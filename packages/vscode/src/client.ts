@@ -15,9 +15,10 @@ import {
 import { PublishedDiagnostics } from "./agents/published.js";
 import { ancestorsWithin, resolveBinary, type Resolution, type ResolvedBinary } from "./binary.js";
 import { CrashCounter } from "./crash.js";
+import { layoutOf, readLayout } from "./diskChanges.js";
 import { convertEdit, type ServerEdit } from "./edit.js";
 import { nodeEnvironment, shellCommand, usesShell } from "./environment.js";
-import { globFolder, type Project } from "./projects.js";
+import { globFolder, samePath, type Project } from "./projects.js";
 import { scopeMiddleware, type LensScope } from "./scope.js";
 import { ServerStatus, type ServerState } from "./serverState.js";
 import { parseVersion } from "./version.js";
@@ -34,6 +35,8 @@ export interface ProjectHost {
   channelName(project: Project): string;
   /** Whether a file belongs to some other project than `project`, or to none. */
   ownedElsewhere(project: Project, uri: vscode.Uri): boolean;
+  /** Whether `project`'s server is told a file changed on disk, given its sources' folders (`diskChanges.ts`). */
+  toldOfChange(project: Project, uri: vscode.Uri, sources: readonly string[]): boolean;
   /** Whether `project`'s server is asked for a document's lenses (`codeLens.ts`). */
   asksForLenses(project: Project, document: vscode.TextDocument): boolean;
   /** A lens's title in a document as the editor shows it, named for `project` where two answer. */
@@ -60,6 +63,10 @@ export class ProjectServer implements vscode.Disposable {
   readonly published: PublishedDiagnostics;
   /** The files the running server registered its lenses for (`shown.rs` in crates/ascribe-lsp). */
   private lensSelector: vscode.DocumentFilter[] | undefined;
+  /** The folders of the sources the running server loaded, read when it registers its lenses. */
+  private sourceFolders: readonly string[] = [];
+  /** How many times the server has asked for every lens again (`workspace/codeLens/refresh`), for tests. */
+  private refreshes = 0;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -77,6 +84,11 @@ export class ProjectServer implements vscode.Disposable {
     return (
       this.lensSelector !== undefined && vscode.languages.match(this.lensSelector, document) > 0
     );
+  }
+
+  /** How many times the server has asked for every lens again, for tests. */
+  get lensRefreshes(): number {
+    return this.refreshes;
   }
 
   /** When the server last reached the running state, in milliseconds since the epoch. */
@@ -278,13 +290,21 @@ export class ProjectServer implements vscode.Disposable {
           (error) => this.reportFeatureError("preparing workspace rename", error),
           (message) => {
             if (isPublication(message)) this.published.record(message.params);
+            if (isLensRefresh(message)) this.refreshes += 1;
             const lenses = lensRegistration(message);
-            if (lenses !== undefined) this.lensSelector = lenses ?? undefined;
+            if (lenses !== undefined) {
+              this.lensSelector = lenses ?? undefined;
+              // The server registers its lenses when it loads the model and
+              // when the model moves its sources.
+              if (lenses === null) this.sourceFolders = [];
+              else void this.readSources();
+            }
           },
           {
             asks: (document) => this.host.asksForLenses(this.project, document),
             title: (document, title) => this.host.lensTitle(this.project, document, title),
           },
+          (uri) => this.host.toldOfChange(this.project, uri, this.sourceFolders),
         ),
         errorHandler: this.errorHandler(),
       },
@@ -312,12 +332,27 @@ export class ProjectServer implements vscode.Disposable {
     }
   }
 
+  /**
+   * Reads the folders of the project's sources as the server has them: from
+   * the open `ascribe.toml`, whose text the server is sent, or from the file.
+   */
+  private async readSources(): Promise<void> {
+    const open = vscode.workspace.textDocuments.find(
+      (document) =>
+        document.uri.scheme === "file" && samePath(document.uri.fsPath, this.project.config),
+    );
+    const layout = open ? layoutOf(this.project, open.getText()) : await readLayout(this.project);
+    // Stopped, or the registration dropped, while the file was read.
+    if (this.lensSelector !== undefined) this.sourceFolders = layout.sources;
+  }
+
   private async stopNow(): Promise<void> {
     const client = this.client;
     this.client = undefined;
     this.runningSince = undefined;
     this.published.clear();
     this.lensSelector = undefined;
+    this.sourceFolders = [];
     this.status.set("stopped");
     if (!client) return;
     try {
@@ -425,8 +460,9 @@ function clientOptions(
   reportRenameError: (error: unknown) => void,
   observe: (message: Message) => void,
   lenses: LensScope,
+  toldOfChange: (uri: vscode.Uri) => boolean,
 ): LanguageClientOptions {
-  const scope = scopeMiddleware(ownedElsewhere, lenses);
+  const scope = scopeMiddleware(ownedElsewhere, lenses, toldOfChange);
   const folder = globFolder(project.folder);
   const folderUri = vscode.Uri.file(project.folder);
   return {
@@ -483,6 +519,11 @@ function isPublication(message: Message): message is Message & { params: unknown
     !("id" in message) &&
     "params" in message
   );
+}
+
+/** Whether a message is the server's `workspace/codeLens/refresh` request. */
+function isLensRefresh(message: Message): boolean {
+  return "method" in message && message.method === "workspace/codeLens/refresh" && "id" in message;
 }
 
 /** The id of the server's lens registration (`register_lenses` in crates/ascribe-lsp/src/core.rs). */

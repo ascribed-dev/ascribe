@@ -8,6 +8,7 @@ import {
   PROJECT_DEFAULTS,
   QUIET_MS,
   startsServer,
+  toldOfChange,
   type Layout,
 } from "../../src/diskChanges.js";
 import type { Project } from "../../src/projects.js";
@@ -186,5 +187,44 @@ describe("ChangeBatch", () => {
     batch.dispose();
     vi.advanceTimersByTime(MAX_WAIT_MS);
     expect(flushed).toEqual([]);
+  });
+});
+
+describe("toldOfChange", () => {
+  const root = path.resolve("/work");
+  const docs = project(path.join(root, "docs"));
+  const api = project(path.join(root, "api"));
+  const nested = project(path.join(root, "docs/nested"));
+  const projects = [docs, api, nested];
+  const at = (file: string) => path.join(root, file);
+
+  it("tells a server of its own files", () => {
+    expect(toldOfChange(at("docs/content/a.md"), docs, [], projects)).toBe(true);
+    expect(toldOfChange(at("docs/ascribe.toml"), docs, [], projects)).toBe(true);
+  });
+
+  it("tells a server of a file in its sources' folder that's in no project", () => {
+    const sources = [root];
+    expect(toldOfChange(at("crates/cli/tests/output/a.txt"), docs, sources, projects)).toBe(true);
+    expect(toldOfChange(at("examples.observations/default.toml"), docs, sources, projects)).toBe(
+      true,
+    );
+    expect(toldOfChange(at("crates/cli/tests/output/a.txt"), docs, [], projects)).toBe(false);
+  });
+
+  it("tells a server of a file in its sources' folder that's in another project", () => {
+    const sources = [at("api/code")];
+    expect(toldOfChange(at("api/code/greet.py"), docs, sources, projects)).toBe(true);
+    expect(toldOfChange(at("api/content/a.md"), docs, sources, projects)).toBe(false);
+    expect(toldOfChange(at("docs/nested/code/x.ts"), docs, [], projects)).toBe(false);
+    expect(toldOfChange(at("docs/nested/code/x.ts"), docs, [at("docs/nested")], projects)).toBe(
+      true,
+    );
+  });
+
+  it("doesn't tell a server of node_modules or .git in its sources' folder", () => {
+    const sources = [root];
+    expect(toldOfChange(at("node_modules/a/index.js"), docs, sources, projects)).toBe(false);
+    expect(toldOfChange(at(".git/index"), docs, sources, projects)).toBe(false);
   });
 });

@@ -3,7 +3,7 @@ import * as path from "node:path";
 import * as vscode from "vscode";
 import { ProjectServer, type ProjectHost } from "./client.js";
 import { asksForLenses, isCodeFile, lensTitle } from "./codeLens.js";
-import { ChangeBatch, readLayout, startsServer } from "./diskChanges.js";
+import { ChangeBatch, readLayout, startsServer, toldOfChange } from "./diskChanges.js";
 import {
   channelName,
   comparable,
@@ -194,6 +194,10 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
 
   ownedElsewhere(project: Project, uri: vscode.Uri): boolean {
     return ownedElsewhere(project, uri.fsPath, this.projects);
+  }
+
+  toldOfChange(project: Project, uri: vscode.Uri, sources: readonly string[]): boolean {
+    return toldOfChange(uri.fsPath, project, sources, this.projects);
   }
 
   asksForLenses(project: Project, document: vscode.TextDocument): boolean {
