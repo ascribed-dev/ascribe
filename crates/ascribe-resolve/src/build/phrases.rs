@@ -295,7 +295,7 @@ fn typed(value: &mut Value, ty: &FieldType, phrases: bool, model: Values<'_>) {
 
 /// Replaces each `{key}` whose key is declared; the values aren't scanned
 /// again.
-fn substitute_text(text: &str, model: Values<'_>) -> String {
+pub(crate) fn substitute_text(text: &str, model: Values<'_>) -> String {
     let mut out = String::with_capacity(text.len());
     let mut rest = text;
     while let Some(open) = rest.find('{') {

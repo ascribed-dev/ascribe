@@ -1,0 +1,5 @@
+---
+title: Vale
+---
+
+Text.

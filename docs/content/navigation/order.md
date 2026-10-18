@@ -15,7 +15,7 @@ To put a page in another section, move the file, with [`ascribe rename`](../comm
 
 ## The order you get with no file
 
-With no `ascribe.nav`, sections come in path order, and in each section its own page is first, then its pages by content type, in the order `ascribe.toml` declares the types, then by title. A project whose types go from reference to how-to has its references first in each section.
+With no `ascribe.nav`, sections come in path order, and in each section its own page is first, then its pages by content type, in the order `ascribe.toml` declares the types, then by title, as a reader sees it, without a code span's backticks and with phrases' values. A project whose types go from reference to how-to has its references first in each section.
 
 `ascribe model --format json` shows the project's navigation, under `navigation`.
 
@@ -37,7 +37,7 @@ folder = "Guides/"
 pages = ["My Setup.md", "Upgrade.md"]
 ```
 
-`folder` is the section's folder from the content root, ending in `/`, and `""` is the content root. `pages` names file names in that folder, without the section's own `index.md`. Whatever the file leaves out keeps the default order: a section it doesn't list comes after the ones it does, and a page a section's `pages` doesn't name comes after the ones it names, by title. A nested folder is a section of its own, with its own `[[sections]]` table.
+`folder` is the section's folder from the content root, ending in `/`, and `""` is the content root. `pages` names file names in that folder, without the section's own `index.md`. Whatever the file leaves out keeps the default order: a section it doesn't list comes after the ones it does, and a page a section's `pages` doesn't name comes after the ones it names, by title. A nested folder is a section of its own, with its own `[[sections]]` table, except where its own page sits beside it, such as `checks/diagnostics.md` beside `checks/diagnostics/`: the section goes where that page goes among its parent's pages, so to move it, name the page in the parent's `pages`; its own table doesn't move it.
 
 Run `ascribe check`. A name that isn't a page, or a folder that isn't a section, is an error at the value. A page added to a section that lists its pages is advice, `nav-page-unplaced`, on the page; `ascribe check --fix` adds it to `pages` where it shows now, and you move it from there. Every key and problem is in [the reference](index.md#the-file).
 

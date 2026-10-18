@@ -11,13 +11,16 @@
 //!    `checks/diagnostics/`).
 //! 2. **The default order:** sections in path order, the root first; in
 //!    each, its own page, then its pages by type in `ascribe.toml`'s order,
-//!    then by title. A nested section whose own page is beside its folder
-//!    sits where that page sits among its parent's pages; one with no page
-//!    beside it comes after them, in path order.
+//!    then by title as a reader sees it (as plain text, with the phrases'
+//!    declared values), then as written. A nested section whose own page is
+//!    beside its folder sits where that page sits among its parent's pages;
+//!    one with no page beside it comes after them, in path order.
 //! 3. **The file's order over it:** the sections the file lists, in its
-//!    order, then the rest in path order; in a section that lists `pages`,
-//!    those pages in its order, then the rest by title. A name that's no
-//!    page of the folder, or a folder with no pages, is passed over.
+//!    order, then the rest in path order, but a nested section whose own
+//!    page is beside its folder stays where that page is; in a section that
+//!    lists `pages`, those pages in its order, then the rest by title. A
+//!    name that's no page of the folder, or a folder with no pages, is
+//!    passed over.
 //!
 //! [`Navigation::share`] is a build's share of it: the pages the build
 //! publishes and offers (not `unlisted`), and the sections left with one,
@@ -73,6 +76,13 @@ impl Section {
         self.page
             .as_ref()
             .is_some_and(|page| page.as_str() != format!("{}index.md", self.folder))
+    }
+
+    /// Whether `nested`, one of its sections, is placed by its own page
+    /// beside its folder: that page is one of [`Section::pages`], and the
+    /// section sits right after it, whatever `ascribe.nav`'s tables say.
+    pub fn places(&self, nested: &Section) -> bool {
+        placed(nested, &self.pages)
     }
 
     /// Its label as the source has it, whatever a build publishes: its
@@ -321,7 +331,7 @@ impl Maker<'_> {
                     listed.push(pages.remove(at));
                 }
             }
-            pages.sort_by(|a, b| by_title(a, b));
+            pages.sort_by(|a, b| self.by_title(a, b));
             listed.extend(pages);
             pages = listed;
         }
@@ -337,21 +347,20 @@ impl Maker<'_> {
         if let Some(file) = self.file {
             nested.sort_by_key(|s| file.position(&s.folder).unwrap_or(usize::MAX));
         }
-        let (mut placed, rest): (Vec<Section>, Vec<Section>) = nested
-            .into_iter()
-            .partition(|s| s.page_beside() && s.page.as_ref().is_some_and(|p| pages.contains(p)));
-        placed.sort_by_key(|s| {
+        let (mut sections, rest): (Vec<Section>, Vec<Section>) =
+            nested.into_iter().partition(|s| placed(s, &pages));
+        sections.sort_by_key(|s| {
             s.page
                 .as_ref()
                 .and_then(|p| pages.iter().position(|q| q == p))
         });
-        placed.extend(rest);
+        sections.extend(rest);
         Section {
             folder: folder.to_owned(),
             label: entry.and_then(|e| e.label.clone()),
             page: page.and_then(|p| RelPath::parse(&p).ok()),
             pages,
-            sections: placed,
+            sections,
             listed: entry.is_some(),
         }
     }
@@ -374,19 +383,56 @@ impl Maker<'_> {
                 .and_then(|t| self.model.types.iter().position(|u| u.name == t.name))
                 .unwrap_or(usize::MAX)
         };
-        rank(a).cmp(&rank(b)).then_with(|| by_title(a, b))
+        rank(a).cmp(&rank(b)).then_with(|| self.by_title(a, b))
+    }
+
+    /// By title as plain text without case, then as plain text, then as
+    /// written, a page with no title by its file name, then by path.
+    fn by_title(&self, a: &FileIndex, b: &FileIndex) -> Ordering {
+        let title = |f: &FileIndex| f.title.clone().unwrap_or_else(|| stem(&f.path).to_owned());
+        let (ta, tb) = (title(a), title(b));
+        let (pa, pb) = (
+            plain_title(a, self.model, &ta),
+            plain_title(b, self.model, &tb),
+        );
+        pa.to_lowercase()
+            .cmp(&pb.to_lowercase())
+            .then_with(|| pa.cmp(&pb))
+            .then_with(|| ta.cmp(&tb))
+            .then_with(|| a.path.cmp(&b.path))
     }
 }
 
-/// By title without case, then as written, a page with no title by its file
-/// name, then by path.
-fn by_title(a: &FileIndex, b: &FileIndex) -> Ordering {
-    let title = |f: &FileIndex| f.title.clone().unwrap_or_else(|| stem(&f.path).to_owned());
-    let (ta, tb) = (title(a), title(b));
-    ta.to_lowercase()
-        .cmp(&tb.to_lowercase())
-        .then_with(|| ta.cmp(&tb))
-        .then_with(|| a.path.cmp(&b.path))
+/// Whether `section` is placed among `pages`, its parent's: its own page is
+/// beside its folder and one of them.
+fn placed(section: &Section, pages: &[RelPath]) -> bool {
+    section.page_beside() && section.page.as_ref().is_some_and(|p| pages.contains(p))
+}
+
+/// `title`, `file`'s, as a reader sees it, whatever the build: its phrases
+/// substituted with the values the content model declares when its type's
+/// `title` takes them, and as plain text when `title` sets `inline`.
+fn plain_title(file: &FileIndex, model: &ContentModel, title: &str) -> String {
+    let Some(field) = file
+        .content_type(model)
+        .and_then(|t| t.frontmatter.fields.iter().find(|f| f.name == "title"))
+    else {
+        return title.to_owned();
+    };
+    let values = |key: &str| {
+        if field.phrases {
+            model.phrase(key).map(str::to_owned)
+        } else {
+            None
+        }
+    };
+    if field.inline.is_some() {
+        ascribe_model::inline::plain_text(&ascribe_model::inline::parse(title, &values))
+    } else if field.phrases {
+        crate::build::substitute_text(title, &|key| model.phrase(key))
+    } else {
+        title.to_owned()
+    }
 }
 
 struct Sharer<'a> {

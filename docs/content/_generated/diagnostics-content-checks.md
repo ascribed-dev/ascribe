@@ -414,7 +414,7 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 
 Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
 
-**When:** `ascribe.nav` lists one or more of a section's sibling sections and not the section, which is reported on its first page. A folder none of whose sections the file lists has the default order, and isn't reported.
+**When:** `ascribe.nav` lists one or more of a section's sibling sections and not the section, which is reported on its first page. A folder none of whose sections the file lists has the default order, and isn't reported, nor is a section whose own page beside its folder places it among its parent's pages, since a table wouldn't move it.
 
 **Message:** ascribe.nav lists other sections in `{parent}` and not `{folder}`, so it comes after them, in path order
 

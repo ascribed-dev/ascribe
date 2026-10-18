@@ -10,8 +10,8 @@
 //!   safe fix that removes it.
 //! - On a page: one a section's `pages` leaves out (`nav-page-unplaced`),
 //!   unless it's `unlisted`, which no sidebar shows, and the first page of
-//!   a section the file leaves out where it lists a sibling
-//!   (`nav-section-unplaced`), each advice with a safe fix to the file. A
+//!   a section the file leaves out where it lists a sibling, unless its own
+//!   page beside its folder places it (`nav-section-unplaced`), each advice with a safe fix to the file. A
 //!   section's fix appends every page it reports, and the
 //!   file's appends every section, in the order the navigation has them
 //!   now, so applying it changes no order a reader sees; each diagnostic
@@ -293,7 +293,8 @@ impl Checker<'_> {
     }
 
     /// `nav-section-unplaced`, on the first page of each section the file
-    /// leaves out where it lists one of its siblings.
+    /// leaves out where it lists one of its siblings. A section its page
+    /// beside its folder places isn't one: a table wouldn't move it.
     fn unplaced_sections(&self, root: &Section, out: &mut Vec<Issue>) {
         let mut left: Vec<(&Section, &str)> = Vec::new();
         let mut stack = vec![root];
@@ -303,7 +304,7 @@ impl Checker<'_> {
                     parent
                         .sections
                         .iter()
-                        .filter(|s| !s.listed)
+                        .filter(|s| !s.listed && !parent.places(s))
                         .map(|s| (s, parent.folder.as_str())),
                 );
             }

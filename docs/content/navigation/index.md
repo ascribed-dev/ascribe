@@ -23,7 +23,7 @@ To choose the order and the labels, see [Put your pages in order](order.md).
 With no file, and for whatever the file leaves out:
 
 - Sections come in path order, the content root first.
-- In a section, its own page is first, then its pages by their content type, in the order `ascribe.toml` declares the types, then by title.
+- In a section, its own page is first, then its pages by their content type, in the order `ascribe.toml` declares the types, then by title as a reader sees it, without a code span's backticks and with its phrases' values: a title written `` `zeta.yaml` options `` sorts under z, and `{product} overview` under the product's name.
 - A nested section whose own page is beside its folder sits where that page sits among its parent's pages. Any other comes after the parent's pages, in path order.
 
 ## A page's label
@@ -64,7 +64,7 @@ pages = ["My Setup.md", "Upgrade.md"]
 | Key | Description | Example |
 |---|---|---|
 | `version` | The file's format: `1`. | `version = 1` |
-| `[[sections]]` | One table for each section the file lists, in the order they come. A section it doesn't list comes after the listed ones among its siblings, in path order. | |
+| `[[sections]]` | One table for each section the file lists, in the order they come. A section it doesn't list comes after the listed ones among its siblings, in path order. A nested section whose own page is beside its folder, such as `checks/diagnostics/` with `checks/diagnostics.md`, sits where that page sits among its parent's pages whatever its table says: to move it, move the page in the parent's `pages`. | |
 | `folder` | The section's folder, from the content root, ending in `/`, or `""` for the content root. | `folder = "Guides/"` |
 | `pages` | Optional. File names in that folder, in the order they come; the section's other pages come after them, by title. It may name the page beside a nested folder, which places that section where the page is. A section without `pages` has the default order. | `pages = ["My Setup.md"]` |
 | `label` | Optional. The section's label, on one line. | `label = "How-to guides"` |
@@ -85,7 +85,7 @@ Once the file reads, `ascribe check` and the editor hold it to the project. Each
 | `nav-duplicate`, error | At a folder listed a second time, or a page named a second time in one `pages` | Only the first counts. The fix removes the second table or entry, so keep what you need from it in the first. |
 | `section-page-both`, error | On a folder's `index.md` when the page beside the folder has its name too, with or without the file | Keep one of them as the section's own page. Until then, the `index.md` is. |
 | `nav-page-unplaced`, advice | On a page its section's `pages` doesn't name, unless it's `unlisted`, which no sidebar shows. A section without `pages` reports nothing. | The fix adds the section's unnamed pages to `pages`, in the order they come in now, so nothing moves. Then move them where you want them. |
-| `nav-section-unplaced`, advice | On the first page of a section the file doesn't list when it lists one of the section's siblings. A folder none of whose sections are listed reports nothing. | The fix adds a `[[sections]]` table for each, in the order they come in now. A file that writes `sections = [...]` inline gets no fix: add the sections to its list. |
+| `nav-section-unplaced`, advice | On the first page of a section the file doesn't list when it lists one of the section's siblings. A folder none of whose sections are listed reports nothing, nor does a section its own page beside its folder places, which a table wouldn't move. | The fix adds a `[[sections]]` table for each, in the order they come in now. A file that writes `sections = [...]` inline gets no fix: add the sections to its list. |
 | `nav-label-long`, advice | At a page's `nav-label` that's longer than its title, each counted as a reader sees it | Shorten it, or remove it so the title is the label. |
 
 The fixes keep the file's comments and layout. The two pieces of advice are what tells a writer that a page or a folder they've just added isn't where the file says the others go, and an agent too when it runs `ascribe check`, since the agents' hook reports only errors: `ascribe check --fix` places every one of them at once, where the default already shows it, and the editor offers the same fix on the page. A project that wants every page placed can raise them to errors in [`[checks]`](../content-model/checks.md).

@@ -22,6 +22,15 @@ title = { type = "string", inline = "code" }
 [types.reference.frontmatter]
 title = "string"
 
+[types.concept.frontmatter]
+title = { type = "string", inline = "code", phrases = true }
+
+[types.note.frontmatter]
+title = { type = "string", phrases = true }
+
+[phrases]
+product = "Loom"
+
 [dimensions.deployment]
 values = ["cloud", "self-managed"]
 
@@ -226,6 +235,44 @@ fn a_nested_section_with_its_page_beside_its_folder_sits_where_the_page_is() {
             "    checks/check.md",
             "    [checks/more/] checks/more/index.md",
             "      checks/more/one.md",
+        ]
+    );
+}
+
+#[test]
+fn titles_sort_as_a_reader_sees_them() {
+    let p = project(
+        &[
+            ("Guides/zeta.md", page("concept", "\"`zeta.yaml` options\"")),
+            ("Guides/apply.md", page("concept", "Apply")),
+            (
+                "Guides/overview.md",
+                page("concept", "\"{product} overview\""),
+            ),
+            ("Guides/b-plain.md", page("concept", "b")),
+            ("Guides/b-code.md", page("concept", "\"`b`\"")),
+            // Markup a title doesn't read is its text.
+            ("Notes/zeta.md", page("note", "\"`zeta`\"")),
+            ("Notes/overview.md", page("note", "\"{product} overview\"")),
+            ("Notes/apply.md", page("note", "Apply")),
+        ],
+        None,
+    );
+    assert_eq!(
+        outline(&p.navigation().root),
+        [
+            "[] -",
+            "  [Guides/] -",
+            "    Guides/apply.md",
+            // The same plain text, then as written.
+            "    Guides/b-code.md",
+            "    Guides/b-plain.md",
+            "    Guides/overview.md",
+            "    Guides/zeta.md",
+            "  [Notes/] -",
+            "    Notes/zeta.md",
+            "    Notes/apply.md",
+            "    Notes/overview.md",
         ]
     );
 }
