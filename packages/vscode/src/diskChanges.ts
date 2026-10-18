@@ -103,7 +103,7 @@ export function toldOfChange(
 }
 
 /** Whether `file` is in one of `sources`' folders, and not in its `node_modules` or `.git`. */
-function inASource(file: string, sources: readonly string[]): boolean {
+export function inASource(file: string, sources: readonly string[]): boolean {
   return sources.some((folder) => within(file, folder) && !skipped(file, folder));
 }
 
