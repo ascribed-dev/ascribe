@@ -36,7 +36,7 @@ Each template's table in `rules.toml` gains `memos`, its paragraphs that are ins
 
 **Where the memo goes** depends on what follows the instruction in its container, since a memo is about the block it touches, and binding a heading is an error (SPEC §3.8):
 
-1. **A block follows it:** the memo takes the paragraph's place and touches that block, the blank line between them removed. Above `@steps`, it stacks with it, and is about the list.
+1. **A block follows it:** the memo takes the paragraph's place and touches that block, the blank line between them removed, and is about it; at the top of a section, it's about the section (README decision 4). Above `@steps`, it stacks with it. In the how-to, the two at the top of `\{Task name }` are about its section.
 2. **It's the last block of a section:** the memo moves to the top of the section, under the heading and its `@id`, and is about the section. In the how-to, `\{Optional: Specify when and why…}` ends "Overview" and `\{This section is optional. Include a sub-task…}` ends the sub-task's section.
 3. **It's the last block of a container with no heading,** such as a list item: it can't be a memo, since nothing in the container comes after it and there's no section to be about. The conversion stops, naming it, as a rule that doesn't find its text does, and it stays a placeholder. In the how-to, `\{Optional: The result of completing this step.}` is the last block of the first step; it reads as a slot for the step's result, like the two `Optional:` lines above it, more than as an instruction, which the reading below decides.
 

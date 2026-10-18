@@ -92,7 +92,11 @@ Rotate your [API key](/docs/reference/glossary#api-key "A secret token.")<ascrib
 <p>Rotate your <a href="/docs/reference/glossary#api-key" title="A secret token." data-ascribe-term="api-key">API key</a> often.</p>
 ```
 
-A marker after a space doesn't apply. A link that is the last inline content of a heading is handled as an image is: the marker applies to the link. The emitter never writes this, since glossary terms aren't matched in headings.
+A marker after a space doesn't apply. A link that is the last inline content of a heading is handled as an image is: the marker applies to the link. Glossary terms aren't matched in headings, but a link an author writes to a term's heading is a use of the term, so the emitter writes this for one that ends a heading, followed by the heading's own marker after a space:
+
+```markdown
+## See [widget](/docs/glossary#widget "A part of a page that a model declares.")<ascribe-attributes data-ascribe-term="widget"></ascribe-attributes> <ascribe-attributes id="see-widget"></ascribe-attributes>
+```
 
 ## 3. What applying a marker does
 
@@ -152,6 +156,7 @@ Each construct below has at least one fixture in [`tests/render/`]({repo}/tree/m
 | `image-in-link` | §2.2 | An image inside link text |
 | `image-ends-heading` | §2.1, §2.2 | A marker directly after an image that ends a heading applies to the image, not the heading |
 | `link-inline` | §2.3 | `[text](href "title")` followed by a marker, with code as link text, and a marker after a space that doesn't apply |
+| `link-ends-heading` | §2.1, §2.3 | A marker directly after a link that ends a heading applies to the link, not the heading |
 | `link-line` | §2.3, §4 | Links out of a line, one with a title and code as its text, each followed by its marker |
 | `attribute-values` | §1, §3 | Escaped quotes, ampersands, and angle brackets decode; spaces and commas stay |
 | `not-a-marker` | §1, §2 | Markers after a space, mid-heading, or in a paragraph, and malformed markers, stay as raw HTML |
