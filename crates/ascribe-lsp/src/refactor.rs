@@ -620,6 +620,40 @@ fn rename_heading(ctx: &Ctx, offset: usize, new_text: &str) -> Option<WorkspaceE
     )
 }
 
+/// What the editor says when a rename at `position` rewords a glossary
+/// term's heading that has no `@id`: the term's id is the heading's, so it
+/// changes with the words. `None` for any other rename.
+pub(crate) fn term_id_note(ctx: &Ctx, position: Position, new_text: &str) -> Option<String> {
+    let file = ctx.file()?;
+    let index = LineIndex::new(&file.source);
+    let offset = ctx.encoding.offset_lenient(&index, &file.source, position);
+    let (heading_span, span) = heading_text_at(&file.document.blocks, offset, &file.source)?;
+    let at = file.headings.iter().position(|h| h.span == heading_span)?;
+    let heading = &file.headings[at];
+    if heading.explicit_id.is_some() {
+        return None;
+    }
+    ctx.snapshot.glossary().term_at(file.file, heading.span)?;
+    let edit = ByteEdit::replace(span, new_text.to_owned());
+    let updated = ascribe_core::apply_edits(&file.source, std::slice::from_ref(&edit)).ok()?;
+    let slugger = ascribe_resolve::slug::slugger_by_name(&ctx.model.consumer.slugger)
+        .unwrap_or_else(ascribe_resolve::slug::default_slugger);
+    let indexed = ascribe_resolve::index_file(
+        file.file,
+        &file.path,
+        &updated,
+        &ctx.model,
+        slugger.as_ref(),
+    );
+    let new_id = &indexed.headings.get(at)?.source_id;
+    (*new_id != heading.source_id).then(|| {
+        format!(
+            "“{}” is a glossary term, and its heading has no `@id`, so the term's id changes too, from `{}` to `{new_id}`. The links to it are changed. To keep an id when the words change, give the heading an `@id`.",
+            heading.text, heading.source_id
+        )
+    })
+}
+
 /// Gives the heading at `heading` of the requested page the `@id` `new_id`,
 /// on a line of its own under it, and changes every link and include that
 /// names an id it changes: its own, and those of the headings after it whose

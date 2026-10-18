@@ -34,6 +34,8 @@ pub struct Client {
     pub latest: BTreeMap<String, PublishDiagnosticsParams>,
     pub initialize_result: serde_json::Value,
     pub requests_from_server: Vec<Request>,
+    /// The text of every `window/showMessage`, in order.
+    pub messages: Vec<String>,
     /// What it answers a `window/showMessageRequest` with.
     answer: serde_json::Value,
 }
@@ -138,6 +140,7 @@ impl Client {
             latest: BTreeMap::new(),
             initialize_result: json!(null),
             requests_from_server: Vec::new(),
+            messages: Vec::new(),
             answer: match setup.ask.flatten() {
                 Some(title) => json!({ "title": title }),
                 None => json!(null),
@@ -157,6 +160,12 @@ impl Client {
                 self.latest
                     .insert(params.uri.as_str().to_owned(), params.clone());
                 self.log.push(params);
+                None
+            }
+            Message::Notification(n) if n.method == "window/showMessage" => {
+                if let Some(message) = n.params["message"].as_str() {
+                    self.messages.push(message.to_owned());
+                }
                 None
             }
             Message::Notification(_) => None,

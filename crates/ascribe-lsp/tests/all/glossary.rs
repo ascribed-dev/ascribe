@@ -1,6 +1,7 @@
 //! A glossary's terms in the editor (SPEC §5.4): going from a term to its
-//! heading, its uses, completing `@term`, the hover on its heading, and the
-//! quick fixes of a glossary page's problems.
+//! heading, its uses, completing `@term`, the hover on its heading, the
+//! quick fixes of a glossary page's problems, and renaming a term with its
+//! heading.
 
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
@@ -396,4 +397,86 @@ fn a_term_without_an_id_is_given_a_stable_one() {
     apply(&mut client, &f, &add["edit"]);
     assert!(read(&f, "docs/glossary.md").contains("## Segment\n@id: segment\n@term\n"));
     left_behind_none(&client, before, None);
+}
+
+#[test]
+fn renaming_a_terms_id_renames_the_term() {
+    let f = project();
+    let glossary = f.path("docs/glossary.md");
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let before = slugs(&client);
+    let edit = client
+        .request(
+            "textDocument/rename",
+            json!({
+                "textDocument": { "uri": uri(&glossary).as_str() },
+                "position": at(GLOSSARY, "@id: rollout", 6),
+                "newName": "rollouts-explained",
+            }),
+        )
+        .response_result
+        .expect("a rename");
+    apply(&mut client, &f, &edit);
+    assert!(read(&f, "docs/glossary.md").contains("@id: rollouts-explained\n"));
+    assert!(read(&f, "docs/index.md").contains("[them](glossary.md#rollouts-explained)"));
+    left_behind_none(&client, before, None);
+    // The term is the new id now.
+    let found = request(
+        &mut client,
+        "textDocument/definition",
+        &f.path("docs/index.md"),
+        at(INDEX, "rollouts", 3),
+    );
+    assert_eq!(found["uri"], uri(&glossary).as_str());
+    assert!(client.messages.is_empty(), "{:?}", client.messages);
+}
+
+#[test]
+fn rewording_a_terms_heading_without_an_id_says_its_id_changes() {
+    let index = "---\ntitle: Home\n---\n\n# Home\n\nPick a [segment](glossary.md#segment).\n";
+    let f = Fixture::new(
+        MODEL,
+        &[("docs/glossary.md", GLOSSARY), ("docs/index.md", index)],
+    );
+    let glossary = f.path("docs/glossary.md");
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let edit = client
+        .request(
+            "textDocument/rename",
+            json!({
+                "textDocument": { "uri": uri(&glossary).as_str() },
+                "position": at(GLOSSARY, "Segment", 2),
+                "newName": "Audience",
+            }),
+        )
+        .response_result
+        .expect("a rename");
+    client.pump();
+    assert_eq!(
+        client.messages,
+        [
+            "“Segment” is a glossary term, and its heading has no `@id`, so the term's id changes too, from `segment` to `audience`. The links to it are changed. To keep an id when the words change, give the heading an `@id`."
+        ]
+    );
+    apply(&mut client, &f, &edit);
+    assert!(read(&f, "docs/index.md").contains("[segment](glossary.md#audience)"));
+    // A heading with an `@id` keeps it, and says nothing.
+    let text = read(&f, "docs/glossary.md");
+    let edit = client
+        .request(
+            "textDocument/rename",
+            json!({
+                "textDocument": { "uri": uri(&glossary).as_str() },
+                "position": at(&text, "Rollout", 2),
+                "newName": "Staged rollout",
+            }),
+        )
+        .response_result
+        .expect("a rename");
+    client.pump();
+    assert_eq!(client.messages.len(), 1, "{:?}", client.messages);
+    apply(&mut client, &f, &edit);
+    assert!(read(&f, "docs/glossary.md").contains("## Staged rollout\n@id: rollout\n"));
 }

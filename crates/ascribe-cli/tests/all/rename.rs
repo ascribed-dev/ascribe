@@ -295,3 +295,37 @@ fn a_listed_page_that_moves_keeps_ascribe_nav_right() {
         "{report}"
     );
 }
+
+#[test]
+fn a_glossary_terms_id_is_renamed_with_its_heading() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "ascribe.toml",
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[glossary]\npages = [\"glossary.md\"]\n",
+    );
+    write(
+        dir.path(),
+        "docs/glossary.md",
+        "---\ntitle: Glossary\n---\n\n## Rollout\n@id: rollout\n@term {aliases=rollouts}\n\nA plan for turning a flag on.\n",
+    );
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Home\n---\n\nPlan your rollouts. See [the glossary](glossary.md#rollout).\n",
+    );
+    let output = ascribe(
+        dir.path(),
+        &["rename", "glossary.md#rollout", "rollouts-explained"],
+    );
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    assert!(read(dir.path(), "docs/index.md").contains("(glossary.md#rollouts-explained)"));
+    let build = ascribe(dir.path(), &["build", "--emit", "site"]);
+    assert_eq!(code_of(&build), 0, "{}", stderr(&build));
+    let page = read(dir.path(), ".ascribe/build/site/site/index.md");
+    assert!(
+        page.contains("data-ascribe-term=\"rollouts-explained\""),
+        "{page}"
+    );
+    assert!(!page.contains("data-ascribe-term=\"rollout\""), "{page}");
+}

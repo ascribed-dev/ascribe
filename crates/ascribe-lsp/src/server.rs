@@ -817,8 +817,24 @@ fn rename_request(shared: &Shared, request: &Request) -> Result<serde_json::Valu
                 )
             })
         } else {
-            core.nav_target(&uri)
-                .and_then(|ctx| crate::refactor::rename(&ctx, params))
+            core.nav_target(&uri).and_then(|ctx| {
+                let note = crate::refactor::term_id_note(
+                    &ctx,
+                    params.text_document_position.position,
+                    &params.new_name,
+                );
+                let edit = crate::refactor::rename(&ctx, params)?;
+                if let Some(message) = note {
+                    core.send(Notification::new(
+                        "window/showMessage".to_owned(),
+                        lsp_types::ShowMessageParams {
+                            typ: lsp_types::MessageType::INFO,
+                            message,
+                        },
+                    ));
+                }
+                Some(edit)
+            })
         }
     };
     match context {
