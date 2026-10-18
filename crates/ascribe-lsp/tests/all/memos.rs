@@ -546,3 +546,61 @@ fn moving_a_page_rewrites_the_about_of_the_memos_keeping_the_id() {
     }
     assert!(memo_edits(&result, &fixture, "memos/phrase.md").is_empty());
 }
+
+#[test]
+fn renaming_a_term_a_phrase_or_a_fragments_heading_rewrites_the_memos_about_it() {
+    const GLOSSARY: &str = "---\ntitle: Glossary\n---\n\nUse {product}.\n\n## Region\n@term\n\nWhere a workspace runs.\n";
+    const PAGE: &str = "---\ntitle: Page\n---\n\n## Page\n\n@include: _part.md\n";
+    const PART: &str = "## Part\n@id: part\n\nText.\n";
+    let model = format!("{MODEL}\n[glossary]\npages = [\"glossary.md\"]\n");
+    let fixture = Fixture::new(
+        &model,
+        &[
+            ("docs/glossary.md", GLOSSARY),
+            ("docs/page.md", PAGE),
+            ("docs/_part.md", PART),
+            ("memos/term.md", "---\nabout: term:region\n---\n\nWhy.\n"),
+            (
+                "memos/phrase.md",
+                "---\nabout: phrase:product\n---\n\nWhy.\n",
+            ),
+            (
+                "memos/part.md",
+                "---\nabout:\n  page.md#part\n---\n\nWhy.\n",
+            ),
+        ],
+    );
+    let mut client = Client::start(&fixture.root());
+    client.settle();
+    let mut rename = |rel: &str, text: &str, needle: &str, new: &str| {
+        client.open(&fixture.path(rel), 1, text);
+        client
+            .request(
+                "textDocument/rename",
+                json!({
+                    "textDocument": doc(&fixture, rel),
+                    "position": at(text, needle),
+                    "newName": new,
+                }),
+            )
+            .response_result
+            .expect("a rename")
+    };
+    // Rewording a term's heading with no `@id` changes its id.
+    let result = rename("docs/glossary.md", GLOSSARY, "Region", "Area");
+    assert_eq!(
+        memo_edits(&result, &fixture, "memos/term.md"),
+        [(7, "term:area".to_owned())]
+    );
+    let result = rename("docs/glossary.md", GLOSSARY, "product}", "brand");
+    assert_eq!(
+        memo_edits(&result, &fixture, "memos/phrase.md"),
+        [(7, "phrase:brand".to_owned())]
+    );
+    // On the line under `about:`.
+    let result = rename("docs/_part.md", PART, "part\n", "piece");
+    assert_eq!(
+        memo_edits(&result, &fixture, "memos/part.md"),
+        [(2, "page.md#piece".to_owned())]
+    );
+}

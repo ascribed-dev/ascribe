@@ -367,7 +367,7 @@ pub(crate) fn rename(ctx: &Ctx, params: RenameParams) -> Option<WorkspaceEdit> {
             &mut edits,
             &mut phrase_edits,
         )?;
-        let memo_edits = crate::memos::id_edits(ctx, &ctx.path, old, &params.new_name);
+        let memo_edits = crate::memos::id_edits(ctx, file, old, &params.new_name);
         return workspace_edit_with_config(
             ctx,
             with_memo_edits(workspace_edit(ctx, edits), memo_edits),
@@ -518,7 +518,8 @@ fn rename_phrase(
     };
     changes.insert(crate::uri::path_to_uri(&ctx.config)?, vec![model_edit]);
     result.changes = Some(changes);
-    Some(result)
+    let memo_edits = crate::memos::entry_edits(ctx, ascribe_resolve::EntryKind::Phrase, old, new);
+    Some(with_memo_edits(result, memo_edits))
 }
 
 /// The edits that rename the phrase `old` to `new` in the code `@snippet`s
@@ -745,7 +746,7 @@ fn with_id_changes(
             &mut edits,
             &mut phrase_edits,
         )?;
-        memo_edits.extend(crate::memos::id_edits(ctx, &ctx.path, &old_id, &new_id));
+        memo_edits.extend(crate::memos::id_edits(ctx, file, &old_id, &new_id));
     }
     workspace_edit_with_config(
         ctx,

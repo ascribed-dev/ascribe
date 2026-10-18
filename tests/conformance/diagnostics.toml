@@ -4147,7 +4147,7 @@ messages.entry = "`{about}` isn't declared in ascribe.toml, so this memo is abou
 messages.entry-suggestion = "`{about}` isn't declared in ascribe.toml, so this memo is about nothing; did you mean `{suggestion}`?"
 messages.term = "`{about}` isn't a term on a glossary page, so this memo is about nothing"
 messages.term-suggestion = "`{about}` isn't a term on a glossary page, so this memo is about nothing; did you mean `{suggestion}`?"
-fix = "Point `about` at what the memo is about now. Renaming a page or changing a heading's id leaves the memos about it detached, so give them the new name. If what it was about is gone, the memo is too: delete the file."
+fix = "Point `about` at what the memo is about now. A rename, with `ascribe rename` or the editor, rewrites the `about` of the memos about what it renames, but a page moved or a heading's id changed by hand leaves them detached, so give them the new name. If what it was about is gone, the memo is too: delete the file."
 
 [[diagnostic]]
 code = "ASC227"
