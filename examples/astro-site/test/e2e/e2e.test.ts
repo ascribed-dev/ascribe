@@ -330,6 +330,7 @@ describe("the built site", () => {
     );
     expect(documents.map((d) => d.path).sort()).toEqual([
       "Guides/My Setup.md",
+      "Guides/Teams/Share a loom.md",
       "Reference/Options.md",
       "index.md",
     ]);

@@ -46,7 +46,8 @@ describe("the Pages view as the navigation of examples/astro-site", () => {
   }
 
   const start = ["Start", "  index.md"];
-  const guides = ["Guides", "  Guides/My Setup.md"];
+  // Guides/Teams/, a nested section, is listed after Guides' own pages.
+  const guides = ["Guides", "  Guides/My Setup.md", "  Guides/Teams/"];
 
   after(async () => {
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
@@ -208,6 +209,7 @@ describe("the Pages view as the navigation of examples/astro-site", () => {
       "Guides",
       "  Guides/Defaults.md",
       "  Guides/My Setup.md",
+      "  Guides/Teams/",
       "API reference",
       "  Reference/Limits.md",
       "  Reference/Options.md",

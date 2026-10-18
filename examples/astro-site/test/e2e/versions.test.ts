@@ -101,7 +101,12 @@ describe("a versioned build", () => {
         .getByRole("link")
         .evaluateAll((links) => links.map((a) => a.getAttribute("href")));
       // The page 3.4 doesn't have isn't listed.
-      expect(sidebar).toEqual([`${BASE}/3.4`, `${BASE}/3.4/guides/my-setup`, `${BASE}/3.4/reference/options`]);
+      expect(sidebar).toEqual([
+        `${BASE}/3.4`,
+        `${BASE}/3.4/guides/my-setup`,
+        `${BASE}/3.4/guides/teams/share-a-loom`,
+        `${BASE}/3.4/reference/options`,
+      ]);
       const links = await page
         .locator("article a[href^='/']")
         .evaluateAll((anchors) => anchors.map((a) => a.getAttribute("href") ?? ""));
