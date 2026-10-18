@@ -48,8 +48,9 @@
 //               ASCRIBE_BIN and `git`.
 //   navigation  a copy of examples/astro-site with a page added to Reference,
 //               the Pages view as its navigation: dragging, Place Here,
-//               Rename Label…, moving a page, and revealing the open one,
-//               against the real `ascribe lsp`. Needs ASCRIBE_BIN as well.
+//               Rename Label…, moving a page, revealing the open one, and
+//               ascribe.nav's problems and completion as it's typed, against
+//               the real `ascribe lsp`. Needs ASCRIBE_BIN as well.
 //   monorepo    test/fixtures/monorepo, several projects (one nested in
 //               another) with servers started on demand, against the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
