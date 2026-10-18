@@ -1,6 +1,7 @@
 //! Hover (SPEC §10): what a link or include points at, a phrase's value, a
-//! glossary term's definition, the availability a spec resolves to, the rule
-//! of `[listing]` a page is under, and what a directive is.
+//! glossary term's definition (on its heading, with how many pages use it),
+//! the availability a spec resolves to, the rule of `[listing]` a page is
+//! under, and what a directive is.
 
 use ascribe_core::availability::{AvailabilitySpec, Detail, Version, parse_availability};
 use ascribe_core::schema::{
@@ -30,20 +31,57 @@ fn term_hover(ctx: &Ctx, offset: usize) -> Option<Hover> {
         })?;
     let project = ctx.snapshot.project();
     let term = project.glossary().term(&id)?.term.clone();
-    let router = DefaultRouter::from_consumer(&ctx.model.consumer);
-    let definition = project
-        .resolver(ctx.model.editor_default_build(), &router)
-        .term_definition(&id)
-        .filter(|d| !d.is_empty());
-    let text = match definition {
-        Some(definition) => format!("**{term}**\n\n{definition}"),
-        None => format!("**{term}**\n\nThe editor's build doesn't link this glossary term."),
+    let text = format!("**{term}**\n\n{}", term_definition(ctx, &id));
+    markdown_hover(ctx, span, text)
+}
+
+/// On a glossary term's heading, its definition in the editor's build, and
+/// how many pages use the term.
+fn term_heading_hover(ctx: &Ctx, offset: usize) -> Option<Hover> {
+    let file = ctx.file()?;
+    let glossary = ctx.snapshot.glossary();
+    let term = glossary.terms.iter().find(|t| {
+        t.written_in == ctx.path && t.heading.start() <= offset && offset <= t.heading.end()
+    })?;
+    let mut pages: Vec<RelPath> = ctx
+        .snapshot
+        .uses(&Usable::Term(term.id.clone()))
+        .into_iter()
+        .map(|place| place.file)
+        .collect();
+    pages.dedup();
+    let used = match pages.len() {
+        0 => "No page uses it.".to_owned(),
+        1 => "Used on 1 page.".to_owned(),
+        n => format!("Used on {n} pages."),
     };
+    let text = format!(
+        "**{}**, a glossary term\n\n{}\n\n{used}",
+        term.term,
+        term_definition(ctx, &term.id)
+    );
+    let heading = file.heading_at(term.heading)?;
+    markdown_hover(ctx, heading.span, text)
+}
+
+/// A term's definition in the editor's build, or that the build doesn't
+/// link it.
+fn term_definition(ctx: &Ctx, id: &str) -> String {
+    let project = ctx.snapshot.project();
+    let router = DefaultRouter::from_consumer(&ctx.model.consumer);
+    project
+        .resolver(ctx.model.editor_default_build(), &router)
+        .term_definition(id)
+        .filter(|d| !d.is_empty())
+        .unwrap_or_else(|| "The editor's build doesn't link this glossary term.".to_owned())
+}
+
+fn markdown_hover(ctx: &Ctx, span: ascribe_core::Span, value: String) -> Option<Hover> {
     let range = Lines::new(ctx).range(&ctx.path, span)?;
     Some(Hover {
         contents: HoverContents::Markup(MarkupContent {
             kind: MarkupKind::Markdown,
-            value: text,
+            value,
         }),
         range: Some(range),
     })
@@ -55,7 +93,7 @@ pub(crate) fn hover(ctx: &Ctx, position: Position) -> Option<Hover> {
     let index = LineIndex::new(&file.source);
     let offset = ctx.encoding.offset_lenient(&index, &file.source, position);
     let Some(hit) = hit_at(file, offset) else {
-        return term_hover(ctx, offset);
+        return term_hover(ctx, offset).or_else(|| term_heading_hover(ctx, offset));
     };
     let (span, text) = match hit {
         Hit::Phrase(use_) => {

@@ -10,7 +10,8 @@
 //!   prose, a `@note` or its type, a widget, a `@variant` or its attribute,
 //!   or the frontmatter's `type` value, that phrase, feature, term, note
 //!   type, widget, dimension, or content type;
-//! - on a heading, or the primary of its `@id`, that heading;
+//! - on a heading, the primary of its `@id`, or its `@term`, that heading,
+//!   and for a glossary term's heading, the term's occurrences too;
 //! - at the start of the file, or on its frontmatter or title, the file.
 //!
 //! In `ascribe.toml`, the cursor on an entry's declaration (a phrase's key,
@@ -20,7 +21,7 @@
 //! about at the first of them.
 
 use ascribe_core::{LineIndex, RelPath};
-use ascribe_resolve::Usable;
+use ascribe_resolve::{Usable, Use};
 use ascribe_syntax::BlockKind;
 use lsp_types::{Location, Position, Range};
 
@@ -43,13 +44,40 @@ pub(crate) fn references(
     if include_declaration && let Some(declared) = declaration(ctx, &mut lines, &target) {
         out.push(declared);
     }
-    for place in ctx.snapshot.uses(&target) {
+    for place in places(ctx, &target) {
         out.push(Location {
             uri: ctx.uri_of(&place.file)?,
             range: lines.range(&place.file, place.span)?,
         });
     }
     Some(out)
+}
+
+/// The places that use `target`. A glossary term's heading is used where
+/// the term is, as `ascribe refs term:<id>` lists it, beside the links to
+/// the heading, each place once.
+fn places(ctx: &Ctx, target: &Usable) -> Vec<Use> {
+    let mut places = ctx.snapshot.uses(target);
+    let Usable::Heading { file, id } = target else {
+        return places;
+    };
+    let glossary = ctx.snapshot.glossary();
+    if !glossary
+        .term(id)
+        .is_some_and(|term| term.written_in == *file)
+    {
+        return places;
+    }
+    for place in ctx.snapshot.uses(&Usable::Term(id.clone())) {
+        if !places
+            .iter()
+            .any(|p| p.file == place.file && p.span == place.span)
+        {
+            places.push(place);
+        }
+    }
+    places.sort_by(|a, b| (&a.file, a.span.start()).cmp(&(&b.file, b.span.start())));
+    places
 }
 
 /// The places that use the content model entry declared at `position` of
@@ -168,6 +196,19 @@ pub(crate) fn target_at(ctx: &Ctx, offset: usize) -> Option<Usable> {
         return Some(Usable::Heading {
             file: ctx.path.clone(),
             id: id.to_owned(),
+        });
+    }
+    // A term's `@term` asks about its heading, as the heading does.
+    if let Some(directive) = directive
+        && directive.name == "term"
+        && let Some(heading) = file
+            .headings
+            .iter()
+            .find(|h| h.term.as_ref().is_some_and(|t| t.span == directive.span))
+    {
+        return Some(Usable::Heading {
+            file: ctx.path.clone(),
+            id: heading.source_id.clone(),
         });
     }
     if let Some(heading) = file
