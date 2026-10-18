@@ -838,6 +838,7 @@ A glossary is one or more pages, which the content model lists (§7.2). Each hea
 - **Its definition** is the first block of its section's own content, when that's a paragraph, as plain text: phrases substituted for the build, emphasis and code reduced to their text, a link to its text, an image to its alt text, inline HTML dropped, and whitespace runs one space. Directives that bind the heading, and `@available`, `@intended`, and `@memo` above the paragraph, come before the section's own content. A paragraph a fragment brings in counts. A section that opens with groups (§3.6), such as `@variant`, has the paragraph each arm opens with, in the builds that keep that arm. A section that opens with anything else has no definition, which is an error (§8.2). The definition is resolved for each build: a build that removes the paragraph leaves the term without a definition in that build.
 - **It's linked** to its heading on the first of its glossary pages the build publishes. A heading that two glossary pages show, through a fragment, is one term.
 - Two terms, or a term and an alias, with the same text, compared ignoring case unless both terms are case-sensitive, are an error at the second, which isn't a term (§8.2).
+- Two terms with the same id, which their headings' texts can give them on two pages, are an error at the second, which isn't a term (§8.2).
 
 Processors link occurrences of glossary terms to their definitions according to each term's settings, else the glossary's. Authors don't mark glossary terms where they're used, except for a term whose settings turn automatic linking off (`match = "marked"`): processors don't link that term, and authors link the occurrences that mean it to its heading with an ordinary link (§5.2), for words that also have ordinary senses.
 
@@ -1154,7 +1155,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Navigation | A `folder` in `ascribe.nav` that isn't a section | Error |
 | Navigation | A folder `ascribe.nav` lists twice, or a page a section's `pages` names twice | Error |
 | Navigation | A folder with an `index.md` and a page beside it with the folder's name | Error |
-| Glossary | Two terms, or a term and an alias, with the same text | Error |
+| Glossary | Two terms, or a term and an alias, with the same text, or two terms with the same id | Error |
 | Glossary | A term whose section doesn't start with a paragraph | Error |
 | Glossary | `@term` on a heading that no page the glossary lists shows | Error |
 | Project widget | Violates its declared schema | Error |

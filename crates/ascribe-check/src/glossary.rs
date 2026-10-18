@@ -1,8 +1,9 @@
 //! The glossary against the content (SPEC §5.4):
 //!
 //! - `glossary-term-duplicate`: two terms, or a term and an alias, with the
-//!   same text, reported at the second, naming the first. Matching can't
-//!   choose between them, so the second is left out of the glossary.
+//!   same text, or two terms with the same id, reported at the second,
+//!   naming the first. Matching, and a link to the id, can't choose between
+//!   them, so the second is left out of the glossary.
 //! - `glossary-definition-missing`: a term whose section doesn't start with a
 //!   paragraph, at its heading.
 //! - `term-off-glossary-page`: `@term` on a heading no glossary page shows,
@@ -31,15 +32,17 @@ pub(crate) fn check(
     let glossary = index.glossary();
     let mut issues = Vec::new();
     for duplicate in glossary.duplicates {
-        issues.push(
-            Issue::new(
-                diagnostics::GLOSSARY_TERM_DUPLICATE,
-                Location::new(file(duplicate.file), duplicate.span),
-            )
-            .with_arg("text", duplicate.text)
-            .with_arg("first", duplicate.first)
-            .with_arg("page", duplicate.first_page.to_string()),
-        );
+        let mut issue = Issue::new(
+            diagnostics::GLOSSARY_TERM_DUPLICATE,
+            Location::new(file(duplicate.file), duplicate.span),
+        )
+        .with_arg("text", duplicate.text)
+        .with_arg("first", duplicate.first)
+        .with_arg("page", duplicate.first_page.to_string());
+        if duplicate.id {
+            issue = issue.with_variant("id");
+        }
+        issues.push(issue);
     }
     for term in glossary.terms.iter().filter(|t| t.definition.is_empty()) {
         issues.push(

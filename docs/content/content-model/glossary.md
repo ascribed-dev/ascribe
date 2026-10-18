@@ -133,7 +133,7 @@ Write a term the pages share once, in a [fragment](../writing/directives.md#file
 @include: _glossary/shared.md
 ```
 
-A heading the fragment brings in is one term, wherever it's shown. Each build links it to the first page in `pages` that the build publishes, so order `pages` with the page you'd rather readers land on first. Two different headings with the same text are an error, `glossary-term-duplicate`, since a term has one definition.
+A heading the fragment brings in is one term, wherever it's shown. Each build links it to the first page in `pages` that the build publishes, so order `pages` with the page you'd rather readers land on first. Two different headings with the same text are an error, `glossary-term-duplicate`, since a term has one definition, and so are two with the same id, since the id names the term: give one of them another with `@id`.
 
 ## What `ascribe check` reports
 
@@ -143,7 +143,7 @@ Each of these is in [the diagnostics reference](../checks/diagnostics.md), with 
 |---|---|---|
 | [`model-glossary-page`](../checks/diagnostics/content-model.md#ASC238) | A path in `pages` that isn't a page | Error |
 | [`term-off-glossary-page`](../checks/diagnostics/pages.md#ASC242) | `@term` on a page `pages` doesn't list | Error |
-| [`glossary-term-duplicate`](../checks/diagnostics/pages.md#ASC239) | A term or alias with the same text as another, at the second | Error |
+| [`glossary-term-duplicate`](../checks/diagnostics/pages.md#ASC239) | A term or alias with the same text as another, or a term with the same id, at the second | Error |
 | [`glossary-definition-missing`](../checks/diagnostics/pages.md#ASC240) | A term whose section doesn't open with a paragraph | Error |
 | [`glossary-definition-long`](../checks/diagnostics/content-checks.md#ASC241) | A definition over 300 characters in a build | Advice |
 | [`glossary-term-unused`](../checks/diagnostics/content-checks.md#ASC158) | A term no other page uses or links | Advice |

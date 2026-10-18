@@ -4333,9 +4333,10 @@ next = "write"
 evidence = []
 spec = "5.4"
 reference = "content-model/content.md#12-glossary"
-row = "Glossary | Two terms, or a term and an alias, with the same text"
+row = "Glossary | Two terms, or a term and an alias, with the same text, or two terms with the same id"
 message = "\"{text}\" is already the glossary term `{first}`, on {page}"
-fix = "Remove the text from one of the terms' headings or `aliases`, or make the terms distinct. Text is compared ignoring case unless both terms are case-sensitive."
+messages.id = "`{first}` is already a glossary term's id, on {page}"
+fix = "Remove the text from one of the terms' headings or `aliases`, or make the terms distinct. Give one of two terms with the same id another with `@id`. Text is compared ignoring case unless both terms are case-sensitive."
 
 [[diagnostic]]
 code = "ASC240"
