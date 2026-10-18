@@ -3213,7 +3213,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "A memo about a glossary term isn't placed on the term's heading"
     },
     {
@@ -3231,7 +3231,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Renames leave memos detached: a term's id, a phrase, a fragment's heading, and a block-scalar `about`"
     },
     {
@@ -3249,7 +3249,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Two glossary terms with the same id are merged, and nothing reports it"
     },
     {
@@ -3267,7 +3267,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Editing a fragment a glossary page includes re-resolves every page, though no term changed"
     },
     {
@@ -3285,7 +3285,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The snippet lens and This page's example rows don't refresh for files outside the project's folder"
     },
     {
@@ -3304,7 +3304,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "This page costs more per cursor move than Used by did"
     },
     {
@@ -3322,7 +3322,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The snippet lens skips Markdown files, and names itself when only one project shows the file"
     },
     {
@@ -3358,7 +3358,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The Astro starter's sidebar leaves out nested sections"
     },
     {
@@ -3377,7 +3377,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "An `unlisted` page is treated as unplaced in the navigation"
     },
     {
@@ -3395,7 +3395,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The navigation's order: a placed section ignores `[[sections]]`, and titles sort by their markup"
     },
     {
@@ -3413,7 +3413,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "No editor test shows an `ascribe.nav` problem, completion, or its TOML language"
     },
     {
@@ -3431,7 +3431,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Two small bugs in the editor's memos: an `@end` of any indent, and a file name too long"
     },
     {
@@ -3448,7 +3448,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The editor guide: Switch Project's heading holds three sections, and the page is over the size limit"
     },
     {
@@ -3465,7 +3465,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs and records that contradict what shipped"
     },
     {
