@@ -7,6 +7,7 @@ ascribe.toml                      base-path /docs/, trailing-slash never; the `s
 content/
   index.md                        the root page: served at /docs
   Guides/My Setup.md              entry id guides/my-setup; page-level availability
+  Guides/Teams/Share a loom.md    a nested section's page, in the sidebar below Guides
   Reference/Options.md            links to an explicit-id heading; an image beside the page
   _fragments/requirements.md      included by My Setup; its image sits beside the fragment
   downloads/loom.yaml             linked to, so published under _ascribe/files/
@@ -26,6 +27,7 @@ test/e2e/                         the end-to-end tests
 | A partial variant selection: one group reduced to one arm, another left as tabs | build `site` selects `deployment = cloud`; the `pm` group stays tabs |
 | An availability annotation | page-level `available` in the frontmatter, and `@available` on `## Streaming` |
 | A permalink | `@id {permalink=true}: weave-config`, at `/docs/go/weave-config`, which with `?pm=pnpm` opens the `pnpm` tab; a name that isn't there gets the 404 page's explanation |
+| A nested section | `Guides/Teams/`, whose page the sidebar lists after `My Setup.md`, one level deeper |
 | Routes | links to `guides/my-setup` and to the root page, which only work if Ascribe's router and Astro's agree |
 
 ## Running it

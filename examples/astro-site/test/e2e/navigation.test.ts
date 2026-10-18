@@ -2,7 +2,8 @@
 // with the collection alone, so its groups are the default order with no
 // `ascribe.nav`, and the file's order with one, with no list of the site's.
 // Its previous and next, from `neighbors()`, follow the same order, and a
-// page's `nav-label` is its name in both.
+// page's `nav-label` is its name in both. A nested section's pages are in
+// their top section's group, a level deeper.
 import { readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -21,23 +22,29 @@ async function pagerOf(root: string, page: string): Promise<string[]> {
   );
 }
 
-/** The built home page's sidebar: each group's label, then its pages' addresses and labels as HTML. */
+/**
+ * The built home page's sidebar: each group's label, then its pages' depths,
+ * addresses, and labels as HTML.
+ */
 async function sidebarOf(root: string): Promise<string[]> {
   const html = await readFile(path.join(root, "dist", "index.html"), "utf8");
   const nav = /<nav aria-label="Docs">([\s\S]*?)<\/nav>/.exec(html)?.[1] ?? "";
   const lines: string[] = [];
   for (const section of nav.split("<section").slice(1)) {
     lines.push(/<h2[^>]*>([\s\S]*?)<\/h2>/.exec(section)?.[1] ?? "");
-    for (const link of section.matchAll(/<a href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g)) {
-      lines.push(`  ${link[1]} ${link[2]?.trim()}`);
+    for (const item of section.matchAll(
+      /<li data-depth="(\d+)">\s*<a href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g,
+    )) {
+      lines.push(`  ${item[1]} ${item[2]} ${item[3]?.trim()}`);
     }
   }
   return lines;
 }
 
-const START = ["Start", "  /docs Loom documentation"];
-const GUIDES = ["Guides", "  /docs/guides/my-setup Set up Loom"];
-const REFERENCE = ["Reference", "  /docs/reference/options <code>loom.yaml</code> options"];
+const START = ["Start", "  0 /docs Loom documentation"];
+const NESTED = "  1 /docs/guides/teams/share-a-loom Share a loom";
+const GUIDES = ["Guides", "  0 /docs/guides/my-setup Set up Loom", NESTED];
+const REFERENCE = ["Reference", "  0 /docs/reference/options <code>loom.yaml</code> options"];
 
 describe("the sidebar", () => {
   it("is the default order with no ascribe.nav, and the file's with one", async () => {
@@ -66,7 +73,8 @@ describe("the sidebar", () => {
     expect(await sidebarOf(root)).toEqual([
       ...START,
       "Guides",
-      "  /docs/guides/my-setup Setup",
+      "  0 /docs/guides/my-setup Setup",
+      NESTED,
       ...REFERENCE,
     ]);
     expect(await pagerOf(root, "index.html")).toEqual(["next /docs/guides/my-setup Next: Setup"]);

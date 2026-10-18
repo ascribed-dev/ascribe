@@ -9,7 +9,13 @@ import Head from "@ascribed/astro/Head.astro";
 // what it is and where the current one is.
 import Versions from "@ascribed/astro/Versions.astro";
 import VersionBanner from "@ascribed/astro/VersionBanner.astro";
-import { neighbors, sidebar, type Formatted } from "@ascribed/astro/content";
+import {
+  neighbors,
+  sidebar,
+  type Formatted,
+  type SidebarGroup,
+  type SidebarPage,
+} from "@ascribed/astro/content";
 
 interface Props {
   entry: CollectionEntry<"docs">;
@@ -40,12 +46,40 @@ const labelHtml = (of: { label: string; formatted?: Formatted }) =>
   of.formatted?.label ?? escape(of.label);
 const { available } = page(entry);
 // The sidebar: the project's navigation, in ascribe.nav's order or the
-// default one, each page with its address and label. With a versioned build,
+// default one, each page with its address and label, and a nested section's
+// pages right after its own page, each with its depth. With a versioned build,
 // it shows the pages of the line this page is in. Previous and next are the
 // pages before and after this one in the navigation's reading order.
 const entries = await getCollection("docs");
 const groups = sidebar(entries, { entry });
 const { previous, next } = neighbors(entry, entries);
+
+/** A sidebar page, with how many sections deep it is: 0 in a top section. */
+interface Item {
+  page: SidebarPage<CollectionEntry<"docs">>;
+  depth: number;
+}
+
+/**
+ * A group's pages in order, each nested section's right after its own page,
+ * or after the group's pages when its own page is its `index.md`.
+ */
+function items(group: SidebarGroup<CollectionEntry<"docs">>, depth = 0): Item[] {
+  const placed = new Set<SidebarGroup<CollectionEntry<"docs">>>();
+  const out: Item[] = [];
+  for (const page of group.pages) {
+    out.push({ page, depth });
+    for (const section of group.sections) {
+      if (section.page?.entry !== page.entry) continue;
+      placed.add(section);
+      out.push(...items(section, depth + 1));
+    }
+  }
+  for (const section of group.sections) {
+    if (!placed.has(section)) out.push(...items(section, depth + 1));
+  }
+  return out;
+}
 ---
 
 <!doctype html>
@@ -63,8 +97,8 @@ const { previous, next } = neighbors(entry, entries);
           <section>
             <h2 set:html={labelHtml(group)} />
             <ul>
-              {group.pages.map((item) => (
-                <li>
+              {items(group).map(({ page: item, depth }) => (
+                <li data-depth={depth}>
                   <a
                     href={item.href}
                     aria-current={item.entry.id === entry.id ? "page" : undefined}

@@ -35,6 +35,8 @@ interface Records {
 /** The page that isn't listed, and the page that's listed and not quoted. */
 const UNLISTED = "/docs/reference/options";
 const UNQUOTED = "/docs/guides/my-setup";
+/** A listed page in a nested section. */
+const NESTED = "/docs/guides/teams/share-a-loom";
 
 /**
  * Lists the docs' pages by a rule at every level of `[listing]`, with no
@@ -210,6 +212,7 @@ describe("a site at the host's root", () => {
     "https://docs.example.com/",
     "https://docs.example.com/docs",
     `https://docs.example.com${UNQUOTED}`,
+    `https://docs.example.com${NESTED}`,
     "https://docs.example.com/v1.2",
   ];
 
@@ -309,6 +312,7 @@ describe("two projects", () => {
     "https://docs.example.com/",
     "https://docs.example.com/docs",
     `https://docs.example.com${UNQUOTED}`,
+    `https://docs.example.com${NESTED}`,
     "https://docs.example.com/why",
   ];
 
@@ -413,6 +417,7 @@ describe("what a site leaves out", () => {
       expect(locations(await text(server.origin, "/docs/sitemap.xml"))).toEqual([
         "https://docs.example.com/docs",
         `https://docs.example.com${UNQUOTED}`,
+    `https://docs.example.com${NESTED}`,
       ]);
       expect(head(await text(server.origin, UNLISTED)).robots).toBe("noindex");
     } finally {
