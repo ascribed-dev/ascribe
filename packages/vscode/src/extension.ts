@@ -213,6 +213,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
         `Ascribe: copied \`${line}\`. Run it in a terminal.`,
       );
     }),
+    // The command a quick fix carries to select what it wrote, for the person
+    // to type over: a glossary term's new definition (SELECT_RANGE in
+    // crates/ascribe-lsp/src/code_action.rs).
+    vscode.commands.registerCommand("ascribe.selectRange", async (uri: unknown, range: unknown) => {
+      const at = rangeOf(range);
+      if (typeof uri !== "string" || !at) return;
+      const editor = await vscode.window.showTextDocument(vscode.Uri.parse(uri));
+      editor.selection = new vscode.Selection(at.start, at.end);
+      editor.revealRange(at);
+    }),
     // The command a lens in a code file carries: the pages showing it, in the
     // references peek, as Find All References lists places.
     vscode.commands.registerCommand("ascribe.showReferences", async (...args: unknown[]) => {
@@ -286,12 +296,6 @@ function referencesOf(
   args: unknown[],
 ): { uri: vscode.Uri; position: vscode.Position; locations: vscode.Location[] } | undefined {
   const [uri, position, locations] = args as [unknown, unknown, unknown];
-  const asPosition = (value: unknown): vscode.Position | undefined => {
-    const p = value as { line?: unknown; character?: unknown } | null;
-    return typeof p?.line === "number" && typeof p.character === "number"
-      ? new vscode.Position(p.line, p.character)
-      : undefined;
-  };
   const at = asPosition(position);
   if (typeof uri !== "string" || !at || !Array.isArray(locations)) return undefined;
   const found: vscode.Location[] = [];
@@ -305,6 +309,22 @@ function referencesOf(
     found.push(new vscode.Location(vscode.Uri.parse(location.uri), new vscode.Range(start, end)));
   }
   return { uri: vscode.Uri.parse(uri), position: at, locations: found };
+}
+
+/** A position as the server writes it, in the editor's type; `undefined` when it isn't one. */
+function asPosition(value: unknown): vscode.Position | undefined {
+  const p = value as { line?: unknown; character?: unknown } | null;
+  return typeof p?.line === "number" && typeof p.character === "number"
+    ? new vscode.Position(p.line, p.character)
+    : undefined;
+}
+
+/** A range as the server writes it, in the editor's type; `undefined` when it isn't one. */
+function rangeOf(value: unknown): vscode.Range | undefined {
+  const r = value as { start?: unknown; end?: unknown } | null;
+  const start = asPosition(r?.start);
+  const end = asPosition(r?.end);
+  return start && end ? new vscode.Range(start, end) : undefined;
 }
 
 /** The only project's server, or the one picked from a list when there are several. */
