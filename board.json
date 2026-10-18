@@ -1744,7 +1744,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhANgnw",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs report: links and the published site"
     },
     {
@@ -2939,8 +2939,11 @@
         "documentation",
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/601"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Glossary pages: a guide to setting up a glossary"
     },
     {
@@ -3194,6 +3197,293 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "A page type's use drops a tab-separated comment after `type:`"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Memos plan, phases 5 to 7, where it meets glossary pages (#593): a term is now a heading on a glossary page, and `memos/README.md`'s \"The other plans\" says a memo about `term:<id>` names it.\n\nWhat happens, in a project whose `glossary.md` has `## Region` with `@id: area` and `@term`, and `memos/region.md` with `about: term:area`:\n\n1. **It isn't placed.** `ascribe outline glossary.md` lists the memo about `glossary.md#area` and not the one about `term:area`, and neither do the `fix` prompt, the editor's memo lens, or This page's Memos section.\n2. **A `quote` is refused, with a reason that's no longer true:** ``[ASC225] Error: `term:area` is an entry of ascribe.toml, which has no text to quote; remove `quote` ``.\n3. **A missing term is \"not declared in ascribe.toml\"** (`memo-detached`'s message, `tests/conformance/diagnostics.toml` around line 4146).\n4. **The docs say the same:** `docs/content/writing/memo-files.md:25-26` and `docs/content/command/questions.md:120` call `term:` an entry of `ascribe.toml`, and `SPEC.md:1032` \"a content model entry\".\n\nCause: `Named::find` returns `Usable::Term` (`crates/ascribe-resolve/src/named.rs:149`); `place` refuses a quote on any entry (`crates/ascribe-lsp/src/memos.rs:418` and the check's equivalent); outline's listing and the language server's memo lookup match only files and headings.\n\nWhat fixes it: resolve a term a glossary page carries to its heading wherever a memo is placed, so a `term:` memo behaves as one about `glossary.md#<id>`, `quote` included; give `memo-invalid` and `memo-detached` a term wording; reword the two pages. `SPEC.md`'s sentence is a contract, so its change goes with a decision file. Add conformance cases for a placed, a quoted, and a detached `term:` memo.\n",
+        "number": 603,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A memo about a glossary term isn't placed on the term's heading",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/603"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZwo",
+      "labels": [
+        "bug",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "A memo about a glossary term isn't placed on the term's heading"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Memos plan phase 6 says renaming \"rewrites each memo's `about` that names it\", and the docs promise it (`docs/content/editor/index.md:166`, `docs/content/command/project-files.md:27` and `:32`). Four cases don't:\n\n1. **A term's heading id.** `ascribe rename glossary.md#region area` rewrites a memo written `glossary.md#region` and leaves `about: term:region`, which `ascribe check` then reports as `memo-detached`. The glossary plan's phase 4 (\"renaming a heading keeps everything that names its term\") assumed only links name the id. `id_edits` in `crates/ascribe-lsp/src/memos.rs` (around 565-574) rewrites only `path#id`.\n2. **A phrase.** In a copy of `examples/quill`, `ascribe rename phrase:product brand` rewrites seven places in the pages and leaves the shipped `memos/product-name.md` (`about: phrase:product`) detached. `rename_phrase` in `crates/ascribe-lsp/src/refactor.rs` makes no memo edits. Check a dimension value's rename the same way.\n3. **A heading in an included fragment, written `page.md#id`.** `id_edits` matches `path == file`, where links follow the page heading through the include.\n4. **An `about` written as a YAML block scalar, or on the line after its key.** `value_span` looks only on the key's line, so the rewrite is skipped silently.\n\nAlso: `memo-detached`'s fix text (ASC226 in `tests/conformance/diagnostics.toml`, and `docs/content/_generated/diagnostics-pages.md:721`) still says a rename leaves memos detached.\n\nWhat fixes it: memo edits in every rename that can change what an `about` names (`term:`, `phrase:`, a dimension value, a heading reached through a fragment), and `value_span` reading the value wherever YAML puts it, or a diagnostic saying it couldn't. A test for each case, through both `ascribe rename` and the editor's rename.\n",
+        "number": 604,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Renames leave memos detached: a term's id, a phrase, a fragment's heading, and a block-scalar `about`",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/604"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZxM",
+      "labels": [
+        "bug",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Renames leave memos detached: a term's id, a phrase, a fragment's heading, and a block-scalar `about`"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Glossary pages plan, decision 2: a term's id is its heading's id and names the term everywhere else.\n\nReproduce: `[glossary] pages = [\"glossary.md\", \"more.md\"]`, `match = \"every\"`; `glossary.md` has `## Spanner` with `@id: spanner` and `@term`; `more.md` has `## Bolt` with `@id: spanner` and `@term`; a page says \"Tighten the bolt with a spanner.\"\n\n- `ascribe check` is clean.\n- \"bolt\" builds as `[bolt](/glossary/#spanner \"A spanner is a tool.\")`: the other term's heading and definition.\n- With `match = \"first\"`, \"bolt\" isn't linked at all.\n- `ascribe model --format json` lists two terms with id `spanner`, and `ascribe refs term:spanner` counts both words.\n- Case-sensitive terms `Go` and `GO` on two pages reach the same state with no `@id`.\n\nCause: `Project::glossary` (`crates/ascribe-resolve/src/glossary.rs`, around 144-221) compares terms' text, never their ids, and `crates/ascribe-resolve/src/build/glossary.rs` (around 92-95) maps each id to the first term.\n\nWhat fixes it: report a duplicate id at the second, as `glossary-term-duplicate` does for text (a second wording of it, or a new diagnostic in both diagnostics files with a conformance case), and leave the second term out of matching, as a duplicate text is.\n",
+        "number": 605,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Two glossary terms with the same id are merged, and nothing reports it",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/605"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZyE",
+      "labels": [
+        "bug",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Two glossary terms with the same id are merged, and nothing reports it"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Glossary pages plan, phase 2's editor design and its thread's seam: \"A change to a glossary page that touches none of [its terms] leaves the other pages alone.\"\n\n`crates/ascribe-resolve/src/incremental/mod.rs` (around 1086-1101) sets `all_pages` for any touched file a glossary page includes, before comparing the terms' signature. A test that edits a fragment included under a non-term heading of the glossary page gets `re_resolve = {a.md, c.md, glossary.md}`, where `c.md` uses no term. Editing the glossary page itself, outside a term, correctly re-resolves only that page.\n\nWhat fixes it: widen to every page only when the fragment changes a term or a definition, by the same signature the glossary page's own edits are compared with. Add the case to the incremental tests: a fragment edit outside any definition re-resolves only the glossary page.\n",
+        "number": 606,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Editing a fragment a glossary page includes re-resolves every page, though no term changed",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/606"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZzA",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Editing a fragment a glossary page includes re-resolves every page, though no term changed"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Editor's views plan, phase 3 and decision 14: the \"Shown in N pages\" lens is placed from the saved file and answered again when it's saved. Phase 4's tested-example rows should follow a changed observation.\n\nFor a source outside the project's folder, which is Ascribe's own docs (`path = \"..\"`) and the shared-sources case decision 14 is about, neither happens. The scope middleware drops every watched-file event for a file that another project owns or none does (`packages/vscode/src/scope.ts`, `didChangeWatchedFile`, using `ownedElsewhere` from `projects.ts`). Phase 3 opened `provideCodeLenses` to those files and not the events. The server refreshes lenses (`workspace/codeLens/refresh`) and forgets This page's cached rows only on those events (`crates/ascribe-lsp/src/core.rs`). So the docs' server never hears that `crates/ascribe-cli/tests/output/…` or `examples.observations/default.toml` changed.\n\nNot caught: `shared.it.ts` checks only the lenses' titles, and the server's test sends the event directly, past the middleware.\n\nWhat fixes it: let `didChangeWatchedFile` through for files the project's lens registration or its sources' folders cover. A unit test of the middleware for a file in no project and in another project's sources, and a step in the shared-sources integration test that saves a shown file after adding lines above its region and waits for both lenses to move.\n",
+        "number": 607,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The snippet lens and This page's example rows don't refresh for files outside the project's folder",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/607"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZ0A",
+      "labels": [
+        "bug",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The snippet lens and This page's example rows don't refresh for files outside the project's folder"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Editor's views plan, decision 11 and phase 1's criterion that a cursor move is \"no slower than Used by's requests\", which phase 4 says still holds.\n\n1. **The benchmark fails on `main`.** `cargo bench -p ascribe-lsp --bench page` ends with \"ascribe/page is slower than Used by's requests\". One run: on `writing/directives.md`, median 352 µs per move for `ascribe/page` against 141 µs for Used by's two requests (server time). Likely cause, not bisected: the memos join calls `memos::about` on every request, outside what's kept for the page, and it reads every memo file from disk each time (`crates/ascribe-lsp/src/page.rs`, `memos.rs`). Phase 4's pull request said the cost was unchanged without running the bench, and CI doesn't run it.\n2. **While review is on, a move asks two requests.** `askThisPage` calls `reviewOf`, which sends `ascribe/review/changes` on every refresh (`packages/vscode/src/ui/sidebarViews.ts`, `preview/review.ts` `changesOf`). Phase 2 said This page's Review section \"adds no request\". The test's counter counts only `ascribe/page`, with review off.\n\nWhat fixes it: keep the memos about a page with what's kept for it, invalidated by a memo file's change, and keep the review's changes in the extension until the base or the files change. Run the bench in CI, or as a test with a margin, so the criterion is held; count every request a move sends in the test, with review on.\n",
+        "number": 608,
+        "repository": "ascribed-dev/ascribe",
+        "title": "This page costs more per cursor move than Used by did",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/608"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZ04",
+      "labels": [
+        "bug",
+        "rust",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "This page costs more per cursor move than Used by did"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Editor's views plan, phase 3 and decision 14.\n\n1. **A Markdown file a `@snippet` shows gets no lens from another project.** `isCodeFile` treats every Markdown file as a page (`packages/vscode/src/codeLens.ts`), so the extension never asks the showing project's server. Driving `ascribe lsp` for `docs/` directly, the server does answer \"Shown in 1 page\" for `crates/ascribe-cli/tests/output/versions-notes.md` and `examples/getting-started/docs/install.md`; VS Code shows nothing.\n2. **The lens is named whenever two projects' sources cover the file,** not when two projects show it. `lensTitle` counts the servers whose registration covers the document (`packages/vscode/src/registry.ts`), so a file only one project shows reads \"docs: shown in 1 page\", where decision 14 says such a lens is unnamed. The shared-sources fixture can't tell the two rules apart.\n\nWhat fixes it: ask for lenses on a Markdown file outside the project's own pages when the project's registration covers it; name the lens only when more than one server answers with one. Extend the shared-sources fixture with a file in both projects' sources that only one shows, and a shown Markdown file.\n",
+        "number": 609,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The snippet lens skips Markdown files, and names itself when only one project shows the file",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/609"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZ1k",
+      "labels": [
+        "bug",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The snippet lens skips Markdown files, and names itself when only one project shows the file"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Navigation plan, phase 5's criterion that \"the sidebar `sidebar()` draws has the view's order\", and decision 24.\n\nWith pages `a.md`, `guides.md`, and `b.md` at the content root and a folder `guides/`, the Pages view draws Start as Home, Alpha, then the `guides/` section, then Beta. `sidebar()`, `llms.txt`, and `nav.json` give Start (Home, Alpha, Beta), then Guides as a section of its own. #584 made a page beside a top folder read with that folder's section after #583 had shipped the view, and the view didn't follow (`packages/vscode/src/ui/sidebar.ts`, around 123-136 and 186-196). `changes/editor/pages-navigation.md` says Pages shows pages \"in the order a sidebar shows them\". No unit test has a page beside a top folder.\n\nWhat fixes it: draw such a section at the top level, after Start, as `nav.json` has it, and decide what dragging it does there (it can't move inside Start's pages). A unit test of `pagesRoots` with a page beside a top folder, compared against the server's `nav.json` for the same project.\n",
+        "number": 610,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The Pages view puts a top section whose own page is beside its folder inside Start",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/610"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZ2k",
+      "labels": [
+        "bug",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The Pages view puts a top section whose own page is beside its folder inside Start"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Navigation plan, phase 6 (\"a site made by `npx @ascribed/astro init` builds with a sidebar\") and decision 3 (the outputs carry the tree, and `sidebar()` hands it to a site whole).\n\nThe starter's layout, `packages/astro/starter/src/layouts/Docs.astro` (around line 66), and `examples/astro-site`'s copy of it render only `group.pages`. Pages in a folder below a top folder are in no new site's sidebar, though `neighbors()` still links to them. The `src/nav.ts` the starter used to write was checked complete, so a new site used to list every page.\n\nWhat fixes it: draw `group.sections`, nested, as `site/src/components/Sidebar.astro` does, in both layouts. Add a nested folder to `examples/astro-site` and have its end-to-end test find a nested page in the sidebar.\n",
+        "number": 611,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The Astro starter's sidebar leaves out nested sections",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/611"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZ3E",
+      "labels": [
+        "bug",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The Astro starter's sidebar leaves out nested sections"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Navigation plan, decisions 11 and 27: `listing: unlisted` leaves a page out of the navigation.\n\nReproduce: a section `ref/` with `pages = [\"opts.md\"]` in `ascribe.nav`, and `ref/secret.md` with `listing: unlisted`. `ascribe check` reports both:\n\n- ``[ASC235] Advice: `ref/`'s `pages` in ascribe.nav doesn't name this page, so it comes after the pages it does, by title``\n- ``[ASC154] Advice: … it's `unlisted`, so it's left out of the sidebar too and nothing reaches it but its address``\n\n`ascribe check --fix` then writes `pages = [\"opts.md\", \"secret.md\"]`, the agents' hook passes the advice on, and the Pages view shows the page as an entry marked \"not placed\" with **Place Here** (`crates/ascribe-lsp/src/inventory.rs`, around 277-303). `ascribe model`, `nav.json`, `llms.txt`, and `sidebar()` correctly leave it out. Cause: `Navigation::of` keeps unlisted pages, and only a build's share drops them.\n\nWhat fixes it: leave unlisted pages out of `nav-page-unplaced`, its fix, and `place_page` (`crates/ascribe-check/src/nav.rs`), and mark them in the inventory so Pages shows them as unlisted, not unplaced. A conformance case for an unlisted page in a section that lists pages.\n",
+        "number": 612,
+        "repository": "ascribed-dev/ascribe",
+        "title": "An `unlisted` page is treated as unplaced in the navigation",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/612"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZ4I",
+      "labels": [
+        "bug",
+        "rust",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "An `unlisted` page is treated as unplaced in the navigation"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Navigation plan, decisions 8 and 24.\n\n1. **A section placed by its own page beside its folder ignores its `[[sections]]` position, and nothing says so.** Listing `ref/`, `both/`, `guides/` builds with `guides/` first when `guides.md` sits in the root's pages (`crates/ascribe-resolve/src/navigation.rs`, around 340-348). That follows decision 24, but SPEC §7.8 (\"The tables' order is the sections' order\"), the reference's `[[sections]]` row, and `docs/content/navigation/order.md` (\"List the sections in the order you want them\") say otherwise; the editor's `moveSection` knows and refuses. And `nav-section-unplaced` on such a section (for example `guides/advanced/` placed by `advanced.md`) says it \"comes after them, in path order\", which isn't where it goes, and its safe fix appends a table that changes nothing.\n2. **The default order sorts titles as written.** `by_title` (`navigation.rs`, around 383-390) compares the raw title, so \"`zeta.yaml` options\" sorts before \"Apply\" and \"{product} overview\" after everything, though labels have been plain text since decision #594.\n\nWhat fixes it: say the placement rule in SPEC §7.8 (with a decision file, since SPEC is a contract), the reference, and the how-to; leave placed sections out of `nav-section-unplaced`. Sort by the plain text, with the written title as a tiebreak. Conformance cases for both.\n",
+        "number": 613,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The navigation's order: a placed section ignores `[[sections]]`, and titles sort by their markup",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/613"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZ44",
+      "labels": [
+        "bug",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The navigation's order: a placed section ignores `[[sections]]`, and titles sort by their markup"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Navigation plan, phase 3's criteria: the goal's steps \"in conformance cases and an integration test\", and \"without [a TOML extension], its language is still TOML and its problems are shown\".\n\nThe server's side is tested (`crates/ascribe-lsp/tests/all/nav_file.rs`). The only VS Code test of the file, in `packages/vscode/test/integration/suite/navigation.it.ts` (around line 228), waits for zero diagnostics, which would also pass if the client never sent `ascribe.nav` to the server.\n\nWhat fixes it: an integration step that types a misspelled page in `pages` and waits for `nav-page-unknown`, checks that the document's `languageId` is `toml`, and asks for completion inside `pages` and finds the folder's pages.\n",
+        "number": 614,
+        "repository": "ascribed-dev/ascribe",
+        "title": "No editor test shows an `ascribe.nav` problem, completion, or its TOML language",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/614"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZ5Y",
+      "labels": [
+        "bug",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "No editor test shows an `ascribe.nav` problem, completion, or its TOML language"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Memos plan, phases 3 and 6.\n\n1. **The grammar ends a container memo's comment color at an `@end` of any indent.** `ascribe.injection.tmLanguage.json` (around line 48) matches `@end` anywhere, so in a memo that holds an indented `@end` line, the lines after it lose the comment color, though decision 21 keeps a container's lines raw up to an `@end` at the opener's indent. Fix: capture the opener's indent and backreference it in the end pattern; a grammar test with an indented `@end` inside a memo.\n2. **Add Memo can write a file name over 255 bytes.** The name is cut at five words, not at a length, so a quote in CJK prose makes a name the file system refuses, and the extension says \"the page changed. Try again.\" Fix: cut the name by bytes as well, under the file system's limit, and say the real error when a write fails; a unit test with a long CJK quote.\n",
+        "number": 615,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Two small bugs in the editor's memos: an `@end` of any indent, and a file name too long",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/615"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZ6Y",
+      "labels": [
+        "bug",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Two small bugs in the editor's memos: an `@end` of any indent, and a file name too long"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec.\n\n1. **Switch Project's heading swallows This page, Pages, and Content model.** In `docs/content/editor/index.md`, #590 put `#### Switch Project` with `@available: next` (line 274) right after `#### This page, Pages, and Content model` (line 270), so everything to `### The status bar` (line 325), This page's tables and the whole of Pages and Content model, is under it. The ten links to `#this-page-pages-and-content-model` reach one paragraph, and the section's mark makes all of Pages and Content model read as unreleased, though much of it shipped in 0.3.x. Fix: move Switch Project to just before `### The status bar`, its mark on it alone.\n2. **The page is over `page-size`'s limit.** `ascribe check --config docs` reports ``[ASC149] Advice: this page's Markdown is 66,745 characters in build `site` ``. It was 38,589 bytes at 0.3.2 and grew with every editor phase. Decision #394 says a page over the limit is split, names this guide, and says the check isn't acknowledged. Fix: split it into pages in `docs/content/editor/`, each answering one question, update the links to moved headings, and run `ascribe permalinks sync`.\n",
+        "number": 616,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The editor guide: Switch Project's heading holds three sections, and the page is over the size limit",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/616"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZ7U",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The editor guide: Switch Project's heading holds three sections, and the page is over the size limit"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Each is small; together they're what a reader or an agent would trip on.\n\n- [ ] **`[glossary] pages` isn't marked as unreleased.** `docs/content/content-model/content.md`'s `## 12. [glossary]` and its fragment `_fragments/content-model/glossary.md` describe `pages` and `@term` with no `@available: next`, so the site tells 0.3.2 users to write a glossary 0.3.2 rejects. `@term` itself is marked.\n- [ ] **The walkthrough's sidebar step** (`packages/vscode/media/walkthrough/sidebar.md`, line 5) says Pages lists \"pages by type… and pages nothing links to\". Pages shows the navigation's sections, and orphans are a filter, **Orphans Only**; Content model lists page types first.\n- [ ] **The navigation reference says the agents' hook \"reports only errors\"** (`docs/content/navigation/index.md:91`). Since #581 it reports advice with a safe fix too, as `docs/content/agents/index.md` says.\n- [ ] **Two records say `ascribe model`'s `schema_version` \"stays `1`\"**: `changes/command/model-navigation.md` and `project-docs/decisions/539b-navigation-in-model-and-json.md`. It's 3, and didn't move, as `docs/content/command/questions.md` says.\n- [ ] **The site-render contract says the emitter never writes a link marker at the end of a heading** (`docs/content/contracts/site-render.md:95`). Under the glossary plan's decision 21, `## See [widget](glossary.md#widget)` builds a term marker then the heading's id marker. Both renderers handle it; add the case to `tests/render/` and reword the sentence.\n- [ ] **The skill says a hover shows a definition's \"first sentence\"** (`crates/ascribe-cli/src/agents/skill.rs`, and the blessed `packages/cli/skills/ascribe/SKILL.md:65` and the plugin's copy). It shows the whole first paragraph, as the glossary guide says.\n- [ ] **Templates:** the plan's conversion rule 1, the test name at `scripts/templates/convert.test.ts:181`, and the `rules.toml` comment say a template's instruction binds the block below it; at the top of a section it binds the section (decision 4), as in the how-to's lines 23-24 and the troubleshooting template's \"Cause 2\". And `docs/content/templates/index.md:141` with `changes/language/template-section-empty.md` give \"Symptom 1\" as an example of `template-section-empty`, which isn't reported for it; \"Cause 1 of symptom 1\" is.\n",
+        "number": 617,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs and records that contradict what shipped",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/617"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZ8I",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs and records that contradict what shipped"
+    },
+    {
+      "content": {
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Every phase of versions, memos, the editor's views, navigation, and glossary pages has merged.\n\n- [ ] **Decision files.** The roadmap and `project-docs/decisions/README.md` say that when a plan's last phase merges, its decisions that still bind the work become files there, numbered by its last issue. None has: nothing is numbered 502 (versions), 536 (memos), 544 (the editor's views), 541 (navigation), or 548 (glossary pages). Some contract changes got files during their phase (533, 537a-d, 539a-d, 545a, 546a, 551, 558, 585), which the closing files don't repeat. The editor's views plan has no file at all, for example for decision 11 (This page answered by one request) or the Projects view's removal; most of versions' (its `versions.json` shape, decisions 68-84) are only in its README.\n- [ ] **The editor's views plan, decision 15,** says `source.fixAll.ascribe` applies the set `ascribe check --fix` applies to the file. #563 limited it to the problems the editor shows, and documented that; the decision should say so, in its file.\n- [ ] **Each plan's README** says it's finished, in which pull request, and where its decisions in force now are. `project-docs/versions/README.md` (lines 131 and 145) still asks the maintainer to confirm decisions 70-74 and 78-84 \"in its pull request\".\n- [ ] **The roadmap** says it's complete, or becomes a record: its \"Where each plan stands\" still shows the start.\n\n`node scripts/repo-docs/decisions.ts check` checks the files.\n",
+        "number": 618,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Close the finished plans: their decisions, READMEs, and the roadmap",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/618"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBoZ8w",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Close the finished plans: their decisions, READMEs, and the roadmap"
     }
   ]
 }
