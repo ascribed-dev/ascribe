@@ -1,5 +1,4 @@
-// The editor guide, docs/content/editor/index.md and its page of settings and
-// commands, docs/content/editor/settings.md, includes four fragments
+// The editor guide, the pages in docs/content/editor/, include four fragments
 // generated from package.json and the action registry: the settings, the
 // commands in the command palette, the actions, and the tools for agents. This test renders them
 // and fails when one is out of date; run it with ASCRIBE_BLESS=1 to rewrite
@@ -10,7 +9,7 @@
 // each from src/actions/registry.ts. A setting or command no release has yet
 // is listed in `available`, which gives its row an availability.
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { ACTIONS, commandId } from "../../src/actions/registry.js";
 
@@ -36,40 +35,40 @@ const commands: Record<string, string> = {
   "ascribe.openPreview":
     "Opens the page preview of the active page beside the editor, starting its project's server if it hasn't started.",
   "ascribe.openSitePreview":
-    "Opens the active page on its project's dev server, in the browser. See [Site preview](../editor/index.md#site-preview).",
+    "Opens the active page on its project's dev server, in the browser. See [Site preview](../editor/preview.md#site-preview).",
   "ascribe.selectPreviewBuild":
     "Picks the build the preview shows, for the previewed page's project, as the preview's **Build** picker does. It's the same choice as **Switch Build**.",
   "ascribe.switchBuild":
-    "Picks the build you're looking at in the active file's project: the one the preview renders and the status bar names. Choosing the editor build follows `[editor] build`. See [The status bar](../editor/index.md#the-status-bar).",
+    "Picks the build you're looking at in the active file's project: the one the preview renders and the status bar names. Choosing the editor build follows `[editor] build`. See [The status bar](../editor/preview.md#the-status-bar).",
   "ascribe.checkEveryBuild":
     "Runs `ascribe check` over every build of the active file's project, and adds to the Problems panel the problems of builds other than the editor's, which the language server doesn't check. When no file of a project is active and the workspace has several projects, it asks which. See [The Problems panel](../editor/settings.md#the-problems-panel).",
   "ascribe.projectMenu":
     "Shows the menu of the active file's project, as clicking its status bar item does: switch the build, check every build, show the server's output, switch project, restart its server, dim what the build leaves out, or open the preview.",
   "ascribe.switchProject":
-    "Lists the workspace's projects, the sidebar's first, each with its folder and its server's state, and shows the one you choose in the sidebar, starting its server, until a file of another project is active. Shown while the workspace has several projects. See [Switch Project](../editor/index.md#switch-project).",
+    "Lists the workspace's projects, the sidebar's first, each with its folder and its server's state, and shows the one you choose in the sidebar, starting its server, until a file of another project is active. Shown while the workspace has several projects. See [Switch Project](../editor/sidebar.md#switch-project).",
   "ascribe.toggleBuildLens":
-    "Turns the build lens on or off for the active file's project: the editor dims what the build you're looking at leaves out of each page, with a hover that says why. See [The build lens](../editor/index.md#the-build-lens).",
+    "Turns the build lens on or off for the active file's project: the editor dims what the build you're looking at leaves out of each page, with a hover that says why. See [The build lens](../editor/preview.md#the-build-lens).",
   "ascribe.startReview":
-    "Marks what changed in the preview, against a base it asks for, for the active page's project. Its server must be running: open one of its pages first. See [Review in the preview](../editor/index.md#review-in-the-preview).",
+    "Marks what changed in the preview, against a base it asks for, for the active page's project. Its server must be running: open one of its pages first. See [Review in the preview](../editor/review.md).",
   "ascribe.stopReview": "Turns review off for the active page's project, and frees its base.",
   "ascribe.changedPages":
     "Lists the pages the change touches in the preview's build; choosing one opens it and its preview.",
   "ascribe.refreshComments":
-    "Reads the pull request's review threads from GitHub again, for the active page's project. See [Comments in the preview](../editor/index.md#comments-in-the-preview).",
+    "Reads the pull request's review threads from GitHub again, for the active page's project. See [Comments in the preview](../editor/review.md#comments-in-the-preview).",
   "ascribe.submitReview":
     "Opens the preview's dialog for submitting your review's comments, on the page it shows or the first changed page. Shown while you have comments to submit. It's in the Review view's title bar too.",
   "ascribe.openSourceChanges":
-    "Opens one diff of the changed pages' source files, at the base against the working tree: each page's own file, and the fragments and pages it changed through. It's in the Review view's title bar too. See [The Review view](../editor/index.md#the-review-view).",
+    "Opens one diff of the changed pages' source files, at the base against the working tree: each page's own file, and the fragments and pages it changed through. It's in the Review view's title bar too. See [The Review view](../editor/review.md#the-review-view).",
   "ascribe.promptAgentFile":
     "Builds a prompt for your agent about the active file's problems, and puts it where `ascribe.agents.promptTarget` says, without sending it. Shown when the file has problems. See [Prompt your agent](../agents/index.md#prompt-your-agent).",
   "ascribe.promptAgentProject":
     "Builds a prompt for your agent about the problems of the active file's project, as Prompt Agent to Fix This File does. Shown when the project has problems.",
   "ascribe.newPage":
-    "Starts a page from its type's template: asks for the type, each with what it's for, then the title, makes the page in the content root, and opens it with the first thing to fill in selected; the page names its type in its frontmatter. Run on a folder in the Explorer, it makes the page in that folder. It's in the Pages view's title bar too. See [Start a page](../editor/index.md#start-a-page).",
+    "Starts a page from its type's template: asks for the type, each with what it's for, then the title, makes the page in the content root, and opens it with the first thing to fill in selected; the page names its type in its frontmatter. Run on a folder in the Explorer, it makes the page in that folder. It's in the Pages view's title bar too. See [Start a page](../editor/actions.md#start-a-page).",
   "ascribe.nextPlaceholder":
     "Selects the next thing the page's template left to fill in, after the cursor, so typing replaces it; after the last, it goes back to the first.",
   "ascribe.actions":
-    "Opens the [actions bar](../editor/index.md#the-actions-bar): the fixes for problems at the cursor, then the actions that apply to the cursor or selection.",
+    "Opens the [actions bar](../editor/actions.md#the-actions-bar): the fixes for problems at the cursor, then the actions that apply to the cursor or selection.",
 };
 
 /** The actions' commands, which share one row. */
@@ -79,7 +78,7 @@ const actionCommands = new Set(ACTIONS.map(commandId));
 const ACTIONS_ROW = "ascribe.action.*";
 
 /** What the actions' row says. */
-const actionsRow = `Runs the action, such as **Ascribe: ${ACTIONS[0]?.title ?? ""}**, in a Markdown file of a project. Each of the [actions](../editor/index.md#actions) is a command.`;
+const actionsRow = `Runs the action, such as **Ascribe: ${ACTIONS[0]?.title ?? ""}**, in a Markdown file of a project. Each of the [actions](../editor/actions.md) is a command.`;
 
 /**
  * The availability of each setting or command newer than the extension's
@@ -261,12 +260,14 @@ describe("the editor guide", () => {
   });
 
   it.each(fragments)("includes _generated/%s", (name) => {
-    const guide = read("docs/content/editor/index.md");
-    const settings = read("docs/content/editor/settings.md");
+    const pages = readdirSync(new URL("docs/content/editor/", root)).filter((page) =>
+      page.endsWith(".md"),
+    );
     expect(
-      guide.includes(`@include: ../_generated/${name}\n`) ||
-        settings.includes(`@include: ../_generated/${name}\n`),
-      `neither docs/content/editor/index.md nor editor/settings.md includes _generated/${name}`,
+      pages.some((page) =>
+        read(`docs/content/editor/${page}`).includes(`@include: ../_generated/${name}\n`),
+      ),
+      `no page in docs/content/editor/ includes _generated/${name}`,
     ).toBe(true);
   });
 });

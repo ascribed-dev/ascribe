@@ -10,7 +10,7 @@ A heading marked as a [permalink](../writing/directives.md#permalinks), `@id {pe
 This guide covers publishing the addresses, linking to them from a product, checking those links in the product's CI, and what to do when a section moves, gets a second name, or goes away.
 
 @available: next
-In VS Code, the sidebar's [This page](../editor/index.md#this-page-pages-and-content-model) lists the permalinks a page declares, its own and its headings', and each opens its line.
+In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page-pages-and-content-model) lists the permalinks a page declares, its own and its headings', and each opens its line.
 
 ## Publish the addresses
 

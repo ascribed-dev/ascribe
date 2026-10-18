@@ -37,7 +37,7 @@ See [`[dimensions.<name>]`](../content-model/content.md#dimensions) for every ke
 
 "Sign in" has neither, so it's the same everywhere.
 
-`ascribe check` reports a value the dimension doesn't declare, an arm with neither a value nor a title, and a group that isn't closed, at the line that has it. In VS Code, **Insert content that varies** and **Mark where it's available** write both for you, from the dimensions the project declares; see [Actions](../editor/index.md#actions).
+`ascribe check` reports a value the dimension doesn't declare, an arm with neither a value nor a title, and a group that isn't closed, at the line that has it. In VS Code, **Insert content that varies** and **Mark where it's available** write both for you, from the dimensions the project declares; see [Actions](../editor/actions.md).
 
 ## 3. Declare the builds
 
@@ -74,7 +74,7 @@ npx ascribe render docs/install.md --build windows
 
 The Windows build has only the Windows command, with no tabs and no label, since there's nothing to choose between. "Start it at login" is gone: it isn't available on Windows. A Windows reader sees a page written for them.
 
-In VS Code, the preview's **Build** picker shows a page as any build has it, and the [build lens](../editor/index.md#the-build-lens) dims what the build you're looking at leaves out, in the source.
+In VS Code, the preview's **Build** picker shows a page as any build has it, and the [build lens](../editor/preview.md#the-build-lens) dims what the build you're looking at leaves out, in the source.
 
 ## Publishing more than one build
 

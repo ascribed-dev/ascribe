@@ -383,7 +383,7 @@ fn a_page_of_ascribes_docs_has_its_rows() {
         .iter()
         .map(|p| p["name"].as_str().unwrap())
         .collect();
-    assert!(names.contains(&"agents-in-vs-code"), "{names:?}");
+    assert!(names.contains(&"editor-guide"), "{names:?}");
     let answer = page(&mut client, &path);
     let size = &answer["health"]["size"];
     assert_eq!(size["build"], "site");

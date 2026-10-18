@@ -39,7 +39,7 @@ nav-label: Keys
 ---
 ```
 
-`nav-label` is a string on one line, read as the page's `title` is: with code spans in it where `title` sets `inline = "code"`, and phrases where `title` takes them. It's reserved, so a content type can't declare it and a fragment can't use it. Everywhere else the page keeps its title: its heading, search, and `llms.txt`, which names each page as an agent should look for it. One longer than the title it shortens is advice, `nav-label-long`. In the editor, **Rename Label…** in a page's menu in the **Pages** view sets it ([the editor](../editor/index.md#this-page-pages-and-content-model)).
+`nav-label` is a string on one line, read as the page's `title` is: with code spans in it where `title` sets `inline = "code"`, and phrases where `title` takes them. It's reserved, so a content type can't declare it and a fragment can't use it. Everywhere else the page keeps its title: its heading, search, and `llms.txt`, which names each page as an agent should look for it. One longer than the title it shortens is advice, `nav-label-long`. In the editor, **Rename Label…** in a page's menu in the **Pages** view sets it ([the editor](../editor/sidebar.md#this-page-pages-and-content-model)).
 
 ## The file
 @id: the-file
@@ -71,7 +71,7 @@ pages = ["My Setup.md", "Upgrade.md"]
 
 A file that isn't TOML, has no `version` or another one, has a key other than these, or a value of the wrong kind is `nav-invalid`, and the project has the default order until it reads.
 
-The editor is the easy way to change it: drag sections and pages in its **Pages** view, which shows the navigation and writes the file, keeping its comments ([the editor](../editor/index.md#this-page-pages-and-content-model)). Moving a page or a folder, with `ascribe rename` or in the editor, changes the file to match.
+The editor is the easy way to change it: drag sections and pages in its **Pages** view, which shows the navigation and writes the file, keeping its comments ([the editor](../editor/sidebar.md#this-page-pages-and-content-model)). Moving a page or a folder, with `ascribe rename` or in the editor, changes the file to match.
 
 ## Problems
 @id: problems

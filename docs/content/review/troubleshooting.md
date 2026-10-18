@@ -91,5 +91,5 @@ Review stops with a message.
 
 - [Review](index.md): reviewing a pull request, and how comments map to it.
 - [Review in the site preview](../astro/reference.md#review-in-the-site-preview): the site's side of review.
-- [Comments in the preview](../editor/index.md#comments-in-the-preview): the editor's side.
+- [Comments in the preview](../editor/review.md#comments-in-the-preview): the editor's side.
 - [`ascribe diff`](diff.md#cli-diff): the comparison every part of review makes.
