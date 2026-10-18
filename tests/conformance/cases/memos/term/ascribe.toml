@@ -1,0 +1,8 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[glossary]
+match = "first"
+pages = ["glossary.md"]

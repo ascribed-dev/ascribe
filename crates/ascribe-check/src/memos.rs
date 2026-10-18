@@ -194,11 +194,17 @@ fn detached(index: &ascribe_resolve::Project, named: &Named, about: &str, at: Lo
                 .iter()
                 .find(|(_, k)| k == kind)
                 .map_or("", |(p, _)| *p);
+            // A term is a heading on a glossary page, not an entry of
+            // ascribe.toml.
+            let (plain, suggestion) = match kind {
+                EntryKind::Term => ("term", "term-suggestion"),
+                _ => ("entry", "entry-suggestion"),
+            };
             match suggest(name, names) {
                 Some(found) => issue
-                    .with_variant("entry-suggestion")
+                    .with_variant(suggestion)
                     .with_arg("suggestion", format!("{prefix}:{found}")),
-                None => issue.with_variant("entry"),
+                None => issue.with_variant(plain),
             }
         }
     }

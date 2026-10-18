@@ -17,7 +17,7 @@ use ascribe_syntax::{Block, BlockKind, ParseOptions, frontmatter_lines, parse, r
 use crate::fs::FileSystem;
 use crate::index::walk::walk_blocks;
 use crate::layout::Layout;
-use crate::named::Named;
+use crate::named::{EntryKind, Named};
 use crate::project::Project;
 use crate::uses::Usable;
 
@@ -86,8 +86,8 @@ pub enum Invalid {
     NotText(&'static str),
     /// `about` isn't written as a target is: why.
     BadAbout(String),
-    /// `quote` with an `about` that names a content model entry, which has
-    /// no text to quote.
+    /// `quote` with an `about` that names a content model entry other than
+    /// a glossary term, which has no text to quote.
     QuoteWithoutText,
 }
 
@@ -191,7 +191,9 @@ impl MemoFile {
                 }
             },
         }
-        if let (Some(Named::Entry { .. }), Some(quote)) = (&memo.named, &memo.quote) {
+        if let (Some(named), Some(quote)) = (&memo.named, &memo.quote)
+            && !has_text(named)
+        {
             let at = quote.line;
             memo.problem(Invalid::QuoteWithoutText, at);
         }
@@ -405,20 +407,47 @@ impl MemoState {
     }
 }
 
+/// Whether what `named` names has text a `quote` can be found in: a page,
+/// a fragment, or a heading, and a glossary term, which is a heading on a
+/// glossary page.
+fn has_text(named: &Named) -> bool {
+    match named {
+        Named::Path { .. } => true,
+        Named::Entry { kind, .. } => *kind == EntryKind::Term,
+    }
+}
+
+/// What a memo about `target` is on: a glossary term's heading, where it's
+/// written, for a term, so a memo about `term:<id>` is one about that
+/// heading; anything else, as it is.
+pub fn memo_target(project: &Project, target: Usable) -> Usable {
+    match &target {
+        Usable::Term(id) => match project.glossary().term(id) {
+            Some(term) => Usable::Heading {
+                file: term.written_in.clone(),
+                id: term.id.clone(),
+            },
+            None => target,
+        },
+        _ => target,
+    }
+}
+
 /// Places `memo` against `project`'s source index: `None` when its `about`
 /// isn't a target, or it has a quote and its target has no text.
 ///
-/// With no `quote`, the memo is on its target. With one, the blocks of the
+/// A glossary term is placed on its heading ([`memo_target`]). With no
+/// `quote`, the memo is on its target. With one, the blocks of the
 /// target are searched in source order, each block's source as written in
 /// the file it names, with whitespace runs read as one space and case kept;
 /// the first that holds it is the memo's block. A quote across two blocks
 /// isn't found.
 pub fn place(memo: &MemoFile, project: &Project) -> Option<Placement> {
     let named = memo.named.clone()?;
-    if matches!(named, Named::Entry { .. }) && memo.quote.is_some() {
+    if !has_text(&named) && memo.quote.is_some() {
         return None;
     }
-    let Some(target) = named.find(project) else {
+    let Some(target) = named.find(project).map(|t| memo_target(project, t)) else {
         return Some(Placement {
             named,
             target: None,
