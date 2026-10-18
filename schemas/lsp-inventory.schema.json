@@ -91,13 +91,18 @@
           "type": "string"
         },
         "placed": {
-          "description": "Whether it has its place: its section lists no pages, or lists it.\nOne that isn't comes after those that are, and `nav-page-unplaced`\nreports it.",
+          "description": "Whether it has its place: its section lists no pages, or lists it,\nor it's `unlisted`. One that isn't comes after those that are, and\n`nav-page-unplaced` reports it.",
+          "type": "boolean"
+        },
+        "unlisted": {
+          "description": "Whether it's `unlisted`: no build's sidebar shows it, so it needs no\nplace.",
           "type": "boolean"
         }
       },
       "required": [
         "path",
-        "placed"
+        "placed",
+        "unlisted"
       ],
       "type": "object"
     },

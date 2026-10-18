@@ -9,9 +9,10 @@
 //!   named twice in one `pages`, at the second (`nav-duplicate`), with a
 //!   safe fix that removes it.
 //! - On a page: one a section's `pages` leaves out (`nav-page-unplaced`),
-//!   and the first page of a section the file leaves out where it lists a
-//!   sibling (`nav-section-unplaced`), each advice with a safe fix to the
-//!   file. A section's fix appends every page it leaves out, and the
+//!   unless it's `unlisted`, which no sidebar shows, and the first page of
+//!   a section the file leaves out where it lists a sibling
+//!   (`nav-section-unplaced`), each advice with a safe fix to the file. A
+//!   section's fix appends every page it reports, and the
 //!   file's appends every section, in the order the navigation has them
 //!   now, so applying it changes no order a reader sees; each diagnostic
 //!   of a section, or of the file, offers the same fix, which `--fix`
@@ -30,7 +31,7 @@ use ascribe_core::{
     Applicability, DiagnosticSlug, FileId, Fix, Issue, Location, RelPath, TextEdit, diagnostics,
 };
 use ascribe_model::nav_text::{append_names, item_span, table_span, toml_string};
-use ascribe_model::{Checks, NavFile, NavSection};
+use ascribe_model::{Checks, Listing, NavFile, NavSection};
 use ascribe_resolve::{FileKind, Navigation, Section};
 
 use crate::across::title_span;
@@ -239,7 +240,8 @@ impl Checker<'_> {
     }
 
     /// `nav-page-unplaced`, on each page of a listed section's that its
-    /// `pages` leaves out.
+    /// `pages` leaves out and that isn't `unlisted`: no sidebar shows one
+    /// that is (SPEC §7.8), so it has no place to need.
     fn unplaced_pages(&self, out: &mut Vec<Issue>) {
         let mut seen: BTreeSet<&str> = BTreeSet::new();
         for entry in &self.nav.sections {
@@ -259,7 +261,7 @@ impl Checker<'_> {
             let left: Vec<&RelPath> = section
                 .pages
                 .iter()
-                .filter(|p| !named.contains(name(p)))
+                .filter(|p| !named.contains(name(p)) && !self.unlisted(p))
                 .collect();
             let names: Vec<&str> = left.iter().map(|p| name(p)).collect();
             let Some(edit) = append_names(self.text, list, written, &names) else {
@@ -357,6 +359,14 @@ impl Checker<'_> {
                 issue.with_fix(fix(title.clone(), vec![edit.clone()], Applicability::Safe))
             });
         }
+    }
+
+    /// Whether the page is `unlisted`.
+    fn unlisted(&self, page: &RelPath) -> bool {
+        let model = self.index.model();
+        self.index
+            .file(page)
+            .is_some_and(|f| f.listing(model) == Listing::Unlisted)
     }
 
     /// Where a problem about a page is reported: at its title.

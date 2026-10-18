@@ -558,3 +558,48 @@ fn a_page_or_a_folder_that_moves_keeps_ascribe_nav_right() {
         text.replace("\"Options.md\", \"Defaults.md\", ", "\"Options.md\", ")
     );
 }
+
+#[test]
+fn an_unlisted_page_its_section_leaves_out_is_marked_and_place_here_refuses_it() {
+    let text = "version = 1\n\n[[sections]]\nfolder = \"Reference/\"\npages = [\"Options.md\"]\n";
+    let f = project(Some(text));
+    f.write(
+        "docs/Reference/Secret.md",
+        "---\ntitle: Secret\nlisting: unlisted\n---\n\nText.\n",
+    );
+    let mut client = Client::start(&f.root());
+    let inventory = inventory(&mut client, &f);
+    let reference = inventory["navigation"]["sections"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|s| s["folder"] == "Reference/")
+        .unwrap();
+    let entry = |path: &str| {
+        reference["pages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|p| p["path"] == path)
+            .unwrap()
+            .clone()
+    };
+    assert_eq!(
+        entry("Reference/Secret.md"),
+        json!({ "path": "Reference/Secret.md", "placed": true, "unlisted": true })
+    );
+    assert_eq!(
+        entry("Reference/Limits.md"),
+        json!({ "path": "Reference/Limits.md", "placed": false, "unlisted": false })
+    );
+    let refused = edit(
+        &mut client,
+        &f,
+        "placePage",
+        json!({ "page": "Reference/Secret.md" }),
+    );
+    assert_eq!(
+        refused["error"],
+        "`Secret.md` is `unlisted`, so no sidebar shows it and it has no place to take."
+    );
+}

@@ -508,6 +508,17 @@ pub(crate) fn edit(ctx: &Ctx, asked: &NavChange) -> Result<EditResult, String> {
         .ok()
         .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
     let project = ctx.snapshot.project();
+    // An unlisted page is in no sidebar (SPEC §7.8): it has no place to take.
+    if let NavChange::PlacePage { page } = asked
+        && project
+            .file(page)
+            .is_some_and(|f| f.listing(project.model()) == ascribe_model::Listing::Unlisted)
+    {
+        return Err(format!(
+            "`{}` is `unlisted`, so no sidebar shows it and it has no place to take.",
+            file_name(page.as_str())
+        ));
+    }
     let navigation = project.navigation();
     let after = change(text.as_deref(), &navigation, asked)?;
     let nav = NavFile::parse(&after, FileId::new(0))

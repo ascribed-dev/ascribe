@@ -4274,7 +4274,7 @@ spec = "7.8"
 reference = "navigation/index.md#the-file"
 configurable = true
 area = "project"
-when = "`ascribe.nav` lists `pages` for a page's section and doesn't name the page. A section with no `pages` has the default order, and its pages aren't reported, nor is a section's own page"
+when = "`ascribe.nav` lists `pages` for a page's section and doesn't name the page. A section with no `pages` has the default order, and its pages aren't reported, nor is a section's own page, nor an `unlisted` page, which no sidebar shows"
 message = "`{folder}`'s `pages` in ascribe.nav doesn't name this page, so it comes after the pages it does, by title"
 fix = "Add the page's file name to the section's `pages` in `ascribe.nav`, where it should come. The fix appends the section's pages that aren't named, in the order they come in now, so the navigation is the same after it; move the names to where you want them."
 

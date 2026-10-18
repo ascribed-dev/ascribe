@@ -1,0 +1,9 @@
+description: >-
+  An `unlisted` page that a section's `pages` leaves out isn't advice: no
+  sidebar shows it, so it has no place to need. A listed page the same
+  `pages` leaves out still is.
+spec: ["7.8"]
+tags: [check]
+
+diagnostics:
+  - {slug: nav-page-unplaced, file: Reference/Defaults.md, line: 2, severity: advice}
