@@ -2,7 +2,7 @@ import { stat } from "node:fs/promises";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { ProjectServer, type ProjectHost } from "./client.js";
-import { asksForLenses, isCodeFile, lensTitle } from "./codeLens.js";
+import { asksForLenses, lensTitle } from "./codeLens.js";
 import { ChangeBatch, readLayout, startsServer, toldOfChange } from "./diskChanges.js";
 import {
   channelName,
@@ -200,14 +200,33 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     return toldOfChange(uri.fsPath, project, sources, this.projects);
   }
 
-  asksForLenses(project: Project, document: vscode.TextDocument): boolean {
-    return asksForLenses(project, document.uri.fsPath, document.languageId, this.projects);
+  asksForLenses(
+    project: Project,
+    document: vscode.TextDocument,
+    sources: readonly string[],
+  ): boolean {
+    return asksForLenses(project, document.uri.fsPath, document.languageId, sources, this.projects);
   }
 
-  lensTitle(project: Project, document: vscode.TextDocument, title: string): string {
-    if (!isCodeFile(document.uri.fsPath, document.languageId)) return title;
-    const answering = this.servers.filter((server) => server.registeredLenses(document)).length;
-    return lensTitle(title, this.name(project), answering);
+  /**
+   * Names `project`'s lenses in a document only where another project's
+   * server answers there with a lens too: each other server the editor would
+   * ask for the document's lenses is asked. There's rarely one to ask.
+   */
+  async lensTitles(
+    project: Project,
+    document: vscode.TextDocument,
+    titles: readonly string[],
+    token: vscode.CancellationToken,
+  ): Promise<string[]> {
+    const others = this.servers.filter(
+      (server) => !samePath(server.project.config, project.config),
+    );
+    const answered = await Promise.all(
+      others.map((server) => server.answersWithLenses(document, token)),
+    );
+    const answering = 1 + answered.filter(Boolean).length;
+    return titles.map((title) => lensTitle(title, this.name(project), answering));
   }
 
   async dispose(): Promise<void> {

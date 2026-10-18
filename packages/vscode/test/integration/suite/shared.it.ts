@@ -5,8 +5,9 @@ import { activated, uriOf, waitFor } from "./helpers.js";
 
 // The real `ascribe lsp` on test/fixtures/shared-sources: two projects, docs/
 // and api/, whose sources are the same folder, code/. Each project's server
-// answers for the code file, and each lens names its project.
-describe("a code file two projects show", () => {
+// answers for the code file, and each lens names its project. A file only
+// docs/ shows has one lens, unnamed, Markdown files among them.
+describe("files in two projects' sources", () => {
   let api: AscribeApi;
 
   before(async () => {
@@ -31,6 +32,22 @@ describe("a code file two projects show", () => {
       return titles.length === 2 && titles.every((t) => t.includes(":")) && titles;
     });
     assert.deepEqual(titles, ["api: shown in 1 page", "docs: shown in 1 page"]);
+  });
+
+  it("has one lens, unnamed, where only one project shows the file", async () => {
+    for (const file of [uriOf("code", "farewell.py"), uriOf("code", "notes.md")]) {
+      await vscode.window.showTextDocument(file);
+      const titles = await waitFor(`a lens in ${file.fsPath}`, async () => {
+        const found = await vscode.commands.executeCommand<vscode.CodeLens[]>(
+          "vscode.executeCodeLensProvider",
+          file,
+          10,
+        );
+        const titles = found.map((lens) => lens.command?.title ?? "");
+        return titles.length > 0 && titles;
+      });
+      assert.deepEqual(titles, ["Shown in 1 page"]);
+    }
   });
 
   // The code file is outside both projects' folders, so each server hears

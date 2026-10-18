@@ -6,8 +6,12 @@ import { followableScheme } from "./linkSchemes.js";
 export interface LensScope {
   /** Whether the server is asked for a document's lenses. */
   asks(document: vscode.TextDocument): boolean;
-  /** A lens's title as the editor shows it in a document. */
-  title(document: vscode.TextDocument, title: string): string;
+  /** The titles of the server's lenses in a document as the editor shows them. */
+  titles(
+    document: vscode.TextDocument,
+    titles: readonly string[],
+    token: vscode.CancellationToken,
+  ): Promise<string[]>;
 }
 
 /**
@@ -19,11 +23,12 @@ export interface LensScope {
  * request, pushed diagnostics, watched-file events, and renames.
  *
  * `excluded` says whether a file belongs to another project, or to none.
- * `lenses`, when given, decides the lens requests instead: a code file a page
- * shows is never sent to a server, and its lenses are asked for from every
- * server whose registration covers it (`codeLens.ts`). `toldOfChange`, when
- * given, decides the watched-file events instead: a server follows its
- * sources' folders on disk, which may be outside its project (`diskChanges.ts`).
+ * `lenses`, when given, decides the lens requests instead: a file a page
+ * shows is never sent to a server unless it's the server's own, and its
+ * lenses are asked for from every server whose sources hold it
+ * (`codeLens.ts`). `toldOfChange`, when given, decides the watched-file
+ * events instead: a server follows its sources' folders on disk, which may
+ * be outside its project (`diskChanges.ts`).
  */
 export function scopeMiddleware(
   excluded: (uri: vscode.Uri) => boolean,
@@ -53,10 +58,15 @@ export function scopeMiddleware(
     provideCodeLenses: async (d, t, next) => {
       if (lenses ? !lenses.asks(d) : skip(d)) return undefined;
       const found = await next(d, t);
-      if (lenses) {
-        for (const lens of found ?? []) {
-          if (lens.command) lens.command.title = lenses.title(d, lens.command.title);
-        }
+      if (lenses && found && found.length > 0) {
+        const titles = await lenses.titles(
+          d,
+          found.map((lens) => lens.command?.title ?? ""),
+          t,
+        );
+        found.forEach((lens, i) => {
+          if (lens.command) lens.command.title = titles[i] ?? lens.command.title;
+        });
       }
       return found;
     },

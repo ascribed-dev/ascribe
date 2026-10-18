@@ -2,6 +2,7 @@ import * as path from "node:path";
 import * as vscode from "vscode";
 import {
   CloseAction,
+  CodeLensRequest,
   ErrorAction,
   LanguageClient,
   State,
@@ -37,10 +38,19 @@ export interface ProjectHost {
   ownedElsewhere(project: Project, uri: vscode.Uri): boolean;
   /** Whether `project`'s server is told a file changed on disk, given its sources' folders (`diskChanges.ts`). */
   toldOfChange(project: Project, uri: vscode.Uri, sources: readonly string[]): boolean;
-  /** Whether `project`'s server is asked for a document's lenses (`codeLens.ts`). */
-  asksForLenses(project: Project, document: vscode.TextDocument): boolean;
-  /** A lens's title in a document as the editor shows it, named for `project` where two answer. */
-  lensTitle(project: Project, document: vscode.TextDocument, title: string): string;
+  /** Whether `project`'s server is asked for a document's lenses, given its sources' folders (`codeLens.ts`). */
+  asksForLenses(
+    project: Project,
+    document: vscode.TextDocument,
+    sources: readonly string[],
+  ): boolean;
+  /** The titles of `project`'s lenses in a document as the editor shows them, named for it where another server answers with lenses too. */
+  lensTitles(
+    project: Project,
+    document: vscode.TextDocument,
+    titles: readonly string[],
+    token: vscode.CancellationToken,
+  ): Promise<string[]>;
 }
 
 /**
@@ -84,6 +94,34 @@ export class ProjectServer implements vscode.Disposable {
     return (
       this.lensSelector !== undefined && vscode.languages.match(this.lensSelector, document) > 0
     );
+  }
+
+  /** Whether the server is asked for a document's lenses where its registration covers it (`codeLens.ts`). */
+  asksForLenses(document: vscode.TextDocument): boolean {
+    return this.host.asksForLenses(this.project, document, this.sourceFolders);
+  }
+
+  /**
+   * Whether the running server answers a document with a lens, asking it as
+   * the editor would. False when it isn't asked, or the request fails.
+   */
+  async answersWithLenses(
+    document: vscode.TextDocument,
+    token: vscode.CancellationToken,
+  ): Promise<boolean> {
+    const client = this.client;
+    if (!client || client.state !== State.Running) return false;
+    if (!this.registeredLenses(document) || !this.asksForLenses(document)) return false;
+    try {
+      const found = await client.sendRequest(
+        CodeLensRequest.type,
+        { textDocument: { uri: client.code2ProtocolConverter.asUri(document.uri) } },
+        token,
+      );
+      return (found?.length ?? 0) > 0;
+    } catch {
+      return false;
+    }
   }
 
   /** How many times the server has asked for every lens again, for tests. */
@@ -301,8 +339,9 @@ export class ProjectServer implements vscode.Disposable {
             }
           },
           {
-            asks: (document) => this.host.asksForLenses(this.project, document),
-            title: (document, title) => this.host.lensTitle(this.project, document, title),
+            asks: (document) => this.asksForLenses(document),
+            titles: (document, titles, token) =>
+              this.host.lensTitles(this.project, document, titles, token),
           },
           (uri) => this.host.toldOfChange(this.project, uri, this.sourceFolders),
         ),
