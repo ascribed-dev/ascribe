@@ -12,15 +12,17 @@
 //! 2. **The default order:** sections in path order, the root first; in
 //!    each, its own page, then its pages by type in `ascribe.toml`'s order,
 //!    then by title as a reader sees it (as plain text, with the phrases'
-//!    declared values), then as written. A nested section whose own page is
-//!    beside its folder sits where that page sits among its parent's pages;
-//!    one with no page beside it comes after them, in path order.
+//!    declared values), then as written. A section below the root whose own
+//!    page is beside its folder sits where that page sits among its parent's
+//!    pages; one with no page beside it comes after them, in path order. A
+//!    top section is never placed by its page: it comes after the root's
+//!    pages, as every other does (decision #610).
 //! 3. **The file's order over it:** the sections the file lists, in its
-//!    order, then the rest in path order, but a nested section whose own
-//!    page is beside its folder stays where that page is; in a section that
-//!    lists `pages`, those pages in its order, then the rest by title. A
-//!    name that's no page of the folder, or a folder with no pages, is
-//!    passed over.
+//!    order, then the rest in path order, but a section below the root
+//!    whose own page is beside its folder stays where that page is; in a
+//!    section that lists `pages`, those pages in its order, then the rest by
+//!    title. A name that's no page of the folder, or a folder with no pages,
+//!    is passed over.
 //!
 //! [`Navigation::share`] is a build's share of it: the pages the build
 //! publishes and offers (not `unlisted`), and the sections left with one,
@@ -59,11 +61,12 @@ pub struct Section {
     /// name, which is then one of the parent's [`Section::pages`] too.
     pub page: Option<RelPath>,
     /// Its pages in order, its own page not among them. The page beside a
-    /// nested folder is one of them, and the nested section sits right
-    /// after it.
+    /// nested folder is one of them, and below the root the nested section
+    /// sits right after it.
     pub pages: Vec<RelPath>,
-    /// Its nested sections in order: each one whose own page is among
-    /// [`Section::pages`] in that page's order, then the rest.
+    /// Its nested sections in order: below the root, each one it
+    /// [places](Section::places) in its page's order, then the rest; at the
+    /// root, all of them as the rest.
     pub sections: Vec<Section>,
     /// Whether `ascribe.nav` lists it.
     pub listed: bool,
@@ -79,10 +82,12 @@ impl Section {
     }
 
     /// Whether `nested`, one of its sections, is placed by its own page
-    /// beside its folder: that page is one of [`Section::pages`], and the
-    /// section sits right after it, whatever `ascribe.nav`'s tables say.
+    /// beside its folder: below the content root, that page is one of
+    /// [`Section::pages`], and the section sits right after it, whatever
+    /// `ascribe.nav`'s tables say. A top section never is, so it's ordered
+    /// among the top sections by `[[sections]]` (decision #610).
     pub fn places(&self, nested: &Section) -> bool {
-        placed(nested, &self.pages)
+        !self.folder.is_empty() && placed(nested, &self.pages)
     }
 
     /// Its label as the source has it, whatever a build publishes: its
@@ -342,13 +347,14 @@ impl Maker<'_> {
             .map(|child| self.section(&child))
             .collect();
         // Listed sections in the file's order, then the rest in path order
-        // (already so); then each one placed by its page beside the folder
-        // moves to where that page is.
+        // (already so); then, below the root, each one placed by its page
+        // beside the folder moves to where that page is.
         if let Some(file) = self.file {
             nested.sort_by_key(|s| file.position(&s.folder).unwrap_or(usize::MAX));
         }
-        let (mut sections, rest): (Vec<Section>, Vec<Section>) =
-            nested.into_iter().partition(|s| placed(s, &pages));
+        let (mut sections, rest): (Vec<Section>, Vec<Section>) = nested
+            .into_iter()
+            .partition(|s| !folder.is_empty() && placed(s, &pages));
         sections.sort_by_key(|s| {
             s.page
                 .as_ref()
@@ -403,8 +409,8 @@ impl Maker<'_> {
     }
 }
 
-/// Whether `section` is placed among `pages`, its parent's: its own page is
-/// beside its folder and one of them.
+/// Whether `section` could be placed among `pages`, its parent's: its own
+/// page is beside its folder and one of them.
 fn placed(section: &Section, pages: &[RelPath]) -> bool {
     section.page_beside() && section.page.as_ref().is_some_and(|p| pages.contains(p))
 }

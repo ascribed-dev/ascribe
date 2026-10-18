@@ -929,14 +929,15 @@ export interface InventorySection {
   /**
    * The content path of its own page: its `index.md`, or the page beside
    * the folder with its name, which is then one of its parent's `pages`
-   * too, and the section sits where it does.
+   * too, and below the content root the section sits where it does.
    */
   page: string | null;
   /** Its pages in order, its own page not among them. */
   pages: InventoryNavPage[];
   /**
-   * Its nested sections: each whose own page is among `pages` sits
-   * there; the rest come after the pages, in this order.
+   * Its nested sections: below the content root, each whose own page is
+   * among `pages` sits there; the rest, and every top section, come after
+   * the pages, in this order.
    */
   sections: InventorySection[];
   /** Whether `ascribe.nav` lists it. */

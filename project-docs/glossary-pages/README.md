@@ -1,5 +1,7 @@
 # Glossary pages
 
+**This plan is finished:** its last phase merged in [#601](https://github.com/ascribed-dev/ascribe/pull/601). Its decisions in force are [decision #545a](../decisions/545a-glossary-pages.md), [#546a](../decisions/546a-glossary-page-rules.md), [#548a](../decisions/548a-term-id-and-definition.md), [#548b](../decisions/548b-where-a-term-is-linked.md), [#548c](../decisions/548c-glossary-diagnostics.md), [#548d](../decisions/548d-terms-in-the-editor.md), and [#548e](../decisions/548e-docs-glossary.md). This README is the record of what was intended; the code, the SPEC, and those decisions say what is.
+
 A glossary's terms are written where the rest of the docs are written: on a page, in Markdown, by whoever writes the pages, and each definition once. A term is a heading marked `@term`, its definition is the section's first paragraph, and `[glossary] pages` names the pages that hold terms. `[glossary.terms]` goes. The idea is in the [proposal](../proposals/glossary-pages.md). This is the plan for building it.
 
 ## Who it's for

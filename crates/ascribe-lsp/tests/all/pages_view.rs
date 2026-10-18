@@ -323,6 +323,54 @@ fn the_first_drop_creates_the_file_with_the_sections_listed() {
 }
 
 #[test]
+fn a_top_section_beside_its_page_moves_among_the_top_sections() {
+    // `Reference.md` beside `Reference/` doesn't place it among the root's
+    // pages: it's ordered by `[[sections]]` as any top section is (decision
+    // #610). Below the root, `Guides/Deep.md` still places `Guides/Deep/`.
+    let files = [
+        ("docs/index.md", page("Home")),
+        ("docs/Reference.md", page("Reference")),
+        ("docs/Guides/My Setup.md", page("My setup")),
+        ("docs/Guides/Deep.md", page("Deep")),
+        ("docs/Guides/Deep/Part.md", page("Part")),
+        ("docs/Reference/Options.md", page("Options")),
+    ];
+    let files: Vec<(&str, &str)> = files.iter().map(|(p, t)| (*p, t.as_str())).collect();
+    let f = Fixture::new(MODEL, &files);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    assert_eq!(
+        folders(&inventory(&mut client, &f)),
+        ["Guides/", "Reference/"]
+    );
+    let answer = edit(
+        &mut client,
+        &f,
+        "moveSection",
+        json!({ "folder": "Reference/", "before": "Guides/" }),
+    );
+    let changes = answer["edit"]["documentChanges"]
+        .as_array()
+        .unwrap_or_else(|| panic!("a new file: {answer}"));
+    assert_eq!(
+        changes[1]["edits"][0]["newText"],
+        "version = 1\n\n[[sections]]\nfolder = \"Reference/\"\n\n[[sections]]\nfolder = \"Guides/\"\n"
+    );
+    let refused = edit(
+        &mut client,
+        &f,
+        "moveSection",
+        json!({ "folder": "Guides/Deep/" }),
+    );
+    assert!(
+        refused["error"]
+            .as_str()
+            .is_some_and(|e| e.contains("move that page among `Guides/`'s pages")),
+        "{refused}"
+    );
+}
+
+#[test]
 fn each_drop_keeps_the_files_comments_and_gives_the_order_asked_for() {
     let text = "# The site's order.\nversion = 1\n\n# The guides.\n[[sections]]\nfolder = \"Guides/\" # first\n";
     let f = project(Some(text));

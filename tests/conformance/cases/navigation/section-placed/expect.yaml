@@ -1,7 +1,8 @@
 description: >-
-  A section its own page beside its folder places, among its parent's
-  pages, isn't advice where the file lists a sibling and not it: a table
-  wouldn't move it. A sibling that no page places is.
+  A section below the content root that its own page beside its folder
+  places, among its parent's pages, isn't advice where the file lists a
+  sibling and not it: a table wouldn't move it. A sibling that no page
+  places is.
 spec: ["7.8"]
 tags: [check]
 
