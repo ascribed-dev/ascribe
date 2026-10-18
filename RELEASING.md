@@ -168,6 +168,7 @@ Then, by hand:
 
 - **Remove the marks on the site's own pages** that the command rewrote, in `site/home/content/`, as `site/home/ascribe.toml` says: `git diff -- site/home/content` lists them.
 - **Name the release in the tests' tables:** change `"next"` to `"ascribe 0.2.0"` in what `git grep -n '"next"' -- crates/ascribe-cli/src/docs.rs packages/vscode/test/unit/docs.test.ts` finds, then rewrite the generated tables: `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` and `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts`.
+- **Retake the site's screenshots** when the release leaves one more than a minor release behind, which `scripts/docs-site/screenshots.test.ts` fails on in step 3: the pictures of the editor and of review, whose records in `site/home/content/screenshots/` say the release each was taken at. After `ascribe versions release`, so each record names this release: `npm run build:checkout` in `site/`, then `node scripts/docs-site/screenshots.ts` at the repository's root, which retakes both on any system ([`site/README.md`](site/README.md#screenshots) says what each needs). Look at the pictures before committing them.
 
 **Check:** `ascribe check --deny-warnings` passes on `docs` and on `site/home`. A `next` mark inside a page or section that's now marked with the release is `available-exceeds-scope`: move the mark onto what's new, or, for a page marked as a whole, leave the new part unmarked until the next release.
 

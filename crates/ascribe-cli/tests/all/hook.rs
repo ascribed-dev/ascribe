@@ -6,9 +6,9 @@
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 
 use std::fs;
-use std::io::{Read, Write};
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output, Stdio};
+use std::process::{Child, Command, Output, Stdio};
 use std::sync::mpsc::{self, Receiver};
 use std::time::Duration;
 
@@ -77,6 +77,22 @@ fn served(args: &[&str], input: &str, cache: &Path) -> Output {
     panic!("the check server didn't answer");
 }
 
+/// Starts `command`, again while its binary is busy (`ETXTBSY`, on Linux):
+/// a binary a test has just copied stays open for writing in a process
+/// another test started during the copy, until that process runs its own
+/// program, which is soon.
+fn spawn(command: &mut Command) -> Child {
+    for _ in 0..50 {
+        match command.spawn() {
+            Err(error) if error.kind() == io::ErrorKind::ExecutableFileBusy => {
+                std::thread::sleep(Duration::from_millis(20));
+            }
+            started => return started.unwrap(),
+        }
+    }
+    command.spawn().unwrap()
+}
+
 /// [`hook`], with the binary at `exe`.
 fn hook_of(exe: &Path, args: &[&str], input: &str, cache: Option<&Path>) -> Output {
     let mut command = Command::new(exe);
@@ -92,7 +108,7 @@ fn hook_of(exe: &Path, args: &[&str], input: &str, cache: Option<&Path>) -> Outp
             .env_remove("ASCRIBE_HOOK_SERVER"),
         None => command.env("ASCRIBE_HOOK_SERVER", "off"),
     };
-    let mut child = command.spawn().unwrap();
+    let mut child = spawn(&mut command);
     let stdout = read_until_closed(child.stdout.take().unwrap());
     let stderr = read_until_closed(child.stderr.take().unwrap());
     child
