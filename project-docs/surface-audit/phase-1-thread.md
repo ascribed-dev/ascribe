@@ -65,7 +65,7 @@ Findings go in `findings.md`, in the form phase 5 will use: a number, the kind, 
 
 From the command-line findings, a first set of conventions, written into `project-docs/checklists.md` under the list for a change to a command:
 
-- how a command and a group of subcommands are named. Five are proposed and unbuilt (`ascribe permalinks`, `ascribe observe`, `ascribe versions`, `ascribe archive`, and a command that writes [page templates](../proposals/page-templates.md) into a project, which has no name yet), so the convention is tried against each;
+- how a command and a group of subcommands are named. Five are proposed and unbuilt (`ascribe permalinks`, `ascribe observe`, `ascribe versions`, `ascribe archive`, and a command that writes [page templates](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/page-templates.md) into a project, which has no name yet), so the convention is tried against each;
 - which words `--format` takes and what each means;
 - how a page, a build, and a project are named in arguments;
 - what each exit code means.

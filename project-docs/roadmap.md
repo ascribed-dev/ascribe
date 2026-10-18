@@ -1,10 +1,10 @@
 # The plans, in order
 
-Five plans have phase files: [versions](versions/README.md), [memos](memos/README.md), [the editor's views](editor-ui/README.md), [navigation](navigation/README.md), and [glossary pages](glossary-pages/README.md). This file says which phase runs when, what can run at the same time, and how each is run. It doesn't say what a phase builds: its phase file does, and it's the spec. Where this file and a phase file disagree about a phase's content, the phase file wins; where they disagree about order, stop and ask the maintainer.
+Five plans have phase files: [versions](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/versions/README.md), [memos](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/memos/README.md), [the editor's views](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/editor-ui/README.md), [navigation](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/navigation/README.md), and [glossary pages](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/glossary-pages/README.md). This file says which phase runs when, what can run at the same time, and how each is run. It doesn't say what a phase builds: its phase file does, and it's the spec. Where this file and a phase file disagree about a phase's content, the phase file wins; where they disagree about order, stop and ask the maintainer.
 
 Written 16 October 2026, with every plan's decisions answered.
 
-**Finished, 18 October 2026.** Every phase of every plan has merged, and each plan is closed: its decisions in force are files in [`decisions/`](decisions/README.md), and its README is the record of what was intended.
+**Finished, 18 October 2026.** Every phase of every plan has merged, and each plan is closed: its decisions in force are files in [`decisions/`](decisions/README.md), and its folder, the record of what was intended, is in git history: the links below are to `395fe80d`, the last commit that has them.
 
 | Plan | Last phase | Decisions in force |
 |---|---|---|
@@ -123,7 +123,7 @@ An issue whose needs aren't all merged stays in Backlog. When they are, it's rea
 
 - **A plan's decisions stay in its README** while it runs, numbered within the plan. Don't reopen one in a phase.
 - **A phase that changes a contract** (the language, an output, a command's JSON, a published API) adds a decision file to `project-docs/decisions/` in its pull request, named by its issue, as [the folder's README](decisions/README.md) says.
-- **When a plan's last phase merges,** its decisions that still bind the work become files there, numbered by the plan's last issue, and the plan's folder stays as the record of what was intended.
+- **When a plan's last phase merges,** its decisions that still bind the work become files there, numbered by the plan's last issue, and the plan's folder is removed once they're there, kept in git history as the record of what was intended.
 
 ### When to stop and ask
 

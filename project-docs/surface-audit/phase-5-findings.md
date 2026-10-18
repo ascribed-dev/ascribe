@@ -10,7 +10,7 @@ What the audit was for: a report of where the surface doesn't hold together, wha
 
 - Everything the earlier phases wrote: the inventory and the capability table, the sessions' notes and transcripts, the docs site's two lists, and phase 1's first findings and conventions.
 - The [proposal](https://github.com/ascribed-dev/ascribe/blob/460259f6529f9e7d5a8e06e600a9f28b43ae03f5/project-docs/proposals/surface-audit.md): the seven questions, and the five kinds of finding.
-- The proposals and plans about to add to the surface: [permalinks](https://github.com/ascribed-dev/ascribe/blob/76a46b26090c2dd0efbd7c918a29d58754f8eace/project-docs/permalinks/README.md), [tested examples](../proposals/tested-examples.md), [versions](../proposals/versions.md), [page templates](../proposals/page-templates.md), and the [website](https://github.com/ascribed-dev/ascribe/blob/e80d764ef544f7fb617dec8084248a3e161a6d23/project-docs/proposals/website.md). Each names commands, settings, or files that don't exist yet. Content checks has landed, so its commands are in the inventory.
+- The proposals and plans about to add to the surface: [permalinks](https://github.com/ascribed-dev/ascribe/blob/76a46b26090c2dd0efbd7c918a29d58754f8eace/project-docs/permalinks/README.md), [tested examples](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/tested-examples.md), [versions](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/versions.md), [page templates](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/page-templates.md), and the [website](https://github.com/ascribed-dev/ascribe/blob/e80d764ef544f7fb617dec8084248a3e161a6d23/project-docs/proposals/website.md). Each names commands, settings, or files that don't exist yet. Content checks has landed, so its commands are in the inventory.
 - `project-docs/checklists.md`: where conventions go.
 
 ## Design
@@ -43,7 +43,7 @@ Then a short opening section: the five or six findings that matter most, and wha
 
 ### The proposals, against the findings
 
-For each of those proposals: what it would add, laid against the conventions and the findings. Two have left a name open for this: the command that writes the starter set of [page templates](../proposals/page-templates.md) into a project, and every command group the others propose. Where a proposed name or shape would repeat a problem the audit found, say so, with what to change in the proposal. This is the part with a deadline, since those plans are next.
+For each of those proposals: what it would add, laid against the conventions and the findings. Two have left a name open for this: the command that writes the starter set of [page templates](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/page-templates.md) into a project, and every command group the others propose. Where a proposed name or shape would repeat a problem the audit found, say so, with what to change in the proposal. This is the part with a deadline, since those plans are next.
 
 ### Conventions
 

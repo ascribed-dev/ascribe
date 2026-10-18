@@ -1,6 +1,6 @@
 # Proposal: search
 
-A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It comes from section 15 of the [brainstorm](../brainstorm.md), which also raised a cache and notes. Those are proposals of their own ([memos](memos.md), and the cache's): the three share no layer, and this one mentions the others only where it touches them.
+A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It comes from section 15 of the [brainstorm](../brainstorm.md), which also raised a cache and notes. Those are proposals of their own ([memos](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/memos.md), and the cache's): the three share no layer, and this one mentions the others only where it touches them.
 
 ## The goal
 
@@ -25,7 +25,7 @@ The customer this matters most to is an agent. "Where do the docs already explai
 
 Search adds the one thing none of them does: words, across every page, as resolved. It must not grow into a second `refs`. When a hit comes from a phrase or a fragment, search says so and names the `refs` command that lists the uses; it doesn't list them itself.
 
-**On a site, for readers.** The docs site runs [Pagefind](https://pagefind.app) over its built HTML, and the index is served with the pages (`site/README.md`). That's search for a reader, in a browser, over what was published. This proposal is for the people and agents writing the pages, in the repository, before anything is published, and its answers are source lines. Ascribe isn't replacing a site's search, and builds no index for a site. The search inside a version's archive, in the [versions proposal](versions.md), is a reader's search too.
+**On a site, for readers.** The docs site runs [Pagefind](https://pagefind.app) over its built HTML, and the index is served with the pages (`site/README.md`). That's search for a reader, in a browser, over what was published. This proposal is for the people and agents writing the pages, in the repository, before anything is published, and its answers are source lines. Ascribe isn't replacing a site's search, and builds no index for a site. The search inside a version's archive, in the [versions proposal](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/versions.md), is a reader's search too.
 
 **The pieces a search would stand on:**
 
@@ -275,7 +275,7 @@ A real inverted index, and the engine that comes with it, would be worth weighin
 - **A persistent index,** as above.
 - **A search view in the sidebar.** The quick pick first; a view if people keep results open. Microsoft Learn's authoring pack and Dendron's Lookup each put their finding and inserting in one quick pick, and VS Code's UX guidelines keep the sidebar for what a command can't do.
 
-Later: [memos](memos.md), once they exist, could be searched alongside pages.
+Later: [memos](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/memos.md), once they exist, could be searched alongside pages.
 
 ## The thread
 
