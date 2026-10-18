@@ -9,7 +9,7 @@
 // docs/ascribe.toml: the release the docs describe now. screenshots.test.ts fails when a record is
 // more than one minor release behind it. The review picture needs the site
 // installed with the Ascribe to show (`npm run build:checkout` in site/); the
-// editor's needs ASCRIBE_BIN and Linux with Xvfb. site/README.md has the rest.
+// editor's needs ASCRIBE_BIN. site/README.md has the rest.
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -53,6 +53,24 @@ export const retake = (name: string): string => `node scripts/docs-site/screensh
 export interface Taken {
   /** The release the picture was taken at: the current line then. */
   release: string;
+}
+
+/**
+ * What the docs take code examples from: each pattern of `[sources.code]
+ * include` in docs/ascribe.toml, up to its first wildcard, as a path from the
+ * repository's root. The review picture's copy of the repository holds these.
+ */
+export function codeSources(toml = readFileSync(path.join(ROOT, "docs/ascribe.toml"), "utf8")) {
+  const include = (parse(toml) as { sources?: { code?: { include?: unknown } } }).sources?.code
+    ?.include;
+  const patterns = Array.isArray(include) ? include.filter((p) => typeof p === "string") : [];
+  return patterns
+    .map((pattern) => {
+      const segments = pattern.split("/");
+      const wild = segments.findIndex((segment) => /[*?[{]/.test(segment));
+      return (wild === -1 ? segments : segments.slice(0, wild)).join("/");
+    })
+    .filter((source) => source !== "");
 }
 
 /**

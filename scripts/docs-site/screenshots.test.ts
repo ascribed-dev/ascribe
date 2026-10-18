@@ -9,7 +9,15 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vitest";
-import { currentRelease, FOLDER, PICTURES, SCHEMES, stale, type Taken } from "./screenshots.ts";
+import {
+  codeSources,
+  currentRelease,
+  FOLDER,
+  PICTURES,
+  SCHEMES,
+  stale,
+  type Taken,
+} from "./screenshots.ts";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 const current = currentRelease();
@@ -53,4 +61,13 @@ test("the current release is read from docs/ascribe.toml", () => {
     currentRelease('spec = "0.1"\n[releases.ascribe]\nlive = ["1.4.2", "1.10.0", "1.9.3"]\n'),
   ).toBe("1.10.0");
   expect(() => currentRelease('spec = "0.1"\n')).toThrow("[releases.ascribe]");
+});
+
+test("the code sources are read from docs/ascribe.toml, each up to its first wildcard", () => {
+  expect(
+    codeSources(
+      'spec = "0.1"\n[sources.code]\npath = ".."\ninclude = ["examples/**", "packages/astro/starter/**", "README.md", "**/*.ts"]\n',
+    ),
+  ).toEqual(["examples", "packages/astro/starter", "README.md"]);
+  expect(codeSources()).toContain("packages/astro/starter");
 });
