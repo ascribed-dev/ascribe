@@ -139,7 +139,8 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
       // As a refactoring, so `files.refactoring.autoSave` saves the other
       // files it changes, such as `ascribe.toml`.
       if (!(await vscode.workspace.applyEdit(result.edit, { isRefactoring: true }))) {
-        say("The edit couldn't be applied: the page changed. Try again.", true);
+        const unmade = action.does.opens ? await whyNotMade(result.edit, document.uri) : undefined;
+        say(unmade ?? "The edit couldn't be applied: the page changed. Try again.", true);
         return record;
       }
       record.done = true;
@@ -170,7 +171,7 @@ async function openMade(
   page: vscode.Uri,
   record: RunRecord,
 ): Promise<void> {
-  const made = edit.entries().find(([uri]) => uri.toString() !== page.toString())?.[0];
+  const made = madeBy(edit, page);
   if (!made) return;
   const document = await vscode.workspace.openTextDocument(made);
   if (document.isDirty) await document.save();
@@ -180,6 +181,39 @@ async function openMade(
     editor.selection = new vscode.Selection(select.start, select.end);
     editor.revealRange(select);
   }
+}
+
+/** The file an edit makes, the first it changes other than the page. */
+function madeBy(edit: vscode.WorkspaceEdit, page: vscode.Uri): vscode.Uri | undefined {
+  return edit.entries().find(([uri]) => uri.toString() !== page.toString())?.[0];
+}
+
+/**
+ * Why the file an edit makes couldn't be written, when an edit that makes
+ * one isn't applied: VS Code says only that it wasn't, so the file is
+ * written empty here, and removed again, to hear the file system's own
+ * error, such as a name too long. `undefined` when it can be written.
+ */
+async function whyNotMade(
+  edit: vscode.WorkspaceEdit,
+  page: vscode.Uri,
+): Promise<string | undefined> {
+  const made = madeBy(edit, page);
+  if (!made) return undefined;
+  const name = vscode.workspace.asRelativePath(made, false);
+  try {
+    await vscode.workspace.fs.stat(made);
+    return `\`${name}\` couldn't be made: a file is there already.`;
+  } catch {
+    // Nothing is there: try writing it.
+  }
+  try {
+    await vscode.workspace.fs.writeFile(made, new Uint8Array());
+  } catch (error) {
+    return `\`${name}\` couldn't be made: ${error instanceof Error ? error.message : String(error)}`;
+  }
+  await vscode.workspace.fs.delete(made).then(undefined, () => undefined);
+  return undefined;
 }
 
 /** What to rename: what's at `position` of `uri`, to `newName`. */

@@ -43,6 +43,11 @@ pub(crate) const SHOW_MEMOS: &str = "ascribe.showMemos";
 /// How many words of a quote a new memo file's name is made from.
 const NAME_WORDS: usize = 5;
 
+/// The most bytes a new memo file's name has before its `-2` and `.md`,
+/// well under the 255 bytes most file systems allow a name: five words of
+/// CJK prose, with no spaces between them, can be hundreds.
+const NAME_BYTES: usize = 100;
+
 /// The committed memos, then the personal ones, as the editor has them.
 pub(crate) fn read(ctx: &Ctx) -> Vec<MemoFile> {
     let fs: &dyn ascribe_resolve::FileSystem = &*ctx.fs;
@@ -263,6 +268,7 @@ pub(crate) fn add(
                 .trim_end_matches(".md")
                 .to_owned()
         });
+    let stem = cut(&stem);
     let fs: &dyn ascribe_resolve::FileSystem = &*ctx.fs;
     let taken = fs.files_in(&folder);
     let path = (1..)
@@ -398,6 +404,19 @@ fn name(quote: Option<&str>) -> Option<String> {
         .map(str::to_lowercase)
         .collect();
     (!words.is_empty()).then(|| words.join("-"))
+}
+
+/// `stem` cut to at most [`NAME_BYTES`] bytes, at a character, without a
+/// `-` left at its end.
+fn cut(stem: &str) -> String {
+    let mut end = stem.len().min(NAME_BYTES);
+    while !stem.is_char_boundary(end) {
+        end -= 1;
+    }
+    match stem.get(..end).unwrap_or_default().trim_end_matches('-') {
+        "" => "memo".to_owned(),
+        kept => kept.to_owned(),
+    }
 }
 
 /// The value of a memo file's `about`, where it's written: the line's span
@@ -643,6 +662,17 @@ mod tests {
             Some("install-the-agent-package-then")
         );
         assert_eq!(name(Some("`--`")), None);
+    }
+
+    #[test]
+    fn a_name_is_cut_to_a_length_a_file_system_takes() {
+        // One "word" of CJK prose, with no spaces, is 300 bytes.
+        let quote = "設定ファイルを保存してから再起動してください".repeat(5);
+        let cut = cut(&name(Some(&quote)).unwrap_or_default());
+        assert!(cut.len() <= NAME_BYTES, "{} bytes", cut.len());
+        assert!(quote.starts_with(&cut));
+        assert_eq!(super::cut("a-b-"), "a-b");
+        assert_eq!(super::cut("install-the-agent"), "install-the-agent");
     }
 
     #[test]
