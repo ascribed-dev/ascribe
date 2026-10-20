@@ -3,13 +3,35 @@
 //! every page each build publishes and listed once however many pages or
 //! builds show it.
 
-use ascribe_check::{Project, select_builds};
+use ascribe_check::{Project, Scope, select_builds};
 use ascribe_core::{LineIndex, WideEncoding};
-use ascribe_resolve::reading::{self, At, In, Query, Reading, Through};
+use ascribe_model::Build;
+use ascribe_resolve::reading::{self, At, Found, In, Query, Reading, Through};
 use ascribe_resolve::{AstroRouter, Usable};
 
 use crate::QueryError;
 use crate::lines::project_path;
+
+/// What `ascribe search` is asked.
+#[derive(Clone, Copy, Debug)]
+pub struct Search<'a> {
+    /// The query, as given.
+    pub query: &'a str,
+    /// The builds to search; every build when none is named.
+    pub builds: &'a [String],
+    /// The folders and pages to keep to, from the project root; every page
+    /// when `None`.
+    pub scope: Option<&'a Scope>,
+    /// The content type to keep to.
+    pub page_type: Option<&'a str>,
+    /// Whether case is matched as written.
+    pub case: bool,
+    /// Whether a word or a phrase matches only where it isn't inside a
+    /// longer word.
+    pub word: bool,
+    /// The most places to give.
+    pub limit: usize,
+}
 
 /// What `ascribe search <QUERY>` answers.
 #[derive(Debug)]
@@ -25,7 +47,35 @@ pub struct Searched {
     pub total: usize,
     /// How many pages show a place.
     pub pages: usize,
+    /// Each page that shows a place, from the project root, and how many
+    /// places it shows: most first, then in path order.
+    pub by_page: Vec<(String, usize)>,
+    /// When nothing matched, what the source says: `None` when something
+    /// did.
+    pub nothing: Option<Nothing>,
 }
+
+/// What the source says about words nothing a build searched publishes.
+#[derive(Debug, PartialEq, Eq)]
+pub enum Nothing {
+    /// No page, fragment, or `ascribe.toml` has them as written.
+    Unwritten,
+    /// They're written, but no build searched publishes them there, or a
+    /// phrase's value hides them.
+    Unpublished {
+        /// The first places they're written, at most three: each file, from
+        /// the project root, and line.
+        written: Vec<(String, u32)>,
+        /// How many places they're written.
+        total: usize,
+    },
+    /// Builds that weren't searched publish them, in the content model's
+    /// order.
+    OtherBuilds(Vec<String>),
+}
+
+/// How many places [`Nothing::Unpublished`] names.
+const WRITTEN: usize = 3;
 
 /// A place a query matches: a line of the source to edit.
 #[derive(Debug)]
@@ -84,32 +134,33 @@ pub struct SearchPage {
     pub builds: Vec<String>,
 }
 
-/// The places in `project` that `query` matches in the builds named in
-/// `builds` (every build when none is), at most `limit` of them. `index` is
-/// the project's source index.
+/// The places in `project` that `asked` matches, at most as many as it
+/// asks for, and when there are none, what the source says. `index` is the
+/// project's source index.
 ///
 /// # Errors
 ///
-/// The query can't be read, or a build isn't one of the model's.
+/// The query can't be read, a build isn't one of the model's, or a type
+/// isn't one of its types.
 pub fn search(
     project: &Project,
     index: &ascribe_resolve::Project,
-    query: &str,
-    builds: &[String],
-    limit: usize,
+    asked: &Search<'_>,
 ) -> Result<Searched, QueryError> {
-    let parsed = Query::parse(query)?;
-    let builds = select_builds(project, builds)?;
-    let mut readings: Vec<Reading> = Vec::new();
-    for build in &builds {
-        // An older line's addresses are under its folder, as its output's are.
-        let lined = index.for_build(build);
-        let lined = lined.as_ref();
-        let router = AstroRouter::from_consumer(&lined.model().consumer);
-        let resolved = lined.resolve_build(build, &router);
-        readings.extend(resolved.pages.iter().map(|p| Reading::of(lined, p)));
+    let parsed = Query::parse(asked.query)?
+        .matching_case(asked.case)
+        .whole_words(asked.word);
+    let builds = select_builds(project, asked.builds)?;
+    if let Some(name) = asked.page_type {
+        known_type(project, name)?;
     }
-    let found = reading::find(index, &readings, &parsed);
+    let found = find_in(index, &builds, &parsed, asked);
+    let nothing = found
+        .places
+        .is_empty()
+        .then(|| nothing(project, index, &builds, &parsed, asked));
+    let limit = asked.limit;
+    let query = asked.query;
     let names: Vec<String> = builds.iter().map(|b| b.name.clone()).collect();
     let model_lines = LineIndex::new(project.model_text());
     let places = found
@@ -206,12 +257,123 @@ pub fn search(
             }
         })
         .collect();
+    let mut by_page: Vec<(String, usize)> = Vec::new();
+    for shown in found.places.iter().flat_map(|p| &p.shown) {
+        let page = project_path(index, &shown.page);
+        match by_page.iter_mut().find(|(p, _)| *p == page) {
+            Some((_, count)) => *count += 1,
+            None => by_page.push((page, 1)),
+        }
+    }
+    by_page.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
     Ok(Searched {
         query: query.to_owned(),
         builds: names,
         places,
         total: found.places.len(),
         pages: found.pages,
+        by_page,
+        nothing,
+    })
+}
+
+/// The places `query` matches in the pages `asked` keeps to that `builds`
+/// publish.
+fn find_in(
+    index: &ascribe_resolve::Project,
+    builds: &[&Build],
+    query: &Query,
+    asked: &Search<'_>,
+) -> Found {
+    let mut readings: Vec<Reading> = Vec::new();
+    for build in builds {
+        // An older line's addresses are under its folder, as its output's are.
+        let lined = index.for_build(build);
+        let lined = lined.as_ref();
+        let router = AstroRouter::from_consumer(&lined.model().consumer);
+        let resolved = lined.resolve_build(build, &router);
+        readings.extend(
+            resolved
+                .pages
+                .iter()
+                .filter(|page| {
+                    asked.scope.is_none_or(|scope| {
+                        index
+                            .path_of(page.file)
+                            .is_some_and(|path| scope.contains(&index.layout().project_path(path)))
+                    })
+                })
+                .filter(|page| {
+                    asked.page_type.is_none_or(|name| {
+                        lined
+                            .file_by_id(page.file)
+                            .and_then(|file| file.content_type(lined.model()))
+                            .is_some_and(|t| t.name == name)
+                    })
+                })
+                .map(|page| Reading::of(lined, page)),
+        );
+    }
+    reading::find(index, &readings, query)
+}
+
+/// What the source says about words no build searched publishes: the
+/// builds not searched that publish them, when there are some, or else
+/// where the source writes them.
+fn nothing(
+    project: &Project,
+    index: &ascribe_resolve::Project,
+    searched: &[&Build],
+    query: &Query,
+    asked: &Search<'_>,
+) -> Nothing {
+    let others: Vec<&Build> = project
+        .model()
+        .builds
+        .iter()
+        .filter(|b| !searched.iter().any(|s| s.name == b.name))
+        .collect();
+    if !others.is_empty() {
+        let found = find_in(index, &others, query, asked);
+        let mut publish: Vec<String> = Vec::new();
+        for build in &others {
+            if found.places.iter().any(|p| p.builds.contains(&build.name)) {
+                publish.push(build.name.clone());
+            }
+        }
+        if !publish.is_empty() {
+            return Nothing::OtherBuilds(publish);
+        }
+    }
+    let written = reading::scan(index, project.model_text(), query);
+    if written.is_empty() {
+        return Nothing::Unwritten;
+    }
+    Nothing::Unpublished {
+        total: written.len(),
+        written: written
+            .into_iter()
+            .take(WRITTEN)
+            .map(|w| (w.file.to_string(), w.line))
+            .collect(),
+    }
+}
+
+/// Checks that `name` is one of the content model's types.
+fn known_type(project: &Project, name: &str) -> Result<(), QueryError> {
+    let types: Vec<&str> = project
+        .model()
+        .types
+        .iter()
+        .map(|t| t.name.as_str())
+        .collect();
+    if types.contains(&name) {
+        return Ok(());
+    }
+    Err(QueryError::UnknownType {
+        given: name.to_owned(),
+        closest: ascribe_model::suggest(name, types.iter().copied()).map(str::to_owned),
+        types: types.iter().map(|t| (*t).to_owned()).collect(),
     })
 }
 
@@ -221,6 +383,8 @@ mod tests {
 
     use std::path::Path;
 
+    use ascribe_core::RelPath;
+
     use super::*;
 
     fn quill() -> Project {
@@ -228,10 +392,43 @@ mod tests {
         Project::load(&root.join("ascribe.toml")).expect("Quill loads")
     }
 
+    fn asked<'a>(query: &'a str, builds: &'a [String], limit: usize) -> Search<'a> {
+        Search {
+            query,
+            builds,
+            scope: None,
+            page_type: None,
+            case: false,
+            word: false,
+            limit,
+        }
+    }
+
     fn quill_search(query: &str, builds: &[&str], limit: usize) -> Result<Searched, QueryError> {
         let project = quill();
         let builds: Vec<String> = builds.iter().map(|b| (*b).to_owned()).collect();
-        search(&project, &project.index(), query, &builds, limit)
+        search(&project, &project.index(), &asked(query, &builds, limit))
+    }
+
+    fn scope(paths: &[&str]) -> Scope {
+        Scope::new(paths.iter().map(|p| RelPath::parse(p).unwrap()))
+    }
+
+    /// Quill with a second page that includes its prerequisites.
+    fn quill_with_second_page() -> Project {
+        quill().with_source(
+            &RelPath::parse("setup.md").unwrap(),
+            "---\ntype: page\ntitle: Set up\n---\n\n## Before\n\n@include: _fragments/prerequisites.md\n"
+                .to_owned(),
+        )
+    }
+
+    fn files(found: &Searched) -> Vec<(&str, u32)> {
+        found
+            .places
+            .iter()
+            .map(|p| (p.file.as_str(), p.line))
+            .collect()
     }
 
     #[test]
@@ -311,7 +508,7 @@ mod tests {
     fn a_snippet_match_is_at_the_code_file_line() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/tested");
         let project = Project::load(&root.join("ascribe.toml")).expect("the example loads");
-        let found = search(&project, &project.index(), "\"hello, \"", &[], 50).unwrap();
+        let found = search(&project, &project.index(), &asked("\"hello, \"", &[], 50)).unwrap();
         let code = found
             .places
             .iter()
@@ -340,5 +537,209 @@ mod tests {
             quill_search("quill", &["nope"], 50),
             Err(QueryError::UnknownBuild(_))
         ));
+    }
+
+    #[test]
+    fn a_folder_or_a_page_keeps_the_search_to_its_pages() {
+        let project = quill();
+        let index = project.index();
+        let all = search(&project, &index, &asked("quill", &[], 500)).unwrap();
+        let kept = scope(&["docs/keys.md"]);
+        let keys = search(
+            &project,
+            &index,
+            &Search {
+                scope: Some(&kept),
+                ..asked("quill", &[], 500)
+            },
+        )
+        .unwrap();
+        assert!(keys.total > 0 && keys.total < all.total);
+        assert!(
+            keys.places
+                .iter()
+                .all(|p| p.file == "docs/keys.md" || p.file == "ascribe.toml"),
+            "{:?}",
+            files(&keys)
+        );
+        assert_eq!(keys.pages, 1);
+        let folder = scope(&["docs"]);
+        let docs = search(
+            &project,
+            &index,
+            &Search {
+                scope: Some(&folder),
+                ..asked("quill", &[], 500)
+            },
+        )
+        .unwrap();
+        assert_eq!(docs.total, all.total);
+    }
+
+    #[test]
+    fn a_fragment_counts_only_for_the_pages_in_the_scope_that_show_it() {
+        let project = quill_with_second_page();
+        let index = project.held_index();
+        let everywhere = search(&project, &index, &asked("\"node.js 20\"", &[], 50)).unwrap();
+        let pages: Vec<&str> = everywhere.places[0]
+            .pages
+            .iter()
+            .map(|p| p.page.as_str())
+            .collect();
+        assert_eq!(pages, ["install-agent.md", "setup.md"]);
+        let kept = scope(&["docs/setup.md"]);
+        let one = search(
+            &project,
+            &index,
+            &Search {
+                scope: Some(&kept),
+                ..asked("\"node.js 20\"", &[], 50)
+            },
+        )
+        .unwrap();
+        assert_eq!(files(&one), [("docs/_fragments/prerequisites.md", 3)]);
+        let pages: Vec<&str> = one.places[0]
+            .pages
+            .iter()
+            .map(|p| p.page.as_str())
+            .collect();
+        assert_eq!(pages, ["setup.md"]);
+        assert_eq!(one.by_page, [("docs/setup.md".to_owned(), 1)]);
+    }
+
+    #[test]
+    fn a_type_keeps_to_its_pages_and_an_unknown_one_names_the_closest() {
+        let project = quill();
+        let index = project.index();
+        let typed = search(
+            &project,
+            &index,
+            &Search {
+                page_type: Some("page"),
+                ..asked("quill", &[], 500)
+            },
+        )
+        .unwrap();
+        assert_eq!(typed.total, quill_search("quill", &[], 500).unwrap().total);
+        let error = search(
+            &project,
+            &index,
+            &Search {
+                page_type: Some("pgae"),
+                ..asked("quill", &[], 50)
+            },
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "no content type is `pgae`; did you mean page?"
+        );
+        let error = search(
+            &project,
+            &index,
+            &Search {
+                page_type: Some("tutorial"),
+                ..asked("quill", &[], 50)
+            },
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "no content type is `tutorial`; the types are page"
+        );
+    }
+
+    #[test]
+    fn case_and_whole_words_narrow_what_matches() {
+        let project = quill();
+        let index = project.index();
+        let any = search(&project, &index, &asked("key", &[], 500)).unwrap();
+        let word = search(
+            &project,
+            &index,
+            &Search {
+                word: true,
+                ..asked("key", &[], 500)
+            },
+        )
+        .unwrap();
+        assert!(word.total < any.total, "`keys` matches only without --word");
+        assert!(
+            word.places.iter().all(|p| {
+                let text: Vec<char> = p.text.chars().collect();
+                text.get(p.matched.1).is_none_or(|c| !c.is_alphanumeric())
+            }),
+            "every match ends a word"
+        );
+        let lower = search(
+            &project,
+            &index,
+            &Search {
+                case: true,
+                ..asked("quill", &[], 500)
+            },
+        )
+        .unwrap();
+        let folded = quill_search("quill", &[], 500).unwrap();
+        assert!(lower.total > 0 && lower.total < folded.total);
+        assert!(lower.places.iter().all(|p| {
+            let text: String = p.text.chars().skip(p.matched.0).take(5).collect();
+            text == "quill"
+        }));
+    }
+
+    #[test]
+    fn pages_are_counted_most_first_then_by_path() {
+        let found = quill_search("quill", &[], 0).unwrap();
+        assert!(found.places.is_empty(), "the limit cuts the places");
+        assert_eq!(found.by_page.len(), found.pages);
+        assert!(
+            found
+                .by_page
+                .windows(2)
+                .all(|w| w[0].1 > w[1].1 || (w[0].1 == w[1].1 && w[0].0 < w[1].0)),
+            "{:?}",
+            found.by_page
+        );
+        assert!(found.by_page.iter().map(|(_, n)| n).sum::<usize>() >= found.total);
+    }
+
+    #[test]
+    fn nothing_written_is_in_no_page() {
+        let found = quill_search("zebra", &[], 50).unwrap();
+        assert_eq!(found.nothing, Some(Nothing::Unwritten));
+        assert_eq!(quill_search("quill", &[], 50).unwrap().nothing, None);
+    }
+
+    #[test]
+    fn words_only_in_a_memo_are_in_no_page() {
+        let found = quill_search("revocation", &[], 50).unwrap();
+        assert_eq!(found.nothing, Some(Nothing::Unwritten));
+    }
+
+    #[test]
+    fn words_no_build_publishes_are_written_at_their_lines() {
+        // The source spells the phrase's key, not its value.
+        let found = quill_search("\"{cloud}\"", &[], 50).unwrap();
+        let Some(Nothing::Unpublished { written, total }) = found.nothing else {
+            panic!("{:?}", found.nothing);
+        };
+        assert!(total > 3, "{total}");
+        assert_eq!(written.len(), 3);
+        assert!(written.windows(2).all(|w| w[0] <= w[1]), "{written:?}");
+    }
+
+    #[test]
+    fn words_another_build_publishes_name_it() {
+        let found = quill_search("\"point the agent at your server\"", &["cloud"], 50).unwrap();
+        assert_eq!(found.total, 0);
+        assert_eq!(
+            found.nothing,
+            Some(Nothing::OtherBuilds(vec![
+                "site".to_owned(),
+                "site@3.4".to_owned(),
+                "self-managed-3.3".to_owned()
+            ]))
+        );
     }
 }

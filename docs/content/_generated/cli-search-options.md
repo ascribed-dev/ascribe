@@ -1,4 +1,9 @@
 @memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
-- `QUERY`: What to find: words, which must all be in one block in any order, or a phrase in double quotes, matched as written. Quote several words together: `ascribe search "rate limit"`, and a phrase inside them: `ascribe search '"rate limit"'`. Case is ignored, and a word matches inside a longer one.
+- `QUERY`: What to find: words, which must all be in one block in any order, or a phrase in double quotes, matched as written. Quote several words together: `ascribe search "rate limit"`, and a phrase inside them: `ascribe search '"rate limit"'`. Case is ignored unless `--case`, and a word matches inside a longer one unless `--word`.
+- `[PATHS]...`: Search only the pages in these folders, or these pages, from the current folder. A fragment's text counts for the pages here that show it. By default, every page.
+- `--type <NAME>`: Search only the pages of this content type.
+- `--case`: Match case as written.
+- `--word`: Match a word or a phrase only where it isn't inside a longer word: where the characters on either side aren't letters, digits, or `_`.
+- `--summary`: Show the pages and how many places each has, most first, instead of the places.
 - `--build <NAME>`: Search the pages of this build; repeat it for several. By default, every build.
-- `--limit <N>`: List at most this many places. By default, 50.
+- `--limit <N>`: List at most this many places, or with `--summary`, pages. By default, 50 places, or 20 pages.

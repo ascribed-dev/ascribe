@@ -139,8 +139,7 @@ pub fn find(project: &Project, readings: &[Reading], query: &Query) -> Found {
     for reading in readings {
         for block in &reading.blocks {
             let mut from = 0;
-            while let Some(found) = block.text.get(from..).and_then(|rest| query.find_in(rest)) {
-                let range = from + found.start..from + found.end;
+            while let Some(range) = query.find_from(&block.text, from) {
                 let (place, after) = locate(project, &mut lines, block, range);
                 let key = match &place.at {
                     At::Source { file, line, .. } | At::Code { file, line, .. } => {
