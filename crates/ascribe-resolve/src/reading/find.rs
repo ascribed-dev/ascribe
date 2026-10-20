@@ -93,33 +93,39 @@ enum Key {
 /// The places `query` matches in `readings`, given in the order to take a
 /// place's text from: each build's pages, the builds in the content model's
 /// order. A line that matches in several pages or builds is one place,
-/// with each of them; a block matches once, at its first match.
+/// with each of them. A block matches at its first match; when that's
+/// wholly in a phrase's value, the phrase is a place and matching carries
+/// on in the block after the phrase, until a match is the block's line.
 pub fn find(project: &Project, readings: &[Reading], query: &Query) -> Found {
     let mut lines: HashMap<FileId, LineIndex> = HashMap::new();
     let mut places: Vec<Place> = Vec::new();
     let mut keys: HashMap<Key, usize> = HashMap::new();
     for reading in readings {
         for block in &reading.blocks {
-            let Some(range) = query.find_in(&block.text) else {
-                continue;
-            };
-            let place = locate(project, &mut lines, block, range);
-            let key = match &place.at {
-                At::Source { file, line, .. } => Key::Line(*file, *line),
-                At::Phrase { key, .. } => Key::Phrase(key.clone()),
-            };
-            let i = *keys.entry(key).or_insert_with(|| {
-                places.push(place);
-                places.len() - 1
-            });
-            let Some(place) = places.get_mut(i) else {
-                continue;
-            };
-            if !place.builds.contains(&reading.build) {
-                place.builds.push(reading.build.clone());
-            }
-            if !place.pages.contains(&reading.page) {
-                place.pages.push(reading.page.clone());
+            let mut from = 0;
+            while let Some(found) = block.text.get(from..).and_then(|rest| query.find_in(rest)) {
+                let range = from + found.start..from + found.end;
+                let (place, after) = locate(project, &mut lines, block, range);
+                let key = match &place.at {
+                    At::Source { file, line, .. } => Key::Line(*file, *line),
+                    At::Phrase { key, .. } => Key::Phrase(key.clone()),
+                };
+                let i = *keys.entry(key).or_insert_with(|| {
+                    places.push(place);
+                    places.len() - 1
+                });
+                if let Some(place) = places.get_mut(i) {
+                    if !place.builds.contains(&reading.build) {
+                        place.builds.push(reading.build.clone());
+                    }
+                    if !place.pages.contains(&reading.page) {
+                        place.pages.push(reading.page.clone());
+                    }
+                }
+                match after {
+                    Some(after) if after > from => from = after,
+                    _ => break,
+                }
             }
         }
     }
@@ -145,13 +151,14 @@ pub fn find(project: &Project, readings: &[Reading], query: &Query) -> Found {
     Found { places, pages }
 }
 
-/// The place a match in a block is.
+/// The place a match in a block is, and, when it's a phrase's value, where
+/// in the block's text the phrase ends.
 fn locate(
     project: &Project,
     lines: &mut HashMap<FileId, LineIndex>,
     block: &ReadBlock,
     matched: Range<usize>,
-) -> Place {
+) -> (Place, Option<usize>) {
     let mut through = Vec::new();
     for piece in block.pieces_in(matched.clone()) {
         let item = match &piece.kind {
@@ -176,7 +183,7 @@ fn locate(
     {
         let text = block.text[first.range.clone()].to_owned();
         let start = matched.start - first.range.start;
-        return Place {
+        let place = Place {
             at: At::Phrase {
                 key: key.clone(),
                 span: declared.span,
@@ -190,13 +197,14 @@ fn locate(
             builds: Vec::new(),
             pages: Vec::new(),
         };
+        return (place, Some(first.range.end));
     }
     let offset = block.source_offset(matched.start);
     let index = lines.entry(block.file).or_insert_with(|| {
         LineIndex::new(project.file_by_id(block.file).map_or("", |f| &f.source))
     });
     let (line, column) = line_col(index, offset);
-    Place {
+    let place = Place {
         at: At::Source {
             file: block.file,
             offset,
@@ -211,5 +219,6 @@ fn locate(
         through,
         builds: Vec::new(),
         pages: Vec::new(),
-    }
+    };
+    (place, None)
 }
