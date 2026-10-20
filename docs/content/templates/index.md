@@ -68,7 +68,7 @@ The [command reference](../examples/sources.md#cli-templates-status) has its opt
 
 ## In a project that has pages
 
-A project with pages written already can take the set too; Ascribe's own docs did. Its pages name no type yet if the project declared none, and `ascribe check` offers a fix for each. Each new type's frontmatter is the set's plain `title` and `description`, so put back what your own types declared. Pages written before their template have none of its placeholders, so the check reports nothing on them, and a page that's none of the six, such as a home page that lists the others, gets a type of your own with no template. A guide says what a kind of page is for; a page that already does its job needn't match its template heading for heading.
+A project with pages written already can take the set too; Ascribe's own docs did. Its pages name no type yet if the project declared none, and `ascribe check` offers a fix for each. Pages written before their template have none of its placeholders, so the check reports nothing on them, and a page that's none of the six, such as a home page that lists the others, gets a type of your own with no template. A guide says what a kind of page is for; a page that already does its job needn't match its template heading for heading.
 
 ## Ascribe's notes
 
