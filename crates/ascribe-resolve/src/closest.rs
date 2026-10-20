@@ -5,7 +5,7 @@
 use std::collections::BTreeSet;
 
 use ascribe_core::{Applicability, FileId, Fix, RelPath, Span, TextEdit};
-use ascribe_model::edit_distance;
+use ascribe_model::{edit_distance, edit_distance_within};
 
 use crate::index::{FileKind, Target};
 use crate::links::{encode_destination, link_path};
@@ -162,16 +162,29 @@ fn closest_pages(
         .map(|id| pages_with_heading(project, id))
         .unwrap_or_default();
     let has_heading = |path: &RelPath| headed.contains(path);
+    let written_name = name(written);
     // Every page but the case twin, scored by how far its path is from the
-    // one written.
+    // one written. A page without the heading is only offered within the
+    // limit, so its distance isn't worked out further.
     let mut scored: Vec<(usize, &RelPath)> = project
         .pages()
         .filter(|f| f.kind == FileKind::Page && Some(&f.path) != actual)
-        .map(|f| {
+        .filter_map(|f| {
             let candidate = link_path(&f.path, from);
-            let distance = edit_distance(written, &candidate)
-                .min(edit_distance(&name(written), &name(&candidate)));
-            (distance, &f.path)
+            let bound = if has_heading(&f.path) {
+                usize::MAX
+            } else {
+                limit
+            };
+            let distance = edit_distance_within(written, &candidate, bound)
+                .into_iter()
+                .chain(edit_distance_within(
+                    &written_name,
+                    &name(&candidate),
+                    bound,
+                ))
+                .min()?;
+            Some((distance, &f.path))
         })
         .collect();
     scored.sort();

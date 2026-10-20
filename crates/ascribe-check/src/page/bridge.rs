@@ -81,7 +81,7 @@ pub(crate) fn held_index(project: &Project) -> ascribe_resolve::Project {
 /// checked project's texts, or one the caller already has (the language server's
 /// incremental index).
 pub(super) enum IndexRef<'p> {
-    Owned(Box<ascribe_resolve::Project>),
+    Owned(Arc<ascribe_resolve::Project>),
     Borrowed(&'p ascribe_resolve::Project),
 }
 
@@ -107,14 +107,17 @@ pub(super) struct Indexed<'p> {
 }
 
 impl<'p> Indexed<'p> {
+    /// The project's own source index, which its file-level checks share
+    /// (a broken link's closest targets are looked for in it), so a check
+    /// of the whole project indexes it once.
     pub fn new(project: &Project) -> Indexed<'p> {
-        let index = held_index(project);
+        let index = project.link_index().clone();
         let ids = index
             .files()
             .filter_map(|f| Some((f.file, project.source_at(&f.path)?.id)))
             .collect();
         Indexed {
-            index: IndexRef::Owned(Box::new(index)),
+            index: IndexRef::Owned(index),
             ids,
         }
     }

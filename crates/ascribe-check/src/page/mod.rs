@@ -75,8 +75,8 @@ const KEEP_EVERYTHING: &str = "(everything)";
 /// page-level ones for `build`, each naming it in [`Diagnostic::builds`].
 ///
 /// This is the one function every tool calls for a build. It indexes the
-/// project each time; to check several builds, call [`check_all_builds`], or
-/// keep a [`PageChecker`].
+/// project the first time, and the project keeps the index; to check several
+/// builds, call [`check_all_builds`], or keep a [`PageChecker`].
 pub fn check_project(project: &Project, build: &Build) -> Vec<Diagnostic> {
     let checker = PageChecker::new(project);
     let mut out = check_files_with(project, Some(&checker));

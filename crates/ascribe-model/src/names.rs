@@ -53,18 +53,34 @@ pub const BUILD_RULE: &str = "use a letter, then letters, digits, underscores, h
 
 /// Levenshtein distance, for did-you-mean suggestions.
 pub fn edit_distance(a: &str, b: &str) -> usize {
+    edit_distance_within(a, b, usize::MAX).unwrap_or(usize::MAX)
+}
+
+/// [`edit_distance`], when it's at most `limit`: `None` as soon as it's
+/// sure to be more, without working the rest out.
+pub fn edit_distance_within(a: &str, b: &str, limit: usize) -> Option<usize> {
     let a: Vec<char> = a.chars().collect();
     let b: Vec<char> = b.chars().collect();
+    if a.len().abs_diff(b.len()) > limit {
+        return None;
+    }
     let mut prev: Vec<usize> = (0..=b.len()).collect();
+    let mut cur = vec![0; b.len() + 1];
     for (i, ca) in a.iter().enumerate() {
-        let mut cur = vec![i + 1];
+        cur[0] = i + 1;
+        let mut least = cur[0];
         for (j, cb) in b.iter().enumerate() {
             let cost = usize::from(ca != cb);
-            cur.push((prev[j] + cost).min(prev[j + 1] + 1).min(cur[j] + 1));
+            cur[j + 1] = (prev[j] + cost).min(prev[j + 1] + 1).min(cur[j] + 1);
+            least = least.min(cur[j + 1]);
         }
-        prev = cur;
+        // No row's least is below the one before it's.
+        if least > limit {
+            return None;
+        }
+        std::mem::swap(&mut prev, &mut cur);
     }
-    prev[b.len()]
+    Some(prev[b.len()]).filter(|d| *d <= limit)
 }
 
 /// The closest candidate to `key`, if it is close enough to be a typo.
@@ -111,5 +127,17 @@ mod tests {
             Some("content-root")
         );
         assert_eq!(suggest("zzzz", ["content-root"]), None);
+    }
+
+    #[test]
+    fn distances() {
+        assert_eq!(edit_distance("kitten", "sitting"), 3);
+        assert_eq!(edit_distance("", "abc"), 3);
+        assert_eq!(edit_distance_within("kitten", "sitting", 3), Some(3));
+        assert_eq!(edit_distance_within("kitten", "sitting", 2), None);
+        // Too far by length alone, and by a row whose least is over.
+        assert_eq!(edit_distance_within("a", "abcdef", 2), None);
+        assert_eq!(edit_distance_within("abcdef", "uvwxyz", 3), None);
+        assert_eq!(edit_distance_within("same", "same", 0), Some(0));
     }
 }
