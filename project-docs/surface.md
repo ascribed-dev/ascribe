@@ -472,6 +472,7 @@ Views:
 
 | View | Id |
 |---|---|
+| Project | `ascribe.project` |
 | Review | `ascribe.review` |
 | This page | `ascribe.thisPage` |
 | Pages | `ascribe.pages` |

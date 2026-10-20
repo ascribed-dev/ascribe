@@ -17,6 +17,7 @@ import { projectKeys, STATE_NAMES } from "./ui/describe.js";
 import { BuildLenses } from "./ui/lens.js";
 import { ProjectBuilds } from "./ui/projectBuilds.js";
 import { ReviewView, type ReviewViewApi } from "./ui/reviewView.js";
+import { ProjectView, type ProjectViewApi } from "./ui/projectView.js";
 import { SidebarViews, type SidebarApi, type ThisPageApi } from "./ui/sidebarViews.js";
 import { showRestricted, StatusBar, type StatusBarApi } from "./ui/statusBar.js";
 import { SwitchProject, type SwitchProjectApi } from "./ui/switchProject.js";
@@ -64,6 +65,8 @@ export interface AscribeApi {
     lens: BuildLensApi;
     /** The Review view, and its Open Source Changes. */
     review: ReviewViewApi;
+    /** The Project view. */
+    project: ProjectViewApi;
     /** The This page view. */
     thisPage: ThisPageApi;
     /** The Pages and Content model views. */
@@ -121,6 +124,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   const switchProject = new SwitchProject(projects, builds, sidebar);
   switchProject.register();
   sidebar.register();
+  const projectView = new ProjectView(projects, sidebar, checks, context.extensionUri);
+  projectView.register();
 
   const newPage = new NewPage(projects);
   newPage.register();
@@ -181,6 +186,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     switchProject,
     reviewView,
     sidebar,
+    projectView,
     walkthrough,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
       await projects.refresh();
@@ -282,6 +288,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       switchProject: switchProject.api,
       lens: lens.api,
       review: reviewView.api,
+      project: projectView.api,
       thisPage: sidebar.thisPageApi,
       sidebar: sidebar.api,
       everyBuild: checks.api,

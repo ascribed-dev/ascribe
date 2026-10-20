@@ -1,7 +1,7 @@
 ---
 type: reference
 title: The Ascribe sidebar
-description: "The Ascribe sidebar in VS Code: This page, Pages, Content model, and switching the project they show."
+description: "The Ascribe sidebar in VS Code: Project, This page, Pages, Content model, and switching the project they show."
 available: ascribe 0.3.0
 ---
 
@@ -9,6 +9,29 @@ The Ascribe icon in the activity bar opens the Ascribe sidebar, with three views
 
 @available: ascribe 0.4.0
 While review is on, a **Review** view comes first: see [The Review view](review.md#the-review-view).
+
+@available: next
+A **Project** view comes first of all, above Review: see [The Project view](#the-project-view).
+
+## The Project view
+@available: next
+
+**Project** is about the whole project the sidebar shows, where This page is about one page. It shows the same project as the views below it, following the file you're in, and staying on its project when you click in it or open a file of no project.
+
+At its top are the project's name, its folder, its language server's state, such as "running" or "failed", and the version of the `ascribe` binary the server runs.
+
+**Health** counts what needs doing in the project, and its header says how many things there are to do. Each count says when it's from, and it's shown as current only when it is:
+
+| Count | From | Opens |
+|---|---|---|
+| **Problems in every build** | "2 errors, 1 warning": the problems the last **Check Every Build** found in every build, by severity | The Problems panel |
+
+- A count of none shows `0`, dimmed.
+- A count that hasn't been made shows a dash and "Needs every build checked", with **Check Every Build** beside it.
+- A count from a check that the project has changed since shows a dash and "Out of date", with the time of the check and **Check Every Build** beside it. Any change to a file of the project counts, saved or not: a page, `ascribe.toml`, `ascribe.nav`, `ascribe.permalinks`, a memo, a template, or a file in one of its [sources](../examples/sources.md)' folders.
+- A count from a check that read files with unsaved changes says so: the check reads files as they're saved.
+
+The view never checks every build by itself, since that can take a few seconds on a large project. **Actions** has **Check Every Build**, which checks the project the view shows, wherever the cursor is. **Escape** in the view puts the cursor back in the editor.
 
 ## This page, Pages, and Content model
 

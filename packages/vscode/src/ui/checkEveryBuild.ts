@@ -4,12 +4,12 @@ import * as path from "node:path";
 import * as vscode from "vscode";
 import { CHECK_SCHEMA_VERSION } from "../agents/problems.js";
 import type { ProjectServer } from "../client.js";
-import { readLayout, startsServer, type Layout } from "../diskChanges.js";
+import { changesCheck, readLayout, type Layout } from "../diskChanges.js";
 import { shellCommand, usesShell } from "../environment.js";
 import { checkedText, panelProblems, type EditorRange, type PanelProblem } from "../everyBuild.js";
 import { comparable, owningProject, type Project } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
-import type { CheckReport } from "../shapes.js";
+import type { CheckReport, Summary } from "../shapes.js";
 import { STATE_NAMES } from "./describe.js";
 
 export const CHECK_EVERY_BUILD_COMMAND = "ascribe.checkEveryBuild";
@@ -37,7 +37,30 @@ interface Checked {
   files: Set<string>;
   /** Whether nothing in the project has changed since it started. */
   current: boolean;
+  /** How many problems it found in every build, once it's made. */
+  summary?: Summary;
+  /** Why the project couldn't be checked, once it's made, or `null`. */
+  error?: string | null;
+  /** How many of the project's files had unsaved changes, which it read as saved. */
+  unsaved?: number;
 }
+
+/** A project's check of every build, as the Project view counts it. */
+export type EveryBuildResult =
+  | { kind: "none" }
+  | { kind: "running" }
+  | {
+      kind: "made";
+      /** When it started, in milliseconds since the epoch. */
+      at: number;
+      summary: Summary;
+      /** Why the project couldn't be checked, or `null`. */
+      error: string | null;
+      /** Whether nothing in the project has changed since it started (`isCurrent`). */
+      current: boolean;
+      /** How many of the project's files had unsaved changes, which it read as saved. */
+      unsaved: number;
+    };
 
 /**
  * **Check Every Build**: runs `ascribe check` over every build of the active
@@ -102,12 +125,40 @@ export class EveryBuildChecks implements vscode.Disposable {
           if (!known.has(comparable(checked.project.config))) this.forget(key);
         }
       }),
-      vscode.commands.registerCommand(CHECK_EVERY_BUILD_COMMAND, () => {
-        // One check at a time: a second waits for the first.
-        this.running = this.running.then(() => this.check()).catch(() => undefined);
-        return this.running;
-      }),
+      vscode.commands.registerCommand(CHECK_EVERY_BUILD_COMMAND, () => this.queue()),
     );
+  }
+
+  /**
+   * Checks every build of `server`'s project, as the command does for the
+   * active file's: the Project view's, which follows its own project.
+   */
+  checkProject(server: ProjectServer): Promise<void> {
+    return this.queue(server);
+  }
+
+  /** One check at a time: a second waits for the first. */
+  private queue(server?: ProjectServer): Promise<void> {
+    this.running = this.running.then(() => this.check(server)).catch(() => undefined);
+    return this.running;
+  }
+
+  /** The project in `folder`'s check of every build: under way, made, or none since the window opened. */
+  resultOf(folder: string): EveryBuildResult {
+    const key = comparable(folder);
+    if (this.checking && comparable(this.checking.project.folder) === key) {
+      return { kind: "running" };
+    }
+    const checked = this.checked.get(key);
+    if (!checked?.summary) return { kind: "none" };
+    return {
+      kind: "made",
+      at: checked.started,
+      summary: checked.summary,
+      error: checked.error ?? null,
+      current: checked.current,
+      unsaved: checked.unsaved ?? 0,
+    };
   }
 
   /** Whether the Problems panel holds a check of every build of the project in `folder` that is still current. */
@@ -120,9 +171,9 @@ export class EveryBuildChecks implements vscode.Disposable {
     this.changed.dispose();
   }
 
-  private async check(): Promise<void> {
+  private async check(chosen?: ProjectServer): Promise<void> {
     const active = vscode.window.activeTextEditor?.document.uri;
-    const server = (active && this.projects.serverFor(active)) ?? (await this.pick());
+    const server = chosen ?? (active && this.projects.serverFor(active)) ?? (await this.pick());
     if (!server) {
       if (this.projects.servers.length === 0) {
         void vscode.window.showInformationMessage(
@@ -148,6 +199,7 @@ export class EveryBuildChecks implements vscode.Disposable {
       current: true,
     };
     this.checking = run;
+    this.changed.fire();
     let report: CheckReport | undefined;
     try {
       report = await vscode.window.withProgress(
@@ -165,6 +217,8 @@ export class EveryBuildChecks implements vscode.Disposable {
       return;
     } finally {
       this.checking = undefined;
+      // The Project view stops saying it's checking, whatever came of it.
+      this.changed.fire();
     }
     if (!report) return;
     if (report.schema_version !== CHECK_SCHEMA_VERSION) {
@@ -201,15 +255,18 @@ export class EveryBuildChecks implements vscode.Disposable {
       this.collection.set(vscode.Uri.parse(uri), diagnostics);
     for (const uri of byFile.keys()) run.files.add(uri);
     run.current &&= report.error === null;
-    this.checked.set(key, run);
-    this.changed.fire();
-
     const unsaved = vscode.workspace.textDocuments.filter(
       (d) =>
         d.isDirty &&
         d.uri.scheme === "file" &&
         owningProject(d.uri.fsPath, this.projects.projects)?.config === project.config,
     ).length;
+    run.summary = report.summary;
+    run.error = report.error;
+    run.unsaved = unsaved;
+    this.checked.set(key, run);
+    this.changed.fire();
+
     const text = checkedText(report, name, problems.length, unsaved);
     const total = report.summary.errors + report.summary.warnings + report.summary.advice;
     const shown =
@@ -261,7 +318,7 @@ export class EveryBuildChecks implements vscode.Disposable {
   /** Whether a change to a file makes a check out of date. */
   private counts(file: string, written: number | undefined, checked: Checked): boolean {
     if (written !== undefined && written < checked.started) return false;
-    return startsServer(file, checked.project, checked.layout, this.projects.projects);
+    return changesCheck(file, checked.project, checked.layout, this.projects.projects);
   }
 
   private forget(key: string): void {
