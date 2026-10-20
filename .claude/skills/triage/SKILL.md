@@ -9,6 +9,8 @@ Triage owns one move: **Backlog → Ready**. It reads every card in Backlog, mov
 
 [The `board` skill](../board/SKILL.md) says how to read the board and move a card.
 
+Start a workflow with the GitHub MCP tool `actions_run_trigger`, never `gh workflow run`; the `board` skill has the details.
+
 ## Steps
 
 1. **Read the board,** and list the Backlog cards that are issues. Draft items and pull requests aren't triage's to move.
