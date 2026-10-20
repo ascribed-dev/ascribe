@@ -37,3 +37,11 @@ why = "The page repeats a YAML key (`navigation_title` twice), which is not vali
 [class."diagnostic:code-language-missing"]
 verdict = "intended"
 why = "A fenced code block whose info string doesn't start with a language: a bare fence (Astro 39, Docker 7, Elastic 245), another tool's directive written as a fence (Elastic's MyST ```{applies_to}, ```{note}, ```{include}, 587), and Hugo attributes glued to the language (Docker's ```yaml{hl_lines=[…]}, 2), whose first word is the whole token and names no language a highlighter knows. The advice is right for each. FINDINGS R6."
+
+[class."diagnostic:html-comment"]
+verdict = "intended"
+why = "An HTML comment in prose (Astro's `<!--src/components/CartFlyoutToggle.vue-->` file labels, Docker's `<!-- Source: … -->` lines and markdownlint switches, Elastic's template instructions). SPEC §4.10: a comment is in the published page's source, a memo isn't, and `html-comment` (ASC223) is the advice that says so. FINDINGS R7."
+
+[class."diagnostic:frontmatter-reserved-in-fragment"]
+verdict = "intended"
+why = "Elastic's four page templates (`contribute-docs/content-types/_snippets/templates/*-template.md`) carry page frontmatter with `type:`. Under `_snippets/` they're fragments by SPEC §2.2, and §2.2 reserves `type` for pages, so the error follows the spec. Upstream they're files to copy, kept out of the build, never included. FINDINGS R8."

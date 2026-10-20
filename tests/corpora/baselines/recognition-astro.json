@@ -2,6 +2,7 @@
   "files": 422,
   "classes": {
     "diagnostic:code-language-missing": 39,
+    "diagnostic:html-comment": 7,
     "diagnostic:phrase-undeclared:plain": 4,
     "phrase-candidate:prose:plain": 4
   }
