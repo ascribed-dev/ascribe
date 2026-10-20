@@ -802,6 +802,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `astro/index.md` | Astro | how-to |
 | `astro/reference.md` | `@ascribed/astro` reference | reference |
 | `checks/check.md` | `ascribe check`, `build`, and `fmt` | reference |
+| `checks/ci.md` | Checks in CI | how-to |
 | `checks/diagnostics.md` | Diagnostics | reference |
 | `checks/diagnostics/content-checks.md` | Diagnostics: content checks | reference |
 | `checks/diagnostics/content-model.md` | Diagnostics: the content model | reference |
@@ -851,6 +852,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `getting-started.md` | Getting started | tutorial |
 | `glossary.md` | Glossary | reference |
 | `index.md` | Ascribe documentation | index |
+| `install.md` | Install | how-to |
 | `navigation/index.md` | Navigation | reference |
 | `navigation/order.md` | Put your pages in order | how-to |
 | `permalinks/index.md` | Permalinks | how-to |

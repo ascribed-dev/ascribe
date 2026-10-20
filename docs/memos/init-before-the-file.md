@@ -15,6 +15,3 @@ region of `examples/getting-started/ascribe.toml`, and
 example stops starting with what `ascribe init` writes. To change what the page
 shows, change the command and its template, then the example; don't edit the
 example alone.
-
-"Write it by hand" stays for Ascribe 0.3.0 and earlier, which have no
-`ascribe init`, and for a project that wants nothing written for it.
