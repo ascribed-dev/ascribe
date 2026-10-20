@@ -124,6 +124,12 @@ vscode = "1.138"
 # as `{repo}/tree/main/<path>`.
 repo = "https://github.com/ascribed-dev/ascribe"
 
+# A picture of the editor is one for each scheme, `![…](images/status-bar-light.png){scheme=light}`
+# beside its dark one, as on the site's own pages; the site shows the
+# reader's (site/src/styles/site.css). A picture for both leaves it out.
+[images.attributes]
+scheme = "enum(light, dark)?"
+
 [glossary]
 match = "first"
 pages = ["glossary.md"]

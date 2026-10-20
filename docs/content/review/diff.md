@@ -20,7 +20,7 @@ The text output lists each build's changed pages with counts, and where a change
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff.txt
 
 @available: ascribe 0.3.2
-The [lines](../versions/index.md) of a versioned build are listed together, under the build's name, and a page they share once, with the lines it changed in:
+The [lines](../versions/lines.md) of a versioned build are listed together, under the build's name, and a page they share once, with the lines it changed in:
 
 @available: ascribe 0.3.2
 ```text
@@ -136,7 +136,7 @@ How blocks are matched: blocks are compared by their content without positions, 
 @id {permalink=true}: cli-drift
 @available: ascribe 0.2.0
 
-Lists the pages whose code examples changed between a git revision and the working tree, and whether the words around them changed too, and the pages whose examples no longer resolve. A page covers the code it shows, and nothing else: every region it takes a [snippet](../writing/directives.md#snippet) from, and every whole file it takes as one, including its fragments' snippets. It's for CI, where it says which pages a reviewer should reread; see [Drift](../examples/index.md#when-an-example-changes).
+Lists the pages whose code examples changed between a git revision and the working tree, and whether the words around them changed too, and the pages whose examples no longer resolve. A page covers the code it shows, and nothing else: every region it takes a [snippet](../writing/directives.md#snippet) from, and every whole file it takes as one, including its fragments' snippets. It's for CI, where it says which pages a reviewer should reread; see [Report the pages whose examples changed](../examples/drift.md).
 
 @include: ../_generated/cli-drift-options.md
 

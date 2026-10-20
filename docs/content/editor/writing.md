@@ -36,7 +36,7 @@ What the editor does as you write a page: what it completes, what it shows on ho
 - A glossary term, in prose: its definition for the editor's build. On the term's heading: the definition, and how many pages use the term.
 
 @available: ascribe 0.3.2
-- A version in an availability spec, for a target with [release lines](../versions/index.md): the line it falls in, and that line's status, such as "in line 3.4, live".
+- A version in an availability spec, for a target with [release lines](../versions/lines.md): the line it falls in, and that line's status, such as "in line 3.4, live".
 
 @available: ascribe 0.3.2
 - `replaces` in frontmatter: the page it replaces, and which page each line publishes. Go to Definition opens the replaced page.
@@ -55,7 +55,10 @@ What the editor does as you write a page: what it completes, what it shows on ho
 ## Code files a page shows
 @available: ascribe 0.4.0
 
-A code file a page shows with [`@snippet`](../writing/directives.md#snippet) says which pages show it: above each region a snippet takes, and on the first line of a file a snippet takes whole, a lens reads "Shown in 3 pages". A page counts once however many of its `@snippet`s show the region, and a fragment's `@snippet` counts each page that includes the fragment. Choose the lens to see the places in the references peek, as **Find All References** lists them, and choose one to open the page at its `@snippet`. It's how you find the pages a change to your code will change, as you make it.
+A code file a page shows with [`@snippet`](../writing/directives.md#snippet) says which pages show it, in a lens above each region a snippet takes, and on the first line of a file a snippet takes whole. A page counts once however many of its `@snippet`s show the region, and a fragment's `@snippet` counts each page that includes the fragment. Choose the lens to list the pages, and choose one to open the page at its `@snippet`. It's how you find the pages a change to your code will change, as you make it.
+
+![A code file, greet.ts, with the lens "Shown in 3 pages" over the region a snippet takes, and the references peek open under it: it lists the three pages, index.md, quickstart.md, and reference.md, and shows index.md at its line `@snippet: code:examples/greet.ts#greet`.](../images/shown-in-pages-light.png){scheme=light}
+![A code file, greet.ts, with the lens "Shown in 3 pages" over the region a snippet takes, and the references peek open under it: it lists the three pages, index.md, quickstart.md, and reference.md, and shows index.md at its line `@snippet: code:examples/greet.ts#greet`.](../images/shown-in-pages-dark.png){scheme=dark}
 
 The lens is placed from the saved file, as a build reads it: the editor doesn't send code files to the language server. Lines you add above a region leave its lens where the region was until you save the file, wherever the source's folder is: in the project's folder, beside it, or in another project's. It's there for the files of the content model's [sources](../content-model/output.md#18-sourcesname), Markdown files among them, while the project's language server is running, and nowhere else. A file more than one project shows gets a lens from each project, each counting its own pages and naming the project, such as "docs: shown in 3 pages", since those pages are built and published apart; a file only one project shows has one lens, unnamed, whichever other projects' sources it's in.
 

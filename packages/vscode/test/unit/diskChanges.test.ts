@@ -55,7 +55,7 @@ describe("layoutOf", () => {
 
   it("has the content model reference's defaults", () => {
     const reference = readFileSync(
-      new URL("../../../../docs/content/content-model/index.md", import.meta.url),
+      new URL("../../../../docs/content/_generated/content-model-project.md", import.meta.url),
       "utf8",
     );
     for (const [key, value] of Object.entries(PROJECT_DEFAULTS)) {

@@ -1,36 +1,35 @@
 ---
 type: how-to
-title: Versions
-description: Publishing the docs of more than one version of a product from one source, a site for each version a reader can be on.
+title: Publish a site for each version
+description: Build the docs of every version a reader can be on from one source, a site for each release line, and move them on when a line ships.
 available: ascribe 0.3.2
 ---
 
-A product a team supports in more than one version needs docs for each: a reader on 3.4 should read about 3.4, and find the same page for 3.5. Ascribe does this from one source, the marks the pages already have, in four levels a project opts into one at a time:
+A reader on 3.4 should read the docs for 3.4, and find the same page for 3.5. This page builds an output for each version a reader can be on, from one source and the `@available` marks the pages already have, and moves them on when a version ships. [Release lines](lines.md) says what a line is and what its output holds, and [Archive and retire a line](archive.md) is for a line that leaves.
 
-1. **No versions.** The default. Nothing to configure, and nothing changes.
-2. **One site that knows its versions.** `[releases]` in `ascribe.toml` lists a target's lines: the live ones, the planned ones, when a line's support ends, and the ones that have left. One site still, with checks that the marks name versions the list knows, and "planned" worked out instead of kept by hand.
-3. **A window of live versions.** `versions = "<target>"` on a build gives one output for each live line, which this page covers, with links from one line to another, and an older line that says what it is and where the current one is, to a reader, a search engine, and an agent.
-4. **An archive.** A line rendered once more into a folder of HTML that needs nothing else, kept after it leaves the window.
+## Before you start
 
-## List the live lines
+- Mark the content that's in some versions and not others with [`@available`](../writing/directives.md#available), naming a target `ascribe.toml` declares, such as `self-managed 3.5`.
+- To publish with Astro, set the site up with [`@ascribed/astro`](../astro/index.md) first.
 
-A **line** is a version as you write it, and holds every version that starts with it: `3.4` holds `3.4.0`, `3.4.2`, and `3.4.2.1`. List the lines a reader can be on under the target they're versions of:
+## Publish a site for each version
+
+### 1. List the live lines
+
+Under `[releases]`, list the lines of the target a reader can be on:
 
 ```toml
 [releases.self-managed]
 live = ["3.4", "3.5"]
 ```
 
-The order doesn't matter: the newest is the **current line**. Write lines as finely as you release: `["3.4", "3.5"]` for a line for each minor release, `["0.2.0", "0.3.0"]` for one for each patch release. Every line of a target has the same number of parts. The [`[releases]` reference](../content-model/content.md#71-releasestarget) has the rules.
+A line holds every version that starts with it: `3.4` holds `3.4.0` and `3.4.2`. Write lines as finely as you release, `["3.4", "3.5"]` for minor releases or `["0.2.0", "0.3.0"]` for patch releases. The newest is the current line.
 
-## Say what's planned, ending, and gone
+### 2. Say what's planned, ending, and gone
 
-The rest of the list says what a reader can't be on yet, and what they can't be on any more:
+Add what a reader can't be on yet, and what they can't be on any more, if you have them:
 
 ```toml
-[releases]
-planned-label = "planned"
-
 [releases.self-managed]
 live = ["3.4", "3.5"]
 planned = ["3.6"]
@@ -43,30 +42,12 @@ planned = ["3.6"]
 "3.3" = {}
 ```
 
-- **`planned`** lines haven't shipped. Content marked for a version in one reads "planned" in every output, `Self-managed (planned, 3.6)`, with `planned-label`'s word if you set one. When 3.6 ships, move it to `live`, and the same marks read "since 3.6" with no other edit.
-- **`ends`** gives the last day each live line is supported. Once it's passed, `ascribe check` reports [`release-line-ended`](../checks/diagnostics/content-checks.md): move the line to `archived`.
-- **`archived`** lines have left. `url` says where one can still be read, and `ended` when its support ended; both are optional.
+Content marked for a planned version reads "planned" until its line ships, and a line whose `ends` has passed is reported until you archive it. The [`[releases]` reference](../content-model/content.md#71-releasestarget) has each key and what the checks find in the marks once the list is there.
 
-Every line of a target has the same number of parts, planned lines are newer than every live line, and archived lines older.
+### 3. Version a build
+@id: build-a-site-for-each-line
 
-When a planned line ships, [`ascribe versions release`](release.md#release-day) moves it to `live` and rewrites the marks that named it through a feature; `ascribe versions list` shows the lines, and `ascribe versions changes` what differs between two.
-
-## What the checks find
-
-With the list, `ascribe check` checks each version a mark names, in pages and in `ascribe.toml`'s features and builds:
-
-- **A version newer than every line** is an error, [`available-version-ahead`](../checks/diagnostics/directives.md): `self-managed 3.7` when 3.6 is the newest line is likely a typo, or a line to plan. The fix changes it to the newest line.
-- **A version between two declared lines** but in none, such as `3.5` when the lines are `3.4` and `3.6`, is [`available-line-undeclared`](../checks/diagnostics/content-checks.md), with a fix to each line beside it.
-- **A mark that no output shows** is reported when nothing builds the versions it names. On a versioned build, a version at or before the oldest live line isn't shown, since every reader has it: `self-managed 3.3` reads the same as `self-managed`, and [`available-same-in-every-line`](../checks/diagnostics/content-checks.md) offers to write it so. Content that's in no live or planned line at all is [`available-in-no-line`](../checks/diagnostics/content-checks.md). A build that badges or filters, and isn't versioned by the target, still shows every version, so while a project has one, these two report nothing.
-- **`availability-left-behind`** compares a feature's versions with its target's current line.
-
-A version older than every declared line isn't a mistake the first two report: it's before the window, so you needn't declare the releases before the ones you support.
-
-A phrase can follow the list too: `release = { line = "self-managed" }` makes `{release}` the current line, and in an older line's output of a versioned build, that line.
-
-## Build a site for each line
-
-Name the target on a build:
+Name the target on the build that makes your site:
 
 ```toml
 [builds.site]
@@ -74,172 +55,61 @@ availability = "badge"
 versions = "self-managed"
 ```
 
-`ascribe build` then writes an output for each live line. The current line keeps the build's name and its addresses; each other line is `<build>@<line>`, under its number after the base path:
+The build now writes an output for each live line. The current line keeps the build's name and addresses, so turning versions on moves no address; each other line is `<build>@<line>`, under its number after the base path:
 
 | Line | Output | A page at `install.md` |
 |---|---|---|
 | 3.5, current | `.ascribe/build/site/` | `/docs/install/` |
 | 3.4 | `.ascribe/build/site@3.4/` | `/docs/3.4/install/` |
 
-So turning versions on moves no address, and a link to the docs always shows the newest line. Every address in an older line's output starts with its folder: links between pages, the files they link to, and the canonical addresses in its page records. `--build site@3.4` builds that line alone, and `--build site` the current one.
-
-A versioned build's `availability` is `badge`: a build that filters is already one version of one target. With one live line, the build writes what it would without `versions`, apart from the file the lines share (below), and older marks no longer show their versions.
-
-## What each line has
-
-A line keeps content whose `available` doesn't name the target, and content that's available for the target at some version in the line. Content that begins at `3.4.2` is in 3.4; so is content removed at `3.4.2`, since it was there at `3.4.0`. What isn't in a line is removed from its output, as a filtered build removes it: a section, a table row, or a whole page. The current line also keeps content marked for a version after it, shown as it is in any badge build, such as "3.6+".
-
-What's left is marked as a badge build marks it, but a version at or before the oldest live line isn't shown, since every reader has it: with 3.4 and 3.5 live, `self-managed 3.3` shows the target alone, `self-managed deprecated 3.2` shows "deprecated", and `self-managed 3.4.2` shows its version. A history keeps the state in effect when the window opens and what follows: with 3.5 and 3.6 live, `self-managed (preview 3.3, ga 3.5, deprecated 3.6)` shows `self-managed (ga 3.5, deprecated 3.6)`. A build that isn't versioned shows them all.
-
-`ascribe check` checks each line as a build. A problem in more than one line is reported once, saying so.
-
-## Links between lines
-
-A link to a page that isn't in a line still goes somewhere, in three steps:
-
-1. **The page that takes its place.** A page that's rewritten under a new name says which page it replaces, with `replaces` in its frontmatter:
-
-   ```yaml
-   ---
-   title: Configure the agent
-   available: self-managed 3.5
-   replaces: configure-legacy.md
-   ---
-   ```
-
-   A link to either page lands on whichever one the line has. Neither page links to the other by hand, and a link keeps its `#id` when the page it lands on has a heading with that id.
-2. **The page in another line.** Otherwise the link leads to the page in the nearest line that has it, the closest newer line first. In 3.4, a link to a page new in 3.5 goes to `/docs/webhooks/`, and the line follows the link: "Webhooks (3.5)". A site styles it by its `data-ascribe-release-line` attribute; the plain output writes the line after the link.
-3. **Nowhere.** When no live line has the page, the link is [`link-page-dropped`](../checks/diagnostics/pages.md), as in any build.
-
-A link from the current line to a page only an older line has is [advice](../checks/diagnostics/pages.md): it's a reader on the newest docs sent back to an older line, which is usually a link the page no longer needs. Two pages that replace each other, or a page that replaces a page its own line still has, are errors. [`replaces`](../writing/directives.md#a-page-that-replaces-another) has the rules, and `ascribe link` says where a link goes in each line.
-
-## What an older line says about itself
-
-A reader who lands on an older line from a search should know it's older, and find the current one. Each output says so in its own way:
-
-- **The canonical address** of a page in an older line is the same page in the current line, or the page that replaced it there, following `replaces` as a link does. A page the current line has neither of keeps its own. So a search engine indexes the current line's page, and an older line's page only when it's the one place the page is.
-- **The sitemap** lists a page when it's listed and its canonical address is its own: each current page once, and an older line's page only when the current line has no such page.
-- **The page's Markdown** opens with a line that says which version it is:
-
-  > Documentation for Self-managed 3.4. Support ends on 31 January 2027. The current version is 3.5: <https://docs.example.com/docs/install/>.
-
-  The current line's says its own version alone. The date comes from `ends`, and the sentence is left out without one; the target is named by its [label](../content-model/content.md#dimensions).
-- **A site's banner** says the same to a person: [`VersionBanner.astro`](#publish-with-astro) with Astro, or the site's own from the files below.
-
-Nothing is added to `robots.txt`. An older line is kept out of an index by its pages, not by a rule over its folder, which would also stop a crawler reading the canonical link.
-
-### Keep the older lines out of an index
-
-A project that doesn't want its older lines found at all says so under `[listing]`:
-
-```toml
-[listing]
-older-lines = "unlisted"
-```
-
-Every page of every line but the current one is then `unlisted`: it asks not to be indexed, and it's left out of the sitemap and `llms.txt`. `unquoted` asks that they not be quoted. The rule only restricts, as every listing rule does: a page in an older line that sets a looser `listing`, such as `listing: listed`, is [`listing-loosened-in-line`](../checks/diagnostics/pages.md). A folder's or a type's rule still applies on top of it.
-
-## What the lines know about each other
-
-Each `ascribe build` of a project with `[releases]` writes `.ascribe/build/_ascribe/versions.json`: for each versioned build, the target's label, its lines, and for each page the lines that publish it, with its route in each, and the page it replaces or that replaces it. A site reads it to link a page to the same page in another line. The [output layout contract](../contracts/output-layout.md#15-the-versions-file) has its format.
-
-A site that isn't built with Astro has all a banner and a list of versions need in it and in each line's page records (`_ascribe/pages.json`):
-
-| To write | Read |
-|---|---|
-| "Documentation for Self-managed 3.4" | `builds.<name>.label`, and the line from `lines[]`, the one whose `base` the page is under |
-| "Support ends on 31 January 2027" | that line's `ends` |
-| The link to the current line | the page's `canonical` in its record when it isn't the page's own address; else the `base` of the line whose `status` is `current` |
-| A page's other lines | `pages.<path>.lines`, following `replaces` and `replaced-by` |
-| The lines that have left | the `lines[]` whose `status` is `archived`, and their `url` |
-
-## In the editor, in review, and in the tools
-
-The lines show wherever a build does, and a page that's the same in every line shows once:
-
-- **The editor.** Switch build lists a versioned build's lines under it, the current line first, and the build lens and the preview follow the line you choose: in 3.4, a page new in 3.5 is dimmed whole, and the preview is at the line's address, `/3.4/install/`. The editor checks every line of its build, and a problem only some lines have says which, such as "(only in build `site@3.4`)". A hover on a mark's version says which line it falls in, and a hover on `replaces` says which page each line publishes. [The editor](../editor/preview.md#the-status-bar) has the rest.
-- **Review.** `ascribe diff` lists a changed page once with the lines it changed in: "in every line" for a page the lines share, "only in 3.4" for a change inside a section only 3.4 has. The HTML report lists the page once too, and switches between the lines it changed in. [Diff](../review/diff.md) has the details.
-- **The tools.** `ascribe render install.md --build site@3.4` renders the page as that line publishes it, at its address under `/3.4/`, and so does `ascribe_render`. `ascribe model` has a `releases` section: each target's lines, with their status and the build that is each.
-
-## Publish with Astro
-
-[`@ascribed/astro`](../astro/index.md) serves every line from one site, with no change to `astro.config.mjs` or `src/content.config.ts`. The collection has every line's pages: the current line's with their usual ids, and an older line's with the line in front, `3.4/install`, so the route `[...slug].astro` gives each is where Ascribe's links point. Each entry's data has `line` and `current`.
-
-`<Versions entry={entry} />`, from `@ascribed/astro/Versions.astro`, lists the lines, each a link to the page there, with the page's own line marked `aria-current="page"`. A page that replaces another lists the lines of the page it replaces too, and the other way around, so `configure/` in 3.5 and `3.4/configure-legacy/` link to each other. A line that has neither is shown unlinked, "(not in this version)", and the archived lines that have a `url` follow, each linking to it, "(archived)". It renders nothing for a build that isn't versioned, or one with a single line to list.
-
-`<VersionBanner entry={entry} />`, from `@ascribed/astro/VersionBanner.astro`, writes the banner on an older line's pages, and nothing on the current line's:
-
-> Documentation for Self-managed 3.4. Support ends on 31 January 2027. See this page for 3.5.
-
-The last sentence links to the page in the current line, or the page that replaced it, and to the current line's home otherwise, as "See the documentation for 3.5." Each sentence's words are a property, `documentation`, `supportEnds`, `samePage`, and `home`, with `locale` for the date, so a site can translate them; `Versions.astro`'s are `label`, `missing`, and `archived`.
-
-The sidebar shows the pages of the page's own line when the layout passes the entry: `sidebar(entries, { entry })`, its navigation or, with a site's own list, `sidebar(entries, { nav, entry })`. `npx @ascribed/astro init` writes all three into the layout.
-
-`astro build` and `astro dev` build every line, and `astro dev` rebuilds them all on a change. With `[consumer] agents = true`, each line's `llms.txt` and Markdown are published at its base path, `/docs/3.4/llms.txt`, with the response headers each line's pages need. A permalink forwards to the current line, whichever lines have the page: it's the address a product prints, and it should land on the newest docs.
-
-## Archive a line
-
-Before a line leaves the window, keep a copy of it that needs nothing else: no site generator, no server, and no script but its search.
+### 4. Check and build each line
 
 ```sh
-ascribe versions archive "self-managed 3.4" --to archive/3.4 --current https://docs.example.com/docs/
+ascribe check
+ascribe build
 ```
 
-The folder has a page for each page of the line, `install.md` as `install.html`, and works opened from a disk or served at any address, since every link between its pages is relative:
+`ascribe check` checks every line as a build, and reports a problem that's in more than one line once, saying which. `ascribe build` writes every line; `--build site@3.4` builds one. `ascribe versions list` shows each line, its output, and how many pages it publishes, as in `examples/quill`:
 
-- **Every page says what it is,** at its top: "Documentation for Self-managed 3.4. This version is no longer maintained." With `--current`, a link to the current documentation follows. Nothing in it is a date or a "latest" that would read wrongly later.
-- **A way around.** A sidebar on every page lists the pages as the line's site sidebar does, from its [navigation](../navigation/index.md), with the page you're on marked; each page lists its own sections, and links to the previous and next pages in reading order. The contents page lists every page: it's `index.html`, or `contents.html` when the line's own root `index.md` is `index.html`.
-- **It prints.** Printing a page leaves out the sidebar, keeps the statement, and writes each link's address after it. `all.html` has every page in order in one document, for one PDF of the whole line.
-- **It can be searched,** from a box at the top of the sidebar, opened from a disk too. Typing lists the pages and headings that have every word, best first: a page's title, then a heading, then the text under one, code blocks included, with the words around each match. A result opens the page at its heading. Search is the archive's one script, and its index is `search-index.js`, which the box loads the first time it's used; the command says how large it is. Nothing is fetched from anywhere else, and nothing is stored in the browser.
-- **It's kept out of search engines,** by `<meta name="robots" content="noindex">` on every page, and a `robots.txt` for a host that serves the folder at its own address.
-- **It reads without a script.** With scripts off, the search box isn't shown, and the sidebar and the contents page are the way around. Tabs show one after another, each under its label, as the [element contract](../astro/elements.md) promises without JavaScript. The stylesheet is the element library's with the archive's own, and follows the reader's light or dark setting.
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-list.txt
 
-A link to a page that isn't in the line goes to the page that takes its place there, as a link in the line's output does. A link that would lead out of the line to another one is written as its text, and the command names each. A link to another site stays a link.
+### 5. Publish with Astro
+@id: publish-with-astro
 
-The archive is Ascribe's own render, not the site's: a project's site design isn't carried into it. Host the folder anywhere, then record its address, so the live site lists it among the lines:
+[`@ascribed/astro`](../astro/index.md) serves every line from one site, with no change to `astro.config.mjs` or `src/content.config.ts`. Run `npx @ascribed/astro init` to write the layout, or add these to your own:
 
-```toml
-[releases.self-managed.archived]
-"3.4" = { url = "https://archive.example.com/3.4/" }
+```astro
+---
+import Versions from "@ascribed/astro/Versions.astro";
+import VersionBanner from "@ascribed/astro/VersionBanner.astro";
+---
+<VersionBanner entry={entry} />
+<Versions entry={entry} />
 ```
 
-`Versions.astro` lists an archived line that has a `url` after the live ones, as a link out of the site. The [archive contract](../contracts/archive.md) has the folder's layout.
+`<Versions>` links the page to the same page in each line, and `<VersionBanner>` tells a reader on an older line which version they're reading and where the current one is. Pass the entry to the sidebar too, `sidebar(entries, { entry })`, so it lists the pages of the page's own line. [The Astro components](lines.md#the-astro-components) has what each shows and the words it takes.
 
-## Retire a line
+A site not built with Astro reads the same from `versions.json` and the page records: [What the lines know about each other](lines.md#what-the-lines-know-about-each-other) says where each part is.
 
-Once its archive is hosted, take the line out of the source. The order matters, since after the clean-up the source no longer holds what the line needs:
+## When a line ships
+@id: release-day
 
-1. **Archive it,** as above, while every line's content is still there.
-2. **Host the archive,** and note its address.
-3. **Retire it:**
+Before a line ships, mark what's written for it through a [feature](../content-model/content.md#9-featureskey) that names it, `[features.next] available = "self-managed 3.6"`, and `@available: next` on the pages. On the day, one command moves the docs:
 
-   ```sh
-   ascribe versions retire "self-managed 3.4" --url https://archive.example.com/3.4/
-   ```
+```sh
+ascribe versions release "self-managed 3.6"
+```
 
-4. **Add the redirects** it lists to your host.
+It rewrites each mark that names 3.6 through a feature to `self-managed 3.6`, points the feature at the next planned line, or at `--next`, and moves 3.6 from `planned` to `live`. Where no build is versioned by the target, it also moves the old current line to `archived`, with its date in `ends` as `ended`, since such a project publishes one line; a project that builds a site for each line keeps the old line live until you [retire it](archive.md). Commit the change it writes: it's one commit, and `git checkout` undoes it. Run it with `--dry-run` first to see what it would do; [the command's reference](release.md#cli-versions-release) has when it refuses and why.
 
-The retirement moves 3.4 from `live` to `archived`, with its `url` and the day it ended, so `Versions.astro` lists it as an archive and `ascribe build` stops writing its output, removing the folder it wrote before. Then, with 3.5 the oldest line, each mark for the target is rewritten to the simplest spec that means the same in every line still live or planned:
+Then start the release notes from what the new line has that the one before didn't:
 
-| A mark | With 3.5 and 3.6 live | Why |
-|---|---|---|
-| `self-managed 3.4` | `self-managed` | Every live line has it |
-| `self-managed deprecated 3.2` | `self-managed deprecated` | The state is still worth showing |
-| `self-managed (preview 3.3, ga 3.5, deprecated 3.6)` | `self-managed (ga 3.5, deprecated 3.6)` | The steps before the window go; the one in effect when it opens stays |
-| `cloud, self-managed 3.4` | `cloud, self-managed` | Other targets are untouched |
+```sh
+ascribe versions changes "self-managed 3.5" 3.6 --format markdown
+```
 
-A feature's spec in `ascribe.toml` is rewritten the same way. No live line's output changes, and the command proves it by building before and after. A build that isn't a line, such as a badge build that shows "3.4+", does change, so the command names its pages and needs `--force`.
+## See also
 
-The retirement deletes nothing on its own. Content that only 3.4 had, and a mark that says nothing any more, such as `@available: self-managed` on a page of a site for self-managed alone, is listed with `--show-unused`, and deleted with `--remove-unused` once you've read the list. A mark that says nothing still draws a badge, which is why it's yours to remove.
-
-Each address 3.4 published should go somewhere: to the same page in the current line, to the page that replaced it there, or to its page in the archive. The command lists them, the replaced pages in its text and every address in its JSON, each as `from` and `to`, and writes nothing for a host. The [command reference](release.md#cli-versions-retire) has its options.
-
-## For agents
-
-With [`[consumer] agents = true`](../agents/index.md), each line has its own outputs for agents, in its plain output:
-
-- **`llms.txt`** lists the line's pages, and its heading names the line: `# Loom (Self-managed 3.4)`. An older line's opens with a line pointing at the current line's: "This is an older version. The current version is 3.5: [llms.txt](https://docs.example.com/docs/llms.txt)."
-- **Each page's Markdown** opens with the line that says which version it is, above.
-- **`ascribe agents index --build site@3.4`** writes the compact index of a line for a product's `AGENTS.md`, its heading naming the line as `llms.txt`'s does. Without `--build`, it's the current line's.
-
-A line kept out of an index with `[listing] older-lines = "unlisted"` lists nothing in its `llms.txt`.
+- [Release lines](lines.md): what each line's output holds, how links between lines go, and what an older line says about itself.
+- [Archive and retire a line](archive.md): keep a copy of a line, then take it out of the source.
+- [`ascribe versions`](release.md): the commands' options and output.

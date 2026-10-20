@@ -11,16 +11,16 @@ A page of a known kind has a shape: a how-to has what to do before you start, th
 
 The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, from their repository, [gitlab.com/tgdp/templates](https://gitlab.com/tgdp/templates), at their release v1.6.0. Their work is under the MIT No Attribution License, which asks for no credit; this is it anyway, with thanks.
 
-Ascribe converts each one into an Ascribe page, with a script, and changes nothing of their wording: what the template says about itself is taken out, its title moves into the frontmatter, and each `{placeholder}` is written as `\{placeholder}`, so it shows as written and isn't read as a phrase. Each guide says at its top where it came from. `ascribe templates list` shows the set, and which release it's from.
+Ascribe converts each one into an Ascribe page and changes nothing of their wording: each `{placeholder}` is written as `\{placeholder}`, so it shows as written and isn't read as a phrase. Each guide says at its top where it came from, and `ascribe templates list` shows the set and its release.
 
 @available: ascribe 0.4.0
-A template's instructions to the writer, such as `{This section is optional}`, are [memos](../writing/directives.md#memo), with their words: `@memo: This section is optional`. A memo is about the block below it, or about its section when it's at the top of one, so an instruction that ended a section moves to the top of it. A memo is never published: follow it, then delete it or keep it. A paragraph that marks where the page's own text goes, such as the how-to's `{Optional: Explanatory text}` in a step, stays a placeholder.
+A template's instructions to the writer, such as `{This section is optional}`, are [memos](../writing/directives.md#memo): `@memo: This section is optional`. A memo is never published: follow it, then delete it or keep it. A paragraph that marks where the page's own text goes, such as the how-to's `{Optional: Explanatory text}` in a step, stays a placeholder.
 
 The set has six templates, for a how-to, a concept, a tutorial, a reference, a troubleshooting page, and release notes. Each is one of theirs, and has a type of the same name.
 
 ## Take the templates
 
-To start a project with the set, run `ascribe init --templates` in an empty folder. It writes the project's first `ascribe.toml`, with a type, `page`, for a page that's none of the six, and takes the six templates as `eject` would; the [command reference](../examples/sources.md#cli-init) shows the file.
+To start a project with the set, run `ascribe init --templates` in an empty folder: it writes the project's first `ascribe.toml` and takes the six templates as `eject` would ([command reference](../examples/sources.md#cli-init)).
 
 In a project that has its `ascribe.toml` already, take the whole set:
 
@@ -40,64 +40,43 @@ title = "string"
 description = "string"
 ```
 
-Each type's page has a title and a description, as every template's frontmatter has; when one of your types declares `title` or `description` with more than `"string"`, such as an `inline` or a `role`, the new types declare them the same way. A page says what type it is in its frontmatter, as each template does, so a page of any type can go in any folder:
+A page says what type it is in its frontmatter, `type: how-to`, as each template does, so a page of any type can go in any folder. Commit the files, with `templates/templates.lock`, which records what each was copied from. The rules [`ascribe agents sync`](../agents/index.md#agent-instructions) writes say what each type is for; to say it your own way, give the type a [`purpose`](../content-model/index.md#41-page-types).
 
-```yaml
----
-type: how-to
-title: "Rotate keys"
----
-```
-
-Once a project declares types, every page names one. A project that had none, whose pages were all of the implicit type `page`, gets `[types.page]` written out, and `eject` lists the pages that name no type: each needs `type: page`, or the type it's of, and `ascribe check` reports each with a fix for every type. Commit the files, with `templates/templates.lock`, which records what each was copied from. The rules [`ascribe agents sync`](../agents/index.md#agent-instructions) writes say what each type is for with their summary of it, from that file; to say it your own way, give the type a [`purpose`](../content-model/index.md#41-page-types).
-
-To take only some, name them: `ascribe templates eject how-to concept`. `ascribe templates list` names the six. A type of the same name declared already, or a file where one would be written, is named, and then nothing is written. To keep a type the project declares, with its own frontmatter, and take the template for it, add `--keep-type`: it adds only the type's `template` and `guide`. `--to` writes them into another folder outside the content root, and the [command reference](../examples/sources.md#cli-templates-eject) has the rest.
-
-`eject` adds to a project, and doesn't start one: without an `ascribe.toml`, it says to run `ascribe init --templates`.
+To take only some, name them: `ascribe templates eject how-to concept`. A type the project declares already is refused, and nothing is written; to keep it and take its template, add `--keep-type`. The [command reference](../examples/sources.md#cli-templates-eject) has the rest.
 
 ## Change a template
 
 From then on the files are your project's, and nothing in Ascribe writes over them. Change a template as you'd change any page: take out a section your project never has, add one it always does, or write your own placeholder as `\{What goes here}`. Add to the guide or the notes, or add a file of your own to the type's `guide` list.
 
-A change to a template changes what the check looks for, since it compares a page with the template as it is now. A placeholder you take out of the template isn't looked for in pages any more, and one you add is.
+The check compares a page with the template as it is now, so a placeholder you take out isn't looked for any more, and one you add is.
 
 ## See what's changed in the set
 
-The Good Docs Project keeps improving their templates, and a later `ascribe` carries their newer release. Nothing changes your copies: to see what's different, run:
+A later `ascribe` carries The Good Docs Project's newer release. Nothing changes your copies: to see what's different, run:
 
 ```sh
 ascribe templates status
 ```
 
-For each template you took, it says whether the set has changed it since your copy, from `templates.lock`'s record of each file as written, and whether you've changed it; then the templates of the set you don't have. A file the set changed and you didn't is listed with the sections that are different. It reads nothing but your project and the set your `ascribe` carries, so it works offline, and its first line says which release that set is from.
-
-To take a change, see it, then copy what you want by hand:
+For each template you took, it says whether the set has changed it since your copy, and whether you've changed it. To take a change, see it, then copy what you want by hand:
 
 ```sh
 ascribe templates status --diff how-to
 ```
 
-`--exit-code` makes it exit with 1 when the set has changed a template you took, or no longer has one, for a CI job that wants to know. The [command reference](../examples/sources.md#cli-templates-status) has the rest, and its JSON.
+The [command reference](../examples/sources.md#cli-templates-status) has its options, for a CI job too, and its JSON.
 
 ## In a project that has pages
 
-A project that takes the set late is one with pages written already. Ascribe's own docs took it that way, with 46 pages, and it showed what to expect:
-
-- **A type you declare already is refused,** and nothing is written. To take its template and keep your type as it is, add `--keep-type`.
-- **Your pages name no type yet,** if your project declared none. Each needs `type:`, and `ascribe check` offers a fix for each type; a type no page names isn't reported.
-- **Each type's frontmatter is the set's,** a plain `title` and `description`. Put back what your own types declare, such as a title drawn as code (`inline = "code"`), on each one.
-- **Pages written before their template have nothing of it left,** so the check reports none of its placeholders. A phrase with a placeholder's name, such as `{product}`, which the tutorial's template has, isn't reported, since the template's brace is escaped and the phrase's isn't.
-- **Not every page fits.** A home page that lists the other pages is none of the six: give it a type of your own, with no template. The troubleshooting template's "Cause" and "Solution" headings repeat under every symptom, and the check warns about headings with the same name on a page, so the docs write them as bold paragraphs instead.
-
-The docs didn't change a page that already did its job to match its template heading for heading: a guide says what a kind of page is for, and the template is one way to get there.
+A project with pages written already can take the set too; Ascribe's own docs did. Its pages name no type yet if the project declared none, and `ascribe check` offers a fix for each. Pages written before their template have none of its placeholders, so the check reports nothing on them, and a page that's none of the six, such as a home page that lists the others, gets a type of your own with no template. A guide says what a kind of page is for; a page that already does its job needn't match its template heading for heading.
 
 ## Ascribe's notes
 
-Their guide says what belongs in a page of each kind, and it's written for any tool. Ascribe's notes, `<type>.ascribe.md`, are a minute's reading after it: only what's particular to writing that kind of page in Ascribe, such as a how-to's alternatives by platform as a [variant](../glossary.md#variant) group, and a step's command taken from tested code with [`@snippet`](../writing/directives.md#snippet). They're the only words in the set that are Ascribe's, and `templates.lock` records them apart from their files.
+Their guide says what belongs in a page of each kind, for any tool. Ascribe's notes, `<type>.ascribe.md`, are a minute's reading after it: only what's particular to writing that kind of page in Ascribe, such as a how-to's alternatives by platform as a [variant](../glossary.md#variant) group, and a step's command taken from tested code with [`@snippet`](../writing/directives.md#snippet).
 
 ## Start a page
 
-In VS Code, run **Ascribe: New Page** from the Command Palette, from the **Pages** view's title bar, or on a folder in the Explorer. It asks for the type, each with what it's for, and the page's title, then makes the page from the type's template with its type and title set, in the content root, or in the folder you ran it on. The page opens with the first thing to fill in selected, usually the description, so typing replaces it, and **Ascribe: Go to Next Placeholder** selects the next. It never writes over a file. A type with no template gives a page with its frontmatter, so it works in any project ([editor guide](../editor/actions.md#start-a-page)).
+In VS Code, run **Ascribe: New Page**. It asks for the type and the page's title, then makes the page from the type's template, with the first thing to fill in selected; **Ascribe: Go to Next Placeholder** selects the next ([editor guide](../editor/actions.md#start-a-page)).
 
 Without the editor:
 
@@ -111,48 +90,19 @@ Without the editor:
 2. Read the type's guide and Ascribe's notes on it, before you write.
 3. Replace each `\{placeholder}` with what it asks for, and the title and description in the frontmatter with your own.
 
-An agent starts from the template too. Ask it for a page, with the plugin's `/ascribe:new-page` or the prompt `ascribe agents prompt new-page` prints ([agents guide](../agents/index.md#from-the-command-line)), and the prompt gives it the template with its type and title set, says where the file goes, and sends it to the guide and the notes, by their paths, before it writes:
+An agent starts from the template too. Ask it for a page with the plugin's `/ascribe:new-page`, or the prompt `ascribe agents prompt new-page` prints ([agents guide](../agents/index.md#from-the-command-line)), which gives it the template and sends it to the guide and the notes before it writes:
 
 ```sh
 ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 ```
 
-There's no command that writes the page for you at the terminal: copying the file is one line, the editor's **New Page** is for a person, and the prompt is for the agent.
-
 ## What's left to fill in
 
-`ascribe check` compares a page with its type's template, and reports what it still has of it as advice (`template-placeholder-left`):
+`ascribe check` compares a page with its type's template and reports, as advice, what it still has of it: a placeholder or a frontmatter field the page has word for word ([`template-placeholder-left`](../checks/diagnostics/content-checks.md#ASC195)), and a section the template gives only memos that the page leaves empty ([`template-section-empty`](../checks/diagnostics/content-checks.md#ASC229)). A memo the page keeps isn't reported. In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page-pages-and-content-model) says how many are left, and **Go to Next Placeholder** goes to the next one.
 
-- **A placeholder,** the template's text from a `\{` to its closing brace, that the page still has word for word. Its brace has to be escaped on the page too, as it is in the template: a phrase with a placeholder's name, such as `{product}`, is the page's own, and so is a placeholder quoted in inline code or a code block. One that runs across blocks, as the how-to's "See also" opens a brace in a paragraph and closes it at the end of a list, is reported once, where it starts, when the page has all of it.
-- **A frontmatter field** with the value the template gives it, such as `title: "Title"`.
-
-@available: ascribe (ga 0.3.1, removed 0.4.0)
-- **An instruction,** a paragraph the template has in a block quote, that the page still has whole. A block quote of your own isn't one.
-
-How a line is wrapped doesn't matter, so an editor that rewraps a paragraph doesn't hide a placeholder in it. A page of a type with no template isn't looked at.
-
-@available: ascribe 0.4.0
-In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page-pages-and-content-model) says how many are left on the page, and choosing the row goes to the next one.
-
-@available: ascribe 0.4.0
-A memo the page keeps from its template isn't reported, and **Go to Next Placeholder** passes over it: it's never published, so what to do with it is yours to decide. A placeholder in a block quote is reported as any other is.
-
-@available: ascribe 0.4.0
-**A section the template gives only memos,** such as the concept's "Use cases" or the troubleshooting template's "Cause 1 of symptom 1", has no placeholder to leave, so one a page doesn't fill in builds as a heading with nothing under it. `ascribe check` reports it as advice of its own, at its heading (`template-section-empty`): a section of the page with the template's heading, at the same level and with the same text, that has nothing in it but memos, directives bound to its heading such as `@id`, and the headings of subsections as empty as it is. A section followed directly by a subsection with text in it is filled, and a section you've renamed is your own. Write the section, or take out its heading when the page doesn't need it.
-
-The check finds only what was never touched. A placeholder with one word changed, or with the space before its closing brace taken out, as the how-to's `\{Task name }` has, isn't the template's any more, and isn't reported; nor is one you've begun filling in. Nor does it look at a page's shape: a how-to with its steps taken out, and none written, has nothing left of the template to report. Read a page through before publishing it.
-
-To turn either check off, or make it a warning, set its level in [`[checks]`](../content-model/checks.md#19-checks):
-
-```toml
-[checks]
-template-placeholder-left = "warning"
-template-section-empty = "off"
-```
+The check finds only what was never touched, so read a page through before publishing it. To turn either check off, or make it a warning, set its level in [`[checks]`](../content-model/checks.md#19-checks).
 
 ## See also
 
 - [`ascribe templates`](../examples/sources.md#cli-templates-eject): `list` and `eject`, and their options.
 - [Page types](../content-model/index.md#41-page-types): a type's `template`, `guide`, and `purpose`.
-- [ASC195 `template-placeholder-left`](../checks/diagnostics/content-checks.md#ASC195): what the check reports.
-- [ASC229 `template-section-empty`](../checks/diagnostics/content-checks.md#ASC229): what it reports of a section left empty.

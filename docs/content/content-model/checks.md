@@ -20,9 +20,9 @@ level = "warning"
 limit = 40_000
 ```
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `<check>` | string or table | the check's own level | A check's name, as the [diagnostics reference](../checks/diagnostics.md) lists it. The value is its level: `"off"`, `"advice"`, `"warning"`, or `"error"`. Or it's a table with `level` and the check's own settings, which its entry in the reference lists; without `level`, the check keeps its own. |
+Each key is a check's name, as the [diagnostics reference](../checks/diagnostics.md) lists it. Its value is the check's level, or a table, `[checks.<check>]`, with the check's own settings, which its entry in the reference lists, and these keys:
+
+@include: ../_generated/content-model-checks.md
 
 Only a check the [diagnostics reference](../checks/diagnostics.md#setting-a-checks-level) marks configurable can be named; that section lists them, with their settings. Three have one, `limit`: for `page-size`, a whole number of characters above 0, `50_000` unless set; for `image-large`, a size, `"500 KB"` unless set; and for `memo-long`, a whole number of characters above 0, `2_000` unless set. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
 
@@ -58,11 +58,7 @@ Says that a check's problem with a content model entry or an image is intended, 
 
 @include: ../_fragments/content-model/intended-example.md
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `check` | string | required | The check, by its name. It must be a review check that reports its problems at an entry, as the [diagnostics reference](../checks/diagnostics.md) says. |
-| `reason` | string | required | Why the problem is intended. Not empty. |
-| `phrase`, `feature`, or `image` | string | required | The entry: a phrase's key, a feature's key, or an image's path under the content root. Exactly one. |
+@include: ../_generated/content-model-intended.md
 
 A glossary term is a heading, so it's acknowledged on its page instead, with [`@intended`](../writing/directives.md#intended) under its heading; `term` here is an error that says so.
 
@@ -79,14 +75,7 @@ preset = "quiet"
 off = ["Ascribe.Repeated"]
 ```
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `preset` | string | | Ascribe's own selection of Vale rules: `quiet`, rules that are almost never wrong. Nothing is downloaded: the preset is written under `.ascribe/vale/`. |
-| `config` | string | | Instead of a preset, the path of the project's own `.vale.ini`, from the project root. |
-| `off` | array of strings | `[]` | Rules of the preset to turn off, by the names alerts give them, such as `Ascribe.Repeated`. Only with `preset`. |
-| `command` | string | `"vale"` | The command that runs Vale. A path with a separator is from the project root; a bare name is looked up as the shell would. A path is a program in the project: the editor asks before it runs one, and the agents' hooks don't run one ([Prose, through Vale](../checks/vale.md#where-vale-runs)). |
-| `in-check` | boolean | `false` | Whether `ascribe check`, and the agents' hook, check the prose without `--vale`. |
-| `max-level` | string | `"error"` | The most an alert can be: `"advice"`, `"warning"`, or `"error"`. Vale's `suggestion`, `warning`, and `error` are advice, a warning, and an error up to it; with `"advice"`, Vale's alerts never fail `--deny-warnings`. |
+@include: ../_generated/content-model-checks-vale.md
 
 Ascribe writes the project's own words (phrase values, glossary terms and their aliases, and the labels of dimensions, their values, and features) to a Vale vocabulary, `Ascribe`, under `.ascribe/vale/`, so Vale doesn't take them for misspellings. It's turned on for a preset and for the project's own configuration alike; nothing the project wrote is changed.
 
@@ -104,12 +93,7 @@ How `ascribe report links` checks the project's external links, with [lychee](ht
 ignore = ["localhost", "*.internal.example.com"]
 ```
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `command` | string | `"lychee"` | The command that runs lychee. A path with a separator is from the project root; a bare name is looked up as the shell would. |
-| `ignore` | array of strings | `[]` | The hosts whose links aren't checked: a host name, such as `example.com`, or `*.` and a host name, which covers every host under it but not the name itself. Case doesn't matter. |
-| `reuse-days` | whole number | `14` | How many days an address that answered isn't asked about again. Each address's own limit falls between half of this and all of it, so addresses first checked together don't all come due on one day. `0` asks about every address on every run. |
-| `confirm-days` | whole number | `3` | How many days a link that answered before and fails now is listed as unconfirmed, and not reported, before it's reported. A 404 or a 410 is reported at once. `0` reports every failure at once. |
+@include: ../_generated/content-model-checks-links.md
 
 The answers it reuses and the links it holds as unconfirmed are kept in `.ascribe/`: [What it remembers](../checks/external-links.md#what-it-remembers).
 
@@ -136,10 +120,7 @@ cli-settings = "settings"
 
 `[permalinks.retired]` has an entry for each retired permalink, keyed by its name:
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `reason` | string | required | Why it was retired. A reader whose link leads there sees it, as text. Not empty. |
-| `to` | string | | Where its address leads now: a page, by its path from the content root, and `#` and a heading's id, as `guides/security.md#rotate-keys`. Without it, or in a build that doesn't publish the page, the address shows that what was there was removed, the reason, and a link to the docs' home. |
+@include: ../_generated/content-model-permalinks-retired.md
 
 `[permalinks.aliases]` has an entry for each alias, keyed by its name, whose value is the name it leads to: a permalink a heading or page declares, or another alias that leads to one. An alias's address leads where its permalink's does, in every build that publishes it, so repointing the alias changes where it leads and nothing else.
 

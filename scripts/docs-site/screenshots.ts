@@ -1,15 +1,17 @@
-// The site's screenshots: the pictures of the editor and of review on the
-// landing page and Why Ascribe, each in light and dark, and beside them the
-// release each was taken at. This retakes them, one name or every one:
+// The screenshots: the pictures of the editor and of review on the landing
+// page and Why Ascribe, and the docs' scenes of the editor, each in light and
+// dark, and beside them the release each was taken at. This retakes them, one
+// name or every one:
 //
-//   node scripts/docs-site/screenshots.ts [review | editor]
+//   node scripts/docs-site/screenshots.ts [review | editor | build-lens | ...]
 //
 // Each picture's own script takes it (the steps below), and this writes its
 // record, `<name>.json`, with the current line of `[releases.ascribe]` in
 // docs/ascribe.toml: the release the docs describe now. screenshots.test.ts fails when a record is
 // more than one minor release behind it. The review picture needs the site
 // installed with the Ascribe to show (`npm run build:checkout` in site/); the
-// editor's needs ASCRIBE_BIN. site/README.md has the rest.
+// editor's and the scenes need ASCRIBE_BIN, and the status bar's scene a POSIX
+// shell. site/README.md has the rest.
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -18,30 +20,44 @@ import { parse } from "smol-toml";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 
-/** Where the pictures and their records are, under home/'s content root. */
+/** Where the site's pictures and their records are, under home/'s content root. */
 export const FOLDER = "site/home/content/screenshots";
 
-/** A picture: its name, which its files start with, and the commands that take it. */
+/** Where the docs' scenes and their records are, under the docs' content root. */
+export const SCENES = "docs/content/images";
+
+/** A picture: its name, which its files start with, its folder, and the commands that take it. */
 interface Picture {
   name: string;
+  folder: string;
   steps: { cwd: string; command: string[] }[];
 }
+
+/** A picture of the editor, which packages/vscode/scripts/screenshot.ts takes by its name. */
+const editor = (name: string, folder: string): Picture => ({
+  name,
+  folder,
+  steps: [
+    { cwd: "packages/vscode", command: ["node", "esbuild.mjs", "--scenes"] },
+    {
+      cwd: "packages/vscode",
+      command: ["node", "scripts/screenshot.ts", path.join(ROOT, folder), name],
+    },
+  ],
+});
 
 export const PICTURES: Picture[] = [
   {
     name: "review",
+    folder: FOLDER,
     steps: [{ cwd: "site", command: ["node", "scripts/screenshot.ts", path.join(ROOT, FOLDER)] }],
   },
-  {
-    name: "editor",
-    steps: [
-      { cwd: "packages/vscode", command: ["node", "esbuild.mjs"] },
-      {
-        cwd: "packages/vscode",
-        command: ["node", "scripts/screenshot.ts", path.join(ROOT, FOLDER)],
-      },
-    ],
-  },
+  editor("editor", FOLDER),
+  editor("build-lens", SCENES),
+  editor("actions-bar", SCENES),
+  editor("review-view", SCENES),
+  editor("status-bar", SCENES),
+  editor("shown-in-pages", SCENES),
 ];
 
 export const SCHEMES = ["light", "dark"] as const;
@@ -107,16 +123,21 @@ function minors(version: string): [major: number, minor: number] {
 }
 
 /**
- * Why the picture `name`, taken at `release`, is out of date for `current`,
- * or undefined when it isn't: when it's more than ALLOWED minor releases
- * behind, or from an earlier major.
+ * Why the picture `name` in `folder`, taken at `release`, is out of date for
+ * `current`, or undefined when it isn't: when it's more than ALLOWED minor
+ * releases behind, or from an earlier major.
  */
-export function stale(name: string, release: string, current: string): string | undefined {
+export function stale(
+  name: string,
+  release: string,
+  current: string,
+  folder = FOLDER,
+): string | undefined {
   const [major, minor] = minors(release);
   const [currentMajor, currentMinor] = minors(current);
   const behind = currentMajor > major || currentMinor - minor > ALLOWED;
   if (!behind) return undefined;
-  return `${FOLDER}/${name}-*.png show ${release}, more than ${ALLOWED} minor release behind ${current}: run \`${retake(name)}\``;
+  return `${folder}/${name}-*.png show ${release}, more than ${ALLOWED} minor release behind ${current}: run \`${retake(name)}\``;
 }
 
 if (import.meta.main) {
@@ -136,7 +157,7 @@ if (import.meta.main) {
       execFileSync(program, args, { cwd: path.join(ROOT, cwd), stdio: "inherit" });
     }
     const record: Taken = { release };
-    const file = path.join(FOLDER, `${picture.name}.json`);
+    const file = path.join(picture.folder, `${picture.name}.json`);
     writeFileSync(path.join(ROOT, file), `${JSON.stringify(record, null, 2)}\n`);
     console.log(`Wrote ${file}`);
   }

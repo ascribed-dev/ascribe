@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "target": "self-managed",
+  "line": "3.4",
+  "status": "live",
+  "build": "site",
+  "folder": "archive/3.4",
+  "contents": "index.html",
+  "pages": 5,
+  "assets": 2,
+  "removed": 0,
+  "search_index_bytes": 3196,
+  "search_index_large": false,
+  "unlinked": [
+    {
+      "file": "docs/upgrade.md",
+      "text": "webhooks",
+      "href": "/webhooks/",
+      "line": "3.5"
+    }
+  ]
+}

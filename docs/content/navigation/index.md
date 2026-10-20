@@ -5,7 +5,7 @@ description: The order a project's sections and pages come in, from ascribe.nav 
 available: ascribe 0.4.0
 ---
 
-A project's **navigation** is its sections and pages in order, each with its label. Every sidebar and table of contents is drawn from it: an Astro site's `sidebar()` and `neighbors()` read it from the build (see [the Astro reference](../astro/reference.md#sidebar)), and so do [`llms.txt`](../content-model/output.md#consumer), `ascribe agents index`, an [archive](../versions/index.md#archive-a-line) of a release line, the JSON output, and `ascribe model`. With no file, a project has the default order; with `ascribe.nav` beside `ascribe.toml`, the file's order is laid over it, for the sections and pages it names. The rules are SPEC §7.8, and what the site output carries is the [navigation contract](../contracts/navigation.md).
+A project's **navigation** is its sections and pages in order, each with its label. Every sidebar and table of contents is drawn from it: an Astro site's `sidebar()` and `neighbors()` read it from the build (see [the Astro reference](../astro/reference.md#sidebar)), and so do [`llms.txt`](../content-model/output.md#consumer), `ascribe agents index`, an [archive](../versions/archive.md) of a release line, the JSON output, and `ascribe model`. With no file, a project has the default order; with `ascribe.nav` beside `ascribe.toml`, the file's order is laid over it, for the sections and pages it names. The rules are SPEC §7.8, and what the site output carries is the [navigation contract](../contracts/navigation.md).
 
 To choose the order and the labels, see [Put your pages in order](order.md).
 
@@ -104,5 +104,5 @@ Each build's site output has its share as `_ascribe/nav.json`, beside the page r
 | A site's sidebar | `sidebar()` in `@ascribed/astro`: the root's pages under its label, then a group for each top section, with nested sections inside. |
 | Previous and next | `neighbors()` in `@ascribed/astro`: the pages before and after one in reading order. |
 | [`llms.txt`](../content-model/output.md#consumer) and `ascribe agents index` | A section for the root's pages, under its label, then one for each top section, with its nested sections' pages in reading order. A page keeps its title there. |
-| An [archive](../versions/index.md#archive-a-line) | Its sidebar and contents page, nested sections in their place, and previous and next in reading order. |
+| An [archive](../versions/archive.md) | Its sidebar and contents page, nested sections in their place, and previous and next in reading order. |
 | `ascribe model --format json` | The project's navigation under `navigation`, every page that isn't `unlisted`, with each section's `listed`: whether `ascribe.nav` lists it. |

@@ -43,8 +43,7 @@ folder = "agents/"
 
 [[sections]]
 folder = "examples/"
-label = "Examples and drift"
-pages = ["tested.md", "sources.md"]
+pages = ["snippets.md", "docs-repository.md", "drift.md", "tested.md", "sources.md"]
 
 [[sections]]
 folder = "astro/"
@@ -58,6 +57,8 @@ folder = "navigation/"
 
 [[sections]]
 folder = "versions/"
+label = "Versions"
+pages = ["archive.md", "lines.md", "release.md"]
 
 [[sections]]
 folder = "templates/"

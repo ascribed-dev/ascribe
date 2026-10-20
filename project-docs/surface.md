@@ -848,7 +848,10 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `editor/settings.md` | Editor workspaces, settings, and commands | reference |
 | `editor/sidebar.md` | The Ascribe sidebar | reference |
 | `editor/writing.md` | Writing in the editor | reference |
-| `examples/index.md` | Drift | how-to |
+| `examples/docs-repository.md` | Keep the docs in another repository | how-to |
+| `examples/drift.md` | Report the pages whose examples changed | how-to |
+| `examples/index.md` | Examples and drift | concept |
+| `examples/snippets.md` | Show an example from the code | how-to |
 | `examples/sources.md` | `ascribe init`, `sources`, `observe`, `permalinks`, `templates`, and `vale` | reference |
 | `examples/tested.md` | Show what an example was tested with | how-to |
 | `getting-started.md` | Getting started | tutorial |
@@ -862,7 +865,9 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `review/index.md` | Review | how-to |
 | `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
 | `templates/index.md` | Page templates | how-to |
-| `versions/index.md` | Versions | how-to |
+| `versions/archive.md` | Archive and retire a line | how-to |
+| `versions/index.md` | Publish a site for each version | how-to |
+| `versions/lines.md` | Release lines | reference |
 | `versions/release.md` | `ascribe versions` | reference |
 | `writing/directives.md` | Directive reference | reference |
 | `writing/memo-files.md` | Memo files | reference |
