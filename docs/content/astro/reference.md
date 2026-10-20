@@ -18,7 +18,7 @@ Everything `@ascribed/astro` takes and does, once a site is set up: its options,
 | `anchors` {available="ascribe 0.2.0"} | Mark each block of the page with the source file and lines it came from (`data-ascribe-source`; see the [site-render contract](../contracts/site-render.md#7-source-anchors)), for review: `"dev"` in `astro dev` only, `true` in `astro build` too. Use `"dev"` unless the build is for reviewers: `true` puts source file paths, fragments' included, in the published pages. By default, `false`, though `review` turns them on in `astro dev`. |
 | `review` {available="ascribe 0.2.0"} | [Review in the site preview](reference.md#review-in-the-site-preview): the **Ascribe review** app in `astro dev`'s toolbar. `false` leaves it out. By default, `true`. `astro build` never has it. With `projects`, it reviews one entry: the one an entry's name names (`review: "docs"`), or the first for `true`. |
 | `codeTitles` {available="ascribe 0.2.0"} | Show a code block's title above it ([code block titles](reference.md#code-block-titles)). `false` leaves titles out, for a site that shows them itself. By default, `true`. |
-| `sitemap` {available="ascribe 0.3.0"} | `{ exclude: [...] }`: routes of the site's own pages, from the host's root, to leave out of the [sitemap](reference.md#search-engines-and-crawlers), such as `["/drafts"]`. |
+| `sitemap` {available="ascribe 0.3.0"} | `{ exclude: [...] }`: routes of the site's own pages, from the host's root, to leave out of the [sitemap](../publishing/site.md#the-sitemap), such as `["/drafts"]`. |
 
 ## What the integration does
 
@@ -32,9 +32,9 @@ Everything `@ascribed/astro` takes and does, once a site is set up: its options,
 - @available: ascribe 0.3.0
   **Gives each permalink an address** that forwards to its page or heading, in `astro dev` and in the built site ([permalinks](reference.md#permalinks)).
 - @available: ascribe 0.3.0
-  **Writes the site's sitemap and `robots.txt`** from every project's page records, and gives a layout each page's head ([search engines and crawlers](reference.md#search-engines-and-crawlers)), in `astro dev` and in the built site.
+  **Writes the site's sitemap and `robots.txt`** from every project's page records, and gives a layout each page's head ([the head, sitemap, and `robots.txt`](../publishing/site.md)), in `astro dev` and in the built site.
 - @available: ascribe 0.3.0
-  **Sends each Markdown version's response headers** in `astro dev`, and with `[consumer] headers = "netlify"` writes them into the built site's `_headers`, or fails the build when the site's own `public/_headers` lacks them ([response headers](reference.md#response-headers)).
+  **Sends each Markdown version's response headers** in `astro dev`, and with `[consumer] headers = "netlify"` writes them into the built site's `_headers`, or fails the build when the site's own `public/_headers` lacks them ([response headers](../publishing/site.md#response-headers)).
 - @available: ascribe 0.3.2
   **Serves every line of a versioned build** from one collection, builds every line in `astro build` and `astro dev`, and serves each line's linked files at its base path ([versions](reference.md#versions)). Each entry's data has `line`, the line it's from, and `current`; the generated schema doesn't type them. A permalink forwards to the current line, and each line's outputs for agents are published at its base path, with its headers.
 - @available: ascribe 0.2.0
@@ -59,7 +59,7 @@ A layout imports these from `@ascribed/astro`, each given the page's collection 
 | Component | What it renders |
 |---|---|
 | `Elements.astro` {available="ascribe 0.2.0"} | `<Elements />`: the element library's stylesheet, and the small script `<ascribe-tabs>` needs. |
-| `Head.astro` {available="ascribe 0.3.0"} | `<Head entry={entry} />`: everything the page's head says about the page, from its record: its `<title>`, description, canonical link, robots rule, link to its Markdown version, link preview, and breadcrumbs ([the head](reference.md#the-head)). |
+| `Head.astro` {available="ascribe 0.3.0"} | `<Head entry={entry} />`: everything the page's head says about the page, from its record: its `<title>`, description, canonical link, robots rule, link to its Markdown version, link preview, and breadcrumbs ([the head](../publishing/site.md#the-head)). |
 | `Availability.astro` {available="ascribe 0.2.0"} | `<Availability available={entry.data.available} />`: the page's `available` frontmatter as a badge, the same markup the site output gives a section's `@available`, which the element library styles. Nothing for a page with no availability. |
 | `Versions.astro` {available="ascribe 0.3.2"} | `<Versions entry={entry} />`: the lines of a [versioned build](reference.md#versions), those that have the page, or the page it replaces or the page that replaces it, as links, the others unlinked, and the archived lines that have an address. Nothing for a build that isn't versioned. |
 | `VersionBanner.astro` {available="ascribe 0.3.2"} | `<VersionBanner entry={entry} />`: on an older line's page, which version it documents, with a link to the current line's. Nothing on the current line. |
@@ -148,136 +148,7 @@ On an address under the permalinks' path, it says the link came from a product t
 ## Search engines and crawlers
 @available: ascribe 0.3.0
 
-Each build writes a record of every page, `_ascribe/pages.json` ([output-layout contract](../contracts/output-layout.md#13-the-page-records)), with its title, description, canonical address, and [`listing`](../content-model/index.md#listing-a-page), whether the page set it or a rule of [`[listing]`](../content-model/checks.md#22-listing) did, for a folder, a type, or the whole site, and what the project says to crawlers in [`[crawlers]`](../content-model/checks.md#21-crawlers): what each kind of AI crawler may do, and its own `robots.txt` lines. The integration writes what a search engine reads from those records, so the head, the sitemap, `robots.txt`, and `llms.txt` can't disagree about a page.
-
-### The head
-
-A layout includes `Head.astro` in `<head>`, given the page's collection entry, and writes none of what it writes:
-
-```astro
----
-import Head from "@ascribed/astro/Head.astro";
-import Elements from "@ascribed/astro/Elements.astro";
-const { entry } = Astro.props;
----
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <Head
-    entry={entry}
-    title={(title, record) => (record.route === "/" ? "Loom" : `${title} · Loom`)}
-    name="Loom"
-    card={{ src: "/social-card.png", alt: "Loom's docs", width: 1200, height: 630 }}
-  />
-  <Elements />
-</head>
-```
-
-From the page's record, it writes:
-
-- `<title>`, and `<meta property="og:title">` with the same text;
-- `<meta name="description">` and `<meta property="og:description">`;
-- `<link rel="canonical">` and `<meta property="og:url">`, when `[consumer] site` is set, and `<meta property="og:type" content="website">`;
-- `<meta name="robots" content="noindex">` for a page that's `unlisted`, and `<meta name="robots" content="nosnippet">` for one that's `unquoted`, which asks a search engine to show no text from it in a result, or in an AI answer inside its search product; it asks nothing of a crawler gathering training data;
-- `<link rel="alternate" type="text/markdown">` to the page's Markdown version, when the build publishes one ([`[consumer] agents`](../content-model/output.md#consumer)) and the page isn't `unlisted`;
-- the page's breadcrumbs, as [`BreadcrumbList`](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb) structured data, when there are two steps or more.
-
-From the site, by property, since the record doesn't hold them:
-
-- `title`, a function from the page's title and its record to the whole title. The record has the page's `route`, so a site can title its home page with its name alone. Without `title`, the title is the page's own, and a page whose title is missing gets no `<title>`.
-- `name`, the site's name, for `<meta property="og:site_name">`, and, on the page at the host's root (`/`), the site's name as [`WebSite`](https://developers.google.com/search/docs/appearance/site-names) structured data, which a search engine shows as the name in a result. Google reads it only on the home page.
-- `card`, the page's social card: `src`, its image, from the host's root or absolute; `alt`, what it shows; and `width` and `height`, in pixels. It's the `og:image` tags a link preview shows. Without it, there are no image tags.
-
-The layout keeps the character set, the viewport, icons, theme colors, styles, the elements, and tags for one network that Open Graph doesn't cover, such as `<meta name="twitter:card">`. A tag `Head.astro` writes that the layout writes too is in the head twice; `astro dev` warns once about each such tag, naming it and the first page it's on. It's a warning and not an error, since a site may have a reason.
-
-**Breadcrumbs.** A page's place in the site, from its route's folders: the page at each folder of its route that has one, named by its title, down to the page itself. `/docs/guides/install/` has the page at `/docs/`, the page at `/docs/guides/` if there is one, and itself. A folder with no page isn't a step, since there's nothing to link to. The steps are the record's `breadcrumbs`, so a layout can draw visible breadcrumbs from the same list with `pageRecord(entry)`. They change how a search result is displayed, and nothing else. They aren't the site's navigation: the content model has none, so a page's folders are all that say where it is.
-
-**A page with no record**, such as an Astro page of the site's own, gets nothing from `Head.astro`, and writes its own `<title>`, description, canonical link, and link preview. A page that isn't an Ascribe page and shouldn't be listed writes its own `<meta name="robots" content="noindex">`, and goes in the `sitemap` option's `exclude`, since the integration reads no HTML and can't see the rule. A site whose home page isn't an Ascribe page writes the site's name there itself:
-
-```html
-<script type="application/ld+json">
-  {"@context": "https://schema.org", "@type": "WebSite",
-   "name": "Loom", "url": "https://loom.example.com/"}
-</script>
-```
-
-`pageRecord(entry)`, from `@ascribed/astro/content`, gives a layout the record itself, for anything else it writes from it.
-
-### The sitemap
-
-`astro build` writes one sitemap for the site, `sitemap.xml` at Astro's `base`, and `astro dev` serves it there. It lists by absolute address, with no dates:
-
-- every page of every project that isn't `unlisted`, when the site has a route that shows it: a project whose collection the site only quotes from adds nothing;
-- every other page Astro built, such as a changelog page of the site's own, except a permalink's forwarding page, the not-found page, and the routes in the `sitemap` option's `exclude`.
-
-`astro dev` knows only the routes of the site's own that have no parameters, so a page of the site's own that a route's `getStaticPaths` lists is in the built sitemap only.
-
-@available: ascribe 0.3.2
-Of a [versioned build](reference.md#versions), a page is listed only when its canonical address is its own, so an older line adds only the pages the current line has nothing in the place of, and each current page is listed once.
-
-A sitemap needs absolute addresses, so a site with no `site` (`[consumer] site`, or Astro's) gets none, and the build warns. A site with its own `sitemap.xml` in `public/` keeps it, the integration writes none, and `robots.txt` points to the site's.
-
-### `robots.txt`
-
-At the host's root, the integration writes one `robots.txt` for the site, and `astro dev` serves it:
-
-```text
-User-agent: GPTBot
-User-agent: ClaudeBot
-User-agent: Google-Extended
-Disallow: /
-
-User-agent: *
-Disallow: /docs/drafts/
-
-User-agent: ExampleBot
-Disallow: /
-
-Sitemap: https://docs.example.com/sitemap.xml
-```
-
-It writes a group for each purpose a project disallows, such as `training = "disallow"`, naming every crawler of that purpose Ascribe knows ([crawlers by purpose](../content-model/checks.md#crawlers-by-purpose)), each purpose once. Then it opens a `User-agent: *` group with each project's lines for every crawler, the lines before its first `User-agent` line, then adds the groups each project wrote whole, then the sitemap's address. Each project's paths have its base path before them. With no sitemap, there's no last line, and with nothing to say at all, no file: a project with no `[crawlers]` and an address gets the sitemap's line alone.
-
-- **Projects of one site must agree on each purpose,** since they share the file. One that allows a purpose and one that disallows it fail `astro build`, naming both, and `astro dev` serves no `robots.txt` until they agree. A project that leaves a purpose out agrees with either.
-- **A site with its own `robots.txt`** in `public/` keeps it, and the integration writes none. The build says so, with the lines Ascribe would have written; copy them into your file.
-- **A site whose Astro `base` isn't `/`** has no host root to write to, and a crawler reads `robots.txt` only there. The sitemap goes under the base, no `robots.txt` is written, and the build prints the lines the host's own `robots.txt` needs, the sitemap's address among them.
-
-### Response headers
-
-A page's Markdown version is a file with no head, so the rule its page's head gives a crawler has to be a response header, and only the host sends those. Each build lists what each Markdown version needs in `_ascribe/headers.json` ([output-layout contract](../contracts/output-layout.md#14-the-headers)):
-
-- `X-Robots-Tag: noindex` for a page that's `unlisted`, and `nosnippet` for one that's `unquoted`, the same rule as its head;
-- `Link: <https://docs.example.com/docs/guides/install/>; rel="canonical"` on every one, naming the page, so a search engine lists the page and not its Markdown copy, while an agent can still fetch either.
-
-`astro dev` sends them with each `.md` file, so you can try them with no host:
-
-```sh
-$ curl -sI http://localhost:4321/docs/internal/runbook.md | grep -i x-robots-tag
-x-robots-tag: noindex
-```
-
-**On Netlify,** set `headers = "netlify"` in `[consumer]`, and `astro build` writes the rules into `_headers` at the root of the built site, which Netlify reads:
-
-```toml
-[consumer]
-site = "https://docs.example.com"
-base-path = "/docs/"
-agents = true
-headers = "netlify"
-```
-
-```text
-/docs/internal/runbook.md
-  Link: <https://docs.example.com/docs/internal/runbook/>; rel="canonical"
-  X-Robots-Tag: noindex
-```
-
-Each rule is for one exact path, never a pattern, so a rule for a page can't reach its neighbor. With several projects, the file holds the rules of each project that sets `headers`.
-
-- **A site with its own `_headers`** in `public/` keeps it, and the integration never rewrites it. The build checks that it has Ascribe's lines, and fails when it doesn't, with the lines to add as its message. A line counts when it's under the same path, with the same value; the case of a header's name doesn't matter.
-- **A site whose Astro `base` isn't `/`** has no root to write `_headers` to, so the build prints the lines instead.
-
-**On another host,** read the list after the build and give each path its headers in the host's own configuration: [Serve the Markdown versions](serve-markdown.md) says how for nginx and Cloudflare Pages.
+From every project's page records, `_ascribe/pages.json`, the integration writes what a search engine reads: each page's head, through `Head.astro`; the site's `sitemap.xml` and `robots.txt`; and each Markdown version's response headers, which `astro dev` sends and `headers = "netlify"` writes into `_headers`. [The head, sitemap, `robots.txt`, and headers](../publishing/site.md) says what each holds, and [Publishing](../publishing/index.md) what a project tells search engines and agents.
 
 ## The sidebar
 @id: sidebar
