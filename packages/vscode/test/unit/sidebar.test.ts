@@ -27,8 +27,10 @@ import {
   pagesResource,
   pagesRoots,
   SHOW_PROBLEMS,
+  shownEditor,
   SWITCH_BUILD,
   thisPageChildren,
+  thisPageItems,
   thisPageLook,
   thisPageRoots,
   viewsNotice,
@@ -842,7 +844,13 @@ describe("the This page view", () => {
       "Memos (none)",
     ]);
     const roots = thisPageRoots(page);
-    expect(roots.map((n) => thisPageLook(n).expanded)).toEqual([true, true, true, true]);
+    // Only About starts open; the rest say in their headers whether to open them.
+    expect(thisPageItems(roots, () => false).items.map((item) => item.open)).toEqual([
+      true,
+      false,
+      false,
+      false,
+    ]);
     expect(thisPageLook(nth(roots, 3))).toMatchObject({ dimmed: true, expandable: false });
     const included = nth(thisPageChildren(nth(roots, 2)), 1);
     expect(thisPageLook(included)).toMatchObject({ dimmed: true, expandable: false });
@@ -968,9 +976,8 @@ describe("the This page view", () => {
         "  Includes (0)",
         "Memos (none)",
       ]);
-      const reviewNode = nth(roots, 1);
-      expect(thisPageLook(reviewNode).expanded).toBe(true);
-      expect(thisPageLook(nth(thisPageChildren(reviewNode), 1)).expanded).toBe(true);
+      const [, reviewItem] = thisPageItems(roots, () => false).items;
+      expect(reviewItem).toMatchObject({ key: "review", kind: "section", open: false });
     });
 
     it("says when the branch doesn't change the page, and dims no open threads", () => {
@@ -1224,6 +1231,117 @@ describe("the This page view", () => {
         includes: [],
       }),
     ).toEqual([]);
+  });
+});
+
+describe("This page's items, as its webview draws them", () => {
+  const page: PageResult = {
+    about: {
+      path: "keys.md",
+      fragment: false,
+      title: "API keys",
+      type: "page",
+      address: "/keys/",
+      markdownAddress: null,
+      description: null,
+      review: null,
+      availability: null,
+      builds: [{ name: "site", leftOut: null }],
+      listing: null,
+      permalinks: [],
+      template: null,
+    },
+    heading: null,
+    health: { size: null, examples: [] },
+    linkedFrom: [
+      { uri: "file:///p/docs/a.md", path: "a.md", range: range(3), text: "See [](keys.md)." },
+    ],
+    includedBy: [],
+    includes: [],
+    memos: [],
+  };
+
+  it("keys each section by its kind, and the rest by where they are under it", () => {
+    const { items, nodes } = thisPageItems(thisPageRoots(page), () => false);
+    expect(items.map((item) => item.key)).toEqual(["about", "health", "connections", "memos"]);
+    const connections = nth(items, 2);
+    expect(connections.children.map((item) => [item.key, item.kind])).toEqual([
+      ["connections/0", "group"],
+      ["connections/1", "group"],
+      ["connections/2", "group"],
+    ]);
+    const link = nth(nth(connections.children, 0).children, 0).children[0];
+    expect(link).toMatchObject({
+      key: "connections/0/0/0",
+      kind: "item",
+      label: "See [](keys.md).",
+    });
+    expect(nodes.get("connections/0/0/0")?.kind).toBe("place");
+    // About's rows are a label and a value.
+    expect(
+      nth(items, 0).children.map((item) => `${item.kind} ${item.label}: ${item.description}`),
+    ).toEqual([
+      "row Title: API keys",
+      "row Type: page",
+      "row Address: /keys/",
+      "row Markdown: not published",
+      "row Builds: Published by site",
+    ]);
+  });
+
+  it("asks the model which items do something when they're chosen", () => {
+    const { items } = thisPageItems(
+      thisPageRoots(page),
+      (node) => node.kind === "place" || (node.kind === "row" && node.row.opens !== undefined),
+    );
+    const acting = (list: typeof items): string[] =>
+      list.flatMap((item) => [...(item.acts ? [item.key] : []), ...acting(item.children)]);
+    expect(acting(items)).toEqual(["about/4", "connections/0/0/0"]);
+  });
+
+  it("marks a row that says something needs doing, and dims a section with nothing in it", () => {
+    const { items } = thisPageItems(
+      thisPageRoots({
+        ...page,
+        health: {
+          size: { characters: 60_000, limit: 50_000, build: "site" },
+          examples: [],
+        },
+      }),
+      () => false,
+    );
+    const health = nth(items, 1);
+    expect(health).toMatchObject({ description: "1 thing to do", dimmed: false });
+    expect(nth(health.children, 0)).toMatchObject({ kind: "row", label: "Size", warn: true });
+    expect(nth(items, 3)).toMatchObject({ label: "Memos", description: "none", dimmed: true });
+  });
+});
+
+describe("the page This page shows", () => {
+  const isPage = (editor: string) => editor.endsWith(".md");
+
+  it("is the active editor's, when it's a page's", () => {
+    expect(shownEditor("keys.md", "quickstart.md", ["keys.md", "quickstart.md"], isPage)).toBe(
+      "quickstart.md",
+    );
+  });
+
+  it("stays on its page while the focus is in the view, a panel, or an editor of no page", () => {
+    // VS Code reports no active editor while a webview has the focus.
+    expect(shownEditor("keys.md", undefined, ["keys.md"], isPage)).toBe("keys.md");
+    expect(shownEditor("keys.md", "ascribe.toml", ["keys.md", "ascribe.toml"], isPage)).toBe(
+      "keys.md",
+    );
+  });
+
+  it("isn't moved by a page that's only open in another group", () => {
+    expect(shownEditor("keys.md", undefined, ["keys.md", "quickstart.md"], isPage)).toBe("keys.md");
+  });
+
+  it("shows none once its editor is closed and the active one isn't a page's", () => {
+    expect(shownEditor("keys.md", "ascribe.toml", ["ascribe.toml"], isPage)).toBeUndefined();
+    expect(shownEditor("keys.md", undefined, [], isPage)).toBeUndefined();
+    expect(shownEditor(undefined, undefined, [], isPage)).toBeUndefined();
   });
 });
 

@@ -23,6 +23,7 @@ import type {
   PagePlace,
   PageResult,
 } from "../shapes.js";
+import type { ViewItem } from "../webview/viewProtocol.js";
 
 /** How an item of a view looks. */
 export interface ItemLook {
@@ -271,6 +272,24 @@ export function followedProject<T>(
   if (active === undefined) return shown;
   if (editorChanged || shown === undefined || !known.includes(shown)) return active;
   return shown;
+}
+
+/**
+ * The editor whose page This page shows: the active one, when it's a page's;
+ * otherwise the one it shows, while that's still open. Focus leaving the
+ * page's editor, for the view itself, another view, a panel, or an editor
+ * that isn't a page, leaves it on its page; only a page's editor becoming
+ * active moves it. Once its editor is closed, and the active one isn't a
+ * page's, it shows none.
+ */
+export function shownEditor<T>(
+  shown: T | undefined,
+  active: T | undefined,
+  open: readonly T[],
+  isPage: (editor: T) => boolean,
+): T | undefined {
+  if (active !== undefined && isPage(active)) return active;
+  return shown !== undefined && open.includes(shown) ? shown : undefined;
 }
 
 /** What Pages and Content model show above their items, while their project's server can't answer. */
@@ -1220,7 +1239,6 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
         ),
         expandable: node.rows.length > 0,
         dimmed: node.rows.length === 0,
-        expanded: true,
       };
     }
     case "included": {
@@ -1251,7 +1269,6 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
           "git-pull-request",
           `This branch's changes to the page, against ${node.review.base}, and its open threads`,
         ),
-        expanded: true,
       };
     case "threads": {
       const size = node.threads.length;
@@ -1289,7 +1306,6 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
           "references",
           `${count(node.linked, "link", "links")} and ${count(node.included, "include", "includes")} ${to}`,
         ),
-        expanded: true,
       };
     }
     case "memos": {
@@ -1304,7 +1320,6 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
         ),
         dimmed: size === 0,
         expandable: size > 0,
-        expanded: true,
       };
     }
     case "memo": {
@@ -1365,6 +1380,51 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
         expandable: false,
       };
   }
+}
+
+/**
+ * The kinds of This page's nodes below a section that hold others, which the
+ * webview draws as headings over them, even when they're empty.
+ */
+const GROUPS = new Set<ThisPageNode["kind"]>(["group", "file", "included", "threads"]);
+
+/**
+ * This page's items as its webview draws them, from the model: each with a
+ * key, and whether choosing it does something (`acts`), with the node each
+ * key names. A section's key is its kind, so which sections are open is kept
+ * for every page; the rest are keyed by where they are under it.
+ */
+export function thisPageItems(
+  roots: readonly ThisPageNode[],
+  acts: (node: ThisPageNode) => boolean,
+): { items: ViewItem[]; nodes: Map<string, ThisPageNode> } {
+  const nodes = new Map<string, ThisPageNode>();
+  const item = (node: ThisPageNode, key: string, depth: number): ViewItem => {
+    nodes.set(key, node);
+    const look = thisPageLook(node);
+    const children = look.expandable ? thisPageChildren(node) : [];
+    return {
+      key,
+      kind:
+        depth === 0
+          ? "section"
+          : node.kind === "row"
+            ? "row"
+            : GROUPS.has(node.kind)
+              ? "group"
+              : "item",
+      label: look.label,
+      description: look.description,
+      tooltip: look.tooltip,
+      icon: look.icon,
+      dimmed: look.dimmed,
+      warn: node.kind === "row" && node.row.warn === true,
+      acts: acts(node),
+      open: depth === 0 && look.expanded === true,
+      children: children.map((child, i) => item(child, `${key}/${i}`, depth + 1)),
+    };
+  };
+  return { items: roots.map((root) => item(root, root.kind, 0)), nodes };
 }
 
 // Shared.

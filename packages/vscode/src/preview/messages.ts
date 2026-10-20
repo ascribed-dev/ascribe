@@ -4,7 +4,8 @@
 // one, each value has its type and a sane size, and a choice is one of its
 // list. `MESSAGES` has a check for every `FromWebview`, and its type makes
 // adding a message without one an error. Apart from VS Code, so it can be
-// tested by itself.
+// tested by itself. The sidebar's webview views check theirs with the same
+// checks (`../ui/webviewView.ts`).
 
 import type { PromptRequest } from "@ascribed/review/github";
 import { within } from "../projects.js";
@@ -17,7 +18,7 @@ import type {
 } from "./protocol.js";
 
 /** A check of an untyped value, which says what it is when it passes. */
-type Check<T> = (value: unknown) => value is T;
+export type Check<T> = (value: unknown) => value is T;
 
 /** The longest string a message carries: a path, a link, a name, an anchor, a sentence. */
 export const MAX_TEXT = 8 * 1024;
@@ -25,28 +26,28 @@ export const MAX_TEXT = 8 * 1024;
 /** The most items in a list or a record: a page's images or elements, a report's blocks. */
 const MAX_ITEMS = 10_000;
 
-const text: Check<string> = (value): value is string =>
+export const text: Check<string> = (value): value is string =>
   typeof value === "string" && value.length <= MAX_TEXT;
 
 /** A count, an id, or a line: a whole number from 0. */
-const whole: Check<number> = (value): value is number =>
+export const whole: Check<number> = (value): value is number =>
   typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 
-const boolean: Check<boolean> = (value): value is boolean => typeof value === "boolean";
+export const boolean: Check<boolean> = (value): value is boolean => typeof value === "boolean";
 
 function oneOf<const T extends readonly string[]>(...values: T): Check<T[number]> {
   return (value): value is T[number] => typeof value === "string" && values.includes(value);
 }
 
-function nullable<T>(check: Check<T>): Check<T | null> {
+export function nullable<T>(check: Check<T>): Check<T | null> {
   return (value): value is T | null => value === null || check(value);
 }
 
-function isObject(value: unknown): value is Record<string, unknown> {
+export function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function listOf<T>(item: Check<T>): Check<T[]> {
+export function listOf<T>(item: Check<T>): Check<T[]> {
   return (value): value is T[] =>
     Array.isArray(value) && value.length <= MAX_ITEMS && value.every(item);
 }
@@ -60,7 +61,7 @@ function recordOf<T>(item: Check<T>): Check<Record<string, T>> {
 }
 
 /** An object with each of these fields, each passing its check. Other fields are never read. */
-function shape<T>(fields: { [K in keyof T]-?: Check<T[K]> }): Check<T> {
+export function shape<T>(fields: { [K in keyof T]-?: Check<T[K]> }): Check<T> {
   return (value): value is T =>
     isObject(value) &&
     Object.entries(fields).every(([key, check]) => (check as Check<unknown>)(value[key]));

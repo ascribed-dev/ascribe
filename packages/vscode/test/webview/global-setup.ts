@@ -1,4 +1,4 @@
-// The webview tests load the preview the way VS Code does: the shell HTML
+// The webview tests load the preview and This page the way VS Code does: the shell HTML
 // and the bundled files under `dist/webview/`. Bundle them first, unless each
 // is already newer than everything esbuild.mjs bundles them from (this
 // package's source, the element library's source and stylesheet, and review's
@@ -12,7 +12,16 @@ const here = fileURLToPath(new URL("../..", import.meta.url));
 const packages = join(here, "..");
 
 /** The files `dist/webview/` holds when esbuild.mjs has run. */
-const OUTPUTS = ["elements.js", "elements.css", "marks.css", "preview.js", "preview.css"];
+const OUTPUTS = [
+  "elements.js",
+  "elements.css",
+  "marks.css",
+  "preview.js",
+  "preview.css",
+  "thisPage.js",
+  "views.css",
+  "codicon.ttf",
+];
 
 /** The modification times of every file under `dir`, recursively; none when it's missing. */
 function mtimes(dir: string): number[] {
