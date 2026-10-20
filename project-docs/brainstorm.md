@@ -6,7 +6,7 @@ Written on 2 October 2026, after 0.1.1, and cut back on 11 October 2026 to what'
 
 - **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, and external links), [permalinks](../docs/content/permalinks/index.md), [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), [versions](../docs/content/versions/index.md), [navigation](../docs/content/navigation/index.md), [the glossary as pages](../docs/content/content-model/glossary.md), the editor's [sidebar](../docs/content/editor/sidebar.md), and what a search engine and a crawler are told, in the [Astro guide](../docs/content/astro/index.md).
 - **Planned.** [Search](search/README.md), from its [proposal](proposals/search.md).
-- **Proposed.** [The rest of the cache](proposals/cache.md).
+- **Proposed.** [The rest of the cache](proposals/cache.md), and [This page as a webview](proposals/this-page-webview.md).
 
 The sections keep the numbers they had, since other documents name them, so the numbers have gaps.
 
@@ -190,7 +190,7 @@ Either touches the editor, whose diagnostics and hovers assume one file, and eve
 
 Added 2026-10-18, from what the [editor's views plan](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/editor-ui/README.md) left for later. Not planned.
 
-- **A webview for a view.** The sidebar's views are native trees ([decision #544a](decisions/544a-sidebar-views.md)). This page's rows are labels with descriptions, which a tree draws in the editor's theme, with its keyboard and accessibility, for nothing. A webview view could lay the page out as a card, its state readable at a glance, at the cost of building those again, and of a page that keeps up with the editor's theme on its own. The research behind the views ([VS Code extension UI patterns](reports/VS%20Code%20extension%20UI%20patterns.md)) found extensions that went the other way, Dendron among them. The question to ask once people have used the views: which one, if any, they wish showed more at once.
+- **A webview for a view.** Answered for This page: it becomes a webview, and the other views stay trees, in its [proposal](proposals/this-page-webview.md). Whether the Review view follows is the question left, once This page has been used.
 - **A drop handler that asks for alt text.** Dropping or pasting an image into a page is VS Code's Markdown extension's, which writes the image's link with no alt text, where **Insert an image** asks for it. A handler of Ascribe's own would ask as that action does, and put the image where the project keeps its images. [Decision #544h](decisions/544h-editor-leaves-out.md) holds it back until what VS Code's drop writes fails `ascribe check`, which nobody has yet checked by hand: drop and paste an image, and drop a page, into a page of `examples/quill` with the settings at their defaults, then run `ascribe check`.
 
 ---
