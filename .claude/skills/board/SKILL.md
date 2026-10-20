@@ -11,7 +11,7 @@ A Claude cloud session can't reach the board itself. Its GitHub access covers th
 
 ## Read the board
 
-Start Board with the GitHub MCP tool `actions_run_trigger`, never `gh workflow run` in the shell: `method: "run_workflow"`, `owner: "ascribed-dev"`, `repo: "ascribe"`, `workflow_id: "board.yml"`, `ref: "main"`, and no `inputs` to only read. Inputs are always strings. Wait for the run with `actions_list` (`method: "list_workflow_runs"`, `resource_id: "board.yml"`) until it has completed, then read `board.json` from the branch `board`:
+Start Board with the GitHub MCP tool `actions_run_trigger`, never `gh workflow run` in the shell: `method: "run_workflow"`, `owner: "ascribed-dev"`, `repo: "ascribe"`, `workflow_id: "board.yml"`, `ref: "main"`, and no `inputs` to only read. Inputs are always strings. Wait for the run with `actions_list` (`method: "list_workflow_runs"`, `resource_id: "board.yml"`), taking the newest run created after you started it, since other sessions run Board too, until it has completed, then read `board.json` from the branch `board`:
 
 ```sh
 gh api 'repos/ascribed-dev/ascribe/contents/board.json?ref=board' --jq .content | base64 -d > board.json
@@ -41,7 +41,7 @@ Agents post as the maintainer, who also authors their pull requests, and GitHub 
 
 Start it the same way, with `actions_run_trigger`: `method: "run_workflow"`, `owner: "ascribed-dev"`, `repo: "ascribe"`, `workflow_id: "approve.yml"`, `ref: "main"`, and `inputs: { pr: "123", sha: "<the full head commit you reviewed>" }`. In a cloud session, auto mode's safety check refuses the shell command as self-approval; the MCP tools are allowed by the environment.
 
-Give the commit you reviewed, not a fresh fetch: Approve refuses when the pull request's head has moved past the commit you give it, so new commits always get a review first. Then find the run with `actions_list` (`method: "list_workflow_runs"`, `resource_id: "approve.yml"`) and check that it passed before you merge.
+Give the commit you reviewed, not a fresh fetch: Approve refuses when the pull request's head has moved past the commit you give it, so new commits always get a review first. Then find the run with `actions_list` (`method: "list_workflow_runs"`, `resource_id: "approve.yml"`), the newest run created after you started it, and check that it passed before you merge.
 
 ## Everything else on GitHub
 
