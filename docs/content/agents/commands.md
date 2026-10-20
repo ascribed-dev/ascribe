@@ -1,10 +1,10 @@
 ---
 type: reference
-title: "`ascribe agents`, `mcp`, and `lsp`"
-description: "Set a repository up for AI agents, serve a project's tools over MCP, and run the language server."
+title: "`ascribe agents` and `mcp`"
+description: "Set a repository up for AI agents, and serve a project's tools over MCP."
 ---
 
-The commands for agents and editors. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
+The commands for agents. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
 
 ## `ascribe agents`
 @id {permalink=true}: cli-agents
@@ -191,10 +191,3 @@ Every tool is read-only: none writes a file or starts a program the project name
 The resources are `ascribe://directives`, each built-in directive's syntax (`ascribe agents skill references/directives.md`); `ascribe://model/<project>`, what a project's content model allows (`ascribe model <project>`); and `ascribe://instructions/<project>`, its rules (`ascribe agents rules <project>`). `<project>` is a file or folder in it, from the folder the server runs in. The prompts are `new-page`, `fix`, and `review`, as `ascribe agents prompt` prints them.
 
 The server speaks the protocol's 2026-07-28 revision, which has no handshake, and answers `initialize` for a client on 2025-11-25 or 2025-06-18. It takes no options, and refuses `--config` (exit code `2`). Its logs go to standard error; it exits with `0` when standard input ends.
-
-## `ascribe lsp`
-@id {permalink=true}: cli-lsp
-
-Runs the language server, speaking the Language Server Protocol over standard input and output. An editor starts it; you don't run it yourself. It takes no options of its own, and refuses `--config` (exit code `2`): its project is the nearest `ascribe.toml` at or above the workspace folder the editor gives it, never one below, and `ascribe.toml`'s `[editor] build` says which build's page-level diagnostics to report. Its logs go to standard error, starting with the project it uses.
-
-The VS Code extension runs it for you, one server for each project in the workspace. See [Editing](../editor/index.md). Any editor with an LSP client can run `ascribe lsp` too; for several projects, start one per project ([Other editors](../editor/index.md#other-editors)).
