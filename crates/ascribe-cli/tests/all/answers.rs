@@ -847,6 +847,47 @@ fn search_finds_words_through_phrases_in_the_builds_that_publish_them() {
 }
 
 #[test]
+fn search_names_three_of_the_pages_a_fragment_is_on_and_the_command_for_all() {
+    let dir = project();
+    let site = dir.path().join("site");
+    for n in 1..=4 {
+        write(
+            &site.join(format!("docs/more-{n}.md")),
+            &format!("---\ntitle: More {n}\n---\n\n@include: _fragments/before.md\n"),
+        );
+    }
+    let out = run(
+        dir.path(),
+        &["search", "\"you need\"", "--config", "site"],
+        0,
+    );
+    assert_eq!(
+        stdout(&out),
+        "docs/_fragments/before.md:3: You need Quill.\n    on 5 pages: install.md #before-you-start, more-1.md #before-you-start, more-2.md #before-you-start, and 2 more: `ascribe refs _fragments/before.md`\n\n1 place matches, on 5 pages.\n"
+    );
+}
+
+#[test]
+fn search_names_the_builds_of_a_page_that_shows_a_place_in_fewer() {
+    let dir = project();
+    let site = dir.path().join("site");
+    write(
+        &site.join("docs/both.md"),
+        "---\ntitle: Both\n---\n\n@variant {deployment=self-managed}:\n@include: _fragments/before.md\n@variant {deployment=cloud}:\nOther.\n@end\n",
+    );
+    let out = run(
+        dir.path(),
+        &["search", "\"you need\"", "--config", "site"],
+        0,
+    );
+    let text = stdout(&out);
+    assert!(
+        text.contains("on 2 pages: both.md #before-you-start (in build self-managed), install.md #before-you-start\n"),
+        "{text}"
+    );
+}
+
+#[test]
 fn search_finds_a_phrase_value_at_its_line_in_the_model() {
     let quill = repository_root().join("examples/quill");
     let out = run(&quill, &["search", "\"quill cloud\""], 0);

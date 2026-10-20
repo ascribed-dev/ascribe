@@ -199,18 +199,35 @@ Finds where the pages say something, as their readers read it, and names the lin
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/search.txt
 
-Each place is `file:line:` and the block as a reader reads it, cut around the match, then where a reader meets it: the heading it's under and that heading's id, the arm of a variant group it's in, the phrases the match reads through, and, when it isn't in every build searched, the builds it's in. A line is listed once however many builds show it. The places are in a fixed order: headings, then the rest, each in path order and in order within a file.
+Each place is `file:line:` and the block as a reader reads it, cut around the match, then where a reader meets it: the heading it's under and that heading's id, the arm of a variant group it's in, the phrases the match reads through, and, when it isn't in every build searched, the builds it's in. A line is listed once however many pages and builds show it. The places are in a fixed order: titles, then headings, then the rest; in each, the places written in pages come before those in fragments and code files, each in path order and in order within a file.
 
 The query is one argument. Words must all be in one block, in any order; a phrase in double quotes is matched as written, a run of spaces matching any run of white space. Quote several words together, and a phrase inside them: `ascribe search "rate limit"` finds both words in a block, and `ascribe search '"rate limit"'` finds them together. Case is ignored, and nothing else is: `cafe` doesn't find "café". A word matches inside a longer one, so `sync` finds "synchronize". A match never crosses from one block into another. There are no regular expressions; to run a pattern over the text readers read, write the plain output with `ascribe build --emit plain` and use `grep` on it.
 
-What's searched is what each build's plain output says of each page's own text: its headings, paragraphs, lists, block quotes, tables (a row at a time), code blocks, and the titles and text of notes and details. A match is a place in the source:
+What's searched is each page's title and the field its type marks `role = "description"`, as each build publishes them, and what each build's plain output says of the page: its headings, paragraphs, lists, block quotes, tables (a row at a time), code blocks, and the titles and text of notes and details, wherever each is written: in the page, in a fragment an include brings in, or in the code file a `@snippet` shows. A match is a place in the source, listed once however many pages show it:
 
-- **Text written in the page** is at its line.
-- **A match that reads through a phrase's value,** such as "Sign in to Quill Cloud" where the page says `Sign in to {cloud}`, is at the line that uses the phrase, `through phrase cloud`.
-- **A match wholly inside a phrase's value** is at the phrase's line in `ascribe.toml`, with how many places use it and the `ascribe refs` command that lists them. The rest of the block is still searched after the phrase: where `Sign in to {cloud}, then edit quill.yaml` is searched for `quill`, the phrase is one place and the line, at `quill.yaml`, is another.
-- **A link with no text** reads as its target's title, and a match in it is at the link, through that page's title.
+| The match is | The place is | Where a reader meets it says |
+|---|---|---|
+| Written in the page | The page's line | The heading and its id, the arm, the builds when not all |
+| Written in a fragment | The fragment's line | `on 5 pages:` and the first three, each with its heading's id, then `ascribe refs` with the fragment for the rest |
+| Partly a phrase's value, as "Sign in to Quill Cloud" where the page says `Sign in to {cloud}` | The line that uses the phrase | `through phrase cloud` |
+| Wholly inside a phrase's value, as "Quill Cloud" | The phrase's line in `ascribe.toml` | How many places use it, and `ascribe refs phrase:cloud` |
+| In a link with no text, which reads as its target's title | The link | `through upgrade.md's title` |
+| In a snippet's code | The code file's line | `through code:examples/greet.ts#greet`, and the pages that show it, as for a fragment |
+| In a page's title or description | The key's line in the page's frontmatter | The builds when not all |
 
-What isn't searched: what no build publishes, the source's own spelling of a phrase, text an include brings in from a fragment, the code a `@snippet` shows, a page's title and description, text the content model writes (labels, availability lines, a widget's fallback), text in images, raw HTML, and what a site adds around a page.
+A page that shows a place in fewer builds than the place is in names them after it, as `install.md #prerequisites (in build cloud)`. A code file outside the project's folder is named as the snippet's address names it, such as `code:greet.ts`. A snippet's code shown on more than three pages lists the first three and how many more. When the code a snippet shows can't be lined up with its file, as when a phrase's value has a line break, the place is the first line the snippet shows, and says `at the first line it shows`.
+
+After a match wholly inside a phrase's value, the rest of the block is still searched: where `Sign in to {cloud}, then edit quill.yaml` is searched for `quill`, the phrase is one place and the line, at `quill.yaml`, is another.
+
+`ascribe search "docs repository" --config examples/quill` finds a line of the page and a line of the fragment it includes:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/search-fragment.txt
+
+`ascribe search '"upgrade the agent"' --config examples/quill` finds the page's title first, then the links that read as it:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/search-title.txt
+
+What isn't searched: what no build publishes, the source's own spelling of a phrase, frontmatter fields other than the title and the description, the navigation's labels, text the content model writes (labels, availability lines, a widget's fallback), text in images, raw HTML, and what a site adds around a page.
 
 `ascribe search "zebra" --config examples/quill`:
 

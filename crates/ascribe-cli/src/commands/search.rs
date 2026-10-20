@@ -4,7 +4,7 @@
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use ascribe_query::{SearchPlace, Searched};
+use ascribe_query::{SearchPage, SearchPlace, Searched};
 use clap::Args as ClapArgs;
 
 use crate::answer::{self, FromDisk, Projects, Stop};
@@ -16,6 +16,9 @@ use crate::shell::quote;
 const TEXT_LIMIT: usize = 50;
 /// How many characters of a block a place shows, around the match.
 const WIDTH: usize = 80;
+/// How many of the pages that show a fragment's or a snippet's place the
+/// text names.
+const PAGES: usize = 3;
 
 /// Arguments of `ascribe search`.
 #[derive(Debug, ClapArgs)]
@@ -155,7 +158,8 @@ pub fn write_text(out: &mut dyn Write, s: &Searched, next: Option<&str>) -> io::
 
 /// Where a reader meets a place: the heading it's under, its arm, what it
 /// reads through, and its builds when it isn't in all of them; for a
-/// phrase, how many places use it.
+/// phrase, how many places use it; for a fragment's or a snippet's, the
+/// pages that show it.
 fn about(place: &SearchPlace) -> Vec<String> {
     let mut parts = Vec::new();
     if let Some((text, id)) = &place.heading {
@@ -178,6 +182,12 @@ fn about(place: &SearchPlace) -> Vec<String> {
     for title in &place.titles {
         parts.push(format!("through {title}'s title"));
     }
+    if let Some(snippet) = &place.snippet {
+        parts.push(format!("through {snippet}"));
+        if place.first_line {
+            parts.push("at the first line it shows".to_owned());
+        }
+    }
     if let (Some(uses), Some(key)) = (place.uses, place.phrases.first()) {
         let places = if uses == 1 { "place" } else { "places" };
         parts.push(format!(
@@ -192,7 +202,43 @@ fn about(place: &SearchPlace) -> Vec<String> {
         };
         parts.push(format!("in {builds} {}", place.builds.join(", ")));
     }
+    if !place.pages.is_empty() {
+        parts.push(pages(place));
+    }
     parts
+}
+
+/// The pages that show a place: the first few, each with the heading it's
+/// under and its builds when they aren't all the place's, then how many
+/// more and the command that lists them.
+fn pages(place: &SearchPlace) -> String {
+    let count = place.pages.len();
+    let noun = if count == 1 { "page" } else { "pages" };
+    let named: Vec<String> = place.pages.iter().take(PAGES).map(page).collect();
+    let mut text = format!("on {count} {noun}: {}", named.join(", "));
+    if count > PAGES {
+        text.push_str(&format!(", and {} more", count - PAGES));
+        if let Some(target) = &place.refs {
+            text.push_str(&format!(": `ascribe refs {}`", quote(target)));
+        }
+    }
+    text
+}
+
+fn page(shown: &SearchPage) -> String {
+    let mut text = shown.page.clone();
+    if let Some((_, id)) = &shown.heading {
+        text.push_str(&format!(" #{id}"));
+    }
+    if !shown.builds.is_empty() {
+        let builds = if shown.builds.len() == 1 {
+            "build"
+        } else {
+            "builds"
+        };
+        text.push_str(&format!(" (in {builds} {})", shown.builds.join(", ")));
+    }
+    text
 }
 
 /// The block's text, cut to about [`WIDTH`] characters around the match at

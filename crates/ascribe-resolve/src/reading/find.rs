@@ -7,15 +7,17 @@ use std::ops::Range;
 
 use ascribe_core::{FileId, LineIndex, RelPath, Span};
 
-use super::{In, PieceKind, Query, ReadBlock, Reading, Under, line_col};
+use super::{In, Origin, PieceKind, Query, ReadBlock, Reading, Under, line_col};
 use crate::Project;
 use crate::fs::MODEL_FILE;
+use crate::snippet::{Snippet, parse_address};
 
 /// What [`find`] found.
 #[derive(Clone, Debug, Default)]
 pub struct Found {
-    /// The places, in order: headings, then the rest, each in path order
-    /// and in order within a file.
+    /// The places, in order: titles, then headings, then the rest; in each,
+    /// the places written in pages, then those in fragments and code files,
+    /// each in path order and in order within a file.
     pub places: Vec<Place>,
     /// How many pages show a place.
     pub pages: usize,
@@ -42,7 +44,25 @@ pub struct Place {
     /// The builds it matched in, in the order searched.
     pub builds: Vec<String>,
     /// The pages that show it, in path order.
-    pub pages: Vec<RelPath>,
+    pub shown: Vec<Shown>,
+    /// Whether it's written where other pages can show it too: in a
+    /// fragment, or in a snippet's code file.
+    pub shared: bool,
+    /// For a snippet's code that can't be lined up with its file, true: the
+    /// place is the first line shown, not the line the match is on.
+    pub first_line: bool,
+}
+
+/// A page that shows a place.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Shown {
+    /// The page's content path.
+    pub page: RelPath,
+    /// The heading the place is under on the page, in the first build that
+    /// shows it there.
+    pub under: Option<Under>,
+    /// The builds that show it on the page, in the order searched.
+    pub builds: Vec<String>,
 }
 
 /// Where a place is written.
@@ -52,6 +72,20 @@ pub enum At {
     Source {
         /// The file.
         file: FileId,
+        /// The byte where the match's first character is written.
+        offset: usize,
+        /// Its line, from 1.
+        line: u32,
+        /// Its column, from 1, in Unicode characters.
+        column: u32,
+    },
+    /// In a snippet's code file.
+    Code {
+        /// The code file's id.
+        file: FileId,
+        /// Its path from the project root, or, for a file outside the
+        /// project's folder, `<source>:<path>`, as the snippet names it.
+        path: String,
         /// The byte where the match's first character is written.
         offset: usize,
         /// Its line, from 1.
@@ -81,6 +115,8 @@ pub enum Through {
         /// The heading's id, when the link names one.
         id: Option<String>,
     },
+    /// A snippet's code: its address, as written.
+    Code(String),
 }
 
 /// What identifies a place: its line, or its phrase.
@@ -107,7 +143,9 @@ pub fn find(project: &Project, readings: &[Reading], query: &Query) -> Found {
                 let range = from + found.start..from + found.end;
                 let (place, after) = locate(project, &mut lines, block, range);
                 let key = match &place.at {
-                    At::Source { file, line, .. } => Key::Line(*file, *line),
+                    At::Source { file, line, .. } | At::Code { file, line, .. } => {
+                        Key::Line(*file, *line)
+                    }
                     At::Phrase { key, .. } => Key::Phrase(key.clone()),
                 };
                 let i = *keys.entry(key).or_insert_with(|| {
@@ -118,8 +156,21 @@ pub fn find(project: &Project, readings: &[Reading], query: &Query) -> Found {
                     if !place.builds.contains(&reading.build) {
                         place.builds.push(reading.build.clone());
                     }
-                    if !place.pages.contains(&reading.page) {
-                        place.pages.push(reading.page.clone());
+                    let at = match place.shown.iter().position(|s| s.page == reading.page) {
+                        Some(at) => at,
+                        None => {
+                            place.shown.push(Shown {
+                                page: reading.page.clone(),
+                                under: block.under.clone(),
+                                builds: Vec::new(),
+                            });
+                            place.shown.len() - 1
+                        }
+                    };
+                    if let Some(shown) = place.shown.get_mut(at)
+                        && !shown.builds.contains(&reading.build)
+                    {
+                        shown.builds.push(reading.build.clone());
                     }
                 }
                 match after {
@@ -134,17 +185,28 @@ pub fn find(project: &Project, readings: &[Reading], query: &Query) -> Found {
             .path_of(*file)
             .map(|p| project.layout().project_path(p).to_string())
             .unwrap_or_default(),
+        At::Code { path, .. } => path.clone(),
         At::Phrase { .. } => MODEL_FILE.to_owned(),
     };
     let offset = |at: &At| match at {
-        At::Source { offset, .. } => *offset,
+        At::Source { offset, .. } | At::Code { offset, .. } => *offset,
         At::Phrase { span, .. } => span.start(),
     };
-    places.sort_by_cached_key(|p| (p.kind != In::Heading, path(&p.at), offset(&p.at)));
+    let rank = |kind: In| match kind {
+        In::Title => 0,
+        In::Heading => 1,
+        _ => 2,
+    };
+    // Within each kind, the pages' own places come before those of the
+    // files they bring in, fragments and code files.
+    places.sort_by_cached_key(|p| (rank(p.kind), p.shared, path(&p.at), offset(&p.at)));
     for place in &mut places {
-        place.pages.sort();
+        place.shown.sort_by(|a, b| a.page.cmp(&b.page));
     }
-    let mut pages: Vec<&RelPath> = places.iter().flat_map(|p| &p.pages).collect();
+    let mut pages: Vec<&RelPath> = places
+        .iter()
+        .flat_map(|p| p.shown.iter().map(|s| &s.page))
+        .collect();
     pages.sort();
     pages.dedup();
     let pages = pages.len();
@@ -173,6 +235,14 @@ fn locate(
             through.push(item);
         }
     }
+    let (shared, first_line) = match &block.origin {
+        Origin::Page => (false, false),
+        Origin::Fragment => (true, false),
+        Origin::Snippet { snippet, exact } => {
+            through.push(Through::Code(snippet.address.clone()));
+            (true, !exact)
+        }
+    };
     let first = block.piece_at(matched.start);
     let last = block.piece_at(matched.end.max(matched.start + 1) - 1);
     // Wholly inside one phrase's value: the place to edit is the value.
@@ -195,22 +265,34 @@ fn locate(
             arm: None,
             through,
             builds: Vec::new(),
-            pages: Vec::new(),
+            shown: Vec::new(),
+            shared: false,
+            first_line: false,
         };
         return (place, Some(first.range.end));
     }
     let offset = block.source_offset(matched.start);
-    let index = lines.entry(block.file).or_insert_with(|| {
-        LineIndex::new(project.file_by_id(block.file).map_or("", |f| &f.source))
-    });
+    let index = lines
+        .entry(block.file)
+        .or_insert_with(|| LineIndex::new(block.source(project)));
     let (line, column) = line_col(index, offset);
-    let place = Place {
-        at: At::Source {
+    let at = match &block.origin {
+        Origin::Snippet { snippet, .. } => At::Code {
+            file: block.file,
+            path: code_path(snippet),
+            offset,
+            line,
+            column,
+        },
+        Origin::Page | Origin::Fragment => At::Source {
             file: block.file,
             offset,
             line,
             column,
         },
+    };
+    let place = Place {
+        at,
         kind: block.kind,
         text: block.text.clone(),
         matched,
@@ -218,7 +300,19 @@ fn locate(
         arm: block.arm.clone(),
         through,
         builds: Vec::new(),
-        pages: Vec::new(),
+        shown: Vec::new(),
+        shared,
+        first_line,
     };
     (place, None)
+}
+
+/// A code file's path from the project root, or, when that leaves the
+/// project's folder, the file as the snippet's address names it.
+fn code_path(snippet: &Snippet) -> String {
+    let path = snippet.path.as_str();
+    if path != ".." && !path.starts_with("../") {
+        return path.to_owned();
+    }
+    parse_address(&snippet.address).map_or_else(|_| snippet.address.clone(), |a| a.file())
 }

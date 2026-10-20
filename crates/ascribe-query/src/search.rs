@@ -18,8 +18,8 @@ pub struct Searched {
     pub query: String,
     /// The builds searched, in the content model's order.
     pub builds: Vec<String>,
-    /// The places, at most as many as asked for: headings, then the rest,
-    /// each in path order and in order within a file.
+    /// The places, at most as many as asked for: titles, then headings,
+    /// then the rest, each in path order and in order within a file.
     pub places: Vec<SearchPlace>,
     /// How many places match.
     pub total: usize,
@@ -37,8 +37,8 @@ pub struct SearchPlace {
     /// The column of the match's first character, from 1, in Unicode
     /// characters.
     pub column: u32,
-    /// What it is: `heading`, `text`, `table`, `code`, or `phrase`, a
-    /// phrase's value in `ascribe.toml`.
+    /// What it is: `title`, `description`, `heading`, `text`, `table`,
+    /// `code`, or `phrase`, a phrase's value in `ascribe.toml`.
     pub kind: &'static str,
     /// The block's text as a reader reads it; for a phrase, its value.
     pub text: String,
@@ -46,6 +46,8 @@ pub struct SearchPlace {
     /// its last, in Unicode characters.
     pub matched: (usize, usize),
     /// The heading the block is under, and its id; for a heading, itself.
+    /// `None` for a place other pages show too, which gives each page's in
+    /// `pages`.
     pub heading: Option<(String, String)>,
     /// The arm of a group the block is written in.
     pub arm: Option<String>,
@@ -54,10 +56,32 @@ pub struct SearchPlace {
     /// The pages whose titles, or headings, links with no text borrow and
     /// the match reads through: `page.md` or `page.md#id`.
     pub titles: Vec<String>,
+    /// The snippet whose code it's in: its address, as written.
+    pub snippet: Option<String>,
+    /// For a snippet's code that can't be lined up with its file, true: the
+    /// line is the first one the snippet shows, not the match's.
+    pub first_line: bool,
     /// The builds it's in, when it isn't in every build searched.
     pub builds: Vec<String>,
     /// For a phrase, how many places in the source use it.
     pub uses: Option<usize>,
+    /// For a place in a fragment or a snippet's code, the pages that show
+    /// it, in path order.
+    pub pages: Vec<SearchPage>,
+    /// For a place in a fragment, what `ascribe refs` takes to list the
+    /// pages that include it: the fragment's content path.
+    pub refs: Option<String>,
+}
+
+/// A page that shows a place written in a fragment or a code file.
+#[derive(Debug)]
+pub struct SearchPage {
+    /// The page's content path.
+    pub page: String,
+    /// The heading the place is under there, and its id.
+    pub heading: Option<(String, String)>,
+    /// The builds that show it there, when they aren't all of the place's.
+    pub builds: Vec<String>,
 }
 
 /// The places in `project` that `query` matches in the builds named in
@@ -104,6 +128,9 @@ pub fn search(
                     *line,
                     *column,
                 ),
+                At::Code {
+                    path, line, column, ..
+                } => (path.clone(), *line, *column),
                 At::Phrase { span, .. } => {
                     let (line, column) = model_lines
                         .wide_line_col(WideEncoding::Utf32, span.start())
@@ -114,6 +141,7 @@ pub fn search(
             let chars = |byte: usize| place.text[..byte].chars().count();
             let mut phrases = Vec::new();
             let mut titles = Vec::new();
+            let mut snippet = None;
             for through in &place.through {
                 match through {
                     Through::Phrase(key) => phrases.push(key.clone()),
@@ -121,11 +149,34 @@ pub fn search(
                         Some(id) => format!("{page}#{id}"),
                         None => page.to_string(),
                     }),
+                    Through::Code(address) => snippet = Some(address.clone()),
                 }
             }
             let uses = match &place.at {
                 At::Phrase { key, .. } => Some(index.uses(&Usable::Phrase(key.clone())).len()),
-                At::Source { .. } => None,
+                At::Source { .. } | At::Code { .. } => None,
+            };
+            let shared = place.shared && place.kind != In::Phrase;
+            let pages = if shared {
+                place
+                    .shown
+                    .iter()
+                    .map(|shown| SearchPage {
+                        page: shown.page.to_string(),
+                        heading: shown.under.as_ref().map(|u| (u.text.clone(), u.id.clone())),
+                        builds: if shown.builds == place.builds {
+                            Vec::new()
+                        } else {
+                            shown.builds.clone()
+                        },
+                    })
+                    .collect()
+            } else {
+                Vec::new()
+            };
+            let refs = match &place.at {
+                At::Source { file, .. } if shared => index.path_of(*file).map(ToString::to_string),
+                _ => None,
             };
             SearchPlace {
                 file,
@@ -137,17 +188,21 @@ pub fn search(
                 heading: place
                     .under
                     .as_ref()
-                    .filter(|_| place.kind != In::Phrase)
+                    .filter(|_| place.kind != In::Phrase && !shared)
                     .map(|u| (u.text.clone(), u.id.clone())),
                 arm: place.arm.clone(),
                 phrases,
                 titles,
+                snippet,
+                first_line: place.first_line,
                 builds: if place.builds.len() == names.len() {
                     Vec::new()
                 } else {
                     place.builds.clone()
                 },
                 uses,
+                pages,
+                refs,
             }
         })
         .collect();
@@ -209,6 +264,69 @@ mod tests {
         assert_eq!(found.places.len(), 3);
         assert!(found.total > 3, "{}", found.total);
         assert_eq!(found.builds, ["cloud"]);
+    }
+
+    #[test]
+    fn a_fragment_line_is_one_place_with_the_pages_that_show_it() {
+        let found = quill_search("docs repository", &[], 50).unwrap();
+        let places: Vec<(&str, u32)> = found
+            .places
+            .iter()
+            .map(|p| (p.file.as_str(), p.line))
+            .collect();
+        assert_eq!(
+            places,
+            [
+                ("docs/install-agent.md", 8),
+                ("docs/_fragments/prerequisites.md", 4)
+            ]
+        );
+        let fragment = &found.places[1];
+        assert_eq!(fragment.heading, None, "each page gives its own");
+        assert_eq!(
+            fragment.refs.as_deref(),
+            Some("_fragments/prerequisites.md")
+        );
+        let pages: Vec<(&str, Option<&str>)> = fragment
+            .pages
+            .iter()
+            .map(|p| (p.page.as_str(), p.heading.as_ref().map(|h| h.1.as_str())))
+            .collect();
+        assert_eq!(pages, [("install-agent.md", Some("prerequisites"))]);
+        assert!(found.places[0].pages.is_empty());
+        assert_eq!(found.pages, 1);
+    }
+
+    #[test]
+    fn a_title_comes_first_at_its_key() {
+        let found = quill_search("\"install the quill agent\"", &[], 50).unwrap();
+        let first = &found.places[0];
+        assert_eq!(
+            (first.file.as_str(), first.line, first.kind),
+            ("docs/install-agent.md", 3, "title")
+        );
+    }
+
+    #[test]
+    fn a_snippet_match_is_at_the_code_file_line() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/tested");
+        let project = Project::load(&root.join("ascribe.toml")).expect("the example loads");
+        let found = search(&project, &project.index(), "\"hello, \"", &[], 50).unwrap();
+        let code = found
+            .places
+            .iter()
+            .find(|p| p.file.ends_with("greet.ts"))
+            .unwrap();
+        assert_eq!(
+            (code.file.as_str(), code.line),
+            ("code/examples/greet.ts", 3)
+        );
+        assert_eq!(
+            code.snippet.as_deref(),
+            Some("code:examples/greet.ts#greet")
+        );
+        assert!(!code.first_line);
+        assert_eq!(code.pages[0].page, "index.md");
     }
 
     #[test]

@@ -487,6 +487,10 @@ pub struct Extracted {
     /// lines between its tags, or the whole file. `None` for an empty file
     /// or region.
     pub lines: Option<(u32, u32)>,
+    /// For each line of `code`, the part of the file it shows: the line
+    /// after the indentation taken off, or an empty span at its start for a
+    /// blank line.
+    pub spans: Vec<Span>,
 }
 
 /// Takes the snippet out of `text`: `region`'s lines, or every line, without
@@ -501,21 +505,21 @@ pub fn extract(text: &str, tags: &Tags, region: Option<&Region>) -> Extracted {
         None => (0, lines.len()),
     };
     let blank = |l: &str| l.trim().is_empty();
-    let mut kept: Vec<&str> = (from..to)
+    let mut kept: Vec<Line<'_>> = (from..to)
         .filter(|i| !tags.hidden.get(*i).copied().unwrap_or(false))
-        .filter_map(|i| lines.get(i).map(|l| l.text))
+        .filter_map(|i| lines.get(i).copied())
         .collect();
     // Blank lines at the start and end go, so where a formatter puts a tag
     // line doesn't change the snippet.
-    while kept.last().is_some_and(|l| blank(l)) {
+    while kept.last().is_some_and(|l| blank(l.text)) {
         kept.pop();
     }
-    let lead = kept.iter().take_while(|l| blank(l)).count();
+    let lead = kept.iter().take_while(|l| blank(l.text)).count();
     kept.drain(..lead);
     // The common leading whitespace, character for character, of the lines
     // that aren't blank.
     let mut common: Option<&str> = None;
-    for line in kept.iter().filter(|l| !blank(l)) {
+    for line in kept.iter().map(|l| l.text).filter(|l| !blank(l)) {
         let indent = &line[..line.len() - line.trim_start().len()];
         common = Some(match common {
             None => indent,
@@ -532,14 +536,18 @@ pub fn extract(text: &str, tags: &Tags, region: Option<&Region>) -> Extracted {
     }
     let cut = common.map_or(0, str::len);
     let mut code = String::new();
+    let mut spans = Vec::with_capacity(kept.len());
     for line in &kept {
-        if !blank(line) {
-            code.push_str(&line[cut..]);
+        if blank(line.text) {
+            spans.push(Span::new(line.span.start(), line.span.start()));
+        } else {
+            code.push_str(&line.text[cut..]);
+            spans.push(Span::new(line.span.start() + cut, line.span.end()));
         }
         code.push('\n');
     }
     let lines = (from < to).then(|| (from as u32 + 1, to as u32));
-    Extracted { code, lines }
+    Extracted { code, lines, spans }
 }
 
 #[cfg(test)]
@@ -642,6 +650,19 @@ fn main() {
         // Whitespace-only lines are emptied and don't count.
         let text = "    a\n  \n    b\n";
         assert_eq!(extract(text, &Tags::default(), None).code, "a\n\nb\n");
+    }
+
+    #[test]
+    fn each_line_of_the_code_has_the_part_of_the_file_it_shows() {
+        let text =
+            "# :snippet-start: a\n\n  x = 1\n  y = 2  # :remove:\n\n  z = 3\n# :snippet-end:\n";
+        let tags = hash(text);
+        let extracted = extract(text, &tags, tags.region("a"));
+        assert_eq!(extracted.code, "x = 1\n\nz = 3\n");
+        let shown: Vec<&str> = extracted.spans.iter().map(|s| &text[s.range()]).collect();
+        assert_eq!(shown, ["x = 1", "", "z = 3"]);
+        let starts: Vec<usize> = extracted.spans.iter().map(|s| s.start()).collect();
+        assert_eq!(starts, [23, 49, 52]);
     }
 
     #[test]

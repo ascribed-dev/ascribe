@@ -10,12 +10,15 @@
 //! phrase's value, or a title a link with no text borrows from its target.
 //! [`ReadBlock::locate`] turns a range of the text into the place to edit.
 //!
-//! What's read is what the build's plain output says of the page's own file:
-//! headings, paragraphs, a list item's own text, block quotes' contents, the
-//! titles and text the plain output shows of notes, details, and arms, each
-//! table row, and each code block written in the page. Blocks that came
-//! through an include, code a `@snippet` became, HTML blocks, and what the
-//! content model writes (labels, fallbacks, availability lines) aren't.
+//! What's read is the page's title and the field its type marks `role =
+//! "description"`, as the build publishes them, then what the build's plain
+//! output says: headings, paragraphs, a list item's own text, block quotes'
+//! contents, the titles and text the plain output shows of notes, details,
+//! and arms, each table row, and each code block, wherever each is written:
+//! in the page, in a fragment an include brings in ([`Origin::Fragment`]), or
+//! in the code file a `@snippet` shows ([`Origin::Snippet`]). HTML blocks,
+//! and what the content model writes (labels, fallbacks, availability
+//! lines), aren't.
 //!
 //! The matching is in [`Query`], and [`find`] gathers the places a query
 //! matches across the readings of many pages and builds.
@@ -24,6 +27,7 @@ mod find;
 mod query;
 
 use std::ops::Range;
+use std::sync::Arc;
 
 use ascribe_core::{FileId, LineIndex, RelPath, Span};
 use ascribe_model::PlainContent;
@@ -31,11 +35,13 @@ use ascribe_syntax::{
     Block, BlockKind, Bound, CodeBlock, DirectiveLine, Inline, InlineKind, PrimaryValue, Table,
 };
 
-pub use find::{At, Found, Place, Through, find};
+pub use find::{At, Found, Place, Shown, Through, find};
 pub use query::{BadQuery, Query};
 
 use crate::build::{LinkTarget, ResolvedBlock, ResolvedKind, ResolvedLink, Substitution};
-use crate::index::RefKind;
+use crate::index::{FileIndex, PhrasePlace, RefKind, frontmatter_key};
+use crate::llms::description_field;
+use crate::snippet::Snippet;
 use crate::{Project, ResolvedPage};
 
 /// A page as a build's readers read it.
@@ -52,6 +58,10 @@ pub struct Reading {
 /// What a block, or a place found in one, is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum In {
+    /// The page's title, at its key in the frontmatter.
+    Title,
+    /// The field the page's type marks `role = "description"`, at its key.
+    Description,
     /// A heading.
     Heading,
     /// Prose: a paragraph, a list item's own text, a block quote's, a
@@ -59,7 +69,7 @@ pub enum In {
     Text,
     /// A table's row.
     Table,
-    /// A code block written in the page.
+    /// A code block, or the code a `@snippet` shows.
     Code,
     /// A phrase's value, at its line in `ascribe.toml`.
     Phrase,
@@ -69,6 +79,8 @@ impl In {
     /// Its name, as the command's JSON writes it.
     pub fn as_str(self) -> &'static str {
         match self {
+            In::Title => "title",
+            In::Description => "description",
             In::Heading => "heading",
             In::Text => "text",
             In::Table => "table",
@@ -89,15 +101,38 @@ pub struct ReadBlock {
     /// The pieces of `text`, in order and touching: each byte of it is in
     /// exactly one.
     pub pieces: Vec<Piece>,
-    /// The file it's written in.
+    /// The file it's written in: a source file, or for a snippet's code,
+    /// its code file.
     pub file: FileId,
-    /// Its span there: a table row's for a row, a title line's for a title.
+    /// Its span there: a table row's for a row, a title line's for a
+    /// directive's title, the key's line for a frontmatter field, the lines
+    /// shown for a snippet's code.
     pub span: Span,
     /// The heading it's under, or for a heading, the heading itself.
     pub under: Option<Under>,
     /// The arm of a group it's written in, when it's in one: its attributes
     /// as written (`deployment=cloud`), or else its title.
     pub arm: Option<String>,
+    /// Where it's written, when that isn't the page's own file.
+    pub origin: Origin,
+}
+
+/// Where a block of a reading is written.
+#[derive(Clone, Debug)]
+pub enum Origin {
+    /// In the page's own file.
+    Page,
+    /// In a fragment an include brings in, at any depth.
+    Fragment,
+    /// In the code file a `@snippet` shows.
+    Snippet {
+        /// The snippet.
+        snippet: Arc<Snippet>,
+        /// Whether each line of the code is placed at its own line of the
+        /// file. When the code shown can't be lined up with what the file
+        /// says, it's one piece, standing for the first line shown.
+        exact: bool,
+    },
 }
 
 /// The heading a block is under.
@@ -149,6 +184,7 @@ impl Reading {
             blocks: Vec::new(),
             under: None,
         };
+        reader.frontmatter();
         reader.blocks(&page.blocks);
         Reading {
             page: page.path.clone(),
@@ -159,6 +195,16 @@ impl Reading {
 }
 
 impl ReadBlock {
+    /// The text of the file it's written in.
+    pub fn source<'p>(&'p self, project: &'p Project) -> &'p str {
+        match &self.origin {
+            Origin::Snippet { snippet, .. } => &snippet.text,
+            Origin::Page | Origin::Fragment => {
+                project.file_by_id(self.file).map_or("", |f| &f.source)
+            }
+        }
+    }
+
     /// The piece the byte at `offset` of the text is in.
     pub fn piece_at(&self, offset: usize) -> Option<&Piece> {
         let i = self.pieces.partition_point(|p| p.range.end <= offset);
@@ -194,6 +240,64 @@ struct Reader<'a> {
 }
 
 impl<'a> Reader<'a> {
+    /// The page's title and description, as the build publishes them, each
+    /// at its key's line.
+    fn frontmatter(&mut self) {
+        let Some(index) = self.project.file_by_id(self.page.file) else {
+            return;
+        };
+        if let Some(title) = &self.page.title {
+            self.field(index, "title", title, In::Title);
+        }
+        let frontmatter = self.page.frontmatter.as_ref();
+        if let Some(field) = description_field(self.project.model(), frontmatter)
+            && let Some(text) = frontmatter
+                .and_then(|f| f.get(field.name.as_str()))
+                .and_then(|v| v.as_str())
+        {
+            self.field(index, &field.name, text, In::Description);
+        }
+    }
+
+    /// A field of the frontmatter whose value reads as `text`: aligned with
+    /// the value when it's on the key's line, and else standing for that
+    /// line as a whole.
+    fn field(&mut self, index: &FileIndex, key: &str, text: &str, kind: In) {
+        let Some(line) = frontmatter_key(index, key) else {
+            return;
+        };
+        let written = index.source.get(line.range()).unwrap_or_default();
+        let after = written.find(':').map_or(written.len(), |colon| colon + 1);
+        let value = &written[after..];
+        let start = line.start() + after + (value.len() - value.trim_start().len());
+        let value = Span::new(start.min(line.end()), line.end());
+        let model = self.project.model();
+        let subs: Vec<Substitution> = index
+            .phrases
+            .iter()
+            .filter(|p| p.declared && p.place == PhrasePlace::Frontmatter)
+            .filter(|p| value.contains_span(p.phrase.span))
+            .filter_map(|p| {
+                Some(Substitution {
+                    span: p.phrase.span,
+                    key: p.phrase.key.clone(),
+                    value: model.phrase(&p.phrase.key)?.to_owned(),
+                })
+            })
+            .collect();
+        let mut w = Writer::new(&index.source, &subs, &[]);
+        let scalar = index
+            .source
+            .get(value.range())
+            .is_none_or(|v| v.is_empty() || v.starts_with(['|', '>']));
+        if scalar {
+            w.made(text, line);
+        } else {
+            w.text(value, text);
+        }
+        self.add(kind, index.file, line, None, Origin::Page, w);
+    }
+
     fn blocks(&mut self, blocks: &[ResolvedBlock]) {
         let mut skip_next = false;
         for block in blocks {
@@ -261,29 +365,28 @@ impl<'a> Reader<'a> {
                         id: ids.page_id.clone(),
                     });
                 }
-                if self.own(block) {
-                    let mut w = self.writer(block);
-                    w.inlines(&h.inlines);
-                    self.push(block, In::Heading, block.span, w);
-                }
+                let mut w = self.writer(block);
+                w.inlines(&h.inlines);
+                self.push(block, In::Heading, block.span, w);
             }
-            BlockKind::Paragraph(p) if self.own(block) => {
+            BlockKind::Paragraph(p) => {
                 let mut w = self.writer(block);
                 w.inlines(&p.inlines);
                 self.push(block, In::Text, block.span, w);
             }
-            BlockKind::Table(t) if self.own(block) => self.table(block, t),
-            BlockKind::CodeBlock(c) if self.own(block) && block.snippet.is_none() => {
-                let mut w = self.writer(block);
-                w.code(block.span, c);
-                self.push(block, In::Code, block.span, w);
-            }
+            BlockKind::Table(t) => self.table(block, t),
+            BlockKind::CodeBlock(c) => match &block.snippet {
+                Some(snippet) => self.snippet(block, c, snippet),
+                None => {
+                    let mut w = self.writer(block);
+                    w.code(block.span, c);
+                    self.push(block, In::Code, block.span, w);
+                }
+            },
             BlockKind::Directive(line) => match line.name.as_str() {
                 "note" => {
                     self.title(block, line);
-                    if let Some(PrimaryValue::Text(text)) = &line.primary
-                        && self.own(block)
-                    {
+                    if let Some(PrimaryValue::Text(text)) = &line.primary {
                         let mut w = self.writer(block);
                         w.inlines(&text.inlines);
                         self.push(block, In::Text, text.span, w);
@@ -302,9 +405,7 @@ impl<'a> Reader<'a> {
 
     /// A directive's title line, as a block of text.
     fn title(&mut self, block: &ResolvedBlock, line: &DirectiveLine) {
-        if let Some(title) = &line.title
-            && self.own(block)
-        {
+        if let Some(title) = &line.title {
             let mut w = self.writer(block);
             w.inlines(&title.inlines);
             self.push(block, In::Text, title.span, w);
@@ -323,9 +424,34 @@ impl<'a> Reader<'a> {
         }
     }
 
-    /// Whether a block is written in the page's own file.
-    fn own(&self, block: &ResolvedBlock) -> bool {
-        block.via.is_empty() && block.file == self.page.file
+    /// The code a `@snippet` shows: each line at the part of its code file
+    /// it shows, the lines joined by spaces.
+    fn snippet(&mut self, block: &ResolvedBlock, code: &CodeBlock, snippet: &Arc<Snippet>) {
+        let literal = code.literal.strip_suffix('\n').unwrap_or(&code.literal);
+        if literal.is_empty() {
+            return;
+        }
+        let lines: Vec<&str> = literal.split('\n').collect();
+        let exact = lines.len() == snippet.spans.len();
+        let first = snippet.spans.first().copied().unwrap_or_default();
+        let last = snippet.spans.last().copied().unwrap_or_default();
+        let mut w = Writer::new(&snippet.text, &[], &[]);
+        let span = if exact {
+            for (text, line) in lines.iter().zip(&snippet.spans) {
+                w.made(" ", Span::new(line.start(), line.start()));
+                w.text(*line, text.trim_end_matches('\r'));
+            }
+            first.cover(last)
+        } else {
+            w.made(literal, first);
+            first
+        };
+        let arm = self.arm(block.file, block.span);
+        let origin = Origin::Snippet {
+            snippet: Arc::clone(snippet),
+            exact,
+        };
+        self.add(In::Code, snippet.file, span, arm, origin, w);
     }
 
     fn writer<'b>(&self, block: &'b ResolvedBlock) -> Writer<'b>
@@ -336,33 +462,49 @@ impl<'a> Reader<'a> {
             .project
             .file_by_id(block.file)
             .map_or("", |f| &*f.source);
-        Writer {
-            source,
-            subs: &block.substitutions,
-            links: &block.links,
-            text: String::new(),
-            pieces: Vec::new(),
-            pending: None,
-        }
+        Writer::new(source, &block.substitutions, &block.links)
     }
 
+    /// The arm of a group in `file` that holds `span`.
+    fn arm(&self, file: FileId, span: Span) -> Option<String> {
+        self.project
+            .file_by_id(file)
+            .and_then(|f| arm_of(&f.document.blocks, span))
+    }
+
+    /// Adds a block of a resolved page, written in its file at `span`.
     fn push(&mut self, block: &ResolvedBlock, kind: In, span: Span, w: Writer<'_>) {
+        let origin = if block.via.is_empty() && block.file == self.page.file {
+            Origin::Page
+        } else {
+            Origin::Fragment
+        };
+        let arm = self.arm(block.file, span);
+        self.add(kind, block.file, span, arm, origin, w);
+    }
+
+    fn add(
+        &mut self,
+        kind: In,
+        file: FileId,
+        span: Span,
+        arm: Option<String>,
+        origin: Origin,
+        w: Writer<'_>,
+    ) {
         let (text, pieces) = w.finish();
         if text.is_empty() {
             return;
         }
-        let arm = self
-            .project
-            .file_by_id(block.file)
-            .and_then(|f| arm_of(&f.document.blocks, span));
         self.blocks.push(ReadBlock {
             kind,
             text,
             pieces,
-            file: block.file,
+            file,
             span,
             under: self.under.clone(),
             arm,
+            origin,
         });
     }
 }
@@ -379,7 +521,18 @@ struct Writer<'a> {
     pending: Option<Span>,
 }
 
-impl Writer<'_> {
+impl<'a> Writer<'a> {
+    fn new(source: &'a str, subs: &'a [Substitution], links: &'a [ResolvedLink]) -> Writer<'a> {
+        Writer {
+            source,
+            subs,
+            links,
+            text: String::new(),
+            pieces: Vec::new(),
+            pending: None,
+        }
+    }
+
     fn finish(self) -> (String, Vec<Piece>) {
         (self.text, self.pieces)
     }

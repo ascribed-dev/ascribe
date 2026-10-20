@@ -1,0 +1,7 @@
+docs/index.md:5: The example takes a name and says hello:
+code/examples/greet.out.txt:1: Hello, reader!
+    through code:examples/greet.out.txt · on 1 page: index.md
+code/examples/greet.ts:3: …string { return `Hello, ${name}!`; } console.log(greet("reader"));
+    through code:examples/greet.ts#greet · on 1 page: index.md
+
+3 places match, on 1 page.

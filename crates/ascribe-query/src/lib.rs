@@ -56,7 +56,7 @@ pub use refs::{Asked, Place, Refs, TargetKind, image_refs, refs};
 pub use render::{Rendered, render};
 pub use report::{Report, report};
 pub use rules::{pointer, rules};
-pub use search::{SearchPlace, Searched, search};
+pub use search::{SearchPage, SearchPlace, Searched, search};
 pub use versions::{VersionChanges, VersionsList};
 
 /// The version of every answer's JSON schema.

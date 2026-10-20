@@ -128,7 +128,7 @@ pub fn to_conformance(
                 let code = project
                     .code_file(d.location.file)
                     .ok_or_else(|| AdapterError(format!("{} has no file", d.slug)))?;
-                (code.path.to_string(), code.text.clone())
+                (code.path.to_string(), code.text.to_string())
             }
         };
         let index = ascribe_core::LineIndex::new(&text);
