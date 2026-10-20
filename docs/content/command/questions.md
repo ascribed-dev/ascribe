@@ -1,7 +1,7 @@
 ---
 type: reference
-title: "`ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, and `render`"
-description: "Ask a project about its diagnostics, content model, pages, links, and references, and rename what a page links to."
+title: "`ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, `render`, and `search`"
+description: "Ask a project about its diagnostics, content model, pages, links, and references, find where its pages say something, and rename what a page links to."
 ---
 
 The commands that answer questions about a project, for writers and for agents, without changing anything, and `ascribe rename`, which changes a name and every reference to it. The options every command accepts are in the [command reference](index.md#options-every-command-accepts).
@@ -185,3 +185,36 @@ A line of a [versioned build](../versions/index.md), such as `--build site@3.4`,
 | `2` | It couldn't run: no `ascribe.toml`, one with errors, a path that isn't a page, more than one build and no `--build`, an unknown build, or a page that can't be rendered |
 
 With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `page`, `build`, `not_published` (why the build doesn't publish it, or null), `route` (its route in the build's site, or null), and `text`, the page as text output writes it.
+
+## `ascribe search`
+@id {permalink=true}: cli-search
+@available: next
+
+Finds where the pages say something, as their readers read it, and names the line to edit for each place. A text search reads the source, where a page says `Sign in to {cloud}`; `ascribe search` reads each page as every build publishes it, where it says "Sign in to Quill Cloud", and says which line wrote that, and through which phrase.
+
+@include: ../_generated/cli-search-options.md
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/search.txt
+
+Each place is `file:line:` and the block as a reader reads it, cut around the match, then where a reader meets it: the heading it's under and that heading's id, the arm of a variant group it's in, the phrases the match reads through, and, when it isn't in every build searched, the builds it's in. A line is listed once however many builds show it. The places are in a fixed order: headings, then the rest, each in path order and in order within a file.
+
+The query is one argument. Words must all be in one block, in any order; a phrase in double quotes is matched as written, a run of spaces matching any run of white space. Quote several words together, and a phrase inside them: `ascribe search "rate limit"` finds both words in a block, and `ascribe search '"rate limit"'` finds them together. Case is ignored, and nothing else is: `cafe` doesn't find "café". A word matches inside a longer one, so `sync` finds "synchronize". A match never crosses from one block into another. There are no regular expressions; to run a pattern over the text readers read, write the plain output with `ascribe build --emit plain` and use `grep` on it.
+
+What's searched is what each build's plain output says of each page's own text: its headings, paragraphs, lists, block quotes, tables (a row at a time), code blocks, and the titles and text of notes and details. A match is a place in the source:
+
+- **Text written in the page** is at its line.
+- **A match that reads through a phrase's value,** such as "Sign in to Quill Cloud" where the page says `Sign in to {cloud}`, is at the line that uses the phrase, `through phrase cloud`.
+- **A match wholly inside a phrase's value** is at the phrase's line in `ascribe.toml`, with how many places use it and the `ascribe refs` command that lists them.
+- **A link with no text** reads as its target's title, and a match in it is at the link, through that page's title.
+
+What isn't searched: what no build publishes, the source's own spelling of a phrase, text an include brings in from a fragment, the code a `@snippet` shows, a page's title and description, text the content model writes (labels, availability lines, a widget's fallback), text in images, raw HTML, and what a site adds around a page.
+
+`ascribe search "zebra" --config examples/quill`:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/search-none.txt
+
+| Code | Meaning |
+|---|---|
+| `0` | Something matched |
+| `1` | Nothing matched |
+| `2` | It couldn't run: no `ascribe.toml`, one with errors, an empty query, a quote that isn't closed, more than one argument, or an unknown build |

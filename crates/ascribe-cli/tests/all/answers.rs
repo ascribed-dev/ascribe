@@ -1,6 +1,6 @@
 //! The commands that answer questions (`explain`, `model`, `outline`, `link`,
-//! `refs`, and `render`): their JSON, exit codes, and limits, by running the
-//! binary. `tests/output.rs` has their output on `examples/quill`, which the
+//! `refs`, `render`, and `search`): their JSON, exit codes, and limits, by
+//! running the binary. `tests/output.rs` has their output on `examples/quill`, which the
 //! command reference shows.
 
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
@@ -742,4 +742,79 @@ fn render_needs_a_build_and_a_page() {
         &["render", "site/docs/keys.md", "--build", "nope"],
         2,
     );
+}
+
+#[test]
+fn search_finds_words_through_phrases_in_the_builds_that_publish_them() {
+    let dir = project();
+    let out = run(
+        dir.path(),
+        &["search", "upgrade quill", "--config", "site"],
+        0,
+    );
+    let text = stdout(&out);
+    assert!(
+        text.starts_with("docs/install.md:15: Upgrade Quill.\n"),
+        "{text}"
+    );
+    assert!(text.contains("through phrase product"), "{text}");
+    assert!(text.contains("in build self-managed"), "{text}");
+    assert!(text.ends_with("1 place matches, on 1 page.\n"), "{text}");
+}
+
+#[test]
+fn search_finds_a_phrase_value_at_its_line_in_the_model() {
+    let quill = repository_root().join("examples/quill");
+    let out = run(&quill, &["search", "\"quill cloud\""], 0);
+    let text = stdout(&out);
+    assert!(text.starts_with("ascribe.toml:34: Quill Cloud\n"), "{text}");
+    assert!(text.contains("`ascribe refs phrase:cloud`"), "{text}");
+}
+
+#[test]
+fn search_exits_1_when_nothing_matches() {
+    let dir = project();
+    let out = run(dir.path(), &["search", "zebra", "--config", "site"], 1);
+    assert_eq!(stdout(&out), "No place matches.\n");
+}
+
+#[test]
+fn search_cuts_the_list_and_says_how_to_see_it_all() {
+    let dir = project();
+    let args = ["search", "upgrade", "--config", "site", "--limit", "1"];
+    let text = stdout(&run(dir.path(), &args, 0));
+    assert!(
+        text.ends_with(
+            "2 places match, on 1 page.\nShowing 1 of them; for all: `ascribe search upgrade --limit 2 --config site`\n"
+        ),
+        "{text}"
+    );
+}
+
+#[test]
+fn search_says_to_quote_several_words() {
+    let dir = project();
+    let out = run(
+        dir.path(),
+        &["search", "rate", "limit", "--config", "site"],
+        2,
+    );
+    assert!(
+        stderr(&out).contains("quote several words together: ascribe search 'rate limit'"),
+        "{}",
+        stderr(&out)
+    );
+}
+
+#[test]
+fn search_stops_on_a_query_or_a_build_it_cannot_read() {
+    let dir = project();
+    for args in [
+        &["search", "\"rate limit", "--config", "site"][..],
+        &["search", " ", "--config", "site"],
+        &["search", "quill", "--build", "nope", "--config", "site"],
+    ] {
+        let out = run(dir.path(), args, 2);
+        assert!(stderr(&out).starts_with("error: "), "{}", stderr(&out));
+    }
 }

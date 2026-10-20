@@ -29,6 +29,8 @@ mod permalinks;
 mod plain;
 #[path = "all/quill.rs"]
 mod quill;
+#[path = "all/reading.rs"]
+mod reading;
 #[path = "all/render_fixtures.rs"]
 mod render_fixtures;
 #[path = "all/site.rs"]

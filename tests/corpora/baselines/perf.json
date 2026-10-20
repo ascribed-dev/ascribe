@@ -41,6 +41,7 @@
     "memory/diff-synthetic-3000-phrase": 539.42,
     "memory/diff-synthetic-3000-unchanged": 371.34,
     "memory/lsp-100-edits-3000": 185.35,
-    "memory/lsp-load-3000": 185.17
+    "memory/lsp-load-3000": 185.17,
+    "search/synthetic-3000": 664.11
   }
 }

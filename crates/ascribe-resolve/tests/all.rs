@@ -38,6 +38,8 @@ mod incremental_differential;
 mod memos;
 #[path = "all/navigation.rs"]
 mod navigation;
+#[path = "all/reading.rs"]
+mod reading;
 #[path = "all/references.rs"]
 mod references;
 #[path = "all/snippets.rs"]
