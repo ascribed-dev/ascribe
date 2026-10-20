@@ -438,6 +438,47 @@
       ],
       "type": "object"
     },
+    "ModelSetting": {
+      "description": "A key of a section of settings, such as `[consumer]`, as the registry of\n`ascribe.toml`'s keys has it, with the value in effect.",
+      "properties": {
+        "default": {
+          "description": "The value used when the file leaves it out, when that's one value."
+        },
+        "default_text": {
+          "description": "What's used when the file leaves it out, in the reference's words,\nwhen that isn't one value.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "key": {
+          "description": "The key: in `checks`, a check's slug.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "What its value is: `switch`, `choice`, `number`, `text`, `level`,\n`list`, or `table`.",
+          "type": "string"
+        },
+        "set": {
+          "description": "Whether `ascribe.toml` sets it.",
+          "type": "boolean"
+        },
+        "table": {
+          "description": "The table it's in, as `ascribe.toml` writes it: `consumer`,\n`checks.vale`.",
+          "type": "string"
+        },
+        "value": {
+          "description": "The value in effect: the file's, else the default. Absent when the\nfile leaves it out and its default isn't one value."
+        }
+      },
+      "required": [
+        "table",
+        "key",
+        "kind",
+        "set"
+      ],
+      "type": "object"
+    },
     "ModelSource": {
       "description": "A source: a folder of files, such as code, that pages can show.",
       "properties": {
@@ -641,10 +682,50 @@
         "null"
       ]
     },
+    "checks": {
+      "description": "`[checks]`: each key of `[checks.vale]` and `[checks.links]`, with its\nvalue in effect, and each check the file sets, by its slug.",
+      "items": {
+        "$ref": "#/$defs/ModelSetting"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "consumer": {
+      "description": "`[consumer]`: each key, with its value in effect.",
+      "items": {
+        "$ref": "#/$defs/ModelSetting"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "crawlers": {
+      "description": "`[crawlers]`: each key, with its value in effect.",
+      "items": {
+        "$ref": "#/$defs/ModelSetting"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
     "dimensions": {
       "description": "Dimensions, in declaration order.",
       "items": {
         "$ref": "#/$defs/ModelDimension"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "editor": {
+      "description": "`[editor]`: each key, with its value in effect.",
+      "items": {
+        "$ref": "#/$defs/ModelSetting"
       },
       "type": [
         "array",
@@ -671,6 +752,16 @@
         "null"
       ]
     },
+    "listing": {
+      "description": "`[listing]`: each key, with its value in effect.",
+      "items": {
+        "$ref": "#/$defs/ModelSetting"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
     "navigation": {
       "anyOf": [
         {
@@ -682,10 +773,30 @@
       ],
       "description": "The project's navigation, its root section: every page that isn't\n`unlisted`, in order, as each build's `_ascribe/nav.json` has its\nshare of it. Only in the whole report."
     },
+    "permalinks": {
+      "description": "`[permalinks]`: each key, with its value in effect.",
+      "items": {
+        "$ref": "#/$defs/ModelSetting"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
     "phrases": {
       "description": "Phrases, in declaration order.",
       "items": {
         "$ref": "#/$defs/ModelPhrase"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "project": {
+      "description": "`[project]`: each key, with its value in effect.",
+      "items": {
+        "$ref": "#/$defs/ModelSetting"
       },
       "type": [
         "array",

@@ -58,6 +58,20 @@ pub enum Section {
     Builds,
     /// Sources, with their folders and the files they make readable.
     Sources,
+    /// Where the content is, and where builds go.
+    Project,
+    /// The site the outputs are for.
+    Consumer,
+    /// The build the editor checks.
+    Editor,
+    /// Each check's level, Vale, and the external links.
+    Checks,
+    /// What the site tells crawlers.
+    Crawlers,
+    /// What the site lists for search engines.
+    Listing,
+    /// Retired permalinks and aliases.
+    Permalinks,
 }
 
 impl Section {
@@ -72,6 +86,13 @@ impl Section {
             Section::Releases => QuerySection::Releases,
             Section::Builds => QuerySection::Builds,
             Section::Sources => QuerySection::Sources,
+            Section::Project => QuerySection::Project,
+            Section::Consumer => QuerySection::Consumer,
+            Section::Editor => QuerySection::Editor,
+            Section::Checks => QuerySection::Checks,
+            Section::Crawlers => QuerySection::Crawlers,
+            Section::Listing => QuerySection::Listing,
+            Section::Permalinks => QuerySection::Permalinks,
         }
     }
 }
@@ -100,6 +121,7 @@ fn load(global: &Global, args: &Args) -> Result<Loaded, Failure> {
     let index = project.index();
     Ok(Loaded {
         model: file.model,
+        config: file.text,
         fs,
         terms: ascribe_query::terms(&index),
         index,
@@ -109,6 +131,7 @@ fn load(global: &Global, args: &Args) -> Result<Loaded, Failure> {
 /// What [`load`] reads.
 struct Loaded {
     model: ContentModel,
+    config: String,
     fs: DiskFs,
     terms: Vec<ascribe_query::ModelTerm>,
     index: ascribe_resolve::Project,
@@ -123,7 +146,13 @@ struct Loaded {
 pub fn answer(global: &Global, args: &Args) -> Result<ModelReport, Stop> {
     let loaded = load(global, args)?;
     let section = args.section.map(Section::query);
-    let mut report = ascribe_query::model(&loaded.model, loaded.terms, section, Some(&loaded.fs));
+    let mut report = ascribe_query::model(
+        &loaded.model,
+        Some(&loaded.config),
+        loaded.terms,
+        section,
+        Some(&loaded.fs),
+    );
     if section.is_none() {
         report.navigation = Some(ascribe_query::navigation(&loaded.index));
     }
@@ -146,6 +175,7 @@ fn model(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
             out.write_all(
                 ascribe_query::summary(
                     &loaded.model,
+                    Some(&loaded.config),
                     loaded.terms,
                     section,
                     SUMMARY_BUDGET,

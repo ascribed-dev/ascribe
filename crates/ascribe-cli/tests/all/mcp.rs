@@ -333,6 +333,11 @@ fn every_tool_returns_its_commands_json_and_changes_nothing() {
             &["model", "site", "--section", "phrases", "--format", "json"],
         ),
         (
+            "ascribe_model",
+            json!({ "path": "site", "section": "consumer" }),
+            &["model", "site", "--section", "consumer", "--format", "json"],
+        ),
+        (
             "ascribe_outline",
             json!({ "page": "site/docs/install.md", "build": "cloud" }),
             &[

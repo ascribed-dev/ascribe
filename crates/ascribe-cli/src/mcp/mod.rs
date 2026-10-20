@@ -143,6 +143,7 @@ impl Server {
         let terms = ascribe_query::terms(loaded.index());
         Ok(ascribe_query::summary(
             &file.model,
+            Some(&file.text),
             terms,
             None,
             SUMMARY_BUDGET,

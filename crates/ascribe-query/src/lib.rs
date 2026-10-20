@@ -47,8 +47,8 @@ pub use explain::{
 };
 pub use link::{LinkAnswer, LinkKind, LinkLine, LinkSuggestion, link};
 pub use model::{
-    ModelNavPage, ModelNavSection, ModelReport, ModelTerm, Section, model, navigation, summary,
-    terms,
+    ModelNavPage, ModelNavSection, ModelReport, ModelSetting, ModelTerm, Section, model,
+    navigation, summary, terms,
 };
 pub use outline::{Outline, OutlineHeading, OutlineMemo, OutlineMemoState, outline};
 pub use permalinks::{PermalinksAnswer, Retire, RetireAnswer, SyncAnswer, VerifyAnswer};
