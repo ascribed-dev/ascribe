@@ -801,8 +801,6 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `agents/copilot.md` | GitHub Copilot | how-to |
 | `agents/hooks.md` | Check an agent's edits with hooks | how-to |
 | `agents/index.md` | Agents | how-to |
-| `agents/index.md` | Agents | how-to |
-| `agents/index.md` | Agents | how-to |
 | `agents/instructions.md` | Write the agent files | how-to |
 | `agents/loop.md` | Work with an agent | how-to |
 | `agents/mcp.md` | Set up the MCP server | how-to |
@@ -814,8 +812,6 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `astro/elements.md` | Element library reference | reference |
 | `astro/index.md` | Astro | how-to |
 | `astro/more-than-docs.md` | Put the docs in a site with more than the docs | how-to |
-| `astro/reference.md` | `@ascribed/astro` reference | reference |
-| `astro/reference.md` | `@ascribed/astro` reference | reference |
 | `astro/reference.md` | `@ascribed/astro` reference | reference |
 | `astro/serve-markdown.md` | Serve the Markdown versions | how-to |
 | `checks/check.md` | `ascribe check`, `build`, and `fmt` | reference |
@@ -830,8 +826,6 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `checks/report.md` | The project report | how-to |
 | `checks/vale.md` | Prose, through Vale | how-to |
 | `command/index.md` | Command reference | reference |
-| `command/project-files.md` | Files Ascribe writes | reference |
-| `command/project-files.md` | Files Ascribe writes | reference |
 | `command/project-files.md` | Files Ascribe writes | reference |
 | `command/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, `render`, and `search` | reference |
 | `content-model/checks.md` | `ascribe.toml`: checks, permalinks, and listing | reference |
@@ -864,8 +858,6 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `editor/preview.md` | The preview and builds | reference |
 | `editor/problems.md` | Problems and fixes | reference |
 | `editor/review.md` | Review in the preview | reference |
-| `editor/review.md` | Review in the preview | reference |
-| `editor/review.md` | Review in the preview | reference |
 | `editor/settings.md` | Editor workspaces, settings, and commands | reference |
 | `editor/sidebar.md` | The Ascribe sidebar | reference |
 | `editor/writing.md` | Writing in the editor | reference |
@@ -890,13 +882,9 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `review/diff.md` | `ascribe diff` and `drift` | reference |
 | `review/how-it-works.md` | How review works | concept |
 | `review/index.md` | Review | how-to |
-| `review/index.md` | Review | how-to |
-| `review/index.md` | Review | how-to |
 | `review/site-preview.md` | Review in the site preview | reference |
 | `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
 | `templates/command.md` | `ascribe templates` | reference |
-| `templates/index.md` | Page templates | how-to |
-| `templates/index.md` | Page templates | how-to |
 | `templates/index.md` | Page templates | how-to |
 | `versions/archive.md` | Archive and retire a line | how-to |
 | `versions/index.md` | Publish a site for each version | how-to |
