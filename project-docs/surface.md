@@ -795,9 +795,18 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 
 | Page | Title | Type |
 |---|---|---|
+| `agents/claude-code.md` | Claude Code | how-to |
 | `agents/commands.md` | `ascribe agents` and `mcp` | reference |
+| `agents/copilot.md` | GitHub Copilot | how-to |
+| `agents/hooks.md` | Check an agent's edits with hooks | how-to |
 | `agents/index.md` | Agents | how-to |
+| `agents/instructions.md` | Write the agent files | how-to |
+| `agents/loop.md` | Work with an agent | how-to |
+| `agents/mcp.md` | Set up the MCP server | how-to |
 | `agents/measuring.md` | What to measure | concept |
+| `agents/product-index.md` | Index your docs for your product's agents | how-to |
+| `agents/prompts.md` | Prompt your agent | how-to |
+| `agents/whats-sent.md` | What's sent where | concept |
 | `astro/elements.md` | Element library reference | reference |
 | `astro/index.md` | Astro | how-to |
 | `astro/reference.md` | `@ascribed/astro` reference | reference |
