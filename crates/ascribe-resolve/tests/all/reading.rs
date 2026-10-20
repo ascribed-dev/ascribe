@@ -394,3 +394,51 @@ fn text_that_spells_a_phrase_value_before_the_phrase_is_still_copied() {
     let found = find(&project, &[r], &Query::parse("\"quill now\"").unwrap());
     assert_eq!(found.places[0].through, [Through::Phrase("product".into())]);
 }
+
+#[test]
+fn a_match_after_a_phrase_that_matches_is_the_line_too() {
+    let project = project(&[(
+        "a.md",
+        "---\ntitle: A\n---\n\nSign in to {cloud}, then edit `quill.yaml`.\n\nUse {cloud}.\n",
+    )]);
+    let found = search(&project, "quill");
+    let mut kinds: Vec<In> = found.places.iter().map(|p| p.kind).collect();
+    kinds.sort_by_key(|k| *k != In::Phrase);
+    assert_eq!(kinds, [In::Phrase, In::Text], "{found:#?}");
+    let place = found.places.iter().find(|p| p.kind == In::Text).unwrap();
+    let (line, _) = line_of(&project, &place.at);
+    assert_eq!(line, 5);
+    assert_eq!(&place.text[place.matched.clone()], "quill");
+    assert_eq!(place.matched.start, place.text.find("quill.yaml").unwrap());
+    assert!(place.through.is_empty());
+    let At::Source { column, .. } = place.at else {
+        unreachable!()
+    };
+    assert_eq!(column, 32);
+}
+
+#[test]
+fn searching_quill_finds_the_lines_that_name_quill_yaml_after_the_phrase() {
+    let project = quill();
+    let found = search(&project, "quill");
+    let lines: Vec<(String, u32)> = found
+        .places
+        .iter()
+        .filter_map(|p| match p.at {
+            At::Source { file, line, .. } => {
+                Some((project.path_of(file).unwrap().to_string(), line))
+            }
+            At::Phrase { .. } => None,
+        })
+        .collect();
+    let has = |want: (&str, u32)| lines.iter().any(|(p, l)| (p.as_str(), *l) == want);
+    assert!(has(("install-agent.md", 62)), "{lines:?}");
+    // `keys.md:10` says `quill` only in `{cloud}`'s value: the phrase's place.
+    assert!(!has(("keys.md", 10)), "{lines:?}");
+    assert!(
+        found
+            .places
+            .iter()
+            .any(|p| matches!(&p.at, At::Phrase { key, .. } if key == "cloud"))
+    );
+}
