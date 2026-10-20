@@ -345,6 +345,10 @@ edit, measured by the `perf` bench (`check-one/*`) on 2026-10-09 on the cloud
 container described above (Intel Xeon @ 2.10 GHz, 4 logical cores), where the
 whole Elastic check takes 3.8 s against 3.2 s on the runner. Median of five
 runs. The fragment is one the bench adds, which the first 100 pages include.
+A clean page is the first after those 100 with no warning or error; advice
+doesn't count, since it doesn't fail a check, and since `heading-level-skipped`
+(advice) some 2,700 of the Elastic sample's 3,008 pages have some (#693). The
+bench prints the clean and error pages it times.
 
 | | synthetic, every build | synthetic, `--editor-build` | Elastic, every build | Elastic, `--editor-build` |
 |---|---|---|---|---|
