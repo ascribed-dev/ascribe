@@ -78,4 +78,4 @@ pnpm -r test                           # the packages
 
 ## License
 
-[Mozilla Public License 2.0](LICENSE).
+[Mozilla Public License 2.0](LICENSE). Ascribe is made by [Bryo Studio](https://bryostudio.com).
