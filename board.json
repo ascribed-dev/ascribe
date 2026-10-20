@@ -3575,7 +3575,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Search: ascribe search finds words as readers read them, and names the line to edit"
     },
     {
@@ -3663,6 +3663,57 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "Search: ascribe diff takes its block text from the reading"
+    },
+    {
+      "content": {
+        "body": "Phase P2 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#preparation). The spec is this phase's entry there and the sections of the [Project Settings proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-settings.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** every entry with `configurable = true` has a `when`, and a test fails on one without.\n\n**Decided:**\n- Decision 6 of the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#decisions): **Where a setting's description lives.** **Decided:** every key of `ascribe.toml` has one home, a registry, `crates/ascribe-model/settings.toml`, which the binary embeds: the loader reads its keys and defaults from it, the reference's tables are generated from it, and `ascribe/settings` answers from it (Project Settings, \"The registry\"). A check's description is its `when` in `tests/conformance/diagnostics.toml`.\n\n**Needs:** nothing.\n",
+        "number": 648,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Checks: a `when` for every configurable check",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/648"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCMoZc",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Checks: a `when` for every configurable check"
+    },
+    {
+      "content": {
+        "body": "Phase V1 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-v-the-project-view). The spec is this phase's entry there and the sections of the [Project view proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-view.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** the thread's use case passes as an integration test: unknown, then current after Check Every Build, then out of date after an edit.\n\n**Stop and ask** if `isCurrent` misses a change that matters.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #651\n",
+        "number": 654,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Project view: every build's problems, counted honestly",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/654"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCMoj4",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Project view: every build's problems, counted honestly"
+    },
+    {
+      "content": {
+        "body": "Phase V5 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-v-the-project-view). The spec is this phase's entry there and the sections of the [Project view proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-view.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** switching the build in the view moves the status bar and the preview, Switch Project is in the view's title bar and not in Pages' or Content model's, Restricted Mode turns every action off, and the docs describe the view as it is.\n\n**Decided:**\n- Decision 3 of the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#decisions): **Where Switch Project lives.** **Decided:** the Project view's title bar alone; Pages and Content model lose it.\n- Decision 4 of the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#decisions): **A badge on the Project view.** **Decided:** none.\n- Decision 5 of the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#decisions): **What the status bar menu keeps.** **Decided:** everything it has, each entry running the same command the view runs.\n\n**Needs:** #657, #658\n",
+        "number": 659,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Project view: the head, About, and Restricted Mode",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/659"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCMotQ",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Project view: the head, About, and Restricted Mode"
     }
   ]
 }
