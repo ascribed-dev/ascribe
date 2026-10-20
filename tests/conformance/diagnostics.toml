@@ -3897,9 +3897,10 @@ configurable = true
 area = "project"
 spec = "4.4"
 reference = "content-model/content.md#71-releasestarget"
-when = "every build that publishes a mark's content is versioned by its target, or filtered for it at a version in the window or after it, and every version the mark names for the target is at or before the oldest live line, so no output shows it"
+when = "every version a mark names for its target is at or before the oldest live line and its last state counts as available, so every live line has the content, and no build filtered for the target at a version before the window publishes it: no output shows the versions, or a build that badges availability shows them and they're all before the oldest live line, so the badge says only that the content is older than every live line"
 message = "`{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so no output shows them; write `{simpler}`"
-fix = "Write the mark without its versions, keeping its state: `self-managed 3.1` becomes `self-managed`, and `self-managed deprecated 3.2` becomes `self-managed deprecated`. Every live line has the content, and a line's output leaves out a version at or before the oldest live line, so nothing a reader sees changes."
+messages.badge = "`{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so its badge is shown and says nothing a reader of any live line needs; write `{simpler}`"
+fix = "Write the mark without its versions, keeping its state: `self-managed 3.1` becomes `self-managed`, and `self-managed deprecated 3.2` becomes `self-managed deprecated`. Every live line has the content, and a line's output leaves out a version at or before the oldest live line, so where no output shows the versions nothing a reader sees changes. In a build that badges availability, which is reported only for versions before the oldest live line, the badge's version goes, which changes the page, so the fix isn't safe; a project that keeps such badges, as \"new in 0.2\", turns the check off in `[checks]`."
 
 [[diagnostic]]
 code = "ASC213"

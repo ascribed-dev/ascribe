@@ -29,4 +29,5 @@ availability = "badge"
 availability = { filter = "self-managed 3.9" }
 
 [checks]
+available-same-in-every-line = "off"
 feature-unused = "off"

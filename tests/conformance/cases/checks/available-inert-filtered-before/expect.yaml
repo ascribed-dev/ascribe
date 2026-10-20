@@ -1,0 +1,8 @@
+description: >-
+  A build filtered for a mark's target at a version before the oldest live
+  line publishes content by the mark's versions, so with one, no mark is
+  reported as doing nothing, even beside a badge build.
+spec: ["4.4", "9.3"]
+tags: [check]
+
+diagnostics: []
