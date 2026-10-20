@@ -11,6 +11,10 @@
         "label": "Getting started"
       },
       {
+        "href": "/docs/install/",
+        "label": "Install"
+      },
+      {
         "href": "/docs/glossary/",
         "label": "Glossary"
       }
@@ -92,6 +96,10 @@
         "href": "/docs/checks/diagnostics/content-model/",
         "label": "Diagnostics: the content model",
         "nested": true
+      },
+      {
+        "href": "/docs/checks/ci/",
+        "label": "Checks in CI"
       },
       {
         "href": "/docs/checks/vale/",

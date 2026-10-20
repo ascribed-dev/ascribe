@@ -39,6 +39,8 @@ code --install-extension Ascribe.ascribe-vscode
 npx ascribe check
 ```
 
+To install it another way, such as without Node, see [Install](https://ascribed-dev.com/go/install/).
+
 Read [Getting started](https://ascribed-dev.com/go/getting-started/), then the rest of the [documentation](https://ascribed-dev.com/go/docs/).
 
 To write docs with an AI coding agent, such as Claude Code, GitHub Copilot, Cursor, or Codex, read [Agents](https://ascribed-dev.com/go/agents-guide/): `npx ascribe agents sync` gives your agent the project's rules and a skill that teaches it to check its own work.

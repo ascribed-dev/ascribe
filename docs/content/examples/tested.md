@@ -40,7 +40,7 @@ Wrote examples.observations/default.toml: 2 files, Node 24.9.0 on Linux.
 
 Commit the observation with the code, as you would a lockfile. When the test fails, nothing is written, and the old observation stays. When it replaces one, it says what changed since: the files added, removed, and changed, and the environment values that differ.
 
-`ascribe observe` runs where the code is, so `ascribe` has to be installed there: with npm, or [without Node](../getting-started.md#without-node) from Homebrew or the install script. Run it on a clean tree: the files are hashed after the test, as they are then.
+`ascribe observe` runs where the code is, so `ascribe` has to be installed there: with npm, or [without Node](../install.md#without-node) from Homebrew or the install script. Run it on a clean tree: the files are hashed after the test, as they are then.
 
 ## 3. Show the example
 

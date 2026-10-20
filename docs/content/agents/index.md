@@ -24,7 +24,7 @@ ascribe agents sync
 
 That writes `AGENTS.md` and the skill, which most agents read on their own. Then add what your agent can use: [the MCP server](index.md#the-mcp-server), [the hooks](index.md#hooks), or, in Claude Code, [the plugin](index.md#the-plugin).
 
-This guide writes commands as `ascribe`. With `@ascribed/cli` installed in your project, as [Getting started](../getting-started.md#install-the-command) does, run them as `npx ascribe` (`pnpm exec ascribe` with pnpm); your agent does the same.
+This guide writes commands as `ascribe`. With `@ascribed/cli` installed in your project, as [Install](../install.md#npm) says, run them as `npx ascribe` (`pnpm exec ascribe` with pnpm); your agent does the same.
 
 ## The loop
 
@@ -249,7 +249,7 @@ ascribe agents sync --target claude --with-hook
 
 [`ascribe agents sync`](commands.md#cli-agents-sync) lists the file and the entries for each target, and how it merges them into a file you share.
 
-The entries run `ascribe` from your path. Put the release's binary on your path, with `brew install ascribed-dev/tap/ascribe` or the install script ([Getting started](../getting-started.md#without-node) has both), or install it with `npm install -g @ascribed/cli`; the npm package's launcher adds about 60 ms to each run, more than a check after an edit takes, so prefer the binary for hooks. When your project pins `@ascribed/cli` in its `node_modules`, the hooks run that binary instead, found from the repository's root (`$CLAUDE_PROJECT_DIR` for Claude Code, `git rev-parse --show-toplevel` for Codex and Copilot), so an agent started in a subfolder finds it too. Two entries still run `ascribe` from your path, because neither can find the root on every system: the MCP server in `.mcp.json`, and Codex's hooks on Windows. Codex asks you to trust a project's hooks before it runs them.
+The entries run `ascribe` from your path. Put the release's binary on your path, with `brew install ascribed-dev/tap/ascribe` or the install script ([Install](../install.md#without-node) has both), or install it with `npm install -g @ascribed/cli`; the npm package's launcher adds about 60 ms to each run, more than a check after an edit takes, so prefer the binary for hooks. When your project pins `@ascribed/cli` in its `node_modules`, the hooks run that binary instead, found from the repository's root (`$CLAUDE_PROJECT_DIR` for Claude Code, `git rev-parse --show-toplevel` for Codex and Copilot), so an agent started in a subfolder finds it too. Two entries still run `ascribe` from your path, because neither can find the root on every system: the MCP server in `.mcp.json`, and Codex's hooks on Windows. Codex asks you to trust a project's hooks before it runs them.
 
 For Claude Code, use the plugin or the project's entries, not both: with both, it hears about each problem twice.
 

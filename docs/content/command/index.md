@@ -9,7 +9,7 @@ The `ascribe` command checks, builds, and formats an Ascribe project, and runs t
 
 @include: ../_generated/cli-synopsis.md
 
-Install it in a project with `npm install --save-dev @ascribed/cli` (see [Getting started](../getting-started.md#install-the-command)) and run it with `npx ascribe`, or from a script in `package.json`. Where there's no Node, install it on your path with Homebrew or the install script ([Without Node](../getting-started.md#without-node)) and run it as `ascribe`.
+Install it in a project with `npm install --save-dev @ascribed/cli` (see [Install](../install.md#npm)) and run it with `npx ascribe`, or from a script in `package.json`. Where there's no Node, install it on your path with Homebrew or the install script ([Install](../install.md#without-node)) and run it as `ascribe`.
 
 ## Commands
 
