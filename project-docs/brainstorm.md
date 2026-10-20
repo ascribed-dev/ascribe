@@ -6,7 +6,7 @@ Written on 2 October 2026, after 0.1.1, and cut back on 11 October 2026 to what'
 
 - **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, and external links), [permalinks](../docs/content/permalinks/index.md), [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), [versions](../docs/content/versions/index.md), [navigation](../docs/content/navigation/index.md), [the glossary as pages](../docs/content/content-model/glossary.md), the editor's [sidebar](../docs/content/editor/sidebar.md), and what a search engine and a crawler are told, in the [Astro guide](../docs/content/astro/index.md).
 - **Planned.** [Search](search/README.md), from its [proposal](proposals/search.md).
-- **Proposed.** [The rest of the cache](proposals/cache.md), and [This page as a webview](proposals/this-page-webview.md).
+- **Proposed.** [The rest of the cache](proposals/cache.md), [This page as a webview](proposals/this-page-webview.md), [the Project view](proposals/project-view.md), and [Project Settings](proposals/project-settings.md).
 
 The sections keep the numbers they had, since other documents name them, so the numbers have gaps.
 
