@@ -17,6 +17,7 @@
 //! | [`nav`] | [`NavFile`]: `ascribe.nav`, the order of the project's sections and pages |
 //! | [`permalinks`] | [`PermalinkList`]: `ascribe.permalinks`, the project's permalinks and where each is declared |
 //! | [`vale`] | [`vale::Preset`]: the Vale configurations `[checks.vale] preset` names |
+//! | [`settings`] | [`settings::settings`]: every key of `ascribe.toml`, from `settings.toml`, which the loader reads its keys and defaults from |
 //! | `crawlers` | [`known_crawlers`]: the crawlers Ascribe knows, by purpose, from `data/crawlers.toml` |
 //!
 //! The availability-spec parser is in `ascribe_core::availability`; this
@@ -52,6 +53,7 @@ pub mod pattern;
 mod permalink_names;
 pub mod permalinks;
 mod sections;
+pub mod settings;
 mod toml_util;
 pub mod types;
 pub mod vale;

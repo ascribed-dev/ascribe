@@ -686,11 +686,6 @@ const UNDECLARED: { surface: string; what: string; where: string }[] = [
     where: "`Builtin::schema` in `crates/ascribe-core/src/schema.rs`, as code, not as a list",
   },
   {
-    surface: "`ascribe.toml`",
-    what: "Each section's keys",
-    where: "The loader, `crates/ascribe-model/src/`, and the reference's prose",
-  },
-  {
     surface: "The VS Code extension",
     what: "The status bar item (the build, and review's state), the preview and its header, the build lens, and review's marks and threads",
     where: "`packages/vscode/src/`, as code",

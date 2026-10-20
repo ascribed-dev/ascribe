@@ -24,10 +24,6 @@ impl Loader<'_> {
             self.wrong_type("intended", v, "an array of tables, written [[intended]]");
             return out;
         };
-        let keys = ["check", "reason", "phrase", "feature", "image"];
-        // `term` is checked apart: in an allowed list it would be suggested,
-        // and a glossary term is acknowledged at its heading now.
-        let allowed = [keys.as_slice(), &["term"]].concat();
         for item in items.iter() {
             let Some(t) = self.as_table("intended[]", item) else {
                 continue;
@@ -45,7 +41,9 @@ impl Loader<'_> {
                     );
                 }
             }
-            self.check_keys("intended", t, &allowed);
+            // `term` is reported apart: a glossary term is acknowledged at its
+            // heading now.
+            self.check_table("intended", t, "intended");
             let check = self.require("intended", t, span, "check").and_then(|c| {
                 let name = self.string("intended.check", c, false)?;
                 self.check_name(&name, sp(c))

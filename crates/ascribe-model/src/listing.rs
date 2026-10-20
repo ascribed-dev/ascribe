@@ -29,11 +29,7 @@ impl Loader<'_> {
         let Some(t) = self.as_table("listing", v) else {
             return out;
         };
-        self.check_keys(
-            "listing",
-            t,
-            &["default", "older-lines", "folders", "types"],
-        );
+        self.check_table("listing", t, "listing");
         for (key, key_span, value) in entries(t) {
             if key == "default"
                 && let Some(listing) = self.listing_value("listing.default", value)
