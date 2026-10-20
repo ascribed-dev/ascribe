@@ -24,6 +24,9 @@ The elements render into the page, with no shadow DOM, so the site's own styles 
 
 ## The elements
 
+![The elements with the library's default colors: the five note types, Note, Tip, Important, Warning, and Caution, each a box of its own color with its label; a procedure's numbered steps, joined by a line; a group of tabs, npm, pnpm, and yarn, with npm chosen; and an availability badge, Self-managed (preview, 3.4+), under a heading.](../images/elements-light.png){scheme=light}
+![The elements with the library's default colors: the five note types, Note, Tip, Important, Warning, and Caution, each a box of its own color with its label; a procedure's numbered steps, joined by a line; a group of tabs, npm, pnpm, and yarn, with npm chosen; and an availability badge, Self-managed (preview, 3.4+), under a heading.](../images/elements-dark.png){scheme=dark}
+
 | Element | What the site output writes it for | Contract |
 |---|---|---|
 | `<ascribe-note>` | A `@note`. Its `type` attribute is the note type, such as `tip`. | [§1]({repo}/blob/main/packages/elements/CONTRACT.md#1-ascribe-note) |
@@ -106,4 +109,4 @@ import { choose } from "@ascribed/elements";
 choose("pm", "pnpm");
 ```
 
-A permalink's page uses it to carry a choice in its address; see [Linking from a product](../permalinks/index.md#linking-from-a-product).
+A permalink's page uses it to carry a choice in its address; see [permalinks](reference.md#permalinks).

@@ -102,6 +102,10 @@
         "nested": true
       },
       {
+        "href": "/docs/checks/external-links/",
+        "label": "Check external links"
+      },
+      {
         "href": "/docs/checks/ci/",
         "label": "Checks in CI"
       },
@@ -121,6 +125,18 @@
       {
         "href": "/docs/review/",
         "label": "Review"
+      },
+      {
+        "href": "/docs/review/how-it-works/",
+        "label": "How review works"
+      },
+      {
+        "href": "/docs/review/site-preview/",
+        "label": "Review in the site preview"
+      },
+      {
+        "href": "/docs/review/ci-report/",
+        "label": "Attach the review report to every pull request"
       },
       {
         "href": "/docs/review/diff/",
@@ -231,7 +247,19 @@
     "pages": [
       {
         "href": "/docs/examples/",
-        "label": "Drift"
+        "label": "Examples and drift"
+      },
+      {
+        "href": "/docs/examples/snippets/",
+        "label": "Show an example from the code"
+      },
+      {
+        "href": "/docs/examples/docs-repository/",
+        "label": "Keep the docs in another repository"
+      },
+      {
+        "href": "/docs/examples/drift/",
+        "label": "Report the pages whose examples changed"
       },
       {
         "href": "/docs/examples/tested/",
@@ -239,7 +267,20 @@
       },
       {
         "href": "/docs/examples/sources/",
-        "label": "ascribe init, sources, observe, permalinks, templates, and vale"
+        "label": "ascribe sources and observe"
+      }
+    ]
+  },
+  {
+    "label": "Publishing",
+    "pages": [
+      {
+        "href": "/docs/publishing/",
+        "label": "Publishing"
+      },
+      {
+        "href": "/docs/publishing/site/",
+        "label": "The head, sitemap, robots.txt, and headers"
       }
     ]
   },
@@ -249,6 +290,18 @@
       {
         "href": "/docs/astro/",
         "label": "Astro"
+      },
+      {
+        "href": "/docs/astro/more-than-docs/",
+        "label": "Put the docs in a site with more than the docs"
+      },
+      {
+        "href": "/docs/astro/agents/",
+        "label": "Publish for AI agents"
+      },
+      {
+        "href": "/docs/astro/serve-markdown/",
+        "label": "Serve the Markdown versions"
       },
       {
         "href": "/docs/astro/reference/",
@@ -266,6 +319,10 @@
       {
         "href": "/docs/permalinks/",
         "label": "Permalinks"
+      },
+      {
+        "href": "/docs/permalinks/command/",
+        "label": "ascribe permalinks"
       }
     ]
   },
@@ -279,6 +336,10 @@
       {
         "href": "/docs/navigation/order/",
         "label": "Put your pages in order"
+      },
+      {
+        "href": "/docs/navigation/site-list/",
+        "label": "Move a site's own list to the navigation"
       }
     ]
   },
@@ -287,7 +348,15 @@
     "pages": [
       {
         "href": "/docs/versions/",
-        "label": "Versions"
+        "label": "Publish a site for each version"
+      },
+      {
+        "href": "/docs/versions/archive/",
+        "label": "Archive and retire a line"
+      },
+      {
+        "href": "/docs/versions/lines/",
+        "label": "Release lines"
       },
       {
         "href": "/docs/versions/release/",
@@ -301,6 +370,10 @@
       {
         "href": "/docs/templates/",
         "label": "Page templates"
+      },
+      {
+        "href": "/docs/templates/command/",
+        "label": "ascribe templates"
       }
     ]
   },
@@ -313,7 +386,7 @@
       },
       {
         "href": "/docs/command/questions/",
-        "label": "ascribe explain, model, outline, link, refs, rename, and render"
+        "label": "ascribe explain, model, outline, link, refs, rename, render, and search"
       },
       {
         "href": "/docs/command/project-files/",

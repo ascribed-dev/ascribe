@@ -2,7 +2,6 @@
 type: how-to
 title: Set up the MCP server
 description: "Give an agent with no shell Ascribe's answers as tools, through `ascribe mcp`."
-available: ascribe 0.3.0
 ---
 
 `ascribe mcp` is a server for the [Model Context Protocol](https://modelcontextprotocol.io), which most agents' hosts speak. It offers the commands that answer questions as tools an agent calls, for an agent with no shell, or a host that asks you to approve each command it runs. An agent with a shell needs no server: the commands give the same answers.

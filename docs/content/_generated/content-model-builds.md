@@ -1,0 +1,6 @@
+@memo: Generated from crates/ascribe-model/settings.toml by tests/conformance/tests/docs.rs; edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `variants` | string or table | `"switch"` | The variant mode. `"switch"` keeps every arm and page. A **selection** is a table from dimension names to a value or an array of values: `{ deployment = "cloud" }`, `{ pm = ["npm", "pnpm"] }`. Every dimension MUST be declared and every value a value of that dimension. An empty table is an error; write `"switch"`. |
+| `availability` | string or table | `"badge"` | The availability mode. `"badge"` keeps everything and annotates it. `{ filter = "<target> [<version>]" }` removes content not available for the target at the version. The target MUST be a declared dimension value, not a dimension name. A versioned target MUST have a version, and a versionless one MUST NOT. The version follows the version scheme (§7). |
+| `versions` | string | none | The target the build is **versioned** by, such as `"self-managed"`: one output for each of its live lines (§7.1). The target MUST have a `[releases]` table with at least one live line, and the build's `availability` MUST be `"badge"`. |

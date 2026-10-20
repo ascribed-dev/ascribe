@@ -1,0 +1,4 @@
+note: these are the first files copied from api, into sources/api/. Commit them with the docs: everyone who can read this repository can read them, which matters when the code's repository is private.
+api: pinned to e06ca34
+api: copied src/auth.rs
+wrote ascribe.lock

@@ -60,10 +60,7 @@ Every problem the loader reports is in the [diagnostics reference](../checks/dia
 
 @include: ../_fragments/content-model/project.md
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `content-root` | string (path) | `"docs"` | The content root ([SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)): the directory holding every source file. Paths in links and includes that begin with `/` are relative to it. It must exist and be a directory. |
-| `output-dir` | string (path) | `".ascribe/build"` | Where `ascribe build` writes output. Each build and emitter writes under `<output-dir>/<build>/<emitter>/`. It need not exist. It may be outside the project's folder, with `..`, and a build then writes there. A build never writes or removes through a symbolic link on the way to it, or in it ([output-layout contract](../contracts/output-layout.md#2-what-ascribe-owns)). |
+@include: ../_generated/content-model-project.md
 
 **Rules:** both paths are relative (`model-path-absolute`). The output directory must not be inside the content root, the content root must not be inside the output directory, and they must not be the same directory (`model-output-overlaps-content`); otherwise a build would read its own output as source, or delete source as stale output. Paths are compared after normalizing `.` and `..` segments and, when both exist, after resolving symbolic links.
 
@@ -88,13 +85,7 @@ Every problem the loader reports is in the [diagnostics reference](../checks/dia
 ### Listing a page
 @available: ascribe 0.3.0
 
-A page says whether readers that aren't people are offered it with `listing` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)), one of three values, from open to closed:
-
-| Value | What it means |
-|---|---|
-| `listed` | The default, when a page doesn't set it. Search engines may list it, and agents are offered it in `llms.txt`. |
-| `unquoted` | Listed, and asks not to be quoted (`nosnippet`): a search result, or an AI answer inside a search product, shows no text from it. It's in `llms.txt` and the sitemap. |
-| `unlisted` | Asks not to be listed (`noindex`), and isn't offered: it's out of `llms.txt`, the sitemap, and the [navigation](../navigation/index.md#what-a-build-shows), so no sidebar drawn from it shows the page. It's still built, at its address, with its Markdown version. |
+A page says whether readers that aren't people are offered it with `listing` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)), one of three values, from open to closed: `listed`, the default when a page doesn't set it, `unquoted`, and `unlisted`. What each tells search engines and agents is in [Publishing](../publishing/index.md#how-a-page-is-listed). Any other value, or one that isn't a string, is an error (`frontmatter-type-mismatch`).
 
 ```yaml
 ---
@@ -103,13 +94,9 @@ listing: unlisted
 ---
 ```
 
-Each build writes every page's record, with its `listing`, to `_ascribe/pages.json` in the site output, and `llms.txt` is written from the record. In an Astro site, `@ascribed/astro` writes the page's head, the sitemap, and `robots.txt` from it too ([the `@ascribed/astro` reference](../astro/reference.md#search-engines-and-crawlers)). The site output's frontmatter doesn't carry `listing`, since the record does. A record's canonical address needs [`[consumer] site`](output.md#consumer): without it, a site gets no canonical links and no sitemap, which needs absolute addresses. Any other value, or one that isn't a string, is an error (`frontmatter-type-mismatch`).
+Each build writes every page's record, with its `listing`, to `_ascribe/pages.json` in the site output. The site output's frontmatter doesn't carry `listing`, since the record does.
 
 A project can set `listing` for the whole site, a folder, or a content type, in [`[listing]`](checks.md#22-listing). A page under a rule can set the same value or a stricter one, never a looser one (`listing-loosened`).
-
-What isn't handled yet:
-
-- **The Markdown version of a page that isn't listed can still be indexed** unless the host sends it with `X-Robots-Tag: noindex`, since only a response header keeps a file that isn't HTML out of a search index. With [`[consumer] headers`](output.md#consumer) set, the build gives the host the header; without it, the header is in `_ascribe/headers.json`, and the host sends it only if a deploy step gives it the list.
 
 @include: ../_fragments/content-model/types-frontmatter-and-fragments.md
 
@@ -121,16 +108,7 @@ What isn't handled yet:
 
 @include: ../_fragments/content-model/field-types.md
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `type` | string | **required** | A field type or attribute type (§5.1). In table form it may also be `object`, `list(object)`, or bare `enum`, with the keys below. |
-| `fields` | table of fields | required when `type` is `object`, `object?`, `list(object)`, or `list(object)?`; not allowed otherwise | The nested fields of an object, in the same syntax (short or table form). Field types only. |
-| `values` | array of strings | required when `type` uses bare `enum`; not allowed otherwise | The enumeration's values, for values that aren't simple words, such as `["Getting started", "How-to"]`. Values must be distinct. Values of a `set(enum)` attribute must be tokens. |
-| `default` | any TOML value | none | The value used when the field or attribute is absent. It must have the declared type (a TOML string for `string` and `enum`, integer or float for `number`, boolean for `boolean`, local date for `date`, array for `list`, inline table for `object`, a string or array of strings for `set`). A field with a default is optional; adding `?` as well is allowed and changes nothing. |
-| `phrases` | boolean | `false` | Whether phrases ([SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)) are substituted in this field's value. Field types only; allowed only on `string` and `list(string)` fields (and their optional forms), including fields nested in objects. See §11. |
-| `inline` | string | none | `"code"` reads the value's code spans. Allowed only on a content type's top-level `string` fields (and `string?`). See §5.3. |
-| `description` | string | none | Help text shown by the editor (hover and completion) and emitted into generated schemas as documentation. |
-| `role` | string | none | What the field is for, which a check reads: `"description"`, `"review-date"`, or `"owner"`. Allowed only on a content type's top-level fields. See §5.4. |
+@include: ../_generated/content-model-fields.md
 
 @include: ../_fragments/content-model/field-types-nesting.md
 

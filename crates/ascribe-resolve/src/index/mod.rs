@@ -38,6 +38,7 @@ use crate::snippet::SnippetUse;
 
 pub(crate) use frontmatter::key_line as frontmatter_key;
 pub use headings::{ExplicitId, Heading, TermMark, plain_text as heading_text};
+pub use mentions::{Mention, MentionKind};
 pub use refs::{Local, RefKind, Reference, Target};
 pub(crate) use refs::{substitute_with, target_of};
 

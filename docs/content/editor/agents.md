@@ -2,20 +2,17 @@
 type: reference
 title: Agents in the editor
 description: "Prompting your agent to fix a problem from VS Code, and the tools and skill an agent in VS Code gets."
-available: ascribe 0.3.0
 ---
 
 The extension prompts your agent about the problems it shows, and gives an agent in VS Code the tools of Ascribe and of the editor.
 
 ## Prompt agent
 
-@available: ascribe 0.3.0
 On a problem, the lightbulb also offers **Prompt agent: fix this problem**, after the problem's quick fixes. It builds a prompt for your AI agent about the problem, and copies it, or opens your agent with it filled in, as `ascribe.agents.promptTarget` says. **Ascribe: Prompt Agent to Fix This File** and **Ascribe: Prompt Agent to Fix This Project** do the same for every problem in the file or the project. Nothing is sent: you read the prompt and send it. See [Prompt your agent](../agents/prompts.md).
 
 ## Agents in VS Code
 @id {permalink=true}: agents-in-vs-code
 
-@available: ascribe 0.3.0
 An agent in VS Code, such as GitHub Copilot in agent mode, gets Ascribe's tools with nothing to set up. In a workspace with an Ascribe project, the extension offers [`ascribe mcp`](../agents/mcp.md) as an MCP server, named **Ascribe** in VS Code's list of MCP servers. It runs the binary the first project uses (see [Which `ascribe` it runs](index.md#which-ascribe-it-runs)), in the workspace folder, and VS Code starts it when an agent first needs it. When the workspace's projects use different binaries, the project's output says which one the server runs. Its prompts, `new-page`, `fix`, and `review`, appear as slash commands in the chat.
 
 An agent that writes files without opening them still gets their problems: a project's language server starts when one of its files changes on disk, and the Problems panel shows them, where Copilot can read them after its edits. Like the panel, they're the editor's build's; the [hooks](../agents/hooks.md) and `ascribe check` cover every build. See [When servers start](settings.md#when-servers-start).

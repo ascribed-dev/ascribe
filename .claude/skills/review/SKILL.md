@@ -9,6 +9,8 @@ A reviewer gets one card in **In review** and owns its last move: it merges, and
 
 [The `board` skill](../board/SKILL.md) says how to approve and merge.
 
+Start a workflow with the GitHub MCP tool `actions_run_trigger`, never `gh workflow run`; the `board` skill has the details.
+
 ## Steps
 
 1. **Find the pull request:** the one that closes the card's issue. Read the issue, the description, and the whole diff.

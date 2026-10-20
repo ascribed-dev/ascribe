@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "target": "self-managed",
+  "from": "3.4",
+  "to": "3.5",
+  "added": [
+    {
+      "file": "docs/configure.md",
+      "line": 5,
+      "kind": "page",
+      "page": "Configure the agent",
+      "text": "Configure the agent",
+      "in_place_of": {
+        "file": "docs/configure-legacy.md",
+        "line": 5,
+        "page": "Configure the agent (3.4)"
+      }
+    },
+    {
+      "file": "docs/keys.md",
+      "line": 25,
+      "kind": "section",
+      "page": "API keys",
+      "heading": "Sign webhook events",
+      "text": "Sign webhook events"
+    },
+    {
+      "file": "docs/webhooks.md",
+      "line": 5,
+      "kind": "page",
+      "page": "Webhooks",
+      "text": "Webhooks"
+    }
+  ],
+  "removed": [],
+  "changed": []
+}

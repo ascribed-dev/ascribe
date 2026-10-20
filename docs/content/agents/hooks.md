@@ -2,7 +2,6 @@
 type: how-to
 title: Check an agent's edits with hooks
 description: "Have Claude Code, Codex, or GitHub Copilot check each file it writes, and the whole project before it finishes."
-available: ascribe 0.3.0
 ---
 
 A hook is a command your agent runs at a point in its work. Ascribe's checks an agent's work without the agent having to remember: each file it writes, as it writes it, and the whole project before it finishes. One command, [`ascribe agents hook`](commands.md#cli-agents-hook), serves Claude Code, Codex, and GitHub Copilot, which share a hook format. Cursor's and Gemini CLI's formats differ, and Ascribe writes neither.
@@ -32,6 +31,5 @@ In Claude Code, [the plugin](claude-code.md) has the stop hook too: use the plug
 Neither stops an edit, writes a file, or holds the agent up: a check that takes too long is given up. [`ascribe agents hook`](commands.md#cli-agents-hook) says exactly what each reports, and how the check server it starts keeps a check after an edit to milliseconds.
 
 ## Prose, through Vale
-@available: ascribe 0.3.0
 
 A project that checks its prose with [Vale](../checks/vale.md) has the hooks run it only with `in-check = true` in `[checks.vale]`, as `ascribe check` does: after an edit on the files the agent wrote, and before it finishes on the whole project. Vale gets half of what the hook waits; when it takes longer, its alerts are left out, and the rest of the check reaches the agent as usual. Only Vale's error-level alerts reach the agent, as with every other check; with `max-level = "advice"` or `"warning"`, none do. A hook can't ask you before it runs a program, so it runs Vale only when `command` is a name found on your `PATH`, such as `vale`, never when it's a path to a program in the project: then it tells the agent, with the errors it reports, that the prose wasn't checked and that `ascribe check --vale` checks it.

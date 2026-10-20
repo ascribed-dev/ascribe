@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "changed": true,
+  "created": false,
+  "added": [],
+  "moved": [
+    {
+      "name": "weave-config",
+      "from": "guides/weave.md#weave-config",
+      "to": "reference/loom.md#weave-config"
+    }
+  ],
+  "aliased": [],
+  "retired": [],
+  "removed": [
+    "rotate-keys"
+  ]
+}

@@ -10,7 +10,7 @@ What the content model may contain is SPEC §7 and the [content model reference]
 |---|---|---|
 | `src/lib.rs` | `load`, `load_with_file`, `load_str`, `load_str_in` | The entry points. `load` reads the file and runs the rules that need the disk (the content root exists); `load_str` runs every other rule on text alone, for unsaved buffers and tests; `load_str_in` is text with a project folder. |
 | `src/model.rs` | `ContentModel`, `Build`, `Source`, `Consumer`, `Dimension`, `Feature`, `Widget` | The typed model, and the questions other crates ask of it: `directive_schemas`, `type_of`, `type_named`, `is_fragment`, `build`, `check_availability`, and the rest. |
-| `settings.toml`, `src/settings.rs` | `settings`, `Setting` | The registry of `ascribe.toml`'s keys: every key with its table, kind, choices, default, and description, in the reference's order. The binary carries it, and the loader reads its keys and defaults from it. |
+| `settings.toml`, `src/settings.rs` | `settings`, `Setting` | The registry of `ascribe.toml`'s keys: every key with its table, kind, choices, default, and description, in the reference's order. The binary carries it, the loader reads its keys and defaults from it, and the reference's tables of keys are generated from it (`tests/conformance/tests/docs.rs`). |
 | `src/loader.rs` | | The walk over the TOML tree, and the sections that define names: project, dimensions, lifecycle, features, notes, phrases. |
 | `src/sections.rs` | | Content types, fragments, the glossary, images, widgets, the consumer, builds, and the editor. |
 | `src/fields.rs`, `src/types.rs` | `Field`, `FieldType`, `validate_frontmatter` | Field and attribute types, and checking a page's frontmatter against its type. |

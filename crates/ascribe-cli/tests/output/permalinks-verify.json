@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "list": "ascribe.permalinks",
+  "found": [
+    "weave-config",
+    "config"
+  ],
+  "retired": [
+    {
+      "name": "rotate-keys",
+      "reason": "Merged into the security guide"
+    }
+  ],
+  "missing": [
+    "weave-colour"
+  ]
+}

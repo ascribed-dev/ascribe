@@ -2,7 +2,6 @@
 type: how-to
 title: Index your docs for your product's agents
 description: "Write a compact index of your docs into your product's `AGENTS.md`, so the agents of the people who use your product read them."
-available: ascribe 0.3.0
 ---
 
 The agents that write your docs read `AGENTS.md` and the skill. The agents of the people who use your product read your docs too, and `ascribe agents index` writes something for those: a compact index of the docs, one line a page, small enough to go in your product's own `AGENTS.md`. With `--pages`, it also copies each page's Markdown version into a folder, and the index points into it, so a package can ship the docs for the version it installs, with no server and nothing to fetch.

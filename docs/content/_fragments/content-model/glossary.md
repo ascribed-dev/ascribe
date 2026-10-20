@@ -4,11 +4,7 @@ The glossary ([SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)): the pag
 
 ### 12.1 Settings
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `pages` {available="ascribe 0.4.0"} | array of strings (paths) | `[]` | The glossary pages, each a path from the content root, written as in a link ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links); a leading `/` is allowed and means the same). Each MUST be a page, not a fragment. A term is linked to the first of its pages that a build publishes. |
-| `match` | string | `"first"` | Which occurrences are linked: `"first"`, the first occurrence of each term on each page, or `"every"`, every occurrence. "Page" means the resolved page for a build, after includes and build modes. A term can override it. |
-| `case-sensitive` | boolean | `false` | Whether occurrences must match a term's case exactly. When `false`, matching ignores case. A term can override it. |
+@include: ../../_generated/content-model-glossary.md
 
 @available: ascribe 0.4.0
 There's no `terms` table: a project that has one gets an error saying to write each term on a glossary page.

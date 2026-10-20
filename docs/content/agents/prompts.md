@@ -2,7 +2,6 @@
 type: how-to
 title: Prompt your agent
 description: "Turn a problem, a review comment, or a changed page into a prompt for your agent, in VS Code or from the command line."
-available: ascribe 0.3.0
 ---
 
 **Prompt agent** turns a problem Ascribe reports into a prompt for your agent: what to fix, where, what Ascribe knows about it, and how to check the result. It fills the prompt in where you send it and never sends it for you, so you read it first. [What a prompt says](commands.md#what-a-prompt-says) lists its parts.

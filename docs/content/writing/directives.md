@@ -65,7 +65,7 @@ replaces: configure-legacy.md
 ---
 ```
 
-In a build versioned by a target ([versions](../versions/index.md)), a link to the old page goes to the new one in a line that has the new one, and the other way round, so the pages that link to either need no marks; and a site's list of a page's lines leads from one to the other. In any other build the two are different pages.
+In a build versioned by a target ([versions](../versions/lines.md#links-between-lines)), a link to the old page goes to the new one in a line that has the new one, and the other way round, so the pages that link to either need no marks; and a site's list of a page's lines leads from one to the other. In any other build the two are different pages.
 
 - It names a page, without `#` and an id. A page can't replace itself, and a chain of `replaces` can't come back to where it started.
 - No line publishes both pages, and no line publishes two pages that replace the same page: mark the new page with the line it starts in, and the old one with where it ends, `self-managed (ga 3.0, removed 3.5)`.
@@ -213,23 +213,10 @@ Directives follow CommonMark's container rules, like headings and code fences:
 - Block quotes work the same way, with `>` in place of indentation.
 
 ## Built-in directives
-@memo: The built-ins are in SPEC §4's order, here, in the table, and in the contents, so each section's link to the SPEC counts up. A new built-in goes where the SPEC puts it, in all three.
 
 ([SPEC §4]({repo}/blob/main/SPEC.md#4-built-in-directives))
 
-| Directive | Forms | Primary | Purpose |
-|---|---|---|---|
-| [`@id`](directives.md#id) | line | an id | Give a heading a stable id |
-| [`@include`](directives.md#include) | line | a path | Include a file or a section |
-| [`@variant`](directives.md#variant) | container, grouped | none | Mark alternative content |
-| [`@available`](directives.md#available) | line | an availability spec or feature key | Say where content applies |
-| [`@note`](directives.md#note) | line, container | text, optional | A callout |
-| [`@steps`](directives.md#steps) | line | none | Mark an ordered list as a procedure |
-| [`@details`](directives.md#details) | line, container | none | Collapsible content |
-| [`@snippet`](directives.md#snippet) | line | an address | A code example from a file |
-| [`@intended`](directives.md#intended) | line | a reason | Say a check's problem is intended |
-| [`@memo`](directives.md#memo) {available="ascribe 0.4.0"} | line, container | text | Keep a note for whoever maintains the page, never published |
-| [`@term`](directives.md#term) {available="ascribe 0.4.0"} | line | none | Make a glossary page's heading a term |
+@include: ../_generated/directives-builtins.md
 
 ### `@id`
 
@@ -258,11 +245,11 @@ Without `@id`, a heading's id is its slug, computed from its text. Add `@id` to 
 @id {permalink=true}: cli-check
 ```
 
-- **Each permalink has an address of its own,** `go/<id>` under the site's base path, or under [`permalink-path`](../content-model/output.md#consumer), which forwards to the section wherever it is. With [`@ascribed/astro`](../permalinks/index.md#with-astro), `/go/cli-check/` sends the reader to `/docs/reference/cli/#cli-check`. A product links to the address, not to the page: `ascribe check --help` ends with `https://ascribed-dev.com/go/cli-check/`.
+- **Each permalink has an address of its own,** `go/<id>` under the site's base path, or under [`permalink-path`](../content-model/output.md#consumer), which forwards to the section wherever it is. With [`@ascribed/astro`](../astro/reference.md#permalinks), `/go/cli-check/` sends the reader to `/docs/reference/cli/#cli-check`. A product links to the address, not to the page: `ascribe check --help` ends with `https://ascribed-dev.com/go/cli-check/`.
 - **An address can say what its reader uses,** with the content model's [dimensions](../content-model/content.md#dimensions) as parameters: `/go/install-agent/?pm=pnpm` opens the section with the `pnpm` tab showing, as if the reader had picked it. A parameter the docs don't know is ignored. [Linking from a product](../permalinks/index.md#linking-from-a-product) has more.
 - **The id is still the heading's anchor,** and links inside the docs name it as they name any id: `cli.md#cli-check`. A permalink is for links from outside the docs; inside, link to the file.
 - **A build can publish a permalink in one place only,** and `ascribe check` reports one it publishes twice (`permalink-duplicate`). Names that differ only in case, such as `Setup` and `setup`, are one name, since a site may serve every spelling of an address at one. A heading in a fragment is published on every page that includes it, so a marked heading belongs in a fragment only one page of each build includes. Two pages that no build publishes together may share a permalink.
-- **A permalink that's removed is reported when the project commits its list,** `ascribe.permalinks`, which [`ascribe permalinks sync`](../examples/sources.md#cli-permalinks-sync) writes. Delete the id or the attribute, and `ascribe check` warns (`permalink-removed`), since the address stops working and something outside the docs may still link to it. Without the list, nothing reports it. Moving the heading to another page isn't removing it: run `sync` again, and the list follows. A permalink removed on purpose is retired, with a reason its address shows, and one name can lead to another as an alias, both in [`[permalinks]`](../content-model/checks.md#20-permalinks). [The permalinks list](../contracts/permalinks-list.md) has the details.
+- **A permalink that's removed is reported when the project commits its list,** `ascribe.permalinks`, which [`ascribe permalinks sync`](../permalinks/command.md#cli-permalinks-sync) writes. Delete the id or the attribute, and `ascribe check` warns (`permalink-removed`), since the address stops working and something outside the docs may still link to it. Without the list, nothing reports it. Moving the heading to another page isn't removing it: run `sync` again, and the list follows. A permalink removed on purpose is retired, with a reason its address shows, and one name can lead to another as an alias, both in [`[permalinks]`](../content-model/checks.md#20-permalinks). [The permalinks list](../contracts/permalinks-list.md) has the details.
 
 A whole page can have a permalink too, in its frontmatter, and its address leads to the top of the page:
 
@@ -649,7 +636,7 @@ See [](keys.md#rotate-keys).
 ### Links between lines
 @available: ascribe 0.3.2
 
-In a build versioned by a target ([versions](../versions/index.md)), a link to a page a line doesn't publish isn't an error. It goes, in order, to:
+In a build versioned by a target ([versions](../versions/lines.md#links-between-lines)), a link to a page a line doesn't publish isn't an error. It goes, in order, to:
 
 1. The page that takes its place in the line: the page that [replaces it](directives.md#a-page-that-replaces-another), or that it replaces, following a chain of them to the page the line has.
 2. The page in the nearest line that has it, the closest newer line first, then the closest older: a **link out** of the line. Its text stays what you wrote, and the output says which line it leads to: the site output marks it for the stylesheet, which shows "(3.5)" after it, and the plain output writes " (3.5)" after the link.

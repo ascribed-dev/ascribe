@@ -11,7 +11,7 @@ The problems you can meet reviewing a pull request with Ascribe, in the page pre
 
 Review shows the changes against the base you picked, and no comments.
 
-**Cause.** Review finds the pull request whose head is the branch you're on, in the repository the branch is pushed to (or in a remote named `upstream`, for a fork). It found none: the branch isn't pushed, doesn't track its remote branch, or has no open pull request.
+**Cause.** Review found no open pull request whose head is the branch you're on ([where it looks](how-it-works.md#signing-in-to-github)): the branch isn't pushed, doesn't track its remote branch, or has no open pull request.
 
 **Solution.**
 
@@ -24,18 +24,18 @@ Review shows the changes against the base you picked, and no comments.
 
 The page preview says "Showing changes only. Comments need GitHub.", or the site preview says to run `gh auth login`.
 
-**Cause.** Review isn't signed in to GitHub, or the remote is on a host it has no sign-in for.
+**Cause.** Review isn't signed in to GitHub, or the remote is on a host it has no sign-in for ([Signing in to GitHub](how-it-works.md#signing-in-to-github)).
 
 **Solution.** How to sign in depends on where you're reviewing:
 
-- **In the page preview,** choose **Sign in to see comments**, or, when `gh` is signed in, **Use GitHub CLI**. When the remote isn't on `github.com` or the server `github-enterprise.uri` names, the preview says so instead of offering a sign-in.
+- **In the page preview,** choose **Sign in to see comments**, or, when `gh` is signed in, **Use GitHub CLI**.
 - **In the site preview,** run `gh auth login` (with `--hostname` for GitHub Enterprise Server), then choose **Refresh**.
 
 ## Comments are off in the site preview
 
 The panel shows the changes only, and names a setting.
 
-**Cause.** `astro dev` listens on the network (`--host`), or your Vite config lets other pages talk to the dev server (`server.cors: true`, `server.allowedHosts: true`, or `legacy.skipWebSocketTokenCheck`). Anyone who could reach the dev server could otherwise comment as you, so review turns comments off.
+**Cause.** `astro dev` listens on the network, or your Vite config lets other pages talk to the dev server, so anyone who could reach it could comment as you ([Comments](site-preview.md#comments) lists the settings).
 
 **Solution.** Remove the setting the panel names, and start `astro dev` again.
 
@@ -43,15 +43,15 @@ The panel shows the changes only, and names a setting.
 
 The panel says the blocks carry no source anchors, and lists the page's changes and threads instead, each with **Open source**; or it says the route isn't an Ascribe page.
 
-**Cause.** The marks are placed by the `data-ascribe-source` attribute on each block. Your layout or a component rebuilds the content without it. A route that isn't an Ascribe page has no blocks to mark, and the panel lists the changed pages instead.
+**Cause.** Your layout or a component rebuilds the content without each block's `data-ascribe-source`, which places the marks, or the route isn't an Ascribe page ([Pages with nothing to mark](site-preview.md#pages-with-nothing-to-mark)).
 
-**Solution.** Render the page's content as the integration gives it, keeping each block's `data-ascribe-source`. [Review in the site preview](../astro/reference.md#review-in-the-site-preview) has what the site's side needs.
+**Solution.** Render the page's content as the integration gives it, keeping each block's `data-ascribe-source`.
 
 ## The project has errors
 
 The page preview says how many errors the project has, with **Show problems**; the site preview, the HTML report, and `ascribe diff` (on standard error) say so too.
 
-**Cause.** Review still compares the pages, but a page with an error can render oddly, and that oddity isn't the change. The numbers can differ: the page preview counts what VS Code's Problems panel shows, which checks pages for the editor's build only, while the others count what `ascribe check` finds for the builds compared.
+**Cause.** Review compares pages with errors as they are, and a page with an error can render oddly ([When the project has errors](how-it-works.md#when-the-project-has-errors), which also says why the numbers can differ).
 
 **Solution.** Run `ascribe check` to list the errors, or choose **Show problems**, and fix them.
 
@@ -59,7 +59,7 @@ The page preview says how many errors the project has, with **Show problems**; t
 
 A thread is listed above the page, with the text it was on.
 
-**Cause.** Its lines are no longer on the page: the text was deleted, the block moved to another page, or the thread is on a whole file.
+**Cause.** Its lines are no longer on the page ([Comments and the pull request](how-it-works.md#comments-and-the-pull-request)).
 
 **Solution.** Reply to it or resolve it where it's listed. **View on GitHub** opens it in the pull request.
 
@@ -67,7 +67,7 @@ A thread is listed above the page, with the text it was on.
 
 The page preview offers **Pull** or **Push**, or a block says to push or save first.
 
-**Cause.** Comments are placed on the pull request's latest commit, and your checkout isn't at it. Behind, some comments may be on lines you don't have yet. Ahead, with commits you haven't pushed, you can comment only on lines that are on GitHub. In VS Code, a block with unsaved changes can't be commented on either.
+**Cause.** Comments are placed on the pull request's latest commit, and your checkout isn't at it, or the block has unsaved changes ([Your checkout and the pull request](how-it-works.md#your-checkout-and-the-pull-request)).
 
 **Solution.** Bring the checkout to the pull request's latest commit:
 
@@ -89,7 +89,8 @@ Review stops with a message.
 
 ## For more information
 
-- [Review](index.md): reviewing a pull request, and how comments map to it.
-- [Review in the site preview](../astro/reference.md#review-in-the-site-preview): the site's side of review.
+- [Review](index.md): reviewing a pull request.
+- [How review works](how-it-works.md): what review compares, and how comments map to the pull request.
+- [Review in the site preview](site-preview.md): the site's side of review.
 - [Comments in the preview](../editor/review.md#comments-in-the-preview): the editor's side.
 - [`ascribe diff`](diff.md#cli-diff): the comparison every part of review makes.

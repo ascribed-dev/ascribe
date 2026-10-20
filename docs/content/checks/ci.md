@@ -18,5 +18,5 @@ It installs the latest release. To run the version your `package.json` pins inst
 
 ## See also
 
-- [The project report](report.md): the whole project's state, every week in CI.
+- [The project report](report.md): the whole project's state, every day in CI.
 - [Diagnostics](diagnostics.md): every problem Ascribe reports, and its fix.

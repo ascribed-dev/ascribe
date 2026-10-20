@@ -346,11 +346,11 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
-**When:** Every build that publishes a mark's content is versioned by its target, or filtered for it at a version in the window or after it, and every version the mark names for the target is at or before the oldest live line, so no output shows it.
+**When:** Every version a mark names for its target is at or before the oldest live line and its last state counts as available, so every live line has the content, and no build filtered for the target at a version before the window publishes it: no output shows the versions, or a build that badges availability shows them and they're all before the oldest live line, so the badge says only that the content is older than every live line.
 
 **Message:** `{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so no output shows them; write `{simpler}`
 
-**Fix:** Write the mark without its versions, keeping its state: `self-managed 3.1` becomes `self-managed`, and `self-managed deprecated 3.2` becomes `self-managed deprecated`. Every live line has the content, and a line's output leaves out a version at or before the oldest live line, so nothing a reader sees changes.
+**Fix:** Write the mark without its versions, keeping its state: `self-managed 3.1` becomes `self-managed`, and `self-managed deprecated 3.2` becomes `self-managed deprecated`. Every live line has the content, and a line's output leaves out a version at or before the oldest live line, so where no output shows the versions nothing a reader sees changes. In a build that badges availability, which is reported only for versions before the oldest live line, the badge's version goes, which changes the page, so the fix isn't safe; a project that keeps such badges, as "new in 0.2", turns the check off in `[checks]`.
 
 **Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
 
@@ -553,7 +553,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 **Message:** the site fails the delivery spec's `{check}` check: \{result}. \{setting}
 
-**Fix:** Change the setting the message names where the site is hosted; no page needs editing. The [Astro guide](../astro/index.md#what-your-host-does) says what to set on the hosts it names. Only `ascribe report agents` checks a published site.
+**Fix:** Change the setting the message names where the site is hosted; no page needs editing. [Serve the Markdown versions](../astro/serve-markdown.md) says what to set on the hosts it names. Only `ascribe report agents` checks a published site.
 
 **Read more:** [`[consumer]`](../content-model/output.md#consumer) in the `ascribe.toml` reference.
 

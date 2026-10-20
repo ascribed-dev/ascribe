@@ -6,7 +6,7 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/command/questions.md`, `docs/content/editor/index.md`, `docs/content/examples/sources.md`, `docs/content/review/diff.md`, `docs/content/versions/release.md`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/index.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
@@ -26,24 +26,25 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe link` | Says whether a link works, written on a given page: whether its target exists, the page's title or the heading's text, and the destination to write there. | `TARGET --from <PAGE>` | `text`, `json` |
 | `ascribe lsp` | Runs the language server, speaking the Language Server Protocol over standard input and output. |  |  |
 | `ascribe mcp` | Runs an MCP server, speaking the Model Context Protocol over standard input and output, for an agent that has no shell, or a host that approves tools one by one. |  |  |
-| `ascribe model` | Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. | `[PATH] [--section types\|dimensions\|phrases\|features\|glossary\|widgets\|releases\|builds\|sources]` | `text`, `json` |
+| `ascribe model` | Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. | `[PATH] [--section types\|dimensions\|phrases\|features\|glossary\|widgets\|releases\|builds\|sources\|project\|consumer\|editor\|checks\|crawlers\|listing\|permalinks]` | `text`, `json` |
 | `ascribe observe` | Runs the test of a folder of tested examples, and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. | `[--name <NAME>] [--check]` | `text`, `json` |
 | `ascribe outline` | Shows a page's title and type, and the headings a link to it can name, with the ids links write after `#`: the page's own headings and those that come from the fragments it includes. | `PAGE [--build <NAME>]` | `text`, `json` |
 | `ascribe permalinks sync` | Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each alias and retired permalink as `ascribe.toml` has it. | `[--check]` | `text`, `json` |
 | `ascribe permalinks list` | Shows every permalink the content declares, with the file and line it's declared on, and each alias and retired permalink in `ascribe.toml`, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that the project no longer has. |  | `text`, `json` |
 | `ascribe permalinks verify` | Checks that each name is a permalink or an alias in a list, and names each one that isn't, and each one that was retired, with the reason the docs give. | `[NAME]... [--from <FILE>] [--against <PATH>]` | `text`, `json` |
 | `ascribe permalinks retire` | Retires permalinks on purpose, with a reason: it writes an entry for each in `ascribe.toml`'s [`[permalinks.retired]`](../content-model/checks.md#20-permalinks), in place, keeping the file's comments and order, and, when the project has `ascribe.permalinks`, records there each one the content no longer declares. | `[NAME]... --reason <TEXT> [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>]` | `text`, `json` |
-| `ascribe refs` | Lists the places that use a page, a fragment, a heading, or an entry of the content model, each as `file:line:column`, with what kind of use it is. | `TARGET [--limit <N>]` | `text`, `json` |
+| `ascribe refs` | Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model, each as `file:line:column`, with what kind of use it is. | `TARGET [--limit <N>]` | `text`, `json` |
 | `ascribe rename` | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. | `TARGET NEW` |  |
 | `ascribe render` | Writes a page as a reader of one build sees it: the plain Markdown the build's `plain` output writes for it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. | `PAGE [--build <NAME>] [--frontmatter]` | `text`, `json` |
 | `ascribe report` | Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. | `[SECTION]... [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice\|warning\|error]` | `text`, `markdown`, `json`, `prompt` |
+| `ascribe search` | Finds where the pages say something, as their readers read it, and names the line to edit for each place. | `QUERY [--build <NAME>]... [--limit <N>]` |  |
 | `ascribe sources fetch` | Makes the copies match `ascribe.lock`: at each source's pin, it copies the files snippets name that have no copy or a wrong one, and removes the copies no snippet names. | `[NAME]...` |  |
 | `ascribe sources update` | Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20, or that the pin moved back), the copies that changed, the tested examples whose status changed, and the pages whose examples changed, grouped as `ascribe drift` groups them. | `[NAME]... [--to <REV>]` | `text`, `json`, `markdown` |
 | `ascribe sources status` | Shows each source in another repository: its repository and branch, its pin, and each copy's state (current, changed here, missing, not in the lock, unused, not copied yet, or not in the repository at the pin). |  | `text`, `json` |
 | `ascribe templates list` | Shows each template the set has, in a line, with what it's for, and which release of theirs the set was converted from. |  |  |
 | `ascribe templates eject` | Writes each template named, with its guide and Ascribe's notes on its type, into the project, and adds its type to `ascribe.toml`. | `[NAME]... [--to <DIR>] [--keep-type]` | `text`, `json` |
 | `ascribe templates status` | Says what's changed in the templates since the project took them: for each one, whether the set this `ascribe` carries has changed it since the copy, and whether the project has changed its copy; then each template of the set the project doesn't have. | `[--exit-code] [--diff <NAME>]` | `text`, `json` |
-| `ascribe vale eject` | Writes the preset `[checks.vale]` names out as the project's own Vale configuration, for a project that wants more than turning a preset's rules off: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. |  |  |
+| `ascribe vale eject` | Writes the preset `[checks.vale]` names out as the project's own Vale configuration: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. |  |  |
 | `ascribe versions list` | Shows each target's lines, newest first: whether each is current, live, planned, or archived, the output and base path of each live line on each build versioned by the target, with how many pages it publishes, the last day of support from `ends`, and an archived line's address and the day it ended. |  | `text`, `json` |
 | `ascribe versions changes` | Says what differs between two lines of a target, from the marks alone, with nothing built: the pages, sections, blocks, and table rows that are in the second line and not the first (added), in the first and not the second (removed), and in both with a different state, such as deprecated in one (changed). | `FROM TO` | `text`, `json`, `markdown` |
 | `ascribe versions release` | Releases a line: rewrites the marks that name it through a feature, moves the feature on, makes the line live, and archives the old current line where no build is versioned by the target. | `LINE [--next <LINE>] [--dry-run] [--force]` | `text`, `json` |
@@ -800,6 +801,8 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `agents/copilot.md` | GitHub Copilot | how-to |
 | `agents/hooks.md` | Check an agent's edits with hooks | how-to |
 | `agents/index.md` | Agents | how-to |
+| `agents/index.md` | Agents | how-to |
+| `agents/index.md` | Agents | how-to |
 | `agents/instructions.md` | Write the agent files | how-to |
 | `agents/loop.md` | Work with an agent | how-to |
 | `agents/mcp.md` | Set up the MCP server | how-to |
@@ -807,9 +810,14 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `agents/product-index.md` | Index your docs for your product's agents | how-to |
 | `agents/prompts.md` | Prompt your agent | how-to |
 | `agents/whats-sent.md` | What's sent where | concept |
+| `astro/agents.md` | Publish for AI agents | how-to |
 | `astro/elements.md` | Element library reference | reference |
 | `astro/index.md` | Astro | how-to |
+| `astro/more-than-docs.md` | Put the docs in a site with more than the docs | how-to |
 | `astro/reference.md` | `@ascribed/astro` reference | reference |
+| `astro/reference.md` | `@ascribed/astro` reference | reference |
+| `astro/reference.md` | `@ascribed/astro` reference | reference |
+| `astro/serve-markdown.md` | Serve the Markdown versions | how-to |
 | `checks/check.md` | `ascribe check`, `build`, and `fmt` | reference |
 | `checks/ci.md` | Checks in CI | how-to |
 | `checks/diagnostics.md` | Diagnostics | reference |
@@ -817,12 +825,15 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `checks/diagnostics/content-model.md` | Diagnostics: the content model | reference |
 | `checks/diagnostics/directives.md` | Diagnostics: directives | reference |
 | `checks/diagnostics/pages.md` | Diagnostics: links, pages, and sources | reference |
+| `checks/external-links.md` | Check external links | how-to |
 | `checks/report-command.md` | `ascribe report` | reference |
 | `checks/report.md` | The project report | how-to |
 | `checks/vale.md` | Prose, through Vale | how-to |
 | `command/index.md` | Command reference | reference |
 | `command/project-files.md` | Files Ascribe writes | reference |
-| `command/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, and `render` | reference |
+| `command/project-files.md` | Files Ascribe writes | reference |
+| `command/project-files.md` | Files Ascribe writes | reference |
+| `command/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, `render`, and `search` | reference |
 | `content-model/checks.md` | `ascribe.toml`: checks, permalinks, and listing | reference |
 | `content-model/content.md` | `ascribe.toml`: dimensions, phrases, and widgets | reference |
 | `content-model/glossary.md` | Set up a glossary | how-to |
@@ -853,11 +864,16 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `editor/preview.md` | The preview and builds | reference |
 | `editor/problems.md` | Problems and fixes | reference |
 | `editor/review.md` | Review in the preview | reference |
+| `editor/review.md` | Review in the preview | reference |
+| `editor/review.md` | Review in the preview | reference |
 | `editor/settings.md` | Editor workspaces, settings, and commands | reference |
 | `editor/sidebar.md` | The Ascribe sidebar | reference |
 | `editor/writing.md` | Writing in the editor | reference |
-| `examples/index.md` | Drift | how-to |
-| `examples/sources.md` | `ascribe init`, `sources`, `observe`, `permalinks`, `templates`, and `vale` | reference |
+| `examples/docs-repository.md` | Keep the docs in another repository | how-to |
+| `examples/drift.md` | Report the pages whose examples changed | how-to |
+| `examples/index.md` | Examples and drift | concept |
+| `examples/snippets.md` | Show an example from the code | how-to |
+| `examples/sources.md` | `ascribe sources` and `observe` | reference |
 | `examples/tested.md` | Show what an example was tested with | how-to |
 | `getting-started.md` | Getting started | tutorial |
 | `glossary.md` | Glossary | reference |
@@ -865,12 +881,26 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `install.md` | Install | how-to |
 | `navigation/index.md` | Navigation | reference |
 | `navigation/order.md` | Put your pages in order | how-to |
+| `navigation/site-list.md` | Move a site's own list to the navigation | how-to |
+| `permalinks/command.md` | `ascribe permalinks` | reference |
 | `permalinks/index.md` | Permalinks | how-to |
+| `publishing/index.md` | Publishing | concept |
+| `publishing/site.md` | The head, sitemap, `robots.txt`, and headers | reference |
+| `review/ci-report.md` | Attach the review report to every pull request | how-to |
 | `review/diff.md` | `ascribe diff` and `drift` | reference |
+| `review/how-it-works.md` | How review works | concept |
 | `review/index.md` | Review | how-to |
+| `review/index.md` | Review | how-to |
+| `review/index.md` | Review | how-to |
+| `review/site-preview.md` | Review in the site preview | reference |
 | `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
+| `templates/command.md` | `ascribe templates` | reference |
 | `templates/index.md` | Page templates | how-to |
-| `versions/index.md` | Versions | how-to |
+| `templates/index.md` | Page templates | how-to |
+| `templates/index.md` | Page templates | how-to |
+| `versions/archive.md` | Archive and retire a line | how-to |
+| `versions/index.md` | Publish a site for each version | how-to |
+| `versions/lines.md` | Release lines | reference |
 | `versions/release.md` | `ascribe versions` | reference |
 | `writing/directives.md` | Directive reference | reference |
 | `writing/memo-files.md` | Memo files | reference |

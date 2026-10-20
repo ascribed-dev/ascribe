@@ -11,17 +11,7 @@ Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#cont
 
 @include: ../_fragments/content-model/consumer.md
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `profile` | string | `"astro"` | The consumer profile. Supported: `"astro"`. |
-| `site` | string (URL) | none | The published site's origin, such as `"https://docs.quill.dev"`: an `http` or `https` URL with no path, query, or fragment. The plain-markdown output needs it to write absolute links ([SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)). Without it, plain-markdown links are root-relative (they start with `base-path`) and `ascribe build` warns. |
-| `base-path` | string | `"/"` | **Routing.** The URL path every route starts with, such as `"/docs/"`, including any locale prefix (`"/en/"`). It must start with `/`. A trailing `/` is optional and doesn't change the meaning. |
-| `trailing-slash` | string | `"always"` | **Routing.** Whether page URLs end in `/`: `"always"` (`/guides/setup/`) or `"never"` (`/guides/setup`). Match the consumer's own setting (Astro's `trailingSlash` and `build.format`). |
-| `slugger` | string | `"github"` | **Slugging.** The algorithm for heading ids ([SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)), which must be the one the consumer uses. Supported: `"github"`, a port of `github-slugger`, which Astro uses. |
-| `html` | boolean | `true` | **HTML passthrough.** Whether the consumer renders raw HTML in markdown. The site output's custom elements need it, so the `astro` profile supports only `true`. |
-| `agents` {available="ascribe 0.3.0"} | boolean | `false` | **Outputs for agents.** Whether each build also publishes what AI agents read, as the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) lays it out: `llms.txt`, the index of every page, and each page's Markdown at its URL with `.md`. It needs `site`, since every link agents read is absolute. See below. |
-| `permalink-path` {available="ascribe 0.3.0"} | string | `go/` under `base-path` | **Permalinks.** Where each [permalink](../writing/directives.md#permalinks)'s address is published, as a path from the site's root, such as `"/go/"`: `/go/cli-check/` forwards to the heading marked `cli-check`. It must start with `/`. Set it when the addresses a product prints shouldn't move when `base-path` does. Under the `astro` profile it must be under `base-path`, since an Astro site serves nothing outside it. |
-| `headers` {available="ascribe 0.3.0"} | string | none | **Response headers.** The host whose format a build's response headers are written in, so that the Markdown version of a page that isn't listed isn't indexed either. Supported: `"netlify"`, the `_headers` file Netlify reads. `@ascribed/astro` writes it into the built site ([the `@ascribed/astro` reference](../astro/reference.md#response-headers)). Without it, nothing is written for a host, and the headers are in `_ascribe/headers.json` for a deploy step to read. See below. |
+@include: ../_generated/content-model-consumer.md
 
 **Heading ids, image attributes, and assets** ([SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)) are part of the profile, not keys. The `astro` profile has exactly one way to do each:
 
@@ -38,7 +28,7 @@ A later profile that offers a choice will add a key for it.
 - **`llms.txt`** lists every page the build publishes as `- [Title](../url): description`, linking to its Markdown. Its heading is the title of the page at `base-path`, and its summary that page's description. Its sections are the project's [navigation](../navigation/index.md)'s: the content root's pages first, under its label, **Start** unless `ascribe.nav` gives another, then each top section, in order, named by its label, with the pages of the sections nested in it in reading order. A page is listed by its title, not its `nav-label`. An index over 50,000 characters is split into one `llms.txt` per top section, which the root file links to. A page's description is the field its type marks [`role = "description"`](index.md#54-field-roles), as plain text, or the field's `default` when the page leaves the field out or empty; a type without one lists its pages without descriptions.
 - **Each page of the site output** opens with a pointer to `llms.txt` and the page's Markdown, which the element library hides from sight ([element contract §8]({repo}/blob/main/packages/elements/CONTRACT.md#8-ascribe-for-agents)).
 
-**The headers of a Markdown version.** A Markdown version has no head, so what its page's head says is a response header, which the host sends. Each build lists them in `_ascribe/headers.json` in the site output ([output-layout contract](../contracts/output-layout.md#14-the-headers)), a rule for each Markdown version's path: `X-Robots-Tag: noindex` for a page that's `unlisted`, `nosnippet` for one that's `unquoted`, and `Link: <page>; rel="canonical"` on every one, so a search engine lists the page and not its Markdown copy, while an agent can still find either. With `headers = "netlify"`, `@ascribed/astro` writes them into `_headers`.
+**The headers of a Markdown version.** Each build lists the response headers each Markdown version needs, `X-Robots-Tag` and a canonical `Link`, in `_ascribe/headers.json` in the site output ([output-layout contract](../contracts/output-layout.md#14-the-headers)), and with `headers = "netlify"`, `@ascribed/astro` writes them into `_headers`. Why a host sends them is in [Publishing](../publishing/index.md#the-markdown-versions-headers).
 
 `@ascribed/astro` publishes the plain output with the site, and serves it in `astro dev`. With another generator, copy `<output-dir>/<build>/plain/` to the site's `base-path`. `ascribe check` then reports two advice checks: a description too long for its line in `llms.txt` (`description-too-long`), on the page that writes it, or once on a field's `default` in `ascribe.toml`, and an `llms.txt` still over the limit when it's split (`llms-section-large`).
 
@@ -80,13 +70,7 @@ include = ["src/**", "examples/**"]
 
 A page names a file through its source as `<source>:<path>`, with the path relative to the source's folder: `@snippet: code:examples/quill/ascribe.toml#dimensions`. Both kinds of source are addressed the same way, so moving code to another repository, or back, changes `ascribe.toml` and no page.
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `path` | string (path) | **required** without `git` | The source's folder, relative to the project root. It must exist, be a directory, and be inside the git repository the project is in, when the project is in one. |
-| `git` | string (URL) | **required** without `path` | Another repository, as `git` takes it: `https://`, `http://`, `ssh://`, `git://`, `file://`, or `user@host:path`. |
-| `branch` | string | the repository's default branch | The branch `ascribe sources update` moves the pin to. |
-| `include` | array of patterns | every file | The files a snippet may read, matched against their paths relative to the source's folder (§1.3). |
-| `ignore` | array of patterns | none | Files left out even when `include` matches them. |
+@include: ../_generated/content-model-sources.md
 
 `<name>` follows the rules for keys (§1.2). A project can declare several sources, of either kind.
 

@@ -22,7 +22,7 @@ Only the current line has it.
 The oldest line has some of it.
 
 @available: cloud, self-managed 3.1
-The cloud build publishes it, and shows the version.
+The cloud build publishes it, and shows the version in a badge.
 
 @available: old
 Marked with a feature, which is reported in ascribe.toml.

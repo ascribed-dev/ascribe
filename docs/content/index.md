@@ -17,7 +17,7 @@ permalink: docs
 - @available: ascribe 0.3.0
   [Prose, through Vale](checks/vale.md): checking your pages' prose with Vale, in the editor and in `ascribe check`.
 - @available: ascribe 0.3.0
-  [The project report](checks/report.md): what state the whole project is in, from the problems and pages it counts to broken external links, and running it every week in CI.
+  [The project report](checks/report.md): what state the whole project is in, from the problems and pages it counts to the published site, and running it every day in CI.
 - [Diagnostics](checks/diagnostics.md): every problem Ascribe reports, with its code and fix.
 - @available: ascribe 0.2.0
   [Review](review/index.md): reviewing a pull request as readers will see it, in the page preview, the site preview, or a report from CI, and commenting there.
@@ -25,7 +25,7 @@ permalink: docs
 - @available: ascribe 0.3.0
   [Agents](agents/index.md): helping an AI coding agent write and fix pages, with instructions it reads on its own and a skill that teaches it the check-and-fix loop.
 - @available: ascribe 0.2.0
-  [Drift](examples/index.md): keeping pages from falling behind the code they describe, with code examples taken from tested files and a report of the pages whose examples changed.
+  [Examples and drift](examples/index.md): keeping pages from falling behind the code they describe, with code examples taken from tested files and a report of the pages whose examples changed.
 - [Astro](astro/index.md): publishing a site with `@ascribed/astro`.
 - [Element library reference](astro/elements.md): the custom elements a site draws, and the CSS custom properties that theme them.
 - @available: ascribe 0.3.0

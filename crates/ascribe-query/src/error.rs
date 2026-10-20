@@ -37,6 +37,9 @@ pub enum QueryError {
     /// A build name isn't one of the model's.
     #[error(transparent)]
     UnknownBuild(#[from] UnknownBuild),
+    /// A query isn't written as `search` reads one.
+    #[error(transparent)]
+    BadQuery(#[from] ascribe_resolve::reading::BadQuery),
     /// A target isn't written as `refs` reads one.
     #[error("`{given}` isn't a target: {reason}")]
     BadTarget {
@@ -116,6 +119,7 @@ impl Coded for QueryError {
             QueryError::NotAPage { .. } => "not_a_page",
             QueryError::BuildRequired { .. } => "build_required",
             QueryError::UnknownBuild(e) => e.code(),
+            QueryError::BadQuery(e) => e.code(),
             QueryError::BadTarget { .. } => "bad_target",
             QueryError::Render(e) => e.code(),
             QueryError::PermalinksListInvalid { .. } => "permalinks_list_invalid",

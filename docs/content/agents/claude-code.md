@@ -2,7 +2,6 @@
 type: how-to
 title: Claude Code
 description: "Give Claude Code the skill, the MCP server, the stop hook, the language server, and commands in one install, with the Ascribe plugin."
-available: ascribe 0.3.0
 ---
 
 Claude Code takes Ascribe in one of two ways: the plugin, which gives it everything in one install, or the project's own entries, written by `ascribe agents sync`. Use one, not both: with both, it hears about each problem twice.

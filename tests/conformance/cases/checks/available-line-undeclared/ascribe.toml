@@ -22,4 +22,5 @@ name = "A release nobody declared"
 available = "self-managed 3.3"
 
 [checks]
+available-same-in-every-line = "off"
 availability-left-behind = "off"

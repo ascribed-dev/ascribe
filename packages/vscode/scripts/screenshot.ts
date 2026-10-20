@@ -1,20 +1,34 @@
-// Takes the site's picture of the editor: a copy of examples/quill in a real
-// VS Code, with a link written as a page's address, its warning in the
-// Problems view, and its quick fix open. One picture per scheme, written as
-// `editor-light.png` and `editor-dark.png` into the folder given.
+// Takes a picture of the editor in a real VS Code, one per scheme, written as
+// `<name>-light.png` and `<name>-dark.png` into the folder given:
 //
-//   node scripts/screenshot.ts <folder>
+//   node scripts/screenshot.ts <folder> <name>
 //
-// `node scripts/docs-site/screenshots.ts editor`, at the repository's root,
+// `editor`, the site's picture, is a copy of examples/quill with a link
+// written as a page's address, its warning in the Problems view, and its
+// quick fix open. The others are the docs' scenes (SCENES below): each opens
+// its own workspace, and scenes.ts, run in VS Code's extension host, stages
+// it through the extension's API, a step at a time, while this takes the
+// picture of each step.
+//
+// `node scripts/docs-site/screenshots.ts <name>`, at the repository's root,
 // builds the extension, runs this, and records the release beside the
 // pictures. It needs ASCRIBE_BIN, the path to a built `ascribe`. The page is
 // laid out at a fixed size whatever the screen, so a picture is the same on
 // every run on one machine: on Linux VS Code is drawn on a virtual screen of
 // that size (`xvfb-run`), and elsewhere in a window whose page is held to it.
 // VS Code is the version below, downloaded on first use into out/vscode-test,
-// as the integration tests do.
-import { spawn, type ChildProcess } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+// as the integration tests do. The status bar's scene runs `ascribe` through a
+// shell script, so it needs a POSIX shell: Linux or macOS.
+import { execFileSync, spawn, type ChildProcess } from "node:child_process";
+import {
+  chmodSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -62,19 +76,235 @@ async function poll<T>(what: string, find: () => Promise<T | undefined>): Promis
   }
 }
 
-/** A copy of examples/quill with the broken link, and where the cursor goes. */
-function workspace(scratch: string): { root: string; goto: string } {
-  const root = path.join(scratch, "quill");
-  cpSync(path.join(repositoryRoot, "examples", "quill"), root, { recursive: true });
-  const file = path.join(root, PAGE);
-  const text = readFileSync(file, "utf8").replace(/\r\n/g, "\n");
-  if (!text.includes(LINE)) throw new Error(`examples/quill/${PAGE} no longer has: ${LINE}`);
-  writeFileSync(file, text.replace(LINE, BROKEN));
-  const lines = text.replace(LINE, BROKEN).split("\n");
-  const line = lines.indexOf(BROKEN) + 1;
-  const column = BROKEN.indexOf("/keys/") + 3;
-  return { root, goto: `${file}:${line}:${column}` };
+/** A workspace to open: its folder, a place to open in it, and settings beyond the quiet ones. */
+interface Workspace {
+  root: string;
+  goto?: string;
+  settings?: Record<string, unknown>;
 }
+
+/** Waits for the extension host to stage a scene's step `n`, and says when its picture is taken. */
+interface Stage {
+  staged(n: number): Promise<void>;
+  taken(n: number): void;
+}
+
+/** A picture: the workspace it opens, and how it's taken once VS Code is up. */
+interface Picture {
+  /** Whether scenes.ts stages it, under the picture's name. */
+  scene: boolean;
+  workspace(scratch: string, server: string): Workspace;
+  take(window: Page, stage: Stage): Promise<Buffer>;
+}
+
+/** A copy of an example, as `name` in `scratch`. */
+function copy(scratch: string, example: string, name = path.basename(example)): string {
+  const root = path.join(scratch, name);
+  cpSync(path.join(repositoryRoot, "examples", example), root, { recursive: true });
+  return root;
+}
+
+/** Runs git in `cwd` as nobody in particular. */
+function git(cwd: string, ...args: string[]): void {
+  execFileSync(
+    "git",
+    [
+      "-c",
+      "user.name=Ana",
+      "-c",
+      "user.email=ana@example.com",
+      "-c",
+      "commit.gpgsign=false",
+      "-c",
+      "core.autocrlf=false",
+      ...args,
+    ],
+    { cwd, stdio: "ignore" },
+  );
+}
+
+/** Replaces `from` in a file, which must have it. */
+function edit(file: string, from: string, to: string): void {
+  const text = readFileSync(file, "utf8").replace(/\r\n/g, "\n");
+  if (!text.includes(from)) throw new Error(`${file} no longer has: ${from}`);
+  writeFileSync(file, text.replace(from, to));
+}
+
+/** The window, without the title bar, which names it as an extension's test host. */
+async function shot(window: Page): Promise<Buffer> {
+  // The last entrance and layout.
+  await window.waitForTimeout(1000);
+  const title = await window.locator(".part.titlebar").boundingBox();
+  const top = Math.ceil(title?.height ?? 0);
+  return window.screenshot({
+    clip: { x: 0, y: top, width: WIDTH, height: HEIGHT - top },
+    animations: "disabled",
+    caret: "initial",
+  });
+}
+
+/** Every language server started as the workspace opens, rather than on a page's. */
+const startAll = { "ascribe.startServers": "all" };
+
+/** Takes one step's picture of the window, once `visible` is. */
+async function stepShot(window: Page, stage: Stage, visible: string): Promise<Buffer> {
+  await stage.staged(0);
+  await window.locator(visible).first().waitFor({ timeout: 60_000 });
+  const picture = await shot(window);
+  stage.taken(0);
+  return picture;
+}
+
+export const PICTURES: Record<string, Picture> = {
+  editor: {
+    scene: false,
+    workspace(scratch) {
+      const root = copy(scratch, "quill");
+      const file = path.join(root, PAGE);
+      edit(file, LINE, BROKEN);
+      const lines = readFileSync(file, "utf8").split("\n");
+      const line = lines.indexOf(BROKEN) + 1;
+      const column = BROKEN.indexOf("/keys/") + 3;
+      return { root, goto: `${file}:${line}:${column}` };
+    },
+    async take(window) {
+      // The language server has checked the page.
+      await window.locator(".squiggly-warning").first().waitFor({ timeout: 60_000 });
+      await command(window, "Notifications: Clear All Notifications");
+      await command(window, "View: Close Primary Side Bar");
+      await command(window, "View: Focus Problems");
+      await window.locator(".markers-panel .monaco-list-row").first().waitFor();
+      await command(window, "View: Focus First Editor Group");
+      await window.keyboard.press(process.platform === "darwin" ? "Meta+." : "Control+.");
+      await window.locator(".action-widget").first().waitFor();
+      return shot(window);
+    },
+  },
+  "build-lens": {
+    scene: true,
+    workspace: (scratch) => ({ root: copy(scratch, "platforms"), settings: startAll }),
+    take: (window, stage) => stepShot(window, stage, ".monaco-hover:has-text('Left out of')"),
+  },
+  "actions-bar": {
+    scene: true,
+    workspace: (scratch) => ({ root: copy(scratch, "quill"), settings: startAll }),
+    take: (window, stage) => stepShot(window, stage, ".quick-input-widget .monaco-list-row"),
+  },
+  "review-view": {
+    scene: true,
+    workspace(scratch) {
+      const root = copy(scratch, "quill");
+      git(root, "init", "-q", "-b", "main");
+      git(root, "add", "-A");
+      git(root, "commit", "-q", "-m", "The Quill example");
+      git(root, "checkout", "-q", "-b", "feature");
+      edit(
+        path.join(root, "docs", "install-agent.md"),
+        "syncs changes to",
+        "syncs every change to",
+      );
+      git(root, "commit", "-q", "-am", "Reword the agent's introduction");
+      // Pushed to GitHub, which scenes.ts fakes.
+      git(root, "remote", "add", "origin", "https://github.com/acme/quill.git");
+      git(root, "config", "branch.feature.remote", "origin");
+      git(root, "config", "branch.feature.merge", "refs/heads/feature");
+      git(root, "update-ref", "refs/remotes/origin/main", "main");
+      git(root, "update-ref", "refs/remotes/origin/feature", "feature");
+      return {
+        root,
+        settings: { ...startAll, "workbench.view.alwaysShowHeaderActions": true },
+      };
+    },
+    take: (window, stage) => stepShot(window, stage, ".activitybar .badge-content:text-is('1')"),
+  },
+  "shown-in-pages": {
+    scene: true,
+    workspace(scratch) {
+      const root = copy(scratch, "tested");
+      const page = (file: string, title: string, text: string) =>
+        writeFileSync(
+          path.join(root, "docs", file),
+          `---\ntitle: ${title}\n---\n\n${text}\n\n@snippet: code:examples/greet.ts#greet\n`,
+        );
+      page("quickstart.md", "Quickstart", "Greet your first reader:");
+      page("reference.md", "Reference", "`greet` takes a name and returns a greeting:");
+      return { root, goto: path.join(root, "code", "examples", "greet.ts"), settings: startAll };
+    },
+    take: (window, stage) => stepShot(window, stage, ".peekview-widget .monaco-list-row"),
+  },
+  "status-bar": {
+    scene: true,
+    workspace(scratch, server) {
+      const root = path.join(scratch, "workspace");
+      mkdirSync(root);
+      copy(root, "platforms", "docs");
+      writeFileSync(path.join(root, "README.md"), "# The workspace\n\nIts docs are in docs/.\n");
+      // `ascribe`, once `go` is there, and failing once `fail` is.
+      const slow = path.join(scratch, "ascribe");
+      writeFileSync(
+        slow,
+        [
+          "#!/bin/sh",
+          `while [ ! -e '${path.join(root, "go")}' ]; do sleep 0.2; done`,
+          `[ -e '${path.join(root, "fail")}' ] && exit 1`,
+          `exec '${server}' "$@"`,
+          "",
+        ].join("\n"),
+      );
+      chmodSync(slow, 0o755);
+      return { root, settings: { "ascribe.path": slow } };
+    },
+    async take(window, stage) {
+      const item = window.locator(`[id="Ascribe.ascribe-vscode.ascribe.project"]`);
+      const bar = window.locator(".part.statusbar");
+      const crops: string[] = [];
+      const STATES = 5;
+      for (let n = 0; n < STATES; n++) {
+        await stage.staged(n);
+        await window.waitForTimeout(500);
+        const at = await item.boundingBox();
+        const strip = await bar.boundingBox();
+        if (!at || !strip) throw new Error("no status bar item");
+        const crop = await window.screenshot({
+          clip: { x: at.x - 8, y: strip.y, width: at.width + 16, height: strip.height },
+          animations: "disabled",
+        });
+        crops.push(crop.toString("base64"));
+        // The last step's is taken once the board is: VS Code quits then.
+        if (n < STATES - 1) stage.taken(n);
+      }
+      // The states one above another, on the status bar's own color.
+      // A string, since this script has no DOM types: the page's own code.
+      await window.evaluate(`{
+        const bar = document.querySelector(".part.statusbar");
+        const board = document.createElement("div");
+        board.id = "ascribe-states";
+        Object.assign(board.style, {
+          position: "fixed",
+          inset: "0 auto auto 0",
+          zIndex: "100000",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          gap: "6px",
+          padding: "10px 12px",
+          background: getComputedStyle(bar).backgroundColor,
+        });
+        for (const data of ${JSON.stringify(crops)}) {
+          const image = document.createElement("img");
+          image.src = "data:image/png;base64," + data;
+          image.style.zoom = String(1 / devicePixelRatio);
+          board.append(image);
+        }
+        document.body.append(board);
+      }`);
+      await window.waitForTimeout(500);
+      const board = await window.locator("#ascribe-states").screenshot({ animations: "disabled" });
+      stage.taken(STATES - 1);
+      return board;
+    },
+  },
+};
 
 /** VS Code's settings for a quiet window: the theme, and nothing that moves or invites. */
 function settings(scheme: "light" | "dark", server: string): Record<string, unknown> {
@@ -115,25 +345,46 @@ async function command(window: Page, title: string): Promise<void> {
   await window.locator(".quick-input-widget").waitFor({ state: "hidden" });
 }
 
-async function picture(scheme: "light" | "dark", out: string, server: string): Promise<void> {
+async function take(
+  name: string,
+  scheme: "light" | "dark",
+  out: string,
+  server: string,
+): Promise<void> {
+  const picture = PICTURES[name];
+  if (!picture) throw new Error(`no picture named ${name}`);
   const executable = await downloadAndUnzipVSCode({
     version: VSCODE,
     cachePath: path.join(packageRoot, "out", "vscode-test"),
   });
-  const scratch = mkdtempSync(path.join(tmpdir(), "shot-"));
-  const { root, goto } = workspace(scratch);
+  // One path every time: the references peek shows a page's folder.
+  const scratch = path.join(tmpdir(), "ascribe-screenshot");
+  rmSync(scratch, { recursive: true, force: true, maxRetries: 5 });
+  mkdirSync(scratch);
+  const workspace = picture.workspace(scratch, server);
   const user = path.join(scratch, "user");
   mkdirSync(path.join(user, "User"), { recursive: true });
-  writeFileSync(path.join(user, "User", "settings.json"), JSON.stringify(settings(scheme, server)));
+  writeFileSync(
+    path.join(user, "User", "settings.json"),
+    JSON.stringify({ ...settings(scheme, server), ...workspace.settings }),
+  );
+  const signals = path.join(scratch, "signals");
+  mkdirSync(signals);
   const port = await freePort();
-  const env = { ...process.env };
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    ASCRIBE_SCENE: name,
+    ASCRIBE_SCENE_SIGNALS: signals,
+  };
   // Set by an extension host, and VS Code would then run as plain Node.
   delete env["ELECTRON_RUN_AS_NODE"];
   const args = [
-    root,
-    "--goto",
-    goto,
+    workspace.root,
+    ...(workspace.goto === undefined ? [] : ["--goto", workspace.goto]),
     `--extensionDevelopmentPath=${packageRoot}`,
+    ...(picture.scene
+      ? [`--extensionTestsPath=${path.join(packageRoot, "out", "scenes.cjs")}`]
+      : []),
     "--disable-workspace-trust",
     "--disable-gpu",
     "--disable-updates",
@@ -153,6 +404,18 @@ async function picture(scheme: "light" | "dark", out: string, server: string): P
         detached: true,
       })
     : spawn(executable, args, { stdio: "ignore", env, detached: true });
+  const stage: Stage = {
+    staged: async (n) => {
+      const failed = path.join(signals, "failed");
+      const staged = path.join(signals, `staged-${n}`);
+      await poll(`scene step ${n}`, async () =>
+        existsSync(failed) || existsSync(staged) ? true : undefined,
+      );
+      if (existsSync(failed))
+        throw new Error(`The scene failed at ${readFileSync(failed, "utf8")}`);
+    },
+    taken: (n) => writeFileSync(path.join(signals, `taken-${n}`), ""),
+  };
   let browser: Browser | undefined;
   try {
     browser = await poll("VS Code", () => chromium.connectOverCDP(`http://127.0.0.1:${port}`));
@@ -173,26 +436,7 @@ async function picture(scheme: "light" | "dark", out: string, server: string): P
         mobile: false,
       });
     }
-    // The language server has checked the page.
-    await window.locator(".squiggly-warning").first().waitFor({ timeout: 60_000 });
-    await command(window, "Notifications: Clear All Notifications");
-    await command(window, "View: Close Primary Side Bar");
-    await command(window, "View: Focus Problems");
-    await window.locator(".markers-panel .monaco-list-row").first().waitFor();
-    await command(window, "View: Focus First Editor Group");
-    await window.keyboard.press(process.platform === "darwin" ? "Meta+." : "Control+.");
-    await window.locator(".action-widget").first().waitFor();
-    // The menu's entrance, and the panel's last layout.
-    await window.waitForTimeout(1000);
-    // Without the title bar, which names the window as an extension's test host.
-    const title = await window.locator(".part.titlebar").boundingBox();
-    const top = Math.ceil(title?.height ?? 0);
-    await window.screenshot({
-      path: path.join(out, `editor-${scheme}.png`),
-      clip: { x: 0, y: top, width: WIDTH, height: HEIGHT - top },
-      animations: "disabled",
-      caret: "initial",
-    });
+    writeFileSync(path.join(out, `${name}-${scheme}.png`), await picture.take(window, stage));
   } finally {
     await quit(child, browser);
     rmSync(scratch, { recursive: true, force: true, maxRetries: 5 });
@@ -230,14 +474,18 @@ async function quit(child: ChildProcess, browser: Browser | undefined): Promise<
   await new Promise((resolve) => setTimeout(resolve, 1000));
 }
 
-const out = process.argv[2];
-const server = process.env["ASCRIBE_BIN"];
-if (out === undefined || server === undefined) {
-  console.error("Usage: ASCRIBE_BIN=<a built ascribe> node scripts/screenshot.ts <folder>");
-  process.exit(2);
-}
-mkdirSync(out, { recursive: true });
-for (const scheme of ["light", "dark"] as const) {
-  await picture(scheme, path.resolve(out), path.resolve(server));
-  console.log(`Wrote ${path.join(out, `editor-${scheme}.png`)}`);
+if (import.meta.main) {
+  const [out, name] = process.argv.slice(2);
+  const server = process.env["ASCRIBE_BIN"];
+  if (out === undefined || name === undefined || server === undefined || !(name in PICTURES)) {
+    console.error(
+      `Usage: ASCRIBE_BIN=<a built ascribe> node scripts/screenshot.ts <folder> <${Object.keys(PICTURES).join(" | ")}>`,
+    );
+    process.exit(2);
+  }
+  mkdirSync(out, { recursive: true });
+  for (const scheme of ["light", "dark"] as const) {
+    await take(name, scheme, path.resolve(out), path.resolve(server));
+    console.log(`Wrote ${path.join(out, `${name}-${scheme}.png`)}`);
+  }
 }

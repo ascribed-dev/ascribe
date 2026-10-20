@@ -23,6 +23,7 @@ label = "Checks and reports"
 
 [[sections]]
 folder = "review/"
+pages = ["how-it-works.md", "site-preview.md", "ci-report.md", "diff.md", "troubleshooting.md"]
 
 [[sections]]
 folder = "editor/"
@@ -56,21 +57,33 @@ pages = [
 
 [[sections]]
 folder = "examples/"
-label = "Examples and drift"
-pages = ["tested.md", "sources.md"]
+pages = ["snippets.md", "docs-repository.md", "drift.md", "tested.md", "sources.md"]
+
+[[sections]]
+folder = "publishing/"
 
 [[sections]]
 folder = "astro/"
 label = "Publishing with Astro"
+pages = [
+  "more-than-docs.md",
+  "agents.md",
+  "serve-markdown.md",
+  "reference.md",
+  "elements.md",
+]
 
 [[sections]]
 folder = "permalinks/"
 
 [[sections]]
 folder = "navigation/"
+pages = ["order.md", "site-list.md"]
 
 [[sections]]
 folder = "versions/"
+label = "Versions"
+pages = ["archive.md", "lines.md", "release.md"]
 
 [[sections]]
 folder = "templates/"

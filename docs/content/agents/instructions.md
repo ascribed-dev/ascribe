@@ -2,7 +2,6 @@
 type: how-to
 title: Write the agent files
 description: "Write your project's rules into the files agents read on their own, `AGENTS.md` and the Ascribe skill, and keep them current."
-available: ascribe 0.3.0
 ---
 
 `ascribe agents sync` writes your project's rules into the files agents read on their own, from `ascribe.toml`:

@@ -2,7 +2,6 @@
 type: how-to
 title: Work with an agent
 description: "The loop an agent runs on an Ascribe project: edit a page, check it, fix what's reported, and ask the commands that answer what it would otherwise guess."
-available: ascribe 0.3.0
 ---
 
 An agent working alone runs one loop: edit a page, check it, fix what's reported, and check the whole project before it finishes. `AGENTS.md` and the skill teach it the loop ([Write the agent files](instructions.md)), and [hooks](hooks.md) run the checks for an agent that forgets.
@@ -41,7 +40,6 @@ Other commands answer what an agent would otherwise guess at. Each changes nothi
 To rename a phrase, a dimension's value, a heading's id, or a page, an agent runs [`ascribe rename <target> <new>`](../command/questions.md#cli-rename), which changes every use as the editor's rename does, where a search and replace would miss some: the code a `@snippet {phrases=true}` shows, frontmatter fields, and the links on a page that moves.
 
 ## Fix it, or say it's intended
-@available: ascribe 0.3.0
 
 A problem whose next step is `review` may be fine as it is: a page nothing links to because the site's sidebar does, say. Fixing it is still the first answer, and an agent should fix it unless you tell it the problem is intended. When it is, the answer is an [acknowledgement](../writing/directives.md#intended): the check's name and your reason, written where the check reports the problem, so the next person reads why. Don't acknowledge a problem to make a check pass, and don't let an agent do it on its own: a prompt about a review check says to acknowledge it only when you've said so. The editor's **Mark as intended, and write why** writes a placeholder reason, which is reported until you replace it.
 

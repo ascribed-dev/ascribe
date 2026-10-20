@@ -2,7 +2,6 @@
 type: how-to
 title: GitHub Copilot
 description: "Set Ascribe up for GitHub Copilot, in VS Code and as the cloud agent that works on GitHub."
-available: ascribe 0.3.0
 ---
 
 Copilot reads `AGENTS.md` and the skill that [`ascribe agents sync`](instructions.md) writes, and, with `--target copilot`, rules in `.github/instructions/` applied only to your pages. What else it needs depends on where it runs.

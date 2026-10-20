@@ -55,7 +55,14 @@ fn expect(name: &str, text: &str) {
 fn json(output: &Output) -> String {
     let text = stdout(output);
     let value: serde_json::Value = serde_json::from_str(&text).expect("the report is JSON");
-    let version = format!("\"ascribe_version\": \"{}\"", env!("CARGO_PKG_VERSION"));
+    // `observe` records the build it ran with, which a build from a checkout
+    // follows with `+dev` and its commit.
+    let written = value
+        .pointer("/ascribe_version")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_default();
+    assert!(written.starts_with(env!("CARGO_PKG_VERSION")), "{text}");
+    let version = format!("\"ascribe_version\": \"{written}\"");
     assert!(text.contains(&version), "{text}");
     let mut text = text.replace(&version, "\"ascribe_version\": \"{version}\"");
     if let Some(root) = value.pointer("/repository/root") {
@@ -163,6 +170,11 @@ fn init() {
     expect(
         "init-ascribe.toml",
         &fs::read_to_string(dir.path().join("ascribe.toml")).unwrap(),
+    );
+    let dir = tempfile::tempdir().unwrap();
+    expect(
+        "init.json",
+        &json(&run(dir.path(), &["init", "--format", "json"], 0)),
     );
 }
 
@@ -703,8 +715,13 @@ fn file_url(dir: &Path) -> String {
     }
 }
 
-/// `ascribe sources update`, after three commits to the code repository: the
-/// command reference's text output.
+/// Where the code's repository is said to be, in place of the `file:` URL of
+/// the temporary folder it's in.
+const API: &str = "https://github.com/lantern/api";
+
+/// `ascribe sources fetch` and `status` in a new docs project, then
+/// `ascribe sources update` after three commits to the code repository: the
+/// command reference's examples.
 #[test]
 fn sources_update() {
     let api = repository();
@@ -744,7 +761,26 @@ fn sources_update() {
         );
         out
     };
-    sources(&["sources", "fetch"]);
+    let api_url = file_url(api.path());
+    let shown = |text: String| text.replace(&api_url, API);
+    // The note about a first copy goes to standard error, before the rest.
+    let fetched = sources(&["sources", "fetch"]);
+    expect(
+        "sources-fetch.txt",
+        &format!(
+            "{}{}",
+            String::from_utf8_lossy(&fetched.stderr),
+            stdout(&fetched)
+        ),
+    );
+    expect(
+        "sources-status.txt",
+        &shown(stdout(&sources(&["sources", "status"]))),
+    );
+    expect(
+        "sources-status.json",
+        &shown(json(&sources(&["sources", "status", "--format", "json"]))),
+    );
     commit(docs.path(), "Document signing in");
 
     write(api.path(), "examples/sh/login.sh", "lantern login\n");
@@ -759,10 +795,27 @@ fn sources_update() {
     );
     commit(api.path(), "Take a user when logging in");
 
+    // The same update, in a copy of the docs, as JSON.
+    let copy = tempfile::tempdir().unwrap();
+    copy_tree(docs.path(), copy.path());
     expect(
         "sources-update.txt",
         &stdout(&sources(&["sources", "update"])),
     );
+    let out = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(copy.path())
+        .args(["sources", "update", "--format", "json"])
+        .env("NO_COLOR", "1")
+        .env("ASCRIBE_CACHE_DIR", cache.path())
+        .output()
+        .expect("run ascribe");
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    expect("sources-update.json", &shown(json(&out)));
 }
 
 /// `ascribe rename` on a copy of `examples/quill`, run from its root: the
@@ -872,6 +925,45 @@ fn answers() {
         "render.txt",
         &stdout(&run(&root, &["render", keys, "--build", "cloud"], 0)),
     );
+    expect(
+        "search.txt",
+        &stdout(&run(
+            &root,
+            &["search", "\"sign in to quill cloud\"", "--config", quill],
+            0,
+        )),
+    );
+    // A fragment's line, found once with the page that shows it.
+    expect(
+        "search-fragment.txt",
+        &stdout(&run(
+            &root,
+            &["search", "docs repository", "--config", quill],
+            0,
+        )),
+    );
+    // A snippet's code, at the code file's line.
+    expect(
+        "search-snippet.txt",
+        &stdout(&run(
+            &root,
+            &["search", "hello", "--config", "examples/tested"],
+            0,
+        )),
+    );
+    // A page's title, at its key, before the rest.
+    expect(
+        "search-title.txt",
+        &stdout(&run(
+            &root,
+            &["search", "\"upgrade the agent\"", "--config", quill],
+            0,
+        )),
+    );
+    expect(
+        "search-none.txt",
+        &stdout(&run(&root, &["search", "zebra", "--config", quill], 1)),
+    );
 }
 
 /// `ascribe agents sync` on `examples/quill` in a repository of its own:
@@ -900,6 +992,10 @@ fn versions() {
         &stdout(&run(&quill, &["versions", "list"], 0)),
     );
     expect(
+        "versions-list.json",
+        &json(&run(&quill, &["versions", "list", "--format", "json"], 0)),
+    );
+    expect(
         "versions-changes.txt",
         &stdout(&run(
             &quill,
@@ -918,6 +1014,21 @@ fn versions() {
                 "3.5",
                 "--format",
                 "markdown",
+            ],
+            0,
+        )),
+    );
+    expect(
+        "versions-changes.json",
+        &json(&run(
+            &quill,
+            &[
+                "versions",
+                "changes",
+                "self-managed 3.4",
+                "3.5",
+                "--format",
+                "json",
             ],
             0,
         )),
@@ -946,6 +1057,24 @@ fn versions_archive() {
                 "archive/3.4",
                 "--current",
                 "https://docs.quill.dev/",
+            ],
+            0,
+        )),
+    );
+    expect(
+        "versions-archive.json",
+        &json(&run(
+            root,
+            &[
+                "versions",
+                "archive",
+                "self-managed 3.4",
+                "--to",
+                "archive/3.4",
+                "--current",
+                "https://docs.quill.dev/",
+                "--format",
+                "json",
             ],
             0,
         )),
@@ -992,6 +1121,23 @@ fn versions_release() {
             0,
         )),
     );
+    expect(
+        "versions-release.json",
+        &json(&run(
+            root,
+            &[
+                "versions",
+                "release",
+                "self-managed 3.6",
+                "--next",
+                "3.7",
+                "--dry-run",
+                "--format",
+                "json",
+            ],
+            0,
+        )),
+    );
 }
 
 /// `ascribe versions retire` on `examples/quill`, as a dry run, so it
@@ -1014,5 +1160,216 @@ fn versions_retire() {
             ],
             0,
         )),
+    );
+    // The day it ended is today's, so the JSON is written as of a fixed one.
+    let out = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(&quill)
+        .args([
+            "versions",
+            "retire",
+            "self-managed 3.4",
+            "--url",
+            "https://archive.quill.dev/3.4/",
+            "--dry-run",
+            "--show-unused",
+            "--format",
+            "json",
+        ])
+        .env("NO_COLOR", "1")
+        .env("ASCRIBE_TODAY", "2026-10-16")
+        .output()
+        .expect("run ascribe");
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    expect("versions-retire.json", &json(&out));
+}
+
+/// `ascribe observe --check` on a copy of `examples/tested/code`, as it's
+/// committed and after an example changes: the command reference's examples.
+/// A run of the test itself isn't here, since it prints the test runner's
+/// output and the machine's versions.
+#[test]
+fn observe_check() {
+    let dir = tempfile::tempdir().unwrap();
+    copy_tree(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/tested/code"),
+        dir.path(),
+    );
+    run(dir.path(), &["observe", "--check"], 0);
+    let greet = dir.path().join("examples").join("greet.ts");
+    let mut text = fs::read_to_string(&greet).unwrap();
+    text.push_str("greet(\"again\");\n");
+    fs::write(&greet, text).unwrap();
+    let stale = ascribe(dir.path(), &["observe", "--check"]);
+    assert_eq!(stale.status.code(), Some(1));
+    expect(
+        "observe-check.txt",
+        &format!(
+            "{}{}",
+            stdout(&stale),
+            String::from_utf8_lossy(&stale.stderr)
+        ),
+    );
+    let out = ascribe(dir.path(), &["observe", "--check", "--format", "json"]);
+    assert_eq!(out.status.code(), Some(1));
+    expect("observe-check.json", &json(&out));
+}
+
+/// A project with three permalinks and an alias, its list written, then one
+/// permalink moved to another page and one removed: what `ascribe
+/// permalinks` says about it, for the command reference.
+#[test]
+fn permalinks() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(
+        root,
+        "ascribe.toml",
+        "spec = \"0.1\"\n\n[permalinks.aliases]\nconfig = \"weave-config\"\n",
+    );
+    write(
+        root,
+        "docs/guides/weave.md",
+        "---\ntitle: Weaving\npermalink: weaving\n---\n\n## Configure the loom\n@id {permalink=true}: weave-config\n\nSet the loom up.\n\n## Rotate the keys\n@id {permalink=true}: rotate-keys\n\nRotate them.\n",
+    );
+    write(
+        root,
+        "docs/guides/security.md",
+        "---\ntitle: Security\n---\n\nKeep the keys safe.\n",
+    );
+    expect(
+        "permalinks-sync-new.txt",
+        &stdout(&run(root, &["permalinks", "sync"], 0)),
+    );
+
+    // The section moves to a page of its own, and the other goes.
+    write(
+        root,
+        "docs/guides/weave.md",
+        "---\ntitle: Weaving\npermalink: weaving\n---\n\nSee the loom's reference.\n",
+    );
+    write(
+        root,
+        "docs/reference/loom.md",
+        "---\ntitle: The loom\n---\n\n## Configure the loom\n@id {permalink=true}: weave-config\n\nSet the loom up.\n",
+    );
+    expect(
+        "permalinks-list.txt",
+        &stdout(&run(root, &["permalinks", "list"], 0)),
+    );
+    expect(
+        "permalinks-list.json",
+        &json(&run(root, &["permalinks", "list", "--format", "json"], 0)),
+    );
+    let check = ascribe(root, &["permalinks", "sync", "--check"]);
+    assert_eq!(check.status.code(), Some(1));
+    expect(
+        "permalinks-sync-check.txt",
+        &format!(
+            "{}{}",
+            String::from_utf8_lossy(&check.stderr),
+            stdout(&check)
+        ),
+    );
+    expect(
+        "permalinks-sync.json",
+        &json(&run(
+            root,
+            &["permalinks", "sync", "--check", "--format", "json"],
+            1,
+        )),
+    );
+    let sync = run(root, &["permalinks", "sync"], 0);
+    expect(
+        "permalinks-sync.txt",
+        &format!("{}{}", String::from_utf8_lossy(&sync.stderr), stdout(&sync)),
+    );
+
+    let copy = tempfile::tempdir().unwrap();
+    copy_tree(root, copy.path());
+    let retire = [
+        "permalinks",
+        "retire",
+        "rotate-keys",
+        "--reason",
+        "Merged into the security guide",
+        "--to",
+        "guides/security.md",
+    ];
+    expect("permalinks-retire.txt", &stdout(&run(root, &retire, 0)));
+    expect(
+        "permalinks-retire.json",
+        &json(&run(
+            copy.path(),
+            &[&retire[..], &["--format", "json"]].concat(),
+            0,
+        )),
+    );
+
+    let verify = [
+        "permalinks",
+        "verify",
+        "weave-config",
+        "config",
+        "rotate-keys",
+        "weave-colour",
+        "--against",
+        "ascribe.permalinks",
+    ];
+    expect(
+        "permalinks-verify.txt",
+        &String::from_utf8_lossy(&run(root, &verify, 1).stderr),
+    );
+    expect(
+        "permalinks-verify.json",
+        &json(&run(
+            root,
+            &[&verify[..], &["--format", "json"]].concat(),
+            1,
+        )),
+    );
+}
+
+/// `ascribe templates` in a project `ascribe init` started: the set, one
+/// template taken, and what's changed once the project edits its copy, for
+/// the command reference.
+#[test]
+fn templates() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    run(root, &["init"], 0);
+    expect(
+        "templates-list.txt",
+        &stdout(&run(root, &["templates", "list"], 0)),
+    );
+    let copy = tempfile::tempdir().unwrap();
+    copy_tree(root, copy.path());
+    expect(
+        "templates-eject.txt",
+        &stdout(&run(root, &["templates", "eject", "how-to"], 0)),
+    );
+    expect(
+        "templates-eject.json",
+        &json(&run(
+            copy.path(),
+            &["templates", "eject", "how-to", "--format", "json"],
+            0,
+        )),
+    );
+    let template = root.join("templates").join("how-to.md");
+    let mut text = fs::read_to_string(&template).unwrap();
+    text.push_str("\n## See also\n\n- \\{A page to read next}\n");
+    fs::write(&template, text).unwrap();
+    expect(
+        "templates-status.txt",
+        &stdout(&run(root, &["templates", "status"], 0)),
+    );
+    expect(
+        "templates-status.json",
+        &json(&run(root, &["templates", "status", "--format", "json"], 0)),
     );
 }

@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "changed": true,
+  "sources": [
+    {
+      "name": "api",
+      "git": "https://github.com/lantern/api",
+      "followed": "main",
+      "from": "e06ca349578f9184cd36724d9ed237e0ef2f0eff",
+      "to": "3f7a23ad44ad1f6c9c2814bc82c96a0382f02f19",
+      "moved": true,
+      "back": false,
+      "commits": {
+        "count": 3,
+        "newest": [
+          {
+            "commit": "3f7a23ad44ad1f6c9c2814bc82c96a0382f02f19",
+            "subject": "Take a user when logging in"
+          },
+          {
+            "commit": "77319c2418961a96ceabb9711fa39b393fc8987f",
+            "subject": "Document the client"
+          },
+          {
+            "commit": "13d55fc94ea0515f87527da901c257c617439efe",
+            "subject": "Rename the examples folder"
+          }
+        ]
+      },
+      "files": [
+        {
+          "path": "src/auth.rs",
+          "change": "changed"
+        }
+      ],
+      "examples": [],
+      "failed": [],
+      "first_copy": false
+    }
+  ],
+  "pages": [
+    {
+      "path": "guides/auth.md",
+      "route": "/guides/auth/",
+      "builds": [
+        "site"
+      ],
+      "page_changed": false,
+      "examples": [
+        {
+          "address": "api:src/auth.rs#login",
+          "source": "api",
+          "file": "sources/api/src/auth.rs",
+          "was_file": null,
+          "added": 1,
+          "removed": 1
+        }
+      ],
+      "broken": []
+    }
+  ],
+  "pages_unavailable": null
+}

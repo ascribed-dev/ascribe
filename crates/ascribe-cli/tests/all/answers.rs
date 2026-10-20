@@ -1,6 +1,6 @@
 //! The commands that answer questions (`explain`, `model`, `outline`, `link`,
-//! `refs`, and `render`): their JSON, exit codes, and limits, by running the
-//! binary. `tests/output.rs` has their output on `examples/quill`, which the
+//! `refs`, `render`, and `search`): their JSON, exit codes, and limits, by
+//! running the binary. `tests/output.rs` has their output on `examples/quill`, which the
 //! command reference shows.
 
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
@@ -233,6 +233,13 @@ fn model_reads_every_example_content_model() {
             "widgets",
             "builds",
             "sources",
+            "project",
+            "consumer",
+            "editor",
+            "checks",
+            "crawlers",
+            "listing",
+            "permalinks",
         ] {
             assert!(value[section].is_array(), "{config}: no {section}");
         }
@@ -259,6 +266,136 @@ fn model_cuts_a_long_list_and_names_the_section() {
     let one = json(dir.path(), &["model", "--section", "phrases"], 0);
     assert_eq!(one["phrases"].as_array().unwrap().len(), 400);
     assert!(one.get("types").is_none(), "{one}");
+}
+
+/// Every key of a section of settings, from the registry, as a JSON
+/// section has them: `(table, key)` for the keys a table of its own has, such
+/// as `[checks.vale]`'s, and the key alone for the rest.
+fn registry_keys(section: &str) -> Vec<String> {
+    let all = ascribe_model::settings::settings();
+    let mut out = Vec::new();
+    for s in all.iter().filter(|s| s.table == section) {
+        let inner = format!("{section}.{}", s.key);
+        if s.kind == "table" && all.iter().any(|t| t.table == inner) {
+            out.extend(
+                registry_keys(&inner)
+                    .into_iter()
+                    .map(|k| format!("{}.{k}", s.key)),
+            );
+        } else {
+            out.push(s.key.clone());
+        }
+    }
+    out
+}
+
+#[test]
+fn model_shows_each_section_of_settings_with_its_values_and_defaults() {
+    let root = repository_root();
+    let text = stdout(&run(
+        &root,
+        &["--config", "docs", "model", "--section", "consumer"],
+        0,
+    ));
+    assert!(text.contains("## `[consumer]`"), "{text}");
+    for key in registry_keys("consumer") {
+        assert!(text.contains(&format!("- `{key}`: ")), "{key}: {text}");
+    }
+    // The docs set `base-path`, and leave `slugger` to its default.
+    assert!(
+        text.contains("- `base-path`: `\"/docs/\"` (default `\"/\"`)"),
+        "{text}"
+    );
+    assert!(
+        text.contains("- `slugger`: `\"github\"` (the default)"),
+        "{text}"
+    );
+
+    let whole = json(&root, &["--config", "docs", "model"], 0);
+    for section in [
+        "project",
+        "consumer",
+        "editor",
+        "checks",
+        "crawlers",
+        "listing",
+        "permalinks",
+    ] {
+        let keys: Vec<String> = whole[section]
+            .as_array()
+            .unwrap_or_else(|| panic!("no {section}: {whole}"))
+            .iter()
+            // A check in `[checks]` is one the file names.
+            .filter(|s| !(section == "checks" && s["table"] == "checks"))
+            .map(|s| {
+                let table = s["table"].as_str().unwrap();
+                let key = s["key"].as_str().unwrap();
+                match table.strip_prefix(&format!("{section}.")) {
+                    Some(inner) => format!("{inner}.{key}"),
+                    None => key.to_owned(),
+                }
+            })
+            .collect();
+        assert_eq!(keys, registry_keys(section), "{section}");
+    }
+}
+
+#[test]
+fn model_shows_settings_the_file_sets_and_the_defaults_it_leaves() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        &dir.path().join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[consumer]\nsite = \"https://example.com\"\n\n\
+         [checks]\npage-size = \"warning\"\n\n[checks.links]\nreuse-days = 7\n",
+    );
+    fs::create_dir(dir.path().join("docs")).unwrap();
+    let report = json(dir.path(), &["model"], 0);
+    let find = |section: &str, table: &str, key: &str| -> Value {
+        report[section]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|s| s["table"] == table && s["key"] == key)
+            .unwrap_or_else(|| panic!("no {table} {key}: {report}"))
+            .clone()
+    };
+    let site = find("consumer", "consumer", "site");
+    assert_eq!(site["value"], "https://example.com");
+    assert_eq!(site["set"], true);
+    assert!(site.get("default").is_none(), "{site}");
+    let base = find("consumer", "consumer", "base-path");
+    assert_eq!(base["value"], "/");
+    assert_eq!(base["set"], false);
+    assert_eq!(base["default"], "/");
+    let reuse = find("checks", "checks.links", "reuse-days");
+    assert_eq!(
+        (reuse["value"].clone(), reuse["default"].clone()),
+        (7.into(), 14.into())
+    );
+    let check = find("checks", "checks", "page-size");
+    assert_eq!(check["value"], "warning");
+    assert_eq!(check["kind"], "level");
+    // The editor's build, which the loader chose: the only one.
+    let build = find("editor", "editor", "build");
+    assert_eq!(
+        (build["value"].clone(), build["set"].clone()),
+        ("site".into(), false.into())
+    );
+
+    let text = stdout(&run(dir.path(), &["model"], 0));
+    assert!(
+        text.contains(
+            "`permalinks`, each with its keys and values: `ascribe model --section <name>`"
+        ),
+        "{text}"
+    );
+    assert!(!text.contains("`[consumer]`"), "{text}");
+    let checks = stdout(&run(dir.path(), &["model", "--section", "checks"], 0));
+    assert!(
+        checks.contains("- `links.reuse-days`: `7` (default `14`)"),
+        "{checks}"
+    );
+    assert!(checks.contains("- `page-size`: `\"warning\"`"), "{checks}");
 }
 
 #[test]
@@ -645,6 +782,101 @@ fn refs_to_nothing_is_exit_code_1() {
 }
 
 #[test]
+fn refs_lists_where_an_image_is_shown_linked_and_named() {
+    let dir = project();
+    let site = dir.path().join("site");
+    for image in ["docs/images/keys.png", "docs/images/unused.png"] {
+        fs::create_dir_all(site.join(image).parent().unwrap()).unwrap();
+        fs::write(site.join(image), b"\x89PNG").unwrap();
+    }
+    write(&site.join("docs/notes.txt"), "Not a page.\n");
+    write(
+        &site.join("docs/shown.md"),
+        "---\ntitle: Shown\ncover: images/keys.png\n---\n\n![Keys](images/keys.png)\n\n\
+         See [the picture](images/keys.png).\n\n<img src=\"images/keys.png\" alt=\"Keys\">\n",
+    );
+    let refs = json(dir.path(), &["refs", "site/docs/images/keys.png"], 0);
+    assert_eq!(refs["kind"], "image", "{refs}");
+    assert_eq!(refs["exists"], true);
+    let places: Vec<(&str, u64, u64, &str)> = refs["places"]
+        .as_array()
+        .expect("places")
+        .iter()
+        .map(|p| {
+            (
+                p["file"].as_str().unwrap(),
+                p["line"].as_u64().unwrap(),
+                p["column"].as_u64().unwrap(),
+                p["use"].as_str().unwrap(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        places,
+        [
+            ("docs/shown.md", 3, 8, "frontmatter"),
+            ("docs/shown.md", 6, 1, "image"),
+            ("docs/shown.md", 8, 5, "link"),
+            ("docs/shown.md", 10, 11, "html"),
+        ],
+        "{refs}"
+    );
+    // From the content root too, as a page is.
+    let from_root = json(&site, &["refs", "images/keys.png"], 0);
+    assert_eq!(from_root["total"], 4, "{from_root}");
+
+    // An image nothing uses exists, so it's no problem.
+    let unused = json(dir.path(), &["refs", "site/docs/images/unused.png"], 0);
+    assert_eq!(unused["kind"], "image");
+    assert_eq!(unused["total"], 0);
+    let text = stdout(&run(
+        dir.path(),
+        &["refs", "site/docs/images/unused.png"],
+        0,
+    ));
+    assert_eq!(text, "0 places use site/docs/images/unused.png.\n");
+
+    // A file that's neither a source nor an image says what `refs` takes.
+    let out = run(dir.path(), &["refs", "site/docs/notes.txt"], 2);
+    let err = stderr(&out);
+    assert!(
+        err.contains("it's a file, but not a page, a fragment, or an image"),
+        "{err}"
+    );
+    assert!(!stdout(&out).contains("doesn't exist"));
+    let gone = json(dir.path(), &["refs", "site/docs/images/gone.png"], 1);
+    assert_eq!(gone["kind"], "image", "{gone}");
+    // An image has no headings to name.
+    let err = stderr(&run(
+        dir.path(),
+        &["refs", "site/docs/images/keys.png#top"],
+        2,
+    ));
+    assert!(
+        err.contains("it's an image, which has no headings"),
+        "{err}"
+    );
+}
+
+#[test]
+fn refs_finds_the_image_reviews_page_shows_in_ascribes_docs() {
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    for (dir, target) in [
+        ("docs", "images/review-site-preview.png"),
+        (".", "docs/content/images/review-site-preview.png"),
+    ] {
+        let refs = json(&repo.join(dir), &["refs", target], 0);
+        assert_eq!(refs["kind"], "image", "{refs}");
+        let review = refs["places"]
+            .as_array()
+            .expect("places")
+            .iter()
+            .any(|p| p["file"] == "content/review/index.md" && p["use"] == "image");
+        assert!(review, "from {dir}: {refs}");
+    }
+}
+
+#[test]
 fn render_writes_the_page_a_build_publishes() {
     let dir = project();
     let page = "site/docs/install.md";
@@ -742,4 +974,120 @@ fn render_needs_a_build_and_a_page() {
         &["render", "site/docs/keys.md", "--build", "nope"],
         2,
     );
+}
+
+#[test]
+fn search_finds_words_through_phrases_in_the_builds_that_publish_them() {
+    let dir = project();
+    let out = run(
+        dir.path(),
+        &["search", "upgrade quill", "--config", "site"],
+        0,
+    );
+    let text = stdout(&out);
+    assert!(
+        text.starts_with("docs/install.md:15: Upgrade Quill.\n"),
+        "{text}"
+    );
+    assert!(text.contains("through phrase product"), "{text}");
+    assert!(text.contains("in build self-managed"), "{text}");
+    assert!(text.ends_with("1 place matches, on 1 page.\n"), "{text}");
+}
+
+#[test]
+fn search_names_three_of_the_pages_a_fragment_is_on_and_the_command_for_all() {
+    let dir = project();
+    let site = dir.path().join("site");
+    for n in 1..=4 {
+        write(
+            &site.join(format!("docs/more-{n}.md")),
+            &format!("---\ntitle: More {n}\n---\n\n@include: _fragments/before.md\n"),
+        );
+    }
+    let out = run(
+        dir.path(),
+        &["search", "\"you need\"", "--config", "site"],
+        0,
+    );
+    assert_eq!(
+        stdout(&out),
+        "docs/_fragments/before.md:3: You need Quill.\n    on 5 pages: install.md #before-you-start, more-1.md #before-you-start, more-2.md #before-you-start, and 2 more: `ascribe refs _fragments/before.md`\n\n1 place matches, on 5 pages.\n"
+    );
+}
+
+#[test]
+fn search_names_the_builds_of_a_page_that_shows_a_place_in_fewer() {
+    let dir = project();
+    let site = dir.path().join("site");
+    write(
+        &site.join("docs/both.md"),
+        "---\ntitle: Both\n---\n\n@variant {deployment=self-managed}:\n@include: _fragments/before.md\n@variant {deployment=cloud}:\nOther.\n@end\n",
+    );
+    let out = run(
+        dir.path(),
+        &["search", "\"you need\"", "--config", "site"],
+        0,
+    );
+    let text = stdout(&out);
+    assert!(
+        text.contains("on 2 pages: both.md #before-you-start (in build self-managed), install.md #before-you-start\n"),
+        "{text}"
+    );
+}
+
+#[test]
+fn search_finds_a_phrase_value_at_its_line_in_the_model() {
+    let quill = repository_root().join("examples/quill");
+    let out = run(&quill, &["search", "\"quill cloud\""], 0);
+    let text = stdout(&out);
+    assert!(text.starts_with("ascribe.toml:34: Quill Cloud\n"), "{text}");
+    assert!(text.contains("`ascribe refs phrase:cloud`"), "{text}");
+}
+
+#[test]
+fn search_exits_1_when_nothing_matches() {
+    let dir = project();
+    let out = run(dir.path(), &["search", "zebra", "--config", "site"], 1);
+    assert_eq!(stdout(&out), "No place matches.\n");
+}
+
+#[test]
+fn search_cuts_the_list_and_says_how_to_see_it_all() {
+    let dir = project();
+    let args = ["search", "upgrade", "--config", "site", "--limit", "1"];
+    let text = stdout(&run(dir.path(), &args, 0));
+    assert!(
+        text.ends_with(
+            "2 places match, on 1 page.\nShowing 1 of them; for all: `ascribe search upgrade --limit 2 --config site`\n"
+        ),
+        "{text}"
+    );
+}
+
+#[test]
+fn search_says_to_quote_several_words() {
+    let dir = project();
+    let out = run(
+        dir.path(),
+        &["search", "rate", "limit", "--config", "site"],
+        2,
+    );
+    assert!(
+        stderr(&out).contains("quote several words together: ascribe search 'rate limit'"),
+        "{}",
+        stderr(&out)
+    );
+}
+
+#[test]
+fn search_stops_on_a_query_or_a_build_it_cannot_read() {
+    let dir = project();
+    for args in [
+        &["search", "\"rate limit", "--config", "site"][..],
+        &["search", " ", "--config", "site"],
+        &["search", "quill", "--build", "nope", "--config", "site"],
+    ] {
+        let out = run(dir.path(), args, 2);
+        assert!(stderr(&out).starts_with("error: "), "{}", stderr(&out));
+    }
 }

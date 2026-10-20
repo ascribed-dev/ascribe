@@ -22,7 +22,7 @@
           "type": "boolean"
         },
         "use": {
-          "description": "How it uses the target: `link`, `include`, `phrase`, `availability`,\n`term`, `variant`, `note`, `widget`, or `memo`, a memo file about it.",
+          "description": "How it uses the target: `link`, `include`, `phrase`, `availability`,\n`term`, `variant`, `note`, `widget`, `image`, an image that shows it,\n`html` or `frontmatter`, raw HTML or a frontmatter field that names\nit, or `memo`, a memo file about it.",
           "type": "string"
         }
       },
@@ -51,6 +51,11 @@
         {
           "const": "heading",
           "description": "A heading, by its page and id.",
+          "type": "string"
+        },
+        {
+          "const": "image",
+          "description": "An image under the content root.",
           "type": "string"
         },
         {

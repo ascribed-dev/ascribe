@@ -959,48 +959,7 @@ fn html_as_text(html: &str) -> String {
         .join("\n")
 }
 
-/// The text of raw HTML: tags, comments, and `<script>` and `<style>`
-/// contents removed.
-pub(crate) fn html_text(html: &str) -> String {
-    let mut out = String::with_capacity(html.len());
-    let mut rest = html;
-    while let Some(open) = rest.find('<') {
-        out.push_str(&rest[..open]);
-        let tag = &rest[open..];
-        if let Some(after) = tag.strip_prefix("<!--") {
-            rest = after.find("-->").map_or("", |end| &after[end + 3..]);
-            continue;
-        }
-        // A tag starts with `<` and a letter, `/`, `!`, or `?`; any other
-        // `<` is text, as is one with no `>` after it.
-        let starts_tag = tag[1..]
-            .chars()
-            .next()
-            .is_some_and(|c| c.is_ascii_alphabetic() || matches!(c, '/' | '!' | '?'));
-        let close = if starts_tag { tag.find('>') } else { None };
-        let Some(close) = close else {
-            out.push('<');
-            rest = &tag[1..];
-            continue;
-        };
-        let name: String = tag[1..close]
-            .chars()
-            .take_while(|c| c.is_ascii_alphanumeric())
-            .collect::<String>()
-            .to_ascii_lowercase();
-        rest = &tag[close + 1..];
-        if name == "script" || name == "style" {
-            let end = format!("</{name}");
-            let lower = rest.to_ascii_lowercase();
-            rest = match lower.find(&end) {
-                Some(at) => rest[at..].find('>').map_or("", |gt| &rest[at + gt + 1..]),
-                None => "",
-            };
-        }
-    }
-    out.push_str(rest);
-    out
-}
+pub(crate) use ascribe_resolve::reading::html_text;
 
 /// Replaces each `{key}` that names a declared phrase with its value.
 fn substitute_phrases(model: &ContentModel, text: &str) -> String {

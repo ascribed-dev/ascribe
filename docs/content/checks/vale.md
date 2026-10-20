@@ -23,7 +23,7 @@ Install Vale 3.16 or later: see [Vale's installation page](https://docs.vale.sh/
    preset = "quiet"
    ```
 
-2. Add `.ascribe/` to your `.gitignore`, if it isn't there. Ascribe writes the preset there, beside the build's output, and the files are written again whenever they're needed. Deleting `.ascribe/` costs time, and one noisier link report: the next build writes its output again, and the next `ascribe report links` asks about every address and reports every failure, as a first run does.
+2. Add `.ascribe/` to your `.gitignore`, if it isn't there. Ascribe writes the preset there, beside the build's output, and writes it again whenever it's needed ([Files Ascribe writes](../command/project-files.md)).
 
 That's all: no `.vale.ini` to write, and no `vale sync`. Open a page in VS Code, or save one, and Vale's alerts appear in the Problems panel. In a terminal, `ascribe check --vale` checks every page.
 
@@ -83,7 +83,7 @@ Your project already lists words Vale shouldn't take for misspellings: phrase va
 
 When Vale isn't installed, fails, or takes too long, you get one advice on `[checks.vale]` in `ascribe.toml` (`prose-not-checked`) saying why, and everything else is checked as usual. If you check prose only in CI, turn that advice off on other machines with `prose-not-checked = "off"` in `[checks]`.
 
-To run Vale from somewhere other than your `PATH`, set `command`, a path from the project root:
+To run a Vale that isn't on your `PATH`, set `command` to its path from the project root:
 
 ```toml
 [checks.vale]
@@ -91,11 +91,29 @@ preset = "quiet"
 command = "tools/vale"
 ```
 
-A `command` that's a path is a program in the project, which anyone who can change the repository can change, so only the commands you run yourself, such as `ascribe check`, run it without asking. The editor asks you once a session before it runs it, and remembers your answer; an editor that can't ask doesn't run it. The agents' hooks never run it. Each says so in the `prose-not-checked` advice, and `ascribe check --vale` checks the prose. A bare name, such as `vale`, is found on your `PATH` and runs everywhere but the MCP server.
+A path is a program in the repository, so the editor asks you before it runs it, once a session, and the agents' hooks don't run it; each says so in `prose-not-checked`. To have Vale run everywhere it can, install it on your `PATH` and leave `command` out.
 
 ## From the preset to a configuration of your own
 
-When turning rules off isn't enough, say to add a style package, `ascribe vale eject` writes the preset out as your own configuration: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules in `off` turned off. Then it changes `[checks.vale]` to `config = ".vale.ini"`. From then on, the files are yours to change, and Ascribe never writes them again. It writes nothing when `.vale.ini` or `.vale` is there already. See [`ascribe vale eject`](../examples/sources.md#cli-vale-eject).
+When turning rules off isn't enough, say to add a style package, run [`ascribe vale eject`](#cli-vale-eject) in the project. It writes the preset out as your own configuration, and from then on the files are yours to change: Ascribe never writes them again. The project's vocabulary is still Ascribe's to write, under `.ascribe/vale/`.
+
+## `ascribe vale`
+@id {permalink=true}: cli-vale
+@available: ascribe 0.3.0
+
+Sets up Vale for a project. Vale itself is run by `ascribe check --vale` and the editor.
+
+### `ascribe vale eject`
+@id {permalink=true}: cli-vale-eject
+
+Writes the preset `[checks.vale]` names out as the project's own Vale configuration: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. Then it changes `[checks.vale]` in `ascribe.toml` to `config = ".vale.ini"`, in place of `preset` and `off`, keeping its other keys and comments.
+
+It takes no options but the ones every command accepts ([command reference](../command/index.md#options-every-command-accepts)). It lists each file it wrote, `ascribe.toml` last.
+
+| Code | Meaning |
+|---|---|
+| `0` | The preset is the project's own now |
+| `2` | It wrote nothing: no `ascribe.toml`, a content model with errors, a `[checks.vale]` that names no preset, or a `.vale.ini` or `.vale` that's there already. Or a file couldn't be written; the files it wrote before that stay. |
 
 ## See also
 

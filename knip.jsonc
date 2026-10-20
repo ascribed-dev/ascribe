@@ -59,6 +59,10 @@
         "src/prompt/index.ts",
       ],
     },
+    "examples/astro-site": {
+      // The docs' scenes of the site and the report, which scripts/docs-site/screenshots.ts runs.
+      "entry": ["scripts/screenshot.ts"],
+    },
     "packages/vscode": {
       // The site's editor picture, which scripts/docs-site/screenshots.ts runs.
       "entry": ["scripts/screenshot.ts"],

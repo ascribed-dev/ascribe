@@ -1,0 +1,8 @@
+docs/upgrade.md:3: Upgrade the agent
+    in builds site, site@3.4
+docs/configure-legacy.md:8: …folder instead: see Upgrade the agent.
+    through upgrade.md's title · in build site@3.4
+docs/configure.md:9: …changed from 3.4: Upgrade the agent.
+    through upgrade.md's title · in build site
+
+3 places match, on 3 pages.

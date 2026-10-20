@@ -1,7 +1,7 @@
 ---
 type: reference
-title: "`ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, and `render`"
-description: "Ask a project about its diagnostics, content model, pages, links, and references, and rename what a page links to."
+title: "`ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, `render`, and `search`"
+description: "Ask a project about its diagnostics, content model, pages, links, and references, find where its pages say something, and rename what a page links to."
 ---
 
 The commands that answer questions about a project, for writers and for agents, without changing anything, and `ascribe rename`, which changes a name and every reference to it. The options every command accepts are in the [command reference](index.md#options-every-command-accepts).
@@ -45,7 +45,10 @@ The text is Markdown, at most about 4,000 characters: when the model has more th
 With `--format json`, the document has `schema_version` (`3`), `ascribe_version`, and a field for each section shown: `types`, `dimensions`, `phrases`, `features`, `glossary`, `widgets`, `builds`, and `sources`. Without `--section`, every section is there, empty or not, and so is `navigation`: the project's [navigation](../navigation/index.md), its root section with each section's `folder`, `label`, own `page`, `pages`, nested `sections`, and `listed`, whether `ascribe.nav` lists it, and each page's `source`, `label`, and `type`, every page that isn't `unlisted`; with `--section`, only that one. A label is plain text, as a sidebar shows it: a title or `nav-label` with a code span in it is labeled without the backticks. The [schema](../contracts/json-reports/questions.md#ascribe-model) lists each section's fields.
 
 @available: ascribe 0.3.2
-A project with [release lines](../versions/index.md) has a section for them, `releases` in JSON: each target's lines, with their status and the build that is each line. A versioned build says which target versions it and which line it is.
+A project with [release lines](../versions/lines.md) has a section for them, `releases` in JSON: each target's lines, with their status and the build that is each line. A versioned build says which target versions it and which line it is.
+
+@available: next
+The rest of `ascribe.toml` is there too, a section of settings for each of its tables: `project`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, and `permalinks`. The text without `--section` names them at its end, and `--section` shows one, each key with the value in effect, and its default: `ascribe model --section consumer` shows `[consumer]`'s `site`, `base-path`, and the rest, the ones the file leaves out at their defaults. `[checks]` has the keys of `[checks.vale]` and `[checks.links]`, written `vale.preset` and `links.reuse-days`, and each check the file sets a level for. In JSON, each section is a list of keys, each with `table` (`consumer`, or `checks.vale`), `key`, `kind`, `value` (the value in effect, absent when the file leaves the key out and its default isn't one value), `set` (whether the file sets it), and `default` or `default_text`, the default in the [content model reference](../content-model/index.md)'s words when it isn't one value. The keys and defaults are the ones the loader reads, so `model` shows no key `ascribe check` would refuse.
 
 ## `ascribe outline`
 @id {permalink=true}: cli-outline
@@ -111,13 +114,16 @@ With `--format json`, the document is:
 @id {permalink=true}: cli-refs
 @available: ascribe 0.3.0
 
-Lists the places that use a page, a fragment, a heading, or an entry of the content model, each as `file:line:column`, with what kind of use it is. It's the editor's **Find All References**, on the command line: it finds a phrase only where it's a phrase, and a heading in a fragment through every page that includes it, which a text search can't.
+Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model, each as `file:line:column`, with what kind of use it is. It's the editor's **Find All References**, on the command line: it finds a phrase only where it's a phrase, and a heading in a fragment through every page that includes it, which a text search can't.
 
 @include: ../_generated/cli-refs-options.md
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/refs.txt
 
 A target that's a path, with or without `#id`, finds its project from the path. An entry of the model, or a glossary term, is written with a prefix: `phrase:product` (or `phrase:{product}`), `feature:sso`, `term:api-key`, `dimension:deployment`, `note:warning`, or `widget:release-note`, and the project is found from the current directory, or from `--config`. The places are in path order, and in order within a file. A use is `link`, `include`, `phrase`, `availability`, `term`, `variant`, `note`, or `widget`.
+
+@available: next
+An image under the content root is a target too, named as a page is: `ascribe refs images/keys.png`. Its places are each file that shows it (`image`), links to it (`link`), names it in raw HTML such as `<img src>` (`html`), or names it in a frontmatter field such as `cover` (`frontmatter`): the uses that keep [`image-unused`](../checks/diagnostics/content-checks.md#ASC159) from reporting it. An image nothing uses has no places, and exits with `0`, as any target that exists does.
 
 @available: ascribe 0.4.0
 A [memo file](../writing/memo-files.md) about the target is a place too, with the use `memo`, at its `about` line, after the uses. One whose `about` names a target that doesn't exist is listed under that target, so `ascribe refs` finds the memos a rename left behind.
@@ -126,7 +132,7 @@ A [memo file](../writing/memo-files.md) about the target is a place too, with th
 |---|---|
 | `0` | The target exists, used or not |
 | `1` | It doesn't exist |
-| `2` | It couldn't run: no `ascribe.toml`, one with errors, or a target that's neither a path nor an entry |
+| `2` | It couldn't run: no `ascribe.toml`, one with errors, a target that's neither a path nor an entry, or a file that's neither a page, a fragment, nor an image |
 
 With `--format json`, the document is:
 
@@ -153,7 +159,7 @@ What it renames, written as `ascribe refs` writes a target:
 | `keys.md#rotate-keys` | A heading's id, and each link and include that names it, each retired permalink's `to` in `ascribe.toml` that names it, and each [memo file](../writing/memo-files.md)'s `about` that names it, in `memos/` and `.ascribe/memos/`. A heading with an `@id` has it changed. One whose id is made from its text gets an `@id` line under it, so its text stays, and links to the headings after it that were numbered after it follow. |
 | `keys.md` | The page or fragment moves to the new path, and each link and include to it, or in it, whose path changes is changed. So is what `ascribe.toml` names it by: its path in `[glossary] pages`, a retired permalink's `to`, keeping its `#id`, and a phrase that's a link to it. So is each memo file's `about` that names it or a heading in it, keeping its `#id`, and its entry in its section's `pages` in [`ascribe.nav`](../navigation/index.md#the-file), which is taken out when it moves to another folder. A section written inline, as `sections = [{ … }]`, isn't followed: the file is left as it is, and `ascribe check` reports the name that's gone. The new path is read as the target was: from the current folder, or from the content root. |
 
-A path is from the current folder, or from the content root, and the project is found from it; for a phrase or a value, the project is found from the current folder. `--config` names the project for any target, so `ascribe rename keys.md guides/keys.md --config docs` works from the repository's root. A page that isn't found is named with both places it was looked for. It writes the files it changes, then moves the page, and prints each file it changed, from the current folder. A permalink's id isn't renamed, since links from outside the docs use it: change its `@id` by hand, then retire the old name with [`ascribe permalinks retire`](../examples/sources.md#cli-permalinks-retire). A page isn't moved through a folder that's a symbolic link. A phrase used in the code of a source in another repository isn't renamed either, since that code is a copy.
+A path is from the current folder, or from the content root, and the project is found from it; for a phrase or a value, the project is found from the current folder. `--config` names the project for any target, so `ascribe rename keys.md guides/keys.md --config docs` works from the repository's root. A page that isn't found is named with both places it was looked for. It writes the files it changes, then moves the page, and prints each file it changed, from the current folder. A permalink's id isn't renamed, since links from outside the docs use it: change its `@id` by hand, then retire the old name with [`ascribe permalinks retire`](../permalinks/command.md#cli-permalinks-retire). A page isn't moved through a folder that's a symbolic link. A phrase used in the code of a source in another repository isn't renamed either, since that code is a copy.
 
 | Code | Meaning |
 |---|---|
@@ -185,3 +191,53 @@ A line of a [versioned build](../versions/index.md), such as `--build site@3.4`,
 | `2` | It couldn't run: no `ascribe.toml`, one with errors, a path that isn't a page, more than one build and no `--build`, an unknown build, or a page that can't be rendered |
 
 With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `page`, `build`, `not_published` (why the build doesn't publish it, or null), `route` (its route in the build's site, or null), and `text`, the page as text output writes it.
+
+## `ascribe search`
+@id {permalink=true}: cli-search
+@available: next
+
+Finds where the pages say something, as their readers read it, and names the line to edit for each place. A text search reads the source, where a page says `Sign in to {cloud}`; `ascribe search` reads each page as every build publishes it, where it says "Sign in to Quill Cloud", and says which line wrote that, and through which phrase.
+
+@include: ../_generated/cli-search-options.md
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/search.txt
+
+Each place is `file:line:` and the block as a reader reads it, cut around the match, then where a reader meets it: the heading it's under and that heading's id, the arm of a variant group it's in, the phrases the match reads through, and, when it isn't in every build searched, the builds it's in. A line is listed once however many pages and builds show it. The places are in a fixed order: titles, then headings, then the rest; in each, the places written in pages come before those in fragments and code files, each in path order and in order within a file.
+
+The query is one argument. Words must all be in one block, in any order; a phrase in double quotes is matched as written, a run of spaces matching any run of white space. Quote several words together, and a phrase inside them: `ascribe search "rate limit"` finds both words in a block, and `ascribe search '"rate limit"'` finds them together. Case is ignored, and nothing else is: `cafe` doesn't find "café". A word matches inside a longer one, so `sync` finds "synchronize". A match never crosses from one block into another. There are no regular expressions; to run a pattern over the text readers read, write the plain output with `ascribe build --emit plain` and use `grep` on it.
+
+What's searched is each page's title and the field its type marks `role = "description"`, as each build publishes them, and what each build's plain output says of the page: its headings, paragraphs, lists, block quotes, tables (a row at a time), code blocks, and the titles and text of notes and details, wherever each is written: in the page, in a fragment an include brings in, or in the code file a `@snippet` shows. A match is a place in the source, listed once however many pages show it:
+
+| The match is | The place is | Where a reader meets it says |
+|---|---|---|
+| Written in the page | The page's line | The heading and its id, the arm, the builds when not all |
+| Written in a fragment | The fragment's line | `on 5 pages:` and the first three, each with its heading's id, then `ascribe refs` with the fragment for the rest |
+| Partly a phrase's value, as "Sign in to Quill Cloud" where the page says `Sign in to {cloud}` | The line that uses the phrase | `through phrase cloud` |
+| Wholly inside a phrase's value, as "Quill Cloud" | The phrase's line in `ascribe.toml` | How many places use it, and `ascribe refs phrase:cloud` |
+| In a link with no text, which reads as its target's title | The link | `through upgrade.md's title` |
+| In a snippet's code | The code file's line | `through code:examples/greet.ts#greet`, and the pages that show it, as for a fragment |
+| In a page's title or description | The key's line in the page's frontmatter | The builds when not all |
+
+A page that shows a place in fewer builds than the place is in names them after it, as `install.md #prerequisites (in build cloud)`. A code file outside the project's folder is named as the snippet's address names it, such as `code:greet.ts`. A snippet's code shown on more than three pages lists the first three and how many more. When the code a snippet shows can't be lined up with its file, as when a phrase's value has a line break, the place is the first line the snippet shows, and says `at the first line it shows`.
+
+After a match wholly inside a phrase's value, the rest of the block is still searched: where `Sign in to {cloud}, then edit quill.yaml` is searched for `quill`, the phrase is one place and the line, at `quill.yaml`, is another.
+
+`ascribe search "docs repository" --config examples/quill` finds a line of the page and a line of the fragment it includes:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/search-fragment.txt
+
+`ascribe search '"upgrade the agent"' --config examples/quill` finds the page's title first, then the links that read as it:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/search-title.txt
+
+What isn't searched: what no build publishes, the source's own spelling of a phrase, frontmatter fields other than the title and the description, the navigation's labels, text the content model writes (labels, availability lines, a widget's fallback), text in images, raw HTML, and what a site adds around a page.
+
+`ascribe search "zebra" --config examples/quill`:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/search-none.txt
+
+| Code | Meaning |
+|---|---|
+| `0` | Something matched |
+| `1` | Nothing matched |
+| `2` | It couldn't run: no `ascribe.toml`, one with errors, an empty query, a quote that isn't closed, more than one argument, or an unknown build |

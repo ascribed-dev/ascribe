@@ -48,6 +48,7 @@ mod tests {
     use ascribe_fmt::FormatFilesError;
     use ascribe_lsp::{ReleaseError, RenameError, RetireError, ServeError};
     use ascribe_query::QueryError;
+    use ascribe_resolve::reading::BadQuery;
     use ascribe_sources::SourcesError;
 
     use crate::agents::markers::Damage;
@@ -163,6 +164,8 @@ mod tests {
         ("not_a_page", "a fragment, where only a page will do"),
         ("build_required", "several builds, and none was named"),
         ("bad_target", "refs can't read the target"),
+        ("empty_query", "search has no words to look for"),
+        ("unclosed_quote", "a quote in search's query isn't closed"),
         (
             "markers_damaged",
             "a file's generated block has damaged markers",
@@ -476,6 +479,7 @@ mod tests {
                 | QueryError::NotAPage { .. }
                 | QueryError::BuildRequired { .. }
                 | QueryError::UnknownBuild(_)
+                | QueryError::BadQuery(_)
                 | QueryError::BadTarget { .. }
                 | QueryError::Render(_)
                 | QueryError::PermalinksListInvalid { .. }
@@ -820,6 +824,10 @@ mod tests {
                 builds: vec![text()],
             }),
             Box::new(QueryError::UnknownBuild(unknown_build())),
+            Box::new(QueryError::BadQuery(BadQuery::Empty)),
+            Box::new(QueryError::BadQuery(BadQuery::UnclosedQuote {
+                query: text(),
+            })),
             Box::new(QueryError::BadTarget {
                 given: text(),
                 reason: text(),
