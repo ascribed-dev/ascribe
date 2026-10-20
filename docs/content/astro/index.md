@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Astro
-description: Publishing a site with @ascribed/astro.
+description: Set up an Astro site that publishes an Ascribe project, with @ascribed/astro.
 permalink: astro-guide
 ---
 
@@ -9,7 +9,7 @@ permalink: astro-guide
 
 It supports Astro 7.3.5 and later 7.x releases.
 
-This guide sets a site up. [The `@ascribed/astro` reference](reference.md) has its options, everything it does in `astro build` and `astro dev`, what it writes for search engines and crawlers, review in the site preview, and styling.
+This guide sets a site up. [The `@ascribed/astro` reference](reference.md) has its options, its components, and everything it does in `astro build` and `astro dev`.
 
 ## Set up a site
 
@@ -31,7 +31,7 @@ It brings `@ascribed/cli`, the `ascribe` command for your platform, and `@ascrib
 
 ### 2. Write `ascribe.toml`
 
-Put `ascribe.toml` in the Astro project's root, beside `astro.config.mjs`. Its `[consumer]` settings are the site's routing, because Ascribe writes every link: from the next release, the integration gives Astro its `site`, `base`, and `trailingSlash` from them, so `astro.config.mjs` can leave all three out ([a home page in front of the docs](index.md#a-home-page-in-front-of-the-docs) says how `base` can differ from `base-path`):
+Put `ascribe.toml` in the Astro project's root, beside `astro.config.mjs`. Its `[consumer]` settings are the site's routing, because Ascribe writes every link: the integration gives Astro its `site`, `base`, and `trailingSlash` from them, so `astro.config.mjs` can leave all three out ([a home page in front of the docs](more-than-docs.md#a-home-page-in-front-of-the-docs) says how `base` can differ from `base-path`):
 
 @snippet: code:examples/astro-site/ascribe.toml#site
 
@@ -76,7 +76,7 @@ A page's URL is the base path plus its entry id, and the root page, `content/ind
 
 @snippet {title=src/pages/[...slug].astro}: code:examples/astro-site/src/pages/[...slug].astro
 
-Entry ids are Astro's own: `Guides/My Setup.md` is `guides/my-setup`. The route is at the root of `src/pages/` because the base path is Astro's `base`; with the docs under it, move the route to their folder ([a home page in front of the docs](index.md#a-home-page-in-front-of-the-docs)).
+Entry ids are Astro's own: `Guides/My Setup.md` is `guides/my-setup`. The route is at the root of `src/pages/` because the base path is Astro's `base`; with the docs under it, move the route to their folder ([a home page in front of the docs](more-than-docs.md#a-home-page-in-front-of-the-docs)).
 
 #### The layout
 
@@ -85,41 +85,13 @@ A layout loads the element library, and shows the sidebar, the page's availabili
 @available: ascribe 0.2.0
 @snippet {title=src/layouts/Docs.astro}: code:packages/astro/starter/src/layouts/Docs.astro
 
-`<Elements />` loads the element library's stylesheet and the small script `<ascribe-tabs>` needs. The layout is yours: style it, and replace any part of it with your own components; the table of contents is `headings` from `render`.
-
-@available: ascribe 0.3.0
-`<Head entry={entry} />`, from `@ascribed/astro/Head.astro`, writes everything the page's head says about the page, from its record: its `<title>`, description, canonical link, robots rule, link to its Markdown version, link preview, and breadcrumbs ([the head](reference.md#the-head)).
-
-@available: ascribe 0.2.0
-The example's content model sets `inline = "code"` on `title`, so a title can show code, as "`` `loom.yaml` options ``". `entry.data.title` is then plain text, for `<title>` and search, and `entry.data.formatted.title` is the title as HTML, with each code span a `<code>`, for the heading and navigation (`set:html`). Without the setting, there's no `formatted`, and the layout shows `title`. See [code in a field](../content-model/index.md#53-code-in-a-field).
-
-@available: ascribe 0.3.0
-`entry.data.source` is the page's path from the content root, with `/`, as `guides/install.md`. An "Edit this page" link is your repository's edit address, the content root's folder in it, and `source`, wherever Ascribe's build folder is.
-
-A page's `available` frontmatter reaches the layout as `entry.data.available`: a list of targets, each with the text to show.
-
-@available: ascribe 0.2.0
-`<Availability available={entry.data.available} />`, from `@ascribed/astro/Availability.astro`, renders it as a badge, as the layout above does: the same markup the site output gives a section's `@available`, which the element library styles. It renders nothing for a page with no availability.
-
-@available: ascribe 0.3.2
-`<Versions entry={entry} />`, from `@ascribed/astro/Versions.astro`, lists the lines of a [versioned build](#versions): those that have the page, or the page it replaces or the page that replaces it, as links, the others unlinked, and the archived lines that have an address. It renders nothing for a build that isn't versioned.
-
-@available: ascribe 0.3.2
-`<VersionBanner entry={entry} />`, from `@ascribed/astro/VersionBanner.astro`, says on an older line's page which version it documents, and links to the current line's. It renders nothing on the current line.
+`<Elements />` loads the element library, and `<Head entry={entry} />` writes the page's head from its record. The layout is yours: style it, and replace any part of it with your own components; the table of contents is `headings` from `render`. [The components](reference.md#components) lists what `@ascribed/astro` gives a layout, and what each entry's data has for it.
 
 #### The sidebar
 @available: ascribe 0.3.0
 
 @available: ascribe 0.4.0
-The layout draws the sidebar from the project's [navigation](../navigation/index.md): its sections and pages in the order `ascribe.nav` gives, or the default order, so the site keeps no list of its own. `sidebar(await getCollection("docs"), { entry })`, from `@ascribed/astro/content`, gives its groups: the content root's pages under **Start**, then a group for each top section, with its nested sections in `sections`. Each page has its entry, its address, the one Ascribe's links use, and its label, its title or a shorter `nav-label`, with `formatted.label` its HTML when it has code ([`sidebar()`](reference.md#sidebar)). `neighbors(entry, entries)` gives the pages before and after this one in the same order, for the links at the page's foot ([previous and next](reference.md#neighbors)). The layout lists a nested section's pages in their top section's group, right after the section's own page, or after the group's pages when that's its `index.md`; each `<li>` has a `data-depth`, `0` in a top section and one more for each section below it, for your stylesheet to indent.
-
-@available: ascribe 0.4.0
-With several projects, the sidebar lists the project the entries came from; `sidebar(entries, { name: "docs", entry })` names it, as `ascribeCollection` does. `entry` is the page the sidebar is on: with a [versioned build](#versions), the sidebar shows that page's line.
-
-@available: ascribe 0.4.0
-To change the order or a label, write `ascribe.nav`, or drag the pages in the editor: [Put your pages in order](../navigation/order.md).
-
-A site can keep a list of its own instead, such as the `src/nav.ts` that `init` wrote in 0.3, passed as `sidebar(entries, { nav, entry })`. It keeps working: the sidebar shows the list's groups in its order, and the build fails when the list leaves out a page, names a file that isn't one, or names a page twice. To move it over to the project's navigation, see [Move a site's own list over](../navigation/order.md#own-list).
+The layout draws the sidebar from the project's [navigation](../navigation/index.md), with [`sidebar()`](reference.md#sidebar), and the links at the page's foot with [`neighbors()`](reference.md#neighbors), so the site keeps no list of its own. It lists a nested section's pages in their top section's group, each `<li>` with a `data-depth` for your stylesheet to indent. To change the order or a label, write `ascribe.nav`, or drag the pages in the editor: [Put your pages in order](../navigation/order.md).
 
 ### 5. Build
 
@@ -130,114 +102,10 @@ npx astro build
 
 `astro dev` prints the address it serves, such as `http://localhost:4321/`. Open it with your `base-path` after it, `http://localhost:4321/docs/` for the `ascribe.toml` above, and the site is there. `astro build` writes it to `dist/`, for your host.
 
-## A home page in front of the docs
-@id {permalink=true}: a-home-page-in-front-of-the-docs
-@available: ascribe 0.3.0
+## See also
 
-`[consumer] base-path` can be a path under Astro's `base`, which leaves the rest of the site to your own pages: a home page at `/` with the docs at `/docs/`, in one Astro site. Set `base-path` to the docs' path, leave Astro's `base` at the site's root, its default, and list the project in [`projects`](index.md#several-projects-in-one-site), even alone. With `build`, the integration gives Astro's `base` the docs' base path, which would put your home page under it; with `projects`, `base` stays the site's:
-
-```js
-// astro.config.mjs: `site` and `trailingSlash` come from [consumer].
-export default defineConfig({
-  integrations: [ascribe({ projects: [{ name: "docs", build: "site" }] })],
-});
-```
-
-```toml
-# ascribe.toml
-[consumer]
-profile = "astro"
-site = "https://docs.example.com"
-base-path = "/docs/"
-trailing-slash = "never"
-```
-
-The collection names its entry, `ascribeCollection({ schema, name: "docs" })`, and imports its schema from `.astro/integrations/_ascribed_astro/docs/schema.ts`. A page's route is then `base-path` less Astro's `base`, plus its entry id, so the docs' route goes in `src/pages/docs/[...slug].astro`, with the same `getStaticPaths` as [the route](index.md#the-route). Your home page is `src/pages/index.astro`, or a second Ascribe project ([below](index.md#several-projects-in-one-site)).
-
-Everything Ascribe publishes for the docs is at their base path: the files pages link to (`/docs/_ascribe/files/`), `llms.txt` and each page's Markdown, and, by default, the permalinks (`/docs/go/`). [`permalink-path`](../content-model/output.md#consumer) can put the permalinks anywhere under Astro's `base`, such as `/go/`. A base path outside Astro's `base` still fails the build, since an Astro site serves nothing outside it.
-
-## Several projects in one site
-@id {permalink=true}: several-projects-in-one-site
-@available: ascribe 0.3.0
-
-One integration can build several Ascribe projects into one site, each under its own base path, such as a home page written in Ascribe at `/` and the docs at `/docs/`. List them in `projects`, each entry with a name:
-
-```js
-// astro.config.mjs
-integrations: [
-  ascribe({
-    projects: [
-      { name: "docs", project: "../docs", build: "site" },
-      { name: "home", project: "home", build: "site" },
-    ],
-    review: "docs",
-  }),
-],
-```
-
-The name is what everything else says: the collection, `review`, the folder of the entry's schema, and an error message. It has letters, digits, `-`, and `_`, starts with a letter, and is the entry's own. Each collection names its entry, and imports the copy of its schema from a folder named for it:
-
-```ts
-// src/content.config.ts
-import { defineCollection } from "astro:content";
-import { ascribeCollection } from "@ascribed/astro/content";
-import { schema as docsSchema } from "../.astro/integrations/_ascribed_astro/docs/schema.ts";
-import { schema as homeSchema } from "../.astro/integrations/_ascribed_astro/home/schema.ts";
-
-export const collections = {
-  docs: defineCollection(ascribeCollection({ schema: docsSchema, name: "docs" })),
-  home: defineCollection(ascribeCollection({ schema: homeSchema, name: "home" })),
-};
-```
-
-Astro's `site` and `trailingSlash`, when `astro.config.mjs` leaves them out, come from the first entry whose project sets them; every project must agree with them anyway, and the build fails, naming the entry, when one doesn't. Astro's `base` is the site's, the root every base path is under: the integration never sets it from a project.
-
-Each collection gets its own route, under its project's base path: here `src/pages/[...slug].astro` for `home` and `src/pages/docs/[...slug].astro` for `docs`.
-
-Two entries can name one project with two builds, such as a collection for each release line. They share the project's `ascribe.toml`, so they share its base path: route one of them at it, and use the other's collection as you like. Where both publish a file or a permalink, the first entry's wins.
-
-What the projects share, the integration checks, and it fails the build, naming the entries, when:
-
-- **Two projects have one base path.** Each needs its own. One project at `/` with another beneath it at `/docs/` is fine.
-- **A page of one project is under another's base path,** such as a page at `/docs/extra/` in the project at `/`.
-- **Their permalinks are published at two paths.** One route serves every project's permalinks, so set `permalink-path` to one path in each project that declares any. A project with none can leave it.
-- **Two projects declare one permalink.** Neither project's build can see the other's, so the integration reports it; rename or retire it in one of them.
-- **Two entries have one name,** or a name has other characters.
-
-In `astro dev`, a change rebuilds the project it's in, and each project's folder gets its own `.ascribe/dev.json`, with its own base path. Review covers one project: the entry `review` names, or the first entry when it's `true`. Each removed permalink's page links to the root of the project that retired it, and [`MissingPermalink`](../permalinks/index.md#a-permalink-that-isnt-here) offers the root of the first project with permalinks.
-
-## Publish for AI agents
-@available: ascribe 0.3.0
-
-An AI agent reading your docs does better with Markdown than with HTML, and with an index to choose pages from. Turn on the outputs for agents in `ascribe.toml`'s `[consumer]`, beside `site`, and each build publishes them with the site, as the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) lays them out:
-
-@snippet: code:examples/astro-site/ascribe.toml#agents
-
-- **`llms.txt`** at the base path: every page, in the sections and order of the project's [navigation](../navigation/index.md), as its title, a link to its Markdown, and its description (the field its type marks `role = "description"`). Past 50,000 characters it's split into one `llms.txt` per top section, which the root file links to.
-- **Each page's Markdown** at its URL with `.md`: `/docs/guides/setup` is also `/docs/guides/setup.md`.
-- **A pointer** at the top of each page to both, which the elements' stylesheet hides from sight but not from an agent reading the page.
-
-Nothing is written at the host's root for a project under a path. With docs at `/docs/`, an agent reaches `/docs/llms.txt` through each page's pointer, and the spec's checker looks there as well as at `/llms.txt`. A site that wants a file at the root, such as one whose docs are somewhere else, puts its own in Astro's `public/`.
-
-`site` is required, because everything an agent reads links by absolute URL. The integration builds the plain output too, copies it into the built site, and serves it in `astro dev`. The [`ascribe.toml` reference](../content-model/output.md#consumer) says how `llms.txt` is put together.
-
-`ascribe check` then adds two pieces of advice: a page whose description is too long for its line in `llms.txt`, and an `llms.txt` that's still too long when split. Write each page's `description` as one sentence saying what the page is for; it's what an agent picks a page by.
-
-### What your host does
-
-The files are static, so any host serves them. A few things the spec asks are the server's, not the build's:
-
-- **The `.md` files' type.** Serve them as `text/markdown; charset=utf-8`, and `llms.txt` as `text/plain; charset=utf-8`, as `astro dev` does. Check what your host sends (`curl -I` a page's `.md`), and set the header in its configuration if it's something else.
-- **Content negotiation.** An agent may ask for a page with `Accept: text/markdown`; answering it with the page's `.md` needs a rule on the server, such as an edge function or middleware that rewrites to `<path>.md` when that header asks for Markdown. Without it, agents still find the `.md` URLs through `llms.txt` and the pointer. On Netlify, an edge function does it: this site's is [`markdown.ts`]({repo}/blob/main/site/netlify/edge-functions/markdown.ts). Whatever answers that way passes on the `.md` file's [response headers](reference.md#response-headers), `X-Robots-Tag` and `Link`: the answer is at the page's own address, where no rule for the `.md` path applies, and on Netlify a function's response gets none of `_headers` at all.
-- **Status codes and caching.** A missing page should answer 404, not 200 with a page saying so, and the `.md` files and `llms.txt` should be cached no longer than the pages.
-- **Bot protection.** A rule that challenges unfamiliar clients blocks agents too; let them read `llms.txt` and the `.md` files.
-
-## Versions
-@available: ascribe 0.3.2
-
-With a [versioned build](../versions/index.md), one site serves every live line: the current line's pages at the base path, and each older line's under its number, `/docs/3.4/`, from one collection, with nothing to change in `astro.config.mjs` or `src/content.config.ts`. [The Astro components](../versions/lines.md#the-astro-components) says what the collection, the layout, and `astro dev` do with them. Each line's `llms.txt` and Markdown are published at its base path, an older line's pages name the current line's as canonical, and the sitemap lists each page once. A permalink always forwards to the current line.
-
-## Permalinks
-@available: ascribe 0.3.0
-
-The integration gives each [permalink](../permalinks/index.md) an address, in `astro build` and in `astro dev`; [With Astro](../permalinks/index.md#with-astro) says what it serves and where. [Permalinks](../permalinks/index.md) covers the rest: linking to them from your product, checking those links in its CI, retiring one, and [`MissingPermalink`](../permalinks/index.md#a-permalink-that-isnt-here) for your 404 page.
+- [Put the docs in a site with more than the docs](more-than-docs.md): a home page of your own at `/`, with the docs at `/docs/`.
+- [Publish for AI agents](agents.md): `llms.txt` and each page's Markdown, with the site.
+- [Serve the Markdown versions](serve-markdown.md): what your host does for agents.
+- [The `@ascribed/astro` reference](reference.md): the options, the components, and everything the integration does in `astro build` and `astro dev`, with [versions](reference.md#versions) and [permalinks](reference.md#permalinks).
+- [Element library reference](elements.md): styling the elements.

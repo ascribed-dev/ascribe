@@ -48,12 +48,20 @@ pages = ["snippets.md", "docs-repository.md", "drift.md", "tested.md", "sources.
 [[sections]]
 folder = "astro/"
 label = "Publishing with Astro"
+pages = [
+  "more-than-docs.md",
+  "agents.md",
+  "serve-markdown.md",
+  "reference.md",
+  "elements.md",
+]
 
 [[sections]]
 folder = "permalinks/"
 
 [[sections]]
 folder = "navigation/"
+pages = ["order.md", "site-list.md"]
 
 [[sections]]
 folder = "versions/"

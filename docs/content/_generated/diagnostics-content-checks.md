@@ -553,7 +553,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 **Message:** the site fails the delivery spec's `{check}` check: \{result}. \{setting}
 
-**Fix:** Change the setting the message names where the site is hosted; no page needs editing. The [Astro guide](../astro/index.md#what-your-host-does) says what to set on the hosts it names. Only `ascribe report agents` checks a published site.
+**Fix:** Change the setting the message names where the site is hosted; no page needs editing. [Serve the Markdown versions](../astro/serve-markdown.md) says what to set on the hosts it names. Only `ascribe report agents` checks a published site.
 
 **Read more:** [`[consumer]`](../content-model/output.md#consumer) in the `ascribe.toml` reference.
 
