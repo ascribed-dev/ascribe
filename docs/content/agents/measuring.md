@@ -13,9 +13,21 @@ Everything Ascribe knows about a page is in its record: its address, title, desc
 
 - **`ascribe check`** reports what would go wrong for a reader that isn't a person: two pages with the same title or description, a title its page's own heading contradicts, a page kept out of search whose address `robots.txt` won't let a crawler fetch, a page too long for an agent to read in one fetch. Each is advice you can raise or turn off in [`[checks]`](../content-model/checks.md#19-checks).
 - **`ascribe report pages`** lists every page's record, and `--not-listed` the ones kept out of search, with why. It's what a team would otherwise crawl its own site to see. See [the project report](../checks/report.md#pages).
-- **`ascribe report agents --site <URL>`** runs the delivery spec's checker on the published site, for what only a running server can answer. See [the site and agents](../checks/report.md#the-site-and-agents).
+- **`ascribe report agents --site <URL>`** runs the delivery spec's checker on the published site, for what only a running server can answer: [Check what the site delivers to agents](#check-what-the-site-delivers-to-agents).
 
 None of these is a score. Each problem is listed at its file, with what to do about it; a number would count different things from one tool to the next, and invite tuning to the number.
+
+## Check what the site delivers to agents
+
+`ascribe report agents --site <URL>` runs the [delivery spec](https://agentdocsspec.com/spec/web/)'s checker, `afdocs`, on a built site, the published one or a preview of it, and lists each check as passing, warning, failing, or skipped. Install it with `npm install -g afdocs@0.22.2`.
+
+A check that fails or warns is reported by who changes what it checks, and none of it asks you to edit a page:
+
+- **The hosting** (`delivery-hosting`): status codes, caching, the type a `.md` file is served as, content negotiation, bot protection. The problem names the setting; [what your host does](../astro/index.md#what-your-host-does) says how on the hosts the Astro guide covers. `content-start-position` is here too, since it's the site's page template: a template that writes the navigation before the content warns, even with the content in `<main>`. Put the navigation after the content in the HTML, and place it with CSS. A check the checker added after the version Ascribe knows is counted here until Ascribe lists it.
+- **Ascribe** (`delivery-output`): `llms.txt`, the Markdown pages, and the pointer on each page, which Ascribe writes with `[consumer] agents = true`. Check first that the site publishes what the build wrote; when it does, it's a bug in Ascribe, and the problem says where to report it.
+- **The pages**, such as a page too long for an agent to read in one fetch: `ascribe check` reports these on the page itself, so the report names the check and doesn't repeat it. A page over the checker's `page-size-html` limit that `ascribe check` doesn't report as too long is over it because of what the site's page template adds around the content.
+
+To check the site every day, run this section in the [scheduled job](../checks/report.md#on-a-schedule).
 
 ## Where search engines report
 
@@ -60,6 +72,6 @@ Most of what's written about being found by AI has no evidence behind it, and so
 
 ## Related resources
 
-- [The project report](../checks/report.md): the pages a build lists or keeps out, and how the published site delivers to agents.
+- [The project report](../checks/report.md): the pages a build lists or keeps out, and the rest of what `ascribe report` says.
 - [`[crawlers]`](../content-model/checks.md#21-crawlers): what each kind of AI crawler may do.
 - [Index your docs for your product's agents](index.md#index-your-docs-for-your-products-agents): giving your product's own agents the docs.
