@@ -67,11 +67,11 @@ Run `npx astro dev`, and open the address it prints: your home page is at `/`, a
 
 Everything Ascribe publishes for the docs is at their base path: the files pages link to (`/docs/_ascribe/files/`), `llms.txt` and each page's Markdown, and, by default, the permalinks (`/docs/go/`). [`permalink-path`](../content-model/output.md#consumer) can put the permalinks anywhere under Astro's `base`, such as `/go/`. A base path outside Astro's `base` fails the build, since an Astro site serves nothing outside it.
 
-## A home page written in Ascribe
+## Several projects in one site
 @id {permalink=true}: several-projects-in-one-site
 @available: ascribe 0.3.0
 
-The home page can be an Ascribe project of its own, at `/`, beside the docs at `/docs/`: one integration builds both into the site.
+One integration can build several Ascribe projects into one site, each under its own base path, such as a home page written in Ascribe at `/`, beside the docs at `/docs/`.
 
 @steps
 1. Add the second project to `projects`, each entry with a name, and say which project review covers:

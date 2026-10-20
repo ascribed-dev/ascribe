@@ -20,7 +20,7 @@ curl -I https://docs.example.com/docs/guides/setup.md
 
 ### 2. Send each Markdown version's headers
 
-A Markdown version has no head, so the rule its page's head gives a crawler is a response header: `X-Robots-Tag` for a page that isn't listed, and a canonical `Link` to its page. Each build lists them in `_ascribe/headers.json` ([response headers](reference.md#response-headers)).
+A Markdown version has no head, so the rule its page's head gives a crawler is a response header: `X-Robots-Tag` for a page that's `unlisted` or `unquoted`, and a canonical `Link` to its page. Each build lists them in `_ascribe/headers.json` ([response headers](reference.md#response-headers)).
 
 **On Netlify,** set `headers = "netlify"` in `[consumer]`, and `astro build` writes them into the built site's `_headers`.
 

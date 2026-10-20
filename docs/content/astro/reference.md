@@ -54,7 +54,7 @@ Everything `@ascribed/astro` takes and does, once a site is set up: its options,
 ## Components
 @id: components
 
-A layout imports these from `@ascribed/astro`, each given the page's collection entry or a part of it. [The layout](index.md#the-layout) that `init` writes uses the first four.
+A layout imports these from `@ascribed/astro`, each given the page's collection entry or a part of it. [The layout](index.md#the-layout) that `init` writes uses every one but `MissingPermalink`, which goes on the site's 404 page.
 
 | Component | What it renders |
 |---|---|
