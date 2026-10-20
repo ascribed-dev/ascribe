@@ -2,7 +2,6 @@
 type: reference
 title: "The head, sitemap, `robots.txt`, and headers"
 description: "What @ascribed/astro writes from the page records for search engines and crawlers: each page's head, the sitemap, robots.txt, and the Markdown versions' response headers."
-available: ascribe 0.3.0
 permalink: search-engines
 ---
 
@@ -70,7 +69,6 @@ The layout keeps the character set, the viewport, icons, theme colors, styles, t
 
 `astro dev` knows only the routes of the site's own that have no parameters, so a page of the site's own that a route's `getStaticPaths` lists is in the built sitemap only.
 
-@available: ascribe 0.3.2
 Of a [versioned build](../astro/reference.md#versions), a page is listed only when its canonical address is its own, so an older line adds only the pages the current line has nothing in the place of, and each current page is listed once.
 
 A sitemap needs absolute addresses, so a site with no `site` (`[consumer] site`, or Astro's) gets none, and the build warns. A site with its own `sitemap.xml` in `public/` keeps it, the integration writes none, and `robots.txt` points to the site's.
