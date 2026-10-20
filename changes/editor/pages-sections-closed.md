@@ -1,0 +1,1 @@
+- **Pages starts with every section closed.** Opening a page still selects it in Pages and opens the sections above it, so the open page's path is what you see first. See [the sidebar](docs/content/editor/sidebar.md#this-page-pages-and-content-model).

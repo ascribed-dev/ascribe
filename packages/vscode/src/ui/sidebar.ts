@@ -358,7 +358,8 @@ export function pagesLook(node: PagesNode, build?: string): ItemLook {
         icon: root ? "home" : "folder",
         dimmed: false,
         expandable: node.children.length > 0,
-        expanded: !node.placed,
+        // Every section starts closed: opening a page reveals its path.
+        expanded: false,
         context: PAGES_CONTEXT.section,
       };
     }
