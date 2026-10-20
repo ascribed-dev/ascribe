@@ -69,7 +69,9 @@ pub use fields::field_default_span;
 pub use inline::{InlineMarkup, Segment};
 pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_hash, short_commit};
 pub use model::*;
-pub use names::{KEY_RULE, NAME_WORD_RULE, edit_distance, is_key, is_name_word, suggest};
+pub use names::{
+    KEY_RULE, NAME_WORD_RULE, edit_distance, edit_distance_within, is_key, is_name_word, suggest,
+};
 pub use nav::{NAV_FILE, NAV_VERSION, NavFile, NavSection};
 pub use pattern::{Pattern, PatternError};
 pub use permalinks::{
