@@ -195,7 +195,19 @@
     "pages": [
       {
         "href": "/docs/examples/",
-        "label": "Drift"
+        "label": "Examples and drift"
+      },
+      {
+        "href": "/docs/examples/snippets/",
+        "label": "Show an example from the code"
+      },
+      {
+        "href": "/docs/examples/docs-repository/",
+        "label": "Keep the docs in another repository"
+      },
+      {
+        "href": "/docs/examples/drift/",
+        "label": "Report the pages whose examples changed"
       },
       {
         "href": "/docs/examples/tested/",

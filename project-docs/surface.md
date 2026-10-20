@@ -847,7 +847,10 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `editor/settings.md` | Editor workspaces, settings, and commands | reference |
 | `editor/sidebar.md` | The Ascribe sidebar | reference |
 | `editor/writing.md` | Writing in the editor | reference |
-| `examples/index.md` | Drift | how-to |
+| `examples/docs-repository.md` | Keep the docs in another repository | how-to |
+| `examples/drift.md` | Report the pages whose examples changed | how-to |
+| `examples/index.md` | Examples and drift | concept |
+| `examples/snippets.md` | Show an example from the code | how-to |
 | `examples/sources.md` | `ascribe init`, `sources`, `observe`, `permalinks`, `templates`, and `vale` | reference |
 | `examples/tested.md` | Show what an example was tested with | how-to |
 | `getting-started.md` | Getting started | tutorial |

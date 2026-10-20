@@ -1,7 +1,7 @@
 # The update pull request: on a schedule, moves each source in another
 # repository to the head of its branch and, when an example changed, opens one
 # pull request whose description says which pages to read. It's the recipe in
-# docs/content/examples/index.md ("The update pull request"), which takes it from
+# docs/content/examples/docs-repository.md ("The update pull request"), which takes it from
 # this file: the lines marked `:remove:` are what the fixture adds
 # (scripts/sources-fixture/setup.ts copies this folder into
 # ascribed-dev/sources-fixture-docs).
