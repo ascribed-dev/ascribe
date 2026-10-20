@@ -52,7 +52,7 @@ fn primary(builtin: Builtin, schema: &DirectiveSchema) -> String {
             Builtin::Intended => "a reason",
             Builtin::Memo => "text",
             _ => panic!(
-                "say what @{}'s primary holds in docs/builtins.rs",
+                "say what @{}'s primary holds in crates/ascribe-cli/src/docs/builtins.rs",
                 builtin.name()
             ),
         },
