@@ -179,6 +179,12 @@ impl<'p> BuildResolver<'p> {
     /// same one published too.
     pub(crate) fn replaces_problems(&self, index: &FileIndex) -> Vec<PageProblem> {
         let path = &index.path;
+        // Most pages replace none, and the map reads every page's
+        // frontmatter: a page resolved on its own, as the editor resolves
+        // the pages a keystroke changes, would read them all for nothing.
+        if self.project.replaces(path).is_none() {
+            return Vec::new();
+        }
         let map = self.replacements();
         let Some(replaced) = map.get(path) else {
             return Vec::new();
