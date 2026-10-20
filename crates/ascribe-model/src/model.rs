@@ -8,6 +8,7 @@ use ascribe_core::{
 };
 
 use crate::pattern::Pattern;
+use crate::settings;
 use crate::types::FrontmatterSchema;
 
 /// The spec versions this crate implements (`spec`).
@@ -114,15 +115,6 @@ pub struct LinkSettings {
 }
 
 impl LinkSettings {
-    /// The command `[checks.links] command` defaults to.
-    pub const COMMAND: &'static str = "lychee";
-
-    /// The days `[checks.links] reuse-days` defaults to.
-    pub const REUSE_DAYS: u32 = 14;
-
-    /// The days `[checks.links] confirm-days` defaults to.
-    pub const CONFIRM_DAYS: u32 = 3;
-
     /// Whether `ignore` leaves out links to `host`, ignoring case.
     pub fn ignores(&self, host: &str) -> bool {
         let host = host.trim_end_matches('.').to_ascii_lowercase();
@@ -138,13 +130,15 @@ impl LinkSettings {
     }
 }
 
+/// `[checks.links]` as the registry's defaults have it.
 impl Default for LinkSettings {
     fn default() -> LinkSettings {
+        const LINKS: &str = "checks.links";
         LinkSettings {
-            command: LinkSettings::COMMAND.to_owned(),
+            command: settings::default_text(LINKS, "command").to_owned(),
             ignore: Vec::new(),
-            reuse_days: LinkSettings::REUSE_DAYS,
-            confirm_days: LinkSettings::CONFIRM_DAYS,
+            reuse_days: settings::default_number(LINKS, "reuse-days"),
+            confirm_days: settings::default_number(LINKS, "confirm-days"),
         }
     }
 }
@@ -177,11 +171,6 @@ pub enum ValeSource {
     /// The project's own `.vale.ini`, relative to the project root
     /// (`config`).
     Config(String),
-}
-
-impl ValeSettings {
-    /// The command `[checks.vale] command` defaults to.
-    pub const COMMAND: &'static str = "vale";
 }
 
 impl Checks {

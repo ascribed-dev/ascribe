@@ -1,0 +1,1 @@
+- **The diagnostics reference says when each content check is reported.** The nine content checks that didn't say, from `page-size` to `prose-not-checked`, now do, as the others do, in [the content checks' reference](docs/content/checks/diagnostics/content-checks.md).

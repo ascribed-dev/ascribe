@@ -7,6 +7,7 @@ use toml::de::{DeTable, DeValue};
 
 use crate::inline::InlineMarkup;
 use crate::loader::{Loader, NameRule};
+use crate::settings;
 use crate::toml_util::{V, describe, entries, join, sp, to_yaml};
 use crate::types::{Field, FieldRole, FieldType, default_mismatch};
 
@@ -532,20 +533,7 @@ impl Loader<'_> {
         {
             DeValue::String(s) => (sp(v), s.to_string(), None),
             DeValue::Table(t) => {
-                let allowed: &[&str] = match kind {
-                    Kind::Field => &[
-                        "type",
-                        "fields",
-                        "values",
-                        "default",
-                        "phrases",
-                        "inline",
-                        "role",
-                        "description",
-                    ],
-                    Kind::Attribute => &["type", "values", "default", "description"],
-                };
-                self.check_keys(path, t, allowed);
+                self.check_field(path, t, kind == Kind::Attribute);
                 let ty = self.require(path, t, sp(v), "type")?;
                 let text = self.string(&format!("{path}.type"), ty, false)?;
                 (sp(ty), text, Some(t))
@@ -654,7 +642,9 @@ impl Loader<'_> {
             c.default = Some((sp(d), "default"));
         }
         if let Some(p) = t.get("phrases") {
-            c.phrases = self.boolean(&format!("{path}.phrases"), p).unwrap_or(false);
+            c.phrases = self
+                .boolean(&format!("{path}.phrases"), p)
+                .unwrap_or(settings::default_switch(settings::FIELD_TABLE, "phrases"));
         }
         if let Some(i) = t.get("inline")
             && let Some(value) = self.string(&format!("{path}.inline"), i, false)

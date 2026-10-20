@@ -16,6 +16,7 @@ use toml::de::DeValue;
 use crate::loader::Loader;
 use crate::model::{CheckLevel, CheckSetting, Checks, LinkSettings, ValeSettings, ValeSource};
 use crate::names::suggest;
+use crate::settings;
 use crate::toml_util::{V, entries, join, sp, to_yaml};
 use crate::vale::Preset;
 
@@ -81,10 +82,7 @@ impl Loader<'_> {
                         .iter()
                         .find(|(s, _)| *s == slug)
                         .map_or(&[][..], |(_, keys)| *keys);
-                    let allowed: Vec<&str> = std::iter::once("level")
-                        .chain(own.iter().copied())
-                        .collect();
-                    self.check_keys(&path, table, &allowed);
+                    self.check_check(&path, table, own);
                     setting.level = table
                         .get("level")
                         .and_then(|l| self.level(&join(&path, "level"), l));
@@ -114,18 +112,7 @@ impl Loader<'_> {
     fn vale(&mut self, v: &V<'_>, key_span: ascribe_core::Span) -> Option<ValeSettings> {
         const PATH: &str = "checks.vale";
         let t = self.as_table(PATH, v)?;
-        self.check_keys(
-            PATH,
-            t,
-            &[
-                "preset",
-                "config",
-                "command",
-                "in-check",
-                "max-level",
-                "off",
-            ],
-        );
+        self.check_table(PATH, t, PATH);
         let preset = t.get("preset");
         let config = t.get("config");
         let source = match (preset, config) {
@@ -149,18 +136,19 @@ impl Loader<'_> {
         };
         let command = match t.get("command") {
             Some(c) => self.string(&join(PATH, "command"), c, true)?,
-            None => ValeSettings::COMMAND.to_owned(),
+            None => settings::default_text(PATH, "command").to_owned(),
         };
         let in_check = match t.get("in-check") {
             Some(b) => self.boolean(&join(PATH, "in-check"), b)?,
-            None => false,
+            None => settings::default_switch(PATH, "in-check"),
         };
         let max_level = match t.get("max-level") {
             Some(l) => {
-                let name = self.choice(&join(PATH, "max-level"), l, &CheckLevel::NAMES[1..])?;
+                let choices = settings::choices(PATH, "max-level");
+                let name = self.choice(&join(PATH, "max-level"), l, &choices)?;
                 CheckLevel::from_name(&name)?
             }
-            None => CheckLevel::Error,
+            None => CheckLevel::from_name(settings::default_text(PATH, "max-level"))?,
         };
         let off = match t.get("off") {
             Some(list) => self.vale_off(list, source.as_ref())?,
@@ -213,11 +201,7 @@ impl Loader<'_> {
         let Some(t) = self.as_table(PATH, v) else {
             return links;
         };
-        self.check_keys(
-            PATH,
-            t,
-            &["command", "ignore", "reuse-days", "confirm-days"],
-        );
+        self.check_table(PATH, t, PATH);
         if let Some(command) = t
             .get("command")
             .and_then(|c| self.string(&join(PATH, "command"), c, true))

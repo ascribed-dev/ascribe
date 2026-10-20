@@ -21,7 +21,7 @@ impl Loader<'_> {
         let Some(t) = self.as_table("permalinks", v) else {
             return out;
         };
-        self.check_keys("permalinks", t, &["retired", "aliases"]);
+        self.check_table("permalinks", t, "permalinks");
         if let Some(retired) = t.get("retired")
             && let Some(retired) = self.as_table("permalinks.retired", retired)
         {
@@ -81,7 +81,7 @@ impl Loader<'_> {
     fn retired(&mut self, name: &str, span: Span, v: &V<'_>) -> Option<RetiredPermalink> {
         let path = format!("permalinks.retired.{name}");
         let t = self.as_table(&path, v)?;
-        self.check_keys(&path, t, &["reason", "to"]);
+        self.check_table(&path, t, "permalinks.retired.<name>");
         let reason = self.require(&path, t, sp(v), "reason").and_then(|r| {
             let reason = self.string(&format!("{path}.reason"), r, true)?;
             if is_retired_placeholder(&reason) {

@@ -1,0 +1,1054 @@
+# Every key of `ascribe.toml`: the registry the loader reads its keys and
+# defaults from (`ascribe_model::settings`), which the binary carries. A
+# check's own settings aren't here: a check is described by its `when` in
+# tests/conformance/diagnostics.toml, and its settings are in `[checks]`'s
+# code. Decision 6 of project-docs/roadmap.md.
+#
+# Each entry is one key, in the content model reference's order:
+#
+#   table         The table the key is in, as the reference names it: "" for
+#                 the top level, and `<name>` (or `<target>`, `<line>`, ...)
+#                 for a part a project names, as in "types.<name>". `<field>`
+#                 is a field's or an attribute's table form.
+#   key           The key.
+#   kind          What its value is: "switch" (a boolean), "choice" (one of
+#                 `choices`), "number" (a whole number), "text" (a string),
+#                 "level" (a check's level), "list", or "table". A key whose
+#                 value can be more than one shape has the one with
+#                 structure.
+#   type          Its type, as the reference's tables write it.
+#   choices       For a choice, its values, in the order a message lists
+#                 them.
+#   default       The value the loader uses when the key is absent, when it
+#                 has one.
+#   default-text  The reference's words for a default that isn't one value.
+#   required      true when the key must be there.
+#   only          "fields": a `<field>` key an attribute doesn't take.
+#   available     The release that added it, when the reference marks it.
+#   description   What it does, in Markdown, as the reference writes it.
+#
+# The loader reads `table`, `key`, `choices`, `default`, and `only`; a test
+# fails when it accepts a key this file doesn't have, or this file has one
+# it doesn't read (crates/ascribe-model/src/settings.rs).
+
+# ---- 2. Top level: `spec` ---------------------------------------------------
+
+[[setting]]
+table = ""
+key = "spec"
+kind = "text"
+type = "string"
+required = true
+description = '''The version of the Ascribe specification this project targets (SPEC §11). It MUST be quoted: `spec = 0.1` is a TOML float and is an error. A processor accepts only the spec versions it implements, compared as exact strings; this reference defines `"0.1"`.'''
+
+# ---- 3. `[project]` -----------------------------------------------------------
+
+[[setting]]
+table = ""
+key = "project"
+kind = "table"
+type = "table"
+description = '''Where the source lives and where builds write.'''
+
+[[setting]]
+table = "project"
+key = "content-root"
+kind = "text"
+type = "string (path)"
+default = "docs"
+description = '''The content root ([SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)): the directory holding every source file. Paths in links and includes that begin with `/` are relative to it. It must exist and be a directory.'''
+
+[[setting]]
+table = "project"
+key = "output-dir"
+kind = "text"
+type = "string (path)"
+default = ".ascribe/build"
+description = '''Where `ascribe build` writes output. Each build and emitter writes under `<output-dir>/<build>/<emitter>/`. It need not exist. It may be outside the project's folder, with `..`, and a build then writes there. A build never writes or removes through a symbolic link on the way to it, or in it ([output-layout contract](../contracts/output-layout.md#2-what-ascribe-owns)).'''
+
+# ---- 4. `[types.<name>]` and `[fragments]` ----------------------------------
+
+[[setting]]
+table = ""
+key = "types"
+kind = "table"
+type = "table of tables"
+description = '''Content types: a frontmatter schema for each kind of page, by the type's name.'''
+
+[[setting]]
+table = "types.<name>"
+key = "frontmatter"
+kind = "table"
+type = "table of fields"
+required = true
+description = '''The frontmatter schema: one entry per field, keyed by field name (`name-word`). Values are field types (§5). It MUST declare `title` as a required string (below). A type can't declare a field `type`, which is reserved (`model-field-reserved`).'''
+
+[[setting]]
+table = "types.<name>"
+key = "purpose"
+kind = "text"
+type = "string"
+available = "ascribe 0.3.1"
+description = '''What a page of the type is for, in a few words. The rules `ascribe agents sync` writes say it on the type's line, and `ascribe model` shows it. A type copied from the starter set says its summary there without one (below).'''
+
+[[setting]]
+table = "types.<name>"
+key = "template"
+kind = "text"
+type = "string (path)"
+available = "ascribe 0.3.1"
+description = '''The page a page of the type starts from: a file from the folder `ascribe.toml` is in, outside the content root (below).'''
+
+[[setting]]
+table = "types.<name>"
+key = "guide"
+kind = "list"
+type = "array of paths"
+default = []
+available = "ascribe 0.3.1"
+description = '''What to read before writing a page of the type, in the order to read it, such as a guide and a project's own notes on it: files from the folder `ascribe.toml` is in, outside the content root (below).'''
+
+[[setting]]
+table = ""
+key = "fragments"
+kind = "table"
+type = "table"
+description = '''Which files are fragments, and the frontmatter every fragment is validated against.'''
+
+[[setting]]
+table = "fragments"
+key = "patterns"
+kind = "list"
+type = "array of patterns"
+default = []
+description = '''Additional fragment patterns ([SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)). A file is a fragment if any segment of its path begins with `_`, or its path matches one of these patterns.'''
+
+[[setting]]
+table = "fragments"
+key = "frontmatter"
+kind = "table"
+type = "table of fields"
+default = {}
+default-text = "`{}` (no fields)"
+description = '''The fragment schema ([SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)): the frontmatter every fragment is validated against. Fields as in §5. `title` is not required.'''
+
+# ---- 5. Field and attribute types --------------------------------------------
+
+[[setting]]
+table = "<field>"
+key = "type"
+kind = "text"
+type = "string"
+required = true
+description = '''A field type or attribute type (§5.1). In table form it may also be `object`, `list(object)`, or bare `enum`, with the keys below.'''
+
+[[setting]]
+table = "<field>"
+key = "fields"
+kind = "table"
+type = "table of fields"
+default-text = "required when `type` is `object`, `object?`, `list(object)`, or `list(object)?`; not allowed otherwise"
+only = "fields"
+description = '''The nested fields of an object, in the same syntax (short or table form). Field types only.'''
+
+[[setting]]
+table = "<field>"
+key = "values"
+kind = "list"
+type = "array of strings"
+default-text = "required when `type` uses bare `enum`; not allowed otherwise"
+description = '''The enumeration's values, for values that aren't simple words, such as `["Getting started", "How-to"]`. Values must be distinct. Values of a `set(enum)` attribute must be tokens.'''
+
+[[setting]]
+table = "<field>"
+key = "default"
+kind = "table"
+type = "any TOML value"
+description = '''The value used when the field or attribute is absent. It must have the declared type (a TOML string for `string` and `enum`, integer or float for `number`, boolean for `boolean`, local date for `date`, array for `list`, inline table for `object`, a string or array of strings for `set`). A field with a default is optional; adding `?` as well is allowed and changes nothing.'''
+
+[[setting]]
+table = "<field>"
+key = "phrases"
+kind = "switch"
+type = "boolean"
+default = false
+only = "fields"
+description = '''Whether phrases ([SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)) are substituted in this field's value. Field types only; allowed only on `string` and `list(string)` fields (and their optional forms), including fields nested in objects. See §11.'''
+
+[[setting]]
+table = "<field>"
+key = "inline"
+kind = "choice"
+type = "string"
+choices = ["code"]
+only = "fields"
+description = '''`"code"` reads the value's code spans. Allowed only on a content type's top-level `string` fields (and `string?`). See §5.3.'''
+
+[[setting]]
+table = "<field>"
+key = "description"
+kind = "text"
+type = "string"
+description = '''Help text shown by the editor (hover and completion) and emitted into generated schemas as documentation.'''
+
+[[setting]]
+table = "<field>"
+key = "role"
+kind = "choice"
+type = "string"
+choices = ["description", "review-date", "owner"]
+only = "fields"
+description = '''What the field is for, which a check reads: `"description"`, `"review-date"`, or `"owner"`. Allowed only on a content type's top-level fields. See §5.4.'''
+
+# ---- 6. `[dimensions.<name>]` -------------------------------------------------
+
+[[setting]]
+table = ""
+key = "dimensions"
+kind = "table"
+type = "table of tables"
+description = '''The axes content varies along, by name, whose values are availability targets.'''
+
+[[setting]]
+table = "dimensions.<name>"
+key = "values"
+kind = "list"
+type = "array of strings"
+required = true
+description = '''The dimension's values (`name-word`), in display order. At least one; no duplicates.'''
+
+[[setting]]
+table = "dimensions.<name>"
+key = "labels"
+kind = "table"
+type = "table of strings"
+default = {}
+description = '''Display labels for values, keyed by value ([SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs): "Labels for dimension values come from the content model's display labels"). A value without a label is displayed as the value itself. Every key MUST be a declared value.'''
+
+[[setting]]
+table = "dimensions.<name>"
+key = "label"
+kind = "text"
+type = "string"
+default-text = "the dimension's name"
+description = '''The display label for the dimension itself, used where a dimension name appears as an availability target or names a tab group.'''
+
+[[setting]]
+table = "dimensions.<name>"
+key = "versionless"
+kind = "list"
+type = "array of strings"
+default = []
+description = '''Values that are versionless ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)): availability for them takes a single state and no versions. Every entry MUST be a declared value. Values not listed are versioned.'''
+
+# ---- 7. `[versions]` and `[releases]` -----------------------------------------
+
+[[setting]]
+table = ""
+key = "versions"
+kind = "table"
+type = "table"
+description = '''How versions in availability specs are compared.'''
+
+[[setting]]
+table = "versions"
+key = "scheme"
+kind = "choice"
+type = "string"
+choices = ["numeric"]
+default = "numeric"
+description = '''The version scheme. Spec 0.1 defines one: `"numeric"`.'''
+
+[[setting]]
+table = ""
+key = "releases"
+kind = "table"
+type = "table of tables"
+available = "ascribe 0.3.2"
+description = '''The release lines of a versioned target, by the target's name.'''
+
+[[setting]]
+table = "releases.<target>"
+key = "live"
+kind = "list"
+type = "array of strings (versions)"
+default = []
+available = "ascribe 0.3.2"
+description = '''The lines a reader can be on, in any order. A build [versioned](output.md#16-buildsname) by the target gives one output for each.'''
+
+[[setting]]
+table = "releases.<target>"
+key = "planned"
+kind = "list"
+type = "array of strings (versions)"
+default = []
+available = "ascribe 0.3.2"
+description = '''Lines that haven't shipped, each newer than every live line. A version in one is **planned**: its availability reads `Self-managed (planned, 3.6)` in every output, and stops being planned when its line moves to `live`, with no other edit.'''
+
+[[setting]]
+table = "releases.<target>"
+key = "ends"
+kind = "table"
+type = "table of dates"
+available = "ascribe 0.3.2"
+description = '''The last day each live line is supported, by line: `"3.4" = 2027-01-31`, a TOML date, unquoted.'''
+
+[[setting]]
+table = "releases.<target>"
+key = "archived"
+kind = "table"
+type = "table of tables"
+available = "ascribe 0.3.2"
+description = '''Lines that have left the window, each older than every live line, by line. Each takes `url`, where the line can still be read, and `ended`, the day its support ended, both optional: `"3.2" = {}` declares a line that's readable nowhere.'''
+
+[[setting]]
+table = "releases.<target>.archived.<line>"
+key = "url"
+kind = "text"
+type = "string (URL)"
+available = "ascribe 0.3.2"
+description = '''Where the line can still be read.'''
+
+[[setting]]
+table = "releases.<target>.archived.<line>"
+key = "ended"
+kind = "text"
+type = "date"
+available = "ascribe 0.3.2"
+description = '''The day its support ended.'''
+
+[[setting]]
+table = "releases"
+key = "planned-label"
+kind = "text"
+type = "string"
+default = "planned"
+available = "ascribe 0.3.2"
+description = '''The word a reader sees for a planned version, in place of its state: `Self-managed (planned, 3.6)`.'''
+
+# ---- 8. `[lifecycle.<state>]` -------------------------------------------------
+
+[[setting]]
+table = ""
+key = "lifecycle"
+kind = "table"
+type = "table of tables"
+description = '''Lifecycle states, by name: the five built in, relabeled, and the project's own.'''
+
+[[setting]]
+table = "lifecycle.<state>"
+key = "available"
+kind = "switch"
+type = "boolean"
+default-text = "built-in states: as in the table above; new states: **required**"
+description = '''Whether content in this state counts as available ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available), §9.3). A new state must say so explicitly.'''
+
+[[setting]]
+table = "lifecycle.<state>"
+key = "label"
+kind = "text"
+type = "string"
+default-text = "built-in states: as in the table above; new states: the state's name"
+description = '''The display label used in availability annotations, such as "Available: Quill Cloud (GA); self-managed (preview, 3.4+)" ([SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)).'''
+
+# ---- 9. `[features.<key>]` ----------------------------------------------------
+
+[[setting]]
+table = ""
+key = "features"
+kind = "table"
+type = "table of tables"
+description = '''The features registry: named availability specs, so a feature going generally available takes one edit.'''
+
+[[setting]]
+table = "features.<key>"
+key = "name"
+kind = "text"
+type = "string"
+required = true
+description = '''The feature's display name, shown on hover and available to emitters.'''
+
+[[setting]]
+table = "features.<key>"
+key = "available"
+kind = "text"
+type = "string (availability spec)"
+required = true
+description = '''The feature's availability, in [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)'s syntax.'''
+
+# ---- 10. `[notes.<type>]` -----------------------------------------------------
+
+[[setting]]
+table = ""
+key = "notes"
+kind = "table"
+type = "table of tables"
+description = '''Note types, the values of `@note`'s `type` attribute: the five built in, relabeled, and the project's own.'''
+
+[[setting]]
+table = "notes.<type>"
+key = "label"
+kind = "text"
+type = "string"
+default-text = "built-in types: `Note`, `Tip`, `Important`, `Warning`, `Caution`; new types: **required**"
+description = '''The display label, used where a note's type is shown as text, such as the plain-markdown output's `**Tip: …**` ([SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)).'''
+
+# ---- 11. `[phrases]` ----------------------------------------------------------
+
+[[setting]]
+table = ""
+key = "phrases"
+kind = "table"
+type = "table of strings"
+description = '''The phrases registry: each phrase's text, by its key.'''
+
+[[setting]]
+table = "phrases.<key>"
+key = "line"
+kind = "text"
+type = "string"
+required = true
+available = "ascribe 0.3.2"
+description = '''A target whose lines `[releases.<target>]` (§7.1) lists: the phrase is then a line as the list writes it, in the output of one line of a build the target versions that line, and everywhere else the target's current line.'''
+
+# ---- 12. `[glossary]` ---------------------------------------------------------
+
+[[setting]]
+table = ""
+key = "glossary"
+kind = "table"
+type = "table"
+description = '''The glossary: the pages that hold its terms, and how occurrences are matched.'''
+
+[[setting]]
+table = "glossary"
+key = "pages"
+kind = "list"
+type = "array of strings (paths)"
+default = []
+available = "ascribe 0.4.0"
+description = '''The glossary pages, each a path from the content root, written as in a link ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links); a leading `/` is allowed and means the same). Each MUST be a page, not a fragment. A term is linked to the first of its pages that a build publishes.'''
+
+[[setting]]
+table = "glossary"
+key = "match"
+kind = "choice"
+type = "string"
+choices = ["first", "every"]
+default = "first"
+description = '''Which occurrences are linked: `"first"`, the first occurrence of each term on each page, or `"every"`, every occurrence. "Page" means the resolved page for a build, after includes and build modes. A term can override it.'''
+
+[[setting]]
+table = "glossary"
+key = "case-sensitive"
+kind = "switch"
+type = "boolean"
+default = false
+description = '''Whether occurrences must match a term's case exactly. When `false`, matching ignores case. A term can override it.'''
+
+# ---- 13. `[images]` -----------------------------------------------------------
+
+[[setting]]
+table = ""
+key = "images"
+kind = "table"
+type = "table"
+description = '''Image attributes: which keys may appear in an attribute block after an image, and their types.'''
+
+[[setting]]
+table = "images"
+key = "attributes"
+kind = "table"
+type = "table of attribute types"
+default = {}
+description = '''Accepted image attribute keys (`key` rule) and their types (§5). With no entries, an image accepts no attributes, and any attribute block after an image is an error ([SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics), "Unknown key"). Declaration order is canonical order ([SPEC §8.3]({repo}/blob/main/SPEC.md#83-canonical-form)). A declared default reaches the output: in the site output, every image carries the defaults of attributes it doesn't write.'''
+
+# ---- 14. `[widgets.<name>]` ---------------------------------------------------
+
+[[setting]]
+table = ""
+key = "widgets"
+kind = "table"
+type = "table of tables"
+description = '''Project widgets: directives a documentation set defines, by name.'''
+
+[[setting]]
+table = "widgets.<name>"
+key = "forms"
+kind = "list"
+type = "array of strings"
+required = true
+description = '''The permitted forms ([SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)): `["line"]`, `["container"]`, or both.'''
+
+[[setting]]
+table = "widgets.<name>"
+key = "primary"
+kind = "choice"
+type = "string"
+choices = ["none", "identifier", "identifier?", "text", "text?"]
+default = "none"
+description = '''The primary ([SPEC §3.4]({repo}/blob/main/SPEC.md#34-the-primary)): `"none"`; `"identifier"` or `"text"`, which are required; or `"identifier?"` or `"text?"`, which are optional.'''
+
+[[setting]]
+table = "widgets.<name>"
+key = "binding"
+kind = "choice"
+type = "string"
+choices = ["self", "heading", "block", "heading-or-block"]
+default-text = "required when `forms` includes `\"line\"`; not allowed otherwise"
+description = '''What the line form applies to ([SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)), one of the values below.'''
+
+[[setting]]
+table = "widgets.<name>"
+key = "title"
+kind = "choice"
+type = "string"
+choices = ["none", "accepted", "required"]
+default = "none"
+description = '''Whether the widget takes a title line ([SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)): `"none"`, `"accepted"`, or `"required"`.'''
+
+[[setting]]
+table = "widgets.<name>"
+key = "groupable"
+kind = "switch"
+type = "boolean"
+default = false
+description = '''Whether a run of the widget's openers forms a group of arms ([SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups)).'''
+
+[[setting]]
+table = "widgets.<name>"
+key = "attributes"
+kind = "table"
+type = "table of attribute types"
+default = {}
+description = '''The attribute schema: keys (`key` rule) and types (§5). Declaration order is canonical order ([SPEC §8.3]({repo}/blob/main/SPEC.md#83-canonical-form)). The keys `heading` and `primary`, HTML's global attributes (including `title`), `aria-` keys, and event-handler attributes such as `onclick`, are rejected (`model-attribute-reserved`): the site output writes these attributes onto the widget's element ([SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)).'''
+
+[[setting]]
+table = "widgets.<name>"
+key = "plain-fallback"
+kind = "text"
+type = "string"
+description = '''Plain-text fallback for the plain-markdown output (SPEC §6, §9.4): CommonMark text written in place of the widget. Phrases in it are substituted. It isn't a template: attribute values aren't inserted. Without it, the widget itself emits nothing.'''
+
+[[setting]]
+table = "widgets.<name>"
+key = "plain-content"
+kind = "choice"
+type = "string"
+choices = ["keep", "drop"]
+default = "keep"
+description = '''For a widget that wraps content, whether the plain-markdown output keeps that content (`"keep"`) after the fallback, or drops it (`"drop"`). Allowed only when the widget wraps content: it has container form, or its binding is `block` or `heading-or-block`.'''
+
+[[setting]]
+table = "widgets.<name>"
+key = "description"
+kind = "text"
+type = "string"
+description = '''Help text for the editor's hover and completion.'''
+
+# ---- 15. `[consumer]` ---------------------------------------------------------
+
+[[setting]]
+table = ""
+key = "consumer"
+kind = "table"
+type = "table"
+description = '''The consumer profile: how the site output fits a specific consumer.'''
+
+[[setting]]
+table = "consumer"
+key = "profile"
+kind = "choice"
+type = "string"
+choices = ["astro"]
+default = "astro"
+description = '''The consumer profile. Supported: `"astro"`.'''
+
+[[setting]]
+table = "consumer"
+key = "site"
+kind = "text"
+type = "string (URL)"
+description = '''The published site's origin, such as `"https://docs.quill.dev"`: an `http` or `https` URL with no path, query, or fragment. The plain-markdown output needs it to write absolute links ([SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)). Without it, plain-markdown links are root-relative (they start with `base-path`) and `ascribe build` warns.'''
+
+[[setting]]
+table = "consumer"
+key = "base-path"
+kind = "text"
+type = "string"
+default = "/"
+description = '''**Routing.** The URL path every route starts with, such as `"/docs/"`, including any locale prefix (`"/en/"`). It must start with `/`. A trailing `/` is optional and doesn't change the meaning.'''
+
+[[setting]]
+table = "consumer"
+key = "trailing-slash"
+kind = "choice"
+type = "string"
+choices = ["always", "never"]
+default = "always"
+description = '''**Routing.** Whether page URLs end in `/`: `"always"` (`/guides/setup/`) or `"never"` (`/guides/setup`). Match the consumer's own setting (Astro's `trailingSlash` and `build.format`).'''
+
+[[setting]]
+table = "consumer"
+key = "slugger"
+kind = "choice"
+type = "string"
+choices = ["github"]
+default = "github"
+description = '''**Slugging.** The algorithm for heading ids ([SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)), which must be the one the consumer uses. Supported: `"github"`, a port of `github-slugger`, which Astro uses.'''
+
+[[setting]]
+table = "consumer"
+key = "html"
+kind = "switch"
+type = "boolean"
+default = true
+description = '''**HTML passthrough.** Whether the consumer renders raw HTML in markdown. The site output's custom elements need it, so the `astro` profile supports only `true`.'''
+
+[[setting]]
+table = "consumer"
+key = "agents"
+kind = "switch"
+type = "boolean"
+default = false
+available = "ascribe 0.3.0"
+description = '''**Outputs for agents.** Whether each build also publishes what AI agents read, as the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) lays it out: `llms.txt`, the index of every page, and each page's Markdown at its URL with `.md`. It needs `site`, since every link agents read is absolute. See below.'''
+
+[[setting]]
+table = "consumer"
+key = "permalink-path"
+kind = "text"
+type = "string"
+default-text = "`go/` under `base-path`"
+available = "ascribe 0.3.0"
+description = '''**Permalinks.** Where each [permalink](../writing/directives.md#permalinks)'s address is published, as a path from the site's root, such as `"/go/"`: `/go/cli-check/` forwards to the heading marked `cli-check`. It must start with `/`. Set it when the addresses a product prints shouldn't move when `base-path` does. Under the `astro` profile it must be under `base-path`, since an Astro site serves nothing outside it.'''
+
+[[setting]]
+table = "consumer"
+key = "headers"
+kind = "choice"
+type = "string"
+choices = ["netlify"]
+available = "ascribe 0.3.0"
+description = '''**Response headers.** The host whose format a build's response headers are written in, so that the Markdown version of a page that isn't listed isn't indexed either. Supported: `"netlify"`, the `_headers` file Netlify reads. `@ascribed/astro` writes it into the built site ([the `@ascribed/astro` reference](../astro/reference.md#response-headers)). Without it, nothing is written for a host, and the headers are in `_ascribe/headers.json` for a deploy step to read. See below.'''
+
+# ---- 16. `[builds.<name>]` ----------------------------------------------------
+
+[[setting]]
+table = ""
+key = "builds"
+kind = "table"
+type = "table of tables"
+description = '''Named builds, each with a variant mode and an availability mode.'''
+
+[[setting]]
+table = "builds.<name>"
+key = "variants"
+kind = "table"
+type = "string or table"
+default = "switch"
+description = '''The variant mode. `"switch"` keeps every arm and page. A **selection** is a table from dimension names to a value or an array of values: `{ deployment = "cloud" }`, `{ pm = ["npm", "pnpm"] }`. Every dimension MUST be declared and every value a value of that dimension. An empty table is an error; write `"switch"`.'''
+
+[[setting]]
+table = "builds.<name>"
+key = "availability"
+kind = "table"
+type = "string or table"
+default = "badge"
+description = '''The availability mode. `"badge"` keeps everything and annotates it. `{ filter = "<target> [<version>]" }` removes content not available for the target at the version. The target MUST be a declared dimension value, not a dimension name. A versioned target MUST have a version, and a versionless one MUST NOT. The version follows the version scheme (§7).'''
+
+[[setting]]
+table = "builds.<name>"
+key = "versions"
+kind = "text"
+type = "string"
+description = '''The target the build is **versioned** by, such as `"self-managed"`: one output for each of its live lines (§7.1). The target MUST have a `[releases]` table with at least one live line, and the build's `availability` MUST be `"badge"`.'''
+
+# ---- 17. `[editor]` -----------------------------------------------------------
+
+[[setting]]
+table = ""
+key = "editor"
+kind = "table"
+type = "table"
+description = '''Settings for the authoring environment (SPEC §10).'''
+
+[[setting]]
+table = "editor"
+key = "build"
+kind = "text"
+type = "string"
+default-text = "see below"
+description = '''The build whose page-level diagnostics the language server reports by default ([SPEC §8.1]({repo}/blob/main/SPEC.md#81-validation-levels) checks pages once per build). It MUST name a declared build.'''
+
+# ---- 18. `[sources.<name>]` ---------------------------------------------------
+
+[[setting]]
+table = ""
+key = "sources"
+kind = "table"
+type = "table of tables"
+available = "ascribe 0.2.0"
+description = '''Folders outside the project's content, or other repositories, that its pages may take code examples from, by name.'''
+
+[[setting]]
+table = "sources.<name>"
+key = "path"
+kind = "text"
+type = "string (path)"
+default-text = "**required** without `git`"
+available = "ascribe 0.2.0"
+description = '''The source's folder, relative to the project root. It must exist, be a directory, and be inside the git repository the project is in, when the project is in one.'''
+
+[[setting]]
+table = "sources.<name>"
+key = "git"
+kind = "text"
+type = "string (URL)"
+default-text = "**required** without `path`"
+available = "ascribe 0.2.0"
+description = '''Another repository, as `git` takes it: `https://`, `http://`, `ssh://`, `git://`, `file://`, or `user@host:path`.'''
+
+[[setting]]
+table = "sources.<name>"
+key = "branch"
+kind = "text"
+type = "string"
+default-text = "the repository's default branch"
+available = "ascribe 0.2.0"
+description = '''The branch `ascribe sources update` moves the pin to.'''
+
+[[setting]]
+table = "sources.<name>"
+key = "include"
+kind = "list"
+type = "array of patterns"
+default-text = "every file"
+available = "ascribe 0.2.0"
+description = '''The files a snippet may read, matched against their paths relative to the source's folder (§1.3).'''
+
+[[setting]]
+table = "sources.<name>"
+key = "ignore"
+kind = "list"
+type = "array of patterns"
+default = []
+default-text = "none"
+available = "ascribe 0.2.0"
+description = '''Files left out even when `include` matches them.'''
+
+# ---- 19. `[checks]` -----------------------------------------------------------
+
+[[setting]]
+table = ""
+key = "checks"
+kind = "table"
+type = "table"
+available = "ascribe 0.3.0"
+description = '''How loudly each check about your content's quality speaks, by the check's name, and the settings of the tools Ascribe runs.'''
+
+[[setting]]
+table = "checks.<check>"
+key = "level"
+kind = "level"
+type = "string"
+choices = ["off", "advice", "warning", "error"]
+default-text = "the check's own level"
+available = "ascribe 0.3.0"
+description = '''The check's level: `"off"`, `"advice"`, `"warning"`, or `"error"`. Without it, the check keeps its own.'''
+
+[[setting]]
+table = ""
+key = "intended"
+kind = "list"
+type = "array of tables"
+available = "ascribe 0.3.0"
+description = '''Says that a check's problem with a content model entry or an image is intended. Each table names one check, one entry, and why.'''
+
+[[setting]]
+table = "intended"
+key = "check"
+kind = "text"
+type = "string"
+required = true
+available = "ascribe 0.3.0"
+description = '''The check, by its name. It must be a review check that reports its problems at an entry, as the [diagnostics reference](../checks/diagnostics.md) says.'''
+
+[[setting]]
+table = "intended"
+key = "reason"
+kind = "text"
+type = "string"
+required = true
+available = "ascribe 0.3.0"
+description = '''Why the problem is intended. Not empty.'''
+
+[[setting]]
+table = "intended"
+key = "phrase"
+kind = "text"
+type = "string"
+default-text = "required: exactly one of `phrase`, `feature`, and `image`"
+available = "ascribe 0.3.0"
+description = '''The entry, when it's a phrase: its key.'''
+
+[[setting]]
+table = "intended"
+key = "feature"
+kind = "text"
+type = "string"
+default-text = "required: exactly one of `phrase`, `feature`, and `image`"
+available = "ascribe 0.3.0"
+description = '''The entry, when it's a feature: its key.'''
+
+[[setting]]
+table = "intended"
+key = "image"
+kind = "text"
+type = "string"
+default-text = "required: exactly one of `phrase`, `feature`, and `image`"
+available = "ascribe 0.3.0"
+description = '''The entry, when it's an image: its path under the content root.'''
+
+[[setting]]
+table = "checks"
+key = "vale"
+kind = "table"
+type = "table"
+available = "ascribe 0.3.0"
+description = '''Checks the prose with [Vale](https://vale.sh), a program the project installs.'''
+
+[[setting]]
+table = "checks.vale"
+key = "preset"
+kind = "choice"
+type = "string"
+choices = ["quiet"]
+available = "ascribe 0.3.0"
+description = '''Ascribe's own selection of Vale rules: `quiet`, rules that are almost never wrong. Nothing is downloaded: the preset is written under `.ascribe/vale/`.'''
+
+[[setting]]
+table = "checks.vale"
+key = "config"
+kind = "text"
+type = "string"
+available = "ascribe 0.3.0"
+description = '''Instead of a preset, the path of the project's own `.vale.ini`, from the project root.'''
+
+[[setting]]
+table = "checks.vale"
+key = "off"
+kind = "list"
+type = "array of strings"
+default = []
+available = "ascribe 0.3.0"
+description = '''Rules of the preset to turn off, by the names alerts give them, such as `Ascribe.Repeated`. Only with `preset`.'''
+
+[[setting]]
+table = "checks.vale"
+key = "command"
+kind = "text"
+type = "string"
+default = "vale"
+available = "ascribe 0.3.0"
+description = '''The command that runs Vale. A path with a separator is from the project root; a bare name is looked up as the shell would. A path is a program in the project: the editor asks before it runs one, and the agents' hooks don't run one ([Prose, through Vale](../checks/vale.md#where-vale-runs)).'''
+
+[[setting]]
+table = "checks.vale"
+key = "in-check"
+kind = "switch"
+type = "boolean"
+default = false
+available = "ascribe 0.3.0"
+description = '''Whether `ascribe check`, and the agents' hook, check the prose without `--vale`.'''
+
+[[setting]]
+table = "checks.vale"
+key = "max-level"
+kind = "level"
+type = "string"
+choices = ["advice", "warning", "error"]
+default = "error"
+available = "ascribe 0.3.0"
+description = '''The most an alert can be: `"advice"`, `"warning"`, or `"error"`. Vale's `suggestion`, `warning`, and `error` are advice, a warning, and an error up to it; with `"advice"`, Vale's alerts never fail `--deny-warnings`.'''
+
+[[setting]]
+table = "checks"
+key = "links"
+kind = "table"
+type = "table"
+available = "ascribe 0.3.0"
+description = '''How `ascribe report links` checks the project's external links, with [lychee](https://lychee.cli.rs), a program the project installs.'''
+
+[[setting]]
+table = "checks.links"
+key = "command"
+kind = "text"
+type = "string"
+default = "lychee"
+available = "ascribe 0.3.0"
+description = '''The command that runs lychee. A path with a separator is from the project root; a bare name is looked up as the shell would.'''
+
+[[setting]]
+table = "checks.links"
+key = "ignore"
+kind = "list"
+type = "array of strings"
+default = []
+available = "ascribe 0.3.0"
+description = '''The hosts whose links aren't checked: a host name, such as `example.com`, or `*.` and a host name, which covers every host under it but not the name itself. Case doesn't matter.'''
+
+[[setting]]
+table = "checks.links"
+key = "reuse-days"
+kind = "number"
+type = "whole number"
+default = 14
+available = "ascribe 0.3.0"
+description = '''How many days an address that answered isn't asked about again. Each address's own limit falls between half of this and all of it, so addresses first checked together don't all come due on one day. `0` asks about every address on every run.'''
+
+[[setting]]
+table = "checks.links"
+key = "confirm-days"
+kind = "number"
+type = "whole number"
+default = 3
+available = "ascribe 0.3.0"
+description = '''How many days a link that answered before and fails now is listed as unconfirmed, and not reported, before it's reported. A 404 or a 410 is reported at once. `0` reports every failure at once.'''
+
+# ---- 20. `[permalinks]` -------------------------------------------------------
+
+[[setting]]
+table = ""
+key = "permalinks"
+kind = "table"
+type = "table"
+available = "ascribe 0.3.0"
+description = '''Names for something outside the docs to link to that no heading or page declares: a permalink ended on purpose, and a second name for one.'''
+
+[[setting]]
+table = "permalinks"
+key = "retired"
+kind = "table"
+type = "table of tables"
+available = "ascribe 0.3.0"
+description = '''An entry for each retired permalink, keyed by its name.'''
+
+[[setting]]
+table = "permalinks.retired.<name>"
+key = "reason"
+kind = "text"
+type = "string"
+required = true
+available = "ascribe 0.3.0"
+description = '''Why it was retired. A reader whose link leads there sees it, as text. Not empty.'''
+
+[[setting]]
+table = "permalinks.retired.<name>"
+key = "to"
+kind = "text"
+type = "string"
+available = "ascribe 0.3.0"
+description = '''Where its address leads now: a page, by its path from the content root, and `#` and a heading's id, as `guides/security.md#rotate-keys`. Without it, or in a build that doesn't publish the page, the address shows that what was there was removed, the reason, and a link to the docs' home.'''
+
+[[setting]]
+table = "permalinks"
+key = "aliases"
+kind = "table"
+type = "table of strings"
+available = "ascribe 0.3.0"
+description = '''An entry for each alias, keyed by its name, whose value is the name it leads to: a permalink a heading or page declares, or another alias that leads to one.'''
+
+# ---- 21. `[crawlers]` ---------------------------------------------------------
+
+[[setting]]
+table = ""
+key = "crawlers"
+kind = "table"
+type = "table"
+available = "ascribe 0.3.0"
+description = '''What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person.'''
+
+[[setting]]
+table = "crawlers"
+key = "training"
+kind = "choice"
+type = '`"allow"` or `"disallow"`'
+choices = ["allow", "disallow"]
+available = "ascribe 0.3.0"
+description = '''What crawlers gathering text to train a model may do. `disallow` writes one group naming every training crawler Ascribe knows, with `Disallow: /`.'''
+
+[[setting]]
+table = "crawlers"
+key = "search"
+kind = "choice"
+type = '`"allow"` or `"disallow"`'
+choices = ["allow", "disallow"]
+available = "ascribe 0.3.0"
+description = '''What crawlers building the index an AI search product answers from may do, written the same way.'''
+
+[[setting]]
+table = "crawlers"
+key = "on-request"
+kind = "choice"
+type = '`"allow"` or `"disallow"`'
+choices = ["allow", "disallow"]
+available = "ascribe 0.3.0"
+description = '''What fetchers that read a page because a person asked an assistant about it may do, written the same way.'''
+
+[[setting]]
+table = "crawlers"
+key = "lines"
+kind = "list"
+type = "array of strings"
+default = []
+available = "ascribe 0.3.0"
+description = '''The project's own `robots.txt` lines, in order. Each is one line, not empty. A path in an `Allow` or `Disallow` line is from the project's own root, and the records hold it from the host's, with `base-path` before it: under `base-path = "/docs/"`, `Disallow: /drafts/` is `Disallow: /docs/drafts/`. Any other line is kept as written. The lines before any `User-agent` line are for every crawler, in the `User-agent: *` group. A `User-agent` line that names a crawler starts a group the project writes whole: a crawler obeys only the most specific group that names it, and not the `*` group as well. A crawler a disallowed purpose names can't be named in `lines` too, and no crawler can be named in two groups of `lines`.'''
+
+# ---- 22. `[listing]` ----------------------------------------------------------
+
+[[setting]]
+table = ""
+key = "listing"
+kind = "table"
+type = "table"
+available = "ascribe 0.3.0"
+description = '''How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type.'''
+
+[[setting]]
+table = "listing"
+key = "default"
+kind = "choice"
+type = "string"
+choices = ["listed", "unquoted", "unlisted"]
+default = "listed"
+available = "ascribe 0.3.0"
+description = '''Every page's listing.'''
+
+[[setting]]
+table = "listing"
+key = "folders"
+kind = "table"
+type = "table of strings"
+default = {}
+available = "ascribe 0.3.0"
+description = '''A listing for every page under a folder, keyed by the folder's path from the content root, ending in `/`, with its name's case as it is on disk. A folder's pages are every page whose path starts with it, in folders under it too.'''
+
+[[setting]]
+table = "listing"
+key = "types"
+kind = "table"
+type = "table of strings"
+default = {}
+available = "ascribe 0.3.0"
+description = '''A listing for every page of a content type, keyed by the type's name.'''
+
+[[setting]]
+table = "listing"
+key = "older-lines"
+kind = "choice"
+type = "string"
+choices = ["listed", "unquoted", "unlisted"]
+default = "listed"
+available = "ascribe 0.3.2"
+description = '''The listing of every page of a live line of a versioned build other than its current line: `site@3.4`'s, and not `site`'s. It governs search engines and agents together.'''

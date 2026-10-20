@@ -13,6 +13,7 @@ use toml::de::{DeTable, DeValue};
 use crate::SourceBound;
 use crate::model::*;
 use crate::names::{self, is_key, is_name_word, list, suggest};
+use crate::settings;
 use crate::toml_util::{V, describe, entries, join, sp};
 
 pub(crate) struct Loader<'s> {
@@ -247,8 +248,32 @@ impl<'s> Loader<'s> {
         }
     }
 
-    /// Reports unknown keys in a table whose keys this reference defines.
-    pub(crate) fn check_keys(&mut self, path: &str, t: &DeTable<'_>, allowed: &[&str]) {
+    /// Reports unknown keys in a table whose keys the registry has: `table`
+    /// names it as the registry does (`types.<name>`), and `path` as a
+    /// message does (`types.guide`).
+    pub(crate) fn check_table(&mut self, path: &str, t: &DeTable<'_>, table: &str) {
+        let allowed = settings::taken(table);
+        self.check_keys(path, t, &allowed);
+    }
+
+    /// Reports unknown keys in a field's table form, or an attribute's when
+    /// `attribute`.
+    pub(crate) fn check_field(&mut self, path: &str, t: &DeTable<'_>, attribute: bool) {
+        let allowed = settings::field_keys(attribute);
+        self.check_keys(path, t, &allowed);
+    }
+
+    /// Reports unknown keys in a check's table: the registry's, and `own`,
+    /// the check's own settings.
+    pub(crate) fn check_check(&mut self, path: &str, t: &DeTable<'_>, own: &[&str]) {
+        let mut allowed = settings::keys("checks.<check>");
+        allowed.extend(own);
+        self.check_keys(path, t, &allowed);
+    }
+
+    /// Reports unknown keys in a table whose keys are `allowed`. Private, so
+    /// every table's keys come from the registry.
+    fn check_keys(&mut self, path: &str, t: &DeTable<'_>, allowed: &[&str]) {
         for (key, span, _) in entries(t) {
             if allowed.contains(&key) {
                 continue;
@@ -319,35 +344,7 @@ impl<'s> Loader<'s> {
         };
         let root_span = sp(&parsed);
         let root = parsed.get_ref();
-        self.check_keys(
-            "ascribe.toml",
-            root,
-            &[
-                "spec",
-                "project",
-                "types",
-                "fragments",
-                "dimensions",
-                "versions",
-                "releases",
-                "lifecycle",
-                "features",
-                "notes",
-                "phrases",
-                "glossary",
-                "images",
-                "widgets",
-                "consumer",
-                "builds",
-                "editor",
-                "sources",
-                "checks",
-                "intended",
-                "permalinks",
-                "crawlers",
-                "listing",
-            ],
-        );
+        self.check_table("ascribe.toml", root, "");
 
         let spec = self.spec(root, root_span);
         let project = self.project(root.get("project"));
@@ -444,9 +441,13 @@ impl<'s> Loader<'s> {
             return;
         };
         // `current` is checked apart, so its error can name `[releases]`.
-        self.check_keys("versions", t, &["scheme", "current"]);
+        self.check_table("versions", t, "versions");
         if let Some(s) = t.get("scheme") {
-            self.choice("versions.scheme", s, &["numeric"]);
+            self.choice(
+                "versions.scheme",
+                s,
+                &settings::choices("versions", "scheme"),
+            );
         }
         if let Some((_, span, _)) = entries(t).find(|(key, _, _)| *key == "current") {
             self.push(self.issue(diagnostics::MODEL_VERSIONS_CURRENT, span));
@@ -458,8 +459,8 @@ impl<'s> Loader<'s> {
     fn project(&mut self, v: Option<&V<'_>>) -> ProjectInfo {
         let mut info = ProjectInfo {
             value: Project {
-                content_root: "docs".into(),
-                output_dir: ".ascribe/build".into(),
+                content_root: settings::default_text("project", "content-root").into(),
+                output_dir: settings::default_text("project", "output-dir").into(),
             },
             content_span: None,
             output_span: None,
@@ -468,7 +469,7 @@ impl<'s> Loader<'s> {
         let Some(t) = self.as_table("project", v) else {
             return info;
         };
-        self.check_keys("project", t, &["content-root", "output-dir"]);
+        self.check_table("project", t, "project");
         for (key, slot) in [("content-root", 0), ("output-dir", 1)] {
             let Some(item) = t.get(key) else { continue };
             let path = format!("project.{key}");
@@ -557,8 +558,7 @@ impl<'s> Loader<'s> {
             let Some(st) = self.as_table(&path, item) else {
                 continue;
             };
-            let allowed = ["path", "include", "ignore", "git", "branch"];
-            self.check_keys(&path, st, &allowed);
+            self.check_table(&path, st, "sources.<name>");
             let include = st
                 .get("include")
                 .map(|p| self.patterns(&format!("{path}.include"), p))
@@ -773,7 +773,7 @@ impl<'s> Loader<'s> {
             let Some(dt) = self.as_table(&path, item) else {
                 continue;
             };
-            self.check_keys(&path, dt, &["values", "labels", "label", "versionless"]);
+            self.check_table(&path, dt, "dimensions.<name>");
             let label = match dt.get("label") {
                 Some(l) => self.string(&format!("{path}.label"), l, true),
                 None => None,
@@ -907,7 +907,7 @@ impl<'s> Loader<'s> {
             let Some(st) = self.as_table(&path, item) else {
                 continue;
             };
-            self.check_keys(&path, st, &["available", "label"]);
+            self.check_table(&path, st, "lifecycle.<state>");
             let available = st.get("available").and_then(|a| {
                 self.boolean(&format!("{path}.available"), a)
                     .map(|b| (b, sp(a)))
@@ -984,7 +984,7 @@ impl<'s> Loader<'s> {
             let Some(nt) = self.as_table(&path, item) else {
                 continue;
             };
-            self.check_keys(&path, nt, &["label"]);
+            self.check_table(&path, nt, "notes.<type>");
             let label = nt
                 .get("label")
                 .and_then(|l| self.string(&format!("{path}.label"), l, true));
@@ -1041,7 +1041,7 @@ impl<'s> Loader<'s> {
                 }),
                 DeValue::Table(lt) if lt.get("line").is_some() => {
                     let path = join("phrases", key);
-                    self.check_keys(&path, lt, &["line"]);
+                    self.check_table(&path, lt, "phrases.<key>");
                     let Some(lv) = lt.get("line") else { continue };
                     if let Some(target) = self.string(&format!("{path}.line"), lv, true) {
                         out.push(Phrase {
@@ -1203,7 +1203,7 @@ impl<'s> Loader<'s> {
             let Some(ft) = self.as_table(&path, item) else {
                 continue;
             };
-            self.check_keys(&path, ft, &["name", "available"]);
+            self.check_table(&path, ft, "features.<key>");
             let name = self
                 .require(&path, ft, sp(item), "name")
                 .and_then(|n| self.string(&format!("{path}.name"), n, true));

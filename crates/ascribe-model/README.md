@@ -10,6 +10,7 @@ What the content model may contain is SPEC §7 and the [content model reference]
 |---|---|---|
 | `src/lib.rs` | `load`, `load_with_file`, `load_str`, `load_str_in` | The entry points. `load` reads the file and runs the rules that need the disk (the content root exists); `load_str` runs every other rule on text alone, for unsaved buffers and tests; `load_str_in` is text with a project folder. |
 | `src/model.rs` | `ContentModel`, `Build`, `Source`, `Consumer`, `Dimension`, `Feature`, `Widget` | The typed model, and the questions other crates ask of it: `directive_schemas`, `type_of`, `type_named`, `is_fragment`, `build`, `check_availability`, and the rest. |
+| `settings.toml`, `src/settings.rs` | `settings`, `Setting` | The registry of `ascribe.toml`'s keys: every key with its table, kind, choices, default, and description, in the reference's order. The binary carries it, and the loader reads its keys and defaults from it. |
 | `src/loader.rs` | | The walk over the TOML tree, and the sections that define names: project, dimensions, lifecycle, features, notes, phrases. |
 | `src/sections.rs` | | Content types, fragments, the glossary, images, widgets, the consumer, builds, and the editor. |
 | `src/fields.rs`, `src/types.rs` | `Field`, `FieldType`, `validate_frontmatter` | Field and attribute types, and checking a page's frontmatter against its type. |
@@ -32,6 +33,7 @@ Warnings (`model-name-case`, `model-build-filter-excluded`) don't stop loading; 
 - **It depends only on `ascribe-core`.** It doesn't parse sources, so it doesn't use `ascribe-syntax`; the availability-spec parser is in `ascribe-core`, and this crate checks a spec's names against the model.
 - **It reads one file,** `ascribe.toml`, in `load` (`src/lib.rs`), and touches the disk otherwise only for the rules that need it. Everything else about a project's files is `ascribe-resolve`'s.
 - **Every rule is a registry diagnostic** (`tests/conformance/diagnostics.toml`), reported as an `Issue` at the offending key or value.
+- **A key is in the registry.** The loader takes a table's keys from `settings.toml` (`check_table`), never from a list of its own, and its defaults too; a key reported apart with a message of its own is in `settings::REPORTED_APART`.
 - **Declaration order is kept** (`toml`'s `preserve_order`): the order a model declares builds, dimensions, and attributes in is the order the other crates use them in.
 
 ## Tests
@@ -39,4 +41,5 @@ Warnings (`model-name-case`, `model-build-filter-excluded`) don't stop loading; 
 - Unit tests beside each module.
 - `tests/load.rs`: loading the example content models in `examples/content-models/`, the rules that need the file system, and the queries.
 - `tests/rules.rs`: one failing model per loading rule, checking the slug, the message variant, and the line the issue points at.
+- `tests/settings.rs`: the registry and the loader agree: every key the registry has is one the loader reads, every key the loader takes is one the registry has, and each default the registry gives is the one the loader uses.
 - The conformance suite's `model` cases (`tests/conformance/cases/model/`) check the same rules from the spec.

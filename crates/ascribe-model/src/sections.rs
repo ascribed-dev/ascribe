@@ -14,6 +14,7 @@ use crate::loader::{Loader, NameRule, is_absolute};
 use crate::model::*;
 use crate::names::{is_version, list};
 use crate::pattern::{Pattern, PatternError};
+use crate::settings;
 use crate::toml_util::{V, entries, join, sp};
 use crate::types::{Field, FieldType, FrontmatterSchema, SchemaOwner};
 
@@ -72,7 +73,7 @@ impl Loader<'_> {
         let Some(t) = self.as_table("fragments", v) else {
             return out;
         };
-        self.check_keys("fragments", t, &["patterns", "frontmatter"]);
+        self.check_table("fragments", t, "fragments");
         if let Some(p) = t.get("patterns") {
             out.patterns = self.patterns("fragments.patterns", p);
         }
@@ -137,18 +138,7 @@ impl Loader<'_> {
                         );
                     }
                 }
-                self.check_keys(
-                    &path,
-                    tt,
-                    &[
-                        "files",
-                        "default",
-                        "frontmatter",
-                        "purpose",
-                        "template",
-                        "guide",
-                    ],
-                );
+                self.check_table(&path, tt, "types.<name>");
                 let purpose = tt
                     .get("purpose")
                     .and_then(|p| self.string(&format!("{path}.purpose"), p, true));
@@ -311,9 +301,16 @@ impl Loader<'_> {
     // ---- glossary ---------------------------------------------------------------
 
     pub fn glossary(&mut self, v: Option<&V<'_>>, fragments: &Fragments) -> Glossary {
+        let match_mode = |s: &str| {
+            if s == "every" {
+                GlossaryMatch::Every
+            } else {
+                GlossaryMatch::First
+            }
+        };
         let mut out = Glossary {
-            match_mode: GlossaryMatch::First,
-            case_sensitive: false,
+            match_mode: match_mode(settings::default_text("glossary", "match")),
+            case_sensitive: settings::default_switch("glossary", "case-sensitive"),
             pages: Vec::new(),
         };
         let Some(v) = v else { return out };
@@ -332,22 +329,17 @@ impl Loader<'_> {
                 );
             }
         }
-        self.check_keys(
-            "glossary",
-            t,
-            &["match", "case-sensitive", "pages", "terms"],
-        );
+        self.check_table("glossary", t, "glossary");
         if let Some(m) = t.get("match")
-            && let Some(s) = self.choice("glossary.match", m, &["first", "every"])
+            && let Some(s) =
+                self.choice("glossary.match", m, &settings::choices("glossary", "match"))
         {
-            out.match_mode = if s == "every" {
-                GlossaryMatch::Every
-            } else {
-                GlossaryMatch::First
-            };
+            out.match_mode = match_mode(&s);
         }
         if let Some(c) = t.get("case-sensitive") {
-            out.case_sensitive = self.boolean("glossary.case-sensitive", c).unwrap_or(false);
+            out.case_sensitive = self
+                .boolean("glossary.case-sensitive", c)
+                .unwrap_or(settings::default_switch("glossary", "case-sensitive"));
         }
         if let Some(pages) = t
             .get("pages")
@@ -388,7 +380,7 @@ impl Loader<'_> {
         let Some(t) = self.as_table("images", v) else {
             return Vec::new();
         };
-        self.check_keys("images", t, &["attributes"]);
+        self.check_table("images", t, "images");
         let Some(a) = t.get("attributes") else {
             return Vec::new();
         };
@@ -438,21 +430,8 @@ impl Loader<'_> {
             ok = false;
         }
         let t = self.as_table(&path, item)?;
-        self.check_keys(
-            &path,
-            t,
-            &[
-                "forms",
-                "primary",
-                "binding",
-                "title",
-                "groupable",
-                "attributes",
-                "plain-fallback",
-                "plain-content",
-                "description",
-            ],
-        );
+        const WIDGET: &str = "widgets.<name>";
+        self.check_table(&path, t, WIDGET);
 
         // forms
         let mut forms: Option<Forms> = None;
@@ -478,42 +457,44 @@ impl Loader<'_> {
 
         // primary, title, binding
         let primary_v = t.get("primary");
+        let primary_of = |s: &str| match s {
+            "identifier" => Primary::Identifier { required: true },
+            "identifier?" => Primary::Identifier { required: false },
+            "text" => Primary::Text { required: true },
+            "text?" => Primary::Text { required: false },
+            _ => Primary::None,
+        };
         let primary = match primary_v {
             Some(p) => self
                 .choice(
                     &format!("{path}.primary"),
                     p,
-                    &["none", "identifier", "identifier?", "text", "text?"],
+                    &settings::choices(WIDGET, "primary"),
                 )
-                .map(|s| match s.as_str() {
-                    "identifier" => Primary::Identifier { required: true },
-                    "identifier?" => Primary::Identifier { required: false },
-                    "text" => Primary::Text { required: true },
-                    "text?" => Primary::Text { required: false },
-                    _ => Primary::None,
-                }),
-            None => Some(Primary::None),
+                .map(|s| primary_of(&s)),
+            None => Some(primary_of(settings::default_text(WIDGET, "primary"))),
+        };
+        let title_of = |s: &str| match s {
+            "accepted" => TitleRule::Accepted,
+            "required" => TitleRule::Required,
+            _ => TitleRule::None,
         };
         let title = match t.get("title") {
             Some(x) => self
                 .choice(
                     &format!("{path}.title"),
                     x,
-                    &["none", "accepted", "required"],
+                    &settings::choices(WIDGET, "title"),
                 )
-                .map(|s| match s.as_str() {
-                    "accepted" => TitleRule::Accepted,
-                    "required" => TitleRule::Required,
-                    _ => TitleRule::None,
-                }),
-            None => Some(TitleRule::None),
+                .map(|s| title_of(&s)),
+            None => Some(title_of(settings::default_text(WIDGET, "title"))),
         };
         let binding_v = t.get("binding");
         let binding = binding_v.and_then(|b| {
             self.choice(
                 &format!("{path}.binding"),
                 b,
-                &["self", "heading", "block", "heading-or-block"],
+                &settings::choices(WIDGET, "binding"),
             )
             .map(|s| match s.as_str() {
                 "self" => Binding::SelfBound,
@@ -525,7 +506,7 @@ impl Loader<'_> {
         let groupable_v = t.get("groupable");
         let groupable = groupable_v
             .and_then(|g| self.boolean(&format!("{path}.groupable"), g))
-            .unwrap_or(false);
+            .unwrap_or(settings::default_switch(WIDGET, "groupable"));
 
         if let Some(forms) = forms {
             if forms.line && binding_v.is_none() {
@@ -591,13 +572,22 @@ impl Loader<'_> {
         let plain_fallback = t
             .get("plain-fallback")
             .and_then(|p| self.string(&format!("{path}.plain-fallback"), p, false));
-        let mut plain_content = PlainContent::Keep;
-        if let Some(pc) = t.get("plain-content")
-            && let Some(s) = self.choice(&format!("{path}.plain-content"), pc, &["keep", "drop"])
-        {
+        let plain_content_of = |s: &str| {
             if s == "drop" {
-                plain_content = PlainContent::Drop;
+                PlainContent::Drop
+            } else {
+                PlainContent::Keep
             }
+        };
+        let mut plain_content = plain_content_of(settings::default_text(WIDGET, "plain-content"));
+        if let Some(pc) = t.get("plain-content")
+            && let Some(s) = self.choice(
+                &format!("{path}.plain-content"),
+                pc,
+                &settings::choices(WIDGET, "plain-content"),
+            )
+        {
+            plain_content = plain_content_of(&s);
             let wraps = forms.is_some_and(|f| f.container)
                 || matches!(binding, Some(Binding::Block | Binding::HeadingOrBlock));
             if !wraps && forms.is_some() {
@@ -635,14 +625,22 @@ impl Loader<'_> {
     // ---- consumer ---------------------------------------------------------------------
 
     pub fn consumer(&mut self, v: Option<&V<'_>>) -> Consumer {
+        const CONSUMER: &str = "consumer";
+        let trailing_slash = |s: &str| {
+            if s == "never" {
+                TrailingSlash::Never
+            } else {
+                TrailingSlash::Always
+            }
+        };
         let mut c = Consumer {
-            profile: "astro".into(),
+            profile: settings::default_text(CONSUMER, "profile").into(),
             site: None,
-            base_path: "/".into(),
-            trailing_slash: TrailingSlash::Always,
-            slugger: "github".into(),
-            html: true,
-            agents: false,
+            base_path: settings::default_text(CONSUMER, "base-path").into(),
+            trailing_slash: trailing_slash(settings::default_text(CONSUMER, "trailing-slash")),
+            slugger: settings::default_text(CONSUMER, "slugger").into(),
+            html: settings::default_switch(CONSUMER, "html"),
+            agents: settings::default_switch(CONSUMER, "agents"),
             permalink_path: None,
             headers: None,
         };
@@ -650,23 +648,13 @@ impl Loader<'_> {
         let Some(t) = self.as_table("consumer", v) else {
             return c;
         };
-        self.check_keys(
-            "consumer",
-            t,
-            &[
-                "profile",
-                "site",
-                "base-path",
-                "trailing-slash",
-                "slugger",
-                "html",
-                "agents",
-                "permalink-path",
-                "headers",
-            ],
-        );
+        self.check_table(CONSUMER, t, CONSUMER);
         if let Some(p) = t.get("profile")
-            && let Some(s) = self.choice("consumer.profile", p, &["astro"])
+            && let Some(s) = self.choice(
+                "consumer.profile",
+                p,
+                &settings::choices(CONSUMER, "profile"),
+            )
         {
             c.profile = s;
         }
@@ -698,16 +686,20 @@ impl Loader<'_> {
             }
         }
         if let Some(s) = t.get("trailing-slash")
-            && let Some(text) = self.choice("consumer.trailing-slash", s, &["always", "never"])
+            && let Some(text) = self.choice(
+                "consumer.trailing-slash",
+                s,
+                &settings::choices(CONSUMER, "trailing-slash"),
+            )
         {
-            c.trailing_slash = if text == "never" {
-                TrailingSlash::Never
-            } else {
-                TrailingSlash::Always
-            };
+            c.trailing_slash = trailing_slash(&text);
         }
         if let Some(s) = t.get("slugger")
-            && let Some(text) = self.choice("consumer.slugger", s, &["github"])
+            && let Some(text) = self.choice(
+                "consumer.slugger",
+                s,
+                &settings::choices(CONSUMER, "slugger"),
+            )
         {
             c.slugger = text;
         }
@@ -738,7 +730,11 @@ impl Loader<'_> {
             }
         }
         if let Some(h) = t.get("headers")
-            && let Some(text) = self.choice("consumer.headers", h, &["netlify"])
+            && let Some(text) = self.choice(
+                "consumer.headers",
+                h,
+                &settings::choices(CONSUMER, "headers"),
+            )
             && text == "netlify"
         {
             c.headers = Some(HeadersFormat::Netlify);
@@ -773,7 +769,7 @@ impl Loader<'_> {
                 let Some(bt) = self.as_table(&path, item) else {
                     continue;
                 };
-                self.check_keys(&path, bt, &["variants", "availability", "versions"]);
+                self.check_table(&path, bt, "builds.<name>");
                 let variants = self.variant_mode(name, &path, bt.get("variants"), dimensions);
                 let availability =
                     self.availability_mode(name, &path, bt.get("availability"), dimensions);
@@ -856,7 +852,7 @@ impl Loader<'_> {
         dimensions: &[Dimension],
     ) -> (Vec<Releases>, String) {
         let mut out = Vec::new();
-        let mut planned_label = "planned".to_owned();
+        let mut planned_label = settings::default_text("releases", "planned-label").to_owned();
         let Some(v) = v else {
             return (out, planned_label);
         };
@@ -874,7 +870,7 @@ impl Loader<'_> {
             let Some(rt) = self.as_table(&path, item) else {
                 continue;
             };
-            self.check_keys(&path, rt, &["live", "planned", "ends", "archived"]);
+            self.check_table(&path, rt, "releases.<target>");
             let target_ok = self.releases_target(target, target_span, dimensions);
             let mut list = |key: &str| match rt.get(key) {
                 Some(lv) => self.release_lines(target, &format!("{path}.{key}"), lv),
@@ -1025,7 +1021,7 @@ impl Loader<'_> {
                 ok = false;
                 continue;
             };
-            self.check_keys(&item_path, at, &["url", "ended"]);
+            self.check_table(&item_path, at, "releases.<target>.archived.<line>");
             let url = match at.get("url") {
                 Some(uv) => match self.string(&format!("{item_path}.url"), uv, true) {
                     Some(url) => Some(url),
@@ -1459,7 +1455,7 @@ impl Loader<'_> {
             && let Some(t) = self.as_table("editor", v)
         {
             at = sp(v);
-            self.check_keys("editor", t, &["build"]);
+            self.check_table("editor", t, "editor");
             if let Some(b) = t.get("build")
                 && let Some(name) = self.string("editor.build", b, true)
             {

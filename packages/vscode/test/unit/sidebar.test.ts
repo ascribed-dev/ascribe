@@ -384,6 +384,22 @@ describe("the Pages view", () => {
     expect(pagesParent(sectionOf(roots, "guides/"))).toBeUndefined();
   });
 
+  it("starts with every section closed, so revealing the open page shows its path alone", () => {
+    const sections: string[] = [];
+    const visit = (nodes: ReturnType<typeof pagesRoots>): void => {
+      for (const node of nodes) {
+        if (node.kind === "section") {
+          expect(pagesLook(node)).toMatchObject({ expandable: true, expanded: false });
+          sections.push(node.section.folder);
+        }
+        visit(pagesChildren(node));
+      }
+    };
+    visit(pagesRoots(navigated));
+    // Start, a top section, a section placed among its parent's pages, and another.
+    expect(sections).toEqual(["", "guides/", "guides/deep/", "ref/"]);
+  });
+
   it("is each page's and fragment's file, which VS Code colors by its problems, and nothing else's", () => {
     const roots = pagesRoots(navigated);
     expect(pagesResource(pageOf(roots, "guides/install.md"))).toBe("guides/install.md");

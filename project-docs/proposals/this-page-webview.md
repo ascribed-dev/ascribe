@@ -65,6 +65,9 @@ What VS Code still gives a webview view for nothing: its title, description, and
 
 - **The webview is made late and thrown away often.** VS Code calls the provider when the view is first shown, and disposes of the webview when the view is collapsed or the sidebar shows another container. A message sent before its script has run is lost. So the webview says it's ready, and only then does the extension send it an answer: the newest it has when the ready message arrives, not the one it had when the webview was made, since the cursor may have moved in between. Every ready gets an answer, so a webview that reloads is drawn again. Each answer carries a number that rises, and the webview ignores one older than what it has drawn. One test covers the answer changing between the webview's creation and its ready message. Open sections and the scroll position come back from `getState`.
 - **Clicking the view takes the focus from the editor.** While the webview has focus, VS Code reports no active text editor, and a view that follows the active editor would go empty the moment it's clicked. Opening beside is relative to the page's editor group, not to whatever is active.
+- **An update keeps the reader's place.** The answer changes as the cursor moves, and the problems change as the server checks. Drawing the whole view again would jump its scroll and drop the keyboard's focus, so rows have stable keys and only what changed is drawn again.
+- **It appears a moment later than a tree:** a webview is a page in a frame. Its script is small, with no framework, and it draws the section headers at once so the view never flashes empty.
+- **Cursor moves stay one request each,** as today, and a hidden view still asks nothing.
 
 ### Which page it shows
 
@@ -75,9 +78,6 @@ This page shows the page of the last Markdown editor that was active, with a pag
 - **When the page's editor is closed,** it shows the page of the editor VS Code makes active, if that's a page, and otherwise "Open a page to see what's known about it.", the message the tree shows today.
 
 The thread's first test asserts this rule: click in the view, open an include beside, and the view still shows the page, with the focus in the view.
-- **An update keeps the reader's place.** The answer changes as the cursor moves, and the problems change as the server checks. Drawing the whole view again would jump its scroll and drop the keyboard's focus, so rows have stable keys and only what changed is drawn again.
-- **It appears a moment later than a tree:** a webview is a page in a frame. Its script is small, with no framework, and it draws the section headers at once so the view never flashes empty.
-- **Cursor moves stay one request each,** as today, and a hidden view still asks nothing.
 
 ## Alongside
 

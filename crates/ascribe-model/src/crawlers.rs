@@ -109,9 +109,7 @@ impl Loader<'_> {
         let Some(t) = self.as_table("crawlers", v) else {
             return out;
         };
-        let mut keys = vec!["lines"];
-        keys.extend(Purpose::ALL.map(Purpose::name));
-        self.check_keys("crawlers", t, &keys);
+        self.check_table("crawlers", t, "crawlers");
         for (key, key_span, value) in entries(t) {
             let Some(purpose) = Purpose::from_name(key) else {
                 continue;
