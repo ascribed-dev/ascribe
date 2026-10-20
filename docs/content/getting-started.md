@@ -7,11 +7,11 @@ permalink: getting-started
 
 Ascribe is documentation written as code: Markdown with a small set of directives for the structure documentation needs (notes, procedures, alternatives by platform or product, availability, includes), checked like code, and built into a website, plain Markdown, and JSON. This guide sets up a project and writes, checks, and builds a first page. Its second half, [Astro](astro/index.md), publishes the page as a site.
 
-It's for someone new to Ascribe who knows Markdown and a terminal. By the end, you'll have a project with a content model, a page that the editor and CI check as you write it, and a build of it ready for a site.
+It's for someone new to Ascribe who knows Markdown and a terminal. By the end, you'll have a project with a content model, a page that the editor checks as you write it, and a build of it ready for a site.
 
 ## Before you start
 
-You need [Node.js](https://nodejs.org) {node} or later. Ascribe runs on macOS on Apple silicon, Linux (x64 and arm64, with glibc {glibc} or later (2.39 for 0.1.1 and earlier), which includes the build images of Netlify, Vercel, Cloudflare Pages, and AWS Amplify), and Windows (x64).
+You need [Node.js](https://nodejs.org) {node} or later, on a [platform Ascribe runs on](install.md#platforms).
 
 ## Install the command
 @memo: This section and the next are the two installs the landing page and the README show beside their link here (decision 86 in project-docs/decisions.md). Keep them first; scripts/docs-site/facts.test.ts fails when the copies differ.
@@ -30,39 +30,7 @@ pnpm exec ascribe --version
 ```
 @end
 
-`@ascribed/cli` installs the `ascribe` binary for your platform, and pins its version for everyone who works on the project, and for CI. The latest release is {version}. If `ascribe` can't find the binary, your package manager left out optional dependencies; reinstall with them enabled.
-
-@note {type=tip}: To try what's on `main` before it's released, install `@ascribed/cli@next` and `@ascribed/astro@next` instead: a build published every night, with no promise of stability.
-
-### Without Node
-
-Where there's no Node, such as a Python or Go repository whose hooks or CI run `ascribe`, put a release's binary on your path instead. Each of these installs exactly what a release published, and checks it against the release's `SHA256SUMS` first.
-
-On macOS or Linux, with [Homebrew](https://brew.sh):
-
-```sh
-brew install ascribed-dev/tap/ascribe
-```
-
-Or with the install script, which puts `ascribe` in `~/.local/bin`, never asks for `sudo`, and says when that folder isn't on your path. Add `-s -- --version <version>` for a release other than the latest, or `-s -- --to <folder>` for another folder:
-
-```sh
-curl -fsSL https://ascribed-dev.com/install.sh | sh
-```
-
-The script is short enough to read before you run it: [install.sh](https://ascribed-dev.com/install.sh). Run either again to update.
-
-On Windows, in PowerShell, download the latest release's archive and its `SHA256SUMS`, check the one against the other, and put `ascribe.exe` on your path:
-
-```powershell
-$base = "https://github.com/ascribed-dev/ascribe/releases"; Invoke-WebRequest "$base/latest/download/SHA256SUMS" -OutFile SHA256SUMS; $v = (Select-String -Path SHA256SUMS -Pattern "github/ascribe-(.+)-win32-x64\.zip").Matches[0].Groups[1].Value; $zip = "ascribe-$v-win32-x64.zip"; Invoke-WebRequest "$base/download/v$v/$zip" -OutFile $zip
-if (-not (Select-String -Path SHA256SUMS -SimpleMatch -Pattern "$((Get-FileHash $zip -Algorithm SHA256).Hash.ToLower())  github/$zip")) { throw "$zip doesn't match SHA256SUMS" }
-Expand-Archive $zip "$env:LOCALAPPDATA\Programs" -Force; [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path", "User") + ";$env:LOCALAPPDATA\Programs\ascribe-$v-win32-x64", "User")
-```
-
-Open a new terminal, and `ascribe --version` prints the release.
-
-A machine can then have more than one `ascribe`: the one on your path, the one `@ascribed/cli` pins in a project, and the one the editor's extension bundles. A bare `ascribe` runs your path's; `npx ascribe` runs the project's; the editor runs the project's when there is one, and its own otherwise, and puts that one first on the path of its terminals ([Agents](agents/index.md#vs-code) says how). `ascribe --version` says which version you're running.
+`@ascribed/cli` installs the `ascribe` binary for your platform, and pins its version for everyone who works on the project, and for CI. The latest release is {version}. To install it another way, such as without Node, see [Install](install.md).
 
 ## Install the editor
 
@@ -84,9 +52,6 @@ After you install it, its walkthrough, **Get Started with Ascribe**, shows the p
 
 `ascribe.toml` is the content model: the project's schema. It marks the project root, and says what each kind of page must have in its frontmatter.
 
-### Start with `ascribe init`
-@available: ascribe 0.3.1
-
 Start the project with the command:
 
 @variant {pm=npm}:
@@ -104,16 +69,6 @@ It writes the project's first `ascribe.toml`, and makes `docs/`, the folder the 
 @snippet: code:examples/getting-started/ascribe.toml#init
 
 Every page is of the one type, `page`, and says so with `type: page` in its frontmatter, with a `title` and a `description`. Output goes to `.ascribe/build/`, and there's one build, `site`. `ascribe init --templates` starts the project with six page types too, each with a template to start a page from; see [Page templates](templates/index.md).
-
-### Write it by hand
-
-For a project that wants nothing written for it, or with Ascribe 0.3.0 or earlier, which don't have `ascribe init`, write `ascribe.toml` yourself, and make `docs/`. The smallest is a single line:
-
-```toml
-spec = "0.1"
-```
-
-With nothing else declared, pages live in `docs/`, output goes to `.ascribe/build/`, there's one build, `site`, and every page needs a `title` and has no other field, so leave out the page's `type` and `description` below: a project that declares no types has one, implicitly, and its pages don't name it.
 
 ### Add what the page uses
 
@@ -158,6 +113,14 @@ The link to `configure.md` is reported, since that page doesn't exist yet:
 
 Every diagnostic has a code, and the [diagnostics reference](checks/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too. Create `docs/configure.md` with the same frontmatter fields as `install.md`, `type: page` among them, and check again.
 
+## Format it
+
+```sh
+npx ascribe fmt
+```
+
+rewrites directives and attribute blocks into their canonical spelling, and changes nothing else. `ascribe fmt --check` reports what would change, for CI.
+
 ## Build it
 
 ```sh
@@ -171,14 +134,6 @@ Each build writes three outputs to `.ascribe/build/<build>/`:
 - `json/`: the resolved pages as JSON, for your own tools.
 
 See the [command reference](checks/check.md#cli-build).
-
-## Format it
-
-```sh
-npx ascribe fmt
-```
-
-rewrites directives and attribute blocks into their canonical spelling, and changes nothing else. `ascribe fmt --check` reports what would change, for CI.
 
 ## Publish it with Astro
 
@@ -196,20 +151,13 @@ Either way:
 - `ascribe.toml`'s `[consumer]` `site` and Astro's `site` must be the same address. The `ascribe.toml` above sets it, and the Astro build fails when the two differ.
 - You don't run `ascribe build` yourself: the integration runs it before Astro loads the pages, and again as you edit in `astro dev`.
 
-## Check it in CI
-
-Run the same command the editor runs, and the formatting check, on every pull request:
-
-@snippet {lang=yaml, title=.github/workflows/check.yml}: code:examples/docs-repository/.github/workflows/check.yml#workflow
-
-It installs the latest release. To run the version your `package.json` pins instead, replace that step with `npm ci`, and run each command with `npx`.
-
 ## Summary
 
-You installed the command and the editor, declared a content model in `ascribe.toml`, and wrote a page with a note, alternatives by package manager, phrases, and a procedure. Then you checked it, built its site output, plain Markdown, and JSON, formatted it, and set CI to check every pull request the same way.
+You installed the command and the editor, declared a content model in `ascribe.toml`, and wrote a page with a note, alternatives by package manager, phrases, and a procedure. Then you checked it, formatted it, and built its site output, plain Markdown, and JSON, ready for Astro to publish.
 
 ## Next steps
 
+- [Checks in CI](checks/ci.md): check every pull request the way the editor checks a page.
 - [Content that varies](writing/variants.md): alternatives by platform or product, availability, and builds.
 - [Directive reference](writing/directives.md): the language.
 - [`ascribe.toml` reference](content-model/index.md): the content model.

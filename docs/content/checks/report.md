@@ -14,7 +14,7 @@ ascribe report links                 # external links, with lychee
 ascribe report agents --site https://docs.example.com
 ```
 
-Without a section named, it runs the three that say what state the project is in and need nothing outside it. `pages`, the table of every page's record, needs nothing outside it either, and runs when it's named. The other two run programs you install, and reach the network; when one can't run, it says what's missing and how to get it, and the rest of the report is the same. [`ascribe report`](../review/diff.md#cli-report) lists every option, and the JSON.
+Without a section named, it runs the three that say what state the project is in and need nothing outside it. `pages`, the table of every page's record, needs nothing outside it either, and runs when it's named. The other two run programs you install, and reach the network; when one can't run, it says what's missing and how to get it, and the rest of the report is the same. [`ascribe report`](report-command.md#cli-report) lists every option, and the JSON.
 
 This guide takes the report a section at a time and says what to do about what each one finds, then runs it every week in CI.
 
@@ -177,6 +177,6 @@ This repository runs this job on these docs, in [`.github/workflows/report.yml`]
 
 ## See also
 
-- [`ascribe report`](../review/diff.md#cli-report): every option, and the JSON.
+- [`ascribe report`](report-command.md#cli-report): every option, and the JSON.
 - [What to measure](../agents/measuring.md): what happens to the pages after a deploy, which the report can't see.
 - [`[checks.links]`](../content-model/checks.md#checkslinks): the settings for the external links.

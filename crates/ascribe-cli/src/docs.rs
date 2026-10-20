@@ -155,9 +155,17 @@ fn the_docs_site_is_where_the_binary_links() {
 const COMMAND_REFERENCE: &str = "command/index.md";
 
 /// The command reference's pages: the pages that include a fragment generated
-/// from the help text, its own page first.
+/// from the help text, or that a command's permalink leads to, as `ascribe
+/// lsp`'s on the editor's page, which has no options to generate; its own
+/// page first.
 fn command_reference() -> Vec<String> {
-    fn walk(folder: &str, pages: &mut Vec<String>) {
+    let permalinks = std::fs::read_to_string(repo().join("docs/ascribe.permalinks")).unwrap();
+    let permalinked: Vec<&str> = permalinks
+        .lines()
+        .filter(|l| l.starts_with("cli-"))
+        .filter_map(|l| l.split_once(" = \"")?.1.split(['#', '"']).next())
+        .collect();
+    fn walk(folder: &str, permalinked: &[&str], pages: &mut Vec<String>) {
         let dir = repo().join("docs/content").join(folder);
         let mut names: Vec<String> = std::fs::read_dir(dir)
             .unwrap()
@@ -168,20 +176,21 @@ fn command_reference() -> Vec<String> {
         for name in names {
             let path = format!("{folder}{name}");
             if repo().join("docs/content").join(&path).is_dir() {
-                walk(&format!("{path}/"), pages);
+                walk(&format!("{path}/"), permalinked, pages);
             } else if name.ends_with(".md")
                 && path != COMMAND_REFERENCE
-                && std::fs::read_to_string(repo().join("docs/content").join(&path))
-                    .unwrap()
-                    .lines()
-                    .any(|l| l.starts_with("@include: ") && l.contains("/_generated/cli-"))
+                && (permalinked.contains(&path.as_str())
+                    || std::fs::read_to_string(repo().join("docs/content").join(&path))
+                        .unwrap()
+                        .lines()
+                        .any(|l| l.starts_with("@include: ") && l.contains("/_generated/cli-")))
             {
                 pages.push(path);
             }
         }
     }
     let mut pages = vec![COMMAND_REFERENCE.to_owned()];
-    walk("", &mut pages);
+    walk("", &permalinked, &mut pages);
     pages
 }
 

@@ -912,6 +912,10 @@ fn versions() {
         &stdout(&run(&quill, &["versions", "list"], 0)),
     );
     expect(
+        "versions-list.json",
+        &json(&run(&quill, &["versions", "list", "--format", "json"], 0)),
+    );
+    expect(
         "versions-changes.txt",
         &stdout(&run(
             &quill,
@@ -930,6 +934,21 @@ fn versions() {
                 "3.5",
                 "--format",
                 "markdown",
+            ],
+            0,
+        )),
+    );
+    expect(
+        "versions-changes.json",
+        &json(&run(
+            &quill,
+            &[
+                "versions",
+                "changes",
+                "self-managed 3.4",
+                "3.5",
+                "--format",
+                "json",
             ],
             0,
         )),
@@ -958,6 +977,24 @@ fn versions_archive() {
                 "archive/3.4",
                 "--current",
                 "https://docs.quill.dev/",
+            ],
+            0,
+        )),
+    );
+    expect(
+        "versions-archive.json",
+        &json(&run(
+            root,
+            &[
+                "versions",
+                "archive",
+                "self-managed 3.4",
+                "--to",
+                "archive/3.4",
+                "--current",
+                "https://docs.quill.dev/",
+                "--format",
+                "json",
             ],
             0,
         )),
@@ -1004,6 +1041,23 @@ fn versions_release() {
             0,
         )),
     );
+    expect(
+        "versions-release.json",
+        &json(&run(
+            root,
+            &[
+                "versions",
+                "release",
+                "self-managed 3.6",
+                "--next",
+                "3.7",
+                "--dry-run",
+                "--format",
+                "json",
+            ],
+            0,
+        )),
+    );
 }
 
 /// `ascribe versions retire` on `examples/quill`, as a dry run, so it
@@ -1027,4 +1081,29 @@ fn versions_retire() {
             0,
         )),
     );
+    // The day it ended is today's, so the JSON is written as of a fixed one.
+    let out = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(&quill)
+        .args([
+            "versions",
+            "retire",
+            "self-managed 3.4",
+            "--url",
+            "https://archive.quill.dev/3.4/",
+            "--dry-run",
+            "--show-unused",
+            "--format",
+            "json",
+        ])
+        .env("NO_COLOR", "1")
+        .env("ASCRIBE_TODAY", "2026-10-16")
+        .output()
+        .expect("run ascribe");
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    expect("versions-retire.json", &json(&out));
 }

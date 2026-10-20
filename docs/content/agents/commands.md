@@ -1,10 +1,10 @@
 ---
 type: reference
-title: "`ascribe agents`, `mcp`, and `lsp`"
-description: "Set a repository up for AI agents, serve a project's tools over MCP, and run the language server."
+title: "`ascribe agents` and `mcp`"
+description: "Set a repository up for AI agents, and serve a project's tools over MCP."
 ---
 
-The commands for agents and editors. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
+The commands for agents. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
 
 ## `ascribe agents`
 @id {permalink=true}: cli-agents
@@ -76,7 +76,7 @@ Writes a compact index of one build's docs, for the `AGENTS.md` of the product t
 It lists the pages the build offers, the ones in `llms.txt`: a page that's `unlisted` isn't in it. A page's address is its Markdown version's, with `[consumer] agents = true`, or else its own. The index holds to 8 KB: past that, it leaves out descriptions, from the last page back, then pages, from the last back, and ends with a sentence saying how many it left out and where every page is.
 
 @available: ascribe 0.3.2
-Of a [versioned build](../versions/index.md#for-agents), `--build site@3.4` names an older line, and without `--build` it's the current line's. When the build has more than one live line, the index's heading names the line, as that line's `llms.txt` does: `## Loom (Self-managed 3.4)`.
+Of a [versioned build](../versions/lines.md#for-agents), `--build site@3.4` names an older line, and without `--build` it's the current line's. When the build has more than one live line, the index's heading names the line, as that line's `llms.txt` does: `## Loom (Self-managed 3.4)`.
 
 It prints the index. With `--into`, it writes it between markers in that file instead, as `sync` writes its block, leaving the rest of the file as it is, so a second run replaces the first; it says whether the file changed. With `--pages`, it also writes each offered page's Markdown version, as the build's `plain` output writes it, into that folder, and the index's addresses are paths into it, from the folder of the `--into` file: the folder a package ships beside its `AGENTS.md`. A file in the folder that isn't one of the index's pages, such as a page from an earlier run that the build no longer offers, is named, and left there.
 
@@ -191,10 +191,3 @@ Every tool is read-only: none writes a file or starts a program the project name
 The resources are `ascribe://directives`, each built-in directive's syntax (`ascribe agents skill references/directives.md`); `ascribe://model/<project>`, what a project's content model allows (`ascribe model <project>`); and `ascribe://instructions/<project>`, its rules (`ascribe agents rules <project>`). `<project>` is a file or folder in it, from the folder the server runs in. The prompts are `new-page`, `fix`, and `review`, as `ascribe agents prompt` prints them.
 
 The server speaks the protocol's 2026-07-28 revision, which has no handshake, and answers `initialize` for a client on 2025-11-25 or 2025-06-18. It takes no options, and refuses `--config` (exit code `2`). Its logs go to standard error; it exits with `0` when standard input ends.
-
-## `ascribe lsp`
-@id {permalink=true}: cli-lsp
-
-Runs the language server, speaking the Language Server Protocol over standard input and output. An editor starts it; you don't run it yourself. It takes no options of its own, and refuses `--config` (exit code `2`): its project is the nearest `ascribe.toml` at or above the workspace folder the editor gives it, never one below, and `ascribe.toml`'s `[editor] build` says which build's page-level diagnostics to report. Its logs go to standard error, starting with the project it uses.
-
-The VS Code extension runs it for you, one server for each project in the workspace. See [Editing](../editor/index.md). Any editor with an LSP client can run `ascribe lsp` too; for several projects, start one per project ([Other editors](../editor/index.md#other-editors)).

@@ -251,8 +251,21 @@ fn diff(bin: &Path, dir: &Path) {
 /// change: a clean page, a page with an error, and a fragment that 100 pages
 /// include, added to `pages`' first 100, each checked with every build and
 /// with `--editor-build`. `pages` are content paths of pages, in the order to
-/// try them. Metrics are `check-one/<name>-<case>[-editor]`.
-fn one_file(name: &str, bin: &Path, root: &Path, content_root: &str, pages: &[String]) {
+/// try them. A clean page is one with no warning or error; advice doesn't
+/// count, as it doesn't fail a check. Metrics are
+/// `check-one/<name>-<case>[-editor]`.
+///
+/// # Errors
+///
+/// When no page after the first 100 is clean, naming the project, before
+/// anything is timed.
+fn one_file(
+    name: &str,
+    bin: &Path,
+    root: &Path,
+    content_root: &str,
+    pages: &[String],
+) -> Result<(), String> {
     let docs = root.join(content_root);
     std::fs::create_dir_all(docs.join("_bench")).expect("creates");
     std::fs::write(
@@ -272,27 +285,30 @@ fn one_file(name: &str, bin: &Path, root: &Path, content_root: &str, pages: &[St
         .output()
         .expect("runs ascribe");
     let report: serde_json::Value = serde_json::from_slice(&out.stdout).expect("JSON");
-    let with = |severity: Option<&str>| -> Vec<String> {
+    let with = |severities: &[&str]| -> Vec<String> {
         report["diagnostics"]
             .as_array()
             .expect("a list")
             .iter()
-            .filter(|d| severity.is_none_or(|s| d["severity"] == s))
+            .filter(|d| severities.iter().any(|s| d["severity"] == *s))
             .filter_map(|d| d["file"].as_str().map(str::to_owned))
             .collect()
     };
-    let (any, errors) = (with(None), with(Some("error")));
+    let (problems, errors) = (with(&["error", "warning"]), with(&["error"]));
     let at = |page: &String| format!("{content_root}/{page}");
-    let clean = pages[100..]
+    let rest = pages.get(100..).unwrap_or_default();
+    let clean = rest
         .iter()
         .map(at)
-        .find(|p| !any.contains(p))
-        .expect("a clean page");
-    let broken = match pages[100..].iter().map(at).find(|p| errors.contains(p)) {
+        .find(|p| !problems.contains(p))
+        .ok_or_else(|| {
+            format!("{name}: no page after the first 100 is without a warning or error")
+        })?;
+    let broken = match rest.iter().map(at).find(|p| errors.contains(p)) {
         Some(page) => page,
         None => {
             // No page has an error of its own: give one a broken link.
-            let page = at(&pages[100]);
+            let page = at(&rest[0]);
             let path = root.join(&page);
             let text = std::fs::read_to_string(&path).expect("reads");
             std::fs::write(&path, format!("{text}\n[Gone](/no-such-page.md)\n")).expect("writes");
@@ -301,6 +317,8 @@ fn one_file(name: &str, bin: &Path, root: &Path, content_root: &str, pages: &[St
     };
     let fragment = format!("{content_root}/_bench/wide.md");
     println!("{name}: ascribe check <one file> --format json");
+    println!("  clean: {clean}");
+    println!("  error: {broken}");
     for (case, file) in [
         ("clean", &clean),
         ("error", &broken),
@@ -319,6 +337,7 @@ fn one_file(name: &str, bin: &Path, root: &Path, content_root: &str, pages: &[St
         }
     }
     println!();
+    Ok(())
 }
 
 /// `ascribe diff` and `ascribe drift` on the synthetic project with
@@ -564,7 +583,7 @@ fn main() {
     let project = Synthetic::standard();
     project.write_to(&one).expect("writes");
     let pages: Vec<String> = (0..project.pages).map(|i| project.page_path(i)).collect();
-    one_file("synthetic-3000", &bin, &one, CONTENT_ROOT, &pages);
+    skip_on_error(one_file("synthetic-3000", &bin, &one, CONTENT_ROOT, &pages));
     memory(&bin, dir.path(), &root, &dir.path().join("synthetic-git"));
 
     // The same command on a project with a diagnostic on every page: the text
@@ -632,11 +651,20 @@ fn main() {
         .filter(|path| !model.is_fragment(path))
         .cloned()
         .collect();
-    one_file(
+    skip_on_error(one_file(
         "elastic-converted",
         &bin,
         &root,
         convert::CONTENT_ROOT,
         &pages,
-    );
+    ));
+}
+
+/// Says why a part of the bench was skipped, so the rest still runs and
+/// writes its results.
+fn skip_on_error(result: Result<(), String>) {
+    if let Err(e) = result {
+        println!("{e}: skipped");
+        println!();
+    }
 }

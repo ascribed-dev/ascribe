@@ -20,7 +20,10 @@ Every action is in four places:
 
 ## The actions bar
 
-Press `Ctrl+K A` (`Cmd+K A` on macOS), or run **Ascribe: Actions for the Cursor**, in a page of a project to see what you can do where the cursor is. The bar lists the fixes for problems at the cursor first, then the actions that apply to the cursor or the selection, grouped as **Write**, **Structure**, **Link**, **Media**, **Content model**, and **Memos**. Each shows what it does and the syntax it writes. Type to filter, and choose one: an action that needs something asks for it in the same box. When nothing applies, the bar says where to put the cursor.
+Press `Ctrl+K A` (`Cmd+K A` on macOS), or run **Ascribe: Actions for the Cursor**, in a page of a project to see what you can do where the cursor is. The bar lists the fixes for problems at the cursor first, then the actions that apply to the cursor or the selection, grouped as **Write**, **Structure**, **Link**, **Media**, **Content model**, and **Memos**. Type to filter, and choose one: an action that needs something asks for it in the same box. When nothing applies, the bar says where to put the cursor.
+
+![The actions bar open over a paragraph of a page, asking "What would you like to do here?": each action that applies there is listed with what it does and the syntax it writes, such as "Wrap in a note: Put the paragraph or the selected blocks in an @note callout", and each group, Write, Structure, Link, Content model, and Memos, is named at the right of its first action.](../images/actions-bar-light.png){scheme=light}
+![The actions bar open over a paragraph of a page, asking "What would you like to do here?": each action that applies there is listed with what it does and the syntax it writes, such as "Wrap in a note: Put the paragraph or the selected blocks in an @note callout", and each group, Write, Structure, Link, Content model, and Memos, is named at the right of its first action.](../images/actions-bar-dark.png){scheme=dark}
 
 The bar holds only what applies to the cursor or selection, so it never lists every action as the Command Palette does, and it has no searches or commands of its own.
 

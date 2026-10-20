@@ -1,6 +1,6 @@
 # A docs repository
 
-The docs for the Lantern SDK, a made-up client library, kept in a repository of their own, as the [drift guide](https://ascribed-dev.com/docs/examples/#docs-kept-apart-from-the-code) describes. The examples come from two sources in the code's repository, `ascribed-dev/sources-fixture-code`, whose quickstart is a tested example: `ascribe sources fetch` copies its `ascribe.examples.toml` and observation with it, and the quickstart page says what it was tested with.
+The docs for the Lantern SDK, a made-up client library, kept in a repository of their own, as [Keep the docs in another repository](https://ascribed-dev.com/go/docs-repository) describes. The examples come from two sources in the code's repository, `ascribed-dev/sources-fixture-code`, whose quickstart is a tested example: `ascribe sources fetch` copies its `ascribe.examples.toml` and observation with it, and the quickstart page says what it was tested with.
 
 ```
 ascribe.toml                         the sources: `api` and `examples`, in another repository
