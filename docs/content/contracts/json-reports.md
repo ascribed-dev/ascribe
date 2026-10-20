@@ -4,7 +4,7 @@ title: JSON report contract
 description: The JSON Schemas of what the ascribe commands write with --format json.
 ---
 
-The commands that take `--format json` each write one JSON document, and this contract gives each document's schema. The schemas are JSON Schema (draft 2020-12), generated from the code that writes the documents, so the two can't disagree. They're in the repository's [`schemas/`]({repo}/tree/main/schemas/) folder. The [command reference](../command/index.md) says what each field is for, with an example of each document.
+The commands that take `--format json` each write one JSON document, and this contract gives each document's schema. The schemas are JSON Schema (draft 2020-12), generated from the code that writes the documents, so the two can't disagree. They're in the repository's [`schemas/`]({repo}/tree/main/schemas/) folder. The [command reference](../command/index.md) says what each command does, with an example of its document.
 
 Every document follows these rules:
 
@@ -17,7 +17,7 @@ The schemas of `ascribe check`, `ascribe build`, and `ascribe fmt` are on this p
 
 - [`ascribe diff` and `ascribe drift`](json-reports/diff.md)
 - [`ascribe report`](json-reports/report.md)
-- [`ascribe init`, `ascribe sources`, and `ascribe permalinks`](json-reports/sources.md)
+- [`ascribe init`, `ascribe sources`, `ascribe observe`, and `ascribe permalinks`](json-reports/sources.md)
 - [`ascribe templates`](json-reports/templates.md)
 - [`ascribe versions`](json-reports/versions.md)
 - [`ascribe explain`, `model`, `outline`, `link`, `refs`, `render`, and `agents index`](json-reports/questions.md)

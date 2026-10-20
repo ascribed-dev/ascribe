@@ -637,7 +637,7 @@ kind = "choice"
 type = "string"
 choices = ["netlify"]
 available = "ascribe 0.3.0"
-description = '''**Response headers.** The host whose format a build's response headers are written in, so that the Markdown version of a page that isn't listed isn't indexed either. Supported: `"netlify"`, the `_headers` file Netlify reads. `@ascribed/astro` writes it into the built site ([the `@ascribed/astro` reference](../astro/reference.md#response-headers)). Without it, nothing is written for a host, and the headers are in `_ascribe/headers.json` for a deploy step to read. See below.'''
+description = '''**Response headers.** The host whose format a build's response headers are written in, so that the Markdown version of a page that isn't listed isn't indexed either. Supported: `"netlify"`, the `_headers` file Netlify reads. `@ascribed/astro` writes it into the built site ([response headers](../publishing/site.md#response-headers)). Without it, nothing is written for a host, and the headers are in `_ascribe/headers.json` for a deploy step to read. See below.'''
 
 # ---- 16. `[builds.<name>]` ----------------------------------------------------
 

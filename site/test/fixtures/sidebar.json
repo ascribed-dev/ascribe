@@ -231,7 +231,20 @@
       },
       {
         "href": "/docs/examples/sources/",
-        "label": "ascribe init, sources, observe, permalinks, templates, and vale"
+        "label": "ascribe sources and observe"
+      }
+    ]
+  },
+  {
+    "label": "Publishing",
+    "pages": [
+      {
+        "href": "/docs/publishing/",
+        "label": "Publishing"
+      },
+      {
+        "href": "/docs/publishing/site/",
+        "label": "The head, sitemap, robots.txt, and headers"
       }
     ]
   },
@@ -270,6 +283,10 @@
       {
         "href": "/docs/permalinks/",
         "label": "Permalinks"
+      },
+      {
+        "href": "/docs/permalinks/command/",
+        "label": "ascribe permalinks"
       }
     ]
   },
@@ -317,6 +334,10 @@
       {
         "href": "/docs/templates/",
         "label": "Page templates"
+      },
+      {
+        "href": "/docs/templates/command/",
+        "label": "ascribe templates"
       }
     ]
   },

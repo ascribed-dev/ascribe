@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Install
-description: "Install the ascribe command: in a project with npm, or on your path with Homebrew, the install script, PowerShell, or a release's archive."
+description: "Install the ascribe command, in a project with npm, or on your path with Homebrew, the install script, PowerShell, or a release's archive; then start a project with ascribe init."
 permalink: install
 ---
 
@@ -82,6 +82,51 @@ Each [release]({repo}/releases) has an archive for each platform, `ascribe-<vers
 ## Which `ascribe` runs
 
 A machine can have more than one `ascribe`: the one on your path, the one `@ascribed/cli` pins in a project, and the one the editor's extension bundles. A bare `ascribe` runs your path's; `npx ascribe` runs the project's; the editor runs the project's when there is one, and its own otherwise, and puts that one first on the path of its terminals ([Agents](agents/index.md#vs-code) says how). `ascribe --version` says which version you're running.
+
+## Start a project
+
+With `ascribe` installed, start a project in an empty folder. `--templates` takes the [page templates](templates/index.md) too; leave it out for a project without them.
+
+```sh
+mkdir handbook && cd handbook
+ascribe init --templates
+```
+
+[Getting started](getting-started.md) goes on from there, to a first page and a built site.
+
+### `ascribe init`
+@id {permalink=true}: cli-init
+@available: ascribe 0.3.1
+
+Starts a project: writes its first `ascribe.toml`, and makes the folder its pages go in, `docs/`. With `--templates`, it takes the page templates too, as [`ascribe templates eject`](templates/command.md#cli-templates-eject) with no name does.
+
+@include: _generated/cli-init-options.md
+
+It writes in the current folder, or in `DIR`, a path from the current folder, which it makes if it isn't there. It asks nothing. Where there's an `ascribe.toml` in the folder or above it, it refuses, names the one it found, and writes nothing: `ascribe templates eject`, run there, adds the templates to that project. To start a second project in a repository that has one, name a folder outside it. It takes no `--config`, since the project is the one it starts.
+
+The file it writes is small, and says what each part is for:
+
+@snippet: code:crates/ascribe-cli/tests/output/init-ascribe.toml
+
+It sets the content root, `docs`, though that's the default, since it's the first thing a project changes. It declares one type, `page`, with a title and a description; since it declares a type, each page names it in its frontmatter, with `type: page`. Its comments name what most projects add next, each with its section of the [`ascribe.toml` reference](content-model/index.md), and it adds none of them: no site address, no builds, and no dimensions.
+
+With `--templates`, the six types are added after `page`, and the templates, their guides, Ascribe's notes, and `templates.lock` are written into `templates/`, as `eject` writes them. When a file is where one would be written, it's named, as `eject` names it, and nothing is written.
+
+It lists each file it wrote, `ascribe.toml` last, from the current folder; the content root, when it made it; with `--templates`, each type it added, as `eject` says it; and last, the [Astro guide](astro/index.md), to publish the pages as a site.
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/init.txt
+
+With `--format json`, as its [schema](contracts/json-reports/sources.md#ascribe-init) has it. When `templates.refused` isn't empty, `written` is empty.
+
+.The JSON for this example
+@details:
+@snippet {lang=json}: code:crates/ascribe-cli/tests/output/init.json
+@end
+
+| Code | Meaning |
+|---|---|
+| `0` | The project is there: `ascribe.toml` is written, the content root is there, and with `--templates`, every template and its type |
+| `2` | It wrote nothing: there's an `ascribe.toml` in the folder or above it, the folder is a file, a template was refused, or it was given `--config`. Or a file couldn't be written; the files it wrote before that stay. |
 
 ## See also
 

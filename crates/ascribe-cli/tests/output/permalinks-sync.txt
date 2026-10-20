@@ -1,0 +1,3 @@
+warning: kept rotate-keys, which the project no longer has; `ascribe check` reports it until it's back or retired
+moved weave-config: guides/weave.md#weave-config to reference/loom.md#weave-config
+wrote ascribe.permalinks
