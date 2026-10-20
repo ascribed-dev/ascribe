@@ -628,7 +628,7 @@ kind = "text"
 type = "string"
 default-text = "`go/` under `base-path`"
 available = "ascribe 0.3.0"
-description = '''**Permalinks.** Where each [permalink](../writing/directives.md#permalinks)'s address is published, as a path from the site's root, such as `"/go/"`: `/go/cli-check/` forwards to the heading marked `cli-check`. It must start with `/`. Set it when the addresses a product prints shouldn't move when `base-path` does. Under the `astro` profile it must be under `base-path`, since an Astro site serves nothing outside it.'''
+description = '''**Permalinks.** Where each [permalink](../writing/directives.md#permalinks)'s address is published, as a path from the site's root, such as `"/go/"`: `/go/cli-check/` forwards to the heading marked `cli-check`. It must start with `/`. Set it when the addresses a product prints shouldn't move when `base-path` does. With `@ascribed/astro`, it must be under Astro's `base`, since an Astro site serves nothing outside it, and the integration fails the build when it isn't.'''
 
 [[setting]]
 table = "consumer"
