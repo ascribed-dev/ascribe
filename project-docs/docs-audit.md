@@ -2,7 +2,7 @@
 
 An audit of the user docs in `docs/content/` as they stand at Ascribe 0.4.0 on `main`, on 20 October 2026, against four questions: which pages are too verbose, which try to do too much, where a screenshot would do the work of prose, and where a page has drifted from the product. The last section says where Ascribe's own tools helped the audit and where they fell short.
 
-It recommends and doesn't fix. Every claim of drift below was checked against the code, the spec, or `ascribe <cmd> --help` by whoever found it, and the ones marked † were checked a second time while writing this up. What couldn't be confirmed is listed as unverified, not as drift.
+It recommends and doesn't fix; [the docs after the audit](docs-cleanup/README.md) is the plan that does. Every claim of drift below was checked against the code, the spec, or `ascribe <cmd> --help` by whoever found it, and the ones marked † were checked a second time while writing this up. What couldn't be confirmed is listed as unverified, not as drift.
 
 ## Summary
 
