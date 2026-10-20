@@ -87,7 +87,12 @@ import VersionBanner from "@ascribed/astro/VersionBanner.astro";
 <Versions entry={entry} />
 ```
 
-`<Versions>` links the page to the same page in each line, and `<VersionBanner>` tells a reader on an older line which version they're reading and where the current one is. Pass the entry to the sidebar too, `sidebar(entries, { entry })`, so it lists the pages of the page's own line. [The Astro components](lines.md#the-astro-components) has what each shows and the words it takes.
+On an older line's page, in the starter's layout:
+
+![A page in line 3.4: above its title, the banner says "Documentation for Self-managed 3.4. Support ends on 31 January 2027. See this page for 3.5.", linking to the same page in 3.5; below the title and its badges, the list of lines links to the page in 3.5 and in 3.4, with 3.4, the page's own line, in bold.](../images/versions-light.png){scheme=light}
+![A page in line 3.4: above its title, the banner says "Documentation for Self-managed 3.4. Support ends on 31 January 2027. See this page for 3.5.", linking to the same page in 3.5; below the title and its badges, the list of lines links to the page in 3.5 and in 3.4, with 3.4, the page's own line, in bold.](../images/versions-dark.png){scheme=dark}
+
+Pass the entry to the sidebar too, `sidebar(entries, { entry })`, so it lists the pages of the page's own line. [The Astro components](lines.md#the-astro-components) has what each shows and the words it takes.
 
 A site not built with Astro reads the same from `versions.json` and the page records: [What the lines know about each other](lines.md#what-the-lines-know-about-each-other) says where each part is.
 

@@ -1,9 +1,11 @@
 // Takes the site's picture of review: a pull request's changes marked on a
 // docs page in `astro dev`, with its review comment beside the block it's
 // about and the toolbar's panel open. One picture per scheme, written as
-// `review-light.png` and `review-dark.png` into the folder given.
+// `review-light.png` and `review-dark.png` into the folder given; or, with
+// `review-panel`, the panel alone, cropped from the same page, as
+// `review-panel-light.png` and `review-panel-dark.png`.
 //
-//   node scripts/screenshot.ts <folder>
+//   node scripts/screenshot.ts <folder> [review | review-panel]
 //
 // `node scripts/docs-site/screenshots.ts review`, at the repository's root,
 // runs this and records the release beside the pictures. It needs the site
@@ -184,7 +186,7 @@ async function serve(
   }
 }
 
-async function main(out: string): Promise<void> {
+async function main(out: string, name: string): Promise<void> {
   const scratch = mkdtempSync(path.join(tmpdir(), "review-shot-"));
   const { root, github } = pullRequest(scratch);
   const server = await serve(root, github);
@@ -219,8 +221,9 @@ async function main(out: string): Promise<void> {
       // The overlay places its cards after a scroll or a change of style, and
       // the page's colors finish their transitions.
       await page.waitForTimeout(3000);
-      const file = path.join(out, `review-${colorScheme}.png`);
-      await page.screenshot({ path: file, animations: "disabled", caret: "hide" });
+      const file = path.join(out, `${name}-${colorScheme}.png`);
+      const options = { path: file, animations: "disabled", caret: "hide" } as const;
+      await (name === "review-panel" ? panel.screenshot(options) : page.screenshot(options));
       console.log(`Wrote ${file}`);
     }
   } finally {
@@ -231,10 +234,10 @@ async function main(out: string): Promise<void> {
   }
 }
 
-const out = process.argv[2];
-if (out === undefined) {
-  console.error("Usage: node scripts/screenshot.ts <folder>");
+const [out, name = "review"] = process.argv.slice(2);
+if (out === undefined || !["review", "review-panel"].includes(name)) {
+  console.error("Usage: node scripts/screenshot.ts <folder> [review | review-panel]");
   process.exit(2);
 }
 mkdirSync(out, { recursive: true });
-await main(path.resolve(out));
+await main(path.resolve(out), name);

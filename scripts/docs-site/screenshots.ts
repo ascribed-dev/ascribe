@@ -1,6 +1,6 @@
 // The screenshots: the pictures of the editor and of review on the landing
-// page and Why Ascribe, and the docs' scenes of the editor, each in light and
-// dark, and beside them the release each was taken at. This retakes them, one
+// page and Why Ascribe, and the docs' scenes of the editor, the site, and the
+// report, each in light and dark, and beside them the release each was taken at. This retakes them, one
 // name or every one:
 //
 //   node scripts/docs-site/screenshots.ts [review | editor | build-lens | ...]
@@ -10,8 +10,8 @@
 // docs/ascribe.toml: the release the docs describe now. screenshots.test.ts fails when a record is
 // more than one minor release behind it. The review picture needs the site
 // installed with the Ascribe to show (`npm run build:checkout` in site/); the
-// editor's and the scenes need ASCRIBE_BIN, and the status bar's scene a POSIX
-// shell. site/README.md has the rest.
+// editor's and the scenes need ASCRIBE_BIN, the status bar's scene a POSIX
+// shell, and the site's and the report's scenes examples/astro-site installed. site/README.md has the rest.
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -46,18 +46,40 @@ const editor = (name: string, folder: string): Picture => ({
   ],
 });
 
+/** A picture of review in the site, which site/scripts/screenshot.ts takes by its name. */
+const site = (name: string, folder: string): Picture => ({
+  name,
+  folder,
+  steps: [
+    { cwd: "site", command: ["node", "scripts/screenshot.ts", path.join(ROOT, folder), name] },
+  ],
+});
+
+/** A scene of an Astro site or the report, which examples/astro-site/scripts/screenshot.ts takes. */
+const example = (name: string): Picture => ({
+  name,
+  folder: SCENES,
+  steps: [
+    {
+      cwd: "examples/astro-site",
+      command: ["node", "scripts/screenshot.ts", path.join(ROOT, SCENES), name],
+    },
+  ],
+});
+
 export const PICTURES: Picture[] = [
-  {
-    name: "review",
-    folder: FOLDER,
-    steps: [{ cwd: "site", command: ["node", "scripts/screenshot.ts", path.join(ROOT, FOLDER)] }],
-  },
+  site("review", FOLDER),
   editor("editor", FOLDER),
   editor("build-lens", SCENES),
   editor("actions-bar", SCENES),
   editor("review-view", SCENES),
   editor("status-bar", SCENES),
   editor("shown-in-pages", SCENES),
+  site("review-panel", SCENES),
+  example("html-report"),
+  example("elements"),
+  example("starter-sidebar"),
+  example("versions"),
 ];
 
 export const SCHEMES = ["light", "dark"] as const;
