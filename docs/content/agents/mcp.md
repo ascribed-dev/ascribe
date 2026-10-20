@@ -7,23 +7,29 @@ available: ascribe 0.3.0
 
 `ascribe mcp` is a server for the [Model Context Protocol](https://modelcontextprotocol.io), which most agents' hosts speak. It offers the commands that answer questions as tools an agent calls, for an agent with no shell, or a host that asks you to approve each command it runs. An agent with a shell needs no server: the commands give the same answers.
 
-Your agent's host starts it. Most hosts read a JSON file listing the servers to start, such as `.mcp.json` at the repository's root for Claude Code, or `.cursor/mcp.json` for Cursor; add Ascribe to it:
+In VS Code, the extension offers the server itself, so there's nothing to set up: see [Agents in the editor](../editor/agents.md#agents-in-vs-code). In Claude Code, [the plugin](claude-code.md) has it, and `ascribe agents sync --target claude --with-hook` writes it into `.mcp.json`.
 
-```json
-{
-  "mcpServers": {
-    "ascribe": {
-      "command": "npx",
-      "args": ["ascribe", "mcp"]
-    }
-  }
-}
-```
+## Add the server to your agent's host
 
-Hosts start the server in the repository's root. It serves every project in it: each call names a file or folder, and the server uses the nearest `ascribe.toml` at or above it. A project is loaded once and kept, and loaded again when its files change.
+Your agent's host starts the server, in the repository's root, and one server serves every project in it.
 
-It offers the commands that answer questions as tools, each directive's syntax and each project's content model and rules as resources, and the prompts `new-page`, `fix`, and `review`, which many hosts show as slash commands. None of its tools writes a file or starts a program the project names, so `ascribe_check` never runs [Vale](../checks/vale.md): it says the prose wasn't checked, and `ascribe check --vale` in a shell, which your host asks you about, checks it.
+@steps
+1. Open the file your host reads its servers from, such as `.mcp.json` at the repository's root for Claude Code, or `.cursor/mcp.json` for Cursor.
+2. Add Ascribe to it:
 
-[`ascribe mcp`](commands.md#cli-mcp) lists each tool and the command it runs, and the resources.
+   ```json
+   {
+     "mcpServers": {
+       "ascribe": {
+         "command": "npx",
+         "args": ["ascribe", "mcp"]
+       }
+     }
+   }
+   ```
 
-In VS Code, the extension offers the server itself: see [VS Code](../editor/agents.md#agents-in-vs-code).
+3. Start a new session, and check that the host lists the server's tools.
+
+## What it offers
+
+Its tools are the commands that answer questions; its resources are each directive's syntax, and each project's content model and rules; and its prompts are `new-page`, `fix`, and `review`, which many hosts show as slash commands. Every tool is read-only, so `ascribe_check` never runs [Vale](../checks/vale.md): `ascribe check --vale` in a shell, which your host asks you about, checks the prose. [`ascribe mcp`](commands.md#cli-mcp) lists each tool and the command it runs, and the resources.
