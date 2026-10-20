@@ -98,6 +98,41 @@ info string's first word, which the renderer writes as the block's language,
 names none a highlighter knows. The advice is right for every one; its `text`
 fix is wrong for the Hugo two, and it's marked unsafe.
 
+### R7: an HTML comment in prose: intended (SPEC §4.10)
+
+```
+<!-- Source: https://github.com/testcontainers/tc-guide-getting-started-with-testcontainers-for-go -->
+```
+
+`html-comment` (ASC223) is advice: a comment is in the published page's
+source and its JSON, and a `@memo` keeps the same note out of every output.
+It reports 7 in Astro (`<!--src/components/CartFlyoutToggle.vue-->` labels
+above code), 42 in Docker (`<!-- Source: … -->` above the Testcontainers
+guides, `markdownlint` and `prettier` switches) and 130 in Elastic (the
+`REQUIRED` and `OPTIONAL` instructions in its page templates, `MAINTENANCE`
+notes to editors). Each is a real comment that a reader of the page's source
+would see, so the advice is right. Vale's switches aren't reported; another
+tool's, such as markdownlint's, have to stay comments and are acknowledged
+with `@intended {check=html-comment}`.
+
+### R8: page frontmatter on a file under `_snippets/`: intended (SPEC §2.2)
+
+```
+---
+type: how-to
+---
+```
+
+in `contribute-docs/content-types/_snippets/templates/how-to-template.md`.
+Elastic keeps four page templates (how-to, overview, troubleshooting,
+tutorial) under `_snippets/` so its build skips them; its pages link to them on
+GitHub as files to copy, and nothing includes them. Here a path segment that
+starts with `_` makes a fragment (§2.2), and `type` is reserved for pages, so
+`frontmatter-reserved-in-fragment` (ASC050) is right: 4 errors, one per
+template. Converted, a template belongs outside the content root or in a code
+block on the page that describes it. Not a false positive: the file is a
+fragment by the rule that names fragments, not by a misreading of its text.
+
 ## Converting (the language)
 
 The converters (`src/convert/`) turn each corpus's constructs into Ascribe. What
