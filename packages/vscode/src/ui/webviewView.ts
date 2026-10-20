@@ -29,7 +29,7 @@ export interface ViewHandlers {
 }
 
 /** A message from a view's webview, when it is one the extension takes; `undefined` otherwise. */
-export function checkViewMessage<Report>(
+function checkViewMessage<Report>(
   value: unknown,
   report: Check<Report>,
 ): FromView<Report> | undefined {

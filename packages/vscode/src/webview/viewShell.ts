@@ -14,7 +14,7 @@
  *   stylesheet and the codicon font it loads. No inline style.
  * - `form-action 'none'`, `base-uri 'none'`: neither falls to `default-src`.
  */
-export function viewPolicy(cspSource: string, nonce: string): string {
+function viewPolicy(cspSource: string, nonce: string): string {
   return [
     "default-src 'none'",
     `script-src 'nonce-${nonce}'`,
