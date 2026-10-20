@@ -91,7 +91,12 @@ A layout loads the element library, and shows the sidebar, the page's availabili
 @available: ascribe 0.3.0
 
 @available: ascribe 0.4.0
-The layout draws the sidebar from the project's [navigation](../navigation/index.md), with [`sidebar()`](reference.md#sidebar), and the links at the page's foot with [`neighbors()`](reference.md#neighbors), so the site keeps no list of its own. It lists a nested section's pages in their top section's group, each `<li>` with a `data-depth` for your stylesheet to indent. To change the order or a label, write `ascribe.nav`, or drag the pages in the editor: [Put your pages in order](../navigation/order.md).
+The layout draws the sidebar from the project's [navigation](../navigation/index.md), with [`sidebar()`](reference.md#sidebar), and the links at the page's foot with [`neighbors()`](reference.md#neighbors), so the site keeps no list of its own. Each `<li>` has a `data-depth` for your stylesheet to indent; with one rule for it, a nested section's pages sit in their top section's group:
+
+![The starter's sidebar, with an indent for each depth: Start, with Loom documentation; Guides, with Set up Loom, Troubleshoot Loom, Work in teams, and, indented under Work in teams, the nested section's page Share a loom, the page being read, in bold; and Reference, with loom.yaml options.](../images/starter-sidebar-light.png){scheme=light}
+![The starter's sidebar, with an indent for each depth: Start, with Loom documentation; Guides, with Set up Loom, Troubleshoot Loom, Work in teams, and, indented under Work in teams, the nested section's page Share a loom, the page being read, in bold; and Reference, with loom.yaml options.](../images/starter-sidebar-dark.png){scheme=dark}
+
+To change the order or a label, write `ascribe.nav`, or drag the pages in the editor: [Put your pages in order](../navigation/order.md).
 
 ### 5. Build
 

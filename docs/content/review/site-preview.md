@@ -10,7 +10,12 @@ In `astro dev`, Astro's dev toolbar has an **Ascribe review** app. It shows a pu
 
 ## The panel
 
-Nothing runs until you open the app: opening it starts review, and after **Stop Review**, the panel offers **Start Review**. The panel sits above the toolbar, in one row: the pull request and the base (**#12 against main**), your place in the changes ("3 of 10 on this page", click it for the breakdown), **Changes / As it will be / As it was**, next and previous change, **Comments**, **Refresh**, and **More review actions** (**⋯**), whose **Prompt agent** items copy a prompt for your agent about the page's changes or a fragment's pages ([In review](../agents/index.md#in-review)). Each thread's **Prompt agent** copies one about its comment. Past the last change it offers the next changed page, by its title. When `ascribe check` finds errors in the working tree, the panel [says how many](how-it-works.md#when-the-project-has-errors).
+Nothing runs until you open the app: opening it starts review, and after **Stop Review**, the panel offers **Start Review**. The panel sits above the toolbar:
+
+![The Ascribe review panel: a title bar with Stop Review and Close, then the pull request and the base, "#7 against main"; your place in the changes, "1 change on this page"; Changes, As it will be, and As it was, with Changes chosen; the previous and next change arrows; Comments (1); Refresh; and More review actions (⋯).](../images/review-panel-light.png){scheme=light}
+![The Ascribe review panel: a title bar with Stop Review and Close, then the pull request and the base, "#7 against main"; your place in the changes, "1 change on this page"; Changes, As it will be, and As it was, with Changes chosen; the previous and next change arrows; Comments (1); Refresh; and More review actions (⋯).](../images/review-panel-dark.png){scheme=dark}
+
+Click your place in the changes for the breakdown. **More review actions** (**⋯**) has **Prompt agent** items that copy a prompt for your agent about the page's changes or a fragment's pages ([In review](../agents/index.md#in-review)). Each thread's **Prompt agent** copies one about its comment. Past the last change it offers the next changed page, by its title. When `ascribe check` finds errors in the working tree, the panel [says how many](how-it-works.md#when-the-project-has-errors).
 
 Close the panel to get the page back; it stays closed or open as you move between pages. With the panel closed, a dot on the toolbar button says you have comments you haven't submitted.
 
