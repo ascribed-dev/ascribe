@@ -14,12 +14,22 @@ import {
   type Scripted,
 } from "../actions/steps.js";
 import type { ProjectServer } from "../client.js";
+import {
+  boolean,
+  listOf,
+  nullable,
+  shape,
+  text as shortText,
+  type Check,
+} from "../preview/messages.js";
 import type { ChangedPage } from "../preview/protocol.js";
 import type { ReviewController } from "../preview/review.js";
 import type { ProjectRegistry } from "../registry.js";
 import type { ContextResult, InventoryResult, LspRange, PageResult } from "../shapes.js";
+import type { ThisPageAnswer, ThisPageReport } from "../webview/viewProtocol.js";
 import { insertPlan, LastEditors } from "./insertAt.js";
 import type { ProjectBuilds } from "./projectBuilds.js";
+import { WebviewView, type Drawn } from "./webviewView.js";
 import {
   blocksMove,
   modelChildren,
@@ -39,7 +49,9 @@ import {
   newPathProblem,
   pagesResource,
   pagesRoots,
+  shownPage,
   thisPageChildren,
+  thisPageItems,
   thisPageLook,
   thisPageRoots,
   viewsNotice,
@@ -141,10 +153,24 @@ export interface SidebarApi {
 
 /** The This page view, for tests. */
 export interface ThisPageApi {
-  /** Every item, with every node expanded. */
+  /** Every item of the model the webview draws, with every node expanded. */
   items(): SidebarItem[];
-  /** The message above its items, if it shows one. */
+  /** The message in place of its items, if it shows one. */
   message(): string | undefined;
+  /** Whether it's showing: neither collapsed nor in a hidden container. */
+  visible(): boolean;
+  /** What its webview drew last, if it has drawn. */
+  drawn(): Drawn<ThisPageReport> | undefined;
+  /** Waits until what its webview drew satisfies `predicate`. */
+  whenDrawn(
+    description: string,
+    predicate: (drawn: Drawn<ThisPageReport>) => boolean,
+    timeout?: number,
+  ): Promise<Drawn<ThisPageReport>>;
+  /** Chooses an item of what the webview drew last, by its key, as a click does. */
+  choose(key: string): void;
+  /** Presses Escape in the view, as the reader does. */
+  escape(): Promise<void>;
   /**
    * How many requests it has sent the server, which is one for each cursor
    * move it answers, review on or off.
@@ -262,6 +288,15 @@ export class SidebarViews implements vscode.Disposable {
   private pageReview: ThisPageReview | undefined;
   /** The file This page shows. */
   private pageFile: vscode.Uri | undefined;
+  /**
+   * The page This page shows (`shownPage`), by its document, and the cursor
+   * in it as it was last: its editor is gone while another tab covers it.
+   */
+  private pageAt: PageAt | undefined;
+  /** What This page says in place of its items. */
+  private pageMessage = "";
+  /** The nodes the keys of This page's newest answer name. */
+  private pageNodes = new Map<string, ThisPageNode>();
   /** Counts the cursor's stops, so an older stop's answer is dropped. */
   private pageLooked = 0;
   /** How many times This page has asked the server. */
@@ -301,6 +336,10 @@ export class SidebarViews implements vscode.Disposable {
     },
   );
 
+  /**
+   * The model This page's webview draws: the same functions the tree had,
+   * so the tests read its items as before. It's never shown as a tree.
+   */
   private readonly thisPage = new Tree<ThisPageNode>(
     () =>
       this.page
@@ -342,6 +381,9 @@ export class SidebarViews implements vscode.Disposable {
     },
   );
 
+  /** This page's webview, which draws the model's items. */
+  private readonly thisPageView: WebviewView<ThisPageAnswer, ThisPageReport>;
+
   /** Whether Pages shows only the orphans, and Content model only the unused entries. */
   private orphansOnly = false;
   private unusedOnly = false;
@@ -353,7 +395,18 @@ export class SidebarViews implements vscode.Disposable {
     private readonly review: ReviewController,
     private readonly builds: ProjectBuilds,
     private readonly actions: Inserter,
+    extensionUri: vscode.Uri,
   ) {
+    this.thisPageView = new WebviewView(
+      "ascribe.thisPage",
+      extensionUri,
+      { script: "thisPage.js", title: "This page" },
+      thisPageReport,
+      {
+        open: (seq, key) => void this.chooseItem(seq, key),
+        focusEditor: () => void this.focusPageEditor(),
+      },
+    );
     this.pages.parentOf = pagesParent;
     this.pages.resourceOf = (node) => {
       const content = this.inventory?.contentUri;
@@ -449,7 +502,16 @@ export class SidebarViews implements vscode.Disposable {
   get thisPageApi(): ThisPageApi {
     return {
       items: () => this.thisPage.items(),
-      message: () => this.thisPage.view?.message || undefined,
+      message: () => this.pageMessage || undefined,
+      visible: () => this.thisPageView.visible,
+      drawn: () => this.thisPageView.drawn,
+      whenDrawn: (description, predicate, timeout) =>
+        this.thisPageView.whenDrawn(description, predicate, timeout),
+      choose: (key) => {
+        const drawn = this.thisPageView.drawn;
+        if (drawn) void this.chooseItem(drawn.seq, key);
+      },
+      escape: () => this.focusPageEditor(),
       asked: () => this.pageAsked,
       openThread: (id) => this.openThread(id),
       whenSettled: () => this.whenSettled(),
@@ -464,13 +526,17 @@ export class SidebarViews implements vscode.Disposable {
   }
 
   register(): void {
-    this.thisPage.view = vscode.window.createTreeView("ascribe.thisPage", {
-      treeDataProvider: this.thisPage,
-    });
     // A hidden or collapsed This page asks nothing, and catches up when shown.
     this.disposables.push(
-      this.thisPage.view.onDidChangeVisibility(({ visible }) => {
-        if (visible) this.soon("thisPage");
+      this.thisPageView.register(),
+      this.thisPageView,
+      this.thisPageView.onDidShow(() => {
+        // Shown again on another page than it drew: the answer it kept is
+        // out of date, so it waits for the new one instead of drawing it.
+        if (this.shownPageNow()?.uri.toString() !== this.pageFile?.toString()) {
+          this.thisPageView.forget();
+        }
+        this.soon("thisPage", 0);
       }),
     );
     this.pages.view = vscode.window.createTreeView("ascribe.pages", {
@@ -487,15 +553,25 @@ export class SidebarViews implements vscode.Disposable {
       this.pages,
       this.model,
       vscode.window.onDidChangeActiveTextEditor(() => this.follow(false, true)),
-      vscode.window.onDidChangeTextEditorSelection(({ textEditor }) => {
+      vscode.window.onDidChangeTextEditorSelection(({ textEditor, selections }) => {
+        const selection = selections[0];
+        if (selection && textEditor.document.uri.toString() === this.pageAt?.uri.toString()) {
+          this.pageAt = { uri: this.pageAt.uri, selection };
+        }
         if (textEditor === vscode.window.activeTextEditor) this.soon("thisPage");
+      }),
+      // The page's last tab closed: This page shows the active editor's, if it's a page's.
+      vscode.window.tabGroups.onDidChangeTabs(({ closed }) => {
+        if (closed.length > 0 && this.pageAt && !openInTab(this.pageAt.uri)) {
+          this.soon("thisPage");
+        }
       }),
       // Health's Problems row counts VS Code's diagnostics, which the
       // server doesn't answer with: the view is drawn again, not asked again.
       vscode.languages.onDidChangeDiagnostics(({ uris }) => {
         const shown = this.pageFile?.toString();
         if (this.page && uris.some((uri) => uri.toString() === shown)) {
-          this.thisPage.changed.fire();
+          this.drawThisPage();
         }
       }),
       ...this.watchPages(),
@@ -1156,13 +1232,40 @@ export class SidebarViews implements vscode.Disposable {
     this.reveal();
   }
 
+  /** Whether an editor holds a page of a project, which This page can show. */
+  private isPageEditor(editor: vscode.TextEditor): boolean {
+    const { document } = editor;
+    return (
+      document.languageId === "markdown" && this.projects.serverFor(document.uri) !== undefined
+    );
+  }
+
+  /** The page This page shows now: the active editor's, or the one it shows while it's open. */
+  private shownPageNow(): PageAt | undefined {
+    const active = vscode.window.activeTextEditor;
+    const page = shownPage(
+      this.pageAt?.uri.toString(),
+      active && this.isPageEditor(active) ? active.document.uri.toString() : undefined,
+      this.pageAt && openInTab(this.pageAt.uri) ? [this.pageAt.uri.toString()] : [],
+      () => true,
+    );
+    if (page === undefined) return undefined;
+    if (active && active.document.uri.toString() === page) {
+      return { uri: active.document.uri, selection: active.selection };
+    }
+    return this.pageAt;
+  }
+
   private async askThisPage(): Promise<void> {
-    if (this.thisPage.view && !this.thisPage.view.visible) return;
+    if (!this.thisPageView.visible) return;
     const looked = ++this.pageLooked;
-    const editor = vscode.window.activeTextEditor;
-    const document = editor?.document;
-    const server = document && this.projects.serverFor(document.uri);
-    if (!editor || !document || document.languageId !== "markdown" || !server) {
+    // The page's document, not the active editor: focus in a webview, the
+    // preview's for one, leaves VS Code reporting no active editor, and a tab
+    // that covers the page's leaves it with no editor at all.
+    this.pageAt = this.shownPageNow();
+    const shown = this.pageAt;
+    const server = shown && this.projects.serverFor(shown.uri);
+    if (!shown || !server) {
       this.showThisPage(undefined, NO_PAGE);
       return;
     }
@@ -1177,12 +1280,12 @@ export class SidebarViews implements vscode.Disposable {
       this.showThisPage(undefined, "Waiting for the project's language server.");
       return;
     }
-    const { line, character } = editor.selection.active;
+    const { line, character } = shown.selection.active;
     this.pageAsked++;
     let page: PageResult | null = null;
     try {
       page = (await server.request("ascribe/page", {
-        textDocument: { uri: document.uri.toString() },
+        textDocument: { uri: shown.uri.toString() },
         position: { line, character },
       })) as PageResult | null;
     } catch {
@@ -1192,7 +1295,7 @@ export class SidebarViews implements vscode.Disposable {
     const review = page?.about ? await this.reviewOf(server, page.about.path) : undefined;
     this.pageAsked += this.review.changesRequests - before;
     if (looked !== this.pageLooked) return;
-    this.pageFile = document.uri;
+    this.pageFile = shown.uri;
     this.showThisPage(page?.about ? page : undefined, page?.about ? undefined : NO_PAGE, review);
   }
 
@@ -1232,10 +1335,90 @@ export class SidebarViews implements vscode.Disposable {
     if (page === undefined) this.pageLooked++;
     this.page = page;
     this.pageReview = page && review;
-    if (this.thisPage.view) this.thisPage.view.message = message ?? "";
-    this.thisPage.changed.fire();
+    this.pageMessage = message ?? "";
+    this.drawThisPage();
+  }
+
+  /** Sends This page's webview the model's items as they stand, or its message. */
+  private drawThisPage(): void {
+    const { items, nodes } = thisPageItems(
+      this.thisPage.roots(),
+      (node) =>
+        this.thisPage.opens(node) !== undefined || this.thisPage.command(node) !== undefined,
+    );
+    this.pageNodes = nodes;
+    this.thisPageView.show({
+      message: this.pageMessage || (items.length === 0 ? NO_PAGE : null),
+      sections: items,
+    });
+  }
+
+  /**
+   * Opens what an item This page drew names: a file at its place, or a
+   * command. Only an item of the newest answer, whose key names a node of it
+   * that opens something; anything else the webview sends is dropped.
+   */
+  private async chooseItem(seq: number, key: string): Promise<void> {
+    const node = this.thisPageView.isLatest(seq) ? this.pageNodes.get(key) : undefined;
+    if (!node) return;
+    const command = this.thisPage.command(node);
+    if (command) {
+      await vscode.commands.executeCommand(command.command, ...(command.arguments ?? []));
+      return;
+    }
+    const target = this.thisPage.opens(node);
+    if (target) {
+      await vscode.commands.executeCommand(
+        "vscode.open",
+        target.uri,
+        target.selection ? { selection: target.selection } : {},
+      );
+    }
+  }
+
+  /** Escape in This page: the focus goes back to the page's editor, in the group of its tab. */
+  private async focusPageEditor(): Promise<void> {
+    const page = this.pageAt;
+    const group =
+      page && vscode.window.tabGroups.all.find((g) => g.tabs.some((tab) => isTabOf(tab, page.uri)));
+    if (!page || !group) return;
+    await vscode.window.showTextDocument(page.uri, {
+      viewColumn: group.viewColumn,
+      preserveFocus: false,
+    });
   }
 }
+
+/** The page This page shows: its document, and its cursor as it was last. */
+interface PageAt {
+  uri: vscode.Uri;
+  selection: vscode.Selection;
+}
+
+/** Whether a tab is the text editor of `uri`. */
+function isTabOf(tab: vscode.Tab, uri: vscode.Uri): boolean {
+  return tab.input instanceof vscode.TabInputText && tab.input.uri.toString() === uri.toString();
+}
+
+/** Whether `uri` is open in a tab of some group, on top or covered by another. */
+function openInTab(uri: vscode.Uri): boolean {
+  return vscode.window.tabGroups.all.some((group) => group.tabs.some((tab) => isTabOf(tab, uri)));
+}
+
+/** A check of what This page's webview says it drew. */
+const thisPageReport: Check<ThisPageReport> = shape<ThisPageReport>({
+  message: nullable(shortText),
+  sections: listOf(
+    shape<ThisPageReport["sections"][number]>({
+      key: shortText,
+      label: shortText,
+      open: boolean,
+      items: listOf(shortText),
+    }),
+  ),
+  wraps: boolean,
+  violations: listOf(shortText),
+});
 
 /** What Content model's Insert at the Cursor needs of the editor's actions. */
 export interface Inserter {

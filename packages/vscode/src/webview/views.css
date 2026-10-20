@@ -1,0 +1,160 @@
+/* The sidebar's webview views: This page, and the views that follow it.
+   Every color is one of the `--vscode-*` variables VS Code sets in a webview
+   for the current theme, high contrast included, with no fallback: a webview
+   view is always given them. design/tokens.toml's [emit] names this file, so
+   the color test reads it, and a color written here fails it. */
+@import "@vscode/codicons/dist/codicon.css";
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  padding: 0 0 8px;
+  color: var(--vscode-foreground);
+  background: transparent;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  font-weight: var(--vscode-font-weight);
+  line-height: 1.4;
+}
+
+/* Rows wrap: the whole of what they say is shown, at any width. */
+main {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.message {
+  margin: 8px 20px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.codicon[class*="codicon-"] {
+  flex: none;
+  margin-top: 2px;
+}
+
+details.section > summary {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  padding: 2px 12px 2px 8px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+details.section > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* The twistie: one chevron or the other, as the section is open or closed. */
+details.section > summary > .twistie.open,
+details.section[open] > summary > .twistie.closed {
+  display: none;
+}
+
+details.section[open] > summary > .twistie.open {
+  display: inline-block;
+}
+
+.section-body {
+  padding: 0 12px 4px 30px;
+}
+
+.description {
+  margin-left: 0.5em;
+  font-weight: normal;
+  color: var(--vscode-descriptionForeground);
+}
+
+.dimmed > summary,
+.dimmed > .group-head,
+.item.dimmed {
+  color: var(--vscode-disabledForeground);
+}
+
+dl,
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 6px;
+  padding: 1px 0;
+}
+
+.row dt {
+  display: flex;
+  gap: 6px;
+  min-width: 7.5em;
+}
+
+.row dd {
+  flex: 1 1 10em;
+  margin: 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.row.warn .codicon {
+  color: var(--vscode-editorWarning-foreground);
+}
+
+.item > span,
+.item > button {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  padding: 1px 0;
+}
+
+.group-head {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  margin: 4px 0 0;
+  font-size: inherit;
+  font-weight: 600;
+}
+
+h4.group-head {
+  font-weight: normal;
+}
+
+.group > ul,
+.group > dl,
+.group > .group {
+  padding-left: 22px;
+}
+
+/* A row's button looks like its text, and shows it can be chosen. */
+button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.item > button {
+  width: 100%;
+}
+
+button:hover,
+summary:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}

@@ -68,8 +68,11 @@
       "entry": ["scripts/screenshot.ts"],
       // Release packaging runs `vsce` by name (scripts/release/pack.ts and
       // publish.ts), and the language server packages are the test stub's
-      // (test/stub-server/ascribe), a script with no extension.
+      // (test/stub-server/ascribe), a script with no extension. The webview
+      // views' stylesheet imports `@vscode/codicons`' stylesheet, which
+      // esbuild.mjs bundles with its font.
       "ignoreDependencies": [
+        "@vscode/codicons",
         "@vscode/vsce",
         "vscode-languageserver",
         "vscode-languageserver-textdocument",

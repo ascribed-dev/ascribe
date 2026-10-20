@@ -6,6 +6,8 @@ import * as vscode from "vscode";
 import { ascribeElsewhere } from "../../../src/agents/reach.js";
 import { nodePathEnvironment } from "../../../src/environment.js";
 import type { ItemRecord, SidebarItem } from "../../../src/ui/sidebarViews.js";
+import type { Drawn } from "../../../src/ui/webviewView.js";
+import type { ThisPageReport } from "../../../src/webview/viewProtocol.js";
 import { activated, diagnosticsOf, uriOf, waitFor } from "./helpers.js";
 
 // The sidebar's views run first, while the project's pages are the example's own.
@@ -262,6 +264,159 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
       writeFileSync(quickstart.fsPath, original);
       await vscode.commands.executeCommand("workbench.action.revertAndCloseActiveEditor");
     }
+  });
+});
+
+// This page is a webview: the thread through it, from the extension's answer
+// to what its webview drew. Its webview posts what it drew, which these wait for.
+describe("This page's webview on examples/quill", () => {
+  const installAgent = uriOf("docs", "install-agent.md");
+  const quickstart = uriOf("docs", "quickstart.md");
+
+  /** The title About's first row gives, in what the webview drew last. */
+  const title = (drawn: Drawn<ThisPageReport>): string | undefined =>
+    drawn.report.sections.find((section) => section.key === "about")?.items[0];
+
+  after(async () => {
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
+  it("shows the page with About open and its rows wrapped, stays on it when the view takes the focus, and comes back on another page", async () => {
+    const api = await activated();
+    const view = api.ui.thisPage;
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(installAgent));
+    const first = await view.whenDrawn(
+      "install-agent.md",
+      (drawn) => title(drawn) === "Title (Install the Quill agent)",
+    );
+    assert.deepEqual(
+      first.report.sections.map(({ label, open }) => `${label} ${open ? "open" : "closed"}`),
+      ["About open", "Health closed", "Connections closed", "Memos closed"],
+    );
+    assert.equal(first.report.wraps, true);
+    assert.deepEqual(first.report.violations, []);
+
+    // Clicking in the view takes the focus from the editor: the view stays on the page.
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    await view.whenSettled();
+    assert.equal(title(view.drawn() ?? first), "Title (Install the Quill agent)");
+    // So does focus in a webview editor, the preview's, which leaves VS Code
+    // reporting no active editor at all.
+    await vscode.commands.executeCommand("ascribe.openPreview");
+    await (await activated()).preview.whenDrawn("the preview", () => true);
+    await vscode.commands.executeCommand("workbench.action.focusSecondEditorGroup");
+    await waitFor("the focus in the preview", async () =>
+      vscode.window.activeTextEditor === undefined ? true : undefined,
+    );
+    const asked = view.asked();
+    await view.whenSettled();
+    assert.equal(title(view.drawn() ?? first), "Title (Install the Quill agent)");
+    assert.equal(view.drawn()?.report.message, null);
+    // Escape in the view gives the focus back to the page's editor.
+    await view.escape();
+    assert.equal(vscode.window.activeTextEditor?.document.uri.toString(), installAgent.toString());
+
+    // Collapsed, or its container hidden, it asks nothing.
+    await vscode.commands.executeCommand("workbench.view.explorer");
+    await waitFor("This page hidden", async () => (view.visible() ? undefined : true));
+    const editor = await vscode.window.showTextDocument(
+      await vscode.workspace.openTextDocument(quickstart),
+    );
+    editor.selection = new vscode.Selection(6, 0, 6, 0);
+    await view.whenSettled();
+    const hidden = view.asked();
+    assert.ok(hidden <= asked + 1, `asked ${hidden - asked} times while hidden`);
+    const before = view.drawn()?.seq ?? 0;
+
+    // Shown again, its webview is made again, after the cursor moved: it draws
+    // the other page, with About open, and never the page it showed before.
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    const again = await view.whenDrawn(
+      "quickstart.md",
+      (drawn) => drawn.seq > before && title(drawn) === "Title (Try Quill in the browser)",
+    );
+    assert.equal(again.report.sections[0]?.open, true);
+    assert.ok(view.asked() > hidden);
+  });
+
+  it("stays on its page while a file that isn't a page covers its tab, and moves on once the page's tab is closed", async () => {
+    const api = await activated();
+    const view = api.ui.thisPage;
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(installAgent), {
+      viewColumn: vscode.ViewColumn.One,
+      preview: false,
+    });
+    await view.whenDrawn(
+      "install-agent.md",
+      (drawn) => title(drawn) === "Title (Install the Quill agent)",
+    );
+
+    // ascribe.toml in the page's group covers its tab: the page's editor
+    // leaves the screen, and This page stays on it.
+    const model = uriOf("ascribe.toml");
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(model), {
+      viewColumn: vscode.ViewColumn.One,
+      preview: false,
+    });
+    await waitFor("the page's tab covered", async () =>
+      vscode.window.visibleTextEditors.every(
+        (editor) => editor.document.uri.toString() !== installAgent.toString(),
+      )
+        ? true
+        : undefined,
+    );
+    await view.whenSettled();
+    const covered = view.drawn();
+    assert.ok(covered);
+    assert.equal(covered.report.message, null);
+    assert.equal(title(covered), "Title (Install the Quill agent)");
+    // Escape brings the page's tab back to the top, and the focus to it.
+    await view.escape();
+    assert.equal(vscode.window.activeTextEditor?.document.uri.toString(), installAgent.toString());
+
+    // Closing the page's tab, with ascribe.toml active, leaves it on no page.
+    await vscode.window.showTextDocument(model, { viewColumn: vscode.ViewColumn.One });
+    const tab = vscode.window.tabGroups.all
+      .flatMap((group) => group.tabs)
+      .find(
+        (tab) =>
+          tab.input instanceof vscode.TabInputText &&
+          tab.input.uri.toString() === installAgent.toString(),
+      );
+    assert.ok(tab);
+    await vscode.window.tabGroups.close(tab);
+    await view.whenDrawn("no page", (drawn) => drawn.report.message !== null);
+  });
+
+  it("opens what a row names when it's chosen", async () => {
+    const api = await activated();
+    const view = api.ui.thisPage;
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(installAgent));
+    await view.whenDrawn(
+      "install-agent.md",
+      (drawn) => title(drawn) === "Title (Install the Quill agent)",
+    );
+    // Its Description row goes to the field, in the page's frontmatter.
+    const about = view.items().find((item) => item.label === "About");
+    const at = about?.children.findIndex((item) => item.label === "Description") ?? -1;
+    assert.ok(at >= 0);
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    view.choose(`about/${at}`);
+    await waitFor("the description's line", async () => {
+      const editor = vscode.window.activeTextEditor;
+      return editor?.document.uri.toString() === installAgent.toString() &&
+        editor.selection.start.line === 3
+        ? true
+        : undefined;
+    });
+    // A key no item of the answer has opens nothing.
+    view.choose("about/99");
+    await view.whenSettled();
+    assert.equal(vscode.window.activeTextEditor?.document.uri.toString(), installAgent.toString());
   });
 });
 

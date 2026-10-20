@@ -1,7 +1,7 @@
 # The Ascribe sidebar
 
 - **Review**, while review is on: the changed pages, their problems, and the comments you haven't submitted.
-- **This page**: the page you're on, its title, type, and addresses, whether it's published, listed, due for review, over size, or unfinished, its problems, and what links to it or to the heading at the cursor.
+- **This page**: the page you're on, its title, type, and addresses, whether it's published, listed, due for review, over size, or unfinished, its problems, and what links to it or to the heading at the cursor. Only About starts open; open another section and it stays open on every page.
 - **Pages**: the project's pages in the navigation's sections, and its fragments. **Orphans Only**, in its title bar, lists only the pages nothing links to.
 - **Content model**: the project's page types, phrases, features, glossary terms, and the rest, with how many places use each.
 

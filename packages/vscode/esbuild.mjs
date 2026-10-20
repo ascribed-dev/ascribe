@@ -91,6 +91,7 @@ await bundle({
   entryPoints: {
     elements: "src/webview/elements.ts",
     preview: "src/webview/preview.ts",
+    thisPage: "src/webview/thisPage.ts",
   },
 });
 await bundle({
@@ -99,8 +100,18 @@ await bundle({
     elements: "src/webview/elements.css",
     marks: "src/webview/marks.css",
     preview: "src/webview/preview.css",
+    views: "src/webview/views.css",
   },
+  // The sidebar's webview views draw codicons with VS Code's own font
+  // (`@vscode/codicons`), which the views' stylesheet imports. It's copied
+  // beside the stylesheet, with its license, and read from disk, never downloaded.
+  loader: { ".ttf": "file" },
+  assetNames: "[name]",
 });
+cpSync(
+  fileURLToPath(new URL("node_modules/@vscode/codicons/LICENSE", import.meta.url)),
+  "dist/webview/codicon.LICENSE.txt",
+);
 
 if (process.argv.includes("--tests")) {
   await build({
