@@ -1,0 +1,4 @@
+This ascribe's templates are The Good Docs Project's, https://gitlab.com/tgdp/templates, at v1.6.0.
+how-to: unchanged in the set since the copy from v1.6.0; the project has changed its copy
+  templates/how-to.md: changed here
+Not taken: concept, tutorial, reference, troubleshooting, release-notes. `ascribe templates eject <NAME>` writes one.

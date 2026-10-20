@@ -1,0 +1,1 @@
+examples.observations/default.toml is stale: changed examples/greet.ts. Run `ascribe observe` here to test the examples again.

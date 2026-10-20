@@ -20,7 +20,7 @@ The set has six templates, for a how-to, a concept, a tutorial, a reference, a t
 
 ## Take the templates
 
-To start a project with the set, run `ascribe init --templates` in an empty folder: it writes the project's first `ascribe.toml` and takes the six templates as `eject` would ([command reference](../examples/sources.md#cli-init)).
+To start a project with the set, run `ascribe init --templates` in an empty folder: it writes the project's first `ascribe.toml` and takes the six templates as `eject` would ([command reference](../install.md#cli-init)).
 
 In a project that has its `ascribe.toml` already, take the whole set:
 
@@ -42,7 +42,7 @@ description = "string"
 
 A page says what type it is in its frontmatter, `type: how-to`, as each template does, so a page of any type can go in any folder. Commit the files, with `templates/templates.lock`, which records what each was copied from. The rules [`ascribe agents sync`](../agents/index.md#agent-instructions) writes say what each type is for; to say it your own way, give the type a [`purpose`](../content-model/index.md#41-page-types).
 
-To take only some, name them: `ascribe templates eject how-to concept`. A type the project declares already is refused, and nothing is written; to keep it and take its template, add `--keep-type`. The [command reference](../examples/sources.md#cli-templates-eject) has the rest.
+To take only some, name them: `ascribe templates eject how-to concept`. A type the project declares already is refused, and nothing is written; to keep it and take its template, add `--keep-type`. The [command reference](command.md#cli-templates-eject) has the rest.
 
 ## Change a template
 
@@ -64,7 +64,7 @@ For each template you took, it says whether the set has changed it since your co
 ascribe templates status --diff how-to
 ```
 
-The [command reference](../examples/sources.md#cli-templates-status) has its options, for a CI job too, and its JSON.
+The [command reference](command.md#cli-templates-status) has its options, for a CI job too, and its JSON.
 
 ## In a project that has pages
 
@@ -104,5 +104,5 @@ The check finds only what was never touched, so read a page through before publi
 
 ## See also
 
-- [`ascribe templates`](../examples/sources.md#cli-templates-eject): `list` and `eject`, and their options.
+- [`ascribe templates`](command.md): `list`, `eject`, and `status`, their options, and their output.
 - [Page types](../content-model/index.md#41-page-types): a type's `template`, `guide`, and `purpose`.

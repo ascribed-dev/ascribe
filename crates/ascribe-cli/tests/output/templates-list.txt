@@ -1,0 +1,7 @@
+how-to           A how-to is a concise set of numbered steps to do one task with the product.
+concept          An explanation of a concept, context, or background information about a product or its features.
+tutorial         Instructions for setting up an example project using the product, intended for the purpose of hands-on learning.
+reference        A reference article provides users with descriptions of specific components or characteristics of an application.
+troubleshooting  A list of common problems (referred to as symptoms) experienced by users, an explanation of the causes, and steps to resolve the issue.
+release-notes    Release notes communicate new features, improvements, bug fixes, and known issues about a product to users and stakeholders.
+From The Good Docs Project's templates, https://gitlab.com/tgdp/templates, at v1.6.0, under the MIT No Attribution License.

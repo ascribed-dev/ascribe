@@ -59,11 +59,11 @@ The list is the project's, not one build's. Each permalink the content declares,
 | [`permalink-removed`](../checks/diagnostics/pages.md#ASC177) | An entry's name isn't declared anywhere, and `ascribe.toml` neither aliases nor retires it. It's reported on the entry, in `ascribe.permalinks`. The editor's quick fix retires it. |
 | [`permalinks-list-invalid`](../checks/diagnostics/pages.md#ASC175) | The file isn't a list this version reads. The list isn't used until it's fixed. |
 
-Moving a permalink to another heading or page makes the list behind, and doesn't remove it: the address still works. Retiring a removed permalink, with [`ascribe permalinks retire`](../examples/sources.md#cli-permalinks-retire), ends the warning: the name moves to `[retired]`.
+Moving a permalink to another heading or page makes the list behind, and doesn't remove it: the address still works. Retiring a removed permalink, with [`ascribe permalinks retire`](../permalinks/command.md#cli-permalinks-retire), ends the warning: the name moves to `[retired]`.
 
 ## 4. How Ascribe writes it
 
-[`ascribe permalinks sync`](../examples/sources.md#cli-permalinks-sync) writes the list, and the editor's quick fix on `permalinks-list-behind` writes the same text. Writing the list:
+[`ascribe permalinks sync`](../permalinks/command.md#cli-permalinks-sync) writes the list, and the editor's quick fix on `permalinks-list-behind` writes the same text. Writing the list:
 
 - adds an entry for each declared name the list doesn't have;
 - moves an entry whose place no longer declares its name to a place that does;
@@ -74,7 +74,7 @@ The text is the same for the same list on every platform: the comment, `version`
 
 ## 5. Reading a copy
 
-A copy of the file is all a tool needs to check a link: a name is a permalink of the docs when the copy's `[permalinks]` or `[aliases]` has it. A name in `[retired]` was a permalink, and isn't now: its address shows the reason or leads elsewhere, and a link to it should change. That says the name is declared, not that it has an address: a build gives it one only when it publishes the page or heading that declares it, so a marked heading in a fragment no page includes, or on a page no build publishes, is listed and leads nowhere (`fragment-unused` and `page-orphan` point at most of these). [`ascribe permalinks verify`](../examples/sources.md#cli-permalinks-verify) does this, and [Checking a product's links](../permalinks/index.md#checking-a-products-links) shows it in CI. A tool of your own can read the file with any TOML parser, and:
+A copy of the file is all a tool needs to check a link: a name is a permalink of the docs when the copy's `[permalinks]` or `[aliases]` has it. A name in `[retired]` was a permalink, and isn't now: its address shows the reason or leads elsewhere, and a link to it should change. That says the name is declared, not that it has an address: a build gives it one only when it publishes the page or heading that declares it, so a marked heading in a fragment no page includes, or on a page no build publishes, is listed and leads nowhere (`fragment-unused` and `page-orphan` point at most of these). [`ascribe permalinks verify`](../permalinks/command.md#cli-permalinks-verify) does this, and [Checking a product's links](../permalinks/index.md#checking-a-products-links) shows it in CI. A tool of your own can read the file with any TOML parser, and:
 
 - should fail on a `version` it doesn't know, rather than read it as version 1;
 - should fail on a name in `[retired]`, saying why it was retired;

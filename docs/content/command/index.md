@@ -22,7 +22,11 @@ Each command's options, output, and exit codes are on the page for its kind of w
 - [`ascribe agents` and `mcp`](../agents/commands.md): set a repository up for agents, and serve a project to agents.
 - [`ascribe lsp`](../editor/index.md#cli-lsp): serve a project to an editor.
 - [`ascribe versions`](../versions/release.md): list a project's release lines, say what differs between two, release one, archive one, and retire one.
-- [`ascribe init`, `sources`, `observe`, `permalinks`, `templates`, and `vale`](../examples/sources.md): start a project, and look after its source repositories, its tested examples, permalinks, page templates, and Vale's configuration.
+- [`ascribe init`](../install.md#cli-init): start a project.
+- [`ascribe sources` and `observe`](../examples/sources.md): copy code from other repositories, and record what tested a folder's examples.
+- [`ascribe permalinks`](../permalinks/command.md): keep the list of permalinks, check a product's names against it, and retire a permalink.
+- [`ascribe templates`](../templates/command.md): write the page templates into a project, and say what's changed in them.
+- [`ascribe vale`](../checks/vale.md#cli-vale): write Vale's preset out as the project's own configuration.
 
 ## Options every command accepts
 

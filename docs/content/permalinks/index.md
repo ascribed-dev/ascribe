@@ -52,7 +52,7 @@ jobs:
       - run: npx @ascribed/cli permalinks verify --against docs.permalinks --from docs-links.txt
 ```
 
-`docs-links.txt` lists the names the product links to, one on each line. [`ascribe permalinks verify`](../examples/sources.md#cli-permalinks-verify) exits with 1, naming each name the list doesn't have, and each the docs retired, with the reason they gave, so a link to a section the docs removed, or never had, fails the product's pull request rather than reaching its users. An alias passes, as the permalink it leads to does.
+`docs-links.txt` lists the names the product links to, one on each line. [`ascribe permalinks verify`](command.md#cli-permalinks-verify) exits with 1, naming each name the list doesn't have, and each the docs retired, with the reason they gave, so a link to a section the docs removed, or never had, fails the product's pull request rather than reaching its users. An alias passes, as the permalink it leads to does.
 
 In the docs, `ascribe check` reports a list that's behind the content (`permalinks-list-behind`): a new permalink, or one that moved. Run `ascribe permalinks sync`, or take the editor's quick fix, and commit the list with the change; `ascribe permalinks sync --check` fails in CI when it wasn't. Moving a permalink to another page changes one line of the list and removes nothing. Deleting one is a warning (`permalink-removed`), which `sync` doesn't clear: restore the name, or retire it ([when a section moves or goes away](index.md#moving-aliasing-and-retiring)).
 
@@ -70,7 +70,7 @@ ascribe permalinks retire rotate-keys --reason "Merged into the security guide" 
 ascribe permalinks retire legacy-sync --reason "The sync agent was removed in 4.0"
 ```
 
-[`ascribe permalinks retire`](../examples/sources.md#cli-permalinks-retire) writes each to `[permalinks.retired]` in `ascribe.toml`, keeping the file's comments, and records it in `ascribe.permalinks`, so `ascribe check` no longer warns. With `--to`, its address leads there; without it, the address is a page that says the section was removed, with the reason. A product's `verify` then fails on the name, with the reason, so the product changes its link. In the editor, the quick fix on `permalink-removed` writes the entry with a placeholder reason, which is an error until you replace it. To retire every permalink on a page you're about to delete, run it with `--page` before deleting the page.
+[`ascribe permalinks retire`](command.md#cli-permalinks-retire) writes each to `[permalinks.retired]` in `ascribe.toml`, keeping the file's comments, and records it in `ascribe.permalinks`, so `ascribe check` no longer warns. With `--to`, its address leads there; without it, the address is a page that says the section was removed, with the reason. A product's `verify` then fails on the name, with the reason, so the product changes its link. In the editor, the quick fix on `permalink-removed` writes the entry with a placeholder reason, which is an error until you replace it. To retire every permalink on a page you're about to delete, run it with `--page` before deleting the page.
 
 Retire rather than delete the line from the list: a deleted line makes the address a 404 with nothing to say why, and a product's `verify` says only that the name is missing.
 
@@ -78,6 +78,6 @@ Retire rather than delete the line from the list: a deleted line makes the addre
 
 - [Permalinks](../writing/directives.md#permalinks), in the directive reference: how a heading or a page gets one, and the names it may have.
 - [`[permalinks]`](../content-model/checks.md#20-permalinks): the moved, aliased, and retired names in `ascribe.toml`.
-- [`ascribe permalinks`](../examples/sources.md#cli-permalinks-verify): verifying a product's list, and retiring a name.
+- [`ascribe permalinks`](command.md): `sync`, `list`, `verify`, and `retire`, their options, and their output.
 - [The permalinks list](../contracts/permalinks-list.md): the file a product's CI checks against.
 - [Permalinks](../astro/reference.md#permalinks), in the `@ascribed/astro` reference: the page at each address, its parameters, and [`MissingPermalink`](../astro/reference.md#a-permalink-that-isnt-here) for the site's 404 page.

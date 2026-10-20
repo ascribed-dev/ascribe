@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "config": "ascribe.examples.toml",
+  "check": true,
+  "environment": [],
+  "test": null,
+  "observation": "examples.observations/default.toml",
+  "current": false,
+  "changes": {
+    "added": [],
+    "removed": [],
+    "changed": [
+      "examples/greet.ts"
+    ],
+    "environment": []
+  },
+  "recorded": {},
+  "files": {
+    "examples/greet.out.txt": "sha256-lf:231462024105beaa2d3fcc21f4f29a2a2768328bb8bdb514e37ce65914552cec",
+    "examples/greet.ts": "sha256-lf:398ebfc857666088b8cb814036af12e39781c33d21ce53d5b2c3dc590a3beed2"
+  },
+  "tested": null
+}
