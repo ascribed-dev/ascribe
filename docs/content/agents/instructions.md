@@ -15,7 +15,7 @@ It writes:
 
 - **`AGENTS.md`** beside `ascribe.toml`: the check to run after each edit and before finishing, your page types with what each is for and its frontmatter, and that each page names its type with `type:`, your phrases, the directives your pages use, and how to link. It's at most 4,000 characters, and long lists are cut with the command that shows the rest, the page types first.
 - **A short block in the repository's root `AGENTS.md`,** when your project is in a subfolder: where its pages are, the check to run, and where its full rules are. Some agents, such as Codex, read no `AGENTS.md` below the folder they start in.
-- **The skill,** in `.agents/skills/ascribe/` at the repository's root. See [The skill](instructions.md#the-skill).
+- **The skill,** in `.agents/skills/ascribe/` at the repository's root. See [The skill](#the-skill).
 
 Beside each file it writes, `sync` says which agents read it, and when an agent doesn't read one, the target that writes it where that agent does. Claude Code doesn't read the skill in `.agents/skills/`, so without the `claude` target, `sync` says so:
 
@@ -38,15 +38,9 @@ Don't edit the block itself: change `ascribe.toml`, or your pages, and run `sync
 
 ## Other agents' files
 
-Beyond `AGENTS.md` and the skill, `sync` keeps up to date the files of each target that already has them, and writes a target's files when you ask with `--target`:
-
-The targets are `claude`, `claude-rules`, `copilot`, and `codex`; [`ascribe agents sync`](commands.md#cli-agents-sync) lists what each writes, and what it names the files of a project in a subfolder.
-
-**Claude Code** reads `AGENTS.md` by itself only while there's no `CLAUDE.md` at or above the folder it works in. So `sync` never creates a `CLAUDE.md` unless you ask with `--target claude`, and when there is one, it adds the import to it rather than copying the rules. A personal `CLAUDE.local.md` also stops Claude Code reading `AGENTS.md`; `sync` doesn't edit it, but says so, and you can add `@AGENTS.md` to it yourself.
+Beyond `AGENTS.md` and the skill, `sync` keeps up to date the files of each target that already has them, and writes a target's files when you ask with `--target`. The targets are `claude`, `claude-rules`, `copilot`, and `codex`; [`ascribe agents sync`](commands.md#cli-agents-sync) lists what each writes, and what it names the files of a project in a subfolder. [Claude Code](claude-code.md) and [GitHub Copilot](copilot.md) say when you need theirs.
 
 A repository with several projects can run `sync` at its root, with no `ascribe.toml` there: it syncs each project below, and the root's `AGENTS.md` gets a block for each, which tells an agent starting at the root which project a page is in.
-
-**Copilot's** files are for a repository, so `--target copilot` and `--cloud` need one. Outside a git repository, `sync` treats your project's folder as the root and says so.
 
 ## Keeping them current in CI
 
