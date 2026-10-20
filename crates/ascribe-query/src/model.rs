@@ -1,14 +1,16 @@
 //! What the content model allows, resolved: its page types and their
 //! frontmatter, dimensions, phrases, features, glossary, widgets, builds,
-//! and sources. [`model`] gives every section in full, for tools; [`summary`]
-//! gives a short Markdown summary for an agent to read, cut to a character
-//! budget.
+//! and sources, and every other section of `ascribe.toml`, each key with its
+//! value in effect. [`model`] gives every section in full, for tools;
+//! [`summary`] gives a short Markdown summary for an agent to read, cut to a
+//! character budget.
 
 use ascribe_core::schema::{AttributeType, Attributes, DefaultValue, SetMember};
 use std::collections::BTreeMap;
 
 use ascribe_core::RelPath;
 use ascribe_model::examples::Status;
+use ascribe_model::settings::{self as registry, Setting, SettingValue};
 use ascribe_model::{
     AvailabilityMode, ContentModel, Field, FieldType, GlossaryMatch, Listing, Source, VariantMode,
 };
@@ -45,11 +47,25 @@ pub enum Section {
     Builds,
     /// Sources.
     Sources,
+    /// `[project]`'s settings.
+    Project,
+    /// `[consumer]`'s settings.
+    Consumer,
+    /// `[editor]`'s settings.
+    Editor,
+    /// `[checks]`'s settings.
+    Checks,
+    /// `[crawlers]`'s settings.
+    Crawlers,
+    /// `[listing]`'s settings.
+    Listing,
+    /// `[permalinks]`'s settings.
+    Permalinks,
 }
 
 impl Section {
     /// Every section, in the order answers list them.
-    pub const ALL: [Section; 9] = [
+    pub const ALL: [Section; 16] = [
         Section::Types,
         Section::Dimensions,
         Section::Phrases,
@@ -59,7 +75,29 @@ impl Section {
         Section::Releases,
         Section::Builds,
         Section::Sources,
+        Section::Project,
+        Section::Consumer,
+        Section::Editor,
+        Section::Checks,
+        Section::Crawlers,
+        Section::Listing,
+        Section::Permalinks,
     ];
+
+    /// Whether it's a table of settings, each key [`ModelSetting`]: shown
+    /// with `--section`, and only named in the summary without it.
+    pub fn is_settings(self) -> bool {
+        matches!(
+            self,
+            Section::Project
+                | Section::Consumer
+                | Section::Editor
+                | Section::Checks
+                | Section::Crawlers
+                | Section::Listing
+                | Section::Permalinks
+        )
+    }
 
     /// The section's name, as `--section` takes it.
     pub fn name(self) -> &'static str {
@@ -73,6 +111,13 @@ impl Section {
             Section::Releases => "releases",
             Section::Builds => "builds",
             Section::Sources => "sources",
+            Section::Project => "project",
+            Section::Consumer => "consumer",
+            Section::Editor => "editor",
+            Section::Checks => "checks",
+            Section::Crawlers => "crawlers",
+            Section::Listing => "listing",
+            Section::Permalinks => "permalinks",
         }
     }
 
@@ -87,6 +132,13 @@ impl Section {
             Section::Releases => "Releases",
             Section::Builds => "Builds",
             Section::Sources => "Sources",
+            Section::Project => "`[project]`",
+            Section::Consumer => "`[consumer]`",
+            Section::Editor => "`[editor]`",
+            Section::Checks => "`[checks]`",
+            Section::Crawlers => "`[crawlers]`",
+            Section::Listing => "`[listing]`",
+            Section::Permalinks => "`[permalinks]`",
         }
     }
 }
@@ -132,6 +184,28 @@ pub struct ModelReport {
     /// Sources, in declaration order.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sources: Option<Vec<ModelSource>>,
+    /// `[project]`: each key, with its value in effect.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub project: Option<Vec<ModelSetting>>,
+    /// `[consumer]`: each key, with its value in effect.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub consumer: Option<Vec<ModelSetting>>,
+    /// `[editor]`: each key, with its value in effect.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub editor: Option<Vec<ModelSetting>>,
+    /// `[checks]`: each key of `[checks.vale]` and `[checks.links]`, with its
+    /// value in effect, and each check the file sets, by its slug.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub checks: Option<Vec<ModelSetting>>,
+    /// `[crawlers]`: each key, with its value in effect.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub crawlers: Option<Vec<ModelSetting>>,
+    /// `[listing]`: each key, with its value in effect.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub listing: Option<Vec<ModelSetting>>,
+    /// `[permalinks]`: each key, with its value in effect.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub permalinks: Option<Vec<ModelSetting>>,
     /// The project's navigation, its root section: every page that isn't
     /// `unlisted`, in order, as each build's `_ascribe/nav.json` has its
     /// share of it. Only in the whole report.
@@ -534,15 +608,20 @@ pub fn terms(index: &Project) -> Vec<ModelTerm> {
 }
 
 /// The content model's sections, or only `section`, with the glossary's
-/// `terms` ([`terms`]). With `fs`, each source in the same repository says
-/// what its tested examples are.
+/// `terms` ([`terms`]). `config` is the text of the `ascribe.toml` the model
+/// was loaded from, for its settings' values: without it, each is its
+/// default. With `fs`, each source in the same repository says what its
+/// tested examples are.
 pub fn model(
     model: &ContentModel,
+    config: Option<&str>,
     terms: Vec<ModelTerm>,
     section: Option<Section>,
     fs: Option<&dyn FileSystem>,
 ) -> ModelReport {
     let wants = |s: Section| section.is_none_or(|wanted| wanted == s).then_some(());
+    let file: Option<toml::Table> = config.and_then(|text| text.parse().ok());
+    let settings = |s: Section| wants(s).map(|()| settings(s.name(), file.as_ref()));
     ModelReport {
         schema_version: MODEL_SCHEMA_VERSION,
         ascribe_version: ASCRIBE_VERSION,
@@ -574,6 +653,19 @@ pub fn model(
         releases: wants(Section::Releases).map(|()| releases(model)),
         builds: wants(Section::Builds).map(|()| builds(model)),
         sources: wants(Section::Sources).map(|()| sources(model, fs)),
+        project: settings(Section::Project),
+        consumer: settings(Section::Consumer),
+        editor: settings(Section::Editor).map(|mut keys| {
+            // The build the loader chose, which isn't one default.
+            for key in keys.iter_mut().filter(|k| k.key == "build" && !k.set) {
+                key.value = Some(serde_json::Value::String(model.editor_build.clone()));
+            }
+            keys
+        }),
+        checks: settings(Section::Checks),
+        crawlers: settings(Section::Crawlers),
+        listing: settings(Section::Listing),
+        permalinks: settings(Section::Permalinks),
         navigation: None,
     }
 }
@@ -820,32 +912,57 @@ fn releases(model: &ContentModel) -> Vec<ModelReleases> {
 }
 
 /// The content model as a short Markdown summary, for an agent to read: a
-/// heading per section that declares anything, and a line per entry. When
-/// the whole would be longer than `budget` characters, long lists are cut,
-/// each where it's cut naming the command that lists the rest. With a
-/// `section`, only that one, never cut.
+/// heading per section that declares anything, and a line per entry, then
+/// the sections of settings, named. When the whole would be longer than
+/// `budget` characters, long lists are cut, each where it's cut naming the
+/// command that lists the rest. With a `section`, only that one, never cut:
+/// a section of settings with every key and its value in effect.
 pub fn summary(
     model: &ContentModel,
+    config: Option<&str>,
     terms: Vec<ModelTerm>,
     section: Option<Section>,
     budget: usize,
     fs: Option<&dyn FileSystem>,
 ) -> String {
-    let report = self::model(model, terms, section, fs);
+    let report = self::model(model, config, terms, section, fs);
     let sections: Vec<(Section, Vec<String>)> = Section::ALL
         .into_iter()
-        .filter(|s| section.is_none_or(|wanted| wanted == *s))
+        .filter(|s| match section {
+            Some(wanted) => wanted == *s,
+            None => !s.is_settings(),
+        })
         .map(|s| (s, lines(&report, s)))
         .filter(|(s, lines)| !lines.is_empty() || section == Some(*s))
         .collect();
     let all: Vec<usize> = sections.iter().map(|(_, lines)| lines.len()).collect();
-    if section.is_some() || render(&sections, &all).chars().count() <= budget {
+    if section.is_some() {
         return render(&sections, &all);
     }
-    let taken = fit(&all, |taken| {
-        render(&sections, taken).chars().count() <= budget
-    });
-    render(&sections, &taken)
+    let named = settings_named();
+    let budget = budget.saturating_sub(named.chars().count());
+    let taken = if render(&sections, &all).chars().count() <= budget {
+        all
+    } else {
+        fit(&all, |taken| {
+            render(&sections, taken).chars().count() <= budget
+        })
+    };
+    render(&sections, &taken) + &named
+}
+
+/// The end of the whole model's summary: the sections of settings, which
+/// only `--section` shows.
+fn settings_named() -> String {
+    let names: Vec<String> = Section::ALL
+        .into_iter()
+        .filter(|s| s.is_settings())
+        .map(|s| format!("`{}`", s.name()))
+        .collect();
+    format!(
+        "\n## Settings\n\n- {}, each with its keys and values: `ascribe model --section <name>`\n",
+        names.join(", ")
+    )
 }
 
 /// How many entries of each list to keep, given each list's length (`all`)
@@ -878,7 +995,7 @@ pub(crate) fn fit(all: &[usize], fits: impl Fn(&[usize]) -> bool) -> Vec<usize> 
 /// declares alone (not the glossary's), as the summary lists them.
 pub(crate) fn entries(model: &ContentModel, section: Section) -> Vec<String> {
     lines(
-        &self::model(model, Vec::new(), Some(section), None),
+        &self::model(model, None, Vec::new(), Some(section), None),
         section,
     )
 }
@@ -1010,7 +1127,40 @@ fn lines(report: &ModelReport, section: Section) -> Vec<String> {
             })
             .collect(),
         Section::Sources => report.sources.iter().flatten().map(source_line).collect(),
+        Section::Project => setting_lines(section, &report.project),
+        Section::Consumer => setting_lines(section, &report.consumer),
+        Section::Editor => setting_lines(section, &report.editor),
+        Section::Checks => setting_lines(section, &report.checks),
+        Section::Crawlers => setting_lines(section, &report.crawlers),
+        Section::Listing => setting_lines(section, &report.listing),
+        Section::Permalinks => setting_lines(section, &report.permalinks),
     }
+}
+
+/// A line for each key of a section of settings: its name from the
+/// section's table, its value in effect, and its default.
+fn setting_lines(section: Section, settings: &Option<Vec<ModelSetting>>) -> Vec<String> {
+    let json = |v: &serde_json::Value| format!("`{v}`");
+    settings
+        .iter()
+        .flatten()
+        .map(|s| {
+            let key = match s.table.strip_prefix(section.name()) {
+                Some(rest) if !rest.is_empty() => format!("{}.{}", &rest[1..], s.key),
+                _ => s.key.clone(),
+            };
+            let default = match (&s.default, &s.default_text) {
+                (Some(d), _) => format!("default {}", json(d)),
+                (None, Some(text)) => format!("default: {text}"),
+                (None, None) => "no default".to_owned(),
+            };
+            match (&s.value, s.set) {
+                (Some(v), true) => format!("`{key}`: {} ({default})", json(v)),
+                (Some(v), false) => format!("`{key}`: {} (the default)", json(v)),
+                (None, _) => format!("`{key}`: not set ({default})"),
+            }
+        })
+        .collect()
 }
 
 fn source_line(s: &ModelSource) -> String {
@@ -1148,4 +1298,103 @@ fn widget_line(w: &ModelWidget) -> String {
         text.push_str(&format!(". {description}"));
     }
     text
+}
+
+/// A key of a section of settings, such as `[consumer]`, as the registry of
+/// `ascribe.toml`'s keys has it, with the value in effect.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ModelSetting {
+    /// The table it's in, as `ascribe.toml` writes it: `consumer`,
+    /// `checks.vale`.
+    pub table: String,
+    /// The key: in `checks`, a check's slug.
+    pub key: String,
+    /// What its value is: `switch`, `choice`, `number`, `text`, `level`,
+    /// `list`, or `table`.
+    pub kind: String,
+    /// The value in effect: the file's, else the default. Absent when the
+    /// file leaves it out and its default isn't one value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub value: Option<serde_json::Value>,
+    /// Whether `ascribe.toml` sets it.
+    pub set: bool,
+    /// The value used when the file leaves it out, when that's one value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default: Option<serde_json::Value>,
+    /// What's used when the file leaves it out, in the reference's words,
+    /// when that isn't one value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default_text: Option<String>,
+}
+
+/// The keys of the section of settings `name`, from the registry, each with
+/// its value in `file`, the parsed `ascribe.toml`.
+fn settings(name: &str, file: Option<&toml::Table>) -> Vec<ModelSetting> {
+    let mut out = Vec::new();
+    let table = file
+        .and_then(|f| f.get(name))
+        .and_then(toml::Value::as_table);
+    settings_of(name, name, table, &mut out);
+    out
+}
+
+/// The keys of the registry's table `table`, which the file writes as
+/// `path`, with their values in `values`: a table of keys of its own, such
+/// as `[checks.vale]`, by each of its keys, and a part the project names,
+/// such as a check in `[checks]`, for each one `values` has.
+fn settings_of(table: &str, path: &str, values: Option<&toml::Table>, out: &mut Vec<ModelSetting>) {
+    let all = registry::settings();
+    let own: Vec<&Setting> = all.iter().filter(|s| s.table == table).collect();
+    for s in &own {
+        let value = values.and_then(|t| t.get(&s.key));
+        let inner = format!("{table}.{}", s.key);
+        if s.kind == "table" && all.iter().any(|t| t.table == inner) {
+            let path = format!("{path}.{}", s.key);
+            settings_of(&inner, &path, value.and_then(toml::Value::as_table), out);
+        } else {
+            out.push(setting(path, &s.key, s, value));
+        }
+    }
+    // A part the project names is a table of the registry's, such as
+    // `checks.<check>`, whose value can be its first key's alone.
+    let named = all.iter().find(|s| {
+        s.table
+            .strip_prefix(table)
+            .and_then(|rest| rest.strip_prefix(".<"))
+            .is_some_and(|rest| !rest.contains('.'))
+    });
+    let (Some(named), Some(values)) = (named, values) else {
+        return;
+    };
+    for (key, value) in values {
+        if own.iter().any(|s| &s.key == key) {
+            continue;
+        }
+        let mut entry = setting(path, key, named, Some(value));
+        if value.is_table() {
+            entry.kind = "table".to_owned();
+        }
+        out.push(entry);
+    }
+}
+
+fn setting(table: &str, key: &str, s: &Setting, value: Option<&toml::Value>) -> ModelSetting {
+    let default = s.default.as_ref().map(|d| match d {
+        SettingValue::Switch(b) => serde_json::Value::Bool(*b),
+        SettingValue::Number(n) => serde_json::Value::from(*n),
+        SettingValue::Text(t) => serde_json::Value::String(t.clone()),
+        SettingValue::EmptyList => serde_json::Value::Array(Vec::new()),
+        SettingValue::EmptyTable => serde_json::Value::Object(serde_json::Map::new()),
+    });
+    let set = value.and_then(|v| serde_json::to_value(v).ok());
+    ModelSetting {
+        table: table.to_owned(),
+        key: key.to_owned(),
+        kind: s.kind.clone(),
+        set: set.is_some(),
+        value: set.or_else(|| default.clone()),
+        default,
+        default_text: s.default_text.clone().filter(|t| !t.is_empty()),
+    }
 }

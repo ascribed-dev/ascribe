@@ -233,6 +233,13 @@ fn model_reads_every_example_content_model() {
             "widgets",
             "builds",
             "sources",
+            "project",
+            "consumer",
+            "editor",
+            "checks",
+            "crawlers",
+            "listing",
+            "permalinks",
         ] {
             assert!(value[section].is_array(), "{config}: no {section}");
         }
@@ -259,6 +266,136 @@ fn model_cuts_a_long_list_and_names_the_section() {
     let one = json(dir.path(), &["model", "--section", "phrases"], 0);
     assert_eq!(one["phrases"].as_array().unwrap().len(), 400);
     assert!(one.get("types").is_none(), "{one}");
+}
+
+/// Every key of a section of settings, from the registry, as a JSON
+/// section has them: `(table, key)` for the keys a table of its own has, such
+/// as `[checks.vale]`'s, and the key alone for the rest.
+fn registry_keys(section: &str) -> Vec<String> {
+    let all = ascribe_model::settings::settings();
+    let mut out = Vec::new();
+    for s in all.iter().filter(|s| s.table == section) {
+        let inner = format!("{section}.{}", s.key);
+        if s.kind == "table" && all.iter().any(|t| t.table == inner) {
+            out.extend(
+                registry_keys(&inner)
+                    .into_iter()
+                    .map(|k| format!("{}.{k}", s.key)),
+            );
+        } else {
+            out.push(s.key.clone());
+        }
+    }
+    out
+}
+
+#[test]
+fn model_shows_each_section_of_settings_with_its_values_and_defaults() {
+    let root = repository_root();
+    let text = stdout(&run(
+        &root,
+        &["--config", "docs", "model", "--section", "consumer"],
+        0,
+    ));
+    assert!(text.contains("## `[consumer]`"), "{text}");
+    for key in registry_keys("consumer") {
+        assert!(text.contains(&format!("- `{key}`: ")), "{key}: {text}");
+    }
+    // The docs set `base-path`, and leave `slugger` to its default.
+    assert!(
+        text.contains("- `base-path`: `\"/docs/\"` (default `\"/\"`)"),
+        "{text}"
+    );
+    assert!(
+        text.contains("- `slugger`: `\"github\"` (the default)"),
+        "{text}"
+    );
+
+    let whole = json(&root, &["--config", "docs", "model"], 0);
+    for section in [
+        "project",
+        "consumer",
+        "editor",
+        "checks",
+        "crawlers",
+        "listing",
+        "permalinks",
+    ] {
+        let keys: Vec<String> = whole[section]
+            .as_array()
+            .unwrap_or_else(|| panic!("no {section}: {whole}"))
+            .iter()
+            // A check in `[checks]` is one the file names.
+            .filter(|s| !(section == "checks" && s["table"] == "checks"))
+            .map(|s| {
+                let table = s["table"].as_str().unwrap();
+                let key = s["key"].as_str().unwrap();
+                match table.strip_prefix(&format!("{section}.")) {
+                    Some(inner) => format!("{inner}.{key}"),
+                    None => key.to_owned(),
+                }
+            })
+            .collect();
+        assert_eq!(keys, registry_keys(section), "{section}");
+    }
+}
+
+#[test]
+fn model_shows_settings_the_file_sets_and_the_defaults_it_leaves() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        &dir.path().join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[consumer]\nsite = \"https://example.com\"\n\n\
+         [checks]\npage-size = \"warning\"\n\n[checks.links]\nreuse-days = 7\n",
+    );
+    fs::create_dir(dir.path().join("docs")).unwrap();
+    let report = json(dir.path(), &["model"], 0);
+    let find = |section: &str, table: &str, key: &str| -> Value {
+        report[section]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|s| s["table"] == table && s["key"] == key)
+            .unwrap_or_else(|| panic!("no {table} {key}: {report}"))
+            .clone()
+    };
+    let site = find("consumer", "consumer", "site");
+    assert_eq!(site["value"], "https://example.com");
+    assert_eq!(site["set"], true);
+    assert!(site.get("default").is_none(), "{site}");
+    let base = find("consumer", "consumer", "base-path");
+    assert_eq!(base["value"], "/");
+    assert_eq!(base["set"], false);
+    assert_eq!(base["default"], "/");
+    let reuse = find("checks", "checks.links", "reuse-days");
+    assert_eq!(
+        (reuse["value"].clone(), reuse["default"].clone()),
+        (7.into(), 14.into())
+    );
+    let check = find("checks", "checks", "page-size");
+    assert_eq!(check["value"], "warning");
+    assert_eq!(check["kind"], "level");
+    // The editor's build, which the loader chose: the only one.
+    let build = find("editor", "editor", "build");
+    assert_eq!(
+        (build["value"].clone(), build["set"].clone()),
+        ("site".into(), false.into())
+    );
+
+    let text = stdout(&run(dir.path(), &["model"], 0));
+    assert!(
+        text.contains(
+            "`permalinks`, each with its keys and values: `ascribe model --section <name>`"
+        ),
+        "{text}"
+    );
+    assert!(!text.contains("`[consumer]`"), "{text}");
+    let checks = stdout(&run(dir.path(), &["model", "--section", "checks"], 0));
+    assert!(
+        checks.contains("- `links.reuse-days`: `7` (default `14`)"),
+        "{checks}"
+    );
+    assert!(checks.contains("- `page-size`: `\"warning\"`"), "{checks}");
 }
 
 #[test]
@@ -707,7 +844,18 @@ fn refs_lists_where_an_image_is_shown_linked_and_named() {
         "{err}"
     );
     assert!(!stdout(&out).contains("doesn't exist"));
-    run(dir.path(), &["refs", "site/docs/images/gone.png"], 1);
+    let gone = json(dir.path(), &["refs", "site/docs/images/gone.png"], 1);
+    assert_eq!(gone["kind"], "image", "{gone}");
+    // An image has no headings to name.
+    let err = stderr(&run(
+        dir.path(),
+        &["refs", "site/docs/images/keys.png#top"],
+        2,
+    ));
+    assert!(
+        err.contains("it's an image, which has no headings"),
+        "{err}"
+    );
 }
 
 #[test]

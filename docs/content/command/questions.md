@@ -47,6 +47,9 @@ With `--format json`, the document has `schema_version` (`3`), `ascribe_version`
 @available: ascribe 0.3.2
 A project with [release lines](../versions/lines.md) has a section for them, `releases` in JSON: each target's lines, with their status and the build that is each line. A versioned build says which target versions it and which line it is.
 
+@available: next
+The rest of `ascribe.toml` is there too, a section of settings for each of its tables: `project`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, and `permalinks`. The text without `--section` names them at its end, and `--section` shows one, each key with the value in effect, and its default: `ascribe model --section consumer` shows `[consumer]`'s `site`, `base-path`, and the rest, the ones the file leaves out at their defaults. `[checks]` has the keys of `[checks.vale]` and `[checks.links]`, written `vale.preset` and `links.reuse-days`, and each check the file sets a level for. In JSON, each section is a list of keys, each with `table` (`consumer`, or `checks.vale`), `key`, `kind`, `value` (the value in effect, absent when the file leaves the key out and its default isn't one value), `set` (whether the file sets it), and `default` or `default_text`, the default in the [content model reference](../content-model/index.md)'s words when it isn't one value. The keys and defaults are the ones the loader reads, so `model` shows no key `ascribe check` would refuse.
+
 ## `ascribe outline`
 @id {permalink=true}: cli-outline
 @available: ascribe 0.3.0
