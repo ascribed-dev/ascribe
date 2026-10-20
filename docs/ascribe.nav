@@ -47,6 +47,9 @@ folder = "examples/"
 pages = ["snippets.md", "docs-repository.md", "drift.md", "tested.md", "sources.md"]
 
 [[sections]]
+folder = "publishing/"
+
+[[sections]]
 folder = "astro/"
 label = "Publishing with Astro"
 pages = [

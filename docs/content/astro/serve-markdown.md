@@ -20,7 +20,7 @@ curl -I https://docs.example.com/docs/guides/setup.md
 
 ### 2. Send each Markdown version's headers
 
-A Markdown version has no head, so the rule its page's head gives a crawler is a response header: `X-Robots-Tag` for a page that's `unlisted` or `unquoted`, and a canonical `Link` to its page. Each build lists them in `_ascribe/headers.json` ([response headers](reference.md#response-headers)).
+A Markdown version has no head, so the rule its page's head gives a crawler is a response header: `X-Robots-Tag` for a page that's `unlisted` or `unquoted`, and a canonical `Link` to its page. Each build lists them in `_ascribe/headers.json` ([response headers](../publishing/site.md#response-headers)).
 
 **On Netlify,** set `headers = "netlify"` in `[consumer]`, and `astro build` writes them into the built site's `_headers`.
 
@@ -78,6 +78,6 @@ A rule that challenges unfamiliar clients blocks agents too; let them read `llms
 
 ## See also
 
-- [Response headers](reference.md#response-headers), in the `@ascribed/astro` reference: what `astro dev` sends, and how the build treats a site's own `_headers`.
+- [Response headers](../publishing/site.md#response-headers): what `astro dev` sends, and how the build treats a site's own `_headers`.
 - [`[consumer] headers`](../content-model/output.md#consumer): the host whose format the headers are written in.
 - `ascribe report agents`, which checks a published site against the spec: [the report](../checks/report.md).

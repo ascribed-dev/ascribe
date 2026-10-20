@@ -135,23 +135,15 @@ cli-settings = "settings"
 
 @include: ../_fragments/content-model/crawlers.md
 
-`robots.txt` is a request: a crawler may ignore it, and some bots document that they may. A crawler that follows it and is told not to fetch a page never reads that page's head. Keeping a page out of search results is the page's [`listing`](index.md#listing-a-page), not a `Disallow` line: `ascribe check` says so when a page that isn't listed is at an address the project's own lines disallow for every crawler (`listing-disallowed`), since the crawler can't read the rule then, and a search engine can list the address alone.
+What each purpose's choice costs, and why a page is kept out of search by its listing and not by `robots.txt`, is in [Publishing](../publishing/index.md#what-crawlers-are-told).
 
-`ascribe check` reads each search crawler the way it reads the file: the one group that applies to it. A page that isn't listed is reported when a search crawler may not fetch it, whether the lines for every crawler say so, a group of `lines` that names that crawler, or `search = "disallow"`.
+`ascribe check` reads each search crawler the way it reads the file: the one group that applies to it. A page that isn't listed is reported when a search crawler may not fetch it, whether the lines for every crawler say so, a group of `lines` that names that crawler, or `search = "disallow"` (`listing-disallowed`).
 
 ### Crawlers by purpose
 
 Each operator below runs a bot for each purpose, or a token that says what it may do with what its other bots fetch, and says on its own page which is which. A purpose's group names each of them. A bot whose operator states no single purpose isn't here, such as Common Crawl's `CCBot`, whose archive many train on, or Meta's `meta-externalagent`, which gathers for training and for indexing both; name such a bot in `lines`, in a group of its own. Each row says what its operator said on the day in its last column, linked to the page.
 
 @include: ../_generated/crawlers.md
-
-What each choice costs, in a sentence each:
-
-- **Disallowing `training`** asks those operators not to train models on the site. It doesn't take the site out of any search or answer, and it stops nothing already gathered. Google's and Apple's are tokens, not crawlers: Googlebot and Applebot still fetch every page for search, and the token says only what may be done with it.
-- **Disallowing `search`** takes the site out of those AI search products' answers, which is the point of being crawled by them: a site opted out of OpenAI's search crawler isn't shown in ChatGPT's search answers, for one ([OpenAI](https://developers.openai.com/api/docs/bots), read 2026-10-12). It doesn't touch Google's or Bing's search, whose AI answers are drawn from their ordinary index, which only a page's `listing` keeps a page out of. `ascribe check` says what it costs (`crawlers-disallowed`).
-- **Disallowing `on-request`** asks assistants not to fetch a page when a person asks about it, so they answer from what they already have, or from another site. It's a request several operators say their fetcher may not follow, since a person asked: OpenAI's, Perplexity's, Amazon's, and Meta's say so (see the table), and Google's own fetchers for its agents generally ignore `robots.txt` and have no token, so they aren't listed ([Google](https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers), read 2026-10-12). `ascribe check` says what it costs (`crawlers-disallowed`).
-
-A host's or a CDN's own settings for bots can block a crawler before it reads `robots.txt`, whatever the file says, and can allow it in spite of it. Those are the host's, not Ascribe's: check them when a crawler you allowed can't reach the site.
 
 The list changes, as operators add bots and rename them. Ascribe's release process rereads every source, and a newer Ascribe may name more crawlers for a purpose than an older one did.
 
@@ -164,12 +156,7 @@ The list changes, as operators add bots and rename them. Ascribe's release proce
 
 @include: ../_fragments/content-model/listing.md
 
-`unlisted` pages are out of the sitemap and `llms.txt`, and their head asks not to be listed; `unquoted` pages stay in both, and their head asks not to be quoted (`nosnippet`). That limits what a search result, or an AI answer inside a search product, may quote from the page. It asks nothing of a crawler gathering training data. So a whole folder can be kept out of search without a change to any of its pages:
-
-```toml
-[listing.folders]
-"internal/" = "unlisted"
-```
+What each value tells search engines and agents is in [Publishing](../publishing/index.md#how-a-page-is-listed).
 
 @available: ascribe 0.4.0
 In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page-pages-and-content-model) says whether a page is listed, and which rule says so; choosing the row opens the rule.

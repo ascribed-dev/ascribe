@@ -236,6 +236,19 @@
     ]
   },
   {
+    "label": "Publishing",
+    "pages": [
+      {
+        "href": "/docs/publishing/",
+        "label": "Publishing"
+      },
+      {
+        "href": "/docs/publishing/site/",
+        "label": "The head, sitemap, robots.txt, and headers"
+      }
+    ]
+  },
+  {
     "label": "Publishing with Astro",
     "pages": [
       {
