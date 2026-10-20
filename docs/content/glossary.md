@@ -30,7 +30,7 @@ See [`[dimensions]`](content-model/content.md#dimensions) and [Content that vari
 ## Fragment
 @term {aliases=fragments}
 
-A source file that exists only to be included in other files: any file with a path segment starting with `_`.
+A source file that exists only to be included in other files: any file with a path segment starting with `_`, or whose path matches one of the content model's [`[fragments] patterns`](content-model/index.md#4-typesname-and-fragments).
 
 See [Files](writing/directives.md#files) and [`@include`](writing/directives.md#include).
 

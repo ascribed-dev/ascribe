@@ -108,7 +108,7 @@ With `--format json`, the document is:
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/link.json
 
-`from` is the page as `--from` gave it, from the folder the command was run in, the way `ascribe check` names a file, whether it was given that way or from the content root. `kind` is `page`, `heading`, `fragment`, `file`, `external`, or `missing`. `href` is null when the target doesn't work, and `problem` says why; `closest` lists other targets, best first, each with `href`, `path`, `id`, and `title`.
+`from` is the page as `--from` gave it, from the folder the command was run in, the way `ascribe check` names a file, whether it was given that way or from the content root, and `target` is the target as given. `exists` says whether the link works. `path` is the file the target names, from the content root, `id` the heading's id, and `title` the page's title or the heading's text. `kind` is `page`, `heading`, `fragment`, `file`, `external`, or `missing`. `href` is null when the target doesn't work, and `problem` says why; `closest` lists other targets, best first, each with `href`, `path`, `id`, and `title`. With a versioned build, `lines` says where a link to a page goes in each line. Every field is in [the schema](../contracts/json-reports/questions.md#ascribe-link).
 
 ## `ascribe refs`
 @id {permalink=true}: cli-refs

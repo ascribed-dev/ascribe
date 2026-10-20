@@ -41,7 +41,7 @@ The panel shows the changes only, and names a setting.
 
 ## Nothing is marked in the site preview
 
-The panel says the blocks carry no source anchors, and lists the page's changes and threads instead, each with **Open source**; or it says the route isn't an Ascribe page.
+The panel says the page's blocks carry no source anchors, or that most of its changed blocks carry none, and lists the page's changes and threads instead, each with **Open source**; or it says the route isn't an Ascribe page.
 
 **Cause.** Your layout or a component rebuilds the content without each block's `data-ascribe-source`, which places the marks, or the route isn't an Ascribe page ([Pages with nothing to mark](site-preview.md#pages-with-nothing-to-mark)).
 

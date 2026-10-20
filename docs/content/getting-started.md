@@ -133,7 +133,7 @@ Each build writes three outputs to `.ascribe/build/<build>/`:
 - `plain/`: plain Markdown with everything resolved, for search indexes and LLMs;
 - `json/`: the resolved pages as JSON, for your own tools.
 
-See the [command reference](checks/check.md#cli-build).
+See [`ascribe build`](checks/check.md#cli-build) for its options, and the [command reference](command/index.md) for the rest.
 
 ## Publish it with Astro
 

@@ -17,12 +17,12 @@ Everything `@ascribed/astro` takes and does, once a site is set up: its options,
 | `binary` | The `ascribe` binary to run, relative to the Astro root. By default, the `ASCRIBE_BIN` environment variable, then the binary `@ascribed/cli` installed. |
 | `anchors` {available="ascribe 0.2.0"} | Mark each block of the page with the source file and lines it came from (`data-ascribe-source`; see the [site-render contract](../contracts/site-render.md#7-source-anchors)), for review: `"dev"` in `astro dev` only, `true` in `astro build` too. Use `"dev"` unless the build is for reviewers: `true` puts source file paths, fragments' included, in the published pages. By default, `false`, though `review` turns them on in `astro dev`. |
 | `review` {available="ascribe 0.2.0"} | [Review in the site preview](../review/site-preview.md): the **Ascribe review** app in `astro dev`'s toolbar. `false` leaves it out. By default, `true`. `astro build` never has it. With `projects`, it reviews one entry: the one an entry's name names (`review: "docs"`), or the first for `true`. |
-| `codeTitles` {available="ascribe 0.2.0"} | Show a code block's title above it ([code block titles](reference.md#code-block-titles)). `false` leaves titles out, for a site that shows them itself. By default, `true`. |
+| `codeTitles` {available="ascribe 0.2.0"} | Show a code block's title above it, and what a [tested example](../examples/tested.md) was tested with ([code block titles](reference.md#code-block-titles)). `false` leaves both out, for a site that shows them itself. By default, `true`. |
 | `sitemap` {available="ascribe 0.3.0"} | `{ exclude: [...] }`: routes of the site's own pages, from the host's root, to leave out of the [sitemap](../publishing/site.md#the-sitemap), such as `["/drafts"]`. |
 
 ## What the integration does
 
-- **Fails the Astro build** when `ascribe build` reports an error (the compiler's report is the error), and when `ascribe.toml`'s `[consumer]` `site`, `base-path`, or `trailing-slash` disagrees with Astro's `site`, `base`, or `trailingSlash`. In ascribe 0.2.0, Astro's `trailingSlash: "ignore"` agrees with either value; from the next release, the integration replaces it, as below. `base-path` agrees with Astro's `base` when it's that path or, from the next release, a path under it ([A home page in front of the docs](more-than-docs.md#a-home-page-in-front-of-the-docs)).
+- **Fails the Astro build** when `ascribe build` reports an error (the compiler's report is the error), and when `ascribe.toml`'s `[consumer]` `site`, `base-path`, or `trailing-slash` disagrees with Astro's `site`, `base`, or `trailingSlash`. In ascribe 0.2.0, Astro's `trailingSlash: "ignore"` agrees with either value; since ascribe 0.3.0, the integration replaces it, as below. `base-path` agrees with Astro's `base` when it's that path or, since ascribe 0.3.0, a path under it ([A home page in front of the docs](more-than-docs.md#a-home-page-in-front-of-the-docs)).
 - @available: ascribe 0.3.0
   **Gives Astro its `site`, `base`, and `trailingSlash`** from `[consumer]` when `astro.config.mjs` leaves them out, so the site's address is written once: `site`, `base-path`, and `trailing-slash`. A setting `astro.config.mjs` does give must still agree. With [`projects`](reference.md#several-projects), `base` stays the site's. Astro can't tell an integration a setting left out from one set to its default, so `base: "/"` and `trailingSlash: "ignore"` are replaced too.
 - **Adds its Markdown plugin** to Astro's Markdown processor, to apply heading ids, image attributes, glossary terms' `data-ascribe-term`, and source anchors: to the default Sätteri processor's `hastPlugins`, or to a `unified()` processor's `rehypePlugins`. Both plugins are exported, as `@ascribed/astro/satteri` and `@ascribed/astro/rehype`, for a processor you configure yourself. Their types come from `satteri` and `@types/hast`, optional peer dependencies: a Sätteri processor already has the first, and a `unified()` one the second.
@@ -38,7 +38,7 @@ Everything `@ascribed/astro` takes and does, once a site is set up: its options,
 - @available: ascribe 0.3.2
   **Serves every line of a versioned build** from one collection, builds every line in `astro build` and `astro dev`, and serves each line's linked files at its base path ([versions](reference.md#versions)). Each entry's data has `line`, the line it's from, and `current`; the generated schema doesn't type them. A permalink forwards to the current line, and each line's outputs for agents are published at its base path, with its headers.
 - @available: ascribe 0.2.0
-  **Shows code block titles**, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](reference.md#code-block-titles)).
+  **Shows code block titles** and tested lines, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](reference.md#code-block-titles)).
 - @available: ascribe 0.2.0
   **Copies the generated schema** into `.astro/integrations/_ascribed_astro/schema.ts` after each build, for a project outside the Astro root ([the collection](index.md#the-collection)).
 
@@ -205,7 +205,7 @@ The elements render into the page (no shadow DOM), so your site's styles apply t
 ### Code block titles
 @available: ascribe 0.2.0
 
-A code block's title, such as a [`@snippet`](../writing/directives.md#snippet)'s `title`, is in its info string (`` ```mjs title="astro.config.mjs" ``). Astro's highlighting ignores it, so the integration adds a Shiki transformer that puts a titled block in a figure with the title as its caption:
+A code block's title, such as a [`@snippet`](../writing/directives.md#snippet)'s `title`, is in its info string (`` ```mjs title="astro.config.mjs" ``). So is a tested example's `tested`, what it was tested with. Astro's highlighting ignores both, so the integration adds a Shiki transformer that puts such a block in a figure with the title as its caption, and the tested line under it in a `<div class="ascribe-code-tested">`, whose "Tested with" lead-in is the [element library's stylesheet's](elements.md#generated-text):
 
 ```html
 <figure class="code-title">
