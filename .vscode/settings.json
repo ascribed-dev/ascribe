@@ -2,5 +2,8 @@
   // The test fixtures' ascribe.toml files aren't projects to work on: leaving
   // them out keeps Switch Project to the docs, the site, and the examples,
   // and under the extension's cap of 50 projects.
-  "ascribe.projects.exclude": ["tests/**", "crates/*/tests/**", "packages/vscode/test/**"]
+  "ascribe.projects.exclude": ["tests/**", "crates/*/tests/**", "packages/vscode/test/**"],
+  "[markdown]": {
+    "editor.defaultFormatter": "Ascribe.ascribe-vscode"
+  }
 }
