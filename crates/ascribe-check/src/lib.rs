@@ -59,7 +59,7 @@ pub mod tool;
 pub mod type_files;
 mod yaml;
 
-pub use across::{IMAGE_EXTENSIONS, IMAGE_LIMIT, NOT_IN_EDITOR, size_text};
+pub use across::{IMAGE_EXTENSIONS, IMAGE_LIMIT, NOT_IN_EDITOR, image_file, size_text};
 use ascribe_core::FileId;
 pub use builds::{
     Diagnosed, UnknownBuild, count_errors, count_errors_in, diagnose, diagnose_editor_build,

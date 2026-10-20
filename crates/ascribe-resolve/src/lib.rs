@@ -120,8 +120,9 @@ pub use incremental::{
     Snapshot, Stats, Version,
 };
 pub use index::{
-    AvailabilityMarker, ExplicitId, FileIndex, FileKind, Heading, Include, Local, PhrasePlace,
-    PhraseUse, RefKind, Reference, Target, TermMark, heading_text, index_file,
+    AvailabilityMarker, ExplicitId, FileIndex, FileKind, Heading, Include, Local, Mention,
+    MentionKind, PhrasePlace, PhraseUse, RefKind, Reference, Target, TermMark, heading_text,
+    index_file,
 };
 pub use layout::Layout;
 pub use links::{encode_destination, link_path, named_headings};

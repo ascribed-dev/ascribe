@@ -205,8 +205,8 @@ pub const TOOLS: &[Spec] = &[
         name: "ascribe_refs",
         title: "Find uses",
         command: "ascribe refs",
-        description: "Find where a page, a heading, a fragment, a phrase, or another content \
-            model entry is used, before changing or removing it. Example: {\"target\": \
+        description: "Find where a page, a heading, a fragment, an image, a phrase, or \
+            another content model entry is used, before changing or removing it. Example: {\"target\": \
             \"phrase:product\", \"project\": \"docs\"} returns lines such as \
             `docs/install-agent.md:69:63: phrase` and `8 places use phrase:product.`",
         input: || {
@@ -216,10 +216,10 @@ pub const TOOLS: &[Spec] = &[
                     "target": {
                         "type": "string",
                         "description": "A page or fragment (`keys.md`), a heading \
-                            (`keys.md#rotate-keys`), `phrase:<key>`, `feature:<key>`, \
-                            `term:<id>`, `dimension:<name>`, `note:<type>`, or \
-                            `widget:<name>`. A path is from the server's working directory or \
-                            from the content root.",
+                            (`keys.md#rotate-keys`), an image (`images/keys.png`), \
+                            `phrase:<key>`, `feature:<key>`, `term:<id>`, `dimension:<name>`, \
+                            `note:<type>`, or `widget:<name>`. A path is from the server's \
+                            working directory or from the content root.",
                     },
                     "project": {
                         "type": "string",
