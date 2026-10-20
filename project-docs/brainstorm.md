@@ -12,7 +12,7 @@ The sections keep the numbers they had, since other documents name them, so the 
 
 Three groups of ideas:
 
-- [Product features](#product-features): what's left of snippets and Vale, editable previews, OpenAPI, redirects, and other things a docs system does, embedded help, what the landing page showed about widgets, and what's left of the editor's views.
+- [Product features](#product-features): what's left of snippets and Vale, editable previews, OpenAPI, redirects, and other things a docs system does, embedded help, what the landing page showed about widgets, what's left of the editor's views, a page in any output from the command line, and passages written twice.
 - [Beyond the pages](#beyond-the-pages): what's left of the cache.
 - [Paid features](#paid-features): what could be charged for, if Ascribe ever goes that way. A list to keep, not a plan.
 
@@ -192,6 +192,42 @@ Added 2026-10-18, from what the [editor's views plan](https://github.com/ascribe
 
 - **A webview for a view.** Answered for This page: it becomes a webview, and the other views stay trees, in its [proposal](proposals/this-page-webview.md). Whether the Review view follows is the question left, once This page has been used.
 - **A drop handler that asks for alt text.** Dropping or pasting an image into a page is VS Code's Markdown extension's, which writes the image's link with no alt text, where **Insert an image** asks for it. A handler of Ascribe's own would ask as that action does, and put the image where the project keeps its images. [Decision #544h](decisions/544h-editor-leaves-out.md) holds it back until what VS Code's drop writes fails `ascribe check`, which nobody has yet checked by hand: drop and paste an image, and drop a page, into a page of `examples/quill` with the settings at their defaults, then run `ascribe check`.
+
+## 22. A page in any output, from the command line
+
+Added 2026-10-20. Not planned.
+
+`ascribe render` writes one page as a build's plain output writes it, and [#665](https://github.com/ascribed-dev/ascribe/issues/665) renames it `ascribe resolve`, since what it does is SPEC §9's resolution, then the plain emitter. The rename leaves room for what the old name promised: a page in the other outputs, without building the project.
+
+- **`--emit site`:** the page as the site output writes it, Markdown with Ascribe's elements (`<ascribe-note>`, `<ascribe-tabs>`, availability badges), as `@ascribed/astro` receives it. The option is `ascribe build`'s own word, so `ascribe resolve PAGE --emit plain` is today's answer and `--emit site` the new one. It shows what a site's integration is given, which the plain output can't: what a switcher, a badge, or a glossary link becomes before a site draws it.
+- **`--emit json`:** the page as the JSON output writes it, blocks and all, for a tool that reads one page.
+- **HTML,** from `render_site_html`, the renderer the editor's preview uses and the Astro plugin is held to: the page's content as HTML, without a site's frame, so an agent or a test can see what the elements produce without a browser. It's the one case where "render" was the right word, and it might be a command of its own rather than an output, since no build writes HTML.
+- **For agents:** an `emit` argument on `ascribe_resolve`, not a tool of its own, since a tool takes its command's arguments under the same names (the command checklist). `site` first: it's the view an agent without a shell can't get otherwise, of what a badge or a switcher becomes. `json` only if a use turns up, since the tool's JSON would hold the page's JSON in a field, and HTML not at all, since it costs an agent far more than the Markdown it came from and says nothing the site output doesn't. With `emit: site`, the tool's default text is the site output's Markdown. An argument added to a tool is still a recorded decision (decision 56), though no caller breaks.
+
+What it would serve: the [docs audit](docs-audit.md)'s "where a screenshot would do the work" question, which needed a browser to see tabs and badges; an agent checking what a reader of the site gets, not only a reader of the Markdown version; and tests of a site's integration that start from one page.
+
+Questions:
+
+- **Is HTML an output or a separate thing?** Every other `--emit` value is an output a build writes. HTML isn't, so `--emit html` would make the option mean two things.
+- **The JSON document.** The command's JSON wraps the page's text in `text`; a site or JSON page in it needs a field that says which output it is, which decision 4 lets the document add.
+- **Elements without their script.** The site output's elements are custom elements that `@ascribed/elements` defines. Their HTML is readable without it, but tabs show every panel at once, as a page without JavaScript does.
+
+## 23. Passages written twice
+
+Added 2026-10-20, from the [docs audit](docs-audit.md). Not planned.
+
+The audit found a dozen rules stated three to six times across Ascribe's own pages, and option paragraphs that say again what the generated tables under them say. It found them by reading and with a script: no tool says "this paragraph is on three pages". A writer who repeats a passage instead of including a fragment gets copies that drift apart, and a reader gets the same rule in three wordings.
+
+Ascribe can find this where a prose linter can't, because it knows every page's blocks as a build publishes them. `ascribe diff` already fingerprints each block's content without its position (`crates/ascribe-diff/src/tree.rs`), and the [search plan](search/README.md)'s reading gives each block's text with its place in the source. A report of blocks whose text is the same, or nearly, on more than one page, each with its places, would point at the feature built for the problem: a fragment, written once and included where it's needed.
+
+- **A report, not a check.** Some repetition is right: a warning that belongs on every page it applies to, or a sentence a page needs to stand alone. A diagnostic on each copy would push writers to fragment everything. A section of `ascribe report` that lists what's repeated, largest first, leaves the judgment to the writer.
+- **What's the same.** Exact matches are cheap with fingerprints. Near matches, a rule reworded, are what the audit mostly found, and need a measure of similarity: the shingles a near-duplicate detector uses, over the reading's text. Exact first, and near only if exact finds too little.
+- **What isn't a copy.** A fragment's text on the pages that include it is one passage, not several. Text a phrase fills in is the phrase's. The reading already knows both, as search's results do.
+
+Questions:
+
+- **The threshold.** How long must a passage be to count? A sentence repeated is often fine; a paragraph is the case the audit meant.
+- **A fix.** The report could offer to move a passage into a fragment and include it in each place, which the editor's actions could do one passage at a time. Whether that's worth building depends on how often the copies are really the same.
 
 ---
 

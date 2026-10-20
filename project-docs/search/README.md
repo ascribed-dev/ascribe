@@ -7,6 +7,7 @@ An author or an agent asks where a project's pages say something, and gets the a
 - **An agent about to write a page,** which should ask "where do the docs already explain rate limits?" first, and today can only search text that isn't what readers read.
 - **A writer** changing how the docs name something, who needs every place a reader meets the old name, including the ones a phrase or a fragment puts there.
 - **A reviewer** who sees a sentence in the preview and wants the line that wrote it.
+- **An auditor** checking the docs against the product, who asks where a command, an option, or a setting is mentioned. The [docs audit](../docs-audit.md) of 20 October couldn't ask it: `ascribe refs` finds links to a page, not mentions of a name, so the missing `permalinks list` and `templates status` were found by reading. `ascribe search '"permalinks list"'` is that question, and the first use case phase 1 should be tried on.
 
 ## What exists today
 
