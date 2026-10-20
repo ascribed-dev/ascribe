@@ -3574,6 +3574,9 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/664"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "Search: ascribe search finds words as readers read them, and names the line to edit"
@@ -3666,6 +3669,26 @@
     },
     {
       "content": {
+        "body": "Phase P1 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#preparation). The spec is this phase's entry there and the sections of the [This page as a webview proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/this-page-webview.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** Pages opens with its sections closed, the open page's path is revealed, the unit test says so, and `changes/editor/` and `docs/content/editor/sidebar.md` say so.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** nothing.\n",
+        "number": 647,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Pages: every section starts closed",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/647"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCMoXc",
+      "labels": [
+        "editor-webviews"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/662"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "Pages: every section starts closed"
+    },
+    {
+      "content": {
         "body": "Phase P2 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#preparation). The spec is this phase's entry there and the sections of the [Project Settings proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-settings.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** every entry with `configurable = true` has a `when`, and a test fails on one without.\n\n**Decided:**\n- Decision 6 of the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#decisions): **Where a setting's description lives.** **Decided:** every key of `ascribe.toml` has one home, a registry, `crates/ascribe-model/settings.toml`, which the binary embeds: the loader reads its keys and defaults from it, the reference's tables are generated from it, and `ascribe/settings` answers from it (Project Settings, \"The registry\"). A check's description is its `when` in `tests/conformance/diagnostics.toml`.\n\n**Needs:** nothing.\n",
         "number": 648,
         "repository": "ascribed-dev/ascribe",
@@ -3677,9 +3700,102 @@
       "labels": [
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/663"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "Checks: a `when` for every configurable check"
+    },
+    {
+      "content": {
+        "body": "Phase P3 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#preparation). The spec is this phase's entry there and the sections of the [Project Settings proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-settings.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** `node scripts/compare/outputs.ts --base main` shows every output and diagnostic the same, and a test fails when the loader accepts a key the registry doesn't have, or the registry has one the loader doesn't read.\n\n**Decided:**\n- Decision 6 of the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#decisions): **Where a setting's description lives.** **Decided:** every key of `ascribe.toml` has one home, a registry, `crates/ascribe-model/settings.toml`, which the binary embeds: the loader reads its keys and defaults from it, the reference's tables are generated from it, and `ascribe/settings` answers from it (Project Settings, \"The registry\"). A check's description is its `when` in `tests/conformance/diagnostics.toml`.\n\n**Needs:** nothing.\n",
+        "number": 649,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Content model: one registry of ascribe.toml's keys, read by the loader",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/649"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCMoa8",
+      "labels": [
+        "optimization",
+        "editor-webviews"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/671"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "Content model: one registry of ascribe.toml's keys, read by the loader"
+    },
+    {
+      "content": {
+        "body": "Phase P4 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#preparation). The spec is this phase's entry there and the sections of the [Project Settings proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-settings.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** the built docs are the same, by `node scripts/compare/outputs.ts --base main`; editing a description in the registry without regenerating fails a test; and no `Key | Type | Default | Description` table is left written by hand.\n\n**Stop and ask** if a table can't be reproduced as it is.\n\n**Decided:**\n- Decision 6 of the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#decisions): **Where a setting's description lives.** **Decided:** every key of `ascribe.toml` has one home, a registry, `crates/ascribe-model/settings.toml`, which the binary embeds: the loader reads its keys and defaults from it, the reference's tables are generated from it, and `ascribe/settings` answers from it (Project Settings, \"The registry\"). A check's description is its `when` in `tests/conformance/diagnostics.toml`.\n\n**Needs:** #649\n",
+        "number": 650,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Content model reference: the tables generated from the registry",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/650"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCMocs",
+      "labels": [
+        "optimization",
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "In progress",
+      "title": "Content model reference: the tables generated from the registry"
+    },
+    {
+      "content": {
+        "body": "Phase T1 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-t-this-page). The spec is this phase's entry there and the sections of the [This page as a webview proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/this-page-webview.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** the thread's use case passes as an integration test, with the focus rule's test and the handshake's; the measurement of point 10 is in the pull request, with the tree's beside it; and the keyboard and screen reader behavior of points 1 and 2 is there from the start, so no release has a This page worse to use than the tree.\n\n**Stop and ask** if the measured delay is one a person sees.\n\n**Decided:**\n- Decision 1 of the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#decisions): **The icon font.** The webviews draw codicons with the `@vscode/codicons` font, a new dependency, loaded from the extension's files. **Decided:** the font. The decision file says why decision 48 (\"no web font anywhere\"), which is about a reader downloading a font for text, doesn't reach an icon font the extension ships, as decision 50 already has it ship one.\n\n**Needs:** #647\n",
+        "number": 651,
+        "repository": "ascribed-dev/ascribe",
+        "title": "This page: a webview",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/651"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCMofU",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "In progress",
+      "title": "This page: a webview"
+    },
+    {
+      "content": {
+        "body": "Phase T2 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-t-this-page). The spec is this phase's entry there and the sections of the [This page as a webview proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/this-page-webview.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** an include, a snippet, and an example open beside the page with the view still on it, and a cursor move keeps the view's scroll and the keyboard's focus, in integration tests.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #651\n",
+        "number": 652,
+        "repository": "ascribed-dev/ascribe",
+        "title": "This page: includes open beside, and the view keeps its place",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/652"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCMog8",
+      "labels": [
+        "editor-webviews"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
-      "title": "Checks: a `when` for every configurable check"
+      "title": "This page: includes open beside, and the view keeps its place"
+    },
+    {
+      "content": {
+        "body": "Phase T3 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-t-this-page). The spec is this phase's entry there and the sections of the [This page as a webview proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/this-page-webview.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** each state has a test, the badge counts Health's things to do, and the docs page, the walkthrough, and the extension's README describe the view as it is.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #652\n",
+        "number": 653,
+        "repository": "ascribed-dev/ascribe",
+        "title": "This page: the head, the states, and the badge",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/653"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCMoiU",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "This page: the head, the states, and the badge"
     },
     {
       "content": {
@@ -3700,6 +3816,74 @@
     },
     {
       "content": {
+        "body": "Phase V2 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-v-the-project-view). The spec is this phase's entry there and the sections of the [Project view proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-view.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** each task runs the server's binary in the project's folder, a project that isn't the workspace folder gets `--config`, Observe Examples shows its commands and asks, and none of them is offered in Restricted Mode.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #654\n",
+        "number": 655,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Project view: tasks",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/655"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCMomA",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Project view: tasks"
+    },
+    {
+      "content": {
+        "body": "Phase V3 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-v-the-project-view). The spec is this phase's entry there and the sections of the [Project view proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-view.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** both are one undoable workspace edit over unsaved text, the question names the counts, and the docs say the files are left unsaved on purpose.\n\n**Decided:**\n- Decision 2 of the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#decisions): **How far Apply Every Safe Fix reaches.** **Decided:** the editor's build, as one workspace edit, its caption saying so; every build's fixes stay `ascribe check --fix`'s, as decision #544e has it.\n\n**Needs:** #655\n",
+        "number": 656,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Project view: every safe fix and every page formatted, as one edit",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/656"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCMooo",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Project view: every safe fix and every page formatted, as one edit"
+    },
+    {
+      "content": {
+        "body": "Phase V4 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-v-the-project-view). The spec is this phase's entry there and the sections of the [Project view proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-view.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** each count opens its list, each goes out of date by its rule, in tests, and out of date and zero look different.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #654\n",
+        "number": 657,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Project view: the rest of the counts",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/657"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCMoqE",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Project view: the rest of the counts"
+    },
+    {
+      "content": {
+        "body": "Phase S1 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-s-project-settings). The spec is this phase's entry there and the sections of the [Project Settings proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-settings.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** the thread's use case passes as an integration test, with the comments of `ascribe.toml` as they were, and Undo followed.\n\n**Stop and ask** if the tab and an open `ascribe.toml` can fall out of step.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #651, #650\n",
+        "number": 658,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Project Settings: the round trip",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/658"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCMorA",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Project Settings: the round trip"
+    },
+    {
+      "content": {
         "body": "Phase V5 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-v-the-project-view). The spec is this phase's entry there and the sections of the [Project view proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-view.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** switching the build in the view moves the status bar and the preview, Switch Project is in the view's title bar and not in Pages' or Content model's, Restricted Mode turns every action off, and the docs describe the view as it is.\n\n**Decided:**\n- Decision 3 of the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#decisions): **Where Switch Project lives.** **Decided:** the Project view's title bar alone; Pages and Content model lose it.\n- Decision 4 of the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#decisions): **A badge on the Project view.** **Decided:** none.\n- Decision 5 of the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#decisions): **What the status bar menu keeps.** **Decided:** everything it has, each entry running the same command the view runs.\n\n**Needs:** #657, #658\n",
         "number": 659,
         "repository": "ascribed-dev/ascribe",
@@ -3714,6 +3898,503 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "Project view: the head, About, and Restricted Mode"
+    },
+    {
+      "content": {
+        "body": "Phase S2 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-s-project-settings). The spec is this phase's entry there and the sections of the [Project Settings proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-settings.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** each kind of setting is set, added, and reset in tests, and the checks list shows every configurable check with its `when`.\n\n**Decided:**\n- Decision 7 of the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#decisions): **Which checks Project Settings lists.** **Decided:** all forty-seven configurable checks, the ones the file sets first.\n- Decision 8 of the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#decisions): **Reset to default and the comment above a line.** **Decided:** a comment that touches the line goes with it; one after a blank line stays.\n\n**Needs:** #658, #648\n",
+        "number": 660,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Project Settings: every simple setting, and the checks",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/660"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCMouo",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Project Settings: every simple setting, and the checks"
+    },
+    {
+      "content": {
+        "body": "Phase S3 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-s-project-settings). The spec is this phase's entry there and the sections of the [Project Settings proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-settings.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** search finds a word in any sentence of a description, the button is offered on `docs/ascribe.toml` and not on a fixture's, and the docs describe the tab.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #660\n",
+        "number": 661,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Project Settings: finding settings, and opening the tab",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/661"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCMoxM",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Project Settings: finding settings, and opening the tab"
+    },
+    {
+      "content": {
+        "body": "`ascribe render` doesn't render: it writes plain Markdown, and the name promises something visual. The [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) read it that way (\"`render` is plain Markdown. It can't show tabs, badges, or the lens\"), and inside the codebase \"render\" means HTML: `render_site_html`, the preview, and AGENTS.md's \"Two renderers must agree\". The name was never weighed: the agents plan's phase 2 took it from the code it calls (`ascribe_query::render`, which calls `emit_page`).\n\nWhat the command does is SPEC §9.1's two middle stages for one page: it **resolves** the page for one build (§9.2: includes and snippets, availability, the build's variants, phrases, heading ids, links), then writes it with the plain emitter, as `ascribe build --emit plain` would. Its output is the page's Markdown version, the `.md` file a site with `[consumer] agents = true` publishes for agents.\n\n## The change\n\n- **`ascribe render` becomes `ascribe resolve`,** with the same arguments, options, exit codes, and output. Its help says what it writes: \"Resolves a page for one build and writes it as the build's plain Markdown output.\"\n- **The MCP tool `ascribe_render` becomes `ascribe_resolve`,** by the checklist's rule that a tool is named for its command.\n- **Its JSON document's schema becomes `resolve.schema.json`,** with `schema_version` still `1` and no field changed.\n- **No alias.** Ascribe is before 1.0, and a project changes with it.\n\n## Decided\n\n- The maintainer chose the name on 20 October 2026: `resolve`, over keeping `render` and adding HTML, or folding the command into `ascribe build`. The tool's name and the JSON document are contracts (decisions 52 and 56), so the pull request adds a decision file in `project-docs/decisions/`, named by this issue, that renames them.\n\n## Where it's named\n\nAbout 105 mentions in 40 files outside `CHANGELOG.md` (`git grep -E \"ascribe render|ascribe_render\"`):\n\n- the CLI (`crates/ascribe-cli/src/cli.rs`, `commands/render.rs`), the entry (`crates/ascribe-query/src/render.rs`), the tool (`crates/ascribe-cli/src/mcp/tools.rs`), and `shapes.rs` with the schema in `schemas/`;\n- the agent skill (`crates/ascribe-cli/src/agents/skill.rs`, and its copies in `packages/cli/skills/` and `plugins/ascribe/`, rewritten by their tests), and `diff`'s agent prompts (`crates/ascribe-diff/src/prompt.rs`) with their snapshots and `crates/ascribe-cli/tests/output/`;\n- the docs: `docs/content/command/questions.md` (the section, its `cli-render` permalink, and the page's title), `agents/index.md`, `agents/commands.md`, `review/diff.md`, `versions/index.md`, `writing/variants.md`, `contracts/json-reports/questions.md`, and the generated files rewritten from the help text;\n- the records that describe the current command: decisions #502d, #502e, and #502g, and the search proposal. Plans and audits that describe what was true when they were written stay as they are.\n\nThe `cli-render` permalink is published, so it's retired to the new section, as `ascribe permalinks retire` does, not removed.\n\n## Done when\n\n- `ascribe resolve` answers as `ascribe render` did, and `ascribe render` is an unknown command.\n- `ascribe_resolve` is the tool, and `ascribe_render` isn't.\n- `git grep -E \"ascribe render|ascribe_render|render\\.schema\"` finds only the changelog, the new decision file, and records of what was.\n- `ascribe agents sync --check` passes in the repository, and the release notes' entry in `changes/` says agent files synced before it name the old command until `ascribe agents sync` runs again.\n\n## Coordination\n\nThe search plan's first phase, #641, holds search's reading to \"what `ascribe render` writes\". Whichever merges second updates the other's mention.\n\nThe brainstorm's section 22 keeps what the rename leaves for later: `--emit site`, and HTML.\n",
+        "number": 665,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Rename `ascribe render` to `ascribe resolve`, and its tool to `ascribe_resolve`",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/665"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCM8xg",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Rename `ascribe render` to `ascribe resolve`, and its tool to `ascribe_resolve`"
+    },
+    {
+      "content": {
+        "body": "The weekly corpora run has failed on main since run 8 (https://github.com/ascribed-dev/ascribe/actions/runs/38263080573, and again in https://github.com/ascribed-dev/ascribe/actions/runs/39250005898). `tests/corpora/tests/recognition.rs` fails because two classes the corpora now produce have no entry in `tests/corpora/recognition.toml`:\n\n- `diagnostic:html-comment`, in all three corpora (Astro, Docker, Elastic). For example `recipes/sharing-state-islands.mdx:226:1 <!--src/components/CartFlyoutToggle.vue-->` and `guides/testcontainers-go-getting-started.md:20:1 <!-- Source: … -->`.\n- `diagnostic:frontmatter-reserved-in-fragment`, in Elastic only: `contribute-docs/content-types/_snippets/templates/how-to-template.md:6:1 type: how-to`, and the same in `overview-template.md` and `troubleshooting-template.md`.\n\nEach needs a verdict (`intended`, or `false-positive` naming a finding in FINDINGS.md). The second one may be a false positive: those files are templates under `_snippets/` whose front matter is part of the text they show.\n\nBecause the test step fails, the benchmarks never run, so no perf baseline can be recorded until this is fixed. #664 (search phase 1) needs its `search/synthetic-3000` baseline recorded and is blocked on this.",
+        "number": 666,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Corpora run fails: html-comment and frontmatter-reserved-in-fragment have no recognition verdict",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/666"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCM9Y4",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/672"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "Corpora run fails: html-comment and frontmatter-reserved-in-fragment have no recognition verdict"
+    },
+    {
+      "content": {
+        "body": "`available-same-in-every-line` reports a mark whose versions are all at or before the oldest live line, and offers the simpler spec. It reports nothing in a project that shows badges: `shown` in `crates/ascribe-check/src/releases.rs` counts any build with `availability = \"badge\"` as one that shows the mark, and the check only reports marks no output shows. So a badge build keeps \"Ascribe 0.2.0\" badges for as long as the source says so, and nothing points at them.\n\nFound by the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) (\"Marks and badges the release left behind\"). Ascribe's own docs build `site` with badges and no `versions`, and their live line is 0.4.0; `git grep -c \"@available: ascribe 0\\.[23]\" -- docs/content` counts 191 marks, 27 of them 0.2, and they head a third of the home page's list.\n\n## The change\n\nIn a build that shows badges, a mark every live line of its target has, with its last state available, is reported as advice: the badge it makes says only that the content is older than every live line. The same condition `available-same-in-every-line` uses today, with the one difference that the mark is shown.\n\n- **One diagnostic, a second message.** `available-same-in-every-line` gains a message for this case in `tests/conformance/diagnostics.toml`'s `messages`, saying what's true here: the badge is shown, and says nothing a reader of any live line needs. The existing message (\"so no output shows them\") stays for the case it describes.\n- **Its fix is `unsafe` here.** The simpler spec removes the badge, so it changes what the page says, and a fix is `safe` only when it can't (decision 51). Where no output shows the mark, it stays `safe`.\n- **Advice, and configurable as it is.** Some teams keep \"new in 0.2\" for good, as Python's docs do; `[checks] available-same-in-every-line = \"off\"` keeps their badges quiet.\n\nA behavior change, so it comes with a conformance case: a badge build, a mark older than the oldest live line reported with the new message and an unsafe fix, and a mark in a live line not reported.\n\n## Ascribe's own docs\n\nThis issue adds the check that finds the marks. Removing them from the docs is the audit's own work (its \"Order of work\", item 1); until then `ascribe check` on the docs lists them as advice, which `--deny-warnings` doesn't fail on.\n\n## Done when\n\n- The conformance case passes, and `ascribe check --config docs` reports the docs' old marks with the badge message.\n- `docs/content/checks/diagnostics/` says what the check reports in a badge build, and an entry in `changes/` says so.\n",
+        "number": 667,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Old availability marks aren't reported in a build that shows badges",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/667"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNBm4",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Old availability marks aren't reported in a build that shows badges"
+    },
+    {
+      "content": {
+        "body": "`ascribe refs` can't say where an image is used. From `docs/`, `ascribe refs images/review-site-preview.png` answers \"doesn't exist\", for the image [Review](https://github.com/ascribed-dev/ascribe/blob/main/docs/content/review/index.md) shows; so does the path from the repository's root. Found by the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) (\"The tools\", \"Fell short\").\n\nA target of `refs` is a source file or a content model entry (`Named` in `crates/ascribe-resolve/src/named.rs`). An image is neither, so it's read as a source that isn't there. The uses are already known: `image-unused` reads them (`images` in `crates/ascribe-check/src/across.rs`), from the pages and fragments that show or link to the image (`asset_users`), and the raw HTML and frontmatter fields that name it (`mentioned_paths`).\n\n## The change\n\n- **An image under the content root is a target,** named as a source is: a path from the current folder, or from the content root.\n- **Its places** are each file that shows it, links to it, or names it in raw HTML or a frontmatter field, each with its `use`. `image` and `html` and `frontmatter` are new values of `use`, an addition to the JSON document under decision 4, with the schema regenerated.\n- **An image nothing uses** answers with no places and exit code `0`, as any target that exists does.\n- **A file that's neither a source nor an image** says what `refs` takes, instead of \"doesn't exist\", since it does exist.\n\nThe MCP tool's `target` description, and `ascribe refs`' section in `docs/content/command/questions.md`, name images.\n\n## Done when\n\n- The audit's command lists Review's line, from `docs/` and from the repository's root, in tests.\n- An unused image answers with no places and `0`, and a file that's neither says so, in tests.\n- An entry in `changes/` says `refs` takes an image.\n",
+        "number": 668,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe refs` can't say where an image is used",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/668"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNBoM",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe refs` can't say where an image is used"
+    },
+    {
+      "content": {
+        "body": "The directive reference's table of built-ins ([`docs/content/writing/directives.md`](https://github.com/ascribed-dev/ascribe/blob/main/docs/content/writing/directives.md#built-in-directives), `Directive | Forms | Primary | Purpose`) is written by hand, and a `@memo` above it asks whoever adds a built-in to put it in SPEC §4's order there, in the contents, and in the sections. Nothing compares it with the code. Found by the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) (section 5, \"The templates\").\n\nThe code already declares every column: `builtin_schemas()` in `crates/ascribe-core/src/schema.rs` returns each built-in in SPEC §4's order, with its `name`, `forms`, `primary`, whether it's `groupable`, and its `description`, which is the table's Purpose with a full stop. The docs' own template for a reference says a table the code declares is generated into a fragment and kept by a test ([`docs/templates/reference.ascribe.md`](https://github.com/ascribed-dev/ascribe/blob/main/docs/templates/reference.ascribe.md)).\n\n## The change\n\n- **The table is generated** from `builtin_schemas()` into `docs/content/_generated/`, as the command reference's options are (`crates/ascribe-cli/src/docs.rs`), included where the table is, and rewritten with `ASCRIBE_BLESS=1`. A test fails when it's stale.\n- **Each column comes from the schema:** the forms from `forms` and `groupable` (\"line, container\", \"container, grouped\"), the primary from `primary` in the words the table uses now, and Purpose from `description`.\n- **A row's availability mark** (`{available=\"ascribe 0.4.0\"}` on `@memo` and `@term` today) needs a home the generator reads, since the schema has none. Say in the pull request where it's kept; a new built-in's row is marked `next` until a release rewrites it.\n- **The memo goes,** since the order is the code's. The contents line above the table, which lists the built-ins too, is generated with it or held to it by the same test.\n\n## Done when\n\n- No row of the table is written by hand, and adding a built-in to `Builtin` without regenerating fails a test.\n- `ascribe check --config docs` passes.\n",
+        "number": 669,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The directive reference's table of built-ins is kept by hand",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/669"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNBqA",
+      "labels": [
+        "documentation",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The directive reference's table of built-ins is kept by hand"
+    },
+    {
+      "content": {
+        "body": "`ascribe model` reports the types, dimensions, phrases, features, glossary, widgets, releases, builds, sources, and navigation, and not `[project]`, `[consumer]`, `[editor]`, `[checks]`, `[crawlers]`, `[listing]`, or `[permalinks]`. The [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) confirmed those keys from the loader by hand (\"The tools\", \"Fell short\"), and an agent has no way to ask for them.\n\n#649 makes one registry of every key of `ascribe.toml`, with its kind and default, which the loader reads. Once it's there, `model` can report every section from it, with the value in effect, the default where the file leaves a key out.\n\n## The change\n\n- **`--section` takes each missing section,** and the MCP tool's `section` argument with it (`model_sections` in `crates/ascribe-cli/src/mcp/tools.rs`).\n- **The JSON document gains each section,** each key with its value in effect. Fields are added and none changes meaning, so `schema_version` stays `1`, under decision 4.\n- **The default text stays within 4,000 characters** (decision 52): the new sections are shown with `--section`, and the summary names them where it names what it cut.\n- **The keys and defaults come from the registry,** never a second list, so `model` can't show a key the loader refuses.\n\n## Done when\n\n- `ascribe model --section consumer --config docs` shows `[consumer]`'s keys with their values and defaults, and the JSON has every section, in tests.\n- `ascribe model`'s text without `--section` is still within 4,000 characters.\n- `ascribe model`'s section in `docs/content/command/questions.md` lists the sections, and an entry in `changes/` says so.\n\n**Needs:** #649.\n",
+        "number": 670,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe model` reports every section of `ascribe.toml`",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/670"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNBs4",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe model` reports every section of `ascribe.toml`"
+    },
+    {
+      "content": {
+        "body": "Phase D1 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#fixes). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** the pages the audit's section 4 table names, item by item.\n\n**Done when:** every item is corrected or reported, each listed in the pull request with the SPEC line, the code, and the test that settle it, and `ascribe check --deny-warnings --config docs` passes.\n\n**Decided:**\n- Decision 2 of [the plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#decisions): **Correcting a contract page.** **Decided:** a correction that brings a contract page to what SPEC and the loader already enforce isn't a change to the contract, and needs no decision file: the page was wrong about it. It holds only where SPEC and the code agree, and a test or a conformance case shows it. Where SPEC and the loader disagree, there's nothing to correct toward, and that's a decision for the maintainer. Where the page is right and the code is wrong, it's a bug, with a pull request of its own (AGENTS.md). The pull request lists each correction with the line of SPEC, the code, and the test that settle it.\n\n**Needs:** nothing.\n",
+        "number": 673,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: The drift",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/673"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNi-I",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: The drift"
+    },
+    {
+      "content": {
+        "body": "Phase D2 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#fixes). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** every page with such a mark. `git grep -n \"@available: ascribe 0\\.[23]\" -- docs/content` is a starting list, not the test: it misses `available:` in frontmatter, `{available=…}` on a table's row, and a history such as `(preview 0.2.0, ga 0.3.0)`.\n\n**Done when:** `ascribe check --config docs` reports no `available-same-in-every-line`, with #667 merged so that it would.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #667\n",
+        "number": 674,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: The release's old marks",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/674"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjAE",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: The release's old marks"
+    },
+    {
+      "content": {
+        "body": "Phase D3 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#start-and-writing). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** `getting-started.md`, the new `install.md`, the CI page.\n\n**Done when:** the tutorial has one path and no install reference, and every install link leads to `install.md`.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** nothing.\n",
+        "number": 675,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: An Install page, and a tutorial with one path",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/675"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjAw",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: An Install page, and a tutorial with one path"
+    },
+    {
+      "content": {
+        "body": "Phase D4 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#start-and-writing). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** `examples/sources.md`, `permalinks/index.md`, `templates/index.md`, `checks/vale.md`, `install.md`, `command/index.md`, `contracts/json-reports.md`.\n\n**Done when:** `examples/sources.md` has two commands, each command's reference is in its feature's section, and no link leads to a section that moved.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #675\n",
+        "number": 676,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: The six-command page",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/676"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjB8",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: The six-command page"
+    },
+    {
+      "content": {
+        "body": "Phase D5 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#start-and-writing). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** `writing/directives.md` and the three new pages in `writing/`.\n\n**Done when:** no page is over 3,000 words, the 37 headings are on the pages they belong to, and every link to a moved section is re-pointed (`ascribe refs writing/directives.md` lists 148).\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #674, #669\n",
+        "number": 677,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: The directive reference, as four pages",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/677"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjDo",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: The directive reference, as four pages"
+    },
+    {
+      "content": {
+        "body": "Phase D6 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#agents-and-the-command). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** `review/diff.md`, `checks/report.md`, `agents/commands.md`, `editor/index.md`.\n\n**Done when:** each command's reference is in its feature's section.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** nothing.\n",
+        "number": 678,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: Two references in the wrong section",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/678"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjEk",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: Two references in the wrong section"
+    },
+    {
+      "content": {
+        "body": "Phase D7 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#agents-and-the-command). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** `agents/index.md`, the new pages in `agents/`, `editor/agents.md`. It's the phase \"The pull request says what moved where\" exists for: ten pages, 39 inbound links, and a fold into another section, so its commits come in two kinds, the moves first, which change no words, then the cuts, each commit readable alone, and its description is page by page.\n\n**Done when:** the overview is about 300 words, each task is one page, and the 39 inbound links are re-pointed.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #678\n",
+        "number": 679,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: Agents, as an overview and a page per task",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/679"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjFw",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: Agents, as an overview and a page per task"
+    },
+    {
+      "content": {
+        "body": "Phase D8 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#agents-and-the-command). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** those three.\n\n**Done when:** no paragraph repeats an option's help, and no field list repeats a schema.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #679\n",
+        "number": 680,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: A command's reference says what its help can't",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/680"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjGs",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: A command's reference says what its help can't"
+    },
+    {
+      "content": {
+        "body": "Phase D9 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#feature-sections). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** `versions/`.\n\n**Done when:** the task is reached in the first screen of its page.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** nothing.\n",
+        "number": 681,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: Versions, as two how-tos and a reference",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/681"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjH8",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: Versions, as two how-tos and a reference"
+    },
+    {
+      "content": {
+        "body": "Phase D10 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#feature-sections). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** `review/`, `editor/review.md`, `astro/reference.md`'s review panel section.\n\n**Done when:** each of those rules is written on one page.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** nothing.\n",
+        "number": 682,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: Review, said once",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/682"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjJc",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: Review, said once"
+    },
+    {
+      "content": {
+        "body": "Phase D11 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#feature-sections). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** `examples/index.md`, the new how-tos in `examples/`, `examples/tested.md`, `templates/index.md`.\n\n**Done when:** each how-to is one task.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** nothing.\n",
+        "number": 683,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: Examples and templates",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/683"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjKQ",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: Examples and templates"
+    },
+    {
+      "content": {
+        "body": "Phase D12 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#feature-sections). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** `checks/report.md`, the new external-links how-to, `checks/vale.md`, `agents/measuring.md`.\n\n**Done when:** the report page is about reading the report.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** nothing.\n",
+        "number": 684,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: The report, and Vale's policy",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/684"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjLw",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: The report, and Vale's policy"
+    },
+    {
+      "content": {
+        "body": "Phase D13 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#feature-sections). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** `astro/`, `permalinks/index.md`, `navigation/`.\n\n**Done when:** each how-to is one task, and the navigation rule is on one page.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** nothing.\n",
+        "number": 685,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: Astro, permalinks, and navigation",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/685"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjMg",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: Astro, permalinks, and navigation"
+    },
+    {
+      "content": {
+        "body": "Phase D14 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#feature-sections). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** the new section, `content-model/index.md`'s listing section, `content-model/checks.md`'s crawlers section, `content-model/output.md`'s headers section, and `astro/reference.md`'s paragraph.\n\n**Done when:** the feature has one section, each key reference keeps its table and a link, and the brainstorm's \"Built\" line points at the section, not the Astro guide.\n\n**Decided:**\n- Decision 3 of [the plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#decisions): **Where \"what search engines and agents are told\" lives** (the audit's section 2: listing, crawlers, and headers, one feature spread over three key references). **Decided:** a section of its own, `publishing/`: what a project tells search engines and AI crawlers, and what it delivers to agents (`llms.txt`, the Markdown versions, their headers). The name leaves room for what else is about how a site is published rather than written: the host's response headers, and redirects if they're built (the brainstorm's section 6). Deploying a site stays the getting started tutorial's and the Astro section's. Not the Astro section: `[listing]` and `[crawlers]` are content model settings, kept out of `[consumer]` for that reason, the page records are a file any generator reads, and `llms.txt` is the binary's. The brainstorm line that placed it in the Astro guide predates the search and answers plan. The Astro reference keeps one paragraph, what the integration writes from the records, and a link.\n\n**Needs:** #650\n",
+        "number": 686,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: What search engines and agents are told",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/686"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjOE",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: What search engines and agents are told"
+    },
+    {
+      "content": {
+        "body": "Phase D15 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#the-editor). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** `editor/`.\n\n**Done when:** `settings.md` is what its title says, every `ascribe/*` request in the surface map is on the language server page, and the sidebar's 13 inbound links land on the right view's heading.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #651, #654, #661\n",
+        "number": 687,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: The editor's pages, settled",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/687"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjPY",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: The editor's pages, settled"
+    },
+    {
+      "content": {
+        "body": "Phase D16 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#last). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** the pages the plan's D16 entry names.\n\n**Done when:** `git grep` for each rule's distinctive phrase finds it on one page, and no reference page carries a decision's reasoning.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #673, #674, #675, #676, #677, #678, #679, #680, #681, #682, #683, #684, #685, #686, #687\n",
+        "number": 688,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: The rest of the second homes",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/688"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjRE",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: The rest of the second homes"
+    },
+    {
+      "content": {
+        "body": "Phase D17 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#last). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Pages:** `content-model/` and `contracts/content-model/`, and the fragments they share.\n\n**Done when:** no sentence appears in both outside a shared fragment, no hand-written key table is left in either, and §26 is gone from the contract, each of its decisions a file in `project-docs/decisions/` or named as superseded by one.\n\n**Decided:**\n- Decision 1 of [the plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#decisions): **What a contract page holds** (the audit's section 2, \"The `ascribe.toml` reference and its contract\", and its \"Order of work\", item 6). **Decided:** a contract page holds what's normative and its own: the rules, stated with MUST; the file formats (`ascribe.lock`, `llms.txt`'s layout, the link cache's files); and the key tables, which it shares with the reference through the registry's generated fragments (#650), never a hand-written one, which would be a third home. No explanation. A reference page holds the tables, the explanation, examples, and tasks, and no MUST. Each links to the other at the top. The split is already half there: the contract pages have ten MUSTs and the reference none. Moving the 23 decisions out of `contracts/content-model/validation.md` §26 is itself a change to a published contract page, so D17 adds one decision file of its own, \"what a contract page holds\", and the 23 become decision files numbered by D17's issue with letters, as [the decisions folder's README](../decisions/README.md) has it for several from one source, or are named as superseded by the files that already replace two of them.\n\n**Needs:** #650, #673, #686\n",
+        "number": 689,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: The reference and the contract, each with its own job",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/689"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjSU",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: The reference and the contract, each with its own job"
+    },
+    {
+      "content": {
+        "body": "Phase D18 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#pictures). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** each picture is on its page with alt text that says what its cut paragraph said, its prose is cut, and the freshness test covers it; a scene the script can't reach is taken by hand, says so in the pull request, and has the same record, so the test covers it too.\n\n**A picture has a text form.** Its alt text says in a sentence what the cut paragraph said, so a reader with a screen reader loses nothing: decision 46's \"nothing is told by color alone\" holds for a picture too. `image-alt-missing` is the check that holds an image to having one; the review of each phase holds the sentence to saying what the picture shows.\n\n**Decided:**\n- Decision 4 of [the plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#decisions): **The pictures: scripted or by hand.** **Decided:** scripted. The editor's picture already is: `packages/vscode/scripts/screenshot.ts` takes it, and `scripts/docs-site/screenshots.ts` keeps its record and the command that retakes it, with `scripts/docs-site/screenshots.test.ts` failing one minor release behind. So the scenes extend a harness that exists. The risk is reach: a hover, a peek, and a status bar in several states are scenes a script has to drive, not only open. A scene the script can't reach falls back to a picture taken by hand with the same record, so the staleness test holds either way.\n\n**Needs:** nothing.\n",
+        "number": 690,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: The scenes, and the editor's pictures that won't change",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/690"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjUU",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: The scenes, and the editor's pictures that won't change"
+    },
+    {
+      "content": {
+        "body": "Phase D19 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#pictures). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** each picture is on its page with alt text that says what its cut paragraph said, its prose is cut, and the freshness test covers it; a scene the script can't reach is taken by hand, says so in the pull request, and has the same record, so the test covers it too.\n\n**A picture has a text form.** Its alt text says in a sentence what the cut paragraph said, so a reader with a screen reader loses nothing: decision 46's \"nothing is told by color alone\" holds for a picture too. `image-alt-missing` is the check that holds an image to having one; the review of each phase holds the sentence to saying what the picture shows.\n\n**Decided:**\n- Decision 4 of [the plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#decisions): **The pictures: scripted or by hand.** **Decided:** scripted. The editor's picture already is: `packages/vscode/scripts/screenshot.ts` takes it, and `scripts/docs-site/screenshots.ts` keeps its record and the command that retakes it, with `scripts/docs-site/screenshots.test.ts` failing one minor release behind. So the scenes extend a harness that exists. The risk is reach: a hover, a peek, and a status bar in several states are scenes a script has to drive, not only open. A scene the script can't reach falls back to a picture taken by hand with the same record, so the staleness test holds either way.\n\n**Needs:** #690\n",
+        "number": 691,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: The site's and the report's pictures",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/691"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjVU",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: The site's and the report's pictures"
+    },
+    {
+      "content": {
+        "body": "Phase D20 of [the docs after the audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#pictures). The spec is this phase's entry there and the sections of the [docs audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-audit.md) it names, under the plan's rules for every phase. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** each picture is on its page with alt text that says what its cut paragraph said, its prose is cut, and the freshness test covers it; a scene the script can't reach is taken by hand, says so in the pull request, and has the same record, so the test covers it too.\n\n**A picture has a text form.** Its alt text says in a sentence what the cut paragraph said, so a reader with a screen reader loses nothing: decision 46's \"nothing is told by color alone\" holds for a picture too. `image-alt-missing` is the check that holds an image to having one; the review of each phase holds the sentence to saying what the picture shows.\n\n**Decided:**\n- Decision 4 of [the plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/docs-cleanup/README.md#decisions): **The pictures: scripted or by hand.** **Decided:** scripted. The editor's picture already is: `packages/vscode/scripts/screenshot.ts` takes it, and `scripts/docs-site/screenshots.ts` keeps its record and the command that retakes it, with `scripts/docs-site/screenshots.test.ts` failing one minor release behind. So the scenes extend a harness that exists. The risk is reach: a hover, a peek, and a status bar in several states are scenes a script has to drive, not only open. A scene the script can't reach falls back to a picture taken by hand with the same record, so the staleness test holds either way.\n\n**Needs:** #690, #687, #653, #659\n",
+        "number": 692,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: The new views",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/692"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNjXY",
+      "labels": [
+        "documentation",
+        "docs-audit"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: The new views"
     }
   ]
 }
