@@ -218,7 +218,7 @@ pub struct CodeFile {
     /// Its path relative to the project root, which may start with `..`.
     pub path: RelPath,
     /// Its text.
-    pub text: String,
+    pub text: Arc<str>,
     /// Its comment syntax, by extension; `None` when it has no tags.
     pub style: Option<CommentStyle>,
     /// Its tags.
@@ -321,7 +321,7 @@ fn read_code(fs: &dyn FileSystem, path: &RelPath, id: FileId) -> Result<Arc<Code
     Ok(Arc::new(CodeFile {
         id,
         path: path.clone(),
-        text,
+        text: text.into(),
         style,
         tags,
     }))
@@ -343,6 +343,11 @@ pub struct Snippet {
     /// The lines of the code file it covers, from 1; `None` when they're
     /// none.
     pub lines: Option<(u32, u32)>,
+    /// The code file's text.
+    pub text: Arc<str>,
+    /// For each line of [`Snippet::code`], the part of the code file it
+    /// shows ([`tags::Extracted::spans`]).
+    pub spans: Vec<Span>,
     /// The file as a tested example: its status, the observations current
     /// for it, and what it was tested with. `None` when it isn't one.
     pub example: Option<examples::Example>,
@@ -434,6 +439,8 @@ pub fn resolve_snippet(
         info: snippet.info(&file, tested),
         code: extracted.code,
         lines: extracted.lines,
+        text: file.text.clone(),
+        spans: extracted.spans,
         example,
     })
 }

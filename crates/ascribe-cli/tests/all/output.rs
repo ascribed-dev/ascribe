@@ -933,6 +933,33 @@ fn answers() {
             0,
         )),
     );
+    // A fragment's line, found once with the page that shows it.
+    expect(
+        "search-fragment.txt",
+        &stdout(&run(
+            &root,
+            &["search", "docs repository", "--config", quill],
+            0,
+        )),
+    );
+    // A snippet's code, at the code file's line.
+    expect(
+        "search-snippet.txt",
+        &stdout(&run(
+            &root,
+            &["search", "hello", "--config", "examples/tested"],
+            0,
+        )),
+    );
+    // A page's title, at its key, before the rest.
+    expect(
+        "search-title.txt",
+        &stdout(&run(
+            &root,
+            &["search", "\"upgrade the agent\"", "--config", quill],
+            0,
+        )),
+    );
     expect(
         "search-none.txt",
         &stdout(&run(&root, &["search", "zebra", "--config", quill], 1)),

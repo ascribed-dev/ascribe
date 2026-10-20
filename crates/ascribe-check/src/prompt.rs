@@ -795,7 +795,7 @@ fn lines_of(project: &Project, at: Location) -> Option<Lines> {
         // A file without text, such as an image, has no lines to quote.
         Some(entry) if entry.text.is_empty() => return None,
         Some(entry) => entry.text.to_owned(),
-        None => project.code_file(at.file)?.text.clone(),
+        None => project.code_file(at.file)?.text.to_string(),
     };
     let index = LineIndex::new(&text);
     let start = index.line_col(at.span.start())?.line;

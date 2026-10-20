@@ -1,7 +1,8 @@
 //! A page's reading (`ascribe_resolve::reading`), what `ascribe search`
 //! matches, says what the plain output says: for every project under
 //! `examples/` and `tests/conformance/cases/`, in every build, each block of
-//! each page's reading is found, in order, in the page's plain output read
+//! each page's reading but its description, which the plain output doesn't
+//! write, is found, in order, in the page's plain output read
 //! the same way (parsed, markup removed, white space collapsed). A block the
 //! reading has and the plain output doesn't is a bug in one of them.
 //!
@@ -15,7 +16,7 @@ use std::sync::Arc;
 
 use ascribe_core::{FileId, RelPath};
 use ascribe_emit::{EmitContext, PlainEmitter, emit_page};
-use ascribe_resolve::reading::{Reading, html_text};
+use ascribe_resolve::reading::{In, Reading, html_text};
 use ascribe_resolve::{AstroRouter, DiskFs, Layout, Project};
 use ascribe_syntax::{Block, BlockKind, Inline, InlineKind, ParseOptions};
 
@@ -184,7 +185,10 @@ fn disagreements(root: &Path, name: &str, project: &Project) -> Vec<String> {
             read_plain(&emitted.text, &doc.blocks, &mut text);
             let text = collapse(&text);
             let mut at = 0;
-            for block in Reading::of(project, page).blocks {
+            // The plain output writes no frontmatter, so the description
+            // isn't in it; the title is its first heading.
+            let blocks = Reading::of(project, page).blocks;
+            for block in blocks.into_iter().filter(|b| b.kind != In::Description) {
                 match text[at..].find(&block.text) {
                     Some(found) => at += found + block.text.len(),
                     None => out.push(format!(

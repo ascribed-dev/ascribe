@@ -64,7 +64,7 @@ impl FileTable {
             id: f.id,
             path: f.path.to_string(),
             index: LineIndex::new(&f.text),
-            text: f.text.clone(),
+            text: f.text.to_string(),
         }));
         FileTable { entries }
     }
