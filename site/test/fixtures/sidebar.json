@@ -239,7 +239,15 @@
     "pages": [
       {
         "href": "/docs/versions/",
-        "label": "Versions"
+        "label": "Publish a site for each version"
+      },
+      {
+        "href": "/docs/versions/archive/",
+        "label": "Archive and retire a line"
+      },
+      {
+        "href": "/docs/versions/lines/",
+        "label": "Release lines"
       },
       {
         "href": "/docs/versions/release/",

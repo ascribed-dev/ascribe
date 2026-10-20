@@ -20,7 +20,7 @@ The text output lists each build's changed pages with counts, and where a change
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff.txt
 
 @available: ascribe 0.3.2
-The [lines](../versions/index.md) of a versioned build are listed together, under the build's name, and a page they share once, with the lines it changed in:
+The [lines](../versions/lines.md) of a versioned build are listed together, under the build's name, and a page they share once, with the lines it changed in:
 
 @available: ascribe 0.3.2
 ```text

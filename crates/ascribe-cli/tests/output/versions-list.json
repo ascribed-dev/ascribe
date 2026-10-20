@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "targets": [
+    {
+      "target": "self-managed",
+      "builds": [
+        "site"
+      ],
+      "lines": [
+        {
+          "line": "3.5",
+          "status": "current",
+          "outputs": [
+            {
+              "build": "site",
+              "base": "/",
+              "pages": 6
+            }
+          ]
+        },
+        {
+          "line": "3.4",
+          "status": "live",
+          "outputs": [
+            {
+              "build": "site@3.4",
+              "base": "/3.4/",
+              "pages": 5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
