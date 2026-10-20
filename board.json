@@ -3212,8 +3212,11 @@
         "bug",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/621"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "A memo about a glossary term isn't placed on the term's heading"
     },
     {
@@ -3230,8 +3233,11 @@
         "bug",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/630"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Renames leave memos detached: a term's id, a phrase, a fragment's heading, and a block-scalar `about`"
     },
     {
@@ -3248,8 +3254,11 @@
         "bug",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/620"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Two glossary terms with the same id are merged, and nothing reports it"
     },
     {
@@ -3266,8 +3275,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/627"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Editing a fragment a glossary page includes re-resolves every page, though no term changed"
     },
     {
@@ -3284,8 +3296,11 @@
         "bug",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/619"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "The snippet lens and This page's example rows don't refresh for files outside the project's folder"
     },
     {
@@ -3303,8 +3318,11 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/625"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "This page costs more per cursor move than Used by did"
     },
     {
@@ -3321,13 +3339,16 @@
         "bug",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/626"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "The snippet lens skips Markdown files, and names itself when only one project shows the file"
     },
     {
       "content": {
-        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Navigation plan, phase 5's criterion that \"the sidebar `sidebar()` draws has the view's order\", and decision 24.\n\nWith pages `a.md`, `guides.md`, and `b.md` at the content root and a folder `guides/`, the Pages view draws Start as Home, Alpha, then the `guides/` section, then Beta. `sidebar()`, `llms.txt`, and `nav.json` give Start (Home, Alpha, Beta), then Guides as a section of its own. #584 made a page beside a top folder read with that folder's section after #583 had shipped the view, and the view didn't follow (`packages/vscode/src/ui/sidebar.ts`, around 123-136 and 186-196). `changes/editor/pages-navigation.md` says Pages shows pages \"in the order a sidebar shows them\". No unit test has a page beside a top folder.\n\nWhat fixes it: draw such a section at the top level, after Start, as `nav.json` has it, and decide what dragging it does there (it can't move inside Start's pages). A unit test of `pagesRoots` with a page beside a top folder, compared against the server's `nav.json` for the same project.\n",
+        "body": "Found reviewing the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md)'s plans after their phases merged, on `main` at b91427ec. Navigation plan, phase 5's criterion that \"the sidebar `sidebar()` draws has the view's order\", and decision 24.\n\nWith pages `a.md`, `guides.md`, and `b.md` at the content root and a folder `guides/`, the Pages view draws Start as Home, Alpha, then the `guides/` section, then Beta. `sidebar()`, `llms.txt`, and `nav.json` give Start (Home, Alpha, Beta), then Guides as a section of its own. #584 made a page beside a top folder read with that folder's section after #583 had shipped the view, and the view didn't follow (`packages/vscode/src/ui/sidebar.ts`, around 123-136 and 186-196). `changes/editor/pages-navigation.md` says Pages shows pages \"in the order a sidebar shows them\". No unit test has a page beside a top folder.\n\nWhat fixes it: draw such a section at the top level, after Start, as `nav.json` has it, and decide what dragging it does there (it can't move inside Start's pages). A unit test of `pagesRoots` with a page beside a top folder, compared against the server's `nav.json` for the same project.\n\n\n## Decided\n\nBy the maintainer, 18 October 2026: **a top section is ordered among the top sections by `[[sections]]`, whether or not its own page sits beside its folder, and dragging it in Pages reorders it there.**\n\n- **The top level.** Today a top section whose own page is beside its folder (`guides.md` beside `guides/`) takes its place from where that page would sit among the root's pages, before every other top section, and its `[[sections]]` entry is ignored (`crates/ascribe-resolve/src/navigation.rs`, the `placed` partition). Since #584 that page is the section's own page, shown in no list a writer sees, so nothing visible orders the section. Change the resolver so that at the root no section is placed by a page beside its folder: every top section follows `[[sections]]`, then path order. Pages then draws it as a top section after Start, as `nav.json` does, and a drag writes `[[sections]]` as for any top section.\n- **Below the top level, placement stays** as the navigation plan's decision 24 says: `checks/diagnostics/` sits where `diagnostics.md` sits among `checks/`'s pages, which is how a split page keeps its parts in place. Dragging such a section in Pages moves its page beside the folder within the parent's `pages`, instead of being refused, so the same drag does the same visible thing at every depth.\n- **The record.** This narrows decision 24 to sections below the root. Say so in SPEC §7.8, the navigation reference and `navigation/order.md`, with a decision file in the pull request. It settles the top-level half of #613's first part; #613 keeps the rest (the reference's wording below the root, `nav-section-unplaced` on a placed section, and sorting titles by their plain text).\n\nTests: a resolver test that a top section with its page beside its folder follows `[[sections]]`; a `pagesRoots` unit test that draws it after Start; drag tests for a top section and for a placed nested section.\n",
         "number": 610,
         "repository": "ascribed-dev/ascribe",
         "title": "The Pages view puts a top section whose own page is beside its folder inside Start",
@@ -3339,8 +3360,11 @@
         "bug",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/635"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "The Pages view puts a top section whose own page is beside its folder inside Start"
     },
     {
@@ -3357,8 +3381,11 @@
         "bug",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/622"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "The Astro starter's sidebar leaves out nested sections"
     },
     {
@@ -3376,8 +3403,11 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/628"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "An `unlisted` page is treated as unplaced in the navigation"
     },
     {
@@ -3394,8 +3424,11 @@
         "bug",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/634"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "The navigation's order: a placed section ignores `[[sections]]`, and titles sort by their markup"
     },
     {
@@ -3412,8 +3445,11 @@
         "bug",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/629"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "No editor test shows an `ascribe.nav` problem, completion, or its TOML language"
     },
     {
@@ -3430,8 +3466,11 @@
         "bug",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/631"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Two small bugs in the editor's memos: an `@end` of any indent, and a file name too long"
     },
     {
@@ -3447,8 +3486,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/632"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "The editor guide: Switch Project's heading holds three sections, and the page is over the size limit"
     },
     {
@@ -3464,8 +3506,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/633"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Docs and records that contradict what shipped"
     },
     {
@@ -3481,9 +3526,40 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/624"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "Close the finished plans: their decisions, READMEs, and the roadmap"
+    },
+    {
+      "content": {
+        "body": "Follow-up from #619 (review note: https://github.com/ascribed-dev/ascribe/pull/619#discussion_r4307736519).\n\nSince #619, the VS Code extension tells a project's server about a change to any file in its sources' folders, wherever they are (`toldOfChange` in `packages/vscode/src/diskChanges.ts`), skipping only `node_modules` and `.git`. For Ascribe's own docs the source is `path = \"..\"`, so the docs' server now hears about everything under the repository's root, including `target/` during a `cargo build`.\n\nOn the server, `did_change_watched` (`crates/ascribe-lsp/src/core.rs`) asks for every lens again for any path in a source's folder (`shown::in_a_source` ignores `include`), and `collect_present` walks a created directory. So a build can send the docs' server a stream of lens refreshes and directory walks it didn't get before.\n\nWhat done looks like: a change under a source's folder reaches the server, and refreshes its lenses, only when the server can use it: a file the source's `include` patterns cover, or the source's `ascribe.examples.toml` and observations. Files elsewhere in the folder (such as `target/`) send nothing. A unit test for a file outside `include` in a source's folder, and a language server test that an event for such a file asks for no refresh.\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 623,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The docs' language server is told of every file under the repository during a build",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/623"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBozgI",
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
-      "title": "Close the finished plans: their decisions, READMEs, and the roadmap"
+      "title": "The docs' language server is told of every file under the repository during a build"
+    },
+    {
+      "content": {
+        "body": "## Ascribe report\n\n0 errors, 0 warnings, 1 advice.\n\n### External links\n\nChecked 36 addresses: asked about 2, and reused 34 answers, the oldest from 18 October.\n\nNone is broken or moved.\n\n### Agents\n\nThe delivery spec's checks on `https://ascribed-dev.com/docs/`: 24 pass, 3 warn, 1 skip.\n\nTo change:\n\n- [ASC171] the site passes the delivery spec's `llms-txt-links-resolve` check with a warning, which what Ascribe writes should pass without one: 49/50 same-origin sampled links resolve (98%); 1 broken; 1 failed to fetch. Report it at https://github.com/ascribed-dev/ascribe/issues\n\nAlso failing, about the pages: `page-size-html`, `embedded-data-serialization`. `ascribe check` reports what to change in them.\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/39253665765)\n",
+        "number": 639,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs report: links and the published site",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/639"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhB1Ilw",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs report: links and the published site"
     }
   ]
 }
