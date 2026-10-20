@@ -1,5 +1,7 @@
-// Bundles the extension into one file the extension host can load, and the
-// integration tests into the files the test runner loads. `--watch` rebuilds
+// Bundles the extension into one file the extension host can load, the
+// integration tests into the files the test runner loads, and, with
+// `--scenes`, the docs' scenes (scripts/scenes.ts) into the module
+// scripts/screenshot.ts has VS Code run. `--watch` rebuilds
 // the extension and the webview files on each change, until stopped.
 import { cpSync, rmSync } from "node:fs";
 import process from "node:process";
@@ -126,5 +128,16 @@ if (process.argv.includes("--tests")) {
     outExtension: { ".js": ".cjs" },
     format: "cjs",
     external: ["vscode", "mocha"],
+  });
+}
+
+if (process.argv.includes("--scenes")) {
+  await build({
+    ...common,
+    entryPoints: { scenes: "scripts/scenes.ts" },
+    outdir: "out",
+    outExtension: { ".js": ".cjs" },
+    format: "cjs",
+    external: ["vscode"],
   });
 }

@@ -1,4 +1,4 @@
-// The site's screenshots are there, in light and dark, and none is more than
+// The screenshots, the site's and the docs' scenes, are there, in light and dark, and none is more than
 // one minor release behind the current line of `[releases.ascribe]` in
 // docs/ascribe.toml, the release the docs describe. A picture's release is in the record beside it,
 // which `node scripts/docs-site/screenshots.ts <name>` writes when it retakes
@@ -14,6 +14,7 @@ import {
   currentRelease,
   FOLDER,
   PICTURES,
+  SCENES,
   SCHEMES,
   stale,
   type Taken,
@@ -22,27 +23,35 @@ import {
 const root = fileURLToPath(new URL("../..", import.meta.url));
 const current = currentRelease();
 
-describe.each(PICTURES)("the $name picture", ({ name }) => {
+describe.each(PICTURES)("the $name picture", ({ name, folder }) => {
   test("is there in each scheme", () => {
     for (const scheme of SCHEMES) {
-      const file = `${FOLDER}/${name}-${scheme}.png`;
+      const file = `${folder}/${name}-${scheme}.png`;
       expect(existsSync(path.join(root, file)), `${file} is missing`).toBe(true);
     }
   });
 
   test("is no more than one minor release behind the current one", () => {
-    const file = path.join(root, FOLDER, `${name}.json`);
+    const file = path.join(root, folder, `${name}.json`);
     const record = JSON.parse(readFileSync(file, "utf8")) as Taken;
-    expect(stale(name, record.release, current)).toBeUndefined();
+    expect(stale(name, record.release, current, folder)).toBeUndefined();
   });
 });
 
-test("the folder holds the pictures and their records, and nothing else", () => {
-  const expected = PICTURES.flatMap(({ name }) => [
+test("the site's folder holds its pictures and their records, and nothing else", () => {
+  const expected = PICTURES.filter(({ folder }) => folder === FOLDER).flatMap(({ name }) => [
     `${name}.json`,
     ...SCHEMES.map((scheme) => `${name}-${scheme}.png`),
   ]);
   expect(readdirSync(path.join(root, FOLDER)).sort()).toEqual(expected.sort());
+});
+
+test("each record among the docs' images is a scene's", () => {
+  const records = readdirSync(path.join(root, SCENES)).filter((file) => file.endsWith(".json"));
+  const expected = PICTURES.filter(({ folder }) => folder === SCENES).map(
+    ({ name }) => `${name}.json`,
+  );
+  expect(records.sort()).toEqual(expected.sort());
 });
 
 test("a picture two minor releases back is stale, and names the command that retakes it", () => {
@@ -53,6 +62,9 @@ test("a picture two minor releases back is stale, and names the command that ret
   );
   expect(stale("editor", "0.9.0", "1.0.0")).toContain(
     "node scripts/docs-site/screenshots.ts editor",
+  );
+  expect(stale("build-lens", "0.1.0", "0.3.0", SCENES)).toBe(
+    "docs/content/images/build-lens-*.png show 0.1.0, more than 1 minor release behind 0.3.0: run `node scripts/docs-site/screenshots.ts build-lens`",
   );
 });
 
