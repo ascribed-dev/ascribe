@@ -204,7 +204,7 @@ What's searched is what each build's plain output says of each page's own text: 
 
 - **Text written in the page** is at its line.
 - **A match that reads through a phrase's value,** such as "Sign in to Quill Cloud" where the page says `Sign in to {cloud}`, is at the line that uses the phrase, `through phrase cloud`.
-- **A match wholly inside a phrase's value** is at the phrase's line in `ascribe.toml`, with how many places use it and the `ascribe refs` command that lists them.
+- **A match wholly inside a phrase's value** is at the phrase's line in `ascribe.toml`, with how many places use it and the `ascribe refs` command that lists them. The rest of the block is still searched after the phrase: where `Sign in to {cloud}, then edit quill.yaml` is searched for `quill`, the phrase is one place and the line, at `quill.yaml`, is another.
 - **A link with no text** reads as its target's title, and a match in it is at the link, through that page's title.
 
 What isn't searched: what no build publishes, the source's own spelling of a phrase, text an include brings in from a fragment, the code a `@snippet` shows, a page's title and description, text the content model writes (labels, availability lines, a widget's fallback), text in images, raw HTML, and what a site adds around a page.
