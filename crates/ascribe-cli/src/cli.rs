@@ -182,6 +182,11 @@ pub enum Command {
     /// to agents.
     #[command(after_help = docs_link!("cli-report"))]
     Report(commands::report::Args),
+    /// Show where the pages say something, as their readers read it: words
+    /// as each build publishes them, through phrases, each found at the line
+    /// to edit.
+    #[command(after_help = docs_link!("cli-search"))]
+    Search(commands::search::Args),
     /// Copy code from sources in other repositories, and move their pins.
     #[command(after_help = docs_link!("cli-sources"))]
     Sources(commands::sources::Args),
@@ -221,6 +226,7 @@ impl Command {
             Command::Rename(args) => commands::rename::run(global, args),
             Command::Render(args) => commands::render::run(global, args),
             Command::Report(args) => commands::report::run(global, args),
+            Command::Search(args) => commands::search::run(global, args),
             Command::Sources(args) => commands::sources::run(global, args),
             Command::Templates(args) => commands::templates::run(global, args),
             Command::Vale(args) => commands::vale::run(global, args),

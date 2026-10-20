@@ -1,0 +1,6 @@
+docs/install-agent.md:62: Sign in to Quill Cloud and copy an API key from Settings → Keys, then add it to…
+    Connect to Quill #connect · deployment=cloud arm · through phrase cloud
+docs/keys.md:10: Sign in to Quill Cloud and open Settings → Keys.
+    Create a key #create-key · through phrase cloud
+
+2 places match, on 2 pages.

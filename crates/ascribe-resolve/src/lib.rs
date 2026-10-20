@@ -90,6 +90,7 @@ mod named;
 pub mod navigation;
 pub mod pages;
 mod project;
+pub mod reading;
 pub mod references;
 mod replaces;
 pub mod slug;

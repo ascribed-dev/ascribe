@@ -872,6 +872,18 @@ fn answers() {
         "render.txt",
         &stdout(&run(&root, &["render", keys, "--build", "cloud"], 0)),
     );
+    expect(
+        "search.txt",
+        &stdout(&run(
+            &root,
+            &["search", "\"sign in to quill cloud\"", "--config", quill],
+            0,
+        )),
+    );
+    expect(
+        "search-none.txt",
+        &stdout(&run(&root, &["search", "zebra", "--config", quill], 1)),
+    );
 }
 
 /// `ascribe agents sync` on `examples/quill` in a repository of its own:
