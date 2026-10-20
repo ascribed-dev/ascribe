@@ -5,7 +5,8 @@ description: >-
   keeping its state; a version inside the oldest line but after its start,
   which that line's output shows, isn't; and content in no live or planned
   line is a warning.
-  A build filtered for another target publishes only content that names it.
+  A build filtered for another target publishes only content that names it,
+  and shows the mark's versions in a badge, which is advice as well.
 spec: ["4.4", "9.3"]
 tags: [check]
 
@@ -13,4 +14,5 @@ diagnostics:
   - {slug: available-same-in-every-line, file: ascribe.toml, line: 22, column: 14}
   - {slug: available-same-in-every-line, file: index.md, line: 6, column: 13}
   - {slug: available-same-in-every-line, file: index.md, line: 9, column: 13}
+  - {slug: available-same-in-every-line, file: index.md, line: 24, column: 20}
   - {slug: available-in-no-line, file: index.md, line: 15, column: 13}

@@ -147,7 +147,7 @@ fn variant_dimensions_and_values() {
 #[test]
 fn available_specs_are_checked_against_the_model() {
     let cases = [
-        ("cloud, self-managed preview 3.4", vec![]),
+        ("cloud, self-managed preview 3.5", vec![]),
         ("deployment beta", vec![]),
         ("deployment 3.4", vec!["available-versionless"]),
         ("cloud 3.3", vec!["available-versionless"]),
@@ -171,7 +171,7 @@ fn available_specs_are_checked_against_the_model() {
 #[test]
 fn a_rows_available_is_checked_like_a_directives() {
     let cases = [
-        ("{available=\"cloud, self-managed preview 3.4\"}", vec![]),
+        ("{available=\"cloud, self-managed preview 3.5\"}", vec![]),
         ("{available=cloud}", vec![]),
         ("{available=edge}", vec!["available-unknown"]),
         ("{available=\"cloud 3.3\"}", vec!["available-versionless"]),

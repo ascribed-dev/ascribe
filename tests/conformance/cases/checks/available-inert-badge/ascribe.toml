@@ -27,9 +27,6 @@ versions = "self-managed"
 [builds.badges]
 availability = "badge"
 
-[builds.old]
-availability = { filter = "self-managed 3.3" }
-
 [checks]
 feature-unused = "off"
 availability-left-behind = "off"
