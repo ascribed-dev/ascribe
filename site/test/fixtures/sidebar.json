@@ -102,6 +102,10 @@
         "nested": true
       },
       {
+        "href": "/docs/checks/external-links/",
+        "label": "Check external links"
+      },
+      {
         "href": "/docs/checks/ci/",
         "label": "Checks in CI"
       },
@@ -121,6 +125,18 @@
       {
         "href": "/docs/review/",
         "label": "Review"
+      },
+      {
+        "href": "/docs/review/how-it-works/",
+        "label": "How review works"
+      },
+      {
+        "href": "/docs/review/site-preview/",
+        "label": "Review in the site preview"
+      },
+      {
+        "href": "/docs/review/ci-report/",
+        "label": "Attach the review report to every pull request"
       },
       {
         "href": "/docs/review/diff/",

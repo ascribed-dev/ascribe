@@ -811,6 +811,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `checks/diagnostics/content-model.md` | Diagnostics: the content model | reference |
 | `checks/diagnostics/directives.md` | Diagnostics: directives | reference |
 | `checks/diagnostics/pages.md` | Diagnostics: links, pages, and sources | reference |
+| `checks/external-links.md` | Check external links | how-to |
 | `checks/report-command.md` | `ascribe report` | reference |
 | `checks/report.md` | The project report | how-to |
 | `checks/vale.md` | Prose, through Vale | how-to |
@@ -866,8 +867,11 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `permalinks/index.md` | Permalinks | how-to |
 | `publishing/index.md` | Publishing | concept |
 | `publishing/site.md` | The head, sitemap, `robots.txt`, and headers | reference |
+| `review/ci-report.md` | Attach the review report to every pull request | how-to |
 | `review/diff.md` | `ascribe diff` and `drift` | reference |
+| `review/how-it-works.md` | How review works | concept |
 | `review/index.md` | Review | how-to |
+| `review/site-preview.md` | Review in the site preview | reference |
 | `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
 | `templates/index.md` | Page templates | how-to |
 | `versions/archive.md` | Archive and retire a line | how-to |

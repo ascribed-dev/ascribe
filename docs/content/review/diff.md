@@ -35,7 +35,7 @@ Name a page to see its changes: every changed block, as it was (`-`) and as it i
 @available: ascribe 0.3.0
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff-page.txt
 
-Pages with errors are compared as they are, since comparing work in progress is useful, but a broken page can render oddly and read as part of the change. So when `ascribe check` would find errors for the builds compared, `ascribe diff` says so on standard error, and the [HTML report](diff.md#the-html-report) and review in the editor's preview and the site preview show a notice:
+Pages with errors are compared as they are. When `ascribe check` would find errors for the builds compared, `ascribe diff` says so on standard error, as review does in every place ([When the project has errors](how-it-works.md#when-the-project-has-errors) says why):
 
 ```text
 warning: the working tree has 3 errors; `ascribe check` lists them
@@ -58,23 +58,14 @@ warning: the working tree has 3 errors; `ascribe check` lists them
 ascribe diff --format html > review.html
 ```
 
-It lists the changed pages of each build, with counts, and marks a page that changed only through something it uses ("via `_fragments/prereqs.md`"). With more than one build changed, a picker switches between them. Each page is rendered as it is now, the way the editor's page preview renders it: Ascribe's bare render, without the site's layout, navigation, or styles. On it:
-
-- an **added** block has a solid bar in the margin and the label Added;
-- a **changed** block has a dashed bar and the label Changed, with the words added highlighted and the words removed struck through;
-- a **removed** block is shown where it was, from the base, struck through and collapsed to one line, with **Show** to expand it;
-- a **moved** block has a double bar and the label Moved, with a link to a stub at its old place, and back.
+It lists the changed pages of each build, with counts, and marks a page that changed only through something it uses ("via `_fragments/prereqs.md`"). With more than one build changed, a picker switches between them. Each page is rendered as it is now, the way the editor's page preview renders it: Ascribe's bare render, without the site's layout, navigation, or styles, with review's [marks](how-it-works.md#the-marks), **Show: Changes / As it will be / As it was**, and the arrows that step through the changes. Hovering over a block shows the source file and line it came from (`guides/install.md:12`).
 
 @available: ascribe 0.3.2
 The lines of a versioned build are one build in the list: a changed page is listed once, with "in every line" or the lines it changed in, and a **Line** switch shows it as each line publishes it.
 
-A tab's label and a `details`' summary say what changed in what they can hide: "new" for an added tab, else how many changes ("2 changes").
-
-**Show: Changes / As it will be / As it was** switches between the marks, the page as it will be with none, and the page as it was at the base. The arrows step through the changes ("3 of 10 on this page"), and after the last one offer the next changed page. Hovering over a block shows the source file and line it came from (`guides/install.md:12`). The colors work in light and dark, and every mark has a label as well as a color.
-
 **Copy prompt** copies the page's [agent prompt](diff.md#the-agent-prompt), the one `ascribe diff --format prompt <page>` writes, to paste into your agent. The report has no link that opens an agent: a file opened from a disk or a CI artifact can't tell which editor you use, so it only copies.
 
-A report renders at most 300 changed pages; the rest are listed by name, and the report says so at the top. Each rendered page and image is stored once, however many builds or pages share it. [The report in CI](index.md#the-report-in-ci) has a GitHub Actions job that uploads the report on every pull request.
+A report renders at most 300 changed pages; the rest are listed by name, and the report says so at the top. Each rendered page and image is stored once, however many builds or pages share it. [Attach the review report to every pull request](ci-report.md) has a GitHub Actions job that uploads it.
 
 ### The agent prompt
 

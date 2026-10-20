@@ -40,4 +40,5 @@ feature = "kept"
 reason = "The 3.3 pages still cite it."
 
 [checks]
+available-same-in-every-line = "off"
 feature-unused = "off"

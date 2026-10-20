@@ -23,7 +23,7 @@ Install Vale 3.16 or later: see [Vale's installation page](https://docs.vale.sh/
    preset = "quiet"
    ```
 
-2. Add `.ascribe/` to your `.gitignore`, if it isn't there. Ascribe writes the preset there, beside the build's output, and the files are written again whenever they're needed. Deleting `.ascribe/` costs time, and one noisier link report: the next build writes its output again, and the next `ascribe report links` asks about every address and reports every failure, as a first run does.
+2. Add `.ascribe/` to your `.gitignore`, if it isn't there. Ascribe writes the preset there, beside the build's output, and writes it again whenever it's needed ([Files Ascribe writes](../command/project-files.md)).
 
 That's all: no `.vale.ini` to write, and no `vale sync`. Open a page in VS Code, or save one, and Vale's alerts appear in the Problems panel. In a terminal, `ascribe check --vale` checks every page.
 
@@ -83,7 +83,7 @@ Your project already lists words Vale shouldn't take for misspellings: phrase va
 
 When Vale isn't installed, fails, or takes too long, you get one advice on `[checks.vale]` in `ascribe.toml` (`prose-not-checked`) saying why, and everything else is checked as usual. If you check prose only in CI, turn that advice off on other machines with `prose-not-checked = "off"` in `[checks]`.
 
-To run Vale from somewhere other than your `PATH`, set `command`, a path from the project root:
+To run a Vale that isn't on your `PATH`, set `command` to its path from the project root:
 
 ```toml
 [checks.vale]
@@ -91,7 +91,7 @@ preset = "quiet"
 command = "tools/vale"
 ```
 
-A `command` that's a path is a program in the project, which anyone who can change the repository can change, so only the commands you run yourself, such as `ascribe check`, run it without asking. The editor asks you once a session before it runs it, and remembers your answer; an editor that can't ask doesn't run it. The agents' hooks never run it. Each says so in the `prose-not-checked` advice, and `ascribe check --vale` checks the prose. A bare name, such as `vale`, is found on your `PATH` and runs everywhere but the MCP server.
+A path is a program in the repository, so the editor asks you before it runs it, once a session, and the agents' hooks don't run it; each says so in `prose-not-checked`. To have Vale run everywhere it can, install it on your `PATH` and leave `command` out.
 
 ## From the preset to a configuration of your own
 

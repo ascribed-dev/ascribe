@@ -17,7 +17,7 @@ permalink: docs
 - @available: ascribe 0.3.0
   [Prose, through Vale](checks/vale.md): checking your pages' prose with Vale, in the editor and in `ascribe check`.
 - @available: ascribe 0.3.0
-  [The project report](checks/report.md): what state the whole project is in, from the problems and pages it counts to broken external links, and running it every week in CI.
+  [The project report](checks/report.md): what state the whole project is in, from the problems and pages it counts to the published site, and running it every day in CI.
 - [Diagnostics](checks/diagnostics.md): every problem Ascribe reports, with its code and fix.
 - @available: ascribe 0.2.0
   [Review](review/index.md): reviewing a pull request as readers will see it, in the page preview, the site preview, or a report from CI, and commenting there.

@@ -86,7 +86,7 @@ The level of every Vale alert can be set at once with `prose` in `[checks]`, and
 ### `[checks.links]`
 @available: ascribe 0.3.0
 
-How `ascribe report links` checks the project's external links, with [lychee](https://lychee.cli.rs), a program the project installs. `ascribe check` never checks external links. [The project report](../checks/report.md#external-links) has the steps.
+How `ascribe report links` checks the project's external links, with [lychee](https://lychee.cli.rs), a program the project installs. `ascribe check` never checks external links. [Check external links](../checks/external-links.md) has the steps.
 
 ```toml
 [checks.links]
@@ -95,9 +95,7 @@ ignore = ["localhost", "*.internal.example.com"]
 
 @include: ../_generated/content-model-checks-links.md
 
-An answer is reused only when it had nothing to report: a link that moved, failed, or timed out is asked about on every run, so every problem in a report was found in that run. The answers are kept in `.ascribe/cache/links/`; deleting it costs the next run time, and nothing else. `ascribe report links --recheck` asks about every address.
-
-A link is held as unconfirmed only when an earlier run got an answer from its address: what each address last did is kept in `.ascribe/history/links.json`. Deleting it costs one noisier report, which reports every failure as a first run does, and never a missed problem. `ascribe report links --no-history` reports every failure too.
+The answers it reuses and the links it holds as unconfirmed are kept in `.ascribe/`: [What it remembers](../checks/external-links.md#what-it-remembers).
 
 A broken link is `link-external-broken` and a moved one `link-external-moved`; both are configurable in `[checks]`, and a broken one is acknowledged with `@intended` above its block.
 

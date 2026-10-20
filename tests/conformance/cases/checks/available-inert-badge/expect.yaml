@@ -1,8 +1,14 @@
 description: >-
-  A badge build that isn't versioned shows every mark's versions, and
-  publishes content no line has, so with one, no mark is reported as doing
-  nothing, as in a project with one site.
+  A build that badges availability and isn't versioned shows a mark's
+  versions, so a mark whose versions are all before the oldest live line,
+  with its last state available, is still advice: its badge says only that
+  the content is older than every live line. A mark with a version in a live
+  line, the oldest included, isn't reported, and content in no live line
+  isn't, since the badge build publishes it.
 spec: ["4.4", "9.3"]
 tags: [check]
 
-diagnostics: []
+diagnostics:
+  - {slug: available-same-in-every-line, file: ascribe.toml, line: 22, column: 14}
+  - {slug: available-same-in-every-line, file: index.md, line: 6, column: 13}
+  - {slug: available-same-in-every-line, file: index.md, line: 9, column: 13}

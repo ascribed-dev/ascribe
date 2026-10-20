@@ -50,6 +50,10 @@ const FILES: &[(&str, &str)] = &[
         "a test, compiled only with `cfg(test)`, that reads this repository's docs",
     ),
     (
+        "crates/ascribe-cli/src/docs/builtins.rs",
+        "a test, compiled only with `cfg(test)`, that reads this repository's directive reference",
+    ),
+    (
         "crates/ascribe-cli/src/shapes.rs",
         "a test, compiled only with `cfg(test)`, that reads this repository's generated schemas and types",
     ),

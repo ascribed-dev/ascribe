@@ -376,7 +376,7 @@ mod tests {
             ".github/workflows/report.yml installs another afdocs than {VERSION}"
         );
         for page in [
-            "docs/content/checks/report.md",
+            "docs/content/agents/measuring.md",
             "docs/content/checks/report-command.md",
         ] {
             assert!(

@@ -119,9 +119,11 @@ pub(crate) fn inert_issues(
         let (Some(oldest), versions) = (releases.oldest_live(), entry_versions(entry)) else {
             continue;
         };
-        if versions.is_empty() || shown(model, releases, spec) {
+        let shown = shown(model, releases, spec);
+        if versions.is_empty() || shown == Shown::Decides {
             continue;
         }
+        let badge = shown == Shown::AsBadge;
         let steps = steps(entry);
         let location = at(entry.span);
         let issue = |slug| {
@@ -132,7 +134,8 @@ pub(crate) fn inert_issues(
         };
         let lines: Vec<&Version> = releases.planned.iter().chain(&releases.live).collect();
         if !lines.iter().any(|line| in_line_of(model, &steps, line)) {
-            if none {
+            // A badge build still publishes it, so some output has it.
+            if none && !badge {
                 out.push(issue(diagnostics::AVAILABLE_IN_NO_LINE));
             }
             continue;
@@ -146,20 +149,35 @@ pub(crate) fn inert_issues(
             .and_then(|spec| spec.entries.into_iter().next())
             .filter(|e| entry_versions(e).is_empty());
         let last = steps.last().map_or("ga", |(_, state)| state);
+        // A badge with a version in the oldest line says the content came
+        // with it, which its readers may need; one before says nothing.
+        let older = !badge
+            || versions
+                .iter()
+                .all(|v| !in_line(oldest, v) && v.compare(oldest) == Ordering::Less);
         if same
+            && older
             && let Some(simpler) = simpler
             && model.state_is_available(last) == Some(true)
         {
             let simpler = entry_text(&simpler);
             let mut issue = issue(diagnostics::AVAILABLE_SAME_IN_EVERY_LINE)
                 .with_arg("simpler", simpler.clone());
+            if badge {
+                issue = issue.with_variant("badge");
+            }
             if fixes {
                 issue = issue.with_fix(Fix {
                     title: format!("Write `{simpler}`"),
                     file: location.file,
                     edits: vec![TextEdit::replace(entry.span, simpler)],
-                    // No output shows the version, so none changes.
-                    applicability: Applicability::Safe,
+                    // Where no output shows the version, none changes; a
+                    // badge that shows it goes, which changes the page.
+                    applicability: if badge {
+                        Applicability::Unsafe
+                    } else {
+                        Applicability::Safe
+                    },
                 });
             }
             out.push(issue);
@@ -168,12 +186,27 @@ pub(crate) fn inert_issues(
     out
 }
 
-/// Whether a build shows a mark about `releases`' target in `spec`: any
-/// build that publishes the content and isn't versioned by the target, or
-/// filtered for it at a version in the window or after it. A build filtered
-/// for another target publishes the content only when `spec` names that
-/// target, or its dimension.
-fn shown(model: &ContentModel, releases: &Releases, spec: &AvailabilitySpec) -> bool {
+/// How the builds show a mark about one target, in order: the last one any
+/// build gives is what the builds give together.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum Shown {
+    /// No output shows its versions.
+    Hidden,
+    /// Some output shows them as a badge, and none filters by them.
+    AsBadge,
+    /// A build filtered for the target before the window, where the
+    /// versions still decide what's published.
+    Decides,
+}
+
+/// How the builds show a mark about `releases`' target in `spec`. A build
+/// that badges availability and isn't versioned by the target shows it as a
+/// badge, as does one filtered for another target that publishes the
+/// content, which it does only when `spec` names that target, or its
+/// dimension. A build filtered for the target at a version before the
+/// window decides by it; one in the window or after it, or versioned by the
+/// target, doesn't show it.
+fn shown(model: &ContentModel, releases: &Releases, spec: &AvailabilitySpec) -> Shown {
     let target = releases.target.as_str();
     let names = |other: &str| {
         let dimension = model.dimension_of_value(other).map(|d| d.name.as_str());
@@ -181,23 +214,30 @@ fn shown(model: &ContentModel, releases: &Releases, spec: &AvailabilitySpec) -> 
             .iter()
             .any(|e| e.target.text == other || Some(e.target.text.as_str()) == dimension)
     };
-    model.builds.iter().any(|build| {
+    let each = model.builds.iter().map(|build| {
         if build.versions.as_deref() == Some(target) {
-            return false;
+            return Shown::Hidden;
         }
         match &build.availability {
             AvailabilityMode::Filter { target: t, version } if t == target => {
                 // Before the window, the mark still decides what's shown.
-                version.as_ref().is_some_and(|v| {
+                let before = version.as_ref().is_some_and(|v| {
                     releases.oldest_live().is_some_and(|oldest| {
                         !in_line(oldest, v) && v.compare(oldest) == Ordering::Less
                     })
-                })
+                });
+                if before {
+                    Shown::Decides
+                } else {
+                    Shown::Hidden
+                }
             }
-            AvailabilityMode::Filter { target: t, .. } => names(t),
-            AvailabilityMode::Badge => true,
+            AvailabilityMode::Filter { target: t, .. } if names(t) => Shown::AsBadge,
+            AvailabilityMode::Filter { .. } => Shown::Hidden,
+            AvailabilityMode::Badge => Shown::AsBadge,
         }
-    })
+    });
+    each.max().unwrap_or(Shown::Hidden)
 }
 
 /// An entry as steps: each state with the version it starts at, `None` for
@@ -281,5 +321,43 @@ mod tests {
             let spec = parse_availability(text, 0).expect("a spec");
             assert!(inert_issues(&model, &spec, &at, true).is_empty(), "{text}");
         }
+    }
+
+    /// A build that badges availability shows the versions, so the mark is
+    /// reported with the badge's message, and the fix, which removes them
+    /// from the badge, isn't safe.
+    #[test]
+    fn a_mark_a_badge_shows_is_offered_as_unsafe() {
+        let model = MODEL.replace(
+            "[builds.site]\nversions = \"self-managed\"\n",
+            "[builds.site]\navailability = \"badge\"\n",
+        );
+        let model = ascribe_model::load_str(&model, FileId::new(0)).expect("the model loads");
+        let at = |span: Span| Location::new(FileId::new(1), span);
+        let spec = parse_availability("self-managed 3.1", 0).expect("a spec");
+        let issues = inert_issues(&model, &spec, &at, true);
+        assert_eq!(issues.len(), 1);
+        assert_eq!(issues[0].variant, Some("badge"));
+        assert_eq!(issues[0].fixes[0].applicability, Applicability::Unsafe);
+        for text in [
+            "self-managed 3.5",
+            "self-managed 3.4",
+            "self-managed (preview 3.1, ga 3.4)",
+            "self-managed (ga 3.0, removed 3.2)",
+        ] {
+            let spec = parse_availability(text, 0).expect("a spec");
+            assert!(inert_issues(&model, &spec, &at, true).is_empty(), "{text}");
+        }
+    }
+
+    /// Where no output shows the versions, the message says so.
+    #[test]
+    fn a_mark_no_output_shows_has_the_plain_message() {
+        let model = ascribe_model::load_str(MODEL, FileId::new(0)).expect("the model loads");
+        let at = |span: Span| Location::new(FileId::new(1), span);
+        let spec = parse_availability("self-managed 3.1", 0).expect("a spec");
+        let issues = inert_issues(&model, &spec, &at, true);
+        assert_eq!(issues.len(), 1);
+        assert_eq!(issues[0].variant, None);
     }
 }
