@@ -5,7 +5,18 @@ description: "What Ascribe sends and to whom when an agent works on your docs, w
 available: ascribe 0.3.0
 ---
 
-Nothing about your agent's work leaves your machine through Ascribe: it sends nothing, to no one.
+Ascribe gives your agent text, and your agent decides what to do with it. This page says what that text is, what leaves your machine, and what to watch for when the text is someone else's.
+
+## What your agent reads
+
+- **The files `ascribe agents sync` writes:** your project's rules in `AGENTS.md`, and the skill ([Write the agent files](instructions.md)).
+- **The answers to its questions,** from the commands or [the MCP server](mcp.md): your project's pages, its content model, and its problems, as text or JSON.
+- **What the [hooks](hooks.md) report:** the problems in what it just wrote.
+- **The prompts you send it** ([Prompt your agent](prompts.md)), which can carry a reviewer's comments.
+
+## What's sent where
+
+Nothing about your agent's work leaves your machine through Ascribe: it sends nothing, to no one, and it never writes a page for your agent.
 
 - **No model, no service.** Ascribe makes no request to an AI service, holds no key for one, and collects no telemetry. The commands, the MCP server, and the hooks read your project's files and answer on standard output.
 - **Prompts go where you put them.** **Prompt agent** copies a prompt, or fills it in where your agent takes input, on your machine, and leaves it there for you to send. It never travels through a website. Once you send it, it goes wherever your agent sends what you type, under that agent's terms.
