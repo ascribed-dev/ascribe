@@ -10,6 +10,8 @@
 //!
 //! [decision #536c]: https://github.com/ascribed-dev/ascribe/blob/main/project-docs/decisions/536c-nothing-reads-a-memo.md
 
+use std::collections::HashSet;
+
 use ascribe_core::schema::Builtin;
 use ascribe_core::{LineIndex, RelPath, Span};
 use ascribe_syntax::{Block, BlockKind};
@@ -30,10 +32,17 @@ pub struct Written {
 /// The lines of `project`'s pages and fragments, and of its content model,
 /// whose text is `model`, where `query` matches as written: one for each
 /// block of text it matches in, in path order and then in order within a
-/// file.
-pub fn scan(project: &Project, model: &str, query: &Query) -> Vec<Written> {
+/// file. With `only`, of the pages and fragments it names, by content path,
+/// and the content model.
+pub fn scan(
+    project: &Project,
+    model: &str,
+    query: &Query,
+    only: Option<&HashSet<RelPath>>,
+) -> Vec<Written> {
     let mut files: Vec<(RelPath, &str, Vec<Span>)> = project
         .files()
+        .filter(|file| only.is_none_or(|only| only.contains(&file.path)))
         .map(|file| {
             let mut memos = Vec::new();
             memos_in(&file.document.blocks, &mut memos);

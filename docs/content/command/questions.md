@@ -244,7 +244,7 @@ With `--summary`, the places aren't listed: the pages that show them are, with h
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/search-summary.txt
 
-When nothing matches, search looks for the query, by the same rules, in the source as written: every page's and fragment's text, and `ascribe.toml`'s, leaving out memos, which nothing reads. The source's text is read in blocks between blank lines, with its markup as written, so `{cloud}` is the phrase's key, not its value. The last line says which it is:
+When nothing matches, search looks for the query, by the same rules, in the source as written: every page's and fragment's text, and `ascribe.toml`'s, leaving out memos, which nothing reads. With paths or `--type`, it reads only the pages they keep to, the fragments those pages include, and `ascribe.toml`, so words other pages publish don't count. The source's text is read in blocks between blank lines, with its markup as written, so `{cloud}` is the phrase's key, not its value. The last line says which it is:
 
 | The last line | When |
 |---|---|

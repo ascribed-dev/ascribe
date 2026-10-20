@@ -1371,3 +1371,22 @@ fn search_says_words_in_no_page_and_a_memo_is_in_none() {
         );
     }
 }
+
+#[test]
+fn search_kept_to_paths_says_nothing_of_words_published_outside_them() {
+    let dir = project();
+    let out = run(
+        dir.path(),
+        &["search", "\"rotate them\"", "site/docs/install.md"],
+        1,
+    );
+    assert_eq!(
+        stdout(&out),
+        "No place matches.\nThe words aren't in any page.\n"
+    );
+    run(
+        dir.path(),
+        &["search", "\"rotate them\"", "--config", "site"],
+        0,
+    );
+}

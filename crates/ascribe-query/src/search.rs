@@ -3,7 +3,10 @@
 //! every page each build publishes and listed once however many pages or
 //! builds show it.
 
+use std::collections::HashSet;
+
 use ascribe_check::{Project, Scope, select_builds};
+use ascribe_core::RelPath;
 use ascribe_core::{LineIndex, WideEncoding};
 use ascribe_model::Build;
 use ascribe_resolve::reading::{self, At, Found, In, Query, Reading, Through};
@@ -345,7 +348,8 @@ fn nothing(
             return Nothing::OtherBuilds(publish);
         }
     }
-    let written = reading::scan(index, project.model_text(), query);
+    let only = narrowed(index, asked);
+    let written = reading::scan(index, project.model_text(), query, only.as_ref());
     if written.is_empty() {
         return Nothing::Unwritten;
     }
@@ -357,6 +361,42 @@ fn nothing(
             .map(|w| (w.file.to_string(), w.line))
             .collect(),
     }
+}
+
+/// When `asked` keeps to paths or a type, the content paths of the pages it
+/// keeps to and of the fragments they include, at any depth: what the scan
+/// of the source reads, so it says nothing about words written elsewhere.
+fn narrowed(index: &ascribe_resolve::Project, asked: &Search<'_>) -> Option<HashSet<RelPath>> {
+    if asked.scope.is_none() && asked.page_type.is_none() {
+        return None;
+    }
+    let mut kept = HashSet::new();
+    let mut next: Vec<&ascribe_resolve::FileIndex> = index
+        .pages()
+        .filter(|page| {
+            asked
+                .scope
+                .is_none_or(|scope| scope.contains(&index.layout().project_path(&page.path)))
+        })
+        .filter(|page| {
+            asked.page_type.is_none_or(|name| {
+                page.content_type(index.model())
+                    .is_some_and(|t| t.name == name)
+            })
+        })
+        .collect();
+    while let Some(file) = next.pop() {
+        if !kept.insert(file.path.clone()) {
+            continue;
+        }
+        next.extend(
+            file.includes
+                .iter()
+                .filter_map(|include| include.target.as_ref())
+                .filter_map(|target| index.files().find(|f| &f.path == target)),
+        );
+    }
+    Some(kept)
 }
 
 /// Checks that `name` is one of the content model's types.
@@ -382,8 +422,6 @@ mod tests {
     #![allow(clippy::unwrap_used, clippy::expect_used)]
 
     use std::path::Path;
-
-    use ascribe_core::RelPath;
 
     use super::*;
 
@@ -741,5 +779,50 @@ mod tests {
                 "self-managed-3.3".to_owned()
             ]))
         );
+    }
+
+    fn scoped(query: &str, paths: &[&str]) -> Searched {
+        let project = quill();
+        let kept = scope(paths);
+        search(
+            &project,
+            &project.index(),
+            &Search {
+                scope: Some(&kept),
+                ..asked(query, &[], 50)
+            },
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn a_narrowed_search_says_nothing_of_words_written_outside_it() {
+        // Published on other pages, which the paths leave out.
+        let found = scoped("webhook", &["docs/install-agent.md"]);
+        assert_eq!(found.total, 0);
+        assert_eq!(found.nothing, Some(Nothing::Unwritten));
+        // Written in the page kept to, and on others, which aren't named.
+        let found = scoped("\"{cloud}\"", &["docs/keys.md"]);
+        assert_eq!(
+            found.nothing,
+            Some(Nothing::Unpublished {
+                written: vec![("docs/keys.md".to_owned(), 10)],
+                total: 1
+            })
+        );
+    }
+
+    #[test]
+    fn a_narrowed_search_reads_the_fragments_its_pages_include() {
+        let found = scoped("\"{product} can read\"", &["docs/install-agent.md"]);
+        assert_eq!(
+            found.nothing,
+            Some(Nothing::Unpublished {
+                written: vec![("docs/_fragments/prerequisites.md".to_owned(), 4)],
+                total: 1
+            })
+        );
+        let found = scoped("\"{product} can read\"", &["docs/keys.md"]);
+        assert_eq!(found.nothing, Some(Nothing::Unwritten));
     }
 }
