@@ -1,6 +1,6 @@
 # ascribe-query
 
-Answers to the questions an author or an agent asks about a project, without changing anything: what a diagnostic means, what the content model allows, which headings a page has, whether a link works, what a reader of a build sees, and where something is used. Each is one function that takes a loaded project and plain arguments and returns a typed answer that serializes to the command's JSON; `ascribe explain`, `model`, `outline`, `link`, `render`, and `refs` call them and print the answer, and `ascribe mcp`'s tools call the same functions. None of them prints.
+Answers to the questions an author or an agent asks about a project, without changing anything: what a diagnostic means, what the content model allows, which headings a page has, whether a link works, what a reader of a build sees, and where something is used. Each is one function that takes a loaded project and plain arguments and returns a typed answer that serializes to the command's JSON; `ascribe explain`, `model`, `outline`, `link`, `render`, `refs`, and `search` call them and print the answer, and `ascribe mcp`'s tools call the same functions. None of them prints.
 
 Each answer wraps something the checks or the language server already compute, so the three agree: `link` resolves a target with `ascribe_resolve::resolve_reference`, as `ascribe check` does; `outline` lists the headings the editor's completion offers after `page.md#` (`Project::link_headings`); and `refs` is the editor's **Find All References** (`Project::uses`), which `crates/ascribe-lsp/tests/all/references.rs` holds it to.
 
@@ -15,6 +15,7 @@ Each answer wraps something the checks or the language server already compute, s
 | `src/link.rs` | `link`, `LinkAnswer` | Whether a link target works from a page, the link to write, and the closest targets when it doesn't. |
 | `src/refs.rs` | `refs`, `Asked`, `Refs` | Where a page, a heading, a fragment, or a content model entry is used. |
 | `src/render.rs` | `render`, `Rendered` | A page as a build's `plain` output writes it, without writing anything. |
+| `src/search.rs` | `search`, `Searched` | Where the pages say something, as each build's readers read them, each place a line to edit (`ascribe_resolve::reading`). Its answer is shown as text only, so it isn't serialized and isn't yet a contract. |
 | `src/error.rs` | `QueryError` | What stops an answer, each with a stable code (`ascribe_core::Coded`). |
 
 ## Rules
