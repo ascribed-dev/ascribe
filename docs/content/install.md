@@ -32,7 +32,7 @@ pnpm exec ascribe --version
 
 `@ascribed/cli` installs the `ascribe` binary for your platform, and pins its version in `package.json`. Run it as `npx ascribe` (`pnpm exec ascribe` with pnpm), or from a script in `package.json`. If `ascribe` can't find the binary, your package manager left out optional dependencies; reinstall with them enabled.
 
-To try what's on `main` before it's released, install `@ascribed/cli@next` and `@ascribed/astro@next` instead: a build published every night, with no promise of stability.
+@note {type=tip}: To try what's on `main` before it's released, install `@ascribed/cli@next` and `@ascribed/astro@next` instead: a build published every night, with no promise of stability.
 
 ## On your path, without Node
 @id: without-node
