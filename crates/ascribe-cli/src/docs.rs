@@ -15,6 +15,8 @@ use clap::{Arg, ArgAction, Command, CommandFactory};
 
 use crate::cli::Cli;
 
+mod builtins;
+
 const BLESS: &str = "ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs";
 
 /// What each fragment starts with: a memo, touching its first block, saying

@@ -213,23 +213,10 @@ Directives follow CommonMark's container rules, like headings and code fences:
 - Block quotes work the same way, with `>` in place of indentation.
 
 ## Built-in directives
-@memo: The built-ins are in SPEC §4's order, here, in the table, and in the contents, so each section's link to the SPEC counts up. A new built-in goes where the SPEC puts it, in all three.
 
 ([SPEC §4]({repo}/blob/main/SPEC.md#4-built-in-directives))
 
-| Directive | Forms | Primary | Purpose |
-|---|---|---|---|
-| [`@id`](directives.md#id) | line | an id | Give a heading a stable id |
-| [`@include`](directives.md#include) | line | a path | Include a file or a section |
-| [`@variant`](directives.md#variant) | container, grouped | none | Mark alternative content |
-| [`@available`](directives.md#available) | line | an availability spec or feature key | Say where content applies |
-| [`@note`](directives.md#note) | line, container | text, optional | A callout |
-| [`@steps`](directives.md#steps) | line | none | Mark an ordered list as a procedure |
-| [`@details`](directives.md#details) | line, container | none | Collapsible content |
-| [`@snippet`](directives.md#snippet) | line | an address | A code example from a file |
-| [`@intended`](directives.md#intended) | line | a reason | Say a check's problem is intended |
-| [`@memo`](directives.md#memo) {available="ascribe 0.4.0"} | line, container | text | Keep a note for whoever maintains the page, never published |
-| [`@term`](directives.md#term) {available="ascribe 0.4.0"} | line | none | Make a glossary page's heading a term |
+@include: ../_generated/directives-builtins.md
 
 ### `@id`
 
