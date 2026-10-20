@@ -21,11 +21,18 @@
 #                 them.
 #   default       The value the loader uses when the key is absent, when it
 #                 has one.
-#   default-text  The reference's words for a default that isn't one value.
+#   default-text  The reference's words for a default that isn't one value,
+#                 or for a required key it doesn't mark "**required**"; empty
+#                 where its table leaves the default blank.
 #   required      true when the key must be there.
 #   only          "fields": a `<field>` key an attribute doesn't take.
 #   available     The release that added it, when the reference marks it.
 #   description   What it does, in Markdown, as the reference writes it.
+#
+# The reference's `Key | Type | Default | Description` tables are generated
+# from this file (tests/conformance/tests/docs.rs): edit a key here, then
+# rewrite them with `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test
+# docs`.
 #
 # The loader reads `table`, `key`, `choices`, `default`, and `only`; a test
 # fails when it accepts a key this file doesn't have, or this file has one
@@ -825,6 +832,7 @@ kind = "choice"
 type = "string"
 choices = ["quiet"]
 available = "ascribe 0.3.0"
+default-text = ""
 description = '''Ascribe's own selection of Vale rules: `quiet`, rules that are almost never wrong. Nothing is downloaded: the preset is written under `.ascribe/vale/`.'''
 
 [[setting]]
@@ -833,6 +841,7 @@ key = "config"
 kind = "text"
 type = "string"
 available = "ascribe 0.3.0"
+default-text = ""
 description = '''Instead of a preset, the path of the project's own `.vale.ini`, from the project root.'''
 
 [[setting]]
@@ -941,6 +950,7 @@ kind = "text"
 type = "string"
 required = true
 available = "ascribe 0.3.0"
+default-text = "required"
 description = '''Why it was retired. A reader whose link leads there sees it, as text. Not empty.'''
 
 [[setting]]
@@ -949,6 +959,7 @@ key = "to"
 kind = "text"
 type = "string"
 available = "ascribe 0.3.0"
+default-text = ""
 description = '''Where its address leads now: a page, by its path from the content root, and `#` and a heading's id, as `guides/security.md#rotate-keys`. Without it, or in a build that doesn't publish the page, the address shows that what was there was removed, the reason, and a link to the docs' home.'''
 
 [[setting]]

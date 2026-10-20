@@ -11,17 +11,7 @@ Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#cont
 
 @include: ../_fragments/content-model/consumer.md
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `profile` | string | `"astro"` | The consumer profile. Supported: `"astro"`. |
-| `site` | string (URL) | none | The published site's origin, such as `"https://docs.quill.dev"`: an `http` or `https` URL with no path, query, or fragment. The plain-markdown output needs it to write absolute links ([SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)). Without it, plain-markdown links are root-relative (they start with `base-path`) and `ascribe build` warns. |
-| `base-path` | string | `"/"` | **Routing.** The URL path every route starts with, such as `"/docs/"`, including any locale prefix (`"/en/"`). It must start with `/`. A trailing `/` is optional and doesn't change the meaning. |
-| `trailing-slash` | string | `"always"` | **Routing.** Whether page URLs end in `/`: `"always"` (`/guides/setup/`) or `"never"` (`/guides/setup`). Match the consumer's own setting (Astro's `trailingSlash` and `build.format`). |
-| `slugger` | string | `"github"` | **Slugging.** The algorithm for heading ids ([SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)), which must be the one the consumer uses. Supported: `"github"`, a port of `github-slugger`, which Astro uses. |
-| `html` | boolean | `true` | **HTML passthrough.** Whether the consumer renders raw HTML in markdown. The site output's custom elements need it, so the `astro` profile supports only `true`. |
-| `agents` {available="ascribe 0.3.0"} | boolean | `false` | **Outputs for agents.** Whether each build also publishes what AI agents read, as the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) lays it out: `llms.txt`, the index of every page, and each page's Markdown at its URL with `.md`. It needs `site`, since every link agents read is absolute. See below. |
-| `permalink-path` {available="ascribe 0.3.0"} | string | `go/` under `base-path` | **Permalinks.** Where each [permalink](../writing/directives.md#permalinks)'s address is published, as a path from the site's root, such as `"/go/"`: `/go/cli-check/` forwards to the heading marked `cli-check`. It must start with `/`. Set it when the addresses a product prints shouldn't move when `base-path` does. Under the `astro` profile it must be under `base-path`, since an Astro site serves nothing outside it. |
-| `headers` {available="ascribe 0.3.0"} | string | none | **Response headers.** The host whose format a build's response headers are written in, so that the Markdown version of a page that isn't listed isn't indexed either. Supported: `"netlify"`, the `_headers` file Netlify reads. `@ascribed/astro` writes it into the built site ([the `@ascribed/astro` reference](../astro/reference.md#response-headers)). Without it, nothing is written for a host, and the headers are in `_ascribe/headers.json` for a deploy step to read. See below. |
+@include: ../_generated/content-model-consumer.md
 
 **Heading ids, image attributes, and assets** ([SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)) are part of the profile, not keys. The `astro` profile has exactly one way to do each:
 
@@ -80,13 +70,7 @@ include = ["src/**", "examples/**"]
 
 A page names a file through its source as `<source>:<path>`, with the path relative to the source's folder: `@snippet: code:examples/quill/ascribe.toml#dimensions`. Both kinds of source are addressed the same way, so moving code to another repository, or back, changes `ascribe.toml` and no page.
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `path` | string (path) | **required** without `git` | The source's folder, relative to the project root. It must exist, be a directory, and be inside the git repository the project is in, when the project is in one. |
-| `git` | string (URL) | **required** without `path` | Another repository, as `git` takes it: `https://`, `http://`, `ssh://`, `git://`, `file://`, or `user@host:path`. |
-| `branch` | string | the repository's default branch | The branch `ascribe sources update` moves the pin to. |
-| `include` | array of patterns | every file | The files a snippet may read, matched against their paths relative to the source's folder (§1.3). |
-| `ignore` | array of patterns | none | Files left out even when `include` matches them. |
+@include: ../_generated/content-model-sources.md
 
 `<name>` follows the rules for keys (§1.2). A project can declare several sources, of either kind.
 

@@ -4,8 +4,6 @@ Note types ([SPEC §4.5]({repo}/blob/main/SPEC.md#45-note)), the values of `@not
 
 `<type>` is the note type (`key` rule).
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `label` | string | built-in types: `Note`, `Tip`, `Important`, `Warning`, `Caution`; new types: **required** | The display label, used where a note's type is shown as text, such as the plain-markdown output's `**Tip: …**` ([SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)). |
+@include: ../../_generated/content-model-notes.md
 
 Under `[notes]`, the inline form `security = { label = "Security" }` is equivalent.
