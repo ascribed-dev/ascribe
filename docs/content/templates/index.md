@@ -49,7 +49,7 @@ title: "Rotate keys"
 ---
 ```
 
-Once a project declares types, every page names one. A project that had none, whose pages were all of the implicit type `page`, gets `[types.page]` written out, and `eject` lists the pages that name no type: each needs `type: page`, or the type it's of, and `ascribe check` reports each with a fix for every type. Commit the files, with `templates/templates.lock`, which records what each was copied from. The rules [`ascribe agents sync`](../agents/index.md#agent-instructions) writes say what each type is for with their summary of it, from that file; to say it your own way, give the type a [`purpose`](../content-model/index.md#41-page-types).
+Once a project declares types, every page names one. A project that had none, whose pages were all of the implicit type `page`, gets `[types.page]` written out, and `eject` lists the pages that name no type: each needs `type: page`, or the type it's of, and `ascribe check` reports each with a fix for every type. Commit the files, with `templates/templates.lock`, which records what each was copied from. The rules [`ascribe agents sync`](../agents/instructions.md) writes say what each type is for with their summary of it, from that file; to say it your own way, give the type a [`purpose`](../content-model/index.md#41-page-types).
 
 To take only some, name them: `ascribe templates eject how-to concept`. `ascribe templates list` names the six. A type of the same name declared already, or a file where one would be written, is named, and then nothing is written. To keep a type the project declares, with its own frontmatter, and take the template for it, add `--keep-type`: it adds only the type's `template` and `guide`. `--to` writes them into another folder outside the content root, and the [command reference](../examples/sources.md#cli-templates-eject) has the rest.
 
@@ -111,7 +111,7 @@ Without the editor:
 2. Read the type's guide and Ascribe's notes on it, before you write.
 3. Replace each `\{placeholder}` with what it asks for, and the title and description in the frontmatter with your own.
 
-An agent starts from the template too. Ask it for a page, with the plugin's `/ascribe:new-page` or the prompt `ascribe agents prompt new-page` prints ([agents guide](../agents/index.md#from-the-command-line)), and the prompt gives it the template with its type and title set, says where the file goes, and sends it to the guide and the notes, by their paths, before it writes:
+An agent starts from the template too. Ask it for a page, with the plugin's `/ascribe:new-page` or the prompt `ascribe agents prompt new-page` prints ([agents guide](../agents/prompts.md#from-the-command-line)), and the prompt gives it the template with its type and title set, says where the file goes, and sends it to the guide and the notes, by their paths, before it writes:
 
 ```sh
 ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"

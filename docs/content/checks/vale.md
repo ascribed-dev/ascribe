@@ -78,7 +78,7 @@ Your project already lists words Vale shouldn't take for misspellings: phrase va
 
 - **In the editor**, on a page when you open it and when you save it, never as you type. A slow Vale never delays anything else, and an edit removes the alerts at and after the place you changed until the next save.
 - **In `ascribe check`**, with `--vale`, or always with `in-check = true`. Vale runs once, on the pages the check reports on. Its `suggestion`, `warning`, and `error` alerts are advice, warnings, and errors; set `max-level = "advice"` to keep your own configuration's warnings from failing `--deny-warnings`.
-- **In the agents' hooks**, only with `in-check = true`, and only Vale's error-level alerts reach the agent. See [Agents](../agents/index.md#hooks).
+- **In the agents' hooks**, only with `in-check = true`, and only Vale's error-level alerts reach the agent. See [Agents](../agents/hooks.md).
 - **Never in the MCP server's tools**, which say they only read: `ascribe_check` reports that the prose wasn't checked.
 
 When Vale isn't installed, fails, or takes too long, you get one advice on `[checks.vale]` in `ascribe.toml` (`prose-not-checked`) saying why, and everything else is checked as usual. If you check prose only in CI, turn that advice off on other machines with `prose-not-checked = "off"` in `[checks]`.

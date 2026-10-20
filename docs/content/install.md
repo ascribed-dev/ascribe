@@ -81,7 +81,7 @@ Each [release]({repo}/releases) has an archive for each platform, `ascribe-<vers
 
 ## Which `ascribe` runs
 
-A machine can have more than one `ascribe`: the one on your path, the one `@ascribed/cli` pins in a project, and the one the editor's extension bundles. A bare `ascribe` runs your path's; `npx ascribe` runs the project's; the editor runs the project's when there is one, and its own otherwise, and puts that one first on the path of its terminals ([Agents](agents/index.md#vs-code) says how). `ascribe --version` says which version you're running.
+A machine can have more than one `ascribe`: the one on your path, the one `@ascribed/cli` pins in a project, and the one the editor's extension bundles. A bare `ascribe` runs your path's; `npx ascribe` runs the project's; the editor runs the project's when there is one, and its own otherwise, and puts that one first on the path of its terminals ([Agents](editor/agents.md#agents-in-vs-code) says how). `ascribe --version` says which version you're running.
 
 ## See also
 

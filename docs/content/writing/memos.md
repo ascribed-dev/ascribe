@@ -83,8 +83,8 @@ A memo for you alone, such as what you were told and haven't confirmed, goes in 
 
 An agent reads a memo where you'd want it to: before it changes the page.
 
-- **The rules** `ascribe agents sync` writes tell an agent, when a page has a `@memo`, to read a block's memo before changing the block, and, when the project has memo files, that `ascribe outline <page>` lists the memos about a page: see [Agent instructions](../agents/index.md#agent-instructions).
-- **A prompt about a page,** from `fix`, `review`, or the editor's **Prompt agent**, lists the memo files about the page, or about what changed, by path, and the agent opens them: see [Memos in a prompt](../agents/index.md#memos-in-a-prompt).
+- **The rules** `ascribe agents sync` writes tell an agent, when a page has a `@memo`, to read a block's memo before changing the block, and, when the project has memo files, that `ascribe outline <page>` lists the memos about a page: see [Agent instructions](../agents/instructions.md).
+- **A prompt about a page,** from `fix`, `review`, or the editor's **Prompt agent**, lists the memo files about the page, or about what changed, by path, and the agent opens them: see [Memos in a prompt](../agents/prompts.md#memos-in-a-prompt).
 
 A prompt never pastes in a memo's text, so a long memo costs an agent nothing until it's relevant.
 

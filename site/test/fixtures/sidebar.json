@@ -181,12 +181,48 @@
         "label": "Agents"
       },
       {
-        "href": "/docs/agents/commands/",
-        "label": "ascribe agents and mcp"
+        "href": "/docs/agents/loop/",
+        "label": "Work with an agent"
+      },
+      {
+        "href": "/docs/agents/instructions/",
+        "label": "Write the agent files"
+      },
+      {
+        "href": "/docs/agents/prompts/",
+        "label": "Prompt your agent"
+      },
+      {
+        "href": "/docs/agents/mcp/",
+        "label": "Set up the MCP server"
+      },
+      {
+        "href": "/docs/agents/hooks/",
+        "label": "Check an agent's edits with hooks"
+      },
+      {
+        "href": "/docs/agents/claude-code/",
+        "label": "Claude Code"
+      },
+      {
+        "href": "/docs/agents/copilot/",
+        "label": "GitHub Copilot"
+      },
+      {
+        "href": "/docs/agents/product-index/",
+        "label": "Index your docs for your product's agents"
+      },
+      {
+        "href": "/docs/agents/whats-sent/",
+        "label": "What's sent where"
       },
       {
         "href": "/docs/agents/measuring/",
         "label": "What to measure"
+      },
+      {
+        "href": "/docs/agents/commands/",
+        "label": "ascribe agents and mcp"
       }
     ]
   },

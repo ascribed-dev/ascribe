@@ -57,7 +57,7 @@ The pull request's comments sit beside the blocks they're about, each thread wit
 
 The same threads show on their lines in the source editor, where you can reply and comment too (see [Comments in the preview](../editor/review.md#comments-in-the-preview)).
 
-To hand a comment to your agent, choose **Prompt agent** on its thread. **More review actions** (**⋯**) in the header prompts your agent to review the page, or the pages a changed fragment reaches. [In review](../agents/index.md#in-review) has what each prompt says.
+To hand a comment to your agent, choose **Prompt agent** on its thread. **More review actions** (**⋯**) in the header prompts your agent to review the page, or the pages a changed fragment reaches. [In review](../agents/prompts.md#in-review) has what each prompt says.
 
 ### 5. Submit
 
