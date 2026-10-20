@@ -36,7 +36,7 @@ What the editor does as you write a page: what it completes, what it shows on ho
 - A glossary term, in prose: its definition for the editor's build. On the term's heading: the definition, and how many pages use the term.
 
 @available: ascribe 0.3.2
-- A version in an availability spec, for a target with [release lines](../versions/index.md): the line it falls in, and that line's status, such as "in line 3.4, live".
+- A version in an availability spec, for a target with [release lines](../versions/lines.md): the line it falls in, and that line's status, such as "in line 3.4, live".
 
 @available: ascribe 0.3.2
 - `replaces` in frontmatter: the page it replaces, and which page each line publishes. Go to Definition opens the replaced page.

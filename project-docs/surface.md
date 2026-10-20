@@ -861,7 +861,9 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `review/index.md` | Review | how-to |
 | `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
 | `templates/index.md` | Page templates | how-to |
-| `versions/index.md` | Versions | how-to |
+| `versions/archive.md` | Archive and retire a line | how-to |
+| `versions/index.md` | Publish a site for each version | how-to |
+| `versions/lines.md` | Release lines | reference |
 | `versions/release.md` | `ascribe versions` | reference |
 | `writing/directives.md` | Directive reference | reference |
 | `writing/memo-files.md` | Memo files | reference |

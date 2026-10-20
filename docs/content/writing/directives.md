@@ -65,7 +65,7 @@ replaces: configure-legacy.md
 ---
 ```
 
-In a build versioned by a target ([versions](../versions/index.md)), a link to the old page goes to the new one in a line that has the new one, and the other way round, so the pages that link to either need no marks; and a site's list of a page's lines leads from one to the other. In any other build the two are different pages.
+In a build versioned by a target ([versions](../versions/lines.md#links-between-lines)), a link to the old page goes to the new one in a line that has the new one, and the other way round, so the pages that link to either need no marks; and a site's list of a page's lines leads from one to the other. In any other build the two are different pages.
 
 - It names a page, without `#` and an id. A page can't replace itself, and a chain of `replaces` can't come back to where it started.
 - No line publishes both pages, and no line publishes two pages that replace the same page: mark the new page with the line it starts in, and the old one with where it ends, `self-managed (ga 3.0, removed 3.5)`.
@@ -649,7 +649,7 @@ See [](keys.md#rotate-keys).
 ### Links between lines
 @available: ascribe 0.3.2
 
-In a build versioned by a target ([versions](../versions/index.md)), a link to a page a line doesn't publish isn't an error. It goes, in order, to:
+In a build versioned by a target ([versions](../versions/lines.md#links-between-lines)), a link to a page a line doesn't publish isn't an error. It goes, in order, to:
 
 1. The page that takes its place in the line: the page that [replaces it](directives.md#a-page-that-replaces-another), or that it replaces, following a chain of them to the page the line has.
 2. The page in the nearest line that has it, the closest newer line first, then the closest older: a **link out** of the line. Its text stays what you wrote, and the output says which line it leads to: the site output marks it for the stylesheet, which shows "(3.5)" after it, and the plain output writes " (3.5)" after the link.

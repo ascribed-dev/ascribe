@@ -58,6 +58,8 @@ folder = "navigation/"
 
 [[sections]]
 folder = "versions/"
+label = "Versions"
+pages = ["archive.md", "lines.md", "release.md"]
 
 [[sections]]
 folder = "templates/"

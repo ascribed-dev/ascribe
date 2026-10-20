@@ -5,34 +5,7 @@ description: "List a project's release lines, say what differs between two, rele
 available: ascribe 0.3.2
 ---
 
-The commands for a project's [release lines](index.md): what they are, what differs between two, the release that makes a planned line live, the archive that keeps a line once it leaves, and the retirement that takes it out of the source. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
-
-## Release day
-
-When a line ships, the docs follow it in one command:
-
-```sh
-ascribe versions release "self-managed 3.6"
-```
-
-Before it, the content written for 3.6 says so through a [feature](../content-model/content.md): `[features.next] available = "self-managed 3.6"`, and marks like `@available: next` on the pages. The release:
-
-1. Rewrites each mark that names a feature whose version is in 3.6 to the version itself, `@available: self-managed 3.6`, so the content stays marked for 3.6 once the feature moves on.
-2. Points each such feature at the next planned line, or at `--next`, which it also adds to `planned`, so what's written for the next release can keep using it.
-3. Moves 3.6 from `planned` to `live`.
-4. When no build is [versioned](index.md#build-a-site-for-each-line) by the target, moves the line that was current to `archived`, with no address: such a project publishes one line, and a reader can't be on the old one any more. Its date in `ends`, if it has one, becomes its `ended`. A project that builds a site for each line keeps the old line live, until you archive it.
-
-It builds the project in memory before and after, and refuses when rewriting the marks or archiving the old line would change what a reader sees: both are meant to change nothing, so a change there is a mark the rewrite got wrong. What the release itself changes, each page whose content was planned and is now live, it lists by build. It writes nothing when it refuses, and `--dry-run` says what it would do and writes nothing.
-
-It writes only files git can put back as they were: `ascribe.toml` and each page it rewrites must be tracked, and unchanged since the last commit. So the release is one commit to read, and `git checkout` undoes it. With `--force` it writes them anyway, as it must outside a repository.
-
-A line that isn't planned can be released too, as long as it falls between the current line and the oldest planned one: a patch release, `3.5.1` when the lines are written as patches, needs no entry first. A feature that names the next planned line keeps naming it.
-
-Then, to start the release notes, see what the new line has that the one before didn't:
-
-```sh
-ascribe versions changes "self-managed 3.5" 3.6 --format markdown
-```
+The commands for a project's [release lines](lines.md): what they are, what differs between two, the release that makes a planned line live, the archive that keeps a line once it leaves, and the retirement that takes it out of the source. [Publish a site for each version](index.md) and [Archive and retire a line](archive.md) are the tasks they're used in. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts), and the JSON each writes with `--format json` is in [JSON reports: `ascribe versions`](../contracts/json-reports/versions.md).
 
 ## `ascribe versions`
 @id {permalink=true}: cli-versions
@@ -48,7 +21,12 @@ Shows each target's lines, newest first: whether each is current, live, planned,
 
 @include: ../_generated/cli-versions-list-options.md
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, and `targets`, each with `target`, `builds` (the builds versioned by it), and `lines`, newest first, each with `line`, `status` (`current`, `live`, `planned`, or `archived`), `outputs` (for a live line, each with `build`, `base`, and `pages`), and, when the line has them, `ends`, `ended`, and `url`. It exits with `0`, and `2` when the project doesn't load.
+With `--format json`, the same, as its [schema](../contracts/json-reports/versions.md#ascribe-versions-list) has it. It exits with `0`, and `2` when the project doesn't load.
+
+.The JSON for this example
+@details:
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/versions-list.json
+@end
 
 ### `ascribe versions changes`
 @id {permalink=true}: cli-versions-changes
@@ -65,7 +43,12 @@ The second line is a version of the first's target, and either may come first. E
 
 @snippet {lang=markdown}: code:crates/ascribe-cli/tests/output/versions-notes.md
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `target`, `from`, `to`, and `added`, `removed`, and `changed`, each a list with `file`, `line`, `kind` (`page`, `section`, `block`, or `row`), `page` (its title), `heading` (left out at the top of a page), `text` (its first line), for a changed one, `from_state` and `to_state`, its state in each line, such as `deprecated`, and, for a page added in place of another, `in_place_of`, with that page's `file`, `line`, and `page`.
+With `--format json`, as its [schema](../contracts/json-reports/versions.md#ascribe-versions-changes) has it:
+
+.The JSON for this example
+@details:
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/versions-changes.json
+@end
 
 | Code | Meaning |
 |---|---|
@@ -75,15 +58,26 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 ### `ascribe versions release`
 @id {permalink=true}: cli-versions-release
 
-Releases a line: rewrites the marks that name it through a feature, moves the feature on, makes the line live, and archives the old current line where no build is versioned by the target. [Release day](#release-day) has each step. It edits `ascribe.toml` in place, keeping its comments and order, and each mark where it's written. In a copy of `examples/quill` that plans 3.6, with a section marked `@available: sso` and `[features.sso]` available in `self-managed 3.6`, `ascribe versions release "self-managed 3.6" --next 3.7 --dry-run` says what it would do. Its site is versioned, so 3.5 stays live, with an output of its own, `site@3.5`:
+Releases a line: rewrites the marks that name it through a feature, moves the feature on, makes the line live, and archives the old current line where no build is versioned by the target. [When a line ships](index.md#release-day) has each step. It edits `ascribe.toml` in place, keeping its comments and order, and each mark where it's written. In a copy of `examples/quill` that plans 3.6, with a section marked `@available: sso` and `[features.sso]` available in `self-managed 3.6`, `ascribe versions release "self-managed 3.6" --next 3.7 --dry-run` says what it would do. Its site is versioned, so 3.5 stays live, with an output of its own, `site@3.5`:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-release.txt
+
+It builds the project in memory before and after, and refuses when rewriting the marks or archiving the old line would change what a reader sees: both are meant to change nothing, so a change there is a mark the rewrite got wrong. What the release itself changes, each page whose content was planned and is now live, it lists by build. It writes nothing when it refuses, and `--dry-run` says what it would do and writes nothing.
+
+It writes only files git can put back as they were: `ascribe.toml` and each page it rewrites must be tracked, and unchanged since the last commit. So the release is one commit to read, and `git checkout` undoes it. With `--force` it writes them anyway, as it must outside a repository.
+
+A line that isn't planned can be released too, as long as it falls between the current line and the oldest planned one: a patch release, `3.5.1` when the lines are written as patches, needs no entry first. A feature that names the next planned line keeps naming it.
 
 It refuses a line that's live or archived already, so running it twice changes nothing the second time; a planned line with an older one planned before it; and a line a feature names when no planned line follows it and there's no `--next`. A mark it can't rewrite where it's written, such as a frontmatter `available:` that spans lines, is named with its file and line, to write on one line first.
 
 @include: ../_generated/cli-versions-release-options.md
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `written` (false with `--dry-run`), `target`, `line`, `was_planned`, `next` and `next_added` (the line the features moved to, when they moved, and whether it was added to `planned`), `archived` (the line moved to archived, when one was), `features` (each with `key`, `from` and `to`, its spec before and after, and `kept`, the other targets its spec names), `files` (each with `file`, from the project's folder, and its `marks`, each with `line`, `from`, and `to`), and `outputs` (each with `build`, `output`, and the files `added`, `removed`, and `changed`).
+With `--format json`, as its [schema](../contracts/json-reports/versions.md#ascribe-versions-release) has it:
+
+.The JSON for this example
+@details:
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/versions-release.json
+@end
 
 | Code | Meaning |
 |---|---|
@@ -93,7 +87,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 ### `ascribe versions archive`
 @id {permalink=true}: cli-versions-archive
 
-Renders a line, live or planned, into a folder of HTML that needs nothing else: every page of the line with a statement of what it is, a sidebar with a search box, a contents page, and a print stylesheet, marked so crawlers leave it alone, working from a disk with no server. [Archive a line](index.md#archive-a-line) says what's in it, and the [archive contract](../contracts/archive.md) its layout. In a copy of `examples/quill`, `ascribe versions archive "self-managed 3.4" --to archive/3.4 --current https://docs.quill.dev/` writes the archive and says what to add to `ascribe.toml` once it's hosted:
+Renders a line, live or planned, into a folder of HTML that needs nothing else: every page of the line with a statement of what it is, a sidebar with a search box, a contents page, and a print stylesheet, marked so crawlers leave it alone, working from a disk with no server. [Archive and retire a line](archive.md#archive-a-line) says what's in it, and the [archive contract](../contracts/archive.md) its layout. In a copy of `examples/quill`, `ascribe versions archive "self-managed 3.4" --to archive/3.4 --current https://docs.quill.dev/` writes the archive and says what to add to `ascribe.toml` once it's hosted:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-archive.txt
 
@@ -101,7 +95,12 @@ Renders a line, live or planned, into a folder of HTML that needs nothing else: 
 
 @include: ../_generated/cli-versions-archive-options.md
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `target`, `line`, `status` (`current`, `live`, or `planned`), `build` (the versioned build, as declared), `folder` (from the current folder), `contents` (the contents page, from the folder), `pages`, `assets`, `removed` (files of an earlier archive there that this one doesn't have), `search_index_bytes` (the size of `search-index.js`), `search_index_large` (whether it's over 8 MB), and `unlinked` (each link written as its text, with `file`, from the project's folder, `text`, `href`, and `line`, the line it led to when it led out of the line).
+With `--format json`, as its [schema](../contracts/json-reports/versions.md#ascribe-versions-archive) has it:
+
+.The JSON for this example
+@details:
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/versions-archive.json
+@end
 
 | Code | Meaning |
 |---|---|
@@ -111,7 +110,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 ### `ascribe versions retire`
 @id {permalink=true}: cli-versions-retire
 
-Takes the oldest live line out of the window once its archive is hosted: moves it from `live` to `archived` with its address and the day it ended, rewrites each mark for its target to the simplest spec that means the same in every line still live or planned, lists what no line has any more, and says where each of the line's addresses should go. [Retire a line](index.md#retire-a-line) has each step. It edits `ascribe.toml` in place, keeping its comments and order, and each mark where it's written. In `examples/quill`, `ascribe versions retire "self-managed 3.4" --url https://archive.quill.dev/3.4/ --dry-run --show-unused` says what it would do:
+Takes the oldest live line out of the window once its archive is hosted: moves it from `live` to `archived` with its address and the day it ended, rewrites each mark for its target to the simplest spec that means the same in every line still live or planned, lists what no line has any more, and says where each of the line's addresses should go. [Archive and retire a line](archive.md#retire-a-line) has each step. It edits `ascribe.toml` in place, keeping its comments and order, and each mark where it's written. In `examples/quill`, `ascribe versions retire "self-managed 3.4" --url https://archive.quill.dev/3.4/ --dry-run --show-unused` says what it would do:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-retire.txt
 
@@ -127,7 +126,12 @@ The addresses are listed and not written: a host's redirects file is yours to wr
 
 @include: ../_generated/cli-versions-retire-options.md
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `written` (false with `--dry-run`), `retired` (false when the line was archived already and the run only listed or removed what it left), `target`, `line`, `url`, `ended`, `features` and `files` (as `release` writes them, each mark's `from` the spec it had), `unused` (each with `file`, `line`, `kind`, `page`, `section`, `block`, `row`, or `mark`, and `text`), `removed` (whether `--remove-unused` deleted them), `redirects` (each with `from`, a path from the site's root, and `to`, a path or the archive's full address, as the headers list writes them), and `outputs` (each build that isn't a line of the target and changes, with `build`, `output`, and the files `added`, `removed`, and `changed`).
+With `--format json`, as its [schema](../contracts/json-reports/versions.md#ascribe-versions-retire) has it, written here as of 16 October 2026:
+
+.The JSON for this example
+@details:
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/versions-retire.json
+@end
 
 | Code | Meaning |
 |---|---|
