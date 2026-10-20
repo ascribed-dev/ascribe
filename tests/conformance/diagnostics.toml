@@ -3170,7 +3170,7 @@ reference = "content-model/output.md#consumer"
 when = "`ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation"
 message = "the site fails the delivery spec's `{check}` check: {result}. {setting}"
 messages.warning = "the site passes the delivery spec's `{check}` check with a warning: {result}. {setting}"
-fix = "Change the setting the message names where the site is hosted; no page needs editing. The [Astro guide](astro/index.md#what-your-host-does) says what to set on the hosts it names. Only `ascribe report agents` checks a published site."
+fix = "Change the setting the message names where the site is hosted; no page needs editing. [Serve the Markdown versions](astro/serve-markdown.md) says what to set on the hosts it names. Only `ascribe report agents` checks a published site."
 
 [[diagnostic]]
 code = "ASC171"
