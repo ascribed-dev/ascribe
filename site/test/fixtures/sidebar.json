@@ -227,6 +227,18 @@
         "label": "Astro"
       },
       {
+        "href": "/docs/astro/more-than-docs/",
+        "label": "Put the docs in a site with more than the docs"
+      },
+      {
+        "href": "/docs/astro/agents/",
+        "label": "Publish for AI agents"
+      },
+      {
+        "href": "/docs/astro/serve-markdown/",
+        "label": "Serve the Markdown versions"
+      },
+      {
         "href": "/docs/astro/reference/",
         "label": "@ascribed/astro reference"
       },
@@ -255,6 +267,10 @@
       {
         "href": "/docs/navigation/order/",
         "label": "Put your pages in order"
+      },
+      {
+        "href": "/docs/navigation/site-list/",
+        "label": "Move a site's own list to the navigation"
       }
     ]
   },

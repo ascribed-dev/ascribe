@@ -798,9 +798,12 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `agents/commands.md` | `ascribe agents` and `mcp` | reference |
 | `agents/index.md` | Agents | how-to |
 | `agents/measuring.md` | What to measure | concept |
+| `astro/agents.md` | Publish for AI agents | how-to |
 | `astro/elements.md` | Element library reference | reference |
 | `astro/index.md` | Astro | how-to |
+| `astro/more-than-docs.md` | Put the docs in a site with more than the docs | how-to |
 | `astro/reference.md` | `@ascribed/astro` reference | reference |
+| `astro/serve-markdown.md` | Serve the Markdown versions | how-to |
 | `checks/check.md` | `ascribe check`, `build`, and `fmt` | reference |
 | `checks/ci.md` | Checks in CI | how-to |
 | `checks/diagnostics.md` | Diagnostics | reference |
@@ -859,6 +862,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `install.md` | Install | how-to |
 | `navigation/index.md` | Navigation | reference |
 | `navigation/order.md` | Put your pages in order | how-to |
+| `navigation/site-list.md` | Move a site's own list to the navigation | how-to |
 | `permalinks/index.md` | Permalinks | how-to |
 | `review/diff.md` | `ascribe diff` and `drift` | reference |
 | `review/index.md` | Review | how-to |

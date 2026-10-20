@@ -106,4 +106,4 @@ import { choose } from "@ascribed/elements";
 choose("pm", "pnpm");
 ```
 
-A permalink's page uses it to carry a choice in its address; see [Linking from a product](../permalinks/index.md#linking-from-a-product).
+A permalink's page uses it to carry a choice in its address; see [permalinks](reference.md#permalinks).
