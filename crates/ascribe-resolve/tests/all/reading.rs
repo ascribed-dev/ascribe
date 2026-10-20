@@ -379,3 +379,18 @@ fn a_line_with_two_matches_is_one_place() {
     let found = search(&project, "apple");
     assert_eq!(found.places.len(), 1);
 }
+
+#[test]
+fn text_that_spells_a_phrase_value_before_the_phrase_is_still_copied() {
+    let project = project(&[("a.md", "---\ntitle: A\n---\n\nUse Quill {product} now.\n")]);
+    let r = reading(&project, "a.md", "site");
+    every_character_has_a_place(&project, &r);
+    let found = find(
+        &project,
+        std::slice::from_ref(&r),
+        &Query::parse("\"use quill\"").unwrap(),
+    );
+    assert!(found.places[0].through.is_empty(), "{found:#?}");
+    let found = find(&project, &[r], &Query::parse("\"quill now\"").unwrap());
+    assert_eq!(found.places[0].through, [Through::Phrase("product".into())]);
+}

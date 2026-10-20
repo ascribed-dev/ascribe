@@ -490,7 +490,15 @@ impl Writer<'_> {
         let mut at = span.start();
         let mut rest = text;
         for sub in subs.iter().filter(|s| span.contains_span(s.span)) {
-            let Some(found) = rest.find(sub.value.as_str()) else {
+            // The value is where the text before it is as long as its
+            // source, unless an escape made it shorter; then the first place
+            // it's found.
+            let written = sub.span.start().saturating_sub(at);
+            let found = match rest.get(written..) {
+                Some(after) if after.starts_with(sub.value.as_str()) => Some(written),
+                _ => rest.find(sub.value.as_str()),
+            };
+            let Some(found) = found else {
                 break;
             };
             self.aligned(Span::new(at, sub.span.start()), &rest[..found]);
