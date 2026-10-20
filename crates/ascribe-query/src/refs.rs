@@ -1,14 +1,18 @@
-//! Where a page, a fragment, a heading, or a content model entry is used:
+//! Where a page, a fragment, a heading, an image, or a content model entry
+//! is used:
 //! `file:line` for each place, from the search the editor's Find All
 //! References and its inventory use ([`Project::uses`]). Unlike a text
 //! search, it finds a phrase only where it's a phrase, a heading through
 //! the pages that include its fragment, and a fragment wherever it's
 //! included. A memo file about the target is a place too (SPEC §7.7), at
-//! its `about` line, whether or not the target exists.
+//! its `about` line, whether or not the target exists. An image's places
+//! are the files that show it, link to it, or name it in raw HTML or a
+//! frontmatter field, as `image-unused` finds them.
 
-use ascribe_core::{LineIndex, WideEncoding};
+use ascribe_core::{LineIndex, RelPath, Span, WideEncoding};
 use ascribe_resolve::{
-    BadTarget, EntryKind, FileKind, MemoFile, Project, Usable, UseKind, memo_target, place,
+    BadTarget, EntryKind, FileKind, MemoFile, MentionKind, Project, RefKind, Usable, UseKind,
+    memo_target, place,
 };
 use serde::Serialize;
 
@@ -56,6 +60,8 @@ pub enum TargetKind {
     Fragment,
     /// A heading, by its page and id.
     Heading,
+    /// An image under the content root.
+    Image,
     /// A phrase, `phrase:<key>`.
     Phrase,
     /// A feature, `feature:<key>`.
@@ -81,7 +87,9 @@ pub struct Place {
     /// The column, from 1, in Unicode characters.
     pub column: u32,
     /// How it uses the target: `link`, `include`, `phrase`, `availability`,
-    /// `term`, `variant`, `note`, `widget`, or `memo`, a memo file about it.
+    /// `term`, `variant`, `note`, `widget`, `image`, an image that shows it,
+    /// `html` or `frontmatter`, raw HTML or a frontmatter field that names
+    /// it, or `memo`, a memo file about it.
     #[serde(rename = "use")]
     pub use_kind: &'static str,
     /// Whether it's a memo file kept on this machine only, in
@@ -119,12 +127,15 @@ pub fn refs(
     let places = usable
         .as_ref()
         .map(|target| project.uses(target))
-        .unwrap_or_default();
+        .unwrap_or_default()
+        .into_iter()
+        .map(|place| (place.file, place.span, use_name(place.kind)))
+        .collect();
     // A placed memo is about what the target is, however each names it, and
     // a term's memo is on its heading; a detached one, about what it names
     // as written.
     let on = usable.clone().map(|u| memo_target(project, u));
-    let about: Vec<&MemoFile> = memos
+    let about = memos
         .iter()
         .filter(|memo| {
             place(memo, project).is_some_and(|p| match (&p.target, &on) {
@@ -134,18 +145,110 @@ pub fn refs(
             })
         })
         .collect();
+    answer(
+        project,
+        Found {
+            kind,
+            exists: usable.is_some(),
+            places,
+            about,
+        },
+        given,
+        limit,
+    )
+}
+
+/// The places that use the image at `image`, a path from the content root,
+/// and the memo files of `memos` that name it, at most `limit` of them;
+/// `given` is the target as the person wrote it. The caller has found the
+/// image ([`ascribe_check::image_file`]).
+pub fn image_refs(
+    project: &Project,
+    image: &RelPath,
+    given: &str,
+    limit: usize,
+    memos: &[MemoFile],
+) -> Refs {
+    let mut places: Vec<(RelPath, Span, &'static str)> = project
+        .asset_users(image)
+        .iter()
+        .map(|site| {
+            let used = match site.kind {
+                RefKind::Image => "image",
+                RefKind::Link => "link",
+            };
+            (site.file.clone(), site.span, used)
+        })
+        .collect();
+    for file in project.files() {
+        places.extend(
+            file.mentions()
+                .into_iter()
+                .filter(|m| m.path == *image)
+                .map(|m| {
+                    let used = match m.kind {
+                        MentionKind::Html => "html",
+                        MentionKind::Frontmatter => "frontmatter",
+                    };
+                    (file.path.clone(), m.span, used)
+                }),
+        );
+    }
+    places.sort_by(|a, b| (&a.0, a.1.start()).cmp(&(&b.0, b.1.start())));
+    places.dedup();
+    // A memo can't place an image, so one about it is detached, and names it
+    // as written.
+    let named = Asked::Path {
+        path: image.clone(),
+        id: None,
+    };
+    let about = memos
+        .iter()
+        .filter(|memo| place(memo, project).is_some_and(|p| p.target.is_none() && p.named == named))
+        .collect();
+    answer(
+        project,
+        Found {
+            kind: TargetKind::Image,
+            exists: true,
+            places,
+            about,
+        },
+        given,
+        limit,
+    )
+}
+
+/// What a target is, and what names it.
+struct Found<'m> {
+    kind: TargetKind,
+    exists: bool,
+    /// The places that use it: each one's file, where it is, and its `use`.
+    places: Vec<(RelPath, Span, &'static str)>,
+    /// The memo files about it.
+    about: Vec<&'m MemoFile>,
+}
+
+/// The answer that lists what `found` found, at most `limit` places.
+fn answer(project: &Project, found: Found<'_>, given: &str, limit: usize) -> Refs {
+    let Found {
+        kind,
+        exists,
+        places,
+        about,
+    } = found;
     let mut lines = Lines::new(project);
     let total = places.len() + about.len();
     let mut listed: Vec<Place> = places
         .iter()
         .take(limit)
-        .map(|place| {
-            let (line, column) = lines.at(&place.file, place.span.start());
+        .map(|(file, span, used)| {
+            let (line, column) = lines.at(file, span.start());
             Place {
-                file: project_path(project, &place.file),
+                file: project_path(project, file),
                 line,
                 column,
-                use_kind: use_name(place.kind),
+                use_kind: used,
                 personal: false,
             }
         })
@@ -169,7 +272,7 @@ pub fn refs(
         ascribe_version: ASCRIBE_VERSION,
         target: given.to_owned(),
         kind,
-        exists: usable.is_some(),
+        exists,
         shown: listed.len(),
         truncated: listed.len() < total,
         places: listed,

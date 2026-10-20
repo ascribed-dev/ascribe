@@ -368,14 +368,7 @@ fn images(
             .into_iter()
             .filter_map(|path| {
                 let content = path.relative_to(root)?;
-                let kept = is_image(&path)
-                    && !content.segments().any(|s| s.starts_with('.'))
-                    && !index
-                        .nested_projects()
-                        .iter()
-                        .any(|n| content.starts_with(n))
-                    && (layout.output_dir.is_root() || !path.starts_with(&layout.output_dir));
-                kept.then_some((path, content))
+                listed_image(project, index, &path, &content).then_some((path, content))
             })
             .collect()
     });
@@ -449,6 +442,36 @@ fn left_behind<'s>(
 }
 
 /// Whether a path's extension is an image's.
+/// Whether the image checks look at the file at `content`, a path from the
+/// content root: one that's there, whose extension is an image's, outside
+/// folders whose names start with `.`, nested projects' folders, and the
+/// output directory. `ascribe refs` takes it as a target.
+pub fn image_file(project: &Project, index: &ascribe_resolve::Project, content: &RelPath) -> bool {
+    let Ok(path) = project.content_root().join(content.as_str()) else {
+        return false;
+    };
+    listed_image(project, index, &path, content)
+        && project.file_system().probe(&path) == ascribe_resolve::Probe::File
+}
+
+/// Whether the file at `path`, `content` from the content root, is one the
+/// image checks list, when it's there.
+fn listed_image(
+    project: &Project,
+    index: &ascribe_resolve::Project,
+    path: &RelPath,
+    content: &RelPath,
+) -> bool {
+    let layout = project.layout();
+    is_image(path)
+        && !content.segments().any(|s| s.starts_with('.'))
+        && !index
+            .nested_projects()
+            .iter()
+            .any(|n| content.starts_with(n))
+        && (layout.output_dir.is_root() || !path.starts_with(&layout.output_dir))
+}
+
 fn is_image(path: &RelPath) -> bool {
     path.extension()
         .is_some_and(|e| IMAGE_EXTENSIONS.contains(&e.to_ascii_lowercase().as_str()))

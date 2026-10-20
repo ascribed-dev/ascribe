@@ -10,7 +10,8 @@
 //! - [`link`]: whether a link target exists as seen from a page, and the
 //!   link to write;
 //! - [`render`]: a page as a reader of one build sees it, as plain Markdown;
-//! - [`refs`]: where a page, a heading, or a content model entry is used;
+//! - [`refs`]: where a page, a heading, an image, or a content model entry
+//!   is used;
 //! - [`rules`]: a project's rules, for the instruction files an agent reads;
 //! - [`search`]: where a project's pages say something, as readers read
 //!   them, each place the line to edit;
@@ -51,7 +52,7 @@ pub use model::{
 };
 pub use outline::{Outline, OutlineHeading, OutlineMemo, OutlineMemoState, outline};
 pub use permalinks::{PermalinksAnswer, Retire, RetireAnswer, SyncAnswer, VerifyAnswer};
-pub use refs::{Asked, Place, Refs, TargetKind, refs};
+pub use refs::{Asked, Place, Refs, TargetKind, image_refs, refs};
 pub use render::{Rendered, render};
 pub use report::{Report, report};
 pub use rules::{pointer, rules};
