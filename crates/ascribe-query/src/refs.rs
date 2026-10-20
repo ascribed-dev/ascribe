@@ -286,7 +286,10 @@ fn usable(project: &Project, asked: &Asked) -> (TargetKind, Option<Usable>) {
     let kind = match asked {
         Asked::Path { path, id: None } => match project.file(path).map(|f| f.kind) {
             Some(FileKind::Fragment) => TargetKind::Fragment,
-            _ => TargetKind::Page,
+            Some(FileKind::Page) => TargetKind::Page,
+            // A path that names nothing is what its extension says.
+            None if is_image(path) => TargetKind::Image,
+            None => TargetKind::Page,
         },
         Asked::Path { id: Some(_), .. } => TargetKind::Heading,
         Asked::Entry { kind, .. } => match kind {
@@ -299,6 +302,12 @@ fn usable(project: &Project, asked: &Asked) -> (TargetKind, Option<Usable>) {
         },
     };
     (kind, asked.find(project))
+}
+
+/// Whether a path's extension is an image's, as the image checks read one.
+fn is_image(path: &RelPath) -> bool {
+    path.extension()
+        .is_some_and(|e| ascribe_check::IMAGE_EXTENSIONS.contains(&e.to_ascii_lowercase().as_str()))
 }
 
 fn use_name(kind: UseKind) -> &'static str {

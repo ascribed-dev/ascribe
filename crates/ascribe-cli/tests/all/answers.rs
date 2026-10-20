@@ -707,7 +707,18 @@ fn refs_lists_where_an_image_is_shown_linked_and_named() {
         "{err}"
     );
     assert!(!stdout(&out).contains("doesn't exist"));
-    run(dir.path(), &["refs", "site/docs/images/gone.png"], 1);
+    let gone = json(dir.path(), &["refs", "site/docs/images/gone.png"], 1);
+    assert_eq!(gone["kind"], "image", "{gone}");
+    // An image has no headings to name.
+    let err = stderr(&run(
+        dir.path(),
+        &["refs", "site/docs/images/keys.png#top"],
+        2,
+    ));
+    assert!(
+        err.contains("it's an image, which has no headings"),
+        "{err}"
+    );
 }
 
 #[test]

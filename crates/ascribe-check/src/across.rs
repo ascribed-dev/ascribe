@@ -441,7 +441,6 @@ fn left_behind<'s>(
     latest
 }
 
-/// Whether a path's extension is an image's.
 /// Whether the image checks look at the file at `content`, a path from the
 /// content root: one that's there, whose extension is an image's, outside
 /// folders whose names start with `.`, nested projects' folders, and the
@@ -472,6 +471,7 @@ fn listed_image(
         && (layout.output_dir.is_root() || !path.starts_with(&layout.output_dir))
 }
 
+/// Whether a path's extension is an image's.
 fn is_image(path: &RelPath) -> bool {
     path.extension()
         .is_some_and(|e| IMAGE_EXTENSIONS.contains(&e.to_ascii_lowercase().as_str()))
