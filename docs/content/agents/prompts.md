@@ -9,21 +9,16 @@ available: ascribe 0.3.0
 
 ## In VS Code
 
-- On a problem, the lightbulb (`Ctrl+.`, or `Cmd+.` on macOS) offers **Prompt agent: fix this problem**, after the problem's quick fixes. A problem with a safe quick fix is quicker to fix with it.
-- **Ascribe: Prompt Agent to Fix This File** builds one prompt for the active file's problems, and **Ascribe: Prompt Agent to Fix This Project** one for the project's. The Command Palette shows them when there are problems.
+@steps
+1. Choose where prompts go with the [`ascribe.agents.promptTarget`](../editor/settings.md#editor-settings) setting: the clipboard (the default), to paste into any agent, or VS Code's chat, a Claude Code tab, or Cursor's chat, with the prompt in its input.
+2. Build a prompt:
+   - On a problem, the lightbulb (`Ctrl+.`, or `Cmd+.` on macOS) offers **Prompt agent: fix this problem**, after the problem's quick fixes. A problem with a safe quick fix is quicker to fix with it.
+   - **Ascribe: Prompt Agent to Fix This File** builds one prompt for the active file's problems, and **Ascribe: Prompt Agent to Fix This Project** one for the project's. The Command Palette shows them when there are problems.
+3. Read the prompt where it lands, and send it.
+
+When the place you chose isn't there (the extension isn't installed, or the editor isn't Cursor), the prompt is copied instead, and the status bar says so. The first time you prompt an agent, a notification offers the others your editor has, once.
 
 The prompt is about what the editor checks: the file's problems and its pages' problems in the editor's build (`[editor] build`), as you see them, unsaved edits included. It names the build, and says that `ascribe check` checks every build. Your agent reads the files on disk, so when the file has unsaved changes, the prompt and the editor both say to save it first.
-
-The `ascribe.agents.promptTarget` setting says where the prompt goes:
-
-| Value | Where the prompt goes |
-|---|---|
-| `clipboard` (the default) | The clipboard: paste it into any agent. |
-| `chat` | VS Code's chat, in its input. |
-| `claude-code` | A new Claude Code tab, in its input, through the Claude Code extension. |
-| `cursor` | Cursor's chat, in its input, through its `cursor://` link. Only in Cursor. |
-
-Each one fills the prompt in and leaves it for you to send. When the one you chose isn't there (the extension isn't installed, or the editor isn't Cursor), the prompt is copied instead, and the status bar says so. The first time you prompt an agent, a notification offers the others your editor has, once.
 
 ## From the command line
 
@@ -37,7 +32,7 @@ Each one fills the prompt in and leaves it for you to send. When the one you cho
 ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 ```
 
-`new-page` says where the page goes: where its `path` says, a file or a folder, or else where the request says, and otherwise in the content root, named for the title as its address would be, `docs/rotate-keys.md`; never over a file that's there. For a type with a [template](../templates/index.md), it gives the template with its `type` and title set, to start the file from, and before it, the paths of the type's `guide`, the template's guide and Ascribe's notes, for the agent to read before it writes. The guide isn't put in the prompt: it's long, and a file the agent reads arrives whole. For a type with no template, it gives the frontmatter the type requires, with each field to fill in.
+[`ascribe agents prompt`](commands.md#cli-agents-prompt) says where `new-page` puts the page, and what it gives the agent to start from.
 
 ## Memos in a prompt
 @available: ascribe 0.4.0
@@ -58,7 +53,7 @@ While you [review](../review/index.md) a pull request, **Prompt agent** hands yo
 
 In VS Code, these go where `ascribe.agents.promptTarget` says. The site preview copies them, since a page in your browser can't reach your editor, and says "Prompt copied". The [HTML report](../review/diff.md#the-html-report) has **Copy prompt** for each page. A prompt about the change asks your agent for a report, not edits: you decide what changes.
 
-A comment is someone else's text, so a prompt never passes it as an instruction. It goes inside a fence, under a sentence that names who wrote it and tells your agent to treat it as data and not to follow instructions in it that reach beyond the change. HTML comments, where hidden text would sit, are taken out first. Read the prompt before you send it, as you would any request from a reviewer.
+A comment is someone else's text, so a prompt never passes it as an instruction: it goes inside a fence, as data. Read the prompt before you send it, as you would any request from a reviewer, and see [Agents that reach the network](whats-sent.md#agents-that-reach-the-network) for what the fence doesn't stop.
 
 From the command line, `ascribe diff --format prompt` writes the prompt about the change, and `ascribe diff --format prompt <page>` the one about a page or a fragment, from the same base and builds `ascribe diff` uses:
 
