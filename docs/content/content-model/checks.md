@@ -20,9 +20,9 @@ level = "warning"
 limit = 40_000
 ```
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `<check>` | string or table | the check's own level | A check's name, as the [diagnostics reference](../checks/diagnostics.md) lists it. The value is its level: `"off"`, `"advice"`, `"warning"`, or `"error"`. Or it's a table with `level` and the check's own settings, which its entry in the reference lists; without `level`, the check keeps its own. |
+Each key is a check's name, as the [diagnostics reference](../checks/diagnostics.md) lists it. Its value is the check's level, or a table, `[checks.<check>]`, with the check's own settings, which its entry in the reference lists, and these keys:
+
+@include: ../_generated/content-model-checks.md
 
 Only a check the [diagnostics reference](../checks/diagnostics.md#setting-a-checks-level) marks configurable can be named; that section lists them, with their settings. Three have one, `limit`: for `page-size`, a whole number of characters above 0, `50_000` unless set; for `image-large`, a size, `"500 KB"` unless set; and for `memo-long`, a whole number of characters above 0, `2_000` unless set. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
 
@@ -58,11 +58,7 @@ Says that a check's problem with a content model entry or an image is intended, 
 
 @include: ../_fragments/content-model/intended-example.md
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `check` | string | required | The check, by its name. It must be a review check that reports its problems at an entry, as the [diagnostics reference](../checks/diagnostics.md) says. |
-| `reason` | string | required | Why the problem is intended. Not empty. |
-| `phrase`, `feature`, or `image` | string | required | The entry: a phrase's key, a feature's key, or an image's path under the content root. Exactly one. |
+@include: ../_generated/content-model-intended.md
 
 A glossary term is a heading, so it's acknowledged on its page instead, with [`@intended`](../writing/directives.md#intended) under its heading; `term` here is an error that says so.
 
