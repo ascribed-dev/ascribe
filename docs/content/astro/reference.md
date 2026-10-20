@@ -16,7 +16,7 @@ Everything `@ascribed/astro` takes and does, once a site is set up: its options,
 | `projects` {available="ascribe 0.3.0"} | [Several projects](reference.md#several-projects): a list of entries, each `{ name, build, project }`, in place of `build` and `project`. |
 | `binary` | The `ascribe` binary to run, relative to the Astro root. By default, the `ASCRIBE_BIN` environment variable, then the binary `@ascribed/cli` installed. |
 | `anchors` {available="ascribe 0.2.0"} | Mark each block of the page with the source file and lines it came from (`data-ascribe-source`; see the [site-render contract](../contracts/site-render.md#7-source-anchors)), for review: `"dev"` in `astro dev` only, `true` in `astro build` too. Use `"dev"` unless the build is for reviewers: `true` puts source file paths, fragments' included, in the published pages. By default, `false`, though `review` turns them on in `astro dev`. |
-| `review` {available="ascribe 0.2.0"} | [Review in the site preview](reference.md#review-in-the-site-preview): the **Ascribe review** app in `astro dev`'s toolbar. `false` leaves it out. By default, `true`. `astro build` never has it. With `projects`, it reviews one entry: the one an entry's name names (`review: "docs"`), or the first for `true`. |
+| `review` {available="ascribe 0.2.0"} | [Review in the site preview](../review/site-preview.md): the **Ascribe review** app in `astro dev`'s toolbar. `false` leaves it out. By default, `true`. `astro build` never has it. With `projects`, it reviews one entry: the one an entry's name names (`review: "docs"`), or the first for `true`. |
 | `codeTitles` {available="ascribe 0.2.0"} | Show a code block's title above it ([code block titles](reference.md#code-block-titles)). `false` leaves titles out, for a site that shows them itself. By default, `true`. |
 | `sitemap` {available="ascribe 0.3.0"} | `{ exclude: [...] }`: routes of the site's own pages, from the host's root, to leave out of the [sitemap](reference.md#search-engines-and-crawlers), such as `["/drafts"]`. |
 
@@ -326,29 +326,6 @@ const { previous, next } = neighbors(entry, await getCollection("docs"));
 ```
 
 It returns `{ previous?, next? }`, each `{ entry, href, label, formatted? }`, as a page of a sidebar group is. The first page has no `previous`, and the last no `next`; a page the navigation leaves out, such as one that's `unlisted`, has neither. With a site's own list, `nav`, they're the pages before and after it in the list's groups, in order.
-
-## Review in the site preview
-@id {permalink=true}: review-in-the-site-preview
-@available: ascribe 0.2.0
-
-In `astro dev`, Astro's dev toolbar has an **Ascribe review** app. It shows a pull request's changes and review comments on the real page, in your site's layout: the same marks and threads as the editor's [page preview](../editor/review.md), from the same [`@ascribed/review`]({repo}/blob/main/packages/review/README.md) overlay. Nothing runs until you open the app: opening it starts review, and after **Stop Review**, the panel offers **Start Review**. [Review](../review/index.md) walks through reviewing a pull request with it; this section is the reference for the site's side.
-
-The app's panel sits above the toolbar, in one row: the pull request and the base (**#12 against main**), your place in the changes ("3 of 10 on this page", click it for the breakdown), **Changes / As it will be / As it was**, next and previous change, **Comments**, **Refresh**, and **More review actions** (**⋯**), whose **Prompt agent** items copy a prompt for your agent about the page's changes or a fragment's pages ([In review](../agents/index.md#in-review)). Each thread's **Prompt agent** copies one about its comment. Past the last change it offers the next changed page, by its title. When `ascribe check` finds errors in the working tree, the panel says how many, since a page with an error may not show as it will once it's fixed ([`ascribe diff`](../review/diff.md#cli-diff) explains why). Close it to get the page back; it stays closed or open as you move between pages, and review stays on until **Stop Review** or until `astro dev` stops. With the panel closed, a dot on the toolbar button says you have comments you haven't submitted.
-
-Starting review compares the checkout with the base of its branch's pull request, or, with no pull request, with the default branch (the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists), from where the branch left it, as [`ascribe diff`](../review/diff.md#cli-diff) does. It compares again after each rebuild, so the marks follow your edits on save. A [versioned](../versions/index.md) project is compared in every line, and a page shows the changes of the line it's in: `/3.4/install/` marks what changed in 3.4. Comments, replies, and resolving work as in the page preview, and [map to the pull request](../review/index.md#how-comments-map-to-the-pull-request) the same way: new comments are unsent until **Submit review…** in the panel sends them. Each mark's label and each thread's **Open source** opens the file at the line in your editor, through Vite's open-in-editor: set `LAUNCH_EDITOR` (for example, `LAUNCH_EDITOR=code`) to choose which.
-
-Comments need the [GitHub CLI](https://cli.github.com), signed in (`gh auth login`); the dev server runs it, and no token reaches the page. Without it, or without a pull request, the app shows the changes only and says why. The page and the dev server talk over Vite's own connection, which only pages from the dev server can open. If your Vite config loosens that (`server.cors: true`, `server.allowedHosts: true`, or `legacy.skipWebSocketTokenCheck`), any web page open in your browser could use it, so the app keeps comments off and says which setting to change. It keeps them off too when the dev server listens on the network (`astro dev --host`, or a `server.host` other than localhost), where anyone who can reach the site could comment as you; the changes still show.
-
-The marks, the threads, and the panel are light or dark as the page is, not as your system is, so a light-only site stays readable when your system is in dark mode. The app reads the page's background (or, with none, its `color-scheme`) and sets `data-ascribe-scheme` on the root element; a site that sets `data-ascribe-scheme="light"` or `"dark"` there itself keeps its own.
-
-Review is on for the whole dev server, not one tab: once you start it, every page of the site that loads, in any tab or browser, shows the marks and threads without a click, until **Stop Review**.
-
-Two pages have nothing to place:
-
-- **A route that isn't an Ascribe page** (a changelog page of your own, an index) says so, and lists the pages the change touches, each a link.
-- **A page whose layout drops the anchors**: the marks are placed by the `data-ascribe-source` attributes on each block, so a layout or component that rebuilds the content without them leaves nothing to mark. The panel says so, and lists the page's changes and threads instead, each with **Open source**.
-
-Comparing again after a save runs `ascribe diff` once, which takes about as long as an `ascribe build` of the project: under 50 ms on `examples/astro-site`. `astro dev` logs how long the first comparison took when review starts.
 
 ## Styling
 
