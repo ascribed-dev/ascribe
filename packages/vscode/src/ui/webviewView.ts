@@ -94,6 +94,15 @@ export class WebviewView<Answer, Report> implements vscode.WebviewViewProvider, 
     if (message) void this.view?.webview.postMessage(message);
   }
 
+  /**
+   * Sends the webview a message its own script takes, apart from the
+   * handshake: only to a webview that has drawn, since one sent before it's
+   * ready is lost.
+   */
+  post(message: unknown): void {
+    void this.view?.webview.postMessage(message);
+  }
+
   /** Drops the newest answer, which is out of date: the view draws nothing until it gets another. */
   forget(): void {
     this.handshake.forget();

@@ -418,6 +418,93 @@ describe("This page's webview on examples/quill", () => {
     await view.whenSettled();
     assert.equal(vscode.window.activeTextEditor?.document.uri.toString(), installAgent.toString());
   });
+
+  it("opens an include beside the page, with the focus left in the view and the view on the page", async () => {
+    const api = await activated();
+    const view = api.ui.thisPage;
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(installAgent), {
+      viewColumn: vscode.ViewColumn.One,
+    });
+    await view.whenDrawn(
+      "install-agent.md",
+      (drawn) => title(drawn) === "Title (Install the Quill agent)",
+    );
+    // Connections' third group, Includes, lists the page's one `@include`.
+    const includes = view.items().find((item) => item.label === "Connections")?.children[2];
+    assert.equal(includes?.children[0]?.label, "_fragments/prerequisites.md");
+
+    // The reader clicks in the view, and chooses the include with the keyboard.
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    const pressed = await view.probe({ open: true, focus: "connections/2/0", press: true });
+    assert.equal(pressed.report.focused, "connections/2/0");
+    const fragment = uriOf("docs", "_fragments", "prerequisites.md");
+    const beside = await waitFor("the include beside the page", async () =>
+      vscode.window.visibleTextEditors.find(
+        (editor) => editor.document.uri.toString() === fragment.toString(),
+      ),
+    );
+    assert.equal(beside.viewColumn, vscode.ViewColumn.Two);
+    assert.ok(
+      vscode.window.visibleTextEditors.some(
+        (editor) =>
+          editor.document.uri.toString() === installAgent.toString() &&
+          editor.viewColumn === vscode.ViewColumn.One,
+      ),
+    );
+    // The view stays on the page, and the focus where the choice left it.
+    await view.whenSettled();
+    const after = await view.probe({});
+    assert.equal(title(after), "Title (Install the Quill agent)");
+    assert.equal(after.report.focused, "connections/2/0");
+    assert.equal(after.report.hasFocus, true);
+    assert.notEqual(vscode.window.activeTextEditor?.document.uri.toString(), fragment.toString());
+  });
+
+  it("keeps its scroll and the keyboard's focus as the cursor moves", async () => {
+    const api = await activated();
+    const view = api.ui.thisPage;
+    const keys = uriOf("docs", "keys.md");
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    const editor = await vscode.window.showTextDocument(
+      await vscode.workspace.openTextDocument(keys),
+    );
+    const lines = editor.document.getText().split("\n");
+    const at = (heading: string) => {
+      const line = lines.indexOf(heading);
+      assert.ok(line >= 0, `no ${heading}`);
+      return new vscode.Selection(line + 1, 0, line + 1, 0);
+    };
+    editor.selection = at("## Rotate keys");
+    await view.whenDrawn("keys.md under Rotate keys", (drawn) =>
+      (drawn.report.sections.find((section) => section.key === "connections")?.items ?? []).some(
+        (item) => item.startsWith("install-agent.md"),
+      ),
+    );
+
+    // Every section open, the focus on About's Description, and the view scrolled.
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    const placed = await view.probe({ open: true, focus: "about/4", scroll: 40 });
+    assert.equal(placed.report.focused, "about/4");
+    assert.ok(placed.report.scroll > 0, "the view doesn't scroll");
+
+    // The cursor moves to another heading: Connections changes, and the
+    // reader's place in the view doesn't.
+    const before = view.drawn()?.seq ?? 0;
+    editor.selection = at("## Create a key");
+    const moved = await view.whenDrawn(
+      "keys.md under Create a key",
+      (drawn) =>
+        drawn.seq > before &&
+        !(drawn.report.sections.find((section) => section.key === "connections")?.items ?? []).some(
+          (item) => item.startsWith("install-agent.md"),
+        ),
+    );
+    assert.equal(moved.report.focused, "about/4");
+    assert.equal(moved.report.scroll, placed.report.scroll);
+  });
 });
 
 // Pages' and Content model's menus and filters, run through the views' test
