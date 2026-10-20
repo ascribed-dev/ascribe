@@ -85,7 +85,7 @@ The JSON's sections gain `previous_run`, `new`, and `resolved`, as `links` has t
 
 1. check;
 2. file;
-3. fingerprint: the hash of the source text at the finding's place, with whitespace runs read as one space, or of the address for a link, or of the page's address and the check's id for `afdocs`;
+3. fingerprint: the hash of the source text of the finding's span, or of its line when it has no span, with whitespace runs read as one space; or of the address for a link; or of the page's address and the check's id for `afdocs`;
 4. and, among findings with the first three alike, its order in the file.
 
 So a finding keeps its identity when lines are added above it, and becomes a new one when the text it's about is edited, which is usually right: the edit is what someone should look at. This is the approach SARIF's partial fingerprints and the baselines of several linters take, and it's the seam of the whole proposal, since the baseline below rests on it too.
@@ -97,8 +97,8 @@ So a finding keeps its identity when lines are added above it, and becomes a new
 A team turns on the advice checks and gets 3,400 findings. It wants to fix them over a quarter, and meanwhile to see only the ones it adds.
 
 ```console
-$ ascribe baseline
-Wrote ascribe.baseline: 3,412 findings in 1,906 files.
+$ ascribe baseline write
+Wrote ascribe.baseline: 3,412 problems in 1,906 files.
 $ ascribe check
 checked 2,061 files: 0 errors, 0 warnings, 2 advice, 3,412 in the baseline
 ```
@@ -106,7 +106,7 @@ checked 2,061 files: 0 errors, 0 warnings, 2 advice, 3,412 in the baseline
 - **`ascribe.baseline`,** beside `ascribe.toml`, committed. One line a finding: its check, file, fingerprint, and order, sorted, so two people adding to it rarely touch the same line, and a diff of it reads as a list of findings.
 - **A finding in the baseline isn't reported,** and is counted, as an acknowledged one is.
 - **Only advice can be in it.** An error makes a document non-conforming, and a warning is something a team has decided matters, so neither is put off. `ascribe baseline` skips both, and says how many.
-- **It only shrinks by itself.** A finding that's fixed leaves the baseline the next time `ascribe baseline --prune` runs, and `ascribe check` reports an entry that matches nothing, as advice, so a stale baseline doesn't hide a later finding with the same fingerprint. `ascribe baseline` with no flag adds every current advice finding, which is how it starts and how a team deliberately accepts more.
+- **It only shrinks by itself.** A finding that's fixed leaves the baseline the next time `ascribe baseline prune` runs, and `ascribe check` reports an entry that matches nothing, as advice, so a stale baseline doesn't hide a later finding with the same fingerprint. `ascribe baseline write` adds every current advice finding, which is how it starts and how a team deliberately accepts more.
 - **It isn't `@intended`.** An acknowledgement is one finding, kept for good, with a reason, beside its block. A baseline is many, kept for now, with none. A finding a team means to keep is moved from the baseline to an `@intended`; the editor's quick fix on a baselined finding does that.
 - **The editor and the agents read it,** so an agent working on a page isn't sent after the backlog. `ascribe check --no-baseline` reports everything.
 
@@ -134,9 +134,11 @@ Only the report's code opens the history, as for links, and only the prose check
 2. **The baseline,** on the same identity, once the first has shown it holds across real edits.
 3. **The Vale cache,** when a project's full Vale run is slow enough to matter.
 
-## Open questions
+## Settled
 
-1. **Is a finding's identity its source text, or something narrower?** The text at the place is simple and survives moves. It also makes a reworded sentence a new finding, so a baseline entry is lost when someone fixes a typo near an old finding. A finding's own message arguments (the phrase, the link's target) are steadier but differ by check. Which?
-2. **Does the baseline cover advice only, or warnings too?** A team adopting Ascribe on an existing site may have hundreds of warnings, such as `link-dead` across a migration. Keeping warnings out is simpler and stricter.
-3. **Is `ascribe baseline` a command of its own, or `ascribe check --write-baseline`?** The surface conventions favor a flag on the command whose findings it writes, and a command of its own is easier to find.
-4. **Does the Vale cache wait for a project that needs it, as recommended, or is it built with the rest,** since the link cache's code makes it small?
+The four questions this proposal left open, answered by the maintainer on 20 October 2026.
+
+1. **A finding's identity is the source text of its span.** The check, the file, the hash of the span's text with whitespace folded (its line's, when it has no span), and its order among alike findings. A span is narrower than a block, so a typo fixed elsewhere in the paragraph leaves the finding where it was, and a reworded sentence makes a new one, which errs the right way: an identity that's lost shows a finding again, and one that's too steady hides a changed one. A finding's message arguments would be steadier for some checks and need a rule for each, and the baseline rests on one rule holding for all. _Why:_ one rule for every check, and a mistake that surfaces instead of hiding.
+2. **The baseline holds advice only.** A warning is something a team has decided matters, and the way to put one off is deliberate and reviewed: lower the check to advice in `[checks]`, then baseline it. `ascribe baseline write` says how many warnings and errors it skipped, and names that step. _Why:_ a baseline that could hold warnings would let `--deny-warnings` pass on a project a team hasn't looked at.
+3. **`ascribe baseline` is a group with two verbs, `write` and `prune`.** `write` adds every current advice finding to `ascribe.baseline`, creating it; `prune` removes the entries that match nothing. Neither is `sync`, since bringing the file current would accept every new finding, which is the one thing a baseline mustn't do on its own. A flag on `check` would put two writes of a committed file on a command whose other writes, `--fix`, are to the pages. Both take `--format text|json` and exit `0`, or `2` when they can't run. The group is named for the one file, in the singular, since a project has one baseline. _Why:_ a second operation on the thing already exists, and the conventions put a second command about a thing in its group.
+4. **The Vale cache waits for a project that needs it.** The measurements show no project in or near the repository where a full Vale run costs more than a second, and the cache is a store, a folder in `project-files`, a test that only the prose checks open it, and a hashing of the styles folder, whatever the link cache's code saves. It's built when a project's full `--vale` run is slow enough to matter, or when Ascribe's own CI runs Vale over a corpus that makes it so. _Why:_ a store nobody needs is a surface to keep for nothing.

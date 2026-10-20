@@ -1,6 +1,6 @@
 # Proposal: search
 
-A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It comes from section 15 of the [brainstorm](../brainstorm.md), which also raised a cache and notes. Those are proposals of their own ([memos](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/memos.md), and the cache's): the three share no layer, and this one mentions the others only where it touches them.
+A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. The plan for building it is [search/](../search/README.md). It comes from section 15 of the [brainstorm](../brainstorm.md), which also raised a cache and notes. Those are proposals of their own ([memos](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/memos.md), and the cache's): the three share no layer, and this one mentions the others only where it touches them.
 
 ## The goal
 
