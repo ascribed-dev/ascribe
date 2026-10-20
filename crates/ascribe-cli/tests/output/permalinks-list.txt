@@ -1,0 +1,4 @@
+docs/guides/weave.md:3: weaving
+docs/reference/loom.md:6: weave-config  (ascribe.permalinks has it in guides/weave.md#weave-config)
+ascribe.toml: config is an alias of weave-config
+ascribe.permalinks: rotate-keys was in guides/weave.md#rotate-keys, and nothing declares it now

@@ -122,7 +122,7 @@ function commandReference(): string[] {
   );
   return [
     COMMAND_REFERENCE,
-    ...tracked("docs/content/**/*.md").filter(
+    ...tracked("docs/content/*.md", "docs/content/**/*.md").filter(
       (file) =>
         file !== COMMAND_REFERENCE &&
         !file.includes("/_") &&

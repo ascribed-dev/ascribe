@@ -6,7 +6,7 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/command/questions.md`, `docs/content/editor/index.md`, `docs/content/examples/sources.md`, `docs/content/review/diff.md`, `docs/content/versions/release.md`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/index.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
@@ -44,7 +44,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe templates list` | Shows each template the set has, in a line, with what it's for, and which release of theirs the set was converted from. |  |  |
 | `ascribe templates eject` | Writes each template named, with its guide and Ascribe's notes on its type, into the project, and adds its type to `ascribe.toml`. | `[NAME]... [--to <DIR>] [--keep-type]` | `text`, `json` |
 | `ascribe templates status` | Says what's changed in the templates since the project took them: for each one, whether the set this `ascribe` carries has changed it since the copy, and whether the project has changed its copy; then each template of the set the project doesn't have. | `[--exit-code] [--diff <NAME>]` | `text`, `json` |
-| `ascribe vale eject` | Writes the preset `[checks.vale]` names out as the project's own Vale configuration, for a project that wants more than turning a preset's rules off: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. |  |  |
+| `ascribe vale eject` | Writes the preset `[checks.vale]` names out as the project's own Vale configuration: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. |  |  |
 | `ascribe versions list` | Shows each target's lines, newest first: whether each is current, live, planned, or archived, the output and base path of each live line on each build versioned by the target, with how many pages it publishes, the last day of support from `ends`, and an archived line's address and the day it ended. |  | `text`, `json` |
 | `ascribe versions changes` | Says what differs between two lines of a target, from the marks alone, with nothing built: the pages, sections, blocks, and table rows that are in the second line and not the first (added), in the first and not the second (removed), and in both with a different state, such as deprecated in one (changed). | `FROM TO` | `text`, `json`, `markdown` |
 | `ascribe versions release` | Releases a line: rewrites the marks that name it through a feature, moves the feature on, makes the line live, and archives the old current line where no build is versioned by the target. | `LINE [--next <LINE>] [--dry-run] [--force]` | `text`, `json` |
@@ -856,7 +856,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `examples/drift.md` | Report the pages whose examples changed | how-to |
 | `examples/index.md` | Examples and drift | concept |
 | `examples/snippets.md` | Show an example from the code | how-to |
-| `examples/sources.md` | `ascribe init`, `sources`, `observe`, `permalinks`, `templates`, and `vale` | reference |
+| `examples/sources.md` | `ascribe sources` and `observe` | reference |
 | `examples/tested.md` | Show what an example was tested with | how-to |
 | `getting-started.md` | Getting started | tutorial |
 | `glossary.md` | Glossary | reference |
@@ -865,6 +865,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `navigation/index.md` | Navigation | reference |
 | `navigation/order.md` | Put your pages in order | how-to |
 | `navigation/site-list.md` | Move a site's own list to the navigation | how-to |
+| `permalinks/command.md` | `ascribe permalinks` | reference |
 | `permalinks/index.md` | Permalinks | how-to |
 | `publishing/index.md` | Publishing | concept |
 | `publishing/site.md` | The head, sitemap, `robots.txt`, and headers | reference |
@@ -874,6 +875,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `review/index.md` | Review | how-to |
 | `review/site-preview.md` | Review in the site preview | reference |
 | `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
+| `templates/command.md` | `ascribe templates` | reference |
 | `templates/index.md` | Page templates | how-to |
 | `versions/archive.md` | Archive and retire a line | how-to |
 | `versions/index.md` | Publish a site for each version | how-to |

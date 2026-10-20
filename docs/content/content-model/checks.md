@@ -124,7 +124,7 @@ cli-settings = "settings"
 
 `[permalinks.aliases]` has an entry for each alias, keyed by its name, whose value is the name it leads to: a permalink a heading or page declares, or another alias that leads to one. An alias's address leads where its permalink's does, in every build that publishes it, so repointing the alias changes where it leads and nothing else.
 
-[`ascribe permalinks retire`](../examples/sources.md#cli-permalinks-retire) writes `[permalinks.retired]` for you, and the editor's quick fix on a removed permalink writes an entry with a placeholder reason for you to replace. To bring a retired permalink back, delete its entry and declare the name again.
+[`ascribe permalinks retire`](../permalinks/command.md#cli-permalinks-retire) writes `[permalinks.retired]` for you, and the editor's quick fix on a removed permalink writes an entry with a placeholder reason for you to replace. To bring a retired permalink back, delete its entry and declare the name again.
 
 **Rules.** A name has the characters of an `@id` (`model-invalid-name`). A retired permalink has a `reason`, not empty and not the quick fix's placeholder, and no keys but `reason` and `to` (`model-missing-key`, `model-empty-text`, `model-permalinks`, `model-unknown-key`). A name is one thing: retired, an alias, or declared by the content, never two (`model-permalinks`, `permalink-name-conflict`). An alias leads, through aliases, to a permalink the content declares, never back to itself or to a retired permalink (`model-permalinks`, `permalink-alias-target-missing`). A `to` leads to a page, not a fragment, and to a heading on it when it names one (`permalink-retired-target-missing`).
 

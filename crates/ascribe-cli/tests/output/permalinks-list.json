@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "has_list": true,
+  "permalinks": [
+    {
+      "name": "weaving",
+      "place": "guides/weave.md",
+      "file": "docs/guides/weave.md",
+      "line": 3,
+      "state": "listed",
+      "listed_at": null
+    },
+    {
+      "name": "weave-config",
+      "place": "reference/loom.md#weave-config",
+      "file": "docs/reference/loom.md",
+      "line": 6,
+      "state": "moved",
+      "listed_at": "guides/weave.md#weave-config"
+    }
+  ],
+  "aliases": [
+    {
+      "name": "config",
+      "target": "weave-config",
+      "state": "listed"
+    }
+  ],
+  "retired": [],
+  "removed": [
+    {
+      "name": "rotate-keys",
+      "was": "permalink",
+      "place": "guides/weave.md#rotate-keys"
+    }
+  ]
+}
