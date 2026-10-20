@@ -1,0 +1,3 @@
+api (https://github.com/lantern/api, main)
+  pinned to e06ca349578f9184cd36724d9ed237e0ef2f0eff
+  src/auth.rs: current

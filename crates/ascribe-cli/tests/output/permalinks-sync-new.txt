@@ -1,0 +1,1 @@
+wrote ascribe.permalinks, with 3 permalinks; commit it with the docs

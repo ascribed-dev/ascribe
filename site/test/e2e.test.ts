@@ -160,7 +160,7 @@ test("the landing page's link to getting started opens it under /docs/", async (
   await page.close();
 });
 
-test("the footer links to Credits, the changelog, the license, and the repository, on every kind of page", async () => {
+test("the footer links to Credits, the changelog, the license, the repository, and Bryo Studio, on every kind of page", async () => {
   for (const path of ["/", "/docs/astro/", "/changelog/", "/no/such/page/"]) {
     const page = await open(path);
     const footer = page.locator("footer.site-footer");
@@ -171,7 +171,11 @@ test("the footer links to Credits, the changelog, the license, and the repositor
       "Changelog",
       "License",
       "Repository",
+      "Bryo Studio",
     ]);
+    expect(await footer.getByRole("link", { name: "Bryo Studio" }).getAttribute("href")).toBe(
+      "https://bryostudio.com",
+    );
     expect(await footer.getByRole("link", { name: "Credits" }).getAttribute("href")).toBe(
       "/credits/",
     );

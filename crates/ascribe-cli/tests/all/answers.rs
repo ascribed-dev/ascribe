@@ -645,6 +645,90 @@ fn refs_to_nothing_is_exit_code_1() {
 }
 
 #[test]
+fn refs_lists_where_an_image_is_shown_linked_and_named() {
+    let dir = project();
+    let site = dir.path().join("site");
+    for image in ["docs/images/keys.png", "docs/images/unused.png"] {
+        fs::create_dir_all(site.join(image).parent().unwrap()).unwrap();
+        fs::write(site.join(image), b"\x89PNG").unwrap();
+    }
+    write(&site.join("docs/notes.txt"), "Not a page.\n");
+    write(
+        &site.join("docs/shown.md"),
+        "---\ntitle: Shown\ncover: images/keys.png\n---\n\n![Keys](images/keys.png)\n\n\
+         See [the picture](images/keys.png).\n\n<img src=\"images/keys.png\" alt=\"Keys\">\n",
+    );
+    let refs = json(dir.path(), &["refs", "site/docs/images/keys.png"], 0);
+    assert_eq!(refs["kind"], "image", "{refs}");
+    assert_eq!(refs["exists"], true);
+    let places: Vec<(&str, u64, u64, &str)> = refs["places"]
+        .as_array()
+        .expect("places")
+        .iter()
+        .map(|p| {
+            (
+                p["file"].as_str().unwrap(),
+                p["line"].as_u64().unwrap(),
+                p["column"].as_u64().unwrap(),
+                p["use"].as_str().unwrap(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        places,
+        [
+            ("docs/shown.md", 3, 8, "frontmatter"),
+            ("docs/shown.md", 6, 1, "image"),
+            ("docs/shown.md", 8, 5, "link"),
+            ("docs/shown.md", 10, 11, "html"),
+        ],
+        "{refs}"
+    );
+    // From the content root too, as a page is.
+    let from_root = json(&site, &["refs", "images/keys.png"], 0);
+    assert_eq!(from_root["total"], 4, "{from_root}");
+
+    // An image nothing uses exists, so it's no problem.
+    let unused = json(dir.path(), &["refs", "site/docs/images/unused.png"], 0);
+    assert_eq!(unused["kind"], "image");
+    assert_eq!(unused["total"], 0);
+    let text = stdout(&run(
+        dir.path(),
+        &["refs", "site/docs/images/unused.png"],
+        0,
+    ));
+    assert_eq!(text, "0 places use site/docs/images/unused.png.\n");
+
+    // A file that's neither a source nor an image says what `refs` takes.
+    let out = run(dir.path(), &["refs", "site/docs/notes.txt"], 2);
+    let err = stderr(&out);
+    assert!(
+        err.contains("it's a file, but not a page, a fragment, or an image"),
+        "{err}"
+    );
+    assert!(!stdout(&out).contains("doesn't exist"));
+    run(dir.path(), &["refs", "site/docs/images/gone.png"], 1);
+}
+
+#[test]
+fn refs_finds_the_image_reviews_page_shows_in_ascribes_docs() {
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    for (dir, target) in [
+        ("docs", "images/review-site-preview.png"),
+        (".", "docs/content/images/review-site-preview.png"),
+    ] {
+        let refs = json(&repo.join(dir), &["refs", target], 0);
+        assert_eq!(refs["kind"], "image", "{refs}");
+        let review = refs["places"]
+            .as_array()
+            .expect("places")
+            .iter()
+            .any(|p| p["file"] == "content/review/index.md" && p["use"] == "image");
+        assert!(review, "from {dir}: {refs}");
+    }
+}
+
+#[test]
 fn render_writes_the_page_a_build_publishes() {
     let dir = project();
     let page = "site/docs/install.md";

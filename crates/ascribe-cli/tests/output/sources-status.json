@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "sources": [
+    {
+      "name": "api",
+      "git": "https://github.com/lantern/api",
+      "branch": "main",
+      "commit": "e06ca349578f9184cd36724d9ed237e0ef2f0eff",
+      "files": [
+        {
+          "path": "src/auth.rs",
+          "state": "current"
+        }
+      ]
+    }
+  ]
+}

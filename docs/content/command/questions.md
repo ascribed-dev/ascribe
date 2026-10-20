@@ -111,13 +111,16 @@ With `--format json`, the document is:
 @id {permalink=true}: cli-refs
 @available: ascribe 0.3.0
 
-Lists the places that use a page, a fragment, a heading, or an entry of the content model, each as `file:line:column`, with what kind of use it is. It's the editor's **Find All References**, on the command line: it finds a phrase only where it's a phrase, and a heading in a fragment through every page that includes it, which a text search can't.
+Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model, each as `file:line:column`, with what kind of use it is. It's the editor's **Find All References**, on the command line: it finds a phrase only where it's a phrase, and a heading in a fragment through every page that includes it, which a text search can't.
 
 @include: ../_generated/cli-refs-options.md
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/refs.txt
 
 A target that's a path, with or without `#id`, finds its project from the path. An entry of the model, or a glossary term, is written with a prefix: `phrase:product` (or `phrase:{product}`), `feature:sso`, `term:api-key`, `dimension:deployment`, `note:warning`, or `widget:release-note`, and the project is found from the current directory, or from `--config`. The places are in path order, and in order within a file. A use is `link`, `include`, `phrase`, `availability`, `term`, `variant`, `note`, or `widget`.
+
+@available: next
+An image under the content root is a target too, named as a page is: `ascribe refs images/keys.png`. Its places are each file that shows it (`image`), links to it (`link`), names it in raw HTML such as `<img src>` (`html`), or names it in a frontmatter field such as `cover` (`frontmatter`): the uses that keep [`image-unused`](../checks/diagnostics/content-checks.md#ASC159) from reporting it. An image nothing uses has no places, and exits with `0`, as any target that exists does.
 
 @available: ascribe 0.4.0
 A [memo file](../writing/memo-files.md) about the target is a place too, with the use `memo`, at its `about` line, after the uses. One whose `about` names a target that doesn't exist is listed under that target, so `ascribe refs` finds the memos a rename left behind.
@@ -126,7 +129,7 @@ A [memo file](../writing/memo-files.md) about the target is a place too, with th
 |---|---|
 | `0` | The target exists, used or not |
 | `1` | It doesn't exist |
-| `2` | It couldn't run: no `ascribe.toml`, one with errors, or a target that's neither a path nor an entry |
+| `2` | It couldn't run: no `ascribe.toml`, one with errors, a target that's neither a path nor an entry, or a file that's neither a page, a fragment, nor an image |
 
 With `--format json`, the document is:
 
@@ -153,7 +156,7 @@ What it renames, written as `ascribe refs` writes a target:
 | `keys.md#rotate-keys` | A heading's id, and each link and include that names it, each retired permalink's `to` in `ascribe.toml` that names it, and each [memo file](../writing/memo-files.md)'s `about` that names it, in `memos/` and `.ascribe/memos/`. A heading with an `@id` has it changed. One whose id is made from its text gets an `@id` line under it, so its text stays, and links to the headings after it that were numbered after it follow. |
 | `keys.md` | The page or fragment moves to the new path, and each link and include to it, or in it, whose path changes is changed. So is what `ascribe.toml` names it by: its path in `[glossary] pages`, a retired permalink's `to`, keeping its `#id`, and a phrase that's a link to it. So is each memo file's `about` that names it or a heading in it, keeping its `#id`, and its entry in its section's `pages` in [`ascribe.nav`](../navigation/index.md#the-file), which is taken out when it moves to another folder. A section written inline, as `sections = [{ … }]`, isn't followed: the file is left as it is, and `ascribe check` reports the name that's gone. The new path is read as the target was: from the current folder, or from the content root. |
 
-A path is from the current folder, or from the content root, and the project is found from it; for a phrase or a value, the project is found from the current folder. `--config` names the project for any target, so `ascribe rename keys.md guides/keys.md --config docs` works from the repository's root. A page that isn't found is named with both places it was looked for. It writes the files it changes, then moves the page, and prints each file it changed, from the current folder. A permalink's id isn't renamed, since links from outside the docs use it: change its `@id` by hand, then retire the old name with [`ascribe permalinks retire`](../examples/sources.md#cli-permalinks-retire). A page isn't moved through a folder that's a symbolic link. A phrase used in the code of a source in another repository isn't renamed either, since that code is a copy.
+A path is from the current folder, or from the content root, and the project is found from it; for a phrase or a value, the project is found from the current folder. `--config` names the project for any target, so `ascribe rename keys.md guides/keys.md --config docs` works from the repository's root. A page that isn't found is named with both places it was looked for. It writes the files it changes, then moves the page, and prints each file it changed, from the current folder. A permalink's id isn't renamed, since links from outside the docs use it: change its `@id` by hand, then retire the old name with [`ascribe permalinks retire`](../permalinks/command.md#cli-permalinks-retire). A page isn't moved through a folder that's a symbolic link. A phrase used in the code of a source in another repository isn't renamed either, since that code is a copy.
 
 | Code | Meaning |
 |---|---|
@@ -204,7 +207,7 @@ What's searched is what each build's plain output says of each page's own text: 
 
 - **Text written in the page** is at its line.
 - **A match that reads through a phrase's value,** such as "Sign in to Quill Cloud" where the page says `Sign in to {cloud}`, is at the line that uses the phrase, `through phrase cloud`.
-- **A match wholly inside a phrase's value** is at the phrase's line in `ascribe.toml`, with how many places use it and the `ascribe refs` command that lists them.
+- **A match wholly inside a phrase's value** is at the phrase's line in `ascribe.toml`, with how many places use it and the `ascribe refs` command that lists them. The rest of the block is still searched after the phrase: where `Sign in to {cloud}, then edit quill.yaml` is searched for `quill`, the phrase is one place and the line, at `quill.yaml`, is another.
 - **A link with no text** reads as its target's title, and a match in it is at the link, through that page's title.
 
 What isn't searched: what no build publishes, the source's own spelling of a phrase, text an include brings in from a fragment, the code a `@snippet` shows, a page's title and description, text the content model writes (labels, availability lines, a widget's fallback), text in images, raw HTML, and what a site adds around a page.

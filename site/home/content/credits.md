@@ -12,7 +12,7 @@ Who builds Ascribe, the projects it's built on, and where its ideas came from.
 
 ## Who builds Ascribe
 
-Built by Kyle Rollins with Claude. [Kyle Rollins](https://github.com/KyleBlankRollins) maintains Ascribe, and [Claude](https://www.anthropic.com/claude), Anthropic's model, works on it through [Claude Code](https://claude.com/claude-code). The maintainer decides what's built and reads what ships. Most of the code, the tests, and the docs are written by Claude under those decisions.
+Made by [Bryo Studio](https://bryostudio.com), which is Kyle Rollins, with Claude. [Kyle Rollins](https://github.com/KyleBlankRollins) maintains Ascribe, and [Claude](https://www.anthropic.com/claude), Anthropic's model, works on it through [Claude Code](https://claude.com/claude-code). The maintainer decides what's built and reads what ships. Most of the code, the tests, and the docs are written by Claude under those decisions.
 
 ## What Ascribe is built on
 

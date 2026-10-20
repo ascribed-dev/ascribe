@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "set": {
+    "repository": "https://gitlab.com/tgdp/templates",
+    "tag": "v1.6.0",
+    "commit": "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
+  },
+  "upstream_changed": false,
+  "templates": [
+    {
+      "name": "how-to",
+      "record": "entry",
+      "lock": "templates/templates.lock",
+      "lock_problem": null,
+      "copied_from": "v1.6.0",
+      "upstream": "unchanged",
+      "project": "changed",
+      "files": [
+        {
+          "path": "templates/how-to.md",
+          "kind": "template",
+          "upstream": "unchanged",
+          "project": "changed",
+          "matches_set": false,
+          "sections": null
+        },
+        {
+          "path": "templates/how-to.guide.md",
+          "kind": "guide",
+          "upstream": "unchanged",
+          "project": "unchanged",
+          "matches_set": true,
+          "sections": null
+        },
+        {
+          "path": "templates/how-to.ascribe.md",
+          "kind": "notes",
+          "upstream": "unchanged",
+          "project": "unchanged",
+          "matches_set": true,
+          "sections": null
+        }
+      ]
+    }
+  ],
+  "not_taken": [
+    {
+      "name": "concept",
+      "summary": "An explanation of a concept, context, or background information about a product or its features."
+    },
+    {
+      "name": "tutorial",
+      "summary": "Instructions for setting up an example project using the product, intended for the purpose of hands-on learning."
+    },
+    {
+      "name": "reference",
+      "summary": "A reference article provides users with descriptions of specific components or characteristics of an application."
+    },
+    {
+      "name": "troubleshooting",
+      "summary": "A list of common problems (referred to as symptoms) experienced by users, an explanation of the causes, and steps to resolve the issue."
+    },
+    {
+      "name": "release-notes",
+      "summary": "Release notes communicate new features, improvements, bug fixes, and known issues about a product to users and stakeholders."
+    }
+  ]
+}

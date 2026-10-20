@@ -95,7 +95,25 @@ A path is a program in the repository, so the editor asks you before it runs it,
 
 ## From the preset to a configuration of your own
 
-When turning rules off isn't enough, say to add a style package, `ascribe vale eject` writes the preset out as your own configuration: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules in `off` turned off. Then it changes `[checks.vale]` to `config = ".vale.ini"`. From then on, the files are yours to change, and Ascribe never writes them again. It writes nothing when `.vale.ini` or `.vale` is there already. See [`ascribe vale eject`](../examples/sources.md#cli-vale-eject).
+When turning rules off isn't enough, say to add a style package, run [`ascribe vale eject`](#cli-vale-eject) in the project. It writes the preset out as your own configuration, and from then on the files are yours to change: Ascribe never writes them again. The project's vocabulary is still Ascribe's to write, under `.ascribe/vale/`.
+
+## `ascribe vale`
+@id {permalink=true}: cli-vale
+@available: ascribe 0.3.0
+
+Sets up Vale for a project. Vale itself is run by `ascribe check --vale` and the editor.
+
+### `ascribe vale eject`
+@id {permalink=true}: cli-vale-eject
+
+Writes the preset `[checks.vale]` names out as the project's own Vale configuration: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. Then it changes `[checks.vale]` in `ascribe.toml` to `config = ".vale.ini"`, in place of `preset` and `off`, keeping its other keys and comments.
+
+It takes no options but the ones every command accepts ([command reference](../command/index.md#options-every-command-accepts)). It lists each file it wrote, `ascribe.toml` last.
+
+| Code | Meaning |
+|---|---|
+| `0` | The preset is the project's own now |
+| `2` | It wrote nothing: no `ascribe.toml`, a content model with errors, a `[checks.vale]` that names no preset, or a `.vale.ini` or `.vale` that's there already. Or a file couldn't be written; the files it wrote before that stay. |
 
 ## See also
 

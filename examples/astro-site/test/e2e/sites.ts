@@ -2,7 +2,7 @@
 // front of the docs, and a second project beside them.
 import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { copySite, edit } from "./harness.js";
+import { copySite, edit } from "./harness.ts";
 
 /** A plain Astro home page at the site's root, linking to the docs. */
 const HOME_PAGE = `---

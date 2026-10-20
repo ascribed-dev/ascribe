@@ -61,13 +61,14 @@ In this phase the reading has the blocks written in the page's own file: blocks 
 - **The line:** the source line where the match's first character is written. For a table row, the row's line; for a code block, the line in the page.
 - **Through a phrase,** when the match covers any of a `Phrase` piece: `through phrase <key>`, each key once, in order.
 - **Wholly inside one phrase's value:** the place is the phrase's line in `ascribe.toml`, not the page's, and it says how many places use the phrase and gives `ascribe refs phrase:<key>`.
+- **After a phrase,** when the match is wholly inside its value: matching carries on in the block after the phrase. A later match wholly in a phrase is that phrase's place too; the first that isn't makes the line a place, and the block stops there.
 
 ### The places, and the entry
 
 `ascribe_resolve::reading::find` takes the readings of the pages searched, each with its build, and the query, and returns the places, merged and in order. It's below both callers, so the command and the language server (phase 5) can't disagree about what a place is:
 
 - **One place per source line,** however many builds or pages find it. Its builds are the builds that matched it; its text, the first of them, in `ascribe.toml`'s order. A phrase whose value differs by release line can match in one build and not another; the place lists only those it matched in.
-- **A line with two matches** is one place, at the first.
+- **A line with two matches** is one place, at the first that isn't wholly in a phrase.
 - **The order** is decision 10's, without titles until phase 2: headings, then the rest, each in path order, then by line.
 - **The count of pages** is of the pages a reader can open that show a place.
 
