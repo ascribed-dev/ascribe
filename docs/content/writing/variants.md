@@ -74,7 +74,10 @@ npx ascribe render docs/install.md --build windows
 
 The Windows build has only the Windows command, with no tabs and no label, since there's nothing to choose between. "Start it at login" is gone: it isn't available on Windows. A Windows reader sees a page written for them.
 
-In VS Code, the preview's **Build** picker shows a page as any build has it, and the [build lens](../editor/preview.md#the-build-lens) dims what the build you're looking at leaves out, in the source.
+In VS Code, the preview's **Build** picker shows a page as any build has it, and the [build lens](../editor/preview.md#the-build-lens) dims what the build you're looking at leaves out, in the source:
+
+![The Lantern install page in VS Code with the build lens on for the windows build: the Linux and macOS install commands and the section "Start it at login" are dimmed, a hover over the macOS command says "Left out of windows. Shows only platform=windows.", the preview beside it shows the page as the windows build has it, with only the Windows command, and the status bar shows an eye and "platforms · windows · problems: site only".](../images/build-lens-light.png){scheme=light}
+![The Lantern install page in VS Code with the build lens on for the windows build: the Linux and macOS install commands and the section "Start it at login" are dimmed, a hover over the macOS command says "Left out of windows. Shows only platform=windows.", the preview beside it shows the page as the windows build has it, with only the Windows command, and the status bar shows an eye and "platforms · windows · problems: site only".](../images/build-lens-dark.png){scheme=dark}
 
 ## Publishing more than one build
 

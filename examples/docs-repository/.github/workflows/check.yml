@@ -1,6 +1,6 @@
 # The docs' own check, on every pull request: the update pull request's too,
 # so one whose examples broke fails here. It's the recipe in
-# docs/content/getting-started.md ("Check it in CI"), which takes it from this
+# docs/content/checks/ci.md ("Add the workflow"), which takes it from this
 # file: the line marked `:remove:` is what this example adds, since it follows
 # `main`.
 # :snippet-start: workflow

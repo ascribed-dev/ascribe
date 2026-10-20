@@ -6,7 +6,7 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/check.md`, `docs/content/command/questions.md`, `docs/content/examples/sources.md`, `docs/content/review/diff.md`, `docs/content/versions/release.md`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/command/questions.md`, `docs/content/editor/index.md`, `docs/content/examples/sources.md`, `docs/content/review/diff.md`, `docs/content/versions/release.md`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
@@ -795,7 +795,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 
 | Page | Title | Type |
 |---|---|---|
-| `agents/commands.md` | `ascribe agents`, `mcp`, and `lsp` | reference |
+| `agents/commands.md` | `ascribe agents` and `mcp` | reference |
 | `agents/index.md` | Agents | how-to |
 | `agents/measuring.md` | What to measure | concept |
 | `astro/agents.md` | Publish for AI agents | how-to |
@@ -805,11 +805,13 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `astro/reference.md` | `@ascribed/astro` reference | reference |
 | `astro/serve-markdown.md` | Serve the Markdown versions | how-to |
 | `checks/check.md` | `ascribe check`, `build`, and `fmt` | reference |
+| `checks/ci.md` | Checks in CI | how-to |
 | `checks/diagnostics.md` | Diagnostics | reference |
 | `checks/diagnostics/content-checks.md` | Diagnostics: content checks | reference |
 | `checks/diagnostics/content-model.md` | Diagnostics: the content model | reference |
 | `checks/diagnostics/directives.md` | Diagnostics: directives | reference |
 | `checks/diagnostics/pages.md` | Diagnostics: links, pages, and sources | reference |
+| `checks/report-command.md` | `ascribe report` | reference |
 | `checks/report.md` | The project report | how-to |
 | `checks/vale.md` | Prose, through Vale | how-to |
 | `command/index.md` | Command reference | reference |
@@ -848,21 +850,27 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `editor/settings.md` | Editor workspaces, settings, and commands | reference |
 | `editor/sidebar.md` | The Ascribe sidebar | reference |
 | `editor/writing.md` | Writing in the editor | reference |
-| `examples/index.md` | Drift | how-to |
+| `examples/docs-repository.md` | Keep the docs in another repository | how-to |
+| `examples/drift.md` | Report the pages whose examples changed | how-to |
+| `examples/index.md` | Examples and drift | concept |
+| `examples/snippets.md` | Show an example from the code | how-to |
 | `examples/sources.md` | `ascribe init`, `sources`, `observe`, `permalinks`, `templates`, and `vale` | reference |
 | `examples/tested.md` | Show what an example was tested with | how-to |
 | `getting-started.md` | Getting started | tutorial |
 | `glossary.md` | Glossary | reference |
 | `index.md` | Ascribe documentation | index |
+| `install.md` | Install | how-to |
 | `navigation/index.md` | Navigation | reference |
 | `navigation/order.md` | Put your pages in order | how-to |
 | `navigation/site-list.md` | Move a site's own list to the navigation | how-to |
 | `permalinks/index.md` | Permalinks | how-to |
-| `review/diff.md` | `ascribe diff`, `drift`, and `report` | reference |
+| `review/diff.md` | `ascribe diff` and `drift` | reference |
 | `review/index.md` | Review | how-to |
 | `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
 | `templates/index.md` | Page templates | how-to |
-| `versions/index.md` | Versions | how-to |
+| `versions/archive.md` | Archive and retire a line | how-to |
+| `versions/index.md` | Publish a site for each version | how-to |
+| `versions/lines.md` | Release lines | reference |
 | `versions/release.md` | `ascribe versions` | reference |
 | `writing/directives.md` | Directive reference | reference |
 | `writing/memo-files.md` | Memo files | reference |

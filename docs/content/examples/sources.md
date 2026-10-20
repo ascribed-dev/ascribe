@@ -71,7 +71,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 @id {permalink=true}: cli-observe
 @available: ascribe 0.3.1
 
-Runs the test of a folder of [tested examples](tested.md), and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. It's run in the code's folder, the one that holds `ascribe.examples.toml`, not the docs project's: it doesn't look in parent folders for a config, and doesn't read `ascribe.toml` or `--config`. For code in another repository, that's the code's repository: it refuses to run in a source's copies, which it knows from the `ascribe.lock` above them. So `ascribe` has to be installed where the code is, and today that means Node, the way the [command is installed](../getting-started.md#install-the-command).
+Runs the test of a folder of [tested examples](tested.md), and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. It's run in the code's folder, the one that holds `ascribe.examples.toml`, not the docs project's: it doesn't look in parent folders for a config, and doesn't read `ascribe.toml` or `--config`. For code in another repository, that's the code's repository: it refuses to run in a source's copies, which it knows from the `ascribe.lock` above them. So `ascribe` has to be installed where the code is, and today that means Node, the way the [command is installed](../install.md#npm).
 
 @include: ../_generated/cli-observe-options.md
 

@@ -130,7 +130,7 @@ test("the glibc floor is release-build.yml's everywhere it's written", () => {
   expect(floor).toMatch(/^\d+\.\d+$/);
 
   expect(phrase("glibc"), "docs/ascribe.toml's glibc phrase").toBe(floor);
-  expect(read("docs/content/getting-started.md")).toContain("glibc {glibc} or later");
+  expect(read("docs/content/install.md")).toContain("glibc {glibc} or later");
   // The directives reference and SPEC.md use the floor as their example of
   // prose that differs by release, so it moves with the floor too.
   for (const file of [

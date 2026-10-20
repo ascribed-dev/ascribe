@@ -5,6 +5,10 @@
 //! fails when one is out of date; run it with `ASCRIBE_BLESS=1` to rewrite
 //! them.
 //!
+//! The `ascribe.toml` reference's tables of keys are fragments there too,
+//! `docs/content/_generated/content-model-*.md`, generated from the registry
+//! of its keys, `crates/ascribe-model/settings.toml`.
+//!
 //! It also checks the docs' phrases whose values come from another file, such
 //! as the version, against that file, and that the `ascribe.toml` reference
 //! and its contract share their text only through fragments.
@@ -386,6 +390,417 @@ fn the_crawlers_table_is_current() {
         }
     }
     check_fragments("crawlers", &[("crawlers.md".to_owned(), text)]);
+}
+
+/// A table of the `ascribe.toml` reference, `docs/content/_generated/<name>`,
+/// generated from the registry of its keys, `crates/ascribe-model/settings.toml`.
+struct SettingsTable {
+    /// The fragment's file name.
+    name: &'static str,
+    /// The page that includes it, from `docs/content/`.
+    page: &'static str,
+    /// The registry's table whose keys are the rows.
+    table: &'static str,
+    /// The keys, when the table shows only some, in the registry's order.
+    keys: &'static [&'static str],
+    /// Whether each row says the release that added its key. A row doesn't
+    /// where its section's heading says it.
+    releases: bool,
+}
+
+impl SettingsTable {
+    /// Whether `setting` is one of the table's rows.
+    fn has(&self, setting: &ascribe_model::settings::Setting) -> bool {
+        setting.table == self.table
+            && (self.keys.is_empty() || self.keys.contains(&setting.key.as_str()))
+    }
+}
+
+/// The folders of the `ascribe.toml` reference's text, from the repository's
+/// root: its pages, and the fragments it shares with its contract.
+const CONTENT_MODEL_DIRS: [&str; 2] = [
+    "docs/content/content-model",
+    "docs/content/_fragments/content-model",
+];
+
+/// The `ascribe.toml` reference's `Key | Type | Default | Description`
+/// tables, each written from the registry.
+const SETTINGS_TABLES: &[SettingsTable] = &[
+    SettingsTable {
+        name: "content-model-spec.md",
+        page: "_fragments/content-model/spec.md",
+        table: "",
+        keys: &["spec"],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-project.md",
+        page: "content-model/index.md",
+        table: "project",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-types.md",
+        page: "_fragments/content-model/types.md",
+        table: "types.<name>",
+        keys: &[],
+        releases: true,
+    },
+    SettingsTable {
+        name: "content-model-fragments.md",
+        page: "_fragments/content-model/types-frontmatter-and-fragments.md",
+        table: "fragments",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-fields.md",
+        page: "content-model/index.md",
+        table: ascribe_model::settings::FIELD_TABLE,
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-dimensions.md",
+        page: "_fragments/content-model/dimensions.md",
+        table: "dimensions.<name>",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-versions.md",
+        page: "content-model/content.md",
+        table: "versions",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-releases-target.md",
+        page: "content-model/content.md",
+        table: "releases.<target>",
+        keys: &[],
+        releases: true,
+    },
+    SettingsTable {
+        name: "content-model-releases.md",
+        page: "content-model/content.md",
+        table: "releases",
+        keys: &[],
+        releases: true,
+    },
+    SettingsTable {
+        name: "content-model-lifecycle.md",
+        page: "_fragments/content-model/lifecycle.md",
+        table: "lifecycle.<state>",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-features.md",
+        page: "_fragments/content-model/features.md",
+        table: "features.<key>",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-notes.md",
+        page: "_fragments/content-model/notes.md",
+        table: "notes.<type>",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-glossary.md",
+        page: "_fragments/content-model/glossary.md",
+        table: "glossary",
+        keys: &[],
+        releases: true,
+    },
+    SettingsTable {
+        name: "content-model-images.md",
+        page: "_fragments/content-model/images.md",
+        table: "images",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-widgets.md",
+        page: "_fragments/content-model/widgets.md",
+        table: "widgets.<name>",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-consumer.md",
+        page: "content-model/output.md",
+        table: "consumer",
+        keys: &[],
+        releases: true,
+    },
+    SettingsTable {
+        name: "content-model-builds.md",
+        page: "_fragments/content-model/builds.md",
+        table: "builds.<name>",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-editor.md",
+        page: "_fragments/content-model/editor.md",
+        table: "editor",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-sources.md",
+        page: "content-model/output.md",
+        table: "sources.<name>",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-checks.md",
+        page: "content-model/checks.md",
+        table: "checks.<check>",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-intended.md",
+        page: "content-model/checks.md",
+        table: "intended",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-checks-vale.md",
+        page: "content-model/checks.md",
+        table: "checks.vale",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-checks-links.md",
+        page: "content-model/checks.md",
+        table: "checks.links",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-permalinks-retired.md",
+        page: "content-model/checks.md",
+        table: "permalinks.retired.<name>",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-crawlers.md",
+        page: "_fragments/content-model/crawlers.md",
+        table: "crawlers",
+        keys: &[],
+        releases: false,
+    },
+    // `older-lines` is described where versioned builds are, below the table.
+    SettingsTable {
+        name: "content-model-listing.md",
+        page: "_fragments/content-model/listing.md",
+        table: "listing",
+        keys: &["default", "folders", "types"],
+        releases: false,
+    },
+];
+
+/// The `ascribe.toml` reference's tables of keys, from the registry: each
+/// fragment is current, and its page includes it.
+#[test]
+fn the_content_model_tables_are_current() {
+    let fragments: Vec<(String, String)> = SETTINGS_TABLES
+        .iter()
+        .map(|t| (t.name.to_owned(), settings_table(t)))
+        .collect();
+    check_fragments("content-model-", &fragments);
+    for t in SETTINGS_TABLES {
+        let depth = "../".repeat(t.page.matches('/').count());
+        assert!(
+            read(&format!("docs/content/{}", t.page))
+                .contains(&format!("@include: {depth}_generated/{}\n", t.name)),
+            "docs/content/{} doesn't include _generated/{}",
+            t.page,
+            t.name
+        );
+    }
+}
+
+/// No `Key | Type | Default | Description` table of the `ascribe.toml`
+/// reference is written by hand: each is generated from the registry.
+#[test]
+fn no_content_model_table_is_written_by_hand() {
+    let mut written = Vec::new();
+    for dir in CONTENT_MODEL_DIRS {
+        for entry in std::fs::read_dir(repo().join(dir)).unwrap() {
+            let path = entry.unwrap().path();
+            let text = std::fs::read_to_string(&path).unwrap();
+            if text
+                .lines()
+                .any(|l| l == "| Key | Type | Default | Description |")
+            {
+                written.push(path.display().to_string());
+            }
+        }
+    }
+    written.sort();
+    assert!(
+        written.is_empty(),
+        "generate these tables from crates/ascribe-model/settings.toml, in SETTINGS_TABLES: {}",
+        written.join(", ")
+    );
+}
+
+/// The registry's keys the reference describes in its own words, in prose,
+/// rather than in a table: mostly the tables themselves, each introduced by
+/// the paragraph under its heading. Their descriptions in the registry are
+/// what the editor shows, and aren't compared with the reference's.
+const DESCRIBED_IN_PROSE: &[(&str, &str)] = &[
+    ("", "types"),
+    ("", "fragments"),
+    ("", "dimensions"),
+    ("", "versions"),
+    ("releases.<target>.archived.<line>", "url"),
+    ("releases.<target>.archived.<line>", "ended"),
+    ("", "lifecycle"),
+    ("", "features"),
+    ("", "notes"),
+    ("", "phrases"),
+    ("phrases.<key>", "line"),
+    ("", "glossary"),
+    ("", "images"),
+    ("", "widgets"),
+    ("", "consumer"),
+    ("", "builds"),
+    ("", "sources"),
+    ("", "checks"),
+    ("", "intended"),
+    ("checks", "vale"),
+    ("", "permalinks"),
+    ("permalinks", "retired"),
+    ("permalinks", "aliases"),
+    ("listing", "older-lines"),
+];
+
+/// Every key's description in the registry is the reference's: in a table
+/// generated from it, or written in the reference's prose as the registry
+/// has it, unless it's one of [`DESCRIBED_IN_PROSE`].
+#[test]
+fn every_description_in_the_registry_is_the_references() {
+    use ascribe_model::settings::settings;
+
+    let mut text = String::new();
+    for dir in CONTENT_MODEL_DIRS {
+        let mut files: Vec<_> = std::fs::read_dir(repo().join(dir))
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .collect();
+        files.sort();
+        for file in files {
+            text.push_str(&std::fs::read_to_string(file).unwrap());
+        }
+    }
+    let mut wrong = Vec::new();
+    for s in settings() {
+        let tabled = SETTINGS_TABLES.iter().any(|t| t.has(s));
+        let apart = DESCRIBED_IN_PROSE.contains(&(s.table.as_str(), s.key.as_str()));
+        let found = text.contains(&s.description);
+        match (tabled, apart, found) {
+            (true, true, _) => wrong.push(format!(
+                "{} {}: in a table, so not in DESCRIBED_IN_PROSE",
+                s.table, s.key
+            )),
+            (false, false, false) => wrong.push(format!(
+                "{} {}: its description isn't the reference's; make it so, or add the key to \
+                 DESCRIBED_IN_PROSE",
+                s.table, s.key
+            )),
+            (false, true, true) => wrong.push(format!(
+                "{} {}: the reference has its description, so it needn't be in DESCRIBED_IN_PROSE",
+                s.table, s.key
+            )),
+            _ => {}
+        }
+    }
+    for (table, key) in DESCRIBED_IN_PROSE {
+        if ascribe_model::settings::find(table, key).is_none() {
+            wrong.push(format!(
+                "{table} {key}: in DESCRIBED_IN_PROSE, not in the registry"
+            ));
+        }
+    }
+    assert!(wrong.is_empty(), "{}", wrong.join("\n"));
+}
+
+/// The table of `t`'s keys, as the reference writes it.
+fn settings_table(t: &SettingsTable) -> String {
+    use ascribe_model::settings::{SettingValue, settings};
+
+    let mut text = String::from(
+        "@memo: Generated from crates/ascribe-model/settings.toml by \
+         tests/conformance/tests/docs.rs; edit the registry, then run \
+         `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.\n\
+         | Key | Type | Default | Description |\n\
+         |---|---|---|---|\n",
+    );
+    let rows: Vec<_> = settings().iter().filter(|s| t.has(s)).collect();
+    assert!(
+        !rows.is_empty(),
+        "{}: the registry has no `{}`",
+        t.name,
+        t.table
+    );
+    for s in rows {
+        let mut key = format!("`{}`", s.key);
+        if let (true, Some(release)) = (t.releases, &s.available) {
+            write!(key, " {{available=\"{release}\"}}").unwrap();
+        }
+        let default = match (&s.default_text, &s.default) {
+            (Some(words), _) => words.clone(),
+            (None, _) if s.required => "**required**".to_owned(),
+            (None, Some(SettingValue::Switch(b))) => format!("`{b}`"),
+            (None, Some(SettingValue::Number(n))) => format!("`{n}`"),
+            (None, Some(SettingValue::Text(value))) => format!("`\"{value}\"`"),
+            (None, Some(SettingValue::EmptyList)) => "`[]`".to_owned(),
+            (None, Some(SettingValue::EmptyTable)) => "`{}`".to_owned(),
+            (None, None) => "none".to_owned(),
+        };
+        let cells = [
+            key,
+            s.type_text.clone(),
+            default,
+            from_generated(&s.description),
+        ];
+        text.push('|');
+        for cell in cells {
+            if cell.is_empty() {
+                text.push_str(" |");
+            } else {
+                write!(text, " {cell} |").unwrap();
+            }
+        }
+        text.push('\n');
+    }
+    text
+}
+
+/// A registry description, whose relative links are written from
+/// `docs/content/content-model/`, as the reference writes it, with its links
+/// resolving from `docs/content/_generated/` instead.
+fn from_generated(description: &str) -> String {
+    relink(description, |dest| {
+        if dest.starts_with("../") {
+            ""
+        } else {
+            "../content-model/"
+        }
+    })
 }
 
 /// The groups loader rules are listed in, as they're titled in the
@@ -789,9 +1204,14 @@ fn message(template: &str) -> String {
 
 /// Text whose relative links, written from the content root as the
 /// registry's are, resolve from `_generated/` instead, where the fragment is.
-/// A destination inside a code span is an example, not a link, and stays as
-/// written.
 fn rebase_links(text: &str) -> String {
+    relink(text, |_| "../")
+}
+
+/// Text with `prefix(destination)` written before each relative link's
+/// destination. A destination inside a code span is an example, not a link,
+/// and stays as written.
+fn relink(text: &str, prefix: impl Fn(&str) -> &'static str) -> String {
     let mut out = String::with_capacity(text.len());
     let mut fence = 0;
     let mut rest = text;
@@ -809,7 +1229,7 @@ fn rebase_links(text: &str) -> String {
             out.push_str("](");
             let dest = target.split(')').next().unwrap_or_default();
             if !(dest.starts_with('#') || dest.starts_with('{') || dest.contains("://")) {
-                out.push_str("../");
+                out.push_str(prefix(dest));
             }
             rest = target;
             continue;

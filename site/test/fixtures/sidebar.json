@@ -11,6 +11,10 @@
         "label": "Getting started"
       },
       {
+        "href": "/docs/install/",
+        "label": "Install"
+      },
+      {
         "href": "/docs/glossary/",
         "label": "Glossary"
       }
@@ -70,6 +74,10 @@
         "label": "ascribe check, build, and fmt"
       },
       {
+        "href": "/docs/checks/report-command/",
+        "label": "ascribe report"
+      },
+      {
         "href": "/docs/checks/diagnostics/",
         "label": "Diagnostics"
       },
@@ -94,6 +102,10 @@
         "nested": true
       },
       {
+        "href": "/docs/checks/ci/",
+        "label": "Checks in CI"
+      },
+      {
         "href": "/docs/checks/vale/",
         "label": "Prose, through Vale"
       },
@@ -112,7 +124,7 @@
       },
       {
         "href": "/docs/review/diff/",
-        "label": "ascribe diff, drift, and report"
+        "label": "ascribe diff and drift"
       },
       {
         "href": "/docs/review/troubleshooting/",
@@ -170,7 +182,7 @@
       },
       {
         "href": "/docs/agents/commands/",
-        "label": "ascribe agents, mcp, and lsp"
+        "label": "ascribe agents and mcp"
       },
       {
         "href": "/docs/agents/measuring/",
@@ -183,7 +195,19 @@
     "pages": [
       {
         "href": "/docs/examples/",
-        "label": "Drift"
+        "label": "Examples and drift"
+      },
+      {
+        "href": "/docs/examples/snippets/",
+        "label": "Show an example from the code"
+      },
+      {
+        "href": "/docs/examples/docs-repository/",
+        "label": "Keep the docs in another repository"
+      },
+      {
+        "href": "/docs/examples/drift/",
+        "label": "Report the pages whose examples changed"
       },
       {
         "href": "/docs/examples/tested/",
@@ -255,7 +279,15 @@
     "pages": [
       {
         "href": "/docs/versions/",
-        "label": "Versions"
+        "label": "Publish a site for each version"
+      },
+      {
+        "href": "/docs/versions/archive/",
+        "label": "Archive and retire a line"
+      },
+      {
+        "href": "/docs/versions/lines/",
+        "label": "Release lines"
       },
       {
         "href": "/docs/versions/release/",

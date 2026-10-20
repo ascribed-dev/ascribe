@@ -11,11 +11,7 @@ default = "listed"
 changelog = "unquoted"
 ```
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `default` | string | `"listed"` | Every page's listing. |
-| `folders` | table of strings | `{}` | A listing for every page under a folder, keyed by the folder's path from the content root, ending in `/`, with its name's case as it is on disk. A folder's pages are every page whose path starts with it, in folders under it too. |
-| `types` | table of strings | `{}` | A listing for every page of a content type, keyed by the type's name. |
+@include: ../../_generated/content-model-listing.md
 
 A page's listing is the strictest of its own and the rules it's under: the site's `default`, every folder it's under, and its type's. A folder and a type have no order between them: a page under both gets the stricter. A rule can only restrict. A page MAY set the same value as its rule, or a stricter one, and a page that sets a looser one is an error at the page (`listing-loosened`), since the project contradicts itself. A folder under another folder, and a folder or a type under the `default`, MUST NOT be looser than it (`model-listing-looser`).
 

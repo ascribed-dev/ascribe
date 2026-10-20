@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "written": false,
+  "target": "self-managed",
+  "line": "3.6",
+  "was_planned": true,
+  "next": "3.7",
+  "next_added": true,
+  "archived": null,
+  "features": [
+    {
+      "key": "sso",
+      "from": "self-managed 3.6",
+      "to": "self-managed 3.7",
+      "kept": []
+    }
+  ],
+  "files": [
+    {
+      "file": "docs/keys.md",
+      "marks": [
+        {
+          "line": 30,
+          "from": "sso",
+          "to": "self-managed 3.6"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "build": "",
+      "output": "_ascribe",
+      "added": [],
+      "removed": [],
+      "changed": [
+        "versions.json"
+      ]
+    },
+    {
+      "build": "site",
+      "output": "plain",
+      "added": [],
+      "removed": [],
+      "changed": [
+        "configure.md",
+        "install-agent.md",
+        "keys.md",
+        "quickstart.md",
+        "upgrade.md",
+        "webhooks.md"
+      ]
+    },
+    {
+      "build": "site",
+      "output": "site",
+      "added": [],
+      "removed": [],
+      "changed": [
+        "keys.md"
+      ]
+    },
+    {
+      "build": "site@3.4",
+      "output": "plain",
+      "added": [],
+      "removed": [],
+      "changed": [
+        "configure-legacy.md",
+        "install-agent.md",
+        "keys.md",
+        "quickstart.md",
+        "upgrade.md"
+      ]
+    },
+    {
+      "build": "site@3.4",
+      "output": "site",
+      "added": [],
+      "removed": [],
+      "changed": [
+        "upgrade.md"
+      ]
+    },
+    {
+      "build": "site@3.5",
+      "output": "plain",
+      "added": [
+        "_fragments/prerequisites.png",
+        "configure.md",
+        "install-agent.md",
+        "keys.md",
+        "playground.png",
+        "quickstart.md",
+        "upgrade.md",
+        "webhooks.md"
+      ],
+      "removed": [],
+      "changed": []
+    },
+    {
+      "build": "site@3.5",
+      "output": "site",
+      "added": [
+        "_ascribe/headers.json",
+        "_ascribe/nav.json",
+        "_ascribe/pages.json",
+        "_ascribe/permalinks.json",
+        "_ascribe/schema.ts",
+        "_fragments/prerequisites.png",
+        "configure.md",
+        "install-agent.md",
+        "keys.md",
+        "playground.png",
+        "quickstart.md",
+        "upgrade.md",
+        "webhooks.md"
+      ],
+      "removed": [],
+      "changed": []
+    }
+  ]
+}

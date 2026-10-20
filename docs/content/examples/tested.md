@@ -40,7 +40,7 @@ Wrote examples.observations/default.toml: 2 files, Node 24.9.0 on Linux.
 
 Commit the observation with the code, as you would a lockfile. When the test fails, nothing is written, and the old observation stays. When it replaces one, it says what changed since: the files added, removed, and changed, and the environment values that differ.
 
-`ascribe observe` runs where the code is, so `ascribe` has to be installed there: with npm, or [without Node](../getting-started.md#without-node) from Homebrew or the install script. Run it on a clean tree: the files are hashed after the test, as they are then.
+`ascribe observe` runs where the code is, so `ascribe` has to be installed there: with npm, or [without Node](../install.md#without-node) from Homebrew or the install script. Run it on a clean tree: the files are hashed after the test, as they are then.
 
 ## 3. Show the example
 
@@ -70,7 +70,7 @@ An observation nothing writes any more stays until you delete its file. It goes 
 
 ## When an example changes
 
-An edit to an example, anywhere in the file, makes its observations out of date. The page then drops the tested line, and `ascribe check` reports [`example-stale`](../checks/diagnostics/content-checks.md#ASC199) at each `@snippet` of the file, naming the folder to run `ascribe observe` in. An example no observation lists reports `example-unobserved`. Both are advice: the pages still build. Run `ascribe observe` again and commit, and both clear. With two observations, running one again brings the page back with that one's environment, and the other is still out of date until it's run again too: `ascribe model --section sources` says how many of each observation's files are as it found them.
+An edit to an example, anywhere in the file, makes its observations out of date. A change to a file an example only calls, such as a library, doesn't: only the example files are compared. The page then drops the tested line, and `ascribe check` reports [`example-stale`](../checks/diagnostics/content-checks.md#ASC199) at each `@snippet` of the file, naming the folder to run `ascribe observe` in. An example no observation lists reports `example-unobserved`. Both are advice: the pages still build. Run `ascribe observe` again and commit, and both clear. With two observations, running one again brings the page back with that one's environment, and the other is still out of date until it's run again too: `ascribe model --section sources` says how many of each observation's files are as it found them.
 
 An example that's deleted or renamed without a second run leaves its observation listing a file that isn't there. `ascribe check` reports [`observation-file-missing`](../checks/diagnostics/content-checks.md#ASC202) at that line of the observation, naming the command that writes it again.
 
@@ -81,17 +81,11 @@ In the example itself, a lens over each region a page shows says how many pages 
 
 To check before a commit that an observation still matches the folder, run `ascribe observe --check`, with `--name` for one other than `default`. It runs nothing, not the test and not the environment commands, and exits 1 when the observation is stale or missing, so a pre-commit hook can run it. It's stricter than the pages: a file the config's `include` no longer matches, or one that's gone, counts as a change, though the files still in the observation stay current until the next run.
 
-## Count a project's examples
-
-`ascribe report` counts, for each source with an `ascribe.examples.toml`, how many snippets show one of its examples, and how many of those are current, stale, and unobserved. In its JSON, they're `inventory.examples`, which a project without a config doesn't have.
-
-A change to a file an example only calls, such as a library, doesn't make it stale: only the example files are compared.
-
 ## When the code is in another repository
 
-For a [source in another repository](index.md#docs-kept-apart-from-the-code), the config and the observation stay in the code's repository, beside the examples, and `ascribe observe` runs there. [`ascribe sources fetch`](sources.md#cli-sources-fetch) copies both into `sources/<name>/` with the files your snippets use, whatever the source's `include` says, and `ascribe.lock` lists them as it does every copy. The pages then say what each example was tested with, as they do for a folder in the same repository.
+For a [source in another repository](docs-repository.md), the config and the observation stay in the code's repository, beside the examples, and `ascribe observe` runs there. [`ascribe sources fetch`](sources.md#cli-sources-fetch) copies both into `sources/<name>/` with the files your snippets use, whatever the source's `include` says, and `ascribe.lock` lists them as it does every copy. The pages then say what each example was tested with, as they do for a folder in the same repository.
 
-- **An update says what changed.** When [`ascribe sources update`](sources.md#cli-sources-update) moves a pin, its summary names the examples that went stale (the file changed and its observation didn't follow), the ones the new observation doesn't list, and the ones tested again. The [update pull request](index.md#the-update-pull-request) carries the same lines.
+- **An update says what changed.** When [`ascribe sources update`](sources.md#cli-sources-update) moves a pin, its summary names the examples that went stale (the file changed and its observation didn't follow), the ones the new observation doesn't list, and the ones tested again. The [update pull request](docs-repository.md#the-update-pull-request) carries the same lines.
 - **The fix is in the code's repository.** `example-stale` and `example-unobserved` say so: run `ascribe observe` there and commit, and the next update brings the observation here.
 - **Nothing here runs the config.** Its `test` and commands are read as text and never run, and `ascribe observe` refuses to run in `sources/<name>/`.
 
@@ -113,3 +107,4 @@ Copy one, replace its examples with yours, and run `ascribe observe --name` once
 - [`ascribe observe`](sources.md#cli-observe): its options, exit codes, and JSON.
 - [Tested examples](../contracts/tested-examples.md): the two files' formats.
 - [Sources](../content-model/output.md#18-sourcesname): declaring the folder the examples are in.
+- [The report's inventory](../checks/report.md#inventory): how many of a project's snippets show a tested example, and how many of those are current, stale, and unobserved.

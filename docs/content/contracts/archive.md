@@ -5,7 +5,7 @@ description: What ascribe versions archive writes into a folder, how it records 
 available: ascribe 0.3.2
 ---
 
-This contract says what `ascribe versions archive` writes: one line of a versioned build, rendered once more by Ascribe alone into a folder of HTML that needs nothing else. An archive is a file format people keep for years, so what's here changes only by a recorded decision. [Archive a line](../versions/index.md#archive-a-line) is the guide.
+This contract says what `ascribe versions archive` writes: one line of a versioned build, rendered once more by Ascribe alone into a folder of HTML that needs nothing else. An archive is a file format people keep for years, so what's here changes only by a recorded decision. [Archive and retire a line](../versions/archive.md) is the guide.
 
 ## 1. The folder
 

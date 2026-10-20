@@ -1,7 +1,7 @@
 // The update pull request's recipe is one file,
 // examples/docs-repository/.github/workflows/update-sources.yml: the drift
 // guide shows it, and the sources fixture runs it. The check's recipe is
-// check.yml beside it, which getting started shows. These tests check that
+// check.yml beside it, which the CI how-to shows. These tests check that
 // each uses its file, and, when asked, run the fixture's pass on this machine:
 // with ASCRIBE_BIN naming the binary, or ASCRIBE_SOURCES_FIXTURE=1 for this
 // repository's debug build. A plain `pnpm test` skips the pass, whether or not
@@ -33,8 +33,11 @@ const ascribe =
   process.env["ASCRIBE_BIN"] ??
   (process.env["ASCRIBE_SOURCES_FIXTURE"] === "1" ? built : undefined);
 
-test("the drift guide shows the workflow the fixture runs", () => {
-  const guide = readFileSync(path.join(root, "docs", "content", "examples", "index.md"), "utf8");
+test("the docs-repository guide shows the workflow the fixture runs", () => {
+  const guide = readFileSync(
+    path.join(root, "docs", "content", "examples", "docs-repository.md"),
+    "utf8",
+  );
   // docs/ascribe.toml's `code` source is the repository's root.
   expect(guide).toContain(
     "@snippet {lang=yaml}: code:examples/docs-repository/.github/workflows/update-sources.yml#workflow\n",
@@ -44,8 +47,8 @@ test("the drift guide shows the workflow the fixture runs", () => {
   expect(text).toContain("# :snippet-end:\n");
 });
 
-test("getting started shows the docs repository's check workflow", () => {
-  const page = readFileSync(path.join(root, "docs", "content", "getting-started.md"), "utf8");
+test("the CI how-to shows the docs repository's check workflow", () => {
+  const page = readFileSync(path.join(root, "docs", "content", "checks", "ci.md"), "utf8");
   expect(page).toContain(
     "@snippet {lang=yaml, title=.github/workflows/check.yml}: code:examples/docs-repository/.github/workflows/check.yml#workflow\n",
   );

@@ -310,8 +310,10 @@ test("a page marked with an availability shows its badge", async () => {
 });
 
 test("notes and steps render as elements", async () => {
+  const install = await open("/docs/install/");
+  expect(await install.locator('ascribe-note[type="tip"]').isVisible()).toBe(true);
+  await install.close();
   const page = await open("/docs/getting-started/");
-  expect(await page.locator('ascribe-note[type="tip"]').isVisible()).toBe(true);
   expect(await page.locator("ascribe-steps ol > li").count()).toBe(3);
   await page.close();
 });

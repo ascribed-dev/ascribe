@@ -60,10 +60,7 @@ Every problem the loader reports is in the [diagnostics reference](../checks/dia
 
 @include: ../_fragments/content-model/project.md
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `content-root` | string (path) | `"docs"` | The content root ([SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)): the directory holding every source file. Paths in links and includes that begin with `/` are relative to it. It must exist and be a directory. |
-| `output-dir` | string (path) | `".ascribe/build"` | Where `ascribe build` writes output. Each build and emitter writes under `<output-dir>/<build>/<emitter>/`. It need not exist. It may be outside the project's folder, with `..`, and a build then writes there. A build never writes or removes through a symbolic link on the way to it, or in it ([output-layout contract](../contracts/output-layout.md#2-what-ascribe-owns)). |
+@include: ../_generated/content-model-project.md
 
 **Rules:** both paths are relative (`model-path-absolute`). The output directory must not be inside the content root, the content root must not be inside the output directory, and they must not be the same directory (`model-output-overlaps-content`); otherwise a build would read its own output as source, or delete source as stale output. Paths are compared after normalizing `.` and `..` segments and, when both exist, after resolving symbolic links.
 
@@ -121,16 +118,7 @@ What isn't handled yet:
 
 @include: ../_fragments/content-model/field-types.md
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `type` | string | **required** | A field type or attribute type (§5.1). In table form it may also be `object`, `list(object)`, or bare `enum`, with the keys below. |
-| `fields` | table of fields | required when `type` is `object`, `object?`, `list(object)`, or `list(object)?`; not allowed otherwise | The nested fields of an object, in the same syntax (short or table form). Field types only. |
-| `values` | array of strings | required when `type` uses bare `enum`; not allowed otherwise | The enumeration's values, for values that aren't simple words, such as `["Getting started", "How-to"]`. Values must be distinct. Values of a `set(enum)` attribute must be tokens. |
-| `default` | any TOML value | none | The value used when the field or attribute is absent. It must have the declared type (a TOML string for `string` and `enum`, integer or float for `number`, boolean for `boolean`, local date for `date`, array for `list`, inline table for `object`, a string or array of strings for `set`). A field with a default is optional; adding `?` as well is allowed and changes nothing. |
-| `phrases` | boolean | `false` | Whether phrases ([SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)) are substituted in this field's value. Field types only; allowed only on `string` and `list(string)` fields (and their optional forms), including fields nested in objects. See §11. |
-| `inline` | string | none | `"code"` reads the value's code spans. Allowed only on a content type's top-level `string` fields (and `string?`). See §5.3. |
-| `description` | string | none | Help text shown by the editor (hover and completion) and emitted into generated schemas as documentation. |
-| `role` | string | none | What the field is for, which a check reads: `"description"`, `"review-date"`, or `"owner"`. Allowed only on a content type's top-level fields. See §5.4. |
+@include: ../_generated/content-model-fields.md
 
 @include: ../_fragments/content-model/field-types-nesting.md
 
@@ -175,7 +163,7 @@ team = { type = "enum(docs, platform)", role = "owner" }
 |---|---|---|
 | `description` | `string`, optional or not | [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports a page of the type without one. A required field, or one with a default, always has one, so the check has nothing to report: a page that leaves a field with a default out, or empty, has the default as its description, in `llms.txt` and the page records too. [`description-link`](../checks/diagnostics/content-checks.md#ASC198) reports a Markdown link in one: a description is plain text, so the link is shown as written. |
 | `review-date` | `date`, optional or not | [`review-overdue`](../checks/diagnostics/content-checks.md#ASC153) reports a page whose date has passed. |
-| `owner` | `string` or `enum`, optional or not | [`ascribe report inventory`](../review/diff.md#cli-report) counts pages by owner. |
+| `owner` | `string` or `enum`, optional or not | [`ascribe report inventory`](../checks/report-command.md#cli-report) counts pages by owner. |
 
 Without a role, those checks don't look at the type's pages, and the report counts its pages as having no owner. A role changes nothing in the outputs.
 

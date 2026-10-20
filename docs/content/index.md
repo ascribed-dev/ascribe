@@ -6,6 +6,7 @@ permalink: docs
 ---
 
 - [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, and publish it with Astro.
+- [Install](install.md): every way to install `ascribe`, with npm or on your path without Node.
 - [Content that varies](writing/variants.md): writing one page for readers on different platforms or products, with alternatives, availability, and a build for each audience.
 - [Directive reference](writing/directives.md): the language: directives, attributes, titles, phrases, links, and images.
 - @available: ascribe 0.4.0
@@ -24,7 +25,7 @@ permalink: docs
 - @available: ascribe 0.3.0
   [Agents](agents/index.md): helping an AI coding agent write and fix pages, with instructions it reads on its own and a skill that teaches it the check-and-fix loop.
 - @available: ascribe 0.2.0
-  [Drift](examples/index.md): keeping pages from falling behind the code they describe, with code examples taken from tested files and a report of the pages whose examples changed.
+  [Examples and drift](examples/index.md): keeping pages from falling behind the code they describe, with code examples taken from tested files and a report of the pages whose examples changed.
 - [Astro](astro/index.md): publishing a site with `@ascribed/astro`.
 - [Element library reference](astro/elements.md): the custom elements a site draws, and the CSS custom properties that theme them.
 - @available: ascribe 0.3.0

@@ -7,7 +7,7 @@ version = 1
 
 [[sections]]
 folder = ""
-pages = ["getting-started.md", "glossary.md"]
+pages = ["getting-started.md", "install.md", "glossary.md"]
 
 [[sections]]
 folder = "writing/"
@@ -43,8 +43,7 @@ folder = "agents/"
 
 [[sections]]
 folder = "examples/"
-label = "Examples and drift"
-pages = ["tested.md", "sources.md"]
+pages = ["snippets.md", "docs-repository.md", "drift.md", "tested.md", "sources.md"]
 
 [[sections]]
 folder = "astro/"
@@ -66,6 +65,8 @@ pages = ["order.md", "site-list.md"]
 
 [[sections]]
 folder = "versions/"
+label = "Versions"
+pages = ["archive.md", "lines.md", "release.md"]
 
 [[sections]]
 folder = "templates/"

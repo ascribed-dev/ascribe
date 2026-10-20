@@ -96,7 +96,7 @@ What the projects share, the integration checks, and it fails the build, naming 
 @id: versions
 @available: ascribe 0.3.2
 
-With a [versioned build](../versions/index.md), one site serves every live line: the current line's pages at the base path, and each older line's under its number, `/docs/3.4/`, from one collection, with nothing to change in `astro.config.mjs` or `src/content.config.ts`. [Publish with Astro](../versions/index.md#publish-with-astro) says what the collection, the layout, and `astro dev` do with them. Each line's `llms.txt` and Markdown are published at its base path, an older line's pages name the current line's as canonical, and the sitemap lists each page once. A permalink always forwards to the current line.
+With a [versioned build](../versions/index.md), one site serves every live line: the current line's pages at the base path, and each older line's under its number, `/docs/3.4/`, from one collection, with nothing to change in `astro.config.mjs` or `src/content.config.ts`. [The Astro components](../versions/lines.md#the-astro-components) says what the collection, the layout, and `astro dev` do with them. Each line's `llms.txt` and Markdown are published at its base path, an older line's pages name the current line's as canonical, and the sitemap lists each page once. A permalink always forwards to the current line.
 
 ## Permalinks
 @id: permalinks
