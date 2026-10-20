@@ -50,16 +50,14 @@ details.section > summary::-webkit-details-marker {
   display: none;
 }
 
-/* The twistie, as a tree draws it. */
-details.section > summary::before {
-  content: "\eab6";
-  flex: none;
-  margin-top: 2px;
-  font: normal normal normal 16px/1 codicon;
+/* The twistie: one chevron or the other, as the section is open or closed. */
+details.section > summary > .twistie.open,
+details.section[open] > summary > .twistie.closed {
+  display: none;
 }
 
-details.section[open] > summary::before {
-  content: "\eab4";
+details.section[open] > summary > .twistie.open {
+  display: inline-block;
 }
 
 .section-body {

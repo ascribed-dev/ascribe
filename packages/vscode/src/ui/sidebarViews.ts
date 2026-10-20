@@ -49,7 +49,7 @@ import {
   newPathProblem,
   pagesResource,
   pagesRoots,
-  shownEditor,
+  shownPage,
   thisPageChildren,
   thisPageItems,
   thisPageLook,
@@ -288,8 +288,11 @@ export class SidebarViews implements vscode.Disposable {
   private pageReview: ThisPageReview | undefined;
   /** The file This page shows. */
   private pageFile: vscode.Uri | undefined;
-  /** The editor of the page This page shows (`shownEditor`). */
-  private pageEditor: vscode.TextEditor | undefined;
+  /**
+   * The page This page shows (`shownPage`), by its document, and the cursor
+   * in it as it was last: its editor is gone while another tab covers it.
+   */
+  private pageAt: PageAt | undefined;
   /** What This page says in place of its items. */
   private pageMessage = "";
   /** The nodes the keys of This page's newest answer name. */
@@ -530,13 +533,7 @@ export class SidebarViews implements vscode.Disposable {
       this.thisPageView.onDidShow(() => {
         // Shown again on another page than it drew: the answer it kept is
         // out of date, so it waits for the new one instead of drawing it.
-        const editor = shownEditor(
-          this.pageEditor,
-          vscode.window.activeTextEditor,
-          vscode.window.visibleTextEditors,
-          (e) => this.isPageEditor(e),
-        );
-        if (editor?.document.uri.toString() !== this.pageFile?.toString()) {
+        if (this.shownPageNow()?.uri.toString() !== this.pageFile?.toString()) {
           this.thisPageView.forget();
         }
         this.soon("thisPage", 0);
@@ -556,12 +553,16 @@ export class SidebarViews implements vscode.Disposable {
       this.pages,
       this.model,
       vscode.window.onDidChangeActiveTextEditor(() => this.follow(false, true)),
-      vscode.window.onDidChangeTextEditorSelection(({ textEditor }) => {
+      vscode.window.onDidChangeTextEditorSelection(({ textEditor, selections }) => {
+        const selection = selections[0];
+        if (selection && textEditor.document.uri.toString() === this.pageAt?.uri.toString()) {
+          this.pageAt = { uri: this.pageAt.uri, selection };
+        }
         if (textEditor === vscode.window.activeTextEditor) this.soon("thisPage");
       }),
-      // The page's editor closed: This page shows the active one's, if it's a page's.
-      vscode.window.onDidChangeVisibleTextEditors(() => {
-        if (this.pageEditor && !vscode.window.visibleTextEditors.includes(this.pageEditor)) {
+      // The page's last tab closed: This page shows the active editor's, if it's a page's.
+      vscode.window.tabGroups.onDidChangeTabs(({ closed }) => {
+        if (closed.length > 0 && this.pageAt && !openInTab(this.pageAt.uri)) {
           this.soon("thisPage");
         }
       }),
@@ -1239,21 +1240,32 @@ export class SidebarViews implements vscode.Disposable {
     );
   }
 
+  /** The page This page shows now: the active editor's, or the one it shows while it's open. */
+  private shownPageNow(): PageAt | undefined {
+    const active = vscode.window.activeTextEditor;
+    const page = shownPage(
+      this.pageAt?.uri.toString(),
+      active && this.isPageEditor(active) ? active.document.uri.toString() : undefined,
+      this.pageAt && openInTab(this.pageAt.uri) ? [this.pageAt.uri.toString()] : [],
+      () => true,
+    );
+    if (page === undefined) return undefined;
+    if (active && active.document.uri.toString() === page) {
+      return { uri: active.document.uri, selection: active.selection };
+    }
+    return this.pageAt;
+  }
+
   private async askThisPage(): Promise<void> {
     if (!this.thisPageView.visible) return;
     const looked = ++this.pageLooked;
-    // The page's editor, not the active one: focus in a webview, the
-    // preview's for one, leaves VS Code reporting no active editor.
-    this.pageEditor = shownEditor(
-      this.pageEditor,
-      vscode.window.activeTextEditor,
-      vscode.window.visibleTextEditors,
-      (editor) => this.isPageEditor(editor),
-    );
-    const editor = this.pageEditor;
-    const document = editor?.document;
-    const server = document && this.projects.serverFor(document.uri);
-    if (!editor || !document || !server) {
+    // The page's document, not the active editor: focus in a webview, the
+    // preview's for one, leaves VS Code reporting no active editor, and a tab
+    // that covers the page's leaves it with no editor at all.
+    this.pageAt = this.shownPageNow();
+    const shown = this.pageAt;
+    const server = shown && this.projects.serverFor(shown.uri);
+    if (!shown || !server) {
       this.showThisPage(undefined, NO_PAGE);
       return;
     }
@@ -1268,12 +1280,12 @@ export class SidebarViews implements vscode.Disposable {
       this.showThisPage(undefined, "Waiting for the project's language server.");
       return;
     }
-    const { line, character } = editor.selection.active;
+    const { line, character } = shown.selection.active;
     this.pageAsked++;
     let page: PageResult | null = null;
     try {
       page = (await server.request("ascribe/page", {
-        textDocument: { uri: document.uri.toString() },
+        textDocument: { uri: shown.uri.toString() },
         position: { line, character },
       })) as PageResult | null;
     } catch {
@@ -1283,7 +1295,7 @@ export class SidebarViews implements vscode.Disposable {
     const review = page?.about ? await this.reviewOf(server, page.about.path) : undefined;
     this.pageAsked += this.review.changesRequests - before;
     if (looked !== this.pageLooked) return;
-    this.pageFile = document.uri;
+    this.pageFile = shown.uri;
     this.showThisPage(page?.about ? page : undefined, page?.about ? undefined : NO_PAGE, review);
   }
 
@@ -1364,15 +1376,33 @@ export class SidebarViews implements vscode.Disposable {
     }
   }
 
-  /** Escape in This page: the focus goes back to the page's editor. */
+  /** Escape in This page: the focus goes back to the page's editor, in the group of its tab. */
   private async focusPageEditor(): Promise<void> {
-    const editor = this.pageEditor;
-    if (!editor || !vscode.window.visibleTextEditors.includes(editor)) return;
-    await vscode.window.showTextDocument(editor.document, {
-      ...(editor.viewColumn === undefined ? {} : { viewColumn: editor.viewColumn }),
+    const page = this.pageAt;
+    const group =
+      page && vscode.window.tabGroups.all.find((g) => g.tabs.some((tab) => isTabOf(tab, page.uri)));
+    if (!page || !group) return;
+    await vscode.window.showTextDocument(page.uri, {
+      viewColumn: group.viewColumn,
       preserveFocus: false,
     });
   }
+}
+
+/** The page This page shows: its document, and its cursor as it was last. */
+interface PageAt {
+  uri: vscode.Uri;
+  selection: vscode.Selection;
+}
+
+/** Whether a tab is the text editor of `uri`. */
+function isTabOf(tab: vscode.Tab, uri: vscode.Uri): boolean {
+  return tab.input instanceof vscode.TabInputText && tab.input.uri.toString() === uri.toString();
+}
+
+/** Whether `uri` is open in a tab of some group, on top or covered by another. */
+function openInTab(uri: vscode.Uri): boolean {
+  return vscode.window.tabGroups.all.some((group) => group.tabs.some((tab) => isTabOf(tab, uri)));
 }
 
 /** A check of what This page's webview says it drew. */

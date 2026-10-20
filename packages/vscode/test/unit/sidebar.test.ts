@@ -27,7 +27,7 @@ import {
   pagesResource,
   pagesRoots,
   SHOW_PROBLEMS,
-  shownEditor,
+  shownPage,
   SWITCH_BUILD,
   thisPageChildren,
   thisPageItems,
@@ -1318,30 +1318,32 @@ describe("This page's items, as its webview draws them", () => {
 });
 
 describe("the page This page shows", () => {
-  const isPage = (editor: string) => editor.endsWith(".md");
+  // Each page by its document; the open ones are those with a tab, covered or not.
+  const isPage = (file: string) => file.endsWith(".md");
 
   it("is the active editor's, when it's a page's", () => {
-    expect(shownEditor("keys.md", "quickstart.md", ["keys.md", "quickstart.md"], isPage)).toBe(
+    expect(shownPage("keys.md", "quickstart.md", ["keys.md", "quickstart.md"], isPage)).toBe(
       "quickstart.md",
     );
   });
 
-  it("stays on its page while the focus is in the view, a panel, or an editor of no page", () => {
+  it("stays on its page while the focus is in the view, a panel, or a file that isn't a page", () => {
     // VS Code reports no active editor while a webview has the focus.
-    expect(shownEditor("keys.md", undefined, ["keys.md"], isPage)).toBe("keys.md");
-    expect(shownEditor("keys.md", "ascribe.toml", ["keys.md", "ascribe.toml"], isPage)).toBe(
+    expect(shownPage("keys.md", undefined, ["keys.md"], isPage)).toBe("keys.md");
+    // A file that isn't a page covering the page's tab in its group leaves the tab open.
+    expect(shownPage("keys.md", "ascribe.toml", ["keys.md", "ascribe.toml"], isPage)).toBe(
       "keys.md",
     );
   });
 
   it("isn't moved by a page that's only open in another group", () => {
-    expect(shownEditor("keys.md", undefined, ["keys.md", "quickstart.md"], isPage)).toBe("keys.md");
+    expect(shownPage("keys.md", undefined, ["keys.md", "quickstart.md"], isPage)).toBe("keys.md");
   });
 
-  it("shows none once its editor is closed and the active one isn't a page's", () => {
-    expect(shownEditor("keys.md", "ascribe.toml", ["ascribe.toml"], isPage)).toBeUndefined();
-    expect(shownEditor("keys.md", undefined, [], isPage)).toBeUndefined();
-    expect(shownEditor(undefined, undefined, [], isPage)).toBeUndefined();
+  it("shows none once its tab is closed and the active one isn't a page's", () => {
+    expect(shownPage("keys.md", "ascribe.toml", ["ascribe.toml"], isPage)).toBeUndefined();
+    expect(shownPage("keys.md", undefined, [], isPage)).toBeUndefined();
+    expect(shownPage(undefined, undefined, [], isPage)).toBeUndefined();
   });
 });
 

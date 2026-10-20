@@ -41,8 +41,11 @@ function element<K extends keyof HTMLElementTagNameMap>(
   return made;
 }
 
-function icon(name: string): HTMLElement {
-  const made = element("span", `codicon codicon-${name.replace(/[^a-z0-9-]/g, "")}`);
+function icon(name: string, className = ""): HTMLElement {
+  const made = element(
+    "span",
+    `codicon codicon-${name.replace(/[^a-z0-9-]/g, "")} ${className}`.trimEnd(),
+  );
   made.setAttribute("aria-hidden", "true");
   return made;
 }
@@ -136,7 +139,13 @@ function section(item: ViewItem, channel: ViewChannel<ThisPageReport>): HTMLDeta
   const open = chosen ?? item.open;
   details.open = open;
   const summary = element("summary");
-  summary.append(icon(item.icon), ...labelled(item));
+  // The twistie, as a tree draws it: the stylesheet shows the one for open or closed.
+  summary.append(
+    icon("chevron-right", "twistie closed"),
+    icon("chevron-down", "twistie open"),
+    icon(item.icon),
+    ...labelled(item),
+  );
   details.append(summary);
   const body = element("div", "section-body");
   drawItems(body, item.children, 0, channel);

@@ -340,6 +340,57 @@ describe("This page's webview on examples/quill", () => {
     assert.ok(view.asked() > hidden);
   });
 
+  it("stays on its page while a file that isn't a page covers its tab, and moves on once the page's tab is closed", async () => {
+    const api = await activated();
+    const view = api.ui.thisPage;
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(installAgent), {
+      viewColumn: vscode.ViewColumn.One,
+      preview: false,
+    });
+    await view.whenDrawn(
+      "install-agent.md",
+      (drawn) => title(drawn) === "Title (Install the Quill agent)",
+    );
+
+    // ascribe.toml in the page's group covers its tab: the page's editor
+    // leaves the screen, and This page stays on it.
+    const model = uriOf("ascribe.toml");
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(model), {
+      viewColumn: vscode.ViewColumn.One,
+      preview: false,
+    });
+    await waitFor("the page's tab covered", async () =>
+      vscode.window.visibleTextEditors.every(
+        (editor) => editor.document.uri.toString() !== installAgent.toString(),
+      )
+        ? true
+        : undefined,
+    );
+    await view.whenSettled();
+    const covered = view.drawn();
+    assert.ok(covered);
+    assert.equal(covered.report.message, null);
+    assert.equal(title(covered), "Title (Install the Quill agent)");
+    // Escape brings the page's tab back to the top, and the focus to it.
+    await view.escape();
+    assert.equal(vscode.window.activeTextEditor?.document.uri.toString(), installAgent.toString());
+
+    // Closing the page's tab, with ascribe.toml active, leaves it on no page.
+    await vscode.window.showTextDocument(model, { viewColumn: vscode.ViewColumn.One });
+    const tab = vscode.window.tabGroups.all
+      .flatMap((group) => group.tabs)
+      .find(
+        (tab) =>
+          tab.input instanceof vscode.TabInputText &&
+          tab.input.uri.toString() === installAgent.toString(),
+      );
+    assert.ok(tab);
+    await vscode.window.tabGroups.close(tab);
+    await view.whenDrawn("no page", (drawn) => drawn.report.message !== null);
+  });
+
   it("opens what a row names when it's chosen", async () => {
     const api = await activated();
     const view = api.ui.thisPage;

@@ -224,6 +224,20 @@ describe("This page's webview", () => {
     await expect(view.page.locator("summary").nth(1).textContent()).resolves.toBe(
       "Health1 thing to do",
     );
+    // Each header's twistie is the codicon chevron for open or closed.
+    const twisties = await view.page
+      .locator("summary > .twistie")
+      .evaluateAll((spans) =>
+        spans
+          .filter((span) => getComputedStyle(span).display !== "none")
+          .map((span) => [...span.classList].find((name) => name.startsWith("codicon-chevron"))),
+      );
+    expect(twisties).toEqual([
+      "codicon-chevron-down",
+      "codicon-chevron-right",
+      "codicon-chevron-right",
+      "codicon-chevron-right",
+    ]);
   });
 
   it("wraps a long row at a narrow width instead of cutting it off", async () => {

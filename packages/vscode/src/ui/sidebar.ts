@@ -275,18 +275,18 @@ export function followedProject<T>(
 }
 
 /**
- * The editor whose page This page shows: the active one, when it's a page's;
- * otherwise the one it shows, while that's still open. Focus leaving the
- * page's editor, for the view itself, another view, a panel, or an editor
- * that isn't a page, leaves it on its page; only a page's editor becoming
- * active moves it. Once its editor is closed, and the active one isn't a
- * page's, it shows none.
+ * The page This page shows: the active editor's, when it's a page's;
+ * otherwise the one it shows, while that's still open in a tab. Focus leaving
+ * the page's editor, for the view itself, another view, a panel, or a file
+ * that isn't a page, in the page's group or another, leaves it on its page;
+ * only a page's editor becoming active moves it. Once the page's last tab is
+ * closed, and the active editor isn't a page's, it shows none.
  */
-export function shownEditor<T>(
+export function shownPage<T>(
   shown: T | undefined,
   active: T | undefined,
   open: readonly T[],
-  isPage: (editor: T) => boolean,
+  isPage: (page: T) => boolean,
 ): T | undefined {
   if (active !== undefined && isPage(active)) return active;
   return shown !== undefined && open.includes(shown) ? shown : undefined;
