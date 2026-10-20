@@ -30,7 +30,7 @@ Three groups of ideas:
 
 ## 1. Code snippets: what's left
 
-`@snippet`, sources, and `ascribe drift` are built ([Drift](../docs/content/examples/index.md)), and Ascribe's own docs take their examples that way. Knowing whether an example's code was tested, and with what, is built: [tested examples](../docs/content/examples/tested.md). Three things from the first idea are in neither:
+`@snippet`, sources, and `ascribe drift` are built ([Examples and drift](../docs/content/examples/index.md)), and Ascribe's own docs take their examples that way. Knowing whether an example's code was tested, and with what, is built: [tested examples](../docs/content/examples/tested.md). Three things from the first idea are in neither:
 
 - **The rest of Bluehawk's tags.** `snippet` and `remove` work as they are. `replace`, `uncomment`, `state`, and `emphasize` are reserved and do nothing. States are the interesting one: versions of one example, such as a tutorial's start and finish, which map onto Ascribe's own model as `@snippet {state=start}` inside a `@variant` arm, or a build that picks a state for a whole tutorial. The tested examples plan leaves new tags to a proposal of their own, designed fresh for a project starting clean, so whether to finish Bluehawk's set is a question about who's migrating.
 - **A preview that follows the code.** A snippet is read again when its page changes, not when its code file does, so the preview and a page's problems don't follow an edit to the code. The editor guide says so.

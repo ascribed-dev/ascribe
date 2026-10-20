@@ -12,7 +12,7 @@
 // their `main`, and closes the docs repository's update pull request. It
 // refuses a repository whose README it didn't write, unless --force. The docs
 // repository's workflow needs a GitHub App that can read the code repository
-// and write to the docs repository: docs/content/examples/index.md says how.
+// and write to the docs repository: docs/content/examples/docs-repository.md says how.
 //
 // --pass then runs the pass: it makes each scripted change in the code
 // repository (scripts/sources-fixture/changes.ts), runs the docs repository's

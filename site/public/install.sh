@@ -26,7 +26,7 @@ repo="ascribed-dev/ascribe"
 # The oldest glibc the Linux binaries run on: `GLIBC` in
 # .github/workflows/release-build.yml (scripts/docs-site/facts.test.ts).
 glibc_floor="2.28"
-docs="https://ascribed-dev.com/go/getting-started/"
+docs="https://ascribed-dev.com/go/install/"
 
 say() { printf '%s\n' "$*"; }
 fail() {

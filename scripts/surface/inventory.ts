@@ -110,17 +110,23 @@ const COMMAND_REFERENCE = "docs/content/command/index.md";
 
 /**
  * The command reference's pages: its own, then each page that includes a
- * fragment generated from the help text, in the folder of the feature its
- * commands are for.
+ * fragment generated from the help text, or that a command's permalink leads
+ * to, as `ascribe lsp`'s on the editor's page, which has no options to
+ * generate, in the folder of the feature its commands are for.
  */
 function commandReference(): string[] {
+  const permalinked = new Set(
+    [...read("docs/ascribe.permalinks").matchAll(/^cli-\S* = "([^#"]+)/gm)].map(
+      ([, page = ""]) => `docs/content/${page}`,
+    ),
+  );
   return [
     COMMAND_REFERENCE,
     ...tracked("docs/content/**/*.md").filter(
       (file) =>
         file !== COMMAND_REFERENCE &&
         !file.includes("/_") &&
-        /^@include: .*\/_generated\/cli-/m.test(read(file)),
+        (permalinked.has(file) || /^@include: .*\/_generated\/cli-/m.test(read(file))),
     ),
   ];
 }
