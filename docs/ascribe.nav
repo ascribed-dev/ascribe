@@ -23,6 +23,7 @@ label = "Checks and reports"
 
 [[sections]]
 folder = "review/"
+pages = ["how-it-works.md", "site-preview.md", "ci-report.md", "diff.md", "troubleshooting.md"]
 
 [[sections]]
 folder = "editor/"

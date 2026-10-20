@@ -865,8 +865,11 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `navigation/order.md` | Put your pages in order | how-to |
 | `navigation/site-list.md` | Move a site's own list to the navigation | how-to |
 | `permalinks/index.md` | Permalinks | how-to |
+| `review/ci-report.md` | Attach the review report to every pull request | how-to |
 | `review/diff.md` | `ascribe diff` and `drift` | reference |
+| `review/how-it-works.md` | How review works | concept |
 | `review/index.md` | Review | how-to |
+| `review/site-preview.md` | Review in the site preview | reference |
 | `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
 | `templates/index.md` | Page templates | how-to |
 | `versions/archive.md` | Archive and retire a line | how-to |
