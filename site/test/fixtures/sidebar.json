@@ -74,6 +74,10 @@
         "label": "ascribe check, build, and fmt"
       },
       {
+        "href": "/docs/checks/report-command/",
+        "label": "ascribe report"
+      },
+      {
         "href": "/docs/checks/diagnostics/",
         "label": "Diagnostics"
       },
@@ -120,7 +124,7 @@
       },
       {
         "href": "/docs/review/diff/",
-        "label": "ascribe diff, drift, and report"
+        "label": "ascribe diff and drift"
       },
       {
         "href": "/docs/review/troubleshooting/",
@@ -178,7 +182,7 @@
       },
       {
         "href": "/docs/agents/commands/",
-        "label": "ascribe agents, mcp, and lsp"
+        "label": "ascribe agents and mcp"
       },
       {
         "href": "/docs/agents/measuring/",
