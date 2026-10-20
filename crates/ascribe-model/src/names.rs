@@ -74,7 +74,7 @@ pub fn edit_distance_within(a: &str, b: &str, limit: usize) -> Option<usize> {
             cur[j + 1] = (prev[j] + cost).min(prev[j + 1] + 1).min(cur[j] + 1);
             least = least.min(cur[j + 1]);
         }
-        // No row's least is below the one before it's.
+        // A row's least is never below the previous row's.
         if least > limit {
             return None;
         }
