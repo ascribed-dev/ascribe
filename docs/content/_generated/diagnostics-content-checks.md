@@ -6,6 +6,8 @@
 
 Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
+**When:** A page's Markdown, as a build writes it for agents to read, is as long as the limit or longer: 50,000 characters, or `[checks.page-size] limit`. A page over the limit in several builds is one problem, with its size in the build where it's longest.
+
 **Message:** this page's Markdown is \{size} characters in build `{build}`, and an agent reads under \{limit} in one piece; split the page, or move long tables and code below the prose
 
 **Fix:** Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`. It's the spec's `page-size-markdown` check, made from the build before a deploy; `ascribe report agents` names this check for it, and for the spec's other checks of a page's size.
@@ -16,6 +18,8 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 @id {permalink=true}: ASC150
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** A page's content type marks a field `role = "description"`, and the page leaves the field out or empty. A required field, whose absence is `frontmatter-missing-field`, and a field with a default aren't looked at.
 
 **Message:** this page has no `{field}`; write a sentence saying what the page is for, which search results and agents show with its title
 
@@ -28,6 +32,8 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 Advice · page level · next step: fix · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
+**When:** A heading is more than one level below the heading before it, or is at level 1, which the page's title is. Headings from includes count at the levels they're written with, and after a skip the next heading is compared with the one that skipped, so a skipped section is reported once.
+
 **Message:** this heading is level \{level}, after a level-\{previous} heading; make it level \{expected}, so the outline has no gap
 
 **Fix:** Make each heading one level below the heading it belongs under. A page's title is its level-1 heading, so its own headings start at level 2. The quick fix changes the one heading; the headings under it may need to move up too.
@@ -39,6 +45,8 @@ Advice · page level · next step: fix · configurable in `[checks]` · [SPEC §
 
 Advice · file level · next step: choose · configurable in `[checks]` · [SPEC §1.4]({repo}/blob/main/SPEC.md#14-relationship-to-commonmark)
 
+**When:** A fenced code block has no language after its opening fence: nothing, or only attributes, such as `phrases=true`. An indented code block isn't looked at.
+
 **Message:** this code block has no language; write it after the opening fence, or `text` for output
 
 **Fix:** Write the block's language right after the opening fence, such as `sh`, `toml`, or `json`. Use `text` for program output, logs, and anything else that isn't code. A highlighter colors the block by it, and an agent knows what the block is.
@@ -49,6 +57,8 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 @id {permalink=true}: ASC153
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in the page's `intended` frontmatter · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** A page's content type marks a field `role = "review-date"`, and the date the page gives it is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`.
 
 **Message:** this page was due for review on \{date}; check it still holds, then move `{field}` to the next review
 
@@ -429,6 +439,8 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
+**When:** The project publishes `llms.txt` (`[consumer] agents = true`), and a page's description, or a content type's default for its description field, is longer than 300 characters as `llms.txt` writes it.
+
 **Message:** this description is \{length} characters, and its line in llms.txt reads best under \{limit}; shorten it to one sentence
 
 **Fix:** Shorten the description to one sentence that says what the page is for. It's the page's line in `llms.txt`, which an agent reads to choose a page, so the whole index should stay short.
@@ -439,6 +451,8 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 @id {permalink=true}: ASC164
 
 Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
+
+**When:** The project publishes `llms.txt` (`[consumer] agents = true`), and one of a build's `llms.txt` files is longer than 50,000 characters even with the index split by folder. Reported at the page the file is about.
 
 **Message:** \{file} is \{size} characters in build `{build}`, over the \{limit} an agent reads in one fetch; move some of its pages into folders of their own, or shorten their descriptions
 
@@ -479,6 +493,8 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
+**When:** The project has `[checks.vale]`, and Vale reports an alert about the prose of a page or a fragment, or of a phrase's text. Reported where the alert is in the source, or at the phrase.
+
 **Message:** \{rule}: \{message}
 
 **Fix:** Vale reported this about the prose, under the rule the message starts with. Change the text, or take the replacement the editor offers when the rule gives one; for text from a phrase, change the phrase's value in `ascribe.toml`. A rule that's wrong for the project is turned off in Vale's configuration, or, for the `quiet` preset, in `[checks.vale] off`; one place is quieted with Vale's own comments (`<!-- vale Rule = NO -->`). See [Prose, through Vale](../checks/vale.md).
@@ -489,6 +505,8 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 @id {permalink=true}: ASC166
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+
+**When:** The project has `[checks.vale]`, and Vale couldn't be run, failed, or didn't finish in time, or the tool checking the project doesn't start it, as the agents' tools don't. Reported once, at `[checks.vale]`.
 
 **Message:** the prose wasn't checked: `{command}` couldn't be run (\{reason}). Install Vale, or set `[checks.vale] command` to where it is
 

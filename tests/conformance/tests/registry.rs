@@ -129,6 +129,24 @@ fn only_content_checks_say_when() {
     }
 }
 
+/// A configurable check's `when` is its description, which the reference
+/// and the editor's Project Settings show beside its level, so every one
+/// has it.
+#[test]
+fn configurable_checks_say_when() {
+    let registry = registry();
+    let missing: Vec<&str> = registry
+        .entries
+        .iter()
+        .filter(|e| e.configurable && e.when.is_none())
+        .map(|e| e.slug.as_str())
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "configurable checks without `when`: {missing:?}"
+    );
+}
+
 /// A check's stage is written only when it runs at one stage alone, and the
 /// only such stage is `report`, for a content check that needs the network
 /// or a built site.
