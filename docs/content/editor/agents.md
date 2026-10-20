@@ -16,7 +16,9 @@ On a problem, the lightbulb also offers **Prompt agent: fix this problem**, afte
 @id {permalink=true}: agents-in-vs-code
 
 @available: ascribe 0.3.0
-An agent in VS Code, such as GitHub Copilot in agent mode, gets Ascribe's tools with nothing to set up. In a workspace with an Ascribe project, the extension offers [`ascribe mcp`](../agents/mcp.md) as an MCP server, named **Ascribe** in VS Code's list of MCP servers. It runs the binary the first project uses (see [Which `ascribe` it runs](index.md#which-ascribe-it-runs)), in the workspace folder, and VS Code starts it when an agent first needs it. When the workspace's projects use different binaries, the project's output says which one the server runs.
+An agent in VS Code, such as GitHub Copilot in agent mode, gets Ascribe's tools with nothing to set up. In a workspace with an Ascribe project, the extension offers [`ascribe mcp`](../agents/mcp.md) as an MCP server, named **Ascribe** in VS Code's list of MCP servers. It runs the binary the first project uses (see [Which `ascribe` it runs](index.md#which-ascribe-it-runs)), in the workspace folder, and VS Code starts it when an agent first needs it. When the workspace's projects use different binaries, the project's output says which one the server runs. Its prompts, `new-page`, `fix`, and `review`, appear as slash commands in the chat.
+
+An agent that writes files without opening them still gets their problems: a project's language server starts when one of its files changes on disk, and the Problems panel shows them, where Copilot can read them after its edits. Like the panel, they're the editor's build's; the [hooks](../agents/hooks.md) and `ascribe check` cover every build. See [When servers start](settings.md#when-servers-start).
 
 The extension also gives agents three tools of its own, for what only the editor knows: text that isn't saved, and the review that's open. Name one in chat with `#`, or let the agent pick it.
 
@@ -30,18 +32,3 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 
 @available: ascribe 0.4.0
 Chat has [Ascribe's skill](../agents/instructions.md#the-skill), which teaches an agent the loop of editing a page and checking it, with nothing to set up. The extension ships it, and offers it while no workspace folder has a copy from [`ascribe agents sync`](../agents/instructions.md) in `.agents/skills/ascribe/`, `.claude/skills/ascribe/`, or `.github/skills/ascribe/`. Once one does, chat lists that copy, the project's, instead. VS Code reads those folders only at the top of a workspace folder, and `sync` writes at the repository's root, so in a workspace opened below the root, chat keeps the extension's copy after a `sync`.
-
-## VS Code
-
-The [Ascribe extension](#agents-in-vs-code) gives an agent in VS Code, such as GitHub Copilot in agent mode, what it gives you:
-
-- **Problems as the agent edits.** An agent that writes files without opening them still gets their problems: a project's language server starts when one of its files changes on disk, and the Problems panel shows them, where Copilot can read them after its edits. Like the panel, they're the editor's build's; the hooks and `ascribe check` cover every build. See [When servers start](settings.md#when-servers-start).
-- **The MCP server, with nothing to set up.** The extension offers `ascribe mcp` to VS Code's agents itself, named **Ascribe** in VS Code's list of MCP servers, so there's no file to write. Its prompts, `new-page`, `fix`, and `review`, appear as slash commands in the chat.
-- **Tools only the editor has.** `ascribe_editor_problems`, the problems of files as the editor has them, saved or not; and, while review is on, `ascribe_review_threads`, the pull request's open threads, and `ascribe_review_changes`, the changed pages. Name one in chat with `#`, or let the agent pick it.
-- **Prompt agent**, on a problem, a file, a project, or in review, as [Prompt your agent](../agents/prompts.md) says.
-- **The binary the editor runs.** When `ascribe` on the window's path isn't the binary the extension runs, such as the one bundled with it, the extension puts that binary's folder first on the path of the window's terminals, so `ascribe` in a terminal runs it. A terminal that was open before asks to be relaunched. **Prompt agent**'s prompts then name the binary by its path, so an agent that doesn't work in the window's terminals, such as Claude Code's extension, runs the same one.
-
-@available: ascribe 0.4.0
-- **The skill, with nothing to set up.** The extension gives VS Code's chat [the skill](../agents/instructions.md#the-skill) in a project that never ran `ascribe agents sync`. Once a workspace folder has a synced copy, in `.agents/skills/ascribe/`, `.claude/skills/ascribe/`, or `.github/skills/ascribe/`, chat lists that one, the project's, and not the extension's. VS Code reads those folders at the top of each workspace folder, and `sync` writes at the repository's root, so a workspace opened at a project below the root, such as `docs/`, gets the extension's copy even after `sync`.
-
-See [Agents in VS Code](#agents-in-vs-code).
