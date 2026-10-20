@@ -6,7 +6,8 @@ name: Board
 # but not GitHub's GraphQL API or the organization's, and the board is only
 # reachable through those; a workflow can, with a token that has the board.
 #
-# Run it from Actions → Board → Run workflow, or with
+# Agents run it with the GitHub MCP tool `actions_run_trigger`. By hand, run it
+# from Actions → Board → Run workflow, or with
 # `gh workflow run board.yml --ref main -f issue="123 124" -f status="Ready"`, which
 # gives every issue listed the one Status. With no issue it only reads, and
 # writes the board, its fields, and its items to `board.json` on the branch

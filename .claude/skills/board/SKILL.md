@@ -11,19 +11,13 @@ A Claude cloud session can't reach the board itself. Its GitHub access covers th
 
 ## Read the board
 
-Run Board, wait for it, then read `board.json` from the branch `board`:
+Start Board with the GitHub MCP tool `actions_run_trigger`, never `gh workflow run` in the shell: `method: "run_workflow"`, `owner: "ascribed-dev"`, `repo: "ascribe"`, `workflow_id: "board.yml"`, `ref: "main"`, and no `inputs` to only read. Inputs are always strings. Wait for the run with `actions_list` (`method: "list_workflow_runs"`, `resource_id: "board.yml"`) until it has completed, then read `board.json` from the branch `board`:
 
 ```sh
-since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-gh workflow run board.yml --ref main
-sleep 5
-run=$(gh run list --workflow board.yml --event workflow_dispatch --limit 5 --json databaseId,createdAt \
-  --jq "[.[] | select(.createdAt >= \"$since\")] | last | .databaseId")
-gh run watch "$run" --exit-status > /dev/null
 gh api 'repos/ascribed-dev/ascribe/contents/board.json?ref=board' --jq .content | base64 -d > board.json
 ```
 
-`--ref main` matters: without it `gh workflow run` asks GraphQL for the default branch, and fails. `board.json` has the project, its fields with each single-select field's options, and every item. An item's `status` is its column, and `content` names its issue or pull request:
+`board.json` has the project, its fields with each single-select field's options, and every item. An item's `status` is its column, and `content` names its issue or pull request:
 
 ```sh
 jq -r '.items[] | select(.status == "Ready") | "#\(.content.number) \(.content.title)"' board.json
@@ -33,27 +27,19 @@ A run writes `board.json` only when the board changed, so the file can be older 
 
 ## Move a card
 
-The same workflow, with the issue and the Status by its name as the board shows it:
-
-```sh
-gh workflow run board.yml --ref main -f issue=123 -f status="In review"
-```
+The same tool and workflow, with the issue and the Status by its name as the board shows it: `inputs: { issue: "123", status: "In review" }`.
 
 Then wait for it as above. A failed run says why in its error, for instance a Status the board doesn't have. An issue or pull request that isn't on the board yet is added. Move only cards your role owns, and only to the next column.
 
-Several cards going to the same Status move in one run, listed with spaces or commas:
+Several cards going to the same Status move in one run, listed with spaces or commas: `inputs: { issue: "123 124 125", status: "Ready" }`.
 
-```sh
-gh workflow run board.yml --ref main -f issue="123 124 125" -f status="Ready"
-```
-
-A move doesn't read the board, so `board.json` stays as it was; add `-f read=true` to read it in the same run. Every call the workflow makes to the board counts against one token's hourly GraphQL limit, and a read lists the whole board, so use one run for a batch and read only when you need to. When a run fails on the limit, its log says `API rate limit exceeded` or `unknown owner type`: wait for the limit to reset instead of retrying in a loop, since every retry spends the same limit and so do other sessions'.
+A move doesn't read the board, so `board.json` stays as it was; add `read: "true"` to `inputs` to read it in the same run. Every call the workflow makes to the board counts against one token's hourly GraphQL limit, and a read lists the whole board, so use one run for a batch and read only when you need to. When a run fails on the limit, its log says `API rate limit exceeded` or `unknown owner type`: wait for the limit to reset instead of retrying in a loop, since every retry spends the same limit and so do other sessions'.
 
 ## Approve a pull request
 
 Agents post as the maintainer, who also authors their pull requests, and GitHub doesn't let a pull request's author approve it. Approve posts the approval as `github-actions[bot]`, for the commit you reviewed.
 
-Start it with the GitHub MCP tool `actions_run_trigger`, not `gh workflow run` in the shell: `method: "run_workflow"`, `owner: "ascribed-dev"`, `repo: "ascribe"`, `workflow_id: "approve.yml"`, `ref: "main"`, and `inputs: { pr: "123", sha: "<the full head commit you reviewed>" }`. In a cloud session, auto mode's safety check refuses the shell command as self-approval, and the allow rules in [`.claude/settings.json`](../../settings.json) don't reach it there; the MCP tools are allowed by the environment.
+Start it the same way, with `actions_run_trigger`: `method: "run_workflow"`, `owner: "ascribed-dev"`, `repo: "ascribe"`, `workflow_id: "approve.yml"`, `ref: "main"`, and `inputs: { pr: "123", sha: "<the full head commit you reviewed>" }`. In a cloud session, auto mode's safety check refuses the shell command as self-approval; the MCP tools are allowed by the environment.
 
 Give the commit you reviewed, not a fresh fetch: Approve refuses when the pull request's head has moved past the commit you give it, so new commits always get a review first. Then find the run with `actions_list` (`method: "list_workflow_runs"`, `resource_id: "approve.yml"`) and check that it passed before you merge.
 

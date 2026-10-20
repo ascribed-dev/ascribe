@@ -9,6 +9,8 @@ An implementor gets one card, already moved to **In progress** by the coordinato
 
 [The `board` skill](../board/SKILL.md) says how to move a card.
 
+Start a workflow with the GitHub MCP tool `actions_run_trigger`, never `gh workflow run`; the `board` skill has the details.
+
 ## Steps
 
 1. **Read the issue** and its comments. If triage or the maintainer answered a question there, the answer is part of the ask.
