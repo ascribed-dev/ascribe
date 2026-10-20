@@ -151,11 +151,16 @@ fn path_target(
     };
     let Ok(source) = answer::source_path(project, Path::new(path)) else {
         let readings = answer::content_paths(project, Path::new(path));
-        if id.is_none()
-            && let Some(image) = readings
-                .iter()
-                .find(|content| ascribe_check::image_file(project, index, content))
+        if let Some(image) = readings
+            .iter()
+            .find(|content| ascribe_check::image_file(project, index, content))
         {
+            if id.is_some() {
+                return Err(QueryError::BadTarget {
+                    given: given.to_owned(),
+                    reason: "it's an image, which has no headings; name the image alone".to_owned(),
+                });
+            }
             return Ok(Target::Image(image.clone()));
         }
         let there = |content: &RelPath| {
