@@ -467,6 +467,20 @@ fn machine() {
     );
 }
 
+/// `ascribe search` on the synthetic project at `root`, from cold: every
+/// page of every build resolved and read, as each search does. Recorded
+/// with no target, so what later work adds shows.
+fn search(bin: &Path, root: &Path) {
+    time_cli(
+        "  ascribe search (a word on every page, every build)",
+        "search/synthetic-3000",
+        bin,
+        root,
+        &["search", "welcome"],
+        3,
+    );
+}
+
 fn main() {
     machine();
     let bin = ascribe_bin();
@@ -494,6 +508,7 @@ fn main() {
         &["check", "--format", "json"],
         5,
     );
+    search(&bin, &root);
     time_cli(
         "  ascribe build (first: writes every output)",
         "build/synthetic-3000-first",

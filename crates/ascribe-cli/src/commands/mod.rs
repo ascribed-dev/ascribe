@@ -19,6 +19,7 @@ pub mod refs;
 pub mod rename;
 pub mod render;
 pub mod report;
+pub mod search;
 pub mod sources;
 pub mod templates;
 pub mod vale;

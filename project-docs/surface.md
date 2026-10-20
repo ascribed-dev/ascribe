@@ -37,6 +37,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe rename` | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. | `TARGET NEW` |  |
 | `ascribe render` | Writes a page as a reader of one build sees it: the plain Markdown the build's `plain` output writes for it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. | `PAGE [--build <NAME>] [--frontmatter]` | `text`, `json` |
 | `ascribe report` | Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. | `[SECTION]... [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice\|warning\|error]` | `text`, `markdown`, `json`, `prompt` |
+| `ascribe search` | Finds where the pages say something, as their readers read it, and names the line to edit for each place. | `QUERY [--build <NAME>]... [--limit <N>]` |  |
 | `ascribe sources fetch` | Makes the copies match `ascribe.lock`: at each source's pin, it copies the files snippets name that have no copy or a wrong one, and removes the copies no snippet names. | `[NAME]...` |  |
 | `ascribe sources update` | Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20, or that the pin moved back), the copies that changed, the tested examples whose status changed, and the pages whose examples changed, grouped as `ascribe drift` groups them. | `[NAME]... [--to <REV>]` | `text`, `json`, `markdown` |
 | `ascribe sources status` | Shows each source in another repository: its repository and branch, its pin, and each copy's state (current, changed here, missing, not in the lock, unused, not copied yet, or not in the repository at the pin). |  | `text`, `json` |
@@ -811,7 +812,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `checks/vale.md` | Prose, through Vale | how-to |
 | `command/index.md` | Command reference | reference |
 | `command/project-files.md` | Files Ascribe writes | reference |
-| `command/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, and `render` | reference |
+| `command/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, `render`, and `search` | reference |
 | `content-model/checks.md` | `ascribe.toml`: checks, permalinks, and listing | reference |
 | `content-model/content.md` | `ascribe.toml`: dimensions, phrases, and widgets | reference |
 | `content-model/glossary.md` | Set up a glossary | how-to |

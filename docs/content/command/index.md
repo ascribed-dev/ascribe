@@ -17,7 +17,7 @@ Each command's options, output, and exit codes are on the page for its kind of w
 
 - [`ascribe check`, `build`, and `fmt`](../checks/check.md): check a project, build its outputs, and format its Markdown.
 - [`ascribe diff`, `drift`, and `report`](../review/diff.md): compare a project with another revision, find what drifted from its sources, and report on its health.
-- [`ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, and `render`](questions.md): answer questions about a project, and rename what pages link to.
+- [`ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, `render`, and `search`](questions.md): answer questions about a project, find where its pages say something, and rename what pages link to.
 - [`ascribe agents`, `mcp`, and `lsp`](../agents/commands.md): set a repository up for agents, and serve a project to agents and editors.
 - [`ascribe versions`](../versions/release.md): list a project's release lines, say what differs between two, release one, archive one, and retire one.
 - [`ascribe init`, `sources`, `observe`, `permalinks`, `templates`, and `vale`](../examples/sources.md): start a project, and look after its source repositories, its tested examples, permalinks, page templates, and Vale's configuration.
