@@ -14,12 +14,7 @@ api-version = "string"
 
 `<name>` is the type's name (`key` rule). It appears in diagnostics, in generated code (the Zod schema's name), and on each page of the type, as the value of `type`.
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `frontmatter` | table of fields | **required** | The frontmatter schema: one entry per field, keyed by field name (`name-word`). Values are field types (§5). It MUST declare `title` as a required string (below). A type can't declare a field `type`, which is reserved (`model-field-reserved`). |
-| `purpose` {available="ascribe 0.3.1"} | string | none | What a page of the type is for, in a few words. The rules `ascribe agents sync` writes say it on the type's line, and `ascribe model` shows it. A type copied from the starter set says its summary there without one (below). |
-| `template` {available="ascribe 0.3.1"} | string (path) | none | The page a page of the type starts from: a file from the folder `ascribe.toml` is in, outside the content root (below). |
-| `guide` {available="ascribe 0.3.1"} | array of paths | `[]` | What to read before writing a page of the type, in the order to read it, such as a guide and a project's own notes on it: files from the folder `ascribe.toml` is in, outside the content root (below). |
+@include: ../../_generated/content-model-types.md
 
 @available: ascribe 0.3.1
 **Which type a page is.** A page says what type it is with `type` in its frontmatter, the first key by convention, wherever its file is: a folder can hold pages of every type.

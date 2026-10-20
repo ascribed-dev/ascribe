@@ -217,7 +217,7 @@ Some files are generated from a source, or copied from what the code writes, and
 
 | Test | Rewrites |
 |---|---|
-| `tests/conformance/tests/docs.rs` | The diagnostics reference's fragments in `docs/content/_generated/`, and the `ascribe.toml` reference's table of crawlers by purpose, `crawlers.md` there, from `crates/ascribe-model/data/crawlers.toml` |
+| `tests/conformance/tests/docs.rs` | The diagnostics reference's fragments in `docs/content/_generated/`, the `ascribe.toml` reference's table of crawlers by purpose, `crawlers.md` there, from `crates/ascribe-model/data/crawlers.toml`, and its tables of keys, `content-model-*.md` there, from `crates/ascribe-model/settings.toml` |
 | `crates/ascribe-cli/src/docs.rs` | Each command's options in `docs/content/_generated/` |
 | `crates/ascribe-cli/src/shapes.rs` | The JSON Schemas in `schemas/`, the TypeScript types in `packages/astro/src/shapes.ts`, `packages/review/src/shapes.ts`, and `packages/vscode/src/shapes.ts`, and the schemas' fragments in `docs/content/_generated/`, from the Rust types that write the JSON |
 | `crates/ascribe-cli/tests/all/output.rs` | The command output in `crates/ascribe-cli/tests/output/` |
