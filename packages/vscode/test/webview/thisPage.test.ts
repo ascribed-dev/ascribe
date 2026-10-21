@@ -343,6 +343,27 @@ describe("This page's webview", () => {
     ).resolves.toBe(true);
   });
 
+  it("gives a row the focus back without scrolling when the window gets it back", async () => {
+    const view = await open({ sections: { health: true, connections: true } });
+    await view.page.setViewportSize({ width: 300, height: 90 });
+    await draw(view, 1, sections());
+    await view.page.locator("button[data-key='health/0']").focus();
+    // The row is scrolled out of view, and the window loses the focus.
+    const back = await view.page.evaluate(() => {
+      document.documentElement.scrollTop = 200;
+      const scrolled = document.documentElement.scrollTop;
+      (document.activeElement as HTMLElement).blur();
+      window.dispatchEvent(new FocusEvent("focus"));
+      return {
+        scrolled,
+        scroll: document.documentElement.scrollTop,
+        focused: document.activeElement?.getAttribute("data-key"),
+      };
+    });
+    expect(back.scrolled).toBeGreaterThan(0);
+    expect(back).toEqual({ scrolled: back.scrolled, scroll: back.scrolled, focused: "health/0" });
+  });
+
   it("gives the focus to the section's header when what had it is gone", async () => {
     const view = await open({ sections: { connections: true } });
     await draw(view, 1, sections());

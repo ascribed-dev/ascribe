@@ -188,7 +188,10 @@ fn disagreements(root: &Path, name: &str, project: &Project) -> Vec<String> {
             // The plain output writes no frontmatter, so the description
             // isn't in it; the title is its first heading.
             let blocks = Reading::of(project, page).blocks;
-            for block in blocks.into_iter().filter(|b| b.kind != In::Description) {
+            for block in blocks
+                .into_iter()
+                .filter(|b| b.kind != In::Description && b.kind.searched())
+            {
                 match text[at..].find(&block.text) {
                     Some(found) => at += found + block.text.len(),
                     None => out.push(format!(

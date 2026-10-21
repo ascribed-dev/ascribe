@@ -157,7 +157,8 @@ impl From<In> for SearchIn {
             In::Title => SearchIn::Title,
             In::Description => SearchIn::Description,
             In::Heading => SearchIn::Heading,
-            In::Text => SearchIn::Text,
+            // Search never matches an HTML block or a directive's line.
+            In::Text | In::Html | In::Directive => SearchIn::Text,
             In::Table => SearchIn::Table,
             In::Code => SearchIn::Code,
             In::Phrase => SearchIn::Phrase,
