@@ -1,4 +1,5 @@
 import * as assert from "node:assert/strict";
+import { rmSync } from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import type { AscribeApi } from "../../../src/extension.js";
@@ -13,6 +14,17 @@ export const uriOf = (...parts: string[]): vscode.Uri =>
   vscode.Uri.file(path.join(workspace(), ...parts));
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Deletes a folder a test made in the workspace. On Windows a process running
+ * in the folder keeps it from being deleted: the Project view's check of a
+ * project runs in the project's folder, and can still be running when the
+ * test is done. Node retries on `EPERM` and `EBUSY`, for at least 2 seconds in
+ * all, long enough for a check to finish; a server that's still running holds
+ * the folder for longer than that.
+ */
+export const removeFolder = (folder: string): void =>
+  rmSync(folder, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 
 /** Polls until `check` returns a value that isn't `undefined` or `false`, or fails after `timeout` ms. */
 export async function waitFor<T>(
