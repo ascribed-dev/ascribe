@@ -1772,17 +1772,23 @@
             "type": "string",
             "enum": [
               "build",
-              "syncAgentFiles"
+              "syncAgentFiles",
+              "observeExamples"
             ],
             "enumDescriptions": [
               "Build: `ascribe build`, in the project's folder.",
-              "Sync Agent Files: `ascribe agents sync`, in the project's folder."
+              "Sync Agent Files: `ascribe agents sync`, in the project's folder.",
+              "Observe Examples: `ascribe observe`, in the folder of a source with tested examples. It shows the commands its ascribe.examples.toml names, and asks before running them."
             ],
             "description": "The task to run, with the binary the project's language server runs."
           },
           "project": {
             "type": "string",
             "description": "The project's folder, relative to the workspace folder. Leave it out for the project whose ascribe.toml is in the workspace folder."
+          },
+          "source": {
+            "type": "string",
+            "description": "For observeExamples: the source to observe, by its name in ascribe.toml. Leave it out when the project has one source with tested examples."
           }
         }
       }

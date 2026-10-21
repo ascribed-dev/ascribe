@@ -26,16 +26,20 @@ An expected output is an example like any other: show it with a second `@snippet
 
 ## 2. Run the test and commit what it records
 
-In the same folder, run [`ascribe observe`](sources.md#cli-observe). It names the commands it will run, runs them, and when the test passes, writes `examples.observations/default.toml`: where the test ran, and a hash of every example.
+In the same folder, run [`ascribe observe`](sources.md#cli-observe). It names the commands it will run, asks before running them, runs them, and when the test passes, writes `examples.observations/default.toml`: where the test ran, and a hash of every example.
 
 ```console
 $ ascribe observe
-Running the commands in ascribe.examples.toml:
+The commands in ascribe.examples.toml:
   test         node --test test/greet.test.mjs
   environment  node --version
+Run them? [y/N] y
 node --test test/greet.test.mjs passed.
 Wrote examples.observations/default.toml: 2 files, Node 24.9.0 on Linux.
 ```
+
+@available: next
+The config is a list of commands for your machine to run, so `ascribe observe` asks first: type `y` to run them, and anything else, or nothing, runs nothing and writes nothing. It asks only when its input is a terminal. With `--yes` it doesn't ask, and in CI or a hook, where nobody is there to answer, it runs the commands as it lists them, without asking.
 
 Commit the observation with the code, as you would a lockfile. When the test fails, nothing is written, and the old observation stays. When it replaces one, it says what changed since: the files added, removed, and changed, and the environment values that differ.
 
@@ -73,7 +77,7 @@ An edit to an example, anywhere in the file, makes its observations out of date.
 
 An example that's deleted or renamed without a second run leaves its observation listing a file that isn't there. `ascribe check` reports [`observation-file-missing`](../checks/diagnostics/content-checks.md#ASC202) at that line of the observation, naming the command that writes it again.
 
-In VS Code, the advice is on the `@snippet` line as you write, and a hover on the address says what the file was tested with, or why it says nothing, and which observations say so. The quick fix **Copy the command** copies the line that runs `ascribe observe` in the example's folder; the editor never runs it. When an observation is written, the advice follows without the page being edited. See [the editor](../editor/writing.md#hover).
+In VS Code, the advice is on the `@snippet` line as you write, and a hover on the address says what the file was tested with, or why it says nothing, and which observations say so. The quick fix **Copy the command** copies the line that runs `ascribe observe` in the example's folder. The Project view's **Observe Examples**, a [task](../editor/settings.md#tasks) in a trusted workspace, runs it in the folder of each source with tested examples, where it asks in the terminal before running anything. When an observation is written, the advice follows without the page being edited. See [the editor](../editor/writing.md#hover).
 
 @available: ascribe 0.4.0
 In the example itself, a lens over each region a page shows says how many pages show it, "Shown in 1 page", and lists them, so you know which pages a change will change before you make it. See [Code files a page shows](../editor/writing.md#code-files-a-page-shows).

@@ -43,6 +43,7 @@ export const PROJECT_KEYS = {
   /** The tasks, by their names in `tasks.json`. */
   build: "build",
   syncAgentFiles: "syncAgentFiles",
+  observeExamples: "observeExamples",
 } as const;
 
 /** What `ascribe/inventory` counts, from the view's project's server. */
@@ -142,6 +143,7 @@ const CHECK_AGENT_FILES = { key: PROJECT_KEYS.checkAgentFiles, label: "Check Age
 const TASK_ICONS: Record<TaskName, string> = {
   build: "package",
   syncAgentFiles: "sync",
+  observeExamples: "beaker",
 };
 
 /** A task, as an action: it runs in the terminal. */
@@ -182,6 +184,7 @@ export function projectAnswer(project: ProjectFacts | undefined): ProjectAnswer 
       PROJECT_EDITS.format,
       taskAction("build"),
       taskAction("syncAgentFiles"),
+      taskAction("observeExamples"),
     ],
   };
 }

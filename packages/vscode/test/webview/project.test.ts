@@ -143,7 +143,13 @@ const facts = (
 const none = { count: 0, first: null };
 
 /** The edits and the tasks every project's Actions has after Check Every Build. */
-const TASKS = ["Apply Every Safe Fix", "Format Every Page", "Build", "Sync Agent Files"];
+const TASKS = [
+  "Apply Every Safe Fix",
+  "Format Every Page",
+  "Build",
+  "Sync Agent Files",
+  "Observe Examples",
+];
 
 const made = (current: boolean, errors = 2, warnings = 1, examples = 0): EveryBuildResult => ({
   kind: "made",

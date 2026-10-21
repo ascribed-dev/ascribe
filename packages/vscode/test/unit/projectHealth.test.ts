@@ -89,6 +89,7 @@ describe("projectAnswer", () => {
       PROJECT_KEYS.formatEveryPage,
       PROJECT_KEYS.build,
       PROJECT_KEYS.syncAgentFiles,
+      PROJECT_KEYS.observeExamples,
     ]);
   });
 

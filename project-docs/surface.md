@@ -27,7 +27,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe lsp` | Runs the language server, speaking the Language Server Protocol over standard input and output. |  |  |
 | `ascribe mcp` | Runs an MCP server, speaking the Model Context Protocol over standard input and output, for an agent that has no shell, or a host that approves tools one by one. |  |  |
 | `ascribe model` | Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. | `[PATH] [--section types\|dimensions\|phrases\|features\|glossary\|widgets\|releases\|builds\|sources\|project\|consumer\|editor\|checks\|crawlers\|listing\|permalinks]` | `text`, `json` |
-| `ascribe observe` | Runs the test of a folder of tested examples, and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. | `[--name <NAME>] [--check]` | `text`, `json` |
+| `ascribe observe` | Runs the test of a folder of tested examples, and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. | `[--name <NAME>] [--check] [--yes]` | `text`, `json` |
 | `ascribe outline` | Shows a page's title and type, and the headings a link to it can name, with the ids links write after `#`: the page's own headings and those that come from the fragments it includes. | `PAGE [--build <NAME>]` | `text`, `json` |
 | `ascribe permalinks sync` | Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each alias and retired permalink as `ascribe.toml` has it. | `[--check]` | `text`, `json` |
 | `ascribe permalinks list` | Shows every permalink the content declares, with the file and line it's declared on, and each alias and retired permalink in `ascribe.toml`, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that the project no longer has. |  | `text`, `json` |
@@ -490,8 +490,9 @@ Task types, and the properties `tasks.json` gives them:
 
 | Type | Property | Values | What it says |
 |---|---|---|---|
-| `ascribe` | `task` | `build`, `syncAgentFiles` | The task to run, with the binary the project's language server runs. |
+| `ascribe` | `task` | `build`, `syncAgentFiles`, `observeExamples` | The task to run, with the binary the project's language server runs. |
 | `ascribe` | `project` |  | The project's folder, relative to the workspace folder. |
+| `ascribe` | `source` |  | For observeExamples: the source to observe, by its name in ascribe.toml. |
 
 The walkthrough:
 

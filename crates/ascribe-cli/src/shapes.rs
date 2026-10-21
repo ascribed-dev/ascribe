@@ -355,6 +355,7 @@ const PACKAGES: &[(&str, &[&str])] = &[
             "lsp-project-edit",
             "lsp-build-view",
             "lsp-agent-prompt",
+            "model",
         ],
     ),
 ];
