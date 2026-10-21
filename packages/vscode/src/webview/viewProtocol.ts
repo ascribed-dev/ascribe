@@ -178,18 +178,72 @@ export interface ProjectAction {
   icon: string;
   /** How it runs. */
   caption: string;
+  /** Whether it's off: every action is, in Restricted Mode. */
+  off: boolean;
+}
+
+/** A group of the Project view's actions: Check, Write, or Review and agents. */
+export interface ProjectActionGroup {
+  label: string;
+  actions: ProjectAction[];
+}
+
+/** A button of the Project view's head, drawn as its icon, with its label for a screen reader. */
+export interface ProjectButton {
+  key: string;
+  label: string;
+  /** A codicon's name. */
+  icon: string;
+  /** Its hover text. */
+  tooltip: string;
+}
+
+/** A build the Project view's switch offers. */
+export interface ProjectBuildChoice {
+  /** The build's name, as the switch sends it back: `site`, or a line's, `site@3.4`. */
+  name: string;
+  /** What else is true of it: "editor build", "line 3.4 of site". Empty when nothing is. */
+  description: string;
+}
+
+/** The head of the Project view: what the project is, its server, and the build you're looking at. */
+export interface ProjectHead {
+  name: string;
+  folder: string;
+  /** The server's state, in words. */
+  state: string;
+  version: string | null;
+  /** Beside the server's state: Show Output and Restart. */
+  server: ProjectButton[];
+  /** Beside the name: Project Settings and VS Code's Settings. */
+  settings: ProjectButton[];
+  /**
+   * The build you're looking at, among the builds to choose from; `null`
+   * until the server has said what they are.
+   */
+  build: { shown: string; choices: ProjectBuildChoice[] } | null;
+}
+
+/** A row of the Project view's About. */
+export interface ProjectAboutRow {
+  label: string;
+  value: string;
 }
 
 /** What the Project view draws: a message in place of the project, or the project. */
 export interface ProjectAnswer {
-  /** No project to show; `null` when it has one. */
+  /** No project to show, or Restricted Mode; `null` when it has one. */
   message: string | null;
-  /** The project's name, its folder, its server's state, and the binary's version. */
-  head: { name: string; folder: string; state: string; version: string | null } | null;
+  /** The buttons under the message: Manage Workspace Trust, in Restricted Mode. */
+  notice: { key: string; label: string }[];
+  head: ProjectHead | null;
   /** How many things there are to do, for Health's header: counts above zero, out of date, or never run. */
   toDo: number;
   health: ProjectCount[];
-  actions: ProjectAction[];
+  /** The actions, in their groups; in Restricted Mode, each off. */
+  actions: ProjectActionGroup[];
+  /** What the project is made of: its content root, builds, release lines, sources, and content types. */
+  about: ProjectAboutRow[];
 }
 
 /** What the Project view's webview drew, for tests. */
@@ -197,12 +251,21 @@ export interface ProjectReport {
   message: string | null;
   /** The head's text, line by line. */
   head: string[];
+  /** The build switch's choices, and the one it shows; `null` when there's no switch. */
+  build: { shown: string; choices: string[] } | null;
   /** Each section as drawn: its key, its header's text, and whether it's open. */
   sections: { key: string; label: string; open: boolean }[];
   /** Each count as drawn: its value, its note, its state, and whether its value is dimmed. */
   health: { key: string; value: string; note: string; state: string; dimmed: boolean }[];
-  /** The buttons' labels, in order: the counts' and their actions', then the actions'. */
+  /**
+   * The buttons' labels, in order: the head's, the counts' and their
+   * actions', then the actions'. An icon's button by its label.
+   */
   buttons: string[];
+  /** The labels of the buttons that are off. */
+  off: string[];
+  /** About's rows, as "label: value". */
+  about: string[];
   /** Content security policy violations seen so far. */
   violations: string[];
 }

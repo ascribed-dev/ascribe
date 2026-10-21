@@ -6,7 +6,12 @@ import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright-core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { projectAnswer, type ProjectFacts } from "../../src/ui/projectHealth.js";
+import {
+  projectAnswer,
+  RESTRICTED,
+  restrictedAnswer,
+  type ProjectFacts,
+} from "../../src/ui/projectHealth.js";
 import type { EveryBuildResult } from "../../src/ui/checkEveryBuild.js";
 import type {
   FromView,
@@ -137,18 +142,26 @@ const facts = (
   now: 0,
   time: () => "14:02",
   day: () => "21 October",
+  builds: [],
+  build: undefined,
+  about: { contentRoot: undefined, types: undefined, sources: "asking" },
   ...more,
 });
 
+/** The head's buttons, by their labels: the settings', then the server's. */
+const HEAD = ["Project Settings", "Ascribe's Settings in VS Code", "Show Output", "Restart"];
+
 const none = { count: 0, first: null };
 
-/** The edits and the tasks every project's Actions has after Check Every Build. */
+/** The actions every project has after Check Every Build: the edits, the tasks, review, and the agent's prompt. */
 const TASKS = [
   "Apply Every Safe Fix",
   "Format Every Page",
   "Build",
   "Sync Agent Files",
   "Observe Examples",
+  "Start Review",
+  "Prompt Agent to Fix This Project",
 ];
 
 const made = (current: boolean, errors = 2, warnings = 1, examples = 0): EveryBuildResult => ({
@@ -169,14 +182,27 @@ const made = (current: boolean, errors = 2, warnings = 1, examples = 0): EveryBu
 });
 
 describe("the Project view's webview", () => {
-  it("draws the head, Health, and Actions, open, from its own files", async () => {
+  it("draws the head, Health and Actions open, and About closed, from its own files", async () => {
     const view = await open();
     const report = await view.draw(1, projectAnswer(facts({ kind: "none" })));
     expect(report.head).toEqual(["docs", "Folder: docs", "Server: running", "Version: 0.4.0"]);
+    expect(report.build).toBeNull();
     expect(report.sections).toEqual([
       { key: "health", label: "Health4 things to do", open: true },
       { key: "actions", label: "Actions", open: true },
+      { key: "about", label: "About", open: false },
     ]);
+    await expect(
+      view.page.locator("details[data-key=actions] h3").allTextContents(),
+    ).resolves.toEqual(["Check", "Write", "Review and agents"]);
+    expect(report.about).toEqual([
+      "Content root: Known once the language server runs",
+      "Builds: Known once the language server runs",
+      "Release lines: Known once the language server runs",
+      "Sources: Asking ascribe model…",
+      "Content types: Known once the language server runs",
+    ]);
+    expect(report.off).toEqual([]);
     expect(report.health[0]).toEqual({
       key: "problems",
       value: "—",
@@ -193,8 +219,8 @@ describe("the Project view's webview", () => {
       "unused",
       "agentFiles",
     ]);
-    // Each count from the check has the check beside it, then the actions.
-    expect(report.buttons).toEqual([...Array(5).fill("Check Every Build"), ...TASKS]);
+    // The head's, each count from the check with the check beside it, then the actions.
+    expect(report.buttons).toEqual([...HEAD, ...Array(5).fill("Check Every Build"), ...TASKS]);
     expect(report.violations).toEqual([]);
   });
 
@@ -205,7 +231,7 @@ describe("the Project view's webview", () => {
     const none = await view.draw(2, projectAnswer(facts(made(true, 0, 0))));
     expect(none.health[0]).toMatchObject({ value: "0", state: "none", dimmed: true });
     expect(none.health.every((count) => count.value === "0" && count.dimmed)).toBe(true);
-    expect(none.buttons).toEqual(["Check Every Build", ...TASKS]);
+    expect(none.buttons).toEqual([...HEAD, "Check Every Build", ...TASKS]);
     const stale = await view.draw(3, projectAnswer(facts(made(false))));
     expect(stale.health[0]).toMatchObject({
       value: "—",
@@ -213,13 +239,13 @@ describe("the Project view's webview", () => {
       state: "outOfDate",
       dimmed: false,
     });
-    expect(stale.buttons).toEqual([...Array(5).fill("Check Every Build"), ...TASKS]);
+    expect(stale.buttons).toEqual([...HEAD, ...Array(5).fill("Check Every Build"), ...TASKS]);
   });
 
   it("opens a current count's list, and runs the check, from the keyboard", async () => {
     const view = await open();
     const report = await view.draw(4, projectAnswer(facts(made(true))));
-    expect(report.buttons).toEqual(["2 errors, 1 warning", "Check Every Build", ...TASKS]);
+    expect(report.buttons).toEqual([...HEAD, "2 errors, 1 warning", "Check Every Build", ...TASKS]);
     await expect(
       view.page
         .getByRole("button", {
@@ -227,9 +253,8 @@ describe("the Project view's webview", () => {
         })
         .count(),
     ).resolves.toBe(1);
-    // Tab: Health's header, the count, Actions' header, then Check Every Build.
-    await view.page.keyboard.press("Tab");
-    await view.page.keyboard.press("Tab");
+    // Tab: the head's four buttons, Health's header, the count, Actions' header, then Check Every Build.
+    for (let i = 0; i < HEAD.length + 2; i++) await view.page.keyboard.press("Tab");
     const from = view.posted.length;
     await view.page.keyboard.press("Enter");
     await expect(view.next("open", from)).resolves.toEqual({
@@ -272,6 +297,7 @@ describe("the Project view's webview", () => {
     });
     // The counts above zero open their lists.
     expect(current.buttons).toEqual([
+      ...HEAD,
       "2 examples",
       "3 pages",
       "1 file",
@@ -326,7 +352,7 @@ describe("the Project view's webview", () => {
     await view.draw(1, projectAnswer(facts({ kind: "none" })));
     await view.page.locator("details[data-key=actions] > summary").click();
     const again = await view.draw(2, projectAnswer(facts({ kind: "running" })));
-    expect(again.sections.map(({ open }) => open)).toEqual([true, false]);
+    expect(again.sections.map(({ open }) => open)).toEqual([true, false, false]);
     expect(again.health[0]).toMatchObject({ note: "Checking every build…", state: "running" });
   });
 
@@ -342,5 +368,76 @@ describe("the Project view's webview", () => {
     await expect(view.page.locator("main img").count()).resolves.toBe(0);
     expect(named.head[0]).toBe('<img src=x onerror="__post(1)">');
     expect(named.violations).toEqual([]);
+  });
+
+  it("switches the build with a select, sending the build chosen, and shows the one you're looking at", async () => {
+    const view = await open();
+    const builds = [
+      { name: "site", editor: true },
+      {
+        name: "api",
+        editor: false,
+        lines: [
+          { name: "api", line: "3.5", current: true },
+          { name: "api@3.4", line: "3.4", current: false },
+        ],
+      },
+    ];
+    const report = await view.draw(1, projectAnswer(facts({ kind: "none" }, "docs", { builds })));
+    expect(report.build).toEqual({ shown: "site", choices: ["site", "api", "api@3.4"] });
+    expect(report.head).toContain("Build: site");
+    await expect(
+      view.page.getByRole("combobox", { name: "Build" }).locator("option").allTextContents(),
+    ).resolves.toEqual([
+      "site, editor build",
+      "api, line 3.5, the current line",
+      "api@3.4, line 3.4 of api",
+    ]);
+    const from = view.posted.length;
+    await view.page.getByRole("combobox", { name: "Build" }).selectOption("api@3.4");
+    await expect(view.next("open", from)).resolves.toEqual({
+      type: "open",
+      seq: 1,
+      key: "chooseBuild/api@3.4",
+    });
+    const chosen = await view.draw(
+      2,
+      projectAnswer(facts({ kind: "none" }, "docs", { builds, build: "api@3.4" })),
+    );
+    expect(chosen.build?.shown).toBe("api@3.4");
+  });
+
+  it("names the head's icon buttons for a screen reader, and sends each by its key", async () => {
+    const view = await open();
+    await view.draw(3, projectAnswer(facts({ kind: "none" })));
+    for (const [name, key] of [
+      ["Project Settings", "projectSettings"],
+      ["Ascribe's Settings in VS Code", "editorSettings"],
+      ["Show Output", "showOutput"],
+      ["Restart", "restart"],
+    ] as const) {
+      const from = view.posted.length;
+      await view.page.getByRole("button", { name, exact: true }).click();
+      await expect(view.next("open", from)).resolves.toEqual({ type: "open", seq: 3, key });
+    }
+    await expect(
+      view.page.getByRole("button", { name: "Project Settings" }).getAttribute("title"),
+    ).resolves.toBe("Project Settings: the project's ascribe.toml, which everyone shares");
+  });
+
+  it("says in Restricted Mode that Ascribe isn't running, with every action off", async () => {
+    const view = await open();
+    const report = await view.draw(1, restrictedAnswer());
+    expect(report.message).toBe(RESTRICTED);
+    expect(report.health).toEqual([]);
+    expect(report.buttons).toEqual(["Manage Workspace Trust", "Check Every Build", ...TASKS]);
+    expect(report.off).toEqual(["Check Every Build", ...TASKS]);
+    const from = view.posted.length;
+    await view.page.getByRole("button", { name: "Build", exact: true }).click({ force: true });
+    await view.page.getByRole("button", { name: "Manage Workspace Trust" }).click();
+    const posted = await view.next("open", from);
+    // The action that's off sent nothing: the first choice sent is Manage Workspace Trust.
+    expect(posted).toEqual({ type: "open", seq: 1, key: "manageTrust" });
+    expect(report.violations).toEqual([]);
   });
 });

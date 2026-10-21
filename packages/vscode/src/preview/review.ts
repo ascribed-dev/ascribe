@@ -117,9 +117,11 @@ export class ReviewController implements vscode.Disposable {
     this.disposables.push(
       this.item,
       this.updated,
-      vscode.commands.registerCommand("ascribe.startReview", () =>
-        this.startCommand(this.runningTarget()),
-      ),
+      // The Project view names its project; the Command Palette, none.
+      vscode.commands.registerCommand("ascribe.startReview", (folder?: unknown) => {
+        const named = typeof folder === "string" ? this.projects.serverAt(folder) : undefined;
+        return this.startCommand(named ? this.running(named) : this.runningTarget());
+      }),
       vscode.commands.registerCommand("ascribe.stopReview", () => this.stopCommand()),
       vscode.commands.registerCommand("ascribe.changedPages", () => this.changedPagesCommand()),
       vscode.commands.registerCommand("ascribe.refreshComments", () => this.refreshCommand()),

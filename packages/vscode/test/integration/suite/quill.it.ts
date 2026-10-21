@@ -920,6 +920,25 @@ describe("the Project view on examples/quill", () => {
     const head = api.ui.project.drawn()?.report;
     assert.ok(head?.head.includes("Server: running"), head?.head.join("\n"));
     assert.ok(head?.buttons.includes("Check Every Build"), head?.buttons.join("\n"));
+    // About: from the server's inventory and builds, and the binary's sources.
+    const about = await api.ui.project.whenDrawn(
+      "About, known",
+      (d) =>
+        d.report.about.length > 0 &&
+        d.report.about.every((row) => !row.includes("Known once") && !row.includes("Asking")),
+      30_000,
+    );
+    assert.equal(about.report.about[0], "Content root: docs");
+    assert.equal(about.report.about[3], "Sources: None");
+    assert.match(about.report.about[4] ?? "", /^Content types: page \(\d+ pages\)$/);
+    assert.deepEqual(
+      about.report.sections.map(({ key, open }) => [key, open]),
+      [
+        ["health", true],
+        ["actions", true],
+        ["about", false],
+      ],
+    );
 
     // The view's Check Every Build checks its own project, wherever the focus is.
     await api.ui.project.choose("checkEveryBuild");

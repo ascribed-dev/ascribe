@@ -117,6 +117,39 @@ describe("the build lens, with the real language server on the Lantern docs", ()
     assert.equal(api.preview.build(), "site");
   });
 
+  it("changes with the build switched in the Project view, and so do the status bar and the preview", async () => {
+    await open(rollouts);
+    await vscode.commands.executeCommand("ascribe.project.focus");
+    const drawn = await api.ui.project.whenDrawn(
+      "the build switch on site",
+      (d) => d.report.build?.shown === "site",
+      30_000,
+    );
+    assert.ok(
+      drawn.report.build?.choices.includes("self-hosted"),
+      drawn.report.build?.choices.join(", "),
+    );
+    // What the switch sends when the reader chooses a build.
+    await api.ui.project.choose("chooseBuild/self-hosted");
+    await shown(
+      rollouts,
+      "self-hosted from the Project view",
+      (s) => s.build === "self-hosted" && s.dimmed.length > 0,
+    );
+    await api.preview.whenDrawn("the self-hosted build", (r) => r.result.build === "self-hosted");
+    assert.equal(api.preview.build(), "self-hosted");
+    assert.match(api.ui.statusBar.shown()?.text ?? "", / · self-hosted( · |$)/);
+    await api.ui.project.whenDrawn(
+      "the switch on self-hosted",
+      (d) => d.report.build?.shown === "self-hosted",
+    );
+    // And back: the editor's build, which the status bar's Switch Build names too.
+    await api.ui.project.choose("chooseBuild/site");
+    await api.preview.whenDrawn("the site build", (r) => r.result.build === "site");
+    assert.match(api.ui.statusBar.shown()?.text ?? "", / · site( · |$)/);
+    await open(rollouts);
+  });
+
   it("removes every decoration when it's turned off", async () => {
     await api.preview.receive({ type: "build", name: "self-hosted" });
     await shown(

@@ -75,7 +75,10 @@ export class ProjectSettings implements vscode.Disposable {
 
   register(): void {
     this.disposables.push(
-      vscode.commands.registerCommand("ascribe.openProjectSettings", () => this.open()),
+      // The Project view's gear names its project; the Command Palette, none.
+      vscode.commands.registerCommand("ascribe.openProjectSettings", (folder?: unknown) =>
+        this.open(typeof folder === "string" ? folder : undefined),
+      ),
     );
   }
 
