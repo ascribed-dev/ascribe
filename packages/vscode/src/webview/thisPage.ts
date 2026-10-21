@@ -83,10 +83,9 @@ function chooser(item: ViewItem, channel: ViewChannel<ThisPageReport>): HTMLButt
   const button = element("button");
   button.type = "button";
   button.dataset["key"] = item.key;
-  button.addEventListener("click", () => {
-    trace(`click ${item.key} seq=${channel.seq}`);
-    channel.post({ type: "open", seq: channel.seq, key: item.key });
-  });
+  button.addEventListener("click", () =>
+    channel.post({ type: "open", seq: channel.seq, key: item.key }),
+  );
   return button;
 }
 
@@ -279,15 +278,6 @@ function patch(into: Element, fresh: readonly Node[]): void {
   for (const extra of drawn.slice(fresh.length)) extra.remove();
 }
 
-// DIAG #752: a trace the extension prints.
-const diag: string[] = [];
-function trace(line: string): void {
-  const active = document.activeElement;
-  diag.push(
-    `${Date.now() % 1_000_000} ${line} | active=${active?.tagName ?? "-"}:${focusedKey()} hasFocus=${document.hasFocus()}`,
-  );
-}
-
 const scroller = document.scrollingElement ?? document.documentElement;
 
 /** The key of what has the focus: an item's, or its section's for a header. */
@@ -376,16 +366,12 @@ function report(answer: ThisPageAnswer): ThisPageReport {
     scroll: Math.round(scroller.scrollTop),
     probed,
     violations: seenViolations(),
-    trace: diag.splice(0),
-  } as ThisPageReport;
+  };
 }
 
 function draw(answer: ThisPageAnswer, channel: ViewChannel<ThisPageReport>): ThisPageReport {
   const focused = focusedKey();
   const scroll = scroller.scrollTop;
-  trace(
-    `draw seq=${channel.seq} before: ${answer.message ?? answer.sections.map((item) => `${item.key}[${flat(item.children).length}]`).join(",")}`,
-  );
   patch(
     view,
     answer.message !== null
@@ -396,31 +382,23 @@ function draw(answer: ThisPageAnswer, channel: ViewChannel<ThisPageReport>): Thi
         ],
   );
   // What had the focus is gone: the focus goes to its section's header.
-  if (focused !== null && focusedKey() === null) trace(`draw lost ${focused}`);
   if (focused !== null && focusedKey() === null && !focusKey(focused)) {
     focusKey(focused.split("/")[0] ?? focused);
   }
   scroller.scrollTop = scroll;
-  trace(`draw seq=${channel.seq} after, focused was ${focused}`);
   shown = answer;
   return report(answer);
 }
 
 const channel = startView<ThisPageAnswer, ThisPageReport>(draw);
 
-window.addEventListener("focus", () => trace(`window focus, last ${lastFocused}`));
-window.addEventListener("blur", () => trace("window blur"));
-document.addEventListener("focusout", (event) =>
-  trace(`focusout ${(event.target as Element | null)?.getAttribute?.("data-key")} -> ${(event.relatedTarget as Element | null)?.tagName}`),
-);
 window.addEventListener("message", (event: MessageEvent<unknown>) => {
   const probe = event.data as Partial<ThisPageProbe> | null;
   if (probe?.type !== "probe" || typeof probe.probe !== "number" || !shown) return;
   if (probe.open) {
     for (const details of view.querySelectorAll("details")) details.open = true;
   }
-  trace(`probe ${probe.probe} seq=${channel.seq} focus=${probe.focus} press=${probe.press}`);
-  if (typeof probe.focus === "string") trace(`focusKey(${probe.focus}) = ${focusKey(probe.focus)}`);
+  if (typeof probe.focus === "string") focusKey(probe.focus);
   if (typeof probe.scroll === "number") scroller.scrollTop = probe.scroll;
   if (probe.press && document.activeElement instanceof HTMLElement) {
     document.activeElement.click();

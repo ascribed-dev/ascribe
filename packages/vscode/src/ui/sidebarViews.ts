@@ -317,7 +317,6 @@ export class SidebarViews implements vscode.Disposable {
   private pageAt: PageAt | undefined;
   /** What This page says in place of a page; `undefined` while it shows one. */
   private pageNotice: ThisPageNotice | undefined;
-  /** The nodes the keys of This page's newest answer name. */
   /** The nodes each answer This page sent names, by its items' keys. */
   private readonly pageNodes = new WeakMap<ThisPageAnswer, Map<string, ThisPageNode>>();
   /** Counts the cursor's stops, so an older stop's answer is dropped. */
@@ -594,10 +593,7 @@ export class SidebarViews implements vscode.Disposable {
       this.thisPage,
       this.pages,
       this.model,
-      vscode.window.onDidChangeActiveTextEditor((editor) => {
-        console.log(`[752 ${Date.now() % 1_000_000}] active editor ${editor?.document.uri.path}`);
-        this.follow(false, true);
-      }),
+      vscode.window.onDidChangeActiveTextEditor(() => this.follow(false, true)),
       vscode.window.onDidChangeTextEditorSelection(({ textEditor, selections }) => {
         const selection = selections[0];
         if (selection && textEditor.document.uri.toString() === this.pageAt?.uri.toString()) {
@@ -1450,7 +1446,6 @@ export class SidebarViews implements vscode.Disposable {
       return;
     }
     const node = answer && this.pageNodes.get(answer)?.get(key);
-    console.log(`[752 ${Date.now() % 1_000_000}] chooseItem seq=${seq} key=${key} latest=${this.thisPageView.isLatest(seq)} node=${!!node}`);
     if (!node) return;
     const command = this.thisPage.command(node);
     if (command) {
@@ -1493,7 +1488,6 @@ export class SidebarViews implements vscode.Disposable {
    */
   private async openBeside(uri: vscode.Uri): Promise<void> {
     const group = this.pageAt && groupOf(this.pageAt.uri);
-    console.log(`[752 ${Date.now() % 1_000_000}] openBeside ${uri.path}`);
     await vscode.window.showTextDocument(uri, {
       viewColumn: group ? group.viewColumn + 1 : vscode.ViewColumn.Beside,
       preserveFocus: true,
