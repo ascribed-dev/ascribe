@@ -320,6 +320,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_lsp::BuildViewResult>(),
     },
     Shape {
+        file: "lsp-search",
+        title: "SearchResult",
+        written_by: "the language server, answering `ascribe/search`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::SearchResult>(),
+    },
+    Shape {
         file: "lsp-agent-prompt",
         title: "AgentPromptResult",
         written_by: "the language server, answering `ascribe/agentPrompt`",
@@ -346,6 +353,7 @@ const PACKAGES: &[(&str, &[&str])] = &[
             "lsp-page",
             "lsp-edit",
             "lsp-build-view",
+            "lsp-search",
             "lsp-agent-prompt",
         ],
     ),

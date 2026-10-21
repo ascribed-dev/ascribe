@@ -72,6 +72,8 @@ pub(crate) struct Loaded {
     pub cache: Arc<Mutex<ResolvedCache>>,
     /// What updates affected since the last round, in order, for `cache`.
     pub pending: Vec<Affected>,
+    /// Each build's reading of each page, for `ascribe/search`.
+    pub readings: Arc<crate::search::Readings>,
     /// What each file included at the last round (see `compute::with_included`).
     pub direct_includes: BTreeMap<RelPath, BTreeSet<RelPath>>,
     /// Whether the content checks across the project are to run again.
@@ -484,6 +486,7 @@ impl Core {
             fs,
             dirty,
             cache: Arc::new(Mutex::new(ResolvedCache::new())),
+            readings: Arc::default(),
             pending: Vec::new(),
             direct_includes: BTreeMap::new(),
             across_dirty: true,
@@ -1104,6 +1107,7 @@ impl Core {
         if !affected.is_empty() {
             loaded.pending.push(affected.clone());
         }
+        loaded.readings.absorb(affected);
         loaded.dirty.extend(affected.recheck.iter().cloned());
         let mut cleared = Vec::new();
         for path in &affected.removed {

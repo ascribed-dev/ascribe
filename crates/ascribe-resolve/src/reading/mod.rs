@@ -39,7 +39,7 @@ use ascribe_syntax::{
 
 pub use find::{At, Found, Place, Shown, Through, find};
 pub use query::{BadQuery, Query};
-pub use scan::{Written, scan};
+pub use scan::{Nothing, Written, scan};
 
 use crate::build::{LinkTarget, ResolvedBlock, ResolvedKind, ResolvedLink, Substitution};
 use crate::index::{FileIndex, PhrasePlace, RefKind, frontmatter_key};

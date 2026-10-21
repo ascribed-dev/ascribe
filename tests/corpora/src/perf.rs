@@ -74,6 +74,7 @@ pub const REQUIRED: &[&str] = &[
     "lsp/keystroke-page-3000",
     "lsp/keystroke-fragment-3000",
     "lsp/completion-3000",
+    "lsp/search-3000",
     "memory/check-synthetic-3000",
     "memory/build-synthetic-3000-first",
     "memory/diff-synthetic-3000-unchanged",

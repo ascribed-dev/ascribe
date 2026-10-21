@@ -302,33 +302,7 @@ fn write_total(out: &mut dyn Write, s: &Searched) -> io::Result<()> {
 /// Writes that no place matches, and what the source says about the words.
 fn write_nothing(out: &mut dyn Write, nothing: &Nothing) -> io::Result<()> {
     writeln!(out, "No place matches.")?;
-    match nothing {
-        Nothing::Unwritten => writeln!(out, "The words aren't in any page."),
-        Nothing::Unpublished { written, total } => {
-            let at: Vec<String> = written
-                .iter()
-                .map(|(file, line)| format!("`{file}:{line}`"))
-                .collect();
-            let mut text = format!(
-                "No build searched publishes them. They're written at {}",
-                at.first().map_or("", String::as_str)
-            );
-            let more = total.saturating_sub(1);
-            if more > 0 {
-                let places = if more == 1 { "place" } else { "places" };
-                text.push_str(&format!(" and {more} more {places}"));
-            }
-            writeln!(out, "{text}.")
-        }
-        Nothing::OtherBuilds(builds) => {
-            let builds: Vec<String> = builds.iter().map(|b| format!("`{b}`")).collect();
-            writeln!(
-                out,
-                "Builds not searched publish them: {}.",
-                builds.join(", ")
-            )
-        }
-    }
+    writeln!(out, "{}", nothing.said())
 }
 
 /// Where a reader meets a place: the heading it's under, its arm, what it

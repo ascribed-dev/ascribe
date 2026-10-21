@@ -1,0 +1,296 @@
+{
+  "$defs": {
+    "LspPosition": {
+      "description": "A position in a document: a zero-based line, and a zero-based column in\nthe position encoding the client and server agreed on.",
+      "properties": {
+        "character": {
+          "description": "The column, from 0, in the negotiated position encoding.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "line": {
+          "description": "The line, from 0.",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "line",
+        "character"
+      ],
+      "type": "object"
+    },
+    "LspRange": {
+      "description": "A range in a document, from `start` up to (not including) `end`.",
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it ends."
+        },
+        "start": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it starts."
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "type": "object"
+    },
+    "SearchIn": {
+      "description": "What a place is.",
+      "oneOf": [
+        {
+          "const": "title",
+          "description": "The page's title, at its key in the frontmatter.",
+          "type": "string"
+        },
+        {
+          "const": "description",
+          "description": "The field the page's type marks `role = \"description\"`, at its key.",
+          "type": "string"
+        },
+        {
+          "const": "heading",
+          "description": "A heading.",
+          "type": "string"
+        },
+        {
+          "const": "text",
+          "description": "Prose.",
+          "type": "string"
+        },
+        {
+          "const": "table",
+          "description": "A table's row.",
+          "type": "string"
+        },
+        {
+          "const": "code",
+          "description": "A code block, or the code a `@snippet` shows.",
+          "type": "string"
+        },
+        {
+          "const": "phrase",
+          "description": "A phrase's value, at its line in `ascribe.toml`.",
+          "type": "string"
+        }
+      ]
+    },
+    "SearchPage": {
+      "description": "A page that shows a place.",
+      "properties": {
+        "builds": {
+          "description": "The builds that show it there, in the content model's order.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "heading": {
+          "description": "The heading the place is under there, as a reader reads it; for a\nheading, the heading itself.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "description": "That heading's id.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "page": {
+          "description": "The page's content path.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "page",
+        "heading",
+        "id",
+        "builds"
+      ],
+      "type": "object"
+    },
+    "SearchPlace": {
+      "description": "A place the query matches: a line of the source to edit.",
+      "properties": {
+        "arm": {
+          "description": "The arm of a group the block is written in, as its attributes are\nwritten (`deployment=cloud`), or else its title.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "builds": {
+          "description": "The builds it's in, in the content model's order, when it isn't in\nevery build searched; empty when it is.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "file": {
+          "description": "The file as the editor names it: a source's content path, a code\nfile's path from the project root, or `ascribe.toml`.",
+          "type": "string"
+        },
+        "in": {
+          "$ref": "#/$defs/SearchIn",
+          "description": "What it is: `title`, `description`, `heading`, `text`, `table`,\n`code`, or `phrase`, a phrase's value at its line in `ascribe.toml`."
+        },
+        "match": {
+          "description": "Where the match is in `text`: its first character and the one after\nits last, in Unicode characters.",
+          "items": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+        },
+        "pages": {
+          "description": "The pages that show it, in content path order, at most three.",
+          "items": {
+            "$ref": "#/$defs/SearchPage"
+          },
+          "type": "array"
+        },
+        "pagesTotal": {
+          "description": "How many pages show it; for a phrase, how many places in the source\nuse it.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "range": {
+          "$ref": "#/$defs/LspRange",
+          "description": "The match's first character to the end of its line, in the file.\nFor a phrase, its key to the end of its line in `ascribe.toml`."
+        },
+        "text": {
+          "description": "The block's text as a reader reads it, whole; for a phrase, its\nvalue.",
+          "type": "string"
+        },
+        "through": {
+          "description": "What the match reads through that the line doesn't spell, in order.",
+          "items": {
+            "$ref": "#/$defs/SearchThrough"
+          },
+          "type": "array"
+        },
+        "uri": {
+          "description": "The `file:` URI of the file to edit: a page, a fragment, a snippet's\ncode file, or `ascribe.toml` for a phrase.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri",
+        "range",
+        "file",
+        "in",
+        "text",
+        "match",
+        "through",
+        "arm",
+        "pages",
+        "pagesTotal",
+        "builds"
+      ],
+      "type": "object"
+    },
+    "SearchThrough": {
+      "description": "What a match reads through that its line doesn't spell.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "description": "A phrase's value, by its key.",
+          "properties": {
+            "phrase": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "phrase"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "The title of a page a link with no text takes, or the text of the\nheading it names: `page.md` or `page.md#id`.",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "A snippet's code: its address, as written (`code:app.py#main`).",
+          "properties": {
+            "code": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "code"
+          ],
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The answer to `ascribe/search`. A document that isn't one of the\nproject's files gets an answer with nothing searched.",
+  "properties": {
+    "builds": {
+      "description": "The builds searched, in the content model's order.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "nothing": {
+      "description": "When nothing matched, what the source says about the words, as the\nlast line of `ascribe search` says it: that no page has them, where\nthey're written though no build searched publishes them there, or\nthe builds not searched that do. `null` when something matched, or\nthe query couldn't be read.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "places": {
+      "description": "The places, at most `limit` of them, in the order `ascribe search`\nlists them: titles, then headings, then the rest; in each, the places\nwritten in pages, then those in fragments and code files, each in\npath order and in order within a file.",
+      "items": {
+        "$ref": "#/$defs/SearchPlace"
+      },
+      "type": "array"
+    },
+    "problem": {
+      "description": "Why nothing was searched: the query can't be read (a quote isn't\nclosed, or it has no words), or the build isn't one of the content\nmodel's. `null` when it was searched.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "total": {
+      "description": "How many places match.",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "truncated": {
+      "description": "Whether the list was cut: there are more than `places`.",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "builds",
+    "places",
+    "total",
+    "truncated",
+    "nothing",
+    "problem"
+  ],
+  "title": "SearchResult",
+  "type": "object"
+}

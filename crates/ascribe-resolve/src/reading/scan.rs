@@ -194,3 +194,50 @@ mod tests {
         assert_eq!(at, ["a", "\n", "b", "é", " ", "c"]);
     }
 }
+
+/// What the source says about words nothing a build searched publishes.
+#[derive(Debug, PartialEq, Eq)]
+pub enum Nothing {
+    /// No page, fragment, or `ascribe.toml` has them as written.
+    Unwritten,
+    /// They're written, but no build searched publishes them there, or a
+    /// phrase's value hides them.
+    Unpublished {
+        /// The first places they're written, at most three: each file, from
+        /// the project root, and line.
+        written: Vec<(String, u32)>,
+        /// How many places they're written.
+        total: usize,
+    },
+    /// Builds that weren't searched publish them, in the content model's
+    /// order.
+    OtherBuilds(Vec<String>),
+}
+
+impl Nothing {
+    /// What it says, on one line: the last line of `ascribe search`'s text
+    /// when nothing matched, and what the editor's search shows.
+    pub fn said(&self) -> String {
+        match self {
+            Nothing::Unwritten => "The words aren't in any page.".to_owned(),
+            Nothing::Unpublished { written, total } => {
+                let first = written
+                    .first()
+                    .map_or_else(String::new, |(file, line)| format!("`{file}:{line}`"));
+                let mut text =
+                    format!("No build searched publishes them. They're written at {first}");
+                let more = total.saturating_sub(1);
+                if more > 0 {
+                    let places = if more == 1 { "place" } else { "places" };
+                    text.push_str(&format!(" and {more} more {places}"));
+                }
+                text.push('.');
+                text
+            }
+            Nothing::OtherBuilds(builds) => {
+                let builds: Vec<String> = builds.iter().map(|b| format!("`{b}`")).collect();
+                format!("Builds not searched publish them: {}.", builds.join(", "))
+            }
+        }
+    }
+}

@@ -11,7 +11,7 @@ use ascribe_check::{Project, Scope, select_builds};
 use ascribe_core::RelPath;
 use ascribe_core::{LineIndex, WideEncoding};
 use ascribe_model::Build;
-use ascribe_resolve::reading::{self, At, Found, In, Query, Reading, Through};
+use ascribe_resolve::reading::{self, At, Found, In, Nothing, Query, Reading, Through};
 use ascribe_resolve::{AstroRouter, Usable};
 use serde::Serialize;
 
@@ -87,25 +87,6 @@ pub struct Searched {
     /// did.
     #[serde(skip)]
     pub nothing: Option<Nothing>,
-}
-
-/// What the source says about words nothing a build searched publishes.
-#[derive(Debug, PartialEq, Eq)]
-pub enum Nothing {
-    /// No page, fragment, or `ascribe.toml` has them as written.
-    Unwritten,
-    /// They're written, but no build searched publishes them there, or a
-    /// phrase's value hides them.
-    Unpublished {
-        /// The first places they're written, at most three: each file, from
-        /// the project root, and line.
-        written: Vec<(String, u32)>,
-        /// How many places they're written.
-        total: usize,
-    },
-    /// Builds that weren't searched publish them, in the content model's
-    /// order.
-    OtherBuilds(Vec<String>),
 }
 
 /// How many places [`Nothing::Unpublished`] names.

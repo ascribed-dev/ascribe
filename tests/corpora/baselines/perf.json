@@ -7,7 +7,8 @@
     "check/synthetic-3000-json": 5000.0,
     "lsp/completion-3000": 50.0,
     "lsp/keystroke-fragment-3000": 50.0,
-    "lsp/keystroke-page-3000": 50.0
+    "lsp/keystroke-page-3000": 50.0,
+    "lsp/search-3000": 50.0
   },
   "metrics": {
     "build/synthetic-3000-again": 1553.87,

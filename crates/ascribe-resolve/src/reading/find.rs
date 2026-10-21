@@ -87,6 +87,9 @@ pub enum At {
         /// Its path from the project root, or, for a file outside the
         /// project's folder, `<source>:<path>`, as the snippet names it.
         path: String,
+        /// Its path from the project root, outside the project's folder or
+        /// not.
+        from_root: RelPath,
         /// The byte where the match's first character is written.
         offset: usize,
         /// Its line, from 1.
@@ -286,6 +289,7 @@ fn locate(
         Origin::Snippet { snippet, .. } => At::Code {
             file: block.file,
             path: code_path(snippet),
+            from_root: snippet.path.clone(),
             offset,
             line,
             column,
