@@ -82,9 +82,10 @@ pub struct Args {
     #[arg(long)]
     pub recheck: bool,
 
-    /// Report as a first run would, and still keep what this run sees: say
-    /// nothing about what's new in `problems` and `links`, and report every
-    /// failure of `links`.
+    /// Report as a first run would: say nothing about what's new in
+    /// `problems` and `links`, and report every failure of `links`.
+    /// `problems` keeps nothing for the next report, and `links` still
+    /// keeps what this run sees.
     ///
     /// By default, `problems` and `links` say which problems are new since
     /// the last report and how many it listed are gone, and a link that
@@ -271,19 +272,15 @@ pub(crate) fn report(
         let confirm_days = project.model().checks.links.confirm_days;
         History::open(project.root(), today, confirm_days, args.no_history)
     });
-    // What the other sections remember from the last report, beside it.
+    // What the other sections remember from the last report, beside it;
+    // with `--no-history`, it's neither read nor written.
     let history = project
         .today()
-        .filter(|_| sections.contains(&Section::Problems))
+        .filter(|_| sections.contains(&Section::Problems) && !args.no_history)
         .and_then(|today| {
             let builds = ascribe_check::select_builds(&project, &args.build).ok()?;
             let names: Vec<String> = builds.iter().map(|b| b.name.clone()).collect();
-            Some(ReportHistory::open(
-                project.root(),
-                today,
-                &names,
-                args.no_history,
-            ))
+            Some(ReportHistory::open(project.root(), today, &names))
         });
     let options = Options {
         sections: &sections,

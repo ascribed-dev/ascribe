@@ -16,7 +16,7 @@
 - `--site <URL>`: The address of a built site, for `agents`: the published site, or a preview of it.
 - `--limit <N>`: List at most this many items in each list. By default, 20 in text and Markdown and 500 in JSON. What's left out is counted, with the command that lists it.
 - `--recheck`: For `links`: ask about every address, reusing no answer from an earlier run, and keep what this run gets. By default, an address that answered within `[checks.links] reuse-days` isn't asked about again.
-- `--no-history`: Report as a first run would, and still keep what this run sees: say nothing about what's new in `problems` and `links`, and report every failure of `links`. By default, `problems` and `links` say which problems are new since the last report and how many it listed are gone, and a link that answered before and fails now is listed as unconfirmed until it has kept failing for `[checks.links] confirm-days`.
+- `--no-history`: Report as a first run would: say nothing about what's new in `problems` and `links`, and report every failure of `links`. `problems` keeps nothing for the next report, and `links` still keeps what this run sees. By default, `problems` and `links` say which problems are new since the last report and how many it listed are gone, and a link that answered before and fails now is listed as unconfirmed until it has kept failing for `[checks.links] confirm-days`.
 - `--exit-code[=<LEVEL>]`: Exit with 1 when a section finds something at this severity or above, and with 2 when a section asked for couldn't run: for a scheduled job that opens an issue. `--exit-code` alone is `--exit-code=advice`: any problem fails. Without it, the report exits with 0 whenever it ran.
   - `advice`: Any problem.
   - `warning`: Warnings and errors.

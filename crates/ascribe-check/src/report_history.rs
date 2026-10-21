@@ -8,8 +8,9 @@
 //!   as a list of findings. It's written whole through a rename after each
 //!   run that reports `problems`.
 //! - **A first run says nothing about what's new,** and neither does one
-//!   with `--no-history`, which still keeps what it saw, or one on other
-//!   builds than the history's: `--build` changes what's found.
+//!   on other builds than the history's, compared as a set: `--build`
+//!   changes what's found. `--no-history` doesn't open the history at all,
+//!   so it neither reads nor writes it.
 //! - **A reader trusts nothing:** a file that doesn't parse or has another
 //!   version is no history. Deleting it costs one report that can't say
 //!   what changed.
@@ -42,10 +43,8 @@ pub struct ReportHistory {
     root: PathBuf,
     /// The day the run is on.
     today: Date,
-    /// The builds the run checks.
+    /// The builds the run checks, sorted.
     builds: Vec<String>,
-    /// Whether to report as a first run would (`--no-history`).
-    first_run: bool,
     /// What the file held when it was opened.
     read: Option<Saved>,
 }
@@ -55,7 +54,7 @@ pub struct ReportHistory {
 struct Saved {
     /// The day of the run that wrote it.
     run: Date,
-    /// The builds it checked.
+    /// The builds it checked, sorted.
     builds: Vec<String>,
     /// The findings `problems` reported.
     problems: BTreeSet<Identity>,
@@ -73,14 +72,15 @@ struct FileJson {
 impl ReportHistory {
     /// The history of the project under `root` (`root` is the project's
     /// folder, but for a test), as on `today`, for a run that checks
-    /// `builds`. With `first_run`, nothing is new and nothing is gone, as
-    /// with no history, and the run's findings are still kept.
-    pub fn open(root: &Path, today: Date, builds: &[String], first_run: bool) -> ReportHistory {
+    /// `builds`, in any order.
+    pub fn open(root: &Path, today: Date, builds: &[String]) -> ReportHistory {
+        let mut builds = builds.to_vec();
+        builds.sort();
+        builds.dedup();
         let mut history = ReportHistory {
             root: root.to_owned(),
             today,
-            builds: builds.to_vec(),
-            first_run,
+            builds,
             read: None,
         };
         history.read = history.load();
@@ -99,12 +99,11 @@ impl ReportHistory {
         self.earlier().map(|saved| &saved.problems)
     }
 
-    /// What the history held, unless this run reports as a first run, or
-    /// checks other builds.
+    /// What the history held, unless this run checks other builds.
     fn earlier(&self) -> Option<&Saved> {
         self.read
             .as_ref()
-            .filter(|saved| !self.first_run && saved.builds == self.builds)
+            .filter(|saved| saved.builds == self.builds)
     }
 
     /// Writes `problems` as the history, after the run. A write that fails
@@ -139,9 +138,12 @@ impl ReportHistory {
         if file.version != VERSION {
             return None;
         }
+        let mut builds = file.builds;
+        builds.sort();
+        builds.dedup();
         Some(Saved {
             run: Date::parse(&file.run)?,
-            builds: file.builds,
+            builds,
             problems: file.problems,
         })
     }
@@ -175,7 +177,7 @@ mod tests {
     #[test]
     fn a_run_reads_what_the_last_one_wrote() {
         let dir = tempfile::tempdir().unwrap();
-        let first = ReportHistory::open(dir.path(), day("2026-10-09"), &builds(), false);
+        let first = ReportHistory::open(dir.path(), day("2026-10-09"), &builds());
         assert_eq!(first.previous_run(), None);
         assert_eq!(first.problems_before(), None);
         first.save(BTreeSet::from([found("b"), found("a")]));
@@ -204,7 +206,7 @@ mod tests {
 }
 "#
         );
-        let next = ReportHistory::open(dir.path(), day("2026-10-10"), &builds(), false);
+        let next = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
         assert_eq!(next.previous_run(), Some(day("2026-10-09")));
         assert_eq!(
             next.problems_before(),
@@ -213,21 +215,22 @@ mod tests {
     }
 
     #[test]
-    fn no_history_or_other_builds_has_nothing_to_go_by() {
+    fn other_builds_have_nothing_to_go_by_and_the_same_in_another_order_do() {
         let dir = tempfile::tempdir().unwrap();
-        ReportHistory::open(dir.path(), day("2026-10-09"), &builds(), false)
+        let two = |a: &str, b: &str| vec![a.to_owned(), b.to_owned()];
+        ReportHistory::open(dir.path(), day("2026-10-09"), &two("one", "two"))
             .save(BTreeSet::from([found("a")]));
-        let first = ReportHistory::open(dir.path(), day("2026-10-10"), &builds(), true);
-        assert_eq!(first.previous_run(), None);
-        assert_eq!(first.problems_before(), None);
-        let other = ReportHistory::open(dir.path(), day("2026-10-10"), &["docs".into()], false);
+        let other = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
         assert_eq!(other.previous_run(), None);
+        assert_eq!(other.problems_before(), None);
+        let swapped = ReportHistory::open(dir.path(), day("2026-10-10"), &two("two", "one"));
+        assert_eq!(swapped.previous_run(), Some(day("2026-10-09")));
     }
 
     #[test]
     fn a_reader_trusts_nothing() {
         let dir = tempfile::tempdir().unwrap();
-        let history = ReportHistory::open(dir.path(), day("2026-10-10"), &builds(), false);
+        let history = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
         std::fs::create_dir_all(history.path().parent().unwrap()).unwrap();
         for text in [
             "not json",
@@ -236,7 +239,7 @@ mod tests {
             r#"{"version":1,"run":"2026-10-09","builds":["site"],"problems":[{"check":"x"}]}"#,
         ] {
             std::fs::write(history.path(), text).unwrap();
-            let read = ReportHistory::open(dir.path(), day("2026-10-10"), &builds(), false);
+            let read = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
             assert_eq!(read.previous_run(), None, "{text}");
         }
     }

@@ -846,7 +846,11 @@ fn problems_on(dir: &Path, today: &str, args: &[&str]) -> Output {
 #[test]
 fn problems_says_what_s_new_since_the_last_report() {
     let dir = tempfile::tempdir().expect("a temporary directory");
-    write(dir.path(), "ascribe.toml", "spec = \"0.1\"\n");
+    write(
+        dir.path(),
+        "ascribe.toml",
+        "spec = \"0.1\"\n\n[builds.one]\n\n[builds.two]\n\n[editor]\nbuild = \"one\"\n",
+    );
     let page = |text: &str| {
         write(
             dir.path(),
@@ -921,8 +925,11 @@ fn problems_says_what_s_new_since_the_last_report() {
         "Problems\n  0 errors, 0 warnings, 0 advice.\n  The 2 problems the report of 12 October listed are gone.\n"
     );
 
-    // `--no-history` says nothing about what's new, and still keeps what it saw.
+    // `--no-history` says nothing about what's new, and neither reads nor
+    // writes the history.
     page("Read [the old page](old.md).\n");
+    let history = dir.path().join(".ascribe/history/report.json");
+    let before = fs::read_to_string(&history).expect("the history");
     let report = json(&problems_on(
         dir.path(),
         "2026-10-14",
@@ -935,13 +942,23 @@ fn problems_says_what_s_new_since_the_last_report() {
         (&serde_json::Value::Null, &serde_json::Value::Null)
     );
     assert_eq!(problems["new_items"]["total"], 0);
+    assert_eq!(fs::read_to_string(&history).expect("the history"), before);
     let text = stdout(&problems_on(dir.path(), "2026-10-15", &[]));
     assert!(
-        text.contains("  1 problem, listed on 14 October too.\n"),
+        text.contains("  1 problem, new since 13 October:\n    docs/index.md:5: [ASC036] `old.md` doesn't exist\n"),
         "{text}"
     );
 
-    // A report on other builds than the last one's says nothing either.
-    let other = problems_on(dir.path(), "2026-10-15", &["--build", "site"]);
-    assert!(!stdout(&other).contains("since"), "{}", stdout(&other));
+    // A report on one build of the two says nothing about what's new...
+    let on = |today: &str, builds: &[&str]| {
+        let mut args = vec!["--format", "json"];
+        for b in builds {
+            args.extend(["--build", b]);
+        }
+        json(&problems_on(dir.path(), today, &args))["problems"]["previous_run"].clone()
+    };
+    assert_eq!(on("2026-10-16", &["one"]), serde_json::Value::Null);
+    // ...and the same builds in another order compare.
+    assert_eq!(on("2026-10-17", &["one", "two"]), serde_json::Value::Null);
+    assert_eq!(on("2026-10-18", &["two", "one"]), "2026-10-17");
 }
