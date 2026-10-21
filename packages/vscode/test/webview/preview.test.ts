@@ -716,11 +716,16 @@ function serveThreads(
       const message = preview.posted[at];
       if (message?.type !== "threads") continue;
       seen.push(message);
-      void preview.send({
-        type: "threadsResult",
-        id: message.id,
-        result: answer(message.method, message.params),
-      });
+      // The page can close between the check above and the send, which ends serving.
+      void preview
+        .send({
+          type: "threadsResult",
+          id: message.id,
+          result: answer(message.method, message.params),
+        })
+        .catch((error: unknown) => {
+          if (!preview.page.isClosed()) throw error;
+        });
     }
   }, 10);
   return seen;
