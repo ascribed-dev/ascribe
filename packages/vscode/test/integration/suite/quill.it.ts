@@ -879,11 +879,17 @@ describe("the Project view on examples/quill", () => {
   /** Waits for the view to draw the count `key` in one of `states`, and returns it. */
   async function countIn(key: string, ...states: string[]) {
     const api = await activated();
-    const drawn = await api.ui.project.whenDrawn(
-      `${key} ${states.join(" or ")}`,
-      (d) => states.includes(d.report.health.find((count) => count.key === key)?.state ?? ""),
-      30_000,
-    );
+    const drawn = await api.ui.project
+      .whenDrawn(
+        `${key} ${states.join(" or ")}`,
+        (d) => states.includes(d.report.health.find((count) => count.key === key)?.state ?? ""),
+        30_000,
+      )
+      .catch((error: unknown) => {
+        // Says what it drew instead.
+        const last = api.ui.project.drawn()?.report.health.find((count) => count.key === key);
+        throw new Error(`${String(error)}; it drew ${JSON.stringify(last)}`);
+      });
     const count = drawn.report.health.find((c) => c.key === key);
     assert.ok(count);
     return count;
@@ -948,6 +954,11 @@ describe("the Project view on examples/quill", () => {
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
     await vscode.commands.executeCommand("ascribe.project.focus");
     const folder = await waitFor("the sidebar's project", () => api.ui.sidebar.project());
+    // Showing the project checked them; an earlier test's change on disk may
+    // have put that check out of date since, so the view's action checks again.
+    await waitFor("a check of the agent files", () => api.ui.agentFiles.runs() > 0);
+    await api.ui.agentFiles.whenSettled();
+    await api.ui.project.choose("checkAgentFiles");
     const first = await countIn("agentFiles", "current", "none");
     assert.match(first.value, /^(0|\d+ files?)$/, first.value);
     assert.match(first.note, /^Checked at .+, after the last save$/, first.note);
