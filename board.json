@@ -4522,7 +4522,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/768"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Docs: The new views"
     },
     {
@@ -4764,6 +4764,20 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "Pages: a page the build leaves out is dimmed only in its icon"
+    },
+    {
+      "content": {
+        "body": "`serveThreads` in `packages/vscode/test/webview/preview.test.ts` answers the overlay every 10 ms: it checks `preview.page.isClosed()`, then fires `void preview.send(...)`. When the page closes between the check and the `page.evaluate` in `send`, the promise rejects with \"Target page, context or browser has been closed\", nothing catches it, and Vitest fails the run with an unhandled error after \"asks the extension for an agent prompt about a thread, the page, or a fragment's pages\". It failed CI on #768 (https://github.com/ascribed-dev/ascribe/actions/runs/39642917405/job/119370948211), and once locally in a full `pnpm test`.\n\n**Done when:** a send `serveThreads` makes after the page has closed is caught (`preview.send(...).catch(() => undefined)`, since the page closing is the end of serving), and the suite's runs no longer report the unhandled error.",
+        "number": 771,
+        "repository": "ascribed-dev/ascribe",
+        "title": "preview.test.ts: serveThreads can reject after the page closes",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/771"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCedOY",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Ready",
+      "title": "preview.test.ts: serveThreads can reject after the page closes"
     }
   ]
 }
