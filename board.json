@@ -3659,7 +3659,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Search: Search Pages as Readers See Them in the editor"
     },
     {
@@ -4185,6 +4185,9 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/741"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "Docs: The directive reference, as four pages"
@@ -4432,7 +4435,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/733"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Docs: The reference and the contract, each with its own job"
     },
     {
