@@ -6,7 +6,7 @@ Part of [Search](README.md). Needs phase 3; follows phase 4 by value.
 
 **Search Pages as Readers See Them** finds words as you type, in unsaved text, and opens the line.
 
-In VS Code, in `examples/quill`, run **Ascribe: Search Pages as Readers See Them** and type `sign in to quill cloud` in quotes. One result: the reader's text with the match marked, and under it `install-agent.md:62 · Connect to Quill · through phrase cloud`. Choose it: `docs/install-agent.md` opens at line 62. Type `quill cloud` in quotes: the result opens `ascribe.toml` at the phrase `cloud`. Edit a page without saving, and search again: the unsaved words are found. Switch the status bar's build to `cloud`: the search covers that build; the quick pick's button searches every build.
+In VS Code, in `examples/quill`, run **Ascribe: Search Pages as Readers See Them** and type `sign in to quill cloud` in quotes. One result: the reader's text cut around the match, and under it `install-agent.md:62 · Connect to Quill · through phrase cloud`. Choose it: `docs/install-agent.md` opens at line 62. Type `quill cloud` in quotes: the result opens `ascribe.toml` at the phrase `cloud`. Edit a page without saving, and search again: the unsaved words are found. Switch the status bar's build to `cloud`: the search covers that build; the quick pick's button searches every build.
 
 ## Context
 
@@ -29,7 +29,7 @@ The server answers from its current snapshot, so unsaved text is searched. It ke
 
 **Ascribe: Search Pages as Readers See Them** (`ascribe.search`), in the Command Palette while a project is open. It opens a quick pick that asks the server as you type, debounced, and shows:
 
-- **each place's label:** the reader's text, cut around the match, with the match highlighted;
+- **each place's label:** the reader's text, cut around the match so it stays in view. The match isn't highlighted: VS Code's stable API can't set highlights on a quick pick item, and a textual mark would be read aloud by screen readers (decided in #742). VS Code still highlights typed words where the label has them in the order typed;
 - **its description:** the file and line, the heading, and `through …`, as the command's second line;
 - **its detail,** for a place many pages show: `on 30 pages`.
 
