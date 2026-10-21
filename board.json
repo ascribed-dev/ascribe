@@ -4821,8 +4821,11 @@
       "labels": [
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/786"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Project view: the last Check Every Build kept between sessions"
     },
     {
@@ -4838,8 +4841,11 @@
       "labels": [
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/785"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Problem counts as icons with counts, in This page and the Project view"
     },
     {
@@ -4859,7 +4865,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/784"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "This page: the address opens the page on the live site"
     },
     {
@@ -4880,8 +4886,135 @@
         "https://github.com/ascribed-dev/ascribe/pull/782"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "This page and the Project view sit on gray, not the sidebar's color, in dark themes"
+    },
+    {
+      "content": {
+        "body": "The first step of [the rest of the cache](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/cache.md) (\"What to build first\", 1), and its steel thread: a finding's identity, proven on the report's Problems section. **Done when** below is what done looks like, and it's one pull request.\n\n**What to build:**\n\n- **A finding's identity** (the proposal's \"Differences between runs\", and Settled 1), in `ascribe-check`, where the baseline will read it too: its check (the slug); its file, from the project's root with `/`; its fingerprint; and its order among findings with the first three alike, from 0, in the file's order. The same finding in several builds is one, as `check` already merges it.\n- **The fingerprint** is the first 16 hex digits of the SHA-256 of the source text of the finding's span, with each run of whitespace read as one space and the ends trimmed; of its line's text when the span is empty. A committed file will hold it (the baseline, next), so the rule is fixed here, and the pull request's decision file states it exactly.\n- **The report's history,** `.ascribe/history/report.json`: the last run's day, and the Problems section's findings by identity. Written whole through a rename after each run, as `links.json` is; `--no-history` neither reads nor writes it; only the report's code opens it, which a test holds, as `tests/all/link_cache.rs` does for the links.\n- **The Problems section says what changed:** the JSON's `problems` gains `previous_run`, `new`, and `resolved`, as `links` has them (`null` on a first run and with `--no-history`), and `new_items`, the new problems as a capped list of entries. The text says \"14 problems, 2 of them new since 9 October; 5 the last report listed are gone\" and lists the new ones. Keys are added and none change: the report's JSON is a contract, so the pull request adds its decision file and the schema's new fields.\n\n**The thread, as a test:** two reports on a copy of a project, with a line added above an existing finding and a new finding added below it between them; the second says one problem is new and none are gone. Then the existing finding's text is edited: it reads as one new and one gone.\n\n**Done when:** the thread's test passes; identity has unit tests for whitespace, an empty span, two alike findings in one file, and a finding in two builds; a first run and `--no-history` say nothing about what's new; `docs/content/checks/report.md`'s Problems section says what's new means and how a finding is told from another; and a changelog entry.\n\n**Decided:** the proposal's Settled 1, by the maintainer on 20 October 2026: a finding's identity is the source text of its span. Filing this from the proposal, 21 October 2026.\n",
+        "number": 787,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Report: a finding's identity, and what's new in Problems since the last run",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/787"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCiefs",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Report: a finding's identity, and what's new in Problems since the last run"
+    },
+    {
+      "content": {
+        "body": "The rest of \"Differences between runs\" in [the rest of the cache](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/cache.md): the report's site and agents section says what's failing since the last run. **Done when** below is what done looks like, and it's one pull request.\n\n**What to build:** the agents section's checks (`afdocs`, run on a site's address, `crates/ascribe-check/src/site.rs`) kept by identity in the report's history, `.ascribe/history/report.json`, which #787 adds: a check's identity is the page's address and the check's id, as the proposal's fingerprint has it for `afdocs`.\n\n- The JSON's `agents` gains `previous_run`, `new` (failing now and passing or absent last run), and `resolved`, as `problems` and `links` have them; keys are added and none change, and the decision file says so.\n- The text says \"23 checks: 21 passing, 2 failing, 1 of them failing since 9 October\".\n- Nothing is reused: every check runs every time. The proposal's \"The delivery spec's results\" says why a cache doesn't fit; this is the history, which holds nothing back.\n\n**Done when:** a test with a stubbed `afdocs` runs the report twice, a check failing the second time only, and the second report names it as new; a first run and `--no-history` say nothing about what's new; `docs/content/checks/report.md`'s \"The site and agents\" says what's new means; and a changelog entry.\n\n**Needs:** #787.\n",
+        "number": 788,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Report: the site and agents say what's failing since the last run",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/788"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCiegU",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Report: the site and agents say what's failing since the last run"
+    },
+    {
+      "content": {
+        "body": "The baseline from [the rest of the cache](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/cache.md) (\"A baseline\", and Settled 2 and 3), for the command line. **Done when** below is what done looks like, and it's one pull request.\n\n**What to build:**\n\n- **`ascribe.baseline`,** beside `ascribe.toml`, committed: one line a finding, by the identity #787 adds.\n- **`ascribe baseline write`** adds every current advice finding, creating the file; **`ascribe baseline prune`** removes the entries that match nothing. Both take `--format text|json` and exit `0`, or `2` when they can't run. `write` says how many warnings and errors it skipped, and names the step for putting one off: lower the check to advice in `[checks]`, then write again.\n- **`ascribe check` reads it:** a finding in it isn't reported, and is counted (\"0 errors, 0 warnings, 2 advice, 3,412 in the baseline\"), as an acknowledged one is. Only advice is ever held back: an entry whose check a project has since raised to a warning or an error doesn't hide it. `--no-baseline` reports everything.\n- **An entry that matches nothing is reported, as advice,** so a stale baseline can't hide a later finding with the same fingerprint: a new diagnostic, added to `tests/conformance/diagnostics.toml` and `diagnostics.rs`, whose fix is `ascribe baseline prune`.\n- **`check`'s JSON** gains the count held back, added and changing nothing else.\n\n**The file's syntax, proposed, for the maintainer to approve or change:** it's committed, so it can't change once it ships.\n\n```text\n# ascribe baseline 1\n# Advice put off for now: ascribe baseline write adds, ascribe baseline prune removes.\n# check fingerprint order file\ndescription-too-long 3f9a2c1b9e0d4a77 0 guides/install.md\nlink-text-generic 91c04e2d7b5a6f18 1 guides/install.md\n```\n\n- The first line names the format and its version; `#` starts a comment, and a blank line is ignored.\n- Fields are separated by one space. The file is last, so a path with spaces needs no quoting; it's from the project's root, with `/`.\n- Lines are sorted by file, then check, then fingerprint, then order, so a file's entries are together, two people adding to it rarely touch the same line, and a diff reads as a list of findings.\n- A line that doesn't parse is an error naming the line, and `check` doesn't run with a baseline it can't read.\n\n**Done when:** conformance cases for a finding held back, one not held back because its check is now a warning, a stale entry, and a malformed line; CLI tests for `write`, `prune`, `--no-baseline`, and their JSON; `write` run twice gives the same file byte for byte; the docs have a page for the baseline under `docs/content/checks/`, the commands' reference, and the syntax; `project-docs/surface.md` regenerated; and a changelog entry. The pull request adds a decision file for the command, the file, and its syntax.\n\n**Decided:** the proposal's Settled 2 (advice only) and 3 (`ascribe baseline`, with `write` and `prune`), by the maintainer on 20 October 2026.\n\n**Needs the maintainer:** the syntax above, approved or changed, here. **Needs:** #787.\n",
+        "number": 789,
+        "repository": "ascribed-dev/ascribe",
+        "title": "ascribe.baseline: put existing advice off, with ascribe baseline write and prune",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/789"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCiehs",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "ascribe.baseline: put existing advice off, with ascribe baseline write and prune"
+    },
+    {
+      "content": {
+        "body": "The rest of the baseline in [the rest of the cache](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/cache.md) (\"A baseline\"): the editor and the agents read it. **Done when** below is what done looks like, and it's one pull request.\n\n**What to build:**\n\n- **The language server reads `ascribe.baseline`,** as `check` does after #: a baselined finding isn't published as a diagnostic, and a stale entry is, as advice. An edit to the file, in the editor or on disk, is followed as `ascribe.toml` is.\n- **The agents' hook and the MCP server's `ascribe_check`** hold back what the baseline holds, so an agent working on a page isn't sent after the backlog; each says how many it held back.\n- **A quick fix on a finding the baseline holds,** where the editor can reach it (This page's problems, or the hover on the line), moves it from the baseline to an `@intended` above its block, asking for the reason, as the existing `@intended` quick fix does. Since a baselined finding isn't a diagnostic, the pull request says where the action lives and why.\n\n**Done when:** language server tests for a held-back finding, a stale entry, and an edit to the baseline on disk; an MCP test for `ascribe_check`'s count; the quick fix's test leaves the finding out of the baseline and acknowledged at its block; the editor's and agents' docs say the baseline is read; and a changelog entry.\n\n**Needs:** #789.\n",
+        "number": 790,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The editor and the agents read the baseline, and a quick fix moves a finding to @intended",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/790"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCiei8",
+      "labels": [
+        "enhancement",
+        "rust",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The editor and the agents read the baseline, and a quick fix moves a finding to @intended"
+    },
+    {
+      "content": {
+        "body": "From the brainstorm's [code snippets: what's left](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/brainstorm.md#1-code-snippets-whats-left). **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** a `@snippet` is read again when its page changes, not when its code file does, so the preview and the page's problems don't follow an edit to the code until the page changes or the server restarts. `docs/content/editor/preview.md` says so.\n\n**What exists:** the language server already hears about a source's files (`did_change_watched` in `crates/ascribe-lsp/src/core.rs`, through `shown::used_by_a_source`), and refreshes the \"Shown in N pages\" lenses. When a source's observations or `ascribe.examples.toml` change, `examples::showing_changed` marks the pages that show its examples dirty, so they're checked again.\n\n**What to build:** the same for the code itself. When a file a `@snippet` shows changes on disk, or is created or deleted, every page that shows it, directly or through a fragment, is checked again, and an open preview of one redraws. A file no snippet shows starts nothing.\n\n- An unsaved edit in the code file is out of scope unless the server already holds the file's text; say in the pull request which it is.\n- A burst of changes, such as a branch switch, checks each page once.\n\n**Done when:** a language server test edits a region's code on disk and the page's diagnostics follow (a `snippet-region-missing` appears when the region's tags are removed, and goes when they're back), a page that shows the file through a fragment included; an integration test sees the preview redraw; `docs/content/editor/preview.md` drops the sentence and its workaround, and its next paragraph's \"An edit to the example's own file still waits for the page to change\" is brought in line; and a changelog entry.\n\n**Decided:** by the maintainer on 21 October 2026, to file from the brainstorm.\n",
+        "number": 791,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The preview and a page's problems follow an edit to the code a @snippet shows",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/791"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCiel4",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The preview and a page's problems follow an edit to the code a @snippet shows"
+    },
+    {
+      "content": {
+        "body": "From the brainstorm's [code snippets: what's left](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/brainstorm.md#1-code-snippets-whats-left). **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** on a `@snippet` line, Go to Definition goes where it goes on any directive line (`definition.rs` sends `Hit::Snippet` to `id_definition`), not to the code. The hover (`examples::snippet_hover`) gives the snippet's address, its file as a link, its region and lines, and for a tested example what it was tested with, but not the code the page shows.\n\n**What to build:**\n\n- **Go to Definition on a `@snippet`'s address** opens the code file at the region's start tag, or at the file's first line for a snippet of a whole file. Elsewhere on the line it does what it does now. A region that's missing, or a file that is, goes nowhere, as a broken link does.\n- **The hover shows the code,** as the page will show it: the region extracted, with `remove` applied, in a fenced block in the snippet's language, after what it shows now. Long code is cut at 20 lines, with \"and 34 more lines\" after it.\n\n**Done when:** language server tests for Go to Definition on a region, a whole file, a snippet through a source with a path outside the project's folder, and a missing region; hover tests for a short region, a long one cut, and `remove` applied; `docs/content/editor/writing.md`'s Hover and Navigation lists say both; and a changelog entry.\n\n**Decided:** by the maintainer on 21 October 2026, to file from the brainstorm.\n",
+        "number": 792,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Go to Definition on a @snippet opens its region, and its hover shows the code",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/792"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCienQ",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Go to Definition on a @snippet opens its region, and its hover shows the code"
+    },
+    {
+      "content": {
+        "body": "From the brainstorm's [code snippets: what's left](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/brainstorm.md#1-code-snippets-whats-left). **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** `snippet-tags` (ASC132), unbalanced tags, a region named twice, or a reserved tag, is reported on each page whose `@snippet` shows the file, with the code file's path and line in its message. The person editing the code file, where the fix is, sees nothing there.\n\n**What to build:** in the editor, the language server also publishes each `snippet-tags` problem on the code file itself, at the tag's line, while any page shows the file. It's the same problem, so it says what the page's says and has the same severity; the page keeps its own. Fixing the tags clears both; a file no page shows any longer is cleared.\n\n- `ascribe check` and its JSON don't change: a diagnostic on a code file would change the command's output, which is a contract. This is the editor's alone.\n- A file shown by several pages gets each problem once.\n\n**Done when:** language server tests for a problem published on the code file at the right line, once with two pages showing the file, cleared when the tags are fixed on disk, and cleared when the last `@snippet` showing the file is removed; `docs/content/editor/writing.md`'s \"Code files a page shows\" says it; and a changelog entry.\n\n**Needs:** #791, which makes the server check a page again when its code file changes; without it, a fix in the code file wouldn't clear the page's problem.\n\n**Decided:** by the maintainer on 21 October 2026, to file from the brainstorm.\n",
+        "number": 793,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A code file's snippet-tags problems are shown in the code file, in the editor",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/793"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCiepY",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "A code file's snippet-tags problems are shown in the code file, in the editor"
     }
   ]
 }
