@@ -15,6 +15,9 @@ import {
   problemsCount,
   projectAnswer,
   projectEditQuestion,
+  RESTRICTED,
+  restrictedAnswer,
+  aboutRows,
   reviewsCount,
   staleFiles,
   syncQuestion,
@@ -35,8 +38,15 @@ const facts = (everyBuild: EveryBuildResult, more: Partial<ProjectFacts> = {}): 
   now: 6000,
   time: (at) => `${at / 1000}s`,
   day: (at) => `day ${Math.floor(at / DAY)}`,
+  builds: [],
+  build: undefined,
+  about: { contentRoot: undefined, types: undefined, sources: "asking" },
   ...more,
 });
+
+/** Every action's key, in its group's order. */
+const actionKeys = (answer: ReturnType<typeof projectAnswer>) =>
+  answer.actions.flatMap((group) => group.actions.map((action) => action.key));
 
 const nothing: Found = { count: 0, first: null };
 const found = (count: number): Found => ({
@@ -68,38 +78,114 @@ describe("projectAnswer", () => {
   it("says to open a page when the sidebar has no project", () => {
     expect(projectAnswer(undefined)).toEqual({
       message: NO_PROJECT,
+      notice: [],
       head: null,
       toDo: 0,
       health: [],
       actions: [],
+      about: [],
     });
   });
 
-  it("heads with the project's name, folder, server state, and version, and offers Check Every Build, the edits, and the tasks", () => {
+  it("heads with the project's name, folder, server state with its buttons, version, and settings, and offers the actions in their groups", () => {
     const answer = projectAnswer({
       ...facts({ kind: "none" }),
       state: "failed",
       version: undefined,
     });
     expect(answer.message).toBeNull();
-    expect(answer.head).toEqual({ name: "docs", folder: "docs", state: "failed", version: null });
-    expect(answer.actions.map((action) => action.key)).toEqual([
+    expect(answer.head).toMatchObject({
+      name: "docs",
+      folder: "docs",
+      state: "failed",
+      version: null,
+      build: null,
+    });
+    expect(answer.head?.server.map((button) => button.key)).toEqual([
+      PROJECT_KEYS.showOutput,
+      PROJECT_KEYS.restart,
+    ]);
+    expect(answer.head?.settings.map((button) => [button.key, button.icon])).toEqual([
+      [PROJECT_KEYS.projectSettings, "settings-gear"],
+      [PROJECT_KEYS.editorSettings, "settings"],
+    ]);
+    expect(answer.actions.map((group) => group.label)).toEqual([
+      "Check",
+      "Write",
+      "Review and agents",
+    ]);
+    expect(actionKeys(answer)).toEqual([
       PROJECT_KEYS.checkEveryBuild,
       PROJECT_KEYS.applyEverySafeFix,
       PROJECT_KEYS.formatEveryPage,
       PROJECT_KEYS.build,
       PROJECT_KEYS.syncAgentFiles,
       PROJECT_KEYS.observeExamples,
+      PROJECT_KEYS.startReview,
+      PROJECT_KEYS.promptAgent,
     ]);
+    expect(answer.actions.flatMap((group) => group.actions).some((action) => action.off)).toBe(
+      false,
+    );
+  });
+
+  it("offers Restart only once the server has started", () => {
+    const stopped = projectAnswer({ ...facts({ kind: "none" }), state: "stopped" });
+    expect(stopped.head?.server.map((button) => button.key)).toEqual([PROJECT_KEYS.showOutput]);
+  });
+
+  it("switches among the builds the server lists, a versioned build's lines among them, showing the one you're looking at", () => {
+    const builds = [
+      { name: "site", editor: true },
+      {
+        name: "api",
+        editor: false,
+        lines: [
+          { name: "api", line: "3.5", current: true },
+          { name: "api@3.4", line: "3.4", current: false },
+        ],
+      },
+    ];
+    const editor = projectAnswer(facts({ kind: "none" }, { builds }));
+    expect(editor.head?.build).toEqual({
+      shown: "site",
+      choices: [
+        { name: "site", description: "editor build" },
+        { name: "api", description: "line 3.5, the current line" },
+        { name: "api@3.4", description: "line 3.4 of api" },
+      ],
+    });
+    const chosen = projectAnswer(facts({ kind: "none" }, { builds, build: "api@3.4" }));
+    expect(chosen.head?.build?.shown).toBe("api@3.4");
+  });
+
+  it("says in Restricted Mode that Ascribe isn't running, with every action off and Manage Workspace Trust", () => {
+    const answer = restrictedAnswer();
+    expect(answer.message).toBe(RESTRICTED);
+    expect(answer.notice).toEqual([
+      { key: PROJECT_KEYS.manageTrust, label: "Manage Workspace Trust" },
+    ]);
+    expect(answer.health).toEqual([]);
+    expect(answer.head).toBeNull();
+    expect(actionKeys(answer)).toEqual(actionKeys(projectAnswer(facts({ kind: "none" }))));
+    expect(answer.actions.flatMap((group) => group.actions).every((action) => action.off)).toBe(
+      true,
+    );
   });
 
   it("says each task runs in the terminal", () => {
     const answer = projectAnswer(facts({ kind: "none" }));
-    for (const action of answer.actions.slice(3)) expect(action.caption).toMatch(/^A task: /);
+    const tasks = answer.actions[1]?.actions.slice(2) ?? [];
+    expect(tasks.map((action) => action.key)).toEqual([
+      PROJECT_KEYS.build,
+      PROJECT_KEYS.syncAgentFiles,
+      PROJECT_KEYS.observeExamples,
+    ]);
+    for (const action of tasks) expect(action.caption).toMatch(/^A task: /);
   });
 
   it("says each edit is one edit left unsaved, and that the safe fixes are the editor build's", () => {
-    const [, fixAll, format] = projectAnswer(facts({ kind: "none" })).actions;
+    const [fixAll, format] = projectAnswer(facts({ kind: "none" })).actions[1]?.actions ?? [];
     expect(fixAll?.caption).toMatch(
       /the editor build's, in every file, as one edit left unsaved\./,
     );
@@ -424,5 +510,80 @@ describe("agentFilesCount", () => {
     expect(syncQuestion("docs", ["AGENTS.md"]).message).toBe(
       "1 agent file is out of date in docs. Sync Agent Files?",
     );
+  });
+});
+
+describe("aboutRows", () => {
+  it("says what's known only once the server and the binary have said it", () => {
+    expect(aboutRows(facts({ kind: "none" }))).toEqual([
+      { label: "Content root", value: "Known once the language server runs" },
+      { label: "Builds", value: "Known once the language server runs" },
+      { label: "Release lines", value: "Known once the language server runs" },
+      { label: "Sources", value: "Asking ascribe model…" },
+      { label: "Content types", value: "Known once the language server runs" },
+    ]);
+    expect(
+      aboutRows(
+        facts(
+          { kind: "none" },
+          {
+            about: { contentRoot: undefined, types: undefined, sources: "failed" },
+          },
+        ),
+      )[3],
+    ).toEqual({ label: "Sources", value: "Not known: ascribe model couldn't answer" });
+  });
+
+  it("names the content root, the builds, the release lines, the sources, and the content types", () => {
+    const rows = aboutRows(
+      facts(
+        { kind: "none" },
+        {
+          builds: [
+            { name: "site", editor: true },
+            {
+              name: "api",
+              editor: false,
+              lines: [
+                { name: "api", line: "3.5", current: true },
+                { name: "api@3.4", line: "3.4", current: false },
+              ],
+            },
+          ],
+          about: {
+            contentRoot: "docs/content",
+            types: [
+              { key: "page", pages: 1 },
+              { key: "guide", pages: 12 },
+            ],
+            sources: [
+              { name: "code", path: "examples", tested: true },
+              { name: "api", path: "vendor/api", tested: false },
+            ],
+          },
+        },
+      ),
+    );
+    expect(rows.map(({ label, value }) => `${label}: ${value}`)).toEqual([
+      "Content root: docs/content",
+      "Builds: site (editor build), api",
+      "Release lines: api: 3.5 (current), 3.4",
+      "Sources: code (examples, tested examples), api (vendor/api)",
+      "Content types: page (1 page), guide (12 pages)",
+    ]);
+  });
+
+  it("says when no build is versioned and there are no sources", () => {
+    const rows = aboutRows(
+      facts(
+        { kind: "none" },
+        {
+          builds: [{ name: "site", editor: true }],
+          about: { contentRoot: ".", types: [], sources: [] },
+        },
+      ),
+    );
+    expect(rows[2]).toEqual({ label: "Release lines", value: "None: no build is versioned" });
+    expect(rows[3]).toEqual({ label: "Sources", value: "None" });
   });
 });

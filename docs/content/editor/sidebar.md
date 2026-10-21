@@ -17,7 +17,13 @@ A **Project** view comes first of all, above Review: see [The Project view](#the
 
 **Project** is about the whole project the sidebar shows, where This page is about one page. It shows the same project as the views below it, following the file you're in, and staying on its project when you click in it or open a file of no project.
 
-At its top are the project's name, its folder, its language server's state, such as "running" or "failed", and the version of the `ascribe` binary the server runs.
+At its top are the project's name, its folder, its language server's state, such as "running" or "failed", and the version of the `ascribe` binary the server runs:
+
+- **Show Output** and **Restart** sit beside the server's state, Restart once the server has started, so a failed server is restarted where it's seen. They do what the [status bar](preview.md#the-status-bar) menu's **Show output** and **Restart server** do, for the project the view shows.
+- **Build** is the build you're looking at, with every build of the project, and each line of a versioned build, to switch to. It's the same choice as the status bar's **Switch build** and the preview's **Build** picker: switching it in any of the three moves the others, the preview, and the [build lens](preview.md#the-build-lens) with it.
+- Beside the name, the gear opens [Project Settings](settings.md) for the project, its `ascribe.toml`, which everyone working on it shares, and the second button opens VS Code's Settings at Ascribe's, which are your editor's and nobody else's.
+
+The view has no badge: This page's badge is the one that counts what to do as you write.
 
 **Health** counts what needs doing in the project, and its header says how many things there are to do. Each count says when it's from, and it's shown as current only when it is:
 
@@ -42,7 +48,7 @@ Each count goes out of date by its own rule:
 - **Orphans and unused entries** come from the language server, which reads your unsaved text, so they're current as you type. While the server is starting, or isn't running, they show a dash.
 - **Agent files** are made from the content model and the pages, so most saves can change them. The view checks them when it first shows the project, and again after each save of a file of the project while it's showing, at most once every few seconds and never as you type. A change on disk that isn't a save, such as a `git checkout`, makes the count out of date, with **Check Agent Files** beside it.
 
-The view never checks every build by itself, since that can take a few seconds on a large project. **Actions** acts on the project the view shows, wherever the cursor is, and each says how it runs in its tooltip:
+The view never checks every build by itself, since that can take a few seconds on a large project. **Actions** acts on the project the view shows, wherever the cursor is, in three groups, Check, Write, and Review and agents, and each says how it runs in its tooltip:
 
 | Action | How it runs |
 |---|---|
@@ -52,8 +58,16 @@ The view never checks every build by itself, since that can take a few seconds o
 | **Build** | A task: `ascribe build`, in the terminal |
 | **Sync Agent Files** | A task: `ascribe agents sync`, in the terminal |
 | **Observe Examples** | A task: `ascribe observe`, in the terminal, in the folder of a source with [tested examples](../examples/tested.md). It lists the commands `ascribe.examples.toml` names and asks before running them. |
+| **Start Review** | As **Ascribe: Start Review**: marks what changed in the preview, against a base it asks for. See [Review in the preview](review.md). |
+| **Prompt Agent to Fix This Project** | As **Ascribe: Prompt Agent to Fix This Project**: builds a prompt about the project's problems for your agent, without sending it. See [Prompt your agent](../agents/prompts.md). |
 
 The tasks are in **Tasks: Run Task** too, and [Tasks](settings.md#tasks) says where they run. **Escape** in the view puts the cursor back in the editor.
+
+**About**, closed at first, says what the project is made of: its content root, its builds, with the editor build marked, the release lines of each versioned build, its [sources](../examples/sources.md), with those that have tested examples marked, and its content types, each with how many pages have it. The builds and content types are the language server's, so they're known once it runs; the sources are what `ascribe model` says. The view's sections stay open or closed as you leave them.
+
+In a workspace with several projects, **Switch Project** is in the view's title bar: see [Switch Project](#switch-project).
+
+In Restricted Mode, Ascribe runs nothing, since it would run the project's own `ascribe` binary. The view says so in place of the counts, with **Manage Workspace Trust**, and every action is off until you trust the folder.
 
 ### Edits to the whole project
 @available: next
@@ -122,6 +136,6 @@ Pages and Content model update when you save a file of the project, when a page 
 ## Switch Project
 @available: ascribe 0.4.0
 
-In a workspace with several projects, **Ascribe: Switch Project** chooses the project the sidebar shows. It's in the Command Palette, in Pages' and Content model's title bars, and in the [status bar](preview.md#the-status-bar) item's menu; with one project, it's in none of them. It lists every project, the sidebar's first and marked, each with its folder, its server's state, such as "running, site build", "not checked yet", or "failed", and the `ascribe` binary in use. Each has buttons to show its server's output, and to restart its server when it's running or failed, and **Refresh** in its title asks the running servers for their builds again. Listing them starts no server.
+In a workspace with several projects, **Ascribe: Switch Project** chooses the project the sidebar shows. It's in the Command Palette, in the [Project view](#the-project-view)'s title bar, and in the [status bar](preview.md#the-status-bar) item's menu; with one project, it's in none of them. It lists every project, the sidebar's first and marked, each with its folder, its server's state, such as "running, site build", "not checked yet", or "failed", and the `ascribe` binary in use. Each has buttons to show its server's output, and to restart its server when it's running or failed, and **Refresh** in its title asks the running servers for their builds again. Listing them starts no server.
 
 Choosing a project shows it in the sidebar and starts its server if it hasn't started. It's a jump, not a pin: the sidebar stays on it until a file of another project becomes active, and then follows that file as before.
