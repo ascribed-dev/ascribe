@@ -80,7 +80,7 @@ jobs:
           path: packages/vscode/out/vscode-test
           key: vscode-test-${{ runner.os }}
       # VS Code needs a display; xvfb provides a virtual one.
-      # DIAG #764: the settings suite, 30 times, traced.
+      # DIAG #764: the settings suite, 30 times, with the fix.
       - run: |
           cd packages/vscode && node esbuild.mjs --tests
           failed=0
