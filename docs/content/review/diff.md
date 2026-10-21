@@ -111,7 +111,7 @@ Each change:
 | `kind` | string | `"changed"`, `"added"`, `"removed"`, or `"moved"` |
 | `now` | object | Where the block is written now (absent for a removed block): `source` and `via`, below |
 | `was` | object | Where it was written at the base (absent for an added block) |
-| `words` | object | For changed prose: `now` and `was`, the ranges of words that differ, as `[start, end]` character offsets (Unicode characters, end exclusive) into `now_text` and `was_text`, the block's text with whitespace collapsed. Absent when the text is the same (only a link's target changed, say) or the block is too long to compare word by word. |
+| `words` | object | For changed prose: `now` and `was`, the ranges of words that differ, as `[start, end]` character offsets (Unicode characters, end exclusive) into `now_text` and `was_text`, the block's text as a reader reads it, with inline HTML's tags and comments removed and whitespace collapsed. Absent when that text is the same (only a link's target or an HTML comment changed, say) or the block is too long to compare word by word. |
 | `after` | object | For a removed block, and for a moved block's old place: the block it came after, as it is now. Absent when it was first in its container. |
 | `parent` | object | For a removed block, and for a moved block's old place: the block it was inside, as it is now. Absent at the top of the page. |
 | `text` | string | For a removed block: its text, whitespace collapsed |
