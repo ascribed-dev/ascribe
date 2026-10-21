@@ -985,6 +985,10 @@ describe("the Project view on examples/quill", () => {
       assert.ok(api.ui.project.drawn()?.report.buttons.includes("Check Agent Files"));
       await api.ui.project.choose("checkAgentFiles");
       await countIn("agentFiles", "current", "none");
+      // Deleting it is a change on disk too. Waiting for the view to see it
+      // keeps the watcher's report from reaching the next test's check.
+      rmSync(written);
+      await countIn("agentFiles", "outOfDate");
     } finally {
       rmSync(written, { force: true });
     }
