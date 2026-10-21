@@ -204,7 +204,11 @@ Finds where the pages say something, as their readers read it, and names the lin
 
 Each place is `file:line:` and the block as a reader reads it, cut around the match, then where a reader meets it: the heading it's under and that heading's id, the arm of a variant group it's in, the phrases the match reads through, and, when it isn't in every build searched, the builds it's in. A line is listed once however many pages and builds show it. The places are in a fixed order: titles, then headings, then the rest; in each, the places written in pages come before those in fragments and code files, each in path order and in order within a file.
 
-The query is one argument. Words must all be in one block, in any order; a phrase in double quotes is matched as written, a run of spaces matching any run of white space. Quote several words together, and a phrase inside them: `ascribe search "rate limit"` finds both words in a block, and `ascribe search '"rate limit"'` finds them together. Case is ignored, and nothing else is: `cafe` doesn't find "café". A word matches inside a longer one, so `sync` finds "synchronize". A match never crosses from one block into another. There are no regular expressions; to run a pattern over the text readers read, write the plain output with `ascribe build --emit plain` and use `grep` on it.
+The query is one argument, and paths come after it. Words must all be in one block, in any order; a phrase in double quotes is matched as written, a run of spaces matching any run of white space. Quote several words together, and a phrase inside them: `ascribe search "rate limit"` finds both words in a block, and `ascribe search '"rate limit"'` finds them together. Case is ignored, and nothing else is: `cafe` doesn't find "café". With `--case`, case is matched as written, so `ascribe search Vale --case` doesn't find "vale". A word matches inside a longer one, so `sync` finds "synchronize"; with `--word`, a word or a phrase matches only where the characters on either side of it aren't letters, digits, or `_`, so `ascribe search limit --word` finds "the rate limit." and not "limits". A match never crosses from one block into another.
+
+There are no regular expressions. To run a pattern over the text readers read, write the plain output with `ascribe build --emit plain` and use `grep` on it. That loses what `ascribe search` adds: `grep` names a line of the build's output, not the line of the source to edit, and it can't say that a line came from a fragment, a phrase, or a snippet, or list a line many pages show once; and it reads one build's output at a time.
+
+Paths after the query, from the current folder, keep the search to the pages in those folders, or to those pages: `ascribe search sidebar docs/content/navigation/`. A fragment's text counts for the pages there that show it, and its place lists only them. `--type how-to` keeps to the pages of that content type. A path that has no page or fragment of the project is an error, and when every word after the query could be one of its words, the message says to quote them with it.
 
 What's searched is each page's title and the field its type marks `role = "description"`, as each build publishes them, and what each build's plain output says of the page: its headings, paragraphs, lists, block quotes, tables (a row at a time), code blocks, and the titles and text of notes and details, wherever each is written: in the page, in a fragment an include brings in, or in the code file a `@snippet` shows. A match is a place in the source, listed once however many pages show it:
 
@@ -232,12 +236,36 @@ After a match wholly inside a phrase's value, the rest of the block is still sea
 
 What isn't searched: what no build publishes, the source's own spelling of a phrase, frontmatter fields other than the title and the description, the navigation's labels, text the content model writes (labels, availability lines, a widget's fallback), text in images, raw HTML, and what a site adds around a page.
 
+`ascribe search key examples/quill/docs/keys.md --word`, from the repository's root, keeps to one page and to the whole word:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/search-scope.txt
+
+With `--summary`, the places aren't listed: the pages that show them are, with how many each shows, most first, then in path order, and the total. A place a fragment puts on several pages counts for each. It lists 20 pages, or as many as `--limit` says, then how many more and the command that lists them all. `ascribe search agent --config examples/quill --summary`:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/search-summary.txt
+
+When nothing matches, search looks for the query, by the same rules, in the source as written: every page's and fragment's text, and `ascribe.toml`'s, leaving out memos, which nothing reads. With paths or `--type`, it reads only the pages they keep to, the fragments those pages include, and `ascribe.toml`, so words other pages publish don't count. The source's text is read in blocks between blank lines, with its markup as written, so `{cloud}` is the phrase's key, not its value. The last line says which it is:
+
+| The last line | When |
+|---|---|
+| "The words aren't in any page." | The source doesn't have them either. A word only in a memo is in no page. |
+| "No build searched publishes them. They're written at `docs/x.md:12` and 2 more places." | The source has them, where no build searched publishes them, or where a phrase's value hides them. |
+| "Builds not searched publish them: `site`, `self-managed-3.3`." | With `--build`, when a build that wasn't named has a place. |
+
 `ascribe search "zebra" --config examples/quill`:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/search-none.txt
+
+`ascribe search '"point the agent at your server"' --build cloud --config examples/quill`, words only the self-managed arm says:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/search-other-builds.txt
+
+`ascribe search '"{cloud}"' --config examples/quill`, the source's spelling of a phrase:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/search-written.txt
 
 | Code | Meaning |
 |---|---|
 | `0` | Something matched |
 | `1` | Nothing matched |
-| `2` | It couldn't run: no `ascribe.toml`, one with errors, an empty query, a quote that isn't closed, more than one argument, or an unknown build |
+| `2` | It couldn't run: no `ascribe.toml`, one with errors, an empty query, a quote that isn't closed, a path with no page or fragment of the project, or an unknown build or type |

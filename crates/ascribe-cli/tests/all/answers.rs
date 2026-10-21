@@ -1048,7 +1048,10 @@ fn search_finds_a_phrase_value_at_its_line_in_the_model() {
 fn search_exits_1_when_nothing_matches() {
     let dir = project();
     let out = run(dir.path(), &["search", "zebra", "--config", "site"], 1);
-    assert_eq!(stdout(&out), "No place matches.\n");
+    assert_eq!(
+        stdout(&out),
+        "No place matches.\nThe words aren't in any page.\n"
+    );
 }
 
 #[test]
@@ -1073,7 +1076,9 @@ fn search_says_to_quote_several_words() {
         2,
     );
     assert!(
-        stderr(&out).contains("quote several words together: ascribe search 'rate limit'"),
+        stderr(&out).contains(
+            "error: limit doesn't exist; to search for several words, quote them together: ascribe search 'rate limit'"
+        ),
         "{}",
         stderr(&out)
     );
@@ -1086,8 +1091,302 @@ fn search_stops_on_a_query_or_a_build_it_cannot_read() {
         &["search", "\"rate limit", "--config", "site"][..],
         &["search", " ", "--config", "site"],
         &["search", "quill", "--build", "nope", "--config", "site"],
+        &["search", "quill", "--type", "nope", "--config", "site"],
+        &["search", "quill", "site/docs/nope.md"],
     ] {
         let out = run(dir.path(), args, 2);
         assert!(stderr(&out).starts_with("error: "), "{}", stderr(&out));
     }
+}
+
+/// The `file:line` of each place `ascribe search` lists, with its text.
+fn places(text: &str) -> Vec<(String, String)> {
+    text.lines()
+        .filter(|line| !line.starts_with(' '))
+        .filter_map(|line| {
+            let (file, rest) = line.split_once(':')?;
+            let (number, text) = rest.split_once(": ")?;
+            number.parse::<u32>().ok()?;
+            Some((format!("{file}:{number}"), text.to_owned()))
+        })
+        .collect()
+}
+
+/// The pages `ascribe search --summary` lists, from the project root.
+fn summary_pages(text: &str) -> Vec<String> {
+    text.lines()
+        .skip_while(|line| *line != "By page:")
+        .skip(1)
+        .take_while(|line| line.starts_with("  ") && !line.starts_with("  and "))
+        .map(|line| line.split_whitespace().nth(1).unwrap().to_owned())
+        .collect()
+}
+
+#[test]
+fn search_keeps_to_a_folder_and_a_fragment_to_its_pages_there() {
+    let root = repository_root();
+    let text = stdout(&run(
+        &root,
+        &[
+            "search",
+            "sidebar",
+            "docs/content/navigation/",
+            "--limit",
+            "500",
+        ],
+        0,
+    ));
+    let lines: Vec<&str> = text.lines().collect();
+    let mut found = 0;
+    for (n, line) in lines.iter().enumerate() {
+        let Some((file, _)) = places(line).into_iter().next() else {
+            continue;
+        };
+        found += 1;
+        if file.starts_with("content/navigation/") {
+            continue;
+        }
+        // A fragment's or a snippet's line: shown only on pages there.
+        let about = lines.get(n + 1).copied().unwrap_or_default();
+        let (_, pages) = about
+            .split_once(" page: ")
+            .or_else(|| about.split_once(" pages: "))
+            .unwrap_or_else(|| panic!("{line}\n{about}"));
+        assert!(
+            pages
+                .split(", ")
+                .all(|p| p.starts_with("navigation/") || p.starts_with("and ")),
+            "{line}\n{about}"
+        );
+    }
+    assert!(found > 0, "{text}");
+    let summary = stdout(&run(
+        &root,
+        &[
+            "search",
+            "sidebar",
+            "docs/content/navigation/",
+            "--summary",
+            "--limit",
+            "500",
+        ],
+        0,
+    ));
+    let pages = summary_pages(&summary);
+    assert!(!pages.is_empty(), "{summary}");
+    assert!(
+        pages.iter().all(|p| p.starts_with("content/navigation/")),
+        "{summary}"
+    );
+    let all = summary_pages(&stdout(&run(
+        &root,
+        &[
+            "search",
+            "sidebar",
+            "--config",
+            "docs",
+            "--summary",
+            "--limit",
+            "500",
+        ],
+        0,
+    )));
+    assert!(all.len() > pages.len());
+}
+
+#[test]
+fn search_keeps_to_a_type() {
+    let root = repository_root();
+    let summary = stdout(&run(
+        &root,
+        &[
+            "search",
+            "sidebar",
+            "--config",
+            "docs",
+            "--type",
+            "how-to",
+            "--summary",
+            "--limit",
+            "500",
+        ],
+        0,
+    ));
+    let pages = summary_pages(&summary);
+    assert!(!pages.is_empty(), "{summary}");
+    for page in pages {
+        let text = fs::read_to_string(root.join("docs").join(&page)).unwrap();
+        assert!(text.contains("\ntype: how-to\n"), "{page} isn't a how-to");
+    }
+}
+
+#[test]
+fn search_names_the_closest_type_and_says_to_quote_words() {
+    let root = repository_root();
+    let out = run(
+        &root,
+        &["search", "sidebar", "--config", "docs", "--type", "how-ot"],
+        2,
+    );
+    assert_eq!(
+        stderr(&out),
+        "error: no content type is `how-ot`; did you mean how-to?\n"
+    );
+    let dir = project();
+    let out = run(dir.path(), &["search", "quill", "site/ascribe.toml"], 2);
+    assert_eq!(
+        stderr(&out),
+        "error: site/ascribe.toml has no page or fragment of the project\n"
+    );
+}
+
+#[test]
+fn search_with_word_does_not_find_a_longer_word() {
+    let root = repository_root();
+    let any = stdout(&run(
+        &root,
+        &["search", "limit", "--config", "docs", "--limit", "500"],
+        0,
+    ));
+    let word = stdout(&run(
+        &root,
+        &[
+            "search", "limit", "--config", "docs", "--word", "--limit", "500",
+        ],
+        0,
+    ));
+    let (any, word) = (places(&any), places(&word));
+    assert!(!word.is_empty() && word.len() < any.len());
+    let whole = |text: &str| {
+        let lower = text.to_lowercase();
+        lower.match_indices("limit").any(|(at, m)| {
+            let before = lower[..at].chars().next_back();
+            let after = lower[at + m.len()..].chars().next();
+            !before.is_some_and(|c| c.is_alphanumeric() || c == '_')
+                && !after.is_some_and(|c| c.is_alphanumeric() || c == '_')
+        })
+    };
+    assert!(word.iter().all(|(_, text)| whole(text)), "{word:?}");
+    assert!(
+        any.iter()
+            .any(|(_, text)| text.to_lowercase().contains("limits") && !whole(text)),
+        "a place with only \"limits\" is left out"
+    );
+}
+
+#[test]
+fn search_with_case_does_not_find_another_case() {
+    let root = repository_root();
+    let any = places(&stdout(&run(
+        &root,
+        &["search", "vale", "--config", "docs", "--limit", "500"],
+        0,
+    )));
+    let case = places(&stdout(&run(
+        &root,
+        &[
+            "search", "Vale", "--config", "docs", "--case", "--limit", "500",
+        ],
+        0,
+    )));
+    assert!(!case.is_empty() && case.len() < any.len());
+    assert!(
+        case.iter().all(|(_, text)| text.contains("Vale")),
+        "{case:?}"
+    );
+    assert!(
+        any.iter().any(|(_, text)| !text.contains("Vale")),
+        "a place with only \"vale\" is left out"
+    );
+}
+
+#[test]
+fn search_summarizes_by_page_most_first() {
+    let root = repository_root();
+    let text = stdout(&run(
+        &root,
+        &["search", "sidebar", "--config", "docs", "--summary"],
+        0,
+    ));
+    assert!(text.starts_with("By page:\n"), "{text}");
+    let counts: Vec<usize> = text
+        .lines()
+        .skip(1)
+        .take_while(|line| line.starts_with("  ") && !line.starts_with("  and "))
+        .map(|line| line.split_whitespace().next().unwrap().parse().unwrap())
+        .collect();
+    assert!(counts.windows(2).all(|w| w[0] >= w[1]), "{text}");
+    assert!(
+        text.contains("more pages: `ascribe search sidebar --summary --limit "),
+        "{text}"
+    );
+    assert!(text.trim_end().ends_with(" pages."), "{text}");
+}
+
+#[test]
+fn search_says_which_builds_not_searched_publish_the_words() {
+    let quill = repository_root().join("examples/quill");
+    let out = run(
+        &quill,
+        &[
+            "search",
+            "\"point the agent at your server\"",
+            "--build",
+            "cloud",
+        ],
+        1,
+    );
+    assert_eq!(
+        stdout(&out),
+        "No place matches.\nBuilds not searched publish them: `site`, `site@3.4`, `self-managed-3.3`.\n"
+    );
+}
+
+#[test]
+fn search_says_where_words_no_build_publishes_are_written() {
+    let dir = project();
+    let out = run(
+        dir.path(),
+        &["search", "\"{product}\"", "--config", "site"],
+        1,
+    );
+    assert_eq!(
+        stdout(&out),
+        "No place matches.\nNo build searched publishes them. They're written at `docs/_fragments/before.md:3` and 2 more places.\n"
+    );
+}
+
+#[test]
+fn search_says_words_in_no_page_and_a_memo_is_in_none() {
+    let dir = project();
+    write(
+        &dir.path().join("site/docs/keys.md"),
+        &format!("{KEYS}\n@memo: Rotate before revoking.\n"),
+    );
+    for query in ["zebra", "revoking"] {
+        let out = run(dir.path(), &["search", query, "--config", "site"], 1);
+        assert_eq!(
+            stdout(&out),
+            "No place matches.\nThe words aren't in any page.\n"
+        );
+    }
+}
+
+#[test]
+fn search_kept_to_paths_says_nothing_of_words_published_outside_them() {
+    let dir = project();
+    let out = run(
+        dir.path(),
+        &["search", "\"rotate them\"", "site/docs/install.md"],
+        1,
+    );
+    assert_eq!(
+        stdout(&out),
+        "No place matches.\nThe words aren't in any page.\n"
+    );
+    run(
+        dir.path(),
+        &["search", "\"rotate them\"", "--config", "site"],
+        0,
+    );
 }

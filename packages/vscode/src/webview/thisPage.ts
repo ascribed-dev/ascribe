@@ -11,9 +11,14 @@
 //
 // The text is written by people and agents: titles, memos' first lines,
 // threads' excerpts. All of it is set as text, never as HTML.
+//
+// An answer comes with each cursor move and each check, so drawing one keeps
+// the reader's place: what's drawn already stays, each element with its key,
+// and only what changed is drawn again, so the view keeps its scroll and the
+// keyboard's focus. Up and Down move the focus between the headers and rows.
 
 import { seenViolations, startView, type ViewChannel } from "./view.js";
-import type { ThisPageAnswer, ThisPageReport, ViewItem } from "./viewProtocol.js";
+import type { ThisPageAnswer, ThisPageProbe, ThisPageReport, ViewItem } from "./viewProtocol.js";
 
 const main = document.querySelector<HTMLElement>('[data-role="view"]');
 if (!main) throw new Error("This page's shell has no view");
@@ -170,29 +175,146 @@ function flat(items: readonly ViewItem[]): string[] {
   return items.flatMap((item) => [text(item), ...flat(item.children)]);
 }
 
-function draw(answer: ThisPageAnswer, channel: ViewChannel<ThisPageReport>): ThisPageReport {
-  const sections =
-    answer.message !== null
-      ? []
-      : answer.sections.map((item) => ({ item, details: section(item, channel) }));
-  view.replaceChildren(
-    ...(answer.message !== null
-      ? [element("p", "message", answer.message)]
-      : sections.map(({ details }) => details)),
+/** Whether a node drawn already can stand for a new one: the same element with the same key, or text. */
+function same(drawn: Node, fresh: Node): boolean {
+  if (drawn.nodeType !== fresh.nodeType) return false;
+  if (!(drawn instanceof Element) || !(fresh instanceof Element)) return true;
+  return (
+    drawn.tagName === fresh.tagName &&
+    drawn.getAttribute("data-key") === fresh.getAttribute("data-key")
   );
+}
+
+/**
+ * Makes what's drawn in `into` what `fresh` is, keeping each element that can
+ * stand for its new one, with its listeners, its focus, and what's under it,
+ * and changing only its attributes and text that differ.
+ */
+function patch(into: Element, fresh: readonly Node[]): void {
+  const drawn = [...into.childNodes];
+  fresh.forEach((node, i) => {
+    const kept = drawn[i];
+    if (!kept) {
+      into.append(node);
+    } else if (!same(kept, node)) {
+      kept.replaceWith(node);
+    } else if (kept instanceof Element && node instanceof Element) {
+      for (const name of kept.getAttributeNames()) {
+        if (!node.hasAttribute(name)) kept.removeAttribute(name);
+      }
+      for (const { name, value } of node.attributes) {
+        if (kept.getAttribute(name) !== value) kept.setAttribute(name, value);
+      }
+      patch(kept, [...node.childNodes]);
+    } else if (kept.nodeValue !== node.nodeValue) {
+      kept.nodeValue = node.nodeValue;
+    }
+  });
+  for (const extra of drawn.slice(fresh.length)) extra.remove();
+}
+
+const scroller = document.scrollingElement ?? document.documentElement;
+
+/** The key of what has the focus: an item's, or its section's for a header. */
+function focusedKey(): string | null {
+  const focused = document.activeElement;
+  if (!focused || !view.contains(focused)) return null;
+  const keyed = focused.tagName === "SUMMARY" ? focused.parentElement : focused;
+  return keyed?.getAttribute("data-key") ?? null;
+}
+
+/** Puts the focus on the item of `key`, or on a section's header by its key; whether it could. */
+function focusKey(key: string): boolean {
+  const selector = `[data-key="${CSS.escape(key)}"]`;
+  const target = view.querySelector<HTMLElement>(`details${selector} > summary, button${selector}`);
+  if (!target) return false;
+  target.focus();
+  return document.activeElement === target;
+}
+
+/** The headers and rows the keyboard goes between: those a closed section doesn't hide. */
+function stops(): HTMLElement[] {
+  return [...view.querySelectorAll<HTMLElement>("summary, button")].filter((stop) => {
+    const section = (
+      stop.tagName === "SUMMARY" ? stop.parentElement?.parentElement : stop
+    )?.closest("details");
+    return !section || section.open;
+  });
+}
+
+// Up and Down: the focus moves to the header or row before or after, in the
+// order Tab goes, skipping what a closed section hides.
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+  if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+  const all = stops();
+  const at = all.indexOf(document.activeElement as HTMLElement);
+  const next =
+    event.key === "ArrowDown"
+      ? all[at < 0 ? 0 : Math.min(at + 1, all.length - 1)]
+      : all[at < 0 ? all.length - 1 : Math.max(at - 1, 0)];
+  event.preventDefault();
+  next?.focus();
+});
+
+/** The answer drawn last, which a probe's report describes. */
+let shown: ThisPageAnswer | undefined;
+/** The newest probe answered. */
+let probed = 0;
+
+function report(answer: ThisPageAnswer): ThisPageReport {
   const sample = view.querySelector(".row dd, .item .label") ?? view;
   const { whiteSpace } = getComputedStyle(sample);
   return {
     message: answer.message,
-    sections: sections.map(({ item, details }) => ({
+    sections: (answer.message !== null ? [] : answer.sections).map((item) => ({
       key: item.key,
       label: item.label,
-      open: details.open,
+      open:
+        view.querySelector<HTMLDetailsElement>(`details[data-key="${CSS.escape(item.key)}"]`)
+          ?.open ?? false,
       items: flat(item.children),
     })),
     wraps: whiteSpace !== "nowrap" && whiteSpace !== "pre",
+    focused: focusedKey(),
+    hasFocus: document.hasFocus(),
+    scroll: Math.round(scroller.scrollTop),
+    probed,
     violations: seenViolations(),
   };
 }
 
-startView<ThisPageAnswer, ThisPageReport>(draw);
+function draw(answer: ThisPageAnswer, channel: ViewChannel<ThisPageReport>): ThisPageReport {
+  const focused = focusedKey();
+  const scroll = scroller.scrollTop;
+  patch(
+    view,
+    answer.message !== null
+      ? [element("p", "message", answer.message)]
+      : answer.sections.map((item) => section(item, channel)),
+  );
+  // What had the focus is gone: the focus goes to its section's header.
+  if (focused !== null && focusedKey() === null && !focusKey(focused)) {
+    focusKey(focused.split("/")[0] ?? focused);
+  }
+  scroller.scrollTop = scroll;
+  shown = answer;
+  return report(answer);
+}
+
+const channel = startView<ThisPageAnswer, ThisPageReport>(draw);
+
+window.addEventListener("message", (event: MessageEvent<unknown>) => {
+  const probe = event.data as Partial<ThisPageProbe> | null;
+  if (probe?.type !== "probe" || typeof probe.probe !== "number" || !shown) return;
+  if (probe.open) {
+    for (const details of view.querySelectorAll("details")) details.open = true;
+  }
+  if (typeof probe.focus === "string") focusKey(probe.focus);
+  if (typeof probe.scroll === "number") scroller.scrollTop = probe.scroll;
+  if (probe.press && document.activeElement instanceof HTMLElement) {
+    document.activeElement.click();
+  }
+  probed = Math.max(probed, probe.probe);
+  channel.post({ type: "drawn", seq: channel.seq, report: report(shown) });
+});

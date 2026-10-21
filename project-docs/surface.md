@@ -37,7 +37,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe rename` | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. | `TARGET NEW` |  |
 | `ascribe render` | Writes a page as a reader of one build sees it: the plain Markdown the build's `plain` output writes for it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. | `PAGE [--build <NAME>] [--frontmatter]` | `text`, `json` |
 | `ascribe report` | Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. | `[SECTION]... [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice\|warning\|error]` | `text`, `markdown`, `json`, `prompt` |
-| `ascribe search` | Finds where the pages say something, as their readers read it, and names the line to edit for each place. | `QUERY [--build <NAME>]... [--limit <N>]` |  |
+| `ascribe search` | Finds where the pages say something, as their readers read it, and names the line to edit for each place. | `QUERY [PATHS]... [--type <NAME>] [--case] [--word] [--summary] [--build <NAME>]... [--limit <N>]` |  |
 | `ascribe sources fetch` | Makes the copies match `ascribe.lock`: at each source's pin, it copies the files snippets name that have no copy or a wrong one, and removes the copies no snippet names. | `[NAME]...` |  |
 | `ascribe sources update` | Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20, or that the pin moved back), the copies that changed, the tested examples whose status changed, and the pages whose examples changed, grouped as `ascribe drift` groups them. | `[NAME]... [--to <REV>]` | `text`, `json`, `markdown` |
 | `ascribe sources status` | Shows each source in another repository: its repository and branch, its pin, and each copy's state (current, changed here, missing, not in the lock, unused, not copied yet, or not in the repository at the pin). |  | `text`, `json` |
@@ -796,9 +796,20 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 
 | Page | Title | Type |
 |---|---|---|
+| `agents/claude-code.md` | Claude Code | how-to |
 | `agents/commands.md` | `ascribe agents` and `mcp` | reference |
+| `agents/copilot.md` | GitHub Copilot | how-to |
+| `agents/hooks.md` | Check an agent's edits with hooks | how-to |
 | `agents/index.md` | Agents | how-to |
+| `agents/index.md` | Agents | how-to |
+| `agents/index.md` | Agents | how-to |
+| `agents/instructions.md` | Write the agent files | how-to |
+| `agents/loop.md` | Work with an agent | how-to |
+| `agents/mcp.md` | Set up the MCP server | how-to |
 | `agents/measuring.md` | What to measure | concept |
+| `agents/product-index.md` | Index your docs for your product's agents | how-to |
+| `agents/prompts.md` | Prompt your agent | how-to |
+| `agents/whats-sent.md` | What's sent where | concept |
 | `astro/agents.md` | Publish for AI agents | how-to |
 | `astro/elements.md` | Element library reference | reference |
 | `astro/index.md` | Astro | how-to |
@@ -850,6 +861,8 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `editor/problems.md` | Problems and fixes | reference |
 | `editor/review.md` | Review in the preview | reference |
 | `editor/settings.md` | Editor workspaces, settings, and commands | reference |
+| `editor/sidebar.md` | The Ascribe sidebar | reference |
+| `editor/sidebar.md` | The Ascribe sidebar | reference |
 | `editor/sidebar.md` | The Ascribe sidebar | reference |
 | `editor/writing.md` | Writing in the editor | reference |
 | `examples/docs-repository.md` | Keep the docs in another repository | how-to |
