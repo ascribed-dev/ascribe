@@ -20,7 +20,7 @@ Shows each target's lines, newest first: whether each is current, live, planned,
 
 @include: ../_generated/cli-versions-list-options.md
 
-With `--format json`, the same, as its [schema](../contracts/json-reports/versions.md#ascribe-versions-list) has it. It exits with `0`, and `2` when the project doesn't load.
+With `--format json`, it writes the same in the document its [schema](../contracts/json-reports/versions.md#ascribe-versions-list) describes. It exits with `0`, and `2` when the project doesn't load.
 
 .The JSON for this example
 @details:
@@ -42,7 +42,7 @@ The second line is a version of the first's target, and either may come first. E
 
 @snippet {lang=markdown}: code:crates/ascribe-cli/tests/output/versions-notes.md
 
-With `--format json`, as its [schema](../contracts/json-reports/versions.md#ascribe-versions-changes) has it:
+With `--format json`, it writes the document its [schema](../contracts/json-reports/versions.md#ascribe-versions-changes) describes:
 
 .The JSON for this example
 @details:
@@ -71,7 +71,7 @@ It refuses a line that's live or archived already, so running it twice changes n
 
 @include: ../_generated/cli-versions-release-options.md
 
-With `--format json`, as its [schema](../contracts/json-reports/versions.md#ascribe-versions-release) has it:
+With `--format json`, it writes the document its [schema](../contracts/json-reports/versions.md#ascribe-versions-release) describes:
 
 .The JSON for this example
 @details:
@@ -94,7 +94,7 @@ Renders a line, live or planned, into a folder of HTML that needs nothing else: 
 
 @include: ../_generated/cli-versions-archive-options.md
 
-With `--format json`, as its [schema](../contracts/json-reports/versions.md#ascribe-versions-archive) has it:
+With `--format json`, it writes the document its [schema](../contracts/json-reports/versions.md#ascribe-versions-archive) describes:
 
 .The JSON for this example
 @details:
@@ -113,7 +113,7 @@ Takes the oldest live line out of the window once its archive is hosted: moves i
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-retire.txt
 
-The line's `ended` is its date in `ends`, which goes, or today when it had none: UTC, or `ASCRIBE_TODAY` when it's set, as the checks take it. Its address is `--url`, the one its archive is read at.
+The line's `ended` is its date in `ends`, which goes, or, when it had none, [the day the checks run as](../checks/check.md#checking-as-of-another-day). Its address is `--url`, the one its archive is read at.
 
 It builds the project in memory before and after, and refuses when a live line's output changes: a line's output never showed a version from before the window, so the rewrite is meant to change none. A build that isn't a line of the target can change what it shows: a badge build shows those versions, and a filter build for an older version gains the content a mark no longer limits to later ones. So it names each such build's pages, as those it adds, removes, and changes, and the rewrite needs `--force` to go ahead. It writes only files git can put back as they were, as [`release`](#cli-versions-release) does, or anything with `--force`.
 
@@ -125,7 +125,7 @@ The addresses are listed and not written: a host's redirects file is yours to wr
 
 @include: ../_generated/cli-versions-retire-options.md
 
-With `--format json`, as its [schema](../contracts/json-reports/versions.md#ascribe-versions-retire) has it, written here as of 16 October 2026:
+With `--format json`, it writes the document its [schema](../contracts/json-reports/versions.md#ascribe-versions-retire) describes, here as of 16 October 2026:
 
 .The JSON for this example
 @details:

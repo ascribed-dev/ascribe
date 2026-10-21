@@ -302,9 +302,9 @@ Revoke the old key once every agent uses the new one.
 
 - **What it's about** is decided as for `@available` ([binding](syntax.md#binding-what-a-directive-applies-to)). A container memo touches the block that starts on the line after its `@end`. Several memos stack, in either form, and `ascribe fmt` removes a blank line between a memo and its block.
 - **A line memo** is the rest of its line, and needs some text. **A container memo** is every line up to a line that's only `@end` at the memo's own indent, as written. It takes no attributes. A container memo with nothing in it, or only blank lines, is almost always a slip: `ascribe check` reports it as advice, [`memo-empty`](../checks/diagnostics/content-checks.md#ASC224), whose fix removes it.
-- **Nothing reads a memo.** A link in one isn't checked and isn't a use of the page it names, a `{key}` isn't a phrase, an `@include` isn't followed, a `#` line isn't a heading, and Vale isn't given the text. A code fence that doesn't close, or a line such as `@note:`, doesn't change the page around it. The one line a container memo can't hold is the `@end` that closes it.
-- **It changes no output.** No build, preview, or report shows a memo, wherever it is, a fragment included, and a change to a memo alone isn't a change to [`ascribe diff`](../review/diff.md) or to review.
-- **An HTML comment isn't private:** it's in the source of every published page. `ascribe check` reports one as advice, [`html-comment`](../checks/diagnostics/content-checks.md#ASC223), whose quick fix rewrites it as a memo.
+- **Nothing reads a memo,** nor a [memo file](memo-files.md)'s text. A link in one isn't checked and isn't a use of the page it names, a `{key}` isn't a phrase, an `@include` isn't followed, a `#` line isn't a heading, and Vale isn't given the text. A code fence that doesn't close, or a line such as `@note:`, doesn't change the page around it. The one line a container memo can't hold is the `@end` that closes it.
+- **It changes no output.** No build, preview, or report shows a memo, in a page, a fragment, or a memo file, and a change to one alone isn't a change to [`ascribe diff`](../review/diff.md) or to review.
+- **An HTML comment isn't a memo:** [`html-comment`](../checks/diagnostics/content-checks.md#ASC223) says why, and how to rewrite one as a memo.
 
 ## `@term`
 @available: ascribe 0.4.0

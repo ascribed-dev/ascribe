@@ -32,7 +32,7 @@ And without it, it moves the one, keeps the other, and says why:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/permalinks-sync.txt
 
-With `--format json`, as its [schema](../contracts/json-reports/sources.md#ascribe-permalinks-sync) has it:
+With `--format json`, it writes the document its [schema](../contracts/json-reports/sources.md#ascribe-permalinks-sync) describes:
 
 .The JSON for this example
 @details:
@@ -54,7 +54,7 @@ Shows every permalink the content declares, with the file and line it's declared
 
 @include: ../_generated/cli-permalinks-list-options.md
 
-With `--format json`, the same, as its [schema](../contracts/json-reports/sources.md#ascribe-permalinks-list) has it. It exits with `0` whatever it finds, and `2` when the project doesn't load or the list can't be read.
+With `--format json`, it writes the same in the document its [schema](../contracts/json-reports/sources.md#ascribe-permalinks-list) describes. It exits with `0` whatever it finds, and `2` when the project doesn't load or the list can't be read.
 
 .The JSON for this example
 @details:
@@ -77,7 +77,7 @@ What it says goes to standard error. Once `rotate-keys` is retired, `ascribe per
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/permalinks-verify.txt
 
-With `--format json`, as its [schema](../contracts/json-reports/sources.md#ascribe-permalinks-verify) has it:
+With `--format json`, it writes the document its [schema](../contracts/json-reports/sources.md#ascribe-permalinks-verify) describes:
 
 .The JSON for this example
 @details:
@@ -107,7 +107,7 @@ It retires a name given only when the content no longer declares it and `ascribe
 
 @include: ../_generated/cli-permalinks-retire-options.md
 
-With `--format json`, as its [schema](../contracts/json-reports/sources.md#ascribe-permalinks-retire) has it. It exits with `0` when the names are retired, and `2` when the project doesn't load, the reason is empty, a name can't be retired, or a file can't be written.
+With `--format json`, it writes the document its [schema](../contracts/json-reports/sources.md#ascribe-permalinks-retire) describes. It exits with `0` when the names are retired, and `2` when the project doesn't load, the reason is empty, a name can't be retired, or a file can't be written.
 
 .The JSON for this example
 @details:

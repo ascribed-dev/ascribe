@@ -21,7 +21,7 @@ Ascribe keeps three kinds of commentary apart, and each has its place:
 
 A memo has no replies and nothing to resolve: it's a reason, kept for as long as it holds. When you're discussing a change, discuss it in review; when the discussion settles why the page is the way it is, keep that as a memo.
 
-An HTML comment, `<!-- … -->`, isn't a place for any of these. It's in the source of every published page, so `ascribe check` reports one as advice, [`html-comment`](../checks/diagnostics/content-checks.md#ASC223), and the editor's quick fix **Rewrite as a memo** turns one into a memo about the same block.
+An HTML comment, `<!-- … -->`, isn't a place for any of these: [`html-comment`](../checks/diagnostics/content-checks.md#ASC223) says why, and how to turn one into a memo.
 
 ## Write a memo in the page
 
@@ -47,7 +47,7 @@ agents. See [the incident](notes/2026-08.md).
 Revoke the old key once every agent uses the new one.
 ```
 
-Nothing reads a memo's text: a link in one isn't checked, a `{key}` isn't a phrase, and Vale doesn't see it. No build, preview, or report shows it, and a change to a memo alone isn't a change in review. The [`@memo` reference](directives.md#memo) has every rule.
+The [`@memo` reference](directives.md#memo) has every rule, among them what reads a memo and what it changes.
 
 ## Write a memo file
 
@@ -73,20 +73,13 @@ When the reason is longer than a few lines, or it's about something with no line
 
 In VS Code, **Ascribe: Add a memo** does the first three steps for you, from the cursor and the text you've selected: see [Memo files in the editor](../editor/actions.md#memo-files).
 
-A memo file's place is worked out each time it's read. When the words it quotes change, it's **outdated**, and stays on its section; when the page or heading it names is gone, it's **detached**. Read it against the page, then quote the words it's about now, point `about` at where it belongs, or delete it. Renaming a page or a heading with `ascribe rename`, or in the editor, keeps its memos attached. The [memo files reference](memo-files.md) has the format, each state, and what `ascribe check` reports.
+When `ascribe check` later reports a memo file as outdated or detached, read it against the page, and see [Placed, outdated, and detached](memo-files.md#placed-outdated-and-detached) for what to change. The [memo files reference](memo-files.md) has the format and every rule.
 
 ## Keep a memo to yourself
 
-A memo for you alone, such as what you were told and haven't confirmed, goes in `.ascribe/memos/` instead of `memos/`, in the same format. `.ascribe/` isn't committed, so a **personal memo** stays on your machine, and the editor and `ascribe outline` show it to you marked as personal. **Ascribe: Add a personal memo** writes one. See [Personal memos](memo-files.md#personal-memos).
+A memo for you alone, such as what you were told and haven't confirmed, goes in `.ascribe/memos/` instead of `memos/`, in the same format, and stays on your machine. **Ascribe: Add a personal memo** writes one. [Personal memos](memo-files.md#personal-memos) says what reads it.
 
-## What agents are told
-
-An agent reads a memo where you'd want it to: before it changes the page.
-
-- **The rules** `ascribe agents sync` writes tell an agent, when a page has a `@memo`, to read a block's memo before changing the block, and, when the project has memo files, that `ascribe outline <page>` lists the memos about a page: see [Agent instructions](../agents/instructions.md).
-- **A prompt about a page,** from `fix`, `review`, or the editor's **Prompt agent**, lists the memo files about the page, or about what changed, by path, and the agent opens them: see [Memos in a prompt](../agents/prompts.md#memos-in-a-prompt).
-
-A prompt never pastes in a memo's text, so a long memo costs an agent nothing until it's relevant.
+An agent reads a memo before it changes the page: [Agent instructions](../agents/instructions.md) and [Memos in a prompt](../agents/prompts.md#memos-in-a-prompt) say how it's told.
 
 ## See also
 

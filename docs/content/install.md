@@ -115,7 +115,7 @@ It lists each file it wrote, `ascribe.toml` last, from the current folder; the c
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/init.txt
 
-With `--format json`, as its [schema](contracts/json-reports/sources.md#ascribe-init) has it. When `templates.refused` isn't empty, `written` is empty.
+With `--format json`, it writes the document its [schema](contracts/json-reports/sources.md#ascribe-init) describes. When `templates.refused` isn't empty, `written` is empty.
 
 .The JSON for this example
 @details:

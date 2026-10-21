@@ -24,7 +24,7 @@ doesn't mention the agent.
 
 - **`about`**, required, names what the memo is about, the way [`ascribe refs`](../command/questions.md#cli-refs) names a target: a page or fragment by its path from the content root (`install-agent.md`), a heading as the path, `#`, and its id (`install-agent.md#install-agent`), a glossary term by its id (`term:api-key`), or an entry of `ascribe.toml` as `phrase:product`, `feature:sso`, `dimension:deployment`, `note:warning`, or `widget:release-note`. A heading in a fragment is named in the fragment. A term is a heading on a glossary page, so a memo about `term:api-key` is on that heading, as one about `glossary.md#api-key` is.
 - **`quote`**, which you can leave out, narrows the memo to the block that holds those words: a paragraph, a heading, a list item's paragraph, a code block, or a table, for instance. An entry of `ascribe.toml` has no words to quote; a term's are those of its section.
-- **The text** after the frontmatter is the memo, as you write it. Nothing in it is read: a link isn't checked, and a `{key}` isn't a phrase.
+- **The text** after the frontmatter is the memo, as you write it, read by nothing, as a [`@memo`](directives.md#memo)'s isn't.
 
 The files are every `.md` file in `memos/` and its subfolders. A file's name and its folder mean nothing to Ascribe, so name and arrange them as your team likes; a name or folder that starts with `.` is skipped. A memo is about one thing, with no author, no date, and nothing to finish: a reason, kept for as long as it holds.
 
@@ -44,7 +44,7 @@ Where a memo is is worked out each time it's read, from the pages as they are, a
 - **Outdated.** No block holds the quote: the words were changed since the memo was written. The memo stays on its page or section. It's advice, [`memo-outdated`](../checks/diagnostics/content-checks.md#ASC227): read the memo against the page, and quote the words it's about now, or change or delete it.
 - **Detached.** `about` names nothing: the page was deleted, or it moved or the heading's id changed by hand rather than by a rename. It's a warning, [`memo-detached`](../checks/diagnostics/pages.md#ASC226), which names the ids the page has when the heading is what's missing. Point `about` at what the memo is about now.
 
-A rename keeps a memo attached: [`ascribe rename`](../command/questions.md#cli-rename), and in the editor, `F2` on a heading's `@id` or text, on a phrase, and moving a file in the Explorer, rewrite the `about` of each memo that names what changes, in both folders: the page, keeping its `#id` when the page moves; the heading, written on its own page or on a page that includes the fragment it's in; a glossary term, `term:<id>`, when its heading's id changes; and a phrase, `phrase:<key>`. The value is rewritten where it's written, in quotes, as a block scalar, or on the line under `about:`; one written in a form that can't be found in the text, such as with an escape, is written again on `about`'s line. Its `quote` and its text are left as they are.
+A rename keeps a memo attached: [`ascribe rename`](../command/questions.md#cli-rename), and renaming in the editor ([Refactoring](../editor/writing.md#refactoring)), rewrite the `about` of each memo that names what changes, in both folders, and leave its `quote` and its text as they are.
 
 A memo file that isn't one, with no frontmatter, no `about`, an `about` that isn't a target, or a key besides `about` and `quote`, is an error, [`memo-invalid`](../checks/diagnostics/pages.md#ASC225). `ascribe check` reports each problem on the memo file, at its `about` or `quote` line.
 
@@ -63,4 +63,4 @@ In `examples/quill`, the memo above is about the section of `install-agent.md` t
 
 - **Agents' prompts and rules** name the memos about the page they're about, or about what changed, a line each with the memo's path, and never its text. The rules say where to find a page's memos ([Memos in a prompt](../agents/prompts.md#memos-in-a-prompt)).
 
-No build, preview, or report reads a memo file, and a change to one alone isn't a change to `ascribe diff`.
+A memo file changes no output, as a [`@memo`](directives.md#memo) doesn't.

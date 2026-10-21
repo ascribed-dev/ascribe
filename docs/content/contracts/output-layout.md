@@ -307,10 +307,3 @@ A build writes to a staging directory and replaces the previous output only when
 **The invariant:** at every moment, every file Ascribe has written into an emitter root is listed in the manifest on disk. So if a build is interrupted, the root holds either the previous output or a mix of old and new files that are all listed, and the next build removes what it no longer produces. A user's file is never at risk, because Ascribe only deletes files a manifest lists.
 
 A file listed in a manifest that the user has since edited is still Ascribe's: the next build overwrites or removes it. The output directory is generated; edit the source instead.
-
-## 5. Why this shape
-
-- **One root per build and emitter**, with nothing shared, keeps each output self-contained (SPEC §9.4) and lets a consumer point at exactly one directory, such as an Astro content collection at `.ascribe/build/site/site/`.
-- **Mirrored paths** make the output's structure the source's structure, keep relative references between pages and assets valid, and make collisions between different files impossible (asset contract §3.1).
-- **The manifest beside the root, not in it**, keeps the root holding only output, so a consumer loading every file in it loads nothing else.
-- **Failing on a user's file** instead of overwriting it follows the rule that output never destroys what Ascribe didn't create.

@@ -40,11 +40,7 @@ CommonMark parses the two tags as two adjacent raw inline HTML nodes. (An implem
 
 **Values.** In a value, `&quot;`, `&amp;`, `&lt;`, and `&gt;` stand for `"`, `&`, `<`, and `>`. Any other `&` is a literal `&`. The emitter writes exactly those four escapes, and escapes every `"`, `&`, `<`, and `>` in a value.
 
-### Why a marker
-
-Every alternative is changed by Astro's markdown processing before a plugin can see it. Each of Astro's markdown processors (Sätteri, its default in Astro 7.3, and `unified()`) applies GFM and typographic replacements before a user plugin sees the tree, so an attribute block written as text, such as `## Setup {#setup}` or `![a](b.png){caption="x"}`, reaches the plugin with its quotes curled and its `--` and `...` turned into dashes and ellipses, and an id like `__init__` can become strong emphasis. A raw HTML node is never touched by either: its text is exactly what Ascribe wrote. The marker also degrades quietly. A consumer without the plugin renders it as an empty element: invisible, and for a heading, an element carrying the right `id` inside the heading, so links still land.
-
-The other options considered, and why they lost, are in [decision #689k]({repo}/blob/main/project-docs/decisions/689k-profile-fixes-ids-attributes-assets.md).
+A consumer without the plugin renders a marker as an empty element: invisible, and for a heading, an element carrying the right `id` inside the heading, so links still land. Why the site output uses a marker is [decision #689k]({repo}/blob/main/project-docs/decisions/689k-profile-fixes-ids-attributes-assets.md).
 
 ## 2. Where a marker applies
 
@@ -197,15 +193,13 @@ Every block a reviewer could point at: headings, paragraphs, code blocks, lists 
 
 ### 7.3 How an anchor gets through the markdown pipeline
 
-The site output is markdown the consumer renders, and §1's reasoning holds: only raw HTML reaches a plugin unchanged. So the emitter writes each anchor in one of two ways.
+The emitter writes each anchor in one of two ways ([decision #688a]({repo}/blob/main/project-docs/decisions/688a-source-anchors-as-html.md) says why).
 
 **On an element it writes itself**, as attributes of the element's opening tag, after its other attributes:
 
 ```html
 <ascribe-note type="tip" label="Tip" data-ascribe-source="guides/install.md:9-11">
 ```
-
-Raw HTML passes through every renderer unchanged, so nothing else is needed.
 
 **Before a block the markdown pipeline renders**, as an **anchor comment**: an HTML comment on a line of its own directly before the block, at the block's indentation (inside the list item or block quote that holds it):
 
@@ -229,7 +223,7 @@ Exactly this form is an anchor comment: `<!--ascribe-anchor`, then one or more a
 | `via` | The includes it came through (§7.1). Absent when there are none. |
 | `items` | For a list, each item's lines, `<first>-<last>`, in order, separated by single spaces. An item's file and includes are its list's. |
 
-Why a comment: CommonMark makes an HTML comment an HTML block of its own (type 2) that ends on the line holding `-->`, and lets it interrupt a paragraph. So the comment never joins the block before or after it, the block after it starts where it would have, and a list whose blocks it sits between doesn't become loose, since there's no blank line. Both of Astro's markdown processors hand a plugin the comment as a `raw` node that is a sibling of the block's element. A consumer without the plugin renders an HTML comment: invisible.
+A consumer without the plugin renders an anchor comment as an HTML comment: invisible.
 
 ### 7.4 Applying an anchor comment
 
