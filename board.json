@@ -3578,7 +3578,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/664"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Search: ascribe search finds words as readers read them, and names the line to edit"
     },
     {
@@ -3594,8 +3594,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/724"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Search: a fragment's text, a snippet's code, and a page's title and description"
     },
     {
@@ -3611,8 +3614,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/725"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Search: keep to paths, a type, case, or words; summarize; say what nothing found means"
     },
     {
@@ -3742,8 +3748,11 @@
         "optimization",
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/696"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Content model reference: the tables generated from the registry"
     },
     {
@@ -3759,8 +3768,11 @@
       "labels": [
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/695"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "This page: a webview"
     },
     {
@@ -3776,8 +3788,11 @@
       "labels": [
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/727"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "This page: includes open beside, and the view keeps its place"
     },
     {
@@ -3810,8 +3825,11 @@
       "labels": [
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/728"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In review",
       "title": "Project view: every build's problems, counted honestly"
     },
     {
@@ -3878,8 +3896,11 @@
       "labels": [
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/729"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In progress",
       "title": "Project Settings: the round trip"
     },
     {
@@ -3980,8 +4001,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/708"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Old availability marks aren't reported in a build that shows badges"
     },
     {
@@ -3997,8 +4021,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/718"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "`ascribe refs` can't say where an image is used"
     },
     {
@@ -4015,8 +4042,11 @@
         "documentation",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/705"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "The directive reference's table of built-ins is kept by hand"
     },
     {
@@ -4032,8 +4062,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/717"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "`ascribe model` reports every section of `ascribe.toml`"
     },
     {
@@ -4050,8 +4083,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/726"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In review",
       "title": "Docs: The drift"
     },
     {
@@ -4086,8 +4122,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/694"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs: An Install page, and a tutorial with one path"
     },
     {
@@ -4104,8 +4143,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/715"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs: The six-command page"
     },
     {
@@ -4140,8 +4182,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/699"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs: Two references in the wrong section"
     },
     {
@@ -4158,8 +4203,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/706"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs: Agents, as an overview and a page per task"
     },
     {
@@ -4194,8 +4242,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/700"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs: Versions, as two how-tos and a reference"
     },
     {
@@ -4212,8 +4263,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/709"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs: Review, said once"
     },
     {
@@ -4230,8 +4284,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/698"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs: Examples and templates"
     },
     {
@@ -4248,8 +4305,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/707"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs: The report, and Vale's policy"
     },
     {
@@ -4266,8 +4326,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/697"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs: Astro, permalinks, and navigation"
     },
     {
@@ -4284,8 +4347,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/710"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs: What search engines and agents are told"
     },
     {
@@ -4356,8 +4422,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/701"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs: The scenes, and the editor's pictures that won't change"
     },
     {
@@ -4374,8 +4443,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/714"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs: The site's and the report's pictures"
     },
     {
@@ -4395,6 +4467,85 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "Docs: The new views"
+    },
+    {
+      "content": {
+        "body": "With the recognition verdicts fixed (#666), the corpora run now reaches the benchmarks, and `benches/perf.rs` panics in `one_file` for the converted Elastic sample (https://github.com/ascribed-dev/ascribe/actions/runs/39482480876/job/118834319380):\n\n```\nthread 'main' panicked at tests/corpora/benches/perf.rs:290:10:\na clean page\n```\n\n`one_file` looks for a page after the first 100 with no diagnostic of any severity, and none is left. It probably broke after the last green run (6 October) and was hidden while the recognition test failed first. A likely cause is `heading-level-skipped`, added on 16 October, which the converted Elastic sample now reports 2,744 times across 3,008 pages. The run also shows `html-comment` 130 times. Choosing what \"clean\" means here (no diagnostic, or no warning or error) is a call for its own change.\n\nThe panic stops the perf bench before it writes the rest of its results, so no baseline can be recorded. That blocks the `search/synthetic-3000` baseline for #664. Its timing did run in the same job: median 666.0 ms.",
+        "number": 693,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Corpora perf bench panics: no clean page in the converted Elastic sample",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/693"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCNpRE",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/702"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "Corpora perf bench panics: no clean page in the converted Elastic sample"
+    },
+    {
+      "content": {
+        "body": "Found reviewing #664 (Search phase 1). The maintainer agreed it's a follow-up, not part of that PR.\n\n## What happens\n\n`ascribe_resolve::reading::find` matches each block once, at its first match. When that first match falls wholly inside a phrase's value, `locate` turns it into the phrase's place in `ascribe.toml` and never looks at the rest of the block. The line's own text is then missing from the results, even where it matches the query too.\n\nIn `examples/quill`, `ascribe search quill` lists `ascribe.toml:34` (the `cloud` phrase) but not `docs/install-agent.md:62`. That line says ``Sign in to {cloud} and copy an API key … then add it to `quill.yaml` ``: the first `quill` is inside `{cloud}`'s value, and the `quill.yaml` after it is never found. `docs/keys.md:10` drops out the same way. Someone searching `quill` to find every mention of `quill.yaml` misses those lines.\n\n## What done looks like\n\n- When a block's first match is wholly inside a phrase's value, the phrase's place is still recorded, and matching carries on in the same block after that phrase. A match that isn't wholly in a phrase makes the line a place of its own, as `project-docs/search/phase-1-thread.md`'s \"From a match to a place\" describes.\n- `ascribe search quill` in `examples/quill` lists `docs/install-agent.md:62` and `docs/keys.md:10`, as well as the phrase's line.\n- A test in `crates/ascribe-resolve/tests/all/reading.rs` covers a block whose first match is in a phrase and whose later match is in its own text.\n- The phase file says the rule, if the fix changes what it says.",
+        "number": 711,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Search: a block whose first match is inside a phrase hides the line's own matches",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/711"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCO-gE",
+      "labels": [
+        "rust"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/716"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "Search: a block whose first match is inside a phrase hides the line's own matches"
+    },
+    {
+      "content": {
+        "body": "The corpora run's check of the converted Elastic sample is now 1.86 times slower than its baseline. `check/elastic-converted-json` went from **3,171 ms** in `tests/corpora/baselines/perf.json` to **5,910 ms** in [run 39494124912](https://github.com/ascribed-dev/ascribe/actions/runs/39494124912), on the same runner (AMD EPYC 7763, 4 cores). The run doesn't fail, because the comparison's margin is 3.0, so nothing flags it.\n\nThe other checks slowed by much less over the same span: `check/synthetic-3000` by 1.16 times, `check/noisy-1000-json` by 1.21, and `check/synthetic-3000-snippets` by 1.25. So most of the Elastic slowdown is in something that sample has and the synthetic projects don't. The sample has 3,008 pages and fragments and 2,187 images. That run reported 1,193 errors and 1,987 warnings, `heading-level-skipped` among them (added 16 October; the converted sample reports it 2,744 times, per #693), and `html-comment`. The baseline is from before 16 October, and the corpora run was red from 12 October until #666 and #693, so the change is somewhere in that window.\n\nThe `check-one/elastic-converted-*` metrics (about 5.9 s, against 1.3 to 1.5 s for the editor's build) are new in that run, so they have no baseline to compare against.\n\n## Done when\n\n- The pull request names the change that made the Elastic check slower, found by timing `ascribe check --format json` on the converted sample at commits in the window (`cargo run -p corpora` builds the sample), or by a profile.\n- Either `check/elastic-converted-json` is back within 1.2 times its baseline on the runner, or the pull request shows the time goes to work a check added since must do. In that case it re-records the baseline with that reason in the commit message.\n- If the fix changes a check, outputs stay the same by `node scripts/compare/outputs.ts --base main`.\n\n`lsp/keystroke-fragment-3000`'s slowdown is #713.\n\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 712,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The converted Elastic sample's check is 1.86 times slower than its baseline",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/712"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCPLCY",
+      "labels": [
+        "rust",
+        "performance"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/723"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "The converted Elastic sample's check is 1.86 times slower than its baseline"
+    },
+    {
+      "content": {
+        "body": "In the corpora run, the language server's keystroke in a fragment got close to three times slower. `lsp/keystroke-fragment-3000` went from **8.0 ms** in `tests/corpora/baselines/perf.json` to **23.8 ms** in [run 39494124912](https://github.com/ascribed-dev/ascribe/actions/runs/39494124912), a factor of 2.98 against a margin of 3.0, so one more slowdown would fail the run. It's still under its 50 ms target. Over the same span, `lsp/keystroke-page-3000` went from 1.6 to 2.4 ms, and `incremental/edit a fragment's text (30 pages include it)` went up by 1.12 times.\n\nThe baseline is from before 16 October, and the corpora run was red from 12 October until #666 and #693, so the change is somewhere in that window. The memos, navigation, and glossary phases all landed in it.\n\n## Done when\n\n- The pull request names the change that made the keystroke in a fragment slower, found by running the `lsp` bench at commits in the window or by a profile.\n- Either `lsp/keystroke-fragment-3000` is back within 1.5 times its baseline on the runner, or the pull request shows the time goes to work a feature added since must do per keystroke. In that case it re-records the baseline with that reason in the commit message.\n\nThe converted Elastic check's slowdown is #712.\n\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 713,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The language server's keystroke in a fragment is three times slower than its baseline",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/713"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCPLDk",
+      "labels": [
+        "rust",
+        "performance"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/721"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "The language server's keystroke in a fragment is three times slower than its baseline"
     }
   ]
 }
