@@ -925,6 +925,15 @@ fn answers() {
         "render.txt",
         &stdout(&run(&root, &["render", keys, "--build", "cloud"], 0)),
     );
+}
+
+/// `ascribe search` on `examples/quill`, run from the repository's root:
+/// the command reference's examples.
+#[test]
+fn search() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let quill = "examples/quill";
+
     expect(
         "search.txt",
         &stdout(&run(
@@ -963,6 +972,48 @@ fn answers() {
     expect(
         "search-none.txt",
         &stdout(&run(&root, &["search", "zebra", "--config", quill], 1)),
+    );
+    // Kept to one page, and to whole words.
+    expect(
+        "search-scope.txt",
+        &stdout(&run(
+            &root,
+            &["search", "key", "examples/quill/docs/keys.md", "--word"],
+            0,
+        )),
+    );
+    expect(
+        "search-summary.txt",
+        &stdout(&run(
+            &root,
+            &["search", "agent", "--config", quill, "--summary"],
+            0,
+        )),
+    );
+    // Nothing matched: words other builds publish, and words the source
+    // writes where no build publishes them.
+    expect(
+        "search-other-builds.txt",
+        &stdout(&run(
+            &root,
+            &[
+                "search",
+                "\"point the agent at your server\"",
+                "--build",
+                "cloud",
+                "--config",
+                quill,
+            ],
+            1,
+        )),
+    );
+    expect(
+        "search-written.txt",
+        &stdout(&run(
+            &root,
+            &["search", "\"{cloud}\"", "--config", quill],
+            1,
+        )),
     );
 }
 

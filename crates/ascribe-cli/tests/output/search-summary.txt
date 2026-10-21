@@ -1,0 +1,10 @@
+By page:
+  14  docs/install-agent.md
+   3  docs/configure-legacy.md
+   3  docs/configure.md
+   3  docs/keys.md
+   2  docs/upgrade.md
+   1  docs/quickstart.md
+   1  docs/webhooks.md
+
+27 places match, on 7 pages.

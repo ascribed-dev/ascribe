@@ -219,6 +219,8 @@ mod tests {
         ("bad_line", "a line isn't named as a mark names one"),
         ("no_lines", "a target has no lines in [releases]"),
         ("undeclared_line", "a target's list doesn't declare a line"),
+        ("unknown_type", "a content type isn't one of the model's"),
+        ("no_source_at_path", "a path has no page or fragment"),
         ("release_no_lines", "release's target has no lines"),
         (
             "release_bad_line",
@@ -486,7 +488,10 @@ mod tests {
                 | QueryError::NotRetirable { .. }
                 | QueryError::BadLine { .. }
                 | QueryError::NoLines { .. }
-                | QueryError::UndeclaredLine { .. } => {}
+                | QueryError::UndeclaredLine { .. }
+                | QueryError::UnknownType { .. }
+                | QueryError::NoSource { .. }
+                | QueryError::Scope(_) => {}
             }
         }
         fn agents(e: &SyncError) {
@@ -866,6 +871,25 @@ mod tests {
                 line: text(),
                 lines: Vec::new(),
             }),
+            Box::new(QueryError::UnknownType {
+                given: text(),
+                closest: None,
+                types: Vec::new(),
+            }),
+            Box::new(QueryError::NoSource {
+                path: text(),
+                missing: true,
+                query: None,
+            }),
+            Box::new(QueryError::NoSource {
+                path: text(),
+                missing: false,
+                query: None,
+            }),
+            Box::new(QueryError::Scope(ScopeError::Outside {
+                path: path(),
+                config: path(),
+            })),
             Box::new(ReleaseError::NoLines { target: text() }),
             Box::new(ReleaseError::BadLine {
                 target: text(),

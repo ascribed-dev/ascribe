@@ -21,10 +21,12 @@
 //! lines), aren't.
 //!
 //! The matching is in [`Query`], and [`find`] gathers the places a query
-//! matches across the readings of many pages and builds.
+//! matches across the readings of many pages and builds. When none does,
+//! [`scan`] looks in the source as written.
 
 mod find;
 mod query;
+mod scan;
 
 use std::ops::Range;
 use std::sync::Arc;
@@ -37,6 +39,7 @@ use ascribe_syntax::{
 
 pub use find::{At, Found, Place, Shown, Through, find};
 pub use query::{BadQuery, Query};
+pub use scan::{Written, scan};
 
 use crate::build::{LinkTarget, ResolvedBlock, ResolvedKind, ResolvedLink, Substitution};
 use crate::index::{FileIndex, PhrasePlace, RefKind, frontmatter_key};
