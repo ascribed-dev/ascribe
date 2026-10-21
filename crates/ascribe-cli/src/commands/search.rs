@@ -6,10 +6,12 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use ascribe_check::{Scope, ScopeError};
-use ascribe_query::{Nothing, QueryError, Search, SearchPage, SearchPlace, Searched};
+use ascribe_query::{
+    Nothing, QueryError, Search, SearchPage, SearchPlace, SearchThrough, Searched,
+};
 use clap::Args as ClapArgs;
 
-use crate::answer::{self, FromDisk, Projects, Stop};
+use crate::answer::{self, Format, FromDisk, Projects, Stop};
 use crate::cli::Global;
 use crate::context::Failure;
 use crate::exit;
@@ -18,11 +20,10 @@ use crate::shell::quote;
 
 /// How many places the text lists, unless `--limit` says otherwise.
 const TEXT_LIMIT: usize = 50;
+/// How many places JSON lists, unless `--limit` says otherwise.
+const JSON_LIMIT: usize = 500;
 /// How many characters of a block a place shows, around the match.
 const WIDTH: usize = 80;
-/// How many of the pages that show a fragment's or a snippet's place the
-/// text names.
-const PAGES: usize = 3;
 
 /// Arguments of `ascribe search`.
 #[derive(Debug, ClapArgs)]
@@ -71,9 +72,13 @@ pub struct Args {
 
     /// List at most this many places, or with `--summary`, pages.
     ///
-    /// By default, 50 places, or 20 pages.
+    /// By default, 50 places in text and 500 in JSON, or 20 pages.
     #[arg(long, value_name = "N")]
     pub limit: Option<usize>,
+
+    /// How to show the answer.
+    #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
+    pub format: Format,
 }
 
 /// Runs the command. Exit codes: 0 when something matched, 1 when nothing
@@ -89,14 +94,14 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 }
 
 fn search(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let (searched, next) = match answer(&FromDisk, global, args) {
+    let searched = match answer(&FromDisk, global, args) {
         Ok(answer) => answer,
         Err(stop) => return stop.report(err),
     };
-    let written = if args.summary {
-        write_summary(out, &searched, limit(args), next.as_deref())
-    } else {
-        write_text(out, &searched, next.as_deref())
+    let written = match args.format {
+        Format::Json => answer::write_json(out, &searched),
+        Format::Text if args.summary => write_summary(out, &searched),
+        Format::Text => write_text(out, &searched),
     };
     if let Some(code) = answer::written(written, err) {
         return code;
@@ -108,19 +113,15 @@ fn search(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write
     }
 }
 
-/// The places the command shows, at most as many as `--limit` allows, and
-/// the command that shows them all when they're cut; with `--summary`, the
-/// pages.
+/// The places the command shows, at most as many as `--limit` (or the
+/// format's default) allows, with the command that shows them all when
+/// they're cut; with `--summary`, the pages: what `--format json` writes.
 ///
 /// # Errors
 ///
 /// No project, a path that names no page or fragment of it, a query that
 /// can't be read, or a build or a type that isn't one.
-pub fn answer(
-    projects: &dyn Projects,
-    global: &Global,
-    args: &Args,
-) -> Result<(Searched, Option<String>), Stop> {
+pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<Searched, Stop> {
     let config = answer::locate(global, args.paths.first().map(PathBuf::as_path))
         .map_err(|e| Stop::Load(Failure::Config(e)))?;
     let loaded = projects
@@ -131,10 +132,10 @@ pub fn answer(
     } else {
         Some(scope(&loaded.project, &config, args)?)
     };
-    let limit = limit(args);
-    let searched = ascribe_query::search(
+    let mut searched = ascribe_query::search(
         &loaded.project,
         loaded.index(),
+        loaded.readings(),
         &Search {
             query: &args.query,
             builds: &args.builds,
@@ -142,16 +143,16 @@ pub fn answer(
             page_type: args.page_type.as_deref(),
             case: args.case,
             word: args.word,
-            // A summary counts every page, and lists none of the places.
-            limit: if args.summary { 0 } else { limit },
+            summary: args.summary,
+            limit: limit(args),
         },
     )?;
-    let (shown, all) = if args.summary {
-        (searched.by_page.len().min(limit), searched.by_page.len())
+    let all = if args.summary {
+        searched.pages_matched
     } else {
-        (searched.places.len(), searched.total)
+        searched.total
     };
-    let next = (shown < all).then(|| {
+    searched.next_command = searched.truncated.then(|| {
         // The same command, with the limit that lists them all, each word
         // quoted as a shell needs it.
         let mut words = vec![
@@ -179,9 +180,12 @@ pub fn answer(
         if let Some(config) = &global.config {
             words.extend(["--config".to_owned(), quote(&config.to_string_lossy())]);
         }
+        if args.format == Format::Json {
+            words.extend(["--format".to_owned(), "json".to_owned()]);
+        }
         words.join(" ")
     });
-    Ok((searched, next))
+    Ok(searched)
 }
 
 /// The folders and pages the paths after the query name, each of which
@@ -219,12 +223,12 @@ fn scope(project: &ascribe_check::Project, config: &Path, args: &Args) -> Result
     Ok(scope)
 }
 
-/// The most places, or with `--summary` pages, the text lists.
+/// The most places, or with `--summary` pages, the command lists.
 fn limit(args: &Args) -> usize {
-    args.limit.unwrap_or(if args.summary {
-        TALLY_FILES
-    } else {
-        TEXT_LIMIT
+    args.limit.unwrap_or(match args.format {
+        _ if args.summary => TALLY_FILES,
+        Format::Text => TEXT_LIMIT,
+        Format::Json => JSON_LIMIT,
     })
 }
 
@@ -239,48 +243,40 @@ fn is_plain_word(arg: &str) -> bool {
 
 /// Writes the places as text: each `file:line:` and its block as a reader
 /// reads it, cut around the match, then where a reader meets it.
-pub fn write_text(out: &mut dyn Write, s: &Searched, next: Option<&str>) -> io::Result<()> {
+pub fn write_text(out: &mut dyn Write, s: &Searched) -> io::Result<()> {
     if let Some(nothing) = &s.nothing {
         return write_nothing(out, nothing);
     }
     for place in &s.places {
         writeln!(out, "{}:{}: {}", place.file, place.line, excerpt(place))?;
-        let about = about(place);
+        let about = about(place, &s.builds);
         if !about.is_empty() {
             writeln!(out, "    {}", about.join(" · "))?;
         }
     }
     writeln!(out)?;
     write_total(out, s)?;
-    if let Some(next) = next {
+    if let Some(next) = &s.next_command {
         writeln!(out, "Showing {} of them; for all: `{next}`", s.places.len())?;
     }
     Ok(())
 }
 
 /// Writes the pages that show a place and how many each shows, most first,
-/// at most `limit` of them, then the total: what `--summary` shows. `next`
-/// is the command that lists them all, when they're cut.
-pub fn write_summary(
-    out: &mut dyn Write,
-    s: &Searched,
-    limit: usize,
-    next: Option<&str>,
-) -> io::Result<()> {
+/// then the total, and the command that lists them all when they're cut:
+/// what `--summary` shows.
+pub fn write_summary(out: &mut dyn Write, s: &Searched) -> io::Result<()> {
     if let Some(nothing) = &s.nothing {
         return write_nothing(out, nothing);
     }
-    let shown = s.by_page.len().min(limit);
-    let width = s
-        .by_page
-        .first()
-        .map_or(1, |(_, count)| count.to_string().len());
+    let pages = s.pages.as_deref().unwrap_or_default();
+    let width = pages.first().map_or(1, |p| p.places.to_string().len());
     writeln!(out, "By page:")?;
-    for (page, count) in s.by_page.iter().take(shown) {
-        writeln!(out, "  {count:>width$}  {page}")?;
+    for page in pages {
+        writeln!(out, "  {:>width$}  {}", page.places, page.page)?;
     }
-    if let Some(next) = next.filter(|_| shown < s.by_page.len()) {
-        let more = s.by_page.len() - shown;
+    if let Some(next) = &s.next_command {
+        let more = s.pages_matched - pages.len();
         let pages = if more == 1 { "page" } else { "pages" };
         writeln!(out, "  and {more} more {pages}: `{next}`")?;
     }
@@ -295,8 +291,12 @@ fn write_total(out: &mut dyn Write, s: &Searched) -> io::Result<()> {
     } else {
         "places match"
     };
-    let pages = if s.pages == 1 { "page" } else { "pages" };
-    writeln!(out, "{} {places}, on {} {pages}.", s.total, s.pages)
+    let pages = if s.pages_matched == 1 {
+        "page"
+    } else {
+        "pages"
+    };
+    writeln!(out, "{} {places}, on {} {pages}.", s.total, s.pages_matched)
 }
 
 /// Writes that no place matches, and what the source says about the words.
@@ -335,9 +335,13 @@ fn write_nothing(out: &mut dyn Write, nothing: &Nothing) -> io::Result<()> {
 /// reads through, and its builds when it isn't in all of them; for a
 /// phrase, how many places use it; for a fragment's or a snippet's, the
 /// pages that show it.
-fn about(place: &SearchPlace) -> Vec<String> {
+fn about(place: &SearchPlace, searched: &[String]) -> Vec<String> {
     let mut parts = Vec::new();
-    if let Some((text, id)) = &place.heading {
+    let page = place
+        .pages
+        .first()
+        .filter(|_| !place.shared && place.kind != "phrase");
+    if let Some((text, id)) = page.and_then(|p| p.heading.as_ref().zip(p.id.as_ref())) {
         parts.push(if place.kind == "heading" {
             format!("#{id}")
         } else {
@@ -347,23 +351,32 @@ fn about(place: &SearchPlace) -> Vec<String> {
     if let Some(arm) = &place.arm {
         parts.push(format!("{arm} arm"));
     }
-    for key in &place.phrases {
-        if place.kind == "phrase" {
-            parts.push(format!("phrase {key}"));
-        } else {
-            parts.push(format!("through phrase {key}"));
+    let mut phrase = None;
+    for through in &place.through {
+        if let SearchThrough::Phrase(key) = through {
+            phrase.get_or_insert(key);
+            if place.kind == "phrase" {
+                parts.push(format!("phrase {key}"));
+            } else {
+                parts.push(format!("through phrase {key}"));
+            }
         }
     }
-    for title in &place.titles {
-        parts.push(format!("through {title}'s title"));
-    }
-    if let Some(snippet) = &place.snippet {
-        parts.push(format!("through {snippet}"));
-        if place.first_line {
-            parts.push("at the first line it shows".to_owned());
+    for through in &place.through {
+        if let SearchThrough::Title(title) = through {
+            parts.push(format!("through {title}'s title"));
         }
     }
-    if let (Some(uses), Some(key)) = (place.uses, place.phrases.first()) {
+    for through in &place.through {
+        if let SearchThrough::Code(address) = through {
+            parts.push(format!("through {address}"));
+            if place.end_line.is_some() {
+                parts.push("at the first line it shows".to_owned());
+            }
+        }
+    }
+    if let (true, Some(key)) = (place.kind == "phrase", phrase) {
+        let uses = place.pages_total;
         let places = if uses == 1 { "place" } else { "places" };
         parts.push(format!(
             "{uses} {places} use it: `ascribe refs phrase:{key}`"
@@ -377,8 +390,8 @@ fn about(place: &SearchPlace) -> Vec<String> {
         };
         parts.push(format!("in {builds} {}", place.builds.join(", ")));
     }
-    if !place.pages.is_empty() {
-        parts.push(pages(place));
+    if place.shared && !place.pages.is_empty() {
+        parts.push(pages(place, searched));
     }
     parts
 }
@@ -386,26 +399,36 @@ fn about(place: &SearchPlace) -> Vec<String> {
 /// The pages that show a place: the first few, each with the heading it's
 /// under and its builds when they aren't all the place's, then how many
 /// more and the command that lists them.
-fn pages(place: &SearchPlace) -> String {
-    let count = place.pages.len();
+fn pages(place: &SearchPlace, searched: &[String]) -> String {
+    let count = place.pages_total;
     let noun = if count == 1 { "page" } else { "pages" };
-    let named: Vec<String> = place.pages.iter().take(PAGES).map(page).collect();
+    let named: Vec<String> = place
+        .pages
+        .iter()
+        .map(|p| page(place, p, searched))
+        .collect();
     let mut text = format!("on {count} {noun}: {}", named.join(", "));
-    if count > PAGES {
-        text.push_str(&format!(", and {} more", count - PAGES));
-        if let Some(target) = &place.refs {
-            text.push_str(&format!(": `ascribe refs {}`", quote(target)));
+    if count > place.pages.len() {
+        text.push_str(&format!(", and {} more", count - place.pages.len()));
+        if let Some(refs) = &place.refs_command {
+            text.push_str(&format!(": `{refs}`"));
         }
     }
     text
 }
 
-fn page(shown: &SearchPage) -> String {
+fn page(place: &SearchPlace, shown: &SearchPage, searched: &[String]) -> String {
     let mut text = shown.page.clone();
-    if let Some((_, id)) = &shown.heading {
+    if let Some(id) = &shown.id {
         text.push_str(&format!(" #{id}"));
     }
-    if !shown.builds.is_empty() {
+    // A place in every build searched names none.
+    let builds = if place.builds.is_empty() {
+        searched
+    } else {
+        &place.builds
+    };
+    if shown.builds != builds {
         let builds = if shown.builds.len() == 1 {
             "build"
         } else {
@@ -423,7 +446,7 @@ fn excerpt(place: &SearchPlace) -> String {
     if chars.len() <= WIDTH {
         return place.text.clone();
     }
-    let (first, last) = place.matched;
+    let [first, last] = place.matched;
     let mut start = first.saturating_sub(WIDTH / 4);
     if last > start + WIDTH {
         start = first;

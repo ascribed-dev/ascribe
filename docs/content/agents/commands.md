@@ -99,7 +99,7 @@ Prints a named prompt for an agent, in the same form as [Prompt agent](commands.
 
 | Prompt | Arguments | What it asks |
 |---|---|---|
-| `new-page` | `type`, `title`, and `path` | Write a new page of that type: where its file goes, the type's `guide` to read first, the type's template with the title set, or, for a type with no template, the frontmatter to start it with, and the type's fields |
+| `new-page` | `type`, `title`, and `path` | Write a new page of that type: first, search for its subject with `ascribe search` and edit the page that covers it instead, when there is one; then where its file goes, the type's `guide` to read first, the type's template with the title set, or, for a type with no template, the frontmatter to start it with, and the type's fields |
 | `fix` | `path` | Fix what `ascribe check` reports: the prompt `ascribe check --format prompt` writes when there are problems, else the loop of checking and fixing |
 | `review` | `path` and `base` | Review what the branch does to its pages, as readers see them: the prompt [`ascribe diff --format prompt`](../review/diff.md#cli-diff) writes, or a line saying no page changed |
 
@@ -168,11 +168,12 @@ Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextpr
 | `ascribe_outline` | `ascribe outline` |
 | `ascribe_link` | `ascribe link` |
 | `ascribe_refs` | `ascribe refs`, with `response_format` as for `ascribe_check` |
+| `ascribe_search` | `ascribe search`, with `response_format` as for `ascribe_check`, and `project` to find the project when no `paths` are given |
 | `ascribe_render` | `ascribe render` |
 | `ascribe_format` | `ascribe fmt --check --format json`: the edits, and nothing written |
 | `ascribe_changes` | `ascribe diff --format json --pages-only`, or with `blocks` each changed block too |
 
-Every tool is read-only: none writes a file or starts a program the project names, and each is marked read-only, idempotent, and closed-world. `ascribe_check`, and the `fix` prompt, never run Vale, even with `in-check = true` in `[checks.vale]`: they report one `prose-not-checked` advice instead, and `ascribe check --vale` in a shell checks the prose. Paths are from the folder the server runs in, and each call finds the nearest `ascribe.toml` at or above its paths, so one server serves every project in a repository. A project is loaded once and kept: before each call the server lists the project's files again, names, sizes, and modification times, and loads it again when anything changed, a new or deleted file included. A call with bad arguments, or a path in no project, is a result marked as an error, with a sentence on what to call instead.
+Every tool is read-only: none writes a file or starts a program the project names, and each is marked read-only, idempotent, and closed-world. `ascribe_check`, and the `fix` prompt, never run Vale, even with `in-check = true` in `[checks.vale]`: they report one `prose-not-checked` advice instead, and `ascribe check --vale` in a shell checks the prose. Paths are from the folder the server runs in, and each call finds the nearest `ascribe.toml` at or above its paths, so one server serves every project in a repository. A project is loaded once and kept, with each build's pages as `ascribe_search` reads them once a search asks for the build, so a second search only scans: before each call the server lists the project's files again, names, sizes, and modification times, and loads it again when anything changed, a new or deleted file included. A call with bad arguments, or a path in no project, is a result marked as an error, with a sentence on what to call instead.
 
 The resources are `ascribe://directives`, each built-in directive's syntax (`ascribe agents skill references/directives.md`); `ascribe://model/<project>`, what a project's content model allows (`ascribe model <project>`); and `ascribe://instructions/<project>`, its rules (`ascribe agents rules <project>`). `<project>` is a file or folder in it, from the folder the server runs in. The prompts are `new-page`, `fix`, and `review`, as `ascribe agents prompt` prints them.
 
