@@ -300,6 +300,18 @@
         "icon": "$(search)"
       },
       {
+        "command": "ascribe.applyEverySafeFix",
+        "title": "Apply Every Safe Fix",
+        "category": "Ascribe",
+        "icon": "$(lightbulb-autofix)"
+      },
+      {
+        "command": "ascribe.formatEveryPage",
+        "title": "Format Every Page",
+        "category": "Ascribe",
+        "icon": "$(edit)"
+      },
+      {
         "command": "ascribe.projectMenu",
         "title": "Project Menu",
         "category": "Ascribe"
@@ -1188,6 +1200,14 @@
           "when": "ascribe.active"
         },
         {
+          "command": "ascribe.applyEverySafeFix",
+          "when": "ascribe.active"
+        },
+        {
+          "command": "ascribe.formatEveryPage",
+          "when": "ascribe.active"
+        },
+        {
           "command": "ascribe.projectMenu",
           "when": "ascribe.active && ascribe.inProject"
         },
@@ -1749,6 +1769,38 @@
         "key": "ctrl+k a",
         "mac": "cmd+k a",
         "when": "editorTextFocus && ascribe.inProject && editorLangId == markdown"
+      }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "ascribe",
+        "required": [
+          "task"
+        ],
+        "properties": {
+          "task": {
+            "type": "string",
+            "enum": [
+              "build",
+              "syncAgentFiles",
+              "observeExamples"
+            ],
+            "enumDescriptions": [
+              "Build: `ascribe build`, in the project's folder.",
+              "Sync Agent Files: `ascribe agents sync`, in the project's folder.",
+              "Observe Examples: `ascribe observe`, in the folder of a source with tested examples. It shows the commands its ascribe.examples.toml names, and asks before running them."
+            ],
+            "description": "The task to run, with the binary the project's language server runs."
+          },
+          "project": {
+            "type": "string",
+            "description": "The project's folder, relative to the workspace folder. Leave it out for the project whose ascribe.toml is in the workspace folder."
+          },
+          "source": {
+            "type": "string",
+            "description": "For observeExamples: the source to observe, by its name in ascribe.toml. Leave it out when the project has one source with tested examples."
+          }
+        }
       }
     ],
     "submenus": [

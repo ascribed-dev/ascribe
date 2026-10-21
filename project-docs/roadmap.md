@@ -8,7 +8,7 @@ Written 20 October 2026.
 
 ## Decisions
 
-The proposals left these open. The maintainer answered all eight on 20 October 2026, and each proposal's Settled section records its own. An issue quotes the decisions its phase reads, so triage sees they're made.
+The proposals left these open. The maintainer answered the first eight on 20 October 2026, and each proposal's Settled section records its own; the ninth came out of V2's pull request, and was answered on 21 October 2026. An issue quotes the decisions its phase reads, so triage sees they're made.
 
 1. **The icon font.** The webviews draw codicons with the `@vscode/codicons` font, a new dependency, loaded from the extension's files. **Decided:** the font. The decision file says why decision 48 ("no web font anywhere"), which is about a reader downloading a font for text, doesn't reach an icon font the extension ships, as decision 50 already has it ship one. *Read by:* T1.
 2. **How far Apply Every Safe Fix reaches.** **Decided:** the editor's build, as one workspace edit, its caption saying so; every build's fixes stay `ascribe check --fix`'s, as decision #544e has it. *Read by:* V3.
@@ -18,6 +18,7 @@ The proposals left these open. The maintainer answered all eight on 20 October 2
 6. **Where a setting's description lives.** **Decided:** every key of `ascribe.toml` has one home, a registry, `crates/ascribe-model/settings.toml`, which the binary embeds: the loader reads its keys and defaults from it, the reference's tables are generated from it, and `ascribe/settings` answers from it (Project Settings, "The registry"). A check's description is its `when` in `tests/conformance/diagnostics.toml`. *Read by:* P2, P3, P4.
 7. **Which checks Project Settings lists.** **Decided:** all forty-seven configurable checks, the ones the file sets first. *Read by:* S2.
 8. **Reset to default and the comment above a line.** **Decided:** a comment that touches the line goes with it; one after a blank line stays. *Read by:* S2.
+9. **How Observe Examples asks before it runs.** V2's pull request (#735) found that `ascribe observe` takes no `--config` and runs only the `ascribe.examples.toml` in the folder it's run from, and built the question as a modal in front of a hand-built terminal, with the sources and commands read from TOML by the extension. **Decided:** `ascribe observe` asks for itself. When standard input is a terminal, it shows the commands it will run, from its own reading of the file, and asks before running them; `--yes` skips the question; where standard input isn't a terminal, as in CI or a hook, it runs as today. The Observe Examples task is then a plain process, as Build and Sync Agent Files are, run in the folder of each source with tested examples, which the extension learns from the binary (the model's JSON), parsing no TOML of its own. A change to the CLI's behavior, so V6 adds a decision file and a test of the question. *Read by:* V6.
 
 ## The phases
 
@@ -32,6 +33,7 @@ Four tracks. Each track runs one phase at a time, in its order; across tracks, p
 | 5 | | | V3 | S3 |
 | 6 | | | V4 | |
 | 7 | | | V5 | |
+| 8 | | | V6 | |
 
 Track P's first three phases have no needs and touch different files, so they run at once; P4 follows P3.
 
@@ -51,6 +53,7 @@ Track P's first three phases have no needs and touch different files, so they ru
 | V3 | V2 | Keeps track V one at a time |
 | V4 | V1 | |
 | V5 | V4, S1 | Its gear opens Project Settings, which S1 adds |
+| V6 | V2 | Its task is V2's task type |
 | S1 | T1, P4 | The webview base, and the registry with its descriptions |
 | S2 | S1, P2 | Every check's description |
 | S3 | S2 | |
@@ -77,13 +80,15 @@ Track P's first three phases have no needs and touch different files, so they ru
 
 **V1. The Project view counts every build's problems, honestly.** Project view proposal: "What it looks like" (the head's name, state, and version only), "When each count is from" (Check Every Build's rule), and the thread. The view is first in the sidebar. The decision file for the views' order. *Done when:* the thread's use case passes as an integration test: unknown, then current after Check Every Build, then out of date after an edit. *Stop and ask* if `isCurrent` misses a change that matters.
 
-**V2. Tasks.** Project view proposal: "Writing outputs and running programs is a task", and "Observe Examples runs commands the repository names". The `ascribe` task type, with Build, Sync Agent Files, and Observe Examples, in the view and in **Run Task**. The decision file for the task type's properties, which `tasks.json` names. Runs the full matrix from its branch (Actions → CI → Run workflow): it's about paths, a binary, and `--config` on every platform. *Done when:* each task runs the server's binary in the project's folder, a project that isn't the workspace folder gets `--config`, Observe Examples shows its commands and asks, and none of them is offered in Restricted Mode.
+**V2. Tasks.** Project view proposal: "Writing outputs and running programs is a task". The `ascribe` task type, with Build and Sync Agent Files, in the view and in **Run Task**. The decision file for the task type's properties, which `tasks.json` names. Runs the full matrix from its branch (Actions → CI → Run workflow): it's about paths, a binary, and `--config` on every platform. *Done when:* each task runs the server's binary in the project's folder, a project that isn't the workspace folder gets `--config`, and none of them is offered in Restricted Mode. Observe Examples, once part of this phase, is V6, by decision 9.
 
 **V3. Every safe fix and every page formatted, as one edit.** Project view proposal: "Edits to pages go through the language server", by decision 2. The language server makes each edit for the whole project, and the extension asks with the count of fixes and files before applying it. *Done when:* both are one undoable workspace edit over unsaved text, the question names the counts, and the docs say the files are left unsaved on purpose.
 
 **V4. The rest of the counts.** Project view proposal: the Health table's other rows, and the rest of "When each count is from": the day rule for reviews overdue, `ascribe/inventory`'s counts, and the agent files' count rerun after a save. *Done when:* each count opens its list, each goes out of date by its rule, in tests, and out of date and zero look different.
 
 **V5. The head, About, and Restricted Mode.** Project view proposal: the head's server buttons, its build switch (the `ChosenBuilds` choice), and its two settings buttons, the gear opening Project Settings; About; Restricted Mode; Start Review and Prompt Agent; and decisions 3, 4, and 5. *Done when:* switching the build in the view moves the status bar and the preview, Switch Project is in the view's title bar and not in Pages' or Content model's, Restricted Mode turns every action off, and the docs describe the view as it is.
+
+**V6. Observe Examples, with `ascribe observe` asking for itself.** Project view proposal: "Observe Examples runs commands the repository names", by decision 9. `ascribe observe` asks before it runs the commands when standard input is a terminal, with `--yes` to skip; the Observe Examples task runs it, a plain process, in the folder of each source with tested examples. *Done when:* `ascribe observe` in a terminal shows its commands and runs nothing when declined, with `--yes` it doesn't ask, and without a terminal it runs as today, in tests; the task runs in each such source's folder, in Run Task and the Project view; the extension reads no TOML to find the sources or the commands; the docs (`docs/content/examples/tested.md`, the command's reference) say how the question works; and AGENTS.md, CONTRIBUTING.md, and RELEASING.md, which tell people to run `ascribe observe`, say what it asks.
 
 ### Track S: Project Settings
 
@@ -99,6 +104,7 @@ Two phases on different tracks run at once only when none of these is true:
 
 - **Both change the webview base** (`packages/vscode/src/webview/`'s shared files, `esbuild.mjs`'s webview entries, or the stylesheet's `[emit]` entry). T1 makes it; a later phase that has to change it says so in its pull request, and runs alone among the three extension tracks while it does.
 - **Both change `packages/vscode/src/ui/sidebarViews.ts` or the views in `package.json`** in the same lines. T2, T3, V1, and V5 touch them. They may be in flight at once, since each adds to them rather than rewriting them; the second to open its pull request merges `main` first and resolves by reading both. A phase that has to restructure either file says so in its pull request, and runs alone among tracks T and V while it does.
+- **Both change the `ascribe` task type** (`packages/vscode/src/tasks.ts`, `packages/vscode/src/ui/tasks.ts`, or the `taskDefinitions` in `package.json`): V2, then V6.
 - **Both change the loader or the registry** (`crates/ascribe-model/src/loader.rs`, `crates/ascribe-model/settings.toml`): P3, then P4.
 - **Both change the content model reference's pages** (`docs/content/content-model/`, `docs/content/_fragments/content-model/`) while P4 is in flight. P4 moves every table there, so nothing else edits those pages until it merges.
 

@@ -27,7 +27,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe lsp` | Runs the language server, speaking the Language Server Protocol over standard input and output. |  |  |
 | `ascribe mcp` | Runs an MCP server, speaking the Model Context Protocol over standard input and output, for an agent that has no shell, or a host that approves tools one by one. |  |  |
 | `ascribe model` | Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. | `[PATH] [--section types\|dimensions\|phrases\|features\|glossary\|widgets\|releases\|builds\|sources\|project\|consumer\|editor\|checks\|crawlers\|listing\|permalinks]` | `text`, `json` |
-| `ascribe observe` | Runs the test of a folder of tested examples, and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. | `[--name <NAME>] [--check]` | `text`, `json` |
+| `ascribe observe` | Runs the test of a folder of tested examples, and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. | `[--name <NAME>] [--check] [--yes]` | `text`, `json` |
 | `ascribe outline` | Shows a page's title and type, and the headings a link to it can name, with the ids links write after `#`: the page's own headings and those that come from the fragments it includes. | `PAGE [--build <NAME>]` | `text`, `json` |
 | `ascribe permalinks sync` | Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each alias and retired permalink as `ascribe.toml` has it. | `[--check]` | `text`, `json` |
 | `ascribe permalinks list` | Shows every permalink the content declares, with the file and line it's declared on, and each alias and retired permalink in `ascribe.toml`, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that the project no longer has. |  | `text`, `json` |
@@ -351,7 +351,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
 For people. Read from `packages/vscode/package.json`, `docs/content/_generated/editor-actions.md`.
 
-91 commands, 37 of them actions.
+93 commands, 37 of them actions.
 
 Commands that aren't actions:
 
@@ -370,6 +370,8 @@ Commands that aren't actions:
 | Ascribe: Switch Build | `ascribe.switchBuild` |
 | Ascribe: Check Every Build | `ascribe.checkEveryBuild` |
 | Ascribe: Search Pages as Readers See Them | `ascribe.search` |
+| Ascribe: Apply Every Safe Fix | `ascribe.applyEverySafeFix` |
+| Ascribe: Format Every Page | `ascribe.formatEveryPage` |
 | Ascribe: Project Menu | `ascribe.projectMenu` |
 | Ascribe: Dim What the Build Leaves Out | `ascribe.toggleBuildLens` |
 | Ascribe: Start Review | `ascribe.startReview` |
@@ -485,6 +487,14 @@ Keys:
 |---|---|---|
 | `ascribe.actions` | `ctrl+k a` | `cmd+k a` |
 
+Task types, and the properties `tasks.json` gives them:
+
+| Type | Property | Values | What it says |
+|---|---|---|---|
+| `ascribe` | `task` | `build`, `syncAgentFiles`, `observeExamples` | The task to run, with the binary the project's language server runs. |
+| `ascribe` | `project` |  | The project's folder, relative to the workspace folder. |
+| `ascribe` | `source` |  | For observeExamples: the source to observe, by its name in ascribe.toml. |
+
 The walkthrough:
 
 | Step | Title | Walkthrough |
@@ -500,7 +510,7 @@ Menus the commands are placed in:
 
 | Menu | Entries |
 |---|---|
-| `commandPalette` | 91 |
+| `commandPalette` | 93 |
 | `editor/title` | 5 |
 | `view/title` | 12 |
 | `view/item/context` | 13 |
@@ -525,6 +535,7 @@ Ascribe's own requests:
 | `ascribe/inventory` | `crates/ascribe-lsp/src/inventory.rs` |
 | `ascribe/page` | `crates/ascribe-lsp/src/page.rs` |
 | `ascribe/preview` | `crates/ascribe-lsp/src/preview.rs` |
+| `ascribe/projectEdit` | `crates/ascribe-lsp/src/project_edit.rs` |
 | `ascribe/review/setBase` | `crates/ascribe-lsp/src/review.rs` |
 | `ascribe/review/changes` | `crates/ascribe-lsp/src/review.rs` |
 | `ascribe/review/baseFile` | `crates/ascribe-lsp/src/review.rs` |
@@ -770,6 +781,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/lsp-inventory.schema.json` | InventoryResult | The answer to `ascribe/inventory`. |
 | `schemas/lsp-page.schema.json` | PageResult | The answer to `ascribe/page`. |
 | `schemas/lsp-preview.schema.json` | PreviewResult | The answer to `ascribe/preview`. |
+| `schemas/lsp-project-edit.schema.json` | ProjectEditResult | The answer to `ascribe/projectEdit`: the edit and how much it changes, or why there's none. |
 | `schemas/lsp-search.schema.json` | SearchResult | The answer to `ascribe/search`. |
 | `schemas/lsp-set-base.schema.json` | SetBaseResult | The answer to `ascribe/review/setBase`. |
 | `schemas/lsp-targets.schema.json` | TargetsResult | The answer to `ascribe/targets`: a list for each kind asked for, and no others. |
@@ -897,8 +909,11 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `versions/lines.md` | Release lines | reference |
 | `versions/release.md` | `ascribe versions` | reference |
 | `writing/directives.md` | Directive reference | reference |
+| `writing/frontmatter.md` | Frontmatter | reference |
+| `writing/inline.md` | Phrases, links, and images | reference |
 | `writing/memo-files.md` | Memo files | reference |
 | `writing/memos.md` | Leave a memo for whoever edits next | how-to |
+| `writing/syntax.md` | Directive syntax | reference |
 | `writing/variants.md` | Content that varies | tutorial |
 
 READMEs published with a package, a crate, or the repository:

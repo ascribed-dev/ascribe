@@ -32,7 +32,7 @@ See [`[dimensions]`](content-model/content.md#dimensions) and [Content that vari
 
 A source file that exists only to be included in other files: any file with a path segment starting with `_`, or whose path matches one of the content model's [`[fragments] patterns`](content-model/index.md#4-typesname-and-fragments).
 
-See [Files](writing/directives.md#files) and [`@include`](writing/directives.md#include).
+See [Files](writing/frontmatter.md#files) and [`@include`](writing/directives.md#include).
 
 ## Page preview
 @term
@@ -46,7 +46,7 @@ See [the preview](editor/preview.md).
 
 A reusable string declared in `ascribe.toml` and written `{key}` in a page.
 
-See [Phrases](writing/directives.md#phrases).
+See [Phrases](writing/inline.md#phrases).
 
 ## Site preview
 @term

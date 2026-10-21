@@ -1,4 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
+import * as path from "node:path";
 import { describe, expect, it } from "vitest";
 import { PROMPT_COMMANDS, PROMPT_TARGETS } from "../../src/actions/prompt.js";
 import { MCP_LABEL } from "../../src/agents/mcpServer.js";
@@ -212,6 +213,8 @@ describe("package.json", () => {
       "ascribe.switchBuild",
       "ascribe.checkEveryBuild",
       "ascribe.search",
+      "ascribe.applyEverySafeFix",
+      "ascribe.formatEveryPage",
       "ascribe.projectMenu",
       "ascribe.toggleBuildLens",
       "ascribe.startReview",
@@ -277,7 +280,7 @@ describe("package.json", () => {
     expect(properties["ascribe.agents.promptTarget"]?.enum).toEqual([...PROMPT_TARGETS]);
   });
 
-  it("offers no command that runs ascribe observe: the advice's quick fix only copies it", () => {
+  it("runs ascribe observe only as the Observe Examples task, never with --yes, and the advice's quick fix only copies it", () => {
     for (const command of manifest.contributes.commands) {
       expect(command.command).not.toMatch(/observe/i);
     }
@@ -286,9 +289,20 @@ describe("package.json", () => {
       f.endsWith(".ts"),
     );
     expect(files.length).toBeGreaterThan(0);
+    // The task type and its provider; `ascribe observe` asks for itself, in
+    // the task's terminal, so nothing passes `--yes`. The generated types
+    // name it only in the docs of the JSON they describe.
+    const naming = files.filter(
+      (file) =>
+        file !== "shapes.ts" &&
+        /ascribe observe|["'`]observe["'`]/.test(readFileSync(new URL(file, source), "utf8")),
+    );
+    expect(naming.map((file) => file.split(path.sep).join("/")).sort()).toEqual([
+      "tasks.ts",
+      "ui/tasks.ts",
+    ]);
     for (const file of files) {
-      const text = readFileSync(new URL(file, source), "utf8");
-      expect(text, file).not.toMatch(/ascribe observe|["'`]observe["'`]/);
+      expect(readFileSync(new URL(file, source), "utf8"), file).not.toMatch(/--yes\b/);
     }
     // The quick fix's command copies the line the server gives it.
     const extension = read("../../src/extension.ts");

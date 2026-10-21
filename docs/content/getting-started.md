@@ -98,7 +98,7 @@ Create `docs/install.md`:
 - `@steps` marks the list as a procedure.
 - The link points at a **file**, `configure.md`. Ascribe writes the URL.
 
-The [directive reference](writing/directives.md) describes every directive and inline construct.
+The [directive reference](writing/directives.md) describes every directive, and [phrases, links, and images](writing/inline.md) the rest of what a page writes.
 
 ## Check it
 
@@ -158,7 +158,7 @@ You installed the command and the editor, declared a content model in `ascribe.t
 
 - [Checks in CI](checks/ci.md): check every pull request the way the editor checks a page.
 - [Content that varies](writing/variants.md): alternatives by platform or product, availability, and builds.
-- [Directive reference](writing/directives.md): the language.
+- [Directive syntax](writing/syntax.md) and the [directive reference](writing/directives.md): the language.
 - [`ascribe.toml` reference](content-model/index.md): the content model.
 - [Command reference](command/index.md): every command, its options, and its exit codes.
 - [Diagnostics](checks/diagnostics.md): every problem Ascribe reports, and its fix.

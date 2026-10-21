@@ -78,7 +78,7 @@ The lens is placed from the saved file, as a build reads it: the editor doesn't 
 
 ## Formatting
 
-**Format Document** rewrites Ascribe constructs into canonical form, as `ascribe fmt` does. Turn on `ascribe.formatOnSave` to do it on every save. It changes only Ascribe constructs, never how a page renders.
+**Format Document** rewrites Ascribe constructs into canonical form, as `ascribe fmt` does. Turn on `ascribe.formatOnSave` to do it on every save. It changes only Ascribe constructs, never how a page renders. [Format Every Page](sidebar.md#edits-to-the-whole-project) formats every page of the project in one edit, left unsaved.
 
 When another extension is VS Code's formatter for Markdown, such as Prettier through `editor.defaultFormatter`, it formats your pages too, and can change what they build to: `version: {version}` becomes `version: { version }`. When you open a page and another formatter is set, the extension offers to be the Markdown formatter for that workspace folder. **Use Ascribe** writes `editor.defaultFormatter` under `[markdown]` in the folder's `.vscode/settings.json`, so **Format Document** and `editor.formatOnSave` run Ascribe on your pages. Ascribe formats only its projects' pages, so other Markdown files in the folder are no longer formatted. **Keep** leaves the setting as it is and doesn't ask again for that folder.
 

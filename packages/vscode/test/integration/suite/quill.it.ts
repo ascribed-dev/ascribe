@@ -863,9 +863,11 @@ function lineOf(uri: vscode.Uri, text: string): number {
   );
 }
 
-// The Project view's one count so far: every build's problems, from the last
-// Check Every Build, shown as current only while nothing in the project has
-// changed since (decision #654a).
+// The Project view's counts, each shown as current only while it is: every
+// build's problems, examples, overdue reviews, and the permalinks list from
+// the last Check Every Build, while nothing in the project has changed since
+// (decision #654a); orphans and unused entries from the server's inventory,
+// as you type; and the agent files, after each save.
 describe("the Project view on examples/quill", () => {
   const keys = uriOf("docs", "keys.md");
   const memo = uriOf("memos", "product-name.md");
@@ -881,11 +883,13 @@ describe("the Project view on examples/quill", () => {
   /** Waits for the view to draw the problems count in `state`, and returns it. */
   async function drawnIn(state: string): Promise<NonNullable<ReturnType<typeof problems>>> {
     const api = await activated();
-    const drawn = await api.ui.project.whenDrawn(
-      `every build's problems ${state}`,
-      (d) => problems(d)?.state === state,
-      30_000,
-    );
+    const drawn = await api.ui.project
+      .whenDrawn(`every build's problems ${state}`, (d) => problems(d)?.state === state, 30_000)
+      .catch((error: unknown) => {
+        // Says what it drew instead.
+        const last = api.ui.project.drawn();
+        throw new Error(`${String(error)}; it drew ${JSON.stringify(last && problems(last))}`);
+      });
     const count = problems(drawn);
     assert.ok(count);
     return count;
@@ -935,6 +939,79 @@ describe("the Project view on examples/quill", () => {
     });
   });
 
+  /** Waits for the view to draw the count `key` in one of `states`, and returns it. */
+  async function countIn(key: string, ...states: string[]) {
+    const api = await activated();
+    const drawn = await api.ui.project
+      .whenDrawn(
+        `${key} ${states.join(" or ")}`,
+        (d) => states.includes(d.report.health.find((count) => count.key === key)?.state ?? ""),
+        30_000,
+      )
+      .catch((error: unknown) => {
+        // Says what it drew instead.
+        const last = api.ui.project.drawn()?.report.health.find((count) => count.key === key);
+        throw new Error(`${String(error)}; it drew ${JSON.stringify(last)}`);
+      });
+    const count = drawn.report.health.find((c) => c.key === key);
+    assert.ok(count);
+    return count;
+  }
+
+  it("counts examples, overdue reviews for the day, and the permalinks list from the same check, out of date with it", async () => {
+    const api = await activated();
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
+    await vscode.commands.executeCommand("ascribe.project.focus");
+    await api.ui.project.choose("checkEveryBuild");
+    await drawnIn("current");
+    for (const key of ["examples", "reviews", "permalinks"]) {
+      const count = await countIn(key, "current", "none");
+      assert.match(count.note, /^Checked at /, count.note);
+      // A zero is drawn dimmed, and a count above it isn't.
+      assert.equal(count.dimmed, count.state === "none", `${key}: ${count.value}`);
+    }
+    assert.match((await countIn("reviews", "current", "none")).note, /^Checked at .+, for .+/);
+    await editing(keys, async () => {
+      for (const key of ["examples", "reviews", "permalinks"]) {
+        const stale = await countIn(key, "outOfDate");
+        assert.equal(stale.value, "—");
+        assert.equal(stale.dimmed, false);
+      }
+    });
+  });
+
+  it("counts orphans and unused entries from the inventory, and opens Pages and Content model filtered", async () => {
+    const api = await activated();
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
+    await vscode.commands.executeCommand("ascribe.project.focus");
+    const orphans = await countIn("orphans", "current", "none");
+    const unused = await countIn("unused", "current", "none");
+    for (const count of [orphans, unused]) {
+      assert.match(count.value, /^(0|\d+ (pages?|entry|entries))$/, count.value);
+      assert.equal(count.dimmed, count.state === "none");
+    }
+    try {
+      await api.ui.project.choose("orphans");
+      await api.ui.sidebar.whenSettled();
+      assert.equal(
+        api.ui.sidebar.message("pages") ===
+          "No orphans: something links to or includes every page and fragment.",
+        orphans.state === "none",
+        api.ui.sidebar.message("pages"),
+      );
+      await api.ui.project.choose("unused");
+      await api.ui.sidebar.whenSettled();
+      assert.equal(
+        api.ui.sidebar.message("model") === "Nothing unused: every entry is used.",
+        unused.state === "none",
+        api.ui.sidebar.message("model"),
+      );
+    } finally {
+      await api.ui.sidebar.filter("pages", false);
+      await api.ui.sidebar.filter("model", false);
+    }
+  });
+
   it("goes out of date for a file beside ascribe.toml, outside the content root", async () => {
     const api = await activated();
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
@@ -945,6 +1022,175 @@ describe("the Project view on examples/quill", () => {
     await editing(memo, async () => {
       await drawnIn("outOfDate");
     });
+  });
+
+  describe("its edits to the whole project", () => {
+    const fixMe = uriOf("docs", "fix-me.md");
+    const onDisk = "---\ntitle: Fix me\n---\n\nSee [Install](/install-agent/).\n";
+
+    /** Reverts every document the edits changed, and deletes fix-me.md. */
+    afterEach(async () => {
+      for (const document of vscode.workspace.textDocuments) {
+        if (!document.isDirty) continue;
+        await vscode.window.showTextDocument(document);
+        await vscode.commands.executeCommand("workbench.action.files.revert");
+      }
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      rmSync(fixMe.fsPath, { force: true });
+      await diagnosticsOf(fixMe, (all) => all.length === 0);
+    });
+
+    /** The sidebar's project, with keys.md open. */
+    async function project(): Promise<{ folder: string; editor: vscode.TextEditor }> {
+      const api = await activated();
+      const editor = await vscode.window.showTextDocument(
+        await vscode.workspace.openTextDocument(keys),
+      );
+      const folder = await waitFor("the sidebar's project", () => api.ui.sidebar.project());
+      return { folder, editor };
+    }
+
+    /** Appends `text` to the open page, unsaved. */
+    async function append(editor: vscode.TextEditor, text: string): Promise<void> {
+      const end = editor.document.lineAt(editor.document.lineCount - 1).range.end;
+      assert.ok(await editor.edit((e) => e.insert(end, text)));
+    }
+
+    /** The open document of `uri`, if it's open. */
+    const documentOf = (uri: vscode.Uri) =>
+      vscode.workspace.textDocuments.find((d) => d.uri.toString() === uri.toString());
+
+    it("applies every safe fix, in an open page's unsaved text and a closed page, unsaved, after naming the counts", async () => {
+      const api = await activated();
+      const { folder, editor } = await project();
+      // A closed page's problem, on disk. The server's watcher may start
+      // after the first write, so it's written until the problem shows.
+      await waitFor("fix-me.md's problem", async () => {
+        writeFileSync(fixMe.fsPath, onDisk);
+        return diagnosticsOf(fixMe, (all) => all.length > 0, 2_000).catch(() => undefined);
+      });
+      // An open page's, unsaved.
+      await append(editor, "\nSee [Install](/install-agent/).\n");
+      await diagnosticsOf(keys, (all) =>
+        all.some((d) => d.message.includes("`/install-agent.md`")),
+      );
+
+      // Declined, nothing changes.
+      const declined = await api.ui.projectEdits.run(folder, "fixAll", () =>
+        Promise.resolve(false),
+      );
+      assert.equal(declined.applied, false);
+      assert.match(
+        declined.question ?? "",
+        /^Apply \d+ safe fixes in \d+ files\? They're left unsaved, to read before you save them\.$/,
+      );
+      assert.ok(editor.document.getText().includes("(/install-agent/)"));
+      assert.equal(documentOf(fixMe)?.isDirty ?? false, false);
+
+      const asked: string[] = [];
+      const outcome = await api.ui.projectEdits.run(folder, "fixAll", (question) => {
+        asked.push(question);
+        return Promise.resolve(true);
+      });
+      assert.deepEqual(asked, [declined.question]);
+      assert.equal(outcome.applied, true);
+      // The open page's unsaved text is what's edited.
+      assert.ok(editor.document.getText().includes("See [Install](/install-agent.md)."));
+      assert.ok(editor.document.isDirty);
+      // The closed page is opened, unsaved, and its file is as it was.
+      const opened = documentOf(fixMe);
+      assert.ok(opened?.isDirty, "fix-me.md isn't open with unsaved changes");
+      assert.ok(opened.getText().includes("See [Install](/install-agent.md)."), opened.getText());
+      assert.equal(readFileSync(fixMe.fsPath, "utf8"), onDisk);
+
+      // And the problems they fixed are gone.
+      await diagnosticsOf(keys, (all) => !all.some((d) => d.message.includes("/install-agent")));
+    });
+
+    it("formats every page, unsaved, after naming the count of files", async () => {
+      const api = await activated();
+      const { folder, editor } = await project();
+      await append(editor, "\n@note{ type = tip }: Be careful.\n");
+      const asked: string[] = [];
+      const outcome = await api.ui.projectEdits.run(folder, "format", (question) => {
+        asked.push(question);
+        return Promise.resolve(true);
+      });
+      assert.equal(outcome.applied, true, outcome.said);
+      assert.match(
+        asked[0] ?? "",
+        /^Format \d+ files?\? (They're|It's) left unsaved, to read before you save (them|it)\.$/,
+      );
+      assert.ok(editor.document.getText().endsWith("\n@note {type=tip}: Be careful.\n"));
+      assert.ok(editor.document.isDirty);
+      assert.ok(!readFileSync(keys.fsPath, "utf8").includes("Be careful."));
+    });
+
+    it("says so when there's nothing to format, and asks nothing", async () => {
+      const api = await activated();
+      const { folder } = await project();
+      const outcome = await api.ui.projectEdits.run(folder, "format", () => {
+        assert.fail("asked with nothing to do");
+      });
+      assert.equal(outcome.applied, false);
+      assert.match(outcome.said ?? "", /^Ascribe: every page of .+ is formatted already\.$/);
+    });
+
+    it("offers both in the Project view's Actions", async () => {
+      const api = await activated();
+      await project();
+      await vscode.commands.executeCommand("ascribe.project.focus");
+      await api.ui.project.whenDrawn("the edits", (drawn) =>
+        ["Apply Every Safe Fix", "Format Every Page"].every((label) =>
+          drawn.report.buttons.includes(label),
+        ),
+      );
+    });
+  });
+
+  it("checks the agent files when it shows the project, again after a save, and goes out of date on a change on disk", async () => {
+    const api = await activated();
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
+    await vscode.commands.executeCommand("ascribe.project.focus");
+    const folder = await waitFor("the sidebar's project", () => api.ui.sidebar.project());
+    // Showing the project checked them; an earlier test's change on disk may
+    // have put that check out of date since, so the view's action checks again.
+    await waitFor("a check of the agent files", () => api.ui.agentFiles.runs() > 0);
+    await api.ui.agentFiles.whenSettled();
+    await api.ui.project.choose("checkAgentFiles");
+    const first = await countIn("agentFiles", "current", "none");
+    assert.match(first.value, /^(0|\d+ files?)$/, first.value);
+    assert.match(first.note, /^Checked at .+, after the last save$/, first.note);
+
+    // A save of a page runs it again, once.
+    const before = api.ui.agentFiles.runs();
+    const editor = await vscode.window.showTextDocument(
+      await vscode.workspace.openTextDocument(keys),
+    );
+    assert.ok(await editor.edit((e) => e.insert(new vscode.Position(0, 0), "x")));
+    assert.ok(await editor.document.save());
+    await waitFor("a check after the save", () => api.ui.agentFiles.runs() > before);
+    assert.ok(await editor.edit((e) => e.delete(new vscode.Range(0, 0, 0, 1))));
+    assert.ok(await editor.document.save());
+    await api.ui.agentFiles.whenSettled();
+    assert.equal(api.ui.agentFiles.resultOf(folder).kind, "made");
+
+    // A file written on disk, not saved in the editor, makes it out of date.
+    const written = path.join(folder, "written-on-disk.txt");
+    writeFileSync(written, "Not a page.\n");
+    try {
+      const stale = await countIn("agentFiles", "outOfDate");
+      assert.match(stale.note, /^Out of date: a file changed on disk after the check at /);
+      assert.ok(api.ui.project.drawn()?.report.buttons.includes("Check Agent Files"));
+      await api.ui.project.choose("checkAgentFiles");
+      await countIn("agentFiles", "current", "none");
+      // Deleting it is a change on disk too. Waiting for the view to see it
+      // keeps the watcher's report from reaching the next test's check.
+      rmSync(written);
+      await countIn("agentFiles", "outOfDate");
+    } finally {
+      rmSync(written, { force: true });
+    }
   });
 });
 

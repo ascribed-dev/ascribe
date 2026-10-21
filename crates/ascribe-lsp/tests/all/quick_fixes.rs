@@ -1318,3 +1318,140 @@ fn fix_all_is_offered_only_with_a_safe_fix_and_only_when_asked() {
             .any(|a| a["kind"] == "source.fixAll.ascribe")
     );
 }
+
+/// `ascribe/projectEdit` of `kind`, asked through the project's
+/// `ascribe.toml`.
+fn project_edit(client: &mut Client, f: &Fixture, kind: &str) -> Value {
+    client
+        .request(
+            "ascribe/projectEdit",
+            json!({
+                "textDocument": { "uri": uri(&f.path("ascribe.toml")).as_str() },
+                "kind": kind
+            }),
+        )
+        .response_result
+        .expect("the project's edit")
+}
+
+/// The edit to `path` in a project edit, and the version it's for.
+fn document_edit<'a>(answer: &'a Value, path: &Path) -> Option<(&'a Value, &'a [Value])> {
+    answer["edit"]["documentChanges"]
+        .as_array()
+        .expect("documentChanges")
+        .iter()
+        .find(|change| change["textDocument"]["uri"] == uri(path).as_str())
+        .map(|change| {
+            (
+                &change["textDocument"]["version"],
+                change["edits"].as_array().expect("edits").as_slice(),
+            )
+        })
+}
+
+#[test]
+fn every_safe_fix_in_the_project_is_one_edit_over_unsaved_text() {
+    let f = quill();
+    // On disk, closed.
+    write(&f, "docs/fix-me.md", FIX_ME);
+    // Open, its fixes in its unsaved text alone.
+    let open = f.path("docs/fix-me-too.md");
+    write(
+        &f,
+        "docs/fix-me-too.md",
+        "---\ntitle: Fix me too\n---\n\nFine.\n",
+    );
+    let unsaved = FIX_ME.replace("Fix me", "Fix me too");
+    let mut client = Client::start(&f.root());
+    client.open(&open, 3, &unsaved);
+    // Asked before the edit's diagnostics are published: it waits for them.
+    let answer = project_edit(&mut client, &f, "fixAll");
+
+    // check --fix's edits to the page on disk, as the editor's build has it.
+    let project = ascribe_check::Project::load(&f.path("ascribe.toml")).expect("a project");
+    let mut diagnostics = ascribe_check::diagnose_editor_build(&project, None).diagnostics;
+    diagnostics.sort_by_key(|d| d.severity == ascribe_check::Severity::Advice);
+    let files = ascribe_check::fix::safe_fixes(&project, &f.path("ascribe.toml"), &diagnostics);
+    let fixed = "---\ntitle: Fix me\n---\n\nSee 😀 [Install](/install-agent.md), [Keys](/keys.md), and [Gone](keyz.md).\n";
+    assert_eq!(
+        files
+            .iter()
+            .find(|file| file.path.ends_with("fix-me.md"))
+            .map(|file| file.text.as_str()),
+        Some(fixed)
+    );
+
+    let (version, edits) = document_edit(&answer, &f.path("docs/fix-me.md")).expect("closed");
+    assert_eq!(*version, Value::Null);
+    assert_eq!(apply_edit(FIX_ME, edits), fixed);
+    let (version, edits) = document_edit(&answer, &open).expect("open");
+    assert_eq!(*version, json!(3));
+    assert_eq!(
+        apply_edit(&unsaved, edits),
+        fixed.replace("Fix me", "Fix me too")
+    );
+    // Every file check --fix changes on disk, and the unsaved one, with
+    // three problems fixed in each.
+    let changed = answer["edit"]["documentChanges"].as_array().unwrap().len();
+    assert_eq!(answer["files"], json!(changed));
+    assert_eq!(changed, files.len() + 1);
+    assert_eq!(answer["fixes"], json!(3 * changed), "{answer}");
+    assert!(answer["edit"].get("changes").is_none());
+}
+
+#[test]
+fn every_page_formatted_is_one_edit_ascribe_fmt_makes() {
+    let f = quill();
+    let keys = f.path("docs/keys.md");
+    let original = read(&f, "docs/keys.md");
+    let on_disk = format!("{original}\n@note{{ type = tip }}: Be careful.\n");
+    write(&f, "docs/keys.md", &on_disk);
+    let quickstart = f.path("docs/quickstart.md");
+    let unsaved = format!(
+        "{}\n@note{{ type = tip }}: Unsaved.\n",
+        read(&f, "docs/quickstart.md")
+    );
+    let mut client = Client::start(&f.root());
+    client.open(&quickstart, 7, &unsaved);
+    let answer = project_edit(&mut client, &f, "format");
+
+    assert_eq!(answer["files"], json!(2), "{answer}");
+    assert_eq!(answer["fixes"], Value::Null);
+    let (version, edits) = document_edit(&answer, &keys).expect("closed");
+    assert_eq!(*version, Value::Null);
+    assert_eq!(
+        apply_edit(&on_disk, edits),
+        format!("{original}\n@note {{type=tip}}: Be careful.\n")
+    );
+    let (version, edits) = document_edit(&answer, &quickstart).expect("open");
+    assert_eq!(*version, json!(7));
+    assert!(apply_edit(&unsaved, edits).ends_with("\n@note {type=tip}: Unsaved.\n"));
+
+    // Formatted, there's nothing left to do.
+    client.replace(&quickstart, 8, &apply_edit(&unsaved, edits));
+    write(
+        &f,
+        "docs/keys.md",
+        &format!("{original}\n@note {{type=tip}}: Be careful.\n"),
+    );
+    notify_changed(&mut client, std::slice::from_ref(&keys));
+    let answer = project_edit(&mut client, &f, "format");
+    assert_eq!(answer["files"], json!(0), "{answer}");
+}
+
+#[test]
+fn a_project_edit_through_a_file_of_no_project_says_so() {
+    let f = quill();
+    let mut client = Client::start(&f.root());
+    let answer = client
+        .request(
+            "ascribe/projectEdit",
+            json!({ "textDocument": { "uri": "file:///elsewhere/page.md" }, "kind": "format" }),
+        )
+        .response_result
+        .expect("an answer");
+    assert_eq!(
+        answer,
+        json!({ "error": "This file isn't one of the project's." })
+    );
+}

@@ -13,9 +13,11 @@
 // - InventoryResult (the language server, answering `ascribe/inventory`)
 // - PageResult (the language server, answering `ascribe/page`)
 // - EditResult (the language server, answering `ascribe/edit`)
+// - ProjectEditResult (the language server, answering `ascribe/projectEdit`)
 // - BuildViewResult (the language server, answering `ascribe/buildView`)
 // - SearchResult (the language server, answering `ascribe/search`)
 // - AgentPromptResult (the language server, answering `ascribe/agentPrompt`)
+// - ModelReport (`ascribe model --format json`)
 
 /** A problem acknowledged as intended. */
 export interface AcknowledgedEntry {
@@ -1047,9 +1049,424 @@ export interface LspWorkspaceEdit {
   documentChanges?: LspDocumentChange[];
 }
 
+/** An attribute a widget accepts. */
+export interface ModelAttribute {
+  /** The key. */
+  key: string;
+  /**
+   * The value's type: `string`, `number`, `boolean`, `enum`, `set`, or
+   * `note-type`.
+   */
+  type: string;
+  /**
+   * The values it allows, for `enum` and a `set` of named values; empty
+   * otherwise.
+   */
+  values: string[];
+  /** Whether every use must give it. */
+  required: boolean;
+  /**
+   * The value used when it's left out, as written (a set's members joined
+   * by `|`).
+   */
+  default: string | null;
+  /** What it's for. */
+  description: string | null;
+}
+
+/** A build. */
+export interface ModelBuild {
+  /** Its name. */
+  name: string;
+  /**
+   * Which variant arms it keeps: `switch` for all of them, or the
+   * selection, such as `deployment=cloud`.
+   */
+  variants: string;
+  /**
+   * How it treats availability: `badge`, or the target it filters for,
+   * such as `filter self-managed 3.3`.
+   */
+  availability: string;
+  /** Whether it's the build the editor checks (`[editor] build`). */
+  editor: boolean;
+  /**
+   * For a line of a versioned build, the line, as `[releases.<target>]`
+   * writes it.
+   */
+  line?: string;
+  /** For a line of a versioned build, the target it's versioned by. */
+  versions?: string;
+}
+
+/** A dimension. */
+export interface ModelDimension {
+  /** Its name. */
+  name: string;
+  /** Its label. */
+  label: string;
+  /** Its values, in display order. */
+  values: ModelDimensionValue[];
+}
+
+/** A value of a dimension. */
+export interface ModelDimensionValue {
+  /** The value. */
+  value: string;
+  /** Its label. */
+  label: string;
+  /**
+   * Whether it has no versions, so an availability spec gives it a state
+   * but no version.
+   */
+  versionless: boolean;
+}
+
+/** A source's tested examples. */
+export interface ModelExamples {
+  /**
+   * Whether its `ascribe.examples.toml` can be read. One that can't makes
+   * no file an example.
+   */
+  valid: boolean;
+  /**
+   * How many of the files the source makes readable its config makes
+   * examples.
+   */
+  files: number;
+  /** Its observations, in name order: those that can't be read left out. */
+  observations: ModelObservation[];
+}
+
+/** A feature. */
+export interface ModelFeature {
+  /** Its key, which an availability spec can name. */
+  key: string;
+  /** Its name. */
+  name: string;
+  /** Its availability spec, as written. */
+  availability: string;
+}
+
+/** A frontmatter field. */
+export interface ModelField {
+  /** Its name. */
+  name: string;
+  /** Its type in short form: `string`, `list(string)`, `enum(a, b)`. */
+  type: string;
+  /** Whether every page of the type must give it. */
+  required: boolean;
+  /**
+   * The values it allows, for an enumeration or a list of one; empty
+   * otherwise.
+   */
+  values: string[];
+  /** What it's for, as the content model describes it. */
+  description: string | null;
+  /** An object's fields; empty for any other type. */
+  fields: ModelField[];
+}
+
 /** A kind of content model entry. */
 export type ModelKind =
   "phrase" | "feature" | "term" | "dimension" | "note" | "widget" | "build" | "type";
+
+/** A release line. */
+export interface ModelLine {
+  /** The line, as the list writes it. */
+  line: string;
+  /** `current`, `live`, `planned`, or `archived`. */
+  status: string;
+  /**
+   * The builds that are this line, one for each build versioned by the
+   * target: `site@3.4`, or `site` for the current line.
+   */
+  builds: string[];
+}
+
+/** A page of the navigation. */
+export interface ModelNavPage {
+  /** Its path from the content root. */
+  source: string;
+  /**
+   * Its label as plain text: its `nav-label`, else its title, else its
+   * file name without `.md`.
+   */
+  label: string;
+  /** Its content type's name, when it has one. */
+  type?: string;
+}
+
+/** A section of the navigation: a folder and its pages, in order. */
+export interface ModelNavSection {
+  /** The folder, from the content root, ending in `/`; `""` for the root. */
+  folder: string;
+  /**
+   * Its label: from `ascribe.nav`, else its own page's title as plain
+   * text, else its folder's name with `-` and `_` as spaces and its first
+   * letter capitalized, and "Start" for the root.
+   */
+  label: string;
+  /** Its pages in order, its own page not among them. */
+  pages: ModelNavPage[];
+  /**
+   * Its nested sections with a page, in order: each one whose own page
+   * is among `pages` right after that page, then the rest.
+   */
+  sections: ModelNavSection[];
+  /** Whether `ascribe.nav` lists it. */
+  listed: boolean;
+  /**
+   * Its own page: its `index.md`, or the page beside the folder with its
+   * name, which is then one of the parent's `pages` too.
+   */
+  page?: ModelNavPage;
+}
+
+/** An observation of a source's examples. */
+export interface ModelObservation {
+  /** Its name: `default`, or the name `ascribe observe --name` gave it. */
+  name: string;
+  /**
+   * Its environment as it has it, by name: `os`, `arch`, and each
+   * entry's kept line.
+   */
+  environment: Record<string, string>;
+  /** What a page says it was tested with, by this observation alone. */
+  tested: string;
+  /**
+   * How many files it lists. For a source in another repository, only
+   * those it has copies of, since the others weren't copied.
+   */
+  listed: number;
+  /**
+   * How many of those are as it found them: the rest changed since, or
+   * are gone.
+   */
+  current: number;
+}
+
+/** A phrase. */
+export interface ModelPhrase {
+  /** Its key, written `{key}` in a page. */
+  key: string;
+  /** Its value. */
+  value: string;
+}
+
+/** A target's release lines. */
+export interface ModelReleases {
+  /** The target: a versioned dimension value. */
+  target: string;
+  /** Its lines, newest first: planned, live, then archived. */
+  lines: ModelLine[];
+}
+
+/** The repository a source is in. */
+export interface ModelRemote {
+  /** Its URL. */
+  url: string;
+  /** The branch an update follows; `null` for the repository's default. */
+  branch: string | null;
+}
+
+/**
+ * What `ascribe model --format json` answers: the content model's sections,
+ * or the one asked for.
+ */
+export interface ModelReport {
+  /**
+   * The version of this schema. It changes only when a field is removed
+   * or changes meaning.
+   */
+  schema_version: number;
+  /** The version of Ascribe that wrote it. */
+  ascribe_version: string;
+  /**
+   * Builds, in declaration order, a versioned build as one for each live
+   * line, the current line first.
+   */
+  builds?: ModelBuild[];
+  /**
+   * `[checks]`: each key of `[checks.vale]` and `[checks.links]`, with its
+   * value in effect, and each check the file sets, by its slug.
+   */
+  checks?: ModelSetting[];
+  /** `[consumer]`: each key, with its value in effect. */
+  consumer?: ModelSetting[];
+  /** `[crawlers]`: each key, with its value in effect. */
+  crawlers?: ModelSetting[];
+  /** Dimensions, in declaration order. */
+  dimensions?: ModelDimension[];
+  /** `[editor]`: each key, with its value in effect. */
+  editor?: ModelSetting[];
+  /** Features, in declaration order. */
+  features?: ModelFeature[];
+  /**
+   * Glossary terms, in the order of `[glossary] pages`, and on each page
+   * in document order.
+   */
+  glossary?: ModelTerm[];
+  /** `[listing]`: each key, with its value in effect. */
+  listing?: ModelSetting[];
+  /**
+   * The project's navigation, its root section: every page that isn't
+   * `unlisted`, in order, as each build's `_ascribe/nav.json` has its
+   * share of it. Only in the whole report.
+   */
+  navigation?: ModelNavSection;
+  /** `[permalinks]`: each key, with its value in effect. */
+  permalinks?: ModelSetting[];
+  /** Phrases, in declaration order. */
+  phrases?: ModelPhrase[];
+  /** `[project]`: each key, with its value in effect. */
+  project?: ModelSetting[];
+  /**
+   * `[releases.<target>]`, in declaration order: each target's lines,
+   * with their status.
+   */
+  releases?: ModelReleases[];
+  /** Sources, in declaration order. */
+  sources?: ModelSource[];
+  /**
+   * Page types, in declaration order: the implicit `page` type when none
+   * is declared.
+   */
+  types?: ModelType[];
+  /** Project widgets, in declaration order. */
+  widgets?: ModelWidget[];
+}
+
+/**
+ * A key of a section of settings, such as `[consumer]`, as the registry of
+ * `ascribe.toml`'s keys has it, with the value in effect.
+ */
+export interface ModelSetting {
+  /**
+   * The table it's in, as `ascribe.toml` writes it: `consumer`,
+   * `checks.vale`.
+   */
+  table: string;
+  /** The key: in `checks`, a check's slug. */
+  key: string;
+  /**
+   * What its value is: `switch`, `choice`, `number`, `text`, `level`,
+   * `list`, or `table`.
+   */
+  kind: string;
+  /** Whether `ascribe.toml` sets it. */
+  set: boolean;
+  /** The value used when the file leaves it out, when that's one value. */
+  default?: unknown;
+  /**
+   * What's used when the file leaves it out, in the reference's words,
+   * when that isn't one value.
+   */
+  default_text?: string;
+  /**
+   * The value in effect: the file's, else the default. Absent when the
+   * file leaves it out and its default isn't one value.
+   */
+  value?: unknown;
+}
+
+/** A source: a folder of files, such as code, that pages can show. */
+export interface ModelSource {
+  /** Its name, as addresses write it: `code:` for a source named `code`. */
+  name: string;
+  /**
+   * Its folder, relative to the project's folder: the `path` written,
+   * or, for a source in another repository, the folder of its copies.
+   */
+  path: string;
+  /**
+   * The patterns of the files it makes readable, relative to its folder;
+   * empty for every file.
+   */
+  include: string[];
+  /**
+   * The patterns of the files it doesn't make readable, though `include`
+   * matches them.
+   */
+  ignore: string[];
+  /** The repository it's in, for a source in another repository. */
+  git: ModelRemote | null;
+  /**
+   * Its tested examples, for a source with an `ascribe.examples.toml`:
+   * absent for any other. For a source in another repository, they're
+   * read from its copies.
+   */
+  examples?: ModelExamples;
+}
+
+/**
+ * A glossary term: a heading marked `@term` on a glossary page. Its
+ * definition is the paragraph under the heading, which differs by build:
+ * the JSON output of a build has it.
+ */
+export interface ModelTerm {
+  /** Its id: its heading's id. */
+  id: string;
+  /** The term: its heading's text. */
+  term: string;
+  /** Other ways it's written. */
+  aliases: string[];
+  /**
+   * Which occurrences are linked: `first` on each page, `every` one, or
+   * only those an author links (`marked`).
+   */
+  match: string;
+  /** Whether an occurrence must match its case. */
+  case_sensitive: boolean;
+  /**
+   * The file its heading is written in, from the content root: its
+   * glossary page, or a fragment the page includes.
+   */
+  page: string;
+  /** The heading's line in that file, from 1. */
+  line: number;
+}
+
+/** A page type. */
+export interface ModelType {
+  /**
+   * Its name, which each page of the type gives as its `type`; the
+   * implicit `page` type's pages give none.
+   */
+  name: string;
+  /** Its frontmatter fields, in declaration order. */
+  fields: ModelField[];
+  /**
+   * What to read before writing a page of the type, in the order to read
+   * it, from the folder `ascribe.toml` is in; absent when the type names
+   * none.
+   */
+  guide?: string[];
+  /**
+   * What a page of the type is for, as the content model says; absent
+   * when it says nothing.
+   */
+  purpose?: string;
+  /**
+   * The page a page of the type starts from, from the folder
+   * `ascribe.toml` is in; absent when the type names none.
+   */
+  template?: string;
+}
+
+/** A project widget. */
+export interface ModelWidget {
+  /** Its name, written `@name`. */
+  name: string;
+  /** What it's for, as the content model describes it. */
+  description: string | null;
+  /** Whether it may be one line. */
+  line: boolean;
+  /** Whether it may be a container, closed by `@end`. */
+  container: boolean;
+  /** Its attributes, in canonical order. */
+  attributes: ModelAttribute[];
+}
 
 /** What a page or fragment is. */
 export interface PageAbout {
@@ -1615,6 +2032,31 @@ export type PrimaryKind = "none" | "identifier" | "text" | "availability";
 
 /** How much a problem with showing a page matters. */
 export type ProblemSeverity = "error" | "warning" | "info";
+
+/**
+ * The answer to `ascribe/projectEdit`: the edit and how much it changes, or
+ * why there's none.
+ */
+export type ProjectEditResult =
+  | {
+      /**
+       * Edits to each file it changes, under `documentChanges`, in path
+       * order: an open document's names the version it's for, and any
+       * other's `null`.
+       */
+      edit: LspWorkspaceEdit;
+      /** How many files it changes. */
+      files: number;
+      /**
+       * For the safe fixes, how many problems they fix; `null` for
+       * formatting.
+       */
+      fixes: number | null;
+    }
+  | {
+      /** The message. */
+      error: string;
+    };
 
 /**
  * A span of a file. `end` is just past its last character; an empty range

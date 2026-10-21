@@ -1,0 +1,1 @@
+- **Build and Sync Agent Files run as tasks, from the Project view or Run Task.** Each runs the binary the project's server runs, in the terminal, in the project's folder, with `--config` when the project isn't the workspace folder. The task type, `ascribe`, can be named in `tasks.json`. Neither is offered in Restricted Mode. See [Tasks](docs/content/editor/settings.md#tasks).

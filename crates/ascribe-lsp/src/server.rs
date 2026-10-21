@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use std::thread;
+use std::time::{Duration, Instant};
 
 use ascribe_core::path::normalize;
 use ascribe_core::{LineIndex, Span};
@@ -81,6 +82,9 @@ pub enum Exit {
 struct Shared {
     core: Mutex<Core>,
     wake: Condvar,
+    /// Wakes a request waiting for the diagnostics to be published: the
+    /// worker notifies it each time it has nothing left to do.
+    settled: Condvar,
     /// Wakes the thread that runs Vale (`prose.rs`).
     prose_wake: Condvar,
     options: Options,
@@ -235,6 +239,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
     let shared = Arc::new(Shared {
         core: Mutex::new(core),
         wake: Condvar::new(),
+        settled: Condvar::new(),
         prose_wake: Condvar::new(),
         options,
         idle,
@@ -521,6 +526,7 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     (p.text_document.uri, crate::inventory::inventory)
                 })
             }
+            crate::project_edit::METHOD => project_edit_request(shared, &request),
             crate::search::METHOD => search_request(shared, &request),
             crate::agent_prompt::METHOD => agent_prompt_request(shared, &request),
             crate::review::SET_BASE_METHOD => set_base_request(shared, &request),
@@ -684,6 +690,43 @@ where
     let (uri, compute) = read(params);
     let target = shared.lock().project_target(&uri);
     let result = target.map(|ctx| compute(&ctx)).unwrap_or_default();
+    to_json(request, result)
+}
+
+/// How long `ascribe/projectEdit` waits for the diagnostics queued before
+/// it to be published.
+const SETTLE_LIMIT: Duration = Duration::from_secs(30);
+
+/// Answers `ascribe/projectEdit` once nothing is queued or computing, so
+/// the problems whose safe fixes it takes are those of the text it edits.
+/// No message is read while it waits, so nothing new is queued.
+fn project_edit_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    let params: crate::project_edit::ProjectEditParams =
+        serde_json::from_value(request.params.clone())
+            .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let deadline = Instant::now() + SETTLE_LIMIT;
+    let mut core = shared.lock();
+    while core.has_work() || core.computing {
+        let Some(left) = deadline.checked_duration_since(Instant::now()) else {
+            return to_json(
+                request,
+                crate::project_edit::ProjectEditResult::Failed {
+                    error: "The server is still checking the project. Try again in a moment."
+                        .to_owned(),
+                },
+            );
+        };
+        core = shared
+            .settled
+            .wait_timeout(core, left)
+            .unwrap_or_else(PoisonError::into_inner)
+            .0;
+    }
+    let target = core.project_edit_target(&params.text_document.uri);
+    drop(core);
+    let result = target
+        .map(|(ctx, sources)| crate::project_edit::project_edit(&ctx, &sources, params.kind))
+        .unwrap_or_default();
     to_json(request, result)
 }
 
@@ -1160,6 +1203,7 @@ fn worker(shared: &Shared) {
                 }
                 core.computing = false;
                 shared.idle.store(!core.busy(), Ordering::SeqCst);
+                shared.settled.notify_all();
                 core = shared
                     .wake
                     .wait(core)

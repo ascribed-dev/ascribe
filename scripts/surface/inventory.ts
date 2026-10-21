@@ -303,6 +303,10 @@ interface Manifest {
     chatSkills: { path: string; when?: string }[];
     mcpServerDefinitionProviders: { id: string; label: string }[];
     menus: Record<string, unknown[]>;
+    taskDefinitions: {
+      type: string;
+      properties: Record<string, { enum?: string[]; description?: string }>;
+    }[];
   };
 }
 
@@ -336,6 +340,14 @@ function extension(manifest: Manifest): Section {
   const steps = contributes.walkthroughs.flatMap((walkthrough) =>
     walkthrough.steps.map((step, index) => [String(index + 1), step.title, walkthrough.title]),
   );
+  const tasks = contributes.taskDefinitions.flatMap((definition) =>
+    Object.entries(definition.properties).map(([key, property]) => [
+      code(definition.type),
+      code(key),
+      (property.enum ?? []).map(code).join(", "),
+      sentence(property.description ?? ""),
+    ]),
+  );
   const menus = Object.entries(contributes.menus).map(([menu, items]) => [
     code(menu),
     String(items.length),
@@ -359,6 +371,8 @@ function extension(manifest: Manifest): Section {
       table(["View", "Id"], views),
       "Keys:",
       table(["Command", "Key", "On macOS"], keys),
+      "Task types, and the properties `tasks.json` gives them:",
+      table(["Type", "Property", "Values", "What it says"], tasks),
       "The walkthrough:",
       table(["Step", "Title", "Walkthrough"], steps),
       "Menus the commands are placed in:",

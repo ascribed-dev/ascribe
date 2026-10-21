@@ -6,7 +6,15 @@ import { CHECK_SCHEMA_VERSION } from "../agents/problems.js";
 import type { ProjectServer } from "../client.js";
 import { changesCheck, readLayout, type Layout } from "../diskChanges.js";
 import { shellCommand, usesShell } from "../environment.js";
-import { checkedText, panelProblems, type EditorRange, type PanelProblem } from "../everyBuild.js";
+import {
+  checkedText,
+  countedIn,
+  panelProblems,
+  type Counted,
+  type EditorRange,
+  type Found,
+  type PanelProblem,
+} from "../everyBuild.js";
 import { comparable, owningProject, type Project } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
 import type { CheckReport, Summary } from "../shapes.js";
@@ -43,7 +51,15 @@ interface Checked {
   error?: string | null;
   /** How many of the project's files had unsaved changes, which it read as saved. */
   unsaved?: number;
+  /** What it found of each kind the Project view counts on its own. */
+  counted?: Record<Counted, Found>;
 }
+
+const NOTHING_COUNTED: Record<Counted, Found> = {
+  examples: { count: 0, first: null },
+  reviews: { count: 0, first: null },
+  permalinks: { count: 0, first: null },
+};
 
 /** A project's check of every build, as the Project view counts it. */
 export type EveryBuildResult =
@@ -60,6 +76,8 @@ export type EveryBuildResult =
       current: boolean;
       /** How many of the project's files had unsaved changes, which it read as saved. */
       unsaved: number;
+      /** What it found of each kind the Project view counts on its own. */
+      counted: Record<Counted, Found>;
     };
 
 /**
@@ -158,6 +176,7 @@ export class EveryBuildChecks implements vscode.Disposable {
       error: checked.error ?? null,
       current: checked.current,
       unsaved: checked.unsaved ?? 0,
+      counted: checked.counted ?? NOTHING_COUNTED,
     };
   }
 
@@ -264,6 +283,7 @@ export class EveryBuildChecks implements vscode.Disposable {
     run.summary = report.summary;
     run.error = report.error;
     run.unsaved = unsaved;
+    run.counted = countedIn(report, project.folder, (file) => texts.get(file));
     this.checked.set(key, run);
     this.changed.fire();
 
