@@ -136,6 +136,44 @@ fn a_changed_word_marks_the_block_and_the_words() {
 }
 
 #[test]
+fn inline_html_reads_as_a_reader_reads_it() {
+    let a = version(
+        MODEL,
+        &[(
+            "install.md",
+            &PAGE.replace("with more words.", "with more<br>words. <!-- old note -->"),
+        )],
+    );
+    let b = version(
+        MODEL,
+        &[(
+            "install.md",
+            &PAGE.replace("with more words.", "with fewer<br>words. <!-- new note -->"),
+        )],
+    );
+    let page = page(&a, &b);
+    let words = only_change(&page).words.as_ref().unwrap();
+    assert_eq!(words.now_text, "Second paragraph with fewer words.");
+    assert_eq!(words.was_text, "Second paragraph with more words.");
+
+    // A change only inside a comment changes the block, with no words.
+    let c = version(
+        MODEL,
+        &[(
+            "install.md",
+            &PAGE.replace(
+                "with more words.",
+                "with fewer<br>words. <!-- newer note -->",
+            ),
+        )],
+    );
+    let page = self::page(&b, &c);
+    let change = only_change(&page);
+    assert_eq!(change.kind, ChangeKind::Changed);
+    assert!(change.words.is_none(), "{change:#?}");
+}
+
+#[test]
 fn added_and_removed_blocks() {
     let a = version(MODEL, &[("install.md", PAGE)]);
     let b = version(
