@@ -160,7 +160,7 @@ const OBSERVATIONS_FOLDER = "examples.observations";
  * `include` and nothing for `ignore`, as does case: telling the server of a
  * file it doesn't read costs little, where missing one leaves a lens stale.
  */
-export function sourceUses(file: string, source: Source): boolean {
+function sourceUses(file: string, source: Source): boolean {
   if (!within(file, source.folder) || skipped(file, source.folder)) return false;
   const rest = comparable(file).slice(comparable(source.folder).length);
   const segments = rest.split("/").filter((segment) => segment !== "");
