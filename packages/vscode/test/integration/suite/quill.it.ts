@@ -802,9 +802,11 @@ function lineOf(uri: vscode.Uri, text: string): number {
   );
 }
 
-// The Project view's one count so far: every build's problems, from the last
-// Check Every Build, shown as current only while nothing in the project has
-// changed since (decision #654a).
+// The Project view's counts, each shown as current only while it is: every
+// build's problems, examples, overdue reviews, and the permalinks list from
+// the last Check Every Build, while nothing in the project has changed since
+// (decision #654a); orphans and unused entries from the server's inventory,
+// as you type; and the agent files, after each save.
 describe("the Project view on examples/quill", () => {
   const keys = uriOf("docs", "keys.md");
   const memo = uriOf("memos", "product-name.md");
@@ -872,6 +874,109 @@ describe("the Project view on examples/quill", () => {
       assert.match(stale.note, /^Out of date: the project changed after the check at /);
       assert.equal(api.ui.everyBuild.isCurrent(folder), false);
     });
+  });
+
+  /** Waits for the view to draw the count `key` in one of `states`, and returns it. */
+  async function countIn(key: string, ...states: string[]) {
+    const api = await activated();
+    const drawn = await api.ui.project.whenDrawn(
+      `${key} ${states.join(" or ")}`,
+      (d) => states.includes(d.report.health.find((count) => count.key === key)?.state ?? ""),
+      30_000,
+    );
+    const count = drawn.report.health.find((c) => c.key === key);
+    assert.ok(count);
+    return count;
+  }
+
+  it("counts examples, overdue reviews for the day, and the permalinks list from the same check, out of date with it", async () => {
+    const api = await activated();
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
+    await vscode.commands.executeCommand("ascribe.project.focus");
+    await api.ui.project.choose("checkEveryBuild");
+    await drawnIn("current");
+    for (const key of ["examples", "reviews", "permalinks"]) {
+      const count = await countIn(key, "current", "none");
+      assert.match(count.note, /^Checked at /, count.note);
+      // A zero is drawn dimmed, and a count above it isn't.
+      assert.equal(count.dimmed, count.state === "none", `${key}: ${count.value}`);
+    }
+    assert.match((await countIn("reviews", "current", "none")).note, /^Checked at .+, for .+/);
+    await editing(keys, async () => {
+      for (const key of ["examples", "reviews", "permalinks"]) {
+        const stale = await countIn(key, "outOfDate");
+        assert.equal(stale.value, "—");
+        assert.equal(stale.dimmed, false);
+      }
+    });
+  });
+
+  it("counts orphans and unused entries from the inventory, and opens Pages and Content model filtered", async () => {
+    const api = await activated();
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
+    await vscode.commands.executeCommand("ascribe.project.focus");
+    const orphans = await countIn("orphans", "current", "none");
+    const unused = await countIn("unused", "current", "none");
+    for (const count of [orphans, unused]) {
+      assert.match(count.value, /^(0|\d+ (pages?|entry|entries))$/, count.value);
+      assert.equal(count.dimmed, count.state === "none");
+    }
+    try {
+      await api.ui.project.choose("orphans");
+      await api.ui.sidebar.whenSettled();
+      assert.equal(
+        api.ui.sidebar.message("pages") ===
+          "No orphans: something links to or includes every page and fragment.",
+        orphans.state === "none",
+        api.ui.sidebar.message("pages"),
+      );
+      await api.ui.project.choose("unused");
+      await api.ui.sidebar.whenSettled();
+      assert.equal(
+        api.ui.sidebar.message("model") === "Nothing unused: every entry is used.",
+        unused.state === "none",
+        api.ui.sidebar.message("model"),
+      );
+    } finally {
+      await api.ui.sidebar.filter("pages", false);
+      await api.ui.sidebar.filter("model", false);
+    }
+  });
+
+  it("checks the agent files when it shows the project, again after a save, and goes out of date on a change on disk", async () => {
+    const api = await activated();
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
+    await vscode.commands.executeCommand("ascribe.project.focus");
+    const folder = await waitFor("the sidebar's project", () => api.ui.sidebar.project());
+    const first = await countIn("agentFiles", "current", "none");
+    assert.match(first.value, /^(0|\d+ files?)$/, first.value);
+    assert.match(first.note, /^Checked at .+, after the last save$/, first.note);
+
+    // A save of a page runs it again, once.
+    const before = api.ui.agentFiles.runs();
+    const editor = await vscode.window.showTextDocument(
+      await vscode.workspace.openTextDocument(keys),
+    );
+    assert.ok(await editor.edit((e) => e.insert(new vscode.Position(0, 0), "x")));
+    assert.ok(await editor.document.save());
+    await waitFor("a check after the save", () => api.ui.agentFiles.runs() > before);
+    assert.ok(await editor.edit((e) => e.delete(new vscode.Range(0, 0, 0, 1))));
+    assert.ok(await editor.document.save());
+    await api.ui.agentFiles.whenSettled();
+    assert.equal(api.ui.agentFiles.resultOf(folder).kind, "made");
+
+    // A file written on disk, not saved in the editor, makes it out of date.
+    const written = path.join(folder, "written-on-disk.txt");
+    writeFileSync(written, "Not a page.\n");
+    try {
+      const stale = await countIn("agentFiles", "outOfDate");
+      assert.match(stale.note, /^Out of date: a file changed on disk after the check at /);
+      assert.ok(api.ui.project.drawn()?.report.buttons.includes("Check Agent Files"));
+      await api.ui.project.choose("checkAgentFiles");
+      await countIn("agentFiles", "current", "none");
+    } finally {
+      rmSync(written, { force: true });
+    }
   });
 
   it("goes out of date for a file beside ascribe.toml, outside the content root", async () => {
