@@ -8,7 +8,9 @@ permalink: docs
 - [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, and publish it with Astro.
 - [Install](install.md): every way to install `ascribe`, with npm or on your path without Node.
 - [Content that varies](writing/variants.md): writing one page for readers on different platforms or products, with alternatives, availability, and a build for each audience.
-- [Directive reference](writing/directives.md): the language: directives, attributes, titles, phrases, links, and images.
+- [Directive syntax](writing/syntax.md): the language: how a directive is written, its attributes, forms, titles, and what it applies to.
+- [Directive reference](writing/directives.md): each built-in directive, its attributes, and its rules.
+- [Phrases, links, and images](writing/inline.md) and [frontmatter](writing/frontmatter.md): the rest of what a page writes.
 - @available: ascribe 0.4.0
   [Memos](writing/memos.md): keeping the reason a page is written the way it is beside it, for the people and agents who change it, and never for its readers.
 - @available: ascribe 0.4.0
