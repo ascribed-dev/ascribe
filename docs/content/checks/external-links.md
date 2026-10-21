@@ -23,7 +23,7 @@ Install lychee from [its releases](https://github.com/lycheeverse/lychee/release
 
 2. Fix each link reported as **moved** (`link-external-moved`). Its address redirects permanently to another one, and the fix writes the new address. Check first that it's the page you meant, since some sites send every old address to their home page.
 
-3. Fix each link reported as **broken** (`link-external-broken`): it answers with an error, doesn't answer in time, or can't be reached. Open it. When the page is gone, link to where its content went, or remove the link.
+3. Fix each link reported as **broken** (`link-external-broken`): it answers with an error, doesn't answer in time, or can't be reached. Open it. When the page is gone, link to where its content went, or remove the link. A link whose server failed is reported differently: [A server's error](#a-servers-error).
 
 4. Acknowledge a link that's fine as it is, such as one on a site that turns link checkers away and works in a browser. Write `@intended` above its block, with the reason, and the report stops listing it:
 
@@ -44,6 +44,21 @@ Install lychee from [its releases](https://github.com/lycheeverse/lychee/release
 6. Run `ascribe report links` again, and check that what's left is what you meant to leave.
 
 To run it every day in CI, see [On a schedule](report.md#on-a-schedule). To hand the problems to an agent, `ascribe report links --format prompt` writes them as one prompt.
+
+## A server's error
+
+A link that answers with a server error, a `5xx` status such as `500 Internal Server Error` or `503 Service Unavailable`, isn't reported on the first answer. The server failed, and that often passes in a minute, so Ascribe asks lychee about the address again after 30 seconds, on every run, whatever it remembers. Only the second answer counts:
+
+- **It answers:** the link isn't reported.
+- **It fails again:** it's reported, so it isn't lost, but as the server's failure, not a page that's gone. The message says the server failed, which may be temporary:
+
+  ```text
+  agents/measuring.md:33: [ASC168] https://www.bing.com/webmasters answered 500 Internal Server Error when asked twice: the server failed, which may be temporary
+  ```
+
+  When the link answered on an earlier run, it's [held as unconfirmed](#links-that-answered-before) instead, until it has kept failing for a few days.
+
+A `404 Not Found` or a `410 Gone` says the page isn't there, so it's asked about once, and reported at once, as broken for readers. Any retries lychee makes itself, as `lychee.toml` sets them, come first, seconds apart; Ascribe's comes after them. Set `ASCRIBE_LINKS_RETRY_WAIT` to a number of seconds to wait another time, such as `0` in a test.
 
 ## What it remembers
 

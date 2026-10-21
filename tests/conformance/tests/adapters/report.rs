@@ -12,8 +12,9 @@
 //! The link checker's stand-in answers by host: `gone.test` and its subdomains are a 404,
 //! `moved.test` redirects permanently to the same path on `new.test`,
 //! `landing.test` sends its root to `/docs/intro`,
-//! `slow.test` doesn't answer in time, `down.test` can't be reached, and
-//! every other host answers. A `[checks.links] command` of `not-installed`
+//! `slow.test` doesn't answer in time, `down.test` can't be reached,
+//! `error.test` answers 500 every time it's asked, `flaky.test` answers
+//! 503 the first time and then answers, and every other host answers. A `[checks.links] command` of `not-installed`
 //! is a checker that can't be run.
 //!
 //! A case with a `link-cache/` folder has the answers the report reuses:
@@ -31,7 +32,8 @@
 //! and the pages own (`llms-txt-exists`, `content-negotiation`,
 //! `page-size-markdown`); every other check passes.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Mutex;
 use std::time::Duration;
 
 use ascribe_check::Project;
@@ -87,10 +89,12 @@ fn found(case: &Case) -> Result<(Project, Vec<ascribe_check::Diagnostic>), Adapt
     } else {
         Section::Links
     };
+    let links = StandInLinks::default();
     let tools = Tools {
-        links: &StandInLinks,
+        links: &links,
         site: &StandInSite,
         links_timeout: Duration::from_secs(5),
+        links_retry_wait: Duration::ZERO,
         site_timeout: Duration::from_secs(5),
     };
     let site = project.model().consumer.site.clone();
@@ -163,8 +167,13 @@ fn copy(from: &std::path::Path, to: &std::path::Path) -> Result<(), AdapterError
     Ok(())
 }
 
-/// A link checker that answers from the host alone.
-struct StandInLinks;
+/// A link checker that answers from the host alone, and from whether it
+/// was asked about the address before.
+#[derive(Default)]
+struct StandInLinks {
+    /// The addresses it was asked about.
+    asked: Mutex<BTreeSet<String>>,
+}
 
 impl LinkChecker for StandInLinks {
     fn check(&self, request: &links::Request) -> Result<BTreeMap<String, Answer>, ToolError> {
@@ -174,10 +183,15 @@ impl LinkChecker for StandInLinks {
                 reason: "it isn't installed, or isn't on the PATH".to_owned(),
             });
         }
+        let mut asked = self.asked.lock().map_err(|_| ToolError::Failed {
+            command: request.command.clone(),
+            reason: "a stand-in panicked".to_owned(),
+        })?;
         Ok(request
             .urls
             .iter()
             .map(|url| {
+                let first = asked.insert(url.clone());
                 let host = links::host(url).unwrap_or_default();
                 let answer = match host {
                     h if h == "gone.test" || h.ends_with(".gone.test") => Answer::Broken {
@@ -198,6 +212,12 @@ impl LinkChecker for StandInLinks {
                     },
                     "down.test" => Answer::Unreachable {
                         reason: "Connection failed".to_owned(),
+                    },
+                    "error.test" => Answer::Broken {
+                        status: "500 Internal Server Error".to_owned(),
+                    },
+                    "flaky.test" if first => Answer::Broken {
+                        status: "503 Service Unavailable".to_owned(),
                     },
                     _ => Answer::Fine,
                 };
