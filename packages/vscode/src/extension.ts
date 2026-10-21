@@ -143,7 +143,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   skill.register();
 
   const lenses = new BuildLenses();
-  const checks = new EveryBuildChecks(projects);
+  const checks = new EveryBuildChecks(
+    projects,
+    context.workspaceState,
+    (context.extension.packageJSON as { version: string }).version,
+  );
   checks.register();
   const builds = new ProjectBuilds(projects, chosen, lenses, checks);
   builds.register();

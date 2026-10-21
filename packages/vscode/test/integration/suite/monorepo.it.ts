@@ -664,6 +664,108 @@ describe("with several projects, one nested in another", () => {
       );
       await vscode.commands.executeCommand("workbench.action.files.revert");
     });
+
+    // Decision #778: the last check is kept for the next window, which the
+    // test stands for by forgetting what this one made and reading it back.
+    it("keeps the last check for the next window: current with its problems while nothing changed, out of date once a file did, and none from another version", async () => {
+      const docs = folder.docs();
+      const page =
+        "---\ntype: page\ntitle: Self-managed\navailable: self-managed\n---\n\nRun your own.\n";
+      writeFileSync(selfManaged.fsPath, page);
+      writeFileSync(
+        linking.fsPath,
+        "---\ntype: page\ntitle: Cloud link\n---\n\nSee [](self-managed.md).\n",
+      );
+      await open(selfManaged);
+      await open(linking);
+      await diagnosticsOf(linking, (diagnostics) => diagnostics.length === 0);
+      await vscode.commands.executeCommand("ascribe.project.focus");
+      await waitFor("the docs project in the sidebar", () => {
+        const shown = api.ui.sidebar.project();
+        return shown !== undefined && samePath(shown, docs);
+      });
+
+      /** Checks every build, and waits for the check to be kept, current. */
+      async function checkAndKeep(): Promise<Record<string, unknown>> {
+        await vscode.commands.executeCommand("ascribe.checkEveryBuild");
+        return waitFor("the check kept", () => {
+          const kept = api.ui.everyBuild.kept(docs) as Record<string, unknown> | undefined;
+          return kept?.["current"] === true && typeof kept["files"] === "string" && kept;
+        });
+      }
+      /** The next window: what this one made is forgotten, and the Project view reads it back. */
+      async function reopen(): Promise<void> {
+        api.ui.everyBuild.reopen();
+        await api.ui.everyBuild.whenRead();
+      }
+      /** The view's problems count, once it's drawn in `state`. */
+      async function problemsIn(state: string) {
+        const drawn = await api.ui.project.whenDrawn(
+          `every build's problems ${state}`,
+          (d) => d.report.health.find((count) => count.key === "problems")?.state === state,
+          30_000,
+        );
+        const count = drawn.report.health.find((c) => c.key === "problems");
+        assert.ok(count);
+        return count;
+      }
+
+      // Nothing changed: current, with its problems back in the panel.
+      await checkAndKeep();
+      const found = api.ui.everyBuild.problems();
+      assert.deepEqual(
+        found.map((p) => [path.basename(p.file), p.code]),
+        [["cloud-link.md", "ASC121"]],
+      );
+      api.ui.everyBuild.reopen();
+      assert.deepEqual(api.ui.everyBuild.problems(), []);
+      await api.ui.everyBuild.whenRead();
+      assert.deepEqual(api.ui.everyBuild.problems(), found);
+      assert.deepEqual(codes(linking), ["ASC121"]);
+      assert.equal(api.ui.everyBuild.isCurrent(docs), true);
+      assert.match((await problemsIn("current")).note, /^checked at /);
+
+      // A file of the project written on disk, as a branch switch writes it: out of date, nothing put back.
+      writeFileSync(selfManaged.fsPath, page);
+      await reopen();
+      assert.equal(api.ui.everyBuild.isCurrent(docs), false);
+      assert.deepEqual(api.ui.everyBuild.problems(), []);
+      assert.deepEqual(codes(linking), []);
+      const stale = await problemsIn("outOfDate");
+      assert.equal(stale.value, "—");
+      assert.match(stale.note, /^out of date: the project changed after the check at /);
+
+      // An unsaved edit the window has when it reads the check back, as hot exit
+      // puts one back, or one made before the view showed the project: out of date.
+      const current = await checkAndKeep();
+      const editor = await open(linking);
+      const end = editor.document.lineAt(editor.document.lineCount - 1).range.end;
+      assert.ok(await editor.edit((e) => e.insert(end, "\nMore.\n")));
+      try {
+        // As it was kept before the edit.
+        await api.ui.everyBuild.keep(docs, current);
+        await reopen();
+        assert.equal(api.ui.everyBuild.isCurrent(docs), false);
+        assert.deepEqual(api.ui.everyBuild.problems(), []);
+        assert.match(
+          (await problemsIn("outOfDate")).note,
+          /^out of date: the project changed after the check at /,
+        );
+      } finally {
+        await vscode.commands.executeCommand("workbench.action.files.revert");
+      }
+
+      // Kept by another version of the extension: not checked yet, and dropped.
+      const kept = await checkAndKeep();
+      await api.ui.everyBuild.keep(docs, { ...kept, version: "0.0.0-another" });
+      await reopen();
+      assert.deepEqual(api.ui.everyBuild.problems(), []);
+      assert.equal((await problemsIn("unknown")).note, "not checked yet");
+      assert.equal(api.ui.everyBuild.kept(docs), undefined);
+      // The view hidden again: while it shows a project it runs the agent files'
+      // check in its folder, which the tests after this one delete.
+      await vscode.commands.executeCommand("workbench.view.explorer");
+    });
   });
 
   describe("actions", () => {
