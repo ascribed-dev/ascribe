@@ -24,13 +24,45 @@ At its top are the project's name, its folder, its language server's state, such
 | Count | From | Opens |
 |---|---|---|
 | **Problems in every build** | "2 errors, 1 warning": the problems the last **Check Every Build** found in every build, by severity | The Problems panel |
+| **Tested examples changed or never tested** | The same check's `example-stale` and `example-unobserved` | The Problems panel, and the first of them in the editor |
+| **Reviews overdue** | The same check's `review-overdue`, for the day it ran | The Problems panel, and the first of them in the editor |
+| **Permalinks the list is behind on** | The same check's `permalinks-list-behind` | The Problems panel, and the first of them in the editor |
+| **Pages nothing links to or includes** | The language server's list of orphans, as Pages' **Orphans Only** has it | Pages, with **Orphans Only** on |
+| **Content model entries nothing uses** | The language server's count of each entry's uses, as Content model's **Unused Only** has it | Content model, with **Unused Only** on |
+| **Agent files out of date** | `ascribe agents sync --check`, from the last save | **Sync Agent Files**, which names the files it would change and asks first |
 
-- A count of none shows `0`, dimmed.
-- A count that hasn't been made shows a dash and "Needs every build checked", with **Check Every Build** beside it.
-- A count from a check that the project has changed since shows a dash and "Out of date", with the time of the check and **Check Every Build** beside it. Any change to a file of the project counts, saved or not: a page, `ascribe.toml`, `ascribe.nav`, `ascribe.permalinks`, a memo, a template, or a file in one of its [sources](../examples/sources.md)' folders.
-- A count from a check that read files with unsaved changes says so: the check reads files as they're saved.
+- A count of none shows `0`, dimmed, and opens nothing.
+- A count that hasn't been made shows a dash and says what it needs, such as "Needs every build checked", with the action that makes it beside it.
+- A count that's out of date shows a dash and "Out of date", with why, the time it was made, and the action that brings it current beside it. A dash is never dimmed, and an out-of-date count has a warning icon, so none and not known never look alike.
 
-The view never checks every build by itself, since that can take a few seconds on a large project. **Actions** has **Check Every Build**, which checks the project the view shows, wherever the cursor is. **Escape** in the view puts the cursor back in the editor.
+Each count goes out of date by its own rule:
+
+- **The counts from Check Every Build** go out of date together, on any change to a file of the project, saved or not: a page, `ascribe.toml`, `ascribe.nav`, `ascribe.permalinks`, a memo, a template, or a file in one of its [sources](../examples/sources.md)' folders. A check that read files with unsaved changes says so: it reads files as they're saved.
+- **Reviews overdue** depends on the day as well as the files: it says the day it's for, and goes out of date when the day changes, whatever else has.
+- **Orphans and unused entries** come from the language server, which reads your unsaved text, so they're current as you type. While the server is starting, or isn't running, they show a dash.
+- **Agent files** are made from the content model and the pages, so most saves can change them. The view checks them when it first shows the project, and again after each save of a file of the project while it's showing, at most once every few seconds and never as you type. A change on disk that isn't a save, such as a `git checkout`, makes the count out of date, with **Check Agent Files** beside it.
+
+The view never checks every build by itself, since that can take a few seconds on a large project. **Actions** acts on the project the view shows, wherever the cursor is, and each says how it runs in its tooltip:
+
+| Action | How it runs |
+|---|---|
+| **Check Every Build** | The extension checks every build and puts their problems in the Problems panel |
+| **Apply Every Safe Fix** | The language server, as one edit, left unsaved: see [Edits to the whole project](#edits-to-the-whole-project) |
+| **Format Every Page** | The language server, as one edit, left unsaved |
+| **Build** | A task: `ascribe build`, in the terminal |
+| **Sync Agent Files** | A task: `ascribe agents sync`, in the terminal |
+| **Observe Examples** | A task: `ascribe observe`, in the terminal, in the folder of a source with [tested examples](../examples/tested.md). It lists the commands `ascribe.examples.toml` names and asks before running them. |
+
+The tasks are in **Tasks: Run Task** too, and [Tasks](settings.md#tasks) says where they run. **Escape** in the view puts the cursor back in the editor.
+
+### Edits to the whole project
+@available: next
+
+**Apply Every Safe Fix** applies every [safe fix](problems.md#apply-the-safe-fixes) of the problems the editor shows, in every page and fragment of the project, as **Apply the safe fixes in this page** applies one page's. They're the editor's build's problems, the ones in the Problems panel; a problem only another build has, or one that takes every build to tell, is [`ascribe check --fix`](../checks/check.md#applying-the-safe-fixes)'s to fix. **Format Every Page** formats every page and fragment as [Format Document](writing.md#formatting) and `ascribe fmt` do. Both are in the Command Palette too, as **Ascribe: Apply Every Safe Fix** and **Ascribe: Format Every Page**, for the active file's project.
+
+Each is one edit to the text the editor has, so a page you've changed and not saved is fixed or formatted as you have it, never as it is on disk. Before it's made, the extension says how much it changes and asks: "Apply 6 safe fixes in 4 files? They're left unsaved, to read before you save them." When there's nothing to change, it says so and asks nothing.
+
+The files are left unsaved on purpose. On a large project an edit can change hundreds of files, and each is opened with its changes unsaved, so you can read them before you save them: **File: Save All** saves them. **Undo** takes the edit back: VS Code asks whether to undo it in every file it changed or only in the one you're in. If a file changes while the question is up, nothing is applied; choose the action again.
 
 ## This page, Pages, and Content model
 

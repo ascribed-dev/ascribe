@@ -17,7 +17,12 @@ import { PublishedDiagnostics } from "./agents/published.js";
 import { ancestorsWithin, resolveBinary, type Resolution, type ResolvedBinary } from "./binary.js";
 import { CrashCounter } from "./crash.js";
 import { layoutOf, readLayout, type Source } from "./diskChanges.js";
-import { convertEdit, type ServerEdit } from "./edit.js";
+import {
+  convertEdit,
+  convertProjectEdit,
+  type ServerEdit,
+  type ServerProjectEdit,
+} from "./edit.js";
 import { nodeEnvironment, shellCommand, usesShell } from "./environment.js";
 import { globFolder, samePath, type Project } from "./projects.js";
 import { scopeMiddleware, type LensScope } from "./scope.js";
@@ -200,6 +205,25 @@ export class ProjectServer implements vscode.Disposable {
       },
       refused,
     );
+  }
+
+  /**
+   * Asks for one edit to the whole project, `ascribe/projectEdit`, and
+   * converts it into the editor's types, with its counts. Rejects when the
+   * server isn't running or the answer isn't an edit.
+   */
+  async requestProjectEdit(
+    kind: "fixAll" | "format",
+  ): Promise<ServerProjectEdit<vscode.WorkspaceEdit>> {
+    const value = await this.request("ascribe/projectEdit", {
+      textDocument: { uri: vscode.Uri.file(this.project.config).toString() },
+      kind,
+    });
+    const converter = this.client?.protocol2CodeConverter;
+    if (!converter) throw new Error("the Ascribe language server isn't running");
+    return convertProjectEdit(value, {
+      asWorkspaceEdit: (edit) => converter.asWorkspaceEdit(edit),
+    });
   }
 
   /** How many errors the server reports for the project, as the Problems panel lists them. */

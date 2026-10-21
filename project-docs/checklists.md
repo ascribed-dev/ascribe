@@ -60,6 +60,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] The project's inventory (`ascribe/inventory`; `crates/ascribe-lsp/src/inventory.rs`): a new kind of content model entry is a kind of entry.
 - [ ] What's known about a page (`ascribe/page`; `crates/ascribe-lsp/src/page.rs`), whose connections come from `Project::uses_of_file`: a new form that uses a page or a heading is a kind of use there too.
 - [ ] Page edits (`ascribe/edit`; `crates/ascribe-lsp/src/edit.rs`): an operation that writes a changed construct writes it the new way, and a new directive may need an operation.
+- [ ] One edit for the whole project (`ascribe/projectEdit`; `crates/ascribe-lsp/src/project_edit.rs`), whose safe fixes are `code_action.rs`'s `safe_fixes` and whose formatting is `ascribe_fmt::format`: a new safe fix or formatting rule reaches it through those.
 - [ ] What a build leaves out (`ascribe/buildView`; `crates/ascribe-lsp/src/build_view.rs`): a new way a build removes content is removed in `crates/ascribe-resolve/src/build/modes.rs`, which says why, and the build lens shows it.
 - [ ] A prompt for an agent (`ascribe/agentPrompt`; `crates/ascribe-lsp/src/agent_prompt.rs`), built by `ascribe_check::prompt`: a new diagnostic's prompt is worth reading, and a value it's about goes in its `values` placeholder, which the prompt lists as the allowed values.
 - [ ] The server's tests in `crates/ascribe-lsp/tests/`, and `lsp_parity` in `crates/ascribe-cli/tests/`, which compares the server's diagnostics and agent prompts with `ascribe check`'s, and `build_view_parity`, which compares what the build lens dims with what `ascribe build` leaves out.
@@ -71,7 +72,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 
 **The docs**
 
-- [ ] The reference: `docs/content/writing/directives.md`, or the page of `docs/content/content-model/` with the section, and any guide that shows the form. What no release has yet is marked `@available: next`.
+- [ ] The reference: `docs/content/writing/directives.md` (or `syntax.md`, `frontmatter.md`, or `inline.md` beside it), or the page of `docs/content/content-model/` with the section, and any guide that shows the form. What no release has yet is marked `@available: next`.
 - [ ] A new built-in: the directive reference's table of built-ins, generated from `builtin_schemas()` by `crates/ascribe-cli/src/docs/builtins.rs` (`ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`), with its availability, `next`, in `available` there; and its section in the reference, in SPEC §4's order, which the same test holds.
 - [ ] Its changelog entry, a file of its own in `changes/` ([changes/README.md](../changes/README.md)), not a line in `CHANGELOG.md`.
 

@@ -39,11 +39,11 @@ A link to a page that isn't in a line still goes somewhere, in three steps:
    ---
    ```
 
-   A link to either page lands on whichever one the line has. Neither page links to the other by hand, and a link keeps its `#id` when the page it lands on has a heading with that id.
+   A link to either page lands on whichever one the line has. Neither page links to the other by hand, and a link keeps its `#id` when the page it lands on has a heading with that id, and drops it otherwise, with [`link-fragment-dropped`](../checks/diagnostics/content-checks.md#ASC221) advice.
 2. **The page in another line.** Otherwise the link leads to the page in the nearest line that has it, the closest newer line first. In 3.4, a link to a page new in 3.5 goes to `/docs/webhooks/`, and the line follows the link: "Webhooks (3.5)". A site styles it by its `data-ascribe-release-line` attribute; the plain output writes the line after the link.
 3. **Nowhere.** When no live line has the page, the link is [`link-page-dropped`](../checks/diagnostics/pages.md#ASC121), as in any build.
 
-A link from the current line to a page only an older line has is advice, [`link-into-older-line`](../checks/diagnostics/content-checks.md#ASC220): it's a reader on the newest docs sent back to an older line. [`replaces`](../writing/directives.md#a-page-that-replaces-another) has its rules, and `ascribe link` says where a link goes in each line.
+A link from the current line to a page only an older line has is advice, [`link-into-older-line`](../checks/diagnostics/content-checks.md#ASC220): it's a reader on the newest docs sent back to an older line. [`replaces`](../writing/frontmatter.md#a-page-that-replaces-another) has its rules, and `ascribe link` says where a link goes in each line.
 
 ## What an older line says about itself
 

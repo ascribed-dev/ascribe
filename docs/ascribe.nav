@@ -12,6 +12,7 @@ pages = ["getting-started.md", "install.md", "glossary.md"]
 [[sections]]
 folder = "writing/"
 label = "Writing pages"
+pages = ["syntax.md", "directives.md", "frontmatter.md", "inline.md", "memo-files.md", "memos.md", "variants.md"]
 
 [[sections]]
 folder = "content-model/"

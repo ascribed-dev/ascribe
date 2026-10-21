@@ -12,7 +12,7 @@ Error · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.
 
-**Read more:** [Links](../writing/directives.md#links) in the directive reference.
+**Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
 ### ASC037 `link-id-missing`
 @id {permalink=true}: ASC037
@@ -25,7 +25,7 @@ Error · page level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix the `#id`, or give the heading you mean that id with `@id`.
 
-**Read more:** [Links](../writing/directives.md#links) in the directive reference.
+**Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
 ### ASC038 `link-to-fragment`
 @id {permalink=true}: ASC038
@@ -38,7 +38,7 @@ Error · file level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Link to a page that includes the fragment.
 
-**Read more:** [Links](../writing/directives.md#links) in the directive reference.
+**Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
 ### ASC040 `link-id-removed`
 @id {permalink=true}: ASC040
@@ -51,7 +51,7 @@ Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Put the link in a `@variant` arm that the same build removes, or keep the heading in that build.
 
-**Read more:** [Links](../writing/directives.md#links) in the directive reference.
+**Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
 ### ASC041 `link-route`
 @id {permalink=true}: ASC041
@@ -64,7 +64,7 @@ Warning · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC
 
 **Fix:** Link to the page's file, not its URL: Ascribe writes each output's URLs. The editor's quick fix makes the change.
 
-**Read more:** [Links](../writing/directives.md#links) in the directive reference.
+**Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
 ### ASC121 `link-page-dropped`
 @id {permalink=true}: ASC121
@@ -77,7 +77,7 @@ Error · page level · next step: write · [SPEC §5.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Put the link in a `@variant` arm that the same build removes, or publish the page in that build.
 
-**Read more:** [Links](../writing/directives.md#links) in the directive reference.
+**Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
 ## Images
 
@@ -92,7 +92,7 @@ Error · file level · next step: choose · [SPEC §5.3]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix the path, or add the image. Names must match exactly, including case, and the file must be inside the project.
 
-**Read more:** [Images](../writing/directives.md#images) in the directive reference.
+**Read more:** [Images](../writing/inline.md#images) in the phrases and links reference.
 
 ### ASC043 `image-alt-missing`
 @id {permalink=true}: ASC043
@@ -105,7 +105,7 @@ Warning · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.
 
 **Fix:** Describe the image between the brackets: `![The settings page](settings.png)`.
 
-**Read more:** [Images](../writing/directives.md#images) in the directive reference.
+**Read more:** [Images](../writing/inline.md#images) in the phrases and links reference.
 
 ### ASC059 `image-attribute-missing`
 @id {permalink=true}: ASC059
@@ -118,7 +118,7 @@ Error · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Add the attribute in the block after the image: `![Alt](image.png){width=600}`.
 
-**Read more:** [Images](../writing/directives.md#images) in the directive reference.
+**Read more:** [Images](../writing/inline.md#images) in the phrases and links reference.
 
 ## Phrases
 
@@ -133,7 +133,7 @@ Warning · file level · next step: choose · [SPEC §5.1]({repo}/blob/main/SPEC
 
 **Fix:** Declare the key in `[phrases]` if it's meant as a phrase. Otherwise write `\{` to keep the braces as text.
 
-**Read more:** [Phrases](../writing/directives.md#phrases) in the directive reference.
+**Read more:** [Phrases](../writing/inline.md#phrases) in the phrases and links reference.
 
 ### ASC126 `phrase-double-braces`
 @id {permalink=true}: ASC126
@@ -146,7 +146,7 @@ Warning · file level · next step: fix · [SPEC §5.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the outer braces, or write `\{` for a brace that's meant.
 
-**Read more:** [Phrases](../writing/directives.md#phrases) in the directive reference.
+**Read more:** [Phrases](../writing/inline.md#phrases) in the phrases and links reference.
 
 ## Headings
 
@@ -161,7 +161,7 @@ Warning · file level · next step: fix · [SPEC §5.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Give the heading a stable id: an `@id` line directly under it.
 
-**Read more:** [Heading ids](../writing/directives.md#heading-ids) in the directive reference.
+**Read more:** [Heading ids](../writing/inline.md#heading-ids) in the phrases and links reference.
 
 ### ASC046 `heading-duplicate-without-id`
 @id {permalink=true}: ASC046
@@ -174,7 +174,7 @@ Warning · page level · next step: fix · [SPEC §5.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Give the heading a stable id: an `@id` line directly under it.
 
-**Read more:** [Heading ids](../writing/directives.md#heading-ids) in the directive reference.
+**Read more:** [Heading ids](../writing/inline.md#heading-ids) in the phrases and links reference.
 
 ### ASC124 `heading-empty-slug`
 @id {permalink=true}: ASC124
@@ -187,7 +187,7 @@ Warning · file level · next step: write · [SPEC §5.5]({repo}/blob/main/SPEC.
 
 **Fix:** Give the heading an id: an `@id` line directly under it.
 
-**Read more:** [Heading ids](../writing/directives.md#heading-ids) in the directive reference.
+**Read more:** [Heading ids](../writing/inline.md#heading-ids) in the phrases and links reference.
 
 ## Frontmatter
 
@@ -254,7 +254,7 @@ Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Fix the YAML between the `---` lines.
 
-**Read more:** [Files](../writing/directives.md#files) in the directive reference.
+**Read more:** [Files](../writing/frontmatter.md#files) in the frontmatter reference.
 
 ### ASC188 `listing-loosened`
 @id {permalink=true}: ASC188
@@ -306,7 +306,7 @@ Error · file level · next step: choose · [SPEC §2.1]({repo}/blob/main/SPEC.m
 
 **Fix:** Write the path of the page this one takes the place of, relative to this page or from the content root with a leading `/`, as a link to it is written: `replaces: install-legacy.md`.
 
-**Read more:** [A page that replaces another](../writing/directives.md#a-page-that-replaces-another) in the directive reference.
+**Read more:** [A page that replaces another](../writing/frontmatter.md#a-page-that-replaces-another) in the frontmatter reference.
 
 ### ASC217 `replaces-cycle`
 @id {permalink=true}: ASC217
@@ -319,7 +319,7 @@ Error · page level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Keep `replaces` on the newer page alone, naming the page it takes the place of. A page replaced in turn names nothing that comes after it.
 
-**Read more:** [A page that replaces another](../writing/directives.md#a-page-that-replaces-another) in the directive reference.
+**Read more:** [A page that replaces another](../writing/frontmatter.md#a-page-that-replaces-another) in the frontmatter reference.
 
 ### ASC218 `replaces-overlap`
 @id {permalink=true}: ASC218
@@ -332,7 +332,7 @@ Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Mark the newer page with the line it starts in, `available: self-managed 3.5`, and the page it replaces with where it ends, `available: self-managed (ga 3.0, removed 3.5)`, so each line publishes one of them.
 
-**Read more:** [A page that replaces another](../writing/directives.md#a-page-that-replaces-another) in the directive reference.
+**Read more:** [A page that replaces another](../writing/frontmatter.md#a-page-that-replaces-another) in the frontmatter reference.
 
 ### ASC219 `replaces-same-page`
 @id {permalink=true}: ASC219
@@ -345,7 +345,7 @@ Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Keep `replaces` on one of the two pages, or give them availability that no line shares, so a line has one page in the old page's place. When one page is split in two, the other takes no `replaces`; link to it from the first.
 
-**Read more:** [A page that replaces another](../writing/directives.md#a-page-that-replaces-another) in the directive reference.
+**Read more:** [A page that replaces another](../writing/frontmatter.md#a-page-that-replaces-another) in the frontmatter reference.
 
 ### ASC222 `listing-loosened-in-line`
 @id {permalink=true}: ASC222
@@ -373,7 +373,7 @@ Warning · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.
 
 **Fix:** Indent the directive to the list item's content, to keep it in the item. To end the list there, put a blank line before the directive.
 
-**Read more:** [Lists and block quotes](../writing/directives.md#lists-and-block-quotes) in the directive reference.
+**Read more:** [Lists and block quotes](../writing/syntax.md#lists-and-block-quotes) in the directive syntax reference.
 
 ### ASC053 `directive-indented-code`
 @id {permalink=true}: ASC053
@@ -386,7 +386,7 @@ Warning · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.
 
 **Fix:** Indent the directive less, to its container's content. If it's meant as code, put it in a fenced code block.
 
-**Read more:** [Lists and block quotes](../writing/directives.md#lists-and-block-quotes) in the directive reference.
+**Read more:** [Lists and block quotes](../writing/syntax.md#lists-and-block-quotes) in the directive syntax reference.
 
 ### ASC054 `steps-numbering-continued`
 @id {permalink=true}: ASC054
@@ -414,7 +414,7 @@ Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Check the file's permissions, and save it as UTF-8.
 
-**Read more:** [Files](../writing/directives.md#files) in the directive reference.
+**Read more:** [Files](../writing/frontmatter.md#files) in the frontmatter reference.
 
 ## `@snippet`
 

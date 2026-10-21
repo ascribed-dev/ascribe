@@ -11,13 +11,16 @@ import { TerminalPath, type TerminalsApi } from "./agents/terminals.js";
 import { AgentTools, type ToolsApi } from "./agents/tools.js";
 import { SyncedSkillKey, type SkillApi } from "./agents/skill.js";
 import { BuildLens, type BuildLensApi } from "./ui/buildLens.js";
+import { AgentFilesChecks, type AgentFilesApi } from "./ui/agentFiles.js";
 import { EveryBuildChecks, type EveryBuildApi } from "./ui/checkEveryBuild.js";
 import { ChosenBuilds } from "./ui/chosenBuild.js";
 import { projectKeys, STATE_NAMES } from "./ui/describe.js";
 import { BuildLenses } from "./ui/lens.js";
 import { ProjectBuilds } from "./ui/projectBuilds.js";
 import { ReviewView, type ReviewViewApi } from "./ui/reviewView.js";
+import { ProjectEdits, type ProjectEditsApi } from "./ui/projectEdits.js";
 import { ProjectView, type ProjectViewApi } from "./ui/projectView.js";
+import { ProjectTasks } from "./ui/tasks.js";
 import { thisPageNotice } from "./ui/sidebar.js";
 import {
   SidebarViews,
@@ -73,12 +76,16 @@ export interface AscribeApi {
     review: ReviewViewApi;
     /** The Project view. */
     project: ProjectViewApi;
+    /** Apply Every Safe Fix and Format Every Page. */
+    projectEdits: ProjectEditsApi;
     /** The This page view. */
     thisPage: ThisPageApi;
     /** The Pages and Content model views. */
     sidebar: SidebarApi;
     /** Check Every Build's problems. */
     everyBuild: EveryBuildApi;
+    /** The agent files' checks, which the Project view counts. */
+    agentFiles: AgentFilesApi;
     /** Settles when every request for a project's builds has been answered. */
     whenBuildsKnown(): Promise<void>;
   };
@@ -134,7 +141,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   const switchProject = new SwitchProject(projects, builds, sidebar);
   switchProject.register();
   sidebar.register();
-  const projectView = new ProjectView(projects, sidebar, checks, context.extensionUri);
+  const tasks = new ProjectTasks(context, projects);
+  tasks.register();
+  const projectEdits = new ProjectEdits(projects);
+  projectEdits.register();
+  const agentFiles = new AgentFilesChecks(projects);
+  agentFiles.register();
+  const projectView = new ProjectView(
+    projects,
+    sidebar,
+    checks,
+    agentFiles,
+    tasks,
+    projectEdits,
+    context.extensionUri,
+  );
   projectView.register();
 
   const newPage = new NewPage(projects);
@@ -190,12 +211,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     chosen,
     lenses,
     checks,
+    agentFiles,
     builds,
     statusBar,
     lens,
     switchProject,
     reviewView,
     sidebar,
+    tasks,
+    projectEdits,
     projectView,
     walkthrough,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
@@ -299,9 +323,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       lens: lens.api,
       review: reviewView.api,
       project: projectView.api,
+      projectEdits: projectEdits.api,
       thisPage: sidebar.thisPageApi,
       sidebar: sidebar.api,
       everyBuild: checks.api,
+      agentFiles: agentFiles.api,
       whenBuildsKnown: () => builds.whenSettled(),
     },
   };

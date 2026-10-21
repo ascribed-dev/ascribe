@@ -2,7 +2,8 @@
 //! what it says before it runs anything, the observation it writes when the
 //! test passes, that a failing test writes nothing and leaves the old
 //! observation as it was, its JSON, and what it exits with when it can't
-//! run. The commands are ones `sh` and `cmd` both run.
+//! run; and that, with no terminal on standard input, it doesn't ask before
+//! it runs. The commands are ones `sh` and `cmd` both run.
 
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 
@@ -91,6 +92,25 @@ fn a_passing_test_writes_what_it_passed_and_where() {
         fs::read_to_string(dir.path().join(OBSERVATION)).unwrap(),
         text
     );
+}
+
+/// Standard input here isn't a terminal, as in CI or a hook: it runs the
+/// commands without asking, as it does with `--yes`. The question itself is
+/// tested in `src/commands/observe.rs`.
+#[test]
+fn without_a_terminal_or_with_yes_it_doesnt_ask() {
+    for args in [&["observe"][..], &["observe", "--yes"]] {
+        let dir = folder("exit 0");
+        let output = ascribe(dir.path(), args);
+        assert_eq!(code_of(&output), 0, "{args:?}: {}", stderr(&output));
+        assert!(
+            stdout(&output).starts_with("Running the commands in ascribe.examples.toml:\n"),
+            "{args:?}: {}",
+            stdout(&output)
+        );
+        assert!(!stderr(&output).contains("Run them?"), "{args:?}");
+        assert!(dir.path().join(OBSERVATION).exists(), "{args:?}");
+    }
 }
 
 /// A link to a folder `include` matches, as pnpm's `node_modules` is full

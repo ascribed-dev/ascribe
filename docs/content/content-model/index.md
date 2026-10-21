@@ -13,7 +13,7 @@ A file containing only `spec = "0.1"` is valid; every section has a default ([§
 - [`examples/quill/ascribe.toml`]({repo}/blob/main/examples/quill/ascribe.toml): a small, complete project.
 - [`examples/content-models/full.toml`]({repo}/blob/main/examples/content-models/full.toml): every section and key.
 
-Every problem the loader reports is in the [diagnostics reference](../checks/diagnostics/content-model.md), with its fix. References to "SPEC" are to the [Ascribe specification]({repo}/blob/main/SPEC.md).
+Every problem the loader reports is in the [diagnostics reference](../checks/diagnostics/content-model.md), with its fix. References to "SPEC" are to the [Ascribe specification]({repo}/blob/main/SPEC.md). The rules a loader enforces, stated for someone writing one, are in the [`ascribe.toml` format contract](../contracts/content-model.md), with the same section numbers and key tables.
 
 ## Contents
 
@@ -62,7 +62,7 @@ Every problem the loader reports is in the [diagnostics reference](../checks/dia
 
 @include: ../_generated/content-model-project.md
 
-**Rules:** both paths are relative (`model-path-absolute`). The output directory must not be inside the content root, the content root must not be inside the output directory, and they must not be the same directory (`model-output-overlaps-content`); otherwise a build would read its own output as source, or delete source as stale output. Paths are compared after normalizing `.` and `..` segments and, when both exist, after resolving symbolic links.
+**Rules:** both paths are relative to the project root (`model-path-absolute`). Neither folder can be inside the other, and they can't be one folder (`model-output-overlaps-content`): a build would read its own output as source, or delete source as stale output. Ascribe tells them apart after resolving `.`, `..`, and, for folders that are there, symbolic links, so a link can't hide one inside the other.
 
 @include: ../_fragments/content-model/project-defaults.md
 
@@ -72,9 +72,9 @@ Every problem the loader reports is in the [diagnostics reference](../checks/dia
 
 @include: ../_fragments/content-model/types.md
 
-**The page title.** Every page type must declare `title` as a required `string` field (`model-type-title`). The frontmatter `title` is the page's title wherever the spec needs one, such as the replacement text of an empty link to a page ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)). The field may accept phrases (§11), and code spans (§5.3).
+**The page title.** A page type has to declare `title`, as a required `string` field (`model-type-title`). It's the page's title everywhere Ascribe needs one: an empty link to the page shows it as its text, for one ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)). The field can accept phrases (§11), and code spans (§5.3).
 
-**Reserved keys.** `type` (the page's [content type](#4-typesname-and-fragments)), `available` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)), `variant` ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)), `permalink` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's [permalink](../writing/directives.md#permalinks)), `listing` (below), `replaces` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), the page [a page replaces](../writing/directives.md#a-page-that-replaces-another)), and `nav-label` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's name in the sidebar and the previous and next links) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type must not declare them (`model-field-reserved`). Generated consumer schemas include them automatically, except `listing`, which reaches a site in the page's record (output-layout contract §1.3), `replaces`, which reaches it in the versions file (output-layout contract §1.5), and `nav-label`, which reaches it in the navigation (output-layout contract §1.6). `intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](../writing/directives.md#intended), and since no output has it, generated consumer schemas leave it out. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type must not declare it (`model-field-reserved`).
+**Reserved keys.** `type` (the page's [content type](#4-typesname-and-fragments)), `available` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)), `variant` ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)), `permalink` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's [permalink](../writing/frontmatter.md#a-pages-permalink)), `listing` (below), `replaces` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), the page [a page replaces](../writing/frontmatter.md#a-page-that-replaces-another)), and `nav-label` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's name in the sidebar and the previous and next links) are reserved frontmatter keys. Any page can use them, whatever its type says, and they mean what SPEC says; a type that declares one is an error (`model-field-reserved`). Generated consumer schemas include them automatically, except `listing`, which reaches a site in the page's record (output-layout contract §1.3), `replaces`, which reaches it in the versions file (output-layout contract §1.5), and `nav-label`, which reaches it in the navigation (output-layout contract §1.6). `intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](../writing/directives.md#intended), and since no output has it, generated consumer schemas leave it out. With the `astro` profile, a type can't declare `slug` either (`model-field-reserved`): Astro would take a page's `slug` as its entry id instead of its path, and publish the page at an address Ascribe never worked out.
 
 `formatted` is reserved on page types too: the site output writes the formatted form of fields that set `inline` under it (§5.3), so a type must not declare it (`model-field-reserved`).
 
@@ -97,7 +97,7 @@ A project can set `listing` for the whole site, a folder, or a content type, in 
 
 @include: ../_fragments/content-model/types-frontmatter-and-fragments.md
 
-**Reserved keys on fragments.** The spec defines `type`, `available`, `variant`, `permalink`, `listing`, `replaces`, and `nav-label` for pages only. A fragment's frontmatter must not use them (an error on the fragment), and `[fragments.frontmatter]` must not declare them (`model-field-reserved`). Use `@available` inside the fragment instead. `intended` is for fragments too, and `[fragments.frontmatter]` must not declare it either.
+**Reserved keys on fragments.** `type`, `available`, `variant`, `permalink`, `listing`, `replaces`, and `nav-label` are a page's, so a fragment that has one in its frontmatter gets an error, and `[fragments.frontmatter]` can't declare them (`model-field-reserved`). To mark what a fragment contributes, put `@available` inside it. A fragment can use `intended`, which `[fragments.frontmatter]` can't declare either.
 
 ---
 
@@ -111,9 +111,12 @@ A project can set `listing` for the whole site, a folder, or a content type, in 
 
 ### 5.3 Code in a field
 
-A `string` field is plain text: a backtick in it is a backtick. To show code in a page title, set `inline = "code"` on the field:
+A backtick in a `string` field is just a backtick. To show code in a page title, set `inline = "code"` on the field:
 
-@include: ../_fragments/content-model/inline-code-example.md
+```toml
+[types.reference.frontmatter]
+title = { type = "string", inline = "code" }
+```
 
 ```yaml
 ---

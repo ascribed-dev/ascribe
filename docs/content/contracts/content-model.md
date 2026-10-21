@@ -1,18 +1,14 @@
 ---
 type: reference
 title: "`ascribe.toml` format contract"
-description: The normative contract for the content model file, with the rules a loader enforces and the decisions behind them.
+description: The normative contract for the content model file, with the rules a loader enforces.
 ---
 
-This is the normative contract for `ascribe.toml`, the content model file (SPEC §7). It defines every table and key, the short syntax for field and attribute types, and every rule a loader enforces. The loader in `ascribe-model` implements it. For a guide to writing one, see the [`ascribe.toml` reference](../content-model/index.md).
+This is the normative contract for `ascribe.toml`, the content model file (SPEC §7): its tables and keys, the short syntax for field and attribute types, and every rule a loader enforces. The loader in `ascribe-model` implements it. What each key is for, with examples, is in the [`ascribe.toml` reference](../content-model/index.md), which shares this page's key tables and section numbers.
 
-SPEC.md is normative for the language. This document is normative for the file format. Where it settles something the spec leaves open, the item is listed in [Decisions](content-model/validation.md#26-decisions).
+SPEC.md is normative for the language, and this contract for the file format. The decisions that settle what the spec leaves open are files in [`project-docs/decisions/`]({repo}/tree/main/project-docs/decisions), listed in [decision #689a]({repo}/blob/main/project-docs/decisions/689a-what-a-contract-page-holds.md).
 
-Example files, each valid under this reference:
-
-- [`examples/content-models/minimal.toml`]({repo}/blob/main/examples/content-models/minimal.toml): the smallest valid model.
-- [`examples/content-models/quill.toml`]({repo}/blob/main/examples/content-models/quill.toml): the model SPEC Appendix B assumes.
-- [`examples/content-models/full.toml`]({repo}/blob/main/examples/content-models/full.toml): every section and key.
+Every file in [`examples/content-models/`]({repo}/tree/main/examples/content-models) is valid under this contract: `minimal.toml` is the smallest valid model, `quill.toml` the model SPEC Appendix B assumes, and `full.toml` has every section and key.
 
 ## Contents
 
@@ -41,13 +37,14 @@ Example files, each valid under this reference:
 23. [Defaults: what an absent section means](content-model/checks.md#23-defaults-what-an-absent-section-means)
 24. [Validation rules](content-model/validation.md#24-validation-rules)
 25. [Map of SPEC §7.2 to this file](content-model/validation.md#25-map-of-spec-72-to-this-file)
-26. [Decisions](content-model/validation.md#26-decisions)
 
 ---
 
 ## 1. Conventions
 
 @include: ../_fragments/content-model/conventions.md
+
+**Rules.** A loader MUST preserve the order in which attribute keys (`[images.attributes]`, `[widgets.<name>.attributes]`) and the `[dimensions]` tables are declared, and SHOULD preserve the order of everything else. A filesystem path in `[project]` or `[sources]` MUST NOT be absolute, and MAY contain `..` segments (`model-path-absolute`). A pattern's `**` MUST be a whole segment, and a pattern MUST NOT start with `/` or contain a `..` segment (`model-pattern-syntax`).
 
 ---
 
@@ -61,12 +58,9 @@ Example files, each valid under this reference:
 
 @include: ../_fragments/content-model/project.md
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `content-root` | string (path) | `"docs"` | The content root (SPEC §2.2): the directory holding every source file. Paths in links and includes that begin with `/` are relative to it. It MUST exist and be a directory. |
-| `output-dir` | string (path) | `".ascribe/build"` | Where `ascribe build` writes output. Each build and emitter writes under `<output-dir>/<build>/<emitter>/` (see the [output-layout contract](output-layout.md)). It need not exist. |
+@include: ../_generated/content-model-project.md
 
-**Rules** (§24): both paths are relative (`model-path-absolute`). The output directory MUST NOT be inside the content root, the content root MUST NOT be inside the output directory, and they MUST NOT be the same directory (`model-output-overlaps-content`); otherwise a build would read its own output as source, or delete source as stale output. Paths are compared after normalizing `.` and `..` segments and, when both exist, after resolving symbolic links.
+**Rules** (§24.2): `content-root` and `output-dir` MUST be relative (`model-path-absolute`). The content root MUST exist and be a directory (`model-content-root-missing`); the output directory need not exist. The output directory MUST NOT be inside the content root, the content root MUST NOT be inside the output directory, and the two MUST differ (`model-output-overlaps-content`), each compared after its `.` and `..` segments are normalized and, when both exist, its symbolic links resolved.
 
 @include: ../_fragments/content-model/project-defaults.md
 
@@ -76,13 +70,13 @@ Example files, each valid under this reference:
 
 @include: ../_fragments/content-model/types.md
 
-**The page title.** Every page type MUST declare `title` as a required `string` field (`model-type-title`). The frontmatter `title` is the page's title wherever the spec needs one, such as the replacement text of an empty link to a page (SPEC §5.2). The field MAY accept phrases (§11), and MAY set `inline = "code"` for code spans in the title (§5.3).
+**The page title.** Every page type MUST declare `title` as a required `string` field (`model-type-title`), and a page's frontmatter `title` is its title wherever SPEC needs one (SPEC §5.2). The field MAY set `phrases = true` (§11) and `inline = "code"` (§5.3).
 
-**Reserved keys.** `type` (SPEC §2.1, §7.2), `available` (SPEC §4.4), `variant` (SPEC §4.3), `permalink` (SPEC §2.1), `listing` (SPEC §2.1), and `replaces` (SPEC §2.1) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type MUST NOT declare them (`model-field-reserved`). Generated consumer schemas include them automatically, except `listing`, which reaches a site in the page's record (output-layout contract §1.3), and `replaces`, which reaches it in the versions file (output-layout contract §1.5); `type` is the literal of the type's name, on a type the project declares. `nav-label` (SPEC §2.1) is reserved too, and every page accepts it; it reaches a site as the page's label in the navigation (output-layout contract §1.6), so generated consumer schemas leave it out, and a type MUST NOT declare it (`model-field-reserved`). `intended` (SPEC §4.9) is reserved too, and every page and every fragment accepts it; no output has it, so generated consumer schemas leave it out, and a type MUST NOT declare it (`model-field-reserved`). Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type MUST NOT declare it (`model-field-reserved`). `formatted` is reserved on page types as well: the site output writes the formatted form of `inline` fields under it (§5.3), so a type MUST NOT declare it (`model-field-reserved`). A page's own frontmatter can't use it either, since no type declares it. `source` is reserved on page types for the same reason: the site output writes each page's path from the content root under it (SPEC §9.6), so a type MUST NOT declare it (`model-field-reserved`), and a page can't write it.
+**Reserved keys.** `type`, `available`, `variant`, `permalink`, `listing`, `replaces`, `nav-label` (SPEC §2.1, §4.3, §4.4, §7.2), and `intended` (SPEC §4.9) are reserved frontmatter keys. Every page MUST accept them, with the meaning SPEC gives them, whatever its type declares, and a type MUST NOT declare one (`model-field-reserved`). A generated consumer schema MUST include `type`, as the literal of the type's name on a type the project declares, `available`, `variant`, and `permalink`, and MUST NOT include `listing` (the page's record has it, output-layout contract §1.3), `replaces` (the versions file has it, §1.5), `nav-label` (the navigation has it, §1.6), or `intended`, which no output has. A page type MUST NOT declare `formatted` (§5.3) or `source` (SPEC §9.6), which the site output writes, nor, under the `astro` profile, `slug`, which Astro's content loader reads as an entry id (`model-field-reserved`); a page's frontmatter can't use `formatted` or `source`, since no type declares them.
 
 @include: ../_fragments/content-model/types-frontmatter-and-fragments.md
 
-**Reserved keys on fragments.** The spec defines `type`, `available`, `variant`, `permalink`, `listing`, `replaces`, and `nav-label` for pages only. A fragment's frontmatter MUST NOT use them (an error on the fragment), and `[fragments.frontmatter]` MUST NOT declare them (`model-field-reserved`). Use `@available` inside the fragment instead. A fragment MAY use `intended`, and `[fragments.frontmatter]` MUST NOT declare it (`model-field-reserved`).
+**Reserved keys on fragments.** A fragment's frontmatter MUST NOT use `type`, `available`, `variant`, `permalink`, `listing`, `replaces`, or `nav-label`, which SPEC defines for pages only (`frontmatter-reserved-in-fragment`, an error on the fragment), and MAY use `intended`. `[fragments.frontmatter]` MUST NOT declare any of the eight (`model-field-reserved`).
 
 ---
 
@@ -90,32 +84,19 @@ Example files, each valid under this reference:
 
 @include: ../_fragments/content-model/field-types.md
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `type` | string | **required** | A field type or attribute type (§5.1). In table form it may also be `object`, `list(object)`, or bare `enum`, with the keys below. |
-| `fields` | table of fields | required when `type` is `object`, `object?`, `list(object)`, or `list(object)?`; not allowed otherwise | The nested fields of an object, in the same syntax (short or table form). Field types only. |
-| `values` | array of strings | required when `type` uses bare `enum`; not allowed otherwise | The enumeration's values, for values that aren't simple words, such as `["Getting started", "How-to"]`. Values MUST be distinct. Values of a `set(enum)` attribute MUST be tokens. |
-| `default` | any TOML value | none | The value used when the field or attribute is absent. It MUST have the declared type (a TOML string for `string` and `enum`, integer or float for `number`, boolean for `boolean`, local date for `date`, array for `list`, inline table for `object`, a string or array of strings for `set`). A field with a default is optional; adding `?` as well is allowed and changes nothing. |
-| `phrases` | boolean | `false` | Whether phrases (SPEC §5.1) are substituted in this field's value. Field types only; allowed only on `string` and `list(string)` fields (and their optional forms), including fields nested in objects. See §11. |
-| `inline` | string | none | The inline markup the value is read with. The one value is `"code"`: code spans. Allowed only on a content type's top-level `string` fields (and `string?`), not in objects or the fragment schema. See §5.3. |
-| `description` | string | none | Help text shown by the editor (hover and completion) and emitted into generated schemas as documentation. |
-| `role` | string | none | What the field is for, for the checks that read it (SPEC §7.2): `"description"`, `"review-date"`, or `"owner"`. Allowed only on a content type's top-level fields, not in objects or the fragment schema. See §5.4. |
+@include: ../_generated/content-model-fields.md
+
+**Rules** (§24.3): `fields` MUST be given exactly when the type is `object` or `list(object)`, optional or not (`model-type-fields`). `values` MUST appear only with bare `enum`, with at least one value and no two alike (`model-enum-values`), and a `set(enum)` attribute's values MUST be tokens (`model-set-token`). A `default` MUST have the declared type, and an enumeration's MUST be one of its values (`model-default-type`). `phrases = true` MUST be set only on `string` and `list(string)` fields, optional or not, including fields in objects (`model-phrases-field-type`). `inline` and `role` MUST be set only on a content type's top-level fields, not in an object or the fragment schema (`model-inline-field`, `model-field-role`).
 
 @include: ../_fragments/content-model/field-types-nesting.md
 
 ### 5.3 Inline code in a field
 
-A `string` field is plain text: a backtick in it is a backtick. A field that sets `inline = "code"` is read as inline Markdown that knows only code spans, so a page title can show code:
-
-@include: ../_fragments/content-model/inline-code-example.md
-
-```yaml
-title: "`ascribe.toml` reference"
-```
+A field that sets `inline = "code"` MUST be read as inline Markdown that knows only code spans; any other `string` field's value is its text, backticks and all.
 
 - **Code spans** are CommonMark's (CommonMark §6.1): a run of backticks opens one, the next run of the same length closes it, and a run with no closer is literal. Their content is normalized as CommonMark does: line endings become spaces, and one space is stripped from each end when both ends have one.
 - **Escapes.** Outside code spans, a backslash before ASCII punctuation escapes it, as in CommonMark, so `` \` `` is a literal backtick. Inside them, a backslash is literal.
-- **Nothing else is markup.** Emphasis, links, and HTML stay literal text. A title becomes the text of other links (empty link text, SPEC §5.2), where a link or emphasis would cause trouble.
+- **Nothing else is markup.** Emphasis, links, and HTML stay literal text.
 - **Phrases** (`phrases = true`) are substituted in the text, never inside code spans, as in prose (SPEC §5.1).
 
 Each output carries two forms of the value. The **plain text** is the value without markup: the code spans' content, with no backticks (`ascribe.toml reference`). The **formatted form** keeps the code spans. Where each goes:
@@ -128,7 +109,9 @@ Each output carries two forms of the value. The **plain text** is the value with
 | JSON output | `title` and `frontmatter.<field>` | `formatted.<field>`, a list of `{ "type": "text" \| "code", "value": … }` |
 | Generated Zod schema | The field, as `z.string()` | `formatted`, with a `z.string()` for each field |
 
-A field the page leaves out gets its default's formatted form, so `formatted.<field>` is there whenever the field has a value. The setting is per field, not on for every `string`, so a backtick in an existing field keeps its meaning.
+A field the page leaves out gets its default's formatted form, so `formatted.<field>` is there whenever the field has a value.
+
+**Rules** (§24.3): `inline` MUST be `"code"`, on a content type's top-level `string` or `string?` field (`model-inline-field`).
 
 ---
 
