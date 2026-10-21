@@ -13,7 +13,7 @@ Every action is in four places:
 - The editor's context menu, under **Ascribe**, which lists the actions that apply where the cursor is.
 - The lightbulb (`Ctrl+.` / `Cmd+.`), for the actions that rewrite what's at the cursor, beside the quick fixes.
 
-**Insert a phrase** and **Insert a widget** also run from the **Content model** view: **Insert at the Cursor** in a phrase's or a widget's menu runs them with it chosen, at the cursor of the page you last had open. See [This page, Pages, and Content model](sidebar.md#this-page-pages-and-content-model).
+**Insert a phrase** and **Insert a widget** also run from a phrase's or a widget's menu in the [Content model view](sidebar.md#content-model).
 
 @include: ../_generated/editor-actions.md
 
@@ -50,6 +50,6 @@ A [memo file](../writing/memo-files.md) says why a section or a block is written
 - A **CodeLens** above a heading or a block that has memos counts them: "1 memo", "2 memos", or "3 memos, 1 outdated" when one's quote isn't found any more. A lens at the top of the page counts the memos about the whole page. Click it to open the memo, or, with several, to pick one; each opens at its text.
 - **Ascribe: Add a memo** makes a file in `memos/` about the section the cursor is in, by its id, or about the page when the cursor is above its first heading with an id. Its `quote` is the selected text, or the first line of the block at the cursor; on a heading it has none, and it's about the heading's section. The file is named from the quote's first five words, or the heading's id, cut to 100 bytes, and never made over a file that's there. When the file can't be written, the message says what the file system said. It's saved and opened at its text, so you start writing why. It's in the actions bar's **Memos** group, the Command Palette, and the editor's **Ascribe** submenu.
 - **Ascribe: Add a personal memo** does the same in `.ascribe/memos/`, which stays on your machine: see [Personal memos](../writing/memo-files.md#personal-memos).
-- In a memo file, completion after `about:` offers the project's pages, their headings with ids as `page.md#id`, and its phrases, features, glossary terms, and the rest by `prefix:name`, as [`ascribe refs`](../command/questions.md#cli-refs) takes them. `about` is a link to what it names, and the file shows the problems `ascribe check` would report in it as you type, a personal memo's too.
+- In a memo file, `about:` completes the project's pages, headings, and entries: see [Completion](writing.md#completion).
 
-**This page**'s **Memos** section lists the memos about the heading at the cursor, or the page: see [This page, Pages, and Content model](sidebar.md#this-page-pages-and-content-model).
+**This page**'s **Memos** section lists the memos about the heading at the cursor, or the page: see [This page](sidebar.md#this-page).

@@ -38,6 +38,7 @@ pages = [
   "review.md",
   "agents.md",
   "settings.md",
+  "language-server.md",
 ]
 
 [[sections]]

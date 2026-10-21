@@ -41,9 +41,9 @@ const commands: Record<string, string> = {
   "ascribe.selectPreviewBuild":
     "Picks the build the preview shows, for the previewed page's project, as the preview's **Build** picker does. It's the same choice as **Switch Build**.",
   "ascribe.switchBuild":
-    "Picks the build you're looking at in the active file's project: the one the preview renders and the status bar names. Choosing the editor build follows `[editor] build`. See [The status bar](../editor/preview.md#the-status-bar).",
+    "Picks the build you're looking at in the active file's project: the one the preview renders and the status bar names. Choosing the editor build follows `[editor] build`. See [The build you're looking at](../editor/preview.md#the-build-youre-looking-at).",
   "ascribe.checkEveryBuild":
-    "Runs `ascribe check` over every build of the active file's project, and adds to the Problems panel the problems of builds other than the editor's, which the language server doesn't check. When no file of a project is active and the workspace has several projects, it asks which. See [The Problems panel](../editor/settings.md#the-problems-panel).",
+    "Runs `ascribe check` over every build of the active file's project, and adds to the Problems panel the problems of builds other than the editor's, which the language server doesn't check. When no file of a project is active and the workspace has several projects, it asks which. See [The Problems panel](../editor/problems.md#the-problems-panel).",
   "ascribe.search":
     "Finds words as readers read the active file's project's pages, as you type, unsaved text included, and opens the line that wrote the place you choose. It searches the build the status bar names; its **Search Every Build** button searches every build. See [Search](../editor/writing.md#search).",
   "ascribe.applyEverySafeFix":

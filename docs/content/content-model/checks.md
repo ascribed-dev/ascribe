@@ -39,7 +39,7 @@ limit = "200 KB"
 Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`; `off` turns a check off altogether.
 
 @available: ascribe 0.4.0
-In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page-pages-and-content-model) shows a page's size against `page-size`'s limit, measured the same way, whether or not the page is over it.
+In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) shows a page's size against `page-size`'s limit, measured the same way, whether or not the page is over it.
 
 **Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`), and so is a setting the check doesn't have. A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`). `page-size`'s and `memo-long`'s `limit` is a whole number above 0, and `image-large`'s a size (`model-wrong-type`).
 
@@ -151,7 +151,7 @@ The list changes, as operators add bots and rename them. Ascribe's release proce
 What each value tells search engines and agents is in [Publishing](../publishing/index.md#how-a-page-is-listed).
 
 @available: ascribe 0.4.0
-In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page-pages-and-content-model) says whether a page is listed, and which rule says so; choosing the row opens the rule.
+In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) says whether a page is listed, and which rule says so; choosing the row opens the rule.
 
 In the editor, `listing:` in a page's frontmatter completes its three values, and hovering it says which rule the page is under. A page looser than its rule has a quick fix that removes its `listing`.
 

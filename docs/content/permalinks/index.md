@@ -9,7 +9,7 @@ A heading marked as a [permalink](../writing/directives.md#permalinks), `@id {pe
 This guide keeps a product's links to the docs working: linking to permalinks from the product, checking those links in the product's CI, and what to do in the docs when a section moves, gets a second name, or goes away. The site publishes each address: with Astro, [`@ascribed/astro` does](../astro/reference.md#permalinks).
 
 @available: ascribe 0.4.0
-In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page-pages-and-content-model) lists the permalinks a page declares, its own and its headings', and each opens its line.
+In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) lists the permalinks a page declares, its own and its headings', and each opens its line.
 
 ## Link from your product
 @id: linking-from-a-product

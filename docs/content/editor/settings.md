@@ -1,10 +1,10 @@
 ---
 type: reference
-title: Editor workspaces, settings, and commands
-description: "How the VS Code extension handles a workspace with several projects, and its settings and commands."
+title: Editor workspaces, settings, tasks, and commands
+description: "How the VS Code extension handles a workspace with several projects, Project Settings, its tasks, and its settings and commands."
 ---
 
-How the [VS Code extension](index.md) works in a workspace that holds more than one Ascribe project, and every setting and command it adds.
+How the [VS Code extension](index.md) works in a workspace that holds more than one Ascribe project, the project's own settings, the tasks it runs, and every setting and command it adds.
 
 ## Workspaces with several projects
 @id {permalink=true}: workspaces-with-several-projects
@@ -27,31 +27,15 @@ An `ascribe.toml` you add or delete is picked up as you work. If the editor miss
 
 Each server uses about 6 MB of memory, plus about 70 KB per page of its project.
 
-### The Problems panel
-
-The Problems panel lists diagnostics only for the projects whose server is running. A project whose files you haven't opened or changed shows nothing there, even if it has problems. Open one of its files, or set `ascribe.startServers` to `"all"`, to see them.
-
-A running server reports the problems in each file, and the problems of its pages as the editor's build (`[editor] build`) has them. A problem only another build has, such as a link to a page that build leaves out, isn't in the Problems panel until you check every build. While a project has several builds and the panel holds the editor build's problems alone, the [status bar](preview.md#the-status-bar) says so: **docs · site · problems: this build only**.
-
-**Ascribe: Check Every Build** (also **Check every build** in the status bar's menu) runs `ascribe check` over every build of the active file's project, as it reads the files on disk, and adds the problems the server doesn't show to the Problems panel: those of other builds, each naming the builds it's in (`only in build cloud`), and those of the checks the editor doesn't run, such as `image-unused`. It says how many problems it found in all, and how many it added. When a file changes, the problems it added to that file go, since they may have moved, and the status bar says the panel covers the editor's build alone again, until you run it again. A change to any file of the project counts, not only its pages: `ascribe.nav`, `ascribe.permalinks`, and its memos and templates too. The [Project view](sidebar.md#the-project-view) counts the problems it found, and says when the count is out of date. In a workspace with several projects and no file of one active, it asks which project to check.
-
-An agent that reads the Problems panel sees the same: before calling a project clean, check every build, or run `ascribe check`, which checks every build.
-
-`ascribe check` checks a project whether or not the editor has it open. Run it in the project's folder, or from anywhere with `--config` naming the project's folder or its `ascribe.toml`:
-
-```sh
-npx ascribe check --config handbook
-```
-
 ### Commands and output
 
-Commands act on the project that owns the active file: the preview, its **Build** picker, **Switch Build**, review, and **Show Server Output**. The [status bar](preview.md#the-status-bar) names that project. The sidebar shows it too, and [Switch Project](sidebar.md#switch-project) lists them all and shows another in the sidebar until a file of another project is active. **Restart Language Server** restarts every project's server that has started. [Commands](settings.md#commands) has the details.
+Commands act on the project that owns the active file: the preview, its **Build** picker, **Switch Build**, review, and **Show Server Output**. The [status bar](sidebar.md#the-status-bar) names that project. The sidebar shows it too, and [Switch Project](sidebar.md#switch-project) lists them all and shows another in the sidebar until a file of another project is active. **Restart Language Server** restarts every project's server that has started. [Commands](settings.md#commands) has the details.
 
 Each project's server logs to its own output channel, `Ascribe (<project>)`. The project's name is its folder relative to the workspace folder, such as `Ascribe (handbook/internal)`, or the workspace folder's name for a project at its root. In a workspace with one project, the channel is just `Ascribe`.
 
 A channel's name is set when the channel is first needed, usually when its project's server first starts. So if a workspace with one project gains a second, the first project's channel keeps the name `Ascribe`, beside `Ascribe (<other project>)`, until you reload the window.
 
-When it starts, a server logs its version and the `ascribe.toml` it uses: `ascribe-lsp <version>: using the project at <path>`.
+A server's first line names its version and the `ascribe.toml` it uses, as [the language server](language-server.md#the-project-a-server-serves) says.
 
 ## Project Settings
 @available: next
@@ -76,7 +60,7 @@ A setting the file leaves out is shown with its default, and changing it adds it
 
 ### Content types, builds, and the rest
 
-A content type, a dimension, a release target, a build, and a source are tables of their own, which the file holds as text for a reviewer to read. Each is a card under its section, **Content types**, **Dimensions**, **Releases**, **Builds**, or **Sources**, with its name, its table (`[types.guide]`), the keys the file sets in it, and its line. **Edit in ascribe.toml** opens the file at its table. Phrases, features, and glossary terms are added, renamed, and found in the [Content model view](sidebar.md#this-page-pages-and-content-model), which **Open Content model** shows.
+A content type, a dimension, a release target, a build, and a source are tables of their own, which the file holds as text for a reviewer to read. Each is a card under its section, **Content types**, **Dimensions**, **Releases**, **Builds**, or **Sources**, with its name, its table (`[types.guide]`), the keys the file sets in it, and its line. **Edit in ascribe.toml** opens the file at its table. Phrases, features, and glossary terms are added, renamed, and found in the [Content model view](sidebar.md#content-model), which **Open Content model** shows.
 
 ### Checks
 
@@ -85,7 +69,7 @@ Under **Checks**, the tab lists every check whose level `[checks]` can set ([Set
 ## Tasks
 @available: next
 
-The extension adds a task type, `ascribe`, for the jobs that write files: **Build** runs `ascribe build`, **Sync Agent Files** runs `ascribe agents sync`, and **Observe Examples** runs [`ascribe observe`](../examples/tested.md#2-run-the-test-and-commit-what-it-records). Each runs in the terminal, with its output in view as it would be in CI, and with no problem matcher: the Problems panel stays the editor's and [Check Every Build](#the-problems-panel)'s. The [Project view](sidebar.md#the-project-view)'s Actions run them, and so does **Tasks: Run Task**, where each project has its own, named after the project when the workspace has more than one.
+The extension adds a task type, `ascribe`, for the jobs that write files: **Build** runs `ascribe build`, **Sync Agent Files** runs `ascribe agents sync`, and **Observe Examples** runs [`ascribe observe`](../examples/tested.md#2-run-the-test-and-commit-what-it-records). Each runs in the terminal, with its output in view as it would be in CI, and with no problem matcher: the Problems panel stays the editor's and [Check Every Build](problems.md#the-problems-panel)'s. The [Project view](sidebar.md#the-project-view)'s Actions run them, and so does **Tasks: Run Task**, where each project has its own, named after the project when the workspace has more than one.
 
 Each runs the `ascribe` binary the project's language server runs: the `ascribe.path` setting, the project's own `node_modules/.bin/ascribe`, or the one bundled with the extension. Build and Sync Agent Files run in the project's folder, with `--config` naming its `ascribe.toml` when the project isn't the workspace folder. None is offered in Restricted Mode, where the extension runs nothing until you trust the folder.
 

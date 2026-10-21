@@ -185,7 +185,7 @@
       },
       {
         "href": "/docs/editor/sidebar/",
-        "label": "The Ascribe sidebar"
+        "label": "The sidebar and the status bar"
       },
       {
         "href": "/docs/editor/review/",
@@ -197,7 +197,11 @@
       },
       {
         "href": "/docs/editor/settings/",
-        "label": "Editor workspaces, settings, and commands"
+        "label": "Editor workspaces, settings, tasks, and commands"
+      },
+      {
+        "href": "/docs/editor/language-server/",
+        "label": "The language server"
       }
     ]
   },

@@ -6,7 +6,8 @@
 // site/src/changelog.ts), the tables site/home/ascribe.toml copies from
 // docs/ascribe.toml, the docs' address the Report workflow checks, and the
 // install commands the landing page and the README repeat from getting
-// started. A copy that can't be generated is compared here, so
+// started, and the language server's own requests the editor's language
+// server page lists. A copy that can't be generated is compared here, so
 // changing one place and not the others fails. The npm platform packages are
 // checked the same way in scripts/release/manifests.test.ts.
 import { execFileSync } from "node:child_process";
@@ -322,4 +323,22 @@ test("the landing page and the README install what getting started's first two s
   // The README's "Get started" block starts with them, then checks.
   const readme = shell(section(read("README.md"), "Get started"))[0];
   expect(readme).toEqual([...installs, "npx ascribe check"]);
+});
+
+test("the language server's page lists each request of its own, with its schema", () => {
+  const declared = tracked("crates/ascribe-lsp/src/*.rs")
+    .flatMap((file) => all(read(file), /pub const \w*METHOD: &str = "(ascribe\/[^"]+)";/g))
+    .sort();
+  expect(declared.length).toBeGreaterThan(0);
+  const page = section(read("docs/content/editor/language-server.md"), "Ascribe's own requests");
+  const rows = Array.from(
+    page.matchAll(/^\| `(ascribe\/[^`]+)` \|.*\| `([^`]+\.schema\.json)` \|$/gm),
+    (row) => ({
+      request: row[1] ?? "",
+      schema: row[2] ?? "",
+    }),
+  );
+  expect(rows.map((row) => row.request).sort()).toEqual(declared);
+  for (const { schema } of rows)
+    expect(existsSync(path.join(root, "schemas", schema)), schema).toBe(true);
 });

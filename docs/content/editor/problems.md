@@ -1,7 +1,7 @@
 ---
 type: reference
 title: Problems and fixes
-description: "The problems the VS Code extension shows as you type, their quick fixes, and applying the safe ones."
+description: "The problems the VS Code extension shows as you type, the Problems panel and checking every build, their quick fixes, and applying the safe ones."
 ---
 
 What the editor reports, and the fixes it offers for it.
@@ -14,7 +14,21 @@ When that build is [versioned](../versions/index.md), they're for every line of 
 
 The [content checks](../checks/diagnostics/content-checks.md) about the whole project, such as a page nothing links to or a phrase nothing uses, need every page, so they run when you save, not as you type. Until you save a file you've changed, it doesn't show theirs. The image checks run only in `ascribe check`.
 
-In a workspace with several projects, the Problems panel lists only the projects whose language server is running. See [The Problems panel](settings.md#the-problems-panel).
+## The Problems panel
+
+The Problems panel lists diagnostics only for the projects whose language server is running. A project whose files you haven't opened or changed shows nothing there, even if it has problems. Open one of its files, or set `ascribe.startServers` to `"all"`, to see them ([When servers start](settings.md#when-servers-start)).
+
+A problem only another build has, such as a link to a page that build leaves out, isn't in the Problems panel until you check every build. While a project has several builds and the panel holds the editor build's problems alone, the [status bar](sidebar.md#the-status-bar) says so: **docs · site · problems: this build only**.
+
+**Ascribe: Check Every Build** (also **Check every build** in the status bar's menu) runs `ascribe check` over every build of the active file's project, as it reads the files on disk, and adds the problems the server doesn't show to the Problems panel: those of other builds, each naming the builds it's in (`only in build cloud`), and those of the checks the editor doesn't run, such as `image-unused`. It says how many problems it found in all, and how many it added. When a file changes, the problems it added to that file go, since they may have moved, and the status bar says the panel covers the editor's build alone again, until you run it again. A change to any file of the project counts, not only its pages: `ascribe.nav`, `ascribe.permalinks`, and its memos and templates too. The [Project view](sidebar.md#the-project-view) counts the problems it found, and says when the count is out of date. In a workspace with several projects and no file of one active, it asks which project to check.
+
+An agent that reads the Problems panel sees the same: before calling a project clean, check every build, or run `ascribe check`, which checks every build.
+
+`ascribe check` checks a project whether or not the editor has it open. Run it in the project's folder, or from anywhere with `--config` naming the project's folder or its `ascribe.toml`:
+
+```sh
+npx ascribe check --config handbook
+```
 
 ## Quick fixes
 
