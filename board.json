@@ -3992,7 +3992,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/736"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Rename `ascribe render` to `ascribe resolve`, and its tool to `ascribe_resolve`"
     },
     {
@@ -4632,7 +4632,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhCZBg0",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs report: links and the published site"
     },
     {
@@ -4650,7 +4650,7 @@
         "editor-webviews"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "This page's test of opening a snippet's file beside the page is flaky on CI"
     }
   ]
