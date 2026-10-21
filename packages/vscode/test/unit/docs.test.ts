@@ -83,33 +83,9 @@ const actionsRow = `Runs the action, such as **Ascribe: ${ACTIONS[0]?.title ?? "
 /**
  * The availability of each setting or command newer than the extension's
  * first release, by id: `next` until a release ships it, then that release,
- * as `ascribe 0.2.0`.
+ * as `ascribe 0.2.0`. Remove an entry once every live line has it.
  */
 const available: Record<string, string> = {
-  "ascribe.openPagePreview": "ascribe 0.2.0",
-  "ascribe.openSitePreview": "ascribe 0.2.0",
-  "ascribe.startReview": "ascribe 0.2.0",
-  "ascribe.stopReview": "ascribe 0.2.0",
-  "ascribe.changedPages": "ascribe 0.2.0",
-  "ascribe.refreshComments": "ascribe 0.2.0",
-  "ascribe.switchBuild": "ascribe 0.3.0",
-  "ascribe.checkEveryBuild": "ascribe 0.3.0",
-  "ascribe.projectMenu": "ascribe 0.3.0",
-  "ascribe.toggleBuildLens": "ascribe 0.3.0",
-  "ascribe.preview.scrollPreviewWithEditor": "ascribe 0.2.0",
-  "ascribe.preview.scrollEditorWithPreview": "ascribe 0.2.0",
-  "ascribe.review.sourceComments": "ascribe 0.2.0",
-  "ascribe.actions": "ascribe 0.3.0",
-  "ascribe.promptAgentFile": "ascribe 0.3.0",
-  "ascribe.promptAgentProject": "ascribe 0.3.0",
-  "ascribe.agents.promptTarget": "ascribe 0.3.0",
-  ascribe_editor_problems: "ascribe 0.3.0",
-  ascribe_review_threads: "ascribe 0.3.0",
-  ascribe_review_changes: "ascribe 0.3.0",
-  [ACTIONS_ROW]: "ascribe 0.3.0",
-  "ascribe.newPage": "ascribe 0.3.1",
-  "ascribe.nextPlaceholder": "ascribe 0.3.1",
-  "ascribe.projects.exclude": "ascribe 0.3.2",
   "ascribe.submitReview": "ascribe 0.4.0",
   "ascribe.openSourceChanges": "ascribe 0.4.0",
   "ascribe.switchProject": "ascribe 0.4.0",

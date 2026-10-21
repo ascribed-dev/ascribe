@@ -612,6 +612,7 @@ fn both_revisions_list_the_same_tools_in_the_same_order() {
             "ascribe_outline",
             "ascribe_link",
             "ascribe_refs",
+            "ascribe_search",
             "ascribe_render",
             "ascribe_format",
             "ascribe_changes",
@@ -823,6 +824,120 @@ fn a_project_is_loaded_again_when_its_files_change() {
 }
 
 #[test]
+fn a_second_search_doesnt_load_the_project_again() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write_project(root);
+    let mut server = Server::start(root);
+    let search = |server: &mut Server, query: &str| {
+        let (text, _) = server.call_ok("ascribe_search", json!({ "query": query }));
+        text
+    };
+    assert!(search(&mut server, "rotate").contains("docs/keys.md:8: Rotate them."));
+    change_unseen(
+        &root.join("docs/keys.md"),
+        &KEYS.replace("Rotate them.", "Rotate thez."),
+    );
+    // Another query, and the project as it was loaded.
+    assert!(search(&mut server, "them").contains("docs/keys.md:8: Rotate them."));
+    write(
+        &root.join("docs/tokens.md"),
+        "---\ntype: page\ntitle: Tokens\n---\n",
+    );
+    assert!(search(&mut server, "rotate").contains("docs/keys.md:8: Rotate thez."));
+}
+
+/// `ascribe_search` in the project in `site/`: the command's JSON, and its
+/// text, the summary's too.
+#[test]
+fn search_returns_its_commands_json_and_text() {
+    let repo = repository();
+    let root = repo.path();
+    let mut server = Server::start(root);
+    let detailed: &[(Value, &[&str])] = &[
+        (
+            json!({ "query": "product", "project": "site", "response_format": "detailed" }),
+            &["search", "product", "--config", "site", "--format", "json"],
+        ),
+        (
+            json!({ "query": "rotate", "paths": ["site/docs/keys.md"], "summary": true, "response_format": "detailed" }),
+            &[
+                "search",
+                "rotate",
+                "site/docs/keys.md",
+                "--summary",
+                "--format",
+                "json",
+            ],
+        ),
+    ];
+    for (arguments, command) in detailed {
+        let (text, structured) = server.call_ok("ascribe_search", arguments.clone());
+        let expected = stdout(root, command);
+        assert_eq!(text, expected, "{arguments}");
+        assert_eq!(
+            structured,
+            serde_json::from_str::<Value>(&expected).unwrap()
+        );
+    }
+    let concise: &[(Value, &[&str])] = &[
+        (
+            json!({ "query": "\"you need\"", "project": "site", "build": ["cloud"] }),
+            &[
+                "search",
+                "\"you need\"",
+                "--config",
+                "site",
+                "--build",
+                "cloud",
+            ],
+        ),
+        (
+            json!({ "query": "product", "project": "site", "summary": true }),
+            &["search", "product", "--config", "site", "--summary"],
+        ),
+    ];
+    for (arguments, command) in concise {
+        let (text, structured) = server.call_ok("ascribe_search", arguments.clone());
+        assert_eq!(text, stdout(root, command), "{arguments}");
+        assert_eq!(structured, json!({ "concise": text }));
+    }
+}
+
+/// The thread's query on `examples/quill`, through the tool: the command's
+/// text, and with `detailed`, its JSON.
+#[test]
+fn search_answers_what_the_command_writes() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let mut server = Server::start(&root);
+    let query = "\"sign in to quill cloud\"";
+    let command = ["search", query, "--config", "examples/quill"];
+    let (text, structured) = server.call_ok(
+        "ascribe_search",
+        json!({ "query": query, "project": "examples/quill" }),
+    );
+    assert_eq!(text, stdout(&root, &command));
+    assert!(text.starts_with("docs/install-agent.md:62: "), "{text}");
+    assert_eq!(structured, json!({ "concise": text }));
+    let (text, structured) = server.call_ok(
+        "ascribe_search",
+        json!({ "query": query, "project": "examples/quill", "response_format": "detailed" }),
+    );
+    let expected = stdout(&root, &[&command[..], &["--format", "json"]].concat());
+    assert_eq!(text, expected);
+    assert_eq!(
+        structured,
+        serde_json::from_str::<Value>(&expected).unwrap()
+    );
+    assert_eq!(structured["places"][0]["line"], 62);
+    let message = server.call_error(
+        "ascribe_search",
+        json!({ "query": query, "project": "examples/quill", "paths": ["examples/quill/docs"] }),
+    );
+    assert!(message.contains("not both"), "{message}");
+}
+
+#[test]
 fn resources_and_prompts_are_what_their_commands_print() {
     let repo = repository();
     let root = repo.path();
@@ -941,6 +1056,10 @@ fn the_new_page_prompt_says_where_the_page_goes_and_what_it_needs() {
     );
     assert!(text.contains("Write a new page of type `guide`"), "{text}");
     assert!(
+        text.contains("First, search for the subject in the pages: `ascribe search 'Rotate your keys' site/docs`"),
+        "{text}"
+    );
+    assert!(
         text.contains("when it doesn't say, `site/docs/rotate-your-keys.md`"),
         "{text}"
     );
@@ -1010,7 +1129,7 @@ fn every_tool_resource_and_prompt_names_a_command_that_exists() {
         "resourceTemplates",
     );
     collect(server.result("prompts/list", json!({})), "prompts");
-    assert_eq!(descriptions.len(), 9 + 3 + 2 + 3);
+    assert_eq!(descriptions.len(), 10 + 3 + 2 + 3);
     for description in descriptions {
         let words = named_command(&description);
         assert_eq!(words[0], "ascribe", "{description}");
@@ -1054,6 +1173,7 @@ fn call_in_project(tool: &str) -> Value {
         "ascribe_outline" => json!({ "page": "docs/install.md", "build": "cloud" }),
         "ascribe_link" => json!({ "target": "keys.md", "from": "docs/install.md" }),
         "ascribe_refs" => json!({ "target": "phrase:product" }),
+        "ascribe_search" => json!({ "query": "product" }),
         "ascribe_render" => json!({ "page": "docs/install.md", "build": "cloud" }),
         "ascribe_format" => json!({ "paths": ["docs"] }),
         "ascribe_changes" => json!({ "base": "HEAD" }),

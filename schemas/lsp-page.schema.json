@@ -20,6 +20,24 @@
         }
       ]
     },
+    "FormattedPiece": {
+      "description": "A piece of a formatted value, as the JSON output writes it:\n`{ \"type\": \"text\" | \"code\", \"value\": … }`. Other JSON that shows a\nformatted title, such as the review report's, writes it the same way.",
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/PieceKind",
+          "description": "What the piece is."
+        },
+        "value": {
+          "description": "Its text: a code span's content without its backticks.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ],
+      "type": "object"
+    },
     "IncludeKind": {
       "description": "What kind of directive includes it.",
       "oneOf": [
@@ -123,6 +141,16 @@
           ],
           "description": "Its description, when its type gives a field the description role;\n`null` for a fragment."
         },
+        "formattedTitle": {
+          "description": "The title formatted, when its type's `title` sets `inline`: its\npieces of text and code, as the JSON output writes a formatted title,\nwith phrases substituted when the field takes them; `null` otherwise.",
+          "items": {
+            "$ref": "#/$defs/FormattedPiece"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "fragment": {
           "description": "Whether it's a fragment, which is published only where it's included.",
           "type": "boolean"
@@ -179,7 +207,7 @@
           "description": "What its type's template still leaves to fill in; `null` when its\ntype has no template or nothing of it is left."
         },
         "title": {
-          "description": "Its title (frontmatter `title`).",
+          "description": "Its title (frontmatter `title`), as written.",
           "type": [
             "string",
             "null"
@@ -197,6 +225,7 @@
         "path",
         "fragment",
         "title",
+        "formattedTitle",
         "type",
         "address",
         "markdownAddress",
@@ -283,6 +312,13 @@
           "description": "The `@snippet`'s address, as written.",
           "type": "string"
         },
+        "heading": {
+          "description": "The heading it's under: the innermost whose section holds it, as\nplain text; `null` before the first heading.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "range": {
           "$ref": "#/$defs/LspRange",
           "description": "The `@snippet` line, in the negotiated position encoding."
@@ -303,6 +339,7 @@
         "address",
         "state",
         "tested",
+        "heading",
         "range"
       ],
       "type": "object"
@@ -627,6 +664,21 @@
         "left"
       ],
       "type": "object"
+    },
+    "PieceKind": {
+      "description": "What a piece of a formatted value is.",
+      "oneOf": [
+        {
+          "const": "text",
+          "description": "Text.",
+          "type": "string"
+        },
+        {
+          "const": "code",
+          "description": "A code span.",
+          "type": "string"
+        }
+      ]
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",

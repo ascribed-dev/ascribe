@@ -100,6 +100,7 @@ fn a_page_outside_any_heading_says_what_it_is_and_what_links_to_it() {
             "path": "guide.md",
             "fragment": false,
             "title": "Guide",
+            "formattedTitle": null,
             "type": "page",
             "address": "/guide/",
             "markdownAddress": null,
@@ -173,6 +174,7 @@ fn a_fragment_has_no_address_and_its_headings_are_linked_through_its_includers()
             "path": "_setup.md",
             "fragment": true,
             "title": null,
+            "formattedTitle": null,
             "type": null,
             "address": null,
             "markdownAddress": null,
@@ -210,6 +212,40 @@ fn a_fragment_has_no_address_and_its_headings_are_linked_through_its_includers()
         json!({ "line": 0, "character": 0 }),
     );
     assert_eq!(before["heading"], Value::Null);
+}
+
+#[test]
+fn a_title_read_with_inline_code_comes_in_pieces_too() {
+    let model = MODEL.replace(
+        "title = \"string\"",
+        "title = { type = \"string\", inline = \"code\", phrases = true }",
+    );
+    let f = project(&model);
+    let mut client = started(&f);
+    client.open(
+        &f.path("docs/guide.md"),
+        1,
+        &GUIDE.replace(
+            "title: Guide",
+            "title: \"Configure `{product}.toml` for {product}\"",
+        ),
+    );
+    client.settle();
+    let about = &page(&mut client, &f, "guide.md", at(GUIDE, "Intro"))["about"];
+    // The title as written, and its pieces as the JSON output writes them:
+    // phrases substituted outside code spans, never inside.
+    assert_eq!(about["title"], "Configure `{product}.toml` for {product}");
+    assert_eq!(
+        about["formattedTitle"],
+        json!([
+            { "type": "text", "value": "Configure " },
+            { "type": "code", "value": "{product}.toml" },
+            { "type": "text", "value": " for Quill" },
+        ])
+    );
+    // A type whose title doesn't set `inline` has none.
+    let index = page(&mut client, &f, "index.md", at(INDEX, "See"));
+    assert_eq!(index["about"]["formattedTitle"], Value::Null);
 }
 
 #[test]

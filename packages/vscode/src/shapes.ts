@@ -1056,8 +1056,14 @@ export interface PageAbout {
   path: string;
   /** Whether it's a fragment, which is published only where it's included. */
   fragment: boolean;
-  /** Its title (frontmatter `title`). */
+  /** Its title (frontmatter `title`), as written. */
   title: string | null;
+  /**
+   * The title formatted, when its type's `title` sets `inline`: its
+   * pieces of text and code, as the JSON output writes a formatted title,
+   * with phrases substituted when the field takes them; `null` otherwise.
+   */
+  formattedTitle: FormattedPiece[] | null;
   /**
    * Its content type; `null` for a fragment, and when no one type
    * applies.
@@ -1188,6 +1194,11 @@ export interface PageExample {
   state: ExampleState;
   /** What it was tested with, when it's tested. */
   tested: string | null;
+  /**
+   * The heading it's under: the innermost whose section holds it, as
+   * plain text; `null` before the first heading.
+   */
+  heading: string | null;
   /** The `@snippet` line, in the negotiated position encoding. */
   range: LspRange;
 }

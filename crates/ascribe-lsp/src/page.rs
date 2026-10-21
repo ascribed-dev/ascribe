@@ -23,6 +23,8 @@
 use std::sync::{Arc, Mutex, PoisonError, Weak};
 
 use ascribe_core::{LineIndex, RelPath, Router};
+use ascribe_emit::{FormattedPiece, formatted_pieces};
+use ascribe_model::inline;
 use ascribe_resolve::{AstroRouter, FileIndex, FileKind, Project, Usable, Use, UseKind};
 use lsp_types::{Position, Range, TextDocumentIdentifier};
 use serde::{Deserialize, Serialize};
@@ -88,8 +90,12 @@ pub struct PageAbout {
     pub path: String,
     /// Whether it's a fragment, which is published only where it's included.
     pub fragment: bool,
-    /// Its title (frontmatter `title`).
+    /// Its title (frontmatter `title`), as written.
     pub title: Option<String>,
+    /// The title formatted, when its type's `title` sets `inline`: its
+    /// pieces of text and code, as the JSON output writes a formatted title,
+    /// with phrases substituted when the field takes them; `null` otherwise.
+    pub formatted_title: Option<Vec<FormattedPiece>>,
     /// Its content type; `null` for a fragment, and when no one type
     /// applies.
     #[serde(rename = "type")]
@@ -333,6 +339,7 @@ fn about(ctx: &Ctx, file: &FileIndex, rows: &Rows) -> PageAbout {
         path: file.path.to_string(),
         fragment,
         title: file.title.clone(),
+        formatted_title: formatted_title(ctx, file),
         content_type: file.content_type(&ctx.model).map(|t| t.name.clone()),
         address: router.as_ref().map(|r| r.route(&file.path)),
         markdown_address: router
@@ -347,6 +354,26 @@ fn about(ctx: &Ctx, file: &FileIndex, rows: &Rows) -> PageAbout {
         permalinks: rows.permalinks.clone(),
         template: rows.template.clone(),
     }
+}
+
+/// `file`'s title in pieces, when its type's `title` sets `inline`, read as
+/// the build reads it: phrases substituted when the field takes them.
+fn formatted_title(ctx: &Ctx, file: &FileIndex) -> Option<Vec<FormattedPiece>> {
+    let title = file.title.as_deref()?;
+    let field = file
+        .content_type(&ctx.model)?
+        .frontmatter
+        .fields
+        .iter()
+        .find(|f| f.name == "title")
+        .filter(|f| f.inline.is_some())?;
+    let phrase = |key: &str| {
+        field
+            .phrases
+            .then(|| ctx.model.phrase(key).map(str::to_owned))
+            .flatten()
+    };
+    Some(formatted_pieces(&inline::parse(title, &phrase)))
 }
 
 fn place(ctx: &Ctx, lines: &mut Lines<'_>, at: &Use) -> Option<PagePlace> {

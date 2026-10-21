@@ -16,6 +16,7 @@ import type {
   ViewItem,
 } from "../../src/webview/viewProtocol.js";
 import { viewHtml } from "../../src/webview/viewShell.js";
+import { NOTICE_ACTIONS, thisPageNotice } from "../../src/ui/sidebar.js";
 
 const dist = fileURLToPath(new URL("../../dist/webview/", import.meta.url));
 const ORIGIN = "https://view.test";
@@ -142,6 +143,7 @@ function item(key: string, kind: ViewItem["kind"], label: string, more: Partial<
     key,
     kind,
     label,
+    state: "",
     description: "",
     tooltip: "",
     icon: "blank",
@@ -154,12 +156,15 @@ function item(key: string, kind: ViewItem["kind"], label: string, more: Partial<
   } satisfies ViewItem;
 }
 
-const EXAMPLE = "code:crates/ascribe-cli/tests/output/check.json, changed since it was tested";
+const EXAMPLE = "code:crates/ascribe-cli/tests/output/check.json";
+const STALE = "changed since it was tested";
 
-/** About, Health, Connections, and Memos, as the model builds them for a page. */
+/** About, Health, Connections, and Memos, as the model builds them for a page, under its head. */
 function sections(title = "API keys"): ThisPageAnswer {
   return {
     message: null,
+    actions: [],
+    head: { title: [{ type: "text", value: title }], type: "page", path: "keys.md" },
     sections: [
       item("about", "section", "About", {
         icon: "info",
@@ -176,7 +181,12 @@ function sections(title = "API keys"): ThisPageAnswer {
         icon: "pulse",
         description: "1 thing to do",
         children: [
-          item("health/0", "row", "Example", { description: EXAMPLE, warn: true, acts: true }),
+          item("health/0", "row", "Example", {
+            state: STALE,
+            description: EXAMPLE,
+            warn: true,
+            acts: true,
+          }),
         ],
       }),
       item("connections", "section", "Connections", {
@@ -253,6 +263,8 @@ describe("This page's webview", () => {
     await expect(view.page.locator(".row dd", { hasText: EXAMPLE }).isVisible()).resolves.toBe(
       true,
     );
+    // The row leads with its state.
+    await expect(view.page.locator(".row dd > button > .state").textContent()).resolves.toBe(STALE);
     const [scroll, client] = await view.page.evaluate(() => [
       document.documentElement.scrollWidth,
       document.documentElement.clientWidth,
@@ -422,25 +434,137 @@ describe("This page's webview", () => {
     expect(again.sections.map(({ open }) => open)).toEqual([false, true, false, false]);
   });
 
-  it("shows a message in place of the sections", async () => {
+  it("shows a message in place of the page", async () => {
     const view = await open();
     await draw(view, 1, sections());
-    const report = await draw(view, 2, {
-      message: "Open a page to see what's known about it.",
-      sections: [],
-    });
+    const report = await draw(view, 2, thisPageNotice({ kind: "noPage" }));
     expect(report).toMatchObject({
       message: "Open a page to see what's known about it.",
+      actions: [],
+      head: [],
       sections: [],
     });
     await expect(view.page.locator("p.message").textContent()).resolves.toBe(
       "Open a page to see what's known about it.",
     );
+    await expect(view.page.locator(".head, details").count()).resolves.toBe(0);
+  });
+
+  it("says the server is starting, in place of the page", async () => {
+    const view = await open();
+    const report = await draw(view, 1, thisPageNotice({ kind: "starting" }));
+    expect(report).toMatchObject({
+      message: "Waiting for the project's language server.",
+      actions: [],
+      sections: [],
+    });
+    expect(report.violations).toEqual([]);
+  });
+
+  it("says the server failed, with Show Output and Restart, which the extension runs", async () => {
+    const view = await open();
+    const report = await draw(view, 4, thisPageNotice({ kind: "failed", project: "quill" }));
+    expect(report).toMatchObject({
+      message: "quill: the language server failed to start.",
+      actions: ["Show Output", "Restart"],
+      sections: [],
+    });
+    const from = view.posted.length;
+    await view.page.getByRole("button", { name: "Restart" }).click();
+    await expect(view.next("open", from)).resolves.toEqual({
+      type: "open",
+      seq: 4,
+      key: NOTICE_ACTIONS.restart,
+    });
+    // The buttons are on the keyboard's way too.
+    await view.page.keyboard.press("ArrowUp");
+    await expect(view.page.evaluate(() => document.activeElement?.textContent)).resolves.toBe(
+      "Show Output",
+    );
+  });
+
+  it("says the folder is in Restricted Mode, with Manage Workspace Trust", async () => {
+    const view = await open();
+    const report = await draw(view, 1, thisPageNotice({ kind: "restricted" }));
+    expect(report).toMatchObject({
+      message: "This folder is in Restricted Mode, so Ascribe doesn't run or check its projects.",
+      actions: ["Manage Workspace Trust"],
+      sections: [],
+    });
+    const from = view.posted.length;
+    await view.page.getByRole("button", { name: "Manage Workspace Trust" }).click();
+    await expect(view.next("open", from)).resolves.toMatchObject({
+      key: NOTICE_ACTIONS.manageTrust,
+    });
+  });
+
+  it("heads the page with its title, its code spans drawn as code, then its type and path", async () => {
+    const view = await open();
+    const answer = sections();
+    answer.head = {
+      title: [
+        { type: "code", value: "ascribe.toml" },
+        { type: "text", value: " reference" },
+      ],
+      type: "reference",
+      path: "reference/config.md",
+    };
+    const report = await draw(view, 1, answer);
+    expect(report.head).toEqual(["ascribe.toml reference", "reference · reference/config.md"]);
+    expect(report.code).toEqual(["ascribe.toml"]);
+    await expect(view.page.locator(".head .page-title > code").count()).resolves.toBe(1);
+    // The head comes before the sections, and isn't one.
+    await expect(
+      view.page.locator("main > *").evaluateAll((all) => all.map((each) => each.tagName)),
+    ).resolves.toEqual(["HEADER", "DETAILS", "DETAILS", "DETAILS", "DETAILS"]);
+  });
+
+  it("names a fragment in its head", async () => {
+    const view = await open();
+    const answer = sections("_setup.md");
+    answer.head = {
+      title: [{ type: "text", value: "_setup.md" }],
+      type: "fragment",
+      path: "_setup.md",
+    };
+    const report = await draw(view, 1, answer);
+    expect(report.head).toEqual(["_setup.md", "fragment · _setup.md"]);
+    expect(report.code).toEqual([]);
+  });
+
+  it("keeps an open section's header at the top while its rows scroll", async () => {
+    const view = await open({ sections: { health: true, connections: true } });
+    await view.page.setViewportSize({ width: 300, height: 90 });
+    await draw(view, 1, sections());
+    const sticky = await view.page
+      .locator("details.section > summary")
+      .evaluateAll((all) => all.map((summary) => getComputedStyle(summary).position));
+    // Memos is closed: there's nothing under it to scroll.
+    expect(sticky).toEqual(["sticky", "sticky", "sticky", "static"]);
+    // Scrolled into Connections, its header is at the top of the view.
+    await view.page.evaluate(() => {
+      document.querySelector("[data-key='connections/0/0/0']")?.scrollIntoView();
+    });
+    const top = await view.page
+      .locator("details[data-key=connections] > summary")
+      .evaluate((summary) => Math.round(summary.getBoundingClientRect().top));
+    expect(top).toBe(0);
   });
 
   it("sets what people wrote as text, never as markup", async () => {
     const view = await open();
-    const report = await draw(view, 1, sections('<img src=x onerror="__post(1)"> `code`'));
+    const written = sections('<img src=x onerror="__post(1)"> `code`');
+    written.head = {
+      title: [
+        { type: "text", value: '<img src=x onerror="__post(1)">' },
+        { type: "code", value: "<b>bold</b>" },
+      ],
+      type: "page",
+      path: "keys.md",
+    };
+    const report = await draw(view, 1, written);
+    expect(report.code).toEqual(["<b>bold</b>"]);
+    await expect(view.page.locator("main b").count()).resolves.toBe(0);
     await expect(view.page.locator("main img").count()).resolves.toBe(0);
     await expect(view.page.locator(".row dd").first().textContent()).resolves.toBe(
       '<img src=x onerror="__post(1)"> `code`',

@@ -52,6 +52,9 @@ pub struct Loaded {
     index: OnceCell<ascribe_resolve::Project>,
     /// The index the page-level checks read, once a check asks for it.
     page_index: OnceCell<ascribe_check::PageIndex>,
+    /// Each build's readings of its pages, once a search asks for the
+    /// build.
+    readings: ascribe_query::Readings,
     /// Each check of the whole project so far: the builds asked for, the
     /// diagnostics, and the builds checked. A project kept between calls
     /// checks once for each set of builds.
@@ -82,6 +85,7 @@ impl Loaded {
             project,
             index: OnceCell::new(),
             page_index: OnceCell::new(),
+            readings: ascribe_query::Readings::default(),
             checks: RefCell::new(Vec::new()),
         }
     }
@@ -113,6 +117,12 @@ impl Loaded {
     pub fn page_index(&self) -> &ascribe_check::PageIndex {
         self.page_index
             .get_or_init(|| ascribe_check::PageIndex::new(&self.project))
+    }
+
+    /// Each build's readings of its pages that searches have made, kept
+    /// with the project.
+    pub fn readings(&self) -> &ascribe_query::Readings {
+        &self.readings
     }
 
     /// The project's source index ([`Project::index`]), made on first use.

@@ -2,7 +2,6 @@
 type: reference
 title: Review in the site preview
 description: "The Ascribe review app in astro dev's toolbar: its panel, what it compares, its comments, and the pages it has nothing to mark on."
-available: ascribe 0.2.0
 permalink: review-in-the-site-preview
 ---
 

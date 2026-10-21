@@ -102,7 +102,9 @@ describe("a code file a page shows", () => {
       (item) => item.label === "Example" && item.description.startsWith("code:examples/greet.ts"),
     );
     assert.ok(greet, JSON.stringify(health));
-    assert.ok(greet.description.endsWith(", tested"), greet.description);
+    // It leads with its state, then what it was tested with.
+    assert.equal(greet.state, "tested", JSON.stringify(greet));
+    assert.ok(greet.description.includes(", with Node"), greet.description);
     // It opens the file its `@snippet` shows, beside the page.
     assert.ok(greet.opens?.endsWith("/code/examples/greet.ts"), greet.opens);
     const includes = items

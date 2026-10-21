@@ -4,14 +4,14 @@ title: "`ascribe.toml`: dimensions, phrases, and widgets"
 description: "The content model's dimensions, versions, lifecycle states, features, notes, phrases, glossary, images, and widgets."
 ---
 
-Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section.
+Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The rules for a loader are in the contract's [dimensions, phrases, and widgets](../contracts/content-model/content.md).
 
 ## 6. `[dimensions.<name>]`
 @id {permalink=true}: dimensions
 
 @include: ../_fragments/content-model/dimensions.md
 
-**Rules.** A value must belong to only one dimension (`model-dimension-value-shared`); otherwise a bare target in an availability spec would be ambiguous. Dimension names and values also take part in the one-role rule: a name can be a dimension name, a dimension value, a lifecycle state, or a feature key, but only one of them (`model-name-multiple-roles`).
+**Rules.** A value can be in one dimension only (`model-dimension-value-shared`), since a bare target such as `cloud` in an availability spec has to mean one thing. Dimension names and values also take part in the one-role rule: a name can be a dimension name, a dimension value, a lifecycle state, or a feature key, but only one of them (`model-name-multiple-roles`).
 
 ---
 
@@ -56,11 +56,15 @@ A mark does nothing only where no output shows it: when every build that publish
 
 @include: ../_fragments/content-model/lifecycle.md
 
+**Rules.** `ga` always counts as available (`model-lifecycle-ga-unavailable`): content with no state is `ga` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)), so otherwise unmarked content would be unavailable. A state you add says whether it counts as available (`model-lifecycle-available-required`). The built-in states take part in the one-role rule too: a dimension value named `beta` is an error.
+
 ---
 
 ## 9. `[features.<key>]`
 
 @include: ../_fragments/content-model/features.md
+
+**Rules.** A feature's spec is checked as it would be in a page: it has to parse (`model-availability-syntax`), name declared targets and states (`model-availability-unknown-name`), give no versions to a versionless target or a dimension name (`model-availability-versionless`), and list a history oldest first (`model-availability-history-order`). It can't be another feature's key (`model-feature-nested`), so features never refer to each other, and feature keys take part in the one-role rule.
 
 ---
 
@@ -84,9 +88,14 @@ A mark does nothing only where no output shows it: when every build that publish
 @available: ascribe 0.4.0
 To set one up, see [Set up a glossary](glossary.md).
 
-**Matching:** occurrences match whole words only; the longest matching term wins where terms overlap (`API key` over `API`); matching applies to prose only, never to headings, link text, code, raw HTML, or text inside a directive's primary identifier. A term isn't linked on a glossary page that shows it, and a term whose heading a build doesn't publish, or that has no definition in the build, isn't linked in that build.
+**Matching:** a term is found as a whole word, never inside one, and where two terms overlap, as `API key` and `API` do, the longer is linked. Only prose is searched, so a term in a heading, link text, code, raw HTML, or a directive's primary identifier stays as it is. A glossary page doesn't link the terms it shows, and a build doesn't link a term whose heading it leaves out, or that has no definition in it.
 
-@include: ../_fragments/content-model/glossary-rules.md
+@available: ascribe 0.4.0
+**Rules.** A path in `pages` names a page that's there, with its name's case as it is on disk (`model-glossary-page`). The rest are checked with the project, since terms are read from pages:
+
+- Two terms or aliases with the same text, compared ignoring case unless both terms are case-sensitive, are reported at the second, which isn't a term (`glossary-term-duplicate`); so are two terms with the same id, which two headings with the same text on different pages give them.
+- A term's definition is the paragraph that opens its section, so a term whose section opens with anything else has none (`glossary-definition-missing`). One over 300 characters in a build, the limit a page's `description` has, is advice (`glossary-definition-long`).
+- `@term` on a page `pages` doesn't list, or in a fragment no such page includes, isn't a term (`term-off-glossary-page`). Its fix lists the page in `pages`; the editor applies it, and `ascribe check --fix` doesn't, since it links the page's terms on every page.
 
 ---
 
@@ -102,7 +111,11 @@ To set one up, see [Set up a glossary](glossary.md).
 
 **Rules:**
 
-@include: ../_fragments/content-model/widgets-rules.md
+- A widget with container form can't have a required primary, since a container opener's primary is empty ([SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)), and a container-only widget's primary is `"none"` (`model-widget-container-primary`).
+- A groupable widget is container-only, since the arms of a group are containers ([SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups)) (`model-widget-groupable-form`).
+- A widget with line form needs a `binding`, and one without it can't have one (`model-widget-binding`).
+
+What the site output writes for a widget, its element's tag name and attributes, is set by the [element contract]({repo}/blob/main/packages/elements/CONTRACT.md).
 
 **An example: a landing page.** Ascribe's own landing page is a page of Ascribe, laid out with three widgets that [`site/home/ascribe.toml`]({repo}/blob/main/site/home/ascribe.toml) declares and the site's stylesheet draws: `hero-banner`, the opening, with a `status` attribute the site shows as a badge; `claim-example`, a claim with its heading, its sentences, and the example under them, which can carry an [`@available`](../writing/directives.md#available) mark like any other block; and `source-and-result`, whose content is a `@snippet` of a page's file and whose `page` attribute names that page, which the site draws beside it. The lists and the install commands needed no widget.
 

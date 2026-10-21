@@ -545,7 +545,7 @@
           "type": "webview",
           "name": "This page",
           "contextualTitle": "Ascribe",
-          "when": "ascribe.active"
+          "when": "ascribe.active || !isWorkspaceTrusted"
         },
         {
           "id": "ascribe.pages",

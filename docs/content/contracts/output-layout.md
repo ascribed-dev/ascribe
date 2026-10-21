@@ -37,7 +37,6 @@ Pages mirror their source paths relative to the content root:
 
 Only pages the build publishes are written (SPEC §9.3); fragments never are.
 
-@available: ascribe 0.3.0
 **With `[consumer] agents = true`** (content-model.md §15), the `plain` root is laid out by URL instead, so that copying it to the site's base path publishes what agents read:
 
 | Emitter | Page `Guides/My Setup.md` is written to |
@@ -51,7 +50,6 @@ Assets go where the [asset contract](assets.md) §3 puts them: at their mirrored
 **`_ascribe/` is reserved** in every emitter root for files Ascribe places other than pages and assets inside the content root: assets from outside the content root (`_ascribe/up/`), the site output's published files (`_ascribe/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (`_ascribe/schema.ts`), its list of permalinks (`_ascribe/permalinks.json`, §1.2), its page records (`_ascribe/pages.json`, §1.3), the headers its files need (`_ascribe/headers.json`, §1.4), and its navigation (`_ascribe/nav.json`, §1.6).
 
 ### 1.2 The permalinks list
-@available: ascribe 0.3.0
 
 The site output holds `_ascribe/permalinks.json`: every permalink the build publishes (SPEC §2.1, §4.1), for the site to give each one an address that forwards to its page or heading. It's `generated` in the manifest, and written for every build, with an empty table when the build has none, so a consumer can tell "no permalinks" from an Ascribe that doesn't write the list.
 
@@ -88,7 +86,6 @@ The site output holds `_ascribe/permalinks.json`: every permalink the build publ
 An address forwards to `route`, then `#` and `fragment` when there is one. A later version may add keys to the file or to an entry; it doesn't change these.
 
 ### 1.3 The page records
-@available: ascribe 0.3.0
 
 The site output holds `_ascribe/pages.json`: a record of each page the build publishes (SPEC §9.4), saying what every reader that isn't a person is told about it, and what the project says to crawlers, for a site to write each page's head, its sitemap, and its `robots.txt` from. `llms.txt` is written from the same records. It's `generated` in the manifest, and written for every build, with an empty table when the build has no pages.
 
@@ -147,11 +144,9 @@ The site output holds `_ascribe/pages.json`: a record of each page the build pub
 
 A page that's `unlisted` isn't in `llms.txt`. A later version may add keys to the file, to an entry, or to `robots`; it doesn't change these.
 
-@available: ascribe 0.3.2
 In an older line of a versioned build (§1.5), a page's `canonical` is the route in the current line of the same page, or of the page the current line publishes in its place, following `replaces` (SPEC §2.1); a page the current line has neither of keeps its own. A site lists a page in its sitemap only when `canonical` is its own address. `listing_from.level` is `older-lines` for `[listing] older-lines`, which only a page of an older line is under, and is named after the type's rule and before `default`.
 
 ### 1.4 The headers
-@available: ascribe 0.3.0
 
 The site output holds `_ascribe/headers.json`: the response headers the build's files need from the host, as rules, each a path and the headers it gets. A Markdown version (content-model contract §15) has no head to carry what its page's head says, so the host sends it, and the host is the site's: `@ascribed/astro` writes the rules into Netlify's `_headers` with `[consumer] headers = "netlify"`, and a site built another way reads the list. It's `generated` in the manifest, and written for every build, with an empty list when the build publishes no Markdown versions, so a consumer can tell "no rules" from an Ascribe that doesn't write the file.
 
@@ -184,7 +179,6 @@ The site output holds `_ascribe/headers.json`: the response headers the build's 
 Whatever answers a request for a page's Markdown sends the same headers, whether it serves the file or answers the page's own address asked for with `Accept: text/markdown`. A later version may add keys to the file, such as a list of redirects beside `headers`, or more headers to a rule; it doesn't change these.
 
 ### 1.5 The versions file
-@available: ascribe 0.3.2
 
 A project with `[releases]` (content-model.md §7.1) has `<output-dir>/_ascribe/versions.json`: for each versioned build, its lines and which of them publishes each page, at which route, so a site can link a page to the same page in another line. It's above the builds' folders, the one file they share, and it's owned through the folder's own manifest, `_ascribe/manifest.json`, in the format of §3, so the rules of §2 and §4 hold for it as for an emitter root. Every `ascribe build` of a project with `[releases]` writes it, for every versioned build, whichever builds it was asked for. The first build of a project without `[releases]` removes it, then the manifest, then the folder when nothing else is in it. An `_ascribe` folder that has files and no manifest isn't Ascribe's: a build that would write there fails and leaves it alone, and one that wouldn't leaves it alone too.
 
@@ -248,7 +242,6 @@ Ascribe owns exactly these, and touches nothing else under `<output-dir>`:
 
 Everything else under `<output-dir>` belongs to the user, even inside an emitter root. A user's file is never deleted, moved, or overwritten, and a build that would need to overwrite one fails instead (§4). A directory is removed only when a build empties it by removing files it owned.
 
-@available: ascribe 0.3.0
 **Links.** A build writes and removes only through real folders. It fails, naming the link and touching nothing, when a symbolic link (or, on Windows, a junction) is any of these:
 
 - a folder on the way from the project's folder to `<output-dir>`, or `<output-dir>` itself;
@@ -285,7 +278,7 @@ Each emitter root has a manifest beside it, `<output-dir>/<build>/<emitter>.mani
 | `format` | Always `"ascribe-manifest"`. A file at a manifest's path without it isn't a manifest, and isn't Ascribe's (§4). |
 | `version` | The manifest format's version: `1`. A reader rejects versions it doesn't know. |
 | `build`, `emitter` | Which output this is. |
-| `anchors` {available="ascribe 0.2.0"} | `true` when the site output has source anchors (`ascribe build --anchors`; site-render contract §7). Absent otherwise. |
+| `anchors` | `true` when the site output has source anchors (`ascribe build --anchors`; site-render contract §7). Absent otherwise. |
 | `files` | Every file in the emitter root that Ascribe wrote, sorted by `path`. |
 | `files[].path` | The file's path relative to the emitter root, `/`-separated. A manifest is read as input, not trusted as Ascribe's own: a path that's absolute, has a `.` or `..` segment, or that the operating system reads as on a drive (`C:/x`, `C:x` on Windows) isn't a manifest's, and fails the build. |
 | `files[].kind` | `"page"`, `"asset"`, or `"generated"` (anything else Ascribe writes, such as a schema). |

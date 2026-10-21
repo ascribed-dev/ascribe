@@ -608,6 +608,28 @@ fn a_source_folder_must_exist_be_a_directory_and_be_in_the_repository() {
 }
 
 #[test]
+fn a_change_matters_to_a_source_where_it_reads_or_keeps_its_examples() {
+    let text = "spec = \"0.1\"\n[sources.code]\ngit = \"https://github.com/acme/code.git\"\ninclude = [\"crates/cli/tests/output/**\", \"examples/**\"]\nignore = [\"**/node_modules/**\"]\n";
+    let model = load_str(text, FileId::new(0)).unwrap();
+    let code = model.source("code").unwrap();
+    // A file it reads, and a folder that may hold one.
+    assert!(code.may_use("crates/cli/tests/output/a.txt"));
+    assert!(code.may_use("examples/getting-started"));
+    assert!(code.may_use("crates") && code.may_use("crates/cli"));
+    assert!(code.may_use(""));
+    // Its tested examples, whatever `include` says.
+    assert!(code.may_use("ascribe.examples.toml"));
+    assert!(code.may_use("examples.observations"));
+    assert!(code.may_use("examples.observations/default.toml"));
+    // A build's output, and what `ignore` leaves out.
+    assert!(!code.may_use("target"));
+    assert!(!code.may_use("target/debug/build/a.d"));
+    assert!(!code.may_use("crates/core/src/lib.rs"));
+    assert!(!code.may_use("examples/site/node_modules"));
+    assert!(!code.may_use("examples/site/node_modules/a/index.js"));
+}
+
+#[test]
 fn a_source_in_another_repository_reads_its_copies() {
     let dir = scratch("remote");
     std::fs::create_dir_all(dir.join(".git")).unwrap();
