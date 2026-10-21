@@ -47,7 +47,6 @@ The source pages go in `content/`. If your Ascribe project lives elsewhere, such
 
 A site needs a content collection of the built pages, a route for them, and a layout that loads the elements; this one has a sidebar too. One command writes the three files, in the Astro project's root:
 
-@available: ascribe 0.3.0
 @variant {pm=npm}:
 ```sh
 npx @ascribed/astro init
@@ -58,7 +57,6 @@ pnpm exec ascribe-astro init
 ```
 @end
 
-@available: ascribe 0.3.0
 It writes `src/content.config.ts`, `src/pages/[...slug].astro`, and `src/layouts/Docs.astro`, and from then on they're yours to change; it never writes over a file, and if any of the three is there, it writes nothing. With the Ascribe project elsewhere, say where with `--project ../docs`, and with several builds in `ascribe.toml`, say which the site shows with `--build`. The sections below say what each file does, as `init` writes them for the `ascribe.toml` above.
 
 #### The collection
@@ -67,7 +65,6 @@ It writes `src/content.config.ts`, `src/pages/[...slug].astro`, and `src/layouts
 
 The schema's path is `<output-dir>/<build>/site/_ascribe/schema.ts`, in the directory holding `ascribe.toml`. Importing it by path keeps its exact types, so `entry.data` is typed from your content types. If you change `[project] output-dir`, the build, or the integration's `project`, change this line too.
 
-@available: ascribe 0.2.0
 If the Ascribe project is outside the Astro root (`project: "../docs"`), import the copy of the schema the integration writes inside it instead, `.astro/integrations/_ascribed_astro/schema.ts`, which is `../.astro/integrations/_ascribed_astro/schema.ts` from `src/content.config.ts`, as `init --project` does. The schema imports `astro/zod`, which TypeScript can only find from inside the Astro project, so type-checking (`astro check`, `tsc`) fails on the original there; Astro's own build works with either. The integration updates the copy after each build.
 
 #### The route
@@ -82,13 +79,11 @@ Entry ids are Astro's own: `Guides/My Setup.md` is `guides/my-setup`. The route 
 
 A layout loads the element library, and shows the sidebar, the page's availability, and its table of contents:
 
-@available: ascribe 0.2.0
 @snippet {title=src/layouts/Docs.astro}: code:packages/astro/starter/src/layouts/Docs.astro
 
 `<Elements />` loads the element library, and `<Head entry={entry} />` writes the page's head from its record. The layout is yours: style it, and replace any part of it with your own components; the table of contents is `headings` from `render`. [The components](reference.md#components) lists what `@ascribed/astro` gives a layout, and what each entry's data has for it.
 
 #### The sidebar
-@available: ascribe 0.3.0
 
 @available: ascribe 0.4.0
 The layout draws the sidebar from the project's [navigation](../navigation/index.md), with [`sidebar()`](reference.md#sidebar), and the links at the page's foot with [`neighbors()`](reference.md#neighbors), so the site keeps no list of its own. It lists a nested section's pages in their top section's group, each `<li>` with a `data-depth` for your stylesheet to indent:

@@ -2,7 +2,6 @@
 type: how-to
 title: Permalinks
 description: Link to the docs from your product by permalink, check those links in the product's CI, and keep them working when a section moves, gets a second name, or goes away.
-available: ascribe 0.3.0
 ---
 
 A heading marked as a [permalink](../writing/directives.md#permalinks), `@id {permalink=true}: weave-config`, gets an address of its own, `go/weave-config` under the base path, which sends the reader to the heading wherever it is now. A page with `permalink: options` in its frontmatter gets `go/options`, which leads to the top of the page. Link to that address from outside the docs, such as from your product's interface or its error messages, and the link keeps working when the page moves.

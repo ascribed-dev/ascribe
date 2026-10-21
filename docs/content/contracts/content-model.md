@@ -133,7 +133,6 @@ A field the page leaves out gets its default's formatted form, so `formatted.<fi
 ---
 
 ### 5.4 Field roles
-@available: ascribe 0.3.0
 
 A page type's top-level field MAY have a `role`, which says what the field is for, so a check or the report reads it whatever the field's name (SPEC §7.2):
 
