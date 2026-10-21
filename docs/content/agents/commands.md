@@ -15,7 +15,7 @@ Writes the files AI coding agents read on their own: your project's rules, from 
 ### `ascribe agents sync`
 @id {permalink=true}: cli-agents-sync
 
-Writes the files each target below names. It finds the repository's root as `ascribe diff` does, with `git`; outside a repository, the project's folder is the root, and it says so.
+Writes your project's rules and the Ascribe skill where each `--target`'s agents read them. It finds the repository's root as `ascribe diff` does, with `git`; outside a repository, the project's folder is the root, and it says so.
 
 Run where there's no `ascribe.toml` at or above, such as at the root of a repository with several projects, it syncs each project in the folders below, in path order, and says which. Each writes its own block in the root's `AGENTS.md`, and the list names each file once.
 
