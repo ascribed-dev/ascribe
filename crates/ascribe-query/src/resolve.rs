@@ -1,5 +1,5 @@
-//! A page as a reader of one build sees it: the build's plain output for that
-//! page alone, rendered as `ascribe build` renders it ([`emit_page`] with the
+//! A page as a reader of one build sees it: the page resolved for the build,
+//! then written as the build's plain output writes it ([`emit_page`] with the
 //! [`PlainEmitter`]), without writing anything.
 
 use std::path::Path;
@@ -12,10 +12,10 @@ use serde::Serialize;
 
 use crate::{ASCRIBE_VERSION, QueryError, SCHEMA_VERSION};
 
-/// What `ascribe render <PAGE> --format json` answers.
+/// What `ascribe resolve <PAGE> --format json` answers.
 #[derive(Debug, Serialize)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
-pub struct Rendered {
+pub struct Resolved {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     pub schema_version: u32,
@@ -35,20 +35,20 @@ pub struct Rendered {
     pub text: String,
 }
 
-/// The page at content path `path`, as `build` renders it in its plain
-/// output; with `frontmatter`, its resolved frontmatter first, between `---`
+/// The page at content path `path`, resolved for `build` and written as its
+/// plain output writes it; with `frontmatter`, its resolved frontmatter first, between `---`
 /// lines. `project_root` is the directory of `ascribe.toml`.
 ///
 /// # Errors
 ///
-/// `path` isn't a page of the project, or the page can't be rendered.
-pub fn render(
+/// `path` isn't a page of the project, or the page can't be written.
+pub fn resolve(
     project: &Project,
     project_root: &Path,
     path: &RelPath,
     build: &Build,
     frontmatter: bool,
-) -> Result<Rendered, QueryError> {
+) -> Result<Resolved, QueryError> {
     let file = project.file(path).ok_or_else(|| QueryError::NotASource {
         path: path.to_string(),
     })?;
@@ -57,7 +57,7 @@ pub fn render(
             path: path.to_string(),
         });
     }
-    let mut answer = Rendered {
+    let mut answer = Resolved {
         schema_version: SCHEMA_VERSION,
         ascribe_version: ASCRIBE_VERSION,
         page: path.to_string(),

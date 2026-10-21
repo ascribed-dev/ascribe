@@ -374,10 +374,10 @@ fn every_tool_returns_its_commands_json_and_changes_nothing() {
             ],
         ),
         (
-            "ascribe_render",
+            "ascribe_resolve",
             json!({ "page": "site/docs/install.md", "build": "self-managed", "frontmatter": true }),
             &[
-                "render",
+                "resolve",
                 "site/docs/install.md",
                 "--build",
                 "self-managed",
@@ -613,7 +613,7 @@ fn both_revisions_list_the_same_tools_in_the_same_order() {
             "ascribe_link",
             "ascribe_refs",
             "ascribe_search",
-            "ascribe_render",
+            "ascribe_resolve",
             "ascribe_format",
             "ascribe_changes",
         ]
@@ -1174,7 +1174,7 @@ fn call_in_project(tool: &str) -> Value {
         "ascribe_link" => json!({ "target": "keys.md", "from": "docs/install.md" }),
         "ascribe_refs" => json!({ "target": "phrase:product" }),
         "ascribe_search" => json!({ "query": "product" }),
-        "ascribe_render" => json!({ "page": "docs/install.md", "build": "cloud" }),
+        "ascribe_resolve" => json!({ "page": "docs/install.md", "build": "cloud" }),
         "ascribe_format" => json!({ "paths": ["docs"] }),
         "ascribe_changes" => json!({ "base": "HEAD" }),
         other => panic!("{other} is a new tool: give it a call here"),
@@ -1280,7 +1280,7 @@ fn with_no_repository_a_source_outside_the_servers_folder_isnt_read() {
 
     let mut server = Server::start(&project);
     let error = server.call_error(
-        "ascribe_render",
+        "ascribe_resolve",
         json!({ "page": "docs/index.md", "build": "site" }),
     );
     assert!(error.contains("ascribe.toml has errors"), "{error}");
@@ -1289,13 +1289,13 @@ fn with_no_repository_a_source_outside_the_servers_folder_isnt_read() {
     // Started in the folder that holds the source, it's read.
     let mut server = Server::start(dir.path());
     let (text, _) = server.call_ok(
-        "ascribe_render",
+        "ascribe_resolve",
         json!({ "page": "a/b/project/docs/index.md", "build": "site" }),
     );
     assert!(text.contains("hunter2"), "{text}");
 
     // And a command reads it, as before.
-    let out = ascribe(&project, &["render", "docs/index.md", "--build", "site"]);
+    let out = ascribe(&project, &["resolve", "docs/index.md", "--build", "site"]);
     assert!(out.status.success(), "{out:?}");
     assert!(String::from_utf8_lossy(&out.stdout).contains("hunter2"));
 }

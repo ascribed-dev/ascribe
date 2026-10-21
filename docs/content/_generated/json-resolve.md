@@ -1,6 +1,10 @@
+@memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/resolve.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
+[`schemas/resolve.schema.json`]({repo}/blob/main/schemas/resolve.schema.json):
+
+```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe render <PAGE> --format json` answers.",
+  "description": "What `ascribe resolve <PAGE> --format json` answers.",
   "properties": {
     "ascribe_version": {
       "description": "The version of Ascribe that wrote it.",
@@ -47,6 +51,7 @@
     "route",
     "text"
   ],
-  "title": "RenderReport",
+  "title": "ResolveReport",
   "type": "object"
 }
+```

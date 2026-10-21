@@ -12,7 +12,7 @@
 //! the task, where, what Ascribe knows, how to finish. They ask for a report,
 //! not edits: a reviewer hands a change to their agent to read it as readers
 //! will. A prompt points rather than dumps: it names the page, each change's
-//! lines, and the commands that show the rest (`ascribe render`, `ascribe
+//! lines, and the commands that show the rest (`ascribe resolve`, `ascribe
 //! diff`). Each names the memo files about what changed (SPEC §7.7): one on
 //! the page, on a changed block, or on the section a change is in.
 
@@ -145,11 +145,11 @@ fn short(commit: &str) -> String {
     commit.chars().take(7).collect()
 }
 
-/// `ascribe render` of a page (as the prompt shows it), as `build`'s
+/// `ascribe resolve` of a page (as the prompt shows it), as `build`'s
 /// reader sees it.
-fn render_command(context: &Context, page: &str, build: &str) -> String {
+fn resolve_command(context: &Context, page: &str, build: &str) -> String {
     format!(
-        "{} render {} --build {}",
+        "{} resolve {} --build {}",
         context.ascribe(),
         shell_word(page),
         shell_word(build)
@@ -189,7 +189,7 @@ pub fn page(context: &Context, review: &Review<'_>, build: &str, page: &PageDiff
     if page.status != PageStatus::Removed {
         known.push(format!(
             "To read it: `{}`",
-            render_command(context, &path, build)
+            resolve_command(context, &path, build)
         ));
     }
     let rest = review.diff_command(context, &[build], &["--format", "json"]);
@@ -337,7 +337,7 @@ pub fn fragment_reach(
             shell_word(&path)
         ),
         format!(
-            "To read a page: `{} render <page> --build {}`",
+            "To read a page: `{} resolve <page> --build {}`",
             context.ascribe(),
             shell_word(&build.build)
         ),
@@ -399,7 +399,7 @@ pub fn pages(context: &Context, review: &Review<'_>, builds: &[BuildDiff]) -> Op
     let mut known = vec![
         review.base_line(),
         format!(
-            "To read a page: `{} render <page> --build {build_word}`",
+            "To read a page: `{} resolve <page> --build {build_word}`",
             context.ascribe()
         ),
     ];
