@@ -10,6 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type {
   FromView,
   ThisPageAnswer,
+  ThisPageProbe,
   ThisPageReport,
   ToView,
   ViewItem,
@@ -304,6 +305,94 @@ describe("This page's webview", () => {
     ).resolves.toBe(true);
     await view.page.keyboard.press("Escape");
     await expect(view.next("focusEditor", from)).resolves.toEqual({ type: "focusEditor" });
+  });
+
+  it("keeps its scroll and the keyboard's focus when a new answer comes", async () => {
+    const view = await open({ sections: { health: true, connections: true } });
+    await view.page.setViewportSize({ width: 300, height: 90 });
+    await draw(view, 1, sections());
+    const button = view.page.locator("button[data-key='connections/0/0/0']");
+    await button.focus();
+    await view.page.evaluate(() => {
+      document.documentElement.scrollTop = 60;
+      (window as unknown as Record<string, unknown>)["kept"] = document.activeElement;
+    });
+    // The cursor moved: the same rows, one of them saying something else.
+    const moved = sections("Rotate keys");
+    const report = await draw(view, 2, moved);
+    expect(report.focused).toBe("connections/0/0/0");
+    expect(report.scroll).toBe(60);
+    await expect(view.page.locator(".row dd").first().textContent()).resolves.toBe("Rotate keys");
+    // The row is the element it was, not one drawn again.
+    await expect(
+      view.page.evaluate(
+        () => (window as unknown as Record<string, unknown>)["kept"] === document.activeElement,
+      ),
+    ).resolves.toBe(true);
+  });
+
+  it("gives the focus to the section's header when what had it is gone", async () => {
+    const view = await open({ sections: { connections: true } });
+    await draw(view, 1, sections());
+    await view.page.locator("button[data-key='connections/0/0/0']").focus();
+    const fewer = sections();
+    const connections = fewer.sections[2];
+    if (connections) connections.children = connections.children.slice(1);
+    const report = await draw(view, 2, fewer);
+    expect(report.focused).toBe("connections");
+    await expect(view.page.evaluate(() => document.activeElement?.tagName)).resolves.toBe(
+      "SUMMARY",
+    );
+  });
+
+  it("moves the focus between the headers and rows with Up and Down", async () => {
+    const view = await open();
+    await draw(view, 1, sections());
+    const focused = () =>
+      view.page.evaluate(() => {
+        const at = document.activeElement;
+        return (at?.tagName === "SUMMARY" ? at.parentElement : at)?.getAttribute("data-key");
+      });
+    await view.page.locator("details[data-key=about] > summary").focus();
+    await view.page.keyboard.press("ArrowDown");
+    // About's Title has nothing to open, so its Description is next.
+    await expect(focused()).resolves.toBe("about/1");
+    await view.page.keyboard.press("ArrowDown");
+    await expect(focused()).resolves.toBe("health");
+    // A closed section's rows are skipped.
+    await view.page.keyboard.press("ArrowDown");
+    await expect(focused()).resolves.toBe("connections");
+    await view.page.keyboard.press("ArrowUp");
+    await view.page.keyboard.press("ArrowUp");
+    await expect(focused()).resolves.toBe("about/1");
+    // Down at the last header stays there, and the view doesn't scroll.
+    await view.page.locator("details[data-key=memos] > summary").focus();
+    await view.page.keyboard.press("ArrowDown");
+    await expect(focused()).resolves.toBe("memos");
+  });
+
+  it("answers a probe with what has the focus and how far it's scrolled", async () => {
+    const view = await open();
+    await view.page.setViewportSize({ width: 300, height: 90 });
+    await draw(view, 4, sections());
+    const from = view.posted.length;
+    await view.page.evaluate((m) => window.postMessage(m, "*"), {
+      type: "probe",
+      probe: 1,
+      open: true,
+      focus: "health/0",
+      scroll: 40,
+      press: true,
+    } satisfies ThisPageProbe);
+    await expect(view.next("open", from)).resolves.toEqual({
+      type: "open",
+      seq: 4,
+      key: "health/0",
+    });
+    const drawn = await view.next("drawn", from);
+    expect(drawn.seq).toBe(4);
+    expect(drawn.report).toMatchObject({ probed: 1, focused: "health/0", scroll: 40 });
+    expect(drawn.report.sections.every(({ open }) => open)).toBe(true);
   });
 
   it("ignores an answer older than the one it drew", async () => {
