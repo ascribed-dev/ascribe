@@ -3662,7 +3662,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/742"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Search: Search Pages as Readers See Them in the editor"
     },
     {
@@ -3877,8 +3877,11 @@
       "labels": [
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/744"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Project view: every safe fix and every page formatted, as one edit"
     },
     {
@@ -3898,7 +3901,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/734"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Project view: the rest of the counts"
     },
     {
@@ -4594,8 +4597,11 @@
         "rust",
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/743"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Project view: Observe Examples, with ascribe observe asking for itself"
     },
     {
@@ -4614,6 +4620,38 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "Project view: Observe Examples"
+    },
+    {
+      "content": {
+        "body": "## Ascribe report\n\n0 errors, 0 warnings, 1 advice.\n\n### External links\n\nChecked 35 addresses, asking about each. Nothing is remembered from an earlier run, so every failure is reported.\n\n1 link to look at:\n\n- `content/agents/measuring.md:33`: [ASC168] `https://www.bing.com/webmasters` answered 500 Internal Server Error, so the link is broken for readers\n\n### Agents\n\nThe delivery spec's checks on `https://ascribed-dev.com/docs/`: 25 pass, 2 warn, 1 skip.\n\nNothing for the hosting or Ascribe to change.\n\nAlso failing, about the pages: `page-size-html`, `embedded-data-serialization`. `ascribe check` reports what to change in them.\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/39592071263)\n",
+        "number": 745,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs report: links and the published site",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/745"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCZBg0",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs report: links and the published site"
+    },
+    {
+      "content": {
+        "body": "The VS Code integration test \"opens a snippet's file and a tested example's beside the page, with This page still on it\" (`packages/vscode/test/integration/suite/tested.it.ts:117`, added in #727 for #652) has failed on CI on six pull requests and once on `main` since it landed on 21 October, and passes when the job is run again. It almost always fails the same way: it presses the `@snippet` row for `code/examples/greet.out.txt` in This page, and the file never opens beside the page within `waitFor`'s 30 seconds.\n\n```\n1) a code file a page shows\n     opens a snippet's file and a tested example's beside the page, with This page still on it:\n   AssertionError [ERR_ASSERTION]: Timed out waiting for /tmp/tv-tGsL5Q/workspace/code/examples/greet.out.txt beside the page\n\tat waitFor (out/integration/suite/tested.it.cjs:45:39)\n```\n\nIt's the first of the test's two rows, so the press is lost before anything opens. The other tests in the `tested` suite pass in the same runs, including \"lists the page's tested examples in This page\", which reads the same rows.\n\n## Where it failed\n\nEvery one is the \"VS Code extension integration tests\" job, failing in suite `tested`:\n\n| Pull request | Commit | Run | Failure |\n| --- | --- | --- | --- |\n| #733 (docs only) | `d68e5130` | [attempt 1](https://github.com/ascribed-dev/ascribe/actions/runs/39529023628/job/118990703674), [attempt 2](https://github.com/ascribed-dev/ascribe/actions/runs/39529023628/job/118995955929) | `greet.out.txt` timeout, twice |\n| #729 | `ed36a37f` | [run](https://github.com/ascribed-dev/ascribe/actions/runs/39528995869/job/118990312193) | `greet.out.txt` timeout |\n| #740 | `8767fabe` | [attempt 1](https://github.com/ascribed-dev/ascribe/actions/runs/39530379375/job/118997075855) | `greet.out.txt` timeout; attempt 2 passed |\n| `main`, the merge of #732 | `a4ea6dcc` | [run](https://github.com/ascribed-dev/ascribe/actions/runs/39531928059/job/119001380899) | `greet.out.txt` timeout |\n| #736 | `9d383e64` | [run](https://github.com/ascribed-dev/ascribe/actions/runs/39535697272/job/119011745179) | `greet.out.txt` timeout |\n| #742 | `af72ea82` | [attempt 1](https://github.com/ascribed-dev/ascribe/actions/runs/39538700099/job/119021718069) | `greet.out.txt` timeout (with another failure, in Search) |\n| #743 | `d304d748` | [attempt 1](https://github.com/ascribed-dev/ascribe/actions/runs/39542311876/job/119032645263), [attempt 2](https://github.com/ascribed-dev/ascribe/actions/runs/39542311876/job/119034985606) | timeout, then the variant below |\n\nAttempt 2 on #743 failed one step later: the file opened, but This page's focused row was gone afterwards.\n\n```\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ null\n- 'connections/2/1'\n```\n\nThat's `assert.equal(after.report.focused, key)`, after `view.whenSettled()`. So the page's update can drop the focus, as well as the press being lost.\n\n## What it isn't\n\n#743's implementor thought the cause was a race with the task provider's `ascribe model` call at activation, and made the extension ask for the tested sources once (`e491738`). That doesn't explain it. Both #743 failures are on `d304d748`, which is before that commit, and the failures on #729, #733, #736, #740 and `main` are before #743 was opened. The test was flaky from the start.\n\nThings worth looking at instead: whether `view.probe({ open: true, focus: key, press: true })` can arrive before the webview has drawn the rows the key names, or while a redraw replaces them (`whenDrawn` waits for the Health section, not for Connections); and whether a redraw after the page loses focus to the new editor resets `focused`.\n\n## Done when\n\n- The pull request explains why the press was lost (and why the focus was dropped in the second failure), from a trace or from logging added for it, not a guess.\n- The fix is in the extension or in what the test waits for. It doesn't add a retry or raise the timeout.\n- The `tested` suite passes in at least 10 runs of the integration job in a row on the pull request's last commit (run it with `workflow_dispatch` or reruns, and link them).\n\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 752,
+        "repository": "ascribed-dev/ascribe",
+        "title": "This page's test of opening a snippet's file beside the page is flaky on CI",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/752"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCZfoc",
+      "labels": [
+        "bug",
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Ready",
+      "title": "This page's test of opening a snippet's file beside the page is flaky on CI"
     }
   ]
 }
