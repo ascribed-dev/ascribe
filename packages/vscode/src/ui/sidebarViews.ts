@@ -1676,6 +1676,7 @@ const thisPageReport: Check<ThisPageReport> = shape<ThisPageReport>({
   hasFocus: boolean,
   scroll: whole,
   probed: whole,
+  severities: listOf(shortText),
   violations: listOf(shortText),
 });
 

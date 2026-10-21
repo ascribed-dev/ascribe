@@ -48,7 +48,7 @@ Health                                   2 to do
 
 | Group | Count | From | Opens |
 |---|---|---|---|
-| **Every build** | **Problems** | "2 errors, 1 warning": the problems the last **Check Every Build** found in every build, by severity | The Problems panel |
+| **Every build** | **Problems** | The problems the last **Check Every Build** found in every build, as the status bar counts them: the error icon and 2, the warning icon and 1, an icon per severity with its count, leaving out a severity there's none of. The tooltip says them in words, "2 errors and 1 warning", and so does a screen reader | The Problems panel |
 | | **Tested examples** | The same check's `example-stale` and `example-unobserved`: examples changed since they were tested, or never tested | The Problems panel, and the first of them in the editor |
 | | **Reviews overdue** | The same check's `review-overdue`, for the day it ran | The Problems panel, and the first of them in the editor |
 | | **Permalinks behind** | The same check's `permalinks-list-behind`: permalinks the list is behind on | The Problems panel, and the first of them in the editor |
@@ -130,7 +130,7 @@ About's other rows say where the page is, and whether it's published, listed, du
 
 | Row | Says | Opens |
 |---|---|---|
-| **Problems** | "1 warning, 2 advice": VS Code's problems for the page, as the Problems panel counts them | The Problems panel, where its filter's **Show Active File Only** keeps it to the page |
+| **Problems** | VS Code's problems for the page, as the status bar counts them: the warning icon and 1, the info icon and 2, an icon per severity with its count, leaving out a severity there's none of, or "none". The tooltip says them in words, "1 warning and advice on 2 lines", and so does a screen reader | The Problems panel, where its filter's **Show Active File Only** keeps it to the page |
 | **Size** | "31,200 of 50,000 characters, in site": the page's Markdown in the build where it's largest, measured as [`page-size`](../content-model/checks.md#19-checks) measures it, shown always so a page is seen growing toward the limit, and led by "too large" once it reaches it | Nothing; its tooltip says which build and the limit |
 | **Example** | Each [tested example](../examples/tested.md) a `@snippet` of the page shows: its state first, tested, changed since it was tested, or not tested, then its address, what it was tested with, and the heading it's under | The file its `@snippet` shows, beside the page |
 

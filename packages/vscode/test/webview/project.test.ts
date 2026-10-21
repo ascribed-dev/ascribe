@@ -93,11 +93,15 @@ async function open(): Promise<View> {
     }
   });
   await page.goto(`${ORIGIN}/`);
-  // VS Code sets the theme's colors on the document; two are enough to tell dimmed from not.
+  // VS Code sets the theme's colors on the document: these tell dimmed from
+  // not, and the Problems panel's icons apart.
   await page.evaluate(() => {
     const style = document.documentElement.style;
     style.setProperty("--vscode-foreground", "rgb(30, 30, 30)");
     style.setProperty("--vscode-disabledForeground", "rgb(160, 160, 160)");
+    style.setProperty("--vscode-problemsErrorIcon-foreground", "rgb(200, 0, 0)");
+    style.setProperty("--vscode-problemsWarningIcon-foreground", "rgb(200, 150, 0)");
+    style.setProperty("--vscode-problemsInfoIcon-foreground", "rgb(0, 100, 200)");
   });
   const view: View = {
     page,
@@ -164,10 +168,16 @@ const TASKS = [
   "Prompt Agent to Fix This Project",
 ];
 
-const made = (current: boolean, errors = 2, warnings = 1, examples = 0): EveryBuildResult => ({
+const made = (
+  current: boolean,
+  errors = 2,
+  warnings = 1,
+  examples = 0,
+  advice = 0,
+): EveryBuildResult => ({
   kind: "made",
   at: 0,
-  summary: { errors, warnings, advice: 0 },
+  summary: { errors, warnings, advice },
   error: null,
   current,
   unsaved: 0,
@@ -214,6 +224,7 @@ describe("the Project view's webview", () => {
       note: "not checked yet",
       state: "unknown",
       dimmed: false,
+      severities: [],
     });
     expect(report.health.map(({ key }) => key)).toEqual([
       "problems",
@@ -278,7 +289,7 @@ describe("the Project view's webview", () => {
   it("tells none from not checked: a dimmed 0, and a dash under a head that says why", async () => {
     const view = await open();
     const some = await view.draw(1, projectAnswer(facts(made(true, 0))));
-    expect(some.health[0]).toMatchObject({ value: "1 warning", dimmed: false });
+    expect(some.health[0]).toMatchObject({ value: "1", severities: ["warning 1"], dimmed: false });
     const none = await view.draw(2, projectAnswer(facts(made(true, 0, 0))));
     expect(none.health[0]).toMatchObject({ value: "0", state: "none", dimmed: true });
     expect(none.health.every((count) => count.value === "0" && count.dimmed)).toBe(true);
@@ -296,6 +307,42 @@ describe("the Project view's webview", () => {
       dimmed: false,
     });
     expect(stale.buttons).toEqual([...HEAD, "Check Every Build", ...TASKS, "Check Every Build"]);
+  });
+
+  it("draws problems as an icon per severity with its count, said in words on hover and to a screen reader", async () => {
+    const view = await open();
+    const all = await view.draw(1, projectAnswer(facts(made(true, 2, 1, 0, 3))));
+    expect(all.health[0]).toMatchObject({
+      key: "problems",
+      severities: ["error 2", "warning 1", "info 3"],
+      dimmed: false,
+    });
+    const words = "2 errors, 1 warning, and advice on 3 lines";
+    const button = view.page.getByRole("button", {
+      name: `Problems: ${words}. Every build, checked at 14:02`,
+    });
+    await expect(button.count()).resolves.toBe(1);
+    await expect(button.locator(".severities").getAttribute("title")).resolves.toBe(words);
+    // Each icon is its severity's shape, and its color is the Problems panel's.
+    const colors = await button
+      .locator(".severity .codicon")
+      .evaluateAll((icons) => icons.map((icon) => getComputedStyle(icon).color));
+    expect(colors).toEqual(["rgb(200, 0, 0)", "rgb(200, 150, 0)", "rgb(0, 100, 200)"]);
+    expect(all.violations).toEqual([]);
+    // One severity leaves out the others.
+    const one = await view.draw(2, projectAnswer(facts(made(true, 0, 0, 0, 1))));
+    expect(one.health[0]?.severities).toEqual(["info 1"]);
+    await expect(
+      view.page
+        .getByRole("button", {
+          name: "Problems: advice on 1 line. Every build, checked at 14:02",
+        })
+        .count(),
+    ).resolves.toBe(1);
+    // None stays a dimmed 0, with no icons.
+    const none = await view.draw(3, projectAnswer(facts(made(true, 0, 0))));
+    expect(none.health[0]).toMatchObject({ value: "0", severities: [], dimmed: true });
+    expect(none.violations).toEqual([]);
   });
 
   it("opens a current count's list, and runs the check, from the keyboard", async () => {
@@ -317,12 +364,14 @@ describe("the Project view's webview", () => {
     await expect(
       view.page
         .getByRole("button", {
-          name: "Problems: 2 errors, 1 warning. Every build, checked at 14:02",
+          name: "Problems: 2 errors and 1 warning. Every build, checked at 14:02",
         })
         .count(),
     ).resolves.toBe(1);
     await view.page
-      .getByRole("button", { name: "Problems: 2 errors, 1 warning. Every build, checked at 14:02" })
+      .getByRole("button", {
+        name: "Problems: 2 errors and 1 warning. Every build, checked at 14:02",
+      })
       .focus();
     const later = view.posted.length;
     await view.page.keyboard.press("Enter");

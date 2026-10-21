@@ -403,6 +403,7 @@ const projectReport: Check<ProjectReport> = shape<ProjectReport>({
       note: text,
       state: text,
       dimmed: boolean,
+      severities: listOf(text),
     }),
   ),
   buttons: listOf(text),

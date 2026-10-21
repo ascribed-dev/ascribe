@@ -28,6 +28,17 @@ export type FromView<Report> =
   /** Escape: the focus goes back to the page's editor. */
   | { type: "focusEditor" };
 
+/**
+ * Problems by severity, as the Problems panel counts them: drawn as its
+ * icons, each with its count, and said in words (`../problems.ts`).
+ */
+export interface ProblemCounts {
+  errors: number;
+  warnings: number;
+  /** Information, as the language server sends advice. */
+  advice: number;
+}
+
 // This page.
 
 /** One item This page draws, as the model (`sidebar.ts`) builds it. */
@@ -54,6 +65,12 @@ export interface ViewItem {
   tooltip: string;
   /** A codicon's name. */
   icon: string;
+  /**
+   * A row's problems, drawn in place of its state as an icon per severity
+   * with its count; its state says them in words, for its tooltip and a
+   * screen reader. `null` for a row that isn't problems, or has none.
+   */
+  problems: ProblemCounts | null;
   /** Whether it's dimmed: a section or group with nothing in it, a file that isn't found. */
   dimmed: boolean;
   /** Whether it says something needs doing: overdue, too long, stale. */
@@ -130,6 +147,8 @@ export interface ThisPageReport {
   scroll: number;
   /** The newest probe the report answers, or 0 when it answers none. */
   probed: number;
+  /** The problems' icons drawn, each as its codicon and count: "warning 1". */
+  severities: string[];
   /** Content security policy violations seen so far. */
   violations: string[];
 }
@@ -194,8 +213,14 @@ export interface ProjectCount {
    * note says.
    */
   state: "current" | "none" | "outOfDate" | "unknown" | "running";
-  /** The count as it's shown: "2 errors, 5 warnings", "0", or "—" when it isn't current. */
+  /** The count in words: "2 errors and 5 warnings", "0", or "—" when it isn't current. */
   value: string;
+  /**
+   * Problems, drawn as an icon per severity with its count, its value saying
+   * them in words for its tooltip and a screen reader; absent for any other
+   * count, or none.
+   */
+  problems?: ProblemCounts;
   /**
    * Its own note, when it isn't current though its group is, as overdue
    * reviews checked on another day; `null` when its group's says it.
@@ -299,7 +324,15 @@ export interface ProjectReport {
    * Each count as drawn: its value, its note (its own, or else its group's),
    * its state, and whether its value is dimmed.
    */
-  health: { key: string; value: string; note: string; state: string; dimmed: boolean }[];
+  health: {
+    key: string;
+    value: string;
+    note: string;
+    state: string;
+    dimmed: boolean;
+    /** The icons drawn in place of its value's text, each as its codicon and count: "error 2". */
+    severities: string[];
+  }[];
   /**
    * The buttons' labels, in order: the head's, the actions', then Health's
    * groups' actions and their counts'. An icon's button by its label.

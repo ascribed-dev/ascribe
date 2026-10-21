@@ -159,6 +159,38 @@ ul {
   color: var(--vscode-editorWarning-foreground);
 }
 
+/* Problems, as the status bar shows them: an icon per severity with its
+   count, each icon colored as the Problems panel colors it, and told by its
+   shape as well. Its tooltip says them in words. */
+.severities {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  color: var(--vscode-foreground);
+}
+
+.row .severities {
+  margin-right: 0.5em;
+}
+
+.severity {
+  display: inline-flex;
+  gap: 3px;
+  align-items: flex-start;
+}
+
+.severities .severity-error .codicon {
+  color: var(--vscode-problemsErrorIcon-foreground);
+}
+
+.severities .severity-warning .codicon {
+  color: var(--vscode-problemsWarningIcon-foreground);
+}
+
+.severities .severity-info .codicon {
+  color: var(--vscode-problemsInfoIcon-foreground);
+}
+
 .item > span,
 .item > button {
   display: flex;

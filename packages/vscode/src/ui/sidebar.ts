@@ -23,7 +23,15 @@ import type {
   PagePlace,
   PageResult,
 } from "../shapes.js";
-import type { ThisPageAnswer, ThisPageHead, ViewItem } from "../webview/viewProtocol.js";
+import { problemsText } from "../problems.js";
+import type {
+  ProblemCounts,
+  ThisPageAnswer,
+  ThisPageHead,
+  ViewItem,
+} from "../webview/viewProtocol.js";
+
+export type { ProblemCounts };
 
 /** How an item of a view looks. */
 export interface ItemLook {
@@ -840,6 +848,8 @@ interface AboutRow {
   tooltip: string;
   /** Whether it says something needs doing: overdue, too long, stale. */
   warn?: boolean | undefined;
+  /** Its problems, which This page draws as icons in place of its state, which says them in words. */
+  problems?: ProblemCounts | undefined;
   /** What choosing it does, if anything. */
   opens?: RowTarget | undefined;
 }
@@ -854,13 +864,6 @@ type RowTarget =
   | { kind: "beside"; uri: string }
   | { kind: "command"; command: string; title: string }
   | { kind: "site"; url: string };
-
-/** VS Code's diagnostics for the page, by how loudly they speak. */
-export interface ProblemCounts {
-  errors: number;
-  warnings: number;
-  advice: number;
-}
 
 /** What This page knows besides the server's answer. */
 export interface ThisPageContext {
@@ -1178,17 +1181,14 @@ function healthRows(
 ): AboutRow[] {
   const rows: AboutRow[] = [];
   if (problems) {
-    const parts = [
-      problems.errors > 0 ? count(problems.errors, "error", "errors") : "",
-      problems.warnings > 0 ? count(problems.warnings, "warning", "warnings") : "",
-      problems.advice > 0 ? `${problems.advice} advice` : "",
-    ].filter((part) => part !== "");
+    const said = problemsText(problems);
     rows.push({
       label: "Problems",
-      state: parts.length > 0 ? parts.join(", ") : "none",
+      state: said || "none",
       value: "",
       tooltip: "Opens the Problems panel, where Show Active File Only keeps it to this page",
       warn: problems.errors > 0 || problems.warnings > 0,
+      problems: said ? problems : undefined,
       opens: { kind: "command", command: SHOW_PROBLEMS, title: "Show Problems" },
     });
   }
@@ -1587,6 +1587,7 @@ export function thisPageItems(
       description: look.description,
       tooltip: look.tooltip,
       icon: look.icon,
+      problems: (node.kind === "row" && node.row.problems) || null,
       dimmed: look.dimmed,
       warn: node.kind === "row" && node.row.warn === true,
       acts: acts(node),

@@ -8,7 +8,9 @@
 // list, so a screen reader and the keyboard get them from the HTML itself:
 // Tab between the headers and the buttons, and Enter or Space to open a
 // section or choose a row. Which sections are open is the view's state, the
-// same for every page, until the reader opens or closes one.
+// same for every page, until the reader opens or closes one. Health's
+// Problems row draws its problems as icons with counts, named in words
+// (`severities.ts`).
 //
 // The text is written by people and agents: titles, memos' first lines,
 // threads' excerpts. All of it is set as text, never as HTML.
@@ -23,6 +25,7 @@
 // extension says instead (no page open, the server starting or failed,
 // Restricted Mode) with the buttons that help, which the extension runs.
 
+import { drawnSeverities, severities } from "./severities.js";
 import { seenViolations, startView, type ViewChannel } from "./view.js";
 import type {
   ThisPageAnswer,
@@ -90,9 +93,16 @@ function chooser(item: ViewItem, channel: ViewChannel<ThisPageReport>): HTMLButt
   return button;
 }
 
-/** What a row says: its state first, as a colored label, then its description. */
+/**
+ * What a row says: its state first, as a colored label, or its problems as
+ * icons with counts, which its state names; then its description.
+ */
 function said(item: ViewItem): Node[] {
-  const state = item.state ? [element("span", "state", item.state)] : [];
+  const state = item.problems
+    ? [severities(item.problems, item.state)]
+    : item.state
+      ? [element("span", "state", item.state)]
+      : [];
   const rest = item.description ? [document.createTextNode(item.description)] : [];
   return [...state, ...rest];
 }
@@ -379,6 +389,7 @@ function report(answer: ThisPageAnswer): ThisPageReport {
     hasFocus: document.hasFocus(),
     scroll: Math.round(scroller.scrollTop),
     probed,
+    severities: drawnSeverities(view),
     violations: seenViolations(),
   };
 }

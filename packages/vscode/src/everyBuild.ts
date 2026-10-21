@@ -3,6 +3,7 @@
 // build only, doesn't show. No VS Code in this module.
 
 import * as path from "node:path";
+import { problemsText } from "./problems.js";
 import type { CheckReport, Entry, Pos, Range } from "./shapes.js";
 
 /** A position as the editor has it: from 0, in UTF-16 units. */
@@ -127,16 +128,11 @@ export function checkedText(
 ): string {
   if (report.error !== null) return `Ascribe couldn't check ${project}: ${report.error}`;
   const builds = report.builds_checked.join(", ");
-  const { errors, warnings, advice } = report.summary;
-  const counts = [
-    count(errors, "error"),
-    count(warnings, "warning"),
-    advice > 0 ? `${advice} advice` : "",
-  ].filter(Boolean);
+  const counts = problemsText(report.summary);
   let text =
-    counts.length === 0
+    counts === ""
       ? `Ascribe checked every build of ${project} (${builds}): no problems.`
-      : `Ascribe checked every build of ${project} (${builds}): ${counts.join(", ")}. ${
+      : `Ascribe checked every build of ${project} (${builds}): ${counts}. ${
           added === 0
             ? "The Problems panel already showed them."
             : added === 1

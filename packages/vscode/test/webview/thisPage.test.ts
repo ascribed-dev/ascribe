@@ -147,6 +147,7 @@ function item(key: string, kind: ViewItem["kind"], label: string, more: Partial<
     description: "",
     tooltip: "",
     icon: "blank",
+    problems: null,
     dimmed: false,
     warn: false,
     acts: false,
@@ -254,6 +255,47 @@ describe("This page's webview", () => {
       "codicon-chevron-right",
       "codicon-chevron-right",
     ]);
+  });
+
+  it("draws Problems as an icon per severity with its count, said in words on hover and to a screen reader", async () => {
+    const view = await open();
+    const words = "2 errors, 1 warning, and advice on 3 lines";
+    const answer = (problems: ViewItem["problems"], state: string) => ({
+      ...sections(),
+      sections: [
+        item("health", "section", "Health", {
+          icon: "pulse",
+          open: true,
+          children: [
+            item("health/0", "row", "Problems", {
+              state,
+              problems,
+              warn: problems !== null && problems.errors + problems.warnings > 0,
+              acts: true,
+            }),
+          ],
+        }),
+      ],
+    });
+    const all = await draw(view, 1, answer({ errors: 2, warnings: 1, advice: 3 }, words));
+    expect(all.severities).toEqual(["error 2", "warning 1", "info 3"]);
+    expect(all.sections[0]?.items).toEqual([`Problems (${words})`]);
+    const button = view.page.getByRole("button", { name: `Problems: ${words}` });
+    await expect(button.count()).resolves.toBe(1);
+    await expect(button.locator(".severities").getAttribute("title")).resolves.toBe(words);
+    expect(all.violations).toEqual([]);
+    const one = await draw(view, 2, answer({ errors: 0, warnings: 1, advice: 0 }, "1 warning"));
+    expect(one.severities).toEqual(["warning 1"]);
+    await expect(
+      view.page.getByRole("button", { name: "Problems: 1 warning" }).count(),
+    ).resolves.toBe(1);
+    // None stays "none", in words.
+    const none = await draw(view, 3, answer(null, "none"));
+    expect(none.severities).toEqual([]);
+    await expect(
+      view.page.locator("[data-key='health/0']").getByRole("button").textContent(),
+    ).resolves.toBe("none");
+    expect(none.violations).toEqual([]);
   });
 
   it("wraps a long row at a narrow width instead of cutting it off", async () => {
