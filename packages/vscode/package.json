@@ -381,6 +381,12 @@
         "icon": "$(eye-closed)"
       },
       {
+        "command": "ascribe.openProjectSettings",
+        "title": "Open Project Settings",
+        "category": "Ascribe",
+        "icon": "$(settings-gear)"
+      },
+      {
         "command": "ascribe.showOutput",
         "title": "Show Server Output",
         "category": "Ascribe"
@@ -1248,6 +1254,10 @@
         {
           "command": "ascribe.review.hideAdvice",
           "when": "false"
+        },
+        {
+          "command": "ascribe.openProjectSettings",
+          "when": "ascribe.active"
         },
         {
           "command": "ascribe.showOutput",

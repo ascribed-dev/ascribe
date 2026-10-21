@@ -93,6 +93,7 @@ await bundle({
     preview: "src/webview/preview.ts",
     thisPage: "src/webview/thisPage.ts",
     project: "src/webview/project.ts",
+    settings: "src/webview/settings.ts",
   },
 });
 await bundle({
@@ -102,6 +103,7 @@ await bundle({
     marks: "src/webview/marks.css",
     preview: "src/webview/preview.css",
     views: "src/webview/views.css",
+    settings: "src/webview/settings.css",
   },
   // The sidebar's webview views draw codicons with VS Code's own font
   // (`@vscode/codicons`), which the views' stylesheet imports. It's copied
@@ -129,6 +131,7 @@ if (process.argv.includes("--tests")) {
       "suite/preview.it": "test/integration/suite/preview.it.ts",
       "suite/quill.it": "test/integration/suite/quill.it.ts",
       "suite/review.it": "test/integration/suite/review.it.ts",
+      "suite/settings.it": "test/integration/suite/settings.it.ts",
       "suite/shared.it": "test/integration/suite/shared.it.ts",
       "suite/site.it": "test/integration/suite/site.it.ts",
       "suite/stub.it": "test/integration/suite/stub.it.ts",

@@ -521,6 +521,7 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     })
                 })
             }
+            crate::settings::METHOD => settings_request(shared, &request),
             crate::inventory::METHOD => {
                 project_answer(shared, &request, |p: crate::inventory::InventoryParams| {
                     (p.text_document.uri, crate::inventory::inventory)
@@ -639,6 +640,13 @@ fn edit_request(shared: &Shared, request: &Request) -> Result<serde_json::Value,
     let params: EditParams = serde_json::from_value(request.params.clone())
         .map_err(|e| invalid(&request.id, e.to_string()))?;
     let uri = params.text_document.uri.clone();
+    if params.action == crate::edit::EditAction::SetSetting {
+        let now = shared.lock().model_now(&uri);
+        let result = now
+            .map(|now| crate::settings::set_setting(&now, &params.args))
+            .unwrap_or_default();
+        return to_json(request, result);
+    }
     let target = {
         let core = shared.lock();
         if params.action.about_project() {
@@ -649,6 +657,18 @@ fn edit_request(shared: &Shared, request: &Request) -> Result<serde_json::Value,
     };
     let result = target
         .map(|ctx| edit(&ctx, &uri, &params))
+        .unwrap_or_default();
+    to_json(request, result)
+}
+
+/// `ascribe/settings`, asked through any of the project's files, from
+/// `ascribe.toml` as it is now ([`Core::model_now`]).
+fn settings_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    let params: crate::settings::SettingsParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let now = shared.lock().model_now(&params.text_document.uri);
+    let result = now
+        .map(|now| crate::settings::settings_now(&now))
         .unwrap_or_default();
     to_json(request, result)
 }

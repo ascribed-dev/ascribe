@@ -17,6 +17,7 @@ import { ChosenBuilds } from "./ui/chosenBuild.js";
 import { projectKeys, STATE_NAMES } from "./ui/describe.js";
 import { BuildLenses } from "./ui/lens.js";
 import { ProjectBuilds } from "./ui/projectBuilds.js";
+import { ProjectSettings, type ProjectSettingsApi } from "./ui/projectSettings.js";
 import { ReviewView, type ReviewViewApi } from "./ui/reviewView.js";
 import { ProjectEdits, type ProjectEditsApi } from "./ui/projectEdits.js";
 import { ProjectView, type ProjectViewApi } from "./ui/projectView.js";
@@ -86,6 +87,8 @@ export interface AscribeApi {
     everyBuild: EveryBuildApi;
     /** The agent files' checks, which the Project view counts. */
     agentFiles: AgentFilesApi;
+    /** Project Settings. */
+    projectSettings: ProjectSettingsApi;
     /** Settles when every request for a project's builds has been answered. */
     whenBuildsKnown(): Promise<void>;
   };
@@ -158,6 +161,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   );
   projectView.register();
 
+  const settings = new ProjectSettings(projects, context.extensionUri, context.extension.id);
+  settings.register();
+
   const newPage = new NewPage(projects);
   newPage.register();
   const walkthrough = new Walkthrough(projects);
@@ -221,6 +227,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     tasks,
     projectEdits,
     projectView,
+    settings,
     walkthrough,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
       await projects.refresh();
@@ -328,6 +335,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       sidebar: sidebar.api,
       everyBuild: checks.api,
       agentFiles: agentFiles.api,
+      projectSettings: settings.api,
       whenBuildsKnown: () => builds.whenSettled(),
     },
   };

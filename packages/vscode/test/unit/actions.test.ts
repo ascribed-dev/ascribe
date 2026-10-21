@@ -288,6 +288,7 @@ describe("the registry", () => {
     // Two aren't actions: New Page and Go to Next Placeholder are commands
     // of their own (src/actions/newPage.ts), since neither is about a place in a page.
     // The navigation's, and a page's label, are the Pages view's drags and menu (src/ui/sidebarViews.ts).
+    // A setting is Project Settings' (src/ui/projectSettings.ts).
     const commands = [
       "newPage",
       "nextPlaceholder",
@@ -296,6 +297,7 @@ describe("the registry", () => {
       "placePage",
       "setSectionLabel",
       "setPageLabel",
+      "setSetting",
     ];
     const operations = [...table.matchAll(/^\| `(\w+)` \|/gm)]
       .map((m) => m[1])

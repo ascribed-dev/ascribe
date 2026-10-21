@@ -13,7 +13,7 @@ links, CodeLens, and inlay hints (see [Navigation](#navigation)); code actions,
 rename, formatting, and folding ranges; and the custom requests `ascribe/preview`,
 `ascribe/review/setBase`, `ascribe/review/changes`, `ascribe/review/baseFile`,
 `ascribe/context`, `ascribe/targets`, `ascribe/edit`, `ascribe/buildView`,
-`ascribe/inventory`, `ascribe/page`, and `ascribe/projectEdit`.
+`ascribe/inventory`, `ascribe/page`, `ascribe/projectEdit`, and `ascribe/settings`.
 
 ## The project
 
@@ -406,6 +406,7 @@ The operations, where each applies, and its arguments (`?` is optional):
 | `movePage` | Any of the project's files, as `newPage` | `page` (a content path), `before?` (a page of the same section; none for the end) | The section's `pages`, listing its pages as they stood with `page` before `before`; its table is added, and its siblings', when the file doesn't list it |
 | `placePage` | Any of the project's files, as `newPage` | `page` | `page` at the end of its section's `pages`, which leaves it out |
 | `setSectionLabel` | Any of the project's files, as `newPage` | `folder`, `label?` (none or empty for the default) | The section's `label` |
+| `setSetting` | Any of the project's files, as `newPage` | `table` (a dotted path, `consumer`), `key`, `value` (a boolean, a whole number, or a string, as the setting's kind takes), `shown` (the `version` the [`ascribe/settings`](#project-settings-ascribesettings) answer it was shown from had: a number, or `null` for the disk) | The value where `ascribe.toml` writes it, as it is now, and nothing else; refused for a setting it doesn't write, and when `shown` isn't the version `ascribe.toml` has now, a buffer's for the disk's and the disk's for a buffer's included. Not refused for a problem the model then has, which `ascribe/settings` shows under the setting |
 | `nextPlaceholder` | A page of a type with a template | | Nothing: `select` is the next thing the template left to fill in after `range`, or the first when none is after it |
 | `addMemo` | Anywhere in a page | | A new memo file in `memos/`, its `documentChanges` creating it and giving it its text: `about` is the innermost section with an id at the cursor, as `page.md#id`, or the page above the first heading; `quote` is the selection, its whitespace runs as one space, or the first line of the block at the cursor, left out on a heading or when the memo wouldn't find it. Named from the quote's first words, or the heading's id, never over a file. `select` is the empty line for the memo's text. Refused when `memos/` is in the content root |
 | `addPersonalMemo` | Anywhere in a page | | As `addMemo`, in `.ascribe/memos/` |
@@ -525,6 +526,57 @@ thing ([Navigation](#navigation)): both come from
 pass over the snapshot (`Project::use_counts`). It answers from the current
 snapshot, so it includes unsaved edits. See [Performance](#performance) for
 its cost.
+
+## Project Settings: `ascribe/settings`
+
+A custom request that answers every setting of `ascribe.toml` that Project
+Settings shows, for the editor's tab of the same name:
+
+```jsonc
+{ "textDocument": { "uri": "file:///…/ascribe.toml" } }
+```
+
+Like `ascribe/inventory`, it can be sent for any of the project's files. Its
+TypeScript type is `SettingsResult` in `packages/vscode/src/shapes.ts`
+(`schemas/lsp-settings.schema.json`):
+
+```jsonc
+{
+  "modelUri": "file:///…/ascribe.toml",
+  "version": 7,
+  "unreadable": null,
+  "settings": [{ "table": "consumer", "key": "trailing-slash", "name": "Trailing slash",
+                 "kind": "choice", "choices": ["always", "never"], "default": "always",
+                 "defaultText": null,
+                 "description": [{ "text": "Routing. Whether page URLs end in ", "code": false },
+                                 { "text": "/", "code": true }],
+                 "value": "never", "set": { "range": { … }, "line": 47 },
+                 "problems": [] }]
+}
+```
+
+- The settings are the registry's (`crates/ascribe-model/settings.toml`) of
+  a simple kind (`switch`, `choice`, `number`, `text`, `level`) in a table a
+  project doesn't name parts of, in the reference's order.
+- It reads `ascribe.toml` as it is now: the open buffer, unsaved text
+  included, or the file on disk, and even while it doesn't load. `version` is
+  the version of the open buffer it read, or `null` when it read the disk; a
+  client draws an answer only for the text it has, and asks again otherwise.
+  `unreadable` says why the values can't be read, when the file isn't valid
+  TOML.
+- `value` is the file's (`null` when it leaves the key out, or writes it as
+  something other than a string, a boolean, or a whole number), and `set` the
+  range from its key to the end of its value, with the key's line from 1.
+- `description` is the registry's Markdown as plain text: a link's text is
+  kept and its address dropped, emphasis is taken off, and code spans are
+  pieces of their own, so a client parses nothing.
+- `problems` are the diagnostics published on `ascribe.toml` that touch the
+  setting's range, with their messages and their severities at the levels
+  `[checks]` sets.
+
+`ascribe/edit`'s `setSetting` changes one, through `ModelFile` as the content
+model's actions do, from the same text: it's refused when `ascribe.toml`'s
+version now, or `null` for the disk, isn't the `shown` it's sent with. It's answered in `src/settings.rs`.
 
 ## What's known about a page: `ascribe/page`
 

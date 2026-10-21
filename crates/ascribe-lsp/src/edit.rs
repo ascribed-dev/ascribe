@@ -163,11 +163,15 @@ pub enum EditAction {
     /// Sets a section's `label` in `ascribe.nav`, or takes it out. Asked
     /// through any of the project's files.
     SetSectionLabel,
+    /// Sets a value `ascribe.toml` sets, for Project Settings. Asked through
+    /// any of the project's files, and answered from `ascribe.toml` as it is
+    /// now (`settings.rs`).
+    SetSetting,
 }
 
 impl EditAction {
     /// Every action, in the order the README documents them.
-    pub const ALL: [EditAction; 41] = [
+    pub const ALL: [EditAction; 42] = [
         EditAction::WrapNote,
         EditAction::SetNoteType,
         EditAction::UnwrapNote,
@@ -209,6 +213,7 @@ impl EditAction {
         EditAction::MovePage,
         EditAction::PlacePage,
         EditAction::SetSectionLabel,
+        EditAction::SetSetting,
     ];
 
     /// Whether the action is about the whole project, asked through any of
@@ -367,7 +372,8 @@ fn plan_edit(ctx: &Ctx, uri: &Uri, params: &EditParams) -> Result<EditResult, St
         | EditAction::MoveSection
         | EditAction::MovePage
         | EditAction::PlacePage
-        | EditAction::SetSectionLabel => {
+        | EditAction::SetSectionLabel
+        | EditAction::SetSetting => {
             return Err("The action has no edit to plan here.".to_owned());
         }
     }?;

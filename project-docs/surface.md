@@ -351,7 +351,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
 For people. Read from `packages/vscode/package.json`, `docs/content/_generated/editor-actions.md`.
 
-92 commands, 37 of them actions.
+93 commands, 37 of them actions.
 
 Commands that aren't actions:
 
@@ -384,6 +384,7 @@ Commands that aren't actions:
 | Ascribe: Open Page's Source Changes | `ascribe.review.pageSourceChanges` |
 | Ascribe: Show Advice | `ascribe.review.showAdvice` |
 | Ascribe: Hide Advice | `ascribe.review.hideAdvice` |
+| Ascribe: Open Project Settings | `ascribe.openProjectSettings` |
 | Ascribe: Show Server Output | `ascribe.showOutput` |
 | Ascribe: Restart Language Server | `ascribe.restartServer` |
 | Ascribe: Switch Project | `ascribe.switchProject` |
@@ -509,7 +510,7 @@ Menus the commands are placed in:
 
 | Menu | Entries |
 |---|---|
-| `commandPalette` | 92 |
+| `commandPalette` | 93 |
 | `editor/title` | 5 |
 | `view/title` | 12 |
 | `view/item/context` | 13 |
@@ -538,6 +539,7 @@ Ascribe's own requests:
 | `ascribe/review/setBase` | `crates/ascribe-lsp/src/review.rs` |
 | `ascribe/review/changes` | `crates/ascribe-lsp/src/review.rs` |
 | `ascribe/review/baseFile` | `crates/ascribe-lsp/src/review.rs` |
+| `ascribe/settings` | `crates/ascribe-lsp/src/settings.rs` |
 | `ascribe/targets` | `crates/ascribe-lsp/src/targets.rs` |
 
 The standard requests it answers, by the type that names each in the code:
@@ -781,6 +783,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/lsp-preview.schema.json` | PreviewResult | The answer to `ascribe/preview`. |
 | `schemas/lsp-project-edit.schema.json` | ProjectEditResult | The answer to `ascribe/projectEdit`: the edit and how much it changes, or why there's none. |
 | `schemas/lsp-set-base.schema.json` | SetBaseResult | The answer to `ascribe/review/setBase`. |
+| `schemas/lsp-settings.schema.json` | SettingsResult | The answer to `ascribe/settings`. |
 | `schemas/lsp-targets.schema.json` | TargetsResult | The answer to `ascribe/targets`: a list for each kind asked for, and no others. |
 | `schemas/model.schema.json` | ModelReport | What `ascribe model --format json` answers: the content model's sections, or the one asked for. |
 | `schemas/observe.schema.json` | ObserveReport | What `ascribe observe --format json` writes: the commands it ran, how the test ended, the observation it wrote, and what changed since the one it replaced. |

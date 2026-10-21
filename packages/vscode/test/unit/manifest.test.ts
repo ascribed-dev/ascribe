@@ -227,6 +227,7 @@ describe("package.json", () => {
       "ascribe.review.pageSourceChanges",
       "ascribe.review.showAdvice",
       "ascribe.review.hideAdvice",
+      "ascribe.openProjectSettings",
       "ascribe.showOutput",
       "ascribe.restartServer",
       "ascribe.switchProject",
