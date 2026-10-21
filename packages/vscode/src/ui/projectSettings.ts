@@ -1,0 +1,387 @@
+// Project Settings: an editor tab, a webview panel, that shows a project's
+// `ascribe.toml` settings with their values, defaults, descriptions, and
+// lines, and changes a simple value in place. Opened from the Command
+// Palette (Ascribe: Open Project Settings), one tab per project.
+//
+// It keeps the rules of the sidebar's webview views (decision #651a): the
+// shell and its content security policy (`../webview/viewShell.ts`), the
+// handshake with the newest answer sent (`handshake.ts`), numbered answers,
+// and text set as text. Its webview isn't kept alive while its tab is hidden
+// (`retainContextWhenHidden`): shown again, it says it's ready, and gets the
+// newest answer.
+//
+// What it draws is the server's `ascribe/settings`, read from the text the
+// editor has, and nothing else: `settingsModel.ts` has the rule. A change is
+// `ascribe/edit`'s `setSetting`, applied as a workspace edit, so
+// `ascribe.toml` changes unsaved, Undo puts it back, and the tab follows the
+// document as it follows typing.
+
+import { randomBytes } from "node:crypto";
+import * as vscode from "vscode";
+import type { ProjectServer } from "../client.js";
+import { samePath } from "../projects.js";
+import type { ProjectRegistry } from "../registry.js";
+import type { SettingsResult } from "../shapes.js";
+import type { SettingsAnswer, SettingsReport } from "../webview/settingsProtocol.js";
+import { viewHtml } from "../webview/viewShell.js";
+import { STATE_NAMES } from "./describe.js";
+import { Handshake } from "./handshake.js";
+import {
+  checkSettingsMessage,
+  checkedValue,
+  inStep,
+  settingId,
+  settingsAnswer,
+} from "./settingsModel.js";
+import type { Drawn } from "./webviewView.js";
+
+/** How many times an answer for other text is asked for again before the tab waits for the next change. */
+const TRIES = 5;
+
+/** Project Settings, for tests. */
+export interface ProjectSettingsApi {
+  /** Opens the tab of the project in `folder`, or of the current project, as the command does. */
+  open(folder?: string): Promise<void>;
+  /** What the open tab's webview drew last. */
+  drawn(): Drawn<SettingsReport> | undefined;
+  /** Waits until what the open tab's webview drew satisfies `predicate`. */
+  whenDrawn(
+    description: string,
+    predicate: (drawn: Drawn<SettingsReport>) => boolean,
+    timeout?: number,
+  ): Promise<Drawn<SettingsReport>>;
+  /** Sets a setting of what the webview drew last, as its control does. */
+  set(id: string, value: string | number | boolean): Promise<void>;
+  /** Opens `ascribe.toml` at a setting's line, as its link does. */
+  openLine(id: string): Promise<void>;
+  /** How many tabs are open. */
+  tabs(): number;
+  /** Settles when every request for an answer has been answered. */
+  whenSettled(): Promise<void>;
+}
+
+export class ProjectSettings implements vscode.Disposable {
+  private readonly panels = new Map<string, SettingsPanel>();
+  /** The tab opened or shown last, which the test API acts on. */
+  private last: SettingsPanel | undefined;
+  private readonly disposables: vscode.Disposable[] = [];
+
+  constructor(
+    private readonly projects: ProjectRegistry,
+    private readonly extensionUri: vscode.Uri,
+    private readonly extensionId: string,
+  ) {}
+
+  register(): void {
+    this.disposables.push(
+      vscode.commands.registerCommand("ascribe.openProjectSettings", () => this.open()),
+    );
+  }
+
+  get api(): ProjectSettingsApi {
+    const panel = (): SettingsPanel => {
+      if (!this.last) throw new Error("Project Settings isn't open");
+      return this.last;
+    };
+    return {
+      open: (folder) => this.open(folder),
+      drawn: () => this.last?.drawn,
+      whenDrawn: (description, predicate, timeout) =>
+        panel().whenDrawn(description, predicate, timeout),
+      set: (id, value) => panel().set(panel().seq, id, value),
+      openLine: (id) => panel().openLine(panel().seq, id),
+      tabs: () => this.panels.size,
+      whenSettled: () => this.last?.whenSettled() ?? Promise.resolve(),
+    };
+  }
+
+  /** Opens the tab of a project, or shows the one already open. */
+  private async open(folder?: string): Promise<void> {
+    const server = folder === undefined ? this.projects.current() : this.projects.serverAt(folder);
+    if (!server) {
+      void vscode.window.showInformationMessage("Ascribe: this workspace has no ascribe.toml.");
+      return;
+    }
+    const config = server.project.config;
+    const open = [...this.panels.entries()].find(([path]) => samePath(path, config))?.[1];
+    if (open) {
+      this.last = open;
+      open.reveal();
+      return;
+    }
+    const panel = new SettingsPanel(
+      server,
+      this.projects.name(server.project) || "Project Settings",
+      this.extensionUri,
+      this.extensionId,
+      () => {
+        this.panels.delete(config);
+        if (this.last === panel) this.last = undefined;
+      },
+    );
+    this.panels.set(config, panel);
+    this.last = panel;
+    await server.start();
+    panel.refresh();
+  }
+
+  dispose(): void {
+    for (const panel of this.panels.values()) panel.dispose();
+    for (const disposable of this.disposables.splice(0)) disposable.dispose();
+  }
+}
+
+/** One project's tab. */
+class SettingsPanel implements vscode.Disposable {
+  private readonly panel: vscode.WebviewPanel;
+  private readonly handshake = new Handshake<SettingsAnswer>();
+  /** The server's answer the newest answer was made from. */
+  private result: SettingsResult | undefined;
+  private drawnLast: Drawn<SettingsReport> | undefined;
+  private waiters: (() => void)[] = [];
+  private readonly disposables: vscode.Disposable[] = [];
+  private readonly config: vscode.Uri;
+  /** The refresh under way, and whether another is due after it. */
+  private running: Promise<void> | undefined;
+  private again = false;
+
+  constructor(
+    private readonly server: ProjectServer,
+    title: string,
+    extensionUri: vscode.Uri,
+    private readonly extensionId: string,
+    private readonly closed: () => void,
+  ) {
+    this.config = vscode.Uri.file(server.project.config);
+    const root = vscode.Uri.joinPath(extensionUri, "dist", "webview");
+    this.panel = vscode.window.createWebviewPanel(
+      "ascribe.projectSettings",
+      title,
+      vscode.ViewColumn.Active,
+      { enableScripts: true, localResourceRoots: [root] },
+    );
+    const webview = this.panel.webview;
+    const file = (name: string) => webview.asWebviewUri(vscode.Uri.joinPath(root, name));
+    webview.html = viewHtml({
+      cspSource: webview.cspSource,
+      nonce: randomBytes(16).toString("base64"),
+      script: file("settings.js").toString(),
+      style: file("settings.css").toString(),
+      title: `${title}: Project Settings`,
+    });
+    const isConfig = (uri: vscode.Uri): boolean =>
+      uri.scheme === "file" && samePath(uri.fsPath, this.config.fsPath);
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(vscode.Uri.file(server.project.folder), "ascribe.toml"),
+    );
+    this.disposables.push(
+      webview.onDidReceiveMessage((message: unknown) => this.receive(message)),
+      // Its document is thrown away while the tab is hidden, and made again
+      // when it's shown: the ready that follows gets the newest answer.
+      this.panel.onDidChangeViewState(() => {
+        if (!this.panel.visible) this.handshake.reset();
+      }),
+      this.panel.onDidDispose(() => this.dispose()),
+      // Typing, an edit from the tab, Undo, opening and closing the file, and
+      // the server's problems: each is asked about again.
+      vscode.workspace.onDidChangeTextDocument((event) => {
+        if (isConfig(event.document.uri) && event.contentChanges.length > 0) this.refresh();
+      }),
+      vscode.workspace.onDidOpenTextDocument((document) => {
+        if (isConfig(document.uri)) this.refresh();
+      }),
+      vscode.workspace.onDidCloseTextDocument((document) => {
+        if (isConfig(document.uri)) this.refresh();
+      }),
+      vscode.languages.onDidChangeDiagnostics((event) => {
+        if (event.uris.some(isConfig)) this.refresh();
+      }),
+      server.onDidChangeState(() => this.refresh()),
+      watcher,
+      watcher.onDidChange(() => this.refresh()),
+      watcher.onDidCreate(() => this.refresh()),
+      watcher.onDidDelete(() => this.refresh()),
+    );
+  }
+
+  /** The newest answer's number: what a choice names. */
+  get seq(): number {
+    return this.handshake.latest?.seq ?? 0;
+  }
+
+  get drawn(): Drawn<SettingsReport> | undefined {
+    return this.drawnLast;
+  }
+
+  reveal(): void {
+    this.panel.reveal();
+  }
+
+  /** Asks the server again, after the refresh under way if there is one. */
+  refresh(): void {
+    if (this.running) {
+      this.again = true;
+      return;
+    }
+    this.running = (async () => {
+      do {
+        this.again = false;
+        await this.refreshNow();
+      } while (this.again);
+    })().finally(() => {
+      this.running = undefined;
+    });
+  }
+
+  whenSettled(): Promise<void> {
+    return this.running ?? Promise.resolve();
+  }
+
+  /** The version of `ascribe.toml`'s open document, or `undefined` when it isn't open. */
+  private openVersion(): number | undefined {
+    return vscode.workspace.textDocuments.find(
+      (document) =>
+        document.uri.scheme === "file" && samePath(document.uri.fsPath, this.config.fsPath),
+    )?.version;
+  }
+
+  private async refreshNow(): Promise<void> {
+    const state = this.server.state;
+    if (state !== "running") {
+      this.result = undefined;
+      this.show({
+        message: `The Ascribe language server is ${STATE_NAMES[state]}. Project Settings shows the settings once it's running.`,
+        settings: [],
+      });
+      return;
+    }
+    for (let tries = 0; tries < TRIES; tries++) {
+      let result: SettingsResult;
+      try {
+        result = (await this.server.request("ascribe/settings", {
+          textDocument: { uri: this.config.toString() },
+        })) as SettingsResult;
+      } catch (error) {
+        this.server.reportFeatureError("Project Settings", error);
+        return;
+      }
+      // An answer for other text than the editor has is never drawn: the
+      // text moved on while the server read it, so it's asked again.
+      if (inStep(result.version, this.openVersion())) {
+        this.result = result;
+        this.show(settingsAnswer(result));
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50 * (tries + 1)));
+    }
+  }
+
+  private show(answer: SettingsAnswer): void {
+    const message = this.handshake.answer(answer);
+    if (message) void this.panel.webview.postMessage(message);
+  }
+
+  private receive(value: unknown): void {
+    const message = checkSettingsMessage(value);
+    if (!message) return;
+    switch (message.type) {
+      case "ready": {
+        const answer = this.handshake.readied();
+        if (answer) void this.panel.webview.postMessage(answer);
+        return;
+      }
+      case "drawn":
+        this.drawnLast = { seq: message.seq, report: message.report, at: Date.now() };
+        for (const waiter of this.waiters) waiter();
+        return;
+      case "set":
+        void this.set(message.seq, message.id, message.value);
+        return;
+      case "openLine":
+        void this.openLine(message.seq, message.id);
+        return;
+      case "editorSettings":
+        void vscode.commands.executeCommand(
+          "workbench.action.openSettings",
+          `@ext:${this.extensionId}`,
+        );
+        return;
+      // A tab has no page's editor to give the focus back to.
+      case "focusEditor":
+      case "open":
+        return;
+    }
+  }
+
+  /** Sets the setting `id` of the answer `seq`, when that's still the newest. */
+  async set(seq: number, id: string, value: unknown): Promise<void> {
+    const latest = this.handshake.latest;
+    const result = this.result;
+    if (!latest || latest.seq !== seq || !result) return;
+    const shown = latest.answer.settings.find((s) => s.id === id);
+    const entry = result.settings.find((s) => settingId(s) === id);
+    const checked = shown?.editable ? checkedValue(shown, value) : undefined;
+    if (!entry || checked === undefined) return;
+    try {
+      const edit = await this.server.requestEdit("ascribe/edit", {
+        textDocument: { uri: this.config.toString() },
+        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+        action: "setSetting",
+        args: { table: entry.table, key: entry.key, value: checked },
+        version: result.version ?? undefined,
+      });
+      if ("error" in edit) {
+        void vscode.window.showErrorMessage(`Ascribe: ${edit.error}`);
+        this.refresh();
+        return;
+      }
+      if (!(await vscode.workspace.applyEdit(edit.edit))) {
+        void vscode.window.showErrorMessage(`Ascribe: ascribe.toml couldn't be changed.`);
+      }
+    } catch (error) {
+      this.server.reportFeatureError("Project Settings", error);
+    }
+  }
+
+  /** Opens `ascribe.toml` beside the tab, at the line that sets `id` of the answer `seq`. */
+  async openLine(seq: number, id: string): Promise<void> {
+    const latest = this.handshake.latest;
+    const set = this.result?.settings.find((s) => settingId(s) === id)?.set;
+    if (!latest || latest.seq !== seq || !set) return;
+    const { start, end } = set.range;
+    const range = new vscode.Range(start.line, start.character, end.line, end.character);
+    await vscode.window.showTextDocument(this.config, {
+      viewColumn: vscode.ViewColumn.Beside,
+      selection: range,
+    });
+  }
+
+  whenDrawn(
+    description: string,
+    predicate: (drawn: Drawn<SettingsReport>) => boolean,
+    timeout = 10_000,
+  ): Promise<Drawn<SettingsReport>> {
+    return new Promise((resolve, reject) => {
+      const deadline = setTimeout(() => {
+        this.waiters = this.waiters.filter((w) => w !== check);
+        reject(new Error(`Timed out waiting for Project Settings to draw ${description}`));
+      }, timeout);
+      const check = (): void => {
+        const drawn = this.drawnLast;
+        if (drawn && predicate(drawn)) {
+          clearTimeout(deadline);
+          this.waiters = this.waiters.filter((w) => w !== check);
+          resolve(drawn);
+        }
+      };
+      this.waiters.push(check);
+      check();
+    });
+  }
+
+  dispose(): void {
+    for (const disposable of this.disposables.splice(0)) disposable.dispose();
+    this.panel.dispose();
+    this.closed();
+  }
+}

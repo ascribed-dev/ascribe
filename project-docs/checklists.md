@@ -59,6 +59,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] What actions can point at (`ascribe/targets`; `crates/ascribe-lsp/src/targets.rs`): a new kind of content model entry is a kind of target.
 - [ ] The project's inventory (`ascribe/inventory`; `crates/ascribe-lsp/src/inventory.rs`): a new kind of content model entry is a kind of entry.
 - [ ] What's known about a page (`ascribe/page`; `crates/ascribe-lsp/src/page.rs`), whose connections come from `Project::uses_of_file`: a new form that uses a page or a heading is a kind of use there too.
+- [ ] Project Settings (`ascribe/settings`, and `ascribe/edit`'s `setSetting`; `crates/ascribe-lsp/src/settings.rs`), which answers from the registry in `crates/ascribe-model/settings.toml`: a new key of a simple kind is a setting there.
 - [ ] Page edits (`ascribe/edit`; `crates/ascribe-lsp/src/edit.rs`): an operation that writes a changed construct writes it the new way, and a new directive may need an operation.
 - [ ] What a build leaves out (`ascribe/buildView`; `crates/ascribe-lsp/src/build_view.rs`): a new way a build removes content is removed in `crates/ascribe-resolve/src/build/modes.rs`, which says why, and the build lens shows it.
 - [ ] A prompt for an agent (`ascribe/agentPrompt`; `crates/ascribe-lsp/src/agent_prompt.rs`), built by `ascribe_check::prompt`: a new diagnostic's prompt is worth reading, and a value it's about goes in its `values` placeholder, which the prompt lists as the allowed values.

@@ -15,6 +15,9 @@ A file containing only `spec = "0.1"` is valid; every section has a default ([§
 
 Every problem the loader reports is in the [diagnostics reference](../checks/diagnostics/content-model.md), with its fix. References to "SPEC" are to the [Ascribe specification]({repo}/blob/main/SPEC.md).
 
+@available: next
+In VS Code, [Project Settings](../editor/settings.md#project-settings) shows a project's settings beside its `ascribe.toml`, each with its value, its default, and its line, and changes a value the file sets in place.
+
 ## Contents
 
 1. [Conventions](index.md#1-conventions)

@@ -306,6 +306,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_lsp::EditResult>(),
     },
     Shape {
+        file: "lsp-settings",
+        title: "SettingsResult",
+        written_by: "the language server, answering `ascribe/settings`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::SettingsResult>(),
+    },
+    Shape {
         file: "lsp-build-view",
         title: "BuildViewResult",
         written_by: "the language server, answering `ascribe/buildView`",
@@ -338,6 +345,7 @@ const PACKAGES: &[(&str, &[&str])] = &[
             "lsp-inventory",
             "lsp-page",
             "lsp-edit",
+            "lsp-settings",
             "lsp-build-view",
             "lsp-agent-prompt",
         ],

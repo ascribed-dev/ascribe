@@ -530,3 +530,6 @@ hero = "750 2.75rem/1.1"
 # variables, with no fallback, so their stylesheet has no generated block:
 # it's listed so the color test reads it, and fails on a color written there.
 [emit."packages/vscode/src/webview/views.css"]
+
+# Project Settings' tab, by the same rule as the views.
+[emit."packages/vscode/src/webview/settings.css"]

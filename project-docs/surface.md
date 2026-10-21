@@ -351,7 +351,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
 For people. Read from `packages/vscode/package.json`, `docs/content/_generated/editor-actions.md`.
 
-90 commands, 37 of them actions.
+91 commands, 37 of them actions.
 
 Commands that aren't actions:
 
@@ -382,6 +382,7 @@ Commands that aren't actions:
 | Ascribe: Open Page's Source Changes | `ascribe.review.pageSourceChanges` |
 | Ascribe: Show Advice | `ascribe.review.showAdvice` |
 | Ascribe: Hide Advice | `ascribe.review.hideAdvice` |
+| Ascribe: Open Project Settings | `ascribe.openProjectSettings` |
 | Ascribe: Show Server Output | `ascribe.showOutput` |
 | Ascribe: Restart Language Server | `ascribe.restartServer` |
 | Ascribe: Switch Project | `ascribe.switchProject` |
@@ -498,7 +499,7 @@ Menus the commands are placed in:
 
 | Menu | Entries |
 |---|---|
-| `commandPalette` | 90 |
+| `commandPalette` | 91 |
 | `editor/title` | 5 |
 | `view/title` | 12 |
 | `view/item/context` | 13 |

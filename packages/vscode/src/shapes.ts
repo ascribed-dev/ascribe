@@ -13,6 +13,7 @@
 // - InventoryResult (the language server, answering `ascribe/inventory`)
 // - PageResult (the language server, answering `ascribe/page`)
 // - EditResult (the language server, answering `ascribe/edit`)
+// - SettingsResult (the language server, answering `ascribe/settings`)
 // - BuildViewResult (the language server, answering `ascribe/buildView`)
 // - AgentPromptResult (the language server, answering `ascribe/agentPrompt`)
 
@@ -1650,6 +1651,98 @@ export interface SetBaseResult {
    * unknown revision, `git` missing. The base set before, if any, stays.
    */
   problem: string | null;
+}
+
+/** One setting. */
+export interface SettingEntry {
+  /** Its table, as a dotted path: `consumer`, or empty for the top level. */
+  table: string;
+  /** Its key. */
+  key: string;
+  /** Its name for people: the key in words, `Trailing slash`. */
+  name: string;
+  /** What its value is: `switch`, `choice`, `number`, `text`, or `level`. */
+  kind: string;
+  /**
+   * For a choice or a level, its values, in the order a message lists
+   * them.
+   */
+  choices: string[];
+  /** The value used when the file leaves it out, when it has one. */
+  default: SettingValue | null;
+  /** The reference's words for a default that isn't one value. */
+  defaultText: string | null;
+  /**
+   * What it does, as plain text: the registry's Markdown with a link's
+   * address dropped and its text kept, emphasis taken off, and code spans
+   * as pieces of their own.
+   */
+  description: SettingPiece[];
+  /**
+   * Its value in the file; `null` when the file leaves it out, or writes
+   * it as something other than a string, a boolean, or a whole number.
+   */
+  value: SettingValue | null;
+  /** Where the file sets it; `null` when it leaves it out. */
+  set: SettingPlace | null;
+  /** The server's problems on the lines that set it, in its words. */
+  problems: SettingProblem[];
+}
+
+/** A piece of a description. */
+export interface SettingPiece {
+  /** Its text. */
+  text: string;
+  /** Whether it's a code span. */
+  code: boolean;
+}
+
+/** Where the file sets a setting. */
+export interface SettingPlace {
+  /** From its key to the end of its value. */
+  range: LspRange;
+  /** The line its key is on, counted from 1, as `ascribe.toml:12` names it. */
+  line: number;
+}
+
+/** A problem the server reports on a setting. */
+export interface SettingProblem {
+  /** The message, as the Problems panel shows it. */
+  message: string;
+  /** `error`, `warning`, or `advice`, at the level `[checks]` sets. */
+  severity: string;
+}
+
+/** A setting's value. */
+export type SettingValue = boolean | number | string;
+
+/**
+ * The answer to `ascribe/settings`. A document that isn't one of the
+ * project's files gets no settings.
+ */
+export interface SettingsResult {
+  /**
+   * The `file:` URI of the project's `ascribe.toml`, which the ranges are
+   * in.
+   */
+  modelUri: string | null;
+  /**
+   * The version of `ascribe.toml`'s open document the answer was read
+   * from; `null` when it isn't open, and the answer was read from the
+   * disk.
+   */
+  version: number | null;
+  /**
+   * Why the file's values can't be read: it isn't valid TOML. `null` when
+   * they can.
+   */
+  unreadable: string | null;
+  /**
+   * Every setting of a simple kind in a table a project doesn't name
+   * (`[project]`, `[consumer]`, `[editor]`, and the rest, not
+   * `[types.<name>]`), in the content model reference's order.
+   */
+  settings: SettingEntry[];
 }
 
 /** How many diagnostics of each severity. */

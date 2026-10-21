@@ -1,0 +1,162 @@
+/* Project Settings' tab. As the sidebar's webview views' stylesheet does
+   (views.css), every color is one of the `--vscode-*` variables VS Code sets
+   in a webview for the current theme, high contrast included, with no
+   fallback. design/tokens.toml's [emit] names this file, so the color test
+   reads it, and a color written here fails it. It looks like VS Code's own
+   Settings editor: a bar marks what the file sets, as Settings marks what's
+   changed. */
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  padding: 12px 24px 24px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  font-weight: var(--vscode-font-weight);
+  line-height: 1.4;
+}
+
+main {
+  max-width: 64em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.intro,
+.message {
+  margin: 0 0 16px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.setting {
+  margin: 0 0 4px;
+  padding: 10px 14px 12px;
+  border-left: 2px solid transparent;
+}
+
+.setting:hover {
+  background: var(--vscode-settings-rowHoverBackground);
+}
+
+.setting.set {
+  border-left-color: var(--vscode-settings-modifiedItemIndicator);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  align-items: baseline;
+}
+
+.name {
+  margin: 0;
+  font-size: inherit;
+  font-weight: 600;
+  color: var(--vscode-settings-headerForeground);
+}
+
+code {
+  font-family: var(--vscode-editor-font-family);
+  font-size: 0.95em;
+  color: var(--vscode-textPreformat-foreground);
+  background: var(--vscode-textPreformat-background);
+  border-radius: 3px;
+  padding: 0 3px;
+}
+
+.key {
+  color: var(--vscode-descriptionForeground);
+  background: none;
+  padding: 0;
+}
+
+.description {
+  margin: 4px 0 8px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.control {
+  min-width: 12em;
+  max-width: 100%;
+  padding: 3px 6px;
+  border: 1px solid var(--vscode-settings-textInputBorder);
+  border-radius: 2px;
+  color: var(--vscode-settings-textInputForeground);
+  background: var(--vscode-settings-textInputBackground);
+  font: inherit;
+}
+
+select.control {
+  border-color: var(--vscode-settings-dropdownBorder);
+  color: var(--vscode-settings-dropdownForeground);
+  background: var(--vscode-settings-dropdownBackground);
+}
+
+input.control[type="checkbox"] {
+  min-width: 0;
+  width: 1.2em;
+  height: 1.2em;
+  accent-color: var(--vscode-settings-checkboxBackground);
+}
+
+.control:disabled {
+  opacity: 0.6;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+  margin: 8px 0 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.problems {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.problems li {
+  padding: 2px 0 2px 8px;
+  border-left: 2px solid var(--vscode-editorError-foreground);
+  color: var(--vscode-errorForeground);
+}
+
+.problems li.warning {
+  border-left-color: var(--vscode-editorWarning-foreground);
+  color: var(--vscode-editorWarning-foreground);
+}
+
+.problems li.advice {
+  border-left-color: var(--vscode-editorInfo-foreground);
+  color: var(--vscode-foreground);
+}
+
+/* A link is a button, since the webview opens nothing itself. */
+button.link {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--vscode-textLink-foreground);
+  background: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+button.link:hover {
+  color: var(--vscode-textLink-activeForeground);
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}

@@ -16,6 +16,7 @@ import { ChosenBuilds } from "./ui/chosenBuild.js";
 import { projectKeys, STATE_NAMES } from "./ui/describe.js";
 import { BuildLenses } from "./ui/lens.js";
 import { ProjectBuilds } from "./ui/projectBuilds.js";
+import { ProjectSettings, type ProjectSettingsApi } from "./ui/projectSettings.js";
 import { ReviewView, type ReviewViewApi } from "./ui/reviewView.js";
 import { SidebarViews, type SidebarApi, type ThisPageApi } from "./ui/sidebarViews.js";
 import { showRestricted, StatusBar, type StatusBarApi } from "./ui/statusBar.js";
@@ -70,6 +71,8 @@ export interface AscribeApi {
     sidebar: SidebarApi;
     /** Check Every Build's problems. */
     everyBuild: EveryBuildApi;
+    /** Project Settings. */
+    projectSettings: ProjectSettingsApi;
     /** Settles when every request for a project's builds has been answered. */
     whenBuildsKnown(): Promise<void>;
   };
@@ -121,6 +124,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   const switchProject = new SwitchProject(projects, builds, sidebar);
   switchProject.register();
   sidebar.register();
+
+  const settings = new ProjectSettings(projects, context.extensionUri, context.extension.id);
+  settings.register();
 
   const newPage = new NewPage(projects);
   newPage.register();
@@ -181,6 +187,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     switchProject,
     reviewView,
     sidebar,
+    settings,
     walkthrough,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
       await projects.refresh();
@@ -285,6 +292,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       thisPage: sidebar.thisPageApi,
       sidebar: sidebar.api,
       everyBuild: checks.api,
+      projectSettings: settings.api,
       whenBuildsKnown: () => builds.whenSettled(),
     },
   };

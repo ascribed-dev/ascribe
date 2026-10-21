@@ -1,6 +1,8 @@
-// The webview side of a sidebar webview view: the handshake, the answers'
+// The webview side of a sidebar webview view, and of a webview panel that
+// keeps its rules, as Project Settings does: the handshake, the answers'
 // numbers, the state VS Code keeps for the view, and Escape. A view's script
-// gives it a function that draws an answer and says what it drew.
+// gives it a function that draws an answer and says what it drew, and may
+// post messages of its own (`Extra`) besides the protocol's.
 
 import type { FromView, ToView } from "./viewProtocol.js";
 
@@ -11,8 +13,8 @@ declare function acquireVsCodeApi(): {
 };
 
 /** What a view's script gets to talk to the extension with. */
-export interface ViewChannel<Report> {
-  post(message: FromView<Report>): void;
+export interface ViewChannel<Report, Extra = never> {
+  post(message: FromView<Report> | Extra): void;
   /** The answer drawn last, or 0 before the first. */
   readonly seq: number;
   /** What VS Code kept for the view: the same for every document it makes of it. */
@@ -35,12 +37,12 @@ export function seenViolations(): string[] {
  * Starts a view: draws each answer newer than the last one drawn, says so,
  * and then says it's ready, which the extension answers.
  */
-export function startView<Answer, Report>(
-  draw: (answer: Answer, channel: ViewChannel<Report>) => Report,
-): ViewChannel<Report> {
+export function startView<Answer, Report, Extra = never>(
+  draw: (answer: Answer, channel: ViewChannel<Report, Extra>) => Report,
+): ViewChannel<Report, Extra> {
   const vscode = acquireVsCodeApi();
   let drawn = 0;
-  const channel: ViewChannel<Report> = {
+  const channel: ViewChannel<Report, Extra> = {
     post: (message) => vscode.postMessage(message),
     get seq() {
       return drawn;

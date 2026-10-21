@@ -1,0 +1,250 @@
+{
+  "$defs": {
+    "LspPosition": {
+      "description": "A position in a document: a zero-based line, and a zero-based column in\nthe position encoding the client and server agreed on.",
+      "properties": {
+        "character": {
+          "description": "The column, from 0, in the negotiated position encoding.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "line": {
+          "description": "The line, from 0.",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "line",
+        "character"
+      ],
+      "type": "object"
+    },
+    "LspRange": {
+      "description": "A range in a document, from `start` up to (not including) `end`.",
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it ends."
+        },
+        "start": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it starts."
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "type": "object"
+    },
+    "SettingEntry": {
+      "description": "One setting.",
+      "properties": {
+        "choices": {
+          "description": "For a choice or a level, its values, in the order a message lists\nthem.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "default": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SettingValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The value used when the file leaves it out, when it has one."
+        },
+        "defaultText": {
+          "description": "The reference's words for a default that isn't one value.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "description": "What it does, as plain text: the registry's Markdown with a link's\naddress dropped and its text kept, emphasis taken off, and code spans\nas pieces of their own.",
+          "items": {
+            "$ref": "#/$defs/SettingPiece"
+          },
+          "type": "array"
+        },
+        "key": {
+          "description": "Its key.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "What its value is: `switch`, `choice`, `number`, `text`, or `level`.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name for people: the key in words, `Trailing slash`.",
+          "type": "string"
+        },
+        "problems": {
+          "description": "The server's problems on the lines that set it, in its words.",
+          "items": {
+            "$ref": "#/$defs/SettingProblem"
+          },
+          "type": "array"
+        },
+        "set": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SettingPlace"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where the file sets it; `null` when it leaves it out."
+        },
+        "table": {
+          "description": "Its table, as a dotted path: `consumer`, or empty for the top level.",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SettingValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Its value in the file; `null` when the file leaves it out, or writes\nit as something other than a string, a boolean, or a whole number."
+        }
+      },
+      "required": [
+        "table",
+        "key",
+        "name",
+        "kind",
+        "choices",
+        "default",
+        "defaultText",
+        "description",
+        "value",
+        "set",
+        "problems"
+      ],
+      "type": "object"
+    },
+    "SettingPiece": {
+      "description": "A piece of a description.",
+      "properties": {
+        "code": {
+          "description": "Whether it's a code span.",
+          "type": "boolean"
+        },
+        "text": {
+          "description": "Its text.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "code"
+      ],
+      "type": "object"
+    },
+    "SettingPlace": {
+      "description": "Where the file sets a setting.",
+      "properties": {
+        "line": {
+          "description": "The line its key is on, counted from 1, as `ascribe.toml:12` names it.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "range": {
+          "$ref": "#/$defs/LspRange",
+          "description": "From its key to the end of its value."
+        }
+      },
+      "required": [
+        "range",
+        "line"
+      ],
+      "type": "object"
+    },
+    "SettingProblem": {
+      "description": "A problem the server reports on a setting.",
+      "properties": {
+        "message": {
+          "description": "The message, as the Problems panel shows it.",
+          "type": "string"
+        },
+        "severity": {
+          "description": "`error`, `warning`, or `advice`, at the level `[checks]` sets.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "message",
+        "severity"
+      ],
+      "type": "object"
+    },
+    "SettingValue": {
+      "anyOf": [
+        {
+          "description": "A switch's.",
+          "type": "boolean"
+        },
+        {
+          "description": "A number's.",
+          "type": "integer"
+        },
+        {
+          "description": "A string: a choice's, a level's, or a text's.",
+          "type": "string"
+        }
+      ],
+      "description": "A setting's value."
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The answer to `ascribe/settings`. A document that isn't one of the\nproject's files gets no settings.",
+  "properties": {
+    "modelUri": {
+      "description": "The `file:` URI of the project's `ascribe.toml`, which the ranges are\nin.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "settings": {
+      "description": "Every setting of a simple kind in a table a project doesn't name\n(`[project]`, `[consumer]`, `[editor]`, and the rest, not\n`[types.<name>]`), in the content model reference's order.",
+      "items": {
+        "$ref": "#/$defs/SettingEntry"
+      },
+      "type": "array"
+    },
+    "unreadable": {
+      "description": "Why the file's values can't be read: it isn't valid TOML. `null` when\nthey can.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "version": {
+      "description": "The version of `ascribe.toml`'s open document the answer was read\nfrom; `null` when it isn't open, and the answer was read from the\ndisk.",
+      "type": [
+        "integer",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "modelUri",
+    "version",
+    "unreadable",
+    "settings"
+  ],
+  "title": "SettingsResult",
+  "type": "object"
+}

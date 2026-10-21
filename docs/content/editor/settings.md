@@ -55,6 +55,15 @@ A channel's name is set when the channel is first needed, usually when its proje
 
 When it starts, a server logs its version and the `ascribe.toml` it uses: `ascribe-lsp <version>: using the project at <path>`.
 
+## Project Settings
+@available: next
+
+**Ascribe: Open Project Settings** opens a tab of the project's own settings: those in its `ascribe.toml`, which everyone working on the project shares, and which the file holds for them all to read, review, and commit. Your editor's settings, the `ascribe.*` ones below, are VS Code's, and the tab links to them.
+
+Each setting shows its name, its key (`[consumer] trailing-slash`), what it does, its default, and where the file sets it, as a link to the line (`ascribe.toml:12`), or that the file leaves it out. A bar beside a setting marks one the file sets, as VS Code's Settings editor marks what's changed. For now the tab shows two, `[consumer] trailing-slash` and `[consumer] base-path`.
+
+The tab changes a value the file sets: choose another, or type one and press Enter. The change is made in `ascribe.toml` as an edit to that one value, unsaved, so the file's comments, blank lines, and order stay as they were, and **Undo** in the file puts it back. Typing in `ascribe.toml` changes the tab too: it always shows the file as the editor has it, unsaved text included, and never an older version of it. A value the content model doesn't take is still set, and the language server's problem shows under the setting, in the words of the Problems panel. A setting the file leaves out is shown with its default; for now, add it to the file by hand.
+
 ## Settings
 @id {permalink=true}: editor-settings
 

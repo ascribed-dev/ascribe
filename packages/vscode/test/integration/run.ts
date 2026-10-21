@@ -27,6 +27,10 @@
 //               their commands with scripted answers, and the page's safe
 //               fixes applied on an explicit save, against the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
+//   settings    a copy of examples/quill whose `[consumer]` sets the trailing
+//               slash and the base path, Project Settings' round trip: a value
+//               set from the tab, unsaved, Undo, typing, and the server's
+//               problem, against the real `ascribe lsp`. Needs ASCRIBE_BIN as well.
 //   site        a copy of examples/quill, Open Site Preview and the preview
 //               panel's Site view, against a fake dev server, with the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
@@ -259,6 +263,24 @@ const suites: Suite[] = [
     }),
   },
   {
+    name: "settings",
+    fixture: path.join(repositoryRoot, "examples/quill"),
+    prepare: (workspace) => {
+      const model = path.join(workspace, "ascribe.toml");
+      const text = readFileSync(model, "utf8");
+      const site = 'site = "https://docs.quill.dev"\n';
+      if (!text.includes(site)) throw new Error("examples/quill's [consumer] has changed");
+      writeFileSync(
+        model,
+        text.replace(
+          site,
+          `${site}# Pages end in a slash.\ntrailing-slash = "always" # as Astro's\nbase-path = "/"\n`,
+        ),
+      );
+      return { "ascribe.path": realServer, ...startAll };
+    },
+  },
+  {
     name: "site",
     fixture: path.join(repositoryRoot, "examples/quill"),
     prepare: () => ({ "ascribe.path": realServer, ...startAll }),
@@ -340,6 +362,7 @@ const needsServer = new Set([
   "review",
   "threads",
   "actions",
+  "settings",
   "site",
   "lens",
   "glossary",

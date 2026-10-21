@@ -45,6 +45,7 @@ mod review;
 #[cfg(feature = "json-schema")]
 mod schema;
 mod server;
+mod settings;
 mod shown;
 mod targets;
 mod tokens;
@@ -98,6 +99,10 @@ pub use review::{
     SET_BASE_METHOD as REVIEW_SET_BASE_METHOD, SetBaseParams, SetBaseResult,
 };
 pub use server::{Exit, ServeError, serve};
+pub use settings::{
+    METHOD as SETTINGS_METHOD, SettingEntry, SettingPiece, SettingPlace, SettingProblem,
+    SettingValue, SettingsParams, SettingsResult,
+};
 pub use targets::{
     AttributeKind, BindingKind, METHOD as TARGETS_METHOD, PrimaryKind, TargetAttribute,
     TargetBuild, TargetDimension, TargetDimensionValue, TargetFeature, TargetFragment,
