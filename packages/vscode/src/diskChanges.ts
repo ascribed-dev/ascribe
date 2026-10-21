@@ -19,8 +19,17 @@ export interface Layout {
   contentRoot: string;
   /** `[project] output-dir`. */
   outputDir: string;
-  /** The folder of each `[sources.<name>]` that has a `path`. */
-  sources: string[];
+  /** Each `[sources.<name>]` that has a `path`. */
+  sources: Source[];
+}
+
+/** A source with a folder: where it is, absolute, and which of its files it reads. */
+export interface Source {
+  folder: string;
+  /** `include`: the files it reads, all of them when empty. */
+  include: string[];
+  /** `ignore`: the files it doesn't, whatever `include` says. */
+  ignore: string[];
 }
 
 /**
@@ -50,8 +59,14 @@ export function layoutOf(project: Project, text: string): Layout {
     return path.resolve(project.folder, typeof value === "string" ? value : PROJECT_DEFAULTS[key]);
   };
   const sources = Object.values(section(table, "sources")).flatMap((source) => {
-    const folder = isTable(source) ? source["path"] : undefined;
-    return typeof folder === "string" ? [path.resolve(project.folder, folder)] : [];
+    if (!isTable(source) || typeof source["path"] !== "string") return [];
+    return [
+      {
+        folder: path.resolve(project.folder, source["path"]),
+        include: strings(source["include"]),
+        ignore: strings(source["ignore"]),
+      },
+    ];
   });
   return { contentRoot: setting("content-root"), outputDir: setting("output-dir"), sources };
 }
@@ -82,7 +97,7 @@ export function startsServer(
     within(file, layout.contentRoot) &&
     owningProject(file, projects)?.config === project.config &&
     !skipped(file, layout.contentRoot);
-  return inContent || inASource(file, layout.sources);
+  return inContent || inASource(file, folders(layout.sources));
 }
 
 /**
@@ -109,24 +124,60 @@ export function changesCheck(
     owningProject(file, projects)?.config === project.config &&
     !skipped(file, project.folder) &&
     !within(file, path.join(project.folder, ".ascribe"));
-  return own || inASource(file, layout.sources);
+  return own || inASource(file, folders(layout.sources));
 }
 
 /**
  * Whether a running server of `project` is told that `file` changed on disk
- * (`didChangeWatchedFile` in `scope.ts`): a file of its own, or one in its
- * sources' folders wherever they are, in no project or in another's. The
- * server answers its lenses and This page's rows again on these, and reads
- * a source's observations and `ascribe.examples.toml` from its folder.
- * `sources` are the folders of the sources the server loaded.
+ * (`didChangeWatchedFile` in `scope.ts`): a file of its own, or one a source
+ * can use (`sourceUses`) wherever it is, in no project or in another's.
+ * The server answers its lenses and This page's rows again on these, and
+ * reads a source's observations and `ascribe.examples.toml` from its folder.
+ * The rest of a source's folder, such as a build's `target/`, isn't sent.
+ * `sources` are the sources the server loaded.
  */
 export function toldOfChange(
   file: string,
   project: Project,
-  sources: readonly string[],
+  sources: readonly Source[],
   projects: readonly Project[],
 ): boolean {
-  return !ownedElsewhere(project, file, projects) || inASource(file, sources);
+  return (
+    !ownedElsewhere(project, file, projects) || sources.some((source) => sourceUses(file, source))
+  );
+}
+
+/** A source's examples config, and the folder of its observations. */
+const EXAMPLES_FILE = "ascribe.examples.toml";
+const OBSERVATIONS_FOLDER = "examples.observations";
+
+/**
+ * Whether a change to the file or folder `file` can matter to `source`, as
+ * `Source::may_use` in crates/ascribe-model decides: a file its `include`
+ * patterns cover and `ignore` doesn't, a folder that may hold one, or its
+ * `ascribe.examples.toml` and observations. Never its `node_modules` or
+ * `.git`. A pattern the content model wouldn't load covers everything for
+ * `include` and nothing for `ignore`, as does case: telling the server of a
+ * file it doesn't read costs little, where missing one leaves a lens stale.
+ */
+export function sourceUses(file: string, source: Source): boolean {
+  if (!within(file, source.folder) || skipped(file, source.folder)) return false;
+  const rest = comparable(file).slice(comparable(source.folder).length);
+  const segments = rest.split("/").filter((segment) => segment !== "");
+  const [first] = segments;
+  if (first === OBSERVATIONS_FOLDER || (first === EXAMPLES_FILE && segments.length === 1)) {
+    return true;
+  }
+  const ignored = source.ignore.some((pattern) => matches(pattern, segments, false) === true);
+  const included =
+    source.include.length === 0 ||
+    source.include.some((pattern) => matches(pattern, segments, true) !== false);
+  return !ignored && included;
+}
+
+/** The folders of `sources`. */
+function folders(sources: readonly Source[]): string[] {
+  return sources.map((source) => source.folder);
 }
 
 /** Whether `file` is in one of `sources`' folders, and not in its `node_modules` or `.git`. */
@@ -138,6 +189,120 @@ export function inASource(file: string, sources: readonly string[]): boolean {
 function skipped(file: string, folder: string): boolean {
   const below = comparable(file).slice(comparable(folder).length);
   return below.split("/").some((segment) => SKIPPED.has(segment));
+}
+
+/** A segment of a compiled pattern: `**`, or one segment's glob. */
+type Segment = "**" | RegExp;
+
+const compiled = new Map<string, Segment[][] | undefined>();
+
+/**
+ * Whether `pattern` matches the path of `segments`, or, when `within`, may
+ * match a path below it too. `undefined` for a pattern the content model
+ * wouldn't load (`pattern.rs` in crates/ascribe-model).
+ */
+function matches(
+  pattern: string,
+  segments: readonly string[],
+  within: boolean,
+): boolean | undefined {
+  if (!compiled.has(pattern)) compiled.set(pattern, compile(pattern));
+  const alternatives = compiled.get(pattern);
+  return alternatives?.some((alternative) => matchSegments(alternative, segments, within));
+}
+
+function matchSegments(
+  pattern: readonly Segment[],
+  segments: readonly string[],
+  within: boolean,
+): boolean {
+  const [first, ...rest] = pattern;
+  if (first === undefined) return segments.length === 0;
+  if (within && segments.length === 0) return true;
+  if (first === "**") {
+    for (let skip = 0; skip <= segments.length; skip++) {
+      if (matchSegments(rest, segments.slice(skip), within)) return true;
+    }
+    return false;
+  }
+  const [head, ...tail] = segments;
+  return head !== undefined && first.test(head) && matchSegments(rest, tail, within);
+}
+
+/** A pattern's alternatives, each a list of segments, as `Pattern::new` compiles it. */
+function compile(pattern: string): Segment[][] | undefined {
+  if (pattern === "" || pattern.startsWith("/")) return undefined;
+  const out: Segment[][] = [];
+  for (const alternative of expandBraces(pattern) ?? []) {
+    const segments: Segment[] = [];
+    for (const segment of alternative.split("/")) {
+      if (segment === "" || segment === ".." || (segment !== "**" && segment.includes("**"))) {
+        return undefined;
+      }
+      const glob = segment === "**" ? segment : segmentGlob(segment);
+      if (glob === undefined) return undefined;
+      segments.push(glob);
+    }
+    out.push(segments);
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+/** `{a,b}` alternatives, which don't nest, with escaped characters kept escaped. */
+function expandBraces(pattern: string): string[] | undefined {
+  let open: number | undefined;
+  for (let i = 0; i < pattern.length; i++) {
+    const c = pattern[i];
+    if (c === "\\") i++;
+    else if (c === "{") {
+      if (open !== undefined) return undefined;
+      open = i;
+    } else if (c === "}") {
+      if (open === undefined) return undefined;
+      const prefix = pattern.slice(0, open);
+      const suffix = pattern.slice(i + 1);
+      const out: string[] = [];
+      for (const option of splitUnescaped(pattern.slice(open + 1, i))) {
+        const rest = expandBraces(option + suffix);
+        if (rest === undefined) return undefined;
+        out.push(...rest.map((r) => prefix + r));
+      }
+      return out;
+    }
+  }
+  return open === undefined ? [pattern] : undefined;
+}
+
+/** `text` split at each `,` that isn't escaped. */
+function splitUnescaped(text: string): string[] {
+  const out = [""];
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i] ?? "";
+    if (c === ",") out.push("");
+    else {
+      const next = c === "\\" ? c + (text[++i] ?? "") : c;
+      out[out.length - 1] += next;
+    }
+  }
+  return out;
+}
+
+/** One segment's glob: `*` and `?` within the segment, `\` escaping the next character. */
+function segmentGlob(segment: string): RegExp | undefined {
+  let source = "";
+  // By code point, as the content model reads a pattern.
+  const chars = Array.from(segment);
+  for (let i = 0; i < chars.length; i++) {
+    const c = chars[i];
+    if (c === "*") source += "[^/]*";
+    else if (c === "?") source += "[^/]";
+    else {
+      const literal = c === "\\" ? chars[++i] : c;
+      if (literal === undefined) return undefined;
+      source += literal.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+    }
+  }
+  return new RegExp(`^${source}$`, "iu");
 }
 
 /** How long a burst of changes must go quiet before it's acted on. */
@@ -187,6 +352,13 @@ export class ChangeBatch {
 function section(table: Record<string, unknown>, name: string): Record<string, unknown> {
   const value = table[name];
   return isTable(value) ? value : {};
+}
+
+/** The strings of a TOML array; none for anything else. */
+function strings(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
 }
 
 function isTable(value: unknown): value is Record<string, unknown> {

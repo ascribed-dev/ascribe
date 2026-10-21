@@ -784,10 +784,14 @@ impl Core {
             let Some(path) = Core::doc_path(&event.uri) else {
                 continue;
             };
-            if let Some(loaded) = self.loaded.as_ref()
-                && crate::shown::in_a_source(&loaded.root, &loaded.model, &path)
-            {
-                refresh = true;
+            if let Some(loaded) = self.loaded.as_ref() {
+                if crate::shown::used_by_a_source(&loaded.root, &loaded.model, &path) {
+                    refresh = true;
+                } else if !relative_path(&loaded.root, &path).is_some_and(|p| p.is_inside()) {
+                    // Outside the project, only a source's files matter: a
+                    // build's output in a source's folder isn't walked.
+                    continue;
+                }
             }
             if self.config.is_none()
                 && path.file_name().is_some_and(|n| n == MODEL_FILE)
