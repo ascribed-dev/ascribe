@@ -14,6 +14,7 @@ const facts = (everyBuild: EveryBuildResult): ProjectFacts => ({
   state: "running",
   version: "0.4.0",
   everyBuild,
+  examples: false,
   time: (at) => `${at / 1000}s`,
 });
 
@@ -41,7 +42,7 @@ describe("projectAnswer", () => {
     });
   });
 
-  it("heads with the project's name, folder, server state, and version, and offers Check Every Build", () => {
+  it("heads with the project's name, folder, server state, and version, and offers Check Every Build and the tasks", () => {
     const answer = projectAnswer({
       ...facts({ kind: "none" }),
       state: "failed",
@@ -49,7 +50,23 @@ describe("projectAnswer", () => {
     });
     expect(answer.message).toBeNull();
     expect(answer.head).toEqual({ name: "docs", folder: "docs", state: "failed", version: null });
-    expect(answer.actions.map((action) => action.key)).toEqual([PROJECT_KEYS.checkEveryBuild]);
+    expect(answer.actions.map((action) => action.key)).toEqual([
+      PROJECT_KEYS.checkEveryBuild,
+      PROJECT_KEYS.build,
+      PROJECT_KEYS.syncAgentFiles,
+    ]);
+  });
+
+  it("offers Observe Examples only to a project with tested examples, saying it asks first", () => {
+    const answer = projectAnswer({ ...facts({ kind: "none" }), examples: true });
+    const observe = answer.actions.find((action) => action.key === PROJECT_KEYS.observeExamples);
+    expect(observe).toMatchObject({ label: "Observe Examples" });
+    expect(observe?.caption).toMatch(/after showing them and asking/);
+  });
+
+  it("says each task runs in the terminal", () => {
+    const answer = projectAnswer({ ...facts({ kind: "none" }), examples: true });
+    for (const action of answer.actions.slice(1)) expect(action.caption).toMatch(/^A task: /);
   });
 
   it("counts a count to do while it's above zero, out of date, or never run, and not while it's running or none", () => {

@@ -12,12 +12,14 @@
 import * as vscode from "vscode";
 import type { ProjectServer } from "../client.js";
 import { boolean, listOf, nullable, shape, text, type Check } from "../preview/messages.js";
+import type { Project } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
 import { formatVersion } from "../version.js";
 import type { ProjectAnswer, ProjectReport } from "../webview/viewProtocol.js";
 import type { EveryBuildChecks } from "./checkEveryBuild.js";
 import { PROJECT_KEYS, projectAnswer, type ProjectFacts } from "./projectHealth.js";
 import type { SidebarViews } from "./sidebarViews.js";
+import type { ProjectTasks } from "./tasks.js";
 import { WebviewView, type Drawn } from "./webviewView.js";
 
 /** The Project view, for tests. */
@@ -41,11 +43,14 @@ export interface ProjectViewApi {
 export class ProjectView implements vscode.Disposable {
   private readonly view: WebviewView<ProjectAnswer, ProjectReport>;
   private readonly disposables: vscode.Disposable[] = [];
+  /** Whether each project has tested examples, by its `ascribe.toml`, as last read. */
+  private readonly examples = new Map<string, boolean>();
 
   constructor(
     private readonly projects: ProjectRegistry,
     private readonly sidebar: SidebarViews,
     private readonly checks: EveryBuildChecks,
+    private readonly tasks: ProjectTasks,
     extensionUri: vscode.Uri,
   ) {
     this.view = new WebviewView(
@@ -95,10 +100,22 @@ export class ProjectView implements vscode.Disposable {
     for (const disposable of this.disposables.splice(0)) disposable.dispose();
   }
 
-  /** Sends the view the project as it stands. It's cheap: nothing is asked of the server. */
+  /**
+   * Sends the view the project as it stands. It's cheap: nothing is asked of
+   * the server. Whether the project has tested examples is read again after,
+   * and drawn again when that's changed.
+   */
   private draw(): void {
     const server = this.sidebar.project;
     this.view.show(projectAnswer(server && this.facts(server)));
+    if (server) void this.readExamples(server.project);
+  }
+
+  private async readExamples(project: Project): Promise<void> {
+    const has = (await this.tasks.examplesOf(project)).length > 0;
+    if (this.examples.get(project.config) === has) return;
+    this.examples.set(project.config, has);
+    if (this.sidebar.project?.project.config === project.config) this.draw();
   }
 
   private facts(server: ProjectServer): ProjectFacts {
@@ -110,6 +127,7 @@ export class ProjectView implements vscode.Disposable {
       state: server.state,
       version: binary && formatVersion(binary.version),
       everyBuild: this.checks.resultOf(project.folder),
+      examples: this.examples.get(project.config) ?? false,
       time: (at) => new Date(at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
   }
@@ -124,6 +142,11 @@ export class ProjectView implements vscode.Disposable {
         return;
       case PROJECT_KEYS.checkEveryBuild:
         await this.checks.checkProject(server);
+        return;
+      case PROJECT_KEYS.build:
+      case PROJECT_KEYS.syncAgentFiles:
+      case PROJECT_KEYS.observeExamples:
+        await this.tasks.run(server.project, key);
         return;
       default:
         return;

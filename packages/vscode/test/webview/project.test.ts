@@ -128,8 +128,12 @@ const facts = (everyBuild: EveryBuildResult, name = "docs"): ProjectFacts => ({
   state: "running",
   version: "0.4.0",
   everyBuild,
+  examples: false,
   time: () => "14:02",
 });
+
+/** The tasks every project's Actions has after Check Every Build. */
+const TASKS = ["Build", "Sync Agent Files"];
 
 const made = (current: boolean, errors = 2, warnings = 1): EveryBuildResult => ({
   kind: "made",
@@ -158,7 +162,7 @@ describe("the Project view's webview", () => {
         dimmed: false,
       },
     ]);
-    expect(report.buttons).toEqual(["Check Every Build", "Check Every Build"]);
+    expect(report.buttons).toEqual(["Check Every Build", "Check Every Build", ...TASKS]);
     expect(report.violations).toEqual([]);
   });
 
@@ -168,7 +172,7 @@ describe("the Project view's webview", () => {
     expect(some.health[0]).toMatchObject({ value: "1 warning", dimmed: false });
     const none = await view.draw(2, projectAnswer(facts(made(true, 0, 0))));
     expect(none.health[0]).toMatchObject({ value: "0", state: "none", dimmed: true });
-    expect(none.buttons).toEqual(["Check Every Build"]);
+    expect(none.buttons).toEqual(["Check Every Build", ...TASKS]);
     const stale = await view.draw(3, projectAnswer(facts(made(false))));
     expect(stale.health[0]).toMatchObject({
       value: "—",
@@ -176,13 +180,13 @@ describe("the Project view's webview", () => {
       state: "outOfDate",
       dimmed: false,
     });
-    expect(stale.buttons).toEqual(["Check Every Build", "Check Every Build"]);
+    expect(stale.buttons).toEqual(["Check Every Build", "Check Every Build", ...TASKS]);
   });
 
   it("opens a current count's list, and runs the check, from the keyboard", async () => {
     const view = await open();
     const report = await view.draw(4, projectAnswer(facts(made(true))));
-    expect(report.buttons).toEqual(["2 errors, 1 warning", "Check Every Build"]);
+    expect(report.buttons).toEqual(["2 errors, 1 warning", "Check Every Build", ...TASKS]);
     await expect(
       view.page
         .getByRole("button", {
@@ -211,6 +215,26 @@ describe("the Project view's webview", () => {
     });
     await view.page.keyboard.press("Escape");
     await expect(view.next("focusEditor", from)).resolves.toEqual({ type: "focusEditor" });
+  });
+
+  it("offers Observe Examples to a project with tested examples, and runs a task by its key", async () => {
+    const view = await open();
+    const report = await view.draw(
+      5,
+      projectAnswer({ ...facts({ kind: "none" }), examples: true }),
+    );
+    expect(report.buttons).toEqual([
+      "Check Every Build",
+      "Check Every Build",
+      ...TASKS,
+      "Observe Examples",
+    ]);
+    await expect(
+      view.page.getByRole("button", { name: "Observe Examples" }).getAttribute("title"),
+    ).resolves.toMatch(/^A task: runs ascribe observe in the terminal/);
+    const from = view.posted.length;
+    await view.page.getByRole("button", { name: "Build", exact: true }).click();
+    await expect(view.next("open", from)).resolves.toEqual({ type: "open", seq: 5, key: "build" });
   });
 
   it("keeps a section the reader closed closed when it draws again", async () => {

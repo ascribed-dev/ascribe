@@ -7,6 +7,8 @@
 //
 // Suites (each opens its own copy of a fixture workspace):
 //   activation  a workspace without ascribe.toml: the extension stays inactive
+//   restricted  a workspace with ascribe.toml in Restricted Mode: the extension
+//               starts nothing and offers no task
 //   stub        a workspace with ascribe.toml, against test/stub-server, and
 //               the skill chat gets
 //   quill       a copy of examples/quill with a broken page added, against the
@@ -90,6 +92,11 @@ interface Suite {
    * the suite fails, and then printed with the file watcher's logs.
    */
   traceLogs?: boolean;
+  /**
+   * Open the workspace in Restricted Mode: workspace trust on, as it is out
+   * of the box, and its question at startup answered no by never asking it.
+   */
+  restricted?: boolean;
   /** Open the workspace through a symlink to it (not on Windows), as macOS's /var is. */
   throughLink?: boolean;
   /**
@@ -137,6 +144,12 @@ const suites: Suite[] = [
     name: "activation",
     fixture: path.join(packageRoot, "test/fixtures/no-model"),
     prepare: () => ({ "ascribe.path": stubServer }),
+  },
+  {
+    name: "restricted",
+    fixture: path.join(packageRoot, "test/fixtures/stub-project"),
+    prepare: () => ({ "ascribe.path": stubServer }),
+    restricted: true,
   },
   {
     name: "stub",
@@ -429,6 +442,17 @@ async function main(): Promise<void> {
         path.join(workspace, ".vscode/settings.json"),
         JSON.stringify(settings, null, 2),
       );
+      const userData = path.join(scratch, "user-data");
+      if (suite.restricted) {
+        mkdirSync(path.join(userData, "User"), { recursive: true });
+        writeFileSync(
+          path.join(userData, "User/settings.json"),
+          JSON.stringify({
+            "security.workspace.trust.enabled": true,
+            "security.workspace.trust.startupPrompt": "never",
+          }),
+        );
+      }
       let opened = workspace;
       if (suite.throughLink && process.platform !== "win32") {
         opened = path.join(scratch, "link");
@@ -447,13 +471,13 @@ async function main(): Promise<void> {
           ...(suite.disableBuiltIn
             ? suite.disableBuiltIn.map((id) => `--disable-extension=${id}`)
             : ["--disable-extensions"]),
-          "--disable-workspace-trust",
+          ...(suite.restricted ? [] : ["--disable-workspace-trust"]),
           "--disable-gpu",
           "--disable-updates",
           "--no-sandbox",
           "--skip-welcome",
           "--skip-release-notes",
-          `--user-data-dir=${path.join(scratch, "user-data")}`,
+          `--user-data-dir=${userData}`,
           `--extensions-dir=${path.join(scratch, "extensions")}`,
           ...(suite.launchArgs ?? []),
         ],

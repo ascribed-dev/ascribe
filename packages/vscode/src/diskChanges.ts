@@ -184,11 +184,12 @@ export class ChangeBatch {
   }
 }
 
-function section(table: Record<string, unknown>, name: string): Record<string, unknown> {
+/** A table's subtable, or an empty one when it's missing or isn't a table. */
+export function section(table: Record<string, unknown>, name: string): Record<string, unknown> {
   const value = table[name];
   return isTable(value) ? value : {};
 }
 
-function isTable(value: unknown): value is Record<string, unknown> {
+export function isTable(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

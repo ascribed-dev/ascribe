@@ -1741,6 +1741,38 @@
         "when": "editorTextFocus && ascribe.inProject && editorLangId == markdown"
       }
     ],
+    "taskDefinitions": [
+      {
+        "type": "ascribe",
+        "required": [
+          "task"
+        ],
+        "properties": {
+          "task": {
+            "type": "string",
+            "enum": [
+              "build",
+              "syncAgentFiles",
+              "observeExamples"
+            ],
+            "enumDescriptions": [
+              "Build: `ascribe build`, in the project's folder.",
+              "Sync Agent Files: `ascribe agents sync`, in the project's folder.",
+              "Observe Examples: `ascribe observe`, in a source's folder, which runs the test commands its `ascribe.examples.toml` names. It shows them and asks each time."
+            ],
+            "description": "The task to run, with the binary the project's language server runs."
+          },
+          "project": {
+            "type": "string",
+            "description": "The project's folder, relative to the workspace folder. Leave it out for the project whose ascribe.toml is in the workspace folder."
+          },
+          "source": {
+            "type": "string",
+            "description": "For observeExamples: the source in ascribe.toml whose folder holds the ascribe.examples.toml. Leave it out when only one of its sources has one."
+          }
+        }
+      }
+    ],
     "submenus": [
       {
         "id": "ascribe.actions",

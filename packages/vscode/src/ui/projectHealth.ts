@@ -10,6 +10,7 @@
 
 import type { ServerState } from "../serverState.js";
 import type { Summary } from "../shapes.js";
+import { TASKS, type TaskName } from "../tasks.js";
 import type { ProjectAction, ProjectAnswer, ProjectCount } from "../webview/viewProtocol.js";
 import type { EveryBuildResult } from "./checkEveryBuild.js";
 import { STATE_NAMES } from "./describe.js";
@@ -20,6 +21,10 @@ export const PROJECT_KEYS = {
   problems: "problems",
   /** Check Every Build, of the view's project. */
   checkEveryBuild: "checkEveryBuild",
+  /** The tasks, by their names in `tasks.json`. */
+  build: "build",
+  syncAgentFiles: "syncAgentFiles",
+  observeExamples: "observeExamples",
 } as const;
 
 /** The project the view shows, as plain values. */
@@ -32,6 +37,8 @@ export interface ProjectFacts {
   version: string | undefined;
   /** Its check of every build. */
   everyBuild: EveryBuildResult;
+  /** Whether one of its sources has tested examples, which Observe Examples runs the test of. */
+  examples: boolean;
   /** A time of day, as the view says when something ran. */
   time: (at: number) => string;
 }
@@ -45,6 +52,22 @@ const CHECK_EVERY_BUILD: ProjectAction = {
   icon: "checklist",
   caption: "Runs ascribe check and puts every build's problems in the Problems panel.",
 };
+
+const TASK_ICONS: Record<TaskName, string> = {
+  build: "package",
+  syncAgentFiles: "sync",
+  observeExamples: "beaker",
+};
+
+/** A task, as an action: it runs in the terminal. */
+function taskAction(name: TaskName): ProjectAction {
+  return {
+    key: name,
+    label: TASKS[name].label,
+    icon: TASK_ICONS[name],
+    caption: TASKS[name].caption,
+  };
+}
 
 /** The Project view's answer for `project`, or its message when there's none. */
 export function projectAnswer(project: ProjectFacts | undefined): ProjectAnswer {
@@ -60,7 +83,12 @@ export function projectAnswer(project: ProjectFacts | undefined): ProjectAnswer 
     },
     toDo: health.filter((count) => count.state !== "none" && count.state !== "running").length,
     health,
-    actions: [CHECK_EVERY_BUILD],
+    actions: [
+      CHECK_EVERY_BUILD,
+      taskAction("build"),
+      taskAction("syncAgentFiles"),
+      ...(project.examples ? [taskAction("observeExamples")] : []),
+    ],
   };
 }
 

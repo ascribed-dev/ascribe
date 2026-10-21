@@ -128,6 +128,7 @@ if (process.argv.includes("--tests")) {
       "suite/navigation.it": "test/integration/suite/navigation.it.ts",
       "suite/preview.it": "test/integration/suite/preview.it.ts",
       "suite/quill.it": "test/integration/suite/quill.it.ts",
+      "suite/restricted.it": "test/integration/suite/restricted.it.ts",
       "suite/review.it": "test/integration/suite/review.it.ts",
       "suite/shared.it": "test/integration/suite/shared.it.ts",
       "suite/site.it": "test/integration/suite/site.it.ts",

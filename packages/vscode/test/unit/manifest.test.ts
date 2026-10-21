@@ -276,7 +276,7 @@ describe("package.json", () => {
     expect(properties["ascribe.agents.promptTarget"]?.enum).toEqual([...PROMPT_TARGETS]);
   });
 
-  it("offers no command that runs ascribe observe: the advice's quick fix only copies it", () => {
+  it("runs ascribe observe only as Observe Examples, after asking: the advice's quick fix only copies it", () => {
     for (const command of manifest.contributes.commands) {
       expect(command.command).not.toMatch(/observe/i);
     }
@@ -285,10 +285,18 @@ describe("package.json", () => {
       f.endsWith(".ts"),
     );
     expect(files.length).toBeGreaterThan(0);
+    // The task's arguments are tasks.ts's, and its terminal, ui/tasks.ts's, asks before it starts the binary.
+    const task = new Set(["tasks.ts", "ui/tasks.ts"]);
+    const runs = /ascribe observe|["'`]observe["'`]/;
+    expect(read("../../src/tasks.ts")).toMatch(runs);
     for (const file of files) {
       const text = readFileSync(new URL(file, source), "utf8");
-      expect(text, file).not.toMatch(/ascribe observe|["'`]observe["'`]/);
+      if (!task.has(file.replace(/\\/g, "/"))) expect(text, file).not.toMatch(runs);
     }
+    const terminal = read("../../src/ui/tasks.ts");
+    expect(terminal).toMatch(
+      /const run = await this\.ask\(question\);\s*if \(!run\) \{[\s\S]*?return;\s*\}[\s\S]*?spawn\(/,
+    );
     // The quick fix's command copies the line the server gives it.
     const extension = read("../../src/extension.ts");
     expect(extension).toMatch(

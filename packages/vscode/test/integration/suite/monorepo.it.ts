@@ -881,3 +881,57 @@ describe("with several projects, one nested in another", () => {
     });
   });
 });
+
+// The `ascribe` tasks of projects that aren't the workspace folder: each runs
+// in its project's folder and names its ascribe.toml with `--config`, without
+// starting a server.
+describe("the tasks of projects in subfolders", () => {
+  let api: AscribeApi;
+
+  before(async () => {
+    api = await activated();
+    await api.whenSettled();
+  });
+
+  it("run the binary in each project's folder, with --config naming its ascribe.toml", async () => {
+    const running = new Map(api.projects().map((project) => [project.folder, project.state]));
+    const tasks = await vscode.tasks.fetchTasks({ type: "ascribe" });
+    const binary = vscode.workspace.getConfiguration("ascribe").get<string>("path");
+    for (const project of ["docs", "handbook", "handbook/pages/nested"]) {
+      const folder = path.join(workspace(), ...project.split("/"));
+      for (const [task, args] of [
+        ["build", ["build"]],
+        ["syncAgentFiles", ["agents", "sync"]],
+      ] as const) {
+        const found = tasks.find(
+          (each) => each.definition["task"] === task && each.definition["project"] === project,
+        );
+        assert.ok(found, `${task} for ${project}`);
+        const execution = found.execution;
+        assert.ok(execution instanceof vscode.ProcessExecution);
+        assert.equal(execution.process, binary);
+        assert.deepEqual(execution.args, [...args, "--config", path.join(folder, "ascribe.toml")]);
+        assert.ok(execution.options?.cwd && samePath(execution.options.cwd, folder));
+      }
+    }
+    // Listing the tasks starts no server.
+    assert.deepEqual(
+      new Map(api.projects().map((project) => [project.folder, project.state])),
+      running,
+    );
+
+    const build = tasks.find(
+      (each) => each.definition["task"] === "build" && each.definition["project"] === "handbook",
+    );
+    assert.ok(build);
+    const ended = new Promise<number | undefined>((resolve) => {
+      const listener = vscode.tasks.onDidEndTaskProcess((event) => {
+        if (event.execution.task.name !== build.name) return;
+        listener.dispose();
+        resolve(event.exitCode);
+      });
+    });
+    await vscode.tasks.executeTask(build);
+    assert.equal(await ended, 0);
+  });
+});
