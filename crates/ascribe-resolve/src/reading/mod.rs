@@ -907,8 +907,8 @@ fn collapse(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-/// Whether a piece of inline HTML is a `<br>` tag.
-fn is_br(html: &str) -> bool {
+/// Whether a piece of inline HTML is a `<br>` tag, which reads as a space.
+pub fn is_br(html: &str) -> bool {
     let lower = html.trim().to_ascii_lowercase();
     lower
         .strip_prefix("<br")

@@ -71,12 +71,18 @@ describe("package.json", () => {
     const shown = Object.values(manifest.contributes.menus)
       .flat()
       .filter((entry) => entry.command === "ascribe.switchProject");
-    // The Command Palette, and the title bars of Pages and Content model.
+    // The Command Palette, and the Project view's title bar alone (decision #659).
     expect(shown.map((entry) => entry.when)).toEqual([
       "ascribe.active && ascribe.multipleProjects",
-      "view == ascribe.pages && ascribe.multipleProjects",
-      "view == ascribe.model && ascribe.multipleProjects",
+      "view == ascribe.project && ascribe.multipleProjects",
     ]);
+  });
+
+  it("shows the Project view in Restricted Mode, as This page, to say Ascribe isn't running", () => {
+    const views = manifest.contributes.views.ascribe ?? [];
+    const when = (id: string) => views.find((view) => view.id === id)?.when;
+    expect(when("ascribe.project")).toBe("ascribe.active || !isWorkspaceTrusted");
+    expect(when("ascribe.thisPage")).toBe(when("ascribe.project"));
   });
 
   it("has no Projects view, and keeps Pages, with the welcome messages, in every workspace", () => {

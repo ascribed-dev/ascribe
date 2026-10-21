@@ -148,7 +148,7 @@ fn sections(markdown: &str) -> String {
 }
 
 /// A number with commas between its thousands: `61,234`.
-fn thousands(n: u64) -> String {
+pub fn thousands(n: u64) -> String {
     let digits = n.to_string();
     let mut out = String::new();
     for (i, c) in digits.chars().enumerate() {

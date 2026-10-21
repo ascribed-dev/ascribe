@@ -5,7 +5,8 @@
 //! only moved down the file, or was rewrapped, fingerprints the same. Text is
 //! a block's own text as a reader reads it, from
 //! [`ascribe_resolve::reading::own_text`], which `ascribe search` matches
-//! too, with its whitespace collapsed. What a
+//! too: inline HTML's tags and comments removed, and whitespace collapsed.
+//! What a
 //! reader sees besides the text is in the fingerprint too: a link's resolved
 //! URL, an availability badge's labels, a glossary link, an arm's label.
 
@@ -15,7 +16,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use ascribe_core::{FileId, LineIndex, RelPath, Span};
 use ascribe_emit::labels::{attribute_values, availability_display, dimensional_label};
 use ascribe_model::ContentModel;
-use ascribe_resolve::reading;
+use ascribe_resolve::reading::{self, html_text, is_br};
 use ascribe_resolve::{
     Availability, IncludeSite, LinkTarget, Project, RefKind, ResolvedBlock, ResolvedKind,
     ResolvedPage, Scope,
@@ -624,9 +625,11 @@ fn plain(list: &[Inline]) -> String {
     fn push(list: &[Inline], out: &mut String) {
         for node in list {
             match &node.kind {
-                InlineKind::Text(v) | InlineKind::Code(v) | InlineKind::Html(v) => {
-                    out.push_str(v);
-                }
+                InlineKind::Text(v) | InlineKind::Code(v) => out.push_str(v),
+                // As a reader reads it: tags and comments removed, and a
+                // `<br>` a space.
+                InlineKind::Html(v) if is_br(v) => out.push(' '),
+                InlineKind::Html(v) => out.push_str(&html_text(v)),
                 InlineKind::SoftBreak | InlineKind::HardBreak => out.push(' '),
                 InlineKind::Emphasis(c) | InlineKind::Strong(c) => push(c, out),
                 InlineKind::Link(link) => push(&link.children, out),

@@ -556,7 +556,7 @@
           "type": "webview",
           "name": "Project",
           "contextualTitle": "Ascribe",
-          "when": "ascribe.active"
+          "when": "ascribe.active || !isWorkspaceTrusted"
         },
         {
           "id": "ascribe.review",
@@ -1462,12 +1462,7 @@
         },
         {
           "command": "ascribe.switchProject",
-          "when": "view == ascribe.pages && ascribe.multipleProjects",
-          "group": "navigation@0"
-        },
-        {
-          "command": "ascribe.switchProject",
-          "when": "view == ascribe.model && ascribe.multipleProjects",
+          "when": "view == ascribe.project && ascribe.multipleProjects",
           "group": "navigation@0"
         }
       ],

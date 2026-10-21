@@ -56,6 +56,8 @@ A link that answers with a server error, a `5xx` status such as `500 Internal Se
   agents/measuring.md:33: [ASC168] https://www.bing.com/webmasters answered 500 Internal Server Error when asked twice: the server failed, which may be temporary
   ```
 
+  When asking again couldn't run, the first answer stands, and the message leaves out "when asked twice".
+
   When the link answered on an earlier run, it's [held as unconfirmed](#links-that-answered-before) instead, until it has kept failing for a few days.
 
 A `404 Not Found` or a `410 Gone` says the page isn't there, so it's asked about once, and reported at once, as broken for readers. Any retries lychee makes itself, as `lychee.toml` sets them, come first, seconds apart; Ascribe's comes after them. Set `ASCRIBE_LINKS_RETRY_WAIT` to a number of seconds to wait another time, such as `0` in a test.

@@ -103,7 +103,25 @@ pub struct Entry {
     /// needs the network or a built site: never `ascribe check` or the
     /// editor.
     pub report_only: bool,
+    /// For a content check, what it reports, in Markdown: the registry's
+    /// `when`, which every configurable check has.
+    pub when: Option<String>,
+    /// For a content check, the area the diagnostics reference lists it
+    /// under: one of [`AREAS`].
+    pub area: Option<String>,
 }
+
+/// The areas content checks are listed in, by the registry's `area`, as
+/// they're titled in the diagnostics reference, in its order.
+pub const AREAS: &[(&str, &str)] = &[
+    ("pages", "Pages"),
+    ("project", "Across the project"),
+    ("outputs", "Outputs"),
+    ("prose", "Prose, through Vale"),
+    ("links", "External links"),
+    ("site", "The published site"),
+    ("examples", "Tested examples"),
+];
 
 /// A diagnostic's example: a page that has the problem, and the same page
 /// without it. Each is checked under the explain model
@@ -236,6 +254,8 @@ impl Registry {
                 .unwrap_or(false),
             place: text("place").and_then(|p| Place::from_name(&p)),
             report_only: text("stage").as_deref() == Some("report"),
+            when: text("when"),
+            area: text("area"),
         })
     }
 

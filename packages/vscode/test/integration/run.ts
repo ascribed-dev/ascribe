@@ -30,7 +30,8 @@
 //   settings    a copy of examples/quill whose `[consumer]` sets the trailing
 //               slash and the base path, Project Settings' round trip: a value
 //               set from the tab, unsaved, Undo, typing, and the server's
-//               problem, against the real `ascribe lsp`. Needs ASCRIBE_BIN as well.
+//               problem; a value added and reset; and a check's level, against
+//               the real `ascribe lsp`. Needs ASCRIBE_BIN as well.
 //   site        a copy of examples/quill, Open Site Preview and the preview
 //               panel's Site view, against a fake dev server, with the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.

@@ -20,7 +20,12 @@ import { ProjectBuilds } from "./ui/projectBuilds.js";
 import { ProjectSettings, type ProjectSettingsApi } from "./ui/projectSettings.js";
 import { ReviewView, type ReviewViewApi } from "./ui/reviewView.js";
 import { ProjectEdits, type ProjectEditsApi } from "./ui/projectEdits.js";
-import { ProjectView, type ProjectViewApi } from "./ui/projectView.js";
+import {
+  ProjectView,
+  projectWebview,
+  showRestrictedProject,
+  type ProjectViewApi,
+} from "./ui/projectView.js";
 import { ProjectTasks } from "./ui/tasks.js";
 import { thisPageNotice } from "./ui/sidebar.js";
 import {
@@ -100,13 +105,20 @@ export interface AscribeApi {
 let registry: ProjectRegistry | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<AscribeApi> {
-  // This page is made first, so in Restricted Mode it can say so too.
+  // This page and the Project view are made first, so in Restricted Mode they can say so too.
   const thisPage = thisPageWebview(context.extensionUri);
-  context.subscriptions.push(thisPage.register(), thisPage);
+  const projectWebviewView = projectWebview(context.extensionUri);
+  context.subscriptions.push(
+    thisPage.register(),
+    thisPage,
+    projectWebviewView.register(),
+    projectWebviewView,
+  );
   // In Restricted Mode the extension runs nothing, since it would run the
   // project's own binary; it only says so, and starts once the folder is trusted.
   if (!vscode.workspace.isTrusted) {
     thisPage.show(thisPageNotice({ kind: "restricted" }));
+    showRestrictedProject(projectWebviewView);
     const notice = showRestricted();
     context.subscriptions.push(notice);
     await new Promise<void>((resolve) => {
@@ -155,15 +167,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   projectEdits.register();
   const agentFiles = new AgentFilesChecks(projects);
   agentFiles.register();
-  const projectView = new ProjectView(
+  const projectView = new ProjectView(projectWebviewView, {
     projects,
     sidebar,
     checks,
     agentFiles,
     tasks,
-    projectEdits,
-    context.extensionUri,
-  );
+    edits: projectEdits,
+    builds,
+    chosen,
+    extensionId: context.extension.id,
+  });
   projectView.register();
 
   const settings = new ProjectSettings(projects, context.extensionUri, context.extension.id);

@@ -74,7 +74,9 @@ export class PromptAgent implements vscode.Disposable {
         (uri: unknown, diagnostic: unknown) => this.promptProblem(uri, diagnostic),
       ),
       vscode.commands.registerCommand(PROMPT_COMMANDS.file, () => this.promptFile()),
-      vscode.commands.registerCommand(PROMPT_COMMANDS.project, () => this.promptProject()),
+      vscode.commands.registerCommand(PROMPT_COMMANDS.project, (folder?: unknown) =>
+        this.promptProject(typeof folder === "string" ? folder : undefined),
+      ),
       vscode.languages.registerCodeActionsProvider(
         { language: "markdown", scheme: "file" },
         { provideCodeActions: (document, _range, context) => this.actions(document, context) },
@@ -137,8 +139,11 @@ export class PromptAgent implements vscode.Disposable {
     });
   }
 
-  private async promptProject(): Promise<void> {
-    const server = this.projects.current();
+  /** The project in `folder`, as the Project view names it, else the active file's. */
+  private async promptProject(folder?: string): Promise<void> {
+    const server =
+      (folder === undefined ? undefined : this.projects.serverAt(folder)) ??
+      this.projects.current();
     if (!server) {
       void vscode.window.showInformationMessage("Ascribe: this workspace has no ascribe.toml.");
       return;

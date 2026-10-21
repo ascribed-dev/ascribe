@@ -109,8 +109,8 @@ pub use search::{
 };
 pub use server::{Exit, ServeError, serve};
 pub use settings::{
-    METHOD as SETTINGS_METHOD, SettingEntry, SettingPiece, SettingPlace, SettingProblem,
-    SettingValue, SettingsParams, SettingsResult,
+    CheckEntry, CheckLimit, METHOD as SETTINGS_METHOD, SettingEntry, SettingPiece, SettingPlace,
+    SettingProblem, SettingValue, SettingsParams, SettingsResult,
 };
 pub use targets::{
     AttributeKind, BindingKind, METHOD as TARGETS_METHOD, PrimaryKind, TargetAttribute,

@@ -5,18 +5,24 @@
 // file as it then is. The webview changes nothing itself: a control shows the
 // value of the answer it drew until the next answer comes.
 //
-// Each setting is a section with its name as a heading, so a screen reader
-// moves between them by heading, and its control is labelled by the name. A
-// choice is a `<select>`, a switch a checkbox, and a number or a text an
-// `<input>` that sends its value when it's changed: on Enter, or when the
-// focus leaves it. The tab checks only what its controls can know (a number
-// is a whole number); every rule of the content model is the server's, whose
-// problems show under the setting.
+// The settings are under a heading for each table, and the checks under one
+// of their own. Each setting, and each check, is a section with its name as a
+// heading, so a screen reader moves between them by heading, and its control
+// is labelled by the name. A choice or a level is a `<select>`, a switch a
+// checkbox, and a number, a size, or a text an `<input>` that sends its value
+// when it's changed: on Enter, or when the focus leaves it. A setting the
+// file leaves out shows its default, and changing it adds it to the file; one
+// the file sets has Reset to default, which takes it out. A check shows what
+// it reports, its level, and, for the three that take one, its limit. The tab
+// checks only what its controls can know (a number is a whole number); every
+// rule of the content model is the server's, whose problems show under the
+// setting.
 //
 // The text comes from the registry and from `ascribe.toml`, and is set as
 // text, never as HTML.
 
 import type {
+  CheckView,
   FromSettings,
   SettingsAnswer,
   SettingsReport,
@@ -64,7 +70,9 @@ function control(setting: SettingView, channel: Channel, labelId: string): HTMLE
     const select = element("select");
     const choices = [...setting.choices];
     const current = controlText(setting.value);
-    if (current && !choices.includes(current)) choices.unshift(current);
+    // A value the list doesn't have, or none: shown as it is, never as
+    // another.
+    if (!choices.includes(current)) choices.unshift(current);
     for (const choice of choices) {
       const option = element("option", undefined, choice);
       option.value = choice;
@@ -83,6 +91,7 @@ function control(setting: SettingView, channel: Channel, labelId: string): HTMLE
     const input = element("input");
     input.type = "text";
     if (setting.kind === "number") input.inputMode = "numeric";
+    if (setting.kind === "size") input.placeholder = "500 KB";
     // The file's value, which a redraw compares to keep what's being typed.
     input.defaultValue = controlText(setting.value);
     input.value = input.defaultValue;
@@ -100,6 +109,15 @@ function control(setting: SettingView, channel: Channel, labelId: string): HTMLE
         }
         input.setCustomValidity("");
         post(number);
+      } else if (setting.kind === "size") {
+        const size = input.value.trim();
+        if (size === "") {
+          input.setCustomValidity("A number of bytes, or a size such as 500 KB");
+          input.reportValidity();
+          return;
+        }
+        input.setCustomValidity("");
+        post(/^\d+$/.test(size) && Number.isSafeInteger(Number(size)) ? Number(size) : size);
       } else {
         post(input.value);
       }
@@ -118,20 +136,8 @@ function control(setting: SettingView, channel: Channel, labelId: string): HTMLE
   return made;
 }
 
-function drawSetting(setting: SettingView, index: number, channel: Channel): HTMLElement {
-  const section = element("section", setting.set ? "setting set" : "setting");
-  section.dataset["id"] = setting.id;
-  const labelId = `setting-${index}`;
-  const head = element("div", "head");
-  const name = element("h2", "name", setting.name);
-  name.id = labelId;
-  head.append(name, element("code", "key", setting.key));
-  section.append(head);
-  const description = element("p", "description");
-  for (const piece of setting.description) {
-    description.append(piece.code ? element("code", undefined, piece.text) : piece.text);
-  }
-  section.append(description, control(setting, channel, labelId));
+/** A setting's default, its place, and Reset to default, under its control. */
+function meta(setting: SettingView, channel: Channel): HTMLElement {
   const meta = element("p", "meta");
   if (setting.defaultText)
     meta.append(element("span", "default", `Default: ${setting.defaultText}`));
@@ -142,14 +148,91 @@ function drawSetting(setting: SettingView, index: number, channel: Channel): HTM
     : element("span", "where", setting.where);
   where.classList.add("where");
   meta.append(where);
-  section.append(meta);
-  if (setting.problems.length > 0) {
-    const problems = element("ul", "problems");
-    problems.setAttribute("aria-label", `Problems with ${setting.name}`);
-    for (const problem of setting.problems) {
-      problems.append(element("li", problem.severity, problem.message));
-    }
-    section.append(problems);
+  if (setting.resettable) {
+    const reset = linkButton("Reset to default", () =>
+      channel.post({ type: "reset", seq: channel.seq, id: setting.id }),
+    );
+    reset.classList.add("reset");
+    reset.dataset["id"] = setting.id;
+    reset.setAttribute("aria-label", `Reset ${setting.name} to default`);
+    meta.append(reset);
+  }
+  return meta;
+}
+
+function problems(setting: SettingView): HTMLElement[] {
+  if (setting.problems.length === 0) return [];
+  const list = element("ul", "problems");
+  list.setAttribute("aria-label", `Problems with ${setting.name}`);
+  for (const problem of setting.problems) {
+    list.append(element("li", problem.severity, problem.message));
+  }
+  return [list];
+}
+
+function description(pieces: SettingView["description"]): HTMLElement {
+  const made = element("p", "description");
+  for (const piece of pieces) {
+    made.append(piece.code ? element("code", undefined, piece.text) : piece.text);
+  }
+  return made;
+}
+
+let labels = 0;
+
+function drawSetting(setting: SettingView, channel: Channel): HTMLElement {
+  const section = element("section", setting.set ? "setting set" : "setting");
+  section.dataset["id"] = setting.id;
+  const labelId = `setting-${labels++}`;
+  const head = element("div", "head");
+  const name = element("h3", "name", setting.name);
+  name.id = labelId;
+  head.append(name, element("code", "key", setting.key));
+  section.append(
+    head,
+    description(setting.description),
+    control(setting, channel, labelId),
+    meta(setting, channel),
+    ...problems(setting),
+  );
+  return section;
+}
+
+/** A check: what it reports, its level, and its limit if it takes one. */
+function drawCheck(check: CheckView, channel: Channel): HTMLElement {
+  const { level, limit } = check;
+  const section = element("section", check.named ? "setting check set" : "setting check");
+  section.dataset["id"] = level.id;
+  const labelId = `setting-${labels++}`;
+  const head = element("div", "head");
+  const name = element("h3", "name", level.name);
+  name.id = labelId;
+  head.append(
+    name,
+    element("code", "key", level.key),
+    element("span", "area", `${level.section} · ${check.code}`),
+  );
+  section.append(
+    head,
+    description(level.description),
+    control(level, channel, labelId),
+    meta(level, channel),
+    ...problems(level),
+  );
+  if (limit) {
+    const own = element("div", limit.set ? "limit set" : "limit");
+    const limitId = `setting-${labels++}`;
+    const label = element("span", "limit-name", "Limit");
+    label.id = limitId;
+    own.append(
+      label,
+      // Named by the check's name and "Limit", so it says whose limit it is.
+      control(limit, channel, `${labelId} ${limitId}`),
+      element("code", "key", limit.key),
+      meta(limit, channel),
+      ...problems(limit),
+    );
+    section.append(own);
   }
   return section;
 }
@@ -184,10 +267,29 @@ function draw(answer: SettingsAnswer, channel: Channel): SettingsReport {
     " are VS Code's.",
   );
   view.append(intro);
+  labels = 0;
   if (answer.message !== null) {
     view.append(element("p", "message", answer.message));
   } else {
-    answer.settings.forEach((setting, index) => view.append(drawSetting(setting, index, channel)));
+    let section: string | undefined;
+    for (const setting of answer.settings) {
+      if (setting.section !== section) {
+        section = setting.section;
+        view.append(element("h2", "section", section));
+      }
+      view.append(drawSetting(setting, channel));
+    }
+    if (answer.checks.length > 0) {
+      view.append(
+        element("h2", "section", "Checks"),
+        element(
+          "p",
+          "intro",
+          "How loudly each check about your content speaks, set in [checks]. The ones ascribe.toml names are first.",
+        ),
+      );
+      for (const check of answer.checks) view.append(drawCheck(check, channel));
+    }
   }
   if (keep) {
     const again = view.querySelector<HTMLElement>(`.control[data-id="${CSS.escape(keep.id)}"]`);
@@ -204,7 +306,10 @@ function draw(answer: SettingsAnswer, channel: Channel): SettingsReport {
   }
   return {
     message: answer.message,
-    settings: answer.settings.map((setting) => {
+    settings: [
+      ...answer.settings,
+      ...answer.checks.flatMap((c) => (c.limit ? [c.level, c.limit] : [c.level])),
+    ].map((setting) => {
       const shown = view.querySelector<HTMLInputElement | HTMLSelectElement>(
         `.control[data-id="${CSS.escape(setting.id)}"]`,
       );
@@ -218,6 +323,7 @@ function draw(answer: SettingsAnswer, channel: Channel): SettingsReport {
         where: setting.where,
         problems: setting.problems.map((p) => p.message),
         editable: shown ? !shown.disabled : false,
+        resettable: view.querySelector(`.reset[data-id="${CSS.escape(setting.id)}"]`) !== null,
       };
     }),
     violations: seenViolations(),

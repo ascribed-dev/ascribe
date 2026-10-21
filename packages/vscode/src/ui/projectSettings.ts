@@ -11,10 +11,11 @@
 // newest answer.
 //
 // What it draws is the server's `ascribe/settings`, read from the text the
-// editor has, and nothing else: `settingsModel.ts` has the rule. A change is
-// `ascribe/edit`'s `setSetting`, applied as a workspace edit, so
-// `ascribe.toml` changes unsaved, Undo puts it back, and the tab follows the
-// document as it follows typing.
+// editor has, and nothing else: `settingsModel.ts` has the rule. A change, a
+// value added, and a reset to the default are each `ascribe/edit`'s
+// `setSetting`, applied as a workspace edit, so `ascribe.toml` changes
+// unsaved, Undo puts it back, and the tab follows the document as it follows
+// typing. A check's level and limit are set the same way.
 
 import { randomBytes } from "node:crypto";
 import * as vscode from "vscode";
@@ -27,11 +28,12 @@ import { viewHtml } from "../webview/viewShell.js";
 import { STATE_NAMES } from "./describe.js";
 import { Handshake } from "./handshake.js";
 import {
+  allSettings,
   checkSettingsMessage,
   checkedValue,
   inStep,
   setInStep,
-  settingId,
+  settingTarget,
   settingsAnswer,
 } from "./settingsModel.js";
 import type { Drawn } from "./webviewView.js";
@@ -53,6 +55,8 @@ export interface ProjectSettingsApi {
   ): Promise<Drawn<SettingsReport>>;
   /** Sets a setting of what the webview drew last, as its control does. */
   set(id: string, value: string | number | boolean): Promise<void>;
+  /** Resets a setting of what the webview drew last to its default, as its button does. */
+  reset(id: string): Promise<void>;
   /** Opens `ascribe.toml` at a setting's line, as its link does. */
   openLine(id: string): Promise<void>;
   /** How many tabs are open. */
@@ -75,7 +79,10 @@ export class ProjectSettings implements vscode.Disposable {
 
   register(): void {
     this.disposables.push(
-      vscode.commands.registerCommand("ascribe.openProjectSettings", () => this.open()),
+      // The Project view's gear names its project; the Command Palette, none.
+      vscode.commands.registerCommand("ascribe.openProjectSettings", (folder?: unknown) =>
+        this.open(typeof folder === "string" ? folder : undefined),
+      ),
     );
   }
 
@@ -90,6 +97,7 @@ export class ProjectSettings implements vscode.Disposable {
       whenDrawn: (description, predicate, timeout) =>
         panel().whenDrawn(description, predicate, timeout),
       set: (id, value) => panel().set(panel().seq, id, value),
+      reset: (id) => panel().set(panel().seq, id, null),
       openLine: (id) => panel().openLine(panel().seq, id),
       tabs: () => this.panels.size,
       whenSettled: () => this.last?.whenSettled() ?? Promise.resolve(),
@@ -253,6 +261,7 @@ class SettingsPanel implements vscode.Disposable {
       this.show({
         message: `The Ascribe language server is ${STATE_NAMES[state]}. Project Settings shows the settings once it's running.`,
         settings: [],
+        checks: [],
       });
       return;
     }
@@ -278,7 +287,7 @@ class SettingsPanel implements vscode.Disposable {
     // Still out of step: the answer drawn is for older text, so it's put
     // away until the next change to the document asks again.
     this.result = undefined;
-    this.show({ message: "Reading ascribe.toml…", settings: [] });
+    this.show({ message: "Reading ascribe.toml…", settings: [], checks: [] });
   }
 
   private show(answer: SettingsAnswer): void {
@@ -302,6 +311,9 @@ class SettingsPanel implements vscode.Disposable {
       case "set":
         void this.set(message.seq, message.id, message.value);
         return;
+      case "reset":
+        void this.set(message.seq, message.id, null);
+        return;
       case "openLine":
         void this.openLine(message.seq, message.id);
         return;
@@ -318,15 +330,25 @@ class SettingsPanel implements vscode.Disposable {
     }
   }
 
-  /** Sets the setting `id` of the answer `seq`, when that's still the newest. */
+  /**
+   * Sets the setting `id` of the answer `seq`, or with `null` resets it to
+   * its default, when that answer is still the newest.
+   */
   async set(seq: number, id: string, value: unknown): Promise<void> {
     const latest = this.handshake.latest;
     const result = this.result;
     if (!latest || latest.seq !== seq || !result) return;
-    const shown = latest.answer.settings.find((s) => s.id === id);
-    const entry = result.settings.find((s) => settingId(s) === id);
-    const checked = shown?.editable ? checkedValue(shown, value) : undefined;
-    if (!entry || checked === undefined) return;
+    const shown = allSettings(latest.answer).find((s) => s.id === id);
+    const target = settingTarget(result, id);
+    const checked =
+      value === null
+        ? shown?.resettable
+          ? null
+          : undefined
+        : shown?.editable
+          ? checkedValue(shown, value)
+          : undefined;
+    if (!target || checked === undefined) return;
     try {
       const outcome = await setInStep(
         result.version,
@@ -336,7 +358,7 @@ class SettingsPanel implements vscode.Disposable {
             textDocument: { uri: this.config.toString() },
             range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
             action: "setSetting",
-            args: { table: entry.table, key: entry.key, value: checked, shown: result.version },
+            args: { table: target.table, key: target.key, value: checked, shown: result.version },
           }),
         (edit) => vscode.workspace.applyEdit(edit),
       );
@@ -365,7 +387,7 @@ class SettingsPanel implements vscode.Disposable {
   /** Opens `ascribe.toml` beside the tab, at the line that sets `id` of the answer `seq`. */
   async openLine(seq: number, id: string): Promise<void> {
     const latest = this.handshake.latest;
-    const set = this.result?.settings.find((s) => settingId(s) === id)?.set;
+    const set = this.result && settingTarget(this.result, id)?.set;
     if (!latest || latest.seq !== seq || !set) return;
     const { start, end } = set.range;
     const range = new vscode.Range(start.line, start.character, end.line, end.character);
