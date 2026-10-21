@@ -4434,8 +4434,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/767"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Docs: The rest of the second homes"
     },
     {
@@ -4515,8 +4518,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/768"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Docs: The new views"
     },
     {
@@ -4728,8 +4734,36 @@
         "https://github.com/ascribed-dev/ascribe/pull/765"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "The editor's views: the Project Settings Undo integration test fails intermittently"
+    },
+    {
+      "content": {
+        "body": "In the This page view's webview, a row whose label wraps over several lines squeezes its description: under Connections, a place's \"line 21\" beside a long line of context is drawn as \"lin / e / 21\", a few letters per line. It's visible in the This page picture added in #768 (`docs/content/images/this-page-*.png`), taken at a sidebar 480 CSS pixels wide.\n\nThe row is a flex row (`.item > span`, `.item > button` in `packages/vscode/src/webview/views.css`), and the description shrinks with the label rather than keeping its words whole.\n\n**Done when:** a description in This page's rows never breaks inside a word: a short one such as \"line 21\" stays on one line beside a long wrapped label, and a long one, such as a memo's file path, still wraps at its own breaks rather than overflowing; a webview test in `packages/vscode/test/webview/` holds it, and the This page picture is retaken (`node scripts/docs-site/screenshots.ts this-page`).",
+        "number": 769,
+        "repository": "ascribed-dev/ascribe",
+        "title": "This page: a short description beside a long row wraps a few letters at a time",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/769"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCebaE",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "This page: a short description beside a long row wraps a few letters at a time"
+    },
+    {
+      "content": {
+        "body": "`editor/sidebar.md` says a page the build the status bar shows leaves out \"is dimmed, as the build lens dims text\". In Pages, only its icon is: `getTreeItem` in `packages/vscode/src/ui/sidebarViews.ts` colors the `ThemeIcon` with `disabledForeground` and leaves the label as it is, so the page reads like any other but for its \"Not in cloud\" description. It's visible in the Pages picture added in #768 (`docs/content/images/pages-*.png`), where four pages the cloud build leaves out look nearly like the rest.\n\nA tree item's label can be colored through a `FileDecoration` on its `resourceUri`, as problems already color it red or yellow, which is one way; the issue is what the reader sees, not the means.\n\n**Done when:** a page the chosen build leaves out has its label drawn dimmed in Pages, not only its icon, in light and dark, while a problem's red or yellow still shows on it; it follows the build as you switch; an integration test holds it; and the Pages picture is retaken (`node scripts/docs-site/screenshots.ts pages`). If dimming the label can't be done in a tree view, the docs' sentence says what is dimmed instead.",
+        "number": 770,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Pages: a page the build leaves out is dimmed only in its icon",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/770"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCebfo",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Pages: a page the build leaves out is dimmed only in its icon"
     }
   ]
 }
