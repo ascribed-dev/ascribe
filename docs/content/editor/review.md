@@ -39,7 +39,7 @@ When your branch has an open pull request on GitHub, review shows its review thr
 - **Commenting.** Point at or focus any block and choose **Comment**, then **Add to review**. Threads stay beside their blocks as you type.
 - **Replying.** **Add to review** holds a reply with your other comments. **Reply now** sends it at once.
 - **Resolving.** **Resolve** and **Reopen**.
-- **Prompting your agent.** **Prompt agent** on a thread, **Prompt agent: all open** in the list of comments, and **More review actions** (**⋯**) in the header, for the page's changes or a fragment's pages, build a prompt for your agent and deliver it as `ascribe.agents.promptTarget` says. In the source editor, a thread's title bar has **Prompt Agent**. See [In review](../agents/index.md#in-review).
+- **Prompting your agent.** **Prompt agent** on a thread, **Prompt agent: all open** in the list of comments, and **More review actions** (**⋯**) in the header, for the page's changes or a fragment's pages, build a prompt for your agent and deliver it as `ascribe.agents.promptTarget` says. In the source editor, a thread's title bar has **Prompt Agent**. See [In review](../agents/prompts.md#in-review).
 - **Submitting.** While you have unsent comments, a bar at the bottom counts them, with **Submit review…**: it lists them, takes an optional summary, and submits them. **Discard…** in the same dialog deletes them, after asking.
 
 The same threads show on their lines in the source editor, where you can reply, resolve, and comment on any line into the same review. The GitHub Pull Requests extension shows them there already, so by default Ascribe leaves the source editor to it when it's active; `ascribe.review.sourceComments` decides.

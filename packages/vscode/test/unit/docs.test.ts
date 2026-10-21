@@ -60,7 +60,7 @@ const commands: Record<string, string> = {
   "ascribe.openSourceChanges":
     "Opens one diff of the changed pages' source files, at the base against the working tree: each page's own file, and the fragments and pages it changed through. It's in the Review view's title bar too. See [The Review view](../editor/review.md#the-review-view).",
   "ascribe.promptAgentFile":
-    "Builds a prompt for your agent about the active file's problems, and puts it where `ascribe.agents.promptTarget` says, without sending it. Shown when the file has problems. See [Prompt your agent](../agents/index.md#prompt-your-agent).",
+    "Builds a prompt for your agent about the active file's problems, and puts it where `ascribe.agents.promptTarget` says, without sending it. Shown when the file has problems. See [Prompt your agent](../agents/prompts.md).",
   "ascribe.promptAgentProject":
     "Builds a prompt for your agent about the problems of the active file's project, as Prompt Agent to Fix This File does. Shown when the project has problems.",
   "ascribe.newPage":

@@ -20,13 +20,14 @@ import {
   nullable,
   shape,
   text as shortText,
+  whole,
   type Check,
 } from "../preview/messages.js";
 import type { ChangedPage } from "../preview/protocol.js";
 import type { ReviewController } from "../preview/review.js";
 import type { ProjectRegistry } from "../registry.js";
 import type { ContextResult, InventoryResult, LspRange, PageResult } from "../shapes.js";
-import type { ThisPageAnswer, ThisPageReport } from "../webview/viewProtocol.js";
+import type { ThisPageAnswer, ThisPageProbe, ThisPageReport } from "../webview/viewProtocol.js";
 import { insertPlan, LastEditors } from "./insertAt.js";
 import type { ProjectBuilds } from "./projectBuilds.js";
 import { WebviewView, type Drawn } from "./webviewView.js";
@@ -169,6 +170,13 @@ export interface ThisPageApi {
   ): Promise<Drawn<ThisPageReport>>;
   /** Chooses an item of what the webview drew last, by its key, as a click does. */
   choose(key: string): void;
+  /**
+   * Does in the webview what a reader does, and resolves with its report of
+   * the answer drawn: opens every section, puts the keyboard's focus on an
+   * item or a section's header by its key, scrolls, and chooses what has the
+   * focus, as Enter does, in that order.
+   */
+  probe(what: Omit<ThisPageProbe, "type" | "probe">): Promise<Drawn<ThisPageReport>>;
   /** Presses Escape in the view, as the reader does. */
   escape(): Promise<void>;
   /**
@@ -183,6 +191,13 @@ export interface ThisPageApi {
 }
 
 /** One of the three views: its tree, and how its items look and open. */
+/** What an item opens: a file at a place, or, for This page's includes, a file beside the page. */
+interface Target {
+  uri: vscode.Uri;
+  selection?: vscode.Range;
+  beside?: boolean;
+}
+
 class Tree<N> implements vscode.TreeDataProvider<N> {
   /** An item's parent, which revealing an item walks up. */
   parentOf: ((node: N) => N | undefined) | undefined;
@@ -197,7 +212,7 @@ class Tree<N> implements vscode.TreeDataProvider<N> {
     readonly roots: () => N[],
     readonly children: (node: N) => N[],
     readonly look: (node: N) => ItemLook,
-    readonly opens: (node: N) => { uri: vscode.Uri; selection?: vscode.Range } | undefined,
+    readonly opens: (node: N) => Target | undefined,
     /** The command an item runs in place of opening a file, if it runs one. */
     readonly command: (node: N) => vscode.Command | undefined = () => undefined,
   ) {}
@@ -301,6 +316,8 @@ export class SidebarViews implements vscode.Disposable {
   private pageLooked = 0;
   /** How many times This page has asked the server. */
   private pageAsked = 0;
+  /** How many probes the tests have sent This page's webview. */
+  private pageProbed = 0;
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly pending = new Set<Promise<void>>();
   private readonly disposables: vscode.Disposable[] = [];
@@ -364,11 +381,18 @@ export class SidebarViews implements vscode.Disposable {
         case "place":
           return at(node.place.uri, node.place.range);
         case "include":
-          return node.include.uri ? { uri: vscode.Uri.parse(node.include.uri) } : undefined;
-        case "row":
-          return node.row.opens?.kind === "place"
-            ? at(node.row.opens.uri, node.row.opens.range)
+          return node.include.uri
+            ? { uri: vscode.Uri.parse(node.include.uri), beside: true }
             : undefined;
+        case "row":
+          switch (node.row.opens?.kind) {
+            case "place":
+              return at(node.row.opens.uri, node.row.opens.range);
+            case "beside":
+              return { uri: vscode.Uri.parse(node.row.opens.uri), beside: true };
+            default:
+              return undefined;
+          }
         default:
           return undefined;
       }
@@ -513,6 +537,14 @@ export class SidebarViews implements vscode.Disposable {
       choose: (key) => {
         const drawn = this.thisPageView.drawn;
         if (drawn) void this.chooseItem(drawn.seq, key);
+      },
+      probe: (what) => {
+        const probe = ++this.pageProbed;
+        this.thisPageView.post({ ...what, type: "probe", probe } satisfies ThisPageProbe);
+        return this.thisPageView.whenDrawn(
+          `its answer to probe ${probe}`,
+          (drawn) => drawn.report.probed >= probe,
+        );
       },
       escape: () => this.focusPageEditor(),
       asked: () => this.pageAsked,
@@ -1375,7 +1407,9 @@ export class SidebarViews implements vscode.Disposable {
       return;
     }
     const target = this.thisPage.opens(node);
-    if (target) {
+    if (target?.beside) {
+      await this.openBeside(target.uri);
+    } else if (target) {
       await vscode.commands.executeCommand(
         "vscode.open",
         target.uri,
@@ -1384,11 +1418,25 @@ export class SidebarViews implements vscode.Disposable {
     }
   }
 
+  /**
+   * Opens an include, a snippet's file, or a tested example's in the editor
+   * group beside the page's, leaving the focus where the choice left it. It's
+   * beside the page's group, not the active one: the focus is in the view, and
+   * the page's tab may be in any group.
+   */
+  private async openBeside(uri: vscode.Uri): Promise<void> {
+    const group = this.pageAt && groupOf(this.pageAt.uri);
+    await vscode.window.showTextDocument(uri, {
+      viewColumn: group ? group.viewColumn + 1 : vscode.ViewColumn.Beside,
+      preserveFocus: true,
+      preview: true,
+    });
+  }
+
   /** Escape in This page: the focus goes back to the page's editor, in the group of its tab. */
   private async focusPageEditor(): Promise<void> {
     const page = this.pageAt;
-    const group =
-      page && vscode.window.tabGroups.all.find((g) => g.tabs.some((tab) => isTabOf(tab, page.uri)));
+    const group = page && groupOf(page.uri);
     if (!page || !group) return;
     await vscode.window.showTextDocument(page.uri, {
       viewColumn: group.viewColumn,
@@ -1408,6 +1456,15 @@ function isTabOf(tab: vscode.Tab, uri: vscode.Uri): boolean {
   return tab.input instanceof vscode.TabInputText && tab.input.uri.toString() === uri.toString();
 }
 
+/** The group of `uri`'s tab: one where it's on top, or else the first that has it. */
+function groupOf(uri: vscode.Uri): vscode.TabGroup | undefined {
+  const { all } = vscode.window.tabGroups;
+  return (
+    all.find((group) => group.activeTab !== undefined && isTabOf(group.activeTab, uri)) ??
+    all.find((group) => group.tabs.some((tab) => isTabOf(tab, uri)))
+  );
+}
+
 /** Whether `uri` is open in a tab of some group, on top or covered by another. */
 function openInTab(uri: vscode.Uri): boolean {
   return vscode.window.tabGroups.all.some((group) => group.tabs.some((tab) => isTabOf(tab, uri)));
@@ -1425,6 +1482,10 @@ const thisPageReport: Check<ThisPageReport> = shape<ThisPageReport>({
     }),
   ),
   wraps: boolean,
+  focused: nullable(shortText),
+  hasFocus: boolean,
+  scroll: whole,
+  probed: whole,
   violations: listOf(shortText),
 });
 

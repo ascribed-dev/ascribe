@@ -74,8 +74,37 @@ export interface ThisPageReport {
   sections: { key: string; label: string; open: boolean; items: string[] }[];
   /** Whether a row's text wraps, as the stylesheet sets it. */
   wraps: boolean;
+  /**
+   * The key of what has the keyboard's focus in the view: an item's, or a
+   * section's for its header; `null` for nothing.
+   */
+  focused: string | null;
+  /** Whether the view's document has the focus. */
+  hasFocus: boolean;
+  /** How far the view is scrolled, in pixels. */
+  scroll: number;
+  /** The newest probe the report answers, or 0 when it answers none. */
+  probed: number;
   /** Content security policy violations seen so far. */
   violations: string[];
+}
+
+/**
+ * Extension to This page's webview, for tests: does what a reader does, and
+ * answers with a report of the answer drawn, in this order.
+ */
+export interface ThisPageProbe {
+  type: "probe";
+  /** Rises with each probe. */
+  probe: number;
+  /** Opens every section. */
+  open?: boolean;
+  /** Puts the keyboard's focus on the item of this key, or on a section's header by its key. */
+  focus?: string;
+  /** Scrolls the view to this many pixels from its top. */
+  scroll?: number;
+  /** Chooses what has the focus, as Enter does. */
+  press?: boolean;
 }
 
 // The Project view.

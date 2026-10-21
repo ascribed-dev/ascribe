@@ -40,7 +40,7 @@ title = "string"
 description = "string"
 ```
 
-A page says what type it is in its frontmatter, `type: how-to`, as each template does, so a page of any type can go in any folder. Commit the files, with `templates/templates.lock`, which records what each was copied from. The rules [`ascribe agents sync`](../agents/index.md#agent-instructions) writes say what each type is for; to say it your own way, give the type a [`purpose`](../content-model/index.md#41-page-types).
+A page says what type it is in its frontmatter, `type: how-to`, as each template does, so a page of any type can go in any folder. Commit the files, with `templates/templates.lock`, which records what each was copied from. The rules [`ascribe agents sync`](../agents/instructions.md) writes say what each type is for; to say it your own way, give the type a [`purpose`](../content-model/index.md#41-page-types).
 
 To take only some, name them: `ascribe templates eject how-to concept`. A type the project declares already is refused, and nothing is written; to keep it and take its template, add `--keep-type`. The [command reference](command.md#cli-templates-eject) has the rest.
 
@@ -90,7 +90,7 @@ Without the editor:
 2. Read the type's guide and Ascribe's notes on it, before you write.
 3. Replace each `\{placeholder}` with what it asks for, and the title and description in the frontmatter with your own.
 
-An agent starts from the template too. Ask it for a page with the plugin's `/ascribe:new-page`, or the prompt `ascribe agents prompt new-page` prints ([agents guide](../agents/index.md#from-the-command-line)), which gives it the template and sends it to the guide and the notes before it writes:
+An agent starts from the template too. Ask it for a page with the plugin's `/ascribe:new-page`, or the prompt `ascribe agents prompt new-page` prints ([agents guide](../agents/prompts.md#from-the-command-line)), which gives it the template and sends it to the guide and the notes before it writes:
 
 ```sh
 ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
