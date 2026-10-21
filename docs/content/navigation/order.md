@@ -37,7 +37,14 @@ A section is a folder, and a page is in its folder's section. To put a page in a
 
 ## Or drag them in the editor
 
-In VS Code, the Ascribe sidebar's **Pages** view shows the navigation. Drag a page or a section to where you want it, and the view writes `ascribe.nav` for you, keeping its comments; the file opens with the change unsaved. Dragging a page onto another section moves the file, after asking. See [the editor](../editor/sidebar.md#this-page-pages-and-content-model).
+In VS Code, the Ascribe sidebar's [**Pages** view](../editor/sidebar.md#pages) shows the navigation. Drag a page or a section to where you want it, and the view writes `ascribe.nav` for you as typing does, keeping its comments: the file opens with the change unsaved, and **Undo** takes it back, the file too when the drag made it.
+
+- **Drag a section** onto another beside it, and it's put before it when you drag it up and after it when you drag it down. The sections beside it are listed in the file in the order they had, so nothing else moves.
+- A section whose own page sits beside its folder, such as `checks/diagnostics/` with `checks/diagnostics.md`, is drawn where that page sits among its parent's pages, and dragging it moves that page in the parent's `pages`. At the top level there's no such placing: `guides/` with `guides.md` is drawn after Start, with the page first in it, and is dragged among the top sections like any other.
+- **Drag a page** onto another of its section the same way, or onto its section to put it first. The section's `pages` lists its pages as they stood, with the one you moved where you put it.
+- **Drag a page onto another section**, or a page of one, and it asks first, since the page's address changes. On **Move**, its file moves to that section's folder, and the links to it and `ascribe.nav` follow, as they do when you move a file in the Explorer.
+- A page `ascribe.nav` leaves out of a section that lists its pages is at the end of its section, marked **not placed**; **Place Here** in its menu adds it to the end of the section's `pages`. A page that's `unlisted` is in no sidebar, so it's marked **unlisted** instead, and needs no place.
+- **Rename Label…** in a section's menu sets its `label` in `ascribe.nav`, and in a page's menu its `nav-label`, in its frontmatter, unsaved as a drag's change is. It offers the label as it's written; leave it empty for the default, which for a page is its title.
 
 ## Leave a page out
 

@@ -1,16 +1,18 @@
 ---
 type: reference
-title: The Ascribe sidebar
-description: "The Ascribe sidebar in VS Code: Project, This page, Pages, Content model, and switching the project they show."
+title: The sidebar and the status bar
+description: "The Ascribe sidebar in VS Code, with its Project, This page, Pages, and Content model views, the status bar item, and switching the project they show."
 ---
 
-The Ascribe icon in the activity bar opens the Ascribe sidebar, with three views: **This page**, **Pages**, and **Content model**. In a workspace with no project, Pages says how to start one, and in Restricted Mode, how to trust the folder.
+The Ascribe icon in the activity bar opens the Ascribe sidebar, with three views: **This page**, **Pages**, and **Content model**. In a workspace with no project, Pages says how to start one, and in Restricted Mode, how to trust the folder. The views show the active file's project, named beside Pages' and Content model's titles. They follow the active editor, and show nothing for a project whose server hasn't started: filling them never starts one. When a project's server fails to start, Pages and Content model say so, with **Show Output** and **Restart**.
 
 @available: ascribe 0.4.0
 While review is on, a **Review** view comes first: see [The Review view](review.md#the-review-view).
 
 @available: next
 A **Project** view comes first of all, above Review: see [The Project view](#the-project-view).
+
+The [status bar](#the-status-bar) item names the active file's project, with a menu of the jobs the Project view has.
 
 ## The Project view
 @available: next
@@ -19,7 +21,7 @@ A **Project** view comes first of all, above Review: see [The Project view](#the
 
 At its top are the project's name, its folder, its language server's state, such as "running" or "failed", and the version of the `ascribe` binary the server runs:
 
-- **Show Output** and **Restart** sit beside the server's state, Restart once the server has started, so a failed server is restarted where it's seen. They do what the [status bar](preview.md#the-status-bar) menu's **Show output** and **Restart server** do, for the project the view shows.
+- **Show Output** and **Restart** sit beside the server's state, Restart once the server has started, so a failed server is restarted where it's seen. They do what the [status bar](#the-status-bar) menu's **Show output** and **Restart server** do, for the project the view shows.
 - **Build** is the build you're looking at, with every build of the project, and each line of a versioned build, to switch to. It's the same choice as the status bar's **Switch build** and the preview's **Build** picker: switching it in any of the three moves the others, the preview, and the [build lens](preview.md#the-build-lens) with it.
 - Beside the name, the gear opens [Project Settings](settings.md) for the project, its `ascribe.toml`, which everyone working on it shares, and the second button opens VS Code's Settings at Ascribe's, which are your editor's and nobody else's.
 
@@ -78,11 +80,9 @@ Each is one edit to the text the editor has, so a page you've changed and not sa
 
 The files are left unsaved on purpose. On a large project an edit can change hundreds of files, and each is opened with its changes unsaved, so you can read them before you save them: **File: Save All** saves them. **Undo** takes the edit back: VS Code asks whether to undo it in every file it changed or only in the one you're in. If a file changes while the question is up, nothing is applied; choose the action again.
 
-## This page, Pages, and Content model
-
-The views show the active file's project, named beside Pages' and Content model's titles. They follow the active editor, and show nothing for a project whose server hasn't started: filling them never starts one. When a project's server fails to start, Pages and Content model say so, with **Show Output** and **Restart**.
-
+## This page
 @available: ascribe 0.4.0
+
 **This page** says what's known about the active page, in four sections, and five while review is on, with **Review** after About ([Review in the preview](review.md#the-review-view)). **About** gives its title, its content type, its address, and its Markdown version's address, or "not published" when the project publishes none ([`agents = true`](../content-model/output.md#consumer)); a fragment's address is only where it's included. **Health** says how the page stands. **Connections** lists what links to the page, grouped by file, under **Linked from**, what includes it under **Included by**, and what it includes under **Includes**. With the cursor under a heading, Connections narrows to that heading's links and the includes of its section, whichever page they reach it through, and its title names the heading; Includes stays the page's. **Memos** lists the [memo files](actions.md#memo-files) about the heading, or about the page outside any heading, including those about a block in it, each by its first line with its file beside it, marked personal or outdated when it is. Each item opens the link, the include, or the memo; an include opens in the editor group beside the page's, with the focus left in the view, and This page stays on the page. Unsaved edits count.
 
 @available: next
@@ -113,29 +113,45 @@ About's other rows say whether the page is published, listed, due, and finished.
 
 A fragment has no builds, listing, or size of its own: it's published only where it's included.
 
-- **Pages** has **New Page** in its title bar ([Start a page](actions.md#start-a-page)), and shows the project's [navigation](../navigation/index.md): **Start**, the content root's section, with the home page first, then each section in order, each by its label with its pages by theirs, a page's [`nav-label`](../navigation/index.md#a-page-s-label) or else its title, and their paths beside them, then the project's fragments by folder, each with the files that include it. A page's tooltip counts the links and includes that reach it. Its sections start closed, and opening a page selects it in Pages, opening the sections above it, so the open page's path is what you see. It's the easy way to change the order, which it writes to `ascribe.nav` as typing does: the file opens with the change unsaved, and **Undo** takes it back, the file too when the drag made it.
-  - **Drag a section** onto another beside it, and it's put before it when you drag it up and after it when you drag it down. The sections beside it are listed in the file in the order they had, so nothing else moves.
-  - A section whose own page sits beside its folder, such as `checks/diagnostics/` with `checks/diagnostics.md`, is drawn where that page sits among its parent's pages, and dragging it moves that page in the parent's `pages`. At the top level there's no such placing: `guides/` with `guides.md` is drawn after Start, with the page first in it, and is dragged among the top sections like any other.
-  - **Drag a page** onto another of its section the same way, or onto its section to put it first. The section's `pages` lists its pages as they stood, with the one you moved where you put it.
-  - **Drag a page onto another section**, or a page of one, and it asks first, since the page's address changes. On **Move**, its file moves to that section's folder, and the links to it and `ascribe.nav` follow, as they do when you move a file in the Explorer.
-  - A page `ascribe.nav` leaves out of a section that lists its pages is at the end of its section, marked **not placed**; **Place Here** in its menu adds it to the end of the section's `pages`. A page that's `unlisted` is in no sidebar, so it's marked **unlisted** instead, and needs no place.
-  - **Rename Label…** in a section's menu sets its `label` in `ascribe.nav`, and in a page's menu its `nav-label`, in its frontmatter, unsaved as a drag's change is. It offers the label as it's written; leave it empty for the default, which for a page is its title.
-  - A page or fragment with a problem is colored as it is in the Explorer: red for an error, yellow for a warning.
-  - A page the build the status bar shows leaves out is dimmed, and says "Not in cloud" for the build `cloud`, as the [build lens](preview.md#the-build-lens) dims text. It follows the build as you switch.
-  - A page's menu has **Open Preview to the Side**, also its button; **Copy Link**, which copies its path from the content root, such as `/guides/install.md`, the link a page writes to it (its published address is This page's **Address** row); **Rename or Move…**, which asks for its new path and moves it as the Explorer does, the links to it following; **Find All References**, the links and includes that reach it, in a peek at its start; and **Reveal in Explorer**. A fragment's menu has the last three.
-  - **New Page Here**, in a section's menu, starts a page in its folder ([Start a page](actions.md#start-a-page)).
-  - **Orphans Only**, the filter button in the title bar, lists only the pages nothing links to or includes, apart from index pages, and the fragments nothing includes, each in its section or folder. Choose it again to list everything.
-- **Content model** lists the project's page types, phrases, features, glossary terms, dimensions, note types, widgets, and builds, each with how many places use it, apart from builds, which pages don't name; a page type, with how many pages have it. An entry nothing uses is marked **unused**, a candidate to remove. Each dimension lists its values. Clicking an entry or a value opens its declaration in `ascribe.toml`, or a glossary term's heading on its page. The counts are what **Find All References** lists for the same entry.
-  - **Find All References**, in the menu of an entry pages use, lists those uses in a peek at its declaration. On a page type, it lists the pages whose `type` names it, at that value.
-  - **Rename…**, on a phrase or a dimension's value, asks for the new name and makes the edits `F2` on it in a page makes, shown in the refactor preview first.
-  - **Insert at the Cursor**, on a phrase or a widget, runs **Insert a phrase** or **Insert a widget** with it chosen, at the cursor of the project's last Markdown editor, which comes to the front. Where the cursor is somewhere the action doesn't apply, it says where to put it and changes nothing.
-  - **Unused Only**, the filter button in the title bar, lists only the entries nothing uses.
+This page updates as you move between pages and headings, while it's open.
 
-Pages and Content model update when you save a file of the project, when a page is added or deleted, Pages as you edit `ascribe.nav` too, and when you switch to another project's file; This page updates as you move between pages and headings, while it's open.
+## Pages
+
+**Pages** has **New Page** in its title bar ([Start a page](actions.md#start-a-page)), and shows the project's [navigation](../navigation/index.md): **Start**, the content root's section, with the home page first, then each section in order, each by its label with its pages by theirs, a page's [`nav-label`](../navigation/index.md#a-page-s-label) or else its title, and their paths beside them, then the project's fragments by folder, each with the files that include it. A page's tooltip counts the links and includes that reach it. Its sections start closed, and opening a page selects it in Pages, opening the sections above it, so the open page's path is what you see. It's the easy way to change the order: drag a section or a page where you want it, and it writes `ascribe.nav`, unsaved. [Or drag them in the editor](../navigation/order.md#or-drag-them-in-the-editor) has how each drag is placed, **Place Here** for a page the file leaves out, and **Rename Label…**.
+
+- A page or fragment with a problem is colored as it is in the Explorer: red for an error, yellow for a warning.
+- A page the build the status bar shows leaves out is dimmed, and says "Not in cloud" for the build `cloud`, as the [build lens](preview.md#the-build-lens) dims text. It follows the build as you switch.
+- A page's menu has **Open Preview to the Side**, also its button; **Copy Link**, which copies its path from the content root, such as `/guides/install.md`, the link a page writes to it (its published address is This page's **Address** row); **Rename or Move…**, which asks for its new path and moves it as the Explorer does, the links to it following; **Find All References**, the links and includes that reach it, in a peek at its start; and **Reveal in Explorer**. A fragment's menu has the last three.
+- **New Page Here**, in a section's menu, starts a page in its folder ([Start a page](actions.md#start-a-page)).
+- **Orphans Only**, the filter button in the title bar, lists only the pages nothing links to or includes, apart from index pages, and the fragments nothing includes, each in its section or folder. Choose it again to list everything.
+
+Pages updates when you save a file of the project, when a page is added or deleted, as you edit `ascribe.nav`, and when you switch to another project's file.
+
+## Content model
+
+**Content model** lists the project's page types, phrases, features, glossary terms, dimensions, note types, widgets, and builds, each with how many places use it, apart from builds, which pages don't name; a page type, with how many pages have it. An entry nothing uses is marked **unused**, a candidate to remove. Each dimension lists its values. Clicking an entry or a value opens its declaration in `ascribe.toml`, or a glossary term's heading on its page. The counts are what **Find All References** lists for the same entry.
+
+- **Find All References**, in the menu of an entry pages use, lists those uses in a peek at its declaration. On a page type, it lists the pages whose `type` names it, at that value.
+- **Rename…**, on a phrase or a dimension's value, asks for the new name and makes the edits `F2` on it in a page makes, shown in the refactor preview first.
+- **Insert at the Cursor**, on a phrase or a widget, runs **Insert a phrase** or **Insert a widget** with it chosen, at the cursor of the project's last Markdown editor, which comes to the front. Where the cursor is somewhere the action doesn't apply, it says where to put it and changes nothing.
+- **Unused Only**, the filter button in the title bar, lists only the entries nothing uses.
+
+Content model updates when you save a file of the project, when a page is added or deleted, and when you switch to another project's file.
+
+## The status bar
+
+While a page or an `ascribe.toml` is the active editor, the status bar names its project and the [build you're looking at](preview.md#the-build-youre-looking-at), with an icon for its language server's state. Its tooltip gives the project's folder, its `ascribe.toml`, the `ascribe` binary in use, and the server's state. While the project has several builds and the Problems panel holds the problems of the editor build alone, it says what the panel covers; once you [check every build](problems.md#the-problems-panel), and until something changes, it doesn't. A project's language server starts when one of its pages opens, so until then nothing has checked it: while no page of a project is active, the status bar says so, counting the projects when there are several, and its tooltip names them. Otherwise a file that isn't in a project shows nothing.
+
+![The status bar item in five states, one above another: "docs: not checked yet" with a slashed circle, before a page of the project has opened; "docs" with a spinning arrow, while its language server starts; "docs · site · problems: this build only" with a book, while it runs and the Problems panel covers the editor build alone; "docs · windows · problems: site only" with an eye, while the build lens dims by the windows build; and "docs" with a warning, when the server failed.](../images/status-bar-light.png){scheme=light}
+![The status bar item in five states, one above another: "docs: not checked yet" with a slashed circle, before a page of the project has opened; "docs" with a spinning arrow, while its language server starts; "docs · site · problems: this build only" with a book, while it runs and the Problems panel covers the editor build alone; "docs · windows · problems: site only" with an eye, while the build lens dims by the windows build; and "docs" with a warning, when the server failed.](../images/status-bar-dark.png){scheme=dark}
+
+In Restricted Mode, Ascribe runs nothing, since it would run the project's own `ascribe` binary. The status bar shows **Ascribe: not checking**, and the Problems panel's "No problems" doesn't mean the project is clean. Click it to manage the folder's trust; once you trust it, Ascribe starts.
+
+Click it, or run **Ascribe: Project Menu**, for a menu of the project: **Switch build**, **Check every build**, **Show output**, **Switch project** in a workspace with several projects, **Restart server**, and, for a page, **Dim what the build leaves out** and **Open preview**. The [Project view](#the-project-view) has the same jobs for the project it shows, and each does the same there as here.
 
 ## Switch Project
 @available: ascribe 0.4.0
 
-In a workspace with several projects, **Ascribe: Switch Project** chooses the project the sidebar shows. It's in the Command Palette, in the [Project view](#the-project-view)'s title bar, and in the [status bar](preview.md#the-status-bar) item's menu; with one project, it's in none of them. It lists every project, the sidebar's first and marked, each with its folder, its server's state, such as "running, site build", "not checked yet", or "failed", and the `ascribe` binary in use. Each has buttons to show its server's output, and to restart its server when it's running or failed, and **Refresh** in its title asks the running servers for their builds again. Listing them starts no server.
+In a workspace with several projects, **Ascribe: Switch Project** chooses the project the sidebar shows. It's in the Command Palette, in the [Project view](#the-project-view)'s title bar, and in the [status bar](#the-status-bar) item's menu; with one project, it's in none of them. It lists every project, the sidebar's first and marked, each with its folder, its server's state, such as "running, site build", "not checked yet", or "failed", and the `ascribe` binary in use. Each has buttons to show its server's output, and to restart its server when it's running or failed, and **Refresh** in its title asks the running servers for their builds again. Listing them starts no server.
 
 Choosing a project shows it in the sidebar and starts its server if it hasn't started. It's a jump, not a pin: the sidebar stays on it until a file of another project becomes active, and then follows that file as before.

@@ -19,6 +19,9 @@ What the editor does as you write a page: what it completes, what it shows on ho
 @available: ascribe 0.4.0
 - `@term` only at the top of a section on a glossary page, or in a fragment one includes, under the heading and the directives that bind it, and not on a heading that's a term already. Inside its braces, `aliases`, `match`, and `case-sensitive`, and `match`'s values `first`, `every`, and `marked`.
 
+@available: ascribe 0.4.0
+- In a [memo file](actions.md#memo-files), after `about:`: the project's pages, their headings with ids as `page.md#id`, and its phrases, features, glossary terms, and the rest by `prefix:name`, as [`ascribe refs`](../command/questions.md#cli-refs) takes them. `about` is a link to what it names, and the file shows the problems `ascribe check` would report in it as you type, a personal memo's too.
+
 - In a source's [`ascribe.examples.toml`](../examples/tested.md): its keys, and an environment entry's `label` and `command`. The file's problems appear as you type, where each is. A config no source in `ascribe.toml` names is just a TOML file.
 
 @available: ascribe 0.4.0
@@ -80,7 +83,11 @@ The lens is placed from the saved file, as a build reads it: the editor doesn't 
 
 **Format Document** rewrites Ascribe constructs into canonical form, as `ascribe fmt` does. Turn on `ascribe.formatOnSave` to do it on every save. It changes only Ascribe constructs, never how a page renders. [Format Every Page](sidebar.md#edits-to-the-whole-project) formats every page of the project in one edit, left unsaved.
 
-When another extension is VS Code's formatter for Markdown, such as Prettier through `editor.defaultFormatter`, it formats your pages too, and can change what they build to: `version: {version}` becomes `version: { version }`. When you open a page and another formatter is set, the extension offers to be the Markdown formatter for that workspace folder. **Use Ascribe** writes `editor.defaultFormatter` under `[markdown]` in the folder's `.vscode/settings.json`, so **Format Document** and `editor.formatOnSave` run Ascribe on your pages. Ascribe formats only its projects' pages, so other Markdown files in the folder are no longer formatted. **Keep** leaves the setting as it is and doesn't ask again for that folder.
+### Other formatters
+
+A Markdown formatter doesn't know Ascribe, and can change what a page builds to: Prettier writes `version: {version}` as `version: { version }`, and with `proseWrap: always` it joins a title or a directive line with the text below, since it doesn't know they start new blocks. Exclude Ascribe sources from it, for example with `**/*.md` in `.prettierignore`, and use `ascribe fmt`.
+
+In VS Code, when another extension is the formatter for Markdown, such as Prettier through `editor.defaultFormatter`, it formats your pages too. When you open a page and another formatter is set, the extension offers to be the Markdown formatter for that workspace folder. **Use Ascribe** writes `editor.defaultFormatter` under `[markdown]` in the folder's `.vscode/settings.json`, so **Format Document** and `editor.formatOnSave` run Ascribe on your pages. Ascribe formats only its projects' pages, so other Markdown files in the folder are no longer formatted. **Keep** leaves the setting as it is and doesn't ask again for that folder.
 
 ## Highlighting
 

@@ -6,7 +6,7 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/index.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
@@ -876,11 +876,12 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `editor/actions.md` | Actions, new pages, and memos | reference |
 | `editor/agents.md` | Agents in the editor | reference |
 | `editor/index.md` | Editing | reference |
+| `editor/language-server.md` | The language server | reference |
 | `editor/preview.md` | The preview and builds | reference |
 | `editor/problems.md` | Problems and fixes | reference |
 | `editor/review.md` | Review in the preview | reference |
-| `editor/settings.md` | Editor workspaces, settings, and commands | reference |
-| `editor/sidebar.md` | The Ascribe sidebar | reference |
+| `editor/settings.md` | Editor workspaces, settings, tasks, and commands | reference |
+| `editor/sidebar.md` | The sidebar and the status bar | reference |
 | `editor/writing.md` | Writing in the editor | reference |
 | `examples/docs-repository.md` | Keep the docs in another repository | how-to |
 | `examples/drift.md` | Report the pages whose examples changed | how-to |

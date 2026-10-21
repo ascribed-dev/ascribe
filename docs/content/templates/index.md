@@ -97,7 +97,7 @@ ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 
 ## What's left to fill in
 
-`ascribe check` compares a page with its type's template and reports, as advice, what it still has of it: a placeholder or a frontmatter field the page has word for word ([`template-placeholder-left`](../checks/diagnostics/content-checks.md#ASC195)), and a section the template gives only memos that the page leaves empty ([`template-section-empty`](../checks/diagnostics/content-checks.md#ASC229)). A memo the page keeps isn't reported. In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page-pages-and-content-model) says how many are left, and **Go to Next Placeholder** goes to the next one.
+`ascribe check` compares a page with its type's template and reports, as advice, what it still has of it: a placeholder or a frontmatter field the page has word for word ([`template-placeholder-left`](../checks/diagnostics/content-checks.md#ASC195)), and a section the template gives only memos that the page leaves empty ([`template-section-empty`](../checks/diagnostics/content-checks.md#ASC229)). A memo the page keeps isn't reported. In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) says how many are left, and **Go to Next Placeholder** goes to the next one.
 
 The check finds only what was never touched, so read a page through before publishing it. To turn either check off, or make it a warning, set its level in [`[checks]`](../content-model/checks.md#19-checks).
 
