@@ -52,6 +52,25 @@ async function running(api: AscribeApi, folder: string): Promise<void> {
   await api.whenSettled();
 }
 
+/**
+ * Sets the extension host's clock to `at`, from where it goes on as before, so
+ * a time the extension shows is the same on every run.
+ */
+function stopClock(at: Date): void {
+  const Real = Date;
+  const offset = at.getTime() - Real.now();
+  const now = () => Real.now() + offset;
+  globalThis.Date = class extends Real {
+    constructor(...args: unknown[]) {
+      if (args.length === 0) super(now());
+      else super(...(args as [string]));
+    }
+    static override now(): number {
+      return now();
+    }
+  } as DateConstructor;
+}
+
 /** The status bar item's text once it satisfies `check`. */
 const status = (api: AscribeApi, what: string, check: (text: string) => boolean) =>
   waitFor(what, () => {
@@ -158,6 +177,76 @@ export const SCENES: Record<string, Step[]> = {
       });
       const command = lens.command as vscode.Command;
       await vscode.commands.executeCommand(command.command, ...(command.arguments ?? []));
+    },
+  ],
+
+  // examples/quill's install page with the cursor under the heading a memo is
+  // about, and every section of This page open.
+  "this-page": [
+    async (api, folder) => {
+      await running(api, folder);
+      const editor = await open(folder, "docs/install-agent.md");
+      cursorAt(editor, "Install the agent package");
+      await vscode.commands.executeCommand("ascribe.thisPage.focus");
+      await api.ui.thisPage.whenDrawn(
+        "the page",
+        (d) => d.report.head[0] === "Install the Quill agent",
+      );
+      await api.ui.thisPage.probe({ open: true });
+      await api.ui.thisPage.whenDrawn(
+        "every section, filled",
+        (d) =>
+          d.report.sections.every((s) => s.open && s.items.length > 0) &&
+          d.report.sections.some(
+            (s) => s.key === "memos" && s.items.some((i) => i.includes("agent")),
+          ),
+      );
+      await vscode.commands.executeCommand("workbench.action.focusActiveEditorGroup");
+    },
+  ],
+
+  // A copy of examples/quill with a Reference section, an ascribe.nav that
+  // leaves a page out, a page with a broken link, and the cloud build chosen:
+  // Pages with both sections open.
+  pages: [
+    async (api, folder) => {
+      await running(api, folder);
+      await vscode.commands.executeCommand("ascribe.pages.focus");
+      await open(folder, "docs/reference/cli.md");
+      await open(folder, "docs/quickstart.md");
+      await waitFor("the broken link's error", () =>
+        vscode.languages
+          .getDiagnostics(vscode.Uri.file(path.join(folder, "docs", "reference", "cli.md")))
+          .some((d) => d.severity === vscode.DiagnosticSeverity.Error),
+      );
+      await vscode.commands.executeCommand("ascribe.project.focus");
+      await api.ui.project.whenDrawn("the builds", (d) => d.report.build !== null);
+      await api.ui.project.choose("chooseBuild/cloud");
+      await status(api, "the cloud build", (text) => text.includes(" · cloud"));
+      await vscode.commands.executeCommand("ascribe.pages.focus");
+      await api.ui.sidebar.whenSettled();
+      await vscode.commands.executeCommand("workbench.action.focusActiveEditorGroup");
+    },
+  ],
+
+  // examples/quill's keys page, and the Project view once every build is
+  // checked, its clock stopped at 14:02 on 21 October 2026.
+  project: [
+    async (api, folder) => {
+      stopClock(new Date(2026, 9, 21, 14, 2));
+      await running(api, folder);
+      await open(folder, "docs/keys.md");
+      await vscode.commands.executeCommand("ascribe.project.focus");
+      await api.ui.project.whenDrawn(
+        "About",
+        (d) =>
+          d.report.about.length > 0 && d.report.about.every((row) => !row.includes("Known once")),
+      );
+      await api.ui.project.choose("checkEveryBuild");
+      await api.ui.project.whenDrawn("every count", (d) =>
+        d.report.health.every((count) => count.state !== "running" && count.state !== "unknown"),
+      );
+      await vscode.commands.executeCommand("workbench.action.focusActiveEditorGroup");
     },
   ],
 
