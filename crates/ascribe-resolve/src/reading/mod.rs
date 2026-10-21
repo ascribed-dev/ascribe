@@ -16,9 +16,12 @@
 //! contents, the titles and text the plain output shows of notes, details,
 //! and arms, each table row, and each code block, wherever each is written:
 //! in the page, in a fragment an include brings in ([`Origin::Fragment`]), or
-//! in the code file a `@snippet` shows ([`Origin::Snippet`]). HTML blocks,
-//! and what the content model writes (labels, fallbacks, availability
-//! lines), aren't.
+//! in the code file a `@snippet` shows ([`Origin::Snippet`]). What the
+//! content model writes (labels, fallbacks, availability lines) isn't.
+//! HTML blocks, and the directive lines the plain output doesn't read as
+//! text, are read as written for `ascribe diff`, which takes each block's
+//! text from here ([`own_text`]); search never matches them
+//! ([`In::searched`]).
 //!
 //! The matching is in [`Query`], and [`find`] gathers the places a query
 //! matches across the readings of many pages and builds. When none does,
@@ -76,6 +79,13 @@ pub enum In {
     Code,
     /// A phrase's value, at its line in `ascribe.toml`.
     Phrase,
+    /// An HTML block, as written: read for `ascribe diff`, which compares
+    /// it, and never matched by search, which reads text, not markup.
+    Html,
+    /// A directive's title and primary that the plain output doesn't show
+    /// as text (a widget's title, `@available`'s spec, `@id`'s id): read
+    /// for `ascribe diff`, which compares them, and never matched by search.
+    Directive,
 }
 
 impl In {
@@ -89,7 +99,14 @@ impl In {
             In::Table => "table",
             In::Code => "code",
             In::Phrase => "phrase",
+            In::Html => "html",
+            In::Directive => "directive",
         }
+    }
+
+    /// Whether search matches it.
+    pub fn searched(self) -> bool {
+        !matches!(self, In::Html | In::Directive)
     }
 }
 
@@ -195,6 +212,27 @@ impl Reading {
             blocks: reader.blocks,
         }
     }
+}
+
+/// A resolved block's own text as a reader reads it, without the blocks
+/// inside it: what `ascribe diff` compares word by word. A table's rows, and
+/// a note's title and text, are joined by a space.
+pub fn own_text(project: &Project, page: &ResolvedPage, block: &ResolvedBlock) -> String {
+    let mut reader = Reader {
+        project,
+        page,
+        blocks: Vec::new(),
+        under: None,
+    };
+    match &block.kind {
+        ResolvedKind::Leaf(leaf) => {
+            reader.leaf(block, leaf);
+        }
+        ResolvedKind::Container { opener, .. } => reader.opener(block, opener),
+        _ => {}
+    }
+    let texts: Vec<&str> = reader.blocks.iter().map(|b| b.text.as_str()).collect();
+    texts.join(" ")
 }
 
 impl ReadBlock {
@@ -318,9 +356,7 @@ impl<'a> Reader<'a> {
                 ResolvedKind::Container {
                     opener, children, ..
                 } => {
-                    if matches!(opener.name.as_str(), "note" | "details") {
-                        self.title(block, opener);
-                    }
+                    self.opener(block, opener);
                     if !self.dropped_by_plain(&opener.name) {
                         self.blocks(children);
                     }
@@ -382,10 +418,15 @@ impl<'a> Reader<'a> {
                 Some(snippet) => self.snippet(block, c, snippet),
                 None => {
                     let mut w = self.writer(block);
-                    w.code(block.span, c);
+                    w.code(block.span, &c.literal);
                     self.push(block, In::Code, block.span, w);
                 }
             },
+            BlockKind::HtmlBlock(h) => {
+                let mut w = self.writer(block);
+                w.code(block.span, &h.literal);
+                self.push(block, In::Html, block.span, w);
+            }
             BlockKind::Directive(line) => match line.name.as_str() {
                 "note" => {
                     self.title(block, line);
@@ -397,6 +438,7 @@ impl<'a> Reader<'a> {
                 }
                 "details" => self.title(block, line),
                 name => {
+                    self.directive(block, line);
                     return line.binding == Some(Bound::FollowingBlock)
                         && self.dropped_by_plain(name);
                 }
@@ -413,6 +455,41 @@ impl<'a> Reader<'a> {
             w.inlines(&title.inlines);
             self.push(block, In::Text, title.span, w);
         }
+    }
+
+    /// A container's opening line: a note's or details' title as text, and
+    /// any other's title and primary as a directive's.
+    fn opener(&mut self, block: &ResolvedBlock, line: &DirectiveLine) {
+        if matches!(line.name.as_str(), "note" | "details") {
+            self.title(block, line);
+        } else {
+            self.directive(block, line);
+        }
+    }
+
+    /// The title and primary of a directive line the plain output doesn't
+    /// read, as one block search never matches.
+    fn directive(&mut self, block: &ResolvedBlock, line: &DirectiveLine) {
+        let mut w = self.writer(block);
+        if let Some(title) = &line.title {
+            w.inlines(&title.inlines);
+        }
+        match &line.primary {
+            Some(PrimaryValue::Text(text)) => {
+                w.made(" ", Span::new(text.span.start(), text.span.start()));
+                w.inlines(&text.inlines);
+            }
+            Some(PrimaryValue::Identifier(id)) => {
+                w.made(" ", Span::new(id.span.start(), id.span.start()));
+                w.text(id.span, &id.text);
+            }
+            Some(PrimaryValue::Line(l)) => {
+                w.made(" ", Span::new(l.span.start(), l.span.start()));
+                w.text(l.span, &l.text);
+            }
+            Some(PrimaryValue::Unexpected(_)) | None => {}
+        }
+        self.push(block, In::Directive, line.span, w);
     }
 
     /// Each row of a table, its cells' text joined by spaces.
@@ -722,9 +799,9 @@ impl<'a> Writer<'a> {
         self.subs = saved;
     }
 
-    /// A code block: each line of its code at its line in the source, the
-    /// lines joined by spaces.
-    fn code(&mut self, span: Span, code: &CodeBlock) {
+    /// A code block's code, or an HTML block's: each line at its line in
+    /// the source, the lines joined by spaces.
+    fn code(&mut self, span: Span, literal: &str) {
         let source = self.source.get(span.range()).unwrap_or_default();
         let mut lines: Vec<Span> = Vec::new();
         let mut at = span.start();
@@ -739,7 +816,7 @@ impl<'a> Writer<'a> {
             .map(str::trim_start)
             .is_some_and(|l| l.starts_with("```") || l.starts_with("~~~"));
         let lines = &lines[usize::from(first).min(lines.len())..];
-        let literal = code.literal.strip_suffix('\n').unwrap_or(&code.literal);
+        let literal = literal.strip_suffix('\n').unwrap_or(literal);
         if literal.is_empty() {
             return;
         }

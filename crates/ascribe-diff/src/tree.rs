@@ -3,7 +3,9 @@
 //!
 //! Positions (byte spans, lines) never reach a fingerprint, so a block that
 //! only moved down the file, or was rewrapped, fingerprints the same. Text is
-//! compared with its whitespace collapsed, as a reader sees it. What a
+//! a block's own text as a reader reads it, from
+//! [`ascribe_resolve::reading::own_text`], which `ascribe search` matches
+//! too, with its whitespace collapsed. What a
 //! reader sees besides the text is in the fingerprint too: a link's resolved
 //! URL, an availability badge's labels, a glossary link, an arm's label.
 
@@ -13,6 +15,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use ascribe_core::{FileId, LineIndex, RelPath, Span};
 use ascribe_emit::labels::{attribute_values, availability_display, dimensional_label};
 use ascribe_model::ContentModel;
+use ascribe_resolve::reading;
 use ascribe_resolve::{
     Availability, IncludeSite, LinkTarget, Project, RefKind, ResolvedBlock, ResolvedKind,
     ResolvedPage, Scope,
@@ -46,7 +49,8 @@ pub(crate) struct Node {
     pub kind: String,
     /// Its own content, without positions and without its children's.
     pub own: String,
-    /// Its own text as a reader reads it, whitespace collapsed.
+    /// Its own text as a reader reads it, whitespace collapsed: the
+    /// reading's.
     pub text: String,
     /// Whether its text is prose, which gets a word-level diff.
     pub prose: bool,
@@ -128,7 +132,7 @@ impl<'p> TreeBuilder<'p> {
     }
 
     pub fn page(&mut self, page: &ResolvedPage) -> PageTree {
-        let nodes = self.blocks(&page.blocks);
+        let nodes = self.blocks(page, &page.blocks);
         // YAML values don't implement `Hash`; their serialization is stable.
         // `title` and `available` are left out: they're compared as shown,
         // as the title and the availability.
@@ -174,7 +178,7 @@ impl<'p> TreeBuilder<'p> {
     /// as an element around the block after it (`@note`, `@steps`,
     /// `@details`, a widget) is one node holding that block, anchored from
     /// the directive through the block, as the element is.
-    fn blocks(&mut self, blocks: &[ResolvedBlock]) -> Vec<Node> {
+    fn blocks(&mut self, page: &ResolvedPage, blocks: &[ResolvedBlock]) -> Vec<Node> {
         let mut out = Vec::new();
         let mut pending: Vec<&ResolvedBlock> = Vec::new();
         for block in blocks {
@@ -182,9 +186,9 @@ impl<'p> TreeBuilder<'p> {
                 pending.push(block);
                 continue;
             }
-            let mut nodes = vec![self.block(block)];
+            let mut nodes = vec![self.block(page, block)];
             while let Some(directive) = pending.pop() {
-                let mut node = self.block(directive);
+                let mut node = self.block(page, directive);
                 if !self.wraps(directive) {
                     nodes.insert(0, node);
                     continue;
@@ -203,7 +207,7 @@ impl<'p> TreeBuilder<'p> {
             out.extend(nodes);
         }
         // Directives with no block after them (an error the checks report).
-        out.extend(pending.into_iter().map(|d| self.block(d)));
+        out.extend(pending.into_iter().map(|d| self.block(page, d)));
         out
     }
 
@@ -218,7 +222,7 @@ impl<'p> TreeBuilder<'p> {
     // Longer than the lint allows from before it was on. Split it only while
     // changing it for another reason.
     #[allow(clippy::too_many_lines)]
-    fn block(&mut self, block: &ResolvedBlock) -> Node {
+    fn block(&mut self, page: &ResolvedPage, block: &ResolvedBlock) -> Node {
         let anchor = self.anchor(block.file, block.span, &block.via);
         let mut files = self.files_of(block.file, &block.via);
         for link in &block.links {
@@ -244,7 +248,7 @@ impl<'p> TreeBuilder<'p> {
         let mut uses_model =
             !block.substitutions.is_empty() || !block.glossary.is_empty() || snippet_phrases;
         let mut own = String::new();
-        let mut text = String::new();
+        let text = reading::own_text(self.project, page, block);
         let mut prose = false;
         let mut children = Vec::new();
         let kind;
@@ -257,25 +261,21 @@ impl<'p> TreeBuilder<'p> {
                         own.push_str(&format!("#{}", ids.page_id));
                     }
                     self.inlines(block, &h.inlines, &mut own);
-                    text = plain(&h.inlines);
                     prose = true;
                 }
                 BlockKind::Paragraph(p) => {
                     kind = "paragraph".into();
                     own.push_str(&kind);
                     self.inlines(block, &p.inlines, &mut own);
-                    text = plain(&p.inlines);
                     prose = true;
                 }
                 BlockKind::CodeBlock(c) => {
                     kind = "code".into();
                     own.push_str(&format!("code\u{1}{}\u{1}{}", c.info, lf(&c.literal)));
-                    text = collapse(&c.literal);
                 }
                 BlockKind::HtmlBlock(h) => {
                     kind = "html".into();
                     own.push_str(&format!("html\u{1}{}", lf(h.literal.trim_end())));
-                    text = collapse(&h.literal);
                 }
                 BlockKind::ThematicBreak => {
                     kind = "break".into();
@@ -292,7 +292,6 @@ impl<'p> TreeBuilder<'p> {
                             Alignment::Right => 'r',
                         });
                     }
-                    let mut cells = Vec::new();
                     for row in &t.rows {
                         own.push_str(if row.header { "\u{1}H" } else { "\u{1}R" });
                         if let Some(r) = block.rows.iter().find(|r| r.span == row.span) {
@@ -305,16 +304,13 @@ impl<'p> TreeBuilder<'p> {
                         for cell in &row.cells {
                             own.push('\u{2}');
                             self.inlines(block, &cell.inlines, &mut own);
-                            cells.push(plain(&cell.inlines));
                         }
                     }
-                    text = collapse(&cells.join(" "));
                 }
                 BlockKind::Directive(line) => {
                     kind = format!("directive:{}", line.name);
                     own.push_str(&kind);
                     self.directive_head(block, line, &mut own);
-                    text = directive_text(line);
                     prose = !text.is_empty();
                     if let Some(annotation) = &block.annotation {
                         own.push_str(&format!("\u{1}@{}", annotation.text));
@@ -338,7 +334,7 @@ impl<'p> TreeBuilder<'p> {
             ResolvedKind::BlockQuote { children: blocks } => {
                 kind = "quote".into();
                 own.push_str(&kind);
-                children = self.blocks(blocks);
+                children = self.blocks(page, blocks);
             }
             ResolvedKind::List {
                 ordered,
@@ -351,7 +347,7 @@ impl<'p> TreeBuilder<'p> {
                 children = items
                     .iter()
                     .map(|item| {
-                        let blocks = self.blocks(&item.children);
+                        let blocks = self.blocks(page, &item.children);
                         self.wrapper(block, item.span, "item".into(), String::new(), blocks)
                     })
                     .collect();
@@ -364,12 +360,7 @@ impl<'p> TreeBuilder<'p> {
                 kind = format!("container:{}", opener.name);
                 own.push_str(&kind);
                 self.directive_head(block, opener, &mut own);
-                text = opener
-                    .title
-                    .as_ref()
-                    .map(|t| plain(&t.inlines))
-                    .unwrap_or_default();
-                children = self.blocks(blocks);
+                children = self.blocks(page, blocks);
             }
             ResolvedKind::Group { name, arms, .. } => {
                 kind = format!("group:{name}");
@@ -383,7 +374,7 @@ impl<'p> TreeBuilder<'p> {
                         if let Some(label) = dimensional_label(self.model, &arm.opener) {
                             head.push_str(&format!("\u{1}{label}"));
                         }
-                        let blocks = self.blocks(&arm.children);
+                        let blocks = self.blocks(page, &arm.children);
                         self.wrapper(block, arm.span, "arm".into(), head, blocks)
                     })
                     .collect();
@@ -627,25 +618,9 @@ fn fingerprint(own: &str, children: &[Node]) -> u64 {
     hasher.finish()
 }
 
-/// The text of a directive line as a reader reads it: its title and its
-/// primary.
-fn directive_text(line: &DirectiveLine) -> String {
-    let mut parts = Vec::new();
-    if let Some(title) = &line.title {
-        parts.push(plain(&title.inlines));
-    }
-    match &line.primary {
-        Some(PrimaryValue::Text(t)) => parts.push(plain(&t.inlines)),
-        Some(PrimaryValue::Identifier(i)) => parts.push(i.text.clone()),
-        Some(PrimaryValue::Line(l)) => parts.push(l.text.clone()),
-        Some(PrimaryValue::Unexpected(_)) | None => {}
-    }
-    collapse(&parts.join(" "))
-}
-
-/// Inline content as plain text, whitespace collapsed: what the word-level
-/// diff's ranges count in.
-pub(crate) fn plain(list: &[Inline]) -> String {
+/// Inline content as plain text, whitespace collapsed: an image's alt text
+/// in its fingerprint.
+fn plain(list: &[Inline]) -> String {
     fn push(list: &[Inline], out: &mut String) {
         for node in list {
             match &node.kind {

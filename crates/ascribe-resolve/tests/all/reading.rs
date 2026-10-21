@@ -210,6 +210,29 @@ fn a_block_reads_without_markup_with_phrases_and_spaces_collapsed() {
 }
 
 #[test]
+fn html_blocks_and_directive_lines_are_read_and_never_searched() {
+    let project = project(&[(
+        "index.md",
+        "---\ntitle: T\n---\n\n<div class=\"quill\">\n  Quill   here\n</div>\n\n@id: quill\n## Quill setup\n",
+    )]);
+    let r = reading(&project, "index.md", "site");
+    let texts: Vec<(In, &str)> = r.blocks.iter().map(|b| (b.kind, b.text.as_str())).collect();
+    assert_eq!(
+        texts,
+        [
+            (In::Title, "T"),
+            (In::Html, "<div class=\"quill\"> Quill here </div>"),
+            (In::Directive, "quill"),
+            (In::Heading, "Quill setup"),
+        ]
+    );
+    every_character_has_a_place(&project, &r);
+    let found = search(&project, "quill");
+    let kinds: Vec<In> = found.places.iter().map(|p| p.kind).collect();
+    assert_eq!(kinds, [In::Heading]);
+}
+
+#[test]
 fn a_link_with_no_text_reads_as_its_target_title() {
     let project = project(&[
         (
