@@ -354,7 +354,7 @@ describe("Search Pages as Readers See Them on examples/quill", () => {
       return items[0]?.place ? items : undefined;
     });
     assert.equal(found[0]?.label, "A zebrafinch sings.");
-    assert.match(found[0]?.description ?? "", /^keys\.md:\d+$/);
+    assert.equal(found[0]?.description, "keys.md:30 · Sign webhook events");
     await vscode.commands.executeCommand("workbench.action.files.revert");
     await waitFor(
       "the words gone again",
