@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "page": "keys.md",
+  "build": "cloud",
+  "not_published": null,
+  "route": "/keys/",
+  "text": "# API keys\n\n## Create a key\n\nSign in to Quill Cloud and open **Settings → Keys**.\n\n## Rotate keys\n\nGenerate a new key, put it in `quill.yaml`, and restart the agent. To install the agent first, see [Install the agent](https://docs.quill.dev/install-agent/#install-agent).\n"
+}

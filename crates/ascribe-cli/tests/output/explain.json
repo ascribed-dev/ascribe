@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "code": "ASC036",
+  "slug": "link-target-missing",
+  "severity": "error",
+  "next": "choose",
+  "level": "file",
+  "message": "`{path}` doesn't exist",
+  "variants": [
+    {
+      "name": "case",
+      "message": "`{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
+    },
+    {
+      "name": "outside",
+      "message": "`{path}` is outside the project, so it can't be copied into the output"
+    }
+  ],
+  "fix": "Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.",
+  "docs": "https://ascribed-dev.com/go/ASC036/",
+  "example": {
+    "wrong": "---\ntitle: Install Quill\n---\n\nTo get a key, see [API keys](api-key.md).\n",
+    "right": "---\ntitle: Install Quill\n---\n\nTo get a key, see [API keys](keys.md).\n",
+    "model": null,
+    "files": [
+      {
+        "path": "keys.md",
+        "text": "---\ntitle: API keys\n---\n\nCreate a key in **Settings**.\n"
+      }
+    ]
+  }
+}

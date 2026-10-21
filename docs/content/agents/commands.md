@@ -15,40 +15,25 @@ Writes the files AI coding agents read on their own: your project's rules, from 
 ### `ascribe agents sync`
 @id {permalink=true}: cli-agents-sync
 
-Writes `AGENTS.md` beside `ascribe.toml`, a short block in the repository root's `AGENTS.md` when the project is in a subfolder, and the skill in the root's `.agents/skills/ascribe/`. It also keeps up to date each other target whose files exist already, and writes those `--target` names. It finds the repository's root as `ascribe diff` does, with `git`; outside a repository, the project's folder is the root, and it says so.
+Writes the files each target below names. It finds the repository's root as `ascribe diff` does, with `git`; outside a repository, the project's folder is the root, and it says so.
 
 Run where there's no `ascribe.toml` at or above, such as at the root of a repository with several projects, it syncs each project in the folders below, in path order, and says which. Each writes its own block in the root's `AGENTS.md`, and the list names each file once.
 
-With `--with-hook`, it also writes the [hooks](hooks.md) for `claude`, `codex`, and `copilot`, and for `claude` the MCP server, merging them into the agents' settings files at the root. Hooks it wrote before are kept up to date without it.
-
-With `--cloud`, it also writes what [Copilot's cloud agent](copilot.md) needs: steps that install Ascribe in `.github/workflows/copilot-setup-steps.yml`, creating the workflow or adding them between markers to its `copilot-setup-steps` job. It then prints the MCP server's JSON for the repository's settings, after the list of files; with `--agent`, it writes the custom agent `.github/agents/ascribe-docs.md`, which carries the server, instead. When the repository's projects install Ascribe in different ways, the JSON is still one document, and it and the custom agent carry a server for each way, named as [the guide](copilot.md) says. `--cloud` implies `--target copilot`. The steps and the custom agent are kept up to date without it.
-
 @include: ../_generated/cli-agents-sync-options.md
 
-Each target writes its own files, beside `AGENTS.md` and the skill:
+`--cloud` creates the setup steps workflow, or adds its steps between markers to the workflow's `copilot-setup-steps` job, and prints the MCP server's JSON after the list of files. When the repository's projects install Ascribe in different ways, the JSON is still one document, and it and the custom agent `--agent` writes carry a server for each way, named as [Copilot's cloud agent](copilot.md) says. The custom agent is kept up to date without `--agent`.
 
-| Target | What it writes |
-|---|---|
-| `claude` | An import of `AGENTS.md` (`@AGENTS.md`) in `CLAUDE.md`, and the skill in `.claude/skills/ascribe/`, loaded for your pages |
-| `claude-rules` | The rules in `.claude/rules/ascribe.md`, loaded only when Claude Code works on your pages |
-| `copilot` | The rules in `.github/instructions/ascribe.instructions.md`, applied only to your pages; with `--cloud`, what [Copilot's cloud agent](copilot.md) needs |
-| `codex` | Nothing of its own, since Codex reads `AGENTS.md` and the skill; it's there for [its hooks](hooks.md) |
-
-For a project in a subfolder, the rules files are named after its folder: `ascribe-docs.md` for a project in `docs/`. When one project is nested in another's content root, the outer project's rules say that the nested project's pages aren't theirs.
+The rules files are `.claude/rules/ascribe.md` and `.github/instructions/ascribe.instructions.md`, or, for a project in a subfolder, named after its folder: `ascribe-docs.md` for a project in `docs/`. When one project is nested in another's content root, the outer project's rules say that the nested project's pages aren't theirs.
 
 The rules in `.claude/rules/` and `.github/instructions/`, and the skill's folders, are wholly Ascribe's: `sync` rewrites them whole, and the rules files say so at the top.
 
-With `--with-hook`, each target's file gets these entries:
+With `--with-hook`, each target's file gets the edit hook and the stop hook, which run [`ascribe agents hook`](#cli-agents-hook); Claude Code's edit hook runs after `Write`, `Edit`, and `MultiEdit`, and Copilot's serve its CLI and its cloud agent alike. [Hooks](hooks.md) has the entries, and [The MCP server](mcp.md) the server's.
 
-| Target | File | Entries |
-|---|---|---|
-| `claude` | `.claude/settings.json` and `.mcp.json` | The edit hook (after `Write`, `Edit`, and `MultiEdit`), the stop hook, and [the MCP server](mcp.md) |
-| `codex` | `.codex/hooks.json` | The edit hook and the stop hook |
-| `copilot` | `.github/hooks/ascribe.json` | The edit hook and the stop hook, for Copilot's CLI and its cloud agent |
+It merges its entries into a file it shares: it updates the entries it wrote before in place, keeping what you set on them, such as a longer `timeout` or an `env` on the MCP server, and leaves every other entry and setting as it was. A file whose meaning wouldn't change is left alone, however it's formatted. `.github/hooks/ascribe.json` is wholly Ascribe's. `--check` covers them. `sync` adds the MCP server back to `.mcp.json` only with `--with-hook`, so one you removed stays removed.
 
-It merges its entries into a file it shares: it updates the entries it wrote before in place, keeping what you set on them, such as a longer `timeout` or an `env` on the MCP server, and leaves every other entry and setting as it was. A file whose meaning wouldn't change is left alone, however it's formatted. `.github/hooks/ascribe.json` is wholly Ascribe's. `--check` covers them, and once a file has Ascribe's hooks, `sync` keeps them up to date without `--with-hook`; it adds the MCP server back to `.mcp.json` only with `--with-hook`, so one you removed stays removed.
+`sync` writes only between its markers in a file it shares with your team, and whole files where the file is its own. It lists each file, `wrote` or `unchanged` (with `--check`, `stale` or `up to date`), with the agents that read it:
 
-`sync` writes only between its markers in a file it shares with your team, and whole files where the file is its own; it lists each file, `wrote` or `unchanged`, with the agents that read it, and when Claude Code reads none of the skill it wrote, says that `--target claude` writes the copy it does. With `--check`, it lists each file as `stale` or `up to date`, and writes nothing.
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/agents-sync.txt
 
 | Code | Meaning |
 |---|---|
@@ -78,7 +63,7 @@ It lists the pages the build offers, the ones in `llms.txt`: a page that's `unli
 @available: ascribe 0.3.2
 Of a [versioned build](../versions/lines.md#for-agents), `--build site@3.4` names an older line, and without `--build` it's the current line's. When the build has more than one live line, the index's heading names the line, as that line's `llms.txt` does: `## Loom (Self-managed 3.4)`.
 
-It prints the index. With `--into`, it writes it between markers in that file instead, as `sync` writes its block, leaving the rest of the file as it is, so a second run replaces the first; it says whether the file changed. With `--pages`, it also writes each offered page's Markdown version, as the build's `plain` output writes it, into that folder, and the index's addresses are paths into it, from the folder of the `--into` file: the folder a package ships beside its `AGENTS.md`. A file in the folder that isn't one of the index's pages, such as a page from an earlier run that the build no longer offers, is named, and left there.
+`--into` writes between markers as `sync` writes its block, so a second run replaces the first, and says whether the file changed. `--pages` writes each page's Markdown version as the build's `plain` output writes it. A file in the `--pages` folder that isn't one of the index's pages, such as a page from an earlier run that the build no longer offers, is named, and left there.
 
 @include: ../_generated/cli-agents-index-options.md
 
@@ -91,7 +76,9 @@ ascribe agents index --build site --into packages/sdk/AGENTS.md --pages packages
 | `0` | It printed the index, or wrote it |
 | `2` | It couldn't run: no `ascribe.toml`, one with errors, more than one build and no `--build`, an unknown build, a file whose markers are damaged, a file or folder under the content root (so one of the project's pages), or a file it can't read or write. Nothing is written. |
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `build`, `limit` and `bytes` (the index's size, in bytes, and the most it holds), `offered` (how many pages the build offers), `listed`, `left_out`, and `without_description` (pages, as paths from the content root), `file` and `changed` (the `--into` file, and whether it changed), `folder` and `pages` (the `--pages` folder, and each page copied into it, with its `source` and its `path` in the folder), and `text`, the index. Its schema is in the [JSON report contract](../contracts/json-reports/questions.md#ascribe-agents-index).
+With `--format json`, the document is as follows, and its [schema](../contracts/json-reports/questions.md#ascribe-agents-index) has every field:
+
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/agents-index.json
 
 ### `ascribe agents skill`
 @id {permalink=true}: cli-agents-skill
@@ -118,7 +105,7 @@ Prints a named prompt for an agent, in the same form as [Prompt agent](commands.
 | `fix` | `path` | Fix what `ascribe check` reports: the prompt `ascribe check --format prompt` writes when there are problems, else the loop of checking and fixing |
 | `review` | `path` and `base` | Review what the branch does to its pages, as readers see them: the prompt [`ascribe diff --format prompt`](../review/diff.md#cli-diff) writes, or a line saying no page changed |
 
-`path` is a file or folder in the project, by default the current directory; `fix` reports on it. For `new-page`, a `path` in the content root, from the current directory or from the content root, is where the page goes: its file, or a folder for it. `--list` lists the prompts and their arguments.
+`path` is a file or folder in the project, by default the current directory; `fix` reports on it. For `new-page`, a `path` in the content root, from the current directory or from the content root, is where the page goes: its file, or a folder for it.
 
 Without a `path` in the content root, `new-page` says the page goes where the request says, anywhere in the content root, and otherwise in the content root, named for the title slugged as a page's address is, `rotate-keys.md` for "Rotate keys"; when a file is there, it asks for another path. A page names its type in its frontmatter, so it can go in any folder of pages; a fragment's path is refused.
 
@@ -150,7 +137,9 @@ Checks an agent's work as its hook runs it: after the agent writes a file, or be
 
 @include: ../_generated/cli-agents-hook-options.md
 
-With `--event edit`, it checks the Markdown files the tool wrote that are pages or fragments of a project, as `ascribe check <file> --editor-build` does, and tells the agent their errors, at most 10 lines in the concise form, then the advice in them that has a safe fix, at most 10, each line followed by its fix's title, which says what to change and where, then the build it checked. It reports the advice the editor shows in the files, so a page's `nav-page-unplaced` too, which `ascribe check <file> --editor-build` leaves to a full check. Warnings and the other advice aren't reported. With `--event stop`, it checks every build of each project whose pages or `ascribe.toml` the working tree changes, as `git status` lists them for the whole repository (outside a repository, the project at or above the folder the agent works in), and keeps the agent working while there are errors, with the counts, the first 10 errors, and the command to run, or while a project can't be checked at all, with what `ascribe check` would say. It says nothing when the agent is already continuing because of a stop hook, so it asks at most once for each stop.
+After an edit, it checks the Markdown files the tool wrote that are pages or fragments of a project, as `ascribe check <file> --editor-build` does, and tells the agent their errors, at most 10 lines in the concise form, then the advice in them that has a safe fix, at most 10, each line followed by its fix's title, which says what to change and where, then the build it checked. It reports the advice the editor shows in the files, so a page's `nav-page-unplaced` too, which `ascribe check <file> --editor-build` leaves to a full check. Warnings and the other advice aren't reported.
+
+Before the agent finishes, it checks every build of each project whose pages or `ascribe.toml` the working tree changes, as `git status` lists them for the whole repository (outside a repository, the project at or above the folder the agent works in), and keeps the agent working while there are errors, with the counts, the first 10 errors, and the command to run, or while a project can't be checked at all, with what `ascribe check` would say. It says nothing when the agent is already continuing because of a stop hook, so it asks at most once for each stop.
 
 | Harness | After an edit | Before the agent finishes |
 |---|---|---|
