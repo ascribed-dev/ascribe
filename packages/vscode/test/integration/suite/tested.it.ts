@@ -1,5 +1,5 @@
 import * as assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import type { AscribeApi } from "../../../src/extension.js";
@@ -158,8 +158,8 @@ describe("a code file a page shows", () => {
   });
 });
 
-// The `ascribe` tasks, on the same project: the workspace folder's own, so no
-// task names `--config`, and its `code` source has tested examples.
+// The `ascribe` tasks, on the same project: the workspace folder's own, so
+// neither names `--config`.
 describe("the project's tasks", () => {
   let api: AscribeApi;
 
@@ -175,40 +175,22 @@ describe("the project's tasks", () => {
 
   const fetched = () => vscode.tasks.fetchTasks({ type: "ascribe" });
 
-  /** Runs a task that runs a process, and resolves to its exit code. */
-  async function exitCodeOf(task: vscode.Task): Promise<number | undefined> {
-    const ended = new Promise<number | undefined>((resolve) => {
+  /** Resolves to the exit code of the next run of the task named `name` to end. */
+  function ended(name: string): Promise<number | undefined> {
+    return new Promise((resolve) => {
       const listener = vscode.tasks.onDidEndTaskProcess((event) => {
-        if (event.execution.task.name !== task.name) return;
+        if (event.execution.task.name !== name) return;
         listener.dispose();
         resolve(event.exitCode);
       });
     });
-    await vscode.tasks.executeTask(task);
-    return ended;
   }
 
-  /** Runs Observe Examples answering `run`, and what it asked and did. */
-  async function observe(run: boolean) {
-    const tasks = api.ui.tasks;
-    const [asked, observed] = [tasks.asked.length, tasks.observed.length];
-    const task = (await fetched()).find((each) => each.name === "Observe Examples");
-    assert.ok(task, "Observe Examples isn't offered");
-    tasks.answerNext(run);
-    await vscode.tasks.executeTask(task);
-    const done = await waitFor(
-      "Observe Examples to end",
-      () => tasks.observed.length > observed && tasks.observed[observed],
-      120_000,
-    );
-    return { asked: tasks.asked.slice(asked), done };
-  }
-
-  it("offers Build, Sync Agent Files, and Observe Examples, each running the server's binary in the project's folder", async () => {
+  it("offers Build and Sync Agent Files, each running the server's binary in the project's folder", async () => {
     const tasks = await fetched();
     assert.deepEqual(
       tasks.map((task) => task.name),
-      ["Build", "Sync Agent Files", "Observe Examples"],
+      ["Build", "Sync Agent Files"],
     );
     const binary = api.binary()?.path;
     assert.ok(binary);
@@ -225,57 +207,24 @@ describe("the project's tasks", () => {
     const build = tasks.find((task) => task.name === "Build");
     assert.deepEqual(build?.definition, { type: "ascribe", task: "build" });
     assert.equal(build?.group, vscode.TaskGroup.Build);
-    assert.deepEqual(tasks.find((task) => task.name === "Observe Examples")?.definition, {
-      type: "ascribe",
-      task: "observeExamples",
-      source: "code",
-    });
   });
 
   it("builds from the Project view, in the terminal", async () => {
     await vscode.window.showTextDocument(uriOf("docs", "index.md"));
-    const ended = new Promise<number | undefined>((resolve) => {
-      const listener = vscode.tasks.onDidEndTaskProcess((event) => {
-        if (event.execution.task.name !== "Build") return;
-        listener.dispose();
-        resolve(event.exitCode);
-      });
-    });
+    const exit = ended("Build");
     await vscode.commands.executeCommand("ascribe.project.focus");
     await api.ui.project.whenDrawn("the tasks", (drawn) => drawn.report.buttons.includes("Build"));
     await api.ui.project.choose("build");
-    assert.equal(await ended, 0);
+    assert.equal(await exit, 0);
     assert.ok(existsSync(path.join(workspace(), ".ascribe", "build")));
   });
 
-  it("runs a task tasks.json names, by its definition", async () => {
+  it("syncs the agent files", async () => {
     const sync = (await fetched()).find((task) => task.name === "Sync Agent Files");
     assert.ok(sync);
-    assert.equal(await exitCodeOf(sync), 0);
+    const exit = ended(sync.name);
+    await vscode.tasks.executeTask(sync);
+    assert.equal(await exit, 0);
     assert.ok(existsSync(path.join(workspace(), "AGENTS.md")));
-  });
-
-  it("shows Observe Examples' commands and runs nothing when it's declined", async () => {
-    const observation = path.join(workspace(), "code", "examples.observations", "default.toml");
-    const before = readFileSync(observation, "utf8");
-    const { asked, done } = await observe(false);
-    assert.deepEqual(asked, [
-      {
-        message:
-          "Observe Examples runs the commands code/ascribe.examples.toml names, as you. Run them?",
-        detail: "node --test test/greet.test.mjs\nnode --version",
-        answered: false,
-      },
-    ]);
-    assert.equal(done.exitCode, undefined);
-    assert.equal(readFileSync(observation, "utf8"), before);
-  });
-
-  it("runs ascribe observe in the source's folder once it's answered", async () => {
-    const { asked, done } = await observe(true);
-    assert.equal(asked.length, 1);
-    assert.ok(samePath(done.cwd, path.join(workspace(), "code")));
-    assert.deepEqual(done.args, ["observe"]);
-    assert.equal(done.exitCode, 0);
   });
 });

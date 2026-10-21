@@ -128,7 +128,6 @@ const facts = (everyBuild: EveryBuildResult, name = "docs"): ProjectFacts => ({
   state: "running",
   version: "0.4.0",
   everyBuild,
-  examples: false,
   time: () => "14:02",
 });
 
@@ -217,21 +216,12 @@ describe("the Project view's webview", () => {
     await expect(view.next("focusEditor", from)).resolves.toEqual({ type: "focusEditor" });
   });
 
-  it("offers Observe Examples to a project with tested examples, and runs a task by its key", async () => {
+  it("runs a task by its key, saying in its tooltip that it's a task", async () => {
     const view = await open();
-    const report = await view.draw(
-      5,
-      projectAnswer({ ...facts({ kind: "none" }), examples: true }),
-    );
-    expect(report.buttons).toEqual([
-      "Check Every Build",
-      "Check Every Build",
-      ...TASKS,
-      "Observe Examples",
-    ]);
+    await view.draw(5, projectAnswer(facts({ kind: "none" })));
     await expect(
-      view.page.getByRole("button", { name: "Observe Examples" }).getAttribute("title"),
-    ).resolves.toMatch(/^A task: runs ascribe observe in the terminal/);
+      view.page.getByRole("button", { name: "Sync Agent Files" }).getAttribute("title"),
+    ).resolves.toBe("A task: runs ascribe agents sync in the terminal.");
     const from = view.posted.length;
     await view.page.getByRole("button", { name: "Build", exact: true }).click();
     await expect(view.next("open", from)).resolves.toEqual({ type: "open", seq: 5, key: "build" });

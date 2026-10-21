@@ -58,11 +58,9 @@ When it starts, a server logs its version and the `ascribe.toml` it uses: `ascri
 ## Tasks
 @available: next
 
-The extension adds a task type, `ascribe`, for the jobs that write files or run programs: **Build** runs `ascribe build`, **Sync Agent Files** runs `ascribe agents sync`, and **Observe Examples** runs `ascribe observe`. Each runs in the terminal, with its output in view as it would be in CI, and with no problem matcher: the Problems panel stays the editor's and [Check Every Build](#the-problems-panel)'s. The [Project view](sidebar.md#the-project-view)'s Actions run them, and so does **Tasks: Run Task**, where each project has its own, named after the project when the workspace has more than one.
+The extension adds a task type, `ascribe`, for the jobs that write files: **Build** runs `ascribe build`, and **Sync Agent Files** runs `ascribe agents sync`. Each runs in the terminal, with its output in view as it would be in CI, and with no problem matcher: the Problems panel stays the editor's and [Check Every Build](#the-problems-panel)'s. The [Project view](sidebar.md#the-project-view)'s Actions run them, and so does **Tasks: Run Task**, where each project has its own, named after the project when the workspace has more than one.
 
-Each runs the `ascribe` binary the project's language server runs: the `ascribe.path` setting, the project's own `node_modules/.bin/ascribe`, or the one bundled with the extension. **Build** and **Sync Agent Files** run in the project's folder, with `--config` naming its `ascribe.toml` when the project isn't the workspace folder. **Observe Examples** runs in the folder of a [source](../examples/sources.md) whose `ascribe.examples.toml` lists [tested examples](../examples/tested.md), since `ascribe observe` runs only the file in the folder it's run from. That file names commands for your shell, so before each run it shows them and asks, and runs nothing unless you say to. A project none of whose sources has the file has no Observe Examples.
-
-None of the tasks is offered in Restricted Mode, where the extension runs nothing until you trust the folder.
+Each runs the `ascribe` binary the project's language server runs: the `ascribe.path` setting, the project's own `node_modules/.bin/ascribe`, or the one bundled with the extension. It runs in the project's folder, with `--config` naming its `ascribe.toml` when the project isn't the workspace folder. Neither is offered in Restricted Mode, where the extension runs nothing until you trust the folder.
 
 To bind one to a key, or run it from your own task, name it in `.vscode/tasks.json`:
 
@@ -77,9 +75,8 @@ To bind one to a key, or run it from your own task, name it in `.vscode/tasks.js
 
 | Property | What it says |
 |---|---|
-| `task` | `build`, `syncAgentFiles`, or `observeExamples` |
+| `task` | `build` or `syncAgentFiles` |
 | `project` | The project's folder, relative to the workspace folder. Leave it out for the project whose `ascribe.toml` is in the workspace folder. |
-| `source` | For `observeExamples`: the source, by its name in `ascribe.toml`, whose folder has the `ascribe.examples.toml`. Leave it out when only one has one. |
 
 ## Settings
 @id {permalink=true}: editor-settings

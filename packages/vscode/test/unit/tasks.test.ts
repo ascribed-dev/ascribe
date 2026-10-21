@@ -3,11 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Project } from "../../src/projects.js";
 import {
   definedProject,
-  examplesCommands,
   isAscribeTask,
-  localSources,
-  observeCommand,
-  observeQuestion,
   projectCommand,
   projectProperty,
   taskLabel,
@@ -50,79 +46,10 @@ describe("projectCommand", () => {
   });
 });
 
-describe("observeCommand", () => {
-  it("runs ascribe observe in the source's folder, which takes no --config", () => {
-    const folder = path.join(workspace, "code");
-    expect(observeCommand({ name: "code", folder })).toEqual({ cwd: folder, args: ["observe"] });
-  });
-});
-
-describe("localSources", () => {
-  it("reads the sources with a path, resolved from the project's folder, and leaves out those in another repository", () => {
-    const text = [
-      "[sources.code]",
-      'path = ".."',
-      "[sources.api]",
-      'git = "https://github.com/acme/api.git"',
-      'path = "api"',
-      "[sources.cli]",
-      'path = "tools/cli"',
-    ].join("\n");
-    expect(localSources(docs, text)).toEqual([
-      { name: "code", folder: workspace },
-      { name: "cli", folder: path.join(docs.folder, "tools", "cli") },
-    ]);
-  });
-
-  it("gives none for a model that doesn't parse, or has no sources", () => {
-    expect(localSources(docs, "[sources.code\n")).toEqual([]);
-    expect(localSources(docs, 'spec = "0.1"')).toEqual([]);
-  });
-});
-
-describe("examplesCommands", () => {
-  it("lists the test, then the environment's commands, in order, as observe runs them", () => {
-    const text = [
-      'include = ["examples/**"]',
-      'test = "node --test"',
-      "[environment]",
-      'node = { label = "Node", command = "node --version" }',
-      'npm = { label = "npm", command = "npm --version" }',
-    ].join("\n");
-    expect(examplesCommands(text)).toEqual(["node --test", "node --version", "npm --version"]);
-  });
-
-  it("gives none for a config without commands, and undefined for one that isn't TOML", () => {
-    expect(examplesCommands('include = ["examples/**"]')).toEqual([]);
-    expect(examplesCommands("test = ")).toBeUndefined();
-  });
-});
-
-describe("observeQuestion", () => {
-  it("names the file and shows each command on a line", () => {
-    expect(
-      observeQuestion("code/ascribe.examples.toml", ["node --version", "node --test"]),
-    ).toEqual({
-      message:
-        "Observe Examples runs the commands code/ascribe.examples.toml names, as you. Run them?",
-      detail: "node --version\nnode --test",
-    });
-  });
-
-  it("says so when there's no command, or they can't be read", () => {
-    expect(observeQuestion("ascribe.examples.toml", []).detail).toBe("It names no command.");
-    expect(observeQuestion("ascribe.examples.toml", undefined).detail).toMatch(
-      /couldn't read its commands/,
-    );
-  });
-});
-
 describe("taskLabel", () => {
-  it("names the project and the source only when given", () => {
+  it("names the project only when given", () => {
     expect(taskLabel("build")).toBe("Build");
     expect(taskLabel("syncAgentFiles", "handbook")).toBe("Sync Agent Files (handbook)");
-    expect(taskLabel("observeExamples", undefined, "code")).toBe("Observe Examples (code)");
-    expect(taskLabel("observeExamples", "docs", "code")).toBe("Observe Examples (docs, code)");
   });
 });
 
@@ -146,7 +73,8 @@ describe("a task's definition", () => {
 
   it("is one of the extension's only with a task it knows and string properties", () => {
     expect(isAscribeTask({ type: "ascribe", task: "build" })).toBe(true);
-    expect(isAscribeTask({ type: "ascribe", task: "observeExamples", source: "code" })).toBe(true);
+    expect(isAscribeTask({ type: "ascribe", task: "syncAgentFiles", project: "docs" })).toBe(true);
+    expect(isAscribeTask({ type: "ascribe", task: "observeExamples" })).toBe(false);
     expect(isAscribeTask({ type: "ascribe", task: "release" })).toBe(false);
     expect(isAscribeTask({ type: "ascribe", task: "toString" })).toBe(false);
     expect(isAscribeTask({ type: "shell", task: "build" })).toBe(false);

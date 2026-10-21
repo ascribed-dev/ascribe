@@ -14,7 +14,6 @@ const facts = (everyBuild: EveryBuildResult): ProjectFacts => ({
   state: "running",
   version: "0.4.0",
   everyBuild,
-  examples: false,
   time: (at) => `${at / 1000}s`,
 });
 
@@ -57,15 +56,8 @@ describe("projectAnswer", () => {
     ]);
   });
 
-  it("offers Observe Examples only to a project with tested examples, saying it asks first", () => {
-    const answer = projectAnswer({ ...facts({ kind: "none" }), examples: true });
-    const observe = answer.actions.find((action) => action.key === PROJECT_KEYS.observeExamples);
-    expect(observe).toMatchObject({ label: "Observe Examples" });
-    expect(observe?.caption).toMatch(/after showing them and asking/);
-  });
-
   it("says each task runs in the terminal", () => {
-    const answer = projectAnswer({ ...facts({ kind: "none" }), examples: true });
+    const answer = projectAnswer(facts({ kind: "none" }));
     for (const action of answer.actions.slice(1)) expect(action.caption).toMatch(/^A task: /);
   });
 
