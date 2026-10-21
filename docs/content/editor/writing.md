@@ -24,6 +24,15 @@ What the editor does as you write a page: what it completes, what it shows on ho
 @available: ascribe 0.4.0
 - In the [navigation file](../navigation/index.md), `ascribe.nav`: its keys, a `folder` from the project's sections it doesn't list yet, and in `pages` the section's pages it doesn't name yet. The file's [problems](../navigation/index.md#problems) appear as you type, where each is, with their fixes, and a page its section leaves out offers **Add `name.md` to `folder/`'s pages in ascribe.nav**, which edits the file.
 
+## Search
+@available: next
+
+**Ascribe: Search Pages as Readers See Them**, in the Command Palette, finds words where the pages say them as their readers read them, and opens the line to edit. It's [`ascribe search`](../command/questions.md#cli-search) in the editor: the same query, the same places, in the same order. Type words, which must all be in one block in any order, or a phrase in double quotes, matched as written; case is ignored. The places arrive as you type, each the reader's text cut around the match, and under it the file and line, the heading it's under, and the phrase it reads through: `install-agent.md:62 · Connect to Quill · through phrase cloud`. A place many pages show, from a fragment, says how many. Choose one to open its line. A match wholly inside a phrase's value opens the phrase in `ascribe.toml`.
+
+It searches the build the status bar names, the one the preview renders, so the three agree; the quick pick's **Search Every Build** button searches every build. It searches the pages as you have them, unsaved text included, which `ascribe search` and the MCP server's `ascribe_search`, which read the disk, don't. When nothing matches, it says whether the words are written at all: in no page, in the source though no build searched publishes them there, or in builds it didn't search.
+
+VS Code's own search, **Search: Find in Files**, reads the source as written: it finds `Sign in to {cloud}` and not "Sign in to Quill Cloud", and finds text in arms a build leaves out. Search Pages as Readers See Them reads what a build publishes, and can't search for a pattern; to replace, use VS Code's search on the lines it names.
+
 ## Hover
 
 - A link, image, or include: its target's path, title, and the first paragraph, with phrases filled in. A fragment, a missing file or id, a link written as a URL, and a name whose case doesn't match are called out.

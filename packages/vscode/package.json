@@ -294,6 +294,12 @@
         "icon": "$(checklist)"
       },
       {
+        "command": "ascribe.search",
+        "title": "Search Pages as Readers See Them",
+        "category": "Ascribe",
+        "icon": "$(search)"
+      },
+      {
         "command": "ascribe.projectMenu",
         "title": "Project Menu",
         "category": "Ascribe"
@@ -1175,6 +1181,10 @@
         },
         {
           "command": "ascribe.checkEveryBuild",
+          "when": "ascribe.active"
+        },
+        {
+          "command": "ascribe.search",
           "when": "ascribe.active"
         },
         {

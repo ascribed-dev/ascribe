@@ -12,6 +12,7 @@ The extension activates in a workspace that contains an `ascribe.toml`. A worksp
 - **Completion** for directives, attributes and their values, phrases, availability, include paths, and links, which you search by page and heading title rather than by path.
 - **Hover** for links and includes (the target's title and first paragraph), phrases (their values), and availability (what it means on the published site).
 - **Navigation**: go to definition, Find All References for pages, headings, phrases, and the rest of the content model, clickable links, a CodeLens on each include, one in a code file a page shows that says which pages show it, and hints that show the title an empty-text link will get.
+- **Search Pages as Readers See Them**: find words as readers read the pages, through phrases and fragments, in the build you're looking at or every build, unsaved text included, and open the line that wrote them.
 - **Refactoring**: renaming or moving a file updates the links and includes that point to it; renaming a heading's `@id`, a phrase, or a dimension value updates its uses.
 - **Formatting** into canonical form, on request or on save, and **highlighting** of directives, phrases, and title lines.
 - **A live page preview** that renders the page as the published site does, as you type, for any build, and a **site preview** that opens it on the site's dev server.
