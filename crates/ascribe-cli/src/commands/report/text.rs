@@ -631,6 +631,7 @@ impl Writer<'_> {
             self.code(&agents.site),
             said.join(", ")
         ))?;
+        self.agents_since(agents)?;
         if agents.diagnostics.is_empty() {
             self.line("Nothing for the hosting or Ascribe to change.")?;
         } else {
@@ -656,6 +657,47 @@ impl Writer<'_> {
             ))?;
         }
         Ok(())
+    }
+
+    /// What's failing since the last report on the site, and what isn't
+    /// any more: `23 checks: 21 passing, 2 failing, 1 of them failing since
+    /// 9 October: `content-negotiation`.` Nothing on a first run.
+    fn agents_since(&mut self, agents: &Agents) -> io::Result<()> {
+        let (Some(since), Some(new), Some(resolved)) =
+            (agents.previous_run, &agents.new, agents.resolved)
+        else {
+            return Ok(());
+        };
+        let since = day(since);
+        let results = &agents.results;
+        let passing = results
+            .iter()
+            .filter(|r| r.status == ascribe_check::site::Status::Pass)
+            .count();
+        let failing = results.iter().filter(|r| r.status.is_finding()).count();
+        let mut line = format!(
+            "{}: {passing} passing, {failing} failing",
+            counted(results.len(), "check", "checks")
+        );
+        match (failing, new.len()) {
+            (0, _) => {}
+            (1, 1) => line.push_str(&format!(", failing since {since}")),
+            (1, _) => line.push_str(&format!(", not new since {since}")),
+            (_, 0) => line.push_str(&format!(", none of them new since {since}")),
+            (_, k) => line.push_str(&format!(", {k} of them failing since {since}")),
+        }
+        if resolved > 0 {
+            line.push_str(&format!(
+                "; {resolved} that failed on {since} no longer {}",
+                plural(resolved, "fails", "fail")
+            ));
+        }
+        if !new.is_empty() {
+            let ids: Vec<String> = new.iter().map(|id| self.code(id)).collect();
+            line.push_str(&format!(": {}", ids.join(", ")));
+        }
+        line.push('.');
+        self.line(&line)
     }
 }
 

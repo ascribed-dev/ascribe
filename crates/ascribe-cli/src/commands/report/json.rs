@@ -455,6 +455,20 @@ struct AgentsJson {
     /// or Ascribe owns. One a page owns is `ascribe check`'s, and isn't
     /// repeated.
     diagnostics: Capped<Entry>,
+    /// The day of the last report that checked the same site,
+    /// `YYYY-MM-DD`, or `null` on a first run, with `--no-history`, or when
+    /// the last report checked another site or none.
+    previous_run: Option<String>,
+    /// How many checks fail or warn now that passed on the last report or
+    /// weren't in it, or `null` when `previous_run` is. A check is told from
+    /// another by the site's address and its id.
+    new: Option<usize>,
+    /// How many checks that failed or warned on the last report pass now or
+    /// aren't in this one, or `null` when `previous_run` is.
+    resolved: Option<usize>,
+    /// The ids of the checks `new` counts, in the checker's order; empty
+    /// when `previous_run` is `null`.
+    new_checks: Vec<String>,
 }
 
 /// One check of the delivery spec.
@@ -777,6 +791,10 @@ fn agents_json(agents: &Agents, files: &FileTable, limit: usize) -> AgentsJson {
             })
             .collect(),
         diagnostics: Capped::of(agents.diagnostics.iter(), limit, |d| entry(files, d, 0)),
+        previous_run: agents.previous_run.map(|d| d.to_string()),
+        new: agents.new.as_ref().map(Vec::len),
+        resolved: agents.resolved,
+        new_checks: agents.new.clone().unwrap_or_default(),
     }
 }
 

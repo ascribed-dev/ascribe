@@ -17,7 +17,7 @@ use std::time::Duration;
 
 use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, Span, diagnostics};
 use ascribe_model::CheckLevel;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::tool::{self, ToolError};
 use crate::{Diagnostic, Project};
@@ -170,7 +170,7 @@ pub fn owner(id: &str) -> Owner {
 }
 
 /// How one check came out.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Status {
     /// It passed.

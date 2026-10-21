@@ -1,16 +1,21 @@
 //! What `ascribe report` remembers of its sections from one run to the
 //! next, so each can say what's new since the last report and what's gone
-//! (decision #787). `links` keeps its own, [`crate::links::History`].
+//! (decisions #787 and #788). `links` keeps its own,
+//! [`crate::links::History`].
 //!
-//! - **The history is one file,** `.ascribe/history/report.json`: the last
-//!   run's day, the builds it checked, and the `problems` section's
-//!   findings by [identity](crate::identity), sorted, so a diff of it reads
-//!   as a list of findings. It's written whole through a rename after each
-//!   run that reports `problems`.
+//! - **The history is one file,** `.ascribe/history/report.json`, with a
+//!   part for each section it remembers, each with its own run's day:
+//!   `problems`, the builds it checked and its findings by
+//!   [identity](crate::identity), sorted, so a diff of it reads as a list
+//!   of findings; and `agents`, the site it checked and each of the
+//!   delivery spec's checks by id, with how it came out. It's written whole
+//!   through a rename after each run that reports either; a section the run
+//!   didn't report keeps what the file held.
 //! - **A first run says nothing about what's new,** and neither does one
-//!   on other builds than the history's, compared as a set: `--build`
-//!   changes what's found. `--no-history` doesn't open the history at all,
-//!   so it neither reads nor writes it.
+//!   on other builds than the history's, compared as a set, for `problems`,
+//!   or on another site, for `agents`: either changes what's found.
+//!   `--no-history` doesn't open the history at all, so it neither reads
+//!   nor writes it.
 //! - **A reader trusts nothing:** a file that doesn't parse or has another
 //!   version is no history. Deleting it costs one report that can't say
 //!   what changed.
@@ -21,7 +26,7 @@
 //! `ascribe_resolve::FileSystem`. Only the report's code opens it
 //! (`tests/all/link_cache.rs` holds that).
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use ascribe_core::Date;
@@ -29,12 +34,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::identity::Identity;
 use crate::links::cache::{clean_beside, write_whole};
+use crate::site::Status;
 
 /// The history's file, relative to the project's folder.
 pub const FILE: &str = ".ascribe/history/report.json";
 
 /// The version of the file's format.
-const VERSION: u32 = 1;
+const VERSION: u32 = 2;
 
 /// What `ascribe report` remembers from its last run, as on one day.
 #[derive(Clone, Debug)]
@@ -46,27 +52,66 @@ pub struct ReportHistory {
     /// The builds the run checks, sorted.
     builds: Vec<String>,
     /// What the file held when it was opened.
-    read: Option<Saved>,
+    read: FileJson,
 }
 
-/// The file, read.
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct Saved {
-    /// The day of the run that wrote it.
-    run: Date,
-    /// The builds it checked, sorted.
-    builds: Vec<String>,
+/// What `agents` found on a site: each check's result, by its id. A
+/// check's identity is the site's address and its id.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct SiteChecks {
+    /// The site's address, as `--site` gives it.
+    pub site: String,
+    /// How each check came out, by its id.
+    pub checks: BTreeMap<String, Status>,
+}
+
+/// What a run found, to keep for the next: a section's `None` when the run
+/// didn't report it, so the history keeps what it held.
+#[derive(Clone, Debug, Default)]
+pub struct Found {
     /// The findings `problems` reported.
-    problems: BTreeSet<Identity>,
+    pub problems: Option<BTreeSet<Identity>>,
+    /// What `agents` found on the site.
+    pub agents: Option<SiteChecks>,
 }
 
-/// The file, as written.
-#[derive(Serialize, Deserialize)]
+/// The file.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 struct FileJson {
     version: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    problems: Option<ProblemsJson>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    agents: Option<AgentsJson>,
+}
+
+/// What `problems` reported on a run.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct ProblemsJson {
+    /// The day of the run.
     run: String,
+    /// The builds it checked, sorted.
     builds: Vec<String>,
-    problems: BTreeSet<Identity>,
+    /// Its findings, sorted.
+    findings: BTreeSet<Identity>,
+}
+
+/// What `agents` found on a run.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct AgentsJson {
+    /// The day of the run.
+    run: String,
+    /// The site it checked.
+    site: String,
+    /// Each check, sorted by its id.
+    checks: Vec<CheckJson>,
+}
+
+/// One of the delivery spec's checks, and how it came out.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct CheckJson {
+    check: String,
+    status: Status,
 }
 
 impl ReportHistory {
@@ -81,39 +126,63 @@ impl ReportHistory {
             root: root.to_owned(),
             today,
             builds,
-            read: None,
+            read: FileJson::default(),
         };
-        history.read = history.load();
+        history.read = history.load().unwrap_or_default();
         history
     }
 
-    /// The day of the run the history is from, when this one has one to go
-    /// by.
-    pub fn previous_run(&self) -> Option<Date> {
-        self.earlier().map(|saved| saved.run)
+    /// The day of the run `problems` is compared with, and the findings it
+    /// reported, unless there's none or it checked other builds.
+    pub fn problems_before(&self) -> Option<(Date, &BTreeSet<Identity>)> {
+        let saved = self.read.problems.as_ref()?;
+        let mut builds = saved.builds.clone();
+        builds.sort();
+        builds.dedup();
+        (builds == self.builds).then_some(())?;
+        Some((Date::parse(&saved.run)?, &saved.findings))
     }
 
-    /// The findings the previous run's `problems` reported, when this run
-    /// has one to go by.
-    pub fn problems_before(&self) -> Option<&BTreeSet<Identity>> {
-        self.earlier().map(|saved| &saved.problems)
+    /// The day of the run `agents` is compared with, and how each check
+    /// came out on it, unless there's none or it checked another site
+    /// than `site`.
+    pub fn agents_before(&self, site: &str) -> Option<(Date, BTreeMap<&str, Status>)> {
+        let saved = self.read.agents.as_ref().filter(|a| a.site == site)?;
+        let checks = saved
+            .checks
+            .iter()
+            .map(|c| (c.check.as_str(), c.status))
+            .collect();
+        Some((Date::parse(&saved.run)?, checks))
     }
 
-    /// What the history held, unless this run checks other builds.
-    fn earlier(&self) -> Option<&Saved> {
-        self.read
-            .as_ref()
-            .filter(|saved| saved.builds == self.builds)
-    }
-
-    /// Writes `problems` as the history, after the run. A write that fails
-    /// is skipped.
-    pub fn save(&self, problems: BTreeSet<Identity>) {
+    /// Writes what this run `found` as the history, after the run, keeping
+    /// what the file held for a section it didn't report. A write that
+    /// fails is skipped.
+    pub fn save(&self, found: Found) {
+        let run = self.today.to_string();
         let file = FileJson {
             version: VERSION,
-            run: self.today.to_string(),
-            builds: self.builds.clone(),
-            problems,
+            problems: match found.problems {
+                Some(findings) => Some(ProblemsJson {
+                    run: run.clone(),
+                    builds: self.builds.clone(),
+                    findings,
+                }),
+                None => self.read.problems.clone(),
+            },
+            agents: match found.agents {
+                Some(found) => Some(AgentsJson {
+                    run,
+                    site: found.site,
+                    checks: found
+                        .checks
+                        .into_iter()
+                        .map(|(check, status)| CheckJson { check, status })
+                        .collect(),
+                }),
+                None => self.read.agents.clone(),
+            },
         };
         let Ok(mut text) = serde_json::to_string_pretty(&file) else {
             return;
@@ -129,23 +198,20 @@ impl ReportHistory {
         FILE.split('/').fold(self.root.clone(), |p, s| p.join(s))
     }
 
-    /// What the file holds, when it's a history of this version.
-    fn load(&self) -> Option<Saved> {
+    /// What the file holds, when it's a history of this version whose days
+    /// are days.
+    fn load(&self) -> Option<FileJson> {
         // Outside FileSystem: the history Ascribe writes under `.ascribe/`,
         // not the project's sources.
         let text = std::fs::read_to_string(self.path()).ok()?;
         let file: FileJson = serde_json::from_str(&text).ok()?;
-        if file.version != VERSION {
-            return None;
-        }
-        let mut builds = file.builds;
-        builds.sort();
-        builds.dedup();
-        Some(Saved {
-            run: Date::parse(&file.run)?,
-            builds,
-            problems: file.problems,
-        })
+        let days_parse = file
+            .problems
+            .iter()
+            .map(|p| &p.run)
+            .chain(file.agents.iter().map(|a| &a.run))
+            .all(|d| Date::parse(d).is_some());
+        (file.version == VERSION && days_parse).then_some(file)
     }
 }
 
@@ -174,43 +240,63 @@ mod tests {
         BUILDS.iter().map(|b| (*b).to_owned()).collect()
     }
 
+    fn problems(found: BTreeSet<Identity>) -> Found {
+        Found {
+            problems: Some(found),
+            agents: None,
+        }
+    }
+
+    fn agents(site: &str, checks: &[(&str, Status)]) -> Found {
+        Found {
+            problems: None,
+            agents: Some(SiteChecks {
+                site: site.to_owned(),
+                checks: checks
+                    .iter()
+                    .map(|(id, status)| ((*id).to_owned(), *status))
+                    .collect(),
+            }),
+        }
+    }
+
     #[test]
     fn a_run_reads_what_the_last_one_wrote() {
         let dir = tempfile::tempdir().unwrap();
         let first = ReportHistory::open(dir.path(), day("2026-10-09"), &builds());
-        assert_eq!(first.previous_run(), None);
         assert_eq!(first.problems_before(), None);
-        first.save(BTreeSet::from([found("b"), found("a")]));
+        first.save(problems(BTreeSet::from([found("b"), found("a")])));
         assert_eq!(
             std::fs::read_to_string(first.path()).unwrap(),
             r#"{
-  "version": 1,
-  "run": "2026-10-09",
-  "builds": [
-    "site"
-  ],
-  "problems": [
-    {
-      "check": "link-target-missing",
-      "file": "docs/index.md",
-      "fingerprint": "a",
-      "order": 0
-    },
-    {
-      "check": "link-target-missing",
-      "file": "docs/index.md",
-      "fingerprint": "b",
-      "order": 0
-    }
-  ]
+  "version": 2,
+  "problems": {
+    "run": "2026-10-09",
+    "builds": [
+      "site"
+    ],
+    "findings": [
+      {
+        "check": "link-target-missing",
+        "file": "docs/index.md",
+        "fingerprint": "a",
+        "order": 0
+      },
+      {
+        "check": "link-target-missing",
+        "file": "docs/index.md",
+        "fingerprint": "b",
+        "order": 0
+      }
+    ]
+  }
 }
 "#
         );
         let next = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
-        assert_eq!(next.previous_run(), Some(day("2026-10-09")));
         assert_eq!(
             next.problems_before(),
-            Some(&BTreeSet::from([found("a"), found("b")]))
+            Some((day("2026-10-09"), &BTreeSet::from([found("a"), found("b")])))
         );
     }
 
@@ -219,12 +305,60 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let two = |a: &str, b: &str| vec![a.to_owned(), b.to_owned()];
         ReportHistory::open(dir.path(), day("2026-10-09"), &two("one", "two"))
-            .save(BTreeSet::from([found("a")]));
+            .save(problems(BTreeSet::from([found("a")])));
         let other = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
-        assert_eq!(other.previous_run(), None);
         assert_eq!(other.problems_before(), None);
         let swapped = ReportHistory::open(dir.path(), day("2026-10-10"), &two("two", "one"));
-        assert_eq!(swapped.previous_run(), Some(day("2026-10-09")));
+        assert_eq!(
+            swapped.problems_before().map(|(run, _)| run),
+            Some(day("2026-10-09"))
+        );
+    }
+
+    #[test]
+    fn each_section_keeps_its_own_run_and_one_not_reported_keeps_what_it_held() {
+        let dir = tempfile::tempdir().unwrap();
+        let site = "https://docs.example.com";
+        ReportHistory::open(dir.path(), day("2026-10-09"), &builds())
+            .save(problems(BTreeSet::from([found("a")])));
+        ReportHistory::open(dir.path(), day("2026-10-10"), &builds()).save(agents(
+            site,
+            &[
+                ("llms-txt-exists", Status::Pass),
+                ("content-negotiation", Status::Fail),
+            ],
+        ));
+        let next = ReportHistory::open(dir.path(), day("2026-10-11"), &builds());
+        assert_eq!(
+            next.problems_before(),
+            Some((day("2026-10-09"), &BTreeSet::from([found("a")])))
+        );
+        assert_eq!(
+            next.agents_before(site),
+            Some((
+                day("2026-10-10"),
+                BTreeMap::from([
+                    ("content-negotiation", Status::Fail),
+                    ("llms-txt-exists", Status::Pass)
+                ])
+            ))
+        );
+        // Another site has nothing to go by.
+        assert_eq!(next.agents_before("http://localhost:4321"), None);
+        let text = std::fs::read_to_string(next.path()).unwrap();
+        assert!(
+            text.contains(
+                r#""agents": {
+    "run": "2026-10-10",
+    "site": "https://docs.example.com",
+    "checks": [
+      {
+        "check": "content-negotiation",
+        "status": "fail"
+      },"#
+            ),
+            "{text}"
+        );
     }
 
     #[test]
@@ -234,13 +368,15 @@ mod tests {
         std::fs::create_dir_all(history.path().parent().unwrap()).unwrap();
         for text in [
             "not json",
-            r#"{"version":2,"run":"2026-10-09","builds":["site"],"problems":[]}"#,
-            r#"{"version":1,"run":"someday","builds":["site"],"problems":[]}"#,
-            r#"{"version":1,"run":"2026-10-09","builds":["site"],"problems":[{"check":"x"}]}"#,
+            r#"{"version":1,"run":"2026-10-09","builds":["site"],"problems":[]}"#,
+            r#"{"version":2,"problems":{"run":"someday","builds":["site"],"findings":[]}}"#,
+            r#"{"version":2,"problems":{"run":"2026-10-09","builds":["site"],"findings":[{"check":"x"}]}}"#,
+            r#"{"version":2,"agents":{"run":"2026-10-09","site":"s","checks":[{"check":"x","status":"maybe"}]}}"#,
         ] {
             std::fs::write(history.path(), text).unwrap();
             let read = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
-            assert_eq!(read.previous_run(), None, "{text}");
+            assert_eq!(read.problems_before(), None, "{text}");
+            assert_eq!(read.agents_before("s"), None, "{text}");
         }
     }
 }

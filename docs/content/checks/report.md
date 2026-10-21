@@ -95,6 +95,18 @@ Pages
 
 `ascribe report agents --site <URL>` runs the delivery spec's checker on a built site and reports each check that fails or warns by who changes what it checks: the hosting, or what Ascribe writes. [What to measure](../agents/measuring.md#check-what-the-site-delivers-to-agents) says what to do about each.
 
+From its second run on the same site, the section says which checks are failing since the last report, and how many that failed then no longer do:
+
+```text
+Agents
+  The delivery spec's checks on https://docs.example.com: 21 pass, 2 fail.
+  23 checks: 21 passing, 2 failing, 1 of them failing since 9 October: redirect-behavior.
+```
+
+A check is the same as one the last report had when it's on the same site, by the address given with `--site`, and has the same id. Failing, here, is failing or warning. A check is new when it's failing now and was passing on the last report, or wasn't in it, as a check the checker adds in a later version; one that was skipped or couldn't run then isn't counted as new, since there's nothing to say it was passing. One that failed then and passes now, or is gone, no longer fails.
+
+Every check runs every time: nothing the checker said is reused, because a published site changes without a commit. The report only remembers how each check came out, to compare with. A first run says nothing about what's new, and neither does a run on another site than the last one's, such as a preview after the published site, since that's a different site. `--no-history` says nothing about what's new either, and keeps nothing. How each check came out is kept in `.ascribe/history/report.json`, beside the last report's problems; a report that doesn't run `agents` keeps what the file had for it.
+
 ## Handing a section to an agent
 
 `--format prompt` writes one prompt about one section's problems, `problems`, `links`, or `agents`, for an agent to work through: each problem with what Ascribe knows about it, such as the sentence around a broken link or the setting to change, how to fix each kind, and the command that checks the work. It's nothing when the section finds nothing.
