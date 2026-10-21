@@ -100,11 +100,57 @@ describe("a code file a page shows", () => {
     );
     assert.ok(greet, JSON.stringify(health));
     assert.ok(greet.description.endsWith(", tested"), greet.description);
-    assert.ok(greet.opens?.endsWith("/docs/index.md:7"), greet.opens);
+    // It opens the file its `@snippet` shows, beside the page.
+    assert.ok(greet.opens?.endsWith("/code/examples/greet.ts"), greet.opens);
     const includes = items
       .find((item) => item.label === "Connections")
       ?.children.find((item) => item.label === "Includes");
     const shown = includes?.children.find((item) => item.description === "code/examples/greet.ts");
     assert.ok(shown?.opens?.endsWith("/code/examples/greet.ts"), JSON.stringify(includes));
+  });
+
+  it("opens a snippet's file and a tested example's beside the page, with This page still on it", async () => {
+    const view = api.ui.thisPage;
+    const page = uriOf("docs", "index.md");
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    await vscode.window.showTextDocument(page, { viewColumn: vscode.ViewColumn.One });
+    const drawn = await view.whenDrawn("index.md", (drawn) =>
+      drawn.report.sections.some((section) => section.key === "health"),
+    );
+    const items = view.items();
+    const health = items.find((item) => item.label === "Health")?.children ?? [];
+    const example = health.findIndex(
+      (item) => item.label === "Example" && item.description.startsWith("code:examples/greet.ts"),
+    );
+    const includes = items.find((item) => item.label === "Connections")?.children[2]?.children;
+    const snippet = (includes ?? []).findIndex(
+      (item) => item.description === "code/examples/greet.out.txt",
+    );
+    assert.ok(example >= 0 && snippet >= 0, JSON.stringify(items));
+    const title = drawn.report.sections.find((section) => section.key === "about")?.items[0];
+
+    for (const [key, file] of [
+      [`connections/2/${snippet}`, uriOf("code", "examples", "greet.out.txt")],
+      [`health/${example}`, uriOf("code", "examples", "greet.ts")],
+    ] as const) {
+      // The reader clicks in the view, and chooses the row with the keyboard.
+      await vscode.commands.executeCommand("ascribe.thisPage.focus");
+      await view.probe({ open: true, focus: key, press: true });
+      const beside = await waitFor(`${file.path} beside the page`, async () =>
+        vscode.window.visibleTextEditors.find(
+          (editor) => editor.document.uri.toString() === file.toString(),
+        ),
+      );
+      assert.equal(beside.viewColumn, vscode.ViewColumn.Two);
+      await view.whenSettled();
+      const after = await view.probe({});
+      assert.equal(
+        after.report.sections.find((section) => section.key === "about")?.items[0],
+        title,
+      );
+      assert.equal(after.report.focused, key);
+      assert.equal(after.report.hasFocus, true);
+    }
   });
 });

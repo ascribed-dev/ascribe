@@ -80,7 +80,9 @@ describe("package.json", () => {
 
   it("has no Projects view, and keeps Pages, with the welcome messages, in every workspace", () => {
     const views = manifest.contributes.views.ascribe ?? [];
+    // Decision #654a's order: Project first.
     expect(views.map((view) => view.id)).toEqual([
+      "ascribe.project",
       "ascribe.review",
       "ascribe.thisPage",
       "ascribe.pages",

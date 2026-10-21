@@ -834,9 +834,13 @@ interface AboutRow {
   opens?: RowTarget | undefined;
 }
 
-/** Where a row goes: a place in a file, or a command. */
+/**
+ * Where a row goes: a place in a file, a file opened beside the page, or a
+ * command.
+ */
 type RowTarget =
   | { kind: "place"; uri: string; range: LspRange }
+  | { kind: "beside"; uri: string }
   | { kind: "command"; command: string; title: string };
 
 /** VS Code's diagnostics for the page, by how loudly they speak. */
@@ -944,7 +948,7 @@ export function thisPageRoots(
   return [
     { kind: "about", rows },
     ...(review ? [{ kind: "review" as const, review }] : []),
-    { kind: "health", rows: healthRows(page.health, context) },
+    { kind: "health", rows: healthRows(page.health, page.includes, context) },
     {
       kind: "connections",
       heading: page.heading?.text,
@@ -1106,8 +1110,15 @@ function listingFrom(from: string): string {
   }
 }
 
-/** Health's rows: the problems, the size, and each tested example. */
-function healthRows(health: PageHealth, { uri, problems }: ThisPageContext): AboutRow[] {
+/**
+ * Health's rows: the problems, the size, and each tested example, which
+ * opens the file its `@snippet` shows, beside the page, as the include does.
+ */
+function healthRows(
+  health: PageHealth,
+  includes: readonly PageInclude[],
+  { uri, problems }: ThisPageContext,
+): AboutRow[] {
   const rows: AboutRow[] = [];
   if (problems) {
     const parts = [
@@ -1139,12 +1150,21 @@ function healthRows(health: PageHealth, { uri, problems }: ThisPageContext): Abo
     });
   }
   for (const example of health.examples) {
+    const shown = includes.find(
+      ({ range }) =>
+        range.start.line === example.range.start.line &&
+        range.start.character === example.range.start.character,
+    )?.uri;
     rows.push({
       label: "Example",
       value: `${example.address}, ${exampleState(example)}`,
       tooltip: example.tested ?? exampleState(example),
       warn: example.state !== "tested",
-      opens: uri ? { kind: "place", uri, range: example.range } : undefined,
+      opens: shown
+        ? { kind: "beside", uri: shown }
+        : uri
+          ? { kind: "place", uri, range: example.range }
+          : undefined,
     });
   }
   return rows;

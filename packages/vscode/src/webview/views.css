@@ -158,3 +158,49 @@ summary:hover {
   outline: 1px solid var(--vscode-focusBorder);
   outline-offset: -1px;
 }
+
+/* The Project view. Its head names the project; Health's counts say what
+   they count, when it's from, and, while a count isn't current, the action
+   that brings it current. */
+.head {
+  padding: 4px 12px 6px 30px;
+}
+
+.project-name {
+  margin: 0 0 2px;
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.count dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 6px;
+  align-items: flex-start;
+}
+
+.count .value {
+  color: var(--vscode-foreground);
+}
+
+/* None is a dimmed 0; not current is a dash with why beside it. */
+.count.none .value {
+  color: var(--vscode-disabledForeground);
+}
+
+.count .note {
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.count.outOfDate .note .codicon {
+  color: var(--vscode-editorWarning-foreground);
+}
+
+.count .action {
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+  color: var(--vscode-textLink-foreground);
+}

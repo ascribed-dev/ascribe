@@ -74,6 +74,95 @@ export interface ThisPageReport {
   sections: { key: string; label: string; open: boolean; items: string[] }[];
   /** Whether a row's text wraps, as the stylesheet sets it. */
   wraps: boolean;
+  /**
+   * The key of what has the keyboard's focus in the view: an item's, or a
+   * section's for its header; `null` for nothing.
+   */
+  focused: string | null;
+  /** Whether the view's document has the focus. */
+  hasFocus: boolean;
+  /** How far the view is scrolled, in pixels. */
+  scroll: number;
+  /** The newest probe the report answers, or 0 when it answers none. */
+  probed: number;
+  /** Content security policy violations seen so far. */
+  violations: string[];
+}
+
+/**
+ * Extension to This page's webview, for tests: does what a reader does, and
+ * answers with a report of the answer drawn, in this order.
+ */
+export interface ThisPageProbe {
+  type: "probe";
+  /** Rises with each probe. */
+  probe: number;
+  /** Opens every section. */
+  open?: boolean;
+  /** Puts the keyboard's focus on the item of this key, or on a section's header by its key. */
+  focus?: string;
+  /** Scrolls the view to this many pixels from its top. */
+  scroll?: number;
+  /** Chooses what has the focus, as Enter does. */
+  press?: boolean;
+}
+
+// The Project view.
+
+/** One count of the Project view's Health. */
+export interface ProjectCount {
+  /** Names the count, and what choosing it opens. */
+  key: string;
+  label: string;
+  /**
+   * `current`: a count of something, as the project is now. `none`: current,
+   * and zero. `outOfDate`: from a run the project has changed since, or one
+   * that couldn't finish. `unknown`: never run. `running`: being run now.
+   */
+  state: "current" | "none" | "outOfDate" | "unknown" | "running";
+  /** The count as it's shown: "2 errors, 5 warnings", "0", or "—" when it isn't current. */
+  value: string;
+  /** When it's from, or why it isn't shown. */
+  note: string;
+  /** Whether choosing the count opens its list, which only a current count above zero does. */
+  opens: boolean;
+  /** The action beside it that brings it current, while it isn't. */
+  action: { key: string; label: string } | null;
+}
+
+/** One of the Project view's actions. */
+export interface ProjectAction {
+  key: string;
+  label: string;
+  /** A codicon's name. */
+  icon: string;
+  /** How it runs. */
+  caption: string;
+}
+
+/** What the Project view draws: a message in place of the project, or the project. */
+export interface ProjectAnswer {
+  /** No project to show; `null` when it has one. */
+  message: string | null;
+  /** The project's name, its folder, its server's state, and the binary's version. */
+  head: { name: string; folder: string; state: string; version: string | null } | null;
+  /** How many things there are to do, for Health's header: counts above zero, out of date, or never run. */
+  toDo: number;
+  health: ProjectCount[];
+  actions: ProjectAction[];
+}
+
+/** What the Project view's webview drew, for tests. */
+export interface ProjectReport {
+  message: string | null;
+  /** The head's text, line by line. */
+  head: string[];
+  /** Each section as drawn: its key, its header's text, and whether it's open. */
+  sections: { key: string; label: string; open: boolean }[];
+  /** Each count as drawn: its value, its note, its state, and whether its value is dimmed. */
+  health: { key: string; value: string; note: string; state: string; dimmed: boolean }[];
+  /** The buttons' labels, in order: the counts' and their actions', then the actions'. */
+  buttons: string[];
   /** Content security policy violations seen so far. */
   violations: string[];
 }

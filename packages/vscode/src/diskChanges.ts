@@ -86,6 +86,33 @@ export function startsServer(
 }
 
 /**
+ * Whether a change to `file` makes a check of every build of `project` out of
+ * date (`EveryBuildChecks.isCurrent`): any file of the project, not just
+ * those under the content root, since the check reads `ascribe.nav`,
+ * `ascribe.permalinks`, `ascribe.lock`, the memos, and the templates beside
+ * `ascribe.toml` too; and any file in one of its sources' folders. A file of a
+ * nested project, or in the output directory, the project's `.ascribe`
+ * folder (which the check itself may write), `node_modules`, or `.git`
+ * doesn't count. It errs toward out of date: a change the check doesn't read
+ * costs a check, where one it reads and this missed would show a stale count
+ * as current.
+ */
+export function changesCheck(
+  file: string,
+  project: Project,
+  layout: Layout,
+  projects: readonly Project[],
+): boolean {
+  if (samePath(file, project.config)) return true;
+  if (within(file, layout.outputDir)) return false;
+  const own =
+    owningProject(file, projects)?.config === project.config &&
+    !skipped(file, project.folder) &&
+    !within(file, path.join(project.folder, ".ascribe"));
+  return own || inASource(file, layout.sources);
+}
+
+/**
  * Whether a running server of `project` is told that `file` changed on disk
  * (`didChangeWatchedFile` in `scope.ts`): a file of its own, or one in its
  * sources' folders wherever they are, in no project or in another's. The

@@ -534,6 +534,13 @@
     "views": {
       "ascribe": [
         {
+          "id": "ascribe.project",
+          "type": "webview",
+          "name": "Project",
+          "contextualTitle": "Ascribe",
+          "when": "ascribe.active"
+        },
+        {
           "id": "ascribe.review",
           "name": "Review",
           "contextualTitle": "Ascribe",
@@ -625,7 +632,7 @@
           {
             "id": "sidebar",
             "title": "See your project",
-            "description": "The Ascribe sidebar shows what Ascribe knows about the page you're on, the pages of its project, and how much each entry of the content model is used. In a workspace with several projects, Switch Project in its title bar shows another.\n[Open the Ascribe Sidebar](command:workbench.view.extension.ascribe)",
+            "description": "The Ascribe sidebar shows how many problems the project has in every build, what Ascribe knows about the page you're on, the pages of its project, and how much each entry of the content model is used. In a workspace with several projects, Switch Project in its title bar shows another.\n[Open the Ascribe Sidebar](command:workbench.view.extension.ascribe)",
             "media": {
               "markdown": "media/walkthrough/sidebar.md"
             },

@@ -58,7 +58,7 @@ Most of what's written about being found by AI has no evidence behind it, and so
 **Measured, once each:**
 
 - **A pointer to `llms.txt` on each Markdown page** cut an agent's fetches of addresses that don't exist from 2.23 to 0.11 a task, in one controlled benchmark. Every Markdown page Ascribe publishes has one.
-- **A compact index of the docs in a product's `AGENTS.md`,** about 8 KB, took one vendor's evaluation from 53% to 100%. [`ascribe agents index`](index.md#index-your-docs-for-your-products-agents) writes one.
+- **A compact index of the docs in a product's `AGENTS.md`,** about 8 KB, took one vendor's evaluation from 53% to 100%. [`ascribe agents index`](product-index.md) writes one.
 - **Size.** Agents' fetch tools cut a page off at around 100,000 characters and don't ask for the rest. `ascribe check` reports a page over the delivery spec's limit, 50,000 characters.
 
 **Not supported, or contradicted:**
@@ -74,4 +74,4 @@ Most of what's written about being found by AI has no evidence behind it, and so
 
 - [The project report](../checks/report.md): the pages a build lists or keeps out, and the rest of what `ascribe report` says.
 - [`[crawlers]`](../content-model/checks.md#21-crawlers): what each kind of AI crawler may do.
-- [Index your docs for your product's agents](index.md#index-your-docs-for-your-products-agents): giving your product's own agents the docs.
+- [Index your docs for your product's agents](product-index.md): giving your product's own agents the docs.

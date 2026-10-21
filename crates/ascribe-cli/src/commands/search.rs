@@ -2,14 +2,18 @@
 //! it, and the line to edit for each.
 
 use std::io::{self, Write};
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use ascribe_query::{SearchPage, SearchPlace, Searched};
+use ascribe_check::{Scope, ScopeError};
+use ascribe_query::{Nothing, QueryError, Search, SearchPage, SearchPlace, Searched};
 use clap::Args as ClapArgs;
 
 use crate::answer::{self, FromDisk, Projects, Stop};
 use crate::cli::Global;
+use crate::context::Failure;
 use crate::exit;
+use crate::report::text::TALLY_FILES;
 use crate::shell::quote;
 
 /// How many places the text lists, unless `--limit` says otherwise.
@@ -28,13 +32,36 @@ pub struct Args {
     /// together: `ascribe search "rate limit"`, and a phrase inside them:
     /// `ascribe search '"rate limit"'`.
     ///
-    /// Case is ignored, and a word matches inside a longer one.
+    /// Case is ignored unless `--case`, and a word matches inside a longer
+    /// one unless `--word`.
     #[arg(value_name = "QUERY")]
     pub query: String,
 
-    /// More words, which the query takes only quoted together with it.
-    #[arg(hide = true, value_name = "MORE")]
-    pub more: Vec<String>,
+    /// Search only the pages in these folders, or these pages, from the
+    /// current folder.
+    ///
+    /// A fragment's text counts for the pages here that show it. By
+    /// default, every page.
+    #[arg(value_name = "PATHS")]
+    pub paths: Vec<PathBuf>,
+
+    /// Search only the pages of this content type.
+    #[arg(long = "type", value_name = "NAME")]
+    pub page_type: Option<String>,
+
+    /// Match case as written.
+    #[arg(long)]
+    pub case: bool,
+
+    /// Match a word or a phrase only where it isn't inside a longer word:
+    /// where the characters on either side aren't letters, digits, or `_`.
+    #[arg(long)]
+    pub word: bool,
+
+    /// Show the pages and how many places each has, most first, instead of
+    /// the places.
+    #[arg(long)]
+    pub summary: bool,
 
     /// Search the pages of this build; repeat it for several.
     ///
@@ -42,9 +69,9 @@ pub struct Args {
     #[arg(long = "build", value_name = "NAME")]
     pub builds: Vec<String>,
 
-    /// List at most this many places.
+    /// List at most this many places, or with `--summary`, pages.
     ///
-    /// By default, 50.
+    /// By default, 50 places, or 20 pages.
     #[arg(long, value_name = "N")]
     pub limit: Option<usize>,
 }
@@ -62,24 +89,16 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 }
 
 fn search(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    if !args.more.is_empty() {
-        let words = std::iter::once(&args.query)
-            .chain(&args.more)
-            .map(String::as_str)
-            .collect::<Vec<_>>()
-            .join(" ");
-        let _ = writeln!(
-            err,
-            "error: search takes one query; quote several words together: ascribe search {}",
-            quote(&words)
-        );
-        return exit::FAILURE;
-    }
     let (searched, next) = match answer(&FromDisk, global, args) {
         Ok(answer) => answer,
         Err(stop) => return stop.report(err),
     };
-    if let Some(code) = answer::written(write_text(out, &searched, next.as_deref()), err) {
+    let written = if args.summary {
+        write_summary(out, &searched, limit(args), next.as_deref())
+    } else {
+        write_text(out, &searched, next.as_deref())
+    };
+    if let Some(code) = answer::written(written, err) {
         return code;
     }
     if searched.total > 0 {
@@ -90,26 +109,49 @@ fn search(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write
 }
 
 /// The places the command shows, at most as many as `--limit` allows, and
-/// the command that shows them all when they're cut.
+/// the command that shows them all when they're cut; with `--summary`, the
+/// pages.
 ///
 /// # Errors
 ///
-/// No project, a query that can't be read, or a build that isn't one.
+/// No project, a path that names no page or fragment of it, a query that
+/// can't be read, or a build or a type that isn't one.
 pub fn answer(
     projects: &dyn Projects,
     global: &Global,
     args: &Args,
 ) -> Result<(Searched, Option<String>), Stop> {
-    let loaded = answer::load(projects, global, None)?;
-    let limit = args.limit.unwrap_or(TEXT_LIMIT);
+    let config = answer::locate(global, args.paths.first().map(PathBuf::as_path))
+        .map_err(|e| Stop::Load(Failure::Config(e)))?;
+    let loaded = projects
+        .load(&config)
+        .map_err(|e| Stop::Load(Failure::Load(e)))?;
+    let scope = if args.paths.is_empty() {
+        None
+    } else {
+        Some(scope(&loaded.project, &config, args)?)
+    };
+    let limit = limit(args);
     let searched = ascribe_query::search(
         &loaded.project,
         loaded.index(),
-        &args.query,
-        &args.builds,
-        limit,
+        &Search {
+            query: &args.query,
+            builds: &args.builds,
+            scope: scope.as_ref(),
+            page_type: args.page_type.as_deref(),
+            case: args.case,
+            word: args.word,
+            // A summary counts every page, and lists none of the places.
+            limit: if args.summary { 0 } else { limit },
+        },
     )?;
-    let next = (searched.places.len() < searched.total).then(|| {
+    let (shown, all) = if args.summary {
+        (searched.by_page.len().min(limit), searched.by_page.len())
+    } else {
+        (searched.places.len(), searched.total)
+    };
+    let next = (shown < all).then(|| {
         // The same command, with the limit that lists them all, each word
         // quoted as a shell needs it.
         let mut words = vec![
@@ -117,10 +159,23 @@ pub fn answer(
             "search".to_owned(),
             quote(&args.query),
         ];
+        words.extend(args.paths.iter().map(|p| quote(&p.to_string_lossy())));
         for build in &args.builds {
             words.extend(["--build".to_owned(), quote(build)]);
         }
-        words.extend(["--limit".to_owned(), searched.total.to_string()]);
+        if let Some(name) = &args.page_type {
+            words.extend(["--type".to_owned(), quote(name)]);
+        }
+        for (on, flag) in [
+            (args.case, "--case"),
+            (args.word, "--word"),
+            (args.summary, "--summary"),
+        ] {
+            if on {
+                words.push(flag.to_owned());
+            }
+        }
+        words.extend(["--limit".to_owned(), all.to_string()]);
         if let Some(config) = &global.config {
             words.extend(["--config".to_owned(), quote(&config.to_string_lossy())]);
         }
@@ -129,11 +184,64 @@ pub fn answer(
     Ok((searched, next))
 }
 
+/// The folders and pages the paths after the query name, each of which
+/// must have a page or a fragment of the project at it or under it.
+fn scope(project: &ascribe_check::Project, config: &Path, args: &Args) -> Result<Scope, Stop> {
+    // Words meant for the query, not paths: say to quote them with it.
+    let query = args
+        .paths
+        .iter()
+        .all(|p| p.to_str().is_some_and(is_plain_word))
+        .then(|| {
+            let words: Vec<String> = std::iter::once(args.query.clone())
+                .chain(args.paths.iter().map(|p| p.to_string_lossy().into_owned()))
+                .collect();
+            quote(&words.join(" "))
+        });
+    let scope = Scope::of_paths(project, config, &args.paths, true).map_err(|e| match e {
+        ScopeError::Missing { path } => QueryError::NoSource {
+            path: path.display().to_string(),
+            missing: true,
+            query: query.clone(),
+        },
+        e => QueryError::Scope(e),
+    })?;
+    for (given, path) in args.paths.iter().zip(scope.paths()) {
+        if Scope::new([path.clone()]).sources(project).is_empty() {
+            return Err(QueryError::NoSource {
+                path: given.display().to_string(),
+                missing: false,
+                query,
+            }
+            .into());
+        }
+    }
+    Ok(scope)
+}
+
+/// The most places, or with `--summary` pages, the text lists.
+fn limit(args: &Args) -> usize {
+    args.limit.unwrap_or(if args.summary {
+        TALLY_FILES
+    } else {
+        TEXT_LIMIT
+    })
+}
+
+/// Whether an argument reads as a word, not a path: letters, digits, `-`,
+/// and `'`.
+fn is_plain_word(arg: &str) -> bool {
+    !arg.is_empty()
+        && arg
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '\'')
+}
+
 /// Writes the places as text: each `file:line:` and its block as a reader
 /// reads it, cut around the match, then where a reader meets it.
 pub fn write_text(out: &mut dyn Write, s: &Searched, next: Option<&str>) -> io::Result<()> {
-    if s.total == 0 {
-        return writeln!(out, "No place matches.");
+    if let Some(nothing) = &s.nothing {
+        return write_nothing(out, nothing);
     }
     for place in &s.places {
         writeln!(out, "{}:{}: {}", place.file, place.line, excerpt(place))?;
@@ -143,17 +251,84 @@ pub fn write_text(out: &mut dyn Write, s: &Searched, next: Option<&str>) -> io::
         }
     }
     writeln!(out)?;
+    write_total(out, s)?;
+    if let Some(next) = next {
+        writeln!(out, "Showing {} of them; for all: `{next}`", s.places.len())?;
+    }
+    Ok(())
+}
+
+/// Writes the pages that show a place and how many each shows, most first,
+/// at most `limit` of them, then the total: what `--summary` shows. `next`
+/// is the command that lists them all, when they're cut.
+pub fn write_summary(
+    out: &mut dyn Write,
+    s: &Searched,
+    limit: usize,
+    next: Option<&str>,
+) -> io::Result<()> {
+    if let Some(nothing) = &s.nothing {
+        return write_nothing(out, nothing);
+    }
+    let shown = s.by_page.len().min(limit);
+    let width = s
+        .by_page
+        .first()
+        .map_or(1, |(_, count)| count.to_string().len());
+    writeln!(out, "By page:")?;
+    for (page, count) in s.by_page.iter().take(shown) {
+        writeln!(out, "  {count:>width$}  {page}")?;
+    }
+    if let Some(next) = next.filter(|_| shown < s.by_page.len()) {
+        let more = s.by_page.len() - shown;
+        let pages = if more == 1 { "page" } else { "pages" };
+        writeln!(out, "  and {more} more {pages}: `{next}`")?;
+    }
+    writeln!(out)?;
+    write_total(out, s)
+}
+
+/// `79 places match, on 28 pages.`
+fn write_total(out: &mut dyn Write, s: &Searched) -> io::Result<()> {
     let places = if s.total == 1 {
         "place matches"
     } else {
         "places match"
     };
     let pages = if s.pages == 1 { "page" } else { "pages" };
-    writeln!(out, "{} {places}, on {} {pages}.", s.total, s.pages)?;
-    if let Some(next) = next {
-        writeln!(out, "Showing {} of them; for all: `{next}`", s.places.len())?;
+    writeln!(out, "{} {places}, on {} {pages}.", s.total, s.pages)
+}
+
+/// Writes that no place matches, and what the source says about the words.
+fn write_nothing(out: &mut dyn Write, nothing: &Nothing) -> io::Result<()> {
+    writeln!(out, "No place matches.")?;
+    match nothing {
+        Nothing::Unwritten => writeln!(out, "The words aren't in any page."),
+        Nothing::Unpublished { written, total } => {
+            let at: Vec<String> = written
+                .iter()
+                .map(|(file, line)| format!("`{file}:{line}`"))
+                .collect();
+            let mut text = format!(
+                "No build searched publishes them. They're written at {}",
+                at.first().map_or("", String::as_str)
+            );
+            let more = total.saturating_sub(1);
+            if more > 0 {
+                let places = if more == 1 { "place" } else { "places" };
+                text.push_str(&format!(" and {more} more {places}"));
+            }
+            writeln!(out, "{text}.")
+        }
+        Nothing::OtherBuilds(builds) => {
+            let builds: Vec<String> = builds.iter().map(|b| format!("`{b}`")).collect();
+            writeln!(
+                out,
+                "Builds not searched publish them: {}.",
+                builds.join(", ")
+            )
+        }
     }
-    Ok(())
 }
 
 /// Where a reader meets a place: the heading it's under, its arm, what it

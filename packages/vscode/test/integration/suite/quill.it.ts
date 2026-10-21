@@ -7,7 +7,7 @@ import { ascribeElsewhere } from "../../../src/agents/reach.js";
 import { nodePathEnvironment } from "../../../src/environment.js";
 import type { ItemRecord, SidebarItem } from "../../../src/ui/sidebarViews.js";
 import type { Drawn } from "../../../src/ui/webviewView.js";
-import type { ThisPageReport } from "../../../src/webview/viewProtocol.js";
+import type { ProjectReport, ThisPageReport } from "../../../src/webview/viewProtocol.js";
 import { activated, diagnosticsOf, uriOf, waitFor } from "./helpers.js";
 
 // The sidebar's views run first, while the project's pages are the example's own.
@@ -418,6 +418,93 @@ describe("This page's webview on examples/quill", () => {
     await view.whenSettled();
     assert.equal(vscode.window.activeTextEditor?.document.uri.toString(), installAgent.toString());
   });
+
+  it("opens an include beside the page, with the focus left in the view and the view on the page", async () => {
+    const api = await activated();
+    const view = api.ui.thisPage;
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(installAgent), {
+      viewColumn: vscode.ViewColumn.One,
+    });
+    await view.whenDrawn(
+      "install-agent.md",
+      (drawn) => title(drawn) === "Title (Install the Quill agent)",
+    );
+    // Connections' third group, Includes, lists the page's one `@include`.
+    const includes = view.items().find((item) => item.label === "Connections")?.children[2];
+    assert.equal(includes?.children[0]?.label, "_fragments/prerequisites.md");
+
+    // The reader clicks in the view, and chooses the include with the keyboard.
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    const pressed = await view.probe({ open: true, focus: "connections/2/0", press: true });
+    assert.equal(pressed.report.focused, "connections/2/0");
+    const fragment = uriOf("docs", "_fragments", "prerequisites.md");
+    const beside = await waitFor("the include beside the page", async () =>
+      vscode.window.visibleTextEditors.find(
+        (editor) => editor.document.uri.toString() === fragment.toString(),
+      ),
+    );
+    assert.equal(beside.viewColumn, vscode.ViewColumn.Two);
+    assert.ok(
+      vscode.window.visibleTextEditors.some(
+        (editor) =>
+          editor.document.uri.toString() === installAgent.toString() &&
+          editor.viewColumn === vscode.ViewColumn.One,
+      ),
+    );
+    // The view stays on the page, and the focus where the choice left it.
+    await view.whenSettled();
+    const after = await view.probe({});
+    assert.equal(title(after), "Title (Install the Quill agent)");
+    assert.equal(after.report.focused, "connections/2/0");
+    assert.equal(after.report.hasFocus, true);
+    assert.notEqual(vscode.window.activeTextEditor?.document.uri.toString(), fragment.toString());
+  });
+
+  it("keeps its scroll and the keyboard's focus as the cursor moves", async () => {
+    const api = await activated();
+    const view = api.ui.thisPage;
+    const keys = uriOf("docs", "keys.md");
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    const editor = await vscode.window.showTextDocument(
+      await vscode.workspace.openTextDocument(keys),
+    );
+    const lines = editor.document.getText().split("\n");
+    const at = (heading: string) => {
+      const line = lines.indexOf(heading);
+      assert.ok(line >= 0, `no ${heading}`);
+      return new vscode.Selection(line + 1, 0, line + 1, 0);
+    };
+    editor.selection = at("## Rotate keys");
+    await view.whenDrawn("keys.md under Rotate keys", (drawn) =>
+      (drawn.report.sections.find((section) => section.key === "connections")?.items ?? []).some(
+        (item) => item.startsWith("install-agent.md"),
+      ),
+    );
+
+    // Every section open, the focus on About's Description, and the view scrolled.
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    const placed = await view.probe({ open: true, focus: "about/4", scroll: 40 });
+    assert.equal(placed.report.focused, "about/4");
+    assert.ok(placed.report.scroll > 0, "the view doesn't scroll");
+
+    // The cursor moves to another heading: Connections changes, and the
+    // reader's place in the view doesn't.
+    const before = view.drawn()?.seq ?? 0;
+    editor.selection = at("## Create a key");
+    const moved = await view.whenDrawn(
+      "keys.md under Create a key",
+      (drawn) =>
+        drawn.seq > before &&
+        !(drawn.report.sections.find((section) => section.key === "connections")?.items ?? []).some(
+          (item) => item.startsWith("install-agent.md"),
+        ),
+    );
+    assert.equal(moved.report.focused, "about/4");
+    assert.equal(moved.report.scroll, placed.report.scroll);
+  });
 });
 
 // Pages' and Content model's menus and filters, run through the views' test
@@ -714,6 +801,91 @@ function lineOf(uri: vscode.Uri, text: string): number {
       .findIndex((line) => line.includes(text)) + 1
   );
 }
+
+// The Project view's one count so far: every build's problems, from the last
+// Check Every Build, shown as current only while nothing in the project has
+// changed since (decision #654a).
+describe("the Project view on examples/quill", () => {
+  const keys = uriOf("docs", "keys.md");
+  const memo = uriOf("memos", "product-name.md");
+
+  after(async () => {
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
+  /** The problems count as the webview drew it. */
+  const problems = (drawn: Drawn<ProjectReport>) =>
+    drawn.report.health.find((count) => count.key === "problems");
+
+  /** Waits for the view to draw the problems count in `state`, and returns it. */
+  async function drawnIn(state: string): Promise<NonNullable<ReturnType<typeof problems>>> {
+    const api = await activated();
+    const drawn = await api.ui.project.whenDrawn(
+      `every build's problems ${state}`,
+      (d) => problems(d)?.state === state,
+      30_000,
+    );
+    const count = problems(drawn);
+    assert.ok(count);
+    return count;
+  }
+
+  /** Makes an unsaved edit to `uri` in its editor, and takes it back once `then` has run. */
+  async function editing(uri: vscode.Uri, then: () => Promise<void>): Promise<void> {
+    const editor = await vscode.window.showTextDocument(
+      await vscode.workspace.openTextDocument(uri),
+    );
+    assert.ok(await editor.edit((e) => e.insert(new vscode.Position(0, 0), "x")));
+    try {
+      await then();
+    } finally {
+      await vscode.window.showTextDocument(editor.document);
+      await vscode.commands.executeCommand("workbench.action.files.revert");
+    }
+  }
+
+  it("counts every build's problems as unknown, current after Check Every Build, and out of date after an edit", async () => {
+    const api = await activated();
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
+    await vscode.commands.executeCommand("ascribe.project.focus");
+    const folder = await waitFor("the sidebar's project", () => api.ui.sidebar.project());
+
+    const unknown = await drawnIn("unknown");
+    assert.deepEqual([unknown.value, unknown.note], ["—", "Needs every build checked"]);
+    const head = api.ui.project.drawn()?.report;
+    assert.ok(head?.head.includes("Server: running"), head?.head.join("\n"));
+    assert.ok(head?.buttons.includes("Check Every Build"), head?.buttons.join("\n"));
+
+    // The view's Check Every Build checks its own project, wherever the focus is.
+    await api.ui.project.choose("checkEveryBuild");
+    const current = await drawnIn("current");
+    // broken.md's unknown attribute key is an error in every build.
+    assert.match(current.value, /^\d+ errors?(, \d+ warnings?)?(, \d+ advice)?$/, current.value);
+    assert.match(current.note, /^Checked at /, current.note);
+    assert.equal(api.ui.everyBuild.isCurrent(folder), true);
+    assert.equal(api.ui.project.drawn()?.report.buttons[0], current.value);
+
+    // An edit to a page, unsaved, makes it out of date.
+    await editing(keys, async () => {
+      const stale = await drawnIn("outOfDate");
+      assert.equal(stale.value, "—");
+      assert.match(stale.note, /^Out of date: the project changed after the check at /);
+      assert.equal(api.ui.everyBuild.isCurrent(folder), false);
+    });
+  });
+
+  it("goes out of date for a file beside ascribe.toml, outside the content root", async () => {
+    const api = await activated();
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
+    await vscode.commands.executeCommand("ascribe.project.focus");
+    await api.ui.project.choose("checkEveryBuild");
+    await drawnIn("current");
+    // memos/ is the project's, beside docs/, its content root.
+    await editing(memo, async () => {
+      await drawnIn("outOfDate");
+    });
+  });
+});
 
 // The real `ascribe lsp` on a copy of examples/quill with a broken
 // page, `docs/broken.md`, added (its unknown attribute key is a §8.2 error).

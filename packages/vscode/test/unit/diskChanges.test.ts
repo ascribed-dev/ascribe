@@ -3,6 +3,7 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ChangeBatch,
+  changesCheck,
   layoutOf,
   MAX_WAIT_MS,
   PROJECT_DEFAULTS,
@@ -130,6 +131,70 @@ describe("startsServer", () => {
       startsServer("c:\\repo\\handbook\\pages\\Node_Modules\\a.md", windows, windowsLayout, [
         windows,
       ]),
+    ).toBe(false);
+  });
+});
+
+describe("changesCheck", () => {
+  const repo = path.resolve("/repo");
+  const handbook = project(path.join(repo, "handbook"));
+  const nested = project(path.join(repo, "handbook", "pages", "nested"));
+  const projects = [handbook, nested];
+  const layout: Layout = {
+    contentRoot: path.join(repo, "handbook", "pages"),
+    outputDir: path.join(repo, "handbook", "out"),
+    sources: [path.join(repo, "code")],
+  };
+  const changes = (...segments: string[]) =>
+    changesCheck(path.join(repo, ...segments), handbook, layout, projects);
+
+  it("counts what startsServer counts", () => {
+    expect(changes("handbook", "ascribe.toml")).toBe(true);
+    expect(changes("handbook", "pages", "index.md")).toBe(true);
+    expect(changes("handbook", "pages", "images", "logo.png")).toBe(true);
+    expect(changes("code", "src", "main.rs")).toBe(true);
+  });
+
+  it("counts the project's files beside ascribe.toml, which the check reads too", () => {
+    for (const file of ["ascribe.nav", "ascribe.permalinks", "ascribe.lock", "README.md"]) {
+      expect(changes("handbook", file)).toBe(true);
+      expect(startsServer(path.join(repo, "handbook", file), handbook, layout, projects)).toBe(
+        false,
+      );
+    }
+    expect(changes("handbook", "memos", "index.md")).toBe(true);
+    expect(changes("handbook", "templates", "how-to.md")).toBe(true);
+    expect(changes("handbook", "memos")).toBe(true);
+  });
+
+  it("doesn't count a nested project's files, or files outside the project and its sources", () => {
+    expect(changes("handbook", "pages", "nested", "ascribe.toml")).toBe(false);
+    expect(changes("handbook", "pages", "nested", "content", "index.md")).toBe(false);
+    expect(changes("elsewhere", "index.md")).toBe(false);
+    expect(changes("handbook-old", "ascribe.nav")).toBe(false);
+  });
+
+  it("doesn't count the output directory, .ascribe, node_modules, or .git", () => {
+    expect(changes("handbook", "out", "site", "index.html")).toBe(false);
+    expect(changes("handbook", ".ascribe", "vale", ".vale.ini")).toBe(false);
+    expect(changes("handbook", ".ascribe", "cache", "links", "ab", "x.json")).toBe(false);
+    expect(changes("handbook", "node_modules", "x", "README.md")).toBe(false);
+    expect(changes("handbook", ".git", "index")).toBe(false);
+    expect(changes("code", ".git", "index")).toBe(false);
+  });
+
+  it("folds the case of Windows paths", () => {
+    const windows = project("C:\\Repo\\handbook");
+    const windowsLayout: Layout = {
+      contentRoot: "C:\\Repo\\handbook\\pages",
+      outputDir: "C:\\Repo\\handbook\\.ascribe\\build",
+      sources: [],
+    };
+    expect(changesCheck("c:\\repo\\HANDBOOK\\ascribe.nav", windows, windowsLayout, [windows])).toBe(
+      true,
+    );
+    expect(
+      changesCheck("c:\\repo\\handbook\\.Ascribe\\vale\\a.ini", windows, windowsLayout, [windows]),
     ).toBe(false);
   });
 });

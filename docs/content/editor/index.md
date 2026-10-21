@@ -42,7 +42,7 @@ Each of the extension's features is on the page for what you're doing with it:
 - [Writing in the editor](writing.md): completion, hover, navigation, the lens on code files a page shows, renaming, formatting, and highlighting.
 - [Actions, new pages, and memos](actions.md): the actions that write Ascribe for you, starting a page from its template, and memo files.
 - [The preview and builds](preview.md): the page preview, the site preview, the status bar, and the build lens.
-- [The Ascribe sidebar](sidebar.md): This page, Pages, and Content model, and switching the project they show.
+- [The Ascribe sidebar](sidebar.md): Project, This page, Pages, and Content model, and switching the project they show.
 - [Review in the preview](review.md): what changed against a base, the Review view, and a pull request's comments.
 - [Agents in the editor](agents.md): prompting your agent to fix a problem, and the tools and skill an agent in VS Code gets.
 - [Workspaces, settings, and commands](settings.md): several projects in one workspace, and every setting and command.

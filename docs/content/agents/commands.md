@@ -19,9 +19,9 @@ Writes `AGENTS.md` beside `ascribe.toml`, a short block in the repository root's
 
 Run where there's no `ascribe.toml` at or above, such as at the root of a repository with several projects, it syncs each project in the folders below, in path order, and says which. Each writes its own block in the root's `AGENTS.md`, and the list names each file once.
 
-With `--with-hook`, it also writes the [hooks](index.md#hooks) for `claude`, `codex`, and `copilot`, and for `claude` the MCP server, merging them into the agents' settings files at the root. Hooks it wrote before are kept up to date without it.
+With `--with-hook`, it also writes the [hooks](hooks.md) for `claude`, `codex`, and `copilot`, and for `claude` the MCP server, merging them into the agents' settings files at the root. Hooks it wrote before are kept up to date without it.
 
-With `--cloud`, it also writes what [Copilot's cloud agent](index.md#github-copilot) needs: steps that install Ascribe in `.github/workflows/copilot-setup-steps.yml`, creating the workflow or adding them between markers to its `copilot-setup-steps` job. It then prints the MCP server's JSON for the repository's settings, after the list of files; with `--agent`, it writes the custom agent `.github/agents/ascribe-docs.md`, which carries the server, instead. When the repository's projects install Ascribe in different ways, the JSON is still one document, and it and the custom agent carry a server for each way, named as [the guide](index.md#github-copilot) says. `--cloud` implies `--target copilot`. The steps and the custom agent are kept up to date without it.
+With `--cloud`, it also writes what [Copilot's cloud agent](copilot.md) needs: steps that install Ascribe in `.github/workflows/copilot-setup-steps.yml`, creating the workflow or adding them between markers to its `copilot-setup-steps` job. It then prints the MCP server's JSON for the repository's settings, after the list of files; with `--agent`, it writes the custom agent `.github/agents/ascribe-docs.md`, which carries the server, instead. When the repository's projects install Ascribe in different ways, the JSON is still one document, and it and the custom agent carry a server for each way, named as [the guide](copilot.md) says. `--cloud` implies `--target copilot`. The steps and the custom agent are kept up to date without it.
 
 @include: ../_generated/cli-agents-sync-options.md
 
@@ -31,8 +31,8 @@ Each target writes its own files, beside `AGENTS.md` and the skill:
 |---|---|
 | `claude` | An import of `AGENTS.md` (`@AGENTS.md`) in `CLAUDE.md`, and the skill in `.claude/skills/ascribe/`, loaded for your pages |
 | `claude-rules` | The rules in `.claude/rules/ascribe.md`, loaded only when Claude Code works on your pages |
-| `copilot` | The rules in `.github/instructions/ascribe.instructions.md`, applied only to your pages; with `--cloud`, what [Copilot's cloud agent](index.md#github-copilot) needs |
-| `codex` | Nothing of its own, since Codex reads `AGENTS.md` and the skill; it's there for [its hooks](index.md#hooks) |
+| `copilot` | The rules in `.github/instructions/ascribe.instructions.md`, applied only to your pages; with `--cloud`, what [Copilot's cloud agent](copilot.md) needs |
+| `codex` | Nothing of its own, since Codex reads `AGENTS.md` and the skill; it's there for [its hooks](hooks.md) |
 
 For a project in a subfolder, the rules files are named after its folder: `ascribe-docs.md` for a project in `docs/`. When one project is nested in another's content root, the outer project's rules say that the nested project's pages aren't theirs.
 
@@ -42,7 +42,7 @@ With `--with-hook`, each target's file gets these entries:
 
 | Target | File | Entries |
 |---|---|---|
-| `claude` | `.claude/settings.json` and `.mcp.json` | The edit hook (after `Write`, `Edit`, and `MultiEdit`), the stop hook, and [the MCP server](index.md#the-mcp-server) |
+| `claude` | `.claude/settings.json` and `.mcp.json` | The edit hook (after `Write`, `Edit`, and `MultiEdit`), the stop hook, and [the MCP server](mcp.md) |
 | `codex` | `.codex/hooks.json` | The edit hook and the stop hook |
 | `copilot` | `.github/hooks/ascribe.json` | The edit hook and the stop hook, for Copilot's CLI and its cloud agent |
 
@@ -71,7 +71,7 @@ Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside
 ### `ascribe agents index`
 @id {permalink=true}: cli-agents-index
 
-Writes a compact index of one build's docs, for the `AGENTS.md` of the product they're about: one line a page, with its title, its address, and its description, grouped in sections as the build's `llms.txt` is. It's for your product's agents, where `sync` is for the agents that write your docs; [Index your docs for your product's agents](index.md#index-your-docs-for-your-products-agents) says when it's worth it.
+Writes a compact index of one build's docs, for the `AGENTS.md` of the product they're about: one line a page, with its title, its address, and its description, grouped in sections as the build's `llms.txt` is. It's for your product's agents, where `sync` is for the agents that write your docs; [Index your docs for your product's agents](product-index.md) says when it's worth it.
 
 It lists the pages the build offers, the ones in `llms.txt`: a page that's `unlisted` isn't in it. A page's address is its Markdown version's, with `[consumer] agents = true`, or else its own. The index holds to 8 KB: past that, it leaves out descriptions, from the last page back, then pages, from the last back, and ends with a sentence saying how many it left out and where every page is.
 
@@ -146,7 +146,7 @@ Every path and command in a prompt is from one folder, which it names once: "Pat
 ### `ascribe agents hook`
 @id {permalink=true}: cli-agents-hook
 
-Checks an agent's work as its hook runs it: after the agent writes a file, or before it finishes. It reads the hook's JSON input on standard input and answers in the agent's own format. See [Hooks](index.md#hooks) for the entries that run it.
+Checks an agent's work as its hook runs it: after the agent writes a file, or before it finishes. It reads the hook's JSON input on standard input and answers in the agent's own format. See [Hooks](hooks.md) for the entries that run it.
 
 @include: ../_generated/cli-agents-hook-options.md
 
@@ -172,7 +172,7 @@ The first hook in a project starts a check server in the background, the same `a
 @id {permalink=true}: cli-mcp
 @available: ascribe 0.3.0
 
-Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextprotocol.io) over standard input and output, for an agent that has no shell, or a host that approves tools one by one. An agent's host starts it; you don't run it yourself. It offers the commands that answer questions as tools, the project's rules as resources, and the named prompts of [`ascribe agents prompt`](commands.md#cli-agents-prompt). Each tool's result is the JSON its command writes, so an agent with a shell does as well with the commands. See [The MCP server](index.md#the-mcp-server) to set it up.
+Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextprotocol.io) over standard input and output, for an agent that has no shell, or a host that approves tools one by one. An agent's host starts it; you don't run it yourself. It offers the commands that answer questions as tools, the project's rules as resources, and the named prompts of [`ascribe agents prompt`](commands.md#cli-agents-prompt). Each tool's result is the JSON its command writes, so an agent with a shell does as well with the commands. See [The MCP server](mcp.md) to set it up.
 
 | Tool | The command it runs |
 |---|---|

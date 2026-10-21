@@ -41,6 +41,19 @@ pages = [
 
 [[sections]]
 folder = "agents/"
+pages = [
+  "loop.md",
+  "instructions.md",
+  "prompts.md",
+  "mcp.md",
+  "hooks.md",
+  "claude-code.md",
+  "copilot.md",
+  "product-index.md",
+  "whats-sent.md",
+  "measuring.md",
+  "commands.md",
+]
 
 [[sections]]
 folder = "examples/"

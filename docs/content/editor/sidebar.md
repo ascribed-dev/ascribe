@@ -1,7 +1,7 @@
 ---
 type: reference
 title: The Ascribe sidebar
-description: "The Ascribe sidebar in VS Code: This page, Pages, Content model, and switching the project they show."
+description: "The Ascribe sidebar in VS Code: Project, This page, Pages, Content model, and switching the project they show."
 available: ascribe 0.3.0
 ---
 
@@ -10,15 +10,38 @@ The Ascribe icon in the activity bar opens the Ascribe sidebar, with three views
 @available: ascribe 0.4.0
 While review is on, a **Review** view comes first: see [The Review view](review.md#the-review-view).
 
+@available: next
+A **Project** view comes first of all, above Review: see [The Project view](#the-project-view).
+
+## The Project view
+@available: next
+
+**Project** is about the whole project the sidebar shows, where This page is about one page. It shows the same project as the views below it, following the file you're in, and staying on its project when you click in it or open a file of no project.
+
+At its top are the project's name, its folder, its language server's state, such as "running" or "failed", and the version of the `ascribe` binary the server runs.
+
+**Health** counts what needs doing in the project, and its header says how many things there are to do. Each count says when it's from, and it's shown as current only when it is:
+
+| Count | From | Opens |
+|---|---|---|
+| **Problems in every build** | "2 errors, 1 warning": the problems the last **Check Every Build** found in every build, by severity | The Problems panel |
+
+- A count of none shows `0`, dimmed.
+- A count that hasn't been made shows a dash and "Needs every build checked", with **Check Every Build** beside it.
+- A count from a check that the project has changed since shows a dash and "Out of date", with the time of the check and **Check Every Build** beside it. Any change to a file of the project counts, saved or not: a page, `ascribe.toml`, `ascribe.nav`, `ascribe.permalinks`, a memo, a template, or a file in one of its [sources](../examples/sources.md)' folders.
+- A count from a check that read files with unsaved changes says so: the check reads files as they're saved.
+
+The view never checks every build by itself, since that can take a few seconds on a large project. **Actions** has **Check Every Build**, which checks the project the view shows, wherever the cursor is. **Escape** in the view puts the cursor back in the editor.
+
 ## This page, Pages, and Content model
 
 The views show the active file's project, named beside Pages' and Content model's titles. They follow the active editor, and show nothing for a project whose server hasn't started: filling them never starts one. When a project's server fails to start, Pages and Content model say so, with **Show Output** and **Restart**.
 
 @available: ascribe 0.4.0
-**This page** says what's known about the active page, in four sections. **About** gives its title, its content type, its address, and its Markdown version's address, or "not published" when the project publishes none ([`agents = true`](../content-model/output.md#consumer)); a fragment's address is only where it's included. **Health** says how the page stands. **Connections** lists what links to the page, grouped by file, under **Linked from**, what includes it under **Included by**, and what it includes under **Includes**. With the cursor under a heading, Connections narrows to that heading's links and the includes of its section, whichever page they reach it through, and its title names the heading; Includes stays the page's. **Memos** lists the [memo files](actions.md#memo-files) about the heading, or about the page outside any heading, including those about a block in it, each by its first line with its file beside it, marked personal or outdated when it is. Each item opens the link, the include, or the memo. Unsaved edits count.
+**This page** says what's known about the active page, in four sections, and five while review is on, with **Review** after About ([Review in the preview](review.md#the-review-view)). **About** gives its title, its content type, its address, and its Markdown version's address, or "not published" when the project publishes none ([`agents = true`](../content-model/output.md#consumer)); a fragment's address is only where it's included. **Health** says how the page stands. **Connections** lists what links to the page, grouped by file, under **Linked from**, what includes it under **Included by**, and what it includes under **Includes**. With the cursor under a heading, Connections narrows to that heading's links and the includes of its section, whichever page they reach it through, and its title names the heading; Includes stays the page's. **Memos** lists the [memo files](actions.md#memo-files) about the heading, or about the page outside any heading, including those about a block in it, each by its first line with its file beside it, marked personal or outdated when it is. Each item opens the link, the include, or the memo; an include opens in the editor group beside the page's, with the focus left in the view, and This page stays on the page. Unsaved edits count.
 
 @available: next
-This page follows the page you're working in: the last editor of a page that was active. Clicking in the view, or moving to the preview, another view, a panel, or a file that isn't a page leaves it on its page; when that page's editor closes, it shows the page of the editor that takes its place. Only **About** starts open. The other sections' headers say whether to open them: Health's count of things to do, Connections' heading, and Memos' "none". Open or close a section and it stays that way on every page. Rows wrap, so each shows all it says at any width, with more in its tooltip. **Tab** moves between the section headers and the rows that open something, **Enter** or **Space** opens a section or a row, and **Escape** puts the cursor back in the page.
+This page follows the page you're working in: the last editor of a page that was active. Clicking in the view, or moving to the preview, another view, a panel, or a file that isn't a page leaves it on its page; when that page's editor closes, it shows the page of the editor that takes its place. Only **About** starts open. The other sections' headers say whether to open them: Health's count of things to do, Connections' heading, and Memos' "none". Open or close a section and it stays that way on every page. Rows wrap, so each shows all it says at any width, with more in its tooltip. **Tab**, or **Up** and **Down**, moves between the section headers and the rows that open something, **Enter** or **Space** opens a section or a row, and **Escape** puts the cursor back in the page. As the cursor moves and the checks run, the view changes what it says in place, keeping its scroll and the row you're on.
 
 About's other rows say whether the page is published, listed, due, and finished. Each is shown only when it has something to say, apart from a description, which is shown "missing" where [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports the page. A row with somewhere to go opens it:
 
@@ -38,7 +61,7 @@ About's other rows say whether the page is published, listed, due, and finished.
 |---|---|---|
 | **Problems** | "1 warning, 2 advice": VS Code's problems for the page, as the Problems panel counts them | The Problems panel, where its filter's **Show Active File Only** keeps it to the page |
 | **Size** | "31,200 of 50,000 characters, in site": the page's Markdown in the build where it's largest, measured as [`page-size`](../content-model/checks.md#19-checks) measures it, shown always so a page is seen growing toward the limit | Nothing; its tooltip says which build and the limit |
-| **Example** | Each [tested example](../examples/tested.md) a `@snippet` of the page shows: tested, changed since it was tested, or not tested | Its `@snippet` line |
+| **Example** | Each [tested example](../examples/tested.md) a `@snippet` of the page shows: tested, changed since it was tested, or not tested | The file its `@snippet` shows, beside the page |
 
 A fragment has no builds, listing, or size of its own: it's published only where it's included.
 

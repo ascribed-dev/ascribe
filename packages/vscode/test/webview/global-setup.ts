@@ -19,6 +19,7 @@ const OUTPUTS = [
   "preview.js",
   "preview.css",
   "thisPage.js",
+  "project.js",
   "views.css",
   "settings.js",
   "settings.css",

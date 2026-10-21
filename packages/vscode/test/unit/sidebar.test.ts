@@ -1118,7 +1118,10 @@ describe("the This page view", () => {
       // Size goes nowhere: its tooltip says which build and the limit.
       expect(health[1]?.opens).toBeUndefined();
       expect(health[1]?.tooltip).toContain("50,000");
-      expect(health[2]?.opens).toEqual({ kind: "place", uri, range: range(30) });
+      // An example opens the file its `@snippet` shows, beside the page; one
+      // whose `@snippet` the server lists no file for goes to its line.
+      expect(health[2]?.opens).toEqual({ kind: "beside", uri: "file:///p/code/greet.ts" });
+      expect(health[3]?.opens).toEqual({ kind: "place", uri, range: range(40) });
     });
 
     it("list what the page includes under Connections", () => {

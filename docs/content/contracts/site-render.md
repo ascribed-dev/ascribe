@@ -20,7 +20,7 @@ This contract defines the one syntax the site output uses for all four, the **at
 
 The shared fixtures in [`tests/render/`]({repo}/tree/main/tests/render/) are what keep them equal: both must pass every fixture.
 
-Everything here applies to spec 0.1's only consumer profile, `astro`. It settles content-model.md §25, item 12, which is why `ascribe.toml` has no keys for heading ids, image attributes, or glossary links.
+Everything here applies to spec 0.1's only consumer profile, `astro`. It settles [content-model.md §26](content-model/validation.md#26-decisions), item 12, which is why `ascribe.toml` has no keys for heading ids, image attributes, or glossary links.
 
 ## 1. The attribute marker
 
@@ -44,7 +44,7 @@ CommonMark parses the two tags as two adjacent raw inline HTML nodes. (An implem
 
 Every alternative is changed by Astro's markdown processing before a plugin can see it. Each of Astro's markdown processors (Sätteri, its default in Astro 7.3, and `unified()`) applies GFM and typographic replacements before a user plugin sees the tree, so an attribute block written as text, such as `## Setup {#setup}` or `![a](b.png){caption="x"}`, reaches the plugin with its quotes curled and its `--` and `...` turned into dashes and ellipses, and an id like `__init__` can become strong emphasis. A raw HTML node is never touched by either: its text is exactly what Ascribe wrote. The marker also degrades quietly. A consumer without the plugin renders it as an empty element: invisible, and for a heading, an element carrying the right `id` inside the heading, so links still land.
 
-The other options considered, and why they lost, are in content-model.md §25, item 12.
+The other options considered, and why they lost, are in [content-model.md §26](content-model/validation.md#26-decisions), item 12.
 
 ## 2. Where a marker applies
 
@@ -161,6 +161,9 @@ Each construct below has at least one fixture in [`tests/render/`]({repo}/tree/m
 | `attribute-values` | §1, §3 | Escaped quotes, ampersands, and angle brackets decode; spaces and commas stay |
 | `not-a-marker` | §1, §2 | Markers after a space, mid-heading, or in a paragraph, and malformed markers, stay as raw HTML |
 | `raw-html` | §5 | Custom elements wrapping markdown, `<details>`, and markers inside them |
+| `for-agents` | §5 | The pointer for agents at the top of a page (element contract §8) wraps a paragraph whose links stay as written |
+| `availability-row` | §5 | A table row's availability ends its first cell, its targets between the hidden `(Available: ` and `)` (element contract §4) |
+| `availability-planned` | §5 | A planned target keeps its empty `planned` attribute, in a block's availability and a row's (element contract §4) |
 | `code-tested` | §5.1 | A code block with a tested line alone, and with a title and a tested line, each in a figure with its caption |
 
 ## 7. Source anchors

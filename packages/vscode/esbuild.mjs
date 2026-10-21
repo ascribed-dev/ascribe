@@ -92,6 +92,7 @@ await bundle({
     elements: "src/webview/elements.ts",
     preview: "src/webview/preview.ts",
     thisPage: "src/webview/thisPage.ts",
+    project: "src/webview/project.ts",
     settings: "src/webview/settings.ts",
   },
 });
