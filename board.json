@@ -4522,7 +4522,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/768"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Docs: The new views"
     },
     {
@@ -4748,7 +4748,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhCebaE",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "This page: a short description beside a long row wraps a few letters at a time"
     },
     {
@@ -4762,7 +4762,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhCebfo",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Pages: a page the build leaves out is dimmed only in its icon"
     },
     {
@@ -4776,7 +4776,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhCedOY",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "preview.test.ts: serveThreads can reject after the page closes"
     }
   ]
