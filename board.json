@@ -4747,8 +4747,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/769"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhCebaE",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/773"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "This page: a short description beside a long row wraps a few letters at a time"
     },
     {
@@ -4761,8 +4764,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/770"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhCebfo",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/774"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Pages: a page the build leaves out is dimmed only in its icon"
     },
     {
@@ -4775,9 +4781,98 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/771"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhCedOY",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/772"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "preview.test.ts: serveThreads can reject after the page closes"
+    },
+    {
+      "content": {
+        "body": "A follow-up to the Project view as 0.4.1 shipped it ([proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-view.md), [docs](https://ascribed-dev.com/docs/editor/sidebar/#the-project-view)). **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** each Health count is a label beside its value, its note, and its action (`.row`: the term at least 7.5em, the value at least 10em, wrapping). A long label pushes the rest under it, each piece at its own indent, so every count reads differently. The four counts from Check Every Build each repeat \"Needs every build checked\" and their own **Check Every Build** button, though one check brings all four current. \"6 things to do\" counts each of those four dashes as a thing to do. And Actions sits under Health, whose height changes as the counts do, so the buttons move.\n\n**What to build:** Health's counts in groups by when each is from, the note and the action said once per group, at the group's head; each count one line, its label then its value:\n\n```\nActions\n  …\nHealth                                   2 to do\n  Every build · not checked yet    ▷ Check Every Build\n    Problems                  —\n    Tested examples           —\n    Reviews overdue           —\n    Permalinks behind         —\n  As you type\n    Pages nothing links to    0\n    Unused model entries      5\n  At the last save · 3:30 PM\n    Agent files out of date   4\n```\n\n- The groups: **Every build** (the last Check Every Build: problems, examples, overdue reviews, permalinks), **As you type** (`ascribe/inventory`: orphans, unused entries), and **At the last save** (`ascribe agents sync --check`: agent files). A group's head says its state as the counts' notes say it now (not checked yet, checking, checked at a time, out of date and why, couldn't finish), and carries its action while the group isn't current.\n- Overdue reviews keep their day: when the check is current but from another day, that count alone is a dash, with its own note (\"checked on 20 October; reviews fall due by the day\") and the action.\n- \"To do\" counts the current counts above zero, as the mock's 2 (unused entries, agent files). A group that isn't current isn't a thing to do: its head says so, with its action.\n- The sections' order is the head, then **Actions**, **Health**, and **About**, Actions open at first as now.\n- A count still says what it is in words, never by color alone (decision 46): a dash keeps its group's note as its accessible name, as the value's `aria-label` does now.\n\n**Done when:** the view draws the groups and the order above, in `test/webview/` and the view's unit tests (`projectHealth.ts`'s answer); a narrow sidebar wraps a long label without moving its value under the next count's; the four every-build counts show one note and one **Check Every Build**; \"to do\" follows the rule the docs state; and `docs/content/editor/sidebar.md`'s Project view section describes the groups and the order. The pull request adds a decision file for the order and the groups, since the proposal ordered Health before Actions and gave each count its own note.\n\n**Decided:** by the maintainer on 21 October 2026, from a screenshot of 0.4.1's view: the counts grouped as above, and Actions before Health.\n",
+        "number": 777,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Project view: Health grouped by when each count is from, and Actions first",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/777"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCheWU",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Project view: Health grouped by when each count is from, and Actions first"
+    },
+    {
+      "content": {
+        "body": "A follow-up to the Project view as 0.4.1 shipped it ([proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-view.md), \"When each count is from\"). **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** the last Check Every Build lives only as long as the window (`src/ui/checkEveryBuild.ts`). Every time VS Code opens, the four counts from it are dashes, \"not checked yet\", until someone runs it again, though nothing may have changed since yesterday's check. The view rightly never runs the check by itself (the proposal: it takes a second or more on a large project).\n\n**What to build:** the last check's result kept between sessions, per project, in the workspace's storage (`ExtensionContext.workspaceState`), and on opening:\n\n- **Nothing in the project changed since the check started:** its counts are current, as if it had just run, and its problems are back in the Problems panel, so a count still opens the problems it counts. \"Checked yesterday at 3:30 PM\" says when.\n- **Something changed:** a file of the project (its `ascribe.toml`, the files under its content root and its sources' folders, as `isCurrent` follows them) modified after the check started, or one added or removed. The counts are dashes, out of date, \"the project changed after the check yesterday at 3:30 PM\", with **Check Every Build**; the old problems aren't put back.\n- **Not known:** a result written by another version of the extension, or one that can't be read. Treated as never checked.\n- Overdue reviews still go out of date when the day changes, whatever the files say.\n- The result is the check's own: what was found, its summary, and when it started. Unsaved changes at the time were read as saved, and the note still says so.\n\nHow the comparison is made is the implementor's, within these: it reads modification times, not contents; it runs once when the project's view first needs it, not before the window is usable; and a branch switch, which rewrites files, reads as a change. Say in the pull request what it costs on `docs/`.\n\n**Done when:** in the integration tests, a check, a reload with nothing changed, and the counts are current with their problems in the Problems panel; a check, a file edited on disk, a reload, and they're out of date, with nothing put back; and a result from another version is ignored. `docs/content/editor/sidebar.md` says the check is remembered and when it isn't, and the pull request adds a decision file for keeping it.\n\n**Decided:** by the maintainer on 21 October 2026: the last check's result is kept between sessions. Running the check when VS Code opens was the other option, and isn't taken.\n\n**Needs:** #777, which changes how the check's state is said.\n",
+        "number": 778,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Project view: the last Check Every Build kept between sessions",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/778"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCheZ0",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Project view: the last Check Every Build kept between sessions"
+    },
+    {
+      "content": {
+        "body": "A follow-up to This page and the Project view as 0.4.1 shipped them. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** both views count problems by severity in words: \"1 warning, 2 advice\" (This page's Problems row, `src/ui/sidebar.ts`) and \"2 errors, 1 warning, 3 advice\" (the Project view's problems count, `bySeverity` in `src/ui/projectHealth.ts`). \"Advice\" is a mass noun, so \"3 advice\" reads wrongly, and the severity's name isn't changing: it's the CLI's, the JSON's, and the docs'.\n\n**What to build:** the counts as VS Code's status bar shows them: an icon per severity with its count beside it, leaving out a severity there's none of.\n\n- The icons are the codicons VS Code's Problems panel uses for each severity: `error`, `warning`, and `info` for advice, as the language server sends advice as Information (`crates/ascribe-lsp/src/compute.rs`).\n- Each severity is told by its shape and its count, not by color alone (decision 46). The icons may be colored as the Problems panel colors them, with the theme's `--vscode-*` variables only (design/tokens.toml's rule for `views.css`).\n- **A tooltip says what the icons mean,** in words: \"2 errors, 1 warning, and advice on 3 lines\". The same words are the count's accessible name, so a screen reader hears them and never the icons.\n- None at all stays as it is: \"none\" on This page, a dimmed `0` in the Project view.\n- One function makes the words for both views and for Check Every Build's notification (`checkedText` in `src/everyBuild.ts`, which says \"3 advice\" too and is text, so it keeps the words), in place of the three that build them now.\n\n**Done when:** both views draw the icons and counts, in `test/webview/`, with the tooltip and accessible name in words; the unit tests cover none, one severity, and all three; the views' report shows no content security policy violation; and `docs/content/editor/sidebar.md` shows the new form in This page's Problems row and the Project view's problems count.\n\n**Decided:** by the maintainer on 21 October 2026: icons with counts, and tooltips that say what the icons mean. Renaming the severity was the other option, and isn't taken.\n\n**Needs:** #777, which redraws the Project view's counts.\n",
+        "number": 779,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Problem counts as icons with counts, in This page and the Project view",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/779"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCheZk",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Problem counts as icons with counts, in This page and the Project view"
+    },
+    {
+      "content": {
+        "body": "A follow-up to This page as 0.4.1 shipped it. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** About's **Address** row shows the page's address as text, from the host's root (`about.address`). Opening the page as readers see it means copying it and adding the site yourself.\n\n**What to build:** when the project names its site (`[consumer] site`, which the model accepts only as an origin), Address is a link to the page on the live site: the origin and the address. **Markdown** gets the same, for its Markdown version.\n\n- The webview never navigates. Choosing the link sends it to the extension, which opens it with `vscode.env.openExternal`, so VS Code's trusted-domains question applies; only an `http:` or `https:` origin is opened. A new row target beside `place`, `beside`, and `command` carries it.\n- **What it opens is what's deployed, not this branch.** A page that's new or moved here isn't there yet, and a version other than the current one is at another address. The tooltip says so: \"Open on the site: the published site, which may not have this branch's changes yet\".\n- No link, and the address as text as now, when: the project has no `site`; the page is a fragment; or the build shown leaves the page out.\n- The address is the one for the build shown, as the row shows it now; if a versioned build's older line has a different address, the link follows the row.\n\n**Done when:** in `test/webview/` and the unit tests, a project with `site` draws Address and Markdown as links whose choice asks the extension to open the full URL, and a project without it, a fragment, and a page the build leaves out draw text; the integration test checks the URL the extension opens with a stubbed `openExternal`; and `docs/content/editor/sidebar.md`'s About table says the rows open the live site and what that shows.\n\n**Decided:** by the maintainer on 21 October 2026: the address links to the live site.\n",
+        "number": 780,
+        "repository": "ascribed-dev/ascribe",
+        "title": "This page: the address opens the page on the live site",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/780"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhChecc",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "This page: the address opens the page on the live site"
+    },
+    {
+      "content": {
+        "body": "A follow-up to This page and the Project view as 0.4.1 shipped them. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** in a dark theme, the sidebar's webview views (This page, the Project view) sit on a neutral gray, `#121212`, instead of the sidebar's color, while the native views beside them (Pages, Content model) show the theme's `sideBar.background`. Seen with Nu Disco Dark, whose sidebar is `#180D2A`: the views are gray, and their sticky section headers, painted with `--vscode-sideBar-background`, are a purple strip across them.\n\n**The cause, verified:** `views.css` sets `color-scheme: light dark` on `:root`, and VS Code's webview host page sets no `color-scheme`. When a frame's color scheme differs from its embedder's, Chromium paints an opaque backdrop of its own behind the frame (`#121212` for dark), so the view's transparent `body` shows that and not the sidebar.\n- In Chromium (Playwright), a transparent frame over `#180d2a` reads `#121212` with `:root { color-scheme: light dark }`, and `#180d2a` without it.\n- In VS Code, with the Project view showing, **Developer: Open Webview Developer Tools**, then in the view's frame `document.documentElement.style.colorScheme = \"normal\"`: the gray turns to the sidebar's purple (the maintainer, 21 October 2026).\n\n**What to build:** `views.css` leaves the root's color scheme at `normal`, so the frame stays transparent and the sidebar, or the panel if the view is moved there, shows through. A control that needs the theme's scheme for its native parts, such as the build switch's `<select>` and its dropdown, gets it on the control, from VS Code's body class (`vscode-dark`, `vscode-light`, `vscode-high-contrast`, `vscode-high-contrast-light`); a `color-scheme` on an element doesn't bring the backdrop back.\n\n- The sticky section headers keep an opaque background so rows scrolling under them stay hidden; `--vscode-sideBar-background` is right in the sidebar, which is where the views are contributed.\n- `settings.css` and `preview.css` set the same root `color-scheme`, but each paints the editor's background on its `body`, so nothing shows through them; they're left as they are unless the change is the same one line and the tests say they're unchanged.\n- The color test's rule holds: every color in `views.css` is a `--vscode-*` variable.\n\n**Done when:** a webview test draws a view in a frame over a colored embedder, with the dark scheme emulated, and reads the embedder's color behind the view's body, not `#121212`, and it fails with the old stylesheet; the build switch's dropdown still draws in the theme's scheme in a dark theme (a screenshot in the pull request, from VS Code); and nothing a reader sees changes in a light theme.\n\n**Decided:** nothing new: the views were always meant to sit on the sidebar's colors (`views.css`: \"every color is one of the `--vscode-*` variables VS Code sets\").\n",
+        "number": 781,
+        "repository": "ascribed-dev/ascribe",
+        "title": "This page and the Project view sit on gray, not the sidebar's color, in dark themes",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/781"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhChoN4",
+      "labels": [
+        "bug",
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "This page and the Project view sit on gray, not the sidebar's color, in dark themes"
     }
   ]
 }
