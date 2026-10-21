@@ -235,11 +235,16 @@ export class ProjectView implements vscode.Disposable {
     };
   }
 
-  /** The project's sources, for About: asked of the binary the first time, and drawn again once it answers. */
+  /**
+   * The project's sources, for About: asked of the binary the first time the
+   * view shows the project, and drawn again once it answers. A hidden view
+   * starts no process, as the agent files' check doesn't.
+   */
   private sourcesOf(server: ProjectServer): AboutFacts["sources"] {
     const key = comparable(server.project.folder);
     const known = this.sources.get(key);
     if (known !== undefined) return known;
+    if (!this.view.visible) return "asking";
     this.sources.set(key, "asking");
     void this.tasks.sourcesFor(server.project).then((sources) => {
       // Forgotten while it was asked: it's asked again.
