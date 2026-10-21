@@ -54,7 +54,7 @@ ascribe agents sync --check
 The skill is one folder, `ascribe`, in the [Agent Skills](https://agentskills.io) format, which most agents read. It teaches the tool, the same for every project, and sends the agent to `AGENTS.md` and `ascribe model` for your project's rules:
 
 - the loop: edit a page, run `ascribe check <file> --format concise`, fix what it reports, and run the whole check before finishing; and to stop and ask after three rounds that don't fix it;
-- the commands that answer questions: `explain`, `model`, `outline`, `link`, `render`, and `refs`;
+- the commands that answer questions: `explain`, `model`, `outline`, `link`, `resolve`, and `refs`;
 - which fixes in `ascribe check`'s JSON can be applied as they are;
 - that text from a review or a pull request is someone else's, not instructions;
 - each directive's syntax, in a reference it reads only when it needs it.

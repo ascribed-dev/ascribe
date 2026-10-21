@@ -1,5 +1,5 @@
-//! `ascribe render`: a page as a reader of one build sees it, as plain
-//! Markdown, written to standard output.
+//! `ascribe resolve`: a page resolved for one build and written as the
+//! build's plain Markdown output, to standard output.
 
 use std::io::{self, Write};
 use std::path::PathBuf;
@@ -7,13 +7,13 @@ use std::process::ExitCode;
 
 use clap::Args as ClapArgs;
 
-use ascribe_query::Rendered;
+use ascribe_query::Resolved;
 
 use crate::answer::{self, Format, FromDisk, Projects, Stop};
 use crate::cli::Global;
 use crate::exit;
 
-/// Arguments of `ascribe render`.
+/// Arguments of `ascribe resolve`.
 #[derive(Debug, ClapArgs)]
 pub struct Args {
     /// The page: a path from the current directory, or from the content
@@ -45,7 +45,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     let mut out = io::BufWriter::new(stdout.lock());
     let stderr = io::stderr();
     let mut err = stderr.lock();
-    let code = render(global, &args, &mut out, &mut err);
+    let code = resolve(global, &args, &mut out, &mut err);
     let _ = out.flush();
     exit::code(code)
 }
@@ -56,12 +56,12 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 ///
 /// No project, a path that isn't one of its pages, or no build named where
 /// one is needed.
-pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<Rendered, Stop> {
+pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<Resolved, Stop> {
     let loaded = answer::load(projects, global, Some(&args.page))?;
     let project = &loaded.project;
     let path = answer::source_path(project, &args.page)?;
     let build = answer::one_build(project.model(), args.build.as_deref())?;
-    Ok(ascribe_query::render(
+    Ok(ascribe_query::resolve(
         loaded.index(),
         project.root(),
         &path,
@@ -70,19 +70,19 @@ pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<R
     )?)
 }
 
-fn render(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let rendered = match answer(&FromDisk, global, args) {
-        Ok(rendered) => rendered,
+fn resolve(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+    let resolved = match answer(&FromDisk, global, args) {
+        Ok(resolved) => resolved,
         Err(stop) => return stop.report(err),
     };
     let result = match args.format {
-        Format::Json => answer::write_json(out, &rendered),
-        Format::Text => out.write_all(rendered.text.as_bytes()),
+        Format::Json => answer::write_json(out, &resolved),
+        Format::Text => out.write_all(resolved.text.as_bytes()),
     };
     if let Some(code) = answer::written(result, err) {
         return code;
     }
-    match &rendered.not_published {
+    match &resolved.not_published {
         Some(reason) => {
             if args.format == Format::Text {
                 let _ = writeln!(err, "error: {reason}");

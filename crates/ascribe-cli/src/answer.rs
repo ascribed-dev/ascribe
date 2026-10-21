@@ -1,5 +1,5 @@
 //! What the commands that answer questions share (`explain`, `model`,
-//! `outline`, `link`, `render`, and `refs`): their output format, finding the
+//! `outline`, `link`, `resolve`, and `refs`): their output format, finding the
 //! project from a path given on the command line, reading a page argument,
 //! and writing the answer. The MCP server's tools answer through the same
 //! functions, with a [`Projects`] that keeps projects loaded between calls.

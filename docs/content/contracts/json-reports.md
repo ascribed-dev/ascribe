@@ -20,7 +20,7 @@ The schemas of `ascribe check`, `ascribe build`, and `ascribe fmt` are on this p
 - [`ascribe init`, `ascribe sources`, `ascribe observe`, and `ascribe permalinks`](json-reports/sources.md)
 - [`ascribe templates`](json-reports/templates.md)
 - [`ascribe versions`](json-reports/versions.md)
-- [`ascribe explain`, `model`, `outline`, `link`, `refs`, `render`, and `agents index`](json-reports/questions.md)
+- [`ascribe explain`, `model`, `outline`, `link`, `refs`, `resolve`, and `agents index`](json-reports/questions.md)
 
 ## `ascribe check` and `ascribe build`
 

@@ -527,7 +527,7 @@ fn prompt_output_is_about_every_page_or_the_one_named() {
             "{text}"
         );
         assert!(
-            text.contains("\nTo read it: `ascribe render docs/install.md --build site`\n"),
+            text.contains("\nTo read it: `ascribe resolve docs/install.md --build site`\n"),
             "{text}"
         );
     }

@@ -173,11 +173,11 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_query::LinkAnswer>(),
     },
     Shape {
-        file: "render",
-        title: "RenderReport",
-        written_by: "`ascribe render --format json`",
+        file: "resolve",
+        title: "ResolveReport",
+        written_by: "`ascribe resolve --format json`",
         command: true,
-        schema: |g| g.root_schema_for::<ascribe_query::Rendered>(),
+        schema: |g| g.root_schema_for::<ascribe_query::Resolved>(),
     },
     Shape {
         file: "refs",

@@ -212,3 +212,6 @@ example-stale = "error"
 
 [checks.vale]
 preset = "quiet"
+
+[permalinks.retired]
+cli-render = { to = "command/questions.md#cli-resolve", reason = "The command ascribe render was renamed ascribe resolve" }

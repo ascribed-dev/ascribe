@@ -48,7 +48,7 @@ Each changes nothing, and each takes `--format json`.
 - `ascribe model`: what the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, builds, and sources.
 - `ascribe outline <page>`: a page's title, type, and headings, with the ids links use.
 - `ascribe link <target> --from <page>`: whether a link works from a page, and what to write.
-- `ascribe render <page> --build <name>`: a page as one build's readers see it.
+- `ascribe resolve <page> --build <name>`: a page as one build's readers see it.
 - `ascribe refs <target>`: where a page, a heading (`guides/install.md#configure`), a phrase (`phrase:product`), or another entry is used.
 - `ascribe check --summary`: the problems counted by code and by file, for a project with many; `ascribe check --code <code>` then shows one code's, to fix one rule at a time.
 - `ascribe diff`: which pages changed since the default branch, as readers see them, block by block; `ascribe diff <page>` shows one page's. To show that a change, such as a rename or a refactor, changed nothing for readers, run `ascribe diff --exit-code`: it exits with 0 when no page changed.

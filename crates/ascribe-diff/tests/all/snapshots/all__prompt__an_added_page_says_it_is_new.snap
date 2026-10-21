@@ -1,6 +1,5 @@
 ---
 source: crates/ascribe-diff/tests/all/prompt.rs
-assertion_line: 145
 expression: "page_prompt(&context(), find(&builds, \"my guide.md\"))"
 ---
 Review what this change does to `site/content/my guide.md`, as a reader of build `site` sees it.
@@ -12,7 +11,7 @@ Build: `site`
 
 Base: `origin/main`, from where this branch left it (9f8e7d6)
 The page is new: the base doesn't publish it.
-To read it: `ascribe render 'site/content/my guide.md' --build site`
+To read it: `ascribe resolve 'site/content/my guide.md' --build site`
 
 Follow the project's rules in `AGENTS.md`.
 Report what reads wrongly; don't edit.

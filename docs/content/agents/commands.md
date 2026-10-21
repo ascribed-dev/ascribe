@@ -182,7 +182,7 @@ Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextpr
 | `ascribe_outline` | `ascribe outline` |
 | `ascribe_link` | `ascribe link` |
 | `ascribe_refs` | `ascribe refs`, with `response_format` as for `ascribe_check` |
-| `ascribe_render` | `ascribe render` |
+| `ascribe_resolve` | `ascribe resolve` |
 | `ascribe_format` | `ascribe fmt --check --format json`: the edits, and nothing written |
 | `ascribe_changes` | `ascribe diff --format json --pages-only`, or with `blocks` each changed block too |
 

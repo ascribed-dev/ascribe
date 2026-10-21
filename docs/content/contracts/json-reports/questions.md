@@ -35,10 +35,10 @@ With `--list`:
 
 @include: ../../_generated/json-refs.md
 
-## `ascribe render`
+## `ascribe resolve`
 @available: ascribe 0.3.0
 
-@include: ../../_generated/json-render.md
+@include: ../../_generated/json-resolve.md
 
 ## `ascribe agents index`
 @available: ascribe 0.3.0

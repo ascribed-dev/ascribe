@@ -689,7 +689,7 @@ fn getting_started() {
     );
 }
 
-/// `ascribe render` on `examples/platforms`, the guide to content that
+/// `ascribe resolve` on `examples/platforms`, the guide to content that
 /// varies: its one page, for each of the project's two builds.
 #[test]
 fn platforms() {
@@ -699,7 +699,7 @@ fn platforms() {
             &format!("platforms-{build}.txt"),
             &stdout(&run(
                 &example,
-                &["render", "docs/install.md", "--build", build],
+                &["resolve", "docs/install.md", "--build", build],
                 0,
             )),
         );
@@ -922,8 +922,8 @@ fn answers() {
         )),
     );
     expect(
-        "render.txt",
-        &stdout(&run(&root, &["render", keys, "--build", "cloud"], 0)),
+        "resolve.txt",
+        &stdout(&run(&root, &["resolve", keys, "--build", "cloud"], 0)),
     );
 }
 

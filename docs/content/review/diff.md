@@ -78,7 +78,7 @@ A report renders at most 300 changed pages; the rest are listed by name, and the
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff-prompt.txt
 
-The prompt asks for a report, not edits: a review reads the change, and its author decides what to do. Its paths and commands (`ascribe render`, `git diff`, `ascribe diff`) are written from the folder `ascribe diff` was run in, which it names once, with the base, the build, and `--config` as this run had them. The HTML report's **Copy prompt** gives the same prompt, and the editor's **Prompt agent** gives it from the repository's root.
+The prompt asks for a report, not edits: a review reads the change, and its author decides what to do. Its paths and commands (`ascribe resolve`, `git diff`, `ascribe diff`) are written from the folder `ascribe diff` was run in, which it names once, with the base, the build, and `--config` as this run had them. The HTML report's **Copy prompt** gives the same prompt, and the editor's **Prompt agent** gives it from the repository's root.
 
 ### Diff JSON
 

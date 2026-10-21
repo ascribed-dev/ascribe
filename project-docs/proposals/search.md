@@ -19,7 +19,7 @@ The customer this matters most to is an agent. "Where do the docs already explai
 | `ascribe refs`, and the editor's **Find All References** and **Used by** | Where a named thing is used: a page, a heading, a fragment, a phrase, a feature, a term | Find words. It needs the name |
 | `ascribe outline`, and the **Pages** view | A page's headings and ids; the project's pages by title | Look inside a page's text |
 | `ascribe link` | Whether one target exists, and the closest ones that do | Search |
-| `ascribe render` | One page as one build's readers see it, as plain Markdown | Cover more than a page, or say where a line was written |
+| `ascribe resolve` | One page as one build's readers see it, as plain Markdown | Cover more than a page, or say where a line was written |
 | The **Content model** view | Every phrase, feature, and term, with a count of its uses | Find where a phrase's value is read |
 | The editor's own search, `grep` | The source's text | See what Ascribe resolves |
 
@@ -256,7 +256,7 @@ What's new, and each is a place the map could be wrong:
 - **A table row,** where the text is cells and the source is one line.
 - **The title,** which comes from YAML, not from a block.
 
-The text search matches is the third reading of "what a reader sees" in the code, after the plain emitter and `diff`'s tree. It gets a test that holds it to the plain output, in the pattern of the repository's other two-implementation tests: every block's searchable text is in what `ascribe render` writes for that page. The text and the matching live in a crate below both `ascribe-query` and `ascribe-lsp`, since the language server doesn't depend on `ascribe-query`.
+The text search matches is the third reading of "what a reader sees" in the code, after the plain emitter and `diff`'s tree. It gets a test that holds it to the plain output, in the pattern of the repository's other two-implementation tests: every block's searchable text is in what `ascribe resolve` writes for that page. The text and the matching live in a crate below both `ascribe-query` and `ascribe-lsp`, since the language server doesn't depend on `ascribe-query`.
 
 ## When an index would be worth it
 
