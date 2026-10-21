@@ -3682,7 +3682,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/758"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Search: ascribe diff takes its block text from the reading"
     },
     {
@@ -3980,8 +3980,11 @@
       "labels": [
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/763"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Project Settings: finding settings, and opening the tab"
     },
     {
@@ -4411,7 +4414,7 @@
         "docs-audit"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: The editor's pages, settled"
     },
     {
@@ -4698,9 +4701,29 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/762"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "This page: give a row its focus back without scrolling, so a click into the view lands where it's aimed"
+    },
+    {
+      "content": {
+        "body": "The VS Code integration test \"sets the trailing slash to never in one line, unsaved, and follows Undo in the file\" (`packages/vscode/test/integration/suite/settings.it.ts`) failed once on #763's first CI run and passed on the next run, with only a merge from `main` between the two. Found by #763's reviewer.\n\n**Where it failed:** [CI run 39630339876](https://github.com/ascribed-dev/ascribe/actions/runs/39630339876), job \"js / VS Code extension integration tests\":\n\n```\n1) sets the trailing slash to never in one line, unsaved, and follows Undo in the file:\n   Error: Timed out waiting for Project Settings to draw the trailing slash, always\n```\n\nThe five tests after it then failed because `ascribe.toml` still read `trailing-slash = \"never\"`. So the `undo` command didn't change the document at all; the tab had no change to draw.\n\n**Likely cause (not confirmed):** the test before it ends with `ascribe.openProjectSettings`, which reveals and focuses the Project Settings panel. The Undo test then calls `showTextDocument(document, { viewColumn: Two })` and runs `undo` straight after. If focus hasn't reached the editor yet, `undo` goes to the webview and does nothing. The next test, which comes from an editor that already has focus, undoes three edits without trouble in the same run.\n\n**Done looks like:**\n- Reproduce the failure, or show the focus race. Name the cause in the pull request.\n- Fix the cause in the test, or in the extension if it's a real bug there. For example, wait until the editor actually has focus, or undo through something tied to the document instead of the focused element.\n- Don't skip, retry, or loosen the test's assertions. Waiting on a real condition is fine. A bare sleep isn't.\n\nThe VS Code integration tests run in CI only, so show the fixed test passing in several CI runs from the branch.",
+        "number": 764,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The editor's views: the Project Settings Undo integration test fails intermittently",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/764"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCdveE",
+      "labels": [
+        "bug"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Ready",
-      "title": "This page: give a row its focus back without scrolling, so a click into the view lands where it's aimed"
+      "title": "The editor's views: the Project Settings Undo integration test fails intermittently"
     }
   ]
 }
