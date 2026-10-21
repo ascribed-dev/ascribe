@@ -9,11 +9,15 @@
 # canary of `main`, over the release, since these docs follow `main`. It
 # keeps the answers `report links` reuses, and what it remembers of each
 # link, as an artifact of each run, and downloads the newest before the
-# report. It uploads right after the report, so a run that finds something
-# and fails still keeps it. Not actions/cache: when a repository's caches
-# pass 10 GB, GitHub evicts those read longest ago, and this small one, read
-# once a day beside the build caches, is first to go. The 21 October run
-# found none of the days before (#745).
+# report: when listing or downloading it fails, the report runs with nothing
+# remembered, as on a first run. It uploads right after the report, so a run
+# that finds something and fails still keeps it. The artifact's root is the
+# folder its two paths share, worked out from the paths, not from the files
+# found, so cache/ and history/ keep their names even when one is missing.
+# Not actions/cache: when a repository's caches pass 10 GB, GitHub evicts
+# those read longest ago, and this small one, read once a day beside the
+# build caches, is first to go. The 21 October run found none of the days
+# before (#745).
 #
 # A second job, after the part the page takes, rereads nothing by itself but
 # asks each source of the crawlers Ascribe knows whether it still answers,
@@ -60,12 +64,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          run=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=ascribe-links&per_page=20" \
-            --jq '[.artifacts[] | select((.expired | not) and .workflow_run.head_branch == env.GITHUB_REF_NAME)][0].workflow_run.id // empty')
-          if [ -n "$run" ]; then
-            gh run download "$run" --name ascribe-links --dir docs/.ascribe
-          else
+          if ! run=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=ascribe-links&per_page=20" \
+            --jq '[.artifacts[] | select((.expired | not) and .workflow_run.head_branch == env.GITHUB_REF_NAME)][0].workflow_run.id // empty'); then
+            echo "::warning::The earlier runs' artifacts couldn't be listed, so every failure is reported."
+          elif [ -z "$run" ]; then
             echo "::notice::No earlier run kept what links remembers, so every failure is reported."
+          elif ! gh run download "$run" --name ascribe-links --dir docs/.ascribe; then
+            rm -rf docs/.ascribe/cache docs/.ascribe/history
+            echo "::warning::What run $run kept couldn't be downloaded, so every failure is reported."
           fi
       - name: Report
         id: report
