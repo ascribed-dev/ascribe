@@ -53,6 +53,7 @@ describe("projectAnswer", () => {
       PROJECT_KEYS.checkEveryBuild,
       PROJECT_KEYS.build,
       PROJECT_KEYS.syncAgentFiles,
+      PROJECT_KEYS.observeExamples,
     ]);
   });
 

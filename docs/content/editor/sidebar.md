@@ -37,8 +37,9 @@ The view never checks every build by itself, since that can take a few seconds o
 | **Check Every Build** | The extension checks every build and puts their problems in the Problems panel |
 | **Build** | A task: `ascribe build`, in the terminal |
 | **Sync Agent Files** | A task: `ascribe agents sync`, in the terminal |
+| **Observe Examples** | A task: `ascribe observe`, in the terminal, in the folder of a source with [tested examples](../examples/tested.md). It lists the commands `ascribe.examples.toml` names and asks before running them. |
 
-Both tasks are in **Tasks: Run Task** too, and [Tasks](settings.md#tasks) says where they run. **Escape** in the view puts the cursor back in the editor.
+The tasks are in **Tasks: Run Task** too, and [Tasks](settings.md#tasks) says where they run. **Escape** in the view puts the cursor back in the editor.
 
 ## This page, Pages, and Content model
 

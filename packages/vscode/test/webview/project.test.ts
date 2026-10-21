@@ -132,7 +132,7 @@ const facts = (everyBuild: EveryBuildResult, name = "docs"): ProjectFacts => ({
 });
 
 /** The tasks every project's Actions has after Check Every Build. */
-const TASKS = ["Build", "Sync Agent Files"];
+const TASKS = ["Build", "Sync Agent Files", "Observe Examples"];
 
 const made = (current: boolean, errors = 2, warnings = 1): EveryBuildResult => ({
   kind: "made",

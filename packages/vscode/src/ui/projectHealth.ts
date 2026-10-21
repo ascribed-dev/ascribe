@@ -24,6 +24,7 @@ export const PROJECT_KEYS = {
   /** The tasks, by their names in `tasks.json`. */
   build: "build",
   syncAgentFiles: "syncAgentFiles",
+  observeExamples: "observeExamples",
 } as const;
 
 /** The project the view shows, as plain values. */
@@ -53,6 +54,7 @@ const CHECK_EVERY_BUILD: ProjectAction = {
 const TASK_ICONS: Record<TaskName, string> = {
   build: "package",
   syncAgentFiles: "sync",
+  observeExamples: "beaker",
 };
 
 /** A task, as an action: it runs in the terminal. */
@@ -79,7 +81,12 @@ export function projectAnswer(project: ProjectFacts | undefined): ProjectAnswer 
     },
     toDo: health.filter((count) => count.state !== "none" && count.state !== "running").length,
     health,
-    actions: [CHECK_EVERY_BUILD, taskAction("build"), taskAction("syncAgentFiles")],
+    actions: [
+      CHECK_EVERY_BUILD,
+      taskAction("build"),
+      taskAction("syncAgentFiles"),
+      taskAction("observeExamples"),
+    ],
   };
 }
 

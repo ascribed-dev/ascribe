@@ -1,29 +1,41 @@
 // The `ascribe` task type's provider: Build and Sync Agent Files for each
-// project, in **Tasks: Run Task** and the Project view, and either of them
+// project, and Observe Examples for each of its sources with tested
+// examples, in **Tasks: Run Task** and the Project view, and any of them
 // `tasks.json` names. What each runs is `../tasks.ts`'s.
 //
 // Each runs the binary the project's server runs, in the terminal, with no
 // problem matcher: the Problems panel stays Check Every Build's and the
-// editor's. None is offered in Restricted Mode, where the extension starts
-// nothing.
+// editor's. None is offered, resolved, or run in Restricted Mode, where the
+// extension starts nothing: Observe Examples runs commands the repository
+// names, the case Restricted Mode exists for. In a trusted workspace,
+// `ascribe observe` asks before it runs them, in the task's terminal.
 
+import { execFile } from "node:child_process";
 import * as vscode from "vscode";
 import { resolveProjectBinary, workspaceFolderOf } from "../client.js";
-import { usesShell } from "../environment.js";
+import { shellCommand, usesShell } from "../environment.js";
 import type { Project } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
+import type { ModelReport } from "../shapes.js";
 import {
   definedProject,
+  definedSource,
   isAscribeTask,
   projectCommand,
   projectProperty,
+  sourceCommand,
   TASK_TYPE,
   taskLabel,
-  TASKS,
+  testedSources,
   type AscribeTaskDefinition,
+  type ProjectTaskName,
   type TaskCommand,
   type TaskName,
+  type TestedSource,
 } from "../tasks.js";
+
+/** The tasks run in the project's folder, in the order they're offered. */
+const PROJECT_TASKS: readonly ProjectTaskName[] = ["build", "syncAgentFiles"];
 
 export class ProjectTasks implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
@@ -46,16 +58,36 @@ export class ProjectTasks implements vscode.Disposable {
     for (const disposable of this.disposables.splice(0)) disposable.dispose();
   }
 
-  /** Runs one of a project's tasks, as the Project view's action does. */
+  /**
+   * Runs one of a project's tasks, as the Project view's action does. With
+   * more than one source with tested examples, Observe Examples asks which.
+   */
   async run(project: Project, name: TaskName): Promise<void> {
-    const [task] = await this.tasksOf(project, name);
-    if (!task) {
+    if (!vscode.workspace.isTrusted) return;
+    const binary = await this.binaryOf(project);
+    if (binary === undefined) {
       void vscode.window.showErrorMessage(
         `Ascribe couldn't find a binary to run for ${this.projects.name(project)}. Show Output says where it looked.`,
       );
       return;
     }
-    await vscode.tasks.executeTask(task);
+    const tasks = await this.tasksOf(project, name, binary);
+    if (tasks.length === 0) {
+      void vscode.window.showInformationMessage(
+        `No source of ${this.projects.name(project)} has tested examples: an ascribe.examples.toml in its folder. Observe Examples runs ascribe observe in each one's folder.`,
+      );
+      return;
+    }
+    const task =
+      tasks.length === 1
+        ? tasks[0]
+        : (
+            await vscode.window.showQuickPick(
+              tasks.map((task) => ({ label: task.name, task })),
+              { title: "Observe Examples", placeHolder: "The source to observe" },
+            )
+          )?.task;
+    if (task) await vscode.tasks.executeTask(task);
   }
 
   private async provide(): Promise<vscode.Task[]> {
@@ -76,7 +108,15 @@ export class ProjectTasks implements vscode.Disposable {
     await this.projects.whenSettled();
     const project = definedProject(definition, folder, this.projects.projects);
     if (!project) return undefined;
-    const [made] = await this.tasksOf(project, definition.task);
+    const binary = await this.binaryOf(project);
+    if (binary === undefined) return undefined;
+    const tasks = await this.tasksOf(project, definition.task, binary);
+    const sourceOf = (each: vscode.Task) => String(each.definition["source"]);
+    let made = tasks[0];
+    if (definition.task === "observeExamples") {
+      const source = definedSource(definition, tasks.map(sourceOf));
+      made = tasks.find((each) => source !== undefined && sourceOf(each) === source);
+    }
     if (!made) return undefined;
     // VS Code wants the definition it was given back, with the execution filled in.
     return new vscode.Task(
@@ -89,9 +129,13 @@ export class ProjectTasks implements vscode.Disposable {
     );
   }
 
-  /** A project's tasks, or only the one named `only`; none when no binary is found for it. */
-  private async tasksOf(project: Project, only?: TaskName): Promise<vscode.Task[]> {
-    const binary = await this.binaryOf(project);
+  /**
+   * A project's tasks, or only those of the one named `only`: one for each
+   * task run in the project's folder, and Observe Examples for each source
+   * with tested examples. None when no binary is found for it.
+   */
+  private async tasksOf(project: Project, only?: TaskName, found?: string): Promise<vscode.Task[]> {
+    const binary = found ?? (await this.binaryOf(project));
     if (binary === undefined) return [];
     const workspaceFolder = workspaceFolderOf(project);
     const scope =
@@ -100,23 +144,72 @@ export class ProjectTasks implements vscode.Disposable {
     // Named after the project only when there's more than one to tell apart.
     const projectName = this.projects.projects.length > 1 ? this.projects.name(project) : undefined;
     const property = projectProperty(project, workspaceFolder);
-    const names = only === undefined ? (Object.keys(TASKS) as TaskName[]) : [only];
-    return names.map((name) => {
+    const make = (definition: AscribeTaskDefinition, label: string, command: TaskCommand) =>
+      new vscode.Task(definition, scope, label, TASK_TYPE, execution(binary, command), []);
+    const tasks = PROJECT_TASKS.filter((name) => only === undefined || only === name).map(
+      (name) => {
+        const definition: AscribeTaskDefinition = {
+          type: TASK_TYPE,
+          task: name,
+          ...(property !== undefined && { project: property }),
+        };
+        const task = make(
+          definition,
+          taskLabel(name, projectName),
+          projectCommand(name, project, workspaceFolder),
+        );
+        if (name === "build") task.group = vscode.TaskGroup.Build;
+        return task;
+      },
+    );
+    if (only !== undefined && only !== "observeExamples") return tasks;
+    const sources = await this.sourcesOf(binary, project);
+    for (const source of sources) {
       const definition: AscribeTaskDefinition = {
         type: TASK_TYPE,
-        task: name,
+        task: "observeExamples",
         ...(property !== undefined && { project: property }),
+        source: source.name,
       };
-      const task = new vscode.Task(
-        definition,
-        scope,
-        taskLabel(name, projectName),
-        TASK_TYPE,
-        execution(binary, projectCommand(name, project, workspaceFolder)),
-        [],
+      // Named after the source only when there's more than one to tell apart.
+      const label = taskLabel(
+        "observeExamples",
+        projectName,
+        sources.length > 1 ? source.name : undefined,
       );
-      if (name === "build") task.group = vscode.TaskGroup.Build;
-      return task;
+      tasks.push(make(definition, label, sourceCommand(project, source)));
+    }
+    return tasks;
+  }
+
+  /**
+   * The project's sources with tested examples, as the binary answers:
+   * `ascribe model --section sources --format json`, in the project's
+   * folder. None when it can't answer, as for a content model with errors.
+   */
+  private sourcesOf(binary: string, project: Project): Promise<TestedSource[]> {
+    return new Promise((resolve) => {
+      execFile(
+        shellCommand(binary),
+        ["model", "--section", "sources", "--format", "json"],
+        {
+          cwd: project.folder,
+          windowsHide: true,
+          // A `.cmd` shim, which is what npm links on Windows, needs a shell.
+          shell: usesShell(binary),
+        },
+        (error, stdout) => {
+          if (error) {
+            resolve([]);
+            return;
+          }
+          try {
+            resolve(testedSources(JSON.parse(stdout) as ModelReport));
+          } catch {
+            resolve([]);
+          }
+        },
+      );
     });
   }
 

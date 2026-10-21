@@ -4,10 +4,13 @@ import { describe, expect, it } from "vitest";
 import type { Project } from "../../src/projects.js";
 import {
   definedProject,
+  definedSource,
   isAscribeTask,
   projectCommand,
   projectProperty,
+  sourceCommand,
   taskLabel,
+  testedSources,
 } from "../../src/tasks.js";
 
 const project = (folder: string): Project => ({
@@ -47,10 +50,67 @@ describe("projectCommand", () => {
   });
 });
 
+describe("Observe Examples", () => {
+  const source = (name: string, path: string, more: object = {}) => ({
+    name,
+    path,
+    include: [],
+    ignore: [],
+    git: null,
+    ...more,
+  });
+  const examples = { valid: true, files: 2, observations: [] };
+
+  it("runs ascribe observe in the source's folder, with no --config, wherever the project is", () => {
+    const code = { name: "code", path: "../code" };
+    for (const at of [atRoot, docs]) {
+      expect(sourceCommand(at, code)).toEqual({
+        cwd: path.resolve(at.folder, "../code"),
+        args: ["observe"],
+      });
+    }
+    expect(sourceCommand(docs, { name: "here", path: "." }).cwd).toBe(docs.folder);
+  });
+
+  it("is offered for each source with tested examples in this repository, as the binary's model says", () => {
+    expect(
+      testedSources({
+        sources: [
+          source("code", "code", { examples }),
+          source("plain", "plain"),
+          source("broken", "broken", { examples: { ...examples, valid: false } }),
+          source("api", "sources/api", {
+            git: { url: "https://example.com/api.git", branch: null },
+            examples,
+          }),
+        ],
+      }),
+    ).toEqual([
+      { name: "code", path: "code" },
+      { name: "broken", path: "broken" },
+    ]);
+    expect(testedSources({})).toEqual([]);
+  });
+
+  it("finds the source a definition names, or the only one when it names none", () => {
+    const task = { type: "ascribe", task: "observeExamples" } as const;
+    expect(definedSource(task, ["code"])).toBe("code");
+    expect(definedSource(task, ["code", "more"])).toBeUndefined();
+    expect(definedSource(task, [])).toBeUndefined();
+    expect(definedSource({ ...task, source: "more" }, ["code", "more"])).toBe("more");
+    expect(definedSource({ ...task, source: "gone" }, ["code"])).toBeUndefined();
+  });
+});
+
 describe("taskLabel", () => {
-  it("names the project only when given", () => {
+  it("names the project and the source only when given", () => {
     expect(taskLabel("build")).toBe("Build");
     expect(taskLabel("syncAgentFiles", "handbook")).toBe("Sync Agent Files (handbook)");
+    expect(taskLabel("observeExamples")).toBe("Observe Examples");
+    expect(taskLabel("observeExamples", undefined, "code")).toBe("Observe Examples (code)");
+    expect(taskLabel("observeExamples", "handbook", "code")).toBe(
+      "Observe Examples (handbook, code)",
+    );
   });
 });
 
@@ -75,7 +135,9 @@ describe("a task's definition", () => {
   it("is one of the extension's only with a task it knows and string properties", () => {
     expect(isAscribeTask({ type: "ascribe", task: "build" })).toBe(true);
     expect(isAscribeTask({ type: "ascribe", task: "syncAgentFiles", project: "docs" })).toBe(true);
-    expect(isAscribeTask({ type: "ascribe", task: "observeExamples" })).toBe(false);
+    expect(isAscribeTask({ type: "ascribe", task: "observeExamples" })).toBe(true);
+    expect(isAscribeTask({ type: "ascribe", task: "observeExamples", source: "code" })).toBe(true);
+    expect(isAscribeTask({ type: "ascribe", task: "observeExamples", source: 1 })).toBe(false);
     expect(isAscribeTask({ type: "ascribe", task: "release" })).toBe(false);
     expect(isAscribeTask({ type: "ascribe", task: "toString" })).toBe(false);
     expect(isAscribeTask({ type: "shell", task: "build" })).toBe(false);
@@ -98,6 +160,12 @@ describe("the task provider in Restricted Mode", () => {
   it("resolves none tasks.json names", () => {
     expect(provider).toMatch(
       /private async resolve\([^)]*\)[^{]*\{\s*if \(!vscode\.workspace\.isTrusted \|\|/,
+    );
+  });
+
+  it("runs none from the Project view, Observe Examples among them", () => {
+    expect(provider).toMatch(
+      /async run\([^)]*\)[^{]*\{\s*if \(!vscode\.workspace\.isTrusted\) return;/,
     );
   });
 });

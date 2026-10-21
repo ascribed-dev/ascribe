@@ -129,6 +129,7 @@ export class ProjectView implements vscode.Disposable {
         return;
       case PROJECT_KEYS.build:
       case PROJECT_KEYS.syncAgentFiles:
+      case PROJECT_KEYS.observeExamples:
         await this.tasks.run(server.project, key);
         return;
       default:

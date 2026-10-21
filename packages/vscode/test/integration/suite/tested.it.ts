@@ -161,7 +161,8 @@ describe("a code file a page shows", () => {
 });
 
 // The `ascribe` tasks, on the same project: the workspace folder's own, so
-// neither names `--config`.
+// none names `--config`; and Observe Examples for its source with tested
+// examples, `code`, in that source's folder.
 describe("the project's tasks", () => {
   let api: AscribeApi;
 
@@ -192,7 +193,7 @@ describe("the project's tasks", () => {
     const tasks = await fetched();
     assert.deepEqual(
       tasks.map((task) => task.name),
-      ["Build", "Sync Agent Files"],
+      ["Build", "Sync Agent Files", "Observe Examples"],
     );
     const binary = api.binary()?.path;
     assert.ok(binary);
@@ -209,6 +210,25 @@ describe("the project's tasks", () => {
     const build = tasks.find((task) => task.name === "Build");
     assert.deepEqual(build?.definition, { type: "ascribe", task: "build" });
     assert.equal(build?.group, vscode.TaskGroup.Build);
+  });
+
+  // Not run here: in the task's terminal, `ascribe observe` asks before it
+  // runs the source's commands, and waits for the answer. The question is
+  // the binary's, and its tests ask it.
+  it("offers Observe Examples, running ascribe observe in the source's folder, with no --config", async () => {
+    const observe = (await fetched()).find((task) => task.name === "Observe Examples");
+    assert.deepEqual(observe?.definition, {
+      type: "ascribe",
+      task: "observeExamples",
+      source: "code",
+    });
+    const execution = observe?.execution;
+    assert.ok(execution instanceof vscode.ProcessExecution);
+    assert.equal(execution.process, api.binary()?.path);
+    assert.deepEqual(execution.args, ["observe"]);
+    assert.ok(
+      execution.options?.cwd && samePath(execution.options.cwd, path.join(workspace(), "code")),
+    );
   });
 
   it("builds from the Project view, in the terminal", async () => {
