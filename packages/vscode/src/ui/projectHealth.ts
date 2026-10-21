@@ -562,7 +562,7 @@ export function everyBuildGroup(facts: ProjectFacts): ProjectHealthGroup {
  * When a check was made, after "checked": "at 3:30 PM" today, "yesterday at
  * 3:30 PM", or "on 20 October at 3:30 PM" before that.
  */
-export function checkedWhen(at: number, { time, day, now }: ProjectFacts): string {
+function checkedWhen(at: number, { time, day, now }: ProjectFacts): string {
   const on = day(at);
   if (on === day(now)) return `at ${time(at)}`;
   // In the hour after a day of 23, when the clocks went forward, this gives the day before: it names it.
