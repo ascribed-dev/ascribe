@@ -7,7 +7,15 @@ import type { AscribeApi } from "../../../src/extension.js";
 import type { PreviewApi, RenderRecord } from "../../../src/preview/controller.js";
 import { MAX_WAIT_MS } from "../../../src/diskChanges.js";
 import { comparable, samePath } from "../../../src/projects.js";
-import { activated, diagnosticsOf, sleep, uriOf, waitFor, workspace } from "./helpers.js";
+import {
+  activated,
+  diagnosticsOf,
+  removeFolder,
+  sleep,
+  uriOf,
+  waitFor,
+  workspace,
+} from "./helpers.js";
 
 // The real `ascribe lsp` on test/fixtures/monorepo: a folder with no project
 // (code/), a project (docs/), and a project (handbook/) with another nested
@@ -150,7 +158,7 @@ describe("with several projects, one nested in another", () => {
       for (const dir of missing) {
         const deadline = Date.now() + 30_000;
         for (;;) {
-          rmSync(dir, { recursive: true, force: true });
+          removeFolder(dir);
           mkdirSync(dir);
           try {
             await waitFor(
@@ -850,7 +858,7 @@ describe("with several projects, one nested in another", () => {
       rmSync(path.join(agent(), "ascribe.toml"), { force: true });
       await waitFor("the agent project to go", () => !known(agent()));
       await api.whenSettled();
-      rmSync(agent(), { recursive: true, force: true });
+      removeFolder(agent());
     });
 
     it("starts nothing for a file written into the project's output directory", async () => {
@@ -917,7 +925,7 @@ describe("with several projects, one nested in another", () => {
         await diagnosticsOf(page, (all) => all.length === 0);
       } finally {
         await vscode.commands.executeCommand("workbench.action.closeAllEditors");
-        rmSync(guides, { recursive: true, force: true });
+        removeFolder(guides);
       }
     });
 
@@ -953,7 +961,7 @@ describe("with several projects, one nested in another", () => {
         await api.whenSettled();
         // Its server stopped with it. On Windows this fails if the server runs
         // in the project's folder, which a running process locks.
-        rmSync(idle, { recursive: true, force: true });
+        removeFolder(idle);
       }
     });
 
@@ -978,7 +986,7 @@ describe("with several projects, one nested in another", () => {
         assert.equal(api.state(unwatched), "running");
       } finally {
         await vscode.commands.executeCommand("workbench.action.closeAllEditors");
-        rmSync(unwatched, { recursive: true, force: true });
+        removeFolder(unwatched);
       }
     });
   });
