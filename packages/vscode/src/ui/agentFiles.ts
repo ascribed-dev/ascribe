@@ -72,6 +72,12 @@ export class AgentFilesChecks implements vscode.Disposable {
   private readonly changed = new vscode.EventEmitter<void>();
   private readonly disposables: vscode.Disposable[] = [];
 
+  /**
+   * Whether the Project view is showing `server`'s project: a save runs the
+   * check again only then, so no check runs for a view nobody sees.
+   */
+  shown: (server: ProjectServer) => boolean = () => true;
+
   constructor(private readonly projects: ProjectRegistry) {}
 
   /** Fires when a project's check starts, is made, or stops being current. */
@@ -100,7 +106,9 @@ export class AgentFilesChecks implements vscode.Disposable {
       vscode.workspace.onDidSaveTextDocument((document) => {
         if (document.uri.scheme !== "file") return;
         const server = this.projects.serverFor(document.uri);
-        if (server && this.made.has(comparable(server.project.folder))) this.soon(server);
+        if (server && this.made.has(comparable(server.project.folder)) && this.shown(server)) {
+          this.soon(server);
+        }
       }),
       this.projects.onDidChangeProjects(() => {
         const known = new Set(this.projects.projects.map((p) => comparable(p.folder)));

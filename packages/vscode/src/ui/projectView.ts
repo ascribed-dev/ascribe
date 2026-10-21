@@ -10,7 +10,7 @@
 // the list that already exists. It never runs Check Every Build by itself:
 // that takes a second or more on a large project. The agent files' check is
 // quicker, and runs the first time the view shows a project, then after
-// each save (`agentFiles.ts`).
+// each save while it shows it (`agentFiles.ts`).
 
 import * as vscode from "vscode";
 import type { ProjectServer } from "../client.js";
@@ -89,6 +89,7 @@ export class ProjectView implements vscode.Disposable {
   }
 
   register(): void {
+    this.agentFiles.shown = (server) => this.view.visible && this.sidebar.project === server;
     this.disposables.push(
       this.view.register(),
       this.view,
@@ -114,7 +115,7 @@ export class ProjectView implements vscode.Disposable {
   /** Sends the view the project as it stands. It's cheap: nothing is asked of the server. */
   private draw(): void {
     const server = this.sidebar.project;
-    if (server) this.agentFiles.ensure(server);
+    if (server && this.view.visible) this.agentFiles.ensure(server);
     this.view.show(projectAnswer(server && this.facts(server)));
     clearTimeout(this.midnight);
     const tomorrow = new Date();
