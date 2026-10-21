@@ -211,6 +211,7 @@ describe("package.json", () => {
       "ascribe.nextPlaceholder",
       "ascribe.switchBuild",
       "ascribe.checkEveryBuild",
+      "ascribe.search",
       "ascribe.projectMenu",
       "ascribe.toggleBuildLens",
       "ascribe.startReview",
