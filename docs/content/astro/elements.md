@@ -37,7 +37,6 @@ The elements render into the page, with no shadow DOM, so the site's own styles 
 | `<ascribe-availability-target>` | One target of `<ascribe-availability>`. Its `states` attribute lists its lifecycle states, and the last one styles the badge. | [§4]({repo}/blob/main/packages/elements/CONTRACT.md#4-ascribe-availability-and-ascribe-availability-target) |
 | `<ascribe-group>` | A group of a project widget's arms, so the project's styles or script can find them together. The library gives it `display: block` and nothing else. | [§6]({repo}/blob/main/packages/elements/CONTRACT.md#6-project-widgets) |
 | `<ascribe-for-agents>` | The pointer to `llms.txt` at the top of each page, with `[consumer] agents = true`. The library hides it from sight, not from the page's text. | [§8]({repo}/blob/main/packages/elements/CONTRACT.md#8-ascribe-for-agents) |
-| `<ascribe-attributes>` | A marker beside a heading, an image, or a link, holding its id or attributes. The integration's Markdown plugin moves them onto the element and takes the marker out, so a built page doesn't have it, and the library doesn't style it. | [site-render §1](../contracts/site-render.md#1-the-attribute-marker) |
 
 A `@details` block is HTML's own `<details>`, and a glossary term an ordinary link marked with `data-ascribe-term`, so neither has an element. The library underlines a term's link with dots; restyle it by selecting `a[data-ascribe-term]`. A project's own widget is an element named after it, which the project implements.
 
