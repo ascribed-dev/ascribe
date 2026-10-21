@@ -199,7 +199,7 @@ export interface ProjectButton {
 }
 
 /** A build the Project view's switch offers. */
-export interface ProjectBuildChoice {
+interface ProjectBuildChoice {
   /** The build's name, as the switch sends it back: `site`, or a line's, `site@3.4`. */
   name: string;
   /** What else is true of it: "editor build", "line 3.4 of site". Empty when nothing is. */

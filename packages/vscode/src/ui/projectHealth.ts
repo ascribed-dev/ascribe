@@ -335,7 +335,7 @@ export function projectAnswer(project: ProjectFacts | undefined): ProjectAnswer 
 }
 
 /** The head: the project, its server with its buttons, the build switch, and the settings buttons. */
-export function projectHead(project: ProjectFacts): ProjectHead {
+function projectHead(project: ProjectFacts): ProjectHead {
   const offered = choices(project.builds);
   const shown = project.build ?? offered.find((choice) => choice.editor)?.name;
   return {
