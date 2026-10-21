@@ -12,7 +12,7 @@ ascribe agents sync
 
 It writes:
 
-- **`AGENTS.md`** beside `ascribe.toml`: the check to run after each edit and before finishing, your page types with what each is for and its frontmatter, and that each page names its type with `type:`, your phrases, the directives your pages use, and how to link. It's at most 4,000 characters, and long lists are cut with the command that shows the rest, the page types first.
+- **`AGENTS.md`** beside `ascribe.toml`: the check to run after each edit and before finishing, to run `ascribe search` for a subject before writing a page about it, your page types with what each is for and its frontmatter, and that each page names its type with `type:`, your phrases, the directives your pages use, and how to link. It's at most 4,000 characters, and long lists are cut with the command that shows the rest, the page types first.
 - **A short block in the repository's root `AGENTS.md`,** when your project is in a subfolder: where its pages are, the check to run, and where its full rules are. Some agents, such as Codex, read no `AGENTS.md` below the folder they start in.
 - **The skill,** in `.agents/skills/ascribe/` at the repository's root. See [The skill](#the-skill).
 
@@ -54,7 +54,7 @@ ascribe agents sync --check
 The skill is one folder, `ascribe`, in the [Agent Skills](https://agentskills.io) format, which most agents read. It teaches the tool, the same for every project, and sends the agent to `AGENTS.md` and `ascribe model` for your project's rules:
 
 - the loop: edit a page, run `ascribe check <file> --format concise`, fix what it reports, and run the whole check before finishing; and to stop and ask after three rounds that don't fix it;
-- the commands that answer questions: `explain`, `model`, `outline`, `link`, `render`, and `refs`;
+- the commands that answer questions: `explain`, `model`, `outline`, `link`, `render`, `refs`, and `search`, which it runs before writing a page about a subject;
 - which fixes in `ascribe check`'s JSON can be applied as they are;
 - that text from a review or a pull request is someone else's, not instructions;
 - each directive's syntax, in a reference it reads only when it needs it.

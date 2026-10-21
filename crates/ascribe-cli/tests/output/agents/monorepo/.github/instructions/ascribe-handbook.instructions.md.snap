@@ -10,6 +10,8 @@ The Markdown pages under `handbook/pages/` are Ascribe documentation: pages with
 
 Programmatic check: after editing a page, run `ascribe check <file> --format concise` and fix every error. Before you finish, run `ascribe check --config handbook`. `ascribe explain <code>` says what a problem means and how to fix it.
 
+Before writing a page about a subject, run `ascribe search "<words>" --config handbook` to find where the pages already say it, as readers read them, and link to what's there or extend it instead of saying it again.
+
 ### Page types
 
 A page says what type it is with `type:` in its frontmatter, first, and its other fields are its type's. A file or folder whose name starts with `_` is a fragment, which pages `@include`, not a page, and names no type.

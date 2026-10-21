@@ -48,9 +48,10 @@ pub struct Place {
     /// Whether it's written where other pages can show it too: in a
     /// fragment, or in a snippet's code file.
     pub shared: bool,
-    /// For a snippet's code that can't be lined up with its file, true: the
-    /// place is the first line shown, not the line the match is on.
-    pub first_line: bool,
+    /// For a snippet's code that can't be lined up with its file, the last
+    /// line it shows: the place is the lines shown, from the first, not the
+    /// line the match is on.
+    pub end_line: Option<u32>,
 }
 
 /// A page that shows a place.
@@ -132,7 +133,11 @@ enum Key {
 /// with each of them. A block matches at its first match; when that's
 /// wholly in a phrase's value, the phrase is a place and matching carries
 /// on in the block after the phrase, until a match is the block's line.
-pub fn find(project: &Project, readings: &[Reading], query: &Query) -> Found {
+pub fn find<'a>(
+    project: &Project,
+    readings: impl IntoIterator<Item = &'a Reading>,
+    query: &Query,
+) -> Found {
     let mut lines: HashMap<FileId, LineIndex> = HashMap::new();
     let mut places: Vec<Place> = Vec::new();
     let mut keys: HashMap<Key, usize> = HashMap::new();
@@ -234,12 +239,13 @@ fn locate(
             through.push(item);
         }
     }
-    let (shared, first_line) = match &block.origin {
-        Origin::Page => (false, false),
-        Origin::Fragment => (true, false),
+    // The last line a snippet shows, when its code can't be lined up.
+    let (shared, last_shown) = match &block.origin {
+        Origin::Page => (false, None),
+        Origin::Fragment => (true, None),
         Origin::Snippet { snippet, exact } => {
             through.push(Through::Code(snippet.address.clone()));
-            (true, !exact)
+            (true, snippet.spans.last().filter(|_| !exact).copied())
         }
     };
     let first = block.piece_at(matched.start);
@@ -266,7 +272,7 @@ fn locate(
             builds: Vec::new(),
             shown: Vec::new(),
             shared: false,
-            first_line: false,
+            end_line: None,
         };
         return (place, Some(first.range.end));
     }
@@ -275,6 +281,7 @@ fn locate(
         .entry(block.file)
         .or_insert_with(|| LineIndex::new(block.source(project)));
     let (line, column) = line_col(index, offset);
+    let end_line = last_shown.map(|span| line_col(index, span.start()).0);
     let at = match &block.origin {
         Origin::Snippet { snippet, .. } => At::Code {
             file: block.file,
@@ -301,7 +308,7 @@ fn locate(
         builds: Vec::new(),
         shown: Vec::new(),
         shared,
-        first_line,
+        end_line,
     };
     (place, None)
 }

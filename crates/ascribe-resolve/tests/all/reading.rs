@@ -651,7 +651,7 @@ fn a_match_in_a_snippet_is_at_the_code_file_line() {
     assert_eq!(column, 12);
     assert_eq!(place.kind, In::Code);
     assert_eq!(place.through, [Through::Code("code:app.py#main".into())]);
-    assert!(place.shared && !place.first_line);
+    assert!(place.shared && place.end_line.is_none());
     assert_eq!(place.shown[0].page.as_str(), "index.md");
     assert_eq!(place.shown[0].under.as_ref().unwrap().id, "run");
     let found = search(&project, "\"return os\"");
@@ -771,6 +771,6 @@ fn snippet_code_that_cannot_be_lined_up_is_at_its_first_line() {
     let found = search(&project, "\"echo done\"");
     assert_eq!(found.places.len(), 1, "{found:#?}");
     let place = &found.places[0];
-    assert!(place.first_line);
     assert_eq!(path_line(&project, &place.at), ("code/run.sh".into(), 1));
+    assert_eq!(place.end_line, Some(3), "the lines shown");
 }

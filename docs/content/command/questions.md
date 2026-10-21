@@ -266,3 +266,13 @@ When nothing matches, search looks for the query, by the same rules, in the sour
 | `0` | Something matched |
 | `1` | Nothing matched |
 | `2` | It couldn't run: no `ascribe.toml`, one with errors, an empty query, a quote that isn't closed, a path with no page or fragment of the project, or an unknown build or type |
+
+With `--format json`, the document is a contract of its own, whose schema is in the [JSON report contract](../contracts/json-reports/questions.md#ascribe-search). `ascribe search '"sign in to quill cloud"' --config examples/quill --format json`:
+
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/search.json
+
+Each place has its `file` from the project root, its `line`, and the `column` of the match's first character, in Unicode characters. `in` is what it is: `title`, `description`, `heading`, `text`, `table`, `code`, or `phrase`, a phrase's value at its line in `ascribe.toml`. `text` is the whole block as a reader reads it, and `match` is where the match is in it: its first character and the one after its last, in characters. `through` lists what the match reads through that the line doesn't spell, in order: `{"phrase": key}`, `{"title": page}` for a link with no text, which reads as the title of the page it links to, or the text of the heading it names (`page.md#id`), and `{"code": address}` for a snippet's code. `arm` is the arm of a variant group the line is in, or null.
+
+`pages` names the pages that show the place, at most three, each with its `title`, the `heading` the place is under there and its `id`, and the `builds` that show it there. `pages_total` is how many pages show it; for a phrase, how many places in the source use it. `refs_command` is the `ascribe refs` command that lists them: for a phrase, and for a fragment's line on more pages than `pages` names; otherwise it's null. A snippet's code that can't be lined up with its file is at the first line the snippet shows, and `end_line` is the last; every other place's `end_line` is null.
+
+`total` is how many places match, `pages_matched` how many pages show one, and `shown` how many places are listed, 500 unless `--limit` says otherwise. When the list was cut, `truncated` is true and `next_command` is the command that lists them all. With `--summary`, `places` is empty and `pages` lists each page, from the project root, with how many `places` it shows, and `shown` and `truncated` count pages; without it, `pages` is null. When nothing matched, `source_places` is where the source writes the words, at most three places, each a `file` and `line`, when no build searched publishes them, and `not_searched_builds` is the builds that weren't searched that publish them; both are empty otherwise.

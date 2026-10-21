@@ -27,6 +27,7 @@ use ascribe_templates::start;
 use crate::answer::{self, Projects};
 use crate::cli::Global;
 use crate::commands::{check, diff};
+use crate::shell::quote;
 
 /// A named prompt.
 pub struct Named {
@@ -240,7 +241,13 @@ fn new_page(projects: &dyn Projects, arguments: &Arguments) -> Result<String, St
         ),
         Err(e) => return Err(e.to_string()),
     };
-    let mut known = Vec::new();
+    let mut known = vec![format!(
+        "First, search for the subject in the pages: `ascribe search {} {}`, then other \
+         words for it. If a page already covers it, edit that page instead, and write no new \
+         one.",
+        quote(title),
+        quote(&content_dir)
+    )];
     if let Some(guide) = guide(content_type, &context) {
         known.push(guide);
     }
