@@ -8,9 +8,12 @@
 # updates the one that's open, and the run fails. It installs `next`, the
 # canary of `main`, over the release, since these docs follow `main`. It
 # keeps the answers `report links` reuses, and what it remembers of each
-# link, with actions/cache: each run saves under its own key, and restores
-# the newest by the prefix. It saves right after the report, so a run that
-# finds something and fails still saves.
+# link, as an artifact of each run, and downloads the newest before the
+# report. It uploads right after the report, so a run that finds something
+# and fails still keeps it. Not actions/cache: when a repository's caches
+# pass 10 GB, GitHub evicts those read longest ago, and this small one, read
+# once a day beside the build caches, is first to go. The 21 October run
+# found none of the days before (#745).
 #
 # A second job, after the part the page takes, rereads nothing by itself but
 # asks each source of the crawlers Ascribe knows whether it still answers,
@@ -25,6 +28,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
   issues: write
 
@@ -52,13 +56,17 @@ jobs:
           echo "$LYCHEE_SHA256  $RUNNER_TEMP/$name.tar.gz" | sha256sum --check --strict
           tar -xzf "$RUNNER_TEMP/$name.tar.gz" -C "$RUNNER_TEMP" "$name/lychee"
           echo "$RUNNER_TEMP/$name" >> "$GITHUB_PATH"
-      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            docs/.ascribe/cache
-            docs/.ascribe/history
-          key: ascribe-links-${{ github.run_id }}
-          restore-keys: ascribe-links-
+      - name: Download what the last run kept
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=ascribe-links&per_page=20" \
+            --jq '[.artifacts[] | select((.expired | not) and .workflow_run.head_branch == env.GITHUB_REF_NAME)][0].workflow_run.id // empty')
+          if [ -n "$run" ]; then
+            gh run download "$run" --name ascribe-links --dir docs/.ascribe
+          else
+            echo "::notice::No earlier run kept what links remembers, so every failure is reported."
+          fi
       - name: Report
         id: report
         continue-on-error: true
@@ -66,12 +74,15 @@ jobs:
           ascribe report links agents --config docs
           --site https://ascribed-dev.com/docs/ --format markdown --exit-code
           > report.md
-      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
+          name: ascribe-links
           path: |
             docs/.ascribe/cache
             docs/.ascribe/history
-          key: ascribe-links-${{ github.run_id }}
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 30
       - run: cat report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Open or update the issue
         if: steps.report.outcome != 'success'

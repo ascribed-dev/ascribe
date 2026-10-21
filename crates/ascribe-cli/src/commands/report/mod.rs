@@ -8,6 +8,7 @@ mod text;
 
 use std::io::{self, Write};
 use std::process::ExitCode;
+use std::time::Duration;
 
 use ascribe_check::links::{Cache, History};
 use ascribe_check::prompt::{self, Builds as PromptBuilds};
@@ -27,6 +28,11 @@ use crate::shell::quote;
 const TEXT_LIMIT: usize = 20;
 /// How many items each list of JSON holds, unless `--limit` says otherwise.
 const JSON_LIMIT: usize = 500;
+
+/// The variable that sets how many seconds `links` waits before asking
+/// again about an address that answered with a server error, so a test
+/// doesn't wait.
+const RETRY_WAIT_VARIABLE: &str = "ASCRIBE_LINKS_RETRY_WAIT";
 
 /// Arguments of `ascribe report`.
 #[derive(Debug, ClapArgs)]
@@ -199,7 +205,14 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     let mut out = io::BufWriter::new(stdout.lock());
     let stderr = io::stderr();
     let mut err = stderr.lock();
-    let code = report(global, &args, &Tools::installed(), &mut out, &mut err);
+    let mut tools = Tools::installed();
+    if let Some(seconds) = std::env::var(RETRY_WAIT_VARIABLE)
+        .ok()
+        .and_then(|v| v.trim().parse().ok())
+    {
+        tools.links_retry_wait = Duration::from_secs(seconds);
+    }
+    let code = report(global, &args, &tools, &mut out, &mut err);
     let _ = out.flush();
     exit::code(code)
 }

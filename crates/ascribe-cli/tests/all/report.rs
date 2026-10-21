@@ -67,6 +67,7 @@ fn ascribe_with_path(dir: &Path, path: &Path, args: &[&str]) -> Output {
         .args(args)
         .env("NO_COLOR", "1")
         .env("PATH", path)
+        .env("ASCRIBE_LINKS_RETRY_WAIT", "0")
         .output()
         .expect("run ascribe")
 }
@@ -288,6 +289,7 @@ fn links_on(dir: &Path, today: &str, args: &[&str]) -> Output {
         .env("NO_COLOR", "1")
         .env("PATH", dir.join("no-tools"))
         .env("ASCRIBE_TODAY", today)
+        .env("ASCRIBE_LINKS_RETRY_WAIT", "0")
         .output()
         .expect("run ascribe")
 }
@@ -414,7 +416,7 @@ fn a_link_that_answered_before_is_held_until_it_keeps_failing() {
     let text = stdout(&links_on(dir.path(), "2026-10-13", &[]));
     assert!(
         text.contains(
-            "  1 link to look at, new since 10 October:\n    docs/guides/install.md:7: [ASC168]"
+            "  1 link to look at, new since 10 October:\n    docs/guides/install.md:7: [ASC168] `https://gone.example/` answered 503 Service Unavailable when asked twice: the server failed, which may be temporary"
         ),
         "{text}"
     );
@@ -439,6 +441,30 @@ fn a_link_that_answered_before_is_held_until_it_keeps_failing() {
     assert_eq!(links["unconfirmed"]["total"], 0);
     assert_eq!(links["previous_run"], serde_json::Value::Null);
     assert_eq!(links["new"], serde_json::Value::Null);
+}
+
+/// What lychee writes when the first address answers 503 the first time
+/// it's asked, and answers after.
+#[cfg(unix)]
+const LYCHEE_503_ONCE: &str = r#"while read -r _; do :; done
+if [ -f asked ]; then
+  printf '%s' '{"error_map":{},"success_map":{},"timeout_map":{}}'
+else
+  : > asked
+  printf '%s' '{"error_map":{"stdin":[{"url":"https://gone.example/","status":{"text":"Rejected status code: 503 Service Unavailable","code":503},"span":{"line":1,"column":1}}]},"success_map":{},"timeout_map":{}}'
+fi"#;
+
+#[cfg(unix)]
+#[test]
+fn a_server_error_is_asked_about_again_before_it_s_reported() {
+    let dir = project(&format!(
+        "{MODEL}\n[checks.links]\ncommand = \"bin/lychee\"\n"
+    ));
+    script(&dir.path().join("bin"), "lychee", LYCHEE_503_ONCE);
+    let out = links_on(dir.path(), "2026-10-08", &["--exit-code"]);
+    assert_eq!(code_of(&out), 0, "{}", stdout(&out));
+    assert!(stdout(&out).contains("None is broken or moved."));
+    assert!(dir.path().join("asked").is_file(), "it was asked twice");
 }
 
 /// What afdocs writes when content negotiation fails, the caching warns,

@@ -92,6 +92,9 @@ pub struct Tools<'a> {
     pub site: &'a dyn SiteChecker,
     /// How long the link checker may take.
     pub links_timeout: Duration,
+    /// How long to wait before asking the link checker again about the
+    /// addresses that answered with a server error.
+    pub links_retry_wait: Duration,
     /// How long the site checker may take.
     pub site_timeout: Duration,
 }
@@ -103,6 +106,7 @@ impl Tools<'static> {
             links: &links::Lychee,
             site: &site::Afdocs,
             links_timeout: links::TIMEOUT,
+            links_retry_wait: links::RETRY_WAIT,
             site_timeout: site::TIMEOUT,
         }
     }
@@ -662,6 +666,7 @@ fn links(project: &Project, options: &Options<'_>) -> Ran<Links> {
         project,
         tools.links,
         tools.links_timeout,
+        tools.links_retry_wait,
         options.link_cache,
         history,
     ) {
