@@ -39,6 +39,13 @@ const PROJECT_TASKS: readonly ProjectTaskName[] = ["build", "syncAgentFiles"];
 
 export class ProjectTasks implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
+  /**
+   * Each project's sources with tested examples, by its folder and binary,
+   * as the binary last answered: asked once, and again only after a file
+   * that can change the answer does, so listing the tasks starts no
+   * process most times.
+   */
+  private readonly sources = new Map<string, Promise<TestedSource[]>>();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -51,6 +58,20 @@ export class ProjectTasks implements vscode.Disposable {
         provideTasks: () => this.provide(),
         resolveTask: (task) => this.resolve(task),
       }),
+    );
+    // `ascribe.toml` names the sources, and `ascribe.examples.toml` makes a
+    // source's examples tested: a change to either, or to the projects,
+    // asks the binary again.
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      "**/{ascribe.toml,ascribe.examples.toml}",
+    );
+    const forget = () => this.sources.clear();
+    this.disposables.push(
+      watcher,
+      watcher.onDidChange(forget),
+      watcher.onDidCreate(forget),
+      watcher.onDidDelete(forget),
+      this.projects.onDidChangeProjects(forget),
     );
   }
 
@@ -188,6 +209,16 @@ export class ProjectTasks implements vscode.Disposable {
    * folder. None when it can't answer, as for a content model with errors.
    */
   private sourcesOf(binary: string, project: Project): Promise<TestedSource[]> {
+    const key = `${binary}\0${project.folder}`;
+    let answer = this.sources.get(key);
+    if (!answer) {
+      answer = this.askSources(binary, project);
+      this.sources.set(key, answer);
+    }
+    return answer;
+  }
+
+  private askSources(binary: string, project: Project): Promise<TestedSource[]> {
     return new Promise((resolve) => {
       execFile(
         shellCommand(binary),
