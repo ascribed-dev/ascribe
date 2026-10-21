@@ -322,6 +322,19 @@ document.addEventListener("keydown", (event) => {
   next?.focus();
 });
 
+/** The key of what had the focus last, in the view. */
+let lastFocused: string | null = null;
+document.addEventListener("focusin", () => {
+  lastFocused = focusedKey() ?? lastFocused;
+});
+
+// VS Code gives the view's document the focus back, not what had it in the
+// document: focusing the view while a row has the focus takes it from the row
+// and then gives the document the focus. What had it gets it back.
+window.addEventListener("focus", () => {
+  if (lastFocused !== null && focusedKey() === null) focusKey(lastFocused);
+});
+
 /** The answer drawn last, which a probe's report describes. */
 let shown: ThisPageAnswer | undefined;
 /** The newest probe answered. */
