@@ -822,11 +822,13 @@ describe("the Project view on examples/quill", () => {
   /** Waits for the view to draw the problems count in `state`, and returns it. */
   async function drawnIn(state: string): Promise<NonNullable<ReturnType<typeof problems>>> {
     const api = await activated();
-    const drawn = await api.ui.project.whenDrawn(
-      `every build's problems ${state}`,
-      (d) => problems(d)?.state === state,
-      30_000,
-    );
+    const drawn = await api.ui.project
+      .whenDrawn(`every build's problems ${state}`, (d) => problems(d)?.state === state, 30_000)
+      .catch((error: unknown) => {
+        // Says what it drew instead.
+        const last = api.ui.project.drawn();
+        throw new Error(`${String(error)}; it drew ${JSON.stringify(last && problems(last))}`);
+      });
     const count = problems(drawn);
     assert.ok(count);
     return count;
@@ -949,6 +951,18 @@ describe("the Project view on examples/quill", () => {
     }
   });
 
+  it("goes out of date for a file beside ascribe.toml, outside the content root", async () => {
+    const api = await activated();
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
+    await vscode.commands.executeCommand("ascribe.project.focus");
+    await api.ui.project.choose("checkEveryBuild");
+    await drawnIn("current");
+    // memos/ is the project's, beside docs/, its content root.
+    await editing(memo, async () => {
+      await drawnIn("outOfDate");
+    });
+  });
+
   it("checks the agent files when it shows the project, again after a save, and goes out of date on a change on disk", async () => {
     const api = await activated();
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
@@ -992,18 +1006,6 @@ describe("the Project view on examples/quill", () => {
     } finally {
       rmSync(written, { force: true });
     }
-  });
-
-  it("goes out of date for a file beside ascribe.toml, outside the content root", async () => {
-    const api = await activated();
-    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
-    await vscode.commands.executeCommand("ascribe.project.focus");
-    await api.ui.project.choose("checkEveryBuild");
-    await drawnIn("current");
-    // memos/ is the project's, beside docs/, its content root.
-    await editing(memo, async () => {
-      await drawnIn("outOfDate");
-    });
   });
 });
 
