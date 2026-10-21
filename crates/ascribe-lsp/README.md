@@ -950,6 +950,16 @@ glossary page, not in `ascribe.toml`. Elsewhere in the file it answers `null`.
   extension forgets the changed pages review keeps when it sees one. The file-level checks probe the disk with the files
   the editor and the watcher have reported layered over it
   (`Project::from_parts_with_fs`), as the source index does.
+- **A code file's `snippet-tags`.** Each `snippet-tags` (ASC132) problem a
+  file's `@snippet` has is also published on the code file whose tags it's
+  about, at the tag (`compute::on_code_files`): the same message, severity,
+  and `data`, without the file's fixes, with the code file's other places
+  and the `@snippet` as its related places. A problem that several
+  `@snippet`s show, in one file or several, is published once, naming each
+  (`Core::show_on_code_files`). It goes when the files that showed it are
+  checked again without it, or are deleted. `ascribe check` reports nothing
+  on a code file, so the headless server `ascribe agents hook-server` keeps
+  doesn't either.
 - **The content checks across the project** (`page-orphan`,
   `title-duplicate`, `fragment-unused`, and the unused phrases, features, and
   glossary terms; `PageChecker::check_across`) need every page of the build,

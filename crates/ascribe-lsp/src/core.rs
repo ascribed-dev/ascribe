@@ -181,6 +181,12 @@ pub(crate) struct Core {
     /// even when those didn't change, so a client waiting on the change
     /// learns the server has caught up.
     forced: HashSet<PathBuf>,
+    /// What each file's problems put on the code files its `@snippet`s show
+    /// ([`Core::show_on_code_files`]), by the file's absolute path.
+    shown: BTreeMap<PathBuf, crate::compute::Shown>,
+    /// Whether a code file gets its `snippet-tags` problems: an editor's,
+    /// not the hook's headless server, whose problems are `ascribe check`'s.
+    pub show_on_code: bool,
     next_id: i32,
     /// What gives the day the checks run on.
     pub(crate) clock: Option<crate::Clock>,
@@ -211,6 +217,8 @@ impl Core {
             published: HashMap::new(),
             checked: HashMap::new(),
             forced: HashSet::new(),
+            shown: BTreeMap::new(),
+            show_on_code: true,
             next_id: 0,
             clock: None,
         }
@@ -511,6 +519,9 @@ impl Core {
             .cloned()
             .collect();
         self.loaded = Some(loaded);
+        // Each file's share on the code files comes again with its
+        // diagnostics; the code files are among `gone`.
+        self.shown.clear();
         for path in gone {
             self.clear(&path);
         }
@@ -1260,6 +1271,9 @@ impl Core {
     /// Clears a file's diagnostics, when it had any, or when it was deleted
     /// on disk since ([`Core::did_change_watched`]).
     fn clear(&mut self, path: &Path) {
+        if self.shown.contains_key(path) {
+            self.show_on_code_files(path, Vec::new());
+        }
         self.checked.remove(path);
         self.prose_closed_quietly(path);
         let forced = self.forced.remove(path);
@@ -1283,6 +1297,55 @@ impl Core {
                     version: None,
                 },
             ));
+        }
+    }
+}
+
+impl Core {
+    /// Keeps what a file's problems put on code files, `shown`, in place of
+    /// what they put there before, and publishes each code file either
+    /// touches: every file's share, a problem that several `@snippet`s, in
+    /// one page or several, show only once, naming each of them.
+    pub(crate) fn show_on_code_files(&mut self, file: &Path, shown: crate::compute::Shown) {
+        if !self.show_on_code {
+            return;
+        }
+        let before = if shown.is_empty() {
+            self.shown.remove(file)
+        } else {
+            self.shown.insert(file.to_path_buf(), shown.clone())
+        };
+        let before = before.unwrap_or_default();
+        if before == shown {
+            return;
+        }
+        let code_files: BTreeSet<PathBuf> = before
+            .into_iter()
+            .chain(shown)
+            .map(|(path, _)| path)
+            .collect();
+        for code in code_files {
+            let mut all: Vec<lsp_types::Diagnostic> = Vec::new();
+            for (path, d) in self.shown.values().flatten() {
+                if *path != code {
+                    continue;
+                }
+                let same = all
+                    .iter_mut()
+                    .find(|o| o.range == d.range && o.code == d.code && o.message == d.message);
+                match same {
+                    Some(same) => {
+                        let have = same.related_information.get_or_insert_with(Vec::new);
+                        for r in d.related_information.iter().flatten() {
+                            if !have.contains(r) {
+                                have.push(r.clone());
+                            }
+                        }
+                    }
+                    None => all.push(d.clone()),
+                }
+            }
+            self.publish(&code, all);
         }
     }
 }

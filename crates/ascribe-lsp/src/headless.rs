@@ -61,6 +61,8 @@ impl Watched {
         // A command runs it, and a command reads a source wherever the
         // model says.
         core.bound_sources = false;
+        // Its problems are `ascribe check`'s, which has none on a code file.
+        core.show_on_code = false;
         core.config = Some(config);
         core.start();
         Watched { core, sent }

@@ -106,10 +106,18 @@ impl Across {
     }
 }
 
-/// What a round produced: the diagnostics of each file it computed, and what
-/// the content checks across the project found when the round ran them.
+/// What a file's problems put on the code files its `@snippet`s show: each
+/// file's absolute path, and the diagnostic published there.
+pub(crate) type Shown = Vec<(PathBuf, lsp_types::Diagnostic)>;
+
+/// What a round produced: the diagnostics of each file it computed, with
+/// what they put on code files, and what the content checks across the
+/// project found when the round ran them.
 pub(crate) enum Outcome {
-    Done(Vec<(RelPath, Vec<lsp_types::Diagnostic>)>, Option<Across>),
+    Done(
+        Vec<(RelPath, Vec<lsp_types::Diagnostic>, Shown)>,
+        Option<Across>,
+    ),
     /// A newer update overtook the round before it finished; its files are
     /// queued again.
     Abandoned,
@@ -214,18 +222,19 @@ impl Core {
             loaded.across = Arc::new(across);
         }
         let mut ready = Vec::new();
-        for (path, diagnostics) in results {
+        for (path, diagnostics, shown) in results {
             let abs = loaded.source_path(&path);
             let current = loaded.inc.is_file_current(&job.snapshot, &path);
             let version = self.docs.get(&abs).map(|d| d.version);
             if current && version == job.versions.get(&path).copied() {
-                ready.push((abs, diagnostics));
+                ready.push((abs, diagnostics, shown));
             } else {
                 loaded.dirty.insert(path);
             }
         }
-        for (abs, diagnostics) in ready {
+        for (abs, diagnostics, shown) in ready {
             self.publish(&abs, diagnostics);
+            self.show_on_code_files(&abs, shown);
         }
         if model_changed {
             self.publish_model_diagnostics();
@@ -455,10 +464,76 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
             .iter()
             .map(|d| to_lsp(d, &index, job.encoding, &related))
             .collect();
+        let shown = on_code_files(&diagnostics, &lsp, &project, job, file.id);
         lsp.extend_from_slice(found.of_source(path, &file.text));
-        results.push((path.clone(), lsp));
+        results.push((path.clone(), lsp, shown));
     }
     Outcome::Done(results, across)
+}
+
+/// A file's `snippet-tags` problems (ASC132) as they're shown on the code
+/// files whose tags they're about, at the tag's line: the same problem as the
+/// file's own, `lsp` in `diagnostics`' order, with the other places in the
+/// code file it names and the `@snippet` that shows it as related places, and
+/// no fixes, which are the file's. `ascribe check` reports nothing on a code
+/// file; this is the editor's alone.
+fn on_code_files(
+    diagnostics: &[Diagnostic],
+    lsp: &[lsp_types::Diagnostic],
+    project: &Project,
+    job: &Job,
+    id: FileId,
+) -> Shown {
+    let Some(page) = project
+        .file(id)
+        .and_then(|entry| path_to_uri(&normalize(&job.root.join(&entry.display_path))))
+    else {
+        return Vec::new();
+    };
+    let mut shown = Vec::new();
+    for (d, on_page) in diagnostics.iter().zip(lsp) {
+        if d.slug != ascribe_core::diagnostics::SNIPPET_TAGS {
+            continue;
+        }
+        // The tag itself is the last place a `snippet-tags` problem names.
+        let Some((here, before)) = d.related.split_last() else {
+            continue;
+        };
+        let Some(code) = project.code_file(here.location.file) else {
+            continue;
+        };
+        let abs = normalize(&job.root.join(code.path.as_str()));
+        let Some(uri) = path_to_uri(&abs) else {
+            continue;
+        };
+        let index = LineIndex::new(&code.text);
+        let mut related: Vec<DiagnosticRelatedInformation> = before
+            .iter()
+            .filter(|r| r.location.file == code.id)
+            .map(|r| DiagnosticRelatedInformation {
+                location: Location {
+                    uri: uri.clone(),
+                    range: job.encoding.range(&index, r.location.span),
+                },
+                message: r.message.clone(),
+            })
+            .collect();
+        related.push(DiagnosticRelatedInformation {
+            location: Location {
+                uri: page.clone(),
+                range: on_page.range,
+            },
+            message: "the `@snippet` that shows it".to_owned(),
+        });
+        let mut d = on_page.clone();
+        d.range = job.encoding.range(&index, here.location.span);
+        d.related_information = Some(related);
+        if let Some(map) = d.data.as_mut().and_then(serde_json::Value::as_object_mut) {
+            map.insert("fixes".to_owned(), serde_json::json!([]));
+        }
+        shown.push((abs, d));
+    }
+    shown
 }
 
 /// Runs the content checks across the project for the editor's build, over

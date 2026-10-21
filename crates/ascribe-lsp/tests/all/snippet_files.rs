@@ -2,13 +2,14 @@
 //! `examples/tested`: the pages that show it, directly or through a
 //! fragment, are checked again, and the client is told they read differently
 //! so a preview of one draws it again. A file no snippet shows starts
-//! nothing.
+//! nothing. A problem with its tags is shown on it too, once, while a page
+//! shows it.
 
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
 use std::path::Path;
 
-use crate::support::{Client, Fixture, uri};
+use crate::support::{Client, Fixture, slug, uri};
 use lsp_types::FileChangeType;
 use serde_json::json;
 
@@ -248,4 +249,119 @@ fn a_file_no_snippet_shows_starts_nothing() {
     client.settle();
     assert_eq!(client.publications(&page).len(), published);
     assert!(changed_since(&client, before).is_empty());
+}
+
+/// `greet.ts` with its region's `:snippet-end:` gone, on disk and reported:
+/// both pages that show it, one through a fragment, have `snippet-tags`.
+fn unclose(f: &Fixture, client: &mut Client) -> String {
+    let text = read(f, CODE);
+    let unclosed: String = text
+        .lines()
+        .filter(|line| !line.contains(":snippet-end:"))
+        .map(|line| format!("{line}\n"))
+        .collect();
+    f.write(CODE, &unclosed);
+    client.watched(&[(&f.path(CODE), FileChangeType::CHANGED)]);
+    client.settle();
+    text
+}
+
+#[test]
+fn a_snippet_tags_problem_is_shown_once_on_the_code_file_at_the_tag() {
+    let f = tested();
+    let page = f.path("docs/index.md");
+    let fragment = f.path("docs/_greet.md");
+    let code = f.path(CODE);
+    let mut client = start(&f);
+    assert!(client.diagnostics(&code).is_empty());
+
+    unclose(&f, &mut client);
+    let on_page = client
+        .diagnostics(&page)
+        .into_iter()
+        .find(|d| slug(d) == "snippet-tags")
+        .expect("the page's own");
+    let on_code = client.diagnostics(&code);
+    // Once, though two files show it.
+    assert_eq!(on_code.len(), 1, "{on_code:#?}");
+    let d = &on_code[0];
+    assert_eq!(slug(d), "snippet-tags");
+    // `:snippet-start: greet`, the tag never closed, is on the first line.
+    assert_eq!(d.range.start.line, 0);
+    assert_eq!(d.message, on_page.message);
+    assert_eq!(d.severity, on_page.severity);
+    // It names each `@snippet` that shows the file.
+    let shown_by: Vec<String> = d
+        .related_information
+        .iter()
+        .flatten()
+        .map(|r| {
+            r.location
+                .uri
+                .as_str()
+                .rsplit('/')
+                .next()
+                .unwrap()
+                .to_owned()
+        })
+        .collect();
+    assert_eq!(shown_by, ["_greet.md", "index.md"], "{d:#?}");
+    // The pages keep their own.
+    for file in [&page, &fragment] {
+        assert!(has(&client, file, "snippet-tags"), "{file:?}");
+    }
+}
+
+#[test]
+fn fixing_the_tags_on_disk_clears_the_code_files_problem_and_the_pages() {
+    let f = tested();
+    let page = f.path("docs/index.md");
+    let code = f.path(CODE);
+    let mut client = start(&f);
+    let text = unclose(&f, &mut client);
+    assert!(has(&client, &code, "snippet-tags"));
+
+    f.write(CODE, &text);
+    client.watched(&[(&code, FileChangeType::CHANGED)]);
+    client.settle();
+    assert!(client.diagnostics(&code).is_empty());
+    assert!(!has(&client, &page, "snippet-tags"));
+}
+
+#[test]
+fn removing_the_last_snippet_that_shows_the_file_clears_its_problem() {
+    let f = tested();
+    let page = f.path("docs/index.md");
+    let fragment = f.path("docs/_greet.md");
+    let code = f.path(CODE);
+    let mut client = start(&f);
+    unclose(&f, &mut client);
+    assert!(has(&client, &code, "snippet-tags"));
+
+    let without = |path: &Path| -> String {
+        std::fs::read_to_string(path)
+            .unwrap()
+            .lines()
+            .filter(|line| !line.contains("code:examples/greet.ts"))
+            .map(|line| format!("{line}\n"))
+            .collect()
+    };
+    // One goes: the other still shows it.
+    let text = without(&fragment);
+    client.open(&fragment, 1, &read(&f, "docs/_greet.md"));
+    client.replace(&fragment, 2, &text);
+    client.settle();
+    assert_eq!(client.diagnostics(&code).len(), 1);
+    let related = client.diagnostics(&code)[0]
+        .related_information
+        .clone()
+        .unwrap_or_default();
+    assert_eq!(related.len(), 1, "{related:#?}");
+
+    // The last goes.
+    let text = without(&page);
+    client.open(&page, 1, &read(&f, "docs/index.md"));
+    client.replace(&page, 2, &text);
+    client.settle();
+    assert!(client.diagnostics(&code).is_empty());
 }
