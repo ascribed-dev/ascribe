@@ -947,7 +947,9 @@ describe("the Project view on examples/quill", () => {
     assert.match(current.value, /^\d+ errors?(, \d+ warnings?)?(, \d+ advice)?$/, current.value);
     assert.match(current.note, /^Checked at /, current.note);
     assert.equal(api.ui.everyBuild.isCurrent(folder), true);
-    assert.equal(api.ui.project.drawn()?.report.buttons[0], current.value);
+    // The count opens the Problems panel: its button, after the head's.
+    const buttons = api.ui.project.drawn()?.report.buttons ?? [];
+    assert.ok(buttons.includes(current.value), buttons.join("\n"));
 
     // An edit to a page, unsaved, makes it out of date.
     await editing(keys, async () => {
