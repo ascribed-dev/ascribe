@@ -145,7 +145,7 @@ pub fn find<'a>(
     let mut places: Vec<Place> = Vec::new();
     let mut keys: HashMap<Key, usize> = HashMap::new();
     for reading in readings {
-        for block in &reading.blocks {
+        for block in reading.blocks.iter().filter(|b| b.kind.searched()) {
             let mut from = 0;
             while let Some(range) = query.find_from(&block.text, from) {
                 let (place, after) = locate(project, &mut lines, block, range);

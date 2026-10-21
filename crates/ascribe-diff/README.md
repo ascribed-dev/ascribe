@@ -6,7 +6,7 @@ What changed between a git revision and the working tree, as readers will see it
 |---|---|
 | `src/git.rs` | Running `git`: `Repository` (the repository's root and the project's folder in it), `Base` (the revision, and its merge base with `HEAD`), listing a commit's tree, listing the files that differ between a commit and the working tree (renames followed), and reading blobs through one `git cat-file --batch`, all at once or (`BlobReader`) one at a time through a process kept open |
 | `src/gitfs.rs` | `GitFs`, an `ascribe_resolve::FileSystem` over a commit's tree, with `DiskFs`'s rules for which files are sources and which folders are other projects'; `Revision`, a project's content model and files at a commit. A code file a snippet reads is read when it's asked for, through one `git` process for the whole revision |
-| `src/tree.rs` | A resolved page as a tree of nodes (blocks, list items, arms), each with its source anchor and a fingerprint of its content without positions |
+| `src/tree.rs` | A resolved page as a tree of nodes (blocks, list items, arms), each with its source anchor, a fingerprint of its content without positions, and its own text as a reader reads it, from `ascribe_resolve::reading::own_text`, the reading `ascribe search` matches |
 | `src/align.rs` | Aligning two versions of a page's nodes: a longest-common-subsequence diff over fingerprints, pairing by kind and word overlap, recursion into changed containers, and moves |
 | `src/words.rs` | The word-level diff inside changed prose |
 | `src/compare.rs` | Comparing builds page by page, the files a change comes from (`because`), and the report's types. `reachable` is the short path: the pages a change can reach, found from the two versions' indexes (a file's text, what its references resolve to, its snippets' code, then the files that include it and link to it); every other page resolves the same on both sides and isn't resolved |
@@ -18,7 +18,7 @@ The binary links no git library and no HTTP client: `git` is run as a process wi
 
 ## Rules
 
-- **Positions never reach a fingerprint.** A block that moved down the file, or was rewrapped, fingerprints the same. Text is compared with whitespace collapsed; what a reader sees besides text (a link's resolved URL, an availability badge's labels, a glossary link, an arm's label) is in the fingerprint too.
+- **Positions never reach a fingerprint.** A block that moved down the file, or was rewrapped, fingerprints the same. Text is compared as the reading gives it, without markup and with whitespace collapsed; what a reader sees besides text (a link's resolved URL, an availability badge's labels, a glossary link, an arm's label) is in the fingerprint too.
 - **Anchors follow the [site-render contract's source anchors](https://ascribed-dev.com/go/7-source-anchors/)**, the same strings the site output writes as `data-ascribe-source` and `data-ascribe-via`, and lines are counted as the JSON output's `lines` are.
 - **Limits** keep a generated page from taking seconds: `words::MAX_TOKENS` for the word diff, `align::MAX_CHILDREN` for comparing inside a container, `align::MAX_PAIRS` for pairing within one unmatched run. The static report keeps a large change openable: `html::MAX_PAGES` pages rendered, `html::MAX_IMAGE_BYTES` per image.
 

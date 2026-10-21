@@ -14,6 +14,13 @@
 //! autolinks are Vale's to read. A link or image is given as its text with an
 //! empty destination (`[text]()`), so its address, which may be a reference
 //! whose definition isn't given, is never read as prose.
+//!
+//! This is a reading of its own, not `ascribe_resolve::reading`, which
+//! `ascribe search` and `ascribe diff` share, on purpose: Vale checks one
+//! source file as parsed, not a page a build resolved, so it reads no
+//! fragment, snippet, or phrase another file holds; it keeps inline markup
+//! for Vale's own reader, where the reading removes it; and it gives every
+//! arm, where a build keeps one.
 
 use ascribe_core::Span;
 use ascribe_syntax::{
