@@ -29,7 +29,7 @@ const commands: Record<string, string> = {
   "ascribe.restartServer":
     "Stops and starts every project's server that has started, including one that stopped after crashing, and forgets earlier crashes. A server that hasn't started stays off until it's needed; when none has, the command says so. It also picks up `ascribe.toml` files added or deleted.",
   "ascribe.openProjectSettings":
-    "Opens Project Settings for the active file's project: its `ascribe.toml` settings, each with its value, its default, its description, and the line that sets it, in a tab beside the file. A value the file sets can be changed there, and the change is made in `ascribe.toml`, unsaved. The gear in the Project view's head opens it for the view's project. See [Project Settings](../editor/settings.md#project-settings).",
+    "Opens Project Settings for the active file's project: its `ascribe.toml` settings, each with its value, its default, its description, and the line that sets it, in a tab beside the file. A value the file sets can be changed there, and the change is made in `ascribe.toml`, unsaved. The gear in the Project view's head opens it for the view's project, and the button in `ascribe.toml`'s title bar for that file's. See [Project Settings](../editor/settings.md#project-settings).",
   "ascribe.showOutput":
     "Opens the log of the active file's project. When no file of a project is active and the workspace has several projects, it asks which, showing whether each one's server is running.",
   "ascribe.openPagePreview":

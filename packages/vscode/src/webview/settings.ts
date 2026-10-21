@@ -18,12 +18,24 @@
 // rule of the content model is the server's, whose problems show under the
 // setting.
 //
+// Above them, a search over every setting's name, key, and whole
+// description, and a filter, Set in ascribe.toml, for what the file sets;
+// beside them, the sections, each a button that scrolls to its heading. The
+// search and the filter hide what doesn't match, in the webview alone: they
+// change nothing in the file, and outlast a redraw and the tab being hidden,
+// as its scroll and its section do (`getState`). A part of the project with
+// structure, a content type or a build, is a card whose link opens the file
+// at its table, and phrases, features, and terms are the Content model
+// view's. When `ascribe.toml` is gone, the tab says so, and the next click
+// closes it.
+//
 // The text comes from the registry and from `ascribe.toml`, and is set as
 // text, never as HTML.
 
 import type {
   CheckView,
   FromSettings,
+  PartView,
   SettingsAnswer,
   SettingsReport,
   SettingView,
@@ -34,7 +46,6 @@ type Channel = ViewChannel<SettingsReport, FromSettings>;
 
 const main = document.querySelector<HTMLElement>('[data-role="view"]');
 if (!main) throw new Error("Project Settings' shell has no view");
-const view: HTMLElement = main;
 
 function element<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -54,6 +65,29 @@ function linkButton(text: string, onClick: () => void): HTMLButtonElement {
   button.addEventListener("click", onClick);
   return button;
 }
+
+// The tab's layout, made once: the search and the filter stay as they are
+// while each answer redraws the sections and the settings.
+const toolbar = element("div", "toolbar");
+const search = element("input", "search");
+search.type = "search";
+search.placeholder = "Search settings";
+search.setAttribute("aria-label", "Search settings");
+search.spellcheck = false;
+const setOnly = element("input");
+setOnly.type = "checkbox";
+setOnly.className = "set-only";
+const setOnlyLabel = element("label", "filter");
+setOnlyLabel.append(setOnly, " Set in ascribe.toml");
+toolbar.append(search, setOnlyLabel);
+const intro = element("p", "intro");
+const nav = element("nav", "sections");
+nav.setAttribute("aria-label", "Sections");
+const content = element("div", "content");
+const layout = element("div", "layout");
+layout.append(nav, content);
+main.append(intro, toolbar, layout);
+const view: HTMLElement = content;
 
 /** The value a control shows, as text: what the report says it drew. */
 function controlText(value: SettingView["value"]): string {
@@ -246,7 +280,119 @@ function focused(): { id: string; typed: string | undefined } | undefined {
   return { id: active.dataset["id"], typed };
 }
 
+/** A part of the project with structure: a card whose link opens the file at its table. */
+function drawPart(part: PartView, channel: Channel): HTMLElement {
+  const section = element("section", "setting card set");
+  section.dataset["id"] = part.id;
+  const head = element("div", "head");
+  head.append(element("h3", "name", part.name), element("code", "key", part.key));
+  const meta = element("p", "meta");
+  const edit = linkButton("Edit in ascribe.toml", () =>
+    channel.post({ type: "openLine", seq: channel.seq, id: part.id }),
+  );
+  edit.classList.add("edit");
+  edit.dataset["id"] = part.id;
+  edit.setAttribute("aria-label", `Edit ${part.key} in ascribe.toml`);
+  meta.append(element("span", "where", part.where), edit);
+  section.append(head, element("p", "description", part.summary), meta);
+  return section;
+}
+
+/** Phrases, features, and terms: the Content model view's, where they're added and renamed. */
+function drawContentModel(channel: Channel): HTMLElement {
+  const section = element("section", "setting card");
+  section.dataset["id"] = "content-model";
+  const head = element("div", "head");
+  head.append(element("h3", "name", "Phrases, features, and terms"));
+  const meta = element("p", "meta");
+  meta.append(linkButton("Open Content model", () => channel.post({ type: "contentModel" })));
+  section.append(
+    head,
+    element(
+      "p",
+      "description",
+      "Phrases, features, and glossary terms are added, renamed, and found in the Content model view, with every page that uses them.",
+    ),
+    meta,
+  );
+  return section;
+}
+
+/** Something the search and the filter show or hide: a setting, a check, or a card. */
+interface Item {
+  element: HTMLElement;
+  /** What the search looks in, in lowercase: its name, its key, and its whole description. */
+  text: string;
+  /** Whether the file sets it, which the filter keeps. */
+  set: boolean;
+}
+
+/** A group of items under a heading, with its button in the list of sections. */
+interface Group {
+  title: string;
+  element: HTMLElement;
+  button: HTMLButtonElement;
+  items: Item[];
+}
+
+let groups: Group[] = [];
+
+const words = (setting: SettingView, more: string[] = []): string =>
+  [setting.name, setting.key, ...setting.description.map((p) => p.text), ...more]
+    .join(" ")
+    .toLowerCase();
+
+/** Whether `text` has every word of the search, in any of its sentences. */
+function matches(text: string, query: string): boolean {
+  return query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((word) => word !== "")
+    .every((word) => text.includes(word));
+}
+
+const none = element("p", "message none");
+
+/** Hides what the search and the filter leave out, and a section with nothing left. */
+function filter(): void {
+  const query = search.value;
+  let shown = 0;
+  for (const group of groups) {
+    let left = 0;
+    for (const item of group.items) {
+      const show = matches(item.text, query) && (!setOnly.checked || item.set);
+      item.element.hidden = !show;
+      if (show) left++;
+    }
+    group.element.hidden = left === 0;
+    group.button.hidden = left === 0;
+    shown += left;
+  }
+  none.hidden = groups.length === 0 || shown > 0;
+  none.textContent = setOnly.checked
+    ? "Nothing ascribe.toml sets matches the search."
+    : "No setting matches the search.";
+}
+
 let scrolled = false;
+let gone = false;
+
+/** Starts a group: its heading, and its button in the list of sections. */
+function group(title: string, channel: Channel): Group {
+  const made = element("div", "group");
+  made.append(element("h2", "section", title));
+  const button = element("button", "section-link", title);
+  button.type = "button";
+  button.addEventListener("click", () => {
+    made.scrollIntoView({ block: "start" });
+    channel.setState({ ...channel.state(), section: title });
+  });
+  nav.append(button);
+  view.append(made);
+  const drawn: Group = { title, element: made, button, items: [] };
+  groups.push(drawn);
+  return drawn;
+}
 
 function draw(answer: SettingsAnswer, channel: Channel): SettingsReport {
   const keep = focused();
@@ -257,39 +403,64 @@ function draw(answer: SettingsAnswer, channel: Channel): SettingsReport {
     ]),
   );
   view.replaceChildren();
-  const intro = element(
-    "p",
-    "intro",
+  nav.replaceChildren();
+  groups = [];
+  gone = answer.gone;
+  intro.replaceChildren(
     "These settings are shared with everyone on the project, and written to ascribe.toml. ",
-  );
-  intro.append(
     linkButton("Your editor's settings", () => channel.post({ type: "editorSettings" })),
     " are VS Code's.",
   );
-  view.append(intro);
   labels = 0;
-  if (answer.message !== null) {
-    view.append(element("p", "message", answer.message));
+  const drawing = answer.message === null;
+  toolbar.hidden = !drawing;
+  nav.hidden = !drawing;
+  if (!drawing) {
+    view.append(element("p", "message", answer.message ?? ""));
   } else {
-    let section: string | undefined;
+    let current: Group | undefined;
     for (const setting of answer.settings) {
-      if (setting.section !== section) {
-        section = setting.section;
-        view.append(element("h2", "section", section));
-      }
-      view.append(drawSetting(setting, channel));
+      if (setting.section !== current?.title) current = group(setting.section, channel);
+      const made = drawSetting(setting, channel);
+      current.element.append(made);
+      current.items.push({ element: made, text: words(setting), set: setting.set });
     }
+    let parts: Group | undefined;
+    for (const part of answer.parts) {
+      if (part.section !== parts?.title) parts = group(part.section, channel);
+      const made = drawPart(part, channel);
+      parts.element.append(made);
+      parts.items.push({
+        element: made,
+        text: [part.name, part.key, part.summary].join(" ").toLowerCase(),
+        set: true,
+      });
+    }
+    const model = group("Phrases, features, and terms", channel);
+    const card = drawContentModel(channel);
+    model.element.append(card);
+    model.items.push({ element: card, text: card.textContent?.toLowerCase() ?? "", set: false });
     if (answer.checks.length > 0) {
-      view.append(
-        element("h2", "section", "Checks"),
+      const checks = group("Checks", channel);
+      checks.element.append(
         element(
           "p",
           "intro",
           "How loudly each check about your content speaks, set in [checks]. The ones ascribe.toml names are first.",
         ),
       );
-      for (const check of answer.checks) view.append(drawCheck(check, channel));
+      for (const check of answer.checks) {
+        const made = drawCheck(check, channel);
+        checks.element.append(made);
+        checks.items.push({
+          element: made,
+          text: words(check.level, [check.slug, check.code, check.level.section]),
+          set: check.named,
+        });
+      }
     }
+    view.append(none);
+    filter();
   }
   if (keep) {
     const again = view.querySelector<HTMLElement>(`.control[data-id="${CSS.escape(keep.id)}"]`);
@@ -299,7 +470,7 @@ function draw(answer: SettingsAnswer, channel: Channel): SettingsReport {
     }
     again?.focus();
   }
-  if (!scrolled) {
+  if (!scrolled && drawing) {
     scrolled = true;
     const scroll = channel.state()["scroll"];
     if (typeof scroll === "number") window.scrollTo(0, scroll);
@@ -326,13 +497,28 @@ function draw(answer: SettingsAnswer, channel: Channel): SettingsReport {
         resettable: view.querySelector(`.reset[data-id="${CSS.escape(setting.id)}"]`) !== null,
       };
     }),
+    parts: answer.parts.map((part) => ({ id: part.id, where: part.where })),
     violations: seenViolations(),
   };
 }
 
 const channel = startView<SettingsAnswer, SettingsReport, FromSettings>(draw);
+// The search, the filter, and the scroll, kept for when the tab is shown again.
+const kept = channel.state();
+if (typeof kept["search"] === "string") search.value = kept["search"];
+setOnly.checked = kept["setOnly"] === true;
+const keepFilter = (): void => {
+  channel.setState({ ...channel.state(), search: search.value, setOnly: setOnly.checked });
+  filter();
+};
+search.addEventListener("input", keepFilter);
+setOnly.addEventListener("change", keepFilter);
 window.addEventListener(
   "scroll",
   () => channel.setState({ ...channel.state(), scroll: window.scrollY }),
   { passive: true },
 );
+// A tab whose `ascribe.toml` is gone closes on the next click.
+document.addEventListener("click", () => {
+  if (gone) channel.post({ type: "close" });
+});

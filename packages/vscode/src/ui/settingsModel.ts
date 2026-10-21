@@ -24,6 +24,7 @@ import {
 } from "../preview/messages.js";
 import type {
   CheckEntry,
+  PartEntry,
   SettingEntry,
   SettingPlace,
   SettingsResult,
@@ -32,6 +33,7 @@ import type {
 import type {
   CheckView,
   FromSettings,
+  PartView,
   SettingsAnswer,
   SettingsReport,
   SettingView,
@@ -120,21 +122,53 @@ function checkView(check: CheckEntry): CheckView {
   };
 }
 
+/** The heading of each table whose parts are cards, by the table. */
+const PART_SECTIONS: Readonly<Record<string, string>> = {
+  types: "Content types",
+  dimensions: "Dimensions",
+  releases: "Releases",
+  builds: "Builds",
+  sources: "Sources",
+};
+
+/** A part's id: `part:<table>.<name>`, apart from every setting's. */
+function partId(part: Pick<PartEntry, "table" | "name">): string {
+  return `part:${part.table}.${part.name}`;
+}
+
+function partView(part: PartEntry): PartView {
+  return {
+    id: partId(part),
+    section: PART_SECTIONS[part.table] ?? `[${part.table}]`,
+    name: part.name,
+    key: `[${part.table}.${part.name}]`,
+    summary: part.keys.length > 0 ? `Sets ${part.keys.join(", ")}` : "Sets nothing yet",
+    where: where(part.set),
+  };
+}
+
+/** What the tab draws in place of the settings: a message, and whether it's because the file is gone. */
+export function settingsMessage(message: string, gone = false): SettingsAnswer {
+  return { message, gone, settings: [], checks: [], parts: [] };
+}
+
 /** What the tab draws for the server's answer. */
 export function settingsAnswer(result: SettingsResult): SettingsAnswer {
   if (result.unreadable !== null) {
-    return {
-      message: `${result.unreadable} Fix it in the file to see its settings.`,
-      settings: [],
-      checks: [],
-    };
+    return settingsMessage(`${result.unreadable} Fix it in the file to see its settings.`);
   }
   return {
     message: null,
+    gone: false,
     settings: result.settings.map(view),
     checks: result.checks.map(checkView),
+    parts: result.parts.map(partView),
   };
 }
+
+/** What the tab says once its `ascribe.toml` is deleted or renamed. */
+export const GONE =
+  "ascribe.toml was deleted or renamed, so this project is gone. Click anywhere to close this tab.";
 
 /** Every setting an answer draws a control for: the settings, then each check's level and limit. */
 export function allSettings(answer: SettingsAnswer): SettingView[] {
@@ -146,12 +180,16 @@ export function allSettings(answer: SettingsAnswer): SettingView[] {
 
 /**
  * Where the server finds the setting `id` of its answer: the table and key
- * `setSetting` names, and the place the file sets it, if it does.
+ * `setSetting` names, and the place the file sets it, if it does. A part's
+ * id names its table and its name, which only a link opens: `setSetting`
+ * changes no part, and the tab sends none.
  */
 export function settingTarget(
   result: SettingsResult,
   id: string,
 ): { table: string; key: string; set: SettingPlace | null } | undefined {
+  const part = result.parts.find((p) => partId(p) === id);
+  if (part) return { table: part.table, key: part.name, set: part.set };
   const entry = result.settings.find((s) => settingId(s) === id);
   if (entry) return { table: entry.table, key: entry.key, set: entry.set };
   for (const check of result.checks) {
@@ -236,6 +274,7 @@ const settingsReport: Check<SettingsReport> = shape<SettingsReport>({
     }),
   ),
   violations: listOf(text),
+  parts: listOf(shape<SettingsReport["parts"][number]>({ id: text, where: text })),
 });
 
 const value = (v: unknown): v is string | number | boolean =>
@@ -250,6 +289,8 @@ export function checkSettingsMessage(
     case "ready":
     case "focusEditor":
     case "editorSettings":
+    case "contentModel":
+    case "close":
       return message as FromView<SettingsReport> | FromSettings;
     case "drawn":
       return shape<{ seq: number; report: SettingsReport }>({ seq: whole, report: settingsReport })(

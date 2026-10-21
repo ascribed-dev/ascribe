@@ -28,10 +28,14 @@
 //               fixes applied on an explicit save, against the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
 //   settings    a copy of examples/quill whose `[consumer]` sets the trailing
-//               slash and the base path, Project Settings' round trip: a value
-//               set from the tab, unsaved, Undo, typing, and the server's
-//               problem; a value added and reset; and a check's level, against
-//               the real `ascribe lsp`. Needs ASCRIBE_BIN as well.
+//               slash and the base path, with a fixture's `ascribe.toml` under
+//               `tests/` that `ascribe.projects.exclude` leaves out, Project
+//               Settings' round trip: a value set from the tab, unsaved, Undo,
+//               typing, and the server's problem; a value added and reset; a
+//               check's level; the title bar's button, offered on the
+//               project's `ascribe.toml` and not on the fixture's; and the tab
+//               of a deleted `ascribe.toml`, against the real `ascribe lsp`.
+//               Needs ASCRIBE_BIN as well.
 //   site        a copy of examples/quill, Open Site Preview and the preview
 //               panel's Site view, against a fake dev server, with the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
@@ -278,7 +282,14 @@ const suites: Suite[] = [
           `${site}# Pages end in a slash.\ntrailing-slash = "always" # as Astro's\nbase-path = "/"\n`,
         ),
       );
-      return { "ascribe.path": realServer, ...startAll };
+      // A test fixture's project, as Ascribe's own repository has under tests/.
+      mkdirSync(path.join(workspace, "tests/fixture"), { recursive: true });
+      writeFileSync(path.join(workspace, "tests/fixture/ascribe.toml"), 'spec = "0.1"\n');
+      return {
+        "ascribe.path": realServer,
+        ...startAll,
+        "ascribe.projects.exclude": ["tests/**"],
+      };
     },
   },
   {

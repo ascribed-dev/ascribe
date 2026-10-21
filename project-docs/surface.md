@@ -512,7 +512,7 @@ Menus the commands are placed in:
 | Menu | Entries |
 |---|---|
 | `commandPalette` | 94 |
-| `editor/title` | 5 |
+| `editor/title` | 6 |
 | `view/title` | 11 |
 | `view/item/context` | 13 |
 | `comments/commentThread/context` | 2 |

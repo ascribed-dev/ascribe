@@ -140,6 +140,8 @@ function setting(more: Partial<SettingView> & Pick<SettingView, "id">): SettingV
 
 const ANSWER: SettingsAnswer = {
   message: null,
+  gone: false,
+  parts: [],
   settings: [
     setting({ id: "consumer.trailing-slash" }),
     setting({
@@ -217,13 +219,17 @@ describe("Project Settings' webview", () => {
           resettable: true,
         },
       ],
+      parts: [],
       violations: [],
     });
     const first = tab.page.locator("section.setting").first();
     expect(await first.getAttribute("class")).toBe("setting set");
     expect(await first.locator("h3").textContent()).toBe("Trailing slash");
     // Under its table's heading.
-    expect(await tab.page.locator("h2.section").allTextContents()).toEqual(["[consumer]"]);
+    expect(await tab.page.locator("h2.section").allTextContents()).toEqual([
+      "[consumer]",
+      "Phrases, features, and terms",
+    ]);
     expect(await first.locator(".key").textContent()).toBe("[consumer] trailing-slash");
     expect(await first.locator(".description").textContent()).toBe(
       "Routing. Whether page URLs end in /.",
@@ -276,6 +282,8 @@ describe("Project Settings' webview", () => {
     const [slash, base] = ANSWER.settings as [SettingView, SettingView];
     const report = await tab.draw(2, {
       message: null,
+      gone: false,
+      parts: [],
       settings: [
         { ...slash, value: "never" },
         {
@@ -301,7 +309,13 @@ describe("Project Settings' webview", () => {
       seq: 1,
       answer: ANSWER,
     } satisfies ToView<SettingsAnswer>);
-    await tab.draw(3, { message: "The server is starting.", settings: [], checks: [] });
+    await tab.draw(3, {
+      message: "The server is starting.",
+      gone: false,
+      settings: [],
+      checks: [],
+      parts: [],
+    });
     expect(await tab.page.locator(".message").textContent()).toBe("The server is starting.");
     expect(tab.posted.filter((m) => m.type === "drawn").map((m) => m.seq)).toEqual([1, 2, 3]);
     await tab.page.close();
@@ -311,6 +325,8 @@ describe("Project Settings' webview", () => {
     const tab = await open();
     await tab.draw(1, {
       message: null,
+      gone: false,
+      parts: [],
       settings: [
         setting({
           id: "editor.size",
@@ -348,6 +364,8 @@ describe("Project Settings' webview", () => {
     const tab = await open();
     await tab.draw(4, {
       message: null,
+      gone: false,
+      parts: [],
       settings: [
         setting({ id: "consumer.trailing-slash" }),
         setting({
@@ -381,6 +399,8 @@ describe("Project Settings' webview", () => {
     const tab = await open();
     const report = await tab.draw(5, {
       message: null,
+      gone: false,
+      parts: [],
       settings: [],
       checks: [
         {
@@ -409,7 +429,10 @@ describe("Project Settings' webview", () => {
       ["checks.page-size.level", "advice", false],
       ["checks.page-size.limit", "50000", false],
     ]);
-    expect(await tab.page.locator("h2.section").allTextContents()).toEqual(["Checks"]);
+    expect(await tab.page.locator("h2.section").allTextContents()).toEqual([
+      "Phrases, features, and terms",
+      "Checks",
+    ]);
     const checks = tab.page.locator("section.check");
     expect(await checks.first().getAttribute("class")).toBe("setting check set");
     expect(await checks.nth(1).locator(".description").textContent()).toBe(
@@ -442,6 +465,8 @@ describe("Project Settings' webview", () => {
     const size = pageSize();
     await tab.draw(1, {
       message: null,
+      gone: false,
+      parts: [],
       settings: [],
       checks: [
         {
@@ -464,6 +489,165 @@ describe("Project Settings' webview", () => {
     await limit.fill("300000");
     await limit.press("Enter");
     expect(await tab.next("set", from)).toMatchObject({ value: 300_000 });
+    await tab.page.close();
+  });
+
+  it("finds a word in any sentence of a description, a name, or a key, and keeps to what the file sets", async () => {
+    const tab = await open();
+    await tab.draw(1, {
+      ...ANSWER,
+      settings: [
+        setting({
+          id: "consumer.trailing-slash",
+          description: [
+            { text: "Routing. Whether page URLs end in ", code: false },
+            { text: "/", code: true },
+            { text: ". A site's astro.config has to agree with it.", code: false },
+          ],
+        }),
+        setting({
+          id: "consumer.base-path",
+          name: "Base path",
+          key: "[consumer] base-path",
+          kind: "text",
+          choices: [],
+          value: "/",
+          set: false,
+          resettable: false,
+          where: "Not set in ascribe.toml",
+          description: [{ text: "The path the site is served under.", code: false }],
+        }),
+        setting({
+          id: "editor.build",
+          section: "[editor]",
+          name: "Build",
+          key: "[editor] build",
+          kind: "text",
+          choices: [],
+          value: "",
+          set: false,
+          resettable: false,
+          where: "Not set in ascribe.toml",
+          description: [{ text: "The build the editor checks.", code: false }],
+        }),
+      ],
+      checks: [pageSize()],
+      parts: [
+        {
+          id: "part:types.guide",
+          section: "Content types",
+          name: "guide",
+          key: "[types.guide]",
+          summary: "Sets purpose, frontmatter",
+          where: "ascribe.toml:14",
+        },
+      ],
+    });
+    const visible = async (): Promise<string[]> =>
+      tab.page
+        .locator("section.setting:visible")
+        .evaluateAll((all) => all.map((s) => (s as HTMLElement).dataset["id"] ?? ""));
+    const sections = async (): Promise<string[]> =>
+      tab.page.locator("nav.sections button:visible").allTextContents();
+    expect(await sections()).toEqual([
+      "[consumer]",
+      "[editor]",
+      "Content types",
+      "Phrases, features, and terms",
+      "Checks",
+    ]);
+    const search = tab.page.getByRole("searchbox", { name: "Search settings" });
+    // A word of the description's last sentence, in any case.
+    await search.fill("ASTRO.CONFIG");
+    expect(await visible()).toEqual(["consumer.trailing-slash"]);
+    expect(await sections()).toEqual(["[consumer]"]);
+    expect(await tab.page.locator("h2.section:visible").allTextContents()).toEqual(["[consumer]"]);
+    // Every word, from the name, the key, and the description.
+    await search.fill("base served");
+    expect(await visible()).toEqual(["consumer.base-path"]);
+    await search.fill("[editor] build");
+    expect(await visible()).toEqual(["editor.build"]);
+    // A check by its slug and what it reports; a card by its table.
+    await search.fill("page-size longer");
+    expect(await visible()).toEqual(["checks.page-size.level"]);
+    await search.fill("types.guide");
+    expect(await visible()).toEqual(["part:types.guide"]);
+    await search.fill("nothing has this");
+    expect(await visible()).toEqual([]);
+    expect(await tab.page.locator(".none").textContent()).toBe("No setting matches the search.");
+    // Set in ascribe.toml: what the file sets, and the cards, which it names.
+    await search.fill("");
+    await tab.page.getByRole("checkbox", { name: "Set in ascribe.toml" }).check();
+    expect(await visible()).toEqual(["consumer.trailing-slash", "part:types.guide"]);
+    expect(await tab.page.locator(".none").isVisible()).toBe(false);
+    // The search and the filter outlast the next answer, and are kept for the tab.
+    await search.fill("path");
+    await tab.draw(2, ANSWER);
+    expect(await visible()).toEqual(["consumer.base-path"]);
+    await search.fill("build");
+    expect(await tab.page.locator(".none").textContent()).toBe(
+      "Nothing ascribe.toml sets matches the search.",
+    );
+    const state = await tab.page.evaluate(() =>
+      (window as unknown as { acquireVsCodeApi(): { getState(): unknown } })
+        .acquireVsCodeApi()
+        .getState(),
+    );
+    expect(state).toMatchObject({ search: "build", setOnly: true });
+    await tab.page.close();
+  });
+
+  it("draws a card for each part with structure, and opens the file and Content model", async () => {
+    const tab = await open();
+    await tab.draw(1, {
+      ...ANSWER,
+      settings: [],
+      parts: [
+        {
+          id: "part:builds.cloud",
+          section: "Builds",
+          name: "cloud",
+          key: "[builds.cloud]",
+          summary: "Sets variants",
+          where: "ascribe.toml:30",
+        },
+      ],
+    });
+    const card = tab.page.locator('section.card[data-id="part:builds.cloud"]');
+    expect(await card.locator("h3").textContent()).toBe("cloud");
+    expect(await card.locator(".description").textContent()).toBe("Sets variants");
+    expect(await card.locator(".where").textContent()).toBe("ascribe.toml:30");
+    let from = tab.posted.length;
+    await tab.page.getByRole("button", { name: "Edit [builds.cloud] in ascribe.toml" }).click();
+    expect(await tab.next("openLine", from)).toEqual({
+      type: "openLine",
+      seq: 1,
+      id: "part:builds.cloud",
+    });
+    from = tab.posted.length;
+    await tab.page.getByRole("button", { name: "Open Content model" }).click();
+    expect(await tab.next("contentModel", from)).toEqual({ type: "contentModel" });
+    expect(await tab.page.locator("a").count()).toBe(0);
+    await tab.page.close();
+  });
+
+  it("says ascribe.toml is gone, and the next click closes the tab", async () => {
+    const tab = await open();
+    await tab.draw(1, ANSWER);
+    // A click while the file is there closes nothing.
+    await tab.page.locator("main").click({ position: { x: 1, y: 1 } });
+    await tab.draw(2, {
+      message: "ascribe.toml was deleted or renamed, so this project is gone.",
+      gone: true,
+      settings: [],
+      checks: [],
+      parts: [],
+    });
+    expect(tab.posted.some((m) => m.type === "close")).toBe(false);
+    expect(await tab.page.getByRole("searchbox").isVisible()).toBe(false);
+    const from = tab.posted.length;
+    await tab.page.locator(".message").click();
+    expect(await tab.next("close", from)).toEqual({ type: "close" });
     await tab.page.close();
   });
 });

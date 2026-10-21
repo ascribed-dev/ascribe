@@ -408,6 +408,82 @@ fn a_file_that_isnt_toml_has_settings_with_no_values() {
     );
 }
 
+#[test]
+fn the_parts_with_structure_are_listed_with_their_keys_and_lines() {
+    let model = r#"spec = "0.1"
+dimensions.edition = { values = ["cloud", "server"] }
+
+[project]
+content-root = "docs"
+
+[builds.cloud]
+variants = { edition = "cloud" }
+
+[types.guide]
+purpose = "Teaches a task."
+frontmatter = { title = "string" }
+
+[releases]
+planned-label = "Coming soon"
+
+[releases.cloud]
+live = ["2.0"]
+"#;
+    let fixture = Fixture::new(model, &[("docs/index.md", "# Home\n\nHello.\n")]);
+    let mut client = Client::start(&fixture.root());
+    client.settle();
+    let answer = settings(&mut client, &fixture);
+    let parts: Vec<(String, String, Vec<String>, Value)> = answer["parts"]
+        .as_array()
+        .expect("parts")
+        .iter()
+        .map(|p| {
+            (
+                p["table"].as_str().unwrap().to_owned(),
+                p["name"].as_str().unwrap().to_owned(),
+                p["keys"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|k| k.as_str().unwrap().to_owned())
+                    .collect(),
+                p["set"]["line"].clone(),
+            )
+        })
+        .collect();
+    // In the reference's order, not the file's; `planned-label`, a key of
+    // `[releases]` itself, isn't a part.
+    assert_eq!(
+        parts,
+        vec![
+            (
+                "types".to_owned(),
+                "guide".to_owned(),
+                vec!["purpose".to_owned(), "frontmatter".to_owned()],
+                json!(10)
+            ),
+            (
+                "dimensions".to_owned(),
+                "edition".to_owned(),
+                vec!["values".to_owned()],
+                json!(2)
+            ),
+            (
+                "releases".to_owned(),
+                "cloud".to_owned(),
+                vec!["live".to_owned()],
+                json!(17)
+            ),
+            (
+                "builds".to_owned(),
+                "cloud".to_owned(),
+                vec!["variants".to_owned()],
+                json!(7)
+            ),
+        ]
+    );
+}
+
 /// The edit `setSetting` answers for `[table] key`, applied to `text`, the
 /// buffer at version 1.
 fn edited(text: &str, table: &str, key: &str, value: Value) -> String {

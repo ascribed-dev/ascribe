@@ -79,6 +79,28 @@ pub struct SettingsResult {
     /// Every configurable check: the ones the file sets first, then the
     /// rest, each in the diagnostics reference's order.
     pub checks: Vec<CheckEntry>,
+    /// The parts of the project with structure the file names: each content
+    /// type, dimension, release target, build, and source, in the content
+    /// model reference's order and the file's within each.
+    pub parts: Vec<PartEntry>,
+}
+
+/// A part of the project with structure, which Project Settings shows as a
+/// card that opens the file at its table.
+#[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct PartEntry {
+    /// The table it's in: `types`, `dimensions`, `releases`, `builds`, or
+    /// `sources`.
+    pub table: String,
+    /// Its name in that table: `guide`.
+    pub name: String,
+    /// The keys the file sets in it, in the file's order.
+    pub keys: Vec<String>,
+    /// Where the file names it: its key, in its table's header or its
+    /// dotted key. `null` when it can't be placed.
+    pub set: Option<SettingPlace>,
 }
 
 /// One configurable check, as `[checks]` sets it.
@@ -407,13 +429,48 @@ pub(crate) fn settings_now(now: &ModelNow) -> SettingsResult {
         })
         .collect();
     let checks = checks_now(now, file.as_ref().ok(), &index);
+    let parts = file
+        .as_ref()
+        .map(|f| parts_now(now, f, &index))
+        .unwrap_or_default();
     SettingsResult {
         model_uri: crate::uri::path_to_uri(&now.config).map(|u| u.as_str().to_owned()),
         version: now.version,
         unreadable,
         settings,
         checks,
+        parts,
     }
+}
+
+/// The tables whose parts a project names, and Project Settings shows as
+/// cards, in the content model reference's order.
+const PART_TABLES: [&str; 5] = ["types", "dimensions", "releases", "builds", "sources"];
+
+/// The parts the file names: each table of [`PART_TABLES`]'s entries that is
+/// a table itself, which leaves out a key of the table's own, such as
+/// `[releases] planned-label`.
+fn parts_now(now: &ModelNow, file: &ModelFile<'_>, index: &LineIndex) -> Vec<PartEntry> {
+    let mut parts = Vec::new();
+    for table in PART_TABLES {
+        let Some(entries) = file.table_like(&path(&[table])) else {
+            continue;
+        };
+        for (name, item) in entries.iter() {
+            let Some(part) = item.as_table_like() else {
+                continue;
+            };
+            let key_span = entries.get_key_value(name).and_then(|(key, _)| key.span());
+            parts.push(PartEntry {
+                table: table.to_owned(),
+                name: name.to_owned(),
+                keys: part.iter().map(|(k, _)| k.to_owned()).collect(),
+                set: key_span
+                    .map(|span| setting_place(now, index, Span::new(span.start, span.end))),
+            });
+        }
+    }
+    parts
 }
 
 /// `setSetting`: `args.table` and `args.key` name a setting, `args.value` is

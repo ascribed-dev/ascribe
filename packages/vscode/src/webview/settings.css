@@ -22,9 +22,102 @@ body {
 }
 
 main {
-  max-width: 64em;
+  max-width: 76em;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+/* The search and the filter, above the settings. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  margin: 0 0 16px;
+}
+
+.search {
+  flex: 1 1 20em;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 2px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  font: inherit;
+}
+
+.search::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+.filter {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--vscode-foreground);
+}
+
+.filter input {
+  accent-color: var(--vscode-checkbox-background);
+}
+
+/* The sections on the left, the settings on the right; one above the other
+   when the tab is narrow. */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(10em, 14em) minmax(0, 1fr);
+  gap: 0 24px;
+  align-items: start;
+}
+
+.sections {
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.section-link {
+  margin: 0;
+  padding: 2px 0;
+  border: 0;
+  color: var(--vscode-foreground);
+  background: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.section-link:hover {
+  color: var(--vscode-textLink-activeForeground);
+}
+
+@media (max-width: 600px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sections {
+    position: static;
+    flex-flow: row wrap;
+    gap: 2px 12px;
+    margin-bottom: 8px;
+  }
+}
+
+.group > .section:first-child {
+  margin-top: 0;
+}
+
+.group + .group > .section:first-child {
+  margin-top: 24px;
+}
+
+[hidden] {
+  display: none !important;
 }
 
 .intro,
