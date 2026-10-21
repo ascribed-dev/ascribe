@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Project } from "../../src/projects.js";
@@ -79,5 +80,24 @@ describe("a task's definition", () => {
     expect(isAscribeTask({ type: "ascribe", task: "toString" })).toBe(false);
     expect(isAscribeTask({ type: "shell", task: "build" })).toBe(false);
     expect(isAscribeTask({ type: "ascribe", task: "build", project: 1 })).toBe(false);
+  });
+});
+
+// VS Code trusts every workspace while it runs extension tests, so Restricted
+// Mode can't be opened in an integration test; the provider's source says it
+// offers and resolves nothing there.
+describe("the task provider in Restricted Mode", () => {
+  const provider = readFileSync(new URL("../../src/ui/tasks.ts", import.meta.url), "utf8");
+
+  it("offers no task", () => {
+    expect(provider).toMatch(
+      /private async provide\(\)[^{]*\{\s*if \(!vscode\.workspace\.isTrusted\) return \[\];/,
+    );
+  });
+
+  it("resolves none tasks.json names", () => {
+    expect(provider).toMatch(
+      /private async resolve\([^)]*\)[^{]*\{\s*if \(!vscode\.workspace\.isTrusted \|\|/,
+    );
   });
 });
