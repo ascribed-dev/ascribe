@@ -80,20 +80,9 @@ jobs:
           path: packages/vscode/out/vscode-test
           key: vscode-test-${{ runner.os }}
       # VS Code needs a display; xvfb provides a virtual one.
-      # DIAG #764: the settings suite, 30 times, with the fix.
-      - run: |
-          cd packages/vscode && node esbuild.mjs --tests
-          failed=0
-          for i in $(seq 1 30); do
-            echo "=== #764 run $i"
-            xvfb-run -a node out/integration/run.cjs > run.log 2>&1 || { failed=$((failed+1)); echo "--- FAILED"; }
-            grep -E "\[764|passing|failing|Error:" run.log | cut -c1-400
-          done
-          echo "=== #764 failed $failed of 30"
-          test "$failed" = 0
+      - run: xvfb-run -a pnpm --filter ascribe-vscode test:integration
         env:
           ASCRIBE_BIN: ${{ github.workspace }}/target/debug/ascribe
-          ASCRIBE_SUITE: settings
       # A suite that keeps its VS Code logs leaves them here when it fails
       # (test/integration/run.ts), the language server's trace among them.
       - if: failure()
