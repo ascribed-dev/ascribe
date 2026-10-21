@@ -1,7 +1,13 @@
 // Project Settings: an editor tab, a webview panel, that shows a project's
 // `ascribe.toml` settings with their values, defaults, descriptions, and
 // lines, and changes a simple value in place. Opened from the Command
-// Palette (Ascribe: Open Project Settings), one tab per project.
+// Palette (Ascribe: Open Project Settings), the Project view's gear, and the
+// button in `ascribe.toml`'s title bar, which is offered only on the
+// `ascribe.toml` of a project the extension found: not on one
+// `ascribe.projects.exclude` leaves out, such as a test fixture's. One tab
+// per project, found by the path of its `ascribe.toml`; when that file is
+// deleted or renamed, the tab says the project is gone, and closes on the
+// next click.
 //
 // It keeps the rules of the sidebar's webview views (decision #651a): the
 // shell and its content security policy (`../webview/viewShell.ts`), the
@@ -31,15 +37,23 @@ import {
   allSettings,
   checkSettingsMessage,
   checkedValue,
+  GONE,
   inStep,
   setInStep,
   settingTarget,
   settingsAnswer,
+  settingsMessage,
 } from "./settingsModel.js";
 import type { Drawn } from "./webviewView.js";
 
 /** How many times an answer for other text is asked for again before the tab waits for the next change. */
 const TRIES = 5;
+
+/**
+ * The context key that lists the `ascribe.toml` files the title bar's button
+ * is offered on, each as VS Code may name it in `resourcePath`.
+ */
+const CONFIGS_KEY = "ascribe.projectConfigs";
 
 /** Project Settings, for tests. */
 export interface ProjectSettingsApi {
@@ -61,6 +75,10 @@ export interface ProjectSettingsApi {
   openLine(id: string): Promise<void>;
   /** How many tabs are open. */
   tabs(): number;
+  /** Whether the title bar's button is offered on the file `uri`, as its `when` clause reads it. */
+  offeredOn(uri: vscode.Uri): boolean;
+  /** Clicks the open tab, as a reader does to close a tab whose `ascribe.toml` is gone. */
+  click(): void;
   /** Settles when every request for an answer has been answered. */
   whenSettled(): Promise<void>;
 }
@@ -79,11 +97,37 @@ export class ProjectSettings implements vscode.Disposable {
 
   register(): void {
     this.disposables.push(
-      // The Project view's gear names its project; the Command Palette, none.
-      vscode.commands.registerCommand("ascribe.openProjectSettings", (folder?: unknown) =>
-        this.open(typeof folder === "string" ? folder : undefined),
-      ),
+      // The Project view's gear names its project's folder, and the title
+      // bar's button the `ascribe.toml` it's on; the Command Palette, none.
+      vscode.commands.registerCommand("ascribe.openProjectSettings", (target?: unknown) => {
+        if (target instanceof vscode.Uri) {
+          const project = this.projects.projects.find((p) => samePath(p.config, target.fsPath));
+          return project ? this.open(project.folder) : undefined;
+        }
+        return this.open(typeof target === "string" ? target : undefined);
+      }),
+      this.projects.onDidChangeProjects(() => void this.updateConfigs()),
     );
+    void this.updateConfigs();
+  }
+
+  /**
+   * The `ascribe.toml` files the title bar's button is offered on: each
+   * project's, as a path and as a URI's path, since the `resourcePath` its
+   * `when` clause compares is one or the other by the version of VS Code. A
+   * file it doesn't list, such as a fixture's `ascribe.toml` that
+   * `ascribe.projects.exclude` leaves out, isn't a project the extension
+   * found, and has no button.
+   */
+  private configs(): string[] {
+    return this.projects.projects.flatMap((project) => {
+      const uri = vscode.Uri.file(project.config);
+      return [uri.fsPath, uri.path];
+    });
+  }
+
+  private async updateConfigs(): Promise<void> {
+    await vscode.commands.executeCommand("setContext", CONFIGS_KEY, this.configs());
   }
 
   get api(): ProjectSettingsApi {
@@ -100,6 +144,13 @@ export class ProjectSettings implements vscode.Disposable {
       reset: (id) => panel().set(panel().seq, id, null),
       openLine: (id) => panel().openLine(panel().seq, id),
       tabs: () => this.panels.size,
+      offeredOn: (uri) => {
+        const configs = this.configs();
+        return (
+          uri.scheme === "file" && (configs.includes(uri.fsPath) || configs.includes(uri.path))
+        );
+      },
+      click: () => panel().click(),
       whenSettled: () => this.last?.whenSettled() ?? Promise.resolve(),
     };
   }
@@ -153,6 +204,8 @@ class SettingsPanel implements vscode.Disposable {
   /** The refresh under way, and whether another is due after it. */
   private running: Promise<void> | undefined;
   private again = false;
+  /** Whether `ascribe.toml` is gone: deleted, or renamed. */
+  private gone = false;
 
   constructor(
     private readonly server: ProjectServer,
@@ -210,6 +263,10 @@ class SettingsPanel implements vscode.Disposable {
       watcher.onDidChange(() => this.refresh()),
       watcher.onDidCreate(() => this.refresh()),
       watcher.onDidDelete(() => this.refresh()),
+      // Deleting or renaming `ascribe.toml` stops its server too, and the
+      // registry forgets the project.
+      vscode.workspace.onDidDeleteFiles(() => this.refresh()),
+      vscode.workspace.onDidRenameFiles(() => this.refresh()),
     );
   }
 
@@ -254,15 +311,36 @@ class SettingsPanel implements vscode.Disposable {
     )?.version;
   }
 
+  /** Whether `ascribe.toml` is on disk. An open document of a deleted file is gone too. */
+  private async exists(): Promise<boolean> {
+    try {
+      await vscode.workspace.fs.stat(this.config);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** A click in the tab: it closes the tab when `ascribe.toml` is gone. */
+  click(): void {
+    if (this.gone) this.dispose();
+  }
+
   private async refreshNow(): Promise<void> {
+    this.gone = !(await this.exists());
+    if (this.gone) {
+      this.result = undefined;
+      this.show(settingsMessage(GONE, true));
+      return;
+    }
     const state = this.server.state;
     if (state !== "running") {
       this.result = undefined;
-      this.show({
-        message: `The Ascribe language server is ${STATE_NAMES[state]}. Project Settings shows the settings once it's running.`,
-        settings: [],
-        checks: [],
-      });
+      this.show(
+        settingsMessage(
+          `The Ascribe language server is ${STATE_NAMES[state]}. Project Settings shows the settings once it's running.`,
+        ),
+      );
       return;
     }
     for (let tries = 0; tries < TRIES; tries++) {
@@ -287,7 +365,7 @@ class SettingsPanel implements vscode.Disposable {
     // Still out of step: the answer drawn is for older text, so it's put
     // away until the next change to the document asks again.
     this.result = undefined;
-    this.show({ message: "Reading ascribe.toml…", settings: [], checks: [] });
+    this.show(settingsMessage("Reading ascribe.toml…"));
   }
 
   private show(answer: SettingsAnswer): void {
@@ -322,6 +400,12 @@ class SettingsPanel implements vscode.Disposable {
           "workbench.action.openSettings",
           `@ext:${this.extensionId}`,
         );
+        return;
+      case "contentModel":
+        void vscode.commands.executeCommand("ascribe.model.focus");
+        return;
+      case "close":
+        this.click();
         return;
       // A tab has no page's editor to give the focus back to.
       case "focusEditor":
@@ -384,7 +468,7 @@ class SettingsPanel implements vscode.Disposable {
     }
   }
 
-  /** Opens `ascribe.toml` beside the tab, at the line that sets `id` of the answer `seq`. */
+  /** Opens `ascribe.toml` beside the tab, at the line that sets `id` of the answer `seq`, a setting's or a part's. */
   async openLine(seq: number, id: string): Promise<void> {
     const latest = this.handshake.latest;
     const set = this.result && settingTarget(this.result, id)?.set;

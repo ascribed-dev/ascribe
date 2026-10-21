@@ -187,6 +187,44 @@
       ],
       "type": "object"
     },
+    "PartEntry": {
+      "description": "A part of the project with structure, which Project Settings shows as a\ncard that opens the file at its table.",
+      "properties": {
+        "keys": {
+          "description": "The keys the file sets in it, in the file's order.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "name": {
+          "description": "Its name in that table: `guide`.",
+          "type": "string"
+        },
+        "set": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SettingPlace"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where the file names it: its key, in its table's header or its\ndotted key. `null` when it can't be placed."
+        },
+        "table": {
+          "description": "The table it's in: `types`, `dimensions`, `releases`, `builds`, or\n`sources`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "table",
+        "name",
+        "keys",
+        "set"
+      ],
+      "type": "object"
+    },
     "SettingEntry": {
       "description": "One setting.",
       "properties": {
@@ -373,6 +411,13 @@
         "null"
       ]
     },
+    "parts": {
+      "description": "The parts of the project with structure the file names: each content\ntype, dimension, release target, build, and source, in the content\nmodel reference's order and the file's within each.",
+      "items": {
+        "$ref": "#/$defs/PartEntry"
+      },
+      "type": "array"
+    },
     "settings": {
       "description": "Every setting of a simple kind in a table a project doesn't name\n(`[project]`, `[consumer]`, `[editor]`, and the rest, not\n`[types.<name>]`), in the content model reference's order.",
       "items": {
@@ -400,7 +445,8 @@
     "version",
     "unreadable",
     "settings",
-    "checks"
+    "checks",
+    "parts"
   ],
   "title": "SettingsResult",
   "type": "object"

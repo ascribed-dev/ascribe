@@ -185,6 +185,16 @@ describe("package.json", () => {
     );
   });
 
+  it("offers Project Settings on the title bar of a found project's ascribe.toml alone", () => {
+    // `ascribe.projectConfigs` lists the projects the extension found, which
+    // leaves out an `ascribe.toml` that `ascribe.projects.exclude` does, as a
+    // fixture's under `tests/`.
+    const title = manifest.contributes.menus["editor/title"];
+    expect(title.find((entry) => entry.command === "ascribe.openProjectSettings")?.when).toBe(
+      "resourceFilename == ascribe.toml && resourcePath in ascribe.projectConfigs",
+    );
+  });
+
   it("names the previews as the README does, keeping the preview command's id", () => {
     const titles = new Map(
       (manifest.contributes.commands as { command: string; title: string }[]).map((c) => [

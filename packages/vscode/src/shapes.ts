@@ -1887,6 +1887,27 @@ export interface PageTemplate {
   left: number;
 }
 
+/**
+ * A part of the project with structure, which Project Settings shows as a
+ * card that opens the file at its table.
+ */
+export interface PartEntry {
+  /**
+   * The table it's in: `types`, `dimensions`, `releases`, `builds`, or
+   * `sources`.
+   */
+  table: string;
+  /** Its name in that table: `guide`. */
+  name: string;
+  /** The keys the file sets in it, in the file's order. */
+  keys: string[];
+  /**
+   * Where the file names it: its key, in its table's header or its
+   * dotted key. `null` when it can't be placed.
+   */
+  set: SettingPlace | null;
+}
+
 /** What a piece of a formatted value is. */
 export type PieceKind = "text" | "code";
 
@@ -2378,6 +2399,12 @@ export interface SettingsResult {
    * rest, each in the diagnostics reference's order.
    */
   checks: CheckEntry[];
+  /**
+   * The parts of the project with structure the file names: each content
+   * type, dimension, release target, build, and source, in the content
+   * model reference's order and the file's within each.
+   */
+  parts: PartEntry[];
 }
 
 /** How many diagnostics of each severity. */

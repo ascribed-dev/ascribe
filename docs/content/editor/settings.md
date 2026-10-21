@@ -58,11 +58,27 @@ When it starts, a server logs its version and the `ascribe.toml` it uses: `ascri
 
 **Ascribe: Open Project Settings** opens a tab of the project's own settings: those in its `ascribe.toml`, which everyone working on the project shares, and which the file holds for them all to read, review, and commit. Your editor's settings, the `ascribe.*` ones below, are VS Code's, and the tab links to them.
 
-Each setting shows its name, its key (`[consumer] trailing-slash`), what it does, its default, and where the file sets it, as a link to the line (`ascribe.toml:12`), or that the file leaves it out. A bar beside a setting marks one the file sets, as VS Code's Settings editor marks what's changed. The tab shows every setting that's a switch, a choice, a number, or a short text, under a heading for its table (`[project]`, `[consumer]`, `[editor]`, and the rest), in the order of the [content model reference](../content-model/index.md); a table, a list, or a part of the project with a name of its own, such as a content type or a build, is the file's to edit.
+The tab opens from the Command Palette, from the gear in the [Project view](sidebar.md#the-project-view)'s head, and from the gear in `ascribe.toml`'s title bar. The button is there only on the `ascribe.toml` of a project the extension found: not on one that `ascribe.projects.exclude` leaves out, such as a test fixture's (see [Workspaces with several projects](#workspaces-with-several-projects)). Each project has one tab, titled with the project's name: opening it again shows the tab already open. Closing and reopening `ascribe.toml` changes nothing, since the tab reads the file from the disk while it isn't open. When `ascribe.toml` is deleted or renamed, the project is gone, so the tab says so, and closes when you click it.
+
+### Finding a setting
+
+The search at the top looks in every setting's name, its key, and its whole description, so a word from any sentence of what a setting does finds it, and so does a check's name or what it reports. Each word you type must be there, in any case. **Set in ascribe.toml** keeps to what the file sets. On the left, the sections list the tables, the parts of the project, and the checks; click one to go to it. A section with nothing that matches is left out of the list. The tab keeps the search, the filter, and where you were while you look at another tab.
+
+### What the tab shows
+
+Each setting shows its name, its key (`[consumer] trailing-slash`), what it does, its default, and where the file sets it, as a link to the line (`ascribe.toml:12`), or that the file leaves it out. A bar beside a setting marks one the file sets, as VS Code's Settings editor marks what's changed. The tab shows every setting that's a switch, a choice, a number, or a short text, under a heading for its table (`[project]`, `[consumer]`, `[editor]`, and the rest), in the order of the [content model reference](../content-model/index.md). A table or a list is the file's to edit, and a part of the project with a name of its own, such as a content type or a build, is a card that opens the file at it.
+
+### Changing a value
 
 The tab changes a value the file sets: choose another, or type one and press Enter. The change is made in `ascribe.toml` as an edit to that one value, unsaved, so the file's comments, blank lines, and order stay as they were, and **Undo** in the file puts it back. Typing in `ascribe.toml` changes the tab too: it always shows the file as the editor has it, unsaved text included, and never an older version of it. A value the content model doesn't take is still set, and the language server's problem shows under the setting, in the words of the Problems panel.
 
 A setting the file leaves out is shown with its default, and changing it adds it to its table, after the table's last setting, or adds the table at the end of the file when it has none. **Reset to default**, beside a setting the file sets, takes its line out of the file, and the comment directly above it with it: a comment that touches the line is about that setting. A comment with a blank line before the setting stays, since it may be about the lines around it too. Both are unsaved edits that **Undo** puts back.
+
+### Content types, builds, and the rest
+
+A content type, a dimension, a release target, a build, and a source are tables of their own, which the file holds as text for a reviewer to read. Each is a card under its section, **Content types**, **Dimensions**, **Releases**, **Builds**, or **Sources**, with its name, its table (`[types.guide]`), the keys the file sets in it, and its line. **Edit in ascribe.toml** opens the file at its table. Phrases, features, and glossary terms are added, renamed, and found in the [Content model view](sidebar.md#this-page-pages-and-content-model), which **Open Content model** shows.
+
+### Checks
 
 Under **Checks**, the tab lists every check whose level `[checks]` can set ([Setting a check's level](../checks/diagnostics.md#setting-a-checks-level)), the ones the file names first, then the rest in the diagnostics reference's order. Each shows what it reports, its level, and its own level, which it has when the file sets none. `page-size`, `image-large`, and `memo-long` show their `limit` too, with its default. A level and a limit are set and reset as any setting is, in the form the file writes the check: `page-size = "warning"` in `[checks]`, an inline table, or a `[checks.page-size]` table of its own.
 

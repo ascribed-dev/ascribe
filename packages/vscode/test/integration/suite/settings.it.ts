@@ -7,7 +7,10 @@
 // with the server's problem under it. Every simple setting is shown: one the
 // file leaves out is added to its table, and Reset to default takes one out
 // with its comment. The checks are listed, every configurable one, and a
-// check's level is set from the tab.
+// check's level is set from the tab. The title bar's button is offered on the
+// project's `ascribe.toml` and not on a fixture's that
+// `ascribe.projects.exclude` leaves out, and opens the tab already open; and
+// when `ascribe.toml` is deleted, the tab says so, and a click closes it.
 import * as assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import * as vscode from "vscode";
@@ -249,5 +252,26 @@ describe("Project Settings on examples/quill", () => {
       editor.document.lineAt(editor.selection.start.line).text,
       'trailing-slash = "always" # as Astro\'s',
     );
+  });
+
+  it("offers its button on the project's ascribe.toml and not on a fixture's, and opens the tab already open", async () => {
+    const settings = (await activated()).ui.projectSettings;
+    assert.equal(settings.offeredOn(model()), true);
+    assert.equal(settings.offeredOn(uriOf("tests/fixture/ascribe.toml")), false);
+    assert.equal(settings.offeredOn(uriOf("docs/index.md")), false);
+    // The button passes the file it's on.
+    await vscode.commands.executeCommand("ascribe.openProjectSettings", model());
+    assert.equal(settings.tabs(), 1);
+  });
+
+  it("says the project is gone when ascribe.toml is deleted, and closes on the next click", async () => {
+    const settings = (await activated()).ui.projectSettings;
+    await vscode.workspace.fs.delete(model());
+    await settings.whenDrawn("that the project is gone", (d) =>
+      (d.report.message ?? "").startsWith("ascribe.toml was deleted or renamed"),
+    );
+    assert.equal(settings.tabs(), 1);
+    settings.click();
+    assert.equal(settings.tabs(), 0);
   });
 });

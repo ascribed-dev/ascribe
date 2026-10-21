@@ -559,7 +559,9 @@ TypeScript type is `SettingsResult` in `packages/vscode/src/shapes.ts`
                "named": true, "level": "warning", "set": { "range": { … }, "line": 52 },
                "problems": [],
                "limit": { "kind": "number", "default": 50000, "defaultText": "50,000 characters",
-                          "value": null, "set": null, "problems": [] } }]
+                          "value": null, "set": null, "problems": [] } }],
+  "parts": [{ "table": "types", "name": "guide", "keys": ["purpose", "frontmatter"],
+              "set": { "range": { … }, "line": 14 } }]
 }
 ```
 
@@ -574,6 +576,12 @@ TypeScript type is `SettingsResult` in `packages/vscode/src/shapes.ts`
   the file's, from `<check> = "<level>"` or a table's `level`; and `limit`,
   for `page-size`, `image-large` (a `size`), and `memo-long`, has its default
   and the file's value.
+- The parts are the tables the file names in `[types]`, `[dimensions]`,
+  `[releases]`, `[builds]`, and `[sources]`, in that order, the reference's,
+  and the file's within each: each with the keys it sets, in the file's
+  order, and `set`, the range of its name in its header or dotted key. A key
+  of the table's own, `[releases] planned-label`, isn't a part. Project
+  Settings shows each as a card that opens the file there.
 - It reads `ascribe.toml` as it is now: the open buffer, unsaved text
   included, or the file on disk, and even while it doesn't load. `version` is
   the version of the open buffer it read, or `null` when it read the disk; a

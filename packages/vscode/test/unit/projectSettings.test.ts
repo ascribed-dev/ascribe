@@ -65,6 +65,7 @@ function result(more: Partial<SettingsResult> = {}): SettingsResult {
       }),
     ],
     checks: [],
+    parts: [],
     ...more,
   };
 }
@@ -178,6 +179,51 @@ describe("Project Settings' answer", () => {
     expect(settingTarget(answer, "consumer.nothing")).toBeUndefined();
   });
 
+  it("shows each part with structure as a card under its section, which opens the file at its table", () => {
+    const answer = settingsAnswer(
+      result({
+        parts: [
+          {
+            table: "types",
+            name: "guide",
+            keys: ["purpose", "frontmatter"],
+            set: { range, line: 14 },
+          },
+          { table: "builds", name: "cloud", keys: [], set: null },
+        ],
+      }),
+    );
+    expect(answer.parts).toEqual([
+      {
+        id: "part:types.guide",
+        section: "Content types",
+        name: "guide",
+        key: "[types.guide]",
+        summary: "Sets purpose, frontmatter",
+        where: "ascribe.toml:14",
+      },
+      {
+        id: "part:builds.cloud",
+        section: "Builds",
+        name: "cloud",
+        key: "[builds.cloud]",
+        summary: "Sets nothing yet",
+        where: "Not set in ascribe.toml",
+      },
+    ]);
+    // A card's link opens its line; no setting has its id, so none is set.
+    expect(settingTarget(result({ parts: [] }), "part:types.guide")).toBeUndefined();
+    expect(
+      settingTarget(
+        result({
+          parts: [{ table: "types", name: "guide", keys: [], set: { range, line: 14 } }],
+        }),
+        "part:types.guide",
+      ),
+    ).toEqual({ table: "types", key: "guide", set: { range, line: 14 } });
+    expect(allSettings(answer).map((s) => s.id)).not.toContain("part:types.guide");
+  });
+
   it("doesn't change a value the file writes in a form it can't show", () => {
     const answer = settingsAnswer(
       result({ settings: [entry("base-path", { value: null, set: { range, line: 4 } })] }),
@@ -188,8 +234,10 @@ describe("Project Settings' answer", () => {
   it("says why when the file can't be read", () => {
     expect(settingsAnswer(result({ unreadable: "`ascribe.toml` isn't valid TOML: x" }))).toEqual({
       message: "`ascribe.toml` isn't valid TOML: x Fix it in the file to see its settings.",
+      gone: false,
       settings: [],
       checks: [],
+      parts: [],
     });
   });
 });
@@ -273,6 +321,8 @@ describe("the rule the tab keeps", () => {
     });
     expect(checkSettingsMessage({ type: "reset", seq: 2 })).toBeUndefined();
     expect(checkSettingsMessage({ type: "ready" })).toEqual({ type: "ready" });
+    expect(checkSettingsMessage({ type: "contentModel" })).toEqual({ type: "contentModel" });
+    expect(checkSettingsMessage({ type: "close" })).toEqual({ type: "close" });
     expect(checkSettingsMessage({ type: "drawn", seq: 1, report: {} })).toBeUndefined();
     expect(checkSettingsMessage({ type: "run" })).toBeUndefined();
   });

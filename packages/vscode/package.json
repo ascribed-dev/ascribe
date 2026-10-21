@@ -1384,6 +1384,11 @@
       ],
       "editor/title": [
         {
+          "command": "ascribe.openProjectSettings",
+          "when": "resourceFilename == ascribe.toml && resourcePath in ascribe.projectConfigs",
+          "group": "navigation"
+        },
+        {
           "command": "ascribe.openPreview",
           "when": "ascribe.active && resourceLangId == markdown",
           "group": "navigation"
