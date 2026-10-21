@@ -39,7 +39,7 @@ import { chromium, type Browser, type Page } from "playwright-core";
 /** The VS Code the pictures show. A new one changes them: retake them when it moves. */
 const VSCODE = "1.141.0";
 
-/** The window, in CSS pixels; the picture is twice as many each way. */
+/** The window, in CSS pixels, unless a picture sets its own; the picture is twice as many each way. */
 const [WIDTH, HEIGHT] = [1100, 700];
 const SCALE = 2;
 
@@ -93,6 +93,8 @@ interface Stage {
 interface Picture {
   /** Whether scenes.ts stages it, under the picture's name. */
   scene: boolean;
+  /** The window's size in CSS pixels, when it isn't WIDTH by HEIGHT. */
+  size?: [width: number, height: number];
   workspace(scratch: string, server: string): Workspace;
   take(window: Page, stage: Stage): Promise<Buffer>;
 }
@@ -136,8 +138,9 @@ async function shot(window: Page): Promise<Buffer> {
   await window.waitForTimeout(1000);
   const title = await window.locator(".part.titlebar").boundingBox();
   const top = Math.ceil(title?.height ?? 0);
+  const [width, height] = await window.evaluate<[number, number]>("[innerWidth, innerHeight]");
   return window.screenshot({
-    clip: { x: 0, y: top, width: WIDTH, height: HEIGHT - top },
+    clip: { x: 0, y: top, width, height: height - top },
     animations: "disabled",
     caret: "initial",
   });
@@ -231,6 +234,84 @@ export const PICTURES: Record<string, Picture> = {
       return { root, goto: path.join(root, "code", "examples", "greet.ts"), settings: startAll };
     },
     take: (window, stage) => stepShot(window, stage, ".peekview-widget .monaco-list-row"),
+  },
+  "this-page": {
+    scene: true,
+    // Tall enough for every section of the view.
+    size: [1100, 1000],
+    workspace: (scratch) => ({ root: copy(scratch, "quill"), settings: startAll }),
+    async take(window, stage) {
+      await stage.staged(0);
+      await only(window, "This page", 480);
+      const picture = await shot(window);
+      stage.taken(0);
+      return picture;
+    },
+  },
+  pages: {
+    scene: true,
+    workspace(scratch) {
+      const root = copy(scratch, "quill");
+      const docs = path.join(root, "docs");
+      const page = (file: string, title: string, text: string) =>
+        writeFileSync(path.join(docs, file), `---\ntype: page\ntitle: ${title}\n---\n\n${text}\n`);
+      mkdirSync(path.join(docs, "reference"));
+      page("reference/index.md", "Reference", "Every command and setting of {product}.");
+      page(
+        "reference/cli.md",
+        "The quill command",
+        "`quill init` writes [quill.yaml](config.md) and starts [the agent](../agnet.md).",
+      );
+      page("reference/config.md", "quill.yaml", "The agent reads `quill.yaml` when it starts.");
+      // Keys left out of the Start section's order.
+      writeFileSync(
+        path.join(root, "ascribe.nav"),
+        [
+          "version = 1",
+          "",
+          "[[sections]]",
+          'folder = ""',
+          'pages = ["quickstart.md", "install-agent.md", "configure.md", "configure-legacy.md", "upgrade.md", "webhooks.md"]',
+          "",
+          "[[sections]]",
+          'folder = "reference/"',
+          "",
+        ].join("\n"),
+      );
+      return { root, settings: startAll };
+    },
+    async take(window, stage) {
+      await stage.staged(0);
+      await only(window, "Pages");
+      // Each section open, as a click on it opens it.
+      const pane = window.locator(".pane", {
+        has: window.locator(".pane-header h3", { hasText: /^Pages$/ }),
+      });
+      for (const label of ["Start", "Reference"]) {
+        const row = pane.locator(".monaco-list-row", { hasText: label }).first();
+        if ((await row.getAttribute("aria-expanded")) === "false")
+          await row.locator(".monaco-tl-twistie").click();
+      }
+      await pane.locator(".monaco-list-row", { hasText: "quill.yaml" }).first().waitFor();
+      // The click's selection and focus.
+      await command(window, "View: Focus First Editor Group");
+      const picture = await shot(window);
+      stage.taken(0);
+      return picture;
+    },
+  },
+  project: {
+    scene: true,
+    // Tall enough for Health and Actions.
+    size: [1100, 1000],
+    workspace: (scratch) => ({ root: copy(scratch, "quill"), settings: startAll }),
+    async take(window, stage) {
+      await stage.staged(0);
+      await only(window, "Project", 480);
+      const picture = await shot(window);
+      stage.taken(0);
+      return picture;
+    },
   },
   "status-bar": {
     scene: true,
@@ -334,6 +415,29 @@ function settings(scheme: "light" | "dark", server: string): Record<string, unkn
   };
 }
 
+/**
+ * Collapses every view of the Ascribe sidebar but `title`, so it has the
+ * sidebar's height, and widens the sidebar to `width`.
+ */
+async function only(window: Page, title: string, width = 400): Promise<void> {
+  const sidebar = await window.locator(".part.sidebar").boundingBox();
+  if (!sidebar) throw new Error("no sidebar");
+  // Its edge, dragged.
+  const edge = sidebar.x + sidebar.width;
+  const y = sidebar.y + sidebar.height / 2;
+  await window.mouse.move(edge, y);
+  await window.mouse.down();
+  await window.mouse.move(edge + (sidebar.x + width - edge) / 2, y);
+  await window.mouse.move(sidebar.x + width, y);
+  await window.mouse.up();
+  const headers = window.locator(".sidebar .pane-header");
+  for (const header of await headers.all()) {
+    const name = (await header.locator("h3").textContent())?.trim();
+    const expanded = (await header.getAttribute("aria-expanded")) === "true";
+    if ((name === title) !== expanded) await header.click();
+  }
+}
+
 /** Runs a command from the command palette by its title. */
 async function command(window: Page, title: string): Promise<void> {
   await window.keyboard.press("F1");
@@ -396,7 +500,8 @@ async function take(
     `--extensions-dir=${path.join(scratch, "extensions")}`,
     `--remote-debugging-port=${port}`,
   ];
-  const screen = `-screen 0 ${WIDTH * SCALE}x${HEIGHT * SCALE}x24`;
+  const [width, height] = picture.size ?? [WIDTH, HEIGHT];
+  const screen = `-screen 0 ${width * SCALE}x${height * SCALE}x24`;
   const child = VIRTUAL
     ? spawn("xvfb-run", ["-a", "-s", screen, executable, ...args], {
         stdio: "ignore",
@@ -430,8 +535,8 @@ async function take(
       // A real window is the screen's size: hold the page to the picture's.
       const cdp = await window.context().newCDPSession(window);
       await cdp.send("Emulation.setDeviceMetricsOverride", {
-        width: WIDTH,
-        height: HEIGHT,
+        width,
+        height,
         deviceScaleFactor: SCALE,
         mobile: false,
       });
