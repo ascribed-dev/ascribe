@@ -932,8 +932,6 @@ READMEs published with a package, a crate, or the repository:
 | `packages/elements/README.md` |
 | `packages/review/README.md` |
 | `packages/vscode/README.md` |
-| `packages/vscode/README.md` |
-| `packages/vscode/README.md` |
 | `packages/vscode/test/fixtures/monorepo/code/README.md` |
 | `packages/vscode/test/fixtures/monorepo/docs/README.md` |
 | `packages/vscode/test/fixtures/shared-sources/README.md` |
