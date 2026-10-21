@@ -321,6 +321,9 @@ export class SidebarViews implements vscode.Disposable {
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly pending = new Set<Promise<void>>();
   private readonly disposables: vscode.Disposable[] = [];
+  private readonly projectChanged = new vscode.EventEmitter<ProjectServer | undefined>();
+  /** The views moved to another project: the Project view follows them. */
+  readonly onDidChangeProject = this.projectChanged.event;
 
   /** Pages' items, made once for each inventory, so revealing one finds it. */
   private pagesNodes:
@@ -991,6 +994,7 @@ export class SidebarViews implements vscode.Disposable {
     for (const timer of this.timers.values()) clearTimeout(timer);
     this.timers.clear();
     for (const disposable of this.disposables.splice(0)) disposable.dispose();
+    this.projectChanged.dispose();
   }
 
   /** Drags in Pages: sections and pages, dropped on each other. */
@@ -1178,7 +1182,10 @@ export class SidebarViews implements vscode.Disposable {
    * file of another project becomes active.
    */
   choose(server: ProjectServer): void {
-    this.server = server;
+    if (server !== this.server) {
+      this.server = server;
+      this.projectChanged.fire(server);
+    }
     this.follow(true);
     if (server.state === "stopped") void server.start();
   }
@@ -1194,6 +1201,7 @@ export class SidebarViews implements vscode.Disposable {
     const server = followedProject(this.server, active, editorChanged, this.projects.servers);
     if (server !== this.server) {
       this.server = server;
+      this.projectChanged.fire(server);
       force = true;
     }
     void vscode.commands.executeCommand("setContext", FAILED, this.server?.state === "failed");

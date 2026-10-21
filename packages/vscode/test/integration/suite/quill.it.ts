@@ -7,7 +7,7 @@ import { ascribeElsewhere } from "../../../src/agents/reach.js";
 import { nodePathEnvironment } from "../../../src/environment.js";
 import type { ItemRecord, SidebarItem } from "../../../src/ui/sidebarViews.js";
 import type { Drawn } from "../../../src/ui/webviewView.js";
-import type { ThisPageReport } from "../../../src/webview/viewProtocol.js";
+import type { ProjectReport, ThisPageReport } from "../../../src/webview/viewProtocol.js";
 import { activated, diagnosticsOf, uriOf, waitFor } from "./helpers.js";
 
 // The sidebar's views run first, while the project's pages are the example's own.
@@ -801,6 +801,91 @@ function lineOf(uri: vscode.Uri, text: string): number {
       .findIndex((line) => line.includes(text)) + 1
   );
 }
+
+// The Project view's one count so far: every build's problems, from the last
+// Check Every Build, shown as current only while nothing in the project has
+// changed since (decision #654a).
+describe("the Project view on examples/quill", () => {
+  const keys = uriOf("docs", "keys.md");
+  const memo = uriOf("memos", "product-name.md");
+
+  after(async () => {
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
+  /** The problems count as the webview drew it. */
+  const problems = (drawn: Drawn<ProjectReport>) =>
+    drawn.report.health.find((count) => count.key === "problems");
+
+  /** Waits for the view to draw the problems count in `state`, and returns it. */
+  async function drawnIn(state: string): Promise<NonNullable<ReturnType<typeof problems>>> {
+    const api = await activated();
+    const drawn = await api.ui.project.whenDrawn(
+      `every build's problems ${state}`,
+      (d) => problems(d)?.state === state,
+      30_000,
+    );
+    const count = problems(drawn);
+    assert.ok(count);
+    return count;
+  }
+
+  /** Makes an unsaved edit to `uri` in its editor, and takes it back once `then` has run. */
+  async function editing(uri: vscode.Uri, then: () => Promise<void>): Promise<void> {
+    const editor = await vscode.window.showTextDocument(
+      await vscode.workspace.openTextDocument(uri),
+    );
+    assert.ok(await editor.edit((e) => e.insert(new vscode.Position(0, 0), "x")));
+    try {
+      await then();
+    } finally {
+      await vscode.window.showTextDocument(editor.document);
+      await vscode.commands.executeCommand("workbench.action.files.revert");
+    }
+  }
+
+  it("counts every build's problems as unknown, current after Check Every Build, and out of date after an edit", async () => {
+    const api = await activated();
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
+    await vscode.commands.executeCommand("ascribe.project.focus");
+    const folder = await waitFor("the sidebar's project", () => api.ui.sidebar.project());
+
+    const unknown = await drawnIn("unknown");
+    assert.deepEqual([unknown.value, unknown.note], ["—", "Needs every build checked"]);
+    const head = api.ui.project.drawn()?.report;
+    assert.ok(head?.head.includes("Server: running"), head?.head.join("\n"));
+    assert.ok(head?.buttons.includes("Check Every Build"), head?.buttons.join("\n"));
+
+    // The view's Check Every Build checks its own project, wherever the focus is.
+    await api.ui.project.choose("checkEveryBuild");
+    const current = await drawnIn("current");
+    // broken.md's unknown attribute key is an error in every build.
+    assert.match(current.value, /^\d+ errors?(, \d+ warnings?)?(, \d+ advice)?$/, current.value);
+    assert.match(current.note, /^Checked at /, current.note);
+    assert.equal(api.ui.everyBuild.isCurrent(folder), true);
+    assert.equal(api.ui.project.drawn()?.report.buttons[0], current.value);
+
+    // An edit to a page, unsaved, makes it out of date.
+    await editing(keys, async () => {
+      const stale = await drawnIn("outOfDate");
+      assert.equal(stale.value, "—");
+      assert.match(stale.note, /^Out of date: the project changed after the check at /);
+      assert.equal(api.ui.everyBuild.isCurrent(folder), false);
+    });
+  });
+
+  it("goes out of date for a file beside ascribe.toml, outside the content root", async () => {
+    const api = await activated();
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
+    await vscode.commands.executeCommand("ascribe.project.focus");
+    await api.ui.project.choose("checkEveryBuild");
+    await drawnIn("current");
+    // memos/ is the project's, beside docs/, its content root.
+    await editing(memo, async () => {
+      await drawnIn("outOfDate");
+    });
+  });
+});
 
 // The real `ascribe lsp` on a copy of examples/quill with a broken
 // page, `docs/broken.md`, added (its unknown attribute key is a §8.2 error).
