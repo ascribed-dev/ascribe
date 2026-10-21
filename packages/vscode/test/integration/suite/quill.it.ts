@@ -643,10 +643,12 @@ describe("the menus and filters of Pages and Content model on examples/quill", (
       assert.ok(lines.includes("  Upgrade the agent (Not in cloud)"), lines.join("\n"));
       assert.ok(lines.includes("  Configure the agent (3.4) (Not in cloud)"), lines.join("\n"));
       assert.ok(lines.includes("  API keys (keys.md)"), lines.join("\n"));
-      const upgrade = all(api.ui.sidebar.items("pages")).find(
-        (i) => i.description === "Not in cloud",
-      );
+      const items = all(api.ui.sidebar.items("pages"));
+      const upgrade = items.find((i) => i.label === "Upgrade the agent");
       assert.equal(upgrade?.dimmed, true);
+      // Its label is dimmed too, not only its icon: a decoration of its file.
+      assert.equal(upgrade?.labelColor, "disabledForeground");
+      assert.equal(items.find((i) => i.description === "keys.md")?.labelColor, undefined);
     } finally {
       api.ui.statusBar.answerNext("site");
       await vscode.commands.executeCommand("ascribe.switchBuild");
@@ -655,6 +657,11 @@ describe("the menus and filters of Pages and Content model on examples/quill", (
       l.every((line) => !line.includes("Not in")),
     );
     assert.ok(lines.includes("  Upgrade the agent (upgrade.md)"), lines.join("\n"));
+    const items = all(api.ui.sidebar.items("pages"));
+    assert.deepEqual(
+      items.filter((i) => i.labelColor !== undefined).map((i) => i.label),
+      [],
+    );
   });
 
   it("lists the pages and fragments nothing links to or includes with Orphans Only", async () => {

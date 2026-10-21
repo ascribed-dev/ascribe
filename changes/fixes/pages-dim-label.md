@@ -1,0 +1,1 @@
+- **Fixed: Pages dims the title of a page the status bar's build leaves out, not only its icon.** A problem's red or yellow still shows over it, and the Explorer and the editor's tabs dim the file too. See [The sidebar](docs/content/editor/sidebar.md#pages).
