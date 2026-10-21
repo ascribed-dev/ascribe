@@ -149,6 +149,15 @@ project: it emits one page, indexes only the files a position is asked for
 once per set of pages (a cache keyed by the model revision and a hash of the
 page paths), not per request. See the table under Performance.
 
+**`ascribe/preview/changed`.** The server's notification that files changed
+on disk, which the client reports through `workspace/didChangeWatchedFiles`,
+change how pages read: a page, a fragment it includes, or a file a `@snippet`
+in either shows, which may be outside every directory the client watches for
+the preview. Its params are `{ "pages": [uri, …] }`, the pages whose resolved
+form the change may have changed (`Affected::re_resolve`). A client with a
+preview of one of them sends `ascribe/preview` again. The editor's own edits
+it follows itself, so they don't send it.
+
 ## Review: `ascribe/review/setBase`, `ascribe/review/changes`, and `ascribe/review/baseFile`
 
 Three custom requests compare the project with a git revision, its **base**,

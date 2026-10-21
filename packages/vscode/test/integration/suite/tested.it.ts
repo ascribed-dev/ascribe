@@ -1,8 +1,9 @@
 import * as assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import type { AscribeApi } from "../../../src/extension.js";
+import type { RenderRecord } from "../../../src/preview/controller.js";
 import { samePath } from "../../../src/projects.js";
 import { activated, uriOf, waitFor, workspace } from "./helpers.js";
 
@@ -157,6 +158,34 @@ describe("a code file a page shows", () => {
       assert.equal(after.report.focused, key);
       assert.equal(after.report.hasFocus, true);
     }
+  });
+
+  it("draws the preview again when the code a snippet shows changes on disk", async () => {
+    const greet = uriOf("code", "examples", "greet.ts");
+    const html = (render: RenderRecord) => render.result.page?.html ?? "";
+    await vscode.window.showTextDocument(uriOf("docs", "index.md"));
+    await vscode.commands.executeCommand("ascribe.openPreview");
+    await api.preview.whenDrawn(
+      "the page",
+      (render) => render.result.page?.path === "index.md" && !html(render).includes("Howdy, "),
+    );
+    // Written by something else, as a branch switch writes it: no editor
+    // has the file, and it's outside the content root the preview watches.
+    const text = readFileSync(greet.fsPath, "utf8");
+    writeFileSync(greet.fsPath, text.replace("Hello, ", "Howdy, "));
+    let edited: RenderRecord | undefined;
+    try {
+      edited = await api.preview.whenDrawn("the code as it is on disk", (render) =>
+        html(render).includes("Howdy, "),
+      );
+    } finally {
+      writeFileSync(greet.fsPath, text);
+    }
+    const seq = edited.seq;
+    await api.preview.whenDrawn(
+      "the code as it was",
+      (render) => render.seq > seq && !html(render).includes("Howdy, "),
+    );
   });
 });
 

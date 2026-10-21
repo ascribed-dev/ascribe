@@ -12,9 +12,9 @@ A file with no `ascribe.toml` above it has nothing to preview: "This file isn't 
 
 The preview shows images and files from the content root, and from directories elsewhere in the project that a page uses. For safety, it runs no inline scripts, loads nothing remote, and submits no forms, so raw HTML that needs any of these looks different in the preview than on the site. What the preview's page asks the extension to do is checked first: it opens only files in the project, or ones the preview itself linked to, and only the **Pull**, **Push**, and **Fetch** git commands it has buttons for.
 
-A [`@snippet`](../writing/directives.md#snippet) is read again when its page changes, not when its code file does, so the preview and the page's problems don't follow edits to the code. To see them, change the page, or run **Ascribe: Restart Language Server**.
+A [`@snippet`](../writing/directives.md#snippet) follows its code file on disk: when the file is saved, created, or deleted, by you or by a branch switch, every page that shows it, directly or through a fragment, is checked again, and the preview of one redraws. An unsaved edit to the code file isn't read until it's saved: a snippet shows the file as a build reads it. A file no snippet shows starts nothing.
 
-A [tested example](../examples/tested.md)'s advice, `example-stale` and `example-unobserved`, follows its source's observations and `ascribe.examples.toml`: when `ascribe observe` writes an observation, or the config changes on disk, the pages that show the source's examples are checked again. An edit to the example's own file still waits for the page to change, and so does the preview's tested line.
+A [tested example](../examples/tested.md)'s advice, `example-stale` and `example-unobserved`, follows its own file, its source's observations, and `ascribe.examples.toml` the same way: when you save the example, when `ascribe observe` writes an observation, or when the config changes on disk, the pages that show the source's examples are checked again, and the preview's tested line follows.
 
 ## Site preview
 

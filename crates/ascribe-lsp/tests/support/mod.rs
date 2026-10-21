@@ -36,6 +36,8 @@ pub struct Client {
     pub requests_from_server: Vec<Request>,
     /// The text of every `window/showMessage`, in order.
     pub messages: Vec<String>,
+    /// Every other notification from the server, in order.
+    pub notifications: Vec<Notification>,
     /// What it answers a `window/showMessageRequest` with.
     answer: serde_json::Value,
 }
@@ -141,6 +143,7 @@ impl Client {
             initialize_result: json!(null),
             requests_from_server: Vec::new(),
             messages: Vec::new(),
+            notifications: Vec::new(),
             answer: match setup.ask.flatten() {
                 Some(title) => json!({ "title": title }),
                 None => json!(null),
@@ -168,7 +171,10 @@ impl Client {
                 }
                 None
             }
-            Message::Notification(_) => None,
+            Message::Notification(n) => {
+                self.notifications.push(n);
+                None
+            }
             Message::Request(request) => {
                 // registerCapability and friends: accept. A question: the
                 // answer set up.

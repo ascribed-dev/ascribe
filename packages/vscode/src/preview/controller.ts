@@ -270,6 +270,18 @@ export class PreviewController implements vscode.Disposable {
         if (this.panel && review && server && server.errorCount() !== review.errors)
           this.schedule(DEBOUNCE_MS);
       }),
+      // Files changed on disk change how the page reads: the code a
+      // `@snippet` shows, which may be outside every directory watched here.
+      this.projects.onDidChangePages(({ server, pages }) => {
+        const file = this.file();
+        if (
+          this.panel &&
+          file &&
+          this.server() === server &&
+          pages.some((page) => samePath(vscode.Uri.parse(page).fsPath, file.fsPath))
+        )
+          this.schedule(0);
+      }),
       // The previewed project's build was chosen here or elsewhere.
       this.builds.onDidChange((folder) => {
         const server = this.server();

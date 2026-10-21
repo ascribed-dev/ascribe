@@ -23,6 +23,7 @@
 //! | **A file created, deleted, or renamed** | The same as a content change of that file, and every reference that resolves, or used to resolve, to that path: links, images, includes, route-like links (which look for `route.md` and `route/index.md`), and case-differing names, found through an index from each file to the paths its references can depend on. A rename is a deletion and a creation. |
 //! | **A source file that can't be read** ([`Change::Unreadable`]) | The same as deleting it: it leaves the index. It is listed in [`Project::unreadable`] (and [`Affected::unreadable`]) until a later change to its path, as a file that can't be read at load is. |
 //! | **A non-source file created or deleted** ([`Change::AssetCreated`]) | The references to it (the resolution of each changes between an asset and a missing file), and so the pages that contain them. |
+//! | **A file a `@snippet` reads, created, changed, or deleted** ([`Change::AssetCreated`], [`Change::AssetDeleted`]) | The snippets of the files that show it, read again: the code file itself, or its source's `ascribe.examples.toml` or observations. Those files are checked again, and every page that is one or includes one is re-resolved. |
 //! | **A nested project's `ascribe.toml` created or deleted** | Nothing: it changes which files are sources (a nested project's files aren't), so the batch is refused ([`ApplyError::NestedProjectChanged`]) and the caller loads the project again. A file created, changed, or deleted inside a nested project's folder is a non-source file. |
 //! | **`ascribe.nav`** ([`Change::Nav`]) | Nothing a file holds: the project's [`Project::navigation`] follows it. A new version when the file reads differently. |
 //! | **The content model** | See [`ModelImpact`]: a new directive keyword or note type reparses every file, including ones no one has open; changed phrases, fragment patterns, slugger, or sources re-index every file (parses are reused); anything else re-checks every file and re-resolves every page. |
@@ -91,6 +92,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use ascribe_core::{RelPath, Slugger};
+use ascribe_model::examples::{EXAMPLES_FILE, OBSERVATIONS_FOLDER};
 use ascribe_model::{ContentModel, NavFile};
 
 pub use cache::ResolvedCache;
@@ -161,8 +163,10 @@ pub enum Change {
         /// Where it is.
         to: RelPath,
     },
-    /// A file that isn't a source appeared (an image, a download), at a path
-    /// relative to the **project root**, as [`FileSystem::probe`] takes it.
+    /// A file that isn't a source appeared (an image, a download), or its
+    /// contents changed, at a path relative to the **project root**, as
+    /// [`FileSystem::probe`] takes it. The `@snippet`s that read it read it
+    /// again, from the project's [`FileSystem`].
     AssetCreated {
         /// The path.
         path: RelPath,
@@ -422,6 +426,53 @@ impl Deps {
 
 fn fold(path: &RelPath) -> String {
     path.as_str().to_lowercase()
+}
+
+/// The files with a `@snippet` that reads one of `changed`, paths from the
+/// project root: the file it shows, in any case, or its source's
+/// `ascribe.examples.toml` or a file in its observations' folder, which say
+/// what its example was tested with.
+fn showing(project: &Project, changed: &[&RelPath]) -> BTreeSet<RelPath> {
+    if changed.is_empty() {
+        return BTreeSet::new();
+    }
+    let keys: BTreeSet<String> = changed.iter().map(|p| fold(p)).collect();
+    let mut folders: BTreeMap<&str, RelPath> = BTreeMap::new();
+    let mut examples: BTreeSet<&str> = BTreeSet::new();
+    for source in &project.model().sources {
+        let Ok(folder) = RelPath::parse(&source.path) else {
+            continue;
+        };
+        let configured = changed.iter().any(|path| {
+            path.relative_to(&folder).is_some_and(|rest| {
+                let rest = rest.as_str();
+                rest == EXAMPLES_FILE
+                    || rest
+                        .strip_prefix(OBSERVATIONS_FOLDER)
+                        .is_some_and(|after| after.is_empty() || after.starts_with('/'))
+            })
+        });
+        if configured {
+            examples.insert(&source.name);
+        }
+        folders.insert(&source.name, folder);
+    }
+    project
+        .files()
+        .filter(|file| {
+            file.snippets.iter().any(|snippet| {
+                let Some(Ok(address)) = &snippet.address else {
+                    return false;
+                };
+                examples.contains(address.source.as_str())
+                    || folders
+                        .get(address.source.as_str())
+                        .and_then(|folder| folder.join(&address.path).ok())
+                        .is_some_and(|path| keys.contains(&fold(&path)))
+            })
+        })
+        .map(|file| file.path.clone())
+        .collect()
 }
 
 /// The folder an `ascribe.toml` at this path (relative to the project root)
@@ -781,6 +832,14 @@ impl IncrementalProject {
                 (None, None) => {}
             }
         }
+        // The files whose `@snippet`s read a file that isn't a source and was
+        // reported, whether or not it was there before: its contents may
+        // have changed.
+        let reported: Vec<&RelPath> = file_state.keys().collect();
+        let showing: BTreeSet<RelPath> = showing(&self.project, &reported)
+            .into_iter()
+            .filter(|p| !gone.contains(p))
+            .collect();
         let file_changes: BTreeMap<RelPath, bool> = file_state
             .into_iter()
             .filter(|(path, present)| self.fs.has(path) != *present)
@@ -831,6 +890,7 @@ impl IncrementalProject {
             && edited.is_empty()
             && gone.is_empty()
             && file_changes.is_empty()
+            && showing.is_empty()
             && impact.is_none()
             && !unreadable_changed
             && new_nav.is_none()
@@ -1010,13 +1070,19 @@ impl IncrementalProject {
             project.put_resolutions(path, resolutions);
             project.attach_file(path);
         }
+        let code = crate::snippet::CodeFiles::new();
+        for path in showing.iter().filter(|p| !resolve_set.contains(*p)) {
+            if let Some(index) = project.file(path).cloned() {
+                project.put_snippets(path, project.resolve_snippets(&index, &self.fs, &code));
+            }
+        }
         for path in created.keys().chain(&gone) {
             let includers: Vec<RelPath> = self.include_rev.includers(path).into_iter().collect();
             project.refresh_include_edges(path, &includers);
         }
         // What a change to these files can reach through includes.
-        let mut dirty = touched.clone();
-        for path in &touched {
+        let mut dirty: BTreeSet<RelPath> = touched.union(&showing).cloned().collect();
+        for path in touched.iter().chain(&showing) {
             dirty.extend(self.include_rev.dependents(path));
         }
         project.forget_expansions(Some(&dirty));
@@ -1031,6 +1097,7 @@ impl IncrementalProject {
             && gone.is_empty()
             && impact.is_none()
             && res_changed.is_empty()
+            && showing.is_empty()
             && !unreadable_changed
             && !nav_changed
         {
@@ -1080,7 +1147,7 @@ impl IncrementalProject {
                     }
                 }
             }
-            for path in &res_changed {
+            for path in res_changed.iter().chain(&showing) {
                 widen(path, &mut recheck, &mut re_resolve);
             }
             // The files that write an `@include` of a path that appeared or
