@@ -44,7 +44,7 @@ Examples:
                                          Whether a link works, and what to write
   ascribe refs phrase:product            Where a phrase is used
   ascribe rename phrase:product brand    Rename a phrase, and every use of it
-  ascribe render guides/install.md --build cloud
+  ascribe resolve guides/install.md --build cloud
                                          A page as one build's readers see it
 
 For agents: after each edit, run `ascribe check --format concise` and fix
@@ -174,14 +174,15 @@ pub enum Command {
     /// change everything that uses it, as the editor's rename does.
     #[command(after_help = docs_link!("cli-rename"))]
     Rename(commands::rename::Args),
-    /// Show a page as a reader of one build sees it, as plain Markdown.
-    #[command(after_help = docs_link!("cli-render"))]
-    Render(commands::render::Args),
     /// Report what state the project is in: problems, inventory, what each
     /// build leaves out, external links, and the published site's delivery
     /// to agents.
     #[command(after_help = docs_link!("cli-report"))]
     Report(commands::report::Args),
+    /// Resolve a page for one build and write it as the build's plain
+    /// Markdown output.
+    #[command(after_help = docs_link!("cli-resolve"))]
+    Resolve(commands::resolve::Args),
     /// Show where the pages say something, as their readers read it: words
     /// as each build publishes them, through phrases, each found at the line
     /// to edit.
@@ -224,8 +225,8 @@ impl Command {
             Command::Permalinks(args) => commands::permalinks::run(global, args),
             Command::Refs(args) => commands::refs::run(global, args),
             Command::Rename(args) => commands::rename::run(global, args),
-            Command::Render(args) => commands::render::run(global, args),
             Command::Report(args) => commands::report::run(global, args),
+            Command::Resolve(args) => commands::resolve::run(global, args),
             Command::Search(args) => commands::search::run(global, args),
             Command::Sources(args) => commands::sources::run(global, args),
             Command::Templates(args) => commands::templates::run(global, args),

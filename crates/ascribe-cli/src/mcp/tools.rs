@@ -12,7 +12,7 @@ use serde_json::{Map, Value, json};
 use super::Server;
 use crate::answer::{self, Format};
 use crate::cli::Global;
-use crate::commands::{check, diff, fmt, link, model, outline, refs, render, search};
+use crate::commands::{check, diff, fmt, link, model, outline, refs, resolve, search};
 
 /// A tool.
 pub struct Spec {
@@ -316,9 +316,9 @@ pub const TOOLS: &[Spec] = &[
         call: call_search,
     },
     Spec {
-        name: "ascribe_render",
-        title: "Render a page",
-        command: "ascribe render",
+        name: "ascribe_resolve",
+        title: "Resolve a page",
+        command: "ascribe resolve",
         description: "Read a page as one build's readers see it, as plain Markdown: \
             directives, phrases, includes, and availability resolved. Example: {\"page\": \
             \"docs/keys.md\", \"build\": \"cloud\"} returns `text` starting `# API keys`.",
@@ -341,8 +341,8 @@ pub const TOOLS: &[Spec] = &[
                 "additionalProperties": false,
             })
         },
-        output: || schema(include_str!("../../../../schemas/render.schema.json")),
-        call: call_render,
+        output: || schema(include_str!("../../../../schemas/resolve.schema.json")),
+        call: call_resolve,
     },
     Spec {
         name: "ascribe_format",
@@ -803,14 +803,14 @@ fn call_search(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String>
     Ok(concise_result(out))
 }
 
-fn call_render(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
-    let args = render::Args {
+fn call_resolve(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
+    let args = resolve::Args {
         page: a.path("page")?.unwrap_or_default(),
         build: a.string("build")?,
         frontmatter: a.boolean("frontmatter")?,
         format: Format::Json,
     };
-    json_result(&render::answer(&server.cache, &global(), &args).map_err(|s| s.message())?)
+    json_result(&resolve::answer(&server.cache, &global(), &args).map_err(|s| s.message())?)
 }
 
 fn call_format(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {

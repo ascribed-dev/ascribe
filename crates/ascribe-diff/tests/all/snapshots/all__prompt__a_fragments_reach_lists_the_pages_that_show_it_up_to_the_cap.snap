@@ -1,6 +1,5 @@
 ---
 source: crates/ascribe-diff/tests/all/prompt.rs
-assertion_line: 209
 expression: text
 ---
 `site/content/_fragments/prereqs.md` changed, and 23 pages show it. Check that the new text fits each.
@@ -12,7 +11,7 @@ Build: `site`
 
 Base: `origin/main`, from where this branch left it (9f8e7d6)
 To see what changed in it: `git diff 9f8e7d6 -- site/content/_fragments/prereqs.md`
-To read a page: `ascribe render <page> --build site`
+To read a page: `ascribe resolve <page> --build site`
 Pages:
 - site/content/page-00.md
 - site/content/page-01.md

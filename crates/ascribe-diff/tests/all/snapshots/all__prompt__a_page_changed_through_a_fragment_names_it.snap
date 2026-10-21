@@ -1,6 +1,5 @@
 ---
 source: crates/ascribe-diff/tests/all/prompt.rs
-assertion_line: 111
 expression: "page_prompt(&context(), find(&builds, \"install.md\"))"
 ---
 Review what this change does to `site/content/install.md`, as a reader of build `site` sees it.
@@ -13,7 +12,7 @@ Build: `site`
 Base: `origin/main`, from where this branch left it (9f8e7d6)
 What changed: 1 changed
 Changed through: `site/content/_fragments/prereqs.md`
-To read it: `ascribe render site/content/install.md --build site`
+To read it: `ascribe resolve site/content/install.md --build site`
 Changes:
 - changed: site/content/_fragments/prereqs.md:1, shown through site/content/install.md:9
 

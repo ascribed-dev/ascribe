@@ -59,7 +59,7 @@ Nothing in a test reaches the network: code repositories are reached by `file://
 A reported behavior is a claim; check it before deciding what to prove, since the test you'd write for a bug that isn't there is a test of nothing. The quickest routes, in order:
 
 - **The library, from a test's support module:** `support::fmt(source)` and `support::outline(source, options)` in `ascribe-fmt`, `ascribe_syntax::parse` with `support::check_tree` in `ascribe-syntax`, `build_support::resolve` and `summary` in `ascribe-resolve`, `support::plain` and `site` in `ascribe-emit`. A temporary `#[test]` with `eprintln!`, run with `-- --nocapture`, and deleted once you've seen the answer.
-- **The binary on a scratch copy:** `cargo build -p ascribe-cli`, then `target/debug/ascribe check`, `fmt --check`, `render`, or `outline` on a copy of an example under `examples/`; `ascribe render --build <name> <page>` shows a page as a build publishes it.
+- **The binary on a scratch copy:** `cargo build -p ascribe-cli`, then `target/debug/ascribe check`, `fmt --check`, `resolve`, or `outline` on a copy of an example under `examples/`; `ascribe resolve --build <name> <page>` shows a page as a build publishes it.
 - **The conformance cases:** `tests/conformance/cases/<area>/` often already holds the exact input; `cargo test -p ascribe-conformance --test conformance -- <case id>` runs one.
 
 Then say in your report what the behavior is, where it's already held, and what was missing, before what you added.

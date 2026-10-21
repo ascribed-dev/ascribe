@@ -1,5 +1,5 @@
 //! The commands that answer questions (`explain`, `model`, `outline`, `link`,
-//! `refs`, `render`, and `search`): their JSON, exit codes, and limits, by
+//! `refs`, `resolve`, and `search`): their JSON, exit codes, and limits, by
 //! running the binary. `tests/output.rs` has their output on `examples/quill`, which the
 //! command reference shows.
 
@@ -877,16 +877,16 @@ fn refs_finds_the_image_reviews_page_shows_in_ascribes_docs() {
 }
 
 #[test]
-fn render_writes_the_page_a_build_publishes() {
+fn resolve_writes_the_page_a_build_publishes() {
     let dir = project();
     let page = "site/docs/install.md";
-    let text = stdout(&run(dir.path(), &["render", page, "--build", "cloud"], 0));
+    let text = stdout(&run(dir.path(), &["resolve", page, "--build", "cloud"], 0));
     assert!(text.contains("You need Quill."), "{text}");
     assert!(!text.contains("Upgrade"), "{text}");
     assert!(!text.starts_with("---"), "{text}");
     let other = stdout(&run(
         dir.path(),
-        &["render", page, "--build", "self-managed", "--frontmatter"],
+        &["resolve", page, "--build", "self-managed", "--frontmatter"],
         0,
     ));
     assert!(
@@ -897,7 +897,7 @@ fn render_writes_the_page_a_build_publishes() {
 }
 
 #[test]
-fn render_says_a_reader_sees_one_arm_of_a_switcher() {
+fn resolve_says_a_reader_sees_one_arm_of_a_switcher() {
     let dir = tempfile::tempdir().unwrap();
     write(
         &dir.path().join("ascribe.toml"),
@@ -910,7 +910,7 @@ fn render_says_a_reader_sees_one_arm_of_a_switcher() {
         &dir.path().join("docs/setup.md"),
         "---\ntitle: Set up\n---\n\n@variant {pm=npm}:\nRun npm.\n@variant {pm=pnpm}:\nRun pnpm.\n@end\n\n.Docker\n@variant:\nUse the image.\n\n.Binary\n@variant:\nUse the binary.\n@end\n\n@variant {deployment=cloud}:\nSign in.\n@variant {deployment=self-managed}:\nStart it.\n@end\n",
     );
-    let args = ["render", "docs/setup.md", "--build", "cloud"];
+    let args = ["resolve", "docs/setup.md", "--build", "cloud"];
     let text = stdout(&run(dir.path(), &args, 0));
     assert!(
         text.contains(
@@ -936,18 +936,18 @@ fn render_says_a_reader_sees_one_arm_of_a_switcher() {
 }
 
 #[test]
-fn render_says_why_a_build_leaves_a_page_out() {
+fn resolve_says_why_a_build_leaves_a_page_out() {
     let dir = project();
     let out = run(
         dir.path(),
-        &["render", "site/docs/server.md", "--build", "cloud"],
+        &["resolve", "site/docs/server.md", "--build", "cloud"],
         1,
     );
     assert!(stdout(&out).is_empty(), "{}", stdout(&out));
     assert!(stderr(&out).contains("cloud"), "{}", stderr(&out));
     let value = json(
         dir.path(),
-        &["render", "site/docs/server.md", "--build", "cloud"],
+        &["resolve", "site/docs/server.md", "--build", "cloud"],
         1,
     );
     assert!(value["not_published"].is_string());
@@ -955,14 +955,14 @@ fn render_says_why_a_build_leaves_a_page_out() {
 }
 
 #[test]
-fn render_needs_a_build_and_a_page() {
+fn resolve_needs_a_build_and_a_page() {
     let dir = project();
-    let out = run(dir.path(), &["render", "site/docs/keys.md"], 2);
+    let out = run(dir.path(), &["resolve", "site/docs/keys.md"], 2);
     assert!(stderr(&out).contains("--build"), "{}", stderr(&out));
     run(
         dir.path(),
         &[
-            "render",
+            "resolve",
             "site/docs/_fragments/before.md",
             "--build",
             "cloud",
@@ -971,7 +971,7 @@ fn render_needs_a_build_and_a_page() {
     );
     run(
         dir.path(),
-        &["render", "site/docs/keys.md", "--build", "nope"],
+        &["resolve", "site/docs/keys.md", "--build", "nope"],
         2,
     );
 }

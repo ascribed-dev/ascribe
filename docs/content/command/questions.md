@@ -1,6 +1,6 @@
 ---
 type: reference
-title: "`ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, `render`, and `search`"
+title: "`ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, `resolve`, and `search`"
 description: "Ask a project about its diagnostics, content model, pages, links, and references, find where its pages say something, and rename what a page links to."
 ---
 
@@ -164,30 +164,30 @@ A path is from the current folder, or from the content root, and the project is 
 | `1` | What it names doesn't exist: a phrase, a value, a page, or a heading |
 | `2` | It couldn't rename: no `ascribe.toml`, one with errors, a new name that can't be its name or is taken, a target it doesn't rename, or a file it can't write |
 
-## `ascribe render`
-@id {permalink=true}: cli-render
+## `ascribe resolve`
+@id {permalink=true}: cli-resolve
 
-Writes a page as a reader of one build sees it: the plain Markdown the build's `plain` output writes for it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. It writes nothing to disk.
+Resolves a page for one build and writes it as the build's plain Markdown output, as `ascribe build --emit plain` writes it: the page as a reader of that build sees it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. It writes nothing to disk.
 
-@include: ../_generated/cli-render-options.md
+@include: ../_generated/cli-resolve-options.md
 
-@snippet {lang=text}: code:crates/ascribe-cli/tests/output/render.txt
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/resolve.txt
 
 A variant group the build keeps more than one arm of, which the site shows as tabs, is a line saying so, `A reader sees one of the next 3 sections at a time, chosen by operating system.`, then each arm under a heading that names its dimension and value, such as `### Operating system: macOS`, or its title for labeled arms, as the plain output writes it.
 
-When the build doesn't publish the page, it writes nothing to standard output, says why on standard error, and exits with `1`. A fragment isn't rendered on its own; render a page that includes it.
+When the build doesn't publish the page, it writes nothing to standard output, says why on standard error, and exits with `1`. A fragment isn't resolved on its own; resolve a page that includes it.
 
-A line of a [versioned build](../versions/index.md), such as `--build site@3.4`, renders the page as that line publishes it, its route and links under the line's folder.
+A line of a [versioned build](../versions/index.md), such as `--build site@3.4`, resolves the page as that line publishes it, its route and links under the line's folder.
 
 | Code | Meaning |
 |---|---|
 | `0` | It wrote the page |
 | `1` | The build doesn't publish the page |
-| `2` | It couldn't run: no `ascribe.toml`, one with errors, a path that isn't a page, more than one build and no `--build`, an unknown build, or a page that can't be rendered |
+| `2` | It couldn't run: no `ascribe.toml`, one with errors, a path that isn't a page, more than one build and no `--build`, an unknown build, or a page that can't be written |
 
-With `--format json`, the document is as follows, and its [schema](../contracts/json-reports/questions.md#ascribe-render) has every field:
+With `--format json`, the document is as follows, and its [schema](../contracts/json-reports/questions.md#ascribe-resolve) has every field:
 
-@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/render.json
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/resolve.json
 
 ## `ascribe search`
 @id {permalink=true}: cli-search

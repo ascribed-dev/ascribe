@@ -9,9 +9,9 @@
 //! - [`outline`]: a page's title, type, and headings with their ids;
 //! - [`link`]: whether a link target exists as seen from a page, and the
 //!   link to write;
-//! - [`render`]: a page as a reader of one build sees it, as plain Markdown;
 //! - [`refs`]: where a page, a heading, an image, or a content model entry
 //!   is used;
+//! - [`resolve`]: a page as a reader of one build sees it, as plain Markdown;
 //! - [`rules`]: a project's rules, for the instruction files an agent reads;
 //! - [`search`]: where a project's pages say something, as readers read
 //!   them, each place the line to edit;
@@ -34,8 +34,8 @@ pub mod model;
 pub mod outline;
 pub mod permalinks;
 pub mod refs;
-pub mod render;
 pub mod report;
+pub mod resolve;
 pub mod rules;
 pub mod search;
 pub mod versions;
@@ -54,8 +54,8 @@ pub use model::{
 pub use outline::{Outline, OutlineHeading, OutlineMemo, OutlineMemoState, outline};
 pub use permalinks::{PermalinksAnswer, Retire, RetireAnswer, SyncAnswer, VerifyAnswer};
 pub use refs::{Asked, Place, Refs, TargetKind, image_refs, refs};
-pub use render::{Rendered, render};
 pub use report::{Report, report};
+pub use resolve::{Resolved, resolve};
 pub use rules::{pointer, rules};
 pub use search::{
     PageCount, Readings, Search, SearchPage, SearchPlace, SearchThrough, Searched, SourcePlace,
