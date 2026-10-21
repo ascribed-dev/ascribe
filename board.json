@@ -3678,8 +3678,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/758"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Search: ascribe diff takes its block text from the reading"
     },
     {
@@ -3937,8 +3940,11 @@
       "labels": [
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/757"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Project view: the head, About, and Restricted Mode"
     },
     {
@@ -3954,8 +3960,11 @@
       "labels": [
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/759"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Project Settings: every simple setting, and the checks"
     },
     {
@@ -3972,7 +3981,7 @@
         "editor-webviews"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Project Settings: finding settings, and opening the tab"
     },
     {
@@ -4656,7 +4665,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/754"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "This page's test of opening a snippet's file beside the page is flaky on CI"
     },
     {
@@ -4669,8 +4678,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/755"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhCbOLg",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/756"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "The daily report: a failed history download stops the report"
     }
   ]
