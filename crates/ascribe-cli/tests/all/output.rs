@@ -846,7 +846,23 @@ fn answers() {
         "explain.txt",
         &stdout(&run(&root, &["explain", "link-target-missing"], 0)),
     );
+    expect(
+        "explain.json",
+        &json(&run(
+            &root,
+            &["explain", "link-target-missing", "--format", "json"],
+            0,
+        )),
+    );
     expect("model.txt", &stdout(&run(&root, &["model", quill], 0)));
+    expect(
+        "model-builds.json",
+        &json(&run(
+            &root,
+            &["model", quill, "--section", "builds", "--format", "json"],
+            0,
+        )),
+    );
     expect("outline.txt", &stdout(&run(&root, &["outline", keys], 0)));
     expect(
         "outline.json",
@@ -924,6 +940,24 @@ fn answers() {
     expect(
         "render.txt",
         &stdout(&run(&root, &["render", keys, "--build", "cloud"], 0)),
+    );
+    expect(
+        "render.json",
+        &json(&run(
+            &root,
+            &["render", keys, "--build", "cloud", "--format", "json"],
+            0,
+        )),
+    );
+    expect(
+        "agents-index.json",
+        &json(&run(
+            &root,
+            &[
+                "agents", "index", "--config", quill, "--build", "cloud", "--format", "json",
+            ],
+            0,
+        )),
     );
 }
 

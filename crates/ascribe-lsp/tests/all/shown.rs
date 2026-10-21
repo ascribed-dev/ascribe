@@ -32,8 +32,12 @@ fn tested() -> Fixture {
 }
 
 fn start(f: &Fixture) -> Client {
+    start_in(&f.root())
+}
+
+fn start_in(folder: &Path) -> Client {
     let mut client = Client::start_with(
-        &f.root(),
+        folder,
         Setup {
             lenses: true,
             ..Setup::default()
@@ -245,6 +249,50 @@ fn a_lens_is_placed_from_the_saved_file_and_asked_for_again_when_it_changes() {
             .any(|r| r.method == "workspace/codeLens/refresh")
     );
     assert_eq!(shown(&lenses(&mut client, &path))[0].0, 2);
+}
+
+#[test]
+fn a_file_its_source_doesnt_include_asks_for_no_lens_again() {
+    // The docs in docs/, with the repository around them as their source,
+    // as Ascribe's own are: a build writes target/ in the source's folder.
+    let f = Fixture::new("spec = \"0.1\"\n", &[]);
+    std::fs::create_dir_all(f.path(".git")).unwrap();
+    f.write(
+        "docs/ascribe.toml",
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[sources.code]\npath = \"..\"\ninclude = [\"code/**\"]\n",
+    );
+    f.write(
+        "docs/docs/index.md",
+        "---\ntitle: Greet\n---\n\n@snippet {lang=text}: code:code/greet.txt\n",
+    );
+    f.write("code/greet.txt", "Hello\n");
+    let mut client = start_in(&f.path("docs"));
+    let refreshes = |client: &Client, from: usize| {
+        client.requests_from_server[from..]
+            .iter()
+            .filter(|r| r.method == "workspace/codeLens/refresh")
+            .count()
+    };
+
+    let before = client.requests_from_server.len();
+    f.write("target/debug/build/a.d", "x\n");
+    f.write("code-old/greet.txt", "Hello\n");
+    client.watched(&[
+        (&f.path("target"), FileChangeType::CREATED),
+        (&f.path("target/debug/build/a.d"), FileChangeType::CHANGED),
+        (&f.path("code-old/greet.txt"), FileChangeType::CREATED),
+    ]);
+    client.settle();
+    assert_eq!(refreshes(&client, before), 0);
+
+    // The file the page shows, and the source's examples, ask again.
+    for file in ["code/greet.txt", "ascribe.examples.toml"] {
+        let before = client.requests_from_server.len();
+        f.write(file, "Hello\n");
+        client.watched(&[(&f.path(file), FileChangeType::CHANGED)]);
+        client.settle();
+        assert_eq!(refreshes(&client, before), 1, "{file}");
+    }
 }
 
 #[test]

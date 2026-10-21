@@ -93,6 +93,24 @@ pub(crate) fn in_a_source(root: &Path, model: &ContentModel, path: &Path) -> boo
     })
 }
 
+/// Whether a change on disk to the file or folder at `path` can matter to
+/// one of the model's sources ([`ascribe_model::Source::may_use`]): a file
+/// its `include` patterns cover, a folder that may hold one, or its
+/// `ascribe.examples.toml` and observations. A build's output in a
+/// source's folder doesn't.
+pub(crate) fn used_by_a_source(root: &Path, model: &ContentModel, path: &Path) -> bool {
+    let Some(project) = relative_path(root, path) else {
+        return false;
+    };
+    model.sources.iter().any(|source| {
+        RelPath::parse(&source.path).is_ok_and(|folder| {
+            project
+                .relative_to(&folder)
+                .is_some_and(|rest| source.may_use(rest.as_str()))
+        })
+    })
+}
+
 /// The lenses of the code file at `path`: one for each region a `@snippet`
 /// shows, on its start tag line, and one on the first line when a snippet
 /// shows the whole file. None for a file in no source, or one the server

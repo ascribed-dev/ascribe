@@ -15,14 +15,16 @@ Says what a diagnostic means: its severity, its messages, how to fix it, a link 
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/explain.txt
 
-An example that needs something in `ascribe.toml` to go wrong shows that too: a few lines of the model it was checked against. Every example is checked, so each wrong page reports its diagnostic and nothing else, and each right page reports nothing. `ascribe explain --list` lists every diagnostic's code and name, one per line; with no code and no `--list`, it says so, and exits with `2`.
+An example that needs something in `ascribe.toml` to go wrong shows that too: a few lines of the model it was checked against. Every example is checked, so each wrong page reports its diagnostic and nothing else, and each right page reports nothing.
 
 | Code | Meaning |
 |---|---|
 | `0` | It explained the diagnostic, or listed them |
 | `2` | No diagnostic has that code or name, and it names the closest; or a usage error |
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `code`, `slug`, `severity`, `next` (the [kind of next step](../checks/diagnostics.md#what-to-do-next)), `level` (`file` or `page`), `message`, `variants` (the other messages it can give, each with `name` and `message`), `fix`, `docs` (the link), and `example`, null or with `wrong`, `right`, `model` (the model it was checked against, when it matters, or null), and `files` (other files the right page needs, each with `path` and `text`). With `--list`, it has `diagnostics`, each with `code`, `slug`, and `severity`.
+With `--format json`, the document is as follows. Its [schema](../contracts/json-reports/questions.md#ascribe-explain) has every field, and so does the schema of what `--list` writes:
+
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/explain.json
 
 ## `ascribe model`
 @id {permalink=true}: cli-model
@@ -40,12 +42,14 @@ The text is Markdown, at most about 4,000 characters: when the model has more th
 | `0` | It showed the model |
 | `2` | No `ascribe.toml`, or one with errors |
 
-With `--format json`, the document has `schema_version` (`3`), `ascribe_version`, and a field for each section shown: `types`, `dimensions`, `phrases`, `features`, `glossary`, `widgets`, `builds`, and `sources`. Without `--section`, every section is there, empty or not, and so is `navigation`: the project's [navigation](../navigation/index.md), its root section with each section's `folder`, `label`, own `page`, `pages`, nested `sections`, and `listed`, whether `ascribe.nav` lists it, and each page's `source`, `label`, and `type`, every page that isn't `unlisted`; with `--section`, only that one. A label is plain text, as a sidebar shows it: a title or `nav-label` with a code span in it is labeled without the backticks. The [schema](../contracts/json-reports/questions.md#ascribe-model) lists each section's fields.
+With `--format json`, the document has a field for each section shown, and without `--section`, every section, empty or not, and the project's [navigation](../navigation/index.md) as the sidebar shows it: a label with a code span in it is plain text, without the backticks. Its [schema](../contracts/json-reports/questions.md#ascribe-model) has each section's fields. `--section builds`:
+
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/model-builds.json
 
 A project with [release lines](../versions/lines.md) has a section for them, `releases` in JSON: each target's lines, with their status and the build that is each line. A versioned build says which target versions it and which line it is.
 
 @available: next
-The rest of `ascribe.toml` is there too, a section of settings for each of its tables: `project`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, and `permalinks`. The text without `--section` names them at its end, and `--section` shows one, each key with the value in effect, and its default: `ascribe model --section consumer` shows `[consumer]`'s `site`, `base-path`, and the rest, the ones the file leaves out at their defaults. `[checks]` has the keys of `[checks.vale]` and `[checks.links]`, written `vale.preset` and `links.reuse-days`, and each check the file sets a level for. In JSON, each section is a list of keys, each with `table` (`consumer`, or `checks.vale`), `key`, `kind`, `value` (the value in effect, absent when the file leaves the key out and its default isn't one value), `set` (whether the file sets it), and `default` or `default_text`, the default in the [content model reference](../content-model/index.md)'s words when it isn't one value. The keys and defaults are the ones the loader reads, so `model` shows no key `ascribe check` would refuse.
+The rest of `ascribe.toml` is there too, a section of settings for each of its tables: `project`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, and `permalinks`. The text without `--section` names them at its end, and `--section` shows one, each key with the value in effect, and its default: `ascribe model --section consumer` shows `[consumer]`'s `site`, `base-path`, and the rest, the ones the file leaves out at their defaults. `[checks]` has the keys of `[checks.vale]` and `[checks.links]`, written `vale.preset` and `links.reuse-days`, and each check the file sets a level for. In JSON, each section is a list of keys, in the [schema](../contracts/json-reports/questions.md#ascribe-model). The keys and defaults are the ones the loader reads, so `model` shows no key `ascribe check` would refuse.
 
 ## `ascribe outline`
 @id {permalink=true}: cli-outline
@@ -171,7 +175,7 @@ Writes a page as a reader of one build sees it: the plain Markdown the build's `
 
 A variant group the build keeps more than one arm of, which the site shows as tabs, is a line saying so, `A reader sees one of the next 3 sections at a time, chosen by operating system.`, then each arm under a heading that names its dimension and value, such as `### Operating system: macOS`, or its title for labeled arms, as the plain output writes it.
 
-`--build` is needed when `ascribe.toml` has more than one build. When the build doesn't publish the page, it writes nothing to standard output, says why on standard error, and exits with `1`. A fragment isn't rendered on its own; render a page that includes it.
+When the build doesn't publish the page, it writes nothing to standard output, says why on standard error, and exits with `1`. A fragment isn't rendered on its own; render a page that includes it.
 
 A line of a [versioned build](../versions/index.md), such as `--build site@3.4`, renders the page as that line publishes it, its route and links under the line's folder.
 
@@ -181,7 +185,9 @@ A line of a [versioned build](../versions/index.md), such as `--build site@3.4`,
 | `1` | The build doesn't publish the page |
 | `2` | It couldn't run: no `ascribe.toml`, one with errors, a path that isn't a page, more than one build and no `--build`, an unknown build, or a page that can't be rendered |
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `page`, `build`, `not_published` (why the build doesn't publish it, or null), `route` (its route in the build's site, or null), and `text`, the page as text output writes it.
+With `--format json`, the document is as follows, and its [schema](../contracts/json-reports/questions.md#ascribe-render) has every field:
+
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/render.json
 
 ## `ascribe search`
 @id {permalink=true}: cli-search
