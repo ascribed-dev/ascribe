@@ -4413,8 +4413,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/766"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Docs: The editor's pages, settled"
     },
     {
@@ -4432,7 +4435,7 @@
         "docs-audit"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: The rest of the second homes"
     },
     {
@@ -4513,7 +4516,7 @@
         "docs-audit"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: The new views"
     },
     {
@@ -4721,8 +4724,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/765"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "The editor's views: the Project Settings Undo integration test fails intermittently"
     }
   ]
