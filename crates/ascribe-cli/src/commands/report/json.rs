@@ -130,6 +130,20 @@ struct ProblemsJson {
     acknowledged: Capped<AcknowledgedEntry>,
     /// The command that lists each problem: `ascribe check`, as JSON.
     list_command: String,
+    /// The day of the last report, `YYYY-MM-DD`, or `null` on a first run,
+    /// with `--no-history`, or when the last report checked other builds.
+    previous_run: Option<String>,
+    /// How many problems the last report didn't list, or `null` when
+    /// `previous_run` is. A problem is told from another by its check, its
+    /// file, the text it's about, and its order among those alike.
+    new: Option<usize>,
+    /// How many problems the last report listed that this one doesn't,
+    /// fixed or with the text they're about edited, or `null` when
+    /// `previous_run` is.
+    resolved: Option<usize>,
+    /// The problems the last report didn't list, in the order `ascribe
+    /// check` reports them; none when `previous_run` is `null`.
+    new_items: Capped<Entry>,
 }
 
 /// How many diagnostics one check reports.
@@ -627,6 +641,12 @@ fn problems(p: &Problems, files: &FileTable, limit: usize, list_command: &str) -
         }),
         acknowledged: Capped::of(p.acknowledged.iter(), limit, |a| acknowledged(files, a)),
         list_command: list_command.to_owned(),
+        previous_run: p.previous_run.map(|d| d.to_string()),
+        new: p.new.as_ref().map(Vec::len),
+        resolved: p.resolved,
+        new_items: Capped::of(p.new.as_deref().unwrap_or_default().iter(), limit, |d| {
+            entry(files, d, 0)
+        }),
     }
 }
 
@@ -782,6 +802,7 @@ pub(crate) fn longest(report: &Report) -> usize {
         files.sort_unstable();
         files.dedup();
         see(files.len());
+        see(p.new.as_ref().map_or(0, Vec::len));
     }
     if let Some(i) = &report.inventory {
         see(i.overdue.len());

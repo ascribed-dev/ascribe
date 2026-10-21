@@ -12,6 +12,7 @@ use std::time::Duration;
 
 use ascribe_check::links::{Cache, History};
 use ascribe_check::prompt::{self, Builds as PromptBuilds};
+use ascribe_check::report_history::ReportHistory;
 use ascribe_check::{Diagnostic, Project, Reported, Severity};
 use ascribe_core::Coded;
 use ascribe_query::report::{Options, Ran, Report, Section, Tools};
@@ -81,12 +82,15 @@ pub struct Args {
     #[arg(long)]
     pub recheck: bool,
 
-    /// For `links`: report every failure, as a first run would, and still
-    /// keep what this run sees.
+    /// Report as a first run would: say nothing about what's new in
+    /// `problems` and `links`, and report every failure of `links`.
+    /// `problems` keeps nothing for the next report, and `links` still
+    /// keeps what this run sees.
     ///
-    /// By default, a link that answered before and fails now is listed as
-    /// unconfirmed until it has kept failing for `[checks.links]
-    /// confirm-days`.
+    /// By default, `problems` and `links` say which problems are new since
+    /// the last report and how many it listed are gone, and a link that
+    /// answered before and fails now is listed as unconfirmed until it has
+    /// kept failing for `[checks.links] confirm-days`.
     #[arg(long)]
     pub no_history: bool,
 
@@ -268,6 +272,16 @@ pub(crate) fn report(
         let confirm_days = project.model().checks.links.confirm_days;
         History::open(project.root(), today, confirm_days, args.no_history)
     });
+    // What the other sections remember from the last report, beside it;
+    // with `--no-history`, it's neither read nor written.
+    let history = project
+        .today()
+        .filter(|_| sections.contains(&Section::Problems) && !args.no_history)
+        .and_then(|today| {
+            let builds = ascribe_check::select_builds(&project, &args.build).ok()?;
+            let names: Vec<String> = builds.iter().map(|b| b.name.clone()).collect();
+            Some(ReportHistory::open(project.root(), today, &names))
+        });
     let options = Options {
         sections: &sections,
         builds: &args.build,
@@ -276,6 +290,7 @@ pub(crate) fn report(
         tools,
         link_cache: link_cache.as_ref(),
         link_history: link_history.as_ref(),
+        history: history.as_ref(),
     };
     let report = match ascribe_query::report(&project, &options) {
         Ok(report) => report,

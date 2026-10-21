@@ -31,6 +31,22 @@ The same problems as `ascribe check`, counted three ways: by check, by file, and
 
 It also lists every problem [acknowledged as intended](../writing/directives.md#intended), with its reason, so an acknowledgement that's no longer true is easy to find. `ascribe check --format concise` lists each problem.
 
+### What's new since the last report
+
+From its second run on, the section says which problems are new since the last report, and how many that report listed are gone, and lists the new ones:
+
+```text
+Problems
+  1 error, 13 warnings, 0 advice.
+  14 problems, 2 of them new since 9 October; 5 the last report listed are gone:
+    guides/install.md:40: [ASC036] `setup.md` doesn't exist
+    guides/upgrade.md:12: [ASC036] `notes.md` doesn't exist
+```
+
+A problem is the same as one the last report listed when it has the same check, the same file, and the same text: the source text it's reported at, or its line's when it's reported at no text, with each run of spaces and line ends read as one space. Among problems alike in all three, as two links to one missing page in one paragraph, each is told from the others by its order in the file. So a problem stays the same when lines are added above it or around it, and is new when the text it's about is edited, which is usually what someone should look at: reword the sentence a prose alert is about, and its alert is new, and the old one is gone. Its line number, its message, and the builds it's in aren't part of it.
+
+A first run says nothing about what's new, and neither does a run on other builds than the last one's, named with `--build` in any order, since that finds other problems. `--no-history` says nothing about what's new either, and keeps nothing: the next report compares with the last one before it, so a one-off run doesn't move what a scheduled report compares with. The last report's problems are kept in `.ascribe/history/report.json`, beside what [`links` remembers](external-links.md#what-it-remembers); deleting it costs one report that can't say what changed.
+
 ## Inventory
 
 How many pages the project has, by content type and by owner, and three lists from the checks across the project: the pages whose review date has passed, the pages nothing links to, and the fragments, phrases, features, glossary terms, and images nothing uses.

@@ -280,6 +280,24 @@ pub(crate) fn write_whole(root: &Path, path: &Path, text: &str) -> std::io::Resu
     })
 }
 
+/// Deletes each `tmp-` file over a day old beside `path`, a file under
+/// `.ascribe/`: a run that stopped before its rename left it.
+pub(crate) fn clean_beside(path: &Path, today: Date) {
+    let Some(folder) = path.parent() else {
+        return;
+    };
+    // Outside FileSystem: a folder Ascribe writes under `.ascribe/`, not the
+    // project's sources.
+    let Ok(files) = std::fs::read_dir(folder) else {
+        return;
+    };
+    for file in files.flatten() {
+        if file.file_name().to_string_lossy().starts_with("tmp-") && over_a_day_old(&file, today) {
+            let _ = std::fs::remove_file(file.path());
+        }
+    }
+}
+
 /// A file in the store, as cleanup sees it.
 enum Read {
     /// An entry of this version, from a day.

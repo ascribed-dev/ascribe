@@ -132,6 +132,7 @@ fn found(case: &Case) -> Result<(Project, Vec<ascribe_check::Diagnostic>), Adapt
         tools: &tools,
         link_cache: store.as_ref().map(|(_, cache)| cache),
         link_history: history.as_ref().map(|(_, history)| history),
+        history: None,
     };
     let report =
         ascribe_query::report(&project, &options).map_err(|e| AdapterError(e.to_string()))?;

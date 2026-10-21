@@ -1135,6 +1135,33 @@
           "description": "The command that lists each problem: `ascribe check`, as JSON.",
           "type": "string"
         },
+        "new": {
+          "description": "How many problems the last report didn't list, or `null` when\n`previous_run` is. A problem is told from another by its check, its\nfile, the text it's about, and its order among those alike.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "new_items": {
+          "$ref": "#/$defs/Capped_Entry",
+          "description": "The problems the last report didn't list, in the order `ascribe\ncheck` reports them; none when `previous_run` is `null`."
+        },
+        "previous_run": {
+          "description": "The day of the last report, `YYYY-MM-DD`, or `null` on a first run,\nwith `--no-history`, or when the last report checked other builds.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "resolved": {
+          "description": "How many problems the last report listed that this one doesn't,\nfixed or with the text they're about edited, or `null` when\n`previous_run` is.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
         "summary": {
           "$ref": "#/$defs/Summary",
           "description": "How many errors, warnings, and advice, and of each kind of next\nstep."
@@ -1145,7 +1172,11 @@
         "by_check",
         "by_file",
         "acknowledged",
-        "list_command"
+        "list_command",
+        "previous_run",
+        "new",
+        "resolved",
+        "new_items"
       ],
       "type": "object"
     },

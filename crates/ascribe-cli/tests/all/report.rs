@@ -827,3 +827,138 @@ fn the_inventory_counts_examples_as_the_pages_have_them() {
     let report = json(&ascribe(plain.path(), &["report", "--format", "json"]));
     assert!(report["inventory"].get("examples").is_none(), "{report}");
 }
+
+/// `ascribe report problems` in `dir` on `today`.
+fn problems_on(dir: &Path, today: &str, args: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(dir)
+        .args(["report", "problems"])
+        .args(args)
+        .env("NO_COLOR", "1")
+        .env("PATH", dir.join("no-tools"))
+        .env("ASCRIBE_TODAY", today)
+        .output()
+        .expect("run ascribe")
+}
+
+/// The steel thread of a finding's identity (decision #787): a line added
+/// above a finding keeps it, and an edit to its text makes it a new one.
+#[test]
+fn problems_says_what_s_new_since_the_last_report() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    write(
+        dir.path(),
+        "ascribe.toml",
+        "spec = \"0.1\"\n\n[builds.one]\n\n[builds.two]\n\n[editor]\nbuild = \"one\"\n",
+    );
+    let page = |text: &str| {
+        write(
+            dir.path(),
+            "docs/index.md",
+            &format!("---\ntitle: Home\n---\n\n{text}"),
+        )
+    };
+    page("Read [the old page](old.md).\n");
+
+    // A first run says nothing about what's new.
+    let first = problems_on(dir.path(), "2026-10-09", &[]);
+    assert_eq!(code_of(&first), 0, "{}", stderr(&first));
+    let text = stdout(&first);
+    assert!(
+        text.starts_with("Problems\n  1 error, 0 warnings, 0 advice.\n  By next step"),
+        "{text}"
+    );
+    assert!(!text.contains("since"), "{text}");
+    assert!(dir.path().join(".ascribe/history/report.json").is_file());
+
+    // A line added above the finding, and a new finding below it.
+    page("A new first line.\n\nRead [the old page](old.md).\n\nAnd [the new page](new.md).\n");
+    let text = stdout(&problems_on(dir.path(), "2026-10-10", &[]));
+    assert!(
+        text.contains(
+            "  2 errors, 0 warnings, 0 advice.\n  2 problems, 1 of them new since 9 October:\n    docs/index.md:9: [ASC036] `new.md` doesn't exist\n"
+        ),
+        "{text}"
+    );
+    let report = json(&problems_on(
+        dir.path(),
+        "2026-10-10",
+        &["--format", "json"],
+    ));
+    let problems = &report["problems"];
+    assert_eq!(problems["previous_run"], "2026-10-10");
+    assert_eq!(
+        (&problems["new"], &problems["resolved"]),
+        (&0.into(), &0.into())
+    );
+
+    // The existing finding's text is edited: one new, and one gone.
+    page("A new first line.\n\nRead [the old page](older.md).\n\nAnd [the new page](new.md).\n");
+    let report = json(&problems_on(
+        dir.path(),
+        "2026-10-11",
+        &["--format", "json"],
+    ));
+    let problems = &report["problems"];
+    assert_eq!(problems["previous_run"], "2026-10-10");
+    assert_eq!(
+        (&problems["new"], &problems["resolved"]),
+        (&1.into(), &1.into())
+    );
+    assert_eq!(problems["new_items"]["total"], 1);
+    assert_eq!(problems["new_items"]["items"][0]["file"], "docs/index.md");
+    assert_eq!(
+        problems["new_items"]["items"][0]["range"]["start"]["line"],
+        7
+    );
+    let text = stdout(&problems_on(dir.path(), "2026-10-12", &[]));
+    assert!(
+        text.contains("  2 problems, none of them new since 11 October.\n"),
+        "{text}"
+    );
+
+    // Both fixed: the report says they're gone.
+    page("A new first line.\n");
+    let text = stdout(&problems_on(dir.path(), "2026-10-13", &[]));
+    assert_eq!(
+        text,
+        "Problems\n  0 errors, 0 warnings, 0 advice.\n  The 2 problems the report of 12 October listed are gone.\n"
+    );
+
+    // `--no-history` says nothing about what's new, and neither reads nor
+    // writes the history.
+    page("Read [the old page](old.md).\n");
+    let history = dir.path().join(".ascribe/history/report.json");
+    let before = fs::read_to_string(&history).expect("the history");
+    let report = json(&problems_on(
+        dir.path(),
+        "2026-10-14",
+        &["--no-history", "--format", "json"],
+    ));
+    let problems = &report["problems"];
+    assert_eq!(problems["previous_run"], serde_json::Value::Null);
+    assert_eq!(
+        (&problems["new"], &problems["resolved"]),
+        (&serde_json::Value::Null, &serde_json::Value::Null)
+    );
+    assert_eq!(problems["new_items"]["total"], 0);
+    assert_eq!(fs::read_to_string(&history).expect("the history"), before);
+    let text = stdout(&problems_on(dir.path(), "2026-10-15", &[]));
+    assert!(
+        text.contains("  1 problem, new since 13 October:\n    docs/index.md:5: [ASC036] `old.md` doesn't exist\n"),
+        "{text}"
+    );
+
+    // A report on one build of the two says nothing about what's new...
+    let on = |today: &str, builds: &[&str]| {
+        let mut args = vec!["--format", "json"];
+        for b in builds {
+            args.extend(["--build", b]);
+        }
+        json(&problems_on(dir.path(), today, &args))["problems"]["previous_run"].clone()
+    };
+    assert_eq!(on("2026-10-16", &["one"]), serde_json::Value::Null);
+    // ...and the same builds in another order compare.
+    assert_eq!(on("2026-10-17", &["one", "two"]), serde_json::Value::Null);
+    assert_eq!(on("2026-10-18", &["two", "one"]), "2026-10-17");
+}

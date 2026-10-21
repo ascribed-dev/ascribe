@@ -24,7 +24,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::time::Duration;
 
+use ascribe_check::identity::{self, Identity};
 use ascribe_check::links::{self, LinkChecker};
+use ascribe_check::report_history::ReportHistory;
 use ascribe_check::site::{self, CheckResult, SiteChecker};
 use ascribe_check::tool::ToolError;
 use ascribe_check::{
@@ -131,6 +133,10 @@ pub struct Options<'a> {
     /// What `links` remembers from earlier runs, and where it keeps what
     /// this run sees; none to hold nothing and keep nothing.
     pub link_history: Option<&'a links::History>,
+    /// What the report remembers of its other sections from the last run,
+    /// and where it keeps what this run finds; none to say nothing about
+    /// what's new and keep nothing.
+    pub history: Option<&'a ReportHistory>,
 }
 
 /// Why a section didn't run, and what would let it.
@@ -168,6 +174,14 @@ pub struct Problems {
     pub diagnostics: Vec<Diagnostic>,
     /// The problems acknowledged as intended, with their reasons.
     pub acknowledged: Vec<Acknowledged>,
+    /// The day of the run the history is from, when there's one to go by.
+    pub previous_run: Option<ascribe_core::Date>,
+    /// The diagnostics the previous run didn't report, in the order of
+    /// `diagnostics`, when there's one to go by.
+    pub new: Option<Vec<Diagnostic>>,
+    /// How many findings the previous run reported that this one doesn't,
+    /// when there's one to go by.
+    pub resolved: Option<usize>,
 }
 
 /// `inventory`: what the project holds, and what the checks across it find.
@@ -405,10 +419,12 @@ pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, Unknow
             out.inventory = Some(inventory(project, &diagnosed.diagnostics));
         }
         if asked(Section::Problems) {
-            out.problems = Some(Problems {
-                diagnostics: diagnosed.diagnostics,
-                acknowledged: diagnosed.acknowledged,
-            });
+            out.problems = Some(problems(
+                project,
+                diagnosed.diagnostics,
+                diagnosed.acknowledged,
+                options.history,
+            ));
         }
     }
     if asked(Section::Builds) {
@@ -428,6 +444,41 @@ pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, Unknow
         out.agents = Some(agents(project, options.site, options.tools));
     }
     Ok(out)
+}
+
+/// `problems`: what `ascribe check` found, and, from the history, which of
+/// it is new since the last run and how many of that run's findings are
+/// gone. What this run found is kept in the history.
+fn problems(
+    project: &Project,
+    diagnostics: Vec<Diagnostic>,
+    acknowledged: Vec<Acknowledged>,
+    history: Option<&ReportHistory>,
+) -> Problems {
+    let mut out = Problems {
+        diagnostics,
+        acknowledged,
+        ..Problems::default()
+    };
+    let Some(history) = history else {
+        return out;
+    };
+    let found = identity::identities(project, &out.diagnostics);
+    if let (Some(run), Some(before)) = (history.previous_run(), history.problems_before()) {
+        out.previous_run = Some(run);
+        out.new = Some(
+            out.diagnostics
+                .iter()
+                .zip(&found)
+                .filter(|(_, id)| !before.contains(*id))
+                .map(|(d, _)| d.clone())
+                .collect(),
+        );
+        let now: BTreeSet<&Identity> = found.iter().collect();
+        out.resolved = Some(before.iter().filter(|id| !now.contains(id)).count());
+    }
+    history.save(found.into_iter().collect());
+    out
 }
 
 /// `inventory`, from the project's pages and what `ascribe check` found.
