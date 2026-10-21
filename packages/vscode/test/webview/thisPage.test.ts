@@ -158,6 +158,10 @@ function item(key: string, kind: ViewItem["kind"], label: string, more: Partial<
 
 const EXAMPLE = "code:crates/ascribe-cli/tests/output/check.json";
 const STALE = "changed since it was tested";
+const PLACE =
+  "Generate a new key, put it in `quill.yaml`, and restart the agent. To install the agent first, see [](install-agent.md#install-agent).";
+const MEMO = "The agent goes first because its installer writes the config file that";
+const MEMO_FILE = "memos/agent-goes-first-because-its-installer-writes.md";
 
 /** About, Health, Connections, and Memos, as the model builds them for a page, under its head. */
 function sections(title = "API keys"): ThisPageAnswer {
@@ -265,6 +269,54 @@ describe("This page's webview", () => {
     );
     // The row leads with its state.
     await expect(view.page.locator(".row dd > button > .state").textContent()).resolves.toBe(STALE);
+    const [scroll, client] = await view.page.evaluate(() => [
+      document.documentElement.scrollWidth,
+      document.documentElement.clientWidth,
+    ]);
+    expect(scroll).toBe(client);
+  });
+
+  it("keeps a line's description whole beside a long label that wraps", async () => {
+    const view = await open();
+    await view.page.setViewportSize({ width: 320, height: 600 });
+    await draw(view, 1, {
+      ...sections(),
+      sections: [
+        item("connections", "section", "Connections", {
+          icon: "references",
+          open: true,
+          children: [item("connections/0", "item", PLACE, { description: "line 21", acts: true })],
+        }),
+        item("memos", "section", "Memos", {
+          icon: "note",
+          open: true,
+          children: [item("memos/0", "item", MEMO, { description: MEMO_FILE, acts: true })],
+        }),
+      ],
+    });
+    // A part of a line, and where it breaks: the two characters on either side of each break.
+    const lines = (key: string, part: string) =>
+      view.page.locator(`[data-key="${key}"] > .${part}`).evaluate((span) => {
+        const text = span.textContent ?? "";
+        const range = document.createRange();
+        const top = (i: number) => {
+          range.setStart(span.firstChild as Node, i);
+          range.setEnd(span.firstChild as Node, i + 1);
+          return Math.round(range.getBoundingClientRect().top);
+        };
+        const breaks: string[] = [];
+        for (let i = 1; i < text.length; i++) {
+          if (top(i) !== top(i - 1)) breaks.push(text.slice(i - 1, i + 1));
+        }
+        return breaks;
+      });
+    // A short description stays on one line beside the label's lines.
+    await expect(lines("connections/0", "label")).resolves.not.toEqual([]);
+    await expect(lines("connections/0", "description")).resolves.toEqual([]);
+    // A long one wraps at its own breaks, after a hyphen or a slash, never inside a word.
+    const breaks = await lines("memos/0", "description");
+    expect(breaks).not.toEqual([]);
+    for (const pair of breaks) expect(pair).toMatch(/^[-/]/);
     const [scroll, client] = await view.page.evaluate(() => [
       document.documentElement.scrollWidth,
       document.documentElement.clientWidth,
