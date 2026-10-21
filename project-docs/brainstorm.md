@@ -4,9 +4,8 @@ Ideas for Ascribe that nobody has built, planned, or started. This is exploratio
 
 Written on 2 October 2026, after 0.1.1, and cut back on 11 October 2026 to what's still open. Most of what it held then has been built, and the rest of it has a plan or a proposal of its own, so it's gone from here:
 
-- **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, and external links), [permalinks](../docs/content/permalinks/index.md), [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), [versions](../docs/content/versions/index.md), [navigation](../docs/content/navigation/index.md), [the glossary as pages](../docs/content/content-model/glossary.md), the editor's [sidebar](../docs/content/editor/sidebar.md), and what a search engine and a crawler are told, in [Publishing](../docs/content/publishing/index.md).
-- **Planned.** [Search](search/README.md), from its [proposal](proposals/search.md).
-- **Proposed.** [The rest of the cache](proposals/cache.md), [This page as a webview](proposals/this-page-webview.md), [the Project view](proposals/project-view.md), and [Project Settings](proposals/project-settings.md).
+- **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, and external links), [permalinks](../docs/content/permalinks/index.md), [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), [versions](../docs/content/versions/index.md), [navigation](../docs/content/navigation/index.md), [the glossary as pages](../docs/content/content-model/glossary.md), the editor's [sidebar](../docs/content/editor/sidebar.md), [search](../docs/content/command/questions.md#ascribe-search), and what a search engine and a crawler are told, in [Publishing](../docs/content/publishing/index.md).
+- **Proposed.** [The rest of the cache](proposals/cache.md).
 
 The sections keep the numbers they had, since other documents name them, so the numbers have gaps.
 
@@ -190,7 +189,7 @@ Either touches the editor, whose diagnostics and hovers assume one file, and eve
 
 Added 2026-10-18, from what the [editor's views plan](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/editor-ui/README.md) left for later. Not planned.
 
-- **A webview for a view.** Answered for This page: it becomes a webview, and the other views stay trees, in its [proposal](proposals/this-page-webview.md). Whether the Review view follows is the question left, once This page has been used.
+- **A webview for a view.** Answered for This page: it becomes a webview, and the other views stay trees, in its [proposal](https://github.com/ascribed-dev/ascribe/blob/62bf76a9/project-docs/proposals/this-page-webview.md). Whether the Review view follows is the question left, once This page has been used.
 - **A drop handler that asks for alt text.** Dropping or pasting an image into a page is VS Code's Markdown extension's, which writes the image's link with no alt text, where **Insert an image** asks for it. A handler of Ascribe's own would ask as that action does, and put the image where the project keeps its images. [Decision #544h](decisions/544h-editor-leaves-out.md) holds it back until what VS Code's drop writes fails `ascribe check`, which nobody has yet checked by hand: drop and paste an image, and drop a page, into a page of `examples/quill` with the settings at their defaults, then run `ascribe check`.
 
 ## 22. A page in any output, from the command line
@@ -204,7 +203,7 @@ Added 2026-10-20. Not planned.
 - **HTML,** from `render_site_html`, the renderer the editor's preview uses and the Astro plugin is held to: the page's content as HTML, without a site's frame, so an agent or a test can see what the elements produce without a browser. It's the one case where "render" was the right word, and it might be a command of its own rather than an output, since no build writes HTML.
 - **For agents:** an `emit` argument on `ascribe_resolve`, not a tool of its own, since a tool takes its command's arguments under the same names (the command checklist). `site` first: it's the view an agent without a shell can't get otherwise, of what a badge or a switcher becomes. `json` only if a use turns up, since the tool's JSON would hold the page's JSON in a field, and HTML not at all, since it costs an agent far more than the Markdown it came from and says nothing the site output doesn't. With `emit: site`, the tool's default text is the site output's Markdown. An argument added to a tool is still a recorded decision (decision 56), though no caller breaks.
 
-What it would serve: the [docs audit](docs-audit.md)'s "where a screenshot would do the work" question, which needed a browser to see tabs and badges; an agent checking what a reader of the site gets, not only a reader of the Markdown version; and tests of a site's integration that start from one page.
+What it would serve: the [docs audit](https://github.com/ascribed-dev/ascribe/blob/62bf76a9/project-docs/docs-audit.md)'s "where a screenshot would do the work" question, which needed a browser to see tabs and badges; an agent checking what a reader of the site gets, not only a reader of the Markdown version; and tests of a site's integration that start from one page.
 
 Questions:
 
@@ -214,11 +213,11 @@ Questions:
 
 ## 23. Passages written twice
 
-Added 2026-10-20, from the [docs audit](docs-audit.md). Not planned.
+Added 2026-10-20, from the [docs audit](https://github.com/ascribed-dev/ascribe/blob/62bf76a9/project-docs/docs-audit.md). Not planned.
 
 The audit found a dozen rules stated three to six times across Ascribe's own pages, and option paragraphs that say again what the generated tables under them say. It found them by reading and with a script: no tool says "this paragraph is on three pages". A writer who repeats a passage instead of including a fragment gets copies that drift apart, and a reader gets the same rule in three wordings.
 
-Ascribe can find this where a prose linter can't, because it knows every page's blocks as a build publishes them. `ascribe diff` already fingerprints each block's content without its position (`crates/ascribe-diff/src/tree.rs`), and the [search plan](search/README.md)'s reading gives each block's text with its place in the source. A report of blocks whose text is the same, or nearly, on more than one page, each with its places, would point at the feature built for the problem: a fragment, written once and included where it's needed.
+Ascribe can find this where a prose linter can't, because it knows every page's blocks as a build publishes them. `ascribe diff` already fingerprints each block's content without its position (`crates/ascribe-diff/src/tree.rs`), and the [search plan](https://github.com/ascribed-dev/ascribe/blob/62bf76a9/project-docs/search/README.md)'s reading gives each block's text with its place in the source. A report of blocks whose text is the same, or nearly, on more than one page, each with its places, would point at the feature built for the problem: a fragment, written once and included where it's needed.
 
 - **A report, not a check.** Some repetition is right: a warning that belongs on every page it applies to, or a sentence a page needs to stand alone. A diagnostic on each copy would push writers to fragment everything. A section of `ascribe report` that lists what's repeated, largest first, leaves the judgment to the writer.
 - **What's the same.** Exact matches are cheap with fingerprints. Near matches, a rule reworded, are what the audit mostly found, and need a measure of similarity: the shingles a near-duplicate detector uses, over the reading's text. Exact first, and near only if exact finds too little.
@@ -235,7 +234,7 @@ Questions:
 
 ## 15. The cache: what's left
 
-This section held three ideas that share no layer. Two have proposals of their own, which are the later thinking: [memos](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/memos.md), for what people know about a page and have nowhere to put, and [search](proposals/search.md), which was measured and needs no index.
+This section held three ideas that share no layer. Two have proposals of their own, which are the later thinking: [memos](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/memos.md), for what people know about a page and have nowhere to put, and [search](https://github.com/ascribed-dev/ascribe/blob/62bf76a9/project-docs/proposals/search.md), which was measured and needs no index.
 
 The third was a cache, and its first use is built: `ascribe report links` keeps the answers it reuses under `.ascribe/cache/links/`, with an expiry, and holds a link that answered before until it keeps failing. The rule it's built on stays the rule for anything added: deleting the cache changes nothing but time, so nothing may need it to be correct. CI starts with none.
 

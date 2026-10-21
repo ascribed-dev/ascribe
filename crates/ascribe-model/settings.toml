@@ -2,7 +2,8 @@
 # defaults from (`ascribe_model::settings`), which the binary carries. A
 # check's own settings aren't here: a check is described by its `when` in
 # tests/conformance/diagnostics.toml, and its settings are in `[checks]`'s
-# code. Decision 6 of project-docs/roadmap.md.
+# code. Decision 6 of the editor's views'
+# plan: https://github.com/ascribed-dev/ascribe/blob/62bf76a9/project-docs/roadmap.md#decisions
 #
 # Each entry is one key, in the content model reference's order:
 #

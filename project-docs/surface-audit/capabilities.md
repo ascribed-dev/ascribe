@@ -67,7 +67,7 @@ A cell holds what does the job there, or one of these:
 | Rename a phrase everywhere | **gap**: the session's rename was `sed`, with `ascribe refs` before and after ([journey 4](journeys/rename-a-phrase.md)) | **Rename this phrase everywhere**; `F2` | no (D1): `ascribe_refs` finds the uses, and the agent edits each | no (D2) | no (D3) |
 | Rename a dimension's value everywhere | **gap** | **Rename a dimension value everywhere**; `F2` | no (D1) | no (D2) | no (D3) |
 | Rename or move a page and keep its links | **gap**: `ascribe refs` lists the links to fix | Renaming or moving the file in the Explorer | no (D1) | no (D2) | no (D3) |
-| Search the pages' text as readers see it | **gap** (the [search proposal](../proposals/search.md)) | **gap** | **gap** | no (D2) | no (D3) |
+| Search the pages' text as readers see it | **gap** (the [search proposal](https://github.com/ascribed-dev/ascribe/blob/62bf76a9/project-docs/proposals/search.md)) | **gap** | **gap** | no (D2) | no (D3) |
 
 ## Seeing it as a reader
 
