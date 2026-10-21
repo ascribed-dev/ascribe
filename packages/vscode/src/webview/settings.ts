@@ -531,3 +531,13 @@ const diag764 = (line: string): void =>
   });
 window.addEventListener("focus", () => diag764("window focus"));
 window.addEventListener("blur", () => diag764("window blur"));
+diag764(`start t=${Math.round(performance.now())}`);
+window.addEventListener("load", () => diag764("load"));
+window.addEventListener("message", (event: MessageEvent<{ type?: string; seq?: number }>) =>
+  setTimeout(() => diag764(`after message ${event.data?.type} ${event.data?.seq}`), 0),
+);
+let polls764 = 0;
+const poll764 = setInterval(() => {
+  diag764(`poll ${polls764}`);
+  if (++polls764 >= 20) clearInterval(poll764);
+}, 100);
