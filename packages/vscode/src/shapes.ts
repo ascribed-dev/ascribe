@@ -13,6 +13,7 @@
 // - InventoryResult (the language server, answering `ascribe/inventory`)
 // - PageResult (the language server, answering `ascribe/page`)
 // - EditResult (the language server, answering `ascribe/edit`)
+// - ProjectEditResult (the language server, answering `ascribe/projectEdit`)
 // - BuildViewResult (the language server, answering `ascribe/buildView`)
 // - AgentPromptResult (the language server, answering `ascribe/agentPrompt`)
 // - ModelReport (`ascribe model --format json`)
@@ -2030,6 +2031,31 @@ export type PrimaryKind = "none" | "identifier" | "text" | "availability";
 
 /** How much a problem with showing a page matters. */
 export type ProblemSeverity = "error" | "warning" | "info";
+
+/**
+ * The answer to `ascribe/projectEdit`: the edit and how much it changes, or
+ * why there's none.
+ */
+export type ProjectEditResult =
+  | {
+      /**
+       * Edits to each file it changes, under `documentChanges`, in path
+       * order: an open document's names the version it's for, and any
+       * other's `null`.
+       */
+      edit: LspWorkspaceEdit;
+      /** How many files it changes. */
+      files: number;
+      /**
+       * For the safe fixes, how many problems they fix; `null` for
+       * formatting.
+       */
+      fixes: number | null;
+    }
+  | {
+      /** The message. */
+      error: string;
+    };
 
 /**
  * A span of a file. `end` is just past its last character; an empty range

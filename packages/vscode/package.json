@@ -294,6 +294,18 @@
         "icon": "$(checklist)"
       },
       {
+        "command": "ascribe.applyEverySafeFix",
+        "title": "Apply Every Safe Fix",
+        "category": "Ascribe",
+        "icon": "$(lightbulb-autofix)"
+      },
+      {
+        "command": "ascribe.formatEveryPage",
+        "title": "Format Every Page",
+        "category": "Ascribe",
+        "icon": "$(edit)"
+      },
+      {
         "command": "ascribe.projectMenu",
         "title": "Project Menu",
         "category": "Ascribe"
@@ -1175,6 +1187,14 @@
         },
         {
           "command": "ascribe.checkEveryBuild",
+          "when": "ascribe.active"
+        },
+        {
+          "command": "ascribe.applyEverySafeFix",
+          "when": "ascribe.active"
+        },
+        {
+          "command": "ascribe.formatEveryPage",
           "when": "ascribe.active"
         },
         {

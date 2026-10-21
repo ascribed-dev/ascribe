@@ -47,11 +47,22 @@ The view never checks every build by itself, since that can take a few seconds o
 | Action | How it runs |
 |---|---|
 | **Check Every Build** | The extension checks every build and puts their problems in the Problems panel |
+| **Apply Every Safe Fix** | The language server, as one edit, left unsaved: see [Edits to the whole project](#edits-to-the-whole-project) |
+| **Format Every Page** | The language server, as one edit, left unsaved |
 | **Build** | A task: `ascribe build`, in the terminal |
 | **Sync Agent Files** | A task: `ascribe agents sync`, in the terminal |
 | **Observe Examples** | A task: `ascribe observe`, in the terminal, in the folder of a source with [tested examples](../examples/tested.md). It lists the commands `ascribe.examples.toml` names and asks before running them. |
 
 The tasks are in **Tasks: Run Task** too, and [Tasks](settings.md#tasks) says where they run. **Escape** in the view puts the cursor back in the editor.
+
+### Edits to the whole project
+@available: next
+
+**Apply Every Safe Fix** applies every [safe fix](problems.md#apply-the-safe-fixes) of the problems the editor shows, in every page and fragment of the project, as **Apply the safe fixes in this page** applies one page's. They're the editor's build's problems, the ones in the Problems panel; a problem only another build has, or one that takes every build to tell, is [`ascribe check --fix`](../checks/check.md#applying-the-safe-fixes)'s to fix. **Format Every Page** formats every page and fragment as [Format Document](writing.md#formatting) and `ascribe fmt` do. Both are in the Command Palette too, as **Ascribe: Apply Every Safe Fix** and **Ascribe: Format Every Page**, for the active file's project.
+
+Each is one edit to the text the editor has, so a page you've changed and not saved is fixed or formatted as you have it, never as it is on disk. Before it's made, the extension says how much it changes and asks: "Apply 6 safe fixes in 4 files? They're left unsaved, to read before you save them." When there's nothing to change, it says so and asks nothing.
+
+The files are left unsaved on purpose. On a large project an edit can change hundreds of files, and each is opened with its changes unsaved, so you can read them before you save them: **File: Save All** saves them. **Undo** takes the edit back: VS Code asks whether to undo it in every file it changed or only in the one you're in. If a file changes while the question is up, nothing is applied; choose the action again.
 
 ## This page, Pages, and Content model
 

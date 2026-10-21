@@ -1,8 +1,9 @@
 // The Project view, first in the Ascribe sidebar: the sidebar's project, its
 // server's state and binary, Health's counts with when each is from, and
-// Check Every Build. A webview view on This page's base (`webviewView.ts`);
-// the answer is `projectHealth.ts`'s, and the webview's script is
-// `../webview/project.ts`.
+// its actions: Check Every Build, the edits to the whole project
+// (`projectEdits.ts`), and the tasks (`tasks.ts`). A webview view on This
+// page's base (`webviewView.ts`); the answer is `projectHealth.ts`'s, and the
+// webview's script is `../webview/project.ts`.
 //
 // It shows the project Pages and Content model show (`SidebarViews.project`),
 // which follows the active file and keeps its project when the active file
@@ -20,6 +21,7 @@ import { formatVersion } from "../version.js";
 import type { ProjectAnswer, ProjectReport } from "../webview/viewProtocol.js";
 import type { AgentFilesChecks } from "./agentFiles.js";
 import type { EveryBuildChecks } from "./checkEveryBuild.js";
+import type { ProjectEdits } from "./projectEdits.js";
 import {
   inventoryCounts,
   PROJECT_KEYS,
@@ -61,6 +63,7 @@ export class ProjectView implements vscode.Disposable {
     private readonly checks: EveryBuildChecks,
     private readonly agentFiles: AgentFilesChecks,
     private readonly tasks: ProjectTasks,
+    private readonly edits: ProjectEdits,
     extensionUri: vscode.Uri,
   ) {
     this.view = new WebviewView(
@@ -193,6 +196,12 @@ export class ProjectView implements vscode.Disposable {
         return;
       case PROJECT_KEYS.checkEveryBuild:
         await this.checks.checkProject(server);
+        return;
+      case PROJECT_KEYS.applyEverySafeFix:
+        await this.edits.run(server, "fixAll");
+        return;
+      case PROJECT_KEYS.formatEveryPage:
+        await this.edits.run(server, "format");
         return;
       case PROJECT_KEYS.checkAgentFiles:
         await this.agentFiles.checkProject(server);

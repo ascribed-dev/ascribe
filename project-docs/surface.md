@@ -351,7 +351,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
 For people. Read from `packages/vscode/package.json`, `docs/content/_generated/editor-actions.md`.
 
-90 commands, 37 of them actions.
+92 commands, 37 of them actions.
 
 Commands that aren't actions:
 
@@ -369,6 +369,8 @@ Commands that aren't actions:
 | Ascribe: Go to Next Placeholder | `ascribe.nextPlaceholder` |
 | Ascribe: Switch Build | `ascribe.switchBuild` |
 | Ascribe: Check Every Build | `ascribe.checkEveryBuild` |
+| Ascribe: Apply Every Safe Fix | `ascribe.applyEverySafeFix` |
+| Ascribe: Format Every Page | `ascribe.formatEveryPage` |
 | Ascribe: Project Menu | `ascribe.projectMenu` |
 | Ascribe: Dim What the Build Leaves Out | `ascribe.toggleBuildLens` |
 | Ascribe: Start Review | `ascribe.startReview` |
@@ -507,7 +509,7 @@ Menus the commands are placed in:
 
 | Menu | Entries |
 |---|---|
-| `commandPalette` | 90 |
+| `commandPalette` | 92 |
 | `editor/title` | 5 |
 | `view/title` | 12 |
 | `view/item/context` | 13 |
@@ -532,6 +534,7 @@ Ascribe's own requests:
 | `ascribe/inventory` | `crates/ascribe-lsp/src/inventory.rs` |
 | `ascribe/page` | `crates/ascribe-lsp/src/page.rs` |
 | `ascribe/preview` | `crates/ascribe-lsp/src/preview.rs` |
+| `ascribe/projectEdit` | `crates/ascribe-lsp/src/project_edit.rs` |
 | `ascribe/review/setBase` | `crates/ascribe-lsp/src/review.rs` |
 | `ascribe/review/changes` | `crates/ascribe-lsp/src/review.rs` |
 | `ascribe/review/baseFile` | `crates/ascribe-lsp/src/review.rs` |
@@ -776,6 +779,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/lsp-inventory.schema.json` | InventoryResult | The answer to `ascribe/inventory`. |
 | `schemas/lsp-page.schema.json` | PageResult | The answer to `ascribe/page`. |
 | `schemas/lsp-preview.schema.json` | PreviewResult | The answer to `ascribe/preview`. |
+| `schemas/lsp-project-edit.schema.json` | ProjectEditResult | The answer to `ascribe/projectEdit`: the edit and how much it changes, or why there's none. |
 | `schemas/lsp-set-base.schema.json` | SetBaseResult | The answer to `ascribe/review/setBase`. |
 | `schemas/lsp-targets.schema.json` | TargetsResult | The answer to `ascribe/targets`: a list for each kind asked for, and no others. |
 | `schemas/model.schema.json` | ModelReport | What `ascribe model --format json` answers: the content model's sections, or the one asked for. |
@@ -935,6 +939,8 @@ READMEs published with a package, a crate, or the repository:
 | `packages/cli/README.md` |
 | `packages/elements/README.md` |
 | `packages/review/README.md` |
+| `packages/vscode/README.md` |
+| `packages/vscode/README.md` |
 | `packages/vscode/README.md` |
 | `packages/vscode/test/fixtures/monorepo/code/README.md` |
 | `packages/vscode/test/fixtures/monorepo/docs/README.md` |

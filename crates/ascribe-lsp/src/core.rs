@@ -1438,6 +1438,38 @@ impl Core {
         )
     }
 
+    /// What `ascribe/projectEdit` works from, asked through any of the
+    /// project's files: the project's context, as [`Core::project_target`]
+    /// gives it, and each source file of its snapshot, in path order, with
+    /// its open document's URI and version and the diagnostics last
+    /// published for it.
+    pub(crate) fn project_edit_target(
+        &self,
+        uri: &Uri,
+    ) -> Option<(Ctx, Vec<crate::project_edit::Source>)> {
+        let ctx = self.project_target(uri)?;
+        let loaded = self.loaded.as_ref()?;
+        let sources = ctx
+            .snapshot
+            .files()
+            .filter_map(|file| {
+                let path = loaded.source_path(&file.path);
+                let doc = self.docs.get(&path);
+                let uri = match doc {
+                    Some(doc) => doc.uri.clone(),
+                    None => path_to_uri(&path)?,
+                };
+                Some(crate::project_edit::Source {
+                    path: file.path.clone(),
+                    uri,
+                    version: doc.map(|d| d.version),
+                    published: self.checked_with_version(&path),
+                })
+            })
+            .collect();
+        Some((ctx, sources))
+    }
+
     /// A project snapshot for workspace-level refactorings.
     pub(crate) fn project_nav_target(&self) -> Option<Ctx> {
         let loaded = self.loaded.as_ref()?;

@@ -142,8 +142,14 @@ const facts = (
 
 const none = { count: 0, first: null };
 
-/** The tasks every project's Actions has after Check Every Build. */
-const TASKS = ["Build", "Sync Agent Files", "Observe Examples"];
+/** The edits and the tasks every project's Actions has after Check Every Build. */
+const TASKS = [
+  "Apply Every Safe Fix",
+  "Format Every Page",
+  "Build",
+  "Sync Agent Files",
+  "Observe Examples",
+];
 
 const made = (current: boolean, errors = 2, warnings = 1, examples = 0): EveryBuildResult => ({
   kind: "made",
@@ -298,6 +304,21 @@ describe("the Project view's webview", () => {
     const from = view.posted.length;
     await view.page.getByRole("button", { name: "Build", exact: true }).click();
     await expect(view.next("open", from)).resolves.toEqual({ type: "open", seq: 5, key: "build" });
+  });
+
+  it("applies an edit by its key, saying in its tooltip that it's one edit left unsaved", async () => {
+    const view = await open();
+    await view.draw(6, projectAnswer(facts({ kind: "none" })));
+    await expect(
+      view.page.getByRole("button", { name: "Format Every Page" }).getAttribute("title"),
+    ).resolves.toBe("Formats every page as ascribe fmt does, as one edit left unsaved.");
+    const from = view.posted.length;
+    await view.page.getByRole("button", { name: "Apply Every Safe Fix" }).click();
+    await expect(view.next("open", from)).resolves.toEqual({
+      type: "open",
+      seq: 6,
+      key: "applyEverySafeFix",
+    });
   });
 
   it("keeps a section the reader closed closed when it draws again", async () => {
