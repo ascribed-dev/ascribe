@@ -82,7 +82,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 | Section | What it's for | In the reference |
 |---|---|---|
-| Top level: `spec` | The only other top-level keys are the tables in §3–§20. | §2 |
+| Top level: `spec` | The only other top-level keys are the tables in §3–§22, `[releases]` (§7.1) and `[[intended]]` (§19.1) among them. | §2 |
 | `[project]` | Where the source lives and where builds write. | §3 |
 | `[types.<name>]` and `[fragments]` | A **content type** is a frontmatter schema for a kind of page. | §4 |
 | `[dimensions.<name>]` | A **dimension** is an axis content varies along (SPEC §4.3), and whose values are availability targets (SPEC §4.4). | §6 |
@@ -942,6 +942,7 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 | `.ascribe/memos/` | You do: personal memos, memo files kept on your machine only. Ascribe reads them, and writes one only when you ask: the editor's **Ascribe: Add a personal memo** creates one, and a rename (`ascribe rename`, `F2`, or moving a file in the editor) rewrites the `about` of each that names what it renames. | No |
 | `ascribe.lock` | `ascribe sources fetch` and `ascribe sources update`: the commit each source in another repository is pinned to. | Yes |
 | `sources/` | `ascribe sources fetch` and `ascribe sources update`: copies of the files your snippets use from another repository, in `sources/<name>/`. | Yes |
+| `examples.observations/` | `ascribe observe`, beside `ascribe.examples.toml` in the code's folder: what its tested examples passed with, in `default.toml`, or `<name>.toml` with `--name`. `ascribe observe --check` fails without it. | Yes |
 | `ascribe.permalinks` | `ascribe permalinks sync` and `ascribe permalinks retire`: the list of the docs' permalinks a product checks its links against. | Yes |
 | `ascribe.nav` | You do: the order of the project's sections and pages, and their labels, beside `ascribe.toml`. Ascribe reads it; with none, a project has the default order. | Yes |
 | `memos/` | You do: memo files, which say why a page is written the way it is. Ascribe reads them, and writes one only when you ask: the editor's **Ascribe: Add a memo** creates one, and a rename (`ascribe rename`, `F2`, or moving a file in the editor) rewrites the `about` of each that names what it renames. They're in no output. | Yes |

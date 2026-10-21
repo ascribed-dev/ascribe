@@ -38,7 +38,7 @@ A project's source files are the `.md` files under its **content root** (`docs/`
 - A **page** is published on its own.
 - A **fragment** exists only to be included in other files. A file is a fragment when any part of its path starts with `_` (`_warning.md`, `_snippets/setup.md`), or when it matches one of the `[fragments] patterns` in `ascribe.toml`.
 
-A file may start with YAML frontmatter between `---` lines. Its content type in `ascribe.toml` says which keys it takes; every page takes a `title`. Some keys are reserved for pages: `type`, `available` ([availability](directives.md#available)), and `variant` ([whole-page variants](directives.md#whole-page-variants)), with `permalink`, `listing`, and [`replaces`](directives.md#a-page-that-replaces-another).
+A file may start with YAML frontmatter between `---` lines. Its content type in `ascribe.toml` says which keys it takes; every page takes a `title`. Some keys are reserved for pages: `type`, `available` ([availability](directives.md#available)), and `variant` ([whole-page variants](directives.md#whole-page-variants)), with `permalink`, `listing`, [`replaces`](directives.md#a-page-that-replaces-another), `nav-label` (a page's name in the sidebar and the previous and next links, when it's shorter than the title), and [`intended`](directives.md#intended), which fragments take too.
 
 ```markdown
 ---
@@ -112,7 +112,7 @@ Attributes are `key=value` pairs in braces, separated by commas. They use the sa
 - **Keys** are lowercase: a letter, then letters, digits, or hyphens. Each directive accepts only the keys its schema declares.
 - **Values** are a token (`type=caution`, `since=3.4`, `width=600px`), a quoted string (`label="Using other images"`, with `\"` and `\\` inside), or, for keys declared as sets, a **value set** of tokens joined by `|` (`platform=cloud|on-prem`).
 - A value must be quoted when it contains a space or any of `,` `|` `{` `}` `=` `"`.
-- Booleans are written out: `open=true`. A key with no value is an error.
+- Booleans are written out: `permalink=true`, `heading=false`. A key with no value is an error.
 - `{}` is allowed and means no attributes.
 
 A value's type comes from the directive's schema, never from how it looks: `3.10` is a string where the schema says string.
@@ -183,10 +183,10 @@ A directive in line form applies to something, according to its **binding**:
 
 | Binding | Applies to | Directives |
 |---|---|---|
-| Self | Its own primary, or nothing | `@include`; `@note` with a primary |
-| Heading | The heading above it, and that heading's section | `@id` |
+| Self | Its own primary, or nothing | `@include`, `@snippet`; `@note` with a primary |
+| Heading | The heading above it, and that heading's section | `@id`, `@term` |
 | Following block | The next block in the same container | `@steps`; `@details` and `@note` without a colon |
-| Heading or block | At the top of a section, the section; anywhere else, the next block | `@available` |
+| Heading or block | At the top of a section, the section; anywhere else, the next block | `@available`, `@intended`, `@memo` |
 
 **Heading-bound directives** go at the top of their section, directly under the heading, before any other content. Several may stack:
 
@@ -245,9 +245,9 @@ Without `@id`, a heading's id is its slug, computed from its text. Add `@id` to 
 @id {permalink=true}: cli-check
 ```
 
-- **Each permalink has an address of its own,** `go/<id>` under the site's base path, or under [`permalink-path`](../content-model/output.md#consumer), which forwards to the section wherever it is. With [`@ascribed/astro`](../astro/reference.md#permalinks), `/go/cli-check/` sends the reader to `/docs/reference/cli/#cli-check`. A product links to the address, not to the page: `ascribe check --help` ends with `https://ascribed-dev.com/go/cli-check/`.
+- **Each permalink has an address of its own,** `go/<id>` under the site's base path, or under [`permalink-path`](../content-model/output.md#consumer), which forwards to the section wherever it is. With [`@ascribed/astro`](../astro/reference.md#permalinks), `/go/cli-check/` sends the reader to `/docs/checks/check/#cli-check`. A product links to the address, not to the page: `ascribe check --help` ends with `https://ascribed-dev.com/go/cli-check/`.
 - **An address can say what its reader uses,** with the content model's [dimensions](../content-model/content.md#dimensions) as parameters: `/go/install-agent/?pm=pnpm` opens the section with the `pnpm` tab showing, as if the reader had picked it. A parameter the docs don't know is ignored. [Linking from a product](../permalinks/index.md#linking-from-a-product) has more.
-- **The id is still the heading's anchor,** and links inside the docs name it as they name any id: `cli.md#cli-check`. A permalink is for links from outside the docs; inside, link to the file.
+- **The id is still the heading's anchor,** and links inside the docs name it as they name any id: `checks/check.md#cli-check`. A permalink is for links from outside the docs; inside, link to the file.
 - **A build can publish a permalink in one place only,** and `ascribe check` reports one it publishes twice (`permalink-duplicate`). Names that differ only in case, such as `Setup` and `setup`, are one name, since a site may serve every spelling of an address at one. A heading in a fragment is published on every page that includes it, so a marked heading belongs in a fragment only one page of each build includes. Two pages that no build publishes together may share a permalink.
 - **A permalink that's removed is reported when the project commits its list,** `ascribe.permalinks`, which [`ascribe permalinks sync`](../permalinks/command.md#cli-permalinks-sync) writes. Delete the id or the attribute, and `ascribe check` warns (`permalink-removed`), since the address stops working and something outside the docs may still link to it. Without the list, nothing reports it. Moving the heading to another page isn't removing it: run `sync` again, and the list follows. A permalink removed on purpose is retired, with a reason its address shows, and one name can lead to another as an alias, both in [`[permalinks]`](../content-model/checks.md#20-permalinks). [The permalinks list](../contracts/permalinks-list.md) has the details.
 

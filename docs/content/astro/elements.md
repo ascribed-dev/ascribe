@@ -89,7 +89,7 @@ The colors can come from the library's own properties, so a project's state look
 
 ## Generated text
 
-A note's heading line and a tab's label, when the script isn't running, come from the elements' attributes through CSS generated content. So does the lead-in of a line of availability badges, `ascribe-availability::before`, which is `Available: `. A site can restyle or translate it:
+A note's heading line and a tab's label, when the script isn't running, come from the elements' attributes through CSS generated content. So does the lead-in of a line of availability badges, `ascribe-availability::before`, which is `Available: `; the lead-in of a tested code block's caption, `.ascribe-code-tested::before`, which is `Tested with ` ([§9]({repo}/blob/main/packages/elements/CONTRACT.md#9-a-tested-code-block)); and the line after a link to another line of a versioned build, `a[data-ascribe-release-line]::after`, such as ` (3.5)` ([§10]({repo}/blob/main/packages/elements/CONTRACT.md#10-a-link-out-of-a-line)). A site can restyle or translate each:
 
 ```css
 ascribe-availability::before {

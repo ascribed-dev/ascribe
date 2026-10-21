@@ -6,15 +6,6 @@ description: Where assets go in each output and how pages refer to them.
 
 Every output is self-contained: it works without access to the source files (SPEC §9.4, "Assets"). So local files a page refers to are copied into the output, and references to them are rewritten to point at the copies. This contract says which references those are, how they resolve, where the copies go in each output, what they're called, and how references are rewritten.
 
-| Phase | Uses this contract to |
-|---|---|
-| 10 | Report references to files that don't exist |
-| 11 | Resolve each asset reference from the file it's written in, with provenance |
-| 12 | Carry the references that survive a build into each resolved page |
-| 18 | Copy assets and rewrite references in the plain-markdown and JSON outputs |
-| 20 | Do the same in the site output, with the `astro` profile's placement |
-| 25 | Resolve the same references to source files for the preview |
-
 Paths below are `/`-separated and relative, as `ascribe_core::RelPath` represents them. A **content path** is relative to the content root; the **project root** is the directory containing `ascribe.toml`.
 
 ## 1. Which references are assets

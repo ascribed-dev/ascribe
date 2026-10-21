@@ -16,8 +16,8 @@ A *problem* is what Ascribe found in your project, at one place. A *diagnostic* 
 
 The diagnostics are on four pages, by what they're about:
 
-- [Directives](diagnostics/directives.md): attributes, directives and their containers, titles, ids, includes, variants, availability, and widgets.
-- [Links, pages, and sources](diagnostics/pages.md): links, images, phrases, headings, frontmatter, lists, files, snippets, source copies, acknowledgements, and permalinks.
+- [Directives](diagnostics/directives.md): attributes, directives and their containers, binding, titles, ids, includes, variants, availability, steps, details, and widgets.
+- [Links, pages, and sources](diagnostics/pages.md): links, images, phrases, headings, frontmatter, lists, files, snippets, source copies, acknowledgements, permalinks, memo files, navigation, and the glossary.
 - [The content model](diagnostics/content-model.md): `ascribe.toml`.
 - [Content checks](diagnostics/content-checks.md): the content's quality, which a project can set the level of.
 

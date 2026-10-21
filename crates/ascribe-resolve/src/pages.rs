@@ -229,8 +229,8 @@ pub fn header_rules(records: &PageRecords) -> Vec<HeaderRule> {
 /// of `/docs/`, the first step is the page at `/docs/`, never one at `/`. Two
 /// pages at one route, which the site output refuses, give the first.
 ///
-/// The content model has no navigation, so a page's folders are all that
-/// say its place in the site.
+/// The steps are drawn from the route alone, not from the navigation
+/// (`_ascribe/nav.json`), which is the sidebar's.
 pub fn breadcrumbs(router: &AstroRouter, pages: &[&ResolvedPage]) -> Vec<Vec<Step>> {
     let mut by_id: HashMap<String, &ResolvedPage> = HashMap::new();
     for page in pages {
