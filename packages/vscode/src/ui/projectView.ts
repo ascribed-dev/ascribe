@@ -199,7 +199,11 @@ export class ProjectView implements vscode.Disposable {
   /** Sends the view the project as it stands. It's cheap: nothing is asked of the server. */
   private draw(): void {
     const server = this.sidebar.project;
-    if (server && this.view.visible) this.agentFiles.ensure(server);
+    if (server && this.view.visible) {
+      this.agentFiles.ensure(server);
+      // The last check, from an earlier session: read back once the view first shows the project.
+      this.checks.recall(server.project);
+    }
     this.view.show(projectAnswer(server && this.facts(server)));
     clearTimeout(this.midnight);
     const tomorrow = new Date();

@@ -1,5 +1,6 @@
-//! Tested examples in the editor: what a `@snippet` line's file was tested
-//! with, on hover; the command to run where it's out of date, to copy; which
+//! Snippets and tested examples in the editor: where a `@snippet`'s code is,
+//! for Go to Definition; its code, and what its file was tested with, on
+//! hover; the command to run where it's out of date, to copy; which
 //! pages to check again when a source's observations or config change; and
 //! a source's `ascribe.examples.toml`, checked and completed as it's edited.
 //!
@@ -13,8 +14,9 @@ use std::path::Path;
 use ascribe_core::{FileId, Issue, LineIndex, Location, RelPath, diagnostics};
 use ascribe_model::examples::{EXAMPLES_FILE, Problem};
 use ascribe_model::{ContentModel, Source};
+use ascribe_resolve::snippet::SnippetError;
 use ascribe_resolve::{
-    CodeFiles, ExampleStatus, FileIndex, FileSystem, SnippetUse, resolve_snippet,
+    Address, CodeFiles, Example, ExampleStatus, FileIndex, FileSystem, SnippetUse, resolve_snippet,
 };
 use lsp_types::{
     CodeAction, CodeActionKind, CodeActionOrCommand, CompletionItem, CompletionItemKind, Diagnostic,
@@ -32,11 +34,43 @@ pub(crate) const COPY_COMMAND: &str = "ascribe.copyCommand";
 /// The title of the quick fix on `example-stale` and `example-unobserved`.
 pub(crate) const COPY_TITLE: &str = "Copy the command";
 
+/// The most lines of code a hover on a `@snippet` shows.
+const HOVER_LINES: usize = 20;
+
+/// Where a `@snippet`'s code is: its region's start tag, or the code file's
+/// first line for a snippet of a whole file. `None` when the address names
+/// no file, or no region in it, as a broken link goes nowhere.
+pub(crate) fn snippet_definition(ctx: &Ctx, snippet: &SnippetUse) -> Option<lsp_types::Location> {
+    let Some(Ok(address)) = &snippet.address else {
+        return None;
+    };
+    let fs: &dyn FileSystem = &*ctx.fs;
+    let code = CodeFiles::new();
+    // A file whose tags have problems still has the regions it has.
+    let file = match resolve_snippet(snippet, address, &ctx.model, fs, &code) {
+        Ok(resolved) => code.read(fs, &resolved.path).ok()?,
+        Err(SnippetError::Tags(file)) => file,
+        Err(_) => return None,
+    };
+    let range = match &address.region {
+        Some(name) => {
+            let region = file.tags.region(name)?;
+            ctx.encoding.range(&LineIndex::new(&file.text), region.span)
+        }
+        None => lsp_types::Range::default(),
+    };
+    let path = ascribe_core::path::normalize(&ctx.config.parent()?.join(file.path.as_str()));
+    Some(lsp_types::Location {
+        uri: path_to_uri(&path)?,
+        range,
+    })
+}
+
 /// What a hover on a `@snippet`'s address says: the file, as a link that
 /// opens it, and its region; for a tested example, what it was tested with
 /// or why it says nothing, with the observations behind that, and where to
-/// run `ascribe observe`. `None` when the address names no snippet: its
-/// problem says why.
+/// run `ascribe observe`; then the code, as the page shows it. `None` when
+/// the address names no snippet: its problem says why.
 pub(crate) fn snippet_hover(ctx: &Ctx, snippet: &SnippetUse) -> Option<String> {
     let Some(Ok(address)) = &snippet.address else {
         return None;
@@ -68,10 +102,20 @@ pub(crate) fn snippet_hover(ctx: &Ctx, snippet: &SnippetUse) -> Option<String> {
             out.push_str(&format!(", lines {from} to {to}"));
         }
     }
-    let Some(example) = &resolved.example else {
-        return Some(out);
-    };
-    out.push_str("\n\n");
+    if let Some(example) = &resolved.example {
+        out.push_str("\n\n");
+        out.push_str(&tested(ctx, address, example, &code)?);
+    }
+    let lang = resolved.info.split(' ').next().unwrap_or_default();
+    out.push_str(&format!("\n\n{}", code_block(lang, &resolved.code)));
+    Some(out)
+}
+
+/// What a tested example was tested with, or why it says nothing, with the
+/// observations behind that, and where to run `ascribe observe`.
+fn tested(ctx: &Ctx, address: &Address, example: &Example, code: &CodeFiles) -> Option<String> {
+    let fs: &dyn FileSystem = &*ctx.fs;
+    let mut out = String::new();
     match example.status {
         ExampleStatus::Current => {
             out.push_str(&format!(
@@ -80,7 +124,6 @@ pub(crate) fn snippet_hover(ctx: &Ctx, snippet: &SnippetUse) -> Option<String> {
             ));
             let names: Vec<&str> = example.current.iter().map(|o| o.name.as_str()).collect();
             out.push_str(&format!("\n\n{}", observations("current", &names)));
-            return Some(out);
         }
         ExampleStatus::Stale => {
             out.push_str("**Changed after its last test run**");
@@ -101,6 +144,33 @@ pub(crate) fn snippet_hover(ctx: &Ctx, snippet: &SnippetUse) -> Option<String> {
         }
     }
     Some(out)
+}
+
+/// The code as a fenced block in `lang`, its fence longer than any run of
+/// backticks in it, cut at [`HOVER_LINES`] lines with how many more there
+/// are after it.
+fn code_block(lang: &str, code: &str) -> String {
+    let lines: Vec<&str> = code.lines().collect();
+    let shown = &lines[..lines.len().min(HOVER_LINES)];
+    let longest = shown
+        .iter()
+        .flat_map(|line| line.split(|c| c != '`'))
+        .map(str::len)
+        .max()
+        .unwrap_or_default();
+    let fence = "`".repeat((longest + 1).max(3));
+    let mut out = format!("{fence}{lang}\n");
+    for line in shown {
+        out.push_str(line);
+        out.push('\n');
+    }
+    out.push_str(&fence);
+    match lines.len() - shown.len() {
+        0 => {}
+        1 => out.push_str("\n\nand 1 more line"),
+        more => out.push_str(&format!("\n\nand {more} more lines")),
+    }
+    out
 }
 
 /// `Observations current: `default`, `node-22``.

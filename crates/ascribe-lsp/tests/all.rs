@@ -72,5 +72,7 @@ mod settings;
 mod shown;
 #[path = "all/snippet_files.rs"]
 mod snippet_files;
+#[path = "all/snippets.rs"]
+mod snippets;
 #[path = "all/tokens.rs"]
 mod tokens;
