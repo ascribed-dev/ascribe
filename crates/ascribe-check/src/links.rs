@@ -272,9 +272,13 @@ pub fn check(
         .filter(|url| answers.get(*url).is_some_and(is_server_error))
         .cloned()
         .collect();
+    // The addresses that were asked about a second time: when asking again
+    // fails, the first answers stand, and weren't.
+    let mut twice: Vec<String> = Vec::new();
     if !again.is_empty() {
         std::thread::sleep(retry_wait);
         if let Ok(second) = checker.check(&request(again.clone())) {
+            twice.clone_from(&again);
             for url in again {
                 match second.get(&url) {
                     Some(answer) => answers.insert(url, answer.clone()),
@@ -306,7 +310,7 @@ pub fn check(
         let Some(answer) = answers.get(&link.url) else {
             continue;
         };
-        let Some(d) = diagnostic(project, link, answer) else {
+        let Some(d) = diagnostic(project, link, answer, twice.contains(&link.url)) else {
             continue;
         };
         if let Some(held) = history.and_then(|h| h.held(&link.url, answer)) {
@@ -326,8 +330,8 @@ pub fn check(
 }
 
 /// The diagnostic about a link the checker said `answer` about, if it's one
-/// to report.
-fn diagnostic(project: &Project, link: &Link, answer: &Answer) -> Option<Diagnostic> {
+/// to report. `twice` is whether it was asked about a second time.
+fn diagnostic(project: &Project, link: &Link, answer: &Answer, twice: bool) -> Option<Diagnostic> {
     let sentence = || sentence_around(project, link.location);
     let issue = match answer {
         Answer::Fine => return None,
@@ -350,7 +354,7 @@ fn diagnostic(project: &Project, link: &Link, answer: &Answer) -> Option<Diagnos
         Answer::Broken { status } => {
             let mut issue = Issue::new(diagnostics::LINK_EXTERNAL_BROKEN, link.location);
             if is_server_error(answer) {
-                issue = issue.with_variant("server");
+                issue = issue.with_variant(if twice { "server" } else { "server-once" });
             }
             issue
                 .with_arg("url", link.url.clone())

@@ -255,3 +255,60 @@ summary:hover {
   align-items: flex-start;
   color: var(--vscode-textLink-foreground);
 }
+
+/* The head's buttons are icons, each with its label for a screen reader and
+   its tooltip: the settings beside the name, the server's beside its state. */
+.project-top {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.project-top .project-name {
+  flex: 1 1 auto;
+}
+
+.head-buttons,
+.head dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 4px;
+  align-items: flex-start;
+}
+
+.icon-button {
+  display: inline-flex;
+  padding: 0 2px;
+  border-radius: 3px;
+  color: var(--vscode-icon-foreground);
+}
+
+.icon-button .codicon[class*="codicon-"] {
+  margin-top: 1px;
+}
+
+/* The build switch is VS Code's dropdown. */
+.build-switch {
+  max-width: 100%;
+  padding: 1px 4px;
+  border: 1px solid var(--vscode-dropdown-border);
+  border-radius: 2px;
+  color: var(--vscode-dropdown-foreground);
+  background: var(--vscode-dropdown-background);
+  font: inherit;
+}
+
+/* Actions' groups: Check, Write, and Review and agents. */
+.section-body > .group:first-child > .group-head {
+  margin-top: 0;
+}
+
+/* An action that's off, as every one is in Restricted Mode. */
+button:disabled {
+  color: var(--vscode-disabledForeground);
+  cursor: default;
+}
+
+button:disabled:hover {
+  background: none;
+}

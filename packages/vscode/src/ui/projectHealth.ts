@@ -1,7 +1,10 @@
 // What the Project view draws, worked out from plain values so the unit
-// tests can check it without VS Code: the head, Health's counts with when
-// each is from, and the actions. `projectView.ts` gathers the values and
-// sends the answer; `../webview/project.ts` draws it.
+// tests can check it without VS Code: the head with its server's buttons,
+// its build switch, and its settings buttons; Health's counts with when each
+// is from; the actions, in their groups; and About. `projectView.ts` gathers
+// the values and sends the answer; `../webview/project.ts` draws it. In
+// Restricted Mode the counts are replaced by a sentence saying so, and every
+// action is off.
 //
 // A count is shown as current only when it is. One that's out of date, or
 // from a run that hasn't happened, shows a dash and says why, with the
@@ -12,9 +15,18 @@ import type { Counted } from "../everyBuild.js";
 import type { ServerState } from "../serverState.js";
 import type { InventoryResult, Summary } from "../shapes.js";
 import { TASKS, type TaskName } from "../tasks.js";
-import type { ProjectAction, ProjectAnswer, ProjectCount } from "../webview/viewProtocol.js";
+import type {
+  ProjectAboutRow,
+  ProjectAction,
+  ProjectActionGroup,
+  ProjectAnswer,
+  ProjectButton,
+  ProjectCount,
+  ProjectHead,
+} from "../webview/viewProtocol.js";
 import type { AgentFilesResult } from "./agentFiles.js";
 import type { EveryBuildResult } from "./checkEveryBuild.js";
+import { choices, lineDescription, type ListedBuild } from "./chosenBuild.js";
 import { STATE_NAMES } from "./describe.js";
 
 /** The keys of what the Project view's items name, which a choice in it sends back. */
@@ -44,7 +56,24 @@ export const PROJECT_KEYS = {
   build: "build",
   syncAgentFiles: "syncAgentFiles",
   observeExamples: "observeExamples",
+  /** Review and agents: the same commands the Command Palette runs, for the view's project. */
+  startReview: "startReview",
+  promptAgent: "promptAgent",
+  /** The head's buttons: the server's, and the two settings. */
+  showOutput: "showOutput",
+  restart: "restart",
+  projectSettings: "projectSettings",
+  editorSettings: "editorSettings",
+  /** Restricted Mode's button: VS Code's Workspace Trust editor. */
+  manageTrust: "manageTrust",
 } as const;
+
+/**
+ * What the build switch sends, before the build's name: `chooseBuild/site@3.4`.
+ * It sets the same choice the status bar's Switch Build and the preview's
+ * picker set (`ChosenBuilds`).
+ */
+export const CHOOSE_BUILD = "chooseBuild/";
 
 /** What `ascribe/inventory` counts, from the view's project's server. */
 export interface InventoryCounts {
@@ -83,17 +112,92 @@ export interface ProjectFacts {
   time: (at: number) => string;
   /** A day, as the view says which day overdue reviews are for: the same text for the same day. */
   day: (at: number) => string;
+  /** Its builds, as its server lists them; empty until it has. */
+  builds: readonly ListedBuild[];
+  /** The build you're looking at (`ChosenBuilds.shown`). */
+  build: string | undefined;
+  /** What About says. */
+  about: AboutFacts;
+}
+
+/** What the Project view's About is made from. */
+export interface AboutFacts {
+  /** The content root, from the project's folder; `undefined` until the server has said. */
+  contentRoot: string | undefined;
+  /** The content types, each with how many pages have it; `undefined` until the server has said. */
+  types: readonly { key: string; pages: number | null }[] | undefined;
+  /**
+   * The sources, as `ascribe model` answers: each with its folder, and
+   * whether it has tested examples. `asking` while it hasn't answered,
+   * `failed` when it couldn't, as for a content model with errors.
+   */
+  sources: readonly { name: string; path: string; tested: boolean }[] | "asking" | "failed";
 }
 
 /** What the Project view says with no project to show. */
 export const NO_PROJECT = "Open a page of a project to see the project.";
+
+/** What the Project view says in Restricted Mode, in place of the counts. */
+export const RESTRICTED =
+  "This folder is in Restricted Mode, so Ascribe isn't running in it: nothing is counted, and no action runs until you trust the folder.";
 
 const CHECK_EVERY_BUILD: ProjectAction = {
   key: PROJECT_KEYS.checkEveryBuild,
   label: "Check Every Build",
   icon: "checklist",
   caption: "Runs ascribe check and puts every build's problems in the Problems panel.",
+  off: false,
 };
+
+const START_REVIEW: ProjectAction = {
+  key: PROJECT_KEYS.startReview,
+  label: "Start Review",
+  icon: "git-compare",
+  caption:
+    "Marks what changed in the preview, against a base it asks for, as Ascribe: Start Review does.",
+  off: false,
+};
+
+const PROMPT_AGENT: ProjectAction = {
+  key: PROJECT_KEYS.promptAgent,
+  label: "Prompt Agent to Fix This Project",
+  icon: "sparkle",
+  caption:
+    "Builds a prompt about the project's problems for your agent, and puts it where ascribe.agents.promptTarget says, without sending it.",
+  off: false,
+};
+
+/** The head's buttons beside the server's state. */
+const SERVER_BUTTONS: ProjectButton[] = [
+  {
+    key: PROJECT_KEYS.showOutput,
+    label: "Show Output",
+    icon: "output",
+    tooltip: "Show Output: the language server's log",
+  },
+  {
+    key: PROJECT_KEYS.restart,
+    label: "Restart",
+    icon: "debug-restart",
+    tooltip: "Restart the language server",
+  },
+];
+
+/** The head's buttons beside the project's name. */
+const SETTINGS_BUTTONS: ProjectButton[] = [
+  {
+    key: PROJECT_KEYS.projectSettings,
+    label: "Project Settings",
+    icon: "settings-gear",
+    tooltip: "Project Settings: the project's ascribe.toml, which everyone shares",
+  },
+  {
+    key: PROJECT_KEYS.editorSettings,
+    label: "Ascribe's Settings in VS Code",
+    icon: "settings",
+    tooltip: "Ascribe's Settings in VS Code: your editor's, which nobody else gets",
+  },
+];
 
 /** The project edits, by the kind `ascribe/projectEdit` names. */
 export const PROJECT_EDITS = {
@@ -103,12 +207,14 @@ export const PROJECT_EDITS = {
     icon: "lightbulb-autofix",
     caption:
       "Applies the safe fixes of the problems the editor shows, the editor build's, in every file, as one edit left unsaved. Every build's are ascribe check --fix's.",
+    off: false,
   },
   format: {
     key: PROJECT_KEYS.formatEveryPage,
     label: "Format Every Page",
     icon: "edit",
     caption: "Formats every page as ascribe fmt does, as one edit left unsaved.",
+    off: false,
   },
 } as const satisfies Record<ProjectEditKind, ProjectAction>;
 
@@ -153,12 +259,61 @@ function taskAction(name: TaskName): ProjectAction {
     label: TASKS[name].label,
     icon: TASK_ICONS[name],
     caption: TASKS[name].caption,
+    off: false,
+  };
+}
+
+/** The actions, in their groups, as the proposal orders them. */
+function actionGroups(): ProjectActionGroup[] {
+  return [
+    { label: "Check", actions: [CHECK_EVERY_BUILD] },
+    {
+      label: "Write",
+      actions: [
+        PROJECT_EDITS.fixAll,
+        PROJECT_EDITS.format,
+        taskAction("build"),
+        taskAction("syncAgentFiles"),
+        taskAction("observeExamples"),
+      ],
+    },
+    { label: "Review and agents", actions: [START_REVIEW, PROMPT_AGENT] },
+  ];
+}
+
+/**
+ * The Project view's answer in Restricted Mode, where the extension runs
+ * nothing: a sentence in place of the counts, with Manage Workspace Trust,
+ * and every action off.
+ */
+export function restrictedAnswer(): ProjectAnswer {
+  return {
+    message: RESTRICTED,
+    notice: [{ key: PROJECT_KEYS.manageTrust, label: "Manage Workspace Trust" }],
+    head: null,
+    toDo: 0,
+    health: [],
+    actions: actionGroups().map((group) => ({
+      ...group,
+      actions: group.actions.map((action) => ({ ...action, off: true })),
+    })),
+    about: [],
   };
 }
 
 /** The Project view's answer for `project`, or its message when there's none. */
 export function projectAnswer(project: ProjectFacts | undefined): ProjectAnswer {
-  if (!project) return { message: NO_PROJECT, head: null, toDo: 0, health: [], actions: [] };
+  if (!project) {
+    return {
+      message: NO_PROJECT,
+      notice: [],
+      head: null,
+      toDo: 0,
+      health: [],
+      actions: [],
+      about: [],
+    };
+  }
   const health = [
     problemsCount(project),
     examplesCount(project),
@@ -170,23 +325,105 @@ export function projectAnswer(project: ProjectFacts | undefined): ProjectAnswer 
   ];
   return {
     message: null,
-    head: {
-      name: project.name,
-      folder: project.folder,
-      state: STATE_NAMES[project.state],
-      version: project.version ?? null,
-    },
+    notice: [],
+    head: projectHead(project),
     toDo: health.filter((count) => count.state !== "none" && count.state !== "running").length,
     health,
-    actions: [
-      CHECK_EVERY_BUILD,
-      PROJECT_EDITS.fixAll,
-      PROJECT_EDITS.format,
-      taskAction("build"),
-      taskAction("syncAgentFiles"),
-      taskAction("observeExamples"),
-    ],
+    actions: actionGroups(),
+    about: aboutRows(project),
   };
+}
+
+/** The head: the project, its server with its buttons, the build switch, and the settings buttons. */
+function projectHead(project: ProjectFacts): ProjectHead {
+  const offered = choices(project.builds);
+  const shown = project.build ?? offered.find((choice) => choice.editor)?.name;
+  return {
+    name: project.name,
+    folder: project.folder,
+    state: STATE_NAMES[project.state],
+    version: project.version ?? null,
+    // Show Output always has something to show; Restart, once the server has started.
+    server: SERVER_BUTTONS.filter(
+      (button) => button.key !== PROJECT_KEYS.restart || project.state !== "stopped",
+    ),
+    settings: SETTINGS_BUTTONS,
+    build:
+      offered.length === 0 || shown === undefined
+        ? null
+        : {
+            shown,
+            choices: offered.map((choice) => ({
+              name: choice.name,
+              description: [lineDescription(choice), choice.editor ? "editor build" : ""]
+                .filter(Boolean)
+                .join(", "),
+            })),
+          },
+  };
+}
+
+/** What About says while the language server hasn't said. */
+const UNTIL_RUNNING = "Known once the language server runs";
+
+/** About: the content root, the builds, the release lines, the sources, and the content types. */
+export function aboutRows({ about, builds }: ProjectFacts): ProjectAboutRow[] {
+  const known = builds.length > 0;
+  const versioned = builds.filter((build) => (build.lines ?? []).length > 0);
+  const { sources } = about;
+  return [
+    { label: "Content root", value: about.contentRoot ?? UNTIL_RUNNING },
+    {
+      label: "Builds",
+      value: known
+        ? builds
+            .map((build) => (build.editor ? `${build.name} (editor build)` : build.name))
+            .join(", ")
+        : UNTIL_RUNNING,
+    },
+    {
+      label: "Release lines",
+      value: !known
+        ? UNTIL_RUNNING
+        : versioned.length === 0
+          ? "None: no build is versioned"
+          : versioned
+              .map(
+                (build) =>
+                  `${build.name}: ${(build.lines ?? [])
+                    .map((line) => (line.current ? `${line.line} (current)` : line.line))
+                    .join(", ")}`,
+              )
+              .join("; "),
+    },
+    {
+      label: "Sources",
+      value:
+        sources === "asking"
+          ? "Asking ascribe model…"
+          : sources === "failed"
+            ? "Not known: ascribe model couldn't answer"
+            : sources.length === 0
+              ? "None"
+              : sources
+                  .map(
+                    (source) =>
+                      `${source.name} (${source.path}${source.tested ? ", tested examples" : ""})`,
+                  )
+                  .join(", "),
+    },
+    {
+      label: "Content types",
+      value:
+        about.types === undefined
+          ? UNTIL_RUNNING
+          : about.types
+              .map((type) =>
+                type.pages === null ? type.key : `${type.key} (${count(type.pages, "page")})`,
+              )
+              .join(", "),
+    },
+  ];
 }
 
 type Base = Pick<ProjectCount, "key" | "label">;

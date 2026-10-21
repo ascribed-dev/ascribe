@@ -8,7 +8,8 @@
 // editor's. None is offered, resolved, or run in Restricted Mode, where the
 // extension starts nothing: Observe Examples runs commands the repository
 // names, the case Restricted Mode exists for. In a trusted workspace,
-// `ascribe observe` asks before it runs them, in the task's terminal.
+// `ascribe observe` asks before it runs them, in the task's terminal. The
+// sources the binary answers with are the Project view's About's too.
 
 import { execFile } from "node:child_process";
 import * as vscode from "vscode";
@@ -16,7 +17,7 @@ import { resolveProjectBinary, workspaceFolderOf } from "../client.js";
 import { shellCommand, usesShell } from "../environment.js";
 import type { Project } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
-import type { ModelReport } from "../shapes.js";
+import type { ModelReport, ModelSource } from "../shapes.js";
 import {
   definedProject,
   definedSource,
@@ -31,7 +32,6 @@ import {
   type ProjectTaskName,
   type TaskCommand,
   type TaskName,
-  type TestedSource,
 } from "../tasks.js";
 
 /** The tasks run in the project's folder, in the order they're offered. */
@@ -40,12 +40,15 @@ const PROJECT_TASKS: readonly ProjectTaskName[] = ["build", "syncAgentFiles"];
 export class ProjectTasks implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
   /**
-   * Each project's sources with tested examples, by its folder and binary,
-   * as the binary last answered: asked once, and again only after a file
-   * that can change the answer does, so listing the tasks starts no
+   * Each project's sources, by its folder and binary, as the binary last
+   * answered; `undefined` when it couldn't. Asked once, and again only after
+   * a file that can change the answer does, so listing the tasks starts no
    * process most times.
    */
-  private readonly sources = new Map<string, Promise<TestedSource[]>>();
+  private readonly sources = new Map<string, Promise<ModelSource[] | undefined>>();
+  private readonly forgotten = new vscode.EventEmitter<void>();
+  /** The sources the binary answered with may have changed: ask again for them. */
+  readonly onDidForgetSources = this.forgotten.event;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -65,8 +68,12 @@ export class ProjectTasks implements vscode.Disposable {
     const watcher = vscode.workspace.createFileSystemWatcher(
       "**/{ascribe.toml,ascribe.examples.toml}",
     );
-    const forget = () => this.sources.clear();
+    const forget = () => {
+      this.sources.clear();
+      this.forgotten.fire();
+    };
     this.disposables.push(
+      this.forgotten,
       watcher,
       watcher.onDidChange(forget),
       watcher.onDidCreate(forget),
@@ -184,7 +191,7 @@ export class ProjectTasks implements vscode.Disposable {
       },
     );
     if (only !== undefined && only !== "observeExamples") return tasks;
-    const sources = await this.sourcesOf(binary, project);
+    const sources = testedSources({ sources: (await this.sourcesOf(binary, project)) ?? [] });
     for (const source of sources) {
       const definition: AscribeTaskDefinition = {
         type: TASK_TYPE,
@@ -204,11 +211,22 @@ export class ProjectTasks implements vscode.Disposable {
   }
 
   /**
-   * The project's sources with tested examples, as the binary answers:
-   * `ascribe model --section sources --format json`, in the project's
-   * folder. None when it can't answer, as for a content model with errors.
+   * The project's sources, as the binary the project's server runs answers,
+   * for the Project view's About; `undefined` when there's no binary, or it
+   * can't answer.
    */
-  private sourcesOf(binary: string, project: Project): Promise<TestedSource[]> {
+  async sourcesFor(project: Project): Promise<ModelSource[] | undefined> {
+    if (!vscode.workspace.isTrusted) return undefined;
+    const binary = await this.binaryOf(project);
+    return binary === undefined ? undefined : this.sourcesOf(binary, project);
+  }
+
+  /**
+   * The project's sources, as the binary answers: `ascribe model --section
+   * sources --format json`, in the project's folder. `undefined` when it
+   * can't answer, as for a content model with errors.
+   */
+  private sourcesOf(binary: string, project: Project): Promise<ModelSource[] | undefined> {
     const key = `${binary}\0${project.folder}`;
     let answer = this.sources.get(key);
     if (!answer) {
@@ -218,7 +236,7 @@ export class ProjectTasks implements vscode.Disposable {
     return answer;
   }
 
-  private askSources(binary: string, project: Project): Promise<TestedSource[]> {
+  private askSources(binary: string, project: Project): Promise<ModelSource[] | undefined> {
     return new Promise((resolve) => {
       execFile(
         shellCommand(binary),
@@ -231,13 +249,13 @@ export class ProjectTasks implements vscode.Disposable {
         },
         (error, stdout) => {
           if (error) {
-            resolve([]);
+            resolve(undefined);
             return;
           }
           try {
-            resolve(testedSources(JSON.parse(stdout) as ModelReport));
+            resolve((JSON.parse(stdout) as ModelReport).sources ?? []);
           } catch {
-            resolve([]);
+            resolve(undefined);
           }
         },
       );

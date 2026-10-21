@@ -29,7 +29,7 @@ const commands: Record<string, string> = {
   "ascribe.restartServer":
     "Stops and starts every project's server that has started, including one that stopped after crashing, and forgets earlier crashes. A server that hasn't started stays off until it's needed; when none has, the command says so. It also picks up `ascribe.toml` files added or deleted.",
   "ascribe.openProjectSettings":
-    "Opens Project Settings for the active file's project: its `ascribe.toml` settings, each with its value, its default, its description, and the line that sets it, in a tab beside the file. A value the file sets can be changed there, and the change is made in `ascribe.toml`, unsaved. See [Project Settings](../editor/settings.md#project-settings).",
+    "Opens Project Settings for the active file's project: its `ascribe.toml` settings, each with its value, its default, its description, and the line that sets it, in a tab beside the file. A value the file sets can be changed there, and the change is made in `ascribe.toml`, unsaved. The gear in the Project view's head opens it for the view's project. See [Project Settings](../editor/settings.md#project-settings).",
   "ascribe.showOutput":
     "Opens the log of the active file's project. When no file of a project is active and the workspace has several projects, it asks which, showing whether each one's server is running.",
   "ascribe.openPagePreview":
@@ -53,11 +53,11 @@ const commands: Record<string, string> = {
   "ascribe.projectMenu":
     "Shows the menu of the active file's project, as clicking its status bar item does: switch the build, check every build, show the server's output, switch project, restart its server, dim what the build leaves out, or open the preview.",
   "ascribe.switchProject":
-    "Lists the workspace's projects, the sidebar's first, each with its folder and its server's state, and shows the one you choose in the sidebar, starting its server, until a file of another project is active. Shown while the workspace has several projects. See [Switch Project](../editor/sidebar.md#switch-project).",
+    "Lists the workspace's projects, the sidebar's first, each with its folder and its server's state, and shows the one you choose in the sidebar, starting its server, until a file of another project is active. Shown while the workspace has several projects, and in the Project view's title bar then too. See [Switch Project](../editor/sidebar.md#switch-project).",
   "ascribe.toggleBuildLens":
     "Turns the build lens on or off for the active file's project: the editor dims what the build you're looking at leaves out of each page, with a hover that says why. See [The build lens](../editor/preview.md#the-build-lens).",
   "ascribe.startReview":
-    "Marks what changed in the preview, against a base it asks for, for the active page's project. Its server must be running: open one of its pages first. See [Review in the preview](../editor/review.md).",
+    "Marks what changed in the preview, against a base it asks for, for the active page's project, or, from the Project view, the view's. Its server must be running: open one of its pages first. See [Review in the preview](../editor/review.md).",
   "ascribe.stopReview": "Turns review off for the active page's project, and frees its base.",
   "ascribe.changedPages":
     "Lists the pages the change touches in the preview's build; choosing one opens it and its preview.",
@@ -70,7 +70,7 @@ const commands: Record<string, string> = {
   "ascribe.promptAgentFile":
     "Builds a prompt for your agent about the active file's problems, and puts it where `ascribe.agents.promptTarget` says, without sending it. Shown when the file has problems. See [Prompt your agent](../agents/prompts.md).",
   "ascribe.promptAgentProject":
-    "Builds a prompt for your agent about the problems of the active file's project, as Prompt Agent to Fix This File does. Shown when the project has problems.",
+    "Builds a prompt for your agent about the problems of the active file's project, or, from the Project view, the view's, as Prompt Agent to Fix This File does. Shown when the project has problems.",
   "ascribe.newPage":
     "Starts a page from its type's template: asks for the type, each with what it's for, then the title, makes the page in the content root, and opens it with the first thing to fill in selected; the page names its type in its frontmatter. Run on a folder in the Explorer, it makes the page in that folder. It's in the Pages view's title bar too. See [Start a page](../editor/actions.md#start-a-page).",
   "ascribe.nextPlaceholder":
