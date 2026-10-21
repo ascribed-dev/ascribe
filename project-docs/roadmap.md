@@ -8,7 +8,7 @@ Written 20 October 2026.
 
 ## Decisions
 
-The proposals left these open. The maintainer answered the first eight on 20 October 2026, and each proposal's Settled section records its own; the ninth came out of V2's pull request, and was answered on 21 October 2026. An issue quotes the decisions its phase reads, so triage sees they're made.
+The proposals left these open. The maintainer answered the first eight on 20 October 2026, and each proposal's Settled section records its own; the ninth came from V2's pull request, on 21 October. An issue quotes the decisions its phase reads, so triage sees they're made.
 
 1. **The icon font.** The webviews draw codicons with the `@vscode/codicons` font, a new dependency, loaded from the extension's files. **Decided:** the font. The decision file says why decision 48 ("no web font anywhere"), which is about a reader downloading a font for text, doesn't reach an icon font the extension ships, as decision 50 already has it ship one. *Read by:* T1.
 2. **How far Apply Every Safe Fix reaches.** **Decided:** the editor's build, as one workspace edit, its caption saying so; every build's fixes stay `ascribe check --fix`'s, as decision #544e has it. *Read by:* V3.
@@ -53,7 +53,7 @@ Track P's first three phases have no needs and touch different files, so they ru
 | V3 | V2 | Keeps track V one at a time |
 | V4 | V1 | |
 | V5 | V4, S1 | Its gear opens Project Settings, which S1 adds |
-| V6 | V2 | Its task is V2's task type |
+| V6 | V2 | The task type; after V5 to keep track V one at a time |
 | S1 | T1, P4 | The webview base, and the registry with its descriptions |
 | S2 | S1, P2 | Every check's description |
 | S3 | S2 | |
@@ -80,7 +80,7 @@ Track P's first three phases have no needs and touch different files, so they ru
 
 **V1. The Project view counts every build's problems, honestly.** Project view proposal: "What it looks like" (the head's name, state, and version only), "When each count is from" (Check Every Build's rule), and the thread. The view is first in the sidebar. The decision file for the views' order. *Done when:* the thread's use case passes as an integration test: unknown, then current after Check Every Build, then out of date after an edit. *Stop and ask* if `isCurrent` misses a change that matters.
 
-**V2. Tasks.** Project view proposal: "Writing outputs and running programs is a task". The `ascribe` task type, with Build and Sync Agent Files, in the view and in **Run Task**. The decision file for the task type's properties, which `tasks.json` names. Runs the full matrix from its branch (Actions → CI → Run workflow): it's about paths, a binary, and `--config` on every platform. *Done when:* each task runs the server's binary in the project's folder, a project that isn't the workspace folder gets `--config`, and none of them is offered in Restricted Mode. Observe Examples, once part of this phase, is V6, by decision 9.
+**V2. Tasks.** Project view proposal: "Writing outputs and running programs is a task", and "Observe Examples runs commands the repository names". The `ascribe` task type, with Build and Sync Agent Files, in the view and in **Run Task**; Observe Examples is V6, by decision 9. The decision file for the task type's properties, which `tasks.json` names. Runs the full matrix from its branch (Actions → CI → Run workflow): it's about paths, a binary, and `--config` on every platform. *Done when:* each task runs the server's binary in the project's folder, a project that isn't the workspace folder gets `--config`, and none of them is offered in Restricted Mode.
 
 **V3. Every safe fix and every page formatted, as one edit.** Project view proposal: "Edits to pages go through the language server", by decision 2. The language server makes each edit for the whole project, and the extension asks with the count of fixes and files before applying it. *Done when:* both are one undoable workspace edit over unsaved text, the question names the counts, and the docs say the files are left unsaved on purpose.
 
@@ -88,7 +88,7 @@ Track P's first three phases have no needs and touch different files, so they ru
 
 **V5. The head, About, and Restricted Mode.** Project view proposal: the head's server buttons, its build switch (the `ChosenBuilds` choice), and its two settings buttons, the gear opening Project Settings; About; Restricted Mode; Start Review and Prompt Agent; and decisions 3, 4, and 5. *Done when:* switching the build in the view moves the status bar and the preview, Switch Project is in the view's title bar and not in Pages' or Content model's, Restricted Mode turns every action off, and the docs describe the view as it is.
 
-**V6. Observe Examples, with `ascribe observe` asking for itself.** Project view proposal: "Observe Examples runs commands the repository names", by decision 9. `ascribe observe` asks before it runs the commands when standard input is a terminal, with `--yes` to skip; the Observe Examples task runs it, a plain process, in the folder of each source with tested examples. *Done when:* `ascribe observe` in a terminal shows its commands and runs nothing when declined, with `--yes` it doesn't ask, and without a terminal it runs as today, in tests; the task runs in each such source's folder, in Run Task and the Project view; the extension reads no TOML to find the sources or the commands; the docs (`docs/content/examples/tested.md`, the command's reference) say how the question works; and AGENTS.md, CONTRIBUTING.md, and RELEASING.md, which tell people to run `ascribe observe`, say what it asks.
+**V6. Observe Examples.** Project view proposal: "Observe Examples runs commands the repository names", by decision 9. `ascribe observe` shows the commands it will run and asks, when standard input is a terminal, with `--yes` to skip; the Observe Examples task runs it as a plain process in the folder of each source with tested examples, the sources taken from `ascribe model --format json` (each source's `examples`), with a `source` property in the task's definition when a project has more than one. The decision file for the question and the `source` property. *Done when:* `ascribe observe` in a terminal shows its commands and runs nothing when declined, with `--yes` it doesn't ask, and without a terminal it runs as today, in tests; the task runs in each such source's folder, in Run Task and the Project view; the extension reads no TOML to find the sources or the commands; the docs (`docs/content/examples/tested.md`, the command's reference) say how the question works; and AGENTS.md, CONTRIBUTING.md, and RELEASING.md, which tell people to run `ascribe observe`, say what it asks.
 
 ### Track S: Project Settings
 
