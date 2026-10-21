@@ -48,11 +48,9 @@ available: cloud, self-managed preview 3.3
 ---
 ```
 
-@available: ascribe 0.3.1
 A page says what type it is with `type`, the name of a [content type](../content-model/index.md#41-page-types) `ascribe.toml` declares, conventionally its first key. In a project that declares types, every page names one, wherever its file is; in a project that declares none, every page is of the implicit type `page`, and names none. A fragment has no type, and can't use `type`.
 
 ### A page that replaces another
-@available: ascribe 0.3.2
 
 A page rewritten for a newer release, at a new path, says which page it takes the place of with `replaces`, written as a link to that page is:
 
@@ -236,7 +234,6 @@ Gives a heading an explicit, stable id, used for its anchor and by links and inc
 Without `@id`, a heading's id is its slug, computed from its text. Add `@id` to a heading whose text contains a phrase or duplicates another heading's: Ascribe warns about both, because their ids can change without the heading being edited.
 
 #### Permalinks
-@available: ascribe 0.3.0
 
 `{permalink=true}` makes the id a **permalink** as well: a name for the section that something outside the docs can link to, which keeps working when the page is renamed, moved, or rewritten.
 
@@ -280,12 +277,10 @@ Includes another file, or one heading's section of it, in place.
 - Included headings keep the levels they're written with.
 - An include cycle is an error.
 
-@available: ascribe 0.3.0
 A page's includes can make it only so large: far larger than any real page, but not as large as a few files that each include the next twice make it, doubling the page at every step. The include in the page's own file that takes the page past the limit is an error, `include-limit`, whose message gives the limit, and it and every include after it on the page are left out.
 
 Links target pages, not fragments: link to the page that includes a fragment.
 
-@available: ascribe 0.2.0
 A link can name a heading the fragment brings in, as `setup.md#prerequisites`, just as it names one of the page's own.
 
 ### `@variant`
@@ -385,7 +380,6 @@ A spec is a comma-separated list of **targets**, each with an optional lifecycle
 Each build decides what happens to availability: `badge` keeps everything and marks it, and a filter such as `{ filter = "self-managed 3.3" }` removes what isn't available there.
 
 #### Table rows
-@available: ascribe 0.2.0
 
 A table row takes a spec from an attribute block at the end of its first cell, with the key `available`. Quote a spec that has spaces or commas:
 
@@ -459,7 +453,6 @@ Content readers can expand or collapse. The title is required: it's what readers
 Without a colon, `@details` applies to the next block; with one, it's a container.
 
 ### `@snippet`
-@available: ascribe 0.2.0
 
 ([SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet))
 
@@ -498,7 +491,6 @@ Every problem is reported at the `@snippet` line: an address without a source, a
 In VS Code, the code file says which pages show it: a lens over each region a snippet takes, and on the first line of a file a snippet takes whole, counts the pages and lists them. See [Code files a page shows](../editor/writing.md#code-files-a-page-shows).
 
 ### `@intended`
-@available: ascribe 0.3.0
 
 ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended))
 
@@ -634,7 +626,6 @@ See [](keys.md#rotate-keys).
 - In each build, a link's target page must be published. To link from shared content to a page a build drops, put the link in a `@variant` arm the same build removes.
 
 ### Links between lines
-@available: ascribe 0.3.2
 
 In a build versioned by a target ([versions](../versions/lines.md#links-between-lines)), a link to a page a line doesn't publish isn't an error. It goes, in order, to:
 

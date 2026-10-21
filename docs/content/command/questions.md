@@ -8,7 +8,6 @@ The commands that answer questions about a project, for writers and for agents, 
 
 ## `ascribe explain`
 @id {permalink=true}: cli-explain
-@available: ascribe 0.3.0
 
 Says what a diagnostic means: its severity, its messages, how to fix it, a link to its entry in [Diagnostics](../checks/diagnostics.md), and, for the diagnostics people meet most, a short page that has the problem and the same page without it. It needs no project.
 
@@ -27,7 +26,6 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 
 ## `ascribe model`
 @id {permalink=true}: cli-model
-@available: ascribe 0.3.0
 
 Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. A source with an `ascribe.examples.toml` also says how many of its files are [tested examples](../examples/tested.md), and names each observation with what it was tested with and how many of its files are as it found them. For a source in another repository, that's read from its copies, and an observation's files are counted only where there's a copy. It's what an agent, or a new writer, reads before writing frontmatter, a directive's attributes, or a phrase.
 
@@ -44,7 +42,6 @@ The text is Markdown, at most about 4,000 characters: when the model has more th
 
 With `--format json`, the document has `schema_version` (`3`), `ascribe_version`, and a field for each section shown: `types`, `dimensions`, `phrases`, `features`, `glossary`, `widgets`, `builds`, and `sources`. Without `--section`, every section is there, empty or not, and so is `navigation`: the project's [navigation](../navigation/index.md), its root section with each section's `folder`, `label`, own `page`, `pages`, nested `sections`, and `listed`, whether `ascribe.nav` lists it, and each page's `source`, `label`, and `type`, every page that isn't `unlisted`; with `--section`, only that one. A label is plain text, as a sidebar shows it: a title or `nav-label` with a code span in it is labeled without the backticks. The [schema](../contracts/json-reports/questions.md#ascribe-model) lists each section's fields.
 
-@available: ascribe 0.3.2
 A project with [release lines](../versions/lines.md) has a section for them, `releases` in JSON: each target's lines, with their status and the build that is each line. A versioned build says which target versions it and which line it is.
 
 @available: next
@@ -52,7 +49,6 @@ The rest of `ascribe.toml` is there too, a section of settings for each of its t
 
 ## `ascribe outline`
 @id {permalink=true}: cli-outline
-@available: ascribe 0.3.0
 
 Shows a page's title and type, and the headings a link to it can name, with the ids links write after `#`: the page's own headings and those that come from the fragments it includes. They're the headings the editor offers after `page.md#`.
 
@@ -82,7 +78,6 @@ With `--format json`, the document is:
 
 ## `ascribe link`
 @id {permalink=true}: cli-link
-@available: ascribe 0.3.0
 
 Says whether a link works, written on a given page: whether its target exists, the page's title or the heading's text, and the destination to write there. It resolves the link as `ascribe check` and the editor do, so the three agree.
 
@@ -112,7 +107,6 @@ With `--format json`, the document is:
 
 ## `ascribe refs`
 @id {permalink=true}: cli-refs
-@available: ascribe 0.3.0
 
 Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model, each as `file:line:column`, with what kind of use it is. It's the editor's **Find All References**, on the command line: it finds a phrase only where it's a phrase, and a heading in a fragment through every page that includes it, which a text search can't.
 
@@ -142,7 +136,6 @@ With `--format json`, the document is:
 
 ## `ascribe rename`
 @id {permalink=true}: cli-rename
-@available: ascribe 0.3.0
 
 Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. A text search and replace finds a phrase in the pages, but misses what a rename knows about: frontmatter fields with `phrases = true`, code blocks with `phrases=true`, the code a `@snippet {phrases=true}` shows, and a link whose path changes when the page it's on moves.
 
@@ -169,7 +162,6 @@ A path is from the current folder, or from the content root, and the project is 
 
 ## `ascribe render`
 @id {permalink=true}: cli-render
-@available: ascribe 0.3.0
 
 Writes a page as a reader of one build sees it: the plain Markdown the build's `plain` output writes for it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. It writes nothing to disk.
 
@@ -181,7 +173,6 @@ A variant group the build keeps more than one arm of, which the site shows as ta
 
 `--build` is needed when `ascribe.toml` has more than one build. When the build doesn't publish the page, it writes nothing to standard output, says why on standard error, and exits with `1`. A fragment isn't rendered on its own; render a page that includes it.
 
-@available: ascribe 0.3.2
 A line of a [versioned build](../versions/index.md), such as `--build site@3.4`, renders the page as that line publishes it, its route and links under the line's folder.
 
 | Code | Meaning |

@@ -2,7 +2,6 @@
 type: reference
 title: The Ascribe sidebar
 description: "The Ascribe sidebar in VS Code: Project, This page, Pages, Content model, and switching the project they show."
-available: ascribe 0.3.0
 ---
 
 The Ascribe icon in the activity bar opens the Ascribe sidebar, with three views: **This page**, **Pages**, and **Content model**. In a workspace with no project, Pages says how to start one, and in Restricted Mode, how to trust the folder.

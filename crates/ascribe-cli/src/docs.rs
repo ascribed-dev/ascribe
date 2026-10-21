@@ -29,21 +29,8 @@ const HEADER: &str = "@memo: Generated from the help text in crates/ascribe-cli/
 /// the reference marks each with `@available: <availability>`. An option no
 /// release has yet is `next`; when a release ships it, name the release, as
 /// `ascribe 0.2.0`. Remove an entry when the option's command section says
-/// the same.
-const AVAILABLE: &[(&str, &str, &str)] = &[
-    ("build", "anchors", "ascribe 0.2.0"),
-    ("check", "paths", "ascribe 0.3.0"),
-    ("check", "stdin", "ascribe 0.3.0"),
-    ("check", "path", "ascribe 0.3.0"),
-    ("check", "editor_build", "ascribe 0.3.0"),
-    ("check", "code", "ascribe 0.3.0"),
-    ("check", "summary", "ascribe 0.3.0"),
-    ("check", "vale", "ascribe 0.3.0"),
-    ("check", "fix", "ascribe 0.3.0"),
-    ("diff", "page", "ascribe 0.3.0"),
-    ("diff", "pages_only", "ascribe 0.3.0"),
-    ("fmt", "format", "ascribe 0.3.0"),
-];
+/// the same, or when every live line has the option.
+const AVAILABLE: &[(&str, &str, &str)] = &[];
 
 fn repo() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")

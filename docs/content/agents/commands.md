@@ -8,7 +8,6 @@ The commands for agents. The options every command accepts are in the [command r
 
 ## `ascribe agents`
 @id {permalink=true}: cli-agents
-@available: ascribe 0.3.0
 
 Writes the files AI coding agents read on their own: your project's rules, from `ascribe.toml`, and the Ascribe skill; and prints the named prompts. See [Agents](index.md).
 
@@ -75,7 +74,6 @@ Writes a compact index of one build's docs, for the `AGENTS.md` of the product t
 
 It lists the pages the build offers, the ones in `llms.txt`: a page that's `unlisted` isn't in it. A page's address is its Markdown version's, with `[consumer] agents = true`, or else its own. The index holds to 8 KB: past that, it leaves out descriptions, from the last page back, then pages, from the last back, and ends with a sentence saying how many it left out and where every page is.
 
-@available: ascribe 0.3.2
 Of a [versioned build](../versions/lines.md#for-agents), `--build site@3.4` names an older line, and without `--build` it's the current line's. When the build has more than one live line, the index's heading names the line, as that line's `llms.txt` does: `## Loom (Self-managed 3.4)`.
 
 It prints the index. With `--into`, it writes it between markers in that file instead, as `sync` writes its block, leaving the rest of the file as it is, so a second run replaces the first; it says whether the file changed. With `--pages`, it also writes each offered page's Markdown version, as the build's `plain` output writes it, into that folder, and the index's addresses are paths into it, from the folder of the `--into` file: the folder a package ships beside its `AGENTS.md`. A file in the folder that isn't one of the index's pages, such as a page from an earlier run that the build no longer offers, is named, and left there.
@@ -170,7 +168,6 @@ The first hook in a project starts a check server in the background, the same `a
 
 ## `ascribe mcp`
 @id {permalink=true}: cli-mcp
-@available: ascribe 0.3.0
 
 Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextprotocol.io) over standard input and output, for an agent that has no shell, or a host that approves tools one by one. An agent's host starts it; you don't run it yourself. It offers the commands that answer questions as tools, the project's rules as resources, and the named prompts of [`ascribe agents prompt`](commands.md#cli-agents-prompt). Each tool's result is the JSON its command writes, so an agent with a shell does as well with the commands. See [The MCP server](mcp.md) to set it up.
 

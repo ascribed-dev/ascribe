@@ -8,7 +8,6 @@ The commands that write the page templates into a project and say what's changed
 
 ## `ascribe templates`
 @id {permalink=true}: cli-templates
-@available: ascribe 0.3.1
 
 Writes the page templates Ascribe carries into a project, as the project's own files, and declares a content type for each, whose [`template` and `guide`](../content-model/index.md#41-page-types) name them. The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, converted into Ascribe pages, as [Where the templates come from](index.md#where-the-templates-come-from) says.
 

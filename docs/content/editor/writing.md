@@ -19,7 +19,6 @@ What the editor does as you write a page: what it completes, what it shows on ho
 @available: ascribe 0.4.0
 - `@term` only at the top of a section on a glossary page, or in a fragment one includes, under the heading and the directives that bind it, and not on a heading that's a term already. Inside its braces, `aliases`, `match`, and `case-sensitive`, and `match`'s values `first`, `every`, and `marked`.
 
-@available: ascribe 0.3.2
 - In a source's [`ascribe.examples.toml`](../examples/tested.md): its keys, and an environment entry's `label` and `command`. The file's problems appear as you type, where each is. A config no source in `ascribe.toml` names is just a TOML file.
 
 @available: ascribe 0.4.0
@@ -35,13 +34,10 @@ What the editor does as you write a page: what it completes, what it shows on ho
 @available: ascribe 0.4.0
 - A glossary term, in prose: its definition for the editor's build. On the term's heading: the definition, and how many pages use the term.
 
-@available: ascribe 0.3.2
 - A version in an availability spec, for a target with [release lines](../versions/lines.md): the line it falls in, and that line's status, such as "in line 3.4, live".
 
-@available: ascribe 0.3.2
 - `replaces` in frontmatter: the page it replaces, and which page each line publishes. Go to Definition opens the replaced page.
 
-@available: ascribe 0.3.2
 - A `@snippet`'s address: its file, as a link that opens it, and its region and lines. For a [tested example](../examples/tested.md), what it was tested with, "Changed after its last test run", or "Not tested", with the observations behind it, and where to run `ascribe observe`.
 
 ## Navigation

@@ -40,7 +40,6 @@ A later profile that offers a choice will add a key for it.
 
 @include: ../_fragments/content-model/builds.md
 
-@available: ascribe 0.3.2
 A versioned build's outputs, their names and addresses, and what each line keeps and shows are in [Versions](../versions/index.md#build-a-site-for-each-line). An older line's output says nothing to agents: it has no `llms.txt`, and its pages point to no Markdown version.
 
 ---
@@ -52,7 +51,6 @@ A versioned build's outputs, their names and addresses, and what each line keeps
 ---
 
 ## 18. `[sources.<name>]`
-@available: ascribe 0.2.0
 
 A source is a folder outside the project's content, or another repository, that its pages may take code examples from, with [`@snippet`](../writing/directives.md#snippet) ([SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)). It's the only way a page can read a file outside the project's folder.
 
