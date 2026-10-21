@@ -284,7 +284,7 @@ const diag: string[] = [];
 function trace(line: string): void {
   const active = document.activeElement;
   diag.push(
-    `${Math.round(performance.now())} ${line} | active=${active?.tagName ?? "-"}:${focusedKey()} hasFocus=${document.hasFocus()}`,
+    `${Date.now() % 1_000_000} ${line} | active=${active?.tagName ?? "-"}:${focusedKey()} hasFocus=${document.hasFocus()}`,
   );
 }
 
@@ -330,6 +330,19 @@ document.addEventListener("keydown", (event) => {
       : all[at < 0 ? all.length - 1 : Math.max(at - 1, 0)];
   event.preventDefault();
   next?.focus();
+});
+
+/** The key of what had the focus last, in the view. */
+let lastFocused: string | null = null;
+document.addEventListener("focusin", () => {
+  lastFocused = focusedKey() ?? lastFocused;
+});
+
+// VS Code gives the view's document the focus back, not what had it in the
+// document: focusing the view while a row has the focus takes it from the row
+// and then gives the document the focus. What had it gets it back.
+window.addEventListener("focus", () => {
+  if (lastFocused !== null && focusedKey() === null) focusKey(lastFocused);
 });
 
 /** The answer drawn last, which a probe's report describes. */
@@ -395,7 +408,7 @@ function draw(answer: ThisPageAnswer, channel: ViewChannel<ThisPageReport>): Thi
 
 const channel = startView<ThisPageAnswer, ThisPageReport>(draw);
 
-window.addEventListener("focus", () => trace("window focus"));
+window.addEventListener("focus", () => trace(`window focus, last ${lastFocused}`));
 window.addEventListener("blur", () => trace("window blur"));
 document.addEventListener("focusout", (event) =>
   trace(`focusout ${(event.target as Element | null)?.getAttribute?.("data-key")} -> ${(event.relatedTarget as Element | null)?.tagName}`),

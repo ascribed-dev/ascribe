@@ -1493,6 +1493,7 @@ export class SidebarViews implements vscode.Disposable {
    */
   private async openBeside(uri: vscode.Uri): Promise<void> {
     const group = this.pageAt && groupOf(this.pageAt.uri);
+    console.log(`[752 ${Date.now() % 1_000_000}] openBeside ${uri.path}`);
     await vscode.window.showTextDocument(uri, {
       viewColumn: group ? group.viewColumn + 1 : vscode.ViewColumn.Beside,
       preserveFocus: true,

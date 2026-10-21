@@ -141,6 +141,7 @@ describe("a code file a page shows", () => {
     ] as const) {
       // The reader clicks in the view, and chooses the row with the keyboard.
       await vscode.commands.executeCommand("ascribe.thisPage.focus");
+      console.log(`[752 ${Date.now() % 1_000_000}] test: focus command done`);
       console.log(`[752 ${Date.now() % 1_000_000}] test: probe ${key}`);
       await view.probe({ open: true, focus: key, press: true });
       console.log(`[752 ${Date.now() % 1_000_000}] test: probed ${key}`);
