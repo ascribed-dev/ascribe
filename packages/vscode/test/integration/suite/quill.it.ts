@@ -925,7 +925,7 @@ describe("the Project view on examples/quill", () => {
     const folder = await waitFor("the sidebar's project", () => api.ui.sidebar.project());
 
     const unknown = await drawnIn("unknown");
-    assert.deepEqual([unknown.value, unknown.note], ["—", "Needs every build checked"]);
+    assert.deepEqual([unknown.value, unknown.note], ["—", "not checked yet"]);
     const head = api.ui.project.drawn()?.report;
     assert.ok(head?.head.includes("Server: running"), head?.head.join("\n"));
     assert.ok(head?.buttons.includes("Check Every Build"), head?.buttons.join("\n"));
@@ -943,8 +943,8 @@ describe("the Project view on examples/quill", () => {
     assert.deepEqual(
       about.report.sections.map(({ key, open }) => [key, open]),
       [
-        ["health", true],
         ["actions", true],
+        ["health", true],
         ["about", false],
       ],
     );
@@ -954,7 +954,7 @@ describe("the Project view on examples/quill", () => {
     const current = await drawnIn("current");
     // broken.md's unknown attribute key is an error in every build.
     assert.match(current.value, /^\d+ errors?(, \d+ warnings?)?(, \d+ advice)?$/, current.value);
-    assert.match(current.note, /^Checked at /, current.note);
+    assert.match(current.note, /^checked at /, current.note);
     assert.equal(api.ui.everyBuild.isCurrent(folder), true);
     // The count opens the Problems panel: its button, after the head's.
     const buttons = api.ui.project.drawn()?.report.buttons ?? [];
@@ -964,7 +964,7 @@ describe("the Project view on examples/quill", () => {
     await editing(keys, async () => {
       const stale = await drawnIn("outOfDate");
       assert.equal(stale.value, "—");
-      assert.match(stale.note, /^Out of date: the project changed after the check at /);
+      assert.match(stale.note, /^out of date: the project changed after the check at /);
       assert.equal(api.ui.everyBuild.isCurrent(folder), false);
     });
   });
@@ -996,11 +996,10 @@ describe("the Project view on examples/quill", () => {
     await drawnIn("current");
     for (const key of ["examples", "reviews", "permalinks"]) {
       const count = await countIn(key, "current", "none");
-      assert.match(count.note, /^Checked at /, count.note);
+      assert.match(count.note, /^checked at /, count.note);
       // A zero is drawn dimmed, and a count above it isn't.
       assert.equal(count.dimmed, count.state === "none", `${key}: ${count.value}`);
     }
-    assert.match((await countIn("reviews", "current", "none")).note, /^Checked at .+, for .+/);
     await editing(keys, async () => {
       for (const key of ["examples", "reviews", "permalinks"]) {
         const stale = await countIn(key, "outOfDate");
@@ -1190,7 +1189,10 @@ describe("the Project view on examples/quill", () => {
     await api.ui.project.choose("checkAgentFiles");
     const first = await countIn("agentFiles", "current", "none");
     assert.match(first.value, /^(0|\d+ files?)$/, first.value);
-    assert.match(first.note, /^Checked at .+, after the last save$/, first.note);
+    // The group's head says the time of the last save's check.
+    assert.ok(first.note !== "", first.note);
+    const lastSave = api.ui.project.drawn()?.report.groups.find((g) => g.key === "lastSave");
+    assert.equal(lastSave?.head, `At the last save·${first.note}`);
 
     // A save of a page runs it again, once.
     const before = api.ui.agentFiles.runs();
@@ -1210,7 +1212,7 @@ describe("the Project view on examples/quill", () => {
     writeFileSync(written, "Not a page.\n");
     try {
       const stale = await countIn("agentFiles", "outOfDate");
-      assert.match(stale.note, /^Out of date: a file changed on disk after the check at /);
+      assert.match(stale.note, /^out of date: a file changed on disk after the check at /);
       assert.ok(api.ui.project.drawn()?.report.buttons.includes("Check Agent Files"));
       await api.ui.project.choose("checkAgentFiles");
       await countIn("agentFiles", "current", "none");

@@ -1,15 +1,16 @@
 // What the Project view draws, worked out from plain values so the unit
 // tests can check it without VS Code: the head with its server's buttons,
-// its build switch, and its settings buttons; Health's counts with when each
-// is from; the actions, in their groups; and About. `projectView.ts` gathers
-// the values and sends the answer; `../webview/project.ts` draws it. In
-// Restricted Mode the counts are replaced by a sentence saying so, and every
-// action is off.
+// its build switch, and its settings buttons; the actions, in their groups;
+// Health's counts, in groups by when each is from; and About.
+// `projectView.ts` gathers the values and sends the answer;
+// `../webview/project.ts` draws it. In Restricted Mode the counts are
+// replaced by a sentence saying so, and every action is off.
 //
-// A count is shown as current only when it is. One that's out of date, or
-// from a run that hasn't happened, shows a dash and says why, with the
-// action that brings it current beside it; a count of zero shows `0`,
-// dimmed. So "none" and "not checked" never look alike.
+// A count is shown as current only when it is. The counts from one run are
+// a group, whose head says once when they're from; while they aren't
+// current, each is a dash, and the head says why, with the action that
+// brings them current. A count of zero shows `0`, dimmed. So "none" and "not
+// checked" never look alike.
 
 import type { Counted } from "../everyBuild.js";
 import type { ServerState } from "../serverState.js";
@@ -21,8 +22,10 @@ import type {
   ProjectActionGroup,
   ProjectAnswer,
   ProjectButton,
+  ProjectCheck,
   ProjectCount,
   ProjectHead,
+  ProjectHealthGroup,
 } from "../webview/viewProtocol.js";
 import type { AgentFilesResult } from "./agentFiles.js";
 import type { EveryBuildResult } from "./checkEveryBuild.js";
@@ -244,7 +247,10 @@ export function nothingToEdit(kind: ProjectEditKind, name: string): string {
     ? `Ascribe: none of the problems the editor shows in ${name} has a safe fix.`
     : `Ascribe: every page of ${name} is formatted already.`;
 }
-const CHECK_AGENT_FILES = { key: PROJECT_KEYS.checkAgentFiles, label: "Check Agent Files" };
+const CHECK_AGENT_FILES: ProjectCheck = {
+  key: PROJECT_KEYS.checkAgentFiles,
+  label: "Check Agent Files",
+};
 
 const TASK_ICONS: Record<TaskName, string> = {
   build: "package",
@@ -314,20 +320,13 @@ export function projectAnswer(project: ProjectFacts | undefined): ProjectAnswer 
       about: [],
     };
   }
-  const health = [
-    problemsCount(project),
-    examplesCount(project),
-    reviewsCount(project),
-    permalinksCount(project),
-    orphansCount(project),
-    unusedCount(project),
-    agentFilesCount(project),
-  ];
+  const health = healthGroups(project);
   return {
     message: null,
     notice: [],
     head: projectHead(project),
-    toDo: health.filter((count) => count.state !== "none" && count.state !== "running").length,
+    // A count that isn't current isn't a thing to do: its group's head says so, with its action.
+    toDo: health.flatMap((group) => group.counts).filter((item) => item.state === "current").length,
     health,
     actions: actionGroups(),
     about: aboutRows(project),
@@ -428,213 +427,205 @@ export function aboutRows({ about, builds }: ProjectFacts): ProjectAboutRow[] {
 
 type Base = Pick<ProjectCount, "key" | "label">;
 
+/** The counts, by the group they're in, in the order the view shows them. */
+const COUNTS = {
+  problems: { key: PROJECT_KEYS.problems, label: "Problems" },
+  examples: { key: PROJECT_KEYS.examples, label: "Tested examples" },
+  reviews: { key: PROJECT_KEYS.reviews, label: "Reviews overdue" },
+  permalinks: { key: PROJECT_KEYS.permalinks, label: "Permalinks behind" },
+  orphans: { key: PROJECT_KEYS.orphans, label: "Pages nothing links to" },
+  unused: { key: PROJECT_KEYS.unused, label: "Unused model entries" },
+  agentFiles: { key: PROJECT_KEYS.agentFiles, label: "Agent files out of date" },
+} as const satisfies Record<string, Base>;
+
+const CHECK: ProjectCheck = { key: CHECK_EVERY_BUILD.key, label: CHECK_EVERY_BUILD.label };
+
+/** Health's groups: every build's counts, those as you type, and the agent files'. */
+export function healthGroups(facts: ProjectFacts): ProjectHealthGroup[] {
+  return [everyBuildGroup(facts), asYouTypeGroup(facts), lastSaveGroup(facts)];
+}
+
 /** A count, current, of `value`: `0`, dimmed, for none, which opens nothing. */
-function counted(base: Base, n: number, value: string, note: string): ProjectCount {
+function counted(base: Base, n: number, value: string): ProjectCount {
   return {
     ...base,
     state: n === 0 ? "none" : "current",
     value: n === 0 ? "0" : value,
-    note,
+    note: null,
     opens: n > 0,
     action: null,
   };
 }
 
-/** A count that isn't current: a dash, why, and the action that brings it current. */
-function dash(
-  base: Base,
-  state: "outOfDate" | "unknown" | "running",
+/** A group that isn't current: its counts are dashes, and its head says why, with the action that brings it current. */
+function notCurrent(
+  head: Pick<ProjectHealthGroup, "key" | "label">,
+  bases: readonly Base[],
+  state: Exclude<ProjectHealthGroup["state"], "current">,
   note: string,
-  action: ProjectCount["action"],
-): ProjectCount {
-  return { ...base, state, value: "—", note, opens: false, action };
+  action: ProjectCheck | null,
+): ProjectHealthGroup {
+  return {
+    ...head,
+    state,
+    note,
+    action,
+    counts: bases.map((base) => ({
+      ...base,
+      state,
+      value: "—",
+      note: null,
+      opens: false,
+      action: null,
+    })),
+  };
 }
 
 /**
- * A count from the last Check Every Build: a dash until it has run, while it
- * runs, once it's out of date, or when it couldn't finish; else `current`.
+ * The counts from the last Check Every Build: dashes until it has run, while
+ * it runs, once it's out of date, or when it couldn't finish. Overdue reviews
+ * depend on the day as well as the files, so a check from another day leaves
+ * that count alone a dash, with its own note and the check, whatever
+ * `isCurrent` says.
  */
-function fromCheck(
-  base: Base,
-  { everyBuild, time }: ProjectFacts,
-  current: (made: Extract<EveryBuildResult, { kind: "made" }>, at: string) => ProjectCount,
-): ProjectCount {
-  const check = { key: CHECK_EVERY_BUILD.key, label: CHECK_EVERY_BUILD.label };
+export function everyBuildGroup({ everyBuild, time, day, now }: ProjectFacts): ProjectHealthGroup {
+  const head = { key: "everyBuild", label: "Every build" };
+  const bases = [COUNTS.problems, COUNTS.examples, COUNTS.reviews, COUNTS.permalinks];
   switch (everyBuild.kind) {
     case "none":
-      return dash(base, "unknown", "Needs every build checked", check);
+      return notCurrent(head, bases, "unknown", "not checked yet", CHECK);
     case "running":
-      return dash(base, "running", "Checking every build…", null);
+      return notCurrent(head, bases, "running", "checking…", null);
     case "made": {
       const at = time(everyBuild.at);
       if (everyBuild.error !== null) {
-        return dash(
-          base,
+        return notCurrent(
+          head,
+          bases,
           "outOfDate",
-          `The check at ${at} couldn't finish: ${everyBuild.error}`,
-          check,
+          `the check at ${at} couldn't finish: ${everyBuild.error}`,
+          CHECK,
         );
       }
       if (!everyBuild.current) {
-        return dash(
-          base,
+        return notCurrent(
+          head,
+          bases,
           "outOfDate",
-          `Out of date: the project changed after the check at ${at}`,
-          check,
+          `out of date: the project changed after the check at ${at}`,
+          CHECK,
         );
       }
-      return current(everyBuild, at);
+      const severities = bySeverity(everyBuild.summary);
+      const kind = (base: Base, of: Counted, noun: string) => {
+        const n = everyBuild.counted[of].count;
+        return counted(base, n, count(n, noun));
+      };
+      const checkedOn = day(everyBuild.at);
+      const reviews: ProjectCount =
+        checkedOn === day(now)
+          ? kind(COUNTS.reviews, "reviews", "page")
+          : {
+              ...COUNTS.reviews,
+              state: "outOfDate",
+              value: "—",
+              note: `checked on ${checkedOn}; reviews fall due by the day`,
+              opens: false,
+              action: CHECK,
+            };
+      const unsaved =
+        everyBuild.unsaved === 0
+          ? ""
+          : `, ${count(everyBuild.unsaved, "file")} with unsaved changes read as saved`;
+      return {
+        ...head,
+        state: "current",
+        note: `checked at ${at}${unsaved}`,
+        action: null,
+        counts: [
+          counted(COUNTS.problems, severities === "" ? 0 : 1, severities),
+          kind(COUNTS.examples, "examples", "example"),
+          reviews,
+          kind(COUNTS.permalinks, "permalinks", "permalink"),
+        ],
+      };
     }
   }
 }
 
-/** Problems in every build, by severity, from the last Check Every Build. */
-export function problemsCount(facts: ProjectFacts): ProjectCount {
-  const base = { key: PROJECT_KEYS.problems, label: "Problems in every build" };
-  return fromCheck(base, facts, (made, at) => {
-    const value = bySeverity(made.summary);
-    const unsaved =
-      made.unsaved === 0
-        ? ""
-        : `, ${count(made.unsaved, "file")} with unsaved changes read as saved`;
-    return counted(base, value === "" ? 0 : 1, value, `Checked at ${at}${unsaved}`);
-  });
-}
-
-/** One kind of problem the last Check Every Build found, as a count of `noun`. */
-function checkedKind(
-  facts: ProjectFacts,
-  base: Base,
-  kind: Counted,
-  noun: string,
-  note = (at: string) => `Checked at ${at}`,
-): ProjectCount {
-  return fromCheck(base, facts, (made, at) => {
-    const n = made.counted[kind].count;
-    return counted(base, n, count(n, noun), note(at));
-  });
-}
-
-/** Tested examples changed since they were tested, or never tested. */
-export function examplesCount(facts: ProjectFacts): ProjectCount {
-  const base = { key: PROJECT_KEYS.examples, label: "Tested examples changed or never tested" };
-  return checkedKind(facts, base, "examples", "example");
-}
-
 /**
- * Reviews overdue. They depend on the day as well as the files, so the count
- * says the day it's for, and goes out of date when the day changes, whatever
- * `isCurrent` says.
- */
-export function reviewsCount(facts: ProjectFacts): ProjectCount {
-  const base = { key: PROJECT_KEYS.reviews, label: "Reviews overdue" };
-  const { everyBuild, day, now } = facts;
-  if (
-    everyBuild.kind === "made" &&
-    everyBuild.error === null &&
-    everyBuild.current &&
-    day(everyBuild.at) !== day(now)
-  ) {
-    return dash(
-      base,
-      "outOfDate",
-      `Out of date: checked on ${day(everyBuild.at)}, and reviews fall due by the day`,
-      {
-        key: CHECK_EVERY_BUILD.key,
-        label: CHECK_EVERY_BUILD.label,
-      },
-    );
-  }
-  return checkedKind(
-    facts,
-    base,
-    "reviews",
-    "page",
-    (at) => `Checked at ${at}, for ${everyBuild.kind === "made" ? day(everyBuild.at) : ""}`,
-  );
-}
-
-/** Permalinks the content declares that `ascribe.permalinks` doesn't list as they are. */
-export function permalinksCount(facts: ProjectFacts): ProjectCount {
-  const base = { key: PROJECT_KEYS.permalinks, label: "Permalinks the list is behind on" };
-  return checkedKind(facts, base, "permalinks", "permalink");
-}
-
-/**
- * A count from `ascribe/inventory`, which the server answers from its
+ * The counts from `ascribe/inventory`, which the server answers from its
  * snapshot, unsaved text included: current as you type, while the server
  * runs and has answered.
  */
-function fromInventory(
-  base: Base,
-  facts: ProjectFacts,
-  n: (counts: InventoryCounts) => number,
-  noun: string,
-  plural: string,
-): ProjectCount {
-  if (!facts.inventory) {
-    return facts.state === "running" || facts.state === "starting"
-      ? dash(base, "running", "Counting…", null)
-      : dash(
-          base,
+export function asYouTypeGroup({ inventory, state }: ProjectFacts): ProjectHealthGroup {
+  const head = { key: "asYouType", label: "As you type" };
+  const bases = [COUNTS.orphans, COUNTS.unused];
+  if (!inventory) {
+    return state === "running" || state === "starting"
+      ? notCurrent(head, bases, "running", "counting…", null)
+      : notCurrent(
+          head,
+          bases,
           "unknown",
-          `Counted while the language server runs: it's ${STATE_NAMES[facts.state]}`,
+          `counted while the language server runs: it's ${STATE_NAMES[state]}`,
           null,
         );
   }
-  const value = n(facts.inventory);
-  return counted(
-    base,
-    value,
-    `${value} ${value === 1 ? noun : plural}`,
-    "As the pages are now, unsaved changes too",
-  );
-}
-
-/** Pages nothing links to or includes, from `ascribe/inventory`'s orphans. */
-export function orphansCount(facts: ProjectFacts): ProjectCount {
-  const base = { key: PROJECT_KEYS.orphans, label: "Pages nothing links to or includes" };
-  return fromInventory(base, facts, (counts) => counts.orphans, "page", "pages");
-}
-
-/** Content model entries nothing uses, from `ascribe/inventory`'s uses. */
-export function unusedCount(facts: ProjectFacts): ProjectCount {
-  const base = { key: PROJECT_KEYS.unused, label: "Content model entries nothing uses" };
-  return fromInventory(base, facts, (counts) => counts.unused, "entry", "entries");
+  const { orphans, unused } = inventory;
+  return {
+    ...head,
+    state: "current",
+    note: "",
+    action: null,
+    counts: [
+      counted(COUNTS.orphans, orphans, count(orphans, "page")),
+      counted(COUNTS.unused, unused, count(unused, "entry", "entries")),
+    ],
+  };
 }
 
 /**
- * Agent files out of date, from `ascribe agents sync --check`, which runs
- * again after each save of a file of the project: the count says it's from
- * the last save, or that it's running.
+ * The agent files out of date, from `ascribe agents sync --check`, which runs
+ * again after each save of a file of the project: the head says the time of
+ * the last, or that it's running.
  */
-export function agentFilesCount({ agentFiles, time }: ProjectFacts): ProjectCount {
-  const base = { key: PROJECT_KEYS.agentFiles, label: "Agent files out of date" };
+export function lastSaveGroup({ agentFiles, time }: ProjectFacts): ProjectHealthGroup {
+  const head = { key: "lastSave", label: "At the last save" };
+  const bases = [COUNTS.agentFiles];
   switch (agentFiles.kind) {
     case "none":
-      return dash(base, "unknown", "Needs the agent files checked", CHECK_AGENT_FILES);
+      return notCurrent(head, bases, "unknown", "not checked yet", CHECK_AGENT_FILES);
     case "running":
-      return dash(base, "running", "Checking the agent files…", null);
+      return notCurrent(head, bases, "running", "checking…", null);
     case "made": {
       const at = time(agentFiles.at);
       if (agentFiles.error !== null) {
-        return dash(
-          base,
+        return notCurrent(
+          head,
+          bases,
           "outOfDate",
-          `The check at ${at} couldn't finish: ${agentFiles.error}`,
+          `the check at ${at} couldn't finish: ${agentFiles.error}`,
           CHECK_AGENT_FILES,
         );
       }
       if (!agentFiles.current) {
-        return dash(
-          base,
+        return notCurrent(
+          head,
+          bases,
           "outOfDate",
-          `Out of date: a file changed on disk after the check at ${at}`,
+          `out of date: a file changed on disk after the check at ${at}`,
           CHECK_AGENT_FILES,
         );
       }
       const n = agentFiles.stale.length;
-      return counted(base, n, count(n, "file"), `Checked at ${at}, after the last save`);
+      return {
+        ...head,
+        state: "current",
+        note: at,
+        action: null,
+        counts: [counted(COUNTS.agentFiles, n, count(n, "file"))],
+      };
     }
   }
 }
