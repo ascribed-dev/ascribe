@@ -10,7 +10,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
-| `ascribe agents sync` | Writes `AGENTS.md` beside `ascribe.toml`, a short block in the repository root's `AGENTS.md` when the project is in a subfolder, and the skill in the root's `.agents/skills/ascribe/`. | `[--check] [--target agents-md\|skills\|claude\|claude-rules\|copilot\|codex]... [--with-hook] [--cloud] [--agent]` |  |
+| `ascribe agents sync` | Writes your project's rules and the Ascribe skill where each `--target`'s agents read them. | `[--check] [--target agents-md\|skills\|claude\|claude-rules\|copilot\|codex]... [--with-hook] [--cloud] [--agent]` |  |
 | `ascribe agents rules` | Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside `ascribe.toml`, as it would write it now. | `[PATH]` |  |
 | `ascribe agents index` | Writes a compact index of one build's docs, for the `AGENTS.md` of the product they're about: one line a page, with its title, its address, and its description, grouped in sections as the build's `llms.txt` is. | `[--build <NAME>] [--into <FILE>] [--pages <DIR>]` | `text`, `json` |
 | `ascribe agents skill` | Prints a file of the Ascribe skill, the same for every project: its `SKILL.md`, or its directive reference, `references/directives.md`. | `[FILE]` |  |
