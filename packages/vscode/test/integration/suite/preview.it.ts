@@ -292,8 +292,11 @@ describe("Search Pages as Readers See Them on examples/quill", () => {
   const keys = uriOf("docs", "keys.md");
   let api: AscribeApi;
 
+  /** The places' descriptions, leaving out an item that only says something. */
   const descriptions = async (query: string, everyBuild?: boolean) =>
-    (await api.ui.search.items(query, everyBuild)).map((item) => item.description);
+    (await api.ui.search.items(query, everyBuild))
+      .filter((item) => item.place)
+      .map((item) => item.description);
 
   /** Runs the command with a scripted answer, and waits for what it opens. */
   async function choose(query: string, place: string): Promise<vscode.TextEditor> {
