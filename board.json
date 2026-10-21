@@ -3658,6 +3658,9 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/742"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "Search: Search Pages as Readers See Them in the editor"
@@ -3858,7 +3861,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/735"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Project view: tasks"
     },
     {
@@ -3875,7 +3878,7 @@
         "editor-webviews"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Project view: every safe fix and every page formatted, as one edit"
     },
     {
@@ -4189,7 +4192,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/741"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Docs: The directive reference, as four pages"
     },
     {
@@ -4592,7 +4595,7 @@
         "editor-webviews"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Project view: Observe Examples, with ascribe observe asking for itself"
     },
     {
