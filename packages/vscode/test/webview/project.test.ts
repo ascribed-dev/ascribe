@@ -395,11 +395,14 @@ describe("the Project view's webview", () => {
       projectAnswer(
         facts(made(true, 0, 0), "docs", {
           now: 1,
-          day: (at) => (at === 0 ? "20 October" : "21 October"),
+          day: (at) => (at <= 0 ? "20 October" : "21 October"),
         }),
       ),
     );
-    expect(report.groups[0]).toMatchObject({ head: "Every build·checked at 14:02", action: null });
+    expect(report.groups[0]).toMatchObject({
+      head: "Every build·checked yesterday at 14:02",
+      action: null,
+    });
     expect(report.health[2]).toMatchObject({
       key: "reviews",
       value: "—",

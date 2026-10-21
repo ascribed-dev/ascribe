@@ -483,12 +483,15 @@ function notCurrent(
 
 /**
  * The counts from the last Check Every Build: dashes until it has run, while
- * it runs, once it's out of date, or when it couldn't finish. Overdue reviews
+ * it runs, while one kept from an earlier session is compared with the
+ * project's files, once it's out of date, or when it couldn't finish. A
+ * check from another day says which (`checkedWhen`). Overdue reviews
  * depend on the day as well as the files, so a check from another day leaves
  * that count alone a dash, with its own note and the check, whatever
  * `isCurrent` says.
  */
-export function everyBuildGroup({ everyBuild, time, day, now }: ProjectFacts): ProjectHealthGroup {
+export function everyBuildGroup(facts: ProjectFacts): ProjectHealthGroup {
+  const { everyBuild, day, now } = facts;
   const head = { key: "everyBuild", label: "Every build" };
   const bases = [COUNTS.problems, COUNTS.examples, COUNTS.reviews, COUNTS.permalinks];
   switch (everyBuild.kind) {
@@ -496,14 +499,16 @@ export function everyBuildGroup({ everyBuild, time, day, now }: ProjectFacts): P
       return notCurrent(head, bases, "unknown", "not checked yet", CHECK);
     case "running":
       return notCurrent(head, bases, "running", "checking…", null);
+    case "comparing":
+      return notCurrent(head, bases, "running", "reading the last check…", null);
     case "made": {
-      const at = time(everyBuild.at);
+      const at = checkedWhen(everyBuild.at, facts);
       if (everyBuild.error !== null) {
         return notCurrent(
           head,
           bases,
           "outOfDate",
-          `the check at ${at} couldn't finish: ${everyBuild.error}`,
+          `the check ${at} couldn't finish: ${everyBuild.error}`,
           CHECK,
         );
       }
@@ -512,7 +517,7 @@ export function everyBuildGroup({ everyBuild, time, day, now }: ProjectFacts): P
           head,
           bases,
           "outOfDate",
-          `out of date: the project changed after the check at ${at}`,
+          `out of date: the project changed after the check ${at}`,
           CHECK,
         );
       }
@@ -540,7 +545,7 @@ export function everyBuildGroup({ everyBuild, time, day, now }: ProjectFacts): P
       return {
         ...head,
         state: "current",
-        note: `checked at ${at}${unsaved}`,
+        note: `checked ${at}${unsaved}`,
         action: null,
         counts: [
           counted(COUNTS.problems, severities === "" ? 0 : 1, severities),
@@ -551,6 +556,18 @@ export function everyBuildGroup({ everyBuild, time, day, now }: ProjectFacts): P
       };
     }
   }
+}
+
+/**
+ * When a check was made, after "checked": "at 3:30 PM" today, "yesterday at
+ * 3:30 PM", or "on 20 October at 3:30 PM" before that.
+ */
+export function checkedWhen(at: number, { time, day, now }: ProjectFacts): string {
+  const on = day(at);
+  if (on === day(now)) return `at ${time(at)}`;
+  // In the hour after a day of 23, when the clocks went forward, this gives the day before: it names it.
+  const yesterday = day(now - 24 * 60 * 60 * 1000);
+  return on === yesterday ? `yesterday at ${time(at)}` : `on ${on} at ${time(at)}`;
 }
 
 /**

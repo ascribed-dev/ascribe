@@ -16,6 +16,7 @@ import {
   type PanelProblem,
 } from "../everyBuild.js";
 import { comparable, owningProject, type Project } from "../projects.js";
+import { changedSince, projectFiles, readKept, type KeptCheck } from "../lastCheck.js";
 import type { ProjectRegistry } from "../registry.js";
 import type { CheckReport, Summary } from "../shapes.js";
 import { STATE_NAMES } from "./describe.js";
@@ -24,6 +25,8 @@ export const CHECK_EVERY_BUILD_COMMAND = "ascribe.checkEveryBuild";
 const SHOW_PROBLEMS = "Show Problems";
 /** The most JSON `ascribe check` may write: a project with a great many problems. */
 const MAX_OUTPUT = 256 * 1024 * 1024;
+/** `workspaceState` key: each project's last check, by its folder (`KeptCheck`). */
+const KEPT = "ascribe.lastCheckEveryBuild";
 
 /** What a check of every build left in the Problems panel, for tests. */
 export interface EveryBuildApi {
@@ -33,6 +36,18 @@ export interface EveryBuildApi {
   isCurrent(folder: string): boolean;
   /** Settles when the check under way, if any, has finished. */
   whenDone(): Promise<void>;
+  /**
+   * Forgets every check this window made or read back, as a new window
+   * starts, and keeps what's stored: the Project view reads it back when it
+   * next draws.
+   */
+  reopen(): void;
+  /** Settles when every kept check being read back has been compared with its project's files. */
+  whenRead(): Promise<void>;
+  /** What's stored of the last check of the project in `folder`, as it's stored. */
+  kept(folder: string): unknown;
+  /** Stores `value` as the last check of the project in `folder`. */
+  keep(folder: string, value: unknown): Thenable<void>;
 }
 
 /** A project's check of every build, under way or made. */
@@ -53,6 +68,10 @@ interface Checked {
   unsaved?: number;
   /** What it found of each kind the Project view counts on its own. */
   counted?: Record<Counted, Found>;
+  /** The problems it added to the Problems panel. */
+  problems?: PanelProblem[];
+  /** Which files the project had once it was made (`ProjectFiles.list`), once they're known. */
+  list?: string;
 }
 
 const NOTHING_COUNTED: Record<Counted, Found> = {
@@ -65,6 +84,8 @@ const NOTHING_COUNTED: Record<Counted, Found> = {
 export type EveryBuildResult =
   | { kind: "none" }
   | { kind: "running" }
+  /** A check kept from an earlier session, being compared with the project's files. */
+  | { kind: "comparing" }
   | {
       kind: "made";
       /** When it started, in milliseconds since the epoch. */
@@ -87,6 +108,11 @@ export type EveryBuildResult =
  * own collection. A problem in a file that changes is taken away, since its
  * place may have moved, and the project's check is no longer current until
  * it runs again.
+ *
+ * The last check of each project is kept in the workspace's storage, and
+ * read back when the Project view first shows the project in a window:
+ * current, with its problems back in the panel, if no file it follows was
+ * added, removed, or modified since it started; out of date if one was.
  */
 export class EveryBuildChecks implements vscode.Disposable {
   private readonly collection = vscode.languages.createDiagnosticCollection("ascribe-every-build");
@@ -96,8 +122,22 @@ export class EveryBuildChecks implements vscode.Disposable {
   private readonly changed = new vscode.EventEmitter<void>();
   private readonly disposables: vscode.Disposable[] = [];
   private running: Promise<void> = Promise.resolve();
+  /** The projects whose kept check has been read back in this window, or is being. */
+  private readonly recalled = new Set<string>();
+  /** Kept checks being compared with their projects' files, by folder. */
+  private readonly comparing = new Map<string, Checked | undefined>();
+  /** The comparisons under way. */
+  private readonly reading = new Set<Promise<void>>();
 
-  constructor(private readonly projects: ProjectRegistry) {}
+  /**
+   * @param storage The workspace's storage, where each project's last check is kept.
+   * @param version The extension's version: a check kept by another isn't read.
+   */
+  constructor(
+    private readonly projects: ProjectRegistry,
+    private readonly storage: vscode.Memento,
+    private readonly version: string,
+  ) {}
 
   /** Fires when a project's check is made, or stops being current. */
   get onDidChange(): vscode.Event<void> {
@@ -117,6 +157,17 @@ export class EveryBuildChecks implements vscode.Disposable {
       },
       isCurrent: (folder) => this.isCurrent(folder),
       whenDone: () => this.running,
+      reopen: () => {
+        for (const key of this.checked.keys()) this.forget(key);
+        this.recalled.clear();
+        this.changed.fire();
+      },
+      whenRead: async () => {
+        await Promise.all(this.reading);
+      },
+      kept: (folder) => this.keptChecks()[comparable(folder)],
+      keep: (folder, value) =>
+        this.storage.update(KEPT, { ...this.keptChecks(), [comparable(folder)]: value }),
     };
   }
 
@@ -140,7 +191,10 @@ export class EveryBuildChecks implements vscode.Disposable {
       this.projects.onDidChangeProjects(() => {
         const known = new Set(this.projects.projects.map((p) => comparable(p.config)));
         for (const [key, checked] of this.checked) {
-          if (!known.has(comparable(checked.project.config))) this.forget(key);
+          if (!known.has(comparable(checked.project.config))) {
+            this.forget(key);
+            void this.store(key, undefined);
+          }
         }
       }),
       vscode.commands.registerCommand(CHECK_EVERY_BUILD_COMMAND, () => this.queue()),
@@ -161,12 +215,16 @@ export class EveryBuildChecks implements vscode.Disposable {
     return this.running;
   }
 
-  /** The project in `folder`'s check of every build: under way, made, or none since the window opened. */
+  /**
+   * The project in `folder`'s check of every build: under way, made or read
+   * back, being compared, or none.
+   */
   resultOf(folder: string): EveryBuildResult {
     const key = comparable(folder);
     if (this.checking && comparable(this.checking.project.folder) === key) {
       return { kind: "running" };
     }
+    if (this.comparing.has(key)) return { kind: "comparing" };
     const checked = this.checked.get(key);
     if (!checked?.summary) return { kind: "none" };
     return {
@@ -248,8 +306,9 @@ export class EveryBuildChecks implements vscode.Disposable {
     }
 
     const key = comparable(project.folder);
-    this.forget(key);
     const texts = await readTexts(project.folder, report);
+    // After the read, so a kept check read back meanwhile goes too.
+    this.forget(key);
     const problems = panelProblems(
       report,
       project.folder,
@@ -284,8 +343,11 @@ export class EveryBuildChecks implements vscode.Disposable {
     run.error = report.error;
     run.unsaved = unsaved;
     run.counted = countedIn(report, project.folder, (file) => texts.get(file));
+    run.problems = problems;
     this.checked.set(key, run);
+    this.recalled.add(key);
     this.changed.fire();
+    void this.keepWithFiles(key, run);
 
     const text = checkedText(report, name, problems.length, unsaved);
     const total = report.summary.errors + report.summary.warnings + report.summary.advice;
@@ -321,15 +383,21 @@ export class EveryBuildChecks implements vscode.Disposable {
    * disk, for a change on disk to a file that still exists.
    */
   private fileChanged(file: string, written?: number): void {
-    if (this.checking && this.counts(file, written, this.checking)) this.checking.current = false;
+    const under = [this.checking, ...this.comparing.values()];
+    for (const run of under) {
+      if (run && this.counts(file, written, run)) run.current = false;
+    }
     let changed = false;
-    for (const checked of this.checked.values()) {
+    for (const [key, checked] of this.checked) {
       if (!this.counts(file, written, checked)) continue;
       const uri = vscode.Uri.file(file);
       if (checked.files.delete(uri.toString())) this.collection.delete(uri);
       if (checked.current) {
         checked.current = false;
         changed = true;
+        const kept = this.toKept(checked);
+        // Kept with its files once they're known (`keepWithFiles`), current or not.
+        if (kept) void this.store(key, kept);
       }
     }
     if (changed) this.changed.fire();
@@ -347,6 +415,109 @@ export class EveryBuildChecks implements vscode.Disposable {
     for (const uri of checked.files) this.collection.delete(vscode.Uri.parse(uri));
     this.checked.delete(key);
     this.changed.fire();
+  }
+
+  /**
+   * Reads back the last check of `project` kept in an earlier session, once
+   * a window: the Project view asks as it shows the project. Its counts are
+   * current, and its problems back in the panel, if the project's files are
+   * as they were; otherwise it's out of date. One kept by another version,
+   * or that can't be read, is dropped, and the project isn't checked yet.
+   */
+  recall(project: Project): void {
+    const key = comparable(project.folder);
+    if (this.recalled.has(key)) return;
+    this.recalled.add(key);
+    const kept = readKept(this.keptChecks()[key], this.version);
+    if (!kept) {
+      if (key in this.keptChecks()) void this.store(key, undefined);
+      return;
+    }
+    this.comparing.set(key, undefined);
+    this.changed.fire();
+    const reading = this.compare(project, kept)
+      .catch(() => undefined)
+      .finally(() => {
+        this.comparing.delete(key);
+        this.reading.delete(reading);
+        this.changed.fire();
+      });
+    this.reading.add(reading);
+  }
+
+  private async compare(project: Project, kept: KeptCheck): Promise<void> {
+    const key = comparable(project.folder);
+    const run: Checked = {
+      project,
+      layout: await readLayout(project),
+      started: kept.started,
+      files: new Set(),
+      current: kept.current,
+      summary: kept.summary,
+      error: kept.error,
+      unsaved: kept.unsaved,
+      counted: kept.counted,
+      problems: kept.problems,
+      list: kept.files,
+    };
+    // A change from here on makes it out of date too (`fileChanged`).
+    this.comparing.set(key, run);
+    if (run.current) {
+      const now = await projectFiles(project, run.layout, this.projects.projects);
+      if (changedSince(kept, now)) run.current = false;
+    }
+    // Checked again since, or no longer a project.
+    if (this.checked.has(key)) return;
+    if (this.checking && comparable(this.checking.project.folder) === key) return;
+    if (!this.projects.projects.some((p) => p.config === project.config)) return;
+    if (run.current) {
+      for (const problem of kept.problems) {
+        const uri = vscode.Uri.file(problem.file);
+        this.collection.set(uri, [...(this.collection.get(uri) ?? []), toDiagnostic(problem)]);
+        run.files.add(uri.toString());
+      }
+    } else if (kept.current) {
+      void this.store(key, this.toKept(run));
+    }
+    this.checked.set(key, run);
+  }
+
+  /** Keeps a check that's just been made, once the files it follows are known. */
+  private async keepWithFiles(key: string, run: Checked): Promise<void> {
+    const files = await projectFiles(run.project, run.layout, this.projects.projects);
+    // Made again since, or forgotten.
+    if (this.checked.get(key) !== run) return;
+    run.list = files.list;
+    await this.store(key, this.toKept(run));
+  }
+
+  /** What's kept of a check that's made. */
+  private toKept(checked: Checked): KeptCheck | undefined {
+    if (!checked.summary || checked.list === undefined) return undefined;
+    return {
+      version: this.version,
+      started: checked.started,
+      summary: checked.summary,
+      error: checked.error ?? null,
+      unsaved: checked.unsaved ?? 0,
+      counted: checked.counted ?? NOTHING_COUNTED,
+      // Only a current check's are put back.
+      problems: checked.current ? (checked.problems ?? []) : [],
+      current: checked.current,
+      files: checked.list,
+    };
+  }
+
+  /** Each project's kept check, by its folder, as it's stored. */
+  private keptChecks(): Record<string, unknown> {
+    const stored = this.storage.get<unknown>(KEPT);
+    return typeof stored === "object" && stored !== null ? (stored as Record<string, unknown>) : {};
+  }
+
+  /** Keeps `kept` as the project's last check, or forgets it when `undefined`. */
+  private store(key: string, kept: KeptCheck | undefined): Thenable<void> {
+    const { [key]: _old, ...others } = this.keptChecks();
+    return this.storage.update(KEPT, kept === undefined ? others : { ...others, [key]: kept });
   }
 
   /** The only project's server, or the one picked from a list when there are several. */

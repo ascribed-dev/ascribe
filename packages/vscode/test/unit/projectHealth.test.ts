@@ -308,6 +308,25 @@ describe("everyBuildGroup", () => {
     dashes(group, "running");
   });
 
+  it("says it's reading the last check while one kept from an earlier session is compared, with no action", () => {
+    const group = everyBuildGroup(facts({ kind: "comparing" }));
+    expect(group).toMatchObject({
+      state: "running",
+      note: "reading the last check…",
+      action: null,
+    });
+    dashes(group, "running");
+  });
+
+  it("says which day a check from another day is from: yesterday, or its date", () => {
+    const yesterday = facts(made(false), { now: DAY + 6000 });
+    expect(everyBuildGroup(yesterday).note).toBe(
+      "out of date: the project changed after the check yesterday at 5s",
+    );
+    const before = facts(made(true), { now: 3 * DAY });
+    expect(everyBuildGroup(before).note).toBe("checked on day 0 at 5s");
+  });
+
   it("goes out of date once the project changes, saying why, with the check at its head", () => {
     const group = everyBuildGroup(
       facts(made(false, undefined, { counted: { examples: found(2) } })),
@@ -376,7 +395,11 @@ describe("everyBuildGroup", () => {
     const group = everyBuildGroup(
       facts(made(true, undefined, { counted: { reviews: found(1) } }), { now: DAY + 1 }),
     );
-    expect(group).toMatchObject({ state: "current", note: "checked at 5s", action: null });
+    expect(group).toMatchObject({
+      state: "current",
+      note: "checked yesterday at 5s",
+      action: null,
+    });
     expect(countOf(group, PROJECT_KEYS.reviews)).toEqual({
       key: PROJECT_KEYS.reviews,
       label: "Reviews overdue",
