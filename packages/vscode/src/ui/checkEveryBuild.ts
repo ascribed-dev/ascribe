@@ -27,6 +27,8 @@ const SHOW_PROBLEMS = "Show Problems";
 const MAX_OUTPUT = 256 * 1024 * 1024;
 /** `workspaceState` key: each project's last check, by its folder (`KeptCheck`). */
 const KEPT = "ascribe.lastCheckEveryBuild";
+/** The most problems a current check is kept with; one with more isn't kept, and the next window hasn't checked. */
+const MAX_KEPT_PROBLEMS = 5000;
 
 /** What a check of every build left in the Problems panel, for tests. */
 export interface EveryBuildApi {
@@ -465,6 +467,15 @@ export class EveryBuildChecks implements vscode.Disposable {
     if (run.current) {
       const now = await projectFiles(project, run.layout, this.projects.projects);
       if (changedSince(kept, now)) run.current = false;
+      // Unsaved changes leave nothing on disk: one made before the view showed the
+      // project, or put back by hot exit, makes it out of date too.
+      const unsaved = vscode.workspace.textDocuments.some(
+        (d) =>
+          d.isDirty &&
+          d.uri.scheme === "file" &&
+          changesCheck(d.uri.fsPath, project, run.layout, this.projects.projects),
+      );
+      if (unsaved) run.current = false;
     }
     // Checked again since, or no longer a project.
     if (this.checked.has(key)) return;
@@ -494,6 +505,8 @@ export class EveryBuildChecks implements vscode.Disposable {
   /** What's kept of a check that's made. */
   private toKept(checked: Checked): KeptCheck | undefined {
     if (!checked.summary || checked.list === undefined) return undefined;
+    // Too many to keep in the workspace's storage, which is read whole at startup.
+    if (checked.current && (checked.problems?.length ?? 0) > MAX_KEPT_PROBLEMS) return undefined;
     return {
       version: this.version,
       started: checked.started,

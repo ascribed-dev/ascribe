@@ -735,6 +735,26 @@ describe("with several projects, one nested in another", () => {
       assert.equal(stale.value, "—");
       assert.match(stale.note, /^out of date: the project changed after the check at /);
 
+      // An unsaved edit the window has when it reads the check back, as hot exit
+      // puts one back, or one made before the view showed the project: out of date.
+      const current = await checkAndKeep();
+      const editor = await open(linking);
+      const end = editor.document.lineAt(editor.document.lineCount - 1).range.end;
+      assert.ok(await editor.edit((e) => e.insert(end, "\nMore.\n")));
+      try {
+        // As it was kept before the edit.
+        await api.ui.everyBuild.keep(docs, current);
+        await reopen();
+        assert.equal(api.ui.everyBuild.isCurrent(docs), false);
+        assert.deepEqual(api.ui.everyBuild.problems(), []);
+        assert.match(
+          (await problemsIn("outOfDate")).note,
+          /^out of date: the project changed after the check at /,
+        );
+      } finally {
+        await vscode.commands.executeCommand("workbench.action.files.revert");
+      }
+
       // Kept by another version of the extension: not checked yet, and dropped.
       const kept = await checkAndKeep();
       await api.ui.everyBuild.keep(docs, { ...kept, version: "0.0.0-another" });
