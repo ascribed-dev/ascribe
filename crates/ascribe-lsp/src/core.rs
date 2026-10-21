@@ -783,6 +783,7 @@ impl Core {
         let mut visited = Visited::default();
         let mut refresh = false;
         let mut nav = false;
+        let mut redrawn = BTreeSet::new();
         for event in events {
             let Some(path) = Core::doc_path(&event.uri) else {
                 continue;
@@ -851,7 +852,6 @@ impl Core {
                     Change::Edited { .. } | Change::Deleted { .. } | Change::Unreadable { .. }
                 )
             });
-            let reported: Vec<RelPath> = mirror.iter().map(|(path, _)| path.clone()).collect();
             let written: Vec<RelPath> = changes
                 .iter()
                 .filter_map(|change| match change {
@@ -871,7 +871,7 @@ impl Core {
                     }
                 }
             }
-            self.apply(changes, &mirror);
+            redrawn = self.apply(changes, &mirror);
             if let Some(loaded) = self.loaded.as_mut() {
                 loaded.across_dirty = true;
                 for path in written {
@@ -879,14 +879,6 @@ impl Core {
                     // Checked again even when its text is what it was.
                     loaded.dirty.insert(path);
                 }
-                // A source's observations or `ascribe.examples.toml` changing
-                // changes what the pages showing its examples are told.
-                let showing = crate::examples::showing_changed(
-                    &loaded.inc.snapshot(),
-                    &loaded.model,
-                    &reported,
-                );
-                loaded.dirty.extend(showing);
             }
         }
         if memos {
@@ -905,6 +897,29 @@ impl Core {
         }
         if refresh {
             self.refresh_lenses();
+        }
+        self.pages_changed(&redrawn);
+    }
+
+    /// Tells the client which pages read differently because files changed
+    /// on disk, so a preview of one draws it again: a page, a fragment it
+    /// includes, or a file a `@snippet` in either shows
+    /// ([`crate::preview::CHANGED_NOTIFICATION`]). The editor's own edits it
+    /// follows itself.
+    fn pages_changed(&self, pages: &BTreeSet<RelPath>) {
+        let Some(loaded) = self.loaded.as_ref() else {
+            return;
+        };
+        let uris: Vec<String> = pages
+            .iter()
+            .filter_map(|page| path_to_uri(&loaded.source_path(page)))
+            .map(|uri| uri.as_str().to_owned())
+            .collect();
+        if !uris.is_empty() {
+            self.send(Notification::new(
+                crate::preview::CHANGED_NOTIFICATION.to_owned(),
+                serde_json::json!({ "pages": uris }),
+            ));
         }
     }
 
@@ -1075,16 +1090,20 @@ impl Core {
 
     // -- Applying changes -----------------------------------------------------
 
-    /// Applies a batch to the project, and queues what it affects.
-    fn apply(&mut self, changes: Vec<Change>, mirror: &[(RelPath, bool)]) {
+    /// Applies a batch to the project, queues what it affects, and returns
+    /// the pages whose resolved form it may change ([`Affected::re_resolve`]).
+    fn apply(&mut self, changes: Vec<Change>, mirror: &[(RelPath, bool)]) -> BTreeSet<RelPath> {
         let Some(loaded) = self.loaded.as_mut() else {
-            return;
+            return BTreeSet::new();
         };
         for (path, present) in mirror {
             loaded.fs.set(path, *present);
         }
         match loaded.inc.apply(changes) {
-            Ok(affected) => self.absorb(&affected),
+            Ok(affected) => {
+                self.absorb(&affected);
+                return affected.re_resolve;
+            }
             // A nested project's `ascribe.toml` came or went, which changes
             // which files are sources: the disk and the open buffers are read
             // again.
@@ -1096,6 +1115,7 @@ impl Core {
             // `sync_model`.
             Err(ApplyError::LayoutChanged) => self.log("unexpected layout change"),
         }
+        BTreeSet::new()
     }
 
     /// Queues the files an update affects, and clears the diagnostics of the

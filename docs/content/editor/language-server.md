@@ -53,3 +53,5 @@ Beside the standard requests, the server answers requests of its own, which the 
 | `ascribe/buildView` | What a build leaves out of a page: the [build lens](preview.md#the-build-lens) | `lsp-build-view.schema.json` |
 | `ascribe/search` | Where the pages say something, as readers read them: [Search](writing.md#search) | `lsp-search.schema.json` |
 | `ascribe/agentPrompt` | A prompt for an agent about one problem, a file's, or the project's: [Prompt your agent](../agents/prompts.md) | `lsp-agent-prompt.schema.json` |
+
+The server also sends one notification of its own, `ascribe/preview/changed`, with `{ "pages": [uri, …] }`, when files changed on disk change how pages read: a page or a fragment it includes, or a file a `@snippet` in either shows. A client with a preview of one asks for it again; one that doesn't preview can ignore it.

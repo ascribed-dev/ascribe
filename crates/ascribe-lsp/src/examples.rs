@@ -9,16 +9,14 @@
 //! puts `ascribe observe` on the clipboard, for a person to run in a
 //! terminal, where they can see what it starts.
 
-use std::collections::BTreeSet;
 use std::path::Path;
 
 use ascribe_core::{FileId, Issue, LineIndex, Location, RelPath, diagnostics};
-use ascribe_model::examples::{EXAMPLES_FILE, OBSERVATIONS_FOLDER, Problem};
+use ascribe_model::examples::{EXAMPLES_FILE, Problem};
 use ascribe_model::{ContentModel, Source};
 use ascribe_resolve::snippet::SnippetError;
 use ascribe_resolve::{
-    Address, CodeFiles, Example, ExampleStatus, FileIndex, FileSystem, Snapshot, SnippetUse,
-    resolve_snippet,
+    Address, CodeFiles, Example, ExampleStatus, FileIndex, FileSystem, SnippetUse, resolve_snippet,
 };
 use lsp_types::{
     CodeAction, CodeActionKind, CodeActionOrCommand, CompletionItem, CompletionItemKind, Diagnostic,
@@ -256,51 +254,6 @@ fn observe_line(folder: &Path, windows: bool) -> String {
     }
 }
 
-/// The pages and fragments whose `@snippet`s name a source whose
-/// `ascribe.examples.toml` or observations are among `changed` (paths from
-/// the project root): what to check again so their advice is right.
-pub(crate) fn showing_changed(
-    snapshot: &Snapshot,
-    model: &ContentModel,
-    changed: &[RelPath],
-) -> BTreeSet<RelPath> {
-    let sources: Vec<&str> = model
-        .sources
-        .iter()
-        .filter(|source| {
-            RelPath::parse(&source.path)
-                .is_ok_and(|folder| changed.iter().any(|path| is_examples_path(&folder, path)))
-        })
-        .map(|source| source.name.as_str())
-        .collect();
-    if sources.is_empty() {
-        return BTreeSet::new();
-    }
-    snapshot
-        .files()
-        .filter(|file| {
-            file.snippets.iter().any(|s| {
-                matches!(&s.address, Some(Ok(address)) if sources.contains(&address.source.as_str()))
-            })
-        })
-        .map(|file| file.path.clone())
-        .collect()
-}
-
-/// Whether `path` is `folder`'s `ascribe.examples.toml`, its observations'
-/// folder, or a file in it.
-fn is_examples_path(folder: &RelPath, path: &RelPath) -> bool {
-    let Some(rest) = path.relative_to(folder) else {
-        return false;
-    };
-    let rest = rest.as_str();
-    rest == EXAMPLES_FILE
-        || rest == OBSERVATIONS_FOLDER
-        || rest
-            .strip_prefix(OBSERVATIONS_FOLDER)
-            .is_some_and(|after| after.starts_with('/'))
-}
-
 /// The source whose `ascribe.examples.toml` is at `path`, from the project
 /// root.
 pub(crate) fn config_source<'a>(model: &'a ContentModel, path: &RelPath) -> Option<&'a Source> {
@@ -536,23 +489,6 @@ mod tests {
             observe_line(Path::new("D:/it's `x`/code"), true),
             "Set-Location -LiteralPath 'D:/it''s `x`/code'; ascribe observe"
         );
-    }
-
-    #[test]
-    fn knows_the_files_that_change_an_examples_status() {
-        let folder = RelPath::parse("code").unwrap_or_else(|_| unreachable!());
-        let is = |p: &str| {
-            is_examples_path(
-                &folder,
-                &RelPath::parse(p).unwrap_or_else(|_| unreachable!()),
-            )
-        };
-        assert!(is("code/ascribe.examples.toml"));
-        assert!(is("code/examples.observations"));
-        assert!(is("code/examples.observations/default.toml"));
-        assert!(!is("code/examples/greet.ts"));
-        assert!(!is("code/examples.observationsx"));
-        assert!(!is("other/ascribe.examples.toml"));
     }
 
     fn labels(text: &str) -> Vec<String> {

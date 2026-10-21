@@ -18,6 +18,19 @@ export type {
   SetBaseResult,
 } from "../shapes.js";
 
+/**
+ * The server's notification that files changed on disk change how pages
+ * read: a fragment one includes, or the code a `@snippet` shows. A preview
+ * of one asks for it again.
+ */
+export const PREVIEW_CHANGED = "ascribe/preview/changed";
+
+/** The parameters of `ascribe/preview/changed`. */
+export interface PreviewChangedParams {
+  /** The pages, as URIs. */
+  pages: string[];
+}
+
 /** The parameters of `ascribe/preview`. */
 export interface PreviewParams {
   textDocument: { uri: string };

@@ -1085,3 +1085,214 @@ fn the_projects_own_ascribe_toml_below_the_content_root_is_not_a_nested_project(
         ApplyError::NestedProjectChanged
     );
 }
+
+// -- Files a `@snippet` reads ------------------------------------------------------
+
+/// A file system whose files outside the content root a test changes after
+/// the project loads, as the disk changes under the language server: each
+/// path's text, or `None` when it's gone, over the files it loaded with.
+#[derive(Clone)]
+struct SharedFs {
+    base: Arc<MemoryFs>,
+    changed: Arc<std::sync::Mutex<std::collections::BTreeMap<RelPath, Option<String>>>>,
+}
+
+impl SharedFs {
+    fn put(&self, project_path: &str, text: &str) {
+        self.changed
+            .lock()
+            .unwrap()
+            .insert(path(project_path), Some(text.to_owned()));
+    }
+
+    fn remove(&self, project_path: &str) {
+        self.changed
+            .lock()
+            .unwrap()
+            .insert(path(project_path), None);
+    }
+
+    fn changed(&self, project_path: &RelPath) -> Option<Option<String>> {
+        self.changed.lock().unwrap().get(project_path).cloned()
+    }
+}
+
+impl ascribe_resolve::FileSystem for SharedFs {
+    fn sources(&self) -> ascribe_resolve::Sources {
+        self.base.sources()
+    }
+    fn read(&self, path: &RelPath) -> std::io::Result<String> {
+        self.base.read(path)
+    }
+    fn probe(&self, project_path: &RelPath) -> ascribe_resolve::Probe {
+        match self.changed(project_path) {
+            Some(Some(_)) => ascribe_resolve::Probe::File,
+            Some(None) => ascribe_resolve::Probe::Missing,
+            None => self.base.probe(project_path),
+        }
+    }
+    fn read_file(&self, project_path: &RelPath) -> std::io::Result<Vec<u8>> {
+        match self.changed(project_path) {
+            Some(Some(text)) => Ok(text.into_bytes()),
+            Some(None) => Err(std::io::ErrorKind::NotFound.into()),
+            None => self.base.read_file(project_path),
+        }
+    }
+    fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
+        match self.changed(project_path) {
+            Some(Some(_)) => Some(project_path.clone()),
+            Some(None) => None,
+            None => self.base.real_path(project_path),
+        }
+    }
+}
+
+const SNIPPET_MODEL: &str =
+    "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[sources.code]\npath = \"code\"\n";
+
+fn code_project() -> (IncrementalProject, SharedFs) {
+    let model = Arc::new(ascribe_model::load_str(SNIPPET_MODEL, FileId::new(0)).expect("a model"));
+    let layout = Layout::from_model(&model);
+    let fs = MemoryFs::new(&layout)
+        .with_source(
+            "index.md",
+            "---\ntitle: Home\n---\n\n@snippet: code:app.py#main\n",
+        )
+        .with_source(
+            "guide.md",
+            "---\ntitle: Guide\n---\n\n@include: _shown.md\n",
+        )
+        .with_source("_shown.md", "@snippet: code:app.py#main\n")
+        .with_source(
+            "other.md",
+            "---\ntitle: Other\n---\n\n@snippet: code:other.py\n",
+        )
+        .with_file(
+            "code/app.py",
+            "# :snippet-start: main\nprint(1)\n# :snippet-end:\n",
+        )
+        .with_file("code/other.py", "pass\n")
+        .with_file("code/unshown.py", "pass\n");
+    let fs = SharedFs {
+        base: Arc::new(fs),
+        changed: Arc::default(),
+    };
+    (IncrementalProject::load(model, layout, fs.clone()), fs)
+}
+
+/// The code of the page's snippet, as its expansion shows it.
+fn shown_code(inc: &IncrementalProject, page: &str) -> Option<String> {
+    let snapshot = inc.snapshot();
+    let expanded = snapshot.expansion(&path(page))?;
+    expanded
+        .blocks
+        .iter()
+        .find_map(|block| block.snippet.as_ref().map(|snippet| snippet.code.clone()))
+}
+
+#[test]
+fn a_change_to_a_file_a_snippet_shows_reads_it_again_for_every_page_that_shows_it() {
+    let (mut inc, fs) = code_project();
+    assert_eq!(shown_code(&inc, "index.md").as_deref(), Some("print(1)\n"));
+    assert_eq!(shown_code(&inc, "guide.md").as_deref(), Some("print(1)\n"));
+
+    fs.put(
+        "code/app.py",
+        "# :snippet-start: main\nprint(2)\n# :snippet-end:\n",
+    );
+    let affected = inc
+        .apply([Change::AssetCreated {
+            path: path("code/app.py"),
+        }])
+        .unwrap();
+    assert!(!affected.is_empty());
+    // The files with the snippet, and the page that includes the fragment.
+    assert_eq!(
+        affected.recheck,
+        set(&["index.md", "_shown.md", "guide.md"])
+    );
+    assert_eq!(affected.re_resolve, set(&["index.md", "guide.md"]));
+    assert_eq!(shown_code(&inc, "index.md").as_deref(), Some("print(2)\n"));
+    assert_eq!(shown_code(&inc, "guide.md").as_deref(), Some("print(2)\n"));
+    assert_eq!(affected.parsed, BTreeSet::new());
+
+    // Its region's tags gone: the snippet has nothing to show.
+    fs.put("code/app.py", "print(3)\n");
+    inc.apply([Change::AssetCreated {
+        path: path("code/app.py"),
+    }])
+    .unwrap();
+    assert_eq!(shown_code(&inc, "index.md"), None);
+
+    // Deleted, then back.
+    fs.remove("code/app.py");
+    let affected = inc
+        .apply([Change::AssetDeleted {
+            path: path("code/app.py"),
+        }])
+        .unwrap();
+    assert_eq!(affected.re_resolve, set(&["index.md", "guide.md"]));
+    fs.put(
+        "code/app.py",
+        "# :snippet-start: main\nprint(4)\n# :snippet-end:\n",
+    );
+    inc.apply([Change::AssetCreated {
+        path: path("code/app.py"),
+    }])
+    .unwrap();
+    assert_eq!(shown_code(&inc, "guide.md").as_deref(), Some("print(4)\n"));
+}
+
+#[test]
+fn deleting_the_folder_a_snippets_file_is_in_reads_it_again() {
+    let (mut inc, fs) = code_project();
+    fs.remove("code/app.py");
+    fs.remove("code/other.py");
+    // The watcher reports the folder, not each file in it.
+    let affected = inc
+        .apply([Change::AssetDeleted { path: path("code") }])
+        .unwrap();
+    assert_eq!(
+        affected.re_resolve,
+        set(&["index.md", "guide.md", "other.md"])
+    );
+    assert_eq!(shown_code(&inc, "index.md"), None);
+    // A folder whose name only starts as the file's reaches nothing.
+    let affected = inc
+        .apply([Change::AssetDeleted { path: path("cod") }])
+        .unwrap();
+    assert!(affected.is_empty());
+}
+
+#[test]
+fn a_change_to_a_file_no_snippet_shows_changes_nothing() {
+    let (mut inc, fs) = code_project();
+    fs.put("code/unshown.py", "changed\n");
+    let affected = inc
+        .apply([Change::AssetCreated {
+            path: path("code/unshown.py"),
+        }])
+        .unwrap();
+    assert!(affected.is_empty());
+    // Nor does a file whose name only starts as the observations' folder's.
+    let affected = inc
+        .apply([Change::AssetCreated {
+            path: path("code/examples.observationsx"),
+        }])
+        .unwrap();
+    assert!(affected.is_empty());
+}
+
+#[test]
+fn a_change_to_a_sources_observations_reads_its_snippets_again() {
+    let (mut inc, _) = code_project();
+    let affected = inc
+        .apply([Change::AssetCreated {
+            path: path("code/examples.observations/default.toml"),
+        }])
+        .unwrap();
+    assert_eq!(
+        affected.recheck,
+        set(&["index.md", "_shown.md", "guide.md", "other.md"])
+    );
+}

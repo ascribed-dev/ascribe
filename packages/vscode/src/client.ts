@@ -24,6 +24,7 @@ import {
   type ServerProjectEdit,
 } from "./edit.js";
 import { nodeEnvironment, shellCommand, usesShell } from "./environment.js";
+import { PREVIEW_CHANGED, type PreviewChangedParams } from "./preview/protocol.js";
 import { globFolder, samePath, type Project } from "./projects.js";
 import { scopeMiddleware, type LensScope } from "./scope.js";
 import { ServerStatus, type ServerState } from "./serverState.js";
@@ -72,6 +73,7 @@ export class ProjectServer implements vscode.Disposable {
   private requested = false;
   private starting: Promise<void> = Promise.resolve();
   private readonly started = new vscode.EventEmitter<void>();
+  private readonly pagesChanged = new vscode.EventEmitter<string[]>();
   private disposed = false;
   private runningSince: number | undefined;
   /** The diagnostics the running server last published for each file, with their versions. */
@@ -168,6 +170,14 @@ export class ProjectServer implements vscode.Disposable {
   /** Fires each time the server reaches the running state, at the first start and after a restart. */
   get onDidStart(): vscode.Event<void> {
     return this.started.event;
+  }
+
+  /**
+   * Fires with the URIs of the pages that read differently because files
+   * changed on disk (`ascribe/preview/changed`).
+   */
+  get onDidChangePages(): vscode.Event<string[]> {
+    return this.pagesChanged.event;
   }
 
   /**
@@ -308,6 +318,7 @@ export class ProjectServer implements vscode.Disposable {
     this.disposed = true;
     this.channel?.dispose();
     this.started.dispose();
+    this.pagesChanged.dispose();
     this.status.dispose();
   }
 
@@ -375,6 +386,9 @@ export class ProjectServer implements vscode.Disposable {
         ),
         errorHandler: this.errorHandler(),
       },
+    );
+    client.onNotification(PREVIEW_CHANGED, (params: PreviewChangedParams) =>
+      this.pagesChanged.fire(params.pages),
     );
     client.onDidChangeState(({ newState }) => {
       if (newState === State.Running) {

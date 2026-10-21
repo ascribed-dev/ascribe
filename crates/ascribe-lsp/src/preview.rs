@@ -44,6 +44,10 @@ use crate::uri::uri_to_path;
 /// The request's method name.
 pub const METHOD: &str = "ascribe/preview";
 
+/// The notification the server sends when files changed on disk change how
+/// pages read: `{ "pages": [uri, ...] }`. A preview of one asks for it again.
+pub const CHANGED_NOTIFICATION: &str = "ascribe/preview/changed";
+
 /// The parameters of `ascribe/preview`.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
