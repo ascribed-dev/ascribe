@@ -127,7 +127,7 @@ A long glossary, or one for each product, can be several pages. List each in `pa
 pages = ["glossary.md", "self-managed/glossary.md"]
 ```
 
-Write a term the pages share once, in a [fragment](../writing/directives.md#files), and include it on each:
+Write a term the pages share once, in a [fragment](../writing/frontmatter.md#files), and include it on each:
 
 ```markdown
 @include: _glossary/shared.md

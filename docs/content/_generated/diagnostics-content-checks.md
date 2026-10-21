@@ -116,7 +116,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Fix:** Give the current line a page in its place: mark the page so the current line has it, or write the page that takes its place and give it `replaces`. When the link is meant to lead to an older line, as on a page about migrating from it, leave it.
 
-**Read more:** [Links between lines](../writing/directives.md#links-between-lines) in the directive reference.
+**Read more:** [Links between lines](../writing/inline.md#links-between-lines) in the phrases and links reference.
 
 ### ASC221 `link-fragment-dropped`
 @id {permalink=true}: ASC221
@@ -129,7 +129,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Fix:** Give the heading on the page it lands on the same id, with `@id`, or link to the page without `#` and the id.
 
-**Read more:** [Links between lines](../writing/directives.md#links-between-lines) in the directive reference.
+**Read more:** [Links between lines](../writing/inline.md#links-between-lines) in the phrases and links reference.
 
 ### ASC223 `html-comment`
 @id {permalink=true}: ASC223
@@ -209,7 +209,7 @@ Advice · page level · next step: review · configurable in `[checks]` · ackno
 
 **Fix:** Link to the page from a page about its topic, or include it in one, so a reader of that page finds it. A page in the navigation is still in the sidebar, so this is a hint: acknowledge one that needs no link in its `intended` frontmatter, or turn the check off in [`[checks]`](../content-model/checks.md#19-checks) (`page-orphan = "off"`). A page that's `listing: unlisted` is in no sidebar, so only someone given its address reaches it: link to it, or take `listing: unlisted` away to put it in the sidebar.
 
-**Read more:** [Links](../writing/directives.md#links) in the directive reference.
+**Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
 ### ASC155 `fragment-unused`
 @id {permalink=true}: ASC155
@@ -274,7 +274,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 **Fix:** Delete the image when nothing needs it. A frontmatter string counts when it names the image from the file or from the content root, as `cover: img/card.png` does. An image used only by the site's own code is reported too, since Ascribe doesn't read it: turn the check off in [`[checks]`](../content-model/checks.md#19-checks) when your site uses images that way.
 
-**Read more:** [Images](../writing/directives.md#images) in the directive reference.
+**Read more:** [Images](../writing/inline.md#images) in the phrases and links reference.
 
 ### ASC160 `image-large`
 @id {permalink=true}: ASC160

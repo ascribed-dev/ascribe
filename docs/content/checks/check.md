@@ -137,7 +137,7 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 ## `ascribe fmt`
 @id {permalink=true}: cli-fmt
 
-Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. It changes nothing else, never how a page renders, and leaves alone a construct that has an error. See [Canonical form](../writing/directives.md#canonical-form).
+Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. It changes nothing else, never how a page renders, and leaves alone a construct that has an error. See [Canonical form](../writing/syntax.md#canonical-form).
 
 It lists each file it changed.
 
