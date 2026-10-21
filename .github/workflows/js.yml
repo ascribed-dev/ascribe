@@ -84,11 +84,12 @@ jobs:
       - run: |
           cd packages/vscode && node esbuild.mjs --tests
           failed=0
-          for i in $(seq 1 20); do
+          for i in $(seq 1 30); do
             echo "=== #752 run $i"
-            xvfb-run -a node out/integration/run.cjs || failed=$((failed+1))
+            xvfb-run -a node out/integration/run.cjs > run.log 2>&1 || { failed=$((failed+1)); grep -E "\[752|passing|failing|Error|actual|expected|^\s*[+-] " run.log | cut -c1-600; }
+            grep -E "passing|failing" run.log
           done
-          echo "=== #752 failed $failed of 20"
+          echo "=== #752 failed $failed of 30"
           test "$failed" = 0
         env:
           ASCRIBE_BIN: ${{ github.workspace }}/target/debug/ascribe

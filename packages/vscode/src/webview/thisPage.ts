@@ -370,7 +370,9 @@ function report(answer: ThisPageAnswer): ThisPageReport {
 function draw(answer: ThisPageAnswer, channel: ViewChannel<ThisPageReport>): ThisPageReport {
   const focused = focusedKey();
   const scroll = scroller.scrollTop;
-  trace(`draw seq=${channel.seq} before`);
+  trace(
+    `draw seq=${channel.seq} before: ${answer.message ?? answer.sections.map((item) => `${item.key}[${flat(item.children).length}]`).join(",")}`,
+  );
   patch(
     view,
     answer.message !== null
@@ -381,6 +383,7 @@ function draw(answer: ThisPageAnswer, channel: ViewChannel<ThisPageReport>): Thi
         ],
   );
   // What had the focus is gone: the focus goes to its section's header.
+  if (focused !== null && focusedKey() === null) trace(`draw lost ${focused}`);
   if (focused !== null && focusedKey() === null && !focusKey(focused)) {
     focusKey(focused.split("/")[0] ?? focused);
   }
@@ -392,6 +395,11 @@ function draw(answer: ThisPageAnswer, channel: ViewChannel<ThisPageReport>): Thi
 
 const channel = startView<ThisPageAnswer, ThisPageReport>(draw);
 
+window.addEventListener("focus", () => trace("window focus"));
+window.addEventListener("blur", () => trace("window blur"));
+document.addEventListener("focusout", (event) =>
+  trace(`focusout ${(event.target as Element | null)?.getAttribute?.("data-key")} -> ${(event.relatedTarget as Element | null)?.tagName}`),
+);
 window.addEventListener("message", (event: MessageEvent<unknown>) => {
   const probe = event.data as Partial<ThisPageProbe> | null;
   if (probe?.type !== "probe" || typeof probe.probe !== "number" || !shown) return;

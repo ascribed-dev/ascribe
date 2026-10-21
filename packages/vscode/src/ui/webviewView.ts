@@ -55,6 +55,12 @@ export class WebviewView<Answer, Report> implements vscode.WebviewViewProvider, 
   private view: vscode.WebviewView | undefined;
   private readonly handshake = new Handshake<Answer>();
   private drawnLast: Drawn<Report> | undefined;
+  /**
+   * The answers a choice in the webview can name, by number: the one it drew
+   * last, and each sent since. A choice names the answer the reader saw,
+   * and a newer one can be on its way to the webview when it's made.
+   */
+  private readonly choosable = new Map<number, Answer>();
   private waiters: (() => void)[] = [];
   private readonly viewDisposables: vscode.Disposable[] = [];
   private readonly shown = new vscode.EventEmitter<void>();
@@ -108,7 +114,10 @@ export class WebviewView<Answer, Report> implements vscode.WebviewViewProvider, 
     console.log(
       `[752 ${Date.now() % 1_000_000}] ${this.id} answer seq=${this.handshake.latest?.seq} sent=${!!message} from ${new Error().stack?.split("\n").slice(2, 5).map((l) => l.trim()).join(" < ")}`,
     );
-    if (message) void this.view?.webview.postMessage(message);
+    if (message) {
+      this.choosable.set(message.seq, answer);
+      void this.view?.webview.postMessage(message);
+    }
   }
 
   /**
@@ -123,11 +132,20 @@ export class WebviewView<Answer, Report> implements vscode.WebviewViewProvider, 
   /** Drops the newest answer, which is out of date: the view draws nothing until it gets another. */
   forget(): void {
     this.handshake.forget();
+    this.choosable.clear();
   }
 
   /** The answer `seq`, if it's the newest: what a choice in the webview names. */
   isLatest(seq: number): boolean {
     return this.handshake.latest?.seq === seq;
+  }
+
+  /**
+   * The answer `seq`, while the webview can be choosing from it: the one it
+   * drew last, or one sent since. `undefined` for an older one.
+   */
+  answerOf(seq: number): Answer | undefined {
+    return this.choosable.get(seq);
   }
 
   resolveWebviewView(view: vscode.WebviewView): void {
@@ -152,10 +170,12 @@ export class WebviewView<Answer, Report> implements vscode.WebviewViewProvider, 
       // the ready gets the newest answer.
       view.onDidChangeVisibility(() => {
         if (view.visible) this.shown.fire();
+        else this.choosable.clear();
       }),
       view.onDidDispose(() => {
         if (this.view === view) this.view = undefined;
         this.handshake.reset();
+        this.choosable.clear();
       }),
     );
     this.shown.fire();
@@ -172,11 +192,19 @@ export class WebviewView<Answer, Report> implements vscode.WebviewViewProvider, 
     switch (message.type) {
       case "ready": {
         const answer = this.handshake.readied();
-        if (answer) void this.view?.webview.postMessage(answer);
+        // A new document: it can choose only from what it's sent now.
+        this.choosable.clear();
+        if (answer) {
+          this.choosable.set(answer.seq, answer.answer);
+          void this.view?.webview.postMessage(answer);
+        }
         return;
       }
       case "drawn":
         this.drawnLast = { seq: message.seq, report: message.report, at: Date.now() };
+        for (const seq of this.choosable.keys()) {
+          if (seq < message.seq) this.choosable.delete(seq);
+        }
         for (const waiter of this.waiters) waiter();
         return;
       case "open":
