@@ -317,8 +317,8 @@ export class SidebarViews implements vscode.Disposable {
   private pageAt: PageAt | undefined;
   /** What This page says in place of a page; `undefined` while it shows one. */
   private pageNotice: ThisPageNotice | undefined;
-  /** The nodes the keys of This page's newest answer name. */
-  private pageNodes = new Map<string, ThisPageNode>();
+  /** The nodes each answer This page sent names, by its items' keys. */
+  private readonly pageNodes = new WeakMap<ThisPageAnswer, Map<string, ThisPageNode>>();
   /** Counts the cursor's stops, so an older stop's answer is dropped. */
   private pageLooked = 0;
   /** How many times This page has asked the server. */
@@ -1423,28 +1423,29 @@ export class SidebarViews implements vscode.Disposable {
       (node) =>
         this.thisPage.opens(node) !== undefined || this.thisPage.command(node) !== undefined,
     );
-    this.pageNodes = nodes;
     const about = this.page?.about;
     this.thisPageView.badge = this.showsPageNow() ? healthBadge(roots) : undefined;
-    this.thisPageView.show(
+    const answer: ThisPageAnswer =
       this.pageNotice || !about || items.length === 0
         ? thisPageNotice(this.pageNotice ?? { kind: "noPage" })
-        : { message: null, actions: [], head: thisPageHead(about), sections: items },
-    );
+        : { message: null, actions: [], head: thisPageHead(about), sections: items };
+    this.pageNodes.set(answer, nodes);
+    this.thisPageView.show(answer);
   }
 
   /**
    * Opens what an item This page drew names: a file at its place, or a
-   * command. Only an item of the newest answer, whose key names a node of it
-   * that opens something; anything else the webview sends is dropped.
+   * command. Only an item of the answer the webview drew, which a newer one
+   * may be on its way to replace, whose key names a node of that answer that
+   * opens something; anything else the webview sends is dropped.
    */
   private async chooseItem(seq: number, key: string): Promise<void> {
-    const latest = this.thisPageView.isLatest(seq) ? this.thisPageView.latest : undefined;
-    if (latest?.actions.some((action) => action.key === key)) {
+    const answer = this.thisPageView.answerOf(seq);
+    if (answer?.actions.some((action) => action.key === key)) {
       await this.runNoticeAction(key);
       return;
     }
-    const node = this.thisPageView.isLatest(seq) ? this.pageNodes.get(key) : undefined;
+    const node = answer && this.pageNodes.get(answer)?.get(key);
     if (!node) return;
     const command = this.thisPage.command(node);
     if (command) {
@@ -1546,7 +1547,7 @@ export function thisPageWebview(
     thisPageReport,
     {
       open: (seq, key) => {
-        if (view.isLatest(seq) && key === NOTICE_ACTIONS.manageTrust) {
+        if (view.answerOf(seq) && key === NOTICE_ACTIONS.manageTrust) {
           void vscode.commands.executeCommand(MANAGE_TRUST);
         }
       },
