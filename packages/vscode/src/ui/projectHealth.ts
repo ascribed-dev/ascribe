@@ -13,8 +13,9 @@
 // checked" never look alike.
 
 import type { Counted } from "../everyBuild.js";
+import { problemsText } from "../problems.js";
 import type { ServerState } from "../serverState.js";
-import type { InventoryResult, Summary } from "../shapes.js";
+import type { InventoryResult } from "../shapes.js";
 import { TASKS, type TaskName } from "../tasks.js";
 import type {
   ProjectAboutRow,
@@ -516,7 +517,8 @@ export function everyBuildGroup({ everyBuild, time, day, now }: ProjectFacts): P
           CHECK,
         );
       }
-      const severities = bySeverity(everyBuild.summary);
+      const { errors, warnings, advice } = everyBuild.summary;
+      const severities = problemsText({ errors, warnings, advice });
       const kind = (base: Base, of: Counted, noun: string) => {
         const n = everyBuild.counted[of].count;
         return counted(base, n, count(n, noun));
@@ -543,7 +545,12 @@ export function everyBuildGroup({ everyBuild, time, day, now }: ProjectFacts): P
         note: `checked at ${at}${unsaved}`,
         action: null,
         counts: [
-          counted(COUNTS.problems, severities === "" ? 0 : 1, severities),
+          severities === ""
+            ? counted(COUNTS.problems, 0, "")
+            : {
+                ...counted(COUNTS.problems, 1, severities),
+                problems: { errors, warnings, advice },
+              },
           kind(COUNTS.examples, "examples", "example"),
           reviews,
           kind(COUNTS.permalinks, "permalinks", "permalink"),
@@ -647,17 +654,6 @@ export function syncQuestion(
     message: `${files} out of date in ${project}. Sync Agent Files?`,
     detail: `ascribe agents sync would change:\n${stale.join("\n")}`,
   };
-}
-
-/** "2 errors, 1 warning, 3 advice", leaving out a severity there's none of; empty for none at all. */
-function bySeverity({ errors, warnings, advice }: Summary): string {
-  return [
-    errors > 0 ? count(errors, "error") : "",
-    warnings > 0 ? count(warnings, "warning") : "",
-    advice > 0 ? `${advice} advice` : "",
-  ]
-    .filter(Boolean)
-    .join(", ");
 }
 
 function count(n: number, noun: string, nouns = `${noun}s`): string {

@@ -128,6 +128,23 @@ describe("what the check says when it's done", () => {
     );
   });
 
+  it("counts advice by its lines, as the views' tooltips do", () => {
+    const advice = { ...cloud, severity: "advice" as const };
+    const warning = { ...cloud, severity: "warning" as const };
+    expect(
+      checkedText(
+        report([cloud, warning, advice, advice], {
+          summary: { errors: 1, warnings: 1, advice: 2 },
+        }),
+        "docs",
+        0,
+        0,
+      ),
+    ).toBe(
+      "Ascribe checked every build of docs (site, cloud): 1 error, 1 warning, and advice on 2 lines. The Problems panel already showed them.",
+    );
+  });
+
   it("says when there are no problems, and when the project couldn't be checked", () => {
     expect(checkedText(report([]), "docs", 0, 1)).toBe(
       "Ascribe checked every build of docs (site, cloud): no problems. 1 file with unsaved changes was checked as saved.",

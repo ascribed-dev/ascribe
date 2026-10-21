@@ -17,12 +17,14 @@
 // from: the group's head says it once, with the action that brings its
 // counts current while they aren't, and each count is a line of a
 // description list, its label then its value, the value a button when
-// choosing it does something. A count that isn't current says so in words,
+// choosing it does something. Problems are icons with counts, named in words
+// (`severities.ts`). A count that isn't current says so in words,
 // never by color alone: a dash is named by its group's note.
 //
 // The project's name and folder are the author's text: all of it is set as
 // text, never as HTML.
 
+import { drawnSeverities, severities } from "./severities.js";
 import { seenViolations, startView, type ViewChannel } from "./view.js";
 import type {
   ProjectActionGroup,
@@ -238,7 +240,12 @@ function count(item: ProjectCount, group: ProjectHealthGroup, channel: Channel):
   let value: HTMLElement;
   if (item.opens) {
     value = chooser(item.key, channel);
-    value.textContent = item.value;
+    // Problems are icons with counts, which the value says in words, on hover too.
+    if (item.problems) {
+      value.append(severities(item.problems, item.value));
+    } else {
+      value.textContent = item.value;
+    }
     value.setAttribute("aria-label", `${item.label}: ${item.value}. ${when}`);
   } else {
     value = element("span", undefined, item.value);
@@ -390,6 +397,7 @@ function draw(answer: ProjectAnswer, channel: Channel): ProjectReport {
               ?.textContent ??
             "",
           state: item.state,
+          severities: row ? drawnSeverities(row) : [],
           // Drawn in another color than its label's, as the stylesheet dims a zero.
           dimmed:
             value && label

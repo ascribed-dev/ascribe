@@ -1,0 +1,5 @@
+---
+section: The binary
+---
+
+**This page and the Project view count problems as VS Code's status bar does: an icon per severity with its count beside it, and a tooltip that says them in words.** The icons are the Problems panel's codicons, `error`, `warning`, and `info` for advice, which the language server sends as Information, each colored as the panel colors it with the theme's `--vscode-*` variables, and told by its shape and count as well, never by color alone (decision 46). A severity there's none of is left out; none at all stays "none" on This page and a dimmed `0` in the Project view. The words, "2 errors, 1 warning, and advice on 3 lines", are the count's tooltip and its accessible name, so a screen reader hears them and never the icons, and Check Every Build's notification, which is text, says the same words. One function makes them for all three. The severity keeps its name, advice. _Why:_ "advice" is a mass noun, so "3 advice" read wrongly, and the name is the CLI's, the JSON's, and the docs'; renaming it was the other option, and wasn't taken. _From:_ the maintainer, 21 October 2026, in [#779](https://github.com/ascribed-dev/ascribe/issues/779).

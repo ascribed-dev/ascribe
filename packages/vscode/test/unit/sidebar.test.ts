@@ -1198,11 +1198,28 @@ describe("the This page view", () => {
       ]);
       expect(flat([nth(roots, 1)])).toEqual([
         "Health (2 things to do)",
-        "  Problems (1 warning, 2 advice)",
+        "  Problems (1 warning and advice on 2 lines)",
         "  Size (31,200 of 50,000 characters, in site)",
         "  Example (tested, code:greet.ts#greet, with Node 22 on Linux, under “Greet”)",
         "  Example (changed since it was tested, code:old.ts)",
       ]);
+    });
+
+    it("give the webview the problems to draw as icons, and none for none", () => {
+      const problemsItem = (counts: { errors: number; warnings: number; advice: number }) =>
+        nth(
+          thisPageItems(thisPageRoots(full, undefined, { uri, problems: counts }), () => true)
+            .items,
+          1,
+        ).children.find((item) => item.label === "Problems");
+      expect(problemsItem({ errors: 0, warnings: 1, advice: 2 })).toMatchObject({
+        state: "1 warning and advice on 2 lines",
+        problems: { errors: 0, warnings: 1, advice: 2 },
+      });
+      expect(problemsItem({ errors: 0, warnings: 0, advice: 0 })).toMatchObject({
+        state: "none",
+        problems: null,
+      });
     });
 
     it("open the place each is set, or run the command that acts on it", () => {
