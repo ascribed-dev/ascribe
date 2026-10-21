@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { SettingEntry, SettingsResult } from "../../src/shapes.js";
+import type { CheckEntry, SettingEntry, SettingsResult } from "../../src/shapes.js";
 import {
+  allSettings,
   checkSettingsMessage,
   checkedValue,
   inStep,
-  SHOWN,
   setInStep,
+  settingTarget,
   settingsAnswer,
 } from "../../src/ui/settingsModel.js";
 import type { SettingView } from "../../src/webview/settingsProtocol.js";
@@ -29,6 +30,24 @@ function entry(key: string, more: Partial<SettingEntry> = {}): SettingEntry {
 
 const range = { start: { line: 9, character: 0 }, end: { line: 9, character: 24 } };
 
+function check(slug: string, more: Partial<CheckEntry> = {}): CheckEntry {
+  return {
+    slug,
+    code: "ASC149",
+    name: "Page size",
+    area: "Pages",
+    when: [{ text: "A page is long.", code: false }],
+    choices: ["off", "advice", "warning", "error"],
+    default: "advice",
+    named: false,
+    level: null,
+    set: null,
+    problems: [],
+    limit: null,
+    ...more,
+  };
+}
+
 function result(more: Partial<SettingsResult> = {}): SettingsResult {
   return {
     modelUri: "file:///p/ascribe.toml",
@@ -45,26 +64,33 @@ function result(more: Partial<SettingsResult> = {}): SettingsResult {
         set: { range, line: 11 },
       }),
     ],
+    checks: [],
     ...more,
   };
 }
 
 describe("Project Settings' answer", () => {
-  it("shows the settings it shows, in its order, each with its value, default, and place", () => {
+  it("shows every setting, in the server's order, each with its value, default, and place", () => {
     const answer = settingsAnswer(result());
     expect(answer.message).toBeNull();
-    expect(answer.settings.map((s) => s.id)).toEqual([...SHOWN]);
-    expect(answer.settings[0]).toMatchObject({
+    expect(answer.settings.map((s) => s.id)).toEqual([
+      "consumer.site",
+      "consumer.base-path",
+      "consumer.trailing-slash",
+    ]);
+    expect(answer.settings[2]).toMatchObject({
+      section: "[consumer]",
       key: "[consumer] trailing-slash",
       value: "never",
       defaultText: '"always"',
       where: "ascribe.toml:11",
       set: true,
       editable: true,
+      resettable: true,
     });
   });
 
-  it("shows a setting the file leaves out with its default, which it doesn't change yet", () => {
+  it("shows a setting the file leaves out with its default, which a change adds", () => {
     const answer = settingsAnswer(
       result({ settings: [entry("trailing-slash", { default: "always" })] }),
     );
@@ -73,8 +99,83 @@ describe("Project Settings' answer", () => {
       value: "always",
       where: "Not set in ascribe.toml",
       set: false,
-      editable: false,
+      editable: true,
+      resettable: false,
     });
+    expect(
+      settingsAnswer(result({ settings: [entry("spec", { table: "" })] })).settings[0],
+    ).toMatchObject({ section: "The top level", key: "spec" });
+  });
+
+  it("shows each check's level and limit as settings of its own table", () => {
+    const answer = settingsAnswer(
+      result({
+        checks: [
+          check("page-orphan", {
+            name: "Page orphan",
+            named: true,
+            level: "off",
+            set: { range, line: 20 },
+          }),
+          check("page-size", {
+            limit: {
+              kind: "number",
+              default: 50_000,
+              defaultText: "50,000 characters",
+              value: null,
+              set: null,
+              problems: [],
+            },
+          }),
+        ],
+      }),
+    );
+    const [orphan, size] = answer.checks;
+    expect(orphan).toMatchObject({ slug: "page-orphan", named: true, limit: null });
+    expect(orphan?.level).toMatchObject({
+      id: "checks.page-orphan.level",
+      key: "[checks] page-orphan",
+      kind: "level",
+      value: "off",
+      defaultText: "advice",
+      where: "ascribe.toml:20",
+      resettable: true,
+      description: [{ text: "A page is long.", code: false }],
+    });
+    // A check the file leaves out shows its own level.
+    expect(size?.level).toMatchObject({ value: "advice", set: false, editable: true });
+    expect(size?.limit).toMatchObject({
+      id: "checks.page-size.limit",
+      key: "[checks.page-size] limit",
+      kind: "number",
+      value: 50_000,
+      defaultText: "50,000 characters",
+      resettable: false,
+    });
+    expect(allSettings(answer).map((s) => s.id)).toEqual([
+      "consumer.site",
+      "consumer.base-path",
+      "consumer.trailing-slash",
+      "checks.page-orphan.level",
+      "checks.page-size.level",
+      "checks.page-size.limit",
+    ]);
+  });
+
+  it("finds the table and key the server sets for each id", () => {
+    const answer = result({ checks: [check("page-orphan", { set: { range, line: 20 } })] });
+    expect(settingTarget(answer, "consumer.base-path")).toEqual({
+      table: "consumer",
+      key: "base-path",
+      set: { range, line: 10 },
+    });
+    expect(settingTarget(answer, "checks.page-orphan.level")).toEqual({
+      table: "checks.page-orphan",
+      key: "level",
+      set: { range, line: 20 },
+    });
+    expect(settingTarget(answer, "checks.page-orphan.limit")).toBeUndefined();
+    expect(settingTarget(answer, "consumer.nothing")).toBeUndefined();
   });
 
   it("doesn't change a value the file writes in a form it can't show", () => {
@@ -88,6 +189,7 @@ describe("Project Settings' answer", () => {
     expect(settingsAnswer(result({ unreadable: "`ascribe.toml` isn't valid TOML: x" }))).toEqual({
       message: "`ascribe.toml` isn't valid TOML: x Fix it in the file to see its settings.",
       settings: [],
+      checks: [],
     });
   });
 });
@@ -141,7 +243,11 @@ describe("the rule the tab keeps", () => {
   });
 
   it("sends a value only of the setting's kind", () => {
-    const [slash, base] = settingsAnswer(result()).settings as [SettingView, SettingView];
+    const [, base, slash] = settingsAnswer(result()).settings as [
+      SettingView,
+      SettingView,
+      SettingView,
+    ];
     expect(checkedValue(slash, "never")).toBe("never");
     expect(checkedValue(slash, "sometimes")).toBeUndefined();
     expect(checkedValue(base, "/docs/")).toBe("/docs/");
@@ -149,6 +255,9 @@ describe("the rule the tab keeps", () => {
     expect(checkedValue({ ...base, kind: "number" }, 4)).toBe(4);
     expect(checkedValue({ ...base, kind: "number" }, 4.5)).toBeUndefined();
     expect(checkedValue({ ...base, kind: "switch" }, "true")).toBeUndefined();
+    expect(checkedValue({ ...base, kind: "size" }, 200_000)).toBe(200_000);
+    expect(checkedValue({ ...base, kind: "size" }, "200 KB")).toBe("200 KB");
+    expect(checkedValue({ ...base, kind: "size" }, " ")).toBeUndefined();
   });
 
   it("takes the webview's messages, and nothing else", () => {
@@ -157,6 +266,12 @@ describe("the rule the tab keeps", () => {
     ).toEqual({ type: "set", seq: 2, id: "consumer.base-path", value: "/" });
     expect(checkSettingsMessage({ type: "set", seq: 2, id: "x", value: {} })).toBeUndefined();
     expect(checkSettingsMessage({ type: "openLine", seq: -1, id: "x" })).toBeUndefined();
+    expect(checkSettingsMessage({ type: "reset", seq: 2, id: "consumer.site" })).toEqual({
+      type: "reset",
+      seq: 2,
+      id: "consumer.site",
+    });
+    expect(checkSettingsMessage({ type: "reset", seq: 2 })).toBeUndefined();
     expect(checkSettingsMessage({ type: "ready" })).toEqual({ type: "ready" });
     expect(checkSettingsMessage({ type: "drawn", seq: 1, report: {} })).toBeUndefined();
     expect(checkSettingsMessage({ type: "run" })).toBeUndefined();

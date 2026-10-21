@@ -242,6 +242,65 @@ export interface ChangesResult {
   problem: string | null;
 }
 
+/** One configurable check, as `[checks]` sets it. */
+export interface CheckEntry {
+  /** Its slug, which `[checks]` names it by: `page-size`. */
+  slug: string;
+  /** Its code: `ASC149`. */
+  code: string;
+  /** Its name for people: the slug in words, `Page size`. */
+  name: string;
+  /** The area the diagnostics reference lists it under: `Pages`. */
+  area: string;
+  /**
+   * What it reports: the registry's `when`, as plain text and code spans,
+   * as a setting's description is.
+   */
+  when: SettingPiece[];
+  /** The levels `[checks]` takes, in the order a message lists them. */
+  choices: string[];
+  /**
+   * Its own level, which it has when the file sets none: `advice`,
+   * `warning`, or `error`.
+   */
+  default: string;
+  /** Whether the file names the check in `[checks]` at all. */
+  named: boolean;
+  /**
+   * The level the file sets; `null` when it sets none, or writes one that
+   * isn't a string.
+   */
+  level: string | null;
+  /** Where the file sets its level; `null` when it doesn't. */
+  set: SettingPlace | null;
+  /** The server's problems on the lines that set its level. */
+  problems: SettingProblem[];
+  /**
+   * Its `limit`, for a check that takes one: `page-size`, `image-large`,
+   * and `memo-long`.
+   */
+  limit: CheckLimit | null;
+}
+
+/** A check's `limit`. */
+export interface CheckLimit {
+  /**
+   * `number`, a whole number above 0; or `size`, a number of bytes or a
+   * string with a unit, `"500 KB"`.
+   */
+  kind: string;
+  /** The limit used when the file sets none. */
+  default: SettingValue;
+  /** The default in words, with its unit: `50,000 characters`, `500 KB`. */
+  defaultText: string;
+  /** The limit the file sets; `null` when it sets none. */
+  value: SettingValue | null;
+  /** Where the file sets it; `null` when it doesn't. */
+  set: SettingPlace | null;
+  /** The server's problems on the lines that set it. */
+  problems: SettingProblem[];
+}
+
 /**
  * What `ascribe check --format json` and `ascribe build --format json`
  * write: one document, whatever the outcome. Fields can be added without a
@@ -2314,6 +2373,11 @@ export interface SettingsResult {
    * `[types.<name>]`), in the content model reference's order.
    */
   settings: SettingEntry[];
+  /**
+   * Every configurable check: the ones the file sets first, then the
+   * rest, each in the diagnostics reference's order.
+   */
+  checks: CheckEntry[];
 }
 
 /** How many diagnostics of each severity. */

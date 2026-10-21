@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright-core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type {
+  CheckView,
   FromSettings,
   SettingsAnswer,
   SettingsReport,
@@ -116,6 +117,7 @@ async function open(): Promise<Tab> {
 
 function setting(more: Partial<SettingView> & Pick<SettingView, "id">): SettingView {
   return {
+    section: "[consumer]",
     name: "Trailing slash",
     key: "[consumer] trailing-slash",
     kind: "choice",
@@ -125,6 +127,7 @@ function setting(more: Partial<SettingView> & Pick<SettingView, "id">): SettingV
     where: "ascribe.toml:47",
     set: true,
     editable: true,
+    resettable: true,
     description: [
       { text: "Routing. Whether page URLs end in ", code: false },
       { text: "/", code: true },
@@ -150,7 +153,45 @@ const ANSWER: SettingsAnswer = {
       where: "ascribe.toml:48",
     }),
   ],
+  checks: [],
 };
+
+function pageSize(more: Partial<CheckView> = {}): CheckView {
+  return {
+    slug: "page-size",
+    code: "ASC149",
+    named: false,
+    level: setting({
+      id: "checks.page-size.level",
+      section: "Pages",
+      name: "Page size",
+      key: "[checks] page-size",
+      kind: "level",
+      choices: ["off", "advice", "warning", "error"],
+      value: "advice",
+      defaultText: "advice",
+      where: "Not set in ascribe.toml",
+      set: false,
+      resettable: false,
+      description: [{ text: "A page's Markdown is as long as the limit or longer.", code: false }],
+    }),
+    limit: setting({
+      id: "checks.page-size.limit",
+      section: "Pages",
+      name: "Page size limit",
+      key: "[checks.page-size] limit",
+      kind: "number",
+      choices: [],
+      value: 50_000,
+      defaultText: "50,000 characters",
+      where: "Not set in ascribe.toml",
+      set: false,
+      resettable: false,
+      description: [],
+    }),
+    ...more,
+  };
+}
 
 describe("Project Settings' webview", () => {
   it("draws each setting with its name, key, description, default, place, and value, under its policy", async () => {
@@ -165,6 +206,7 @@ describe("Project Settings' webview", () => {
           where: "ascribe.toml:47",
           problems: [],
           editable: true,
+          resettable: true,
         },
         {
           id: "consumer.base-path",
@@ -172,13 +214,16 @@ describe("Project Settings' webview", () => {
           where: "ascribe.toml:48",
           problems: [],
           editable: true,
+          resettable: true,
         },
       ],
       violations: [],
     });
     const first = tab.page.locator("section.setting").first();
     expect(await first.getAttribute("class")).toBe("setting set");
-    expect(await first.locator("h2").textContent()).toBe("Trailing slash");
+    expect(await first.locator("h3").textContent()).toBe("Trailing slash");
+    // Under its table's heading.
+    expect(await tab.page.locator("h2.section").allTextContents()).toEqual(["[consumer]"]);
     expect(await first.locator(".key").textContent()).toBe("[consumer] trailing-slash");
     expect(await first.locator(".description").textContent()).toBe(
       "Routing. Whether page URLs end in /.",
@@ -241,6 +286,7 @@ describe("Project Settings' webview", () => {
           ],
         },
       ],
+      checks: [],
     });
     expect(report.settings.map((s) => [s.value, s.problems])).toEqual([
       ["never", []],
@@ -255,7 +301,7 @@ describe("Project Settings' webview", () => {
       seq: 1,
       answer: ANSWER,
     } satisfies ToView<SettingsAnswer>);
-    await tab.draw(3, { message: "The server is starting.", settings: [] });
+    await tab.draw(3, { message: "The server is starting.", settings: [], checks: [] });
     expect(await tab.page.locator(".message").textContent()).toBe("The server is starting.");
     expect(tab.posted.filter((m) => m.type === "drawn").map((m) => m.seq)).toEqual([1, 2, 3]);
     await tab.page.close();
@@ -277,6 +323,7 @@ describe("Project Settings' webview", () => {
         }),
         setting({ id: "consumer.slugger", editable: false, set: false, where: "Not set" }),
       ],
+      checks: [],
     });
     const size = tab.page.getByRole("textbox", { name: "Size" });
     const from = tab.posted.length;
@@ -294,6 +341,129 @@ describe("Project Settings' webview", () => {
     expect(await tab.page.getByRole("combobox", { name: "Trailing slash" }).isDisabled()).toBe(
       true,
     );
+    await tab.page.close();
+  });
+
+  it("posts Reset to default for a setting the file sets, and offers none for one it leaves out", async () => {
+    const tab = await open();
+    await tab.draw(4, {
+      message: null,
+      settings: [
+        setting({ id: "consumer.trailing-slash" }),
+        setting({
+          id: "consumer.headers",
+          name: "Headers",
+          key: "[consumer] headers",
+          choices: ["netlify"],
+          value: null,
+          defaultText: "",
+          where: "Not set in ascribe.toml",
+          set: false,
+          resettable: false,
+        }),
+      ],
+      checks: [],
+    });
+    expect(await tab.page.getByRole("button", { name: /^Reset/ }).count()).toBe(1);
+    // A choice with no value shows none, rather than its first.
+    expect(await tab.page.getByRole("combobox", { name: "Headers" }).inputValue()).toBe("");
+    const from = tab.posted.length;
+    await tab.page.getByRole("button", { name: "Reset Trailing slash to default" }).click();
+    expect(await tab.next("reset", from)).toEqual({
+      type: "reset",
+      seq: 4,
+      id: "consumer.trailing-slash",
+    });
+    await tab.page.close();
+  });
+
+  it("draws each check with what it reports, its level, and its limit, and posts each", async () => {
+    const tab = await open();
+    const report = await tab.draw(5, {
+      message: null,
+      settings: [],
+      checks: [
+        {
+          slug: "page-orphan",
+          code: "ASC155",
+          named: true,
+          level: setting({
+            id: "checks.page-orphan.level",
+            section: "Across the project",
+            name: "Page orphan",
+            key: "[checks] page-orphan",
+            kind: "level",
+            choices: ["off", "advice", "warning", "error"],
+            value: "off",
+            defaultText: "advice",
+            where: "ascribe.toml:30",
+            description: [{ text: "Nothing links to a page.", code: false }],
+          }),
+          limit: null,
+        },
+        pageSize(),
+      ],
+    });
+    expect(report.settings.map((s) => [s.id, s.value, s.resettable])).toEqual([
+      ["checks.page-orphan.level", "off", true],
+      ["checks.page-size.level", "advice", false],
+      ["checks.page-size.limit", "50000", false],
+    ]);
+    expect(await tab.page.locator("h2.section").allTextContents()).toEqual(["Checks"]);
+    const checks = tab.page.locator("section.check");
+    expect(await checks.first().getAttribute("class")).toBe("setting check set");
+    expect(await checks.nth(1).locator(".description").textContent()).toBe(
+      "A page's Markdown is as long as the limit or longer.",
+    );
+    expect(await checks.nth(1).locator(".area").textContent()).toBe("Pages · ASC149");
+    let from = tab.posted.length;
+    await tab.page.getByRole("combobox", { name: "Page size" }).selectOption("warning");
+    expect(await tab.next("set", from)).toEqual({
+      type: "set",
+      seq: 5,
+      id: "checks.page-size.level",
+      value: "warning",
+    });
+    from = tab.posted.length;
+    const limit = tab.page.getByRole("textbox", { name: "Page size Limit" });
+    await limit.fill("40000");
+    await limit.press("Enter");
+    expect(await tab.next("set", from)).toEqual({
+      type: "set",
+      seq: 5,
+      id: "checks.page-size.limit",
+      value: 40_000,
+    });
+    await tab.page.close();
+  });
+
+  it("sends a size as a number of bytes, or as the text typed", async () => {
+    const tab = await open();
+    const size = pageSize();
+    await tab.draw(1, {
+      message: null,
+      settings: [],
+      checks: [
+        {
+          ...size,
+          limit: size.limit && {
+            ...size.limit,
+            name: "Image large limit",
+            kind: "size",
+            value: "500 KB",
+          },
+        },
+      ],
+    });
+    const limit = tab.page.getByRole("textbox", { name: "Page size Limit" });
+    let from = tab.posted.length;
+    await limit.fill("1.5 MB");
+    await limit.press("Enter");
+    expect(await tab.next("set", from)).toMatchObject({ value: "1.5 MB" });
+    from = tab.posted.length;
+    await limit.fill("300000");
+    await limit.press("Enter");
+    expect(await tab.next("set", from)).toMatchObject({ value: 300_000 });
     await tab.page.close();
   });
 });

@@ -50,7 +50,7 @@ mod collect;
 mod permalinks;
 mod size;
 
-pub use size::{limit as size_limit, markdown_size};
+pub use size::{DEFAULT_LIMIT as DEFAULT_SIZE_LIMIT, limit as size_limit, markdown_size};
 
 use std::cell::RefCell;
 use std::collections::{BTreeSet, HashMap, HashSet};

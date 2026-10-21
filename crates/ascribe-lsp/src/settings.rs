@@ -9,22 +9,35 @@
 //! out of step (decision #658).
 //!
 //! A setting is changed in place with [`ModelFile`], which keeps the file's
-//! comments, blank lines, and order. The edit isn't refused for a problem
-//! the model then has: the server checks it as it checks typing, and the
-//! problem shows under the setting.
+//! comments, blank lines, and order: set where the file writes it, added to
+//! its table where it doesn't, and reset to its default by taking its line
+//! out, with the comment that touches it (decision 8 of the editor's next
+//! views). The edit isn't refused for a problem the model then has: the
+//! server checks it as it checks typing, and the problem shows under the
+//! setting.
+//!
+//! The checks are a list of their own: every configurable check of the
+//! diagnostics registry, with its level and, for the three that take one,
+//! its `limit`, the ones the file sets first (decision 7). A check's level
+//! and limit are set and reset the same way, as the settings of the table
+//! `checks.<check>`, in whichever form the file writes the check: a level
+//! (`page-size = "warning"`), an inline table, or a `[checks.<check>]`
+//! table.
 
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use ascribe_core::{LineIndex, Span};
+use ascribe_check::registry::AREAS;
+use ascribe_check::{Registry, default_limit, size_text};
+use ascribe_core::{DiagnosticSlug, LineIndex, Span, diagnostics};
 use ascribe_model::settings::{FIELD_TABLE, Setting, SettingValue as Default_, settings};
 use lsp_types::{Range, TextDocumentIdentifier, WorkspaceEdit};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value as Json};
-use toml_edit::{Item, Value};
+use toml_edit::{InlineTable, Item, Value};
 
 use crate::edit::EditResult;
-use crate::model_file::{ModelFile, Seg, path};
+use crate::model_file::{Edit, ModelFile, Seg, path};
 use crate::position::Encoding;
 
 /// The request's method name.
@@ -63,6 +76,64 @@ pub struct SettingsResult {
     /// (`[project]`, `[consumer]`, `[editor]`, and the rest, not
     /// `[types.<name>]`), in the content model reference's order.
     pub settings: Vec<SettingEntry>,
+    /// Every configurable check: the ones the file sets first, then the
+    /// rest, each in the diagnostics reference's order.
+    pub checks: Vec<CheckEntry>,
+}
+
+/// One configurable check, as `[checks]` sets it.
+#[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct CheckEntry {
+    /// Its slug, which `[checks]` names it by: `page-size`.
+    pub slug: String,
+    /// Its code: `ASC149`.
+    pub code: String,
+    /// Its name for people: the slug in words, `Page size`.
+    pub name: String,
+    /// The area the diagnostics reference lists it under: `Pages`.
+    pub area: String,
+    /// What it reports: the registry's `when`, as plain text and code spans,
+    /// as a setting's description is.
+    pub when: Vec<SettingPiece>,
+    /// The levels `[checks]` takes, in the order a message lists them.
+    pub choices: Vec<String>,
+    /// Its own level, which it has when the file sets none: `advice`,
+    /// `warning`, or `error`.
+    pub default: String,
+    /// Whether the file names the check in `[checks]` at all.
+    pub named: bool,
+    /// The level the file sets; `null` when it sets none, or writes one that
+    /// isn't a string.
+    pub level: Option<String>,
+    /// Where the file sets its level; `null` when it doesn't.
+    pub set: Option<SettingPlace>,
+    /// The server's problems on the lines that set its level.
+    pub problems: Vec<SettingProblem>,
+    /// Its `limit`, for a check that takes one: `page-size`, `image-large`,
+    /// and `memo-long`.
+    pub limit: Option<CheckLimit>,
+}
+
+/// A check's `limit`.
+#[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct CheckLimit {
+    /// `number`, a whole number above 0; or `size`, a number of bytes or a
+    /// string with a unit, `"500 KB"`.
+    pub kind: String,
+    /// The limit used when the file sets none.
+    pub default: SettingValue,
+    /// The default in words, with its unit: `50,000 characters`, `500 KB`.
+    pub default_text: String,
+    /// The limit the file sets; `null` when it sets none.
+    pub value: Option<SettingValue>,
+    /// Where the file sets it; `null` when it doesn't.
+    pub set: Option<SettingPlace>,
+    /// The server's problems on the lines that set it.
+    pub problems: Vec<SettingProblem>,
 }
 
 /// One setting.
@@ -159,11 +230,155 @@ pub(crate) struct ModelNow {
 }
 
 /// The settings Project Settings shows: the registry's simple keys of the
-/// tables a project doesn't name parts of.
+/// tables a project doesn't name parts of, and that aren't the items of a
+/// list (`[[intended]]`'s).
 fn shown() -> impl Iterator<Item = &'static Setting> {
     settings().iter().filter(|s| {
-        SIMPLE.contains(&s.kind.as_str()) && s.table != FIELD_TABLE && !s.table.contains('<')
+        SIMPLE.contains(&s.kind.as_str())
+            && s.table != FIELD_TABLE
+            && !s.table.contains('<')
+            && !settings()
+                .iter()
+                .any(|list| list.kind == "list" && joined(&list.table, &list.key) == s.table)
     })
+}
+
+/// A table's path and a key, as a dotted path.
+fn joined(table: &str, key: &str) -> String {
+    if table.is_empty() {
+        key.to_owned()
+    } else {
+        format!("{table}.{key}")
+    }
+}
+
+/// The configurable checks, in the diagnostics reference's order: by its
+/// areas, and in the registry's order within each.
+fn configurable() -> impl Iterator<Item = (&'static ascribe_check::Entry, &'static str)> {
+    let registry = Registry::global();
+    AREAS.iter().flat_map(move |(area, title)| {
+        registry
+            .entries()
+            .filter(move |e| e.configurable && e.area.as_deref() == Some(*area))
+            .map(move |e| (e, *title))
+    })
+}
+
+/// The configurable check `checks.<check>` names, for a table of that form.
+fn check_of(table: &str) -> Option<DiagnosticSlug> {
+    let slug = DiagnosticSlug::from_name(table.strip_prefix("checks.")?)?;
+    diagnostics::CONFIGURABLE.contains(&slug).then_some(slug)
+}
+
+/// The problems published on a span of the file.
+fn problems_on(now: &ModelNow, span: Span) -> Vec<SettingProblem> {
+    now.diagnostics
+        .iter()
+        .filter(|d| {
+            let at = d.location.span;
+            at.start() < span.end() && span.start() < at.end().max(at.start() + 1)
+        })
+        .map(|d| SettingProblem {
+            message: d.message.clone(),
+            severity: d.severity.as_str().to_owned(),
+        })
+        .collect()
+}
+
+fn setting_place(now: &ModelNow, index: &LineIndex, span: Span) -> SettingPlace {
+    SettingPlace {
+        range: now.encoding.range(index, span),
+        line: index.line_col(span.start()).map_or(0, |p| p.line) + 1,
+    }
+}
+
+/// The checks as the file sets them.
+fn checks_now(now: &ModelNow, file: Option<&ModelFile<'_>>, index: &LineIndex) -> Vec<CheckEntry> {
+    let choices = settings()
+        .iter()
+        .find(|s| s.table == "checks.<check>" && s.key == "level")
+        .map(|s| s.choices.clone())
+        .unwrap_or_default();
+    let (mut named, mut rest): (Vec<CheckEntry>, Vec<CheckEntry>) = configurable()
+        .map(|(entry, area)| {
+            let slug = entry.slug.as_str();
+            let at = path(&["checks", slug]);
+            let item = file.and_then(|f| f.get(&at));
+            // A level written alone, `page-size = "warning"`, or a table's
+            // `level`.
+            let level_at = match item {
+                Some(Item::Value(Value::String(_))) => at.clone(),
+                _ => path(&["checks", slug, "level"]),
+            };
+            let level_span = file.and_then(|f| place(f, &level_at));
+            let limit = DiagnosticSlug::from_name(slug)
+                .and_then(default_limit)
+                .map(|default| {
+                    let limit_at = path(&["checks", slug, "limit"]);
+                    let span = file.and_then(|f| place(f, &limit_at));
+                    let size = slug == diagnostics::IMAGE_LARGE.as_str();
+                    CheckLimit {
+                        kind: if size { "size" } else { "number" }.to_owned(),
+                        default: SettingValue::Number(i64::try_from(default).unwrap_or(i64::MAX)),
+                        default_text: if size {
+                            size_text(default)
+                        } else {
+                            format!("{} characters", thousands(default))
+                        },
+                        value: file
+                            .and_then(|f| f.get(&limit_at))
+                            .and_then(Item::as_value)
+                            .and_then(value_of),
+                        set: span.map(|span| setting_place(now, index, span)),
+                        problems: span.map(|span| problems_on(now, span)).unwrap_or_default(),
+                    }
+                });
+            CheckEntry {
+                slug: slug.to_owned(),
+                code: entry.code.clone(),
+                name: name(slug),
+                area: area.to_owned(),
+                when: pieces(&sentence(entry.when.as_deref().unwrap_or_default())),
+                choices: choices.clone(),
+                default: entry.severity.as_str().to_owned(),
+                named: item.is_some(),
+                level: file
+                    .and_then(|f| f.get(&level_at))
+                    .and_then(Item::as_str)
+                    .map(str::to_owned),
+                set: level_span.map(|span| setting_place(now, index, span)),
+                problems: level_span
+                    .map(|span| problems_on(now, span))
+                    .unwrap_or_default(),
+                limit,
+            }
+        })
+        .partition(|c| c.named);
+    named.append(&mut rest);
+    named
+}
+
+/// A `when` as a sentence: it ends in a period, as the diagnostics reference
+/// writes it.
+fn sentence(when: &str) -> String {
+    if when.is_empty() || when.ends_with('.') {
+        when.to_owned()
+    } else {
+        format!("{when}.")
+    }
+}
+
+/// A whole number with a comma between each three digits: `50,000`.
+fn thousands(n: u64) -> String {
+    let digits = n.to_string();
+    let mut out = String::new();
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i) % 3 == 0 {
+            out.push(',');
+        }
+        out.push(c);
+    }
+    out
 }
 
 /// The answer to `ascribe/settings`.
@@ -173,28 +388,17 @@ pub(crate) fn settings_now(now: &ModelNow) -> SettingsResult {
     let unreadable = file.as_ref().err().cloned();
     let settings = shown()
         .map(|setting| {
-            let place = file.as_ref().ok().and_then(|f| place(f, setting));
+            let place = file
+                .as_ref()
+                .ok()
+                .and_then(|f| place(f, &key_path(setting)));
             let value = file
                 .as_ref()
                 .ok()
                 .and_then(|f| f.get(&key_path(setting)))
                 .and_then(Item::as_value)
                 .and_then(value_of);
-            let problems = place
-                .map(|span| {
-                    now.diagnostics
-                        .iter()
-                        .filter(|d| {
-                            let at = d.location.span;
-                            at.start() < span.end() && span.start() < at.end().max(at.start() + 1)
-                        })
-                        .map(|d| SettingProblem {
-                            message: d.message.clone(),
-                            severity: d.severity.as_str().to_owned(),
-                        })
-                        .collect()
-                })
-                .unwrap_or_default();
+            let problems = place.map(|span| problems_on(now, span)).unwrap_or_default();
             SettingEntry {
                 table: setting.table.clone(),
                 key: setting.key.clone(),
@@ -210,27 +414,30 @@ pub(crate) fn settings_now(now: &ModelNow) -> SettingsResult {
                 default_text: setting.default_text.clone(),
                 description: pieces(&setting.description),
                 value,
-                set: place.map(|span| SettingPlace {
-                    range: now.encoding.range(&index, span),
-                    line: index.line_col(span.start()).map_or(0, |p| p.line) + 1,
-                }),
+                set: place.map(|span| setting_place(now, &index, span)),
                 problems,
             }
         })
         .collect();
+    let checks = checks_now(now, file.as_ref().ok(), &index);
     SettingsResult {
         model_uri: crate::uri::path_to_uri(&now.config).map(|u| u.as_str().to_owned()),
         version: now.version,
         unreadable,
         settings,
+        checks,
     }
 }
 
-/// `setSetting`: `args.table` and `args.key` name a setting the file sets,
-/// `args.value` is its new value, of its kind, and `args.shown` is the
-/// `version` of the answer the setting was shown from: a number, or `null`
-/// for the disk. It's refused for any other version than `ascribe.toml`'s
-/// now, a buffer's for the disk's or the disk's for a buffer's included.
+/// `setSetting`: `args.table` and `args.key` name a setting, `args.value` is
+/// its new value, of its kind, or `null` to reset it to its default, and
+/// `args.shown` is the `version` of the answer the setting was shown from: a
+/// number, or `null` for the disk. A value the file sets is replaced where it
+/// is, one it leaves out is added to its table, and a reset takes the line
+/// out with the comment that touches it. A check's level and limit are the
+/// table `checks.<check>`'s `level` and `limit`. It's refused for any other
+/// version than `ascribe.toml`'s now, a buffer's for the disk's or the
+/// disk's for a buffer's included.
 pub(crate) fn set_setting(now: &ModelNow, args: &Map<String, Json>) -> EditResult {
     match plan(now, args) {
         Ok(edit) => EditResult::Edit { edit, select: None },
@@ -264,62 +471,194 @@ fn plan(now: &ModelNow, args: &Map<String, Json>) -> Result<WorkspaceEdit, Strin
         _ => Err(format!("`{name}` must be a string.")),
     };
     let (table, key) = (text_arg("table")?, text_arg("key")?);
-    let setting = shown()
-        .find(|s| s.table == table && s.key == key)
-        .ok_or_else(|| {
-            format!(
-                "`{}` isn't a setting Project Settings changes.",
-                named(table, key)
-            )
-        })?;
-    let value = match (setting.kind.as_str(), args.get("value")) {
-        ("switch", Some(Json::Bool(b))) => Value::from(*b),
-        ("number", Some(Json::Number(n))) if n.as_i64().is_some() => {
-            Value::from(n.as_i64().unwrap_or_default())
-        }
-        ("choice" | "level" | "text", Some(Json::String(s))) => Value::from(s.as_str()),
-        (kind, _) => {
-            let wants = match kind {
-                "switch" => "true or false",
-                "number" => "a whole number",
-                _ => "a string",
+    let file = ModelFile::parse(&now.text)?;
+    let edits = match check_of(table) {
+        Some(slug) => plan_check(&file, slug, key, args.get("value"))?,
+        None => {
+            let setting = shown()
+                .find(|s| s.table == table && s.key == key)
+                .ok_or_else(|| {
+                    format!(
+                        "`{}` isn't a setting Project Settings changes.",
+                        named(table, key)
+                    )
+                })?;
+            let value = match (setting.kind.as_str(), args.get("value")) {
+                (_, Some(Json::Null)) => None,
+                ("switch", Some(Json::Bool(b))) => Some(Value::from(*b)),
+                ("number", Some(Json::Number(n))) if n.as_i64().is_some() => {
+                    Some(Value::from(n.as_i64().unwrap_or_default()))
+                }
+                ("choice" | "level" | "text", Some(Json::String(s))) => {
+                    Some(Value::from(s.as_str()))
+                }
+                (kind, _) => {
+                    let wants = match kind {
+                        "switch" => "true or false",
+                        "number" => "a whole number",
+                        _ => "a string",
+                    };
+                    return Err(format!("`{}` takes {wants}.", named(table, key)));
+                }
             };
-            return Err(format!("`{}` takes {wants}.", named(table, key)));
+            let keys: Vec<&str> = setting.table.split('.').filter(|k| !k.is_empty()).collect();
+            let at = key_path(setting);
+            match (file.get(&at), value) {
+                (None, None) => Vec::new(),
+                (Some(_), None) => vec![file.remove_entry(&keys, &setting.key)?],
+                (Some(current), Some(value)) => replaced(&file, &at, current, value)?,
+                (None, Some(value)) => vec![file.add_entry(&keys, &setting.key, value)?],
+            }
         }
     };
-    let file = ModelFile::parse(&now.text)?;
-    let at = key_path(setting);
-    let current = file.get(&at).ok_or_else(|| {
-        format!(
-            "`ascribe.toml` doesn't set `{}`. Add it to the file by hand.",
-            named(table, key)
-        )
-    })?;
-    let mut changes = HashMap::new();
     let uri = crate::uri::path_to_uri(&now.config)
         .ok_or_else(|| "`ascribe.toml` can't be named as a URI.".to_owned())?;
-    let same = current
-        .as_value()
-        .and_then(value_of)
-        .is_some_and(|v| Some(v) == value_of(&value));
-    if same {
-        changes.insert(uri, Vec::new());
+    let edits = if edits.is_empty() {
+        Vec::new()
     } else {
-        let (edits, _) = file.finish(vec![file.replace_value(&at, value)?])?;
+        let (edits, _) = file.finish(edits)?;
         let index = LineIndex::new(&now.text);
-        let edits = edits
+        edits
             .iter()
             .map(|e| lsp_types::TextEdit {
                 range: now.encoding.range(&index, e.span),
                 new_text: e.new_text.clone(),
             })
-            .collect();
-        changes.insert(uri, edits);
-    }
+            .collect()
+    };
     Ok(WorkspaceEdit {
-        changes: Some(changes),
+        changes: Some(HashMap::from([(uri, edits)])),
         document_changes: None,
         change_annotations: None,
+    })
+}
+
+/// The edit that puts `value` where `current` is, at `at`: none when it's
+/// the value there already.
+fn replaced(
+    file: &ModelFile<'_>,
+    at: &[Seg],
+    current: &Item,
+    value: Value,
+) -> Result<Vec<Edit>, String> {
+    let same = current
+        .as_value()
+        .and_then(value_of)
+        .is_some_and(|v| Some(v) == value_of(&value));
+    Ok(if same {
+        Vec::new()
+    } else {
+        vec![file.replace_value(at, value)?]
+    })
+}
+
+/// The edits that set a check's `level` or `limit`, or reset it with `null`,
+/// in the form the file writes the check in: a level alone, which takes a
+/// limit by becoming an inline table; an inline table, rewritten with its
+/// other keys as they are; or a `[checks.<check>]` table, whose lines are
+/// set, added, and removed as a setting's are. A check the file doesn't name
+/// gets `<check> = "level"` in `[checks]`, or a `[checks.<check>]` table of
+/// its own for a limit, or when the file has no `[checks]` table to add to.
+fn plan_check(
+    file: &ModelFile<'_>,
+    slug: DiagnosticSlug,
+    key: &str,
+    value: Option<&Json>,
+) -> Result<Vec<Edit>, String> {
+    let slug = slug.as_str();
+    let named = format!("[checks.{slug}] {key}");
+    let limited = DiagnosticSlug::from_name(slug)
+        .and_then(default_limit)
+        .is_some();
+    let size = slug == diagnostics::IMAGE_LARGE.as_str();
+    let value = match (key, value) {
+        ("level", Some(Json::Null)) => None,
+        ("level", Some(Json::String(s))) => Some(Value::from(s.as_str())),
+        ("level", _) => return Err(format!("`{named}` takes a string, or null.")),
+        ("limit", Some(Json::Null)) if limited => None,
+        ("limit", Some(Json::Number(n))) if limited && n.as_i64().is_some() => {
+            Some(Value::from(n.as_i64().unwrap_or_default()))
+        }
+        ("limit", Some(Json::String(s))) if size => Some(Value::from(s.as_str())),
+        ("limit", _) if limited => {
+            let wants = if size {
+                "a whole number of bytes, a size such as \"500 KB\", or null"
+            } else {
+                "a whole number, or null"
+            };
+            return Err(format!("`{named}` takes {wants}."));
+        }
+        _ => {
+            return Err(format!(
+                "`{named}` isn't a setting Project Settings changes."
+            ));
+        }
+    };
+    let at = path(&["checks", slug]);
+    let own = path(&["checks", slug, key]);
+    let by_hand = || {
+        format!(
+            "`ascribe.toml` writes `[checks] {slug}` in a form this can't change. Change it by hand."
+        )
+    };
+    Ok(match (file.get(&at), value) {
+        (None, None) => Vec::new(),
+        (None, Some(value)) => {
+            let header = matches!(
+                file.get(&path(&["checks"])),
+                Some(Item::Table(t)) if !t.is_dotted() && !t.is_implicit()
+            );
+            if key == "level" && header {
+                vec![file.add_entry(&["checks"], slug, value)?]
+            } else {
+                vec![file.add_table(&["checks", slug], &[(key, value)], &["checks"])?]
+            }
+        }
+        (Some(item @ Item::Value(Value::String(level))), value) => match (key, value) {
+            ("level", None) => vec![file.remove_entry(&["checks"], slug)?],
+            ("level", Some(value)) => replaced(file, &at, item, value)?,
+            (_, None) => Vec::new(),
+            (_, Some(value)) => {
+                let mut table = InlineTable::new();
+                table.insert("level", Value::from(level.value().as_str()));
+                table.insert(key, value);
+                table.fmt();
+                vec![file.replace_value(&at, Value::InlineTable(table))?]
+            }
+        },
+        (Some(Item::Value(Value::InlineTable(current))), value) => {
+            match (current.get(key), value) {
+                (None, None) => Vec::new(),
+                (Some(_), Some(value)) => {
+                    let item = file.get(&own).ok_or_else(by_hand)?;
+                    replaced(file, &own, item, value)?
+                }
+                (_, value) => {
+                    let mut table = InlineTable::new();
+                    for (k, v) in current.iter().filter(|(k, _)| *k != key) {
+                        let mut v = v.clone();
+                        v.decor_mut().clear();
+                        table.insert(k, v);
+                    }
+                    if let Some(value) = value {
+                        table.insert(key, value);
+                    }
+                    if table.is_empty() {
+                        vec![file.remove_entry(&["checks"], slug)?]
+                    } else {
+                        table.fmt();
+                        vec![file.replace_value(&at, Value::InlineTable(table))?]
+                    }
+                }
+            }
+        }
+        (Some(Item::Table(_)), value) => match (file.get(&own), value) {
+            (None, None) => Vec::new(),
+            (Some(_), None) => vec![file.remove_entry(&["checks", slug], key)?],
+            (Some(current), Some(value)) => replaced(file, &own, current, value)?,
+            (None, Some(value)) => vec![file.add_entry(&["checks", slug], key, value)?],
+        },
+        (Some(_), _) => return Err(by_hand()),
     })
 }
 
@@ -338,12 +677,13 @@ fn key_path(setting: &Setting) -> Vec<Seg> {
     path(&keys)
 }
 
-/// Where the file sets a setting: from its key to the end of its value.
-fn place(file: &ModelFile<'_>, setting: &Setting) -> Option<Span> {
-    let at = key_path(setting);
-    let (key, item) = file
-        .table_like(&at[..at.len() - 1])?
-        .get_key_value(&setting.key)?;
+/// Where the file sets the key at `at`: from the key to the end of its
+/// value.
+fn place(file: &ModelFile<'_>, at: &[Seg]) -> Option<Span> {
+    let (Seg::Key(last), parent) = at.split_last()? else {
+        return None;
+    };
+    let (key, item) = file.table_like(parent)?.get_key_value(last)?;
     let (k, v) = (key.span()?, item.span()?);
     Some(Span::new(k.start, v.end.max(k.end)))
 }

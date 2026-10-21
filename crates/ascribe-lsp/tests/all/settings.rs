@@ -1,6 +1,9 @@
 //! Project Settings' round trip: `ascribe/settings` answers from the
 //! registry and `ascribe.toml` as it is now, and `ascribe/edit`'s
-//! `setSetting` changes one value in place, keeping the file's comments.
+//! `setSetting` changes one value in place, keeping the file's comments: it
+//! sets a value the file writes, adds one it leaves out to its table, and
+//! resets one by taking its line out with the comment that touches it. The
+//! checks are listed with their levels and limits, and set the same way.
 //! Each answer names the version of the buffer it read, an edit for another
 //! version is refused, and a value the model refuses is set anyway, its
 //! problem shown under it.
@@ -52,6 +55,19 @@ fn setting<'a>(answer: &'a Value, table: &str, key: &str) -> &'a Value {
 /// Sets `[consumer] key` to `value`, as shown from the answer for `shown`:
 /// a buffer's version, or `null` for the disk.
 fn set(client: &mut Client, fixture: &Fixture, key: &str, value: Value, shown: Value) -> Value {
+    set_in(client, fixture, "consumer", key, value, shown)
+}
+
+/// Sets `[table] key` to `value`, or resets it with `null`, as shown from the
+/// answer for `shown`.
+fn set_in(
+    client: &mut Client,
+    fixture: &Fixture,
+    table: &str,
+    key: &str,
+    value: Value,
+    shown: Value,
+) -> Value {
     let config = fixture.path("ascribe.toml");
     client
         .request(
@@ -60,7 +76,7 @@ fn set(client: &mut Client, fixture: &Fixture, key: &str, value: Value, shown: V
                 "textDocument": { "uri": uri(&config).as_str() },
                 "range": { "start": { "line": 0, "character": 0 }, "end": { "line": 0, "character": 0 } },
                 "action": "setSetting",
-                "args": { "table": "consumer", "key": key, "value": value, "shown": shown },
+                "args": { "table": table, "key": key, "value": value, "shown": shown },
             }),
         )
         .response_result
@@ -359,10 +375,6 @@ fn a_setting_is_checked_against_the_registry_and_its_kind() {
         set(&mut client, &fixture, "no-such-key", json!("x"), json!(1))["error"],
         "`[consumer] no-such-key` isn't a setting Project Settings changes."
     );
-    assert_eq!(
-        set(&mut client, &fixture, "slugger", json!("github"), json!(1))["error"],
-        "`ascribe.toml` doesn't set `[consumer] slugger`. Add it to the file by hand."
-    );
     // The value it has already: nothing to change.
     let same = set(
         &mut client,
@@ -393,5 +405,272 @@ fn a_file_that_isnt_toml_has_settings_with_no_values() {
     assert_eq!(
         setting(&answer, "consumer", "trailing-slash")["value"],
         Value::Null
+    );
+}
+
+/// The edit `setSetting` answers for `[table] key`, applied to `text`, the
+/// buffer at version 1.
+fn edited(text: &str, table: &str, key: &str, value: Value) -> String {
+    let fixture = Fixture::new(text, &[("docs/index.md", "# Home\n\nHello.\n")]);
+    let config = fixture.path("ascribe.toml");
+    let mut client = Client::start(&fixture.root());
+    client.open(&config, 1, text);
+    client.settle();
+    let answer = set_in(&mut client, &fixture, table, key, value, json!(1));
+    assert!(answer["error"].is_null(), "{answer}");
+    applied(text, &answer)
+}
+
+#[test]
+fn a_value_the_file_leaves_out_is_added_to_its_table() {
+    assert_eq!(
+        edited(MODEL, "consumer", "slugger", json!("github")),
+        MODEL.replace(
+            "base-path = \"/\"\n",
+            "base-path = \"/\"\nslugger = \"github\"\n"
+        )
+    );
+    assert_eq!(
+        edited(MODEL, "consumer", "html", json!(false)),
+        MODEL.replace("base-path = \"/\"\n", "base-path = \"/\"\nhtml = false\n")
+    );
+    // A table the file doesn't have is added at its end.
+    assert_eq!(
+        edited(MODEL, "editor", "build", json!("site")),
+        format!("{MODEL}\n[editor]\nbuild = \"site\"\n")
+    );
+    assert_eq!(
+        edited(MODEL, "checks.links", "reuse-days", json!(7)),
+        format!("{MODEL}\n[checks.links]\nreuse-days = 7\n")
+    );
+}
+
+#[test]
+fn reset_to_default_takes_the_line_and_the_comment_that_touches_it() {
+    // The comment directly above goes with the line, and so does the one
+    // after its value.
+    assert_eq!(
+        edited(MODEL, "consumer", "trailing-slash", Value::Null),
+        MODEL.replace(
+            "# Pages end in a slash.\ntrailing-slash = \"always\" # as Astro's\n",
+            ""
+        )
+    );
+    // The first key of a table: the header stays, with its comment.
+    assert_eq!(
+        edited(MODEL, "consumer", "site", Value::Null),
+        MODEL.replace("site = \"https://docs.example.com\"\n", "")
+    );
+    // A comment with a blank line before the key stays: it may be about the
+    // lines around it too.
+    let apart = "spec = \"0.1\"\n\n[consumer]\nsite = \"https://docs.example.com\"\n\n# Routing.\n\nbase-path = \"/docs\"\nhtml = true\n";
+    assert_eq!(
+        edited(apart, "consumer", "base-path", Value::Null),
+        "spec = \"0.1\"\n\n[consumer]\nsite = \"https://docs.example.com\"\n\n# Routing.\n\nhtml = true\n"
+    );
+    // A comment of several lines goes whole.
+    let long = "spec = \"0.1\"\n\n[consumer]\nhtml = true\n# Two lines\n# about the slash.\ntrailing-slash = \"never\"\n";
+    assert_eq!(
+        edited(long, "consumer", "trailing-slash", Value::Null),
+        "spec = \"0.1\"\n\n[consumer]\nhtml = true\n"
+    );
+    // A value the file leaves out has nothing to reset.
+    assert_eq!(edited(MODEL, "consumer", "slugger", Value::Null), MODEL);
+}
+
+fn check<'a>(answer: &'a Value, slug: &str) -> &'a Value {
+    answer["checks"]
+        .as_array()
+        .expect("checks")
+        .iter()
+        .find(|c| c["slug"] == slug)
+        .unwrap_or_else(|| panic!("no check {slug}"))
+}
+
+#[test]
+fn the_checks_list_every_configurable_check_the_ones_the_file_sets_first() {
+    let model = format!(
+        "{MODEL}\n[checks]\npage-orphan = \"off\"\n\n[checks.image-large]\nlimit = \"200 KB\"\n"
+    );
+    let fixture = Fixture::new(&model, &[("docs/index.md", "# Home\n\nHello.\n")]);
+    let mut client = Client::start(&fixture.root());
+    client.settle();
+    let answer = settings(&mut client, &fixture);
+    let checks = answer["checks"].as_array().unwrap();
+    let slugs: Vec<&str> = checks.iter().map(|c| c["slug"].as_str().unwrap()).collect();
+    let configurable: std::collections::BTreeSet<&str> = ascribe_core::diagnostics::CONFIGURABLE
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+    assert_eq!(checks.len(), configurable.len());
+    assert_eq!(
+        slugs
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>(),
+        configurable
+    );
+    assert_eq!(
+        &slugs[..2],
+        &["page-orphan", "image-large"],
+        "the file's, in the reference's order"
+    );
+    for c in checks {
+        assert!(
+            c["when"].as_array().is_some_and(|w| !w.is_empty()),
+            "{} has no `when`",
+            c["slug"]
+        );
+        assert_eq!(c["choices"], json!(["off", "advice", "warning", "error"]));
+    }
+
+    let orphan = check(&answer, "page-orphan");
+    assert_eq!(orphan["named"], true);
+    assert_eq!(orphan["level"], "off");
+    assert_eq!(
+        orphan["set"]["line"],
+        model
+            .lines()
+            .position(|l| l.starts_with("page-orphan"))
+            .unwrap()
+            + 1
+    );
+    assert_eq!(orphan["limit"], Value::Null);
+
+    let image = check(&answer, "image-large");
+    assert_eq!(image["named"], true);
+    assert_eq!(image["level"], Value::Null);
+    assert_eq!(image["limit"]["kind"], "size");
+    assert_eq!(image["limit"]["value"], "200 KB");
+    assert_eq!(image["limit"]["default"], 500_000);
+    assert_eq!(image["limit"]["defaultText"], "500 KB");
+
+    let size = check(&answer, "page-size");
+    assert_eq!(size["named"], false);
+    assert_eq!(size["name"], "Page size");
+    assert_eq!(size["code"], "ASC149");
+    assert_eq!(size["area"], "Pages");
+    assert_eq!(size["default"], "advice");
+    assert_eq!(size["limit"]["kind"], "number");
+    assert_eq!(size["limit"]["defaultText"], "50,000 characters");
+    let when: String = size["when"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| p["text"].as_str().unwrap())
+        .collect();
+    assert!(
+        when.starts_with("A page's Markdown, as a build writes it"),
+        "{when}"
+    );
+    assert!(when.ends_with("longest."), "{when}");
+}
+
+#[test]
+fn a_checks_level_and_limit_are_set_added_and_reset_in_the_form_the_file_writes() {
+    let with = |checks: &str| format!("{MODEL}\n[checks]\n{checks}");
+    // A check the file doesn't name: its level goes in `[checks]`, and a
+    // limit in a table of its own.
+    assert_eq!(
+        edited(
+            &with("page-orphan = \"off\"\n"),
+            "checks.page-size",
+            "level",
+            json!("warning")
+        ),
+        with("page-orphan = \"off\"\npage-size = \"warning\"\n")
+    );
+    assert_eq!(
+        edited(
+            &with("page-orphan = \"off\"\n"),
+            "checks.page-size",
+            "limit",
+            json!(40_000)
+        ),
+        format!(
+            "{}\n[checks.page-size]\nlimit = 40000\n",
+            with("page-orphan = \"off\"\n")
+        )
+    );
+    // With no `[checks]` to add to, a level gets a table of its own too.
+    assert_eq!(
+        edited(MODEL, "checks.page-orphan", "level", json!("off")),
+        format!("{MODEL}\n[checks.page-orphan]\nlevel = \"off\"\n")
+    );
+    // A level alone is set in place, takes a limit by becoming an inline
+    // table, and is reset with its line.
+    let alone = with("# Quieter.\npage-size = \"warning\"\n");
+    assert_eq!(
+        edited(&alone, "checks.page-size", "level", json!("error")),
+        with("# Quieter.\npage-size = \"error\"\n")
+    );
+    assert_eq!(
+        edited(&alone, "checks.page-size", "limit", json!(40_000)),
+        with("# Quieter.\npage-size = { level = \"warning\", limit = 40000 }\n")
+    );
+    assert_eq!(
+        edited(&alone, "checks.page-size", "level", Value::Null),
+        with("")
+    );
+    // An inline table keeps its other key, and goes when it has none left.
+    let inline = with("image-large = { level = \"warning\", limit = \"1 MB\" }\n");
+    assert_eq!(
+        edited(&inline, "checks.image-large", "limit", json!("2 MB")),
+        with("image-large = { level = \"warning\", limit = \"2 MB\" }\n")
+    );
+    assert_eq!(
+        edited(&inline, "checks.image-large", "level", Value::Null),
+        with("image-large = { limit = \"1 MB\" }\n")
+    );
+    assert_eq!(
+        edited(
+            &with("image-large = { limit = \"1 MB\" }\n"),
+            "checks.image-large",
+            "limit",
+            Value::Null
+        ),
+        with("")
+    );
+    // A table's lines are set, added, and reset as a setting's are.
+    let table = format!("{MODEL}\n[checks.memo-long]\n# Longer memos.\nlimit = 3000\n");
+    assert_eq!(
+        edited(&table, "checks.memo-long", "level", json!("off")),
+        format!("{table}level = \"off\"\n")
+    );
+    assert_eq!(
+        edited(&table, "checks.memo-long", "limit", Value::Null),
+        format!("{MODEL}\n[checks.memo-long]\n")
+    );
+}
+
+#[test]
+fn a_check_is_set_only_as_its_settings_take() {
+    let fixture = fixture();
+    let config = fixture.path("ascribe.toml");
+    let mut client = Client::start(&fixture.root());
+    client.open(&config, 1, MODEL);
+    client.settle();
+    let mut error = |table: &str, key: &str, value: Value| {
+        set_in(&mut client, &fixture, table, key, value, json!(1))["error"]
+            .as_str()
+            .unwrap_or_default()
+            .to_owned()
+    };
+    assert_eq!(
+        error("checks.page-orphan", "limit", json!(3)),
+        "`[checks.page-orphan] limit` isn't a setting Project Settings changes."
+    );
+    assert_eq!(
+        error("checks.page-size", "limit", json!("50 KB")),
+        "`[checks.page-size] limit` takes a whole number, or null."
+    );
+    assert_eq!(
+        error("checks.page-size", "level", json!(2)),
+        "`[checks.page-size] level` takes a string, or null."
+    );
+    // A check that isn't configurable isn't a check Project Settings sets.
+    assert_eq!(
+        error("checks.link-target-missing", "level", json!("off")),
+        "`[checks.link-target-missing] level` isn't a setting Project Settings changes."
     );
 }

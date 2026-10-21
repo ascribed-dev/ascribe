@@ -407,7 +407,7 @@ The operations, where each applies, and its arguments (`?` is optional):
 | `movePage` | Any of the project's files, as `newPage` | `page` (a content path), `before?` (a page of the same section; none for the end) | The section's `pages`, listing its pages as they stood with `page` before `before`; its table is added, and its siblings', when the file doesn't list it |
 | `placePage` | Any of the project's files, as `newPage` | `page` | `page` at the end of its section's `pages`, which leaves it out |
 | `setSectionLabel` | Any of the project's files, as `newPage` | `folder`, `label?` (none or empty for the default) | The section's `label` |
-| `setSetting` | Any of the project's files, as `newPage` | `table` (a dotted path, `consumer`), `key`, `value` (a boolean, a whole number, or a string, as the setting's kind takes), `shown` (the `version` the [`ascribe/settings`](#project-settings-ascribesettings) answer it was shown from had: a number, or `null` for the disk) | The value where `ascribe.toml` writes it, as it is now, and nothing else; refused for a setting it doesn't write, and when `shown` isn't the version `ascribe.toml` has now, a buffer's for the disk's and the disk's for a buffer's included. Not refused for a problem the model then has, which `ascribe/settings` shows under the setting |
+| `setSetting` | Any of the project's files, as `newPage` | `table` (a dotted path, `consumer`; a check's is `checks.<check>`, with the key `level` or `limit`), `key`, `value` (a boolean, a whole number, or a string, as the setting's kind takes, or `null` to reset it to its default), `shown` (the `version` the [`ascribe/settings`](#project-settings-ascribesettings) answer it was shown from had: a number, or `null` for the disk) | The value where `ascribe.toml` writes it, as it is now, and nothing else; a value the file leaves out added after its table's last entry, or in a new table at the end; or, for `null`, the setting's line taken out with the comment lines touching it from above. A check is set in the form the file writes it (a level alone, an inline table, or a `[checks.<check>]` table). Refused when `shown` isn't the version `ascribe.toml` has now, a buffer's for the disk's and the disk's for a buffer's included. Not refused for a problem the model then has, which `ascribe/settings` shows under the setting |
 | `nextPlaceholder` | A page of a type with a template | | Nothing: `select` is the next thing the template left to fill in after `range`, or the first when none is after it |
 | `addMemo` | Anywhere in a page | | A new memo file in `memos/`, its `documentChanges` creating it and giving it its text: `about` is the innermost section with an id at the cursor, as `page.md#id`, or the page above the first heading; `quote` is the selection, its whitespace runs as one space, or the first line of the block at the cursor, left out on a heading or when the memo wouldn't find it. Named from the quote's first words, or the heading's id, never over a file. `select` is the empty line for the memo's text. Refused when `memos/` is in the content root |
 | `addPersonalMemo` | Anywhere in a page | | As `addMemo`, in `.ascribe/memos/` |
@@ -552,13 +552,28 @@ TypeScript type is `SettingsResult` in `packages/vscode/src/shapes.ts`
                  "description": [{ "text": "Routing. Whether page URLs end in ", "code": false },
                                  { "text": "/", "code": true }],
                  "value": "never", "set": { "range": { … }, "line": 47 },
-                 "problems": [] }]
+                 "problems": [] }],
+  "checks": [{ "slug": "page-size", "code": "ASC149", "name": "Page size", "area": "Pages",
+               "when": [{ "text": "A page's Markdown, as a build writes it…", "code": false }],
+               "choices": ["off", "advice", "warning", "error"], "default": "advice",
+               "named": true, "level": "warning", "set": { "range": { … }, "line": 52 },
+               "problems": [],
+               "limit": { "kind": "number", "default": 50000, "defaultText": "50,000 characters",
+                          "value": null, "set": null, "problems": [] } }]
 }
 ```
 
 - The settings are the registry's (`crates/ascribe-model/settings.toml`) of
   a simple kind (`switch`, `choice`, `number`, `text`, `level`) in a table a
-  project doesn't name parts of, in the reference's order.
+  project doesn't name parts of, and not the items of a list
+  (`[[intended]]`'s), in the reference's order.
+- The checks are every configurable one of the diagnostics registry, the ones
+  `[checks]` names first (`named`), then the rest, each in the diagnostics
+  reference's order. `when` is the registry's, as a sentence, in pieces as a
+  description is; `default` is the check's own level; `level` and `set` are
+  the file's, from `<check> = "<level>"` or a table's `level`; and `limit`,
+  for `page-size`, `image-large` (a `size`), and `memo-long`, has its default
+  and the file's value.
 - It reads `ascribe.toml` as it is now: the open buffer, unsaved text
   included, or the file on disk, and even while it doesn't load. `version` is
   the version of the open buffer it read, or `null` when it read the disk; a
@@ -575,9 +590,10 @@ TypeScript type is `SettingsResult` in `packages/vscode/src/shapes.ts`
   setting's range, with their messages and their severities at the levels
   `[checks]` sets.
 
-`ascribe/edit`'s `setSetting` changes one, through `ModelFile` as the content
-model's actions do, from the same text: it's refused when `ascribe.toml`'s
-version now, or `null` for the disk, isn't the `shown` it's sent with. It's answered in `src/settings.rs`.
+`ascribe/edit`'s `setSetting` changes one, adds one the file leaves out, or
+resets one with `value: null`, through `ModelFile` as the content model's
+actions do, from the same text: it's refused when `ascribe.toml`'s version
+now, or `null` for the disk, isn't the `shown` it's sent with. It's answered in `src/settings.rs`.
 
 ## What's known about a page: `ascribe/page`
 

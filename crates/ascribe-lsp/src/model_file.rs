@@ -107,6 +107,30 @@ impl<'a> ModelFile<'a> {
                 let text = format!("[{header}]{nl}{key_text}{sep}{value}{nl}");
                 Ok((self.append(&text), change))
             }
+            Some(Item::Table(t)) if table.is_empty() => {
+                // The top level: after its last value, or before the first
+                // table and the comment that touches its header.
+                let last = t
+                    .iter()
+                    .filter_map(|(k, _)| t.get_key_value(k))
+                    .filter(|(_, item)| item.is_value())
+                    .max_by_key(|(_, item)| item.span().map_or(0, |s| s.end));
+                let sep = self.separator(last);
+                let line = format!("{key_text}{sep}{value}");
+                let edit = match last.and_then(|(_, item)| item.span()) {
+                    Some(span) => {
+                        let at = self.text[span.end..]
+                            .find('\n')
+                            .map_or(self.text.len(), |i| span.end + i + 1);
+                        self.insert_line(at, &line)
+                    }
+                    None => match self.first_header() {
+                        Some(at) => TextEdit::insert(at, format!("{line}{nl}{nl}", nl = self.nl)),
+                        None => self.append(&format!("{line}{}", self.nl)),
+                    },
+                };
+                Ok((edit, change))
+            }
             Some(Item::Table(t)) if !t.is_dotted() && !t.is_implicit() => {
                 let (at, last) = self.after_entries(t);
                 let indent = last.map_or("", |(k, _)| self.indent(k));
@@ -200,7 +224,11 @@ impl<'a> ModelFile<'a> {
     }
 
     /// Removes `key = value` from the `[header]` table at `table`, with its
-    /// line.
+    /// line and the comment that touches it from above: the comment lines
+    /// directly over the key, with no blank line between, are about it, and
+    /// left behind would be about nothing. A comment with a blank line
+    /// before the key stays, since it may be about the lines around it too
+    /// (decision 8 of the editor's next views).
     pub(crate) fn remove_entry(&self, table: &[&str], key: &str) -> Result<Edit, String> {
         let refused = || {
             format!(
@@ -218,10 +246,11 @@ impl<'a> ModelFile<'a> {
         let (Some(k_span), Some(v_span)) = (k.span(), item.span()) else {
             return Err(refused());
         };
-        let start = self.text[..k_span.start].rfind('\n').map_or(0, |i| i + 1);
-        if !self.text[start..k_span.start].trim().is_empty() {
+        let line = self.text[..k_span.start].rfind('\n').map_or(0, |i| i + 1);
+        if !self.text[line..k_span.start].trim().is_empty() {
             return Err(refused());
         }
+        let start = self.comment_above(line);
         let end = self.text[v_span.end..]
             .find('\n')
             .map_or(self.text.len(), |i| v_span.end + i + 1);
@@ -280,6 +309,34 @@ impl<'a> ModelFile<'a> {
             .find('\n')
             .map_or(self.text.len(), |i| end + i + 1);
         (at, last)
+    }
+
+    /// The start of the first `[header]` table's header, or of the comment
+    /// lines that touch it from above; `None` when the file has no table.
+    fn first_header(&self) -> Option<usize> {
+        let mut first: Option<usize> = None;
+        let root = self.doc.as_table();
+        headers(self.doc.as_item(), &mut |t| {
+            if let Some(span) = t.span().filter(|_| !std::ptr::eq(t, root)) {
+                first = Some(first.map_or(span.start, |f| f.min(span.start)));
+            }
+        });
+        let line = self.text[..first?].rfind('\n').map_or(0, |i| i + 1);
+        Some(self.comment_above(line))
+    }
+
+    /// The start of the comment lines directly above the line that starts at
+    /// `line`, with no blank line between; `line` when there are none.
+    fn comment_above(&self, line: usize) -> usize {
+        let mut start = line;
+        while start > 0 {
+            let above = self.text[..start - 1].rfind('\n').map_or(0, |i| i + 1);
+            if !self.text[above..start].trim_start().starts_with('#') {
+                break;
+            }
+            start = above;
+        }
+        start
     }
 
     /// An insertion of `line` as a line of its own at `at`, the start of a
@@ -518,6 +575,59 @@ mod tests {
         assert_eq!(
             apply(text, vec![edit]),
             "spec = \"0.1\"\n\n[phrases]\nproduct = \"Quill\"\n"
+        );
+    }
+
+    #[test]
+    fn a_top_level_entry_goes_after_the_last_one_or_before_the_first_table() {
+        let file = ModelFile::parse(MODEL).expect("parses");
+        let edit = file
+            .add_entry(&[], "version", Value::from("1"))
+            .expect("adds");
+        assert_eq!(
+            apply(MODEL, vec![edit]),
+            MODEL.replace("spec = \"0.1\"\n", "spec = \"0.1\"\nversion = \"1\"\n")
+        );
+        // Before the first table, and the comment that touches its header.
+        let text = "# The content model.\n\n# Phrases.\n[phrases]\nproduct = \"Quill\"\n";
+        let file = ModelFile::parse(text).expect("parses");
+        let edit = file
+            .add_entry(&[], "spec", Value::from("0.1"))
+            .expect("adds");
+        assert_eq!(
+            apply(text, vec![edit]),
+            "# The content model.\n\nspec = \"0.1\"\n\n# Phrases.\n[phrases]\nproduct = \"Quill\"\n"
+        );
+        let file = ModelFile::parse("").expect("parses");
+        let edit = file
+            .add_entry(&[], "spec", Value::from("0.1"))
+            .expect("adds");
+        assert_eq!(apply("", vec![edit]), "spec = \"0.1\"\n");
+    }
+
+    #[test]
+    fn an_entry_is_removed_with_the_comment_that_touches_it() {
+        let file = ModelFile::parse(MODEL).expect("parses");
+        let edit = file.remove_entry(&["phrases"], "product").expect("removes");
+        assert_eq!(
+            apply(MODEL, vec![edit]),
+            MODEL.replace("# The product.\nproduct = \"Quill\"   # its name\n", "")
+        );
+        // A comment with a blank line before the key stays.
+        let text = "[phrases]\n# Names.\n\nproduct = \"Quill\"\ncloud = \"Quill Cloud\"\n";
+        let file = ModelFile::parse(text).expect("parses");
+        let edit = file.remove_entry(&["phrases"], "product").expect("removes");
+        assert_eq!(
+            apply(text, vec![edit]),
+            "[phrases]\n# Names.\n\ncloud = \"Quill Cloud\"\n"
+        );
+        // So does the line of the value above, and the header.
+        let text = "[phrases]\nproduct = \"Quill\" # the name\ncloud = \"Quill Cloud\"\n";
+        let file = ModelFile::parse(text).expect("parses");
+        let edit = file.remove_entry(&["phrases"], "cloud").expect("removes");
+        assert_eq!(
+            apply(text, vec![edit]),
+            "[phrases]\nproduct = \"Quill\" # the name\n"
         );
     }
 

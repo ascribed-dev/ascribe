@@ -1,5 +1,154 @@
 {
   "$defs": {
+    "CheckEntry": {
+      "description": "One configurable check, as `[checks]` sets it.",
+      "properties": {
+        "area": {
+          "description": "The area the diagnostics reference lists it under: `Pages`.",
+          "type": "string"
+        },
+        "choices": {
+          "description": "The levels `[checks]` takes, in the order a message lists them.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "code": {
+          "description": "Its code: `ASC149`.",
+          "type": "string"
+        },
+        "default": {
+          "description": "Its own level, which it has when the file sets none: `advice`,\n`warning`, or `error`.",
+          "type": "string"
+        },
+        "level": {
+          "description": "The level the file sets; `null` when it sets none, or writes one that\nisn't a string.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "limit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CheckLimit"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Its `limit`, for a check that takes one: `page-size`, `image-large`,\nand `memo-long`."
+        },
+        "name": {
+          "description": "Its name for people: the slug in words, `Page size`.",
+          "type": "string"
+        },
+        "named": {
+          "description": "Whether the file names the check in `[checks]` at all.",
+          "type": "boolean"
+        },
+        "problems": {
+          "description": "The server's problems on the lines that set its level.",
+          "items": {
+            "$ref": "#/$defs/SettingProblem"
+          },
+          "type": "array"
+        },
+        "set": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SettingPlace"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where the file sets its level; `null` when it doesn't."
+        },
+        "slug": {
+          "description": "Its slug, which `[checks]` names it by: `page-size`.",
+          "type": "string"
+        },
+        "when": {
+          "description": "What it reports: the registry's `when`, as plain text and code spans,\nas a setting's description is.",
+          "items": {
+            "$ref": "#/$defs/SettingPiece"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "slug",
+        "code",
+        "name",
+        "area",
+        "when",
+        "choices",
+        "default",
+        "named",
+        "level",
+        "set",
+        "problems",
+        "limit"
+      ],
+      "type": "object"
+    },
+    "CheckLimit": {
+      "description": "A check's `limit`.",
+      "properties": {
+        "default": {
+          "$ref": "#/$defs/SettingValue",
+          "description": "The limit used when the file sets none."
+        },
+        "defaultText": {
+          "description": "The default in words, with its unit: `50,000 characters`, `500 KB`.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "`number`, a whole number above 0; or `size`, a number of bytes or a\nstring with a unit, `\"500 KB\"`.",
+          "type": "string"
+        },
+        "problems": {
+          "description": "The server's problems on the lines that set it.",
+          "items": {
+            "$ref": "#/$defs/SettingProblem"
+          },
+          "type": "array"
+        },
+        "set": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SettingPlace"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where the file sets it; `null` when it doesn't."
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SettingValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The limit the file sets; `null` when it sets none."
+        }
+      },
+      "required": [
+        "kind",
+        "default",
+        "defaultText",
+        "value",
+        "set",
+        "problems"
+      ],
+      "type": "object"
+    },
     "LspPosition": {
       "description": "A position in a document: a zero-based line, and a zero-based column in\nthe position encoding the client and server agreed on.",
       "properties": {
@@ -210,6 +359,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "The answer to `ascribe/settings`. A document that isn't one of the\nproject's files gets no settings.",
   "properties": {
+    "checks": {
+      "description": "Every configurable check: the ones the file sets first, then the\nrest, each in the diagnostics reference's order.",
+      "items": {
+        "$ref": "#/$defs/CheckEntry"
+      },
+      "type": "array"
+    },
     "modelUri": {
       "description": "The `file:` URI of the project's `ascribe.toml`, which the ranges are\nin.",
       "type": [
@@ -243,7 +399,8 @@
     "modelUri",
     "version",
     "unreadable",
-    "settings"
+    "settings",
+    "checks"
   ],
   "title": "SettingsResult",
   "type": "object"
