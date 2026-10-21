@@ -4825,7 +4825,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/786"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Project view: the last Check Every Build kept between sessions"
     },
     {
@@ -4903,8 +4903,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/795"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Report: a finding's identity, and what's new in Problems since the last run"
     },
     {
@@ -4976,8 +4979,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/796"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "The preview and a page's problems follow an edit to the code a @snippet shows"
     },
     {
@@ -4994,8 +5000,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/794"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Go to Definition on a @snippet opens its region, and its hover shows the code"
     },
     {
@@ -5013,8 +5022,25 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "A code file's snippet-tags problems are shown in the code file, in the editor"
+    },
+    {
+      "content": {
+        "body": "`js / VS Code multi-project integration tests (windows-latest)` fails now and then with `EPERM, Permission denied` from `rmSync`, while a test in `packages/vscode/test/integration/suite/monorepo.it.ts` deletes a project folder it made. PR #795's run 39688328969 failed this way on both attempts: once on `workspace\\guides` (\"adds a project when its ascribe.toml appears, and stops its server when it goes\"), once on `workspace\\unwatched` (\"finds a project the file watcher didn't report when one of its files is opened\").\n\nSince #786, the Project view's check of a project runs `ascribe check` in the project's folder, and on Windows a process running in a folder keeps it from being deleted. When the check is still running as the test cleans up, the delete fails. #786's last commit fixed this for one test only.\n\n**Done looks like:** the tests in \"files changed on disk\" and \"projects that come and go\" delete their folders with retries (`maxRetries` and `retryDelay`, which make Node retry on `EPERM` and `EBUSY`), so a check that's still finishing doesn't fail them. The test that proves a stopped server doesn't hold its folder still fails if the server keeps running.",
+        "number": 797,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The multi-project integration tests fail intermittently on Windows deleting their own folders",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/797"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCjMi4",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/798"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "In progress",
+      "title": "The multi-project integration tests fail intermittently on Windows deleting their own folders"
     }
   ]
 }
