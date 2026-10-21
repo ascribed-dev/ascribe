@@ -631,6 +631,18 @@ describe("Project Settings' webview", () => {
     await tab.page.close();
   });
 
+  it("says whether it has the focus when it starts, and again when it gains or loses it", async () => {
+    const tab = await open();
+    const hasFocus = (): Promise<boolean> => tab.page.evaluate(() => document.hasFocus());
+    expect(await tab.next("focus")).toEqual({ type: "focus", focused: await hasFocus() });
+    for (const event of ["blur", "focus"]) {
+      const from = tab.posted.length;
+      await tab.page.evaluate((type) => window.dispatchEvent(new Event(type)), event);
+      expect(await tab.next("focus", from)).toEqual({ type: "focus", focused: await hasFocus() });
+    }
+    await tab.page.close();
+  });
+
   it("says ascribe.toml is gone, and the next click closes the tab", async () => {
     const tab = await open();
     await tab.draw(1, ANSWER);

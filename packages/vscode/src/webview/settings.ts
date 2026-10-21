@@ -518,26 +518,13 @@ window.addEventListener(
   () => channel.setState({ ...channel.state(), scroll: window.scrollY }),
   { passive: true },
 );
+// The focus, which a test waits for: the tab is opened with it, and it lands
+// a moment later, once the webview has loaded.
+const postFocus = (): void => channel.post({ type: "focus", focused: document.hasFocus() });
+window.addEventListener("focus", postFocus);
+window.addEventListener("blur", postFocus);
+postFocus();
 // A tab whose `ascribe.toml` is gone closes on the next click.
 document.addEventListener("click", () => {
   if (gone) channel.post({ type: "close" });
 });
-
-// DIAG #764: the webview's focus, which the extension prints.
-const diag764 = (line: string): void =>
-  (channel.post as (m: unknown) => void)({
-    type: "diag764",
-    line: `${line} active=${document.activeElement?.tagName ?? "-"} hasFocus=${document.hasFocus()}`,
-  });
-window.addEventListener("focus", () => diag764("window focus"));
-window.addEventListener("blur", () => diag764("window blur"));
-diag764(`start t=${Math.round(performance.now())}`);
-window.addEventListener("load", () => diag764("load"));
-window.addEventListener("message", (event: MessageEvent<{ type?: string; seq?: number }>) =>
-  setTimeout(() => diag764(`after message ${event.data?.type} ${event.data?.seq}`), 0),
-);
-let polls764 = 0;
-const poll764 = setInterval(() => {
-  diag764(`poll ${polls764}`);
-  if (++polls764 >= 20) clearInterval(poll764);
-}, 100);

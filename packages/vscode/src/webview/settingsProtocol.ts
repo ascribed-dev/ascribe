@@ -131,4 +131,6 @@ export type FromSettings =
   /** Close the tab, whose `ascribe.toml` is gone. */
   | { type: "close" }
   /** Open VS Code's Settings, filtered to Ascribe's: your editor's settings. */
-  | { type: "editorSettings" };
+  | { type: "editorSettings" }
+  /** Whether the tab's document has the focus: when it starts, and each time it gains or loses it. For tests. */
+  | { type: "focus"; focused: boolean };

@@ -61,6 +61,8 @@ export interface ProjectSettingsApi {
   open(folder?: string): Promise<void>;
   /** What the open tab's webview drew last. */
   drawn(): Drawn<SettingsReport> | undefined;
+  /** Waits until the open tab's webview has the focus. */
+  whenFocused(): Promise<void>;
   /** Waits until what the open tab's webview drew satisfies `predicate`. */
   whenDrawn(
     description: string,
@@ -138,6 +140,7 @@ export class ProjectSettings implements vscode.Disposable {
     return {
       open: (folder) => this.open(folder),
       drawn: () => this.last?.drawn,
+      whenFocused: () => panel().whenFocused(),
       whenDrawn: (description, predicate, timeout) =>
         panel().whenDrawn(description, predicate, timeout),
       set: (id, value) => panel().set(panel().seq, id, value),
@@ -198,6 +201,8 @@ class SettingsPanel implements vscode.Disposable {
   /** The server's answer the newest answer was made from. */
   private result: SettingsResult | undefined;
   private drawnLast: Drawn<SettingsReport> | undefined;
+  /** Whether the webview's document has the focus, as it said last. */
+  private focused = false;
   private waiters: (() => void)[] = [];
   private readonly disposables: vscode.Disposable[] = [];
   private readonly config: vscode.Uri;
@@ -241,10 +246,10 @@ class SettingsPanel implements vscode.Disposable {
       // Its document is thrown away while the tab is hidden, and made again
       // when it's shown: the ready that follows gets the newest answer.
       this.panel.onDidChangeViewState(() => {
-        console.log(
-          `[764 ${Date.now() % 1_000_000}] tab viewState active=${this.panel.active} visible=${this.panel.visible} column=${this.panel.viewColumn}`,
-        );
-        if (!this.panel.visible) this.handshake.reset();
+        if (!this.panel.visible) {
+          this.handshake.reset();
+          this.focused = false;
+        }
       }),
       this.panel.onDidDispose(() => this.dispose()),
       // Typing, an edit from the tab, Undo, opening and closing the file, and
@@ -283,7 +288,6 @@ class SettingsPanel implements vscode.Disposable {
   }
 
   reveal(): void {
-    console.log(`[764 ${Date.now() % 1_000_000}] reveal`);
     this.panel.reveal();
   }
 
@@ -378,11 +382,6 @@ class SettingsPanel implements vscode.Disposable {
   }
 
   private receive(value: unknown): void {
-    const said = value as { type?: string; line?: string };
-    if (said?.type === "diag764") {
-      console.log(`[764 ${Date.now() % 1_000_000}] webview: ${said.line}`);
-      return;
-    }
     const message = checkSettingsMessage(value);
     if (!message) return;
     switch (message.type) {
@@ -415,6 +414,10 @@ class SettingsPanel implements vscode.Disposable {
         return;
       case "close":
         this.click();
+        return;
+      case "focus":
+        this.focused = message.focused;
+        for (const waiter of this.waiters) waiter();
         return;
       // A tab has no page's editor to give the focus back to.
       case "focusEditor":
@@ -495,21 +498,33 @@ class SettingsPanel implements vscode.Disposable {
     predicate: (drawn: Drawn<SettingsReport>) => boolean,
     timeout = 10_000,
   ): Promise<Drawn<SettingsReport>> {
+    return this.until(`draw ${description}`, timeout, () => {
+      const drawn = this.drawnLast;
+      return drawn && predicate(drawn) ? drawn : undefined;
+    });
+  }
+
+  async whenFocused(timeout = 10_000): Promise<void> {
+    await this.until("have the focus", timeout, () => this.focused || undefined);
+  }
+
+  /** Settles with what `check` returns once it isn't `undefined`, checked at each message that could change it. */
+  private until<T>(what: string, timeout: number, check: () => T | undefined): Promise<T> {
     return new Promise((resolve, reject) => {
       const deadline = setTimeout(() => {
-        this.waiters = this.waiters.filter((w) => w !== check);
-        reject(new Error(`Timed out waiting for Project Settings to draw ${description}`));
+        this.waiters = this.waiters.filter((w) => w !== waiter);
+        reject(new Error(`Timed out waiting for Project Settings to ${what}`));
       }, timeout);
-      const check = (): void => {
-        const drawn = this.drawnLast;
-        if (drawn && predicate(drawn)) {
+      const waiter = (): void => {
+        const value = check();
+        if (value !== undefined) {
           clearTimeout(deadline);
-          this.waiters = this.waiters.filter((w) => w !== check);
-          resolve(drawn);
+          this.waiters = this.waiters.filter((w) => w !== waiter);
+          resolve(value);
         }
       };
-      this.waiters.push(check);
-      check();
+      this.waiters.push(waiter);
+      waiter();
     });
   }
 

@@ -306,6 +306,10 @@ export function checkSettingsMessage(
       })(message)
         ? (message as FromSettings)
         : undefined;
+    case "focus":
+      return shape<{ focused: boolean }>({ focused: boolean })(message)
+        ? (message as FromSettings)
+        : undefined;
     case "reset":
     case "openLine":
       return shape<{ seq: number; id: string }>({ seq: whole, id: text })(message)
