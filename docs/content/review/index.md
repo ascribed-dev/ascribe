@@ -55,7 +55,7 @@ The pull request's comments sit beside the blocks they're about.
 - **To reply,** open the thread and write a reply. **Add to review** keeps it with your unsent comments; **Reply now** sends it at once, while you have none.
 - **To resolve a thread,** choose **Resolve**. **Reopen** undoes it.
 
-To hand a comment to your agent, choose **Prompt agent** on its thread ([In review](../agents/index.md#in-review)).
+To hand a comment to your agent, choose **Prompt agent** on its thread ([In review](../agents/prompts.md#in-review)).
 
 ### 5. Submit
 
