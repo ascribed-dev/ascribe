@@ -11,6 +11,7 @@ import { TerminalPath, type TerminalsApi } from "./agents/terminals.js";
 import { AgentTools, type ToolsApi } from "./agents/tools.js";
 import { SyncedSkillKey, type SkillApi } from "./agents/skill.js";
 import { BuildLens, type BuildLensApi } from "./ui/buildLens.js";
+import { AgentFilesChecks, type AgentFilesApi } from "./ui/agentFiles.js";
 import { EveryBuildChecks, type EveryBuildApi } from "./ui/checkEveryBuild.js";
 import { ChosenBuilds } from "./ui/chosenBuild.js";
 import { projectKeys, STATE_NAMES } from "./ui/describe.js";
@@ -80,6 +81,8 @@ export interface AscribeApi {
     sidebar: SidebarApi;
     /** Check Every Build's problems. */
     everyBuild: EveryBuildApi;
+    /** The agent files' checks, which the Project view counts. */
+    agentFiles: AgentFilesApi;
     /** Settles when every request for a project's builds has been answered. */
     whenBuildsKnown(): Promise<void>;
   };
@@ -137,7 +140,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   sidebar.register();
   const tasks = new ProjectTasks(context, projects);
   tasks.register();
-  const projectView = new ProjectView(projects, sidebar, checks, tasks, context.extensionUri);
+  const agentFiles = new AgentFilesChecks(projects);
+  agentFiles.register();
+  const projectView = new ProjectView(
+    projects,
+    sidebar,
+    checks,
+    agentFiles,
+    tasks,
+    context.extensionUri,
+  );
   projectView.register();
 
   const newPage = new NewPage(projects);
@@ -193,6 +205,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     chosen,
     lenses,
     checks,
+    agentFiles,
     builds,
     statusBar,
     lens,
@@ -306,6 +319,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       thisPage: sidebar.thisPageApi,
       sidebar: sidebar.api,
       everyBuild: checks.api,
+      agentFiles: agentFiles.api,
       whenBuildsKnown: () => builds.whenSettled(),
     },
   };

@@ -75,6 +75,49 @@ export function panelProblems(
   return problems;
 }
 
+/**
+ * The problems the Project view counts on their own, by their diagnostics'
+ * names: tested examples changed since they were tested or never tested,
+ * reviews overdue, and a permalinks list that's behind.
+ */
+const COUNTED = {
+  examples: ["example-stale", "example-unobserved"],
+  reviews: ["review-overdue"],
+  permalinks: ["permalinks-list-behind"],
+} as const satisfies Record<string, readonly string[]>;
+
+export type Counted = keyof typeof COUNTED;
+
+/** How many problems of one kind a check found, and where the first of them is. */
+export interface Found {
+  count: number;
+  /** The first, in the report's order: its file, as an absolute path, and its place. */
+  first: { file: string; range: EditorRange } | null;
+}
+
+/** What a report found of each kind the Project view counts, placed as `panelProblems` places them. */
+export function countedIn(
+  report: CheckReport,
+  root: string,
+  text: (file: string) => string | undefined,
+): Record<Counted, Found> {
+  const found = (slugs: readonly string[]): Found => {
+    const entries = report.diagnostics.filter((entry) => slugs.includes(entry.slug));
+    const first = entries[0];
+    if (!first) return { count: 0, first: null };
+    const file = path.resolve(root, first.file);
+    return {
+      count: entries.length,
+      first: { file, range: editorRange(text(file) ?? "", first.range) },
+    };
+  };
+  return {
+    examples: found(COUNTED.examples),
+    reviews: found(COUNTED.reviews),
+    permalinks: found(COUNTED.permalinks),
+  };
+}
+
 /** What the check found, in a sentence: what the notification after it says. */
 export function checkedText(
   report: CheckReport,

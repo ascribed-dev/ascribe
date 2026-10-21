@@ -1,26 +1,57 @@
 import { describe, expect, it } from "vitest";
+import type { Counted, Found } from "../../src/everyBuild.js";
+import type { InventoryResult } from "../../src/shapes.js";
+import type { AgentFilesResult } from "../../src/ui/agentFiles.js";
 import type { EveryBuildResult } from "../../src/ui/checkEveryBuild.js";
 import {
+  agentFilesCount,
+  examplesCount,
+  inventoryCounts,
   NO_PROJECT,
+  orphansCount,
+  permalinksCount,
   PROJECT_KEYS,
   problemsCount,
   projectAnswer,
+  reviewsCount,
+  staleFiles,
+  syncQuestion,
+  unusedCount,
   type ProjectFacts,
 } from "../../src/ui/projectHealth.js";
 
-const facts = (everyBuild: EveryBuildResult): ProjectFacts => ({
+const DAY = 24 * 60 * 60 * 1000;
+
+const facts = (everyBuild: EveryBuildResult, more: Partial<ProjectFacts> = {}): ProjectFacts => ({
   name: "docs",
   folder: "docs",
   state: "running",
   version: "0.4.0",
   everyBuild,
+  inventory: { orphans: 0, unused: 0 },
+  agentFiles: { kind: "made", at: 7000, stale: [], error: null, current: true },
+  now: 6000,
   time: (at) => `${at / 1000}s`,
+  day: (at) => `day ${Math.floor(at / DAY)}`,
+  ...more,
+});
+
+const nothing: Found = { count: 0, first: null };
+const found = (count: number): Found => ({
+  count,
+  first:
+    count === 0
+      ? null
+      : {
+          file: "/docs/a.md",
+          range: { start: { line: 2, character: 0 }, end: { line: 2, character: 4 } },
+        },
 });
 
 const made = (
   current: boolean,
   summary = { errors: 2, warnings: 1, advice: 3 },
-  more: { error?: string | null; unsaved?: number } = {},
+  more: { error?: string | null; unsaved?: number; counted?: Partial<Record<Counted, Found>> } = {},
 ): EveryBuildResult => ({
   kind: "made",
   at: 5000,
@@ -28,6 +59,7 @@ const made = (
   error: more.error ?? null,
   current,
   unsaved: more.unsaved ?? 0,
+  counted: { examples: nothing, reviews: nothing, permalinks: nothing, ...more.counted },
 });
 
 describe("projectAnswer", () => {
@@ -62,11 +94,32 @@ describe("projectAnswer", () => {
   });
 
   it("counts a count to do while it's above zero, out of date, or never run, and not while it's running or none", () => {
-    expect(projectAnswer(facts({ kind: "none" })).toDo).toBe(1);
+    // Every count from the check: problems, examples, reviews, and permalinks.
+    expect(projectAnswer(facts({ kind: "none" })).toDo).toBe(4);
     expect(projectAnswer(facts({ kind: "running" })).toDo).toBe(0);
     expect(projectAnswer(facts(made(true))).toDo).toBe(1);
-    expect(projectAnswer(facts(made(false))).toDo).toBe(1);
+    expect(projectAnswer(facts(made(false))).toDo).toBe(4);
     expect(projectAnswer(facts(made(true, { errors: 0, warnings: 0, advice: 0 }))).toDo).toBe(0);
+    expect(
+      projectAnswer(
+        facts(made(true, { errors: 0, warnings: 0, advice: 0 }), {
+          inventory: { orphans: 2, unused: 1 },
+          agentFiles: { kind: "none" },
+        }),
+      ).toDo,
+    ).toBe(3);
+  });
+
+  it("lists Health's counts in the proposal's order", () => {
+    expect(projectAnswer(facts({ kind: "none" })).health.map((count) => count.key)).toEqual([
+      PROJECT_KEYS.problems,
+      PROJECT_KEYS.examples,
+      PROJECT_KEYS.reviews,
+      PROJECT_KEYS.permalinks,
+      PROJECT_KEYS.orphans,
+      PROJECT_KEYS.unused,
+      PROJECT_KEYS.agentFiles,
+    ]);
   });
 });
 
@@ -137,5 +190,196 @@ describe("problemsCount", () => {
       value: "—",
       note: "The check at 5s couldn't finish: ascribe.toml: bad",
     });
+  });
+});
+
+describe("the counts from the same check", () => {
+  const counts = [examplesCount, reviewsCount, permalinksCount];
+
+  it("follow the check: a dash until it runs, while it runs, and once the project changes", () => {
+    for (const count of counts) {
+      expect(count(facts({ kind: "none" }))).toMatchObject({
+        state: "unknown",
+        value: "—",
+        note: "Needs every build checked",
+        action: { key: PROJECT_KEYS.checkEveryBuild },
+      });
+      expect(count(facts({ kind: "running" }))).toMatchObject({ state: "running", action: null });
+      expect(
+        count(facts(made(false, undefined, { counted: { examples: found(2) } }))),
+      ).toMatchObject({
+        state: "outOfDate",
+        value: "—",
+        note: "Out of date: the project changed after the check at 5s",
+        opens: false,
+      });
+      expect(count(facts(made(false, undefined, { error: "bad" })))).toMatchObject({
+        state: "outOfDate",
+        note: "The check at 5s couldn't finish: bad",
+      });
+    }
+  });
+
+  it("count their own problems, opening them while above zero, and show none as 0", () => {
+    const check = made(true, undefined, {
+      counted: { examples: found(3), reviews: found(1), permalinks: found(2) },
+    });
+    expect(examplesCount(facts(check))).toMatchObject({
+      key: PROJECT_KEYS.examples,
+      state: "current",
+      value: "3 examples",
+      note: "Checked at 5s",
+      opens: true,
+    });
+    expect(reviewsCount(facts(check))).toMatchObject({
+      state: "current",
+      value: "1 page",
+      note: "Checked at 5s, for day 0",
+      opens: true,
+    });
+    expect(permalinksCount(facts(check))).toMatchObject({ value: "2 permalinks", opens: true });
+    for (const count of counts) {
+      expect(count(facts(made(true)))).toMatchObject({ state: "none", value: "0", opens: false });
+    }
+  });
+
+  it("puts overdue reviews out of date when the day changes, whatever isCurrent says", () => {
+    const check = made(true, undefined, { counted: { reviews: found(1) } });
+    expect(reviewsCount(facts(check, { now: DAY + 1 }))).toMatchObject({
+      state: "outOfDate",
+      value: "—",
+      note: "Out of date: checked on day 0, and reviews fall due by the day",
+      opens: false,
+      action: { key: PROJECT_KEYS.checkEveryBuild },
+    });
+    // The other counts from the same check stay current.
+    expect(examplesCount(facts(check, { now: DAY + 1 })).state).toBe("none");
+    expect(problemsCount(facts(check, { now: DAY + 1 })).state).toBe("current");
+  });
+});
+
+describe("the counts from the inventory", () => {
+  const inventory = (orphans: string[], uses: (number | null)[]): InventoryResult => ({
+    pages: [],
+    fragments: [],
+    orphans,
+    navigation: null,
+    model: uses.map(
+      (n, i) => ({ uses: n, key: `k${i}` }) as unknown as InventoryResult["model"][number],
+    ),
+  });
+
+  it("count orphans, and entries nothing uses, leaving out an entry whose uses aren't counted", () => {
+    expect(inventoryCounts(inventory(["a.md", "b.md"], [0, 3, null, 0, 0]))).toEqual({
+      orphans: 2,
+      unused: 3,
+    });
+  });
+
+  it("are current as the server answers, open their lists, and show none as 0", () => {
+    const counted = facts(made(true), { inventory: { orphans: 1, unused: 4 } });
+    expect(orphansCount(counted)).toMatchObject({
+      key: PROJECT_KEYS.orphans,
+      state: "current",
+      value: "1 page",
+      opens: true,
+    });
+    expect(unusedCount(counted)).toMatchObject({ value: "4 entries", opens: true });
+    const none = facts(made(true), { inventory: { orphans: 0, unused: 0 } });
+    expect(orphansCount(none)).toMatchObject({ state: "none", value: "0", opens: false });
+    expect(unusedCount(none)).toMatchObject({ state: "none", value: "0", opens: false });
+  });
+
+  it("show a dash while the server counts, and while it isn't running", () => {
+    expect(orphansCount(facts(made(true), { inventory: undefined }))).toMatchObject({
+      state: "running",
+      value: "—",
+      note: "Counting…",
+    });
+    expect(unusedCount(facts(made(true), { inventory: undefined, state: "failed" }))).toMatchObject(
+      {
+        state: "unknown",
+        value: "—",
+        note: "Counted while the language server runs: it's failed",
+      },
+    );
+  });
+});
+
+describe("agentFilesCount", () => {
+  const files = (agentFiles: AgentFilesResult) =>
+    agentFilesCount(facts(made(true), { agentFiles }));
+
+  it("is unknown until checked, with the check beside it, and says when it's checking", () => {
+    expect(files({ kind: "none" })).toMatchObject({
+      state: "unknown",
+      value: "—",
+      note: "Needs the agent files checked",
+      action: { key: PROJECT_KEYS.checkAgentFiles, label: "Check Agent Files" },
+    });
+    expect(files({ kind: "running" })).toMatchObject({
+      state: "running",
+      note: "Checking the agent files…",
+      action: null,
+    });
+  });
+
+  it("counts the stale files from the last save, opening Sync Agent Files", () => {
+    expect(
+      files({
+        kind: "made",
+        at: 7000,
+        stale: ["AGENTS.md", ".claude/skills/ascribe/SKILL.md"],
+        error: null,
+        current: true,
+      }),
+    ).toMatchObject({
+      key: PROJECT_KEYS.agentFiles,
+      state: "current",
+      value: "2 files",
+      note: "Checked at 7s, after the last save",
+      opens: true,
+    });
+    expect(files({ kind: "made", at: 7000, stale: [], error: null, current: true })).toMatchObject({
+      state: "none",
+      value: "0",
+      opens: false,
+    });
+  });
+
+  it("goes out of date on a change on disk, and says why a check couldn't finish", () => {
+    expect(
+      files({ kind: "made", at: 7000, stale: ["AGENTS.md"], error: null, current: false }),
+    ).toMatchObject({
+      state: "outOfDate",
+      value: "—",
+      note: "Out of date: a file changed on disk after the check at 7s",
+      opens: false,
+      action: { key: PROJECT_KEYS.checkAgentFiles },
+    });
+    expect(
+      files({ kind: "made", at: 7000, stale: [], error: "no ascribe.toml", current: true }),
+    ).toMatchObject({
+      state: "outOfDate",
+      note: "The check at 7s couldn't finish: no ascribe.toml",
+    });
+  });
+
+  it("reads the stale files from ascribe agents sync --check", () => {
+    expect(
+      staleFiles(
+        "stale      AGENTS.md\nup to date .claude/skills/ascribe/SKILL.md\r\nstale      ../.github/copilot-instructions.md\n",
+      ),
+    ).toEqual(["AGENTS.md", "../.github/copilot-instructions.md"]);
+  });
+
+  it("asks before Sync Agent Files, naming the files it would change", () => {
+    expect(syncQuestion("docs", ["AGENTS.md", "CLAUDE.md"])).toEqual({
+      message: "2 agent files are out of date in docs. Sync Agent Files?",
+      detail: "ascribe agents sync would change:\nAGENTS.md\nCLAUDE.md",
+    });
+    expect(syncQuestion("docs", ["AGENTS.md"]).message).toBe(
+      "1 agent file is out of date in docs. Sync Agent Files?",
+    );
   });
 });
