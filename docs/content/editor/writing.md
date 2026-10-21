@@ -28,7 +28,7 @@ What the editor does as you write a page: what it completes, what it shows on ho
 - In the [navigation file](../navigation/index.md), `ascribe.nav`: its keys, a `folder` from the project's sections it doesn't list yet, and in `pages` the section's pages it doesn't name yet. The file's [problems](../navigation/index.md#problems) appear as you type, where each is, with their fixes, and a page its section leaves out offers **Add `name.md` to `folder/`'s pages in ascribe.nav**, which edits the file.
 
 ## Search
-@available: next
+@available: ascribe 0.4.1
 
 **Ascribe: Search Pages as Readers See Them**, in the Command Palette, finds words where the pages say them as their readers read them, and opens the line to edit. It's [`ascribe search`](../command/questions.md#cli-search) in the editor: the same query, the same places, in the same order. Type words, which must all be in one block in any order, or a phrase in double quotes, matched as written; case is ignored. The places arrive as you type, each the reader's text cut around the match, and under it the file and line, the heading it's under, and the phrase it reads through: `install-agent.md:62 · Connect to Quill · through phrase cloud`. A place many pages show, from a fragment, says how many. Choose one to open its line. A match wholly inside a phrase's value opens the phrase in `ascribe.toml`.
 

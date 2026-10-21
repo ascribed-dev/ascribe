@@ -1,1 +1,0 @@
-- **Fixed:** `ascribe diff` compares inline HTML as a reader reads it. A block's text in the report, and the words marked in it, leave out inline HTML's tags and comments, and read a `<br>` as a space, as `ascribe search` and the plain output do; a change only inside a comment still marks the block as changed, with no words marked. See `docs/content/review/diff.md`.

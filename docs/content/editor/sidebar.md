@@ -9,13 +9,13 @@ The Ascribe icon in the activity bar opens the Ascribe sidebar, with three views
 @available: ascribe 0.4.0
 While review is on, a **Review** view comes first: see [The Review view](review.md#the-review-view).
 
-@available: next
+@available: ascribe 0.4.1
 A **Project** view comes first of all, above Review: see [The Project view](#the-project-view).
 
 The [status bar](#the-status-bar) item names the active file's project, with a menu of the jobs the Project view has.
 
 ## The Project view
-@available: next
+@available: ascribe 0.4.1
 
 **Project** is about the whole project the sidebar shows, where This page is about one page. It shows the same project as the views below it, following the file you're in, and staying on its project when you click in it or open a file of no project.
 
@@ -73,7 +73,7 @@ In a workspace with several projects, **Switch Project** is in the view's title 
 In Restricted Mode, Ascribe runs nothing, since it would run the project's own `ascribe` binary. The view says so in place of the counts, with **Manage Workspace Trust**, and every action is off until you trust the folder.
 
 ### Edits to the whole project
-@available: next
+@available: ascribe 0.4.1
 
 **Apply Every Safe Fix** applies every [safe fix](problems.md#apply-the-safe-fixes) of the problems the editor shows, in every page and fragment of the project, as **Apply the safe fixes in this page** applies one page's. They're the editor's build's problems, the ones in the Problems panel; a problem only another build has, or one that takes every build to tell, is [`ascribe check --fix`](../checks/check.md#applying-the-safe-fixes)'s to fix. **Format Every Page** formats every page and fragment as [Format Document](writing.md#formatting) and `ascribe fmt` do. Both are in the Command Palette too, as **Ascribe: Apply Every Safe Fix** and **Ascribe: Format Every Page**, for the active file's project.
 
@@ -89,10 +89,10 @@ The files are left unsaved on purpose. On a large project an edit can change hun
 ![The This page view, with the rest of the Ascribe sidebar closed, beside the page Install the Quill agent with the cursor under its heading "Install the agent". At the view's top are the page's title, its type, page, and its path, install-agent.md. About gives its title, its type, its address, /install-agent/, its Markdown version, not published, its description's length, 102 characters, its availability, the builds that publish it, and its listing, "Listed (the default)". Health says its problems, none, and its size, "2,567 of 50,000 characters, in site@3.4". Connections, titled to “Install the agent”, lists under Linked from the file keys.md and its line that links there, with its line number, under Included by none, and under Includes the fragment _fragments/prerequisites.md. Memos, titled about “Install the agent”, lists one memo by its first line, with its file, memos/agent-first.md, beside it.](../images/this-page-light.png){scheme=light}
 ![The This page view, with the rest of the Ascribe sidebar closed, beside the page Install the Quill agent with the cursor under its heading "Install the agent". At the view's top are the page's title, its type, page, and its path, install-agent.md. About gives its title, its type, its address, /install-agent/, its Markdown version, not published, its description's length, 102 characters, its availability, the builds that publish it, and its listing, "Listed (the default)". Health says its problems, none, and its size, "2,567 of 50,000 characters, in site@3.4". Connections, titled to “Install the agent”, lists under Linked from the file keys.md and its line that links there, with its line number, under Included by none, and under Includes the fragment _fragments/prerequisites.md. Memos, titled about “Install the agent”, lists one memo by its first line, with its file, memos/agent-first.md, beside it.](../images/this-page-dark.png){scheme=dark}
 
-@available: next
+@available: ascribe 0.4.1
 This page follows the page you're working in: the last editor of a page that was active. Clicking in the view, or moving to the preview, another view, a panel, or a file that isn't a page leaves it on its page; when that page's editor closes, it shows the page of the editor that takes its place. Only **About** starts open. The other sections' headers say whether to open them: Health's count of things to do, Connections' heading, and Memos' "none". Open or close a section and it stays that way on every page. Rows wrap, so each shows all it says at any width, with more in its tooltip, and an open section's header stays at the top of the view while you scroll through its rows. **Tab**, or **Up** and **Down**, moves between the section headers and the rows that open something, **Enter** or **Space** opens a section or a row, and **Escape** puts the cursor back in the page. As the cursor moves and the checks run, the view changes what it says in place, keeping its scroll and the row you're on.
 
-@available: next
+@available: ascribe 0.4.1
 The title above the sections draws its code spans as code where its type's `title` field reads them ([`inline = "code"`](../content-model/index.md#53-code-in-a-field)), and a fragment's type is "fragment". A row whose state can warn says the state first, in the warning color when there's something to do: an example's "changed since it was tested" before its address, a description's "too long" before its length. The view's badge counts Health's things to do, so you see them with This page collapsed or Health closed; it goes when you move to another page while the view is collapsed, until you open it again. In place of a page, This page says when no page is open, when the page's language server is starting, and when it failed to start, with **Show Output** and **Restart**; in Restricted Mode it says Ascribe isn't checking the folder, with **Manage Workspace Trust**.
 
 About's other rows say whether the page is published, listed, due, and finished. Each is shown only when it has something to say, apart from a description, which is shown "missing" where [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports the page. A row with somewhere to go opens it:

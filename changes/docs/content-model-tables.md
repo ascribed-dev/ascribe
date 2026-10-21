@@ -1,1 +1,0 @@
-- **The `ascribe.toml` reference's tables of keys are generated from the keys the loader reads.** Each table says what the editor will. `[[intended]]` lists `phrase`, `feature`, and `image` as a row each, and `[checks]` lists `[checks.<check>]`'s `level`, in [the reference's checks page](docs/content/content-model/checks.md).

@@ -38,7 +38,7 @@ A channel's name is set when the channel is first needed, usually when its proje
 A server's first line names its version and the `ascribe.toml` it uses, as [the language server](language-server.md#the-project-a-server-serves) says.
 
 ## Project Settings
-@available: next
+@available: ascribe 0.4.1
 
 **Ascribe: Open Project Settings** opens a tab of the project's own settings: those in its `ascribe.toml`, which everyone working on the project shares, and which the file holds for them all to read, review, and commit. Your editor's settings, the `ascribe.*` ones below, are VS Code's, and the tab links to them.
 
@@ -67,13 +67,13 @@ A content type, a dimension, a release target, a build, and a source are tables 
 Under **Checks**, the tab lists every check whose level `[checks]` can set ([Setting a check's level](../checks/diagnostics.md#setting-a-checks-level)), the ones the file names first, then the rest in the diagnostics reference's order. Each shows what it reports, its level, and its own level, which it has when the file sets none. `page-size`, `image-large`, and `memo-long` show their `limit` too, with its default. A level and a limit are set and reset as any setting is, in the form the file writes the check: `page-size = "warning"` in `[checks]`, an inline table, or a `[checks.page-size]` table of its own.
 
 ## Tasks
-@available: next
+@available: ascribe 0.4.1
 
 The extension adds a task type, `ascribe`, for the jobs that write files: **Build** runs `ascribe build`, **Sync Agent Files** runs `ascribe agents sync`, and **Observe Examples** runs [`ascribe observe`](../examples/tested.md#2-run-the-test-and-commit-what-it-records). Each runs in the terminal, with its output in view as it would be in CI, and with no problem matcher: the Problems panel stays the editor's and [Check Every Build](problems.md#the-problems-panel)'s. The [Project view](sidebar.md#the-project-view)'s Actions run them, and so does **Tasks: Run Task**, where each project has its own, named after the project when the workspace has more than one.
 
 Each runs the `ascribe` binary the project's language server runs: the `ascribe.path` setting, the project's own `node_modules/.bin/ascribe`, or the one bundled with the extension. Build and Sync Agent Files run in the project's folder, with `--config` naming its `ascribe.toml` when the project isn't the workspace folder. None is offered in Restricted Mode, where the extension runs nothing until you trust the folder.
 
-@available: next
+@available: ascribe 0.4.1
 **Observe Examples** runs in the folder of a [source with tested examples](../examples/tested.md), one task for each, named after the source when the project has more than one; `ascribe observe` runs only the `ascribe.examples.toml` in the folder it's run in, and takes no `--config`. Which sources have tested examples is what `ascribe model --section sources` says: those with an `ascribe.examples.toml`, and not a [source in another repository](../examples/docs-repository.md), whose config is never run. The config names commands to run, so before running them, `ascribe observe` lists them in the task's terminal and asks **Run them? [y/N]**. Type `y` to run them; anything else runs nothing. The Project view's **Observe Examples** asks which source first when there's more than one.
 
 To bind one to a key, or run it from your own task, name it in `.vscode/tasks.json`:

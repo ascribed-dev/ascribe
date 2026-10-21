@@ -96,16 +96,17 @@ values = ["npm", "pnpm"]
 planned-label = "in main, not yet released"
 
 [releases.ascribe]
-live = ["0.4.0"]
-planned = ["0.4.1"]
+live = ["0.4.1"]
+planned = ["0.4.2"]
 
 [releases.ascribe.archived]
 "0.3.1" = {}
 "0.3.2" = {}
+"0.4.0" = {}
 
 [features.next]
 name = "In main, not yet released"
-available = "ascribe 0.4.1"
+available = "ascribe 0.4.2"
 
 [phrases]
 # The latest release: `[releases.ascribe]`'s live line, which
