@@ -1,7 +1,7 @@
 ---
 type: reference
 title: "JSON reports: the commands that answer questions"
-description: "The JSON Schemas of what ascribe explain, model, outline, link, refs, render, and agents index write with --format json."
+description: "The JSON Schemas of what ascribe explain, model, outline, link, refs, render, search, and agents index write with --format json."
 ---
 
 Part of the [JSON report contract](../json-reports.md), whose rules every document here follows.
@@ -39,6 +39,11 @@ With `--list`:
 @available: ascribe 0.3.0
 
 @include: ../../_generated/json-render.md
+
+## `ascribe search`
+@available: next
+
+@include: ../../_generated/json-search.md
 
 ## `ascribe agents index`
 @available: ascribe 0.3.0

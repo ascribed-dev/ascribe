@@ -1015,6 +1015,21 @@ fn search() {
             1,
         )),
     );
+    expect(
+        "search.json",
+        &json(&run(
+            &root,
+            &[
+                "search",
+                "\"sign in to quill cloud\"",
+                "--config",
+                quill,
+                "--format",
+                "json",
+            ],
+            0,
+        )),
+    );
 }
 
 /// `ascribe agents sync` on `examples/quill` in a repository of its own:
