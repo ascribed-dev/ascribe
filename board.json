@@ -3547,7 +3547,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/730"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "The docs' language server is told of every file under the repository during a build"
     },
     {
@@ -3641,7 +3641,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/740"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Search: --format json, the ascribe_search tool, and telling agents to search first"
     },
     {
@@ -3659,7 +3659,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Search: Search Pages as Readers See Them in the editor"
     },
     {
@@ -4186,7 +4186,7 @@
         "docs-audit"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Docs: The directive reference, as four pages"
     },
     {
