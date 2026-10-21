@@ -441,7 +441,7 @@ const COUNTS = {
 const CHECK: ProjectCheck = { key: CHECK_EVERY_BUILD.key, label: CHECK_EVERY_BUILD.label };
 
 /** Health's groups: every build's counts, those as you type, and the agent files'. */
-export function healthGroups(facts: ProjectFacts): ProjectHealthGroup[] {
+function healthGroups(facts: ProjectFacts): ProjectHealthGroup[] {
   return [everyBuildGroup(facts), asYouTypeGroup(facts), lastSaveGroup(facts)];
 }
 
