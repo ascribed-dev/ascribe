@@ -1223,7 +1223,7 @@ function toDo(rows: readonly AboutRow[]): number {
  * How many things Health says there are to do, which its header says and
  * the view's badge shows, so they're seen with Health closed.
  */
-export function healthToDo(roots: readonly ThisPageNode[]): number {
+function healthToDo(roots: readonly ThisPageNode[]): number {
   const health = roots.find((node) => node.kind === "health");
   return health?.kind === "health" ? toDo(health.rows) : 0;
 }

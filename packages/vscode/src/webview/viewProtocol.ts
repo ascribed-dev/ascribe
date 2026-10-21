@@ -66,7 +66,7 @@ export interface ViewItem {
 }
 
 /** A piece of a title: text, or a code span's content, drawn as code. */
-export interface TitlePiece {
+interface TitlePiece {
   type: "text" | "code";
   value: string;
 }
