@@ -3662,7 +3662,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/742"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Search: Search Pages as Readers See Them in the editor"
     },
     {
@@ -3679,7 +3679,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Search: ascribe diff takes its block text from the reading"
     },
     {
@@ -3921,7 +3921,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/729"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Project Settings: the round trip"
     },
     {
@@ -3938,7 +3938,7 @@
         "editor-webviews"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Project view: the head, About, and Restricted Mode"
     },
     {
@@ -3955,7 +3955,7 @@
         "editor-webviews"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Project Settings: every simple setting, and the checks"
     },
     {
@@ -4631,8 +4631,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/745"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhCZBg0",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/753"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Docs report: links and the published site"
     },
     {
@@ -4649,9 +4652,26 @@
         "bug",
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/754"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "This page's test of opening a snippet's file beside the page is flaky on CI"
+    },
+    {
+      "content": {
+        "body": "Follow-ups from the review of #753 (https://github.com/ascribed-dev/ascribe/pull/753#pullrequestreview-5599977160), notes 1 to 3, all non-blocking there.\n\n#753 (for #745) moved what `report links` remembers from `actions/cache` to an artifact of each run. `.github/workflows/report.yml` lists the newest `ascribe-links` artifact with `gh api`, then downloads it with `gh run download`. `docs/content/checks/report.md` (\"On a schedule\") publishes that job to users through its `:snippet-start: job` markers, so what's fixed here is fixed for them too.\n\n## What's wrong\n\n1. **A failed download stops the report.** If `gh api` or `gh run download` fails, for example on a transient API error or an artifact that expired between the list and the download, the step fails and `Report` never runs. A cache miss used to be harmless: the report ran with nothing remembered.\n2. **The artifact's root is the paths' common folder.** `upload-artifact` stores files relative to the folder that `docs/.ascribe/cache` and `docs/.ascribe/history` share. If one of them were missing or empty, the other's files would be stored without their folder name, and download straight into `docs/.ascribe/`.\n3. **\"when asked twice\" can be wrong.** The persistent-5xx message says \"answered 5xx … when asked twice\" even when the second ask failed to run. In that case the first answer stands and still matches `is_server_error`.\n\n## Done when\n\n- If listing or downloading the artifact fails, the step warns (`::warning::`, saying that every failure will be reported) and the report still runs with nothing remembered. Nothing else in the job changes.\n- What's uploaded downloads back to `docs/.ascribe/cache/…` and `docs/.ascribe/history/…` even when only one of the two folders has files. For example, upload `docs/.ascribe` with only those two folders included, or give the upload a fixed root. The pull request shows the artifact's file list from a `workflow_dispatch` run.\n- A 5xx is described as \"when asked twice\" only when it was asked twice. If the second ask didn't run, the message doesn't say so. A test in `crates/ascribe-check/tests/all/link_retry.rs` covers the case. The JSON's fields don't change.\n- `docs/content/checks/report.md` still builds from the snippet and describes the download's fallback.",
+        "number": 755,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The daily report: a failed history download stops the report",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/755"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCbOLg",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Ready",
+      "title": "The daily report: a failed history download stops the report"
     }
   ]
 }
