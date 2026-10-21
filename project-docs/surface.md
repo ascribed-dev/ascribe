@@ -527,6 +527,7 @@ Ascribe's own requests:
 | `ascribe/review/setBase` | `crates/ascribe-lsp/src/review.rs` |
 | `ascribe/review/changes` | `crates/ascribe-lsp/src/review.rs` |
 | `ascribe/review/baseFile` | `crates/ascribe-lsp/src/review.rs` |
+| `ascribe/settings` | `crates/ascribe-lsp/src/settings.rs` |
 | `ascribe/targets` | `crates/ascribe-lsp/src/targets.rs` |
 
 The standard requests it answers, by the type that names each in the code:
@@ -768,6 +769,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/lsp-page.schema.json` | PageResult | The answer to `ascribe/page`. |
 | `schemas/lsp-preview.schema.json` | PreviewResult | The answer to `ascribe/preview`. |
 | `schemas/lsp-set-base.schema.json` | SetBaseResult | The answer to `ascribe/review/setBase`. |
+| `schemas/lsp-settings.schema.json` | SettingsResult | The answer to `ascribe/settings`. |
 | `schemas/lsp-targets.schema.json` | TargetsResult | The answer to `ascribe/targets`: a list for each kind asked for, and no others. |
 | `schemas/model.schema.json` | ModelReport | What `ascribe model --format json` answers: the content model's sections, or the one asked for. |
 | `schemas/observe.schema.json` | ObserveReport | What `ascribe observe --format json` writes: the commands it ran, how the test ended, the observation it wrote, and what changed since the one it replaced. |
