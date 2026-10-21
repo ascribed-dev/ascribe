@@ -976,7 +976,12 @@ describe("the Project view on examples/quill", () => {
     await api.ui.project.choose("checkEveryBuild");
     const current = await drawnIn("current");
     // broken.md's unknown attribute key is an error in every build.
-    assert.match(current.value, /^\d+ errors?(, \d+ warnings?)?(, \d+ advice)?$/, current.value);
+    // Drawn as an icon per severity with its count, the error's first.
+    assert.match(current.severities[0] ?? "", /^error \d+$/, current.severities.join("\n"));
+    assert.ok(
+      current.severities.every((said) => /^(error|warning|info) \d+$/.test(said)),
+      current.severities.join("\n"),
+    );
     assert.match(current.note, /^checked at /, current.note);
     assert.equal(api.ui.everyBuild.isCurrent(folder), true);
     // The count opens the Problems panel: its button, after the head's.
