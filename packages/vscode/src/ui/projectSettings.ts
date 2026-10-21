@@ -241,6 +241,9 @@ class SettingsPanel implements vscode.Disposable {
       // Its document is thrown away while the tab is hidden, and made again
       // when it's shown: the ready that follows gets the newest answer.
       this.panel.onDidChangeViewState(() => {
+        console.log(
+          `[764 ${Date.now() % 1_000_000}] tab viewState active=${this.panel.active} visible=${this.panel.visible} column=${this.panel.viewColumn}`,
+        );
         if (!this.panel.visible) this.handshake.reset();
       }),
       this.panel.onDidDispose(() => this.dispose()),
@@ -280,6 +283,7 @@ class SettingsPanel implements vscode.Disposable {
   }
 
   reveal(): void {
+    console.log(`[764 ${Date.now() % 1_000_000}] reveal`);
     this.panel.reveal();
   }
 
@@ -374,6 +378,11 @@ class SettingsPanel implements vscode.Disposable {
   }
 
   private receive(value: unknown): void {
+    const said = value as { type?: string; line?: string };
+    if (said?.type === "diag764") {
+      console.log(`[764 ${Date.now() % 1_000_000}] webview: ${said.line}`);
+      return;
+    }
     const message = checkSettingsMessage(value);
     if (!message) return;
     switch (message.type) {

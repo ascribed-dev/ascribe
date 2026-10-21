@@ -522,3 +522,12 @@ window.addEventListener(
 document.addEventListener("click", () => {
   if (gone) channel.post({ type: "close" });
 });
+
+// DIAG #764: the webview's focus, which the extension prints.
+const diag764 = (line: string): void =>
+  (channel.post as (m: unknown) => void)({
+    type: "diag764",
+    line: `${line} active=${document.activeElement?.tagName ?? "-"} hasFocus=${document.hasFocus()}`,
+  });
+window.addEventListener("focus", () => diag764("window focus"));
+window.addEventListener("blur", () => diag764("window blur"));

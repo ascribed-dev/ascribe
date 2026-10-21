@@ -116,8 +116,24 @@ describe("Project Settings on examples/quill", () => {
 
     // Undo in the file puts it back, and the tab follows.
     // Beside the tab, as the file is opened beside it: a hidden tab draws nothing.
+    const t = (line: string) =>
+      console.log(
+        `[764 ${Date.now() % 1_000_000}] ${line} active=${vscode.window.activeTextEditor?.document.uri.path.split("/").pop()} version=${document.version} focused=${vscode.window.state.focused}`,
+      );
+    const changes = vscode.workspace.onDidChangeTextDocument((e) => {
+      if (e.document === document) t(`document changed ${e.reason}`);
+    });
+    const actives = vscode.window.onDidChangeActiveTextEditor(() => t("active editor changed"));
+    t("before showTextDocument");
     await vscode.window.showTextDocument(document, { viewColumn: vscode.ViewColumn.Two });
+    t("before undo");
     await vscode.commands.executeCommand("undo");
+    t("after undo");
+    setTimeout(() => {
+      t("1s after undo");
+      changes.dispose();
+      actives.dispose();
+    }, 1000);
     await settings.whenDrawn(
       "the trailing slash, always",
       (d) => shown(d, SLASH).value === "always",
