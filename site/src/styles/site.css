@@ -17,6 +17,7 @@
   --accent: #5962e8;
   --accent-surface: #f5f6fe;
   --focus: #5962e8;
+  --mark-gutter: #1689ab;
   --radius: 0.375rem;
   --type-caption: 600 0.75rem/1.4;
   --type-small: 400 0.875rem/1.5;
@@ -48,6 +49,7 @@
     --accent: #91a1fe;
     --accent-surface: #161b3a;
     --focus: #b3c0ff;
+    --mark-gutter: #56d0f0;
     /* End of generated root. */
   }
 }
@@ -137,14 +139,15 @@ pre {
   color: var(--text);
 }
 
+/* The logo is 9 cells tall: 18 px is 2 px a cell, so its pixels stay sharp. */
 .site-header .site-name svg {
   width: auto;
-  height: 1.5rem;
+  height: 1.125rem;
 }
 
-/* The mark's asterisk: the note on the word. */
+/* The gutter's change marks beside the a. */
 .site-name .second {
-  fill: var(--accent);
+  fill: var(--mark-gutter);
 }
 
 .site-header svg {

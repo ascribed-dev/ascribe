@@ -193,8 +193,8 @@ for theme colors it can't read.
   that's used and not declared. There are none today.
 - **The activity bar icon** is `media/activity.svg`, generated from the mark in
   one color for VS Code to tint. The Marketplace icon is `media/icon.png`, and the
-  banner behind it (`galleryBanner`) is the icon's tile color, which
-  `scripts/design/assets.test.ts` holds to the palette.
+  banner behind it (`galleryBanner`) is the icon's tile color, Deep River's
+  ground, which `scripts/design/assets.test.ts` holds to the mark's colors.
   [design/README.md](../../design/README.md#the-assets) has how they're made.
 
 ## Development

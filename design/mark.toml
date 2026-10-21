@@ -1,0 +1,111 @@
+# Ascribe's mark and wordmark, as pixel grids: the source of every image of
+# them, which scripts/design/assets.ts draws. design/ascribe.af is the board
+# they came from, and design/README.md says how to use them.
+#
+# One character a cell: "#" is a letter, in the text color; "|" is a change
+# mark in the gutter, the second color (`class="second"` in an SVG); "." is
+# empty.
+
+# The mark: a heavy single-storey a, with the change marks of a gutter beside
+# it. The marks split around the a's middle row, so they read as two changed
+# lines and never as an l. 10 × 7: drawn 2 px a cell at 24 px (20 px of art),
+# and 3 px a cell at 32.
+mark = [
+  "||..###.##",
+  "||.##..###",
+  "||.##...##",
+  "...##...##",
+  "||.##...##",
+  "||.##..###",
+  "||..###.##",
+]
+
+# The mark redrawn for 16 px, 2 px a cell: one-cell marks and a narrower a,
+# since the mark's 10 columns don't divide 16. 8 × 7.
+small = [
+  "|..##.##",
+  "|.##.###",
+  "|.##..##",
+  "..##..##",
+  "|.##..##",
+  "|.##.###",
+  "|..##.##",
+]
+
+# The wordmark's letters after the mark's a, in the same heavy hand: two-cell
+# stems, seven rows of x-height, and two rows above it for the b's ascender
+# and the i's dot. The wordmark is the mark, then each letter one cell apart:
+# the mark grown into the word. These letters are for the wordmark only;
+# there's no alphabet beyond it.
+[letters]
+s = [
+  "......",
+  "......",
+  ".#####",
+  "##....",
+  "##....",
+  ".####.",
+  "....##",
+  "....##",
+  "#####.",
+]
+c = [
+  "......",
+  "......",
+  ".#####",
+  "##....",
+  "##....",
+  "##....",
+  "##....",
+  "##....",
+  ".#####",
+]
+r = [
+  ".....",
+  ".....",
+  "##.##",
+  "####.",
+  "##...",
+  "##...",
+  "##...",
+  "##...",
+  "##...",
+]
+i = [
+  "##",
+  "..",
+  "##",
+  "##",
+  "##",
+  "##",
+  "##",
+  "##",
+  "##",
+]
+b = [
+  "##....",
+  "##....",
+  "#####.",
+  "##..##",
+  "##..##",
+  "##..##",
+  "##..##",
+  "##..##",
+  "#####.",
+]
+e = [
+  "......",
+  "......",
+  ".####.",
+  "##..##",
+  "##..##",
+  "######",
+  "##....",
+  "##....",
+  ".#####",
+]
+
+# The social card's line under the wordmark: the headline in
+# project-docs/brand/story.md, drawn in design/fonts/Charter-Bold.ttf.
+[card]
+line = "Docs as code, with the tools docs need."

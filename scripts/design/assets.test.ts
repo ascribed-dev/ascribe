@@ -15,14 +15,14 @@ import {
   manifest,
   MANIFEST,
   CARDS,
-  readDrawing,
+  readGrids,
   readSource,
   readSources,
   render,
   SOURCES,
   type Manifest,
 } from "./assets.ts";
-import { ROOT } from "./specimen.ts";
+import { contrast, ROOT } from "./specimen.ts";
 
 const read = (file: string): string => readFileSync(join(ROOT, file), "utf8");
 const committed = JSON.parse(read(MANIFEST)) as Manifest;
@@ -58,10 +58,10 @@ describe("design/assets.json", () => {
   test("a changed source names the command that rewrites the assets", () => {
     const changed = (file: string) => {
       const text = readSource(file);
-      return file === "design/mark.svg" ? text.replace("29.5", "29.6") : text;
+      return file === "design/mark.toml" ? text.replace("||..###.##", "||..####.#") : text;
     };
     expect(stale(committed, changed)).toEqual([
-      "design/mark.svg changed: run `node scripts/design/assets.ts`",
+      "design/mark.toml changed: run `node scripts/design/assets.ts`",
     ]);
   });
 
@@ -120,11 +120,9 @@ describe.each(ASSETS)("$path", (asset) => {
 test("every source is read", () => {
   expect(SOURCES).toEqual([
     "CHANGELOG.md#heading",
-    "design/candidates/chosen.toml",
-    "design/fonts/InterDisplay-SemiBold.ttf",
-    "design/mark.svg",
-    "design/tagline.svg",
-    "design/wordmark.svg",
+    "design/fonts/Charter-Bold.ttf",
+    "design/mark.toml",
+    "design/tokens.toml#brand",
     "site/home/content/credits.md#heading",
     "site/home/content/index.md#heading",
     "site/home/content/why.md#heading",
@@ -142,7 +140,7 @@ describe("the social cards", () => {
   });
 
   test("are drawn in a font that's in design/ with its license, the only font in the repository", () => {
-    expect(read("design/fonts/LICENSE.txt")).toContain("SIL Open Font License, Version 1.1");
+    expect(read("design/fonts/LICENSE.txt")).toContain("Bitstream Inc.");
     // Ascribe ships no font (decision 48): the repository's one is this.
     const fonts = execFileSync(
       "git",
@@ -158,32 +156,69 @@ describe("the social cards", () => {
       ],
       { cwd: ROOT, encoding: "utf8" },
     );
-    expect(fonts.split("\n").filter((f) => f !== "")).toEqual([
-      "design/fonts/InterDisplay-SemiBold.ttf",
-    ]);
+    expect(fonts.split("\n").filter((f) => f !== "")).toEqual(["design/fonts/Charter-Bold.ttf"]);
   });
 });
 
-test("the favicon is one color, from the reader's scheme", () => {
+test("the favicon is the mark's 16 px cut, in the reader's scheme", () => {
   const { colors } = readSources();
   const text = read("site/public/favicon.svg");
-  expect(text.match(/#[0-9a-f]{6}/g)).toEqual([colors.text.light, colors.text.dark]);
+  expect(text.match(/#[0-9a-f]{6}/g)).toEqual([
+    colors.ink.light,
+    colors.gutter.light,
+    colors.ink.dark,
+    colors.gutter.dark,
+  ]);
   expect(text).toContain("@media (prefers-color-scheme:dark)");
 });
 
-test("a source drawing is read as its paths, at fixed precision", () => {
-  const drawing = readDrawing(
-    "x.svg",
-    '<svg viewBox="0 0 32 32"><!-- a note --><path fill="red" d="M1.004 2.5L3 4.0000001Z"/><path class="second" d="M0 0"/></svg>',
-  );
-  expect(drawing).toEqual({
-    box: [0, 0, 32, 32],
-    shapes: [
-      { d: "M1 2.5L3 4Z", second: false },
-      { d: "M0 0", second: true },
-    ],
+describe("design/mark.toml", () => {
+  const grids = readGrids(readSource("design/mark.toml"));
+
+  test("the wordmark is the mark, on the letters' x-height, then the letters", () => {
+    const width = grids.mark[0]?.length ?? 0;
+    const height = grids.mark.length;
+    const above = grids.wordmark.slice(0, -height).map((row) => row.slice(0, width));
+    const first = grids.wordmark.slice(-height).map((row) => row.slice(0, width));
+    expect(first).toEqual(grids.mark);
+    expect(above.every((row) => row === ".".repeat(width))).toBe(true);
   });
-  expect(() => readDrawing("x.svg", "<svg><path d='M0 0'/></svg>")).toThrow("x.svg: no viewBox");
+
+  test("the 16 px cut has the mark's rows, eight cells wide: 2 px a cell", () => {
+    expect(grids.small).toHaveLength(grids.mark.length);
+    expect(grids.small[0]).toHaveLength(8);
+  });
+
+  test("a grid names the problem", () => {
+    const text = readSource("design/mark.toml");
+    expect(() => readGrids(text.replace('"||..###.##"', '"||..###.#"'))).toThrow(
+      "design/mark.toml mark: every row is as wide as the first",
+    );
+    expect(() => readGrids(text.replace('"||..###.##"', '"||..###.#x"'))).toThrow(
+      'design/mark.toml mark: a cell is "#", "|", or "."',
+    );
+  });
+});
+
+// The mark's colors aren't in a stylesheet, so pairs.toml doesn't check them:
+// these are their pairings, by the same rule (decision 46).
+test("the mark's colors pass their pairings, in light and dark", () => {
+  const { colors } = readSources();
+  const pairs = [
+    ["ink", "ground", 4.5],
+    ["ink", "surface", 4.5],
+    ["muted", "ground", 4.5],
+    ["gutter", "ground", 3],
+    ["gutter", "surface", 3],
+    ["reviewed", "ground", 3],
+  ] as const;
+  const failing = pairs.flatMap(([fg, bg, minimum]) =>
+    (["light", "dark"] as const)
+      .map((scheme) => ({ scheme, ratio: contrast(colors[fg][scheme], colors[bg][scheme]) }))
+      .filter(({ ratio }) => Math.round(ratio * 100) / 100 < minimum)
+      .map(({ scheme, ratio }) => `${scheme}: ${fg} on ${bg}, ${ratio.toFixed(2)}:1`),
+  );
+  expect(failing).toEqual([]);
 });
 
 test("an icon file holds one PNG", () => {
@@ -201,7 +236,7 @@ test("the extension's Marketplace banner is the icon's tile, so the two read as 
     galleryBanner: { color: string; theme: string };
   };
   expect(ASSETS.map((a) => a.path)).toContain(`packages/vscode/${extension.icon}`);
-  expect(extension.galleryBanner).toEqual({ color: colors.surface.dark, theme: "dark" });
+  expect(extension.galleryBanner).toEqual({ color: colors.ground.dark, theme: "dark" });
 });
 
 test("the extension's README shows its header as a PNG by an absolute URL, as the Marketplace requires", () => {

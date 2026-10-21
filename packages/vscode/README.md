@@ -1,4 +1,4 @@
-<p><img src="https://raw.githubusercontent.com/ascribed-dev/ascribe/main/design/out/header-vscode.png" alt="Ascribe" width="266" height="96"></p>
+<p><img src="https://raw.githubusercontent.com/ascribed-dev/ascribe/main/design/out/header-vscode.png" alt="Ascribe" width="286" height="96"></p>
 
 # Ascribe for VS Code
 
