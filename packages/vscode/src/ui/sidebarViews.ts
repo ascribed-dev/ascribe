@@ -194,6 +194,11 @@ export interface ThisPageApi {
    * move it answers, review on or off.
    */
   asked(): number;
+  /**
+   * Stands in for `vscode.env.openExternal` from now on: what it would have
+   * opened is added to the list returned, and nothing is opened.
+   */
+  stubExternal(): string[];
   /** Goes to an open thread its Review section lists, by id, as choosing it does. */
   openThread(id: string): Promise<void>;
   /** Settles when every refresh that is due has finished. */
@@ -332,6 +337,11 @@ export class SidebarViews implements vscode.Disposable {
   private pageAsked = 0;
   /** How many probes the tests have sent This page's webview. */
   private pageProbed = 0;
+  /**
+   * Opens an address on the published site outside VS Code, which asks about
+   * the domain first if it isn't trusted. The tests stand in for it.
+   */
+  private openExternal = (uri: vscode.Uri): Thenable<boolean> => vscode.env.openExternal(uri);
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly pending = new Set<Promise<void>>();
   private readonly disposables: vscode.Disposable[] = [];
@@ -387,6 +397,7 @@ export class SidebarViews implements vscode.Disposable {
         ? thisPageRoots(this.page, this.pageReview, {
             uri: this.pageFile?.toString(),
             problems: this.pageFile && problemsOf(this.pageFile),
+            build: this.pageBuild(),
           })
         : [],
     thisPageChildren,
@@ -496,6 +507,15 @@ export class SidebarViews implements vscode.Disposable {
     return this.pagesNodes.roots;
   }
 
+  /**
+   * The build the status bar shows for the project of the page This page
+   * shows, which says whether the page is on the site there.
+   */
+  private pageBuild(): string | undefined {
+    const server = this.pageFile && this.projects.serverFor(this.pageFile);
+    return server ? this.builds.info(server).build : undefined;
+  }
+
   /** The build the status bar shows for the views' project, which Pages dims the pages it leaves out of. */
   private shownBuild(): string | undefined {
     const server = this.inventoryFrom;
@@ -595,6 +615,14 @@ export class SidebarViews implements vscode.Disposable {
       },
       escape: () => this.focusPageEditor(),
       asked: () => this.pageAsked,
+      stubExternal: () => {
+        const opened: string[] = [];
+        this.openExternal = (uri) => {
+          opened.push(uri.toString(true));
+          return Promise.resolve(true);
+        };
+        return opened;
+      },
       openThread: (id) => this.openThread(id),
       whenSettled: () => this.whenSettled(),
     };
@@ -700,10 +728,12 @@ export class SidebarViews implements vscode.Disposable {
       vscode.workspace.onDidCloseTextDocument((document) =>
         this.lastEditors.forget(document.uri.toString()),
       ),
-      // Pages dims what the build the status bar shows leaves out.
+      // Pages dims what the build the status bar shows leaves out, and This
+      // page's addresses open on the site only where the build has the page.
       this.builds.onDidChange(() => {
         this.pages.changed.fire();
         this.decorationsChanged.fire(undefined);
+        if (this.page) this.drawThisPage();
       }),
       vscode.commands.registerCommand(OPEN_THREAD, (node?: ThisPageNode) =>
         node?.kind === "thread" ? this.openThread(node.thread.id) : undefined,
@@ -1469,7 +1499,9 @@ export class SidebarViews implements vscode.Disposable {
     const { items, nodes } = thisPageItems(
       roots,
       (node) =>
-        this.thisPage.opens(node) !== undefined || this.thisPage.command(node) !== undefined,
+        this.thisPage.opens(node) !== undefined ||
+        this.thisPage.command(node) !== undefined ||
+        siteOf(node) !== undefined,
     );
     const about = this.page?.about;
     this.thisPageView.badge = this.showsPageNow() ? healthBadge(roots) : undefined;
@@ -1482,10 +1514,11 @@ export class SidebarViews implements vscode.Disposable {
   }
 
   /**
-   * Opens what an item This page drew names: a file at its place, or a
-   * command. Only an item of the answer the webview drew, which a newer one
-   * may be on its way to replace, whose key names a node of that answer that
-   * opens something; anything else the webview sends is dropped.
+   * Opens what an item This page drew names: a file at its place, an
+   * address on the published site, or a command. Only an item of the answer
+   * the webview drew, which a newer one may be on its way to replace, whose
+   * key names a node of that answer that opens something; anything else the
+   * webview sends is dropped.
    */
   private async chooseItem(seq: number, key: string): Promise<void> {
     const answer = this.thisPageView.answerOf(seq);
@@ -1495,6 +1528,11 @@ export class SidebarViews implements vscode.Disposable {
     }
     const node = answer && this.pageNodes.get(answer)?.get(key);
     if (!node) return;
+    const site = siteOf(node);
+    if (site !== undefined) {
+      await this.openOnSite(site);
+      return;
+    }
     const command = this.thisPage.command(node);
     if (command) {
       await vscode.commands.executeCommand(command.command, ...(command.arguments ?? []));
@@ -1510,6 +1548,16 @@ export class SidebarViews implements vscode.Disposable {
         target.selection ? { selection: target.selection } : {},
       );
     }
+  }
+
+  /**
+   * Opens an address on the published site outside VS Code: only an `http:`
+   * or `https:` one, which the model built from the project's `site`.
+   */
+  private async openOnSite(url: string): Promise<void> {
+    const uri = vscode.Uri.parse(url, true);
+    if (uri.scheme !== "http" && uri.scheme !== "https") return;
+    await this.openExternal(uri);
   }
 
   /** Runs a button under This page's notice, for the page's server. */
@@ -1673,6 +1721,11 @@ const RENAME_LABEL = "ascribe.pages.renameLabel";
 /** Whether a file is a project's `ascribe.nav`. */
 function isNavFile(uri: vscode.Uri): boolean {
   return uri.scheme === "file" && uri.path.endsWith("/ascribe.nav");
+}
+
+/** The address on the published site a row of This page opens, if it opens one. */
+function siteOf(node: ThisPageNode): string | undefined {
+  return node.kind === "row" && node.row.opens?.kind === "site" ? node.row.opens.url : undefined;
 }
 
 /** The command a thread in This page's Review section runs. */

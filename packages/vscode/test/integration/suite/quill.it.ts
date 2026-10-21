@@ -424,6 +424,29 @@ describe("This page's webview on examples/quill", () => {
     assert.equal(vscode.window.activeTextEditor?.document.uri.toString(), installAgent.toString());
   });
 
+  it("opens the page's address on the published site outside VS Code when it's chosen", async () => {
+    const api = await activated();
+    const view = api.ui.thisPage;
+    const opened = view.stubExternal();
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(installAgent));
+    await view.whenDrawn(
+      "install-agent.md",
+      (drawn) => title(drawn) === "Title (Install the Quill agent)",
+    );
+    // Quill names its site, so Address opens the page there, as the row shows it.
+    const about = view.items().find((item) => item.label === "About");
+    const at = about?.children.findIndex((item) => item.label === "Address") ?? -1;
+    const address = about?.children[at]?.description;
+    assert.match(address ?? "", /^\/.*install-agent/);
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    view.choose(`about/${at}`);
+    await waitFor("the address opened", async () => (opened.length > 0 ? true : undefined));
+    assert.deepEqual(opened, [`https://docs.quill.dev${address}`]);
+    // The page's editor is still where it was: nothing opened in VS Code.
+    assert.equal(vscode.window.activeTextEditor?.document.uri.toString(), installAgent.toString());
+  });
+
   it("opens an include beside the page, with the focus left in the view and the view on the page", async () => {
     const api = await activated();
     const view = api.ui.thisPage;

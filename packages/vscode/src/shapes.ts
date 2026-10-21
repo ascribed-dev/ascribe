@@ -1559,6 +1559,12 @@ export interface PageAbout {
    */
   markdownAddress: string | null;
   /**
+   * The project's published site, its origin (`[consumer] site`), which
+   * the addresses are on: `null` when the project names none, and for a
+   * fragment.
+   */
+  site: string | null;
+  /**
    * Its description, when its type gives a field the description role;
    * `null` for a fragment.
    */

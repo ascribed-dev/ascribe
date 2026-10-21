@@ -60,6 +60,11 @@ export interface ViewItem {
   warn: boolean;
   /** Whether choosing it does something, which the extension asks of the model. */
   acts: boolean;
+  /**
+   * Whether choosing it opens an address outside VS Code, on the published
+   * site: it's drawn as a link, and the extension opens it, never the webview.
+   */
+  link: boolean;
   /** For a section: whether it starts open, until the reader opens or closes it. */
   open: boolean;
   children: ViewItem[];

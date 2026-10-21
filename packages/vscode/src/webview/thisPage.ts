@@ -3,7 +3,8 @@
 // which item the reader chose; the extension opens it.
 //
 // Each section is a `<details>` and its `<summary>`, each row that opens
-// something a button, and the rows of a label and a value a description
+// something a button (a link, for an address on the published site, which
+// the extension opens), and the rows of a label and a value a description
 // list, so a screen reader and the keyboard get them from the HTML itself:
 // Tab between the headers and the buttons, and Enter or Space to open a
 // section or choose a row. Which sections are open is the view's state, the
@@ -109,6 +110,14 @@ function row(item: ViewItem, channel: ViewChannel<ThisPageReport>): HTMLElement 
     const button = chooser(item, channel);
     button.append(...said(item));
     button.setAttribute("aria-label", `${item.label}: ${saying(item)}`);
+    // An address on the published site is a link, which the extension opens
+    // outside VS Code: the webview itself never navigates.
+    if (item.link) {
+      button.classList.add("link");
+      button.setAttribute("role", "link");
+      button.title = item.tooltip;
+      button.append(icon("link-external", "external"));
+    }
     details.append(button);
   } else {
     details.append(...said(item));
