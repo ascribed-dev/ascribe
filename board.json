@@ -4802,7 +4802,7 @@
         "editor-webviews"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Project view: Health grouped by when each count is from, and Actions first"
     },
     {
@@ -4853,7 +4853,7 @@
         "editor-webviews"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "This page: the address opens the page on the live site"
     },
     {
@@ -4871,7 +4871,7 @@
         "editor-webviews"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "This page and the Project view sit on gray, not the sidebar's color, in dark themes"
     }
   ]
