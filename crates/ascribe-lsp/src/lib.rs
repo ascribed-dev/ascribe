@@ -45,6 +45,7 @@ mod retire_line;
 mod review;
 #[cfg(feature = "json-schema")]
 mod schema;
+mod search;
 mod server;
 mod settings;
 mod shown;
@@ -101,6 +102,10 @@ pub use review::{
     BASE_FILE_METHOD as REVIEW_BASE_FILE_METHOD, BaseFileParams, BaseFileResult,
     CHANGES_METHOD as REVIEW_CHANGES_METHOD, ChangesParams, ChangesResult,
     SET_BASE_METHOD as REVIEW_SET_BASE_METHOD, SetBaseParams, SetBaseResult,
+};
+pub use search::{
+    METHOD as SEARCH_METHOD, SearchIn, SearchPage, SearchParams, SearchPlace, SearchResult,
+    SearchThrough,
 };
 pub use server::{Exit, ServeError, serve};
 pub use settings::{

@@ -528,6 +528,7 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                 })
             }
             crate::project_edit::METHOD => project_edit_request(shared, &request),
+            crate::search::METHOD => search_request(shared, &request),
             crate::agent_prompt::METHOD => agent_prompt_request(shared, &request),
             crate::review::SET_BASE_METHOD => set_base_request(shared, &request),
             crate::review::CHANGES_METHOD => changes_request(shared, &request),
@@ -628,6 +629,25 @@ fn page_request(shared: &Shared, request: &Request) -> Result<serde_json::Value,
     };
     let result = target
         .map(|ctx| crate::page::page(&ctx, &cache, params.position))
+        .unwrap_or_default();
+    to_json(request, result)
+}
+
+/// `ascribe/search`, as [`project_answer`] answers it, with the readings
+/// the server keeps for the project.
+fn search_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    let params: crate::search::SearchParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let (target, readings) = {
+        let core = shared.lock();
+        (
+            core.project_target(&params.text_document.uri),
+            core.loaded.as_ref().map(|loaded| loaded.readings.clone()),
+        )
+    };
+    let result = target
+        .zip(readings)
+        .map(|(ctx, readings)| crate::search::search(&ctx, &readings, &params))
         .unwrap_or_default();
     to_json(request, result)
 }

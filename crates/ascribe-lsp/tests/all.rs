@@ -64,6 +64,8 @@ mod rename;
 mod review;
 #[path = "all/scenarios.rs"]
 mod scenarios;
+#[path = "all/search.rs"]
+mod search;
 #[path = "all/settings.rs"]
 mod settings;
 #[path = "all/shown.rs"]

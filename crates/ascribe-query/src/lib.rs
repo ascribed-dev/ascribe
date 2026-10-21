@@ -41,6 +41,7 @@ pub mod search;
 pub mod versions;
 
 pub use agents_index::{AgentsIndex, IndexPage, agents_index};
+pub use ascribe_resolve::reading::Nothing;
 pub use error::QueryError;
 pub use explain::{
     DiagnosticList, ExampleText, Explanation, ListedDiagnostic, code_of, explain, list,
@@ -57,8 +58,8 @@ pub use report::{Report, report};
 pub use resolve::{Resolved, resolve};
 pub use rules::{pointer, rules};
 pub use search::{
-    Nothing, PageCount, Readings, Search, SearchPage, SearchPlace, SearchThrough, Searched,
-    SourcePlace, search,
+    PageCount, Readings, Search, SearchPage, SearchPlace, SearchThrough, Searched, SourcePlace,
+    search,
 };
 pub use versions::{VersionChanges, VersionsList};
 

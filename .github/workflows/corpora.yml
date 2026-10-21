@@ -56,6 +56,7 @@ jobs:
           cargo bench -p ascribe-resolve --bench incremental
           cargo bench -p ascribe-lsp --bench completion
           cargo bench -p ascribe-lsp --bench page
+          cargo bench -p ascribe-lsp --bench search
       - name: Compare with the recorded baselines
         if: ${{ !inputs.record }}
         run: ./target/release/corpora compare bench-results.jsonl

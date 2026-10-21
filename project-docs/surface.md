@@ -351,7 +351,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
 For people. Read from `packages/vscode/package.json`, `docs/content/_generated/editor-actions.md`.
 
-93 commands, 37 of them actions.
+94 commands, 37 of them actions.
 
 Commands that aren't actions:
 
@@ -369,6 +369,7 @@ Commands that aren't actions:
 | Ascribe: Go to Next Placeholder | `ascribe.nextPlaceholder` |
 | Ascribe: Switch Build | `ascribe.switchBuild` |
 | Ascribe: Check Every Build | `ascribe.checkEveryBuild` |
+| Ascribe: Search Pages as Readers See Them | `ascribe.search` |
 | Ascribe: Apply Every Safe Fix | `ascribe.applyEverySafeFix` |
 | Ascribe: Format Every Page | `ascribe.formatEveryPage` |
 | Ascribe: Project Menu | `ascribe.projectMenu` |
@@ -510,7 +511,7 @@ Menus the commands are placed in:
 
 | Menu | Entries |
 |---|---|
-| `commandPalette` | 93 |
+| `commandPalette` | 94 |
 | `editor/title` | 5 |
 | `view/title` | 12 |
 | `view/item/context` | 13 |
@@ -539,6 +540,7 @@ Ascribe's own requests:
 | `ascribe/review/setBase` | `crates/ascribe-lsp/src/review.rs` |
 | `ascribe/review/changes` | `crates/ascribe-lsp/src/review.rs` |
 | `ascribe/review/baseFile` | `crates/ascribe-lsp/src/review.rs` |
+| `ascribe/search` | `crates/ascribe-lsp/src/search.rs` |
 | `ascribe/settings` | `crates/ascribe-lsp/src/settings.rs` |
 | `ascribe/targets` | `crates/ascribe-lsp/src/targets.rs` |
 
@@ -782,6 +784,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/lsp-page.schema.json` | PageResult | The answer to `ascribe/page`. |
 | `schemas/lsp-preview.schema.json` | PreviewResult | The answer to `ascribe/preview`. |
 | `schemas/lsp-project-edit.schema.json` | ProjectEditResult | The answer to `ascribe/projectEdit`: the edit and how much it changes, or why there's none. |
+| `schemas/lsp-search.schema.json` | SearchResult | The answer to `ascribe/search`. |
 | `schemas/lsp-set-base.schema.json` | SetBaseResult | The answer to `ascribe/review/setBase`. |
 | `schemas/lsp-settings.schema.json` | SettingsResult | The answer to `ascribe/settings`. |
 | `schemas/lsp-targets.schema.json` | TargetsResult | The answer to `ascribe/targets`: a list for each kind asked for, and no others. |

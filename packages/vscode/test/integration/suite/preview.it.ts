@@ -2,6 +2,7 @@ import * as assert from "node:assert/strict";
 import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
+import type { AscribeApi } from "../../../src/extension.js";
 import type { PreviewApi, RenderRecord } from "../../../src/preview/controller.js";
 import { EXTENSION_ID, activated, sleep, uriOf, waitFor, workspace } from "./helpers.js";
 
@@ -281,5 +282,103 @@ describe("the preview, with the real language server on examples/quill", () => {
       ],
       "the directory of the asset, not the project root",
     );
+  });
+});
+
+// Search Pages as Readers See Them, with the real `ascribe lsp` on the same
+// copy of examples/quill: the goal of the search plan's editor phase.
+describe("Search Pages as Readers See Them on examples/quill", () => {
+  const install = uriOf("docs", "install-agent.md");
+  const keys = uriOf("docs", "keys.md");
+  let api: AscribeApi;
+
+  /** The places' descriptions, leaving out an item that only says something. */
+  const descriptions = async (query: string, everyBuild?: boolean) =>
+    (await api.ui.search.items(query, everyBuild))
+      .filter((item) => item.place)
+      .map((item) => item.description);
+
+  /** Runs the command with a scripted answer, and waits for what it opens. */
+  async function choose(query: string, place: string): Promise<vscode.TextEditor> {
+    api.ui.search.answerNext({ query, choose: place });
+    await vscode.commands.executeCommand("ascribe.search");
+    await api.ui.search.whenOpened();
+    const editor = vscode.window.activeTextEditor;
+    assert.ok(editor, `${place} opened`);
+    return editor;
+  }
+
+  before(async () => {
+    api = await activated();
+    await api.whenSettled();
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(install));
+    await api.ui.whenBuildsKnown();
+  });
+
+  after(async () => {
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
+  it("finds a phrase as readers read it and opens the line that writes it", async () => {
+    const query = '"sign in to quill cloud"';
+    const [first] = await api.ui.search.items(query);
+    assert.equal(first?.label.slice(0, 22), "Sign in to Quill Cloud");
+    assert.equal(
+      first?.description,
+      "install-agent.md:62 · Connect to Quill · through phrase cloud",
+    );
+    const editor = await choose(query, "install-agent.md:62");
+    assert.equal(editor.document.uri.fsPath, install.fsPath);
+    assert.equal(editor.selection.active.line, 61);
+  });
+
+  it("opens the phrase in ascribe.toml for a match wholly in its value", async () => {
+    const query = '"quill cloud"';
+    assert.ok((await descriptions(query)).includes("ascribe.toml:34 · phrase cloud"));
+    const editor = await choose(query, "ascribe.toml:34");
+    assert.equal(editor.document.uri.fsPath, uriOf("ascribe.toml").fsPath);
+    assert.equal(editor.selection.active.line, 33);
+    assert.match(editor.document.lineAt(33).text, /^cloud = "Quill Cloud"/);
+  });
+
+  it("finds words that aren't saved", async () => {
+    const editor = await vscode.window.showTextDocument(
+      await vscode.workspace.openTextDocument(keys),
+    );
+    assert.deepEqual(await descriptions("zebrafinch"), []);
+    const end = editor.document.lineAt(editor.document.lineCount - 1).range.end;
+    await editor.edit((edit) => edit.insert(end, "\n\nA zebrafinch sings.\n"));
+    assert.ok(editor.document.isDirty);
+    const found = await waitFor("the unsaved words", async () => {
+      const items = await api.ui.search.items("zebrafinch");
+      return items[0]?.place ? items : undefined;
+    });
+    assert.equal(found[0]?.label, "A zebrafinch sings.");
+    assert.equal(found[0]?.description, "keys.md:30 · Sign webhook events");
+    await vscode.commands.executeCommand("workbench.action.files.revert");
+    await waitFor(
+      "the words gone again",
+      async () => (await descriptions("zebrafinch")).length === 0 || undefined,
+    );
+  });
+
+  it("searches the build the status bar names, or with its button every build", async () => {
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(install));
+    const query = '"point the agent at your server"';
+    assert.deepEqual(await descriptions(query), ["install-agent.md:70 · Connect to Quill"]);
+    api.ui.statusBar.answerNext("cloud");
+    await vscode.commands.executeCommand("ascribe.switchBuild");
+    try {
+      const [nothing] = await api.ui.search.items(query);
+      assert.equal(
+        nothing?.label,
+        "Builds not searched publish them: `site`, `site@3.4`, `self-managed-3.3`.",
+      );
+      assert.equal(nothing?.place, undefined);
+      assert.deepEqual(await descriptions(query, true), ["install-agent.md:70 · Connect to Quill"]);
+    } finally {
+      api.ui.statusBar.answerNext("site");
+      await vscode.commands.executeCommand("ascribe.switchBuild");
+    }
   });
 });

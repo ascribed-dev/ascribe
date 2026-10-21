@@ -30,6 +30,7 @@ import {
   type ThisPageApi,
 } from "./ui/sidebarViews.js";
 import { showRestricted, StatusBar, type StatusBarApi } from "./ui/statusBar.js";
+import { SearchPages, type SearchApi } from "./ui/search.js";
 import { SwitchProject, type SwitchProjectApi } from "./ui/switchProject.js";
 import { Walkthrough } from "./ui/walkthrough.js";
 import { showMemos } from "./ui/memos.js";
@@ -72,6 +73,8 @@ export interface AscribeApi {
     statusBar: StatusBarApi;
     /** Switch Project. */
     switchProject: SwitchProjectApi;
+    /** Search Pages as Readers See Them. */
+    search: SearchApi;
     lens: BuildLensApi;
     /** The Review view, and its Open Source Changes. */
     review: ReviewViewApi;
@@ -143,6 +146,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   const sidebar = new SidebarViews(projects, preview.review, builds, actions, thisPage);
   const switchProject = new SwitchProject(projects, builds, sidebar);
   switchProject.register();
+  const search = new SearchPages(projects, builds);
+  search.register();
   sidebar.register();
   const tasks = new ProjectTasks(context, projects);
   tasks.register();
@@ -222,6 +227,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     statusBar,
     lens,
     switchProject,
+    search,
     reviewView,
     sidebar,
     tasks,
@@ -327,6 +333,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     ui: {
       statusBar: statusBar.api,
       switchProject: switchProject.api,
+      search: search.api,
       lens: lens.api,
       review: reviewView.api,
       project: projectView.api,

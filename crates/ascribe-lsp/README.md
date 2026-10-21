@@ -13,7 +13,8 @@ links, CodeLens, and inlay hints (see [Navigation](#navigation)); code actions,
 rename, formatting, and folding ranges; and the custom requests `ascribe/preview`,
 `ascribe/review/setBase`, `ascribe/review/changes`, `ascribe/review/baseFile`,
 `ascribe/context`, `ascribe/targets`, `ascribe/edit`, `ascribe/buildView`,
-`ascribe/inventory`, `ascribe/page`, `ascribe/projectEdit`, and `ascribe/settings`.
+`ascribe/inventory`, `ascribe/page`, `ascribe/projectEdit`, `ascribe/search`, and
+`ascribe/settings`.
 
 ## The project
 
@@ -713,6 +714,62 @@ The answer comes from the current snapshot, so it includes unsaved edits. A
 document that isn't a source file of the project, or a build the content
 model doesn't have, gets an empty `build` and nothing excluded.
 
+## Where the pages say something: `ascribe/search`
+
+A custom request that finds words as the project's readers read them, for the
+editor's **Search Pages as Readers See Them**. The client names any of the
+project's files, which says which project, the query as `ascribe search`
+takes it, and a build; without `build`, every build:
+
+```jsonc
+{ "textDocument": { "uri": "file:///…/ascribe.toml" }, "query": "\"sign in to quill cloud\"", "build": "site" }
+```
+
+The result's TypeScript type is `SearchResult` in
+`packages/vscode/src/shapes.ts` (`schemas/lsp-search.schema.json`):
+
+```jsonc
+{
+  "builds": ["site"],
+  "places": [
+    {
+      "uri": "file:///…/docs/install-agent.md",
+      "range": …,                  // the match's first character to the end of its line
+      "file": "install-agent.md",  // a content path, a code file's path, or ascribe.toml
+      "in": "text",
+      "text": "Sign in to Quill Cloud and copy an API key from Settings → Keys, …",
+      "match": [0, 22],            // in Unicode characters of text
+      "through": [{ "phrase": "cloud" }],
+      "arm": "deployment=cloud",
+      "pages": [{ "page": "install-agent.md", "heading": "Connect to Quill", "id": "connect", "builds": ["site"] }],
+      "pagesTotal": 1,
+      "builds": []                 // the builds it's in, when not every one searched
+    }
+  ],
+  "total": 2,
+  "truncated": false,
+  "nothing": null,                 // when nothing matched, the command's last line
+  "problem": null                  // a query that can't be read, or a build that isn't one
+}
+```
+
+The places are what `ascribe search` lists, in its order: they're found by
+`ascribe_resolve::reading::find`, the function its entry calls, and
+`tests/all/search.rs` holds the two to the same places. A match wholly in a
+phrase's value is the phrase, its range at its key in `ascribe.toml`. At most
+`limit` places are listed, 50 without one. When nothing matches, `nothing`
+says what the command's last line says: the builds not searched that publish
+the words, or where the source writes them though no build publishes them
+there, or that no page has them.
+
+The answer comes from the current snapshot, so it searches unsaved text.
+Each build's reading of each page is kept between searches, made the first
+time a search asks for the build; each update the server applies is queued,
+and the next search reads again the pages it may have changed, every page
+after a change to the content model beyond its warnings. So a query as you
+type is the scan alone. A document that isn't one of the project's files
+gets nothing searched.
+
 ## A prompt for an agent: `ascribe/agentPrompt`
 
 A custom request for **Prompt agent**: a prompt for the user's agent about one
@@ -1138,6 +1195,28 @@ median is slower on either measure, and the weekly corpora and performance
 workflow runs it (`.github/workflows/corpora.yml`). What's kept for the file,
 the memos about it included, is what holds it there: read every time, the
 memos cost a move more than both of Used by's requests.
+
+### Search
+
+`cargo bench -p ascribe-lsp --bench search` (release build) starts the server
+on the same generated projects, searches once, which reads every page, and
+then times 100 `ascribe/search` requests with the readings held, a query in
+turn: words on every page, a fragment's phrase on every page, words on one
+page, and words on none, which also scans the source. The first search, then
+the median / 95th percentile; one run on a 4-core container:
+
+| Pages | First | Median | p95 |
+|---|---|---|---|
+| 20 | 10 ms | 0.38 ms | 0.60 ms |
+| 100 | 31 ms | 1.2 ms | 2.2 ms |
+| 300 | 78 ms | 3.3 ms | 6.3 ms |
+| 1,000 | 280 ms | 12 ms | 15 ms |
+| 3,000 | 1.2 s | 28 ms | 39 ms |
+
+The target is a median under 50 ms at 3,000 pages (`lsp/search-3000`), since
+the quick pick asks as you type; the bench exits non-zero when it misses, and
+the weekly corpora and performance workflow runs it
+(`.github/workflows/corpora.yml`).
 
 ## Library choice
 

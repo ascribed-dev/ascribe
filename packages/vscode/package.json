@@ -294,6 +294,12 @@
         "icon": "$(checklist)"
       },
       {
+        "command": "ascribe.search",
+        "title": "Search Pages as Readers See Them",
+        "category": "Ascribe",
+        "icon": "$(search)"
+      },
+      {
         "command": "ascribe.applyEverySafeFix",
         "title": "Apply Every Safe Fix",
         "category": "Ascribe",
@@ -1193,6 +1199,10 @@
         },
         {
           "command": "ascribe.checkEveryBuild",
+          "when": "ascribe.active"
+        },
+        {
+          "command": "ascribe.search",
           "when": "ascribe.active"
         },
         {

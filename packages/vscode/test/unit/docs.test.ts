@@ -44,6 +44,8 @@ const commands: Record<string, string> = {
     "Picks the build you're looking at in the active file's project: the one the preview renders and the status bar names. Choosing the editor build follows `[editor] build`. See [The status bar](../editor/preview.md#the-status-bar).",
   "ascribe.checkEveryBuild":
     "Runs `ascribe check` over every build of the active file's project, and adds to the Problems panel the problems of builds other than the editor's, which the language server doesn't check. When no file of a project is active and the workspace has several projects, it asks which. See [The Problems panel](../editor/settings.md#the-problems-panel).",
+  "ascribe.search":
+    "Finds words as readers read the active file's project's pages, as you type, unsaved text included, and opens the line that wrote the place you choose. It searches the build the status bar names; its **Search Every Build** button searches every build. See [Search](../editor/writing.md#search).",
   "ascribe.applyEverySafeFix":
     "Applies, as one edit, every safe fix of the problems the editor shows in the active file's project, the editor build's, after saying how many fixes in how many files. The files are left unsaved, for you to read before you save them, and Undo takes the edit back. When no file of a project is active and the workspace has several projects, it asks which. See [Edits to the whole project](../editor/sidebar.md#edits-to-the-whole-project).",
   "ascribe.formatEveryPage":
@@ -95,6 +97,7 @@ const available: Record<string, string> = {
   "ascribe.submitReview": "ascribe 0.4.0",
   "ascribe.openSourceChanges": "ascribe 0.4.0",
   "ascribe.switchProject": "ascribe 0.4.0",
+  "ascribe.search": "next",
   "ascribe.applyEverySafeFix": "next",
   "ascribe.formatEveryPage": "next",
   "ascribe.openProjectSettings": "next",

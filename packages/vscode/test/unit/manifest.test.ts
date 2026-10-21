@@ -212,6 +212,7 @@ describe("package.json", () => {
       "ascribe.nextPlaceholder",
       "ascribe.switchBuild",
       "ascribe.checkEveryBuild",
+      "ascribe.search",
       "ascribe.applyEverySafeFix",
       "ascribe.formatEveryPage",
       "ascribe.projectMenu",

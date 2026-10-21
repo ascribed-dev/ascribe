@@ -64,6 +64,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] One edit for the whole project (`ascribe/projectEdit`; `crates/ascribe-lsp/src/project_edit.rs`), whose safe fixes are `code_action.rs`'s `safe_fixes` and whose formatting is `ascribe_fmt::format`: a new safe fix or formatting rule reaches it through those.
 - [ ] What a build leaves out (`ascribe/buildView`; `crates/ascribe-lsp/src/build_view.rs`): a new way a build removes content is removed in `crates/ascribe-resolve/src/build/modes.rs`, which says why, and the build lens shows it.
 - [ ] A prompt for an agent (`ascribe/agentPrompt`; `crates/ascribe-lsp/src/agent_prompt.rs`), built by `ascribe_check::prompt`: a new diagnostic's prompt is worth reading, and a value it's about goes in its `values` placeholder, which the prompt lists as the allowed values.
+- [ ] Where the pages say something (`ascribe/search`; `crates/ascribe-lsp/src/search.rs`), found by `ascribe_resolve::reading::find`, as `ascribe search` finds it: a new kind of block the reading reads is searched in the editor too, and `crates/ascribe-lsp/tests/all/search.rs` holds the two to the same places.
 - [ ] The server's tests in `crates/ascribe-lsp/tests/`, and `lsp_parity` in `crates/ascribe-cli/tests/`, which compares the server's diagnostics and agent prompts with `ascribe check`'s, and `build_view_parity`, which compares what the build lens dims with what `ascribe build` leaves out.
 
 **The editor**

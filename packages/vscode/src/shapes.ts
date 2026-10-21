@@ -16,6 +16,7 @@
 // - ProjectEditResult (the language server, answering `ascribe/projectEdit`)
 // - SettingsResult (the language server, answering `ascribe/settings`)
 // - BuildViewResult (the language server, answering `ascribe/buildView`)
+// - SearchResult (the language server, answering `ascribe/search`)
 // - AgentPromptResult (the language server, answering `ascribe/agentPrompt`)
 // - ModelReport (`ascribe model --format json`)
 
@@ -2078,6 +2079,123 @@ export interface Related {
   /** What it has to do with the diagnostic. */
   message: string;
 }
+
+/** What a place is. */
+export type SearchIn = "title" | "description" | "heading" | "text" | "table" | "code" | "phrase";
+
+/** A page that shows a place. */
+export interface SearchPage {
+  /** The page's content path. */
+  page: string;
+  /**
+   * The heading the place is under there, as a reader reads it; for a
+   * heading, the heading itself.
+   */
+  heading: string | null;
+  /** That heading's id. */
+  id: string | null;
+  /** The builds that show it there, in the content model's order. */
+  builds: string[];
+}
+
+/** A place the query matches: a line of the source to edit. */
+export interface SearchPlace {
+  /**
+   * The `file:` URI of the file to edit: a page, a fragment, a snippet's
+   * code file, or `ascribe.toml` for a phrase.
+   */
+  uri: string;
+  /**
+   * The match's first character to the end of its line, in the file.
+   * For a phrase, its key to the end of its line in `ascribe.toml`.
+   */
+  range: LspRange;
+  /**
+   * The file as the editor names it: a source's content path, a code
+   * file's path from the project root, or `ascribe.toml`.
+   */
+  file: string;
+  /**
+   * What it is: `title`, `description`, `heading`, `text`, `table`,
+   * `code`, or `phrase`, a phrase's value at its line in `ascribe.toml`.
+   */
+  in: SearchIn;
+  /**
+   * The block's text as a reader reads it, whole; for a phrase, its
+   * value.
+   */
+  text: string;
+  /**
+   * Where the match is in `text`: its first character and the one after
+   * its last, in Unicode characters.
+   */
+  match: [number, number];
+  /** What the match reads through that the line doesn't spell, in order. */
+  through: SearchThrough[];
+  /**
+   * The arm of a group the block is written in, as its attributes are
+   * written (`deployment=cloud`), or else its title.
+   */
+  arm: string | null;
+  /** The pages that show it, in content path order, at most three. */
+  pages: SearchPage[];
+  /**
+   * How many pages show it; for a phrase, how many places in the source
+   * use it.
+   */
+  pagesTotal: number;
+  /**
+   * The builds it's in, in the content model's order, when it isn't in
+   * every build searched; empty when it is.
+   */
+  builds: string[];
+}
+
+/**
+ * The answer to `ascribe/search`. A document that isn't one of the
+ * project's files gets an answer with nothing searched.
+ */
+export interface SearchResult {
+  /** The builds searched, in the content model's order. */
+  builds: string[];
+  /**
+   * The places, at most `limit` of them, in the order `ascribe search`
+   * lists them: titles, then headings, then the rest; in each, the places
+   * written in pages, then those in fragments and code files, each in
+   * path order and in order within a file.
+   */
+  places: SearchPlace[];
+  /** How many places match. */
+  total: number;
+  /** Whether the list was cut: there are more than `places`. */
+  truncated: boolean;
+  /**
+   * When nothing matched, what the source says about the words, as the
+   * last line of `ascribe search` says it: that no page has them, where
+   * they're written though no build searched publishes them there, or
+   * the builds not searched that do. `null` when something matched, or
+   * the query couldn't be read.
+   */
+  nothing: string | null;
+  /**
+   * Why nothing was searched: the query can't be read (a quote isn't
+   * closed, or it has no words), or the build isn't one of the content
+   * model's. `null` when it was searched.
+   */
+  problem: string | null;
+}
+
+/** What a match reads through that its line doesn't spell. */
+export type SearchThrough =
+  | {
+      phrase: string;
+    }
+  | {
+      title: string;
+    }
+  | {
+      code: string;
+    };
 
 /** What a selection is. */
 export interface Selection {
