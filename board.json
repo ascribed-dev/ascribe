@@ -4904,7 +4904,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Report: a finding's identity, and what's new in Problems since the last run"
     },
     {
@@ -4977,7 +4977,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The preview and a page's problems follow an edit to the code a @snippet shows"
     },
     {
@@ -4995,7 +4995,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Go to Definition on a @snippet opens its region, and its hover shows the code"
     },
     {
