@@ -44,6 +44,11 @@ export interface ViewItem {
    */
   kind: "section" | "group" | "row" | "item";
   label: string;
+  /**
+   * A row's state, drawn first, before its description, as a colored label:
+   * the warning color when the row warns. Empty when it has none.
+   */
+  state: string;
   description: string;
   /** Its hover text, on its label. */
   tooltip: string;
@@ -60,16 +65,51 @@ export interface ViewItem {
   children: ViewItem[];
 }
 
-/** What This page draws: a message in place of the sections, or the sections. */
+/** A piece of a title: text, or a code span's content, drawn as code. */
+export interface TitlePiece {
+  type: "text" | "code";
+  value: string;
+}
+
+/** The head of This page: what the page is. */
+export interface ThisPageHead {
+  /** The title in pieces, each set as text: a code span's is drawn as code. */
+  title: TitlePiece[];
+  /** Its content type, or "fragment"; `null` when no one type applies. */
+  type: string | null;
+  /** Its content path. */
+  path: string;
+}
+
+/** A button under a message, which the extension runs by its key. */
+export interface ViewAction {
+  key: string;
+  label: string;
+}
+
+/** What This page draws: a message in place of the page, or its head and sections. */
 export interface ThisPageAnswer {
-  /** No page open, or the server's state; `null` when it has sections to draw. */
+  /**
+   * No page open, the server starting or failed, or Restricted Mode; `null`
+   * when it has a page to draw.
+   */
   message: string | null;
+  /** The buttons under the message: Show Output and Restart, Manage Workspace Trust. */
+  actions: ViewAction[];
+  /** What the page is; `null` with a message. */
+  head: ThisPageHead | null;
   sections: ViewItem[];
 }
 
 /** What This page's webview drew, for tests. */
 export interface ThisPageReport {
   message: string | null;
+  /** The labels of the buttons under the message. */
+  actions: string[];
+  /** The head's text, line by line: the title, then the type and the path. */
+  head: string[];
+  /** The title's pieces drawn as code, each as its text. */
+  code: string[];
   /** Each section as drawn: whether it's open, and its items' text, depth first. */
   sections: { key: string; label: string; open: boolean; items: string[] }[];
   /** Whether a row's text wraps, as the stylesheet sets it. */

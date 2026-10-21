@@ -136,6 +136,16 @@ describe("with ascribe.toml and the stub server", () => {
     );
     await waitFor("the server to fail", () => api.state() === "failed");
     assert.equal(api.binary(), undefined);
+    // This page says so, in place of the page, with what helps.
+    await vscode.window.showTextDocument(
+      await vscode.workspace.openTextDocument(uriOf("docs", "page.md")),
+    );
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    const failed = await api.ui.thisPage.whenDrawn("the failure", (drawn) =>
+      (drawn.report.message ?? "").endsWith(": the language server failed to start."),
+    );
+    assert.deepEqual(failed.report.actions, ["Show Output", "Restart"]);
+    assert.deepEqual(failed.report.head, []);
 
     await config.update("path", good, vscode.ConfigurationTarget.Workspace);
     await waitFor("the server to run again", () => api.state() === "running");

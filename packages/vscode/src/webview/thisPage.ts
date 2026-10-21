@@ -16,9 +16,21 @@
 // the reader's place: what's drawn already stays, each element with its key,
 // and only what changed is drawn again, so the view keeps its scroll and the
 // keyboard's focus. Up and Down move the focus between the headers and rows.
+//
+// Above the sections is the head: the page's title, its code spans drawn as
+// code, then its type and path. In place of a page, it draws what the
+// extension says instead (no page open, the server starting or failed,
+// Restricted Mode) with the buttons that help, which the extension runs.
 
 import { seenViolations, startView, type ViewChannel } from "./view.js";
-import type { ThisPageAnswer, ThisPageProbe, ThisPageReport, ViewItem } from "./viewProtocol.js";
+import type {
+  ThisPageAnswer,
+  ThisPageHead,
+  ThisPageProbe,
+  ThisPageReport,
+  ViewAction,
+  ViewItem,
+} from "./viewProtocol.js";
 
 const main = document.querySelector<HTMLElement>('[data-role="view"]');
 if (!main) throw new Error("This page's shell has no view");
@@ -77,6 +89,13 @@ function chooser(item: ViewItem, channel: ViewChannel<ThisPageReport>): HTMLButt
   return button;
 }
 
+/** What a row says: its state first, as a colored label, then its description. */
+function said(item: ViewItem): Node[] {
+  const state = item.state ? [element("span", "state", item.state)] : [];
+  const rest = item.description ? [document.createTextNode(item.description)] : [];
+  return [...state, ...rest];
+}
+
 /** A row: its label as a description list's term, and its value as its details. */
 function row(item: ViewItem, channel: ViewChannel<ThisPageReport>): HTMLElement {
   const made = element("div", classes(item, "row"));
@@ -88,11 +107,11 @@ function row(item: ViewItem, channel: ViewChannel<ThisPageReport>): HTMLElement 
   const details = element("dd");
   if (item.acts) {
     const button = chooser(item, channel);
-    button.textContent = item.description;
-    button.setAttribute("aria-label", `${item.label}: ${item.description}`);
+    button.append(...said(item));
+    button.setAttribute("aria-label", `${item.label}: ${saying(item)}`);
     details.append(button);
   } else {
-    details.textContent = item.description;
+    details.append(...said(item));
   }
   made.append(term, details);
   return made;
@@ -166,9 +185,55 @@ function section(item: ViewItem, channel: ViewChannel<ThisPageReport>): HTMLDeta
   return details;
 }
 
-/** An item's text as the report gives it: its label, and its description in brackets. */
+/** What a row says, as text: its state, then its description. */
+function saying(item: ViewItem): string {
+  return [item.state, item.description].filter((part) => part !== "").join(", ");
+}
+
+/** An item's text as the report gives it: its label, and what it says in brackets. */
 function text(item: ViewItem): string {
-  return item.description ? `${item.label} (${item.description})` : item.label;
+  const says = saying(item);
+  return says ? `${item.label} (${says})` : item.label;
+}
+
+/** The head: the title, each piece set as text, a code span's in `<code>`; then the type and path. */
+function head(about: ThisPageHead): HTMLElement {
+  const made = element("header", "head");
+  made.dataset["key"] = "head";
+  const title = element("h2", "page-title");
+  title.append(
+    ...about.title.map((piece) =>
+      piece.type === "code"
+        ? element("code", "", piece.value)
+        : document.createTextNode(piece.value),
+    ),
+  );
+  const where = element("p", "page-where");
+  if (about.type !== null) where.append(element("span", "page-type", about.type));
+  where.append(element("span", "page-path", about.path));
+  made.append(title, where);
+  return made;
+}
+
+/** What's said in place of a page, with a button for each action, which the extension runs. */
+function notice(
+  message: string,
+  actions: readonly ViewAction[],
+  channel: ViewChannel<ThisPageReport>,
+): HTMLElement {
+  const made = element("div", "notice");
+  made.dataset["key"] = "notice";
+  made.append(element("p", "message", message));
+  for (const action of actions) {
+    const button = element("button", "notice-action", action.label);
+    button.type = "button";
+    button.dataset["key"] = action.key;
+    button.addEventListener("click", () =>
+      channel.post({ type: "open", seq: channel.seq, key: action.key }),
+    );
+    made.append(button);
+  }
+  return made;
 }
 
 function flat(items: readonly ViewItem[]): string[] {
@@ -265,8 +330,15 @@ let probed = 0;
 function report(answer: ThisPageAnswer): ThisPageReport {
   const sample = view.querySelector(".row dd, .item .label") ?? view;
   const { whiteSpace } = getComputedStyle(sample);
+  const said = (selector: string) =>
+    [...view.querySelectorAll(selector)].map((found) => found.textContent ?? "");
   return {
     message: answer.message,
+    actions: said(".notice-action"),
+    head: [...said(".head .page-title"), said(".head .page-where > span").join(" · ")].filter(
+      (line) => line !== "",
+    ),
+    code: said(".head .page-title code"),
     sections: (answer.message !== null ? [] : answer.sections).map((item) => ({
       key: item.key,
       label: item.label,
@@ -290,8 +362,11 @@ function draw(answer: ThisPageAnswer, channel: ViewChannel<ThisPageReport>): Thi
   patch(
     view,
     answer.message !== null
-      ? [element("p", "message", answer.message)]
-      : answer.sections.map((item) => section(item, channel)),
+      ? [notice(answer.message, answer.actions, channel)]
+      : [
+          ...(answer.head ? [head(answer.head)] : []),
+          ...answer.sections.map((item) => section(item, channel)),
+        ],
   );
   // What had the focus is gone: the focus goes to its section's header.
   if (focused !== null && focusedKey() === null && !focusKey(focused)) {
