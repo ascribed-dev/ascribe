@@ -4907,7 +4907,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/795"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Report: a finding's identity, and what's new in Problems since the last run"
     },
     {
@@ -4925,7 +4925,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Report: the site and agents say what's failing since the last run"
     },
     {
@@ -4943,7 +4943,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "ascribe.baseline: put existing advice off, with ascribe baseline write and prune"
     },
     {
@@ -5021,8 +5021,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/799"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "A code file's snippet-tags problems are shown in the code file, in the editor"
     },
     {
@@ -5039,7 +5042,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/798"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "The multi-project integration tests fail intermittently on Windows deleting their own folders"
     }
   ]
