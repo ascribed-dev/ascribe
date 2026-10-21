@@ -1,6 +1,7 @@
 //! Go to definition (SPEC §10): links and includes go to their target file or
 //! heading, `@id`s to the heading they name, a glossary term in prose to its
-//! heading, and phrases and feature keys to their entry in `ascribe.toml`.
+//! heading, phrases and feature keys to their entry in `ascribe.toml`, and a
+//! `@snippet`'s address to its region's start tag in the code file.
 
 use ascribe_core::{LineIndex, RelPath, Span};
 use ascribe_resolve::{Resolution, Usable};
@@ -31,7 +32,8 @@ pub(crate) fn definition(ctx: &Ctx, position: Position) -> Option<Location> {
             let replaced = ctx.snapshot.replaces(&ctx.path)?;
             source_location(ctx, &mut lines, &replaced, None)
         }
-        Some(Hit::Directive(_) | Hit::Snippet(_)) => id_definition(ctx, &mut lines, offset),
+        Some(Hit::Snippet(snippet)) => crate::examples::snippet_definition(ctx, snippet),
+        Some(Hit::Directive(_)) => id_definition(ctx, &mut lines, offset),
         None => term_definition(ctx, &mut lines, offset)
             .or_else(|| id_definition(ctx, &mut lines, offset)),
     }

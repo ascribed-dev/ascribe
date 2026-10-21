@@ -70,5 +70,7 @@ mod search;
 mod settings;
 #[path = "all/shown.rs"]
 mod shown;
+#[path = "all/snippets.rs"]
+mod snippets;
 #[path = "all/tokens.rs"]
 mod tokens;
