@@ -35,6 +35,9 @@ export const PROJECT_KEYS = {
   agentFiles: "agentFiles",
   /** Check Every Build, of the view's project. */
   checkEveryBuild: "checkEveryBuild",
+  /** The edits to the whole project, through the language server. */
+  applyEverySafeFix: "applyEverySafeFix",
+  formatEveryPage: "formatEveryPage",
   /** `ascribe agents sync --check`, of the view's project. */
   checkAgentFiles: "checkAgentFiles",
   /** The tasks, by their names in `tasks.json`. */
@@ -91,6 +94,49 @@ const CHECK_EVERY_BUILD: ProjectAction = {
   caption: "Runs ascribe check and puts every build's problems in the Problems panel.",
 };
 
+/** The project edits, by the kind `ascribe/projectEdit` names. */
+export const PROJECT_EDITS = {
+  fixAll: {
+    key: PROJECT_KEYS.applyEverySafeFix,
+    label: "Apply Every Safe Fix",
+    icon: "lightbulb-autofix",
+    caption:
+      "Applies the safe fixes of the problems the editor shows, the editor build's, in every file, as one edit left unsaved. Every build's are ascribe check --fix's.",
+  },
+  format: {
+    key: PROJECT_KEYS.formatEveryPage,
+    label: "Format Every Page",
+    icon: "edit",
+    caption: "Formats every page as ascribe fmt does, as one edit left unsaved.",
+  },
+} as const satisfies Record<ProjectEditKind, ProjectAction>;
+
+/** Which edit to the whole project `ascribe/projectEdit` makes. */
+export type ProjectEditKind = "fixAll" | "format";
+
+/**
+ * What the extension asks before applying a project edit, naming its counts:
+ * "Apply 6 safe fixes in 4 files? They're left unsaved, to read before you
+ * save them." `fixes` is `null` for formatting.
+ */
+export function projectEditQuestion(files: number, fixes: number | null): string {
+  const unsaved =
+    files === 1
+      ? "It's left unsaved, to read before you save it."
+      : "They're left unsaved, to read before you save them.";
+  const asked =
+    fixes === null
+      ? `Format ${count(files, "file")}?`
+      : `Apply ${count(fixes, "safe fix", "safe fixes")} in ${count(files, "file")}?`;
+  return `${asked} ${unsaved}`;
+}
+
+/** What the extension says when a project edit would change nothing in the project `name`. */
+export function nothingToEdit(kind: ProjectEditKind, name: string): string {
+  return kind === "fixAll"
+    ? `Ascribe: none of the problems the editor shows in ${name} has a safe fix.`
+    : `Ascribe: every page of ${name} is formatted already.`;
+}
 const CHECK_AGENT_FILES = { key: PROJECT_KEYS.checkAgentFiles, label: "Check Agent Files" };
 
 const TASK_ICONS: Record<TaskName, string> = {
@@ -130,7 +176,13 @@ export function projectAnswer(project: ProjectFacts | undefined): ProjectAnswer 
     },
     toDo: health.filter((count) => count.state !== "none" && count.state !== "running").length,
     health,
-    actions: [CHECK_EVERY_BUILD, taskAction("build"), taskAction("syncAgentFiles")],
+    actions: [
+      CHECK_EVERY_BUILD,
+      PROJECT_EDITS.fixAll,
+      PROJECT_EDITS.format,
+      taskAction("build"),
+      taskAction("syncAgentFiles"),
+    ],
   };
 }
 
@@ -377,6 +429,6 @@ function bySeverity({ errors, warnings, advice }: Summary): string {
     .join(", ");
 }
 
-function count(n: number, noun: string): string {
-  return `${n} ${noun}${n === 1 ? "" : "s"}`;
+function count(n: number, noun: string, nouns = `${noun}s`): string {
+  return `${n} ${n === 1 ? noun : nouns}`;
 }

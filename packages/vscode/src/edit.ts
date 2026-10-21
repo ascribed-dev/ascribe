@@ -4,7 +4,8 @@
 // and its text under `documentChanges`. `ProjectServer.requestEdit`
 // converts with its language client's converter; this module checks the
 // answer's shape and routes its parts through that converter, so it can be
-// tested without VS Code.
+// tested without VS Code. `ascribe/projectEdit`'s answer, an edit with its
+// counts, is converted the same way.
 
 import type { LspPosition, LspRange, LspWorkspaceEdit } from "./shapes.js";
 
@@ -45,6 +46,39 @@ export async function convertEdit<Edit, Range>(
     edit: await converter.asWorkspaceEdit(edit),
     select: select ? converter.asRange(select) : undefined,
   };
+}
+
+/** A server's edit to the whole project, converted, with how many files and fixes it holds; or why there is none. */
+export type ServerProjectEdit<Edit> =
+  | { edit: Edit; files: number; fixes: number | null; versions: Map<string, number | null> }
+  | { error: string };
+
+/**
+ * Converts `ascribe/projectEdit`'s answer: an `error` passes through, and an
+ * edit is converted, with its counts and the version each document's edit is
+ * for, by URI. Anything else is a broken server, and throws.
+ */
+export async function convertProjectEdit<Edit>(
+  value: unknown,
+  converter: Pick<EditConverter<Edit, unknown>, "asWorkspaceEdit">,
+): Promise<ServerProjectEdit<Edit>> {
+  if (!isRecord(value)) throw new Error("the language server returned an invalid edit");
+  if (typeof value.error === "string") return { error: value.error };
+  const { edit, files, fixes } = value;
+  if (!isWorkspaceEdit(edit) || !isCount(files) || !(fixes === null || isCount(fixes))) {
+    throw new Error("the language server returned an invalid edit");
+  }
+  const versions = new Map<string, number | null>();
+  for (const change of edit.documentChanges ?? []) {
+    if (!("textDocument" in change)) continue;
+    const { uri, version } = change.textDocument;
+    versions.set(uri, Number.isInteger(version) ? version : null);
+  }
+  return { edit: await converter.asWorkspaceEdit(edit), files, fixes, versions };
+}
+
+function isCount(value: unknown): value is number {
+  return Number.isInteger(value) && (value as number) >= 0;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
