@@ -762,6 +762,9 @@ describe("with several projects, one nested in another", () => {
       assert.deepEqual(api.ui.everyBuild.problems(), []);
       assert.equal((await problemsIn("unknown")).note, "not checked yet");
       assert.equal(api.ui.everyBuild.kept(docs), undefined);
+      // The view hidden again: while it shows a project it runs the agent files'
+      // check in its folder, which the tests after this one delete.
+      await vscode.commands.executeCommand("workbench.view.explorer");
     });
   });
 
