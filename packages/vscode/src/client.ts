@@ -16,8 +16,13 @@ import {
 import { PublishedDiagnostics } from "./agents/published.js";
 import { ancestorsWithin, resolveBinary, type Resolution, type ResolvedBinary } from "./binary.js";
 import { CrashCounter } from "./crash.js";
-import { layoutOf, readLayout } from "./diskChanges.js";
-import { convertEdit, type ServerEdit } from "./edit.js";
+import { layoutOf, readLayout, type Source } from "./diskChanges.js";
+import {
+  convertEdit,
+  convertProjectEdit,
+  type ServerEdit,
+  type ServerProjectEdit,
+} from "./edit.js";
 import { nodeEnvironment, shellCommand, usesShell } from "./environment.js";
 import { globFolder, samePath, type Project } from "./projects.js";
 import { scopeMiddleware, type LensScope } from "./scope.js";
@@ -36,8 +41,8 @@ export interface ProjectHost {
   channelName(project: Project): string;
   /** Whether a file belongs to some other project than `project`, or to none. */
   ownedElsewhere(project: Project, uri: vscode.Uri): boolean;
-  /** Whether `project`'s server is told a file changed on disk, given its sources' folders (`diskChanges.ts`). */
-  toldOfChange(project: Project, uri: vscode.Uri, sources: readonly string[]): boolean;
+  /** Whether `project`'s server is told a file changed on disk, given its sources (`diskChanges.ts`). */
+  toldOfChange(project: Project, uri: vscode.Uri, sources: readonly Source[]): boolean;
   /** Whether `project`'s server is asked for a document's lenses, given its sources' folders (`codeLens.ts`). */
   asksForLenses(
     project: Project,
@@ -73,8 +78,8 @@ export class ProjectServer implements vscode.Disposable {
   readonly published: PublishedDiagnostics;
   /** The files the running server registered its lenses for (`shown.rs` in crates/ascribe-lsp). */
   private lensSelector: vscode.DocumentFilter[] | undefined;
-  /** The folders of the sources the running server loaded, read when it registers its lenses. */
-  private sourceFolders: readonly string[] = [];
+  /** The sources the running server loaded, read when it registers its lenses. */
+  private sources: readonly Source[] = [];
   /** How many times the server has asked for every lens again (`workspace/codeLens/refresh`), for tests. */
   private refreshes = 0;
 
@@ -98,7 +103,11 @@ export class ProjectServer implements vscode.Disposable {
 
   /** Whether the server is asked for a document's lenses where its registration covers it (`codeLens.ts`). */
   asksForLenses(document: vscode.TextDocument): boolean {
-    return this.host.asksForLenses(this.project, document, this.sourceFolders);
+    return this.host.asksForLenses(
+      this.project,
+      document,
+      this.sources.map((source) => source.folder),
+    );
   }
 
   /**
@@ -196,6 +205,25 @@ export class ProjectServer implements vscode.Disposable {
       },
       refused,
     );
+  }
+
+  /**
+   * Asks for one edit to the whole project, `ascribe/projectEdit`, and
+   * converts it into the editor's types, with its counts. Rejects when the
+   * server isn't running or the answer isn't an edit.
+   */
+  async requestProjectEdit(
+    kind: "fixAll" | "format",
+  ): Promise<ServerProjectEdit<vscode.WorkspaceEdit>> {
+    const value = await this.request("ascribe/projectEdit", {
+      textDocument: { uri: vscode.Uri.file(this.project.config).toString() },
+      kind,
+    });
+    const converter = this.client?.protocol2CodeConverter;
+    if (!converter) throw new Error("the Ascribe language server isn't running");
+    return convertProjectEdit(value, {
+      asWorkspaceEdit: (edit) => converter.asWorkspaceEdit(edit),
+    });
   }
 
   /** How many errors the server reports for the project, as the Problems panel lists them. */
@@ -334,7 +362,7 @@ export class ProjectServer implements vscode.Disposable {
               this.lensSelector = lenses ?? undefined;
               // The server registers its lenses when it loads the model and
               // when the model moves its sources.
-              if (lenses === null) this.sourceFolders = [];
+              if (lenses === null) this.sources = [];
               else void this.readSources();
             }
           },
@@ -343,7 +371,7 @@ export class ProjectServer implements vscode.Disposable {
             titles: (document, titles, token) =>
               this.host.lensTitles(this.project, document, titles, token),
           },
-          (uri) => this.host.toldOfChange(this.project, uri, this.sourceFolders),
+          (uri) => this.host.toldOfChange(this.project, uri, this.sources),
         ),
         errorHandler: this.errorHandler(),
       },
@@ -372,7 +400,7 @@ export class ProjectServer implements vscode.Disposable {
   }
 
   /**
-   * Reads the folders of the project's sources as the server has them: from
+   * Reads the project's sources as the server has them: from
    * the open `ascribe.toml`, whose text the server is sent, or from the file.
    */
   private async readSources(): Promise<void> {
@@ -382,7 +410,7 @@ export class ProjectServer implements vscode.Disposable {
     );
     const layout = open ? layoutOf(this.project, open.getText()) : await readLayout(this.project);
     // Stopped, or the registration dropped, while the file was read.
-    if (this.lensSelector !== undefined) this.sourceFolders = layout.sources;
+    if (this.lensSelector !== undefined) this.sources = layout.sources;
   }
 
   private async stopNow(): Promise<void> {
@@ -391,7 +419,7 @@ export class ProjectServer implements vscode.Disposable {
     this.runningSince = undefined;
     this.published.clear();
     this.lensSelector = undefined;
-    this.sourceFolders = [];
+    this.sources = [];
     this.status.set("stopped");
     if (!client) return;
     try {

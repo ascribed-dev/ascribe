@@ -2,7 +2,6 @@
 type: reference
 title: The Ascribe sidebar
 description: "The Ascribe sidebar in VS Code: Project, This page, Pages, Content model, and switching the project they show."
-available: ascribe 0.3.0
 ---
 
 The Ascribe icon in the activity bar opens the Ascribe sidebar, with three views: **This page**, **Pages**, and **Content model**. In a workspace with no project, Pages says how to start one, and in Restricted Mode, how to trust the folder.
@@ -25,13 +24,45 @@ At its top are the project's name, its folder, its language server's state, such
 | Count | From | Opens |
 |---|---|---|
 | **Problems in every build** | "2 errors, 1 warning": the problems the last **Check Every Build** found in every build, by severity | The Problems panel |
+| **Tested examples changed or never tested** | The same check's `example-stale` and `example-unobserved` | The Problems panel, and the first of them in the editor |
+| **Reviews overdue** | The same check's `review-overdue`, for the day it ran | The Problems panel, and the first of them in the editor |
+| **Permalinks the list is behind on** | The same check's `permalinks-list-behind` | The Problems panel, and the first of them in the editor |
+| **Pages nothing links to or includes** | The language server's list of orphans, as Pages' **Orphans Only** has it | Pages, with **Orphans Only** on |
+| **Content model entries nothing uses** | The language server's count of each entry's uses, as Content model's **Unused Only** has it | Content model, with **Unused Only** on |
+| **Agent files out of date** | `ascribe agents sync --check`, from the last save | **Sync Agent Files**, which names the files it would change and asks first |
 
-- A count of none shows `0`, dimmed.
-- A count that hasn't been made shows a dash and "Needs every build checked", with **Check Every Build** beside it.
-- A count from a check that the project has changed since shows a dash and "Out of date", with the time of the check and **Check Every Build** beside it. Any change to a file of the project counts, saved or not: a page, `ascribe.toml`, `ascribe.nav`, `ascribe.permalinks`, a memo, a template, or a file in one of its [sources](../examples/sources.md)' folders.
-- A count from a check that read files with unsaved changes says so: the check reads files as they're saved.
+- A count of none shows `0`, dimmed, and opens nothing.
+- A count that hasn't been made shows a dash and says what it needs, such as "Needs every build checked", with the action that makes it beside it.
+- A count that's out of date shows a dash and "Out of date", with why, the time it was made, and the action that brings it current beside it. A dash is never dimmed, and an out-of-date count has a warning icon, so none and not known never look alike.
 
-The view never checks every build by itself, since that can take a few seconds on a large project. **Actions** has **Check Every Build**, which checks the project the view shows, wherever the cursor is. **Escape** in the view puts the cursor back in the editor.
+Each count goes out of date by its own rule:
+
+- **The counts from Check Every Build** go out of date together, on any change to a file of the project, saved or not: a page, `ascribe.toml`, `ascribe.nav`, `ascribe.permalinks`, a memo, a template, or a file in one of its [sources](../examples/sources.md)' folders. A check that read files with unsaved changes says so: it reads files as they're saved.
+- **Reviews overdue** depends on the day as well as the files: it says the day it's for, and goes out of date when the day changes, whatever else has.
+- **Orphans and unused entries** come from the language server, which reads your unsaved text, so they're current as you type. While the server is starting, or isn't running, they show a dash.
+- **Agent files** are made from the content model and the pages, so most saves can change them. The view checks them when it first shows the project, and again after each save of a file of the project while it's showing, at most once every few seconds and never as you type. A change on disk that isn't a save, such as a `git checkout`, makes the count out of date, with **Check Agent Files** beside it.
+
+The view never checks every build by itself, since that can take a few seconds on a large project. **Actions** acts on the project the view shows, wherever the cursor is, and each says how it runs in its tooltip:
+
+| Action | How it runs |
+|---|---|
+| **Check Every Build** | The extension checks every build and puts their problems in the Problems panel |
+| **Apply Every Safe Fix** | The language server, as one edit, left unsaved: see [Edits to the whole project](#edits-to-the-whole-project) |
+| **Format Every Page** | The language server, as one edit, left unsaved |
+| **Build** | A task: `ascribe build`, in the terminal |
+| **Sync Agent Files** | A task: `ascribe agents sync`, in the terminal |
+| **Observe Examples** | A task: `ascribe observe`, in the terminal, in the folder of a source with [tested examples](../examples/tested.md). It lists the commands `ascribe.examples.toml` names and asks before running them. |
+
+The tasks are in **Tasks: Run Task** too, and [Tasks](settings.md#tasks) says where they run. **Escape** in the view puts the cursor back in the editor.
+
+### Edits to the whole project
+@available: next
+
+**Apply Every Safe Fix** applies every [safe fix](problems.md#apply-the-safe-fixes) of the problems the editor shows, in every page and fragment of the project, as **Apply the safe fixes in this page** applies one page's. They're the editor's build's problems, the ones in the Problems panel; a problem only another build has, or one that takes every build to tell, is [`ascribe check --fix`](../checks/check.md#applying-the-safe-fixes)'s to fix. **Format Every Page** formats every page and fragment as [Format Document](writing.md#formatting) and `ascribe fmt` do. Both are in the Command Palette too, as **Ascribe: Apply Every Safe Fix** and **Ascribe: Format Every Page**, for the active file's project.
+
+Each is one edit to the text the editor has, so a page you've changed and not saved is fixed or formatted as you have it, never as it is on disk. Before it's made, the extension says how much it changes and asks: "Apply 6 safe fixes in 4 files? They're left unsaved, to read before you save them." When there's nothing to change, it says so and asks nothing.
+
+The files are left unsaved on purpose. On a large project an edit can change hundreds of files, and each is opened with its changes unsaved, so you can read them before you save them: **File: Save All** saves them. **Undo** takes the edit back: VS Code asks whether to undo it in every file it changed or only in the one you're in. If a file changes while the question is up, nothing is applied; choose the action again.
 
 ## This page, Pages, and Content model
 
@@ -41,27 +72,30 @@ The views show the active file's project, named beside Pages' and Content model'
 **This page** says what's known about the active page, in four sections, and five while review is on, with **Review** after About ([Review in the preview](review.md#the-review-view)). **About** gives its title, its content type, its address, and its Markdown version's address, or "not published" when the project publishes none ([`agents = true`](../content-model/output.md#consumer)); a fragment's address is only where it's included. **Health** says how the page stands. **Connections** lists what links to the page, grouped by file, under **Linked from**, what includes it under **Included by**, and what it includes under **Includes**. With the cursor under a heading, Connections narrows to that heading's links and the includes of its section, whichever page they reach it through, and its title names the heading; Includes stays the page's. **Memos** lists the [memo files](actions.md#memo-files) about the heading, or about the page outside any heading, including those about a block in it, each by its first line with its file beside it, marked personal or outdated when it is. Each item opens the link, the include, or the memo; an include opens in the editor group beside the page's, with the focus left in the view, and This page stays on the page. Unsaved edits count.
 
 @available: next
-This page follows the page you're working in: the last editor of a page that was active. Clicking in the view, or moving to the preview, another view, a panel, or a file that isn't a page leaves it on its page; when that page's editor closes, it shows the page of the editor that takes its place. Only **About** starts open. The other sections' headers say whether to open them: Health's count of things to do, Connections' heading, and Memos' "none". Open or close a section and it stays that way on every page. Rows wrap, so each shows all it says at any width, with more in its tooltip. **Tab**, or **Up** and **Down**, moves between the section headers and the rows that open something, **Enter** or **Space** opens a section or a row, and **Escape** puts the cursor back in the page. As the cursor moves and the checks run, the view changes what it says in place, keeping its scroll and the row you're on.
+This page follows the page you're working in: the last editor of a page that was active. Clicking in the view, or moving to the preview, another view, a panel, or a file that isn't a page leaves it on its page; when that page's editor closes, it shows the page of the editor that takes its place. Only **About** starts open. The other sections' headers say whether to open them: Health's count of things to do, Connections' heading, and Memos' "none". Open or close a section and it stays that way on every page. Rows wrap, so each shows all it says at any width, with more in its tooltip, and an open section's header stays at the top of the view while you scroll through its rows. **Tab**, or **Up** and **Down**, moves between the section headers and the rows that open something, **Enter** or **Space** opens a section or a row, and **Escape** puts the cursor back in the page. As the cursor moves and the checks run, the view changes what it says in place, keeping its scroll and the row you're on.
+
+@available: next
+Above the sections is the page's title, with its code spans drawn as code where its type's `title` field reads them ([`inline = "code"`](../content-model/index.md#53-code-in-a-field)), then its content type, or "fragment", and its path. A row whose state can warn says the state first, in the warning color when there's something to do: an example's "changed since it was tested" before its address, a description's "too long" before its length. The view's badge counts Health's things to do, so you see them with This page collapsed or Health closed; it goes when you move to another page while the view is collapsed, until you open it again. In place of a page, This page says when no page is open, when the page's language server is starting, and when it failed to start, with **Show Output** and **Restart**; in Restricted Mode it says Ascribe isn't checking the folder, with **Manage Workspace Trust**.
 
 About's other rows say whether the page is published, listed, due, and finished. Each is shown only when it has something to say, apart from a description, which is shown "missing" where [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports the page. A row with somewhere to go opens it:
 
 | Row | Says | Opens |
 |---|---|---|
-| **Description** | Its length, or its field's default's when the page leaves the field out or empty, against the 300 characters its line in `llms.txt` reads best under when the project publishes one, with a warning only where [`description-too-long`](../checks/diagnostics/content-checks.md#ASC163) reports it, or "missing" | The field in the frontmatter |
-| **Review** | "overdue since 3 October" or "due in 12 days", from the field with the [`review-date` role](../content-model/index.md#54-field-roles), as [`review-overdue`](../checks/diagnostics/content-checks.md#ASC153) compares it with today, with a warning only where that check reports the page | The field |
+| **Description** | Its length, or its field's default's when the page leaves the field out or empty, against the 300 characters its line in `llms.txt` reads best under when the project publishes one, led by "too long" with a warning only where [`description-too-long`](../checks/diagnostics/content-checks.md#ASC163) reports it, or "missing" | The field in the frontmatter |
+| **Review** | "overdue, since 3 October" or "due in 12 days", from the field with the [`review-date` role](../content-model/index.md#54-field-roles), as [`review-overdue`](../checks/diagnostics/content-checks.md#ASC153) compares it with today, with a warning only where that check reports the page | The field |
 | **Availability** | The page's own `available` | Nothing |
 | **Builds** | "Published by site, agents; left out by cloud": the builds that publish the page and the ones that leave it out, with why in its tooltip | **Switch Build**, to see the page as a build publishes it; **Dim What the Build Leaves Out** shows what that build leaves out of it |
 | **Listing** | "Listed (the default)" or "Unlisted, by `[listing.folders]`": what [`pages.json`](../content-model/checks.md#22-listing) says of the page, and the rule that sets it | The page's own `listing`, or the rule in `ascribe.toml` |
 | **Permalink** | A [permalink](../permalinks/index.md) the page or one of its headings declares, one row each | Its `permalink` or its `@id` line |
-| **Template** | "how-to template, 2 placeholders left": what its [type's template](../templates/index.md#whats-left-to-fill-in) still leaves to fill in | **Go to Next Placeholder** |
+| **Template** | "2 placeholders left, how-to template": what its [type's template](../templates/index.md#whats-left-to-fill-in) still leaves to fill in | **Go to Next Placeholder** |
 
 **Health** has these rows:
 
 | Row | Says | Opens |
 |---|---|---|
 | **Problems** | "1 warning, 2 advice": VS Code's problems for the page, as the Problems panel counts them | The Problems panel, where its filter's **Show Active File Only** keeps it to the page |
-| **Size** | "31,200 of 50,000 characters, in site": the page's Markdown in the build where it's largest, measured as [`page-size`](../content-model/checks.md#19-checks) measures it, shown always so a page is seen growing toward the limit | Nothing; its tooltip says which build and the limit |
-| **Example** | Each [tested example](../examples/tested.md) a `@snippet` of the page shows: tested, changed since it was tested, or not tested | The file its `@snippet` shows, beside the page |
+| **Size** | "31,200 of 50,000 characters, in site": the page's Markdown in the build where it's largest, measured as [`page-size`](../content-model/checks.md#19-checks) measures it, shown always so a page is seen growing toward the limit, and led by "too large" once it reaches it | Nothing; its tooltip says which build and the limit |
+| **Example** | Each [tested example](../examples/tested.md) a `@snippet` of the page shows: its state first, tested, changed since it was tested, or not tested, then its address, what it was tested with, and the heading it's under | The file its `@snippet` shows, beside the page |
 
 A fragment has no builds, listing, or size of its own: it's published only where it's included.
 

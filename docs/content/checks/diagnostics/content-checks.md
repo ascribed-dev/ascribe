@@ -6,7 +6,6 @@ description: "The checks of a project's quality, which it can set the level of o
 
 Part of the [diagnostics reference](../diagnostics.md), which says what an entry's severity, level, and next step mean, and has an index of every diagnostic.
 
-@available: ascribe 0.3.0
 Checks of the content's quality: advice unless a project sets another level in [`[checks]`](../../content-model/checks.md#19-checks). A check with settings takes a table, and its entry names them.
 
 ```toml

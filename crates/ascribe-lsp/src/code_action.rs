@@ -13,6 +13,7 @@ use lsp_types::{
 
 use crate::intended;
 use crate::nav::{Ctx, directive_at};
+use crate::position::Encoding;
 
 // Longer than the lint allows from before it was on. Split it only while
 // changing it for another reason.
@@ -274,11 +275,9 @@ fn asks_for(only: Option<&[CodeActionKind]>, kind: &str) -> bool {
 }
 
 /// "Apply the safe fixes in this page": every safe fix of the problems last
-/// published for `file`, in one edit, taken as `ascribe check --fix` takes
-/// them, in its order (advice last) and with two that edit the same text
-/// settled the same way: the first is kept, and the other's problem stays
-/// for the next run. None when it has no safe fix, or when what was
-/// published is for another version of the document than the editor's.
+/// published for `file`, in one edit, as [`safe_fixes`] takes them. None
+/// when it has no safe fix, or when what was published is for another
+/// version of the document than the editor's.
 fn fix_all(
     ctx: &Ctx,
     file: &ascribe_resolve::FileIndex,
@@ -287,7 +286,26 @@ fn fix_all(
     if *version != ctx.version {
         return None;
     }
-    let index = LineIndex::new(&file.source);
+    let (edits, fixed) = safe_fixes(ctx.encoding, &file.source, published)?;
+    let CodeActionOrCommand::CodeAction(mut action) = action(ctx, FIX_ALL_TITLE, fixed, edits)
+    else {
+        return None;
+    };
+    action.kind = Some(CodeActionKind::new(FIX_ALL_KIND));
+    Some(CodeActionOrCommand::CodeAction(action))
+}
+
+/// Every safe fix of the problems `published` for a file whose text is
+/// `source`, taken as `ascribe check --fix` takes them, in its order (advice
+/// last) and with two that edit the same text settled the same way: the
+/// first is kept, and the other's problem stays for the next run. The edits,
+/// and the problems they fix; `None` when there's no safe fix.
+pub(crate) fn safe_fixes(
+    encoding: Encoding,
+    source: &str,
+    published: &[Diagnostic],
+) -> Option<(Vec<TextEdit>, Vec<Diagnostic>)> {
+    let index = LineIndex::new(source);
     let mut diagnostics: Vec<&Diagnostic> = published.iter().collect();
     diagnostics.sort_by_key(|d| {
         (
@@ -315,19 +333,12 @@ fn fix_all(
                 .flatten()
                 .filter_map(|edit| serde_json::from_value::<TextEdit>(edit.clone()).ok())
                 .map(|edit| {
-                    let start = ctx
-                        .encoding
-                        .offset_lenient(&index, &file.source, edit.range.start);
-                    let end = ctx
-                        .encoding
-                        .offset_lenient(&index, &file.source, edit.range.end);
+                    let start = encoding.offset_lenient(&index, source, edit.range.start);
+                    let end = encoding.offset_lenient(&index, source, edit.range.end);
                     ascribe_core::TextEdit::replace(start..end.max(start), edit.new_text)
                 })
                 .collect();
-            if !edits.is_empty()
-                && settled.take(&file.source, &edits)
-                && !fixed.contains(diagnostic)
-            {
+            if !edits.is_empty() && settled.take(source, &edits) && !fixed.contains(diagnostic) {
                 fixed.push(diagnostic.clone());
             }
         }
@@ -338,14 +349,12 @@ fn fix_all(
     let edits = settled
         .edits()
         .iter()
-        .map(|edit| text_edit(ctx, &file.source, edit.clone()))
+        .map(|edit| TextEdit {
+            range: encoding.range(&index, edit.span),
+            new_text: edit.new_text.clone(),
+        })
         .collect();
-    let CodeActionOrCommand::CodeAction(mut action) = action(ctx, FIX_ALL_TITLE, fixed, edits)
-    else {
-        return None;
-    };
-    action.kind = Some(CodeActionKind::new(FIX_ALL_KIND));
-    Some(CodeActionOrCommand::CodeAction(action))
+    Some((edits, fixed))
 }
 
 fn action(

@@ -17,7 +17,7 @@ ascribe link              TARGET --from <PAGE> [--format text|json]
 ascribe lsp
 ascribe mcp
 ascribe model             [PATH] [--section types|dimensions|phrases|features|glossary|widgets|releases|builds|sources|project|consumer|editor|checks|crawlers|listing|permalinks] [--format text|json]
-ascribe observe           [--name <NAME>] [--check] [--format text|json]
+ascribe observe           [--name <NAME>] [--check] [--yes] [--format text|json]
 ascribe outline           PAGE [--build <NAME>] [--format text|json]
 ascribe permalinks sync   [--check] [--format text|json]
 ascribe permalinks list   [--format text|json]
@@ -27,7 +27,7 @@ ascribe refs              TARGET [--limit <N>] [--format text|json]
 ascribe rename            TARGET NEW
 ascribe render            PAGE [--build <NAME>] [--frontmatter] [--format text|json]
 ascribe report            [SECTION]... [--format text|markdown|json|prompt] [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice|warning|error]
-ascribe search            QUERY [PATHS]... [--type <NAME>] [--case] [--word] [--summary] [--build <NAME>]... [--limit <N>]
+ascribe search            QUERY [PATHS]... [--type <NAME>] [--case] [--word] [--summary] [--build <NAME>]... [--limit <N>] [--format text|json]
 ascribe sources fetch     [NAME]...
 ascribe sources update    [NAME]... [--to <REV>] [--format text|json|markdown]
 ascribe sources status    [--format text|json]

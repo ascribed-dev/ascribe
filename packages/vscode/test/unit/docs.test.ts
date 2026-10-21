@@ -44,6 +44,10 @@ const commands: Record<string, string> = {
     "Picks the build you're looking at in the active file's project: the one the preview renders and the status bar names. Choosing the editor build follows `[editor] build`. See [The status bar](../editor/preview.md#the-status-bar).",
   "ascribe.checkEveryBuild":
     "Runs `ascribe check` over every build of the active file's project, and adds to the Problems panel the problems of builds other than the editor's, which the language server doesn't check. When no file of a project is active and the workspace has several projects, it asks which. See [The Problems panel](../editor/settings.md#the-problems-panel).",
+  "ascribe.applyEverySafeFix":
+    "Applies, as one edit, every safe fix of the problems the editor shows in the active file's project, the editor build's, after saying how many fixes in how many files. The files are left unsaved, for you to read before you save them, and Undo takes the edit back. When no file of a project is active and the workspace has several projects, it asks which. See [Edits to the whole project](../editor/sidebar.md#edits-to-the-whole-project).",
+  "ascribe.formatEveryPage":
+    "Formats every page and fragment of the active file's project as `ascribe fmt` does, as one edit, after saying how many files it changes. The files are left unsaved, for you to read before you save them, and Undo takes the edit back. When no file of a project is active and the workspace has several projects, it asks which. See [Edits to the whole project](../editor/sidebar.md#edits-to-the-whole-project).",
   "ascribe.projectMenu":
     "Shows the menu of the active file's project, as clicking its status bar item does: switch the build, check every build, show the server's output, switch project, restart its server, dim what the build leaves out, or open the preview.",
   "ascribe.switchProject":
@@ -85,36 +89,14 @@ const actionsRow = `Runs the action, such as **Ascribe: ${ACTIONS[0]?.title ?? "
 /**
  * The availability of each setting or command newer than the extension's
  * first release, by id: `next` until a release ships it, then that release,
- * as `ascribe 0.2.0`.
+ * as `ascribe 0.2.0`. Remove an entry once every live line has it.
  */
 const available: Record<string, string> = {
-  "ascribe.openPagePreview": "ascribe 0.2.0",
-  "ascribe.openSitePreview": "ascribe 0.2.0",
-  "ascribe.startReview": "ascribe 0.2.0",
-  "ascribe.stopReview": "ascribe 0.2.0",
-  "ascribe.changedPages": "ascribe 0.2.0",
-  "ascribe.refreshComments": "ascribe 0.2.0",
-  "ascribe.switchBuild": "ascribe 0.3.0",
-  "ascribe.checkEveryBuild": "ascribe 0.3.0",
-  "ascribe.projectMenu": "ascribe 0.3.0",
-  "ascribe.toggleBuildLens": "ascribe 0.3.0",
-  "ascribe.preview.scrollPreviewWithEditor": "ascribe 0.2.0",
-  "ascribe.preview.scrollEditorWithPreview": "ascribe 0.2.0",
-  "ascribe.review.sourceComments": "ascribe 0.2.0",
-  "ascribe.actions": "ascribe 0.3.0",
-  "ascribe.promptAgentFile": "ascribe 0.3.0",
-  "ascribe.promptAgentProject": "ascribe 0.3.0",
-  "ascribe.agents.promptTarget": "ascribe 0.3.0",
-  ascribe_editor_problems: "ascribe 0.3.0",
-  ascribe_review_threads: "ascribe 0.3.0",
-  ascribe_review_changes: "ascribe 0.3.0",
-  [ACTIONS_ROW]: "ascribe 0.3.0",
-  "ascribe.newPage": "ascribe 0.3.1",
-  "ascribe.nextPlaceholder": "ascribe 0.3.1",
-  "ascribe.projects.exclude": "ascribe 0.3.2",
   "ascribe.submitReview": "ascribe 0.4.0",
   "ascribe.openSourceChanges": "ascribe 0.4.0",
   "ascribe.switchProject": "ascribe 0.4.0",
+  "ascribe.applyEverySafeFix": "next",
+  "ascribe.formatEveryPage": "next",
   "ascribe.openProjectSettings": "next",
 };
 

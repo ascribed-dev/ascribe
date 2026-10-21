@@ -2,7 +2,6 @@
 type: concept
 title: How review works
 description: What review compares, what its marks mean, how its comments map to the pull request, what it needs from GitHub, and what reaches GitHub.
-available: ascribe 0.2.0
 ---
 
 Review is one comparison shown in three places: the **page preview** in VS Code, the **site preview** under `astro dev`, and the **HTML report** from CI. All three show the same changes with the same marks, and the two previews show the pull request's comments, with the same rules for where each lands. This page is what holds in all three. [Review](index.md) walks through reviewing a pull request; each place's own controls are on [Review in the preview](../editor/review.md), [Review in the site preview](site-preview.md), and [the HTML report](diff.md#the-html-report).

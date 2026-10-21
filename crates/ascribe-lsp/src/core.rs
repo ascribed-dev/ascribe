@@ -784,10 +784,14 @@ impl Core {
             let Some(path) = Core::doc_path(&event.uri) else {
                 continue;
             };
-            if let Some(loaded) = self.loaded.as_ref()
-                && crate::shown::in_a_source(&loaded.root, &loaded.model, &path)
-            {
-                refresh = true;
+            if let Some(loaded) = self.loaded.as_ref() {
+                if crate::shown::used_by_a_source(&loaded.root, &loaded.model, &path) {
+                    refresh = true;
+                } else if !relative_path(&loaded.root, &path).is_some_and(|p| p.is_inside()) {
+                    // Outside the project, only a source's files matter: a
+                    // build's output in a source's folder isn't walked.
+                    continue;
+                }
             }
             if self.config.is_none()
                 && path.file_name().is_some_and(|n| n == MODEL_FILE)
@@ -1457,6 +1461,38 @@ impl Core {
             self.checked(path).to_vec(),
             self.published.get(path).and_then(|p| p.version),
         )
+    }
+
+    /// What `ascribe/projectEdit` works from, asked through any of the
+    /// project's files: the project's context, as [`Core::project_target`]
+    /// gives it, and each source file of its snapshot, in path order, with
+    /// its open document's URI and version and the diagnostics last
+    /// published for it.
+    pub(crate) fn project_edit_target(
+        &self,
+        uri: &Uri,
+    ) -> Option<(Ctx, Vec<crate::project_edit::Source>)> {
+        let ctx = self.project_target(uri)?;
+        let loaded = self.loaded.as_ref()?;
+        let sources = ctx
+            .snapshot
+            .files()
+            .filter_map(|file| {
+                let path = loaded.source_path(&file.path);
+                let doc = self.docs.get(&path);
+                let uri = match doc {
+                    Some(doc) => doc.uri.clone(),
+                    None => path_to_uri(&path)?,
+                };
+                Some(crate::project_edit::Source {
+                    path: file.path.clone(),
+                    uri,
+                    version: doc.map(|d| d.version),
+                    published: self.checked_with_version(&path),
+                })
+            })
+            .collect();
+        Some((ctx, sources))
     }
 
     /// A project snapshot for workspace-level refactorings.

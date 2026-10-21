@@ -12,7 +12,6 @@ An AI agent reading your docs does better with Markdown than with HTML, and with
 
 ## Turn on the outputs for agents
 @id: publish-for-ai-agents
-@available: ascribe 0.3.0
 
 @steps
 1. In `ascribe.toml`'s `[consumer]`, set `agents = true`, beside `site`:

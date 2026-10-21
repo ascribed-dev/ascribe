@@ -12,7 +12,6 @@ A site often has more than its docs: a home page at `/`, with the docs at `/docs
 
 ## A home page in front of the docs
 @id {permalink=true}: a-home-page-in-front-of-the-docs
-@available: ascribe 0.3.0
 
 ### 1. Give the docs their path
 
@@ -69,7 +68,6 @@ Everything Ascribe publishes for the docs is at their base path: the files pages
 
 ## Several projects in one site
 @id {permalink=true}: several-projects-in-one-site
-@available: ascribe 0.3.0
 
 One integration can build several Ascribe projects into one site, each under its own base path, such as a home page written in Ascribe at `/`, beside the docs at `/docs/`.
 

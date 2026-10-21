@@ -44,7 +44,6 @@ It checks your pages as you type, completes directives, [phrases](glossary.md#ph
 
 Format your pages with Ascribe, not a general Markdown formatter: one such as Prettier can change what a page builds to as it saves it. When another extension formats Markdown in your project's folder, the extension offers to be its Markdown formatter instead; choose **Use Ascribe**. See [Formatting](editor/writing.md#formatting).
 
-@available: ascribe 0.3.0
 After you install it, its walkthrough, **Get Started with Ascribe**, shows the preview, the actions bar that writes directives for you, and the Ascribe sidebar. It's under **Help → Welcome** whenever you want it again.
 
 ## Create `ascribe.toml`
@@ -99,7 +98,7 @@ Create `docs/install.md`:
 - `@steps` marks the list as a procedure.
 - The link points at a **file**, `configure.md`. Ascribe writes the URL.
 
-The [directive reference](writing/directives.md) describes every directive and inline construct.
+The [directive reference](writing/directives.md) describes every directive, and [phrases, links, and images](writing/inline.md) the rest of what a page writes.
 
 ## Check it
 
@@ -159,13 +158,11 @@ You installed the command and the editor, declared a content model in `ascribe.t
 
 - [Checks in CI](checks/ci.md): check every pull request the way the editor checks a page.
 - [Content that varies](writing/variants.md): alternatives by platform or product, availability, and builds.
-- [Directive reference](writing/directives.md): the language.
+- [Directive syntax](writing/syntax.md) and the [directive reference](writing/directives.md): the language.
 - [`ascribe.toml` reference](content-model/index.md): the content model.
 - [Command reference](command/index.md): every command, its options, and its exit codes.
 - [Diagnostics](checks/diagnostics.md): every problem Ascribe reports, and its fix.
 - [Editing](editor/index.md): the VS Code extension.
 - [Astro](astro/index.md): publishing a site.
-- @available: ascribe 0.3.1
-  [Tested examples](examples/tested.md): code blocks that say what their example was tested with. Start from a repository to copy, for Node with TypeScript or for Python.
-- @available: ascribe 0.3.0
-  [Agents](agents/index.md): working with an AI coding agent, such as Claude Code, GitHub Copilot, Cursor, or Codex, starting with `ascribe agents sync`, which gives it your project's rules.
+- [Tested examples](examples/tested.md): code blocks that say what their example was tested with. Start from a repository to copy, for Node with TypeScript or for Python.
+- [Agents](agents/index.md): working with an AI coding agent, such as Claude Code, GitHub Copilot, Cursor, or Codex, starting with `ascribe agents sync`, which gives it your project's rules.

@@ -172,7 +172,7 @@ fn without_null(schema: &Value) -> Value {
 
 /// The TypeScript type of a schema.
 fn type_of(schema: &Value) -> String {
-    if schema == &Value::Bool(true) {
+    if schema == &Value::Bool(true) || any_value(schema) {
         return "unknown".to_owned();
     }
     if let Some(reference) = schema.get("$ref").and_then(Value::as_str) {
@@ -201,6 +201,19 @@ fn type_of(schema: &Value) -> String {
             .join(" | "),
         _ => panic!("a schema with no type: {schema}"),
     }
+}
+
+/// Whether a schema has only annotations, such as a description, and so
+/// takes any value: a `serde_json::Value`'s.
+fn any_value(schema: &Value) -> bool {
+    schema.as_object().is_some_and(|map| {
+        map.keys().all(|key| {
+            matches!(
+                key.as_str(),
+                "description" | "title" | "default" | "examples" | "deprecated"
+            )
+        })
+    })
 }
 
 /// The TypeScript type of one of a schema's JSON types.

@@ -13,7 +13,7 @@ links, CodeLens, and inlay hints (see [Navigation](#navigation)); code actions,
 rename, formatting, and folding ranges; and the custom requests `ascribe/preview`,
 `ascribe/review/setBase`, `ascribe/review/changes`, `ascribe/review/baseFile`,
 `ascribe/context`, `ascribe/targets`, `ascribe/edit`, `ascribe/buildView`,
-`ascribe/inventory`, `ascribe/page`, and `ascribe/settings`.
+`ascribe/inventory`, `ascribe/page`, `ascribe/projectEdit`, and `ascribe/settings`.
 
 ## The project
 
@@ -627,6 +627,49 @@ texts, and kept for the file until the snapshot changes (`PageCache` in
 `src/page.rs`), so a cursor move on the same file only picks the heading's
 share. It answers from the current snapshot, so it includes unsaved edits.
 See [Performance](#performance) for its cost.
+
+## One edit for the whole project: `ascribe/projectEdit`
+
+A custom request that answers with one edit to every source file of the
+project, for the editor's Project view, which says how much it changes before
+it applies it:
+
+```jsonc
+{ "textDocument": { "uri": "file:///…/ascribe.toml" }, "kind": "fixAll" }
+```
+
+Like `ascribe/inventory`, it can be sent for any of the project's files. Its
+`kind` is `fixAll`, every safe fix "Apply the safe fixes in this page" makes,
+from the problems last published for each file, which are the editor's
+build's (decision #544e); or `format`, each file as Format Document and
+`ascribe fmt` format it. Its TypeScript type is `ProjectEditResult` in
+`packages/vscode/src/shapes.ts` (`schemas/lsp-project-edit.schema.json`):
+
+```jsonc
+{
+  "edit": { "documentChanges": [
+    { "textDocument": { "uri": "file:///…/docs/keys.md", "version": 4 }, "edits": [ … ] },
+    { "textDocument": { "uri": "file:///…/docs/start.md", "version": null }, "edits": [ … ] }
+  ] },
+  "files": 2,
+  "fixes": 5
+}
+```
+
+- The edits are to the snapshot's text, so an open document's unsaved text is
+  what's edited, and its edit names the version it's for: the client refuses
+  it when the document has changed since. A file that isn't open has `null`.
+- `fixes` is how many problems the safe fixes fix, and `null` for `format`.
+  `files` is how many files the edit changes; an edit that changes nothing has
+  no `documentChanges` entries and `files` 0.
+- A document that isn't one of the project's files gets
+  `{ "error": "This file isn't one of the project's." }`.
+
+It's answered once the diagnostics queued before it are published, so the
+safe fixes are those of the text the edit is to. While it waits it reads no
+other message, so nothing new is queued; after 30 seconds it answers with an
+`error` saying the server is still checking. It's answered in
+`src/project_edit.rs`.
 
 ## What a build leaves out: `ascribe/buildView`
 

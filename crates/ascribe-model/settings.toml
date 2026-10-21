@@ -95,7 +95,6 @@ table = "types.<name>"
 key = "purpose"
 kind = "text"
 type = "string"
-available = "ascribe 0.3.1"
 description = '''What a page of the type is for, in a few words. The rules `ascribe agents sync` writes say it on the type's line, and `ascribe model` shows it. A type copied from the starter set says its summary there without one (below).'''
 
 [[setting]]
@@ -103,7 +102,6 @@ table = "types.<name>"
 key = "template"
 kind = "text"
 type = "string (path)"
-available = "ascribe 0.3.1"
 description = '''The page a page of the type starts from: a file from the folder `ascribe.toml` is in, outside the content root (below).'''
 
 [[setting]]
@@ -112,7 +110,6 @@ key = "guide"
 kind = "list"
 type = "array of paths"
 default = []
-available = "ascribe 0.3.1"
 description = '''What to read before writing a page of the type, in the order to read it, such as a guide and a project's own notes on it: files from the folder `ascribe.toml` is in, outside the content root (below).'''
 
 [[setting]]
@@ -271,7 +268,6 @@ table = ""
 key = "releases"
 kind = "table"
 type = "table of tables"
-available = "ascribe 0.3.2"
 description = '''The release lines of a versioned target, by the target's name.'''
 
 [[setting]]
@@ -280,7 +276,6 @@ key = "live"
 kind = "list"
 type = "array of strings (versions)"
 default = []
-available = "ascribe 0.3.2"
 description = '''The lines a reader can be on, in any order. A build [versioned](output.md#16-buildsname) by the target gives one output for each.'''
 
 [[setting]]
@@ -289,7 +284,6 @@ key = "planned"
 kind = "list"
 type = "array of strings (versions)"
 default = []
-available = "ascribe 0.3.2"
 description = '''Lines that haven't shipped, each newer than every live line. A version in one is **planned**: its availability reads `Self-managed (planned, 3.6)` in every output, and stops being planned when its line moves to `live`, with no other edit.'''
 
 [[setting]]
@@ -297,7 +291,6 @@ table = "releases.<target>"
 key = "ends"
 kind = "table"
 type = "table of dates"
-available = "ascribe 0.3.2"
 description = '''The last day each live line is supported, by line: `"3.4" = 2027-01-31`, a TOML date, unquoted.'''
 
 [[setting]]
@@ -305,7 +298,6 @@ table = "releases.<target>"
 key = "archived"
 kind = "table"
 type = "table of tables"
-available = "ascribe 0.3.2"
 description = '''Lines that have left the window, each older than every live line, by line. Each takes `url`, where the line can still be read, and `ended`, the day its support ended, both optional: `"3.2" = {}` declares a line that's readable nowhere.'''
 
 [[setting]]
@@ -313,7 +305,6 @@ table = "releases.<target>.archived.<line>"
 key = "url"
 kind = "text"
 type = "string (URL)"
-available = "ascribe 0.3.2"
 description = '''Where the line can still be read.'''
 
 [[setting]]
@@ -321,7 +312,6 @@ table = "releases.<target>.archived.<line>"
 key = "ended"
 kind = "text"
 type = "date"
-available = "ascribe 0.3.2"
 description = '''The day its support ended.'''
 
 [[setting]]
@@ -330,7 +320,6 @@ key = "planned-label"
 kind = "text"
 type = "string"
 default = "planned"
-available = "ascribe 0.3.2"
 description = '''The word a reader sees for a planned version, in place of its state: `Self-managed (planned, 3.6)`.'''
 
 # ---- 8. `[lifecycle.<state>]` -------------------------------------------------
@@ -415,7 +404,6 @@ key = "line"
 kind = "text"
 type = "string"
 required = true
-available = "ascribe 0.3.2"
 description = '''A target whose lines `[releases.<target>]` (§7.1) lists: the phrase is then a line as the list writes it, in the output of one line of a build the target versions that line, and everywhere else the target's current line.'''
 
 # ---- 12. `[glossary]` ---------------------------------------------------------
@@ -618,7 +606,6 @@ key = "agents"
 kind = "switch"
 type = "boolean"
 default = false
-available = "ascribe 0.3.0"
 description = '''**Outputs for agents.** Whether each build also publishes what AI agents read, as the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) lays it out: `llms.txt`, the index of every page, and each page's Markdown at its URL with `.md`. It needs `site`, since every link agents read is absolute. See below.'''
 
 [[setting]]
@@ -627,7 +614,6 @@ key = "permalink-path"
 kind = "text"
 type = "string"
 default-text = "`go/` under `base-path`"
-available = "ascribe 0.3.0"
 description = '''**Permalinks.** Where each [permalink](../writing/directives.md#permalinks)'s address is published, as a path from the site's root, such as `"/go/"`: `/go/cli-check/` forwards to the heading marked `cli-check`. It must start with `/`. Set it when the addresses a product prints shouldn't move when `base-path` does. With `@ascribed/astro`, it must be under Astro's `base`, since an Astro site serves nothing outside it, and the integration fails the build when it isn't.'''
 
 [[setting]]
@@ -636,7 +622,6 @@ key = "headers"
 kind = "choice"
 type = "string"
 choices = ["netlify"]
-available = "ascribe 0.3.0"
 description = '''**Response headers.** The host whose format a build's response headers are written in, so that the Markdown version of a page that isn't listed isn't indexed either. Supported: `"netlify"`, the `_headers` file Netlify reads. `@ascribed/astro` writes it into the built site ([response headers](../publishing/site.md#response-headers)). Without it, nothing is written for a host, and the headers are in `_ascribe/headers.json` for a deploy step to read. See below.'''
 
 # ---- 16. `[builds.<name>]` ----------------------------------------------------
@@ -695,7 +680,6 @@ table = ""
 key = "sources"
 kind = "table"
 type = "table of tables"
-available = "ascribe 0.2.0"
 description = '''Folders outside the project's content, or other repositories, that its pages may take code examples from, by name.'''
 
 [[setting]]
@@ -704,7 +688,6 @@ key = "path"
 kind = "text"
 type = "string (path)"
 default-text = "**required** without `git`"
-available = "ascribe 0.2.0"
 description = '''The source's folder, relative to the project root. It must exist, be a directory, and be inside the git repository the project is in, when the project is in one.'''
 
 [[setting]]
@@ -713,7 +696,6 @@ key = "git"
 kind = "text"
 type = "string (URL)"
 default-text = "**required** without `path`"
-available = "ascribe 0.2.0"
 description = '''Another repository, as `git` takes it: `https://`, `http://`, `ssh://`, `git://`, `file://`, or `user@host:path`.'''
 
 [[setting]]
@@ -722,7 +704,6 @@ key = "branch"
 kind = "text"
 type = "string"
 default-text = "the repository's default branch"
-available = "ascribe 0.2.0"
 description = '''The branch `ascribe sources update` moves the pin to.'''
 
 [[setting]]
@@ -731,7 +712,6 @@ key = "include"
 kind = "list"
 type = "array of patterns"
 default-text = "every file"
-available = "ascribe 0.2.0"
 description = '''The files a snippet may read, matched against their paths relative to the source's folder (§1.3).'''
 
 [[setting]]
@@ -741,7 +721,6 @@ kind = "list"
 type = "array of patterns"
 default = []
 default-text = "none"
-available = "ascribe 0.2.0"
 description = '''Files left out even when `include` matches them.'''
 
 # ---- 19. `[checks]` -----------------------------------------------------------
@@ -751,7 +730,6 @@ table = ""
 key = "checks"
 kind = "table"
 type = "table"
-available = "ascribe 0.3.0"
 description = '''How loudly each check about your content's quality speaks, by the check's name, and the settings of the tools Ascribe runs.'''
 
 [[setting]]
@@ -761,7 +739,6 @@ kind = "level"
 type = "string"
 choices = ["off", "advice", "warning", "error"]
 default-text = "the check's own level"
-available = "ascribe 0.3.0"
 description = '''The check's level: `"off"`, `"advice"`, `"warning"`, or `"error"`. Without it, the check keeps its own.'''
 
 [[setting]]
@@ -769,7 +746,6 @@ table = ""
 key = "intended"
 kind = "list"
 type = "array of tables"
-available = "ascribe 0.3.0"
 description = '''Says that a check's problem with a content model entry or an image is intended. Each table names one check, one entry, and why.'''
 
 [[setting]]
@@ -778,7 +754,6 @@ key = "check"
 kind = "text"
 type = "string"
 required = true
-available = "ascribe 0.3.0"
 description = '''The check, by its name. It must be a review check that reports its problems at an entry, as the [diagnostics reference](../checks/diagnostics.md) says.'''
 
 [[setting]]
@@ -787,7 +762,6 @@ key = "reason"
 kind = "text"
 type = "string"
 required = true
-available = "ascribe 0.3.0"
 description = '''Why the problem is intended. Not empty.'''
 
 [[setting]]
@@ -796,7 +770,6 @@ key = "phrase"
 kind = "text"
 type = "string"
 default-text = "required: exactly one of `phrase`, `feature`, and `image`"
-available = "ascribe 0.3.0"
 description = '''The entry, when it's a phrase: its key.'''
 
 [[setting]]
@@ -805,7 +778,6 @@ key = "feature"
 kind = "text"
 type = "string"
 default-text = "required: exactly one of `phrase`, `feature`, and `image`"
-available = "ascribe 0.3.0"
 description = '''The entry, when it's a feature: its key.'''
 
 [[setting]]
@@ -814,7 +786,6 @@ key = "image"
 kind = "text"
 type = "string"
 default-text = "required: exactly one of `phrase`, `feature`, and `image`"
-available = "ascribe 0.3.0"
 description = '''The entry, when it's an image: its path under the content root.'''
 
 [[setting]]
@@ -822,7 +793,6 @@ table = "checks"
 key = "vale"
 kind = "table"
 type = "table"
-available = "ascribe 0.3.0"
 description = '''Checks the prose with [Vale](https://vale.sh), a program the project installs.'''
 
 [[setting]]
@@ -831,7 +801,6 @@ key = "preset"
 kind = "choice"
 type = "string"
 choices = ["quiet"]
-available = "ascribe 0.3.0"
 default-text = ""
 description = '''Ascribe's own selection of Vale rules: `quiet`, rules that are almost never wrong. Nothing is downloaded: the preset is written under `.ascribe/vale/`.'''
 
@@ -840,7 +809,6 @@ table = "checks.vale"
 key = "config"
 kind = "text"
 type = "string"
-available = "ascribe 0.3.0"
 default-text = ""
 description = '''Instead of a preset, the path of the project's own `.vale.ini`, from the project root.'''
 
@@ -850,7 +818,6 @@ key = "off"
 kind = "list"
 type = "array of strings"
 default = []
-available = "ascribe 0.3.0"
 description = '''Rules of the preset to turn off, by the names alerts give them, such as `Ascribe.Repeated`. Only with `preset`.'''
 
 [[setting]]
@@ -859,7 +826,6 @@ key = "command"
 kind = "text"
 type = "string"
 default = "vale"
-available = "ascribe 0.3.0"
 description = '''The command that runs Vale. A path with a separator is from the project root; a bare name is looked up as the shell would. A path is a program in the project: the editor asks before it runs one, and the agents' hooks don't run one ([Prose, through Vale](../checks/vale.md#where-vale-runs)).'''
 
 [[setting]]
@@ -868,7 +834,6 @@ key = "in-check"
 kind = "switch"
 type = "boolean"
 default = false
-available = "ascribe 0.3.0"
 description = '''Whether `ascribe check`, and the agents' hook, check the prose without `--vale`.'''
 
 [[setting]]
@@ -878,7 +843,6 @@ kind = "level"
 type = "string"
 choices = ["advice", "warning", "error"]
 default = "error"
-available = "ascribe 0.3.0"
 description = '''The most an alert can be: `"advice"`, `"warning"`, or `"error"`. Vale's `suggestion`, `warning`, and `error` are advice, a warning, and an error up to it; with `"advice"`, Vale's alerts never fail `--deny-warnings`.'''
 
 [[setting]]
@@ -886,7 +850,6 @@ table = "checks"
 key = "links"
 kind = "table"
 type = "table"
-available = "ascribe 0.3.0"
 description = '''How `ascribe report links` checks the project's external links, with [lychee](https://lychee.cli.rs), a program the project installs.'''
 
 [[setting]]
@@ -895,7 +858,6 @@ key = "command"
 kind = "text"
 type = "string"
 default = "lychee"
-available = "ascribe 0.3.0"
 description = '''The command that runs lychee. A path with a separator is from the project root; a bare name is looked up as the shell would.'''
 
 [[setting]]
@@ -904,7 +866,6 @@ key = "ignore"
 kind = "list"
 type = "array of strings"
 default = []
-available = "ascribe 0.3.0"
 description = '''The hosts whose links aren't checked: a host name, such as `example.com`, or `*.` and a host name, which covers every host under it but not the name itself. Case doesn't matter.'''
 
 [[setting]]
@@ -913,7 +874,6 @@ key = "reuse-days"
 kind = "number"
 type = "whole number"
 default = 14
-available = "ascribe 0.3.0"
 description = '''How many days an address that answered isn't asked about again. Each address's own limit falls between half of this and all of it, so addresses first checked together don't all come due on one day. `0` asks about every address on every run.'''
 
 [[setting]]
@@ -922,7 +882,6 @@ key = "confirm-days"
 kind = "number"
 type = "whole number"
 default = 3
-available = "ascribe 0.3.0"
 description = '''How many days a link that answered before and fails now is listed as unconfirmed, and not reported, before it's reported. A 404 or a 410 is reported at once. `0` reports every failure at once.'''
 
 # ---- 20. `[permalinks]` -------------------------------------------------------
@@ -932,7 +891,6 @@ table = ""
 key = "permalinks"
 kind = "table"
 type = "table"
-available = "ascribe 0.3.0"
 description = '''Names for something outside the docs to link to that no heading or page declares: a permalink ended on purpose, and a second name for one.'''
 
 [[setting]]
@@ -940,7 +898,6 @@ table = "permalinks"
 key = "retired"
 kind = "table"
 type = "table of tables"
-available = "ascribe 0.3.0"
 description = '''An entry for each retired permalink, keyed by its name.'''
 
 [[setting]]
@@ -949,7 +906,6 @@ key = "reason"
 kind = "text"
 type = "string"
 required = true
-available = "ascribe 0.3.0"
 default-text = "required"
 description = '''Why it was retired. A reader whose link leads there sees it, as text. Not empty.'''
 
@@ -958,7 +914,6 @@ table = "permalinks.retired.<name>"
 key = "to"
 kind = "text"
 type = "string"
-available = "ascribe 0.3.0"
 default-text = ""
 description = '''Where its address leads now: a page, by its path from the content root, and `#` and a heading's id, as `guides/security.md#rotate-keys`. Without it, or in a build that doesn't publish the page, the address shows that what was there was removed, the reason, and a link to the docs' home.'''
 
@@ -967,7 +922,6 @@ table = "permalinks"
 key = "aliases"
 kind = "table"
 type = "table of strings"
-available = "ascribe 0.3.0"
 description = '''An entry for each alias, keyed by its name, whose value is the name it leads to: a permalink a heading or page declares, or another alias that leads to one.'''
 
 # ---- 21. `[crawlers]` ---------------------------------------------------------
@@ -977,7 +931,6 @@ table = ""
 key = "crawlers"
 kind = "table"
 type = "table"
-available = "ascribe 0.3.0"
 description = '''What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person.'''
 
 [[setting]]
@@ -986,7 +939,6 @@ key = "training"
 kind = "choice"
 type = '`"allow"` or `"disallow"`'
 choices = ["allow", "disallow"]
-available = "ascribe 0.3.0"
 description = '''What crawlers gathering text to train a model may do. `disallow` writes one group naming every training crawler Ascribe knows, with `Disallow: /`.'''
 
 [[setting]]
@@ -995,7 +947,6 @@ key = "search"
 kind = "choice"
 type = '`"allow"` or `"disallow"`'
 choices = ["allow", "disallow"]
-available = "ascribe 0.3.0"
 description = '''What crawlers building the index an AI search product answers from may do, written the same way.'''
 
 [[setting]]
@@ -1004,7 +955,6 @@ key = "on-request"
 kind = "choice"
 type = '`"allow"` or `"disallow"`'
 choices = ["allow", "disallow"]
-available = "ascribe 0.3.0"
 description = '''What fetchers that read a page because a person asked an assistant about it may do, written the same way.'''
 
 [[setting]]
@@ -1013,7 +963,6 @@ key = "lines"
 kind = "list"
 type = "array of strings"
 default = []
-available = "ascribe 0.3.0"
 description = '''The project's own `robots.txt` lines, in order. Each is one line, not empty. A path in an `Allow` or `Disallow` line is from the project's own root, and the records hold it from the host's, with `base-path` before it: under `base-path = "/docs/"`, `Disallow: /drafts/` is `Disallow: /docs/drafts/`. Any other line is kept as written. The lines before any `User-agent` line are for every crawler, in the `User-agent: *` group. A `User-agent` line that names a crawler starts a group the project writes whole: a crawler obeys only the most specific group that names it, and not the `*` group as well. A crawler a disallowed purpose names can't be named in `lines` too, and no crawler can be named in two groups of `lines`.'''
 
 # ---- 22. `[listing]` ----------------------------------------------------------
@@ -1023,7 +972,6 @@ table = ""
 key = "listing"
 kind = "table"
 type = "table"
-available = "ascribe 0.3.0"
 description = '''How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type.'''
 
 [[setting]]
@@ -1033,7 +981,6 @@ kind = "choice"
 type = "string"
 choices = ["listed", "unquoted", "unlisted"]
 default = "listed"
-available = "ascribe 0.3.0"
 description = '''Every page's listing.'''
 
 [[setting]]
@@ -1042,7 +989,6 @@ key = "folders"
 kind = "table"
 type = "table of strings"
 default = {}
-available = "ascribe 0.3.0"
 description = '''A listing for every page under a folder, keyed by the folder's path from the content root, ending in `/`, with its name's case as it is on disk. A folder's pages are every page whose path starts with it, in folders under it too.'''
 
 [[setting]]
@@ -1051,7 +997,6 @@ key = "types"
 kind = "table"
 type = "table of strings"
 default = {}
-available = "ascribe 0.3.0"
 description = '''A listing for every page of a content type, keyed by the type's name.'''
 
 [[setting]]
@@ -1061,5 +1006,4 @@ kind = "choice"
 type = "string"
 choices = ["listed", "unquoted", "unlisted"]
 default = "listed"
-available = "ascribe 0.3.2"
 description = '''The listing of every page of a live line of a versioned build other than its current line: `site@3.4`'s, and not `site`'s. It governs search engines and agents together.'''

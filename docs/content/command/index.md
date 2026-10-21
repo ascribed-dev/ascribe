@@ -5,7 +5,7 @@ description: "The ascribe commands: their options, outputs, and exit codes."
 permalink: cli-reference
 ---
 
-The `ascribe` command checks, builds, and formats an Ascribe project, and runs the language server the editor uses. Its `explain`, `model`, `outline`, `link`, `refs`, and `render` commands answer questions about a project, for writers and for agents, without changing anything, and `ascribe mcp` offers them to agents as the tools of an MCP server.
+The `ascribe` command checks, builds, and formats an Ascribe project, and runs the language server the editor uses. Its `explain`, `model`, `outline`, `link`, `refs`, `render`, and `search` commands answer questions about a project, for writers and for agents, without changing anything, and `ascribe mcp` offers them to agents as the tools of an MCP server.
 
 @include: ../_generated/cli-synopsis.md
 
@@ -34,5 +34,4 @@ Each command's options, output, and exit codes are on the page for its kind of w
 
 Without `--config`, a command's project is the nearest `ascribe.toml` at or above the current directory, or at or above the path it's given.
 
-@available: ascribe 0.3.0
 When there's none, and the folder holds projects in its subfolders, as a repository with several does at its root, the error names their folders, so you can run the command in one, or pass `--config` with its folder: `the projects below it are in docs, handbook: run ascribe in one of them, or pass --config with its folder`. `ascribe agents sync` is the exception: there, it syncs each of them.

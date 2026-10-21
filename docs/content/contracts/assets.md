@@ -60,7 +60,7 @@ Pages are written at their own source paths too (the output-layout contract), so
 | Plain markdown | Mirrored path, relative reference | Mirrored path, relative reference |
 | JSON | Mirrored path, relative reference | Mirrored path, relative reference |
 | Site, `astro` profile | Mirrored path, relative reference | `_ascribe/files/` + mirrored path, root-relative URL |
-| Plain markdown, `agents = true` {available="ascribe 0.3.0"} | `_ascribe/files/` + mirrored path, absolute URL | `_ascribe/files/` + mirrored path, absolute URL |
+| Plain markdown, `agents = true` | `_ascribe/files/` + mirrored path, absolute URL | `_ascribe/files/` + mirrored path, absolute URL |
 
 The consumer profile decides placement in the site output (SPEC §9.5), through `ConsumerProfile::asset_placement` (`Mirror` or `Published`):
 

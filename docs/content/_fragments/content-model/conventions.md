@@ -14,7 +14,7 @@
 
 - **Keys are kebab-case** (`content-root`, `trailing-slash`), matching Ascribe's attribute keys. TOML allows hyphens in bare keys, so they need no quotes.
 - **Unknown keys are errors**, everywhere, with a did-you-mean suggestion. A misspelled key is otherwise a silently ignored setting. The exceptions are the tables whose keys are names the project chooses (`[phrases]`, `[types]`, `[dimensions]`, and so on); their keys are validated as names instead.
-- **Declaration order is kept where it matters.** The loader MUST preserve the order in which attribute keys are declared (`[images.attributes]`, `[widgets.<name>.attributes]`), because canonical form writes attributes in declared order ([SPEC §8.3]({repo}/blob/main/SPEC.md#83-canonical-form)). It MUST also preserve the order of the `[dimensions]` tables, which is the canonical order of `@variant` attributes and decides which dimension a tab group syncs on (the [element contract]({repo}/blob/main/packages/elements/CONTRACT.md), §3). Loaders SHOULD also preserve order elsewhere, for stable output (for example, the order of dimension values in a tab switcher is the order of `values`). Nothing else in the model depends on order.
+- **Declaration order is kept where it matters.** Attribute keys keep the order they're declared in (`[images.attributes]`, `[widgets.<name>.attributes]`), because canonical form writes attributes in declared order ([SPEC §8.3]({repo}/blob/main/SPEC.md#83-canonical-form)). The `[dimensions]` tables keep theirs too: it's the canonical order of `@variant` attributes, and decides which dimension a tab group syncs on (the [element contract]({repo}/blob/main/packages/elements/CONTRACT.md), §3). Order is kept elsewhere for stable output (for example, the order of dimension values in a tab switcher is the order of `values`). Nothing else in the model depends on order.
 
 ### 1.2 Names
 
@@ -36,19 +36,19 @@ Names are case-sensitive and spelled exactly as declared ([SPEC §4.4]({repo}/bl
 ### 1.3 Paths and patterns
 
 - Paths use `/` as the separator on every platform.
-- Filesystem paths in `[project]` and `[sources]` are relative to the project root. They MUST NOT be absolute, and they MAY use `..`.
+- Filesystem paths in `[project]` and `[sources]` are relative to the project root. They can't be absolute, and they can use `..`.
 - A path in `[glossary] pages` (§12) is written like a link destination in a document ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)), relative to the content root.
 - **Patterns** (globs) are matched against a source file's path relative to the content root, including its extension, with `/` separators. They are case-sensitive. The syntax:
 
   | Syntax | Matches |
   |---|---|
   | `*` | Any run of characters within one path segment, not including `/` |
-  | `**` | Any number of whole segments, including none. It MUST be a whole segment (`a/**/b`, `a/**`, `**/b`) |
+  | `**` | Any number of whole segments, including none. It's only ever a whole segment (`a/**/b`, `a/**`, `**/b`) |
   | `?` | Any one character except `/` |
   | `{a,b}` | Either alternative. Alternatives don't nest |
   | `\` | Escapes the next character |
 
-  Every other character matches itself. A pattern MUST NOT start with `/` and MUST NOT contain a `..` segment. Patterns only ever apply to Markdown source files (`*.md`); other files under the content root are assets. The exception is a source's `include` and `ignore` (§18), which are matched against any file's path relative to the source's folder.
+  Every other character matches itself. A pattern doesn't start with `/`, and has no `..` segment. Patterns only ever apply to Markdown source files (`*.md`); other files under the content root are assets. The exception is a source's `include` and `ignore` (§18), which are matched against any file's path relative to the source's folder.
 
 ### 1.4 How this reference describes keys
 

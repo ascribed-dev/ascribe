@@ -36,6 +36,7 @@ Other commands answer what an agent would otherwise guess at. Each changes nothi
 | [`ascribe link <target> --from <page>`](../command/questions.md#cli-link) | Whether a link works from a page, and what to write when it doesn't |
 | [`ascribe render <page> --build <name>`](../command/questions.md#cli-render) | The page as one build's readers see it, as plain Markdown |
 | [`ascribe refs <target>`](../command/questions.md#cli-refs) | Every place that uses a page, a heading, a phrase, or another entry of the content model, such as the links to fix after renaming a heading |
+| [`ascribe search "<words>"`](../command/questions.md#cli-search) | Where the pages already say something, as their readers read it, with the line to edit: run before writing a page about a subject. It finds the words a phrase, a fragment, or a snippet puts on a page, which `grep` over the source can't |
 
 To rename a phrase, a dimension's value, a heading's id, or a page, an agent runs [`ascribe rename <target> <new>`](../command/questions.md#cli-rename), which changes every use as the editor's rename does, where a search and replace would miss some: the code a `@snippet {phrases=true}` shows, frontmatter fields, and the links on a page that moves.
 

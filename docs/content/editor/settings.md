@@ -11,7 +11,6 @@ How the [VS Code extension](index.md) works in a workspace that holds more than 
 
 Every `ascribe.toml` in the workspace is a project, with its own language server. A repository that keeps its code and its documentation together can hold several, such as `site/ascribe.toml` and `handbook/ascribe.toml`, and you can work on all of them in one window. Folders named `node_modules` aren't searched.
 
-@available: ascribe 0.3.2
 A folder whose `ascribe.toml` isn't a project, such as test fixtures, is left out with `ascribe.projects.exclude`: a list of glob patterns, from each workspace folder, in your workspace's settings, such as `"ascribe.projects.exclude": ["tests/**"]`. A project there isn't listed in **Switch Project** and gets no language server, so its pages get no diagnostics and no preview. Folders that `files.exclude` hides are left out too.
 
 A file belongs to the nearest `ascribe.toml` above it, and only that project's server reports on it. Projects can be nested: a file in `handbook/internal/` belongs to `handbook/internal/ascribe.toml`, not to `handbook/ascribe.toml`. A project nested in another's content root isn't part of it: the outer project's server, `ascribe check`, and `ascribe build` skip the nested project's folder, so a link or an include from the outer project to one of its pages is reported as a missing file. A file in a project's folder but outside its content root isn't one of the project's sources, and gets no diagnostics.
@@ -34,7 +33,6 @@ The Problems panel lists diagnostics only for the projects whose server is runni
 
 A running server reports the problems in each file, and the problems of its pages as the editor's build (`[editor] build`) has them. A problem only another build has, such as a link to a page that build leaves out, isn't in the Problems panel until you check every build. While a project has several builds and the panel holds the editor build's problems alone, the [status bar](preview.md#the-status-bar) says so: **docs · site · problems: this build only**.
 
-@available: ascribe 0.3.0
 **Ascribe: Check Every Build** (also **Check every build** in the status bar's menu) runs `ascribe check` over every build of the active file's project, as it reads the files on disk, and adds the problems the server doesn't show to the Problems panel: those of other builds, each naming the builds it's in (`only in build cloud`), and those of the checks the editor doesn't run, such as `image-unused`. It says how many problems it found in all, and how many it added. When a file changes, the problems it added to that file go, since they may have moved, and the status bar says the panel covers the editor's build alone again, until you run it again. A change to any file of the project counts, not only its pages: `ascribe.nav`, `ascribe.permalinks`, and its memos and templates too. The [Project view](sidebar.md#the-project-view) counts the problems it found, and says when the count is out of date. In a workspace with several projects and no file of one active, it asks which project to check.
 
 An agent that reads the Problems panel sees the same: before calling a project clean, check every build, or run `ascribe check`, which checks every build.
@@ -63,6 +61,33 @@ When it starts, a server logs its version and the `ascribe.toml` it uses: `ascri
 Each setting shows its name, its key (`[consumer] trailing-slash`), what it does, its default, and where the file sets it, as a link to the line (`ascribe.toml:12`), or that the file leaves it out. A bar beside a setting marks one the file sets, as VS Code's Settings editor marks what's changed. For now the tab shows two, `[consumer] trailing-slash` and `[consumer] base-path`.
 
 The tab changes a value the file sets: choose another, or type one and press Enter. The change is made in `ascribe.toml` as an edit to that one value, unsaved, so the file's comments, blank lines, and order stay as they were, and **Undo** in the file puts it back. Typing in `ascribe.toml` changes the tab too: it always shows the file as the editor has it, unsaved text included, and never an older version of it. A value the content model doesn't take is still set, and the language server's problem shows under the setting, in the words of the Problems panel. A setting the file leaves out is shown with its default; for now, add it to the file by hand.
+
+## Tasks
+@available: next
+
+The extension adds a task type, `ascribe`, for the jobs that write files: **Build** runs `ascribe build`, **Sync Agent Files** runs `ascribe agents sync`, and **Observe Examples** runs [`ascribe observe`](../examples/tested.md#2-run-the-test-and-commit-what-it-records). Each runs in the terminal, with its output in view as it would be in CI, and with no problem matcher: the Problems panel stays the editor's and [Check Every Build](#the-problems-panel)'s. The [Project view](sidebar.md#the-project-view)'s Actions run them, and so does **Tasks: Run Task**, where each project has its own, named after the project when the workspace has more than one.
+
+Each runs the `ascribe` binary the project's language server runs: the `ascribe.path` setting, the project's own `node_modules/.bin/ascribe`, or the one bundled with the extension. Build and Sync Agent Files run in the project's folder, with `--config` naming its `ascribe.toml` when the project isn't the workspace folder. None is offered in Restricted Mode, where the extension runs nothing until you trust the folder.
+
+@available: next
+**Observe Examples** runs in the folder of a [source with tested examples](../examples/tested.md), one task for each, named after the source when the project has more than one; `ascribe observe` runs only the `ascribe.examples.toml` in the folder it's run in, and takes no `--config`. Which sources have tested examples is what `ascribe model --section sources` says: those with an `ascribe.examples.toml`, and not a [source in another repository](../examples/docs-repository.md), whose config is never run. The config names commands to run, so before running them, `ascribe observe` lists them in the task's terminal and asks **Run them? [y/N]**. Type `y` to run them; anything else runs nothing. The Project view's **Observe Examples** asks which source first when there's more than one.
+
+To bind one to a key, or run it from your own task, name it in `.vscode/tasks.json`:
+
+```json
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "type": "ascribe", "task": "build", "project": "docs", "label": "Build the docs" }
+  ]
+}
+```
+
+| Property | What it says |
+|---|---|
+| `task` | `build`, `syncAgentFiles`, or `observeExamples` |
+| `project` | The project's folder, relative to the workspace folder. Leave it out for the project whose `ascribe.toml` is in the workspace folder. |
+| `source` | For `observeExamples`: the source to observe, by its name in `ascribe.toml`. Leave it out when the project has one source with tested examples. |
 
 ## Settings
 @id {permalink=true}: editor-settings

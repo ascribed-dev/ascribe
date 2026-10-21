@@ -2,7 +2,6 @@
 type: reference
 title: Tested examples contract
 description: The formats of ascribe.examples.toml, which says which of a source's files are examples and how to test them, and of the observation ascribe observe writes beside it.
-available: ascribe 0.3.1
 ---
 
 This contract says what the two files of a source's tested examples hold: `ascribe.examples.toml`, which the code's owners write, and the observation `ascribe observe` writes beside it. Both are TOML. [Show what an example was tested with](../examples/tested.md) walks through them, and [`ascribe observe`](../examples/sources.md#cli-observe) is the command that reads the first and writes the second.
@@ -13,7 +12,7 @@ Both are in the folder a source's `path` names: `ascribe.examples.toml` at its r
 
 For a source in another repository, the folder is its copies, `sources/<name>/`. [`ascribe sources fetch` and `update`](../examples/sources.md#cli-sources-fetch) copy the repository's `ascribe.examples.toml` and every file in its `examples.observations/` there, at the pin, beside the files snippets use, and `ascribe.lock` lists each with its hash, as it does every copy ([the lock](content-model/output.md#181-ascribelock-and-the-copies)). A repository with neither copies nothing more.
 
-`check`, `build`, `sources`, and the editor read both files and never run a command in either. Only `ascribe observe` runs the config's commands, and only from the folder it's run in. It refuses a folder that's a source's copies, which it knows from the `ascribe.lock` of a project above it, and exits 2: a config that arrived as a copy is data, and its `test` and commands are shown nowhere.
+`check`, `build`, `sources`, and the editor read both files and never run a command in either. Only `ascribe observe` runs the config's commands, and only from the folder it's run in; when its input is a terminal, as in the editor's Observe Examples task, it lists them and asks before running them. It refuses a folder that's a source's copies, which it knows from the `ascribe.lock` of a project above it, and exits 2: a config that arrived as a copy is data, and its `test` and commands are shown nowhere.
 
 ## 2. `ascribe.examples.toml`
 

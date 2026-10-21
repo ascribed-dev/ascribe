@@ -2,9 +2,9 @@ The phrases registry ([SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)).
 
 @snippet: code:examples/content-models/full.toml#phrases
 
-Every key is a phrase key (`key` rule, the same rule as SPEC Appendix A's `phrase`), and every value MUST be a TOML string (`model-phrase-value-type`). `version = 3.4` is a float and an error; that's the kind of silent type change TOML exists to prevent ([SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)). Values are inserted as literal text ([SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)).
+Every key is a phrase key (`key` rule, the same rule as SPEC Appendix A's `phrase`), and every value is a TOML string (`model-phrase-value-type`). `version = 3.4` is a float and an error; that's the kind of silent type change TOML exists to prevent ([SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)). Values are inserted as literal text ([SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)).
 
-**A target's line.** A value MAY instead be a table with one key, `line`, naming a target whose lines `[releases.<target>]` (§7.1) lists: `release = { line = "self-managed" }`. The phrase is then a line as the list writes it: in the output of one line of a build the target versions (`[builds.<name>] versions`), that line, and everywhere else the target's current line, its newest live one. So it changes when a line moves to `live`, and has no second home to keep. The target MUST have a live line (`model-phrase-line`); any other key is an error (`model-unknown-key`).
+**A target's line.** A value can instead be a table with one key, `line`, naming a target whose lines `[releases.<target>]` (§7.1) lists: `release = { line = "self-managed" }`. The phrase is then a line as the list writes it: in the output of one line of a build the target versions (`[builds.<name>] versions`), that line, and everywhere else the target's current line, its newest live one. So it changes when a line moves to `live`, and has no second home to keep. The target needs a live line (`model-phrase-line`), and the table takes no other key (`model-unknown-key`).
 
 **Phrases in frontmatter.** [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases) lets the content model decide which frontmatter fields accept phrases. A field accepts them when its table form sets `phrases = true` (§5.2):
 

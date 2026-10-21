@@ -10,6 +10,7 @@ import {
   blocksMove,
   contentPathOf,
   followedProject,
+  healthBadge,
   labelRename,
   leftOut,
   modelChildren,
@@ -18,6 +19,8 @@ import {
   modelRoots,
   newPathProblem,
   NEXT_PLACEHOLDER,
+  NO_PAGE,
+  NOTICE_ACTIONS,
   pagesChildren,
   pagesDrop,
   pagesFind,
@@ -30,8 +33,10 @@ import {
   shownPage,
   SWITCH_BUILD,
   thisPageChildren,
+  thisPageHead,
   thisPageItems,
   thisPageLook,
+  thisPageNotice,
   thisPageRoots,
   viewsNotice,
   type Place,
@@ -793,6 +798,7 @@ describe("the This page view", () => {
     path: "keys.md",
     fragment: false,
     title: "API keys",
+    formattedTitle: null,
     type: "page",
     address: "/keys/",
     markdownAddress: "/keys.md",
@@ -817,8 +823,10 @@ describe("the This page view", () => {
   function flat(nodes: ThisPageNode[], depth = 0): string[] {
     return nodes.flatMap((node) => {
       const look = thisPageLook(node);
+      // A row's state first, as the view draws it, then its description.
+      const says = [look.state ?? "", look.description].filter((part) => part !== "").join(", ");
       return [
-        `${"  ".repeat(depth)}${look.label}${look.description ? ` (${look.description})` : ""}`,
+        `${"  ".repeat(depth)}${look.label}${says ? ` (${says})` : ""}`,
         ...flat(thisPageChildren(node), depth + 1),
       ];
     });
@@ -916,6 +924,7 @@ describe("the This page view", () => {
         path: "_setup.md",
         fragment: true,
         title: null,
+        formattedTitle: null,
         type: null,
         address: null,
         markdownAddress: null,
@@ -1052,9 +1061,16 @@ describe("the This page view", () => {
             address: "code:greet.ts#greet",
             state: "tested",
             tested: "Node 22 on Linux",
+            heading: "Greet",
             range: range(30),
           },
-          { address: "code:old.ts", state: "stale", tested: null, range: range(40) },
+          {
+            address: "code:old.ts",
+            state: "stale",
+            tested: null,
+            heading: null,
+            range: range(40),
+          },
         ],
       },
       includes: [
@@ -1081,21 +1097,21 @@ describe("the This page view", () => {
 
     it("say whether the page is described, due, published, listed, and unfinished", () => {
       expect(flat([nth(roots, 0)]).slice(5)).toEqual([
-        "  Description (312 of 300 characters, too long)",
-        "  Review (overdue since 3 October)",
+        "  Description (too long, 312 of 300 characters)",
+        "  Review (overdue, since 3 October)",
         "  Availability (self-managed 3.5)",
         "  Builds (Published by site, agents; left out by cloud)",
         "  Listing (Unlisted, by `[listing.folders]`)",
         "  Permalink (keys)",
         "  Permalink (rotate-keys)",
-        "  Template (how-to template, 2 placeholders left)",
+        "  Template (2 placeholders left, how-to template)",
       ]);
       expect(flat([nth(roots, 1)])).toEqual([
         "Health (2 things to do)",
         "  Problems (1 warning, 2 advice)",
         "  Size (31,200 of 50,000 characters, in site)",
-        "  Example (code:greet.ts#greet, tested)",
-        "  Example (code:old.ts, changed since it was tested)",
+        "  Example (tested, code:greet.ts#greet, with Node 22 on Linux, under “Greet”)",
+        "  Example (changed since it was tested, code:old.ts)",
       ]);
     });
 
@@ -1153,8 +1169,9 @@ describe("the This page view", () => {
           .flatMap((n) => (n.kind === "row" ? [n.row] : []))
           .find((row) => row.label === "Review");
       };
-      expect(warned(true)).toMatchObject({ value: "overdue since 3 October", warn: true });
-      expect(warned(false)).toMatchObject({ value: "overdue since 3 October", warn: false });
+      const overdue = { state: "overdue", value: "since 3 October" };
+      expect(warned(true)).toMatchObject({ ...overdue, warn: true });
+      expect(warned(false)).toMatchObject({ ...overdue, warn: false });
     });
 
     it("warn of a long description only where description-too-long reports it", () => {
@@ -1176,8 +1193,13 @@ describe("the This page view", () => {
           .flatMap((n) => (n.kind === "row" ? [n.row] : []))
           .find((row) => row.label === "Description");
       };
-      expect(warned(true)).toMatchObject({ value: "312 of 300 characters, too long", warn: true });
+      expect(warned(true)).toMatchObject({
+        state: "too long",
+        value: "312 of 300 characters",
+        warn: true,
+      });
       expect(warned(false)).toMatchObject({ value: "312 of 300 characters", warn: false });
+      expect(warned(false)?.state).toBeUndefined();
     });
 
     it("say when a review is due, and that a short description is fine", () => {
@@ -1243,6 +1265,7 @@ describe("This page's items, as its webview draws them", () => {
       path: "keys.md",
       fragment: false,
       title: "API keys",
+      formattedTitle: null,
       type: "page",
       address: "/keys/",
       markdownAddress: null,
@@ -1317,6 +1340,111 @@ describe("This page's items, as its webview draws them", () => {
     expect(health).toMatchObject({ description: "1 thing to do", dimmed: false });
     expect(nth(health.children, 0)).toMatchObject({ kind: "row", label: "Size", warn: true });
     expect(nth(items, 3)).toMatchObject({ label: "Memos", description: "none", dimmed: true });
+  });
+});
+
+describe("This page's head, its notices, and its badge", () => {
+  const about: PageAbout = {
+    path: "reference/config.md",
+    fragment: false,
+    title: "`ascribe.toml` reference",
+    formattedTitle: [
+      { type: "code", value: "ascribe.toml" },
+      { type: "text", value: " reference" },
+    ],
+    type: "reference",
+    address: "/reference/config/",
+    markdownAddress: null,
+    description: null,
+    review: null,
+    availability: null,
+    builds: [],
+    listing: null,
+    permalinks: [],
+    template: null,
+  };
+
+  it("heads the page with its title in pieces, its type, and its path", () => {
+    expect(thisPageHead(about)).toEqual({
+      title: [
+        { type: "code", value: "ascribe.toml" },
+        { type: "text", value: " reference" },
+      ],
+      type: "reference",
+      path: "reference/config.md",
+    });
+  });
+
+  it("heads a title its type doesn't format as written, and a page with none by its file", () => {
+    const plain = { ...about, formattedTitle: null };
+    expect(thisPageHead(plain).title).toEqual([
+      { type: "text", value: "`ascribe.toml` reference" },
+    ]);
+    expect(thisPageHead({ ...plain, title: null }).title).toEqual([
+      { type: "text", value: "config.md" },
+    ]);
+    expect(thisPageHead({ ...plain, type: null }).type).toBeNull();
+  });
+
+  it("names a fragment's kind in its head", () => {
+    expect(thisPageHead({ ...about, fragment: true, type: null })).toMatchObject({
+      type: "fragment",
+      path: "reference/config.md",
+    });
+  });
+
+  it("says what's in place of a page in each state, with the buttons that help", () => {
+    const said = (notice: Parameters<typeof thisPageNotice>[0]) => {
+      const answer = thisPageNotice(notice);
+      expect(answer).toMatchObject({ head: null, sections: [] });
+      return [answer.message, ...answer.actions.map((action) => action.label)];
+    };
+    expect(said({ kind: "noPage" })).toEqual([NO_PAGE]);
+    expect(said({ kind: "starting" })).toEqual(["Waiting for the project's language server."]);
+    expect(said({ kind: "failed", project: "quill" })).toEqual([
+      "quill: the language server failed to start.",
+      "Show Output",
+      "Restart",
+    ]);
+    expect(said({ kind: "restricted" })).toEqual([
+      "This folder is in Restricted Mode, so Ascribe doesn't run or check its projects.",
+      "Manage Workspace Trust",
+    ]);
+    expect(thisPageNotice({ kind: "restricted" }).actions[0]?.key).toBe(NOTICE_ACTIONS.manageTrust);
+  });
+
+  it("badges the view with Health's things to do, and nothing when there are none", () => {
+    const page: PageResult = {
+      about,
+      heading: null,
+      health: {
+        size: { characters: 60_000, limit: 50_000, build: "site" },
+        examples: [
+          {
+            address: "code:old.ts",
+            state: "stale",
+            tested: null,
+            heading: null,
+            range: range(4),
+          },
+        ],
+      },
+      linkedFrom: [],
+      includedBy: [],
+      includes: [],
+      memos: [],
+    };
+    const problems = { errors: 0, warnings: 0, advice: 3 };
+    expect(healthBadge(thisPageRoots(page, undefined, { problems }))).toEqual({
+      value: 2,
+      tooltip: "Health: 2 things to do on this page",
+    });
+    // Advice alone isn't a thing to do.
+    const fine = { ...page, health: { size: null, examples: [] } };
+    expect(healthBadge(thisPageRoots(fine, undefined, { problems }))).toBeUndefined();
+    expect(
+      healthBadge(thisPageRoots(fine, undefined, { problems: { ...problems, warnings: 1 } })),
+    ).toEqual({ value: 1, tooltip: "Health: 1 thing to do on this page" });
   });
 });
 

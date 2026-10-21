@@ -1,0 +1,5 @@
+---
+section: The language
+---
+
+**File-level validation reports frontmatter problems as errors of their own.** SPEC §8.1 says file-level validation covers frontmatter, and §8.2 had no rows for it, so it gained file-level error rows: an unknown frontmatter key; a missing required field; a value that doesn't match its field's type; and a reserved key (`available`, `variant`) on a fragment. The two rows for a page that matched more than one content type, or none with no default, went with type assignment by pattern ([decision #450](450-page-type-key.md)). SPEC §8.2 states the rows. _Why:_ SPEC §8.1 says file-level validation covers frontmatter, and §8.2 had no rows to report it with. _From:_ the content model contract's decisions, item 1 ([§26 of its validation rules](https://github.com/ascribed-dev/ascribe/blob/eb7e077/docs/content/contracts/content-model/validation.md#26-decisions)), 28 September 2026, as recommended there; a file of its own since [issue #689](https://github.com/ascribed-dev/ascribe/issues/689).

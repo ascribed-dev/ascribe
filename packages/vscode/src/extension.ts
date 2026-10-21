@@ -11,6 +11,7 @@ import { TerminalPath, type TerminalsApi } from "./agents/terminals.js";
 import { AgentTools, type ToolsApi } from "./agents/tools.js";
 import { SyncedSkillKey, type SkillApi } from "./agents/skill.js";
 import { BuildLens, type BuildLensApi } from "./ui/buildLens.js";
+import { AgentFilesChecks, type AgentFilesApi } from "./ui/agentFiles.js";
 import { EveryBuildChecks, type EveryBuildApi } from "./ui/checkEveryBuild.js";
 import { ChosenBuilds } from "./ui/chosenBuild.js";
 import { projectKeys, STATE_NAMES } from "./ui/describe.js";
@@ -18,8 +19,16 @@ import { BuildLenses } from "./ui/lens.js";
 import { ProjectBuilds } from "./ui/projectBuilds.js";
 import { ProjectSettings, type ProjectSettingsApi } from "./ui/projectSettings.js";
 import { ReviewView, type ReviewViewApi } from "./ui/reviewView.js";
+import { ProjectEdits, type ProjectEditsApi } from "./ui/projectEdits.js";
 import { ProjectView, type ProjectViewApi } from "./ui/projectView.js";
-import { SidebarViews, type SidebarApi, type ThisPageApi } from "./ui/sidebarViews.js";
+import { ProjectTasks } from "./ui/tasks.js";
+import { thisPageNotice } from "./ui/sidebar.js";
+import {
+  SidebarViews,
+  thisPageWebview,
+  type SidebarApi,
+  type ThisPageApi,
+} from "./ui/sidebarViews.js";
 import { showRestricted, StatusBar, type StatusBarApi } from "./ui/statusBar.js";
 import { SwitchProject, type SwitchProjectApi } from "./ui/switchProject.js";
 import { Walkthrough } from "./ui/walkthrough.js";
@@ -68,12 +77,16 @@ export interface AscribeApi {
     review: ReviewViewApi;
     /** The Project view. */
     project: ProjectViewApi;
+    /** Apply Every Safe Fix and Format Every Page. */
+    projectEdits: ProjectEditsApi;
     /** The This page view. */
     thisPage: ThisPageApi;
     /** The Pages and Content model views. */
     sidebar: SidebarApi;
     /** Check Every Build's problems. */
     everyBuild: EveryBuildApi;
+    /** The agent files' checks, which the Project view counts. */
+    agentFiles: AgentFilesApi;
     /** Project Settings. */
     projectSettings: ProjectSettingsApi;
     /** Settles when every request for a project's builds has been answered. */
@@ -84,9 +97,13 @@ export interface AscribeApi {
 let registry: ProjectRegistry | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<AscribeApi> {
+  // This page is made first, so in Restricted Mode it can say so too.
+  const thisPage = thisPageWebview(context.extensionUri);
+  context.subscriptions.push(thisPage.register(), thisPage);
   // In Restricted Mode the extension runs nothing, since it would run the
   // project's own binary; it only says so, and starts once the folder is trusted.
   if (!vscode.workspace.isTrusted) {
+    thisPage.show(thisPageNotice({ kind: "restricted" }));
     const notice = showRestricted();
     context.subscriptions.push(notice);
     await new Promise<void>((resolve) => {
@@ -123,11 +140,25 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   reviewView.register();
   const actions = new ActionsController(projects);
   actions.register();
-  const sidebar = new SidebarViews(projects, preview.review, builds, actions, context.extensionUri);
+  const sidebar = new SidebarViews(projects, preview.review, builds, actions, thisPage);
   const switchProject = new SwitchProject(projects, builds, sidebar);
   switchProject.register();
   sidebar.register();
-  const projectView = new ProjectView(projects, sidebar, checks, context.extensionUri);
+  const tasks = new ProjectTasks(context, projects);
+  tasks.register();
+  const projectEdits = new ProjectEdits(projects);
+  projectEdits.register();
+  const agentFiles = new AgentFilesChecks(projects);
+  agentFiles.register();
+  const projectView = new ProjectView(
+    projects,
+    sidebar,
+    checks,
+    agentFiles,
+    tasks,
+    projectEdits,
+    context.extensionUri,
+  );
   projectView.register();
 
   const settings = new ProjectSettings(projects, context.extensionUri, context.extension.id);
@@ -186,12 +217,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     chosen,
     lenses,
     checks,
+    agentFiles,
     builds,
     statusBar,
     lens,
     switchProject,
     reviewView,
     sidebar,
+    tasks,
+    projectEdits,
     projectView,
     settings,
     walkthrough,
@@ -296,9 +330,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       lens: lens.api,
       review: reviewView.api,
       project: projectView.api,
+      projectEdits: projectEdits.api,
       thisPage: sidebar.thisPageApi,
       sidebar: sidebar.api,
       everyBuild: checks.api,
+      agentFiles: agentFiles.api,
       projectSettings: settings.api,
       whenBuildsKnown: () => builds.whenSettled(),
     },
