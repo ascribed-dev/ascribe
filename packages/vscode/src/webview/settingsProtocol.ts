@@ -8,7 +8,7 @@
 // Apart from VS Code and the DOM: the extension and the webview both read it.
 
 /** A piece of a description: text, or a code span. */
-export interface SettingPieceView {
+interface SettingPieceView {
   text: string;
   code: boolean;
 }
