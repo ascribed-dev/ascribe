@@ -39,7 +39,7 @@ import type {
 import type { FromView } from "../webview/viewProtocol.js";
 
 /** A setting's id: `table.key`. */
-export function settingId(entry: Pick<SettingEntry, "table" | "key">): string {
+function settingId(entry: Pick<SettingEntry, "table" | "key">): string {
   return entry.table ? `${entry.table}.${entry.key}` : entry.key;
 }
 
