@@ -3981,7 +3981,7 @@
         "editor-webviews"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Project Settings: finding settings, and opening the tab"
     },
     {
@@ -4684,6 +4684,23 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "The daily report: a failed history download stops the report"
+    },
+    {
+      "content": {
+        "body": "**Ascribe version:** main after #754 (the VS Code extension)\n\n**Platform:** any\n\n**What happened, and what you expected:**\n\n#754 made This page's webview give the focus back to the row that had it last when the window gets the focus back and nothing in the view has it (`packages/vscode/src/webview/thisPage.ts`, the window `focus` listener, which calls `focusKey(lastFocused)`).\n\nThe window's `focus` event fires on the mousedown when a reader clicks into This page from an editor, before the row they clicked takes the focus. If the row that had the focus last has been scrolled out of view, `focusKey` calls `target.focus()`, which scrolls that row back into view first. The content can then move under the pointer between mousedown and mouseup, so the click lands on a different row, or on nothing. (Found in review of #754: https://github.com/ascribed-dev/ascribe/pull/754#discussion_r4338395725)\n\nExpected: the click lands on the row the reader aimed at, and restoring the focus never scrolls the view.\n\n**Done when:**\n\n- `focusKey` takes an option to focus without scrolling (`focus({ preventScroll: true })`), and the window `focus` restore uses it.\n- Keyboard moves, the redraw restore, and the integration probe still scroll the focused row into view as they do now.\n- A test covers it: a unit or webview test that the window `focus` restore doesn't change the view's scroll position, or an integration case that scrolls the last-focused row out of view, clicks another row from the editor, and opens that row.\n- The `tested` integration suite still passes in CI.\n\n**The smallest input that shows it:** any page with enough rows in This page to scroll. Focus a row, scroll it out of view, click into an editor, then click a different row in This page.",
+        "number": 761,
+        "repository": "ascribed-dev/ascribe",
+        "title": "This page: give a row its focus back without scrolling, so a click into the view lands where it's aimed",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/761"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCdAhw",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Ready",
+      "title": "This page: give a row its focus back without scrolling, so a click into the view lands where it's aimed"
     }
   ]
 }
