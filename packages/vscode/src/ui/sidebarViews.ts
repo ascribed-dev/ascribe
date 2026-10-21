@@ -44,6 +44,7 @@ import {
   followedProject,
   healthBadge,
   labelRename,
+  leftOut,
   NOTICE_ACTIONS,
   pagesFind,
   pagesLook,
@@ -88,6 +89,8 @@ export interface SidebarItem extends ItemLook {
   opens: string | undefined;
   /** The file it is, which VS Code decorates: its problems' color, for one. */
   resource?: string;
+  /** The color the views' own decoration of its file gives its label, by its theme color's id. */
+  labelColor?: string;
   /** The command it runs in place of opening a file, if it runs one. */
   runs?: string;
   children: SidebarItem[];
@@ -210,6 +213,8 @@ class Tree<N> implements vscode.TreeDataProvider<N> {
   parentOf: ((node: N) => N | undefined) | undefined;
   /** The file an item is, which VS Code decorates as the Explorer does. */
   resourceOf: ((node: N) => vscode.Uri | undefined) | undefined;
+  /** The views' own decoration of an item's file, if they give it one. */
+  decorationOf: ((uri: vscode.Uri) => vscode.FileDecoration | undefined) | undefined;
 
   readonly changed = new vscode.EventEmitter<void>();
   readonly onDidChangeTreeData = this.changed.event;
@@ -271,9 +276,11 @@ class Tree<N> implements vscode.TreeDataProvider<N> {
       const target = this.opens(child);
       const command = this.command(child);
       const resource = this.resourceOf?.(child);
+      const color = resource && this.decorationOf?.(resource)?.color;
       return {
         ...this.look(child),
         ...(resource ? { resource: resource.toString() } : {}),
+        ...(color ? { labelColor: color.id } : {}),
         opens: target
           ? `${target.uri.toString()}${target.selection ? `:${target.selection.start.line + 1}` : ""}`
           : undefined,
@@ -334,6 +341,10 @@ export class SidebarViews implements vscode.Disposable {
   private readonly inventoryChanged = new vscode.EventEmitter<void>();
   /** The inventory was answered again, or let go: the Project view counts it. */
   readonly onDidChangeInventory = this.inventoryChanged.event;
+
+  private readonly decorationsChanged = new vscode.EventEmitter<undefined>();
+  /** The files of the pages the shown build leaves out, for the inventory and build they're of. */
+  private leftOutFiles: { from: InventoryResult; build: string; files: Set<string> } | undefined;
 
   /** Pages' items, made once for each inventory, so revealing one finds it. */
   private pagesNodes:
@@ -441,6 +452,34 @@ export class SidebarViews implements vscode.Disposable {
       const content = this.inventory?.contentUri;
       const file = pagesResource(node);
       return content && file ? contentFile(content, file) : undefined;
+    };
+    this.pages.decorationOf = (uri) => this.leftOutDecoration(uri);
+  }
+
+  /**
+   * Dims the label of a page the shown build leaves out, as `pagesLook` dims
+   * its icon: a tree item's label takes a color only from a decoration of its
+   * file. A problem's red or yellow still shows over it, since VS Code gives
+   * the problems' decorations more weight than an extension's. The Explorer
+   * and the editor's tabs show the same file, so they dim it too.
+   */
+  private leftOutDecoration(uri: vscode.Uri): vscode.FileDecoration | undefined {
+    const inventory = this.inventory;
+    const content = inventory?.contentUri;
+    const build = this.shownBuild();
+    if (!inventory || !content || build === undefined) return undefined;
+    if (this.leftOutFiles?.from !== inventory || this.leftOutFiles.build !== build) {
+      const files = new Set(
+        inventory.pages
+          .filter((page) => leftOut(page, build))
+          .map((page) => contentFile(content, page.path).toString()),
+      );
+      this.leftOutFiles = { from: inventory, build, files };
+    }
+    if (!this.leftOutFiles.files.has(uri.toString())) return undefined;
+    return {
+      color: new vscode.ThemeColor("disabledForeground"),
+      tooltip: `Not in ${build}`,
     };
   }
 
@@ -593,6 +632,11 @@ export class SidebarViews implements vscode.Disposable {
       this.thisPage,
       this.pages,
       this.model,
+      vscode.window.registerFileDecorationProvider({
+        onDidChangeFileDecorations: this.decorationsChanged.event,
+        provideFileDecoration: (uri) => this.leftOutDecoration(uri),
+      }),
+      this.onDidChangeInventory(() => this.decorationsChanged.fire(undefined)),
       vscode.window.onDidChangeActiveTextEditor(() => this.follow(false, true)),
       vscode.window.onDidChangeTextEditorSelection(({ textEditor, selections }) => {
         const selection = selections[0];
@@ -657,7 +701,10 @@ export class SidebarViews implements vscode.Disposable {
         this.lastEditors.forget(document.uri.toString()),
       ),
       // Pages dims what the build the status bar shows leaves out.
-      this.builds.onDidChange(() => this.pages.changed.fire()),
+      this.builds.onDidChange(() => {
+        this.pages.changed.fire();
+        this.decorationsChanged.fire(undefined);
+      }),
       vscode.commands.registerCommand(OPEN_THREAD, (node?: ThisPageNode) =>
         node?.kind === "thread" ? this.openThread(node.thread.id) : undefined,
       ),
@@ -1002,6 +1049,7 @@ export class SidebarViews implements vscode.Disposable {
     for (const disposable of this.disposables.splice(0)) disposable.dispose();
     this.projectChanged.dispose();
     this.inventoryChanged.dispose();
+    this.decorationsChanged.dispose();
   }
 
   /** Drags in Pages: sections and pages, dropped on each other. */
