@@ -165,6 +165,16 @@ ul {
   padding: 1px 0;
 }
 
+/* A line's description keeps its words whole beside a label that wraps: it
+   takes its own width, up to half the line, and a longer one, such as a
+   memo's file, wraps at its own breaks. */
+.item .description,
+.group-head .description {
+  flex: none;
+  max-width: 50%;
+  overflow-wrap: break-word;
+}
+
 .group-head {
   display: flex;
   gap: 6px;
