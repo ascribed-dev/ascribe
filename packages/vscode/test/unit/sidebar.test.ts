@@ -21,6 +21,7 @@ import {
   NEXT_PLACEHOLDER,
   NO_PAGE,
   NOTICE_ACTIONS,
+  ON_THE_SITE,
   pagesChildren,
   pagesDrop,
   pagesFind,
@@ -802,6 +803,7 @@ describe("the This page view", () => {
     type: "page",
     address: "/keys/",
     markdownAddress: "/keys.md",
+    site: null,
     ...quiet,
   };
   const health = { size: null, examples: [] };
@@ -928,6 +930,7 @@ describe("the This page view", () => {
         type: null,
         address: null,
         markdownAddress: null,
+        site: null,
         ...quiet,
       },
       heading: null,
@@ -938,6 +941,93 @@ describe("the This page view", () => {
       "  Type (fragment)",
       "  Address (only where it's included)",
     ]);
+  });
+
+  describe("on the published site", () => {
+    const site = "https://docs.example.com";
+    const builds = [
+      { name: "site", leftOut: null },
+      { name: "cloud", leftOut: "variant" as const },
+    ];
+    const onSite = { ...page, about: { ...about, site, builds } };
+    /** About's Address and Markdown rows, as the webview draws them, with where each goes. */
+    function addresses(roots: ThisPageNode[]) {
+      const { items, nodes } = thisPageItems(
+        roots,
+        (node) => node.kind === "row" && !!node.row.opens,
+      );
+      return nth(items, 0)
+        .children.filter((item) => item.label === "Address" || item.label === "Markdown")
+        .map((item) => {
+          const node = nodes.get(item.key);
+          return {
+            label: item.label,
+            value: item.description,
+            link: item.link,
+            acts: item.acts,
+            tooltip: item.tooltip,
+            opens: node?.kind === "row" ? node.row.opens : undefined,
+          };
+        });
+    }
+
+    it("draws Address and Markdown as links that open the full URL", () => {
+      expect(addresses(thisPageRoots(onSite, undefined, { build: "site" }))).toEqual([
+        {
+          label: "Address",
+          value: "/keys/",
+          link: true,
+          acts: true,
+          tooltip: ON_THE_SITE,
+          opens: { kind: "site", url: "https://docs.example.com/keys/" },
+        },
+        {
+          label: "Markdown",
+          value: "/keys.md",
+          link: true,
+          acts: true,
+          tooltip: ON_THE_SITE,
+          opens: { kind: "site", url: "https://docs.example.com/keys.md" },
+        },
+      ]);
+      // No build known yet: nothing says the page isn't there.
+      expect(addresses(thisPageRoots(onSite)).map((row) => row.link)).toEqual([true, true]);
+      // A versioned build's older line: the address the row shows is the one opened.
+      const line = { ...onSite.about, address: "/3.4/keys/", markdownAddress: null };
+      expect(addresses(thisPageRoots({ ...onSite, about: line }))[0]?.opens).toEqual({
+        kind: "site",
+        url: "https://docs.example.com/3.4/keys/",
+      });
+    });
+
+    it("draws the addresses as text without a site, for a fragment, and where the build leaves the page out", () => {
+      const text = [
+        { label: "Address", value: "/keys/", link: false, acts: false },
+        { label: "Markdown", value: "/keys.md", link: false, acts: false },
+      ];
+      const plain = (roots: ThisPageNode[]) =>
+        addresses(roots).map(({ label, value, link, acts }) => ({ label, value, link, acts }));
+      expect(plain(thisPageRoots(page, undefined, { build: "site" }))).toEqual(text);
+      // The build the status bar shows leaves the page out: it isn't on the site there.
+      expect(plain(thisPageRoots(onSite, undefined, { build: "cloud" }))).toEqual(text);
+      // Only an http: or https: origin is opened.
+      const ftp = { ...onSite, about: { ...onSite.about, site: "ftp://docs.example.com" } };
+      expect(plain(thisPageRoots(ftp))).toEqual(text);
+      const fragment = thisPageRoots({
+        ...onSite,
+        about: {
+          ...onSite.about,
+          path: "_setup.md",
+          fragment: true,
+          type: null,
+          address: null,
+          markdownAddress: null,
+        },
+      });
+      expect(plain(fragment)).toEqual([
+        { label: "Address", value: "only where it's included", link: false, acts: false },
+      ]);
+    });
   });
 
   describe("while review is on", () => {
@@ -1269,6 +1359,7 @@ describe("This page's items, as its webview draws them", () => {
       type: "page",
       address: "/keys/",
       markdownAddress: null,
+      site: null,
       description: null,
       review: null,
       availability: null,
@@ -1355,6 +1446,7 @@ describe("This page's head, its notices, and its badge", () => {
     type: "reference",
     address: "/reference/config/",
     markdownAddress: null,
+    site: null,
     description: null,
     review: null,
     availability: null,

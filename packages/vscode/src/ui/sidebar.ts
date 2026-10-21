@@ -845,13 +845,15 @@ interface AboutRow {
 }
 
 /**
- * Where a row goes: a place in a file, a file opened beside the page, or a
- * command.
+ * Where a row goes: a place in a file, a file opened beside the page, a
+ * command, or an address on the published site, which the extension opens
+ * outside VS Code.
  */
 type RowTarget =
   | { kind: "place"; uri: string; range: LspRange }
   | { kind: "beside"; uri: string }
-  | { kind: "command"; command: string; title: string };
+  | { kind: "command"; command: string; title: string }
+  | { kind: "site"; url: string };
 
 /** VS Code's diagnostics for the page, by how loudly they speak. */
 export interface ProblemCounts {
@@ -866,7 +868,16 @@ export interface ThisPageContext {
   uri?: string | undefined;
   /** Its problems, as the Problems panel counts them. */
   problems?: ProblemCounts | undefined;
+  /**
+   * The build the status bar shows, by the name `builds` gives it
+   * (`site@3.4` for a line): a page it leaves out isn't on the site there.
+   */
+  build?: string | undefined;
 }
+
+/** What an Address or Markdown row that opens the published site says on hover. */
+export const ON_THE_SITE =
+  "Open on the site: the published site, which may not have this branch's changes yet";
 
 /** The command a Builds row runs: the build picker. */
 export const SWITCH_BUILD = "ascribe.switchBuild";
@@ -918,6 +929,7 @@ export function thisPageRoots(
 ): ThisPageNode[] {
   const { about } = page;
   if (!about) return [];
+  const live = onTheSite(about, context.build);
   const rows: AboutRow[] = [
     { label: "Title", value: about.title ?? basename(about.path), tooltip: about.path },
     {
@@ -935,7 +947,7 @@ export function thisPageRoots(
           value: "only where it's included",
           tooltip: "A fragment has no address of its own",
         }
-      : { label: "Address", value: about.address ?? "", tooltip: "Its address on the site" },
+      : addressRow("Address", about.address ?? "", "Its address on the site", live),
   ];
   if (!about.fragment) {
     rows.push(
@@ -945,11 +957,12 @@ export function thisPageRoots(
             value: "not published",
             tooltip: "The project publishes no Markdown versions ([consumer] agents)",
           }
-        : {
-            label: "Markdown",
-            value: about.markdownAddress,
-            tooltip: "Its Markdown version's address, which agents read",
-          },
+        : addressRow(
+            "Markdown",
+            about.markdownAddress,
+            "Its Markdown version's address, which agents read",
+            live,
+          ),
     );
   }
   rows.push(...aboutRows(about, context.uri));
@@ -972,6 +985,37 @@ export function thisPageRoots(
     },
     { kind: "memos", heading: page.heading?.text, memos: page.memos },
   ];
+}
+
+/**
+ * The published site's origin, when an address of the page opens on it: the
+ * project names its site, with `http:` or `https:`, and the build shown
+ * doesn't leave the page out. A fragment has no address of its own.
+ */
+function onTheSite(about: PageAbout, build: string | undefined): string | undefined {
+  if (about.fragment || about.site === null) return undefined;
+  if (about.builds.some((b) => b.name === build && b.leftOut !== null)) return undefined;
+  try {
+    const { protocol, origin } = new URL(about.site);
+    return protocol === "http:" || protocol === "https:" ? origin : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * An Address or Markdown row: a link to the address on the published site,
+ * the address as shown appended to `site`, or the address as text without it.
+ */
+function addressRow(
+  label: string,
+  address: string,
+  tooltip: string,
+  site: string | undefined,
+): AboutRow {
+  return site === undefined || !address.startsWith("/")
+    ? { label, value: address, tooltip }
+    : { label, value: address, tooltip: ON_THE_SITE, opens: { kind: "site", url: site + address } };
 }
 
 /** About's rows past what the page is: each only when it has something to say. */
@@ -1546,6 +1590,7 @@ export function thisPageItems(
       dimmed: look.dimmed,
       warn: node.kind === "row" && node.row.warn === true,
       acts: acts(node),
+      link: node.kind === "row" && node.row.opens?.kind === "site",
       open: depth === 0 && look.expanded === true,
       children: children.map((child, i) => item(child, `${key}/${i}`, depth + 1)),
     };

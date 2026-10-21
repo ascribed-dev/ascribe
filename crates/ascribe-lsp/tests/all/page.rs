@@ -104,6 +104,7 @@ fn a_page_outside_any_heading_says_what_it_is_and_what_links_to_it() {
             "type": "page",
             "address": "/guide/",
             "markdownAddress": null,
+            "site": null,
             "description": null,
             "review": null,
             "availability": null,
@@ -178,6 +179,7 @@ fn a_fragment_has_no_address_and_its_headings_are_linked_through_its_includers()
             "type": null,
             "address": null,
             "markdownAddress": null,
+            "site": null,
             "description": null,
             "review": null,
             "availability": null,
@@ -317,4 +319,9 @@ fn a_project_that_publishes_markdown_versions_gives_their_address() {
     );
     assert_eq!(answer["about"]["address"], "/guide/");
     assert_eq!(answer["about"]["markdownAddress"], "/guide.md");
+    // The site they're on, which the editor opens them on.
+    assert_eq!(answer["about"]["site"], "https://docs.example.com");
+    // A fragment has no address of its own, so no site either.
+    let answer = page(&mut client, &f, "_setup.md", at(SETUP, "Run it"));
+    assert_eq!(answer["about"]["site"], Value::Null);
 }

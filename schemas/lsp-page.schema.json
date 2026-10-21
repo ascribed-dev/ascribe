@@ -195,6 +195,13 @@
           ],
           "description": "When it's due for review, when its type gives a field the\nreview-date role and the page has a date in it."
         },
+        "site": {
+          "description": "The project's published site, its origin (`[consumer] site`), which\nthe addresses are on: `null` when the project names none, and for a\nfragment.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "template": {
           "anyOf": [
             {
@@ -229,6 +236,7 @@
         "type",
         "address",
         "markdownAddress",
+        "site",
         "description",
         "review",
         "availability",

@@ -107,6 +107,10 @@ pub struct PageAbout {
     /// project publishes one (`[consumer] agents = true`); `null` otherwise,
     /// and for a fragment.
     pub markdown_address: Option<String>,
+    /// The project's published site, its origin (`[consumer] site`), which
+    /// the addresses are on: `null` when the project names none, and for a
+    /// fragment.
+    pub site: Option<String>,
     /// Its description, when its type gives a field the description role;
     /// `null` for a fragment.
     pub description: Option<PageDescription>,
@@ -346,6 +350,7 @@ fn about(ctx: &Ctx, file: &FileIndex, rows: &Rows) -> PageAbout {
             .as_ref()
             .filter(|_| ctx.model.consumer.agents)
             .map(|r| r.markdown_url(&file.path)),
+        site: ctx.model.consumer.site.clone().filter(|_| !fragment),
         description: rows.description.clone(),
         review: rows.review.clone(),
         availability: rows.availability.clone(),

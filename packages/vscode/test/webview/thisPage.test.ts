@@ -150,6 +150,7 @@ function item(key: string, kind: ViewItem["kind"], label: string, more: Partial<
     dimmed: false,
     warn: false,
     acts: false,
+    link: false,
     open: false,
     children: [],
     ...more,
@@ -340,6 +341,58 @@ describe("This page's webview", () => {
     await expect(
       view.page.locator(".row .label", { hasText: "Title" }).getAttribute("title"),
     ).resolves.toBe("keys.md");
+  });
+
+  it("draws an address on the published site as a link, whose choice asks the extension to open it", async () => {
+    const view = await open();
+    const tooltip =
+      "Open on the site: the published site, which may not have this branch's changes yet";
+    await draw(view, 4, {
+      ...sections(),
+      sections: [
+        item("about", "section", "About", {
+          icon: "info",
+          open: true,
+          children: [
+            item("about/0", "row", "Address", {
+              description: "/keys/",
+              tooltip,
+              acts: true,
+              link: true,
+            }),
+            item("about/1", "row", "Markdown", {
+              description: "/keys.md",
+              tooltip,
+              acts: true,
+              link: true,
+            }),
+            item("about/2", "row", "Type", { description: "page" }),
+          ],
+        }),
+      ],
+    });
+    const address = view.page.getByRole("link", { name: "Address: /keys/" });
+    await expect(address.count()).resolves.toBe(1);
+    await expect(view.page.getByRole("link", { name: "Markdown: /keys.md" }).count()).resolves.toBe(
+      1,
+    );
+    // It says where it goes, and that the site may not have this branch yet.
+    await expect(address.getAttribute("title")).resolves.toBe(tooltip);
+    // It's drawn as a link, with the external link's icon: it leaves VS Code.
+    await expect(address.getAttribute("class")).resolves.toBe("link");
+    await expect(address.locator(".codicon-link-external").count()).resolves.toBe(1);
+    // Choosing it asks the extension, and the webview goes nowhere.
+    const from = view.posted.length;
+    const before = view.page.url();
+    await address.click();
+    await expect(view.next("open", from)).resolves.toEqual({
+      type: "open",
+      seq: 4,
+      key: "about/0",
+    });
+    expect(view.page.url()).toBe(before);
+    // A row without the site is text, not a link.
+    await expect(view.page.getByRole("link").count()).resolves.toBe(2);
   });
 
   it("chooses a row with the keyboard, and gives the focus back with Escape", async () => {
