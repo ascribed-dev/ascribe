@@ -227,14 +227,12 @@ pub(crate) fn settings_now(now: &ModelNow) -> SettingsResult {
 }
 
 /// `setSetting`: `args.table` and `args.key` name a setting the file sets,
-/// and `args.value` is its new value, of its kind. `version` is the version
-/// of `ascribe.toml` the setting was shown from.
-pub(crate) fn set_setting(
-    now: &ModelNow,
-    args: &Map<String, Json>,
-    version: Option<i32>,
-) -> EditResult {
-    match plan(now, args, version) {
+/// `args.value` is its new value, of its kind, and `args.shown` is the
+/// `version` of the answer the setting was shown from: a number, or `null`
+/// for the disk. It's refused for any other version than `ascribe.toml`'s
+/// now, a buffer's for the disk's or the disk's for a buffer's included.
+pub(crate) fn set_setting(now: &ModelNow, args: &Map<String, Json>) -> EditResult {
+    match plan(now, args) {
         Ok(edit) => EditResult::Edit { edit, select: None },
         Err(error) => EditResult::Failed { error },
     }
@@ -243,14 +241,19 @@ pub(crate) fn set_setting(
 // `Uri` hashes by its text; the map is built once and never mutated through
 // a key.
 #[allow(clippy::mutable_key_type)]
-fn plan(
-    now: &ModelNow,
-    args: &Map<String, Json>,
-    version: Option<i32>,
-) -> Result<WorkspaceEdit, String> {
-    if let (Some(seen), Some(now)) = (version, now.version)
-        && seen != now
-    {
+fn plan(now: &ModelNow, args: &Map<String, Json>) -> Result<WorkspaceEdit, String> {
+    let seen = match args.get("shown") {
+        Some(Json::Null) => None,
+        Some(Json::Number(n)) if n.as_i64().is_some_and(|n| i32::try_from(n).is_ok()) => {
+            n.as_i64().and_then(|n| i32::try_from(n).ok())
+        }
+        _ => {
+            return Err(
+                "`shown` must be the version the setting was shown from, or null.".to_owned(),
+            );
+        }
+    };
+    if seen != now.version {
         return Err(
             "`ascribe.toml` changed after the setting was shown. Choose the value again."
                 .to_owned(),

@@ -49,7 +49,9 @@ fn setting<'a>(answer: &'a Value, table: &str, key: &str) -> &'a Value {
         .unwrap_or_else(|| panic!("no [{table}] {key}"))
 }
 
-fn set(client: &mut Client, fixture: &Fixture, key: &str, value: Value, version: i32) -> Value {
+/// Sets `[consumer] key` to `value`, as shown from the answer for `shown`:
+/// a buffer's version, or `null` for the disk.
+fn set(client: &mut Client, fixture: &Fixture, key: &str, value: Value, shown: Value) -> Value {
     let config = fixture.path("ascribe.toml");
     client
         .request(
@@ -58,8 +60,7 @@ fn set(client: &mut Client, fixture: &Fixture, key: &str, value: Value, version:
                 "textDocument": { "uri": uri(&config).as_str() },
                 "range": { "start": { "line": 0, "character": 0 }, "end": { "line": 0, "character": 0 } },
                 "action": "setSetting",
-                "args": { "table": "consumer", "key": key, "value": value },
-                "version": version,
+                "args": { "table": "consumer", "key": key, "value": value, "shown": shown },
             }),
         )
         .response_result
@@ -158,7 +159,13 @@ fn setting_a_value_changes_one_line_and_the_answer_follows_the_buffer() {
     client.settle();
     assert_eq!(settings(&mut client, &fixture)["version"], 1);
 
-    let answer = set(&mut client, &fixture, "trailing-slash", json!("never"), 1);
+    let answer = set(
+        &mut client,
+        &fixture,
+        "trailing-slash",
+        json!("never"),
+        json!(1),
+    );
     let after = applied(MODEL, &answer);
     assert_eq!(
         changed_lines(MODEL, &after),
@@ -193,10 +200,109 @@ fn an_edit_for_an_older_version_is_refused() {
     let mut client = Client::start(&fixture.root());
     client.open(&config, 4, MODEL);
     client.settle();
-    let answer = set(&mut client, &fixture, "trailing-slash", json!("never"), 3);
+    let answer = set(
+        &mut client,
+        &fixture,
+        "trailing-slash",
+        json!("never"),
+        json!(3),
+    );
     assert_eq!(
         answer["error"],
         "`ascribe.toml` changed after the setting was shown. Choose the value again."
+    );
+}
+
+#[test]
+fn an_edit_shown_from_the_disk_is_refused_once_the_file_is_open() {
+    let fixture = fixture();
+    let config = fixture.path("ascribe.toml");
+    let mut client = Client::start(&fixture.root());
+    client.settle();
+    assert_eq!(settings(&mut client, &fixture)["version"], Value::Null);
+    // Opened and typed in after the tab drew the disk's answer.
+    client.open(
+        &config,
+        1,
+        &MODEL.replace(r#"base-path = "/""#, r#"base-path = "/doc""#),
+    );
+    client.settle();
+    let answer = set(
+        &mut client,
+        &fixture,
+        "trailing-slash",
+        json!("never"),
+        Value::Null,
+    );
+    assert_eq!(
+        answer["error"],
+        "`ascribe.toml` changed after the setting was shown. Choose the value again."
+    );
+}
+
+#[test]
+fn an_edit_shown_from_a_buffer_is_refused_once_the_file_is_closed() {
+    let fixture = fixture();
+    let config = fixture.path("ascribe.toml");
+    let mut client = Client::start(&fixture.root());
+    client.open(
+        &config,
+        2,
+        &MODEL.replace(r#"base-path = "/""#, r#"base-path = "/doc""#),
+    );
+    client.settle();
+    assert_eq!(settings(&mut client, &fixture)["version"], 2);
+    // Closed without saving: the disk is what the file is now.
+    client.close(&config);
+    client.settle();
+    let answer = set(
+        &mut client,
+        &fixture,
+        "trailing-slash",
+        json!("never"),
+        json!(2),
+    );
+    assert_eq!(
+        answer["error"],
+        "`ascribe.toml` changed after the setting was shown. Choose the value again."
+    );
+    // From the disk's answer, it's set.
+    let answer = set(
+        &mut client,
+        &fixture,
+        "trailing-slash",
+        json!("never"),
+        Value::Null,
+    );
+    assert_eq!(
+        changed_lines(MODEL, &applied(MODEL, &answer)),
+        vec![r#"trailing-slash = "never" # as Astro's"#.to_owned()]
+    );
+}
+
+#[test]
+fn an_edit_must_say_what_it_was_shown_from() {
+    let fixture = fixture();
+    let config = fixture.path("ascribe.toml");
+    let mut client = Client::start(&fixture.root());
+    client.open(&config, 1, MODEL);
+    client.settle();
+    let answer = client
+        .request(
+            "ascribe/edit",
+            json!({
+                "textDocument": { "uri": uri(&config).as_str() },
+                "range": { "start": { "line": 0, "character": 0 }, "end": { "line": 0, "character": 0 } },
+                "action": "setSetting",
+                "args": { "table": "consumer", "key": "trailing-slash", "value": "never" },
+                "version": 1,
+            }),
+        )
+        .response_result
+        .expect("an answer");
+    assert_eq!(
+        answer["error"],
+        "`shown` must be the version the setting was shown from, or null."
     );
 }
 
@@ -207,7 +313,7 @@ fn a_value_the_model_refuses_is_set_and_its_problem_shows_under_it() {
     let mut client = Client::start(&fixture.root());
     client.open(&config, 1, MODEL);
     client.settle();
-    let answer = set(&mut client, &fixture, "base-path", json!("docs"), 1);
+    let answer = set(&mut client, &fixture, "base-path", json!("docs"), json!(1));
     let after = applied(MODEL, &answer);
     assert_eq!(
         changed_lines(MODEL, &after),
@@ -228,7 +334,7 @@ fn a_value_the_model_refuses_is_set_and_its_problem_shows_under_it() {
     );
 
     // And it's set back from the file as it is, though the model doesn't load.
-    let back = set(&mut client, &fixture, "base-path", json!("/"), 2);
+    let back = set(&mut client, &fixture, "base-path", json!("/"), json!(2));
     assert_eq!(applied(&after, &back), MODEL);
 }
 
@@ -240,19 +346,31 @@ fn a_setting_is_checked_against_the_registry_and_its_kind() {
     client.open(&config, 1, MODEL);
     client.settle();
     assert_eq!(
-        set(&mut client, &fixture, "trailing-slash", json!(true), 1)["error"],
+        set(
+            &mut client,
+            &fixture,
+            "trailing-slash",
+            json!(true),
+            json!(1)
+        )["error"],
         "`[consumer] trailing-slash` takes a string."
     );
     assert_eq!(
-        set(&mut client, &fixture, "no-such-key", json!("x"), 1)["error"],
+        set(&mut client, &fixture, "no-such-key", json!("x"), json!(1))["error"],
         "`[consumer] no-such-key` isn't a setting Project Settings changes."
     );
     assert_eq!(
-        set(&mut client, &fixture, "slugger", json!("github"), 1)["error"],
+        set(&mut client, &fixture, "slugger", json!("github"), json!(1))["error"],
         "`ascribe.toml` doesn't set `[consumer] slugger`. Add it to the file by hand."
     );
     // The value it has already: nothing to change.
-    let same = set(&mut client, &fixture, "trailing-slash", json!("always"), 1);
+    let same = set(
+        &mut client,
+        &fixture,
+        "trailing-slash",
+        json!("always"),
+        json!(1),
+    );
     assert_eq!(applied(MODEL, &same), MODEL);
 }
 

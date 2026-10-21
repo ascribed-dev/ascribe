@@ -7,7 +7,8 @@
 // the editor has. The server says which version of `ascribe.toml`'s open
 // document it read, or that it read the disk; an answer for any other text
 // is dropped and asked for again. A change the tab makes names the version it
-// was shown from, and the server refuses it for any other. So a value typed
+// was shown from, and the server refuses it for any other; the tab applies
+// the server's edit only if the document is still at that version. So a value typed
 // in the file, an edit from the tab, and Undo all reach the tab the same way:
 // the document changes, and the tab asks.
 
@@ -86,6 +87,35 @@ export function settingsAnswer(result: SettingsResult): SettingsAnswer {
  */
 export function inStep(answered: number | null, open: number | undefined): boolean {
   return open === undefined ? answered === null : answered === open;
+}
+
+/** How a change from the tab ended. */
+export type SetOutcome =
+  /** The edit was applied, or VS Code refused it (`false`). */
+  | { type: "applied"; ok: boolean }
+  /** The server refused it, in its words. */
+  | { type: "refused"; error: string }
+  /** The file changed while the server planned it, so it wasn't applied. */
+  | { type: "stale" };
+
+/**
+ * Asks for a change shown from `shown`, and applies it only when the open
+ * document is still the text it was planned for: checked again when the
+ * answer comes back, in the same tick as `apply`, since typing in the file
+ * while the server planned it would leave the edit's ranges on other text.
+ * VS Code records the document's version when `apply` is called, so nothing
+ * comes between the check and the edit.
+ */
+export async function setInStep<Edit>(
+  shown: number | null,
+  open: () => number | undefined,
+  request: () => Promise<{ edit: Edit } | { error: string }>,
+  apply: (edit: Edit) => PromiseLike<boolean>,
+): Promise<SetOutcome> {
+  const answer = await request();
+  if ("error" in answer) return { type: "refused", error: answer.error };
+  if (!inStep(shown, open())) return { type: "stale" };
+  return { type: "applied", ok: await apply(answer.edit) };
 }
 
 /** The value a `set` carries, when it's one the setting takes; `undefined` otherwise. */

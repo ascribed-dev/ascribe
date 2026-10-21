@@ -637,7 +637,7 @@ fn edit_request(shared: &Shared, request: &Request) -> Result<serde_json::Value,
     if params.action == crate::edit::EditAction::SetSetting {
         let now = shared.lock().model_now(&uri);
         let result = now
-            .map(|now| crate::settings::set_setting(&now, &params.args, params.version))
+            .map(|now| crate::settings::set_setting(&now, &params.args))
             .unwrap_or_default();
         return to_json(request, result);
     }

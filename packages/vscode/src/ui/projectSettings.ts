@@ -30,6 +30,7 @@ import {
   checkSettingsMessage,
   checkedValue,
   inStep,
+  setInStep,
   settingId,
   settingsAnswer,
 } from "./settingsModel.js";
@@ -274,6 +275,10 @@ class SettingsPanel implements vscode.Disposable {
       }
       await new Promise((resolve) => setTimeout(resolve, 50 * (tries + 1)));
     }
+    // Still out of step: the answer drawn is for older text, so it's put
+    // away until the next change to the document asks again.
+    this.result = undefined;
+    this.show({ message: "Reading ascribe.toml…", settings: [] });
   }
 
   private show(answer: SettingsAnswer): void {
@@ -323,20 +328,34 @@ class SettingsPanel implements vscode.Disposable {
     const checked = shown?.editable ? checkedValue(shown, value) : undefined;
     if (!entry || checked === undefined) return;
     try {
-      const edit = await this.server.requestEdit("ascribe/edit", {
-        textDocument: { uri: this.config.toString() },
-        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-        action: "setSetting",
-        args: { table: entry.table, key: entry.key, value: checked },
-        version: result.version ?? undefined,
-      });
-      if ("error" in edit) {
-        void vscode.window.showErrorMessage(`Ascribe: ${edit.error}`);
-        this.refresh();
-        return;
-      }
-      if (!(await vscode.workspace.applyEdit(edit.edit))) {
-        void vscode.window.showErrorMessage(`Ascribe: ascribe.toml couldn't be changed.`);
+      const outcome = await setInStep(
+        result.version,
+        () => this.openVersion(),
+        () =>
+          this.server.requestEdit("ascribe/edit", {
+            textDocument: { uri: this.config.toString() },
+            range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+            action: "setSetting",
+            args: { table: entry.table, key: entry.key, value: checked, shown: result.version },
+          }),
+        (edit) => vscode.workspace.applyEdit(edit),
+      );
+      switch (outcome.type) {
+        case "refused":
+          void vscode.window.showErrorMessage(`Ascribe: ${outcome.error}`);
+          this.refresh();
+          return;
+        case "stale":
+          void vscode.window.showErrorMessage(
+            "Ascribe: `ascribe.toml` changed while the setting was being set. Choose the value again.",
+          );
+          this.refresh();
+          return;
+        case "applied":
+          if (!outcome.ok) {
+            void vscode.window.showErrorMessage(`Ascribe: ascribe.toml couldn't be changed.`);
+          }
+          return;
       }
     } catch (error) {
       this.server.reportFeatureError("Project Settings", error);

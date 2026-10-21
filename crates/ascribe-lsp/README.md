@@ -406,7 +406,7 @@ The operations, where each applies, and its arguments (`?` is optional):
 | `movePage` | Any of the project's files, as `newPage` | `page` (a content path), `before?` (a page of the same section; none for the end) | The section's `pages`, listing its pages as they stood with `page` before `before`; its table is added, and its siblings', when the file doesn't list it |
 | `placePage` | Any of the project's files, as `newPage` | `page` | `page` at the end of its section's `pages`, which leaves it out |
 | `setSectionLabel` | Any of the project's files, as `newPage` | `folder`, `label?` (none or empty for the default) | The section's `label` |
-| `setSetting` | Any of the project's files, as `newPage`; `version` is `ascribe.toml`'s, as [`ascribe/settings`](#project-settings-ascribesettings) answered | `table` (a dotted path, `consumer`), `key`, `value` (a boolean, a whole number, or a string, as the setting's kind takes) | The value where `ascribe.toml` writes it, as it is now, and nothing else; refused for a setting it doesn't write. Not refused for a problem the model then has, which `ascribe/settings` shows under the setting |
+| `setSetting` | Any of the project's files, as `newPage` | `table` (a dotted path, `consumer`), `key`, `value` (a boolean, a whole number, or a string, as the setting's kind takes), `shown` (the `version` the [`ascribe/settings`](#project-settings-ascribesettings) answer it was shown from had: a number, or `null` for the disk) | The value where `ascribe.toml` writes it, as it is now, and nothing else; refused for a setting it doesn't write, and when `shown` isn't the version `ascribe.toml` has now, a buffer's for the disk's and the disk's for a buffer's included. Not refused for a problem the model then has, which `ascribe/settings` shows under the setting |
 | `nextPlaceholder` | A page of a type with a template | | Nothing: `select` is the next thing the template left to fill in after `range`, or the first when none is after it |
 | `addMemo` | Anywhere in a page | | A new memo file in `memos/`, its `documentChanges` creating it and giving it its text: `about` is the innermost section with an id at the cursor, as `page.md#id`, or the page above the first heading; `quote` is the selection, its whitespace runs as one space, or the first line of the block at the cursor, left out on a heading or when the memo wouldn't find it. Named from the quote's first words, or the heading's id, never over a file. `select` is the empty line for the memo's text. Refused when `memos/` is in the content root |
 | `addPersonalMemo` | Anywhere in a page | | As `addMemo`, in `.ascribe/memos/` |
@@ -575,8 +575,8 @@ TypeScript type is `SettingsResult` in `packages/vscode/src/shapes.ts`
   `[checks]` sets.
 
 `ascribe/edit`'s `setSetting` changes one, through `ModelFile` as the content
-model's actions do, from the same text: it's refused when the buffer's
-version isn't the `version` it's sent with. It's answered in `src/settings.rs`.
+model's actions do, from the same text: it's refused when `ascribe.toml`'s
+version now, or `null` for the disk, isn't the `shown` it's sent with. It's answered in `src/settings.rs`.
 
 ## What's known about a page: `ascribe/page`
 

@@ -5,6 +5,7 @@ import {
   checkedValue,
   inStep,
   SHOWN,
+  setInStep,
   settingsAnswer,
 } from "../../src/ui/settingsModel.js";
 import type { SettingView } from "../../src/webview/settingsProtocol.js";
@@ -99,6 +100,44 @@ describe("the rule the tab keeps", () => {
     // The file was opened, or closed, while the server read it.
     expect(inStep(null, 1)).toBe(false);
     expect(inStep(5, undefined)).toBe(false);
+  });
+
+  it("applies a change only to the text it was planned for", async () => {
+    let open: number | undefined = 4;
+    const applied: string[] = [];
+    const apply = (edit: string) => {
+      applied.push(edit);
+      return Promise.resolve(true);
+    };
+    expect(
+      await setInStep(
+        4,
+        () => open,
+        () => Promise.resolve({ edit: "a" }),
+        apply,
+      ),
+    ).toEqual({ type: "applied", ok: true });
+    // Typed in the file while the server planned it.
+    const typed = () => {
+      open = 5;
+      return Promise.resolve({ edit: "b" });
+    };
+    expect(await setInStep(4, () => open, typed, apply)).toEqual({ type: "stale" });
+    // Closed while the server planned it: the disk isn't the buffer it was shown from.
+    const closed = () => {
+      open = undefined;
+      return Promise.resolve({ edit: "c" });
+    };
+    expect(await setInStep(5, () => open, closed, apply)).toEqual({ type: "stale" });
+    expect(
+      await setInStep(
+        null,
+        () => open,
+        () => Promise.resolve({ error: "No." }),
+        apply,
+      ),
+    ).toEqual({ type: "refused", error: "No." });
+    expect(applied).toEqual(["a"]);
   });
 
   it("sends a value only of the setting's kind", () => {
