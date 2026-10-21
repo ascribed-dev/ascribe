@@ -170,6 +170,43 @@ fn a_deleted_file_is_missing_and_one_created_again_is_shown() {
 }
 
 #[test]
+fn deleting_the_folder_the_code_is_in_checks_its_pages_again() {
+    let f = tested();
+    let page = f.path("docs/index.md");
+    let fragment = f.path("docs/_greet.md");
+    let folder = f.path("code/examples");
+    let mut client = start(&f);
+    let saved = f.root().with_extension("saved");
+    copy_dir(&folder, &saved);
+    let before = client.notifications.len();
+
+    // A branch switch, or `rm -rf`: the watcher reports the folder alone.
+    std::fs::remove_dir_all(&folder).expect("rm -rf");
+    client.watched(&[(&folder, FileChangeType::DELETED)]);
+    client.settle();
+    for file in [&page, &fragment] {
+        assert!(
+            has(&client, file, "snippet-file-missing"),
+            "{file:?}: {:?}",
+            client.codes(file)
+        );
+    }
+    assert_eq!(
+        changed_since(&client, before),
+        [["again.md".to_owned(), "index.md".to_owned()]]
+    );
+
+    // And back, reported as the folder created.
+    copy_dir(&saved, &folder);
+    std::fs::remove_dir_all(&saved).expect("rm -rf");
+    client.watched(&[(&folder, FileChangeType::CREATED)]);
+    client.settle();
+    for file in [&page, &fragment] {
+        assert!(!has(&client, file, "snippet-file-missing"), "{file:?}");
+    }
+}
+
+#[test]
 fn a_burst_of_changes_checks_each_page_once() {
     let f = tested();
     let page = f.path("docs/index.md");

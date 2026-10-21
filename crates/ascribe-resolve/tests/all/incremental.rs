@@ -1244,6 +1244,27 @@ fn a_change_to_a_file_a_snippet_shows_reads_it_again_for_every_page_that_shows_i
 }
 
 #[test]
+fn deleting_the_folder_a_snippets_file_is_in_reads_it_again() {
+    let (mut inc, fs) = code_project();
+    fs.remove("code/app.py");
+    fs.remove("code/other.py");
+    // The watcher reports the folder, not each file in it.
+    let affected = inc
+        .apply([Change::AssetDeleted { path: path("code") }])
+        .unwrap();
+    assert_eq!(
+        affected.re_resolve,
+        set(&["index.md", "guide.md", "other.md"])
+    );
+    assert_eq!(shown_code(&inc, "index.md"), None);
+    // A folder whose name only starts as the file's reaches nothing.
+    let affected = inc
+        .apply([Change::AssetDeleted { path: path("cod") }])
+        .unwrap();
+    assert!(affected.is_empty());
+}
+
+#[test]
 fn a_change_to_a_file_no_snippet_shows_changes_nothing() {
     let (mut inc, fs) = code_project();
     fs.put("code/unshown.py", "changed\n");

@@ -1090,9 +1090,8 @@ impl Core {
 
     // -- Applying changes -----------------------------------------------------
 
-    /// Applies a batch to the project, and queues what it affects.
-    /// Applies changes to the project, and returns the pages whose resolved
-    /// form they may change ([`Affected::re_resolve`]).
+    /// Applies a batch to the project, queues what it affects, and returns
+    /// the pages whose resolved form it may change ([`Affected::re_resolve`]).
     fn apply(&mut self, changes: Vec<Change>, mirror: &[(RelPath, bool)]) -> BTreeSet<RelPath> {
         let Some(loaded) = self.loaded.as_mut() else {
             return BTreeSet::new();

@@ -429,7 +429,8 @@ fn fold(path: &RelPath) -> String {
 }
 
 /// The files with a `@snippet` that reads one of `changed`, paths from the
-/// project root: the file it shows, in any case, or its source's
+/// project root: the file it shows, in any case, or a folder it's in (a
+/// folder deleted is one change, not one per file in it), or its source's
 /// `ascribe.examples.toml` or a file in its observations' folder, which say
 /// what its example was tested with.
 fn showing(project: &Project, changed: &[&RelPath]) -> BTreeSet<RelPath> {
@@ -468,7 +469,13 @@ fn showing(project: &Project, changed: &[&RelPath]) -> BTreeSet<RelPath> {
                     || folders
                         .get(address.source.as_str())
                         .and_then(|folder| folder.join(&address.path).ok())
-                        .is_some_and(|path| keys.contains(&fold(&path)))
+                        .is_some_and(|path| {
+                            let path = fold(&path);
+                            keys.iter().any(|key| {
+                                path.strip_prefix(key.as_str())
+                                    .is_some_and(|rest| rest.is_empty() || rest.starts_with('/'))
+                            })
+                        })
             })
         })
         .map(|file| file.path.clone())
