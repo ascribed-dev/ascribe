@@ -5,7 +5,7 @@ import type { SearchPlace, SearchResult } from "../shapes.js";
 import type { ProjectBuilds } from "./projectBuilds.js";
 import { searchItems, searchPlaceholder, type SearchItem } from "./searchItems.js";
 
-export const SEARCH_COMMAND = "ascribe.search";
+const SEARCH_COMMAND = "ascribe.search";
 
 /** How long after the last keystroke the server is asked. */
 const DEBOUNCE_MS = 150;
