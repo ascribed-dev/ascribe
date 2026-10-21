@@ -593,7 +593,10 @@ export class SidebarViews implements vscode.Disposable {
       this.thisPage,
       this.pages,
       this.model,
-      vscode.window.onDidChangeActiveTextEditor(() => this.follow(false, true)),
+      vscode.window.onDidChangeActiveTextEditor((editor) => {
+        console.log(`[752 ${Date.now() % 1_000_000}] active editor ${editor?.document.uri.path}`);
+        this.follow(false, true);
+      }),
       vscode.window.onDidChangeTextEditorSelection(({ textEditor, selections }) => {
         const selection = selections[0];
         if (selection && textEditor.document.uri.toString() === this.pageAt?.uri.toString()) {
@@ -1445,6 +1448,7 @@ export class SidebarViews implements vscode.Disposable {
       return;
     }
     const node = this.thisPageView.isLatest(seq) ? this.pageNodes.get(key) : undefined;
+    console.log(`[752 ${Date.now() % 1_000_000}] chooseItem seq=${seq} key=${key} latest=${this.thisPageView.isLatest(seq)} node=${!!node}`);
     if (!node) return;
     const command = this.thisPage.command(node);
     if (command) {

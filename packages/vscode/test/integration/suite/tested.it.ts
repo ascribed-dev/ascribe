@@ -141,15 +141,19 @@ describe("a code file a page shows", () => {
     ] as const) {
       // The reader clicks in the view, and chooses the row with the keyboard.
       await vscode.commands.executeCommand("ascribe.thisPage.focus");
+      console.log(`[752 ${Date.now() % 1_000_000}] test: probe ${key}`);
       await view.probe({ open: true, focus: key, press: true });
+      console.log(`[752 ${Date.now() % 1_000_000}] test: probed ${key}`);
       const beside = await waitFor(`${file.path} beside the page`, async () =>
         vscode.window.visibleTextEditors.find(
           (editor) => editor.document.uri.toString() === file.toString(),
         ),
       );
       assert.equal(beside.viewColumn, vscode.ViewColumn.Two);
+      console.log(`[752 ${Date.now() % 1_000_000}] test: beside ${key}`);
       await view.whenSettled();
       const after = await view.probe({});
+      console.log(`[752 ${Date.now() % 1_000_000}] test: after ${key} focused=${after.report.focused}`);
       assert.equal(
         after.report.sections.find((section) => section.key === "about")?.items[0],
         title,

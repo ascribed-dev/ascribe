@@ -105,6 +105,9 @@ export class WebviewView<Answer, Report> implements vscode.WebviewViewProvider, 
   /** Sends an answer, now if the webview is ready, and otherwise when it is. */
   show(answer: Answer): void {
     const message = this.handshake.answer(answer);
+    console.log(
+      `[752 ${Date.now() % 1_000_000}] ${this.id} answer seq=${this.handshake.latest?.seq} sent=${!!message} from ${new Error().stack?.split("\n").slice(2, 5).map((l) => l.trim()).join(" < ")}`,
+    );
     if (message) void this.view?.webview.postMessage(message);
   }
 
@@ -161,6 +164,11 @@ export class WebviewView<Answer, Report> implements vscode.WebviewViewProvider, 
   private receive(value: unknown): void {
     const message = checkViewMessage(value, this.report);
     if (!message) return;
+    const said = message as { type: string; seq?: number; key?: string; report?: { trace?: string[]; focused?: unknown; probed?: number } };
+    console.log(
+      `[752 ${Date.now() % 1_000_000}] ${this.id} got ${said.type} seq=${said.seq} key=${said.key} latest=${this.handshake.latest?.seq} focused=${said.report?.focused} probed=${said.report?.probed}`,
+    );
+    for (const line of said.report?.trace ?? []) console.log(`[752]   webview: ${line}`);
     switch (message.type) {
       case "ready": {
         const answer = this.handshake.readied();

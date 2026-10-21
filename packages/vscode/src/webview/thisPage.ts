@@ -83,9 +83,10 @@ function chooser(item: ViewItem, channel: ViewChannel<ThisPageReport>): HTMLButt
   const button = element("button");
   button.type = "button";
   button.dataset["key"] = item.key;
-  button.addEventListener("click", () =>
-    channel.post({ type: "open", seq: channel.seq, key: item.key }),
-  );
+  button.addEventListener("click", () => {
+    trace(`click ${item.key} seq=${channel.seq}`);
+    channel.post({ type: "open", seq: channel.seq, key: item.key });
+  });
   return button;
 }
 
@@ -278,6 +279,15 @@ function patch(into: Element, fresh: readonly Node[]): void {
   for (const extra of drawn.slice(fresh.length)) extra.remove();
 }
 
+// DIAG #752: a trace the extension prints.
+const diag: string[] = [];
+function trace(line: string): void {
+  const active = document.activeElement;
+  diag.push(
+    `${Math.round(performance.now())} ${line} | active=${active?.tagName ?? "-"}:${focusedKey()} hasFocus=${document.hasFocus()}`,
+  );
+}
+
 const scroller = document.scrollingElement ?? document.documentElement;
 
 /** The key of what has the focus: an item's, or its section's for a header. */
@@ -353,12 +363,14 @@ function report(answer: ThisPageAnswer): ThisPageReport {
     scroll: Math.round(scroller.scrollTop),
     probed,
     violations: seenViolations(),
-  };
+    trace: diag.splice(0),
+  } as ThisPageReport;
 }
 
 function draw(answer: ThisPageAnswer, channel: ViewChannel<ThisPageReport>): ThisPageReport {
   const focused = focusedKey();
   const scroll = scroller.scrollTop;
+  trace(`draw seq=${channel.seq} before`);
   patch(
     view,
     answer.message !== null
@@ -373,6 +385,7 @@ function draw(answer: ThisPageAnswer, channel: ViewChannel<ThisPageReport>): Thi
     focusKey(focused.split("/")[0] ?? focused);
   }
   scroller.scrollTop = scroll;
+  trace(`draw seq=${channel.seq} after, focused was ${focused}`);
   shown = answer;
   return report(answer);
 }
@@ -385,7 +398,8 @@ window.addEventListener("message", (event: MessageEvent<unknown>) => {
   if (probe.open) {
     for (const details of view.querySelectorAll("details")) details.open = true;
   }
-  if (typeof probe.focus === "string") focusKey(probe.focus);
+  trace(`probe ${probe.probe} seq=${channel.seq} focus=${probe.focus} press=${probe.press}`);
+  if (typeof probe.focus === "string") trace(`focusKey(${probe.focus}) = ${focusKey(probe.focus)}`);
   if (typeof probe.scroll === "number") scroller.scrollTop = probe.scroll;
   if (probe.press && document.activeElement instanceof HTMLElement) {
     document.activeElement.click();
