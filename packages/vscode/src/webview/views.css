@@ -5,9 +5,11 @@
    the color test reads it, and a color written here fails it. */
 @import "@vscode/codicons/dist/codicon.css";
 
-:root {
-  color-scheme: light dark;
-}
+/* The root's color scheme stays `normal`, as VS Code's host page leaves its
+   own: when a frame's scheme differs from its embedder's, Chromium paints an
+   opaque backdrop behind the frame, a gray in a dark one, and the sidebar no
+   longer shows through the transparent body. A control whose native parts
+   follow the scheme takes it below, from the theme's class on the body. */
 
 body {
   margin: 0;
@@ -306,6 +308,17 @@ summary:hover {
   color: var(--vscode-dropdown-foreground);
   background: var(--vscode-dropdown-background);
   font: inherit;
+}
+
+/* Its dropdown and arrow are drawn natively, in the theme's scheme. */
+body.vscode-dark .build-switch,
+body.vscode-high-contrast:not(.vscode-high-contrast-light) .build-switch {
+  color-scheme: dark;
+}
+
+body.vscode-light .build-switch,
+body.vscode-high-contrast-light .build-switch {
+  color-scheme: light;
 }
 
 /* Actions' groups: Check, Write, and Review and agents. */
