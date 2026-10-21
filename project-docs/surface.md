@@ -801,8 +801,6 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `agents/copilot.md` | GitHub Copilot | how-to |
 | `agents/hooks.md` | Check an agent's edits with hooks | how-to |
 | `agents/index.md` | Agents | how-to |
-| `agents/index.md` | Agents | how-to |
-| `agents/index.md` | Agents | how-to |
 | `agents/instructions.md` | Write the agent files | how-to |
 | `agents/loop.md` | Work with an agent | how-to |
 | `agents/mcp.md` | Set up the MCP server | how-to |
@@ -861,8 +859,6 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `editor/problems.md` | Problems and fixes | reference |
 | `editor/review.md` | Review in the preview | reference |
 | `editor/settings.md` | Editor workspaces, settings, and commands | reference |
-| `editor/sidebar.md` | The Ascribe sidebar | reference |
-| `editor/sidebar.md` | The Ascribe sidebar | reference |
 | `editor/sidebar.md` | The Ascribe sidebar | reference |
 | `editor/writing.md` | Writing in the editor | reference |
 | `examples/docs-repository.md` | Keep the docs in another repository | how-to |
