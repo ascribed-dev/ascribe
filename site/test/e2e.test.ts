@@ -525,7 +525,7 @@ test("the landing page reads without a script", async () => {
     "Checked",
     "Reviewed as pages",
     "npm install --save-dev @ascribed/cli",
-    "Where it’s going",
+    "Early, and open source",
   ]) {
     expect(await page.getByText(text, { exact: true }).first().isVisible(), text).toBe(true);
   }
