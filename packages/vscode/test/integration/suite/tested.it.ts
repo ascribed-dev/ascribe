@@ -141,12 +141,34 @@ describe("a code file a page shows", () => {
     ] as const) {
       // The reader clicks in the view, and chooses the row with the keyboard.
       await vscode.commands.executeCommand("ascribe.thisPage.focus");
-      await view.probe({ open: true, focus: key, press: true });
-      const beside = await waitFor(`${file.path} beside the page`, async () =>
-        vscode.window.visibleTextEditors.find(
-          (editor) => editor.document.uri.toString() === file.toString(),
-        ),
-      );
+      const pressed = await view.probe({ open: true, focus: key, press: true });
+      // TEMPORARY (#729): what the test sees when nothing opens.
+      const seen = () =>
+        JSON.stringify({
+          key,
+          pressed: {
+            seq: pressed.seq,
+            focused: pressed.report.focused,
+            hasFocus: pressed.report.hasFocus,
+          },
+          drawn: view.drawn() && { seq: view.drawn()?.seq, focused: view.drawn()?.report.focused },
+          groups: vscode.window.tabGroups.all.map((group) => ({
+            column: group.viewColumn,
+            active: group.isActive,
+            tabs: group.tabs.map((tab) => tab.label),
+          })),
+          visible: vscode.window.visibleTextEditors.map((editor) => editor.document.uri.path),
+        });
+      const beside = await waitFor(
+        `${file.path} beside the page`,
+        async () =>
+          vscode.window.visibleTextEditors.find(
+            (editor) => editor.document.uri.toString() === file.toString(),
+          ),
+        10_000,
+      ).catch((error: unknown) => {
+        throw new Error(`${String(error)}: ${seen()}`);
+      });
       assert.equal(beside.viewColumn, vscode.ViewColumn.Two);
       await view.whenSettled();
       const after = await view.probe({});
