@@ -331,6 +331,9 @@ export class SidebarViews implements vscode.Disposable {
   private readonly projectChanged = new vscode.EventEmitter<ProjectServer | undefined>();
   /** The views moved to another project: the Project view follows them. */
   readonly onDidChangeProject = this.projectChanged.event;
+  private readonly inventoryChanged = new vscode.EventEmitter<void>();
+  /** The inventory was answered again, or let go: the Project view counts it. */
+  readonly onDidChangeInventory = this.inventoryChanged.event;
 
   /** Pages' items, made once for each inventory, so revealing one finds it. */
   private pagesNodes:
@@ -998,6 +1001,7 @@ export class SidebarViews implements vscode.Disposable {
     this.timers.clear();
     for (const disposable of this.disposables.splice(0)) disposable.dispose();
     this.projectChanged.dispose();
+    this.inventoryChanged.dispose();
   }
 
   /** Drags in Pages: sections and pages, dropped on each other. */
@@ -1179,6 +1183,20 @@ export class SidebarViews implements vscode.Disposable {
     return this.server;
   }
 
+  /** The inventory of the project the views show, once its server has answered. */
+  get projectInventory(): InventoryResult | undefined {
+    return this.inventoryFrom === this.server ? this.inventory : undefined;
+  }
+
+  /**
+   * Shows Pages with Orphans Only on, or Content model with Unused Only on:
+   * the lists the Project view's counts open.
+   */
+  async showOnly(view: "pages" | "model"): Promise<void> {
+    await this.filter(view, true);
+    await vscode.commands.executeCommand(`ascribe.${view}.focus`);
+  }
+
   /**
    * Shows a project chosen with Switch Project, starting its server if it
    * hasn't started. It's a jump, not a pin: the views stay on it until a
@@ -1213,6 +1231,7 @@ export class SidebarViews implements vscode.Disposable {
         this.inventory = undefined;
         this.inventoryFrom = undefined;
         this.inventoryAsked++;
+        this.inventoryChanged.fire();
       }
       this.soon("inventory");
     }
@@ -1265,6 +1284,7 @@ export class SidebarViews implements vscode.Disposable {
     if (asked !== this.inventoryAsked) return;
     this.inventory = result;
     this.inventoryFrom = result ? server : undefined;
+    this.inventoryChanged.fire();
     const name = server && result ? this.projects.name(server.project) : undefined;
     for (const tree of [this.pages, this.model]) {
       if (tree.view) tree.view.description = name ?? "";
