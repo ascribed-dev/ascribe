@@ -1,6 +1,6 @@
 # The Ascribe sidebar
 
-- **Project**: the project's language server and binary, and how many problems every build has, with when that was checked. It says when a change has made the count out of date, and **Check Every Build** brings it up to date. Its Actions build the project and sync its agent files, in the terminal.
+- **Project**: the project's language server and binary, and its health: the problems in every build, stale examples, overdue reviews, orphans, unused entries, and agent files out of date, each with when it was counted. Each count opens its list, and says when a change has made it out of date, with the action that brings it up to date. Its Actions build the project and sync its agent files, in the terminal.
 - **Review**, while review is on: the changed pages, their problems, and the comments you haven't submitted.
 - **This page**: the page you're on, headed by its title, type, and path, then its addresses, whether it's published, listed, due for review, over size, or unfinished, its problems, and what links to it or to the heading at the cursor. Only About starts open; open another section and it stays open on every page. A row that can warn says its state first, and the view's badge counts Health's things to do, so you see them with Health closed.
 - **Pages**: the project's pages in the navigation's sections, and its fragments. **Orphans Only**, in its title bar, lists only the pages nothing links to.
