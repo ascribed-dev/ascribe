@@ -4,135 +4,71 @@ title: "`ascribe.toml` format contract: checks, permalinks, and listing"
 description: "The normative contract for the content model's checks, permalinks, crawlers, listing, and defaults."
 ---
 
-Part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section.
+Part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. What these keys are for, with examples, is in the reference's [checks, permalinks, and listing](../../content-model/checks.md).
 
 ## 19. `[checks]`
 
-How loudly each check about the content's quality speaks. A diagnostic about whether the project is valid can't be named here: its severity is the registry's. The two forms a key's value takes are:
+Each key of `[checks]` other than `vale` and `links` is a check's slug, as the [diagnostics reference](../../checks/diagnostics.md) lists it, and its value is a level, `"off"`, `"advice"`, `"warning"`, or `"error"`, or a table, `[checks.<check>]`, with these keys and the check's own settings:
 
-```toml
-[checks]
-code-language-missing = "warning"     # a level
+@include: ../../_generated/content-model-checks.md
 
-[checks.page-size]                    # or a table: the level, and the check's own settings
-level = "off"
-limit = 40_000
-```
+A check's own settings are listed with the check in the [diagnostics reference](../../checks/diagnostics/content-checks.md). `page-size` and `image-large` take `limit`, and so does `memo-long` from ascribe 0.4.0.
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `<check>` | string or table | the check's own level | A check's slug, as the [diagnostics reference](../../checks/diagnostics.md) lists it. The value is a level: `"off"` (not reported), `"advice"`, `"warning"`, or `"error"`. Or it's a table with an optional `level` and the check's own settings, which the reference lists with the check; a table without `level` keeps the check's own level. |
+A level applies wherever the diagnostic is reported: by `ascribe check`, by `ascribe build`, and in the editor. `"off"` MUST NOT be reported, and advice MUST NOT fail `ascribe check`, with `--deny-warnings` or without.
 
-Only a check the diagnostics registry marks configurable can be named; the [diagnostics reference](../../checks/diagnostics/content-checks.md) lists them. The settings a check's table takes:
-
-| Check | Setting | Type | Default | Description |
-|---|---|---|---|---|
-| `page-size` | `limit` | integer | `50000` | The size, in characters of a page's plain Markdown in a build, at which the page is reported. It MUST be above 0. |
-| `image-large` | `limit` | integer or string | `"500 KB"` | The size over which an image file is reported: a whole number of bytes, or a number followed by `B`, `KB`, or `MB` (a kilobyte is 1,000 bytes, a megabyte 1,000,000), with or without a space. |
-| `memo-long` {available="ascribe 0.4.0"} | `limit` | integer | `2000` | The length, in characters of a memo file's text (SPEC §7.7), over which the memo is reported. It MUST be above 0. |
-
-The names `vale` and `links` are reserved: they're tables of settings for the tools Ascribe runs, not checks, and no check has either name. `vale` is §19.2, and `links` §19.3.
-
-A level changes how a diagnostic is reported everywhere: by `ascribe check` and `ascribe build`, and in the editor. Advice is shown, and never fails `ascribe check`, even with `--deny-warnings`; a check set to `off` isn't reported at all.
-
-**Rules** (§24.9): every key is a check's slug, with a did-you-mean suggestion for one that isn't (`model-unknown-key`); the check is configurable (`model-check-not-configurable`); a level is one of the four (`model-invalid-value`); a table has only `level` and the check's settings (`model-unknown-key`); a value is a string or a table, `page-size`'s and `memo-long`'s `limit` a whole number above 0, and `image-large`'s a size (`model-wrong-type`).
+**Rules** (§24.9): a key MUST be a check's slug, or `vale` or `links`, and an unknown one is reported with a did-you-mean suggestion (`model-unknown-key`). The check MUST be one the diagnostics registry marks configurable (`model-check-not-configurable`), and a level one of the four (`model-invalid-value`). A value MUST be a string or a table, and a table MUST have only `level` and the check's settings (`model-unknown-key`). `page-size`'s and `memo-long`'s `limit` MUST be an integer above 0, and `image-large`'s an integer number of bytes or a string of a number and `B`, `KB`, or `MB`, with or without a space between, where a kilobyte is 1,000 bytes and a megabyte 1,000,000 (`model-wrong-type`).
 
 ### 19.1 `[[intended]]`
 
-Acknowledges a review check's problem with a content model entry or an image as intended (SPEC §4.9): the problem isn't reported, and is counted and listed with the reason instead. Each table is one acknowledgement.
+Each `[[intended]]` table acknowledges one review check's problem with one content model entry or image (SPEC §4.9). The problem MUST NOT be reported, and MUST be counted and listed with the reason instead, in every build.
 
-@include: ../../_fragments/content-model/intended-example.md
+@include: ../../_generated/content-model-intended.md
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `check` | string | required | A check's slug. The registry gives it `next = "review"` and `place = "entry"`. |
-| `reason` | string | required | Why the problem is intended. Not empty. |
-| `phrase` | string | | A phrase's key, declared in `[phrases]`. |
-| `feature` | string | | A feature's key, declared in `[features]`. |
-| `image` | string | | An image's path under the content root. |
+An acknowledgement that covers nothing when every build is checked is advice (`intended-unused`), at its `[[intended]]` header, with a fix that removes the table. A glossary term is acknowledged with `@intended` in its section, and `term` here is `model-unknown-key`.
 
-Exactly one of `phrase`, `feature`, and `image`. A glossary term is a heading, acknowledged with `@intended` at the top of its section; `term` is `model-unknown-key`. The acknowledgement covers the check's problems that name that entry, in every build. One that covers nothing when every build is checked is advice (`intended-unused`), reported at its `[[intended]]` header with a fix that removes the table.
-
-**Rules** (§24.9): the check exists, with a did-you-mean suggestion for one that doesn't, is a review check, and is reported at an entry (`model-intended-check`); the table names exactly one declared entry (`model-intended-entry`); `check` and `reason` are present (`model-missing-key`) and `reason` isn't empty (`model-empty-text`); and the table has no other key (`model-unknown-key`).
+**Rules** (§24.9): `check` MUST name a check that exists, with a did-you-mean suggestion when it doesn't, whose registry entry has `next = "review"` and `place = "entry"` (`model-intended-check`). The table MUST name exactly one declared phrase, feature, or image (`model-intended-entry`). `check` and `reason` MUST be present (`model-missing-key`), `reason` MUST NOT be empty (`model-empty-text`), and the table MUST have no other key (`model-unknown-key`).
 
 ### 19.2 `[checks.vale]`
 
-How the prose is checked with Vale, a program the project installs. Ascribe runs it; it isn't linked or downloaded.
+How the prose is checked with Vale, which the project installs and Ascribe runs, never links or downloads.
 
-```toml
-[checks.vale]
-preset = "quiet"              # or: config = ".vale.ini"
-off = ["Ascribe.Repeated"]    # rules of the preset to turn off
-command = "vale"
-in-check = false
-max-level = "error"
-```
+@include: ../../_generated/content-model-checks-vale.md
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `preset` | string | | One of Ascribe's presets: `quiet`. A preset's name never changes once released; a rule added to it is a **Behavior change** in the changelog. |
-| `config` | string | | The project's own `.vale.ini`, a path from the project root. |
-| `off` | array of strings | `[]` | Rules of the preset to turn off, as `<Style>.<Rule>`. Only with `preset`. |
-| `command` | string | `"vale"` | The command run. A value with a path separator is a path from the project root; a bare name is looked up on the `PATH`. A relative path, or an absolute one into the project's folder, is a program in the project, which the language server runs only once the person allows it, and the agents' hook never runs (decision 76). |
-| `in-check` | boolean | `false` | Whether `ascribe check` checks the prose without `--vale`. |
-| `max-level` | string | `"error"` | `"advice"`, `"warning"`, or `"error"`: the most a Vale alert is reported as. Vale's `suggestion`, `warning`, and `error` map to advice, warning, and error, capped at this. |
+A preset's name MUST NOT change once released, and a rule added to a preset is a **Behavior change** in the changelog. A `command` that's a relative path, or an absolute one into the project's folder, is a program in the project: the language server MUST run it only once the person allows it, and the agents' hook MUST NOT run it.
 
-What Ascribe writes for Vale is under `.ascribe/vale/` in the project root: a preset's configuration and styles, and the vocabulary `Ascribe` of the project's own words (phrase values, glossary terms and aliases, dimension, value, and feature labels), one escaped regular expression to a line. Nothing outside it is written, except by `ascribe vale eject`.
+Ascribe MUST write nothing for Vale outside `.ascribe/vale/` in the project root, except by `ascribe vale eject`: there it writes a preset's configuration and styles, and the vocabulary `Ascribe` of the project's own words (phrase values, glossary terms and aliases, dimension, value, and feature labels), one escaped regular expression to a line.
 
-Each alert is a `prose` diagnostic (`ASC165`) on the source file, with the rule as its JSON `rule`; one inside a phrase's text is at the phrase. A Vale that can't be run, fails, or runs out of time is one `prose-not-checked` advice (`ASC166`) at `[checks.vale]`, never a failed check, and so is one the caller doesn't start: the MCP server never starts Vale, the agents' hook never starts a program in the project, and the language server starts one only once the person allows it. Both are configurable in `[checks]`, and `[checks]` sets their level after `max-level` caps Vale's.
+Each alert is a `prose` diagnostic (`ASC165`) on the source file, with the rule as its JSON `rule`, and at the phrase when it's inside a phrase's text. A Vale that can't be run, fails, runs out of time, or isn't started by its caller is one `prose-not-checked` advice (`ASC166`) at `[checks.vale]`, and never fails the check. The MCP server never starts Vale. Both diagnostics are configurable in `[checks]`, whose level applies after `max-level` caps Vale's.
 
-**Rules** (§24.9): exactly one of `preset` and `config` (`model-checks-vale`); `off` only with `preset`, and only naming its rules (`model-checks-vale`); `preset` and `max-level` take one of their values (`model-invalid-value`); no other key (`model-unknown-key`).
+**Rules** (§24.9): `[checks.vale]` MUST have exactly one of `preset` and `config`, and `off` MUST appear only with `preset` and name only its rules (`model-checks-vale`). `preset` and `max-level` MUST take one of their values (`model-invalid-value`), and the table no other key (`model-unknown-key`).
 
 ### 19.3 `[checks.links]`
 
-How `ascribe report links` checks external links: with lychee, a program the project installs, which Ascribe runs with the addresses on its standard input. `ascribe check` never reaches the network.
+How `ascribe report links` checks external links: with lychee, which the project installs, run in the project root with the addresses on its standard input. `ascribe check` MUST NOT reach the network.
 
-```toml
-[checks.links]
-command = "lychee"
-ignore = ["localhost", "*.internal.example.com"]
-```
+@include: ../../_generated/content-model-checks-links.md
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `command` | string | `"lychee"` | The command run, in the project root. A value with a path separator is a path from the project root; a bare name is looked up on the `PATH`. |
-| `ignore` | array of strings | `[]` | Hosts not checked. `name` matches that host; `*.name` matches every host that ends in `.name`, and not `name` itself. Matched without regard to case, after a trailing `.` is dropped. |
-| `reuse-days` | integer | `14` | How many days an answer is reused. An address that answered with nothing to report isn't asked about again while its answer is younger than its own limit: a number of days from half of `reuse-days`, rounded up, through all of it, fixed by a hash of the address. `0` reuses nothing. |
-| `confirm-days` | integer | `3` | How many days a failure is held. A link that fails, other than with `404` or `410`, whose address the history records answering before, is unconfirmed, not a diagnostic, until it has failed on every run for `confirm-days` days from its first failure since that answer. `0` holds nothing. |
+**The links checked** are those whose destination is an `http` or `https` URL, in every source file, each address once, except a host `ignore` matches, compared without case after a trailing `.` is dropped. A link whose address answers with an error, doesn't answer in time, or can't be reached is a `link-external-broken` advice (`ASC168`, `next = "review"`, `place = "block"`), and one whose redirects begin with a `301` or `308` a `link-external-moved` advice (`ASC169`, `next = "choose"`), with an unsafe fix that writes the address the permanent redirects end at. Both are at the link, and configurable in `[checks]`. An `@intended {check=link-external-broken}` that covers no broken link is `intended-unused` only when `ascribe report links` ran.
 
-Answers are kept in `.ascribe/cache/links/` in the project's folder, one file an address, keyed by the address exactly as lychee is given it and a hash of the project's `lychee.toml`. Only an answer with nothing to report is kept, so every diagnostic in a report comes from an address asked about in that run. A file that can't be read, has another version, or holds another key counts as no answer. `ascribe check`, `build`, `diff`, `drift`, `fmt`, the language server, and the agents' hook never read or write the folder.
+**The cache** is `.ascribe/cache/links/` in the project's folder: one file an address, keyed by the address exactly as lychee is given it and a hash of the project's `lychee.toml`. Only an answer with nothing to report is kept, so every diagnostic in a report comes from an address asked about in that run. An address's answer is reused while it's younger than its own limit: a number of days from half of `reuse-days`, rounded up, through all of it, fixed by a hash of the address. A file that can't be read, has another version, or holds another key counts as no answer.
 
-The history is `.ascribe/history/links.json` in the project's folder: one file, version 1, sorted, written whole through a rename after each run, holding for each address the pages link to the last day it answered, the day it started failing, and whether the run reported it. An address no longer linked to is dropped. A run that reads the file again before writing it and finds another run's writing keeps, for each address, the record that confirms its failure later. A file that can't be read or has another version is no history, and with none, or with `--no-history`, every failure is a diagnostic. A permanent redirect is an answer. An `@intended {check=link-external-broken}` covers an unconfirmed link as it covers a reported one. `ascribe check`, `build`, `diff`, `drift`, `fmt`, the language server, and the agents' hook never read or write it.
+**The history** is `.ascribe/history/links.json` in the project's folder: one file, version 1, sorted, written whole through a rename after each run, holding for each address the pages link to the last day it answered, the day it started failing, and whether the run reported it. An address no longer linked to is dropped. A run that reads the file again before writing it and finds another run's writing keeps, for each address, the record that confirms its failure later. A link that fails, other than with `404` or `410`, whose address the history records answering before, is unconfirmed, not a diagnostic, until it has failed on every run for `confirm-days` days from its first failure since that answer. A file that can't be read or has another version is no history, and with none, or with `--no-history`, every failure is a diagnostic. A permanent redirect is an answer. An `@intended {check=link-external-broken}` covers an unconfirmed link as it covers a reported one.
 
-[What it remembers](../../checks/external-links.md#what-it-remembers) describes the cache and the history for a reader.
+`ascribe check`, `build`, `diff`, `drift`, `fmt`, the language server, and the agents' hook MUST NOT read or write the cache or the history.
 
-The links checked are every link whose destination is an `http` or `https` URL, in every source file, each address once. A link whose address answers with an error, doesn't answer in time, or can't be reached is a `link-external-broken` advice (`ASC168`, `next = "review"`, `place = "block"`); one whose redirects begin with a `301` or `308` is a `link-external-moved` advice (`ASC169`, `next = "choose"`), with an unsafe fix that writes the address the permanent redirects end at. Both are at the link, and configurable in `[checks]`. An `@intended {check=link-external-broken}` that covers no broken link is `intended-unused` only when `ascribe report links` ran; `ascribe check` doesn't report it.
-
-**Rules** (§24.9): each `ignore` entry is a host name, or `*.` and one (`model-wrong-type`); `command` is a string, and `reuse-days` and `confirm-days` integers of 0 or more (`model-wrong-type`); no other key (`model-unknown-key`).
+**Rules** (§24.9): each `ignore` entry MUST be a host name, or `*.` and one (`model-wrong-type`); `command` MUST be a string, and `reuse-days` and `confirm-days` integers of 0 or more (`model-wrong-type`); the table MUST have no other key (`model-unknown-key`).
 
 ---
 
 ## 20. `[permalinks]`
 
-Names for something outside the docs to link to that no heading or page declares (SPEC §7.6): a permalink ended on purpose, and a second name for one.
+`[permalinks.retired]` and `[permalinks.aliases]` hold names that no heading or page declares (SPEC §7.6). A key of `[permalinks.retired]` is a retired permalink's name, and its table takes:
 
-```toml
-[permalinks.retired]
-rotate-keys = { to = "guides/security.md#keys", reason = "Merged into the security guide" }
-legacy-sync = { reason = "The sync agent was removed in 4.0" }
+@include: ../../_generated/content-model-permalinks-retired.md
 
-[permalinks.aliases]
-agent-settings = "settings"
-```
+A key of `[permalinks.aliases]` is an alias's name, and its value the name it leads to, which MUST be a heading's or a page's permalink or another alias. `ascribe permalinks retire` and the editor's quick fix on `permalink-removed` MUST write `[permalinks.retired]` in place, and the quick fix's reason is the placeholder `why this permalink was retired`.
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `retired.<name>` | table | | A retired permalink. `reason` (string, required, not empty) is why, which a reader whose link leads there sees. `to` (string) is where its address leads now: a page's path from the content root, and optionally `#` and the id of a heading on it. |
-| `aliases.<name>` | string | | An alias: the name it leads to, a permalink a heading or page declares, or another alias that leads to one. |
-
-No other key is allowed in `[permalinks]` or in a retired permalink's table. A name has the characters of an `@id`. `ascribe permalinks retire`, and the editor's quick fix on `permalink-removed`, write `[permalinks.retired]` in place; the quick fix's reason is the placeholder `why this permalink was retired`, which is an error until it's replaced.
-
-**Rules** (§24.10): each name is valid (`model-invalid-name`); a retired permalink has a `reason` (`model-missing-key`), not empty (`model-empty-text`) and not the placeholder (`model-permalinks`), and no other key (`model-unknown-key`); no name is both retired and an alias, and no alias leads back to itself (`model-permalinks`). What needs the content is checked with the project, not by the loader: SPEC §8.2's `permalink-name-conflict`, `permalink-alias-target-missing`, and `permalink-retired-target-missing`.
+**Rules** (§24.10): `[permalinks]` and a retired permalink's table MUST have no keys but those above (`model-unknown-key`). A name MUST have the characters of an `@id` (`model-invalid-name`). A retired permalink MUST have a `reason` (`model-missing-key`), not empty (`model-empty-text`) and not the placeholder (`model-permalinks`). A name MUST NOT be both retired and an alias, and an alias MUST NOT lead back to itself (`model-permalinks`). What needs the content is checked with the project, not by the loader: SPEC §8.2's `permalink-name-conflict`, `permalink-alias-target-missing`, and `permalink-retired-target-missing`.
 
 ---
 
@@ -140,9 +76,9 @@ No other key is allowed in `[permalinks]` or in a retired permalink's table. A n
 
 @include: ../../_fragments/content-model/crawlers.md
 
-**Rules** (§24.11): each line is a string (`model-wrong-type`), one line (`model-crawlers-line`), and not empty (`model-empty-text`); `training`, `search`, and `on-request` are each `"allow"` or `"disallow"` (`model-invalid-value`); a crawler a `User-agent` line of `lines` names, compared without case, isn't one a disallowed purpose names, nor one an earlier group of `lines` names (`model-crawlers-named-twice`), where consecutive `User-agent` lines open one group and `*` is never counted; no other key (`model-unknown-key`). What a line says isn't validated otherwise: a line that isn't a `User-agent`, `Allow`, or `Disallow` line is written as it is, and `ascribe check` reads only the lines it can.
+**Rules** (§24.11): each of `lines` MUST be a string (`model-wrong-type`) of one line (`model-crawlers-line`), not empty (`model-empty-text`). `training`, `search`, and `on-request` MUST each be `"allow"` or `"disallow"` (`model-invalid-value`). A crawler a `User-agent` line of `lines` names, compared without case, MUST NOT be one a disallowed purpose names, nor one an earlier group of `lines` names (`model-crawlers-named-twice`), where consecutive `User-agent` lines open one group and `*` is never counted. The table MUST have no other key (`model-unknown-key`). A line is otherwise not validated: one that isn't a `User-agent`, `Allow`, or `Disallow` line MUST be written as it is, and `ascribe check` reads only the lines it can.
 
-The crawlers of each purpose are data Ascribe ships, each with its operator, the operator's page about it, and the day it was read; a release may add to them. A disallowed purpose's group names every one Ascribe knows of it.
+The crawlers of each purpose are data Ascribe ships, each with its operator, the operator's page about it, and the day it was read; a release MAY add to them. A disallowed purpose's group MUST name every one Ascribe knows of it.
 
 ---
 
@@ -150,7 +86,7 @@ The crawlers of each purpose are data Ascribe ships, each with its operator, the
 
 @include: ../../_fragments/content-model/listing.md
 
-**Rules** (§24.12): each value is one of `listed`, `unquoted`, and `unlisted` (`model-invalid-value`); a folder is a path from the content root ending in `/`, without `.` or `..` parts or a pattern's characters, of a folder that exists by its exact name (`model-listing-folder`, a filesystem rule); a type is a content type the model declares, or `page` when it declares none (`model-listing-type`); no rule is looser than a folder's it's under, or than `default` (`model-listing-looser`); no other key (`model-unknown-key`). A page that's looser than a rule it's under is checked with the project, not by the loader: SPEC §8.2's `listing-loosened`.
+**Rules** (§24.12): each value MUST be one of `listed`, `unquoted`, and `unlisted` (`model-invalid-value`). A key of `[listing.folders]` MUST be a path from the content root ending in `/`, without `.` or `..` parts or a pattern's characters, of a folder that exists by its exact name (`model-listing-folder`, a filesystem rule), and a key of `[listing.types]` a content type the model declares, or `page` when it declares none (`model-listing-type`). A rule MUST NOT be looser than a folder's it's under, or than `default` (`model-listing-looser`), and the table MUST have no other key (`model-unknown-key`). A page looser than a rule it's under is checked with the project, not by the loader: SPEC §8.2's `listing-loosened`.
 
 `older-lines` is held to `default` by `model-listing-looser`, as a folder's and a type's rules are. A page looser than `older-lines`, which only an older line's pages are under, is SPEC §8.2's `listing-loosened-in-line`.
 

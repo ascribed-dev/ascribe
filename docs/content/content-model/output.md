@@ -40,6 +40,8 @@ A later profile that offers a choice will add a key for it.
 
 @include: ../_fragments/content-model/builds.md
 
+**Rules.** Two build names can't differ only in case (`model-build-name-case`): they become folder names, and some file systems ignore case. A versioned build needs a target with a live line, and can't filter as well (`model-build-versions`). A build that filters for a target its own selection leaves out, such as one selecting `deployment = "cloud"` and filtering for `self-managed 3.3`, builds, but it's almost certainly a mistake, so you get a warning (`model-build-filter-excluded`).
+
 A versioned build's outputs, their names and addresses, and what each line keeps and shows are in [Versions](../versions/index.md#build-a-site-for-each-line). An older line's output says nothing to agents: it has no `llms.txt`, and its pages point to no Markdown version.
 
 ---
