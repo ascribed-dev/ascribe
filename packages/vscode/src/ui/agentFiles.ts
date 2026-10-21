@@ -8,6 +8,8 @@
 
 import { execFile } from "node:child_process";
 import { stat } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import * as path from "node:path";
 import * as vscode from "vscode";
 import type { ProjectServer } from "../client.js";
 import { changesCheck, readLayout, type Layout } from "../diskChanges.js";
@@ -219,7 +221,16 @@ export class AgentFilesChecks implements vscode.Disposable {
       project,
       layout,
       at,
-      stale: error === null ? staleFiles(stdout) : [],
+      // From the project's folder, as `sync` names them when it's run there.
+      stale:
+        error === null
+          ? staleFiles(stdout).map((file) =>
+              path
+                .relative(project.folder, path.resolve(AGENTS_CWD, file))
+                .split(path.sep)
+                .join("/"),
+            )
+          : [],
       error,
       current: true,
     });
@@ -258,22 +269,28 @@ export class AgentFilesChecks implements vscode.Disposable {
   }
 }
 
-/** Runs `ascribe agents sync` in the project's folder, which finds its `ascribe.toml` there. */
+/**
+ * Where `ascribe agents sync` runs: outside every project, since a process's
+ * folder can't be deleted on Windows while it runs, and the check runs after
+ * saves the writer didn't ask for.
+ */
+const AGENTS_CWD = tmpdir();
+
+/** Runs `ascribe agents sync` for the project, naming its `ascribe.toml` with `--config`. */
 function runAgents(
   binary: string,
   project: Project,
   args: string[],
 ): Promise<{ code: number; stdout: string; stderr: string }> {
+  // A `.cmd` shim, which is what npm links on Windows, needs a shell, which
+  // joins the arguments unquoted.
+  const shell = usesShell(binary);
+  const config = shell ? `"${project.config}"` : project.config;
   return new Promise((resolve) => {
     execFile(
       shellCommand(binary),
-      ["agents", "sync", ...args],
-      {
-        cwd: project.folder,
-        windowsHide: true,
-        // A `.cmd` shim, which is what npm links on Windows, needs a shell.
-        shell: usesShell(binary),
-      },
+      ["--config", config, "agents", "sync", ...args],
+      { cwd: AGENTS_CWD, windowsHide: true, shell },
       (error, stdout, stderr) => {
         const code = error === null ? 0 : typeof error.code === "number" ? error.code : Number.NaN;
         resolve({
