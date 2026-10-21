@@ -323,6 +323,11 @@ describe("the rule the tab keeps", () => {
     expect(checkSettingsMessage({ type: "ready" })).toEqual({ type: "ready" });
     expect(checkSettingsMessage({ type: "contentModel" })).toEqual({ type: "contentModel" });
     expect(checkSettingsMessage({ type: "close" })).toEqual({ type: "close" });
+    expect(checkSettingsMessage({ type: "focus", focused: true })).toEqual({
+      type: "focus",
+      focused: true,
+    });
+    expect(checkSettingsMessage({ type: "focus" })).toBeUndefined();
     expect(checkSettingsMessage({ type: "drawn", seq: 1, report: {} })).toBeUndefined();
     expect(checkSettingsMessage({ type: "run" })).toBeUndefined();
   });

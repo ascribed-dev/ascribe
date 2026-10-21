@@ -91,9 +91,13 @@ describe("Project Settings on examples/quill", () => {
         s.id.startsWith("checks.") && s.id.endsWith(".level") && s.id !== "checks.vale.max-level",
     );
     assert.equal(levels.length, 47);
-    // Opening it again shows the tab that's open.
+    // Opening it again shows the tab that's open, with the focus. The focus
+    // lands once the webview has loaded, which can be after the command is
+    // done; a test that goes on to Undo in the file waits for it, or the
+    // focus is taken from the file just as Undo runs, and goes to the tab.
     await vscode.commands.executeCommand("ascribe.openProjectSettings");
     assert.equal(settings.tabs(), 1);
+    await settings.whenFocused();
   });
 
   it("sets the trailing slash to never in one line, unsaved, and follows Undo in the file", async () => {
@@ -116,6 +120,7 @@ describe("Project Settings on examples/quill", () => {
 
     // Undo in the file puts it back, and the tab follows.
     // Beside the tab, as the file is opened beside it: a hidden tab draws nothing.
+    // The file has the focus Undo goes to: the tab took its own before this test.
     await vscode.window.showTextDocument(document, { viewColumn: vscode.ViewColumn.Two });
     await vscode.commands.executeCommand("undo");
     await settings.whenDrawn(

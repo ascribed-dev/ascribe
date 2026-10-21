@@ -518,6 +518,12 @@ window.addEventListener(
   () => channel.setState({ ...channel.state(), scroll: window.scrollY }),
   { passive: true },
 );
+// The focus, which a test waits for: the tab is opened with it, and it lands
+// a moment later, once the webview has loaded.
+const postFocus = (): void => channel.post({ type: "focus", focused: document.hasFocus() });
+window.addEventListener("focus", postFocus);
+window.addEventListener("blur", postFocus);
+postFocus();
 // A tab whose `ascribe.toml` is gone closes on the next click.
 document.addEventListener("click", () => {
   if (gone) channel.post({ type: "close" });
