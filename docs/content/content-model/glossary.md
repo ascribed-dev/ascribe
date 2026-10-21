@@ -135,18 +135,9 @@ Write a term the pages share once, in a [fragment](../writing/frontmatter.md#fil
 
 A heading the fragment brings in is one term, wherever it's shown. Each build links it to the first page in `pages` that the build publishes, so order `pages` with the page you'd rather readers land on first. Two different headings with the same text are an error, `glossary-term-duplicate`, since a term has one definition, and so are two with the same id, since the id names the term: give one of them another with `@id`.
 
-## What `ascribe check` reports
+## Check the glossary
 
-Each of these is in [the diagnostics reference](../checks/diagnostics.md), with its fix:
-
-| Code | Reports | Level |
-|---|---|---|
-| [`model-glossary-page`](../checks/diagnostics/content-model.md#ASC238) | A path in `pages` that isn't a page | Error |
-| [`term-off-glossary-page`](../checks/diagnostics/pages.md#ASC242) | `@term` on a page `pages` doesn't list | Error |
-| [`glossary-term-duplicate`](../checks/diagnostics/pages.md#ASC239) | A term or alias with the same text as another, or a term with the same id, at the second | Error |
-| [`glossary-definition-missing`](../checks/diagnostics/pages.md#ASC240) | A term whose section doesn't open with a paragraph | Error |
-| [`glossary-definition-long`](../checks/diagnostics/content-checks.md#ASC241) | A definition over 300 characters in a build | Advice |
-| [`glossary-term-unused`](../checks/diagnostics/content-checks.md#ASC158) | A term no other page uses or links | Advice |
+Run `ascribe check`. The [rules for `[glossary]`](content.md#12-glossary) say what it reports, and each diagnostic is in [the diagnostics reference](../checks/diagnostics.md) with its fix.
 
 A term you keep though no page uses it yet is acknowledged at its heading, with [`@intended`](../writing/directives.md#intended) among the directives under it:
 
@@ -158,20 +149,11 @@ A term you keep though no page uses it yet is acknowledged at its heading, with 
 Turning a flag back off for everyone it was on for.
 ```
 
-## What a site gets
+## What readers and writers see
 
-In the site output, a term's link is an ordinary link to its heading, with its definition as the link's title, so a reader sees the definition when they point at it. The link is marked with `data-ascribe-term`, holding the term's id:
+A site shows a term's definition when a reader points at its link, and can restyle the link: see [the element library](../astro/elements.md). The plain Markdown output links the term without its definition, and the JSON output lists, for each block, the terms it links, with each one's definition.
 
-```html
-<a href="/glossary/#api-key" title="A secret that identifies a program calling the API, made in the dashboard." data-ascribe-term="api-key">API key</a>
-```
-
-The element library underlines a term's link with dots. A site restyles it, or shows the definition in a popover of its own, by selecting `a[data-ascribe-term]`: see [the element library](../astro/elements.md). The plain Markdown output links the term the same way, without the title or the marker, and the JSON output lists, for each block, the terms it links, with each one's definition.
-
-Writers get the definitions too:
-
-- **In the editor,** hovering over a term shows its definition, **Go to Definition** opens its heading, and **Find All References** lists its uses. See [the editor](../editor/writing.md#hover).
-- **From the command,** `ascribe refs term:api-key` lists a term's uses, and `ascribe model --section glossary` lists the project's terms, which is how an agent learns them.
+In the editor, hovering over a term shows its definition ([Hover](../editor/writing.md#hover)). `ascribe refs term:api-key` lists a term's uses, and `ascribe model --section glossary` lists the project's terms, which is how an agent learns them.
 
 ## See also
 

@@ -68,7 +68,7 @@ It lists each file it wrote, `ascribe.toml` last, from the current folder; each 
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/templates-eject.txt
 
-With `--format json`, as its [schema](../contracts/json-reports/templates.md#ascribe-templates-eject) has it. When `refused` isn't empty, `written`, `added`, and `kept` are.
+With `--format json`, it writes the document its [schema](../contracts/json-reports/templates.md#ascribe-templates-eject) describes. When `refused` isn't empty, `written`, `added`, and `kept` are.
 
 .The JSON for this example
 @details:
@@ -97,7 +97,7 @@ In the project above, once its copy of the how-to template has a section of its 
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/templates-status.txt
 
-With `--format json`, the same, as its [schema](../contracts/json-reports/templates.md#ascribe-templates-status) has it. Paths are from the folder `ascribe.toml` is in.
+With `--format json`, it writes the same in the document its [schema](../contracts/json-reports/templates.md#ascribe-templates-status) describes. Paths are from the folder `ascribe.toml` is in.
 
 .The JSON for this example
 @details:

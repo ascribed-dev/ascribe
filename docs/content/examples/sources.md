@@ -68,7 +68,7 @@ Shows each source in another repository: its repository and branch, its pin, and
 
 @include: ../_generated/cli-sources-status-options.md
 
-With `--format json`, the same, as its [schema](../contracts/json-reports/sources.md#ascribe-sources-status) has it:
+With `--format json`, it writes the same in the document its [schema](../contracts/json-reports/sources.md#ascribe-sources-status) describes:
 
 .The JSON for this example
 @details:
@@ -103,7 +103,7 @@ With `--check`, it runs nothing: not `test`, not the `[environment]` commands. I
 
 With `--check`, `0` means the observation is current, `1` that it's stale or missing, and `2` that the config, the examples, or the observation can't be read.
 
-With `--format json`, what the commands print goes to standard error, and standard output has one document, as its [schema](../contracts/json-reports/sources.md#ascribe-observe) has it. When the test fails, `observation`, `recorded`, `files`, `tested`, and `changes` are empty. With `--check`, `check` is `true` and `test` is null:
+With `--format json`, what the commands print goes to standard error, and standard output has one document, which its [schema](../contracts/json-reports/sources.md#ascribe-observe) describes. When the test fails, `observation`, `recorded`, `files`, `tested`, and `changes` are empty. With `--check`, `check` is `true` and `test` is null:
 
 .The JSON for this example
 @details:
