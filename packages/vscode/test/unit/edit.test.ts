@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertEdit, type EditConverter } from "../../src/edit.js";
+import { convertEdit, convertProjectEdit, type EditConverter } from "../../src/edit.js";
 import type { LspRange, LspWorkspaceEdit } from "../../src/shapes.js";
 
 const range = (line: number, from: number, to: number): LspRange => ({
@@ -105,5 +105,51 @@ describe("converting a server's edit", () => {
     ],
   ])("rejects %s", async (_name, value) => {
     await expect(convertEdit(value, converter())).rejects.toThrow(/invalid edit/);
+  });
+});
+
+describe("converting a server's edit to the whole project", () => {
+  const versioned: LspWorkspaceEdit = {
+    documentChanges: [
+      {
+        textDocument: { uri: "file:///docs/open.md", version: 4 },
+        edits: [{ range: range(2, 0, 0), newText: "x" }],
+      },
+      {
+        textDocument: { uri: "file:///docs/closed.md", version: null },
+        edits: [{ range: range(1, 0, 0), newText: "y" }],
+      },
+    ],
+  };
+
+  it("converts the edit, with its counts and the version each document's edit is for", async () => {
+    const c = converter();
+    expect(await convertProjectEdit({ edit: versioned, files: 2, fixes: 5 }, c)).toEqual({
+      edit: { converted: versioned },
+      files: 2,
+      fixes: 5,
+      versions: new Map([
+        ["file:///docs/open.md", 4],
+        ["file:///docs/closed.md", null],
+      ]),
+    });
+    expect(c.calls).toEqual(["edit"]);
+  });
+
+  it("passes formatting's count of fixes, null, and an error through", async () => {
+    const c = converter();
+    const formatted = await convertProjectEdit({ edit: versioned, files: 2, fixes: null }, c);
+    expect("fixes" in formatted && formatted.fixes).toBeNull();
+    expect(await convertProjectEdit({ error: "Still checking." }, c)).toEqual({
+      error: "Still checking.",
+    });
+  });
+
+  it.each([
+    ["no counts", { edit: versioned }],
+    ["a count that isn't one", { edit: versioned, files: -1, fixes: 0 }],
+    ["no edit", { files: 0, fixes: 0 }],
+  ])("rejects %s", async (_name, value) => {
+    await expect(convertProjectEdit(value, converter())).rejects.toThrow(/invalid edit/);
   });
 });

@@ -17,6 +17,7 @@ import { projectKeys, STATE_NAMES } from "./ui/describe.js";
 import { BuildLenses } from "./ui/lens.js";
 import { ProjectBuilds } from "./ui/projectBuilds.js";
 import { ReviewView, type ReviewViewApi } from "./ui/reviewView.js";
+import { ProjectEdits, type ProjectEditsApi } from "./ui/projectEdits.js";
 import { ProjectView, type ProjectViewApi } from "./ui/projectView.js";
 import { ProjectTasks } from "./ui/tasks.js";
 import { thisPageNotice } from "./ui/sidebar.js";
@@ -74,6 +75,8 @@ export interface AscribeApi {
     review: ReviewViewApi;
     /** The Project view. */
     project: ProjectViewApi;
+    /** Apply Every Safe Fix and Format Every Page. */
+    projectEdits: ProjectEditsApi;
     /** The This page view. */
     thisPage: ThisPageApi;
     /** The Pages and Content model views. */
@@ -137,7 +140,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   sidebar.register();
   const tasks = new ProjectTasks(context, projects);
   tasks.register();
-  const projectView = new ProjectView(projects, sidebar, checks, tasks, context.extensionUri);
+  const projectEdits = new ProjectEdits(projects);
+  projectEdits.register();
+  const projectView = new ProjectView(
+    projects,
+    sidebar,
+    checks,
+    tasks,
+    projectEdits,
+    context.extensionUri,
+  );
   projectView.register();
 
   const newPage = new NewPage(projects);
@@ -200,6 +212,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     reviewView,
     sidebar,
     tasks,
+    projectEdits,
     projectView,
     walkthrough,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
@@ -303,6 +316,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       lens: lens.api,
       review: reviewView.api,
       project: projectView.api,
+      projectEdits: projectEdits.api,
       thisPage: sidebar.thisPageApi,
       sidebar: sidebar.api,
       everyBuild: checks.api,

@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { EveryBuildResult } from "../../src/ui/checkEveryBuild.js";
 import {
   NO_PROJECT,
+  nothingToEdit,
   PROJECT_KEYS,
   problemsCount,
   projectAnswer,
+  projectEditQuestion,
   type ProjectFacts,
 } from "../../src/ui/projectHealth.js";
 
@@ -41,7 +43,7 @@ describe("projectAnswer", () => {
     });
   });
 
-  it("heads with the project's name, folder, server state, and version, and offers Check Every Build and the tasks", () => {
+  it("heads with the project's name, folder, server state, and version, and offers Check Every Build, the edits, and the tasks", () => {
     const answer = projectAnswer({
       ...facts({ kind: "none" }),
       state: "failed",
@@ -51,6 +53,8 @@ describe("projectAnswer", () => {
     expect(answer.head).toEqual({ name: "docs", folder: "docs", state: "failed", version: null });
     expect(answer.actions.map((action) => action.key)).toEqual([
       PROJECT_KEYS.checkEveryBuild,
+      PROJECT_KEYS.applyEverySafeFix,
+      PROJECT_KEYS.formatEveryPage,
       PROJECT_KEYS.build,
       PROJECT_KEYS.syncAgentFiles,
     ]);
@@ -58,7 +62,16 @@ describe("projectAnswer", () => {
 
   it("says each task runs in the terminal", () => {
     const answer = projectAnswer(facts({ kind: "none" }));
-    for (const action of answer.actions.slice(1)) expect(action.caption).toMatch(/^A task: /);
+    for (const action of answer.actions.slice(3)) expect(action.caption).toMatch(/^A task: /);
+  });
+
+  it("says each edit is one edit left unsaved, and that the safe fixes are the editor build's", () => {
+    const [, fixAll, format] = projectAnswer(facts({ kind: "none" })).actions;
+    expect(fixAll?.caption).toMatch(
+      /the editor build's, in every file, as one edit left unsaved\./,
+    );
+    expect(fixAll?.caption).toMatch(/Every build's are ascribe check --fix's\.$/);
+    expect(format?.caption).toMatch(/as one edit left unsaved\.$/);
   });
 
   it("counts a count to do while it's above zero, out of date, or never run, and not while it's running or none", () => {
@@ -137,5 +150,34 @@ describe("problemsCount", () => {
       value: "—",
       note: "The check at 5s couldn't finish: ascribe.toml: bad",
     });
+  });
+});
+
+describe("projectEditQuestion", () => {
+  it("names the fixes and the files, and says they're left unsaved", () => {
+    expect(projectEditQuestion(4, 6)).toBe(
+      "Apply 6 safe fixes in 4 files? They're left unsaved, to read before you save them.",
+    );
+    expect(projectEditQuestion(1, 1)).toBe(
+      "Apply 1 safe fix in 1 file? It's left unsaved, to read before you save it.",
+    );
+  });
+
+  it("names the files to format", () => {
+    expect(projectEditQuestion(12, null)).toBe(
+      "Format 12 files? They're left unsaved, to read before you save them.",
+    );
+    expect(projectEditQuestion(1, null)).toBe(
+      "Format 1 file? It's left unsaved, to read before you save it.",
+    );
+  });
+
+  it("says when there's nothing to do", () => {
+    expect(nothingToEdit("fixAll", "docs")).toBe(
+      "Ascribe: none of the problems the editor shows in docs has a safe fix.",
+    );
+    expect(nothingToEdit("format", "docs")).toBe(
+      "Ascribe: every page of docs is formatted already.",
+    );
   });
 });

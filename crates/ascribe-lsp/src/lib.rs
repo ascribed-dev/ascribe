@@ -34,6 +34,7 @@ mod page;
 mod page_rows;
 mod position;
 mod preview;
+mod project_edit;
 mod prose;
 mod refactor;
 mod references;
@@ -82,6 +83,9 @@ pub use position::Encoding;
 pub use preview::{
     AssetKind, METHOD as PREVIEW_METHOD, PreviewAsset, PreviewBuild, PreviewLink, PreviewPage,
     PreviewParams, PreviewProblem, PreviewResult, PreviewReview, PreviewSection, ProblemSeverity,
+};
+pub use project_edit::{
+    METHOD as PROJECT_EDIT_METHOD, ProjectEditKind, ProjectEditParams, ProjectEditResult,
 };
 pub use release::{
     ChangedOutput, MovedFeature, ReleaseError, Released, ReleasedFile, Releasing, RewrittenMark,

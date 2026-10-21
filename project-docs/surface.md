@@ -351,7 +351,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
 For people. Read from `packages/vscode/package.json`, `docs/content/_generated/editor-actions.md`.
 
-90 commands, 37 of them actions.
+92 commands, 37 of them actions.
 
 Commands that aren't actions:
 
@@ -369,6 +369,8 @@ Commands that aren't actions:
 | Ascribe: Go to Next Placeholder | `ascribe.nextPlaceholder` |
 | Ascribe: Switch Build | `ascribe.switchBuild` |
 | Ascribe: Check Every Build | `ascribe.checkEveryBuild` |
+| Ascribe: Apply Every Safe Fix | `ascribe.applyEverySafeFix` |
+| Ascribe: Format Every Page | `ascribe.formatEveryPage` |
 | Ascribe: Project Menu | `ascribe.projectMenu` |
 | Ascribe: Dim What the Build Leaves Out | `ascribe.toggleBuildLens` |
 | Ascribe: Start Review | `ascribe.startReview` |
@@ -506,7 +508,7 @@ Menus the commands are placed in:
 
 | Menu | Entries |
 |---|---|
-| `commandPalette` | 90 |
+| `commandPalette` | 92 |
 | `editor/title` | 5 |
 | `view/title` | 12 |
 | `view/item/context` | 13 |

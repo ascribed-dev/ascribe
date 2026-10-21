@@ -1,8 +1,9 @@
 // The Project view, first in the Ascribe sidebar: the sidebar's project, its
 // server's state and binary, how many problems every build has with when
-// that count is from, and Check Every Build. A webview view on This page's
-// base (`webviewView.ts`); the answer is `projectHealth.ts`'s, and the
-// webview's script is `../webview/project.ts`.
+// that count is from, and its actions: Check Every Build, the edits to the
+// whole project (`projectEdits.ts`), and the tasks (`tasks.ts`). A webview
+// view on This page's base (`webviewView.ts`); the answer is
+// `projectHealth.ts`'s, and the webview's script is `../webview/project.ts`.
 //
 // It shows the project Pages and Content model show (`SidebarViews.project`),
 // which follows the active file and keeps its project when the active file
@@ -16,6 +17,7 @@ import type { ProjectRegistry } from "../registry.js";
 import { formatVersion } from "../version.js";
 import type { ProjectAnswer, ProjectReport } from "../webview/viewProtocol.js";
 import type { EveryBuildChecks } from "./checkEveryBuild.js";
+import type { ProjectEdits } from "./projectEdits.js";
 import { PROJECT_KEYS, projectAnswer, type ProjectFacts } from "./projectHealth.js";
 import type { SidebarViews } from "./sidebarViews.js";
 import type { ProjectTasks } from "./tasks.js";
@@ -48,6 +50,7 @@ export class ProjectView implements vscode.Disposable {
     private readonly sidebar: SidebarViews,
     private readonly checks: EveryBuildChecks,
     private readonly tasks: ProjectTasks,
+    private readonly edits: ProjectEdits,
     extensionUri: vscode.Uri,
   ) {
     this.view = new WebviewView(
@@ -126,6 +129,12 @@ export class ProjectView implements vscode.Disposable {
         return;
       case PROJECT_KEYS.checkEveryBuild:
         await this.checks.checkProject(server);
+        return;
+      case PROJECT_KEYS.applyEverySafeFix:
+        await this.edits.run(server, "fixAll");
+        return;
+      case PROJECT_KEYS.formatEveryPage:
+        await this.edits.run(server, "format");
         return;
       case PROJECT_KEYS.build:
       case PROJECT_KEYS.syncAgentFiles:
