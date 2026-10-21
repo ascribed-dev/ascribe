@@ -97,10 +97,10 @@ const available: Record<string, string> = {
   "ascribe.submitReview": "ascribe 0.4.0",
   "ascribe.openSourceChanges": "ascribe 0.4.0",
   "ascribe.switchProject": "ascribe 0.4.0",
-  "ascribe.search": "next",
-  "ascribe.applyEverySafeFix": "next",
-  "ascribe.formatEveryPage": "next",
-  "ascribe.openProjectSettings": "next",
+  "ascribe.search": "ascribe 0.4.1",
+  "ascribe.applyEverySafeFix": "ascribe 0.4.1",
+  "ascribe.formatEveryPage": "ascribe 0.4.1",
+  "ascribe.openProjectSettings": "ascribe 0.4.1",
 };
 
 /** The attribute block that ends a row's first cell, for an id in `available`. */

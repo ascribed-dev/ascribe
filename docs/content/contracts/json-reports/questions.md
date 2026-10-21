@@ -35,7 +35,7 @@ With `--list`:
 @include: ../../_generated/json-resolve.md
 
 ## `ascribe search`
-@available: next
+@available: ascribe 0.4.1
 
 @include: ../../_generated/json-search.md
 

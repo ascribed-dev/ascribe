@@ -30,7 +30,7 @@ const HEADER: &str = "@memo: Generated from the help text in crates/ascribe-cli/
 /// release has yet is `next`; when a release ships it, name the release, as
 /// `ascribe 0.2.0`. Remove an entry when the option's command section says
 /// the same, or when every live line has the option.
-const AVAILABLE: &[(&str, &str, &str)] = &[("observe", "yes", "next")];
+const AVAILABLE: &[(&str, &str, &str)] = &[("observe", "yes", "ascribe 0.4.1")];
 
 fn repo() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")

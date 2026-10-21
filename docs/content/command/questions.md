@@ -48,7 +48,7 @@ With `--format json`, the document has a field for each section shown, and witho
 
 A project with [release lines](../versions/lines.md) has a section for them, `releases` in JSON: each target's lines, with their status and the build that is each line. A versioned build says which target versions it and which line it is.
 
-@available: next
+@available: ascribe 0.4.1
 The rest of `ascribe.toml` is there too, a section of settings for each of its tables: `project`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, and `permalinks`. The text without `--section` names them at its end, and `--section` shows one, each key with the value in effect, and its default: `ascribe model --section consumer` shows `[consumer]`'s `site`, `base-path`, and the rest, the ones the file leaves out at their defaults. `[checks]` has the keys of `[checks.vale]` and `[checks.links]`, written `vale.preset` and `links.reuse-days`, and each check the file sets a level for. In JSON, each section is a list of keys, in the [schema](../contracts/json-reports/questions.md#ascribe-model). The keys and defaults are the ones the loader reads, so `model` shows no key `ascribe check` would refuse.
 
 ## `ascribe outline`
@@ -120,7 +120,7 @@ Lists the places that use a page, a fragment, a heading, an image, or an entry o
 
 A target that's a path, with or without `#id`, finds its project from the path. An entry of the model, or a glossary term, is written with a prefix: `phrase:product` (or `phrase:{product}`), `feature:sso`, `term:api-key`, `dimension:deployment`, `note:warning`, or `widget:release-note`, and the project is found from the current directory, or from `--config`. The places are in path order, and in order within a file. A use is `link`, `include`, `phrase`, `availability`, `term`, `variant`, `note`, or `widget`.
 
-@available: next
+@available: ascribe 0.4.1
 An image under the content root is a target too, named as a page is: `ascribe refs images/keys.png`. Its places are each file that shows it (`image`), links to it (`link`), names it in raw HTML such as `<img src>` (`html`), or names it in a frontmatter field such as `cover` (`frontmatter`): the uses that keep [`image-unused`](../checks/diagnostics/content-checks.md#ASC159) from reporting it. An image nothing uses has no places, and exits with `0`, as any target that exists does.
 
 @available: ascribe 0.4.0
@@ -191,7 +191,7 @@ With `--format json`, the document is as follows, and its [schema](../contracts/
 
 ## `ascribe search`
 @id {permalink=true}: cli-search
-@available: next
+@available: ascribe 0.4.1
 
 Finds where the pages say something, as their readers read it, and names the line to edit for each place. A text search reads the source, where a page says `Sign in to {cloud}`; `ascribe search` reads each page as every build publishes it, where it says "Sign in to Quill Cloud", and says which line wrote that, and through which phrase.
 

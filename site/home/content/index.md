@@ -85,10 +85,6 @@ code --install-extension Ascribe.ascribe-vscode
 
 Then [read getting started]({site}/go/getting-started/): it sets up a project, writes a first page, checks it, and publishes it.
 
-## Where it's going
-
-- **Search.** Find where the pages say something as readers see it, through phrases, fragments, and variants, and edit it at its source.
-
 ## Early, and open source
 
 Ascribe is before 1.0, so what it writes and what it accepts can still change between releases. The latest release is {version}. The code, the docs, and the plans are on [GitHub](https://github.com/ascribed-dev/ascribe), under the Mozilla Public License 2.0. [Credits](credits.md) says who builds it, and what it's built on.
