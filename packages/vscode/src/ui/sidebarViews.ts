@@ -42,7 +42,9 @@ import {
   pagesDrop,
   contentPathOf,
   followedProject,
+  healthBadge,
   labelRename,
+  NOTICE_ACTIONS,
   pagesFind,
   pagesLook,
   pagesParent,
@@ -52,8 +54,10 @@ import {
   pagesRoots,
   shownPage,
   thisPageChildren,
+  thisPageHead,
   thisPageItems,
   thisPageLook,
+  thisPageNotice,
   thisPageRoots,
   viewsNotice,
   type ItemLook,
@@ -61,6 +65,7 @@ import {
   type PagesNode,
   type ProblemCounts,
   type ThisPageNode,
+  type ThisPageNotice,
   type ThisPageReview,
 } from "./sidebar.js";
 
@@ -158,6 +163,8 @@ export interface ThisPageApi {
   items(): SidebarItem[];
   /** The message in place of its items, if it shows one. */
   message(): string | undefined;
+  /** The badge's number and tooltip, when it shows one: Health's things to do. */
+  badge(): { value: number; tooltip: string } | undefined;
   /** Whether it's showing: neither collapsed nor in a hidden container. */
   visible(): boolean;
   /** What its webview drew last, if it has drawn. */
@@ -308,8 +315,8 @@ export class SidebarViews implements vscode.Disposable {
    * in it as it was last: its editor is gone while another tab covers it.
    */
   private pageAt: PageAt | undefined;
-  /** What This page says in place of its items. */
-  private pageMessage = "";
+  /** What This page says in place of a page; `undefined` while it shows one. */
+  private pageNotice: ThisPageNotice | undefined;
   /** The nodes the keys of This page's newest answer name. */
   private pageNodes = new Map<string, ThisPageNode>();
   /** Counts the cursor's stops, so an older stop's answer is dropped. */
@@ -408,9 +415,6 @@ export class SidebarViews implements vscode.Disposable {
     },
   );
 
-  /** This page's webview, which draws the model's items. */
-  private readonly thisPageView: WebviewView<ThisPageAnswer, ThisPageReport>;
-
   /** Whether Pages shows only the orphans, and Content model only the unused entries. */
   private orphansOnly = false;
   private unusedOnly = false;
@@ -422,18 +426,13 @@ export class SidebarViews implements vscode.Disposable {
     private readonly review: ReviewController,
     private readonly builds: ProjectBuilds,
     private readonly actions: Inserter,
-    extensionUri: vscode.Uri,
+    /** This page's webview, which draws the model's items: made before the folder was trusted. */
+    private readonly thisPageView: WebviewView<ThisPageAnswer, ThisPageReport>,
   ) {
-    this.thisPageView = new WebviewView(
-      "ascribe.thisPage",
-      extensionUri,
-      { script: "thisPage.js", title: "This page" },
-      thisPageReport,
-      {
-        open: (seq, key) => void this.chooseItem(seq, key),
-        focusEditor: () => void this.focusPageEditor(),
-      },
-    );
+    thisPageView.handlers = {
+      open: (seq, key) => void this.chooseItem(seq, key),
+      focusEditor: () => void this.focusPageEditor(),
+    };
     this.pages.parentOf = pagesParent;
     this.pages.resourceOf = (node) => {
       const content = this.inventory?.contentUri;
@@ -529,7 +528,13 @@ export class SidebarViews implements vscode.Disposable {
   get thisPageApi(): ThisPageApi {
     return {
       items: () => this.thisPage.items(),
-      message: () => this.pageMessage || undefined,
+      message: () => this.thisPageView.latest?.message ?? undefined,
+      badge: () => {
+        const badge = this.thisPageView.badge;
+        return badge?.tooltip === undefined
+          ? undefined
+          : { value: badge.value, tooltip: badge.tooltip };
+      },
       visible: () => this.thisPageView.visible,
       drawn: () => this.thisPageView.drawn,
       whenDrawn: (description, predicate, timeout) =>
@@ -563,8 +568,6 @@ export class SidebarViews implements vscode.Disposable {
   register(): void {
     // A hidden or collapsed This page asks nothing, and catches up when shown.
     this.disposables.push(
-      this.thisPageView.register(),
-      this.thisPageView,
       this.thisPageView.onDidShow(() => {
         // Shown again on another page than it drew: the answer it kept is
         // out of date, so it waits for the new one instead of drawing it.
@@ -1297,7 +1300,11 @@ export class SidebarViews implements vscode.Disposable {
   }
 
   private async askThisPage(): Promise<void> {
-    if (!this.thisPageView.visible) return;
+    if (!this.thisPageView.visible) {
+      // Hidden, it asks nothing: a badge for a page it no longer shows goes.
+      if (!this.showsPageNow()) this.thisPageView.badge = undefined;
+      return;
+    }
     const looked = ++this.pageLooked;
     // The page's document, not the active editor: focus in a webview, the
     // preview's for one, leaves VS Code reporting no active editor, and a tab
@@ -1306,18 +1313,15 @@ export class SidebarViews implements vscode.Disposable {
     const shown = this.pageAt;
     const server = shown && this.projects.serverFor(shown.uri);
     if (!shown || !server) {
-      this.showThisPage(undefined, NO_PAGE);
+      this.showThisPage(undefined, { kind: "noPage" });
       return;
     }
     if (server.state === "failed") {
-      this.showThisPage(
-        undefined,
-        `${this.projects.name(server.project)}: the language server failed to start.`,
-      );
+      this.showThisPage(undefined, { kind: "failed", project: this.projects.name(server.project) });
       return;
     }
     if (server.state !== "running") {
-      this.showThisPage(undefined, "Waiting for the project's language server.");
+      this.showThisPage(undefined, { kind: "starting" });
       return;
     }
     const { line, character } = shown.selection.active;
@@ -1336,7 +1340,11 @@ export class SidebarViews implements vscode.Disposable {
     this.pageAsked += this.review.changesRequests - before;
     if (looked !== this.pageLooked) return;
     this.pageFile = shown.uri;
-    this.showThisPage(page?.about ? page : undefined, page?.about ? undefined : NO_PAGE, review);
+    this.showThisPage(
+      page?.about ? page : undefined,
+      page?.about ? undefined : { kind: "noPage" },
+      review,
+    );
   }
 
   /**
@@ -1366,31 +1374,43 @@ export class SidebarViews implements vscode.Disposable {
     await this.review.openThread(this.pageFile, id);
   }
 
-  /** Shows an answer in This page, or a message in place of one. */
+  /** Shows an answer in This page, or a notice in place of one. */
   private showThisPage(
     page: PageResult | undefined,
-    message: string | undefined,
+    notice: ThisPageNotice | undefined,
     review?: ThisPageReview,
   ): void {
     if (page === undefined) this.pageLooked++;
     this.page = page;
     this.pageReview = page && review;
-    this.pageMessage = message ?? "";
+    this.pageNotice = notice;
     this.drawThisPage();
   }
 
-  /** Sends This page's webview the model's items as they stand, or its message. */
+  /** Whether This page's answer is about the page it would show now. */
+  private showsPageNow(): boolean {
+    return this.shownPageNow()?.uri.toString() === this.pageFile?.toString();
+  }
+
+  /**
+   * Sends This page's webview the model's items as they stand, under the
+   * page's head, or its notice; and sets its badge to Health's things to do.
+   */
   private drawThisPage(): void {
+    const roots = this.thisPage.roots();
     const { items, nodes } = thisPageItems(
-      this.thisPage.roots(),
+      roots,
       (node) =>
         this.thisPage.opens(node) !== undefined || this.thisPage.command(node) !== undefined,
     );
     this.pageNodes = nodes;
-    this.thisPageView.show({
-      message: this.pageMessage || (items.length === 0 ? NO_PAGE : null),
-      sections: items,
-    });
+    const about = this.page?.about;
+    this.thisPageView.badge = this.showsPageNow() ? healthBadge(roots) : undefined;
+    this.thisPageView.show(
+      this.pageNotice || !about || items.length === 0
+        ? thisPageNotice(this.pageNotice ?? { kind: "noPage" })
+        : { message: null, actions: [], head: thisPageHead(about), sections: items },
+    );
   }
 
   /**
@@ -1399,6 +1419,11 @@ export class SidebarViews implements vscode.Disposable {
    * that opens something; anything else the webview sends is dropped.
    */
   private async chooseItem(seq: number, key: string): Promise<void> {
+    const latest = this.thisPageView.isLatest(seq) ? this.thisPageView.latest : undefined;
+    if (latest?.actions.some((action) => action.key === key)) {
+      await this.runNoticeAction(key);
+      return;
+    }
     const node = this.thisPageView.isLatest(seq) ? this.pageNodes.get(key) : undefined;
     if (!node) return;
     const command = this.thisPage.command(node);
@@ -1415,6 +1440,22 @@ export class SidebarViews implements vscode.Disposable {
         target.uri,
         target.selection ? { selection: target.selection } : {},
       );
+    }
+  }
+
+  /** Runs a button under This page's notice, for the page's server. */
+  private async runNoticeAction(key: string): Promise<void> {
+    const server = this.pageAt && this.projects.serverFor(this.pageAt.uri);
+    switch (key) {
+      case NOTICE_ACTIONS.showOutput:
+        server?.showOutput();
+        return;
+      case NOTICE_ACTIONS.restart:
+        await server?.restart();
+        return;
+      case NOTICE_ACTIONS.manageTrust:
+        await vscode.commands.executeCommand(MANAGE_TRUST);
+        return;
     }
   }
 
@@ -1470,9 +1511,41 @@ function openInTab(uri: vscode.Uri): boolean {
   return vscode.window.tabGroups.all.some((group) => group.tabs.some((tab) => isTabOf(tab, uri)));
 }
 
+/**
+ * This page's webview. It's made before the folder is trusted, so in
+ * Restricted Mode it can say so, with Manage Workspace Trust; once the folder
+ * is trusted, `SidebarViews` draws it and takes what it asks.
+ */
+export function thisPageWebview(
+  extensionUri: vscode.Uri,
+): WebviewView<ThisPageAnswer, ThisPageReport> {
+  const view = new WebviewView<ThisPageAnswer, ThisPageReport>(
+    "ascribe.thisPage",
+    extensionUri,
+    { script: "thisPage.js", title: "This page" },
+    thisPageReport,
+    {
+      open: (seq, key) => {
+        if (view.isLatest(seq) && key === NOTICE_ACTIONS.manageTrust) {
+          void vscode.commands.executeCommand(MANAGE_TRUST);
+        }
+      },
+      focusEditor: () =>
+        void vscode.commands.executeCommand("workbench.action.focusActiveEditorGroup"),
+    },
+  );
+  return view;
+}
+
+/** The command of Manage Workspace Trust, under This page's notice in Restricted Mode. */
+const MANAGE_TRUST = "workbench.trust.manage";
+
 /** A check of what This page's webview says it drew. */
 const thisPageReport: Check<ThisPageReport> = shape<ThisPageReport>({
   message: nullable(shortText),
+  actions: listOf(shortText),
+  head: listOf(shortText),
+  code: listOf(shortText),
   sections: listOf(
     shape<ThisPageReport["sections"][number]>({
       key: shortText,
@@ -1542,9 +1615,6 @@ const FAILED = "ascribe.sidebar.failed";
 /** The commands of the views' welcome while their project's server has failed. */
 const SHOW_OUTPUT = "ascribe.sidebar.showOutput";
 const RESTART = "ascribe.sidebar.restart";
-
-/** What This page says when the active file isn't a page of a project. */
-const NO_PAGE = "Open a page to see what's known about it.";
 
 /** The page's diagnostics, counted as the Problems panel shows them. */
 function problemsOf(uri: vscode.Uri): ProblemCounts {
