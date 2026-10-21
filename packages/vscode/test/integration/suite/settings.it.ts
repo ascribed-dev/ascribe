@@ -95,7 +95,8 @@ describe("Project Settings on examples/quill", () => {
     assert.equal(shown(set, BASE).value, "/");
 
     // Undo in the file puts it back, and the tab follows.
-    await vscode.window.showTextDocument(document);
+    // Beside the tab, as the file is opened beside it: a hidden tab draws nothing.
+    await vscode.window.showTextDocument(document, { viewColumn: vscode.ViewColumn.Two });
     await vscode.commands.executeCommand("undo");
     await settings.whenDrawn(
       "the trailing slash, always",
@@ -106,7 +107,10 @@ describe("Project Settings on examples/quill", () => {
 
   it("follows typing in the file, and never draws an answer for older text", async () => {
     const settings = (await activated()).ui.projectSettings;
-    const editor = await vscode.window.showTextDocument(model(), { preview: false });
+    const editor = await vscode.window.showTextDocument(model(), {
+      viewColumn: vscode.ViewColumn.Two,
+      preview: false,
+    });
     const at = editor.document.getText().indexOf('base-path = "/"') + 'base-path = "/'.length;
     // Three keystrokes, each a version the server reads.
     for (const ch of ["d", "o", "c"]) {
