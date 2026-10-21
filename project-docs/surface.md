@@ -484,6 +484,13 @@ Keys:
 |---|---|---|
 | `ascribe.actions` | `ctrl+k a` | `cmd+k a` |
 
+Task types, and the properties `tasks.json` gives them:
+
+| Type | Property | Values | What it says |
+|---|---|---|---|
+| `ascribe` | `task` | `build`, `syncAgentFiles` | The task to run, with the binary the project's language server runs. |
+| `ascribe` | `project` |  | The project's folder, relative to the workspace folder. |
+
 The walkthrough:
 
 | Step | Title | Walkthrough |

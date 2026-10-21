@@ -30,7 +30,15 @@ At its top are the project's name, its folder, its language server's state, such
 - A count from a check that the project has changed since shows a dash and "Out of date", with the time of the check and **Check Every Build** beside it. Any change to a file of the project counts, saved or not: a page, `ascribe.toml`, `ascribe.nav`, `ascribe.permalinks`, a memo, a template, or a file in one of its [sources](../examples/sources.md)' folders.
 - A count from a check that read files with unsaved changes says so: the check reads files as they're saved.
 
-The view never checks every build by itself, since that can take a few seconds on a large project. **Actions** has **Check Every Build**, which checks the project the view shows, wherever the cursor is. **Escape** in the view puts the cursor back in the editor.
+The view never checks every build by itself, since that can take a few seconds on a large project. **Actions** acts on the project the view shows, wherever the cursor is, and each says how it runs in its tooltip:
+
+| Action | How it runs |
+|---|---|
+| **Check Every Build** | The extension checks every build and puts their problems in the Problems panel |
+| **Build** | A task: `ascribe build`, in the terminal |
+| **Sync Agent Files** | A task: `ascribe agents sync`, in the terminal |
+
+Both tasks are in **Tasks: Run Task** too, and [Tasks](settings.md#tasks) says where they run. **Escape** in the view puts the cursor back in the editor.
 
 ## This page, Pages, and Content model
 

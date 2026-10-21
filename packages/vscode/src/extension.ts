@@ -18,6 +18,7 @@ import { BuildLenses } from "./ui/lens.js";
 import { ProjectBuilds } from "./ui/projectBuilds.js";
 import { ReviewView, type ReviewViewApi } from "./ui/reviewView.js";
 import { ProjectView, type ProjectViewApi } from "./ui/projectView.js";
+import { ProjectTasks } from "./ui/tasks.js";
 import { thisPageNotice } from "./ui/sidebar.js";
 import {
   SidebarViews,
@@ -134,7 +135,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   const switchProject = new SwitchProject(projects, builds, sidebar);
   switchProject.register();
   sidebar.register();
-  const projectView = new ProjectView(projects, sidebar, checks, context.extensionUri);
+  const tasks = new ProjectTasks(context, projects);
+  tasks.register();
+  const projectView = new ProjectView(projects, sidebar, checks, tasks, context.extensionUri);
   projectView.register();
 
   const newPage = new NewPage(projects);
@@ -196,6 +199,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     switchProject,
     reviewView,
     sidebar,
+    tasks,
     projectView,
     walkthrough,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {

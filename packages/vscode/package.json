@@ -1741,6 +1741,32 @@
         "when": "editorTextFocus && ascribe.inProject && editorLangId == markdown"
       }
     ],
+    "taskDefinitions": [
+      {
+        "type": "ascribe",
+        "required": [
+          "task"
+        ],
+        "properties": {
+          "task": {
+            "type": "string",
+            "enum": [
+              "build",
+              "syncAgentFiles"
+            ],
+            "enumDescriptions": [
+              "Build: `ascribe build`, in the project's folder.",
+              "Sync Agent Files: `ascribe agents sync`, in the project's folder."
+            ],
+            "description": "The task to run, with the binary the project's language server runs."
+          },
+          "project": {
+            "type": "string",
+            "description": "The project's folder, relative to the workspace folder. Leave it out for the project whose ascribe.toml is in the workspace folder."
+          }
+        }
+      }
+    ],
     "submenus": [
       {
         "id": "ascribe.actions",

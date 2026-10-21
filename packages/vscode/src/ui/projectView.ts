@@ -18,6 +18,7 @@ import type { ProjectAnswer, ProjectReport } from "../webview/viewProtocol.js";
 import type { EveryBuildChecks } from "./checkEveryBuild.js";
 import { PROJECT_KEYS, projectAnswer, type ProjectFacts } from "./projectHealth.js";
 import type { SidebarViews } from "./sidebarViews.js";
+import type { ProjectTasks } from "./tasks.js";
 import { WebviewView, type Drawn } from "./webviewView.js";
 
 /** The Project view, for tests. */
@@ -46,6 +47,7 @@ export class ProjectView implements vscode.Disposable {
     private readonly projects: ProjectRegistry,
     private readonly sidebar: SidebarViews,
     private readonly checks: EveryBuildChecks,
+    private readonly tasks: ProjectTasks,
     extensionUri: vscode.Uri,
   ) {
     this.view = new WebviewView(
@@ -124,6 +126,10 @@ export class ProjectView implements vscode.Disposable {
         return;
       case PROJECT_KEYS.checkEveryBuild:
         await this.checks.checkProject(server);
+        return;
+      case PROJECT_KEYS.build:
+      case PROJECT_KEYS.syncAgentFiles:
+        await this.tasks.run(server.project, key);
         return;
       default:
         return;
