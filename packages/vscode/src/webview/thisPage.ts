@@ -288,12 +288,15 @@ function focusedKey(): string | null {
   return keyed?.getAttribute("data-key") ?? null;
 }
 
-/** Puts the focus on the item of `key`, or on a section's header by its key; whether it could. */
-function focusKey(key: string): boolean {
+/**
+ * Puts the focus on the item of `key`, or on a section's header by its key;
+ * whether it could. With `preventScroll`, the view stays where it is.
+ */
+function focusKey(key: string, { preventScroll = false } = {}): boolean {
   const selector = `[data-key="${CSS.escape(key)}"]`;
   const target = view.querySelector<HTMLElement>(`details${selector} > summary, button${selector}`);
   if (!target) return false;
-  target.focus();
+  target.focus({ preventScroll });
   return document.activeElement === target;
 }
 
@@ -330,9 +333,11 @@ document.addEventListener("focusin", () => {
 
 // VS Code gives the view's document the focus back, not what had it in the
 // document: focusing the view while a row has the focus takes it from the row
-// and then gives the document the focus. What had it gets it back.
+// and then gives the document the focus. What had it gets it back, without
+// scrolling: the window gets the focus on a click's mousedown, and a scroll
+// then would move another row under the pointer before the mouseup.
 window.addEventListener("focus", () => {
-  if (lastFocused !== null && focusedKey() === null) focusKey(lastFocused);
+  if (lastFocused !== null && focusedKey() === null) focusKey(lastFocused, { preventScroll: true });
 });
 
 /** The answer drawn last, which a probe's report describes. */
