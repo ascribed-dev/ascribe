@@ -2,7 +2,6 @@
 type: how-to
 title: Attach the review report to every pull request
 description: Write the HTML review report in CI on each pull request, and link it from the run, so anyone can read the change without a checkout.
-available: ascribe 0.2.0
 ---
 
 `ascribe diff --format html` writes one HTML file showing every changed page rendered, with the same [marks](how-it-works.md#the-marks) as the previews and **Copy prompt** for an agent that reviews the page. It shows the changes, not the pull request's comments. The file holds everything it shows and makes no network requests, so a reviewer opens it with no checkout, no build, and no account, and nothing in it runs but its own script, so a report from a pull request you don't trust yet is safe to open. [The HTML report](diff.md#the-html-report) is its reference.

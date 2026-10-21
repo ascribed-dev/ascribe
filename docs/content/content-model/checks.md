@@ -4,10 +4,9 @@ title: "`ascribe.toml`: checks, permalinks, and listing"
 description: "How the content model sets the checks' levels, permalinks, crawlers, and listing, its defaults, and how it's validated."
 ---
 
-Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section.
+Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The rules for a loader are in the contract's [checks, permalinks, and listing](../contracts/content-model/checks.md).
 
 ## 19. `[checks]`
-@available: ascribe 0.3.0
 
 How loudly each check about your content's quality speaks: whether it's reported as advice, a warning, or an error, or not at all. A diagnostic about whether the project is valid, such as a broken link, can't be set here: it's always reported at its own severity.
 
@@ -24,7 +23,7 @@ Each key is a check's name, as the [diagnostics reference](../checks/diagnostics
 
 @include: ../_generated/content-model-checks.md
 
-Only a check the [diagnostics reference](../checks/diagnostics.md#setting-a-checks-level) marks configurable can be named; that section lists them, with their settings. Three have one, `limit`: for `page-size`, a whole number of characters above 0, `50_000` unless set; for `image-large`, a size, `"500 KB"` unless set; and for `memo-long`, a whole number of characters above 0, `2_000` unless set. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
+Only a check the [diagnostics reference](../checks/diagnostics.md#setting-a-checks-level) marks configurable can be named; that section lists them, with their settings. Three have one, `limit`: for `page-size`, a whole number of characters above 0, `50_000` unless set; for `image-large`, a size, as a number of bytes or a string such as `"1.5 MB"` (a kilobyte is 1,000 bytes), `"500 KB"` unless set; and for `memo-long`, a whole number of characters above 0, `2_000` unless set. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
 
 For example, a site whose sidebar lists every page doesn't need to hear about pages nothing links to, and a team that wants smaller images can lower the limit:
 
@@ -37,13 +36,7 @@ title-duplicate = "warning"
 limit = "200 KB"
 ```
 
-| Setting | Of | Type | Default | Description |
-|---|---|---|---|---|
-| `limit` | `page-size` | integer | `50_000` | The size, in characters of a page's plain Markdown in a build, at which the page is reported. Above 0. |
-| `limit` | `image-large` | size | `"500 KB"` | The size over which an image is reported: a number of bytes, or a string with `B`, `KB`, or `MB`, such as `"1.5 MB"`. A kilobyte is 1,000 bytes. |
-| `limit` {available="ascribe 0.4.0"} | `memo-long` | integer | `2_000` | The length, in characters of a [memo file](../writing/memo-files.md)'s text, over which the memo is reported. Above 0. |
-
-Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`. A check set to `off` isn't reported at all.
+Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`; `off` turns a check off altogether.
 
 @available: ascribe 0.4.0
 In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page-pages-and-content-model) shows a page's size against `page-size`'s limit, measured the same way, whether or not the page is over it.
@@ -52,11 +45,15 @@ In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page-pages-and-c
 
 ### `[[intended]]`: acknowledgements
 @id: intended-acknowledgements
-@available: ascribe 0.3.0
 
 Says that a check's problem with a content model entry or an image is intended, as [`@intended`](../writing/directives.md#intended) does for a block and the `intended` frontmatter key for a page. Each table names one check, one entry, and why.
 
-@include: ../_fragments/content-model/intended-example.md
+```toml
+[[intended]]
+check = "phrase-unused"
+phrase = "old-product-name"
+reason = "Kept for the 2.x pages restored in the next release."
+```
 
 @include: ../_generated/content-model-intended.md
 
@@ -65,7 +62,6 @@ A glossary term is a heading, so it's acknowledged on its page instead, with [`@
 **Rules.** A check that doesn't exist, isn't a review check, or reports its problems somewhere other than an entry is an error (`model-intended-check`). A table without exactly one entry key, or naming an entry that isn't declared, is an error (`model-intended-entry`).
 
 ### `[checks.vale]`
-@available: ascribe 0.3.0
 
 Checks the prose with [Vale](https://vale.sh), a program the project installs: Ascribe gives it each page's prose, with phrases replaced by their text and without frontmatter, directive lines, attributes, or code, and reports its alerts as `prose` diagnostics at their place in the source. The editor runs it on a page when it's opened and saved; `ascribe check` runs it with `--vale`, or always with `in-check = true`. [Prose, through Vale](../checks/vale.md) has the steps.
 
@@ -84,7 +80,6 @@ The level of every Vale alert can be set at once with `prose` in `[checks]`, and
 **Rules.** `[checks.vale]` has exactly one of `preset` and `config`, and `off` goes with `preset` and names its rules (`model-checks-vale`). `preset` is one of Ascribe's presets, and `max-level` one of the three levels (`model-invalid-value`).
 
 ### `[checks.links]`
-@available: ascribe 0.3.0
 
 How `ascribe report links` checks the project's external links, with [lychee](https://lychee.cli.rs), a program the project installs. `ascribe check` never checks external links. [Check external links](../checks/external-links.md) has the steps.
 
@@ -104,9 +99,8 @@ A broken link is `link-external-broken` and a moved one `link-external-moved`; b
 ---
 
 ## 20. `[permalinks]`
-@available: ascribe 0.3.0
 
-Names for something outside the docs to link to that no heading or page declares: a [permalink](../writing/directives.md#permalinks) ended on purpose, and a second name for one. Each is published at an address, as a permalink is, and recorded in `ascribe.permalinks` when the project has it (SPEC §7.6). The [guide](../permalinks/index.md#moving-aliasing-and-retiring) says when to use each.
+Names for something outside the docs to link to that no heading or page declares: a [permalink](../writing/directives.md#permalinks) that was ended on purpose, and another name for one. Each is published at an address, as a permalink is, and recorded in `ascribe.permalinks` when the project has it (SPEC §7.6). The [guide](../permalinks/index.md#moving-aliasing-and-retiring) says when to use each.
 
 ```toml
 [permalinks.retired]
@@ -131,7 +125,6 @@ cli-settings = "settings"
 ---
 
 ## 21. `[crawlers]`
-@available: ascribe 0.3.0
 
 @include: ../_fragments/content-model/crawlers.md
 
@@ -152,7 +145,6 @@ The list changes, as operators add bots and rename them. Ascribe's release proce
 ---
 
 ## 22. `[listing]`
-@available: ascribe 0.3.0
 
 @include: ../_fragments/content-model/listing.md
 
@@ -165,7 +157,6 @@ In the editor, `listing:` in a page's frontmatter completes its three values, an
 
 **Rules.** Each value is one of the three (`model-invalid-value`). A folder is a path from the content root ending in `/`, with no `.` or `..` part or pattern characters, of a folder that's there, with its name's case as on disk (`model-listing-folder`). A type is one the project declares, or `page` when it declares none (`model-listing-type`). A rule isn't looser than a folder's it's under, or than `default` (`model-listing-looser`). A page isn't looser than a rule it's under (`listing-loosened`). No other key is allowed in `[listing]` (`model-unknown-key`).
 
-@available: ascribe 0.3.2
 In an older line of a versioned build, a page isn't looser than `older-lines` either (`listing-loosened-in-line`).
 
 ---
@@ -178,4 +169,4 @@ In an older line of a versioned build, a page isn't looser than `older-lines` ei
 
 ## 24. Validation
 
-A content model with errors is reported, and nothing else is checked, since every other check depends on it. Its warnings are reported with the rest of the diagnostics. Every rule the loader enforces is listed in the [diagnostics reference](../checks/diagnostics/content-model.md), with its code and how to fix it.
+A content model with errors is reported, and nothing else is checked, since every other check depends on it. Its warnings are reported with the rest of the diagnostics. Every rule the loader enforces is listed in the [diagnostics reference](../checks/diagnostics/content-model.md), with its code and how to fix it. The [contract's §24](../contracts/content-model/validation.md#24-validation-rules) states each rule for someone writing a loader.

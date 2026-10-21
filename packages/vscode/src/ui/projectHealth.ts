@@ -11,6 +11,7 @@
 import type { Counted } from "../everyBuild.js";
 import type { ServerState } from "../serverState.js";
 import type { InventoryResult, Summary } from "../shapes.js";
+import { TASKS, type TaskName } from "../tasks.js";
 import type { ProjectAction, ProjectAnswer, ProjectCount } from "../webview/viewProtocol.js";
 import type { AgentFilesResult } from "./agentFiles.js";
 import type { EveryBuildResult } from "./checkEveryBuild.js";
@@ -36,6 +37,9 @@ export const PROJECT_KEYS = {
   checkEveryBuild: "checkEveryBuild",
   /** `ascribe agents sync --check`, of the view's project. */
   checkAgentFiles: "checkAgentFiles",
+  /** The tasks, by their names in `tasks.json`. */
+  build: "build",
+  syncAgentFiles: "syncAgentFiles",
 } as const;
 
 /** What `ascribe/inventory` counts, from the view's project's server. */
@@ -89,6 +93,21 @@ const CHECK_EVERY_BUILD: ProjectAction = {
 
 const CHECK_AGENT_FILES = { key: PROJECT_KEYS.checkAgentFiles, label: "Check Agent Files" };
 
+const TASK_ICONS: Record<TaskName, string> = {
+  build: "package",
+  syncAgentFiles: "sync",
+};
+
+/** A task, as an action: it runs in the terminal. */
+function taskAction(name: TaskName): ProjectAction {
+  return {
+    key: name,
+    label: TASKS[name].label,
+    icon: TASK_ICONS[name],
+    caption: TASKS[name].caption,
+  };
+}
+
 /** The Project view's answer for `project`, or its message when there's none. */
 export function projectAnswer(project: ProjectFacts | undefined): ProjectAnswer {
   if (!project) return { message: NO_PROJECT, head: null, toDo: 0, health: [], actions: [] };
@@ -111,7 +130,7 @@ export function projectAnswer(project: ProjectFacts | undefined): ProjectAnswer 
     },
     toDo: health.filter((count) => count.state !== "none" && count.state !== "running").length,
     health,
-    actions: [CHECK_EVERY_BUILD],
+    actions: [CHECK_EVERY_BUILD, taskAction("build"), taskAction("syncAgentFiles")],
   };
 }
 

@@ -8,7 +8,6 @@ The outputs for agents are static files, so any host serves them, but a few thin
 
 ## What your host does
 @id: what-your-host-does
-@available: ascribe 0.3.0
 
 ### 1. Check the files' type
 

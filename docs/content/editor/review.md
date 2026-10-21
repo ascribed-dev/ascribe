@@ -2,7 +2,6 @@
 type: reference
 title: Review in the preview
 description: "Reviewing a change in the VS Code preview: what changed against a base, the Review view, and a pull request's comments."
-available: ascribe 0.2.0
 ---
 
 The preview can mark what changed against a git revision, the **base**: the [marks](../review/how-it-works.md#the-marks) that review shows in every place, on the page you're editing. It's for reading a change as a page, your own before you push it or someone else's on a checkout of their branch. [Review](../review/index.md) walks through reviewing a pull request, start to finish, and [How review works](../review/how-it-works.md) says what's compared and how comments map to the pull request; this page is the reference for the editor's part.

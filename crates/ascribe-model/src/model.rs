@@ -708,6 +708,19 @@ impl Source {
             && !self.ignore.iter().any(|p| p.matches(path))
     }
 
+    /// Whether a change on disk to the file or folder at `path`, relative
+    /// to the source's folder, can matter to the source: it's a file the
+    /// source reads ([`Source::reads`]), a folder that may hold one that
+    /// `ignore` doesn't leave out, or the source's tested examples' config,
+    /// their observations' folder, or a file in it.
+    pub fn may_use(&self, path: &str) -> bool {
+        use crate::examples::{OBSERVATIONS_FOLDER, is_examples_file};
+        is_examples_file(path)
+            || path == OBSERVATIONS_FOLDER
+            || (!self.ignore.iter().any(|p| p.matches(path))
+                && (self.include.is_empty() || self.include.iter().any(|p| p.may_match_in(path))))
+    }
+
     /// The folder of a source's copies, relative to the project root, when
     /// the source is in another repository: `sources/<name>`.
     pub fn copies_folder(name: &str) -> String {

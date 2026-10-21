@@ -6,4 +6,7 @@
 - `--word`: Match a word or a phrase only where it isn't inside a longer word: where the characters on either side aren't letters, digits, or `_`.
 - `--summary`: Show the pages and how many places each has, most first, instead of the places.
 - `--build <NAME>`: Search the pages of this build; repeat it for several. By default, every build.
-- `--limit <N>`: List at most this many places, or with `--summary`, pages. By default, 50 places, or 20 pages.
+- `--limit <N>`: List at most this many places, or with `--summary`, pages. By default, 50 places in text and 500 in JSON, or 20 pages.
+- `--format <FORMAT>`: How to show the answer.
+  - `text` (the default): Short text, for people and agents to read.
+  - `json`: One JSON document, for tools.

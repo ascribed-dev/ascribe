@@ -2,7 +2,6 @@
 type: how-to
 title: The project report
 description: Reading ascribe report and acting on each section, from the problems and pages it counts to the external links and the published site, and running it every day in CI.
-available: ascribe 0.3.0
 ---
 
 `ascribe check` answers "is this change fine?", quickly, on every edit and every pull request. `ascribe report` answers "what state is this project in?": it counts what the checks find across the whole project, lists what each build leaves out, and runs what's too slow or too networked for a check, such as following every external link. Every problem in it says what kind of next step it needs, as the editor does.

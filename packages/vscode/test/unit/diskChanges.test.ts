@@ -11,6 +11,7 @@ import {
   startsServer,
   toldOfChange,
   type Layout,
+  type Source,
 } from "../../src/diskChanges.js";
 import type { Project } from "../../src/projects.js";
 
@@ -32,6 +33,8 @@ describe("layoutOf", () => {
         'output-dir = "../out"',
         "[sources.code]",
         'path = ".."',
+        'include = ["crates/**", 3]',
+        'ignore = ["**/node_modules/**"]',
         "[sources.api]",
         'git = "https://github.com/acme/api.git"',
       ].join("\n"),
@@ -39,7 +42,13 @@ describe("layoutOf", () => {
     expect(layout).toEqual({
       contentRoot: path.resolve("/repo/docs/pages"),
       outputDir: path.resolve("/repo/out"),
-      sources: [path.resolve("/repo")],
+      sources: [
+        {
+          folder: path.resolve("/repo"),
+          include: ["crates/**"],
+          ignore: ["**/node_modules/**"],
+        },
+      ],
     });
   });
 
@@ -75,7 +84,7 @@ describe("startsServer", () => {
   const layout: Layout = {
     contentRoot: path.join(repo, "handbook", "pages"),
     outputDir: path.join(repo, "handbook", ".ascribe", "build"),
-    sources: [path.join(repo, "code")],
+    sources: [{ folder: path.join(repo, "code"), include: [], ignore: [] }],
   };
   const starts = (...segments: string[]) =>
     startsServer(path.join(repo, ...segments), handbook, layout, projects);
@@ -143,7 +152,7 @@ describe("changesCheck", () => {
   const layout: Layout = {
     contentRoot: path.join(repo, "handbook", "pages"),
     outputDir: path.join(repo, "handbook", "out"),
-    sources: [path.join(repo, "code")],
+    sources: [{ folder: path.join(repo, "code"), include: [], ignore: [] }],
   };
   const changes = (...segments: string[]) =>
     changesCheck(path.join(repo, ...segments), handbook, layout, projects);
@@ -262,6 +271,7 @@ describe("toldOfChange", () => {
   const nested = project(path.join(root, "docs/nested"));
   const projects = [docs, api, nested];
   const at = (file: string) => path.join(root, file);
+  const everything = (folder: string): Source => ({ folder, include: [], ignore: [] });
 
   it("tells a server of its own files", () => {
     expect(toldOfChange(at("docs/content/a.md"), docs, [], projects)).toBe(true);
@@ -269,7 +279,7 @@ describe("toldOfChange", () => {
   });
 
   it("tells a server of a file in its sources' folder that's in no project", () => {
-    const sources = [root];
+    const sources = [everything(root)];
     expect(toldOfChange(at("crates/cli/tests/output/a.txt"), docs, sources, projects)).toBe(true);
     expect(toldOfChange(at("examples.observations/default.toml"), docs, sources, projects)).toBe(
       true,
@@ -278,18 +288,62 @@ describe("toldOfChange", () => {
   });
 
   it("tells a server of a file in its sources' folder that's in another project", () => {
-    const sources = [at("api/code")];
+    const sources = [everything(at("api/code"))];
     expect(toldOfChange(at("api/code/greet.py"), docs, sources, projects)).toBe(true);
     expect(toldOfChange(at("api/content/a.md"), docs, sources, projects)).toBe(false);
     expect(toldOfChange(at("docs/nested/code/x.ts"), docs, [], projects)).toBe(false);
-    expect(toldOfChange(at("docs/nested/code/x.ts"), docs, [at("docs/nested")], projects)).toBe(
-      true,
-    );
+    expect(
+      toldOfChange(at("docs/nested/code/x.ts"), docs, [everything(at("docs/nested"))], projects),
+    ).toBe(true);
   });
 
   it("doesn't tell a server of node_modules or .git in its sources' folder", () => {
-    const sources = [root];
+    const sources = [everything(root)];
     expect(toldOfChange(at("node_modules/a/index.js"), docs, sources, projects)).toBe(false);
     expect(toldOfChange(at(".git/index"), docs, sources, projects)).toBe(false);
+  });
+
+  it("tells a server only of the files in its sources' folder that a source can use", () => {
+    const sources: Source[] = [
+      {
+        folder: root,
+        include: ["crates/cli/tests/output/**", "examples/{a,b}/*.toml"],
+        ignore: ["**/node_modules/**"],
+      },
+    ];
+    const told = (file: string) => toldOfChange(at(file), docs, sources, projects);
+    // What `include` covers, and a folder that may hold it.
+    expect(told("crates/cli/tests/output/a.txt")).toBe(true);
+    expect(told("crates/cli")).toBe(true);
+    expect(told("examples/b/x.toml")).toBe(true);
+    expect(told("examples/b")).toBe(true);
+    // The source's examples, whatever `include` says.
+    expect(told("ascribe.examples.toml")).toBe(true);
+    expect(told("examples.observations")).toBe(true);
+    expect(told("examples.observations/default.toml")).toBe(true);
+    // A build's output, and what `include` doesn't cover or `ignore` leaves out.
+    expect(told("target")).toBe(false);
+    expect(told("target/debug/build/a.d")).toBe(false);
+    expect(told("crates/core/src/lib.rs")).toBe(false);
+    expect(told("examples/c/x.toml")).toBe(false);
+    expect(told("examples/b/x.md")).toBe(false);
+    expect(told("examples/b/node_modules")).toBe(false);
+    expect(told("docs/nested/ascribe.examples.toml")).toBe(false);
+    // Its own files, whatever its sources read.
+    expect(told("docs/content/a.md")).toBe(true);
+  });
+
+  it("reads a pattern as the content model does", () => {
+    const told = (include: string, file: string) =>
+      toldOfChange(at(file), docs, [{ folder: root, include: [include], ignore: [] }], projects);
+    expect(told("a\\*.txt", "a*.txt")).toBe(true);
+    expect(told("a\\*.txt", "ab.txt")).toBe(false);
+    expect(told("a?.txt", "ab.txt")).toBe(true);
+    expect(told("a?.txt", "a.txt")).toBe(false);
+    expect(told("**/*.rs", "src/a/b.rs")).toBe(true);
+    expect(told("*.rs", "src/b.rs")).toBe(false);
+    expect(told("(a).txt", "(a).txt")).toBe(true);
+    // One the content model wouldn't load covers everything.
+    expect(told("{a,b", "target/a.d")).toBe(true);
   });
 });

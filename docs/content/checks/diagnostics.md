@@ -21,7 +21,7 @@ The diagnostics are on four pages, by what they're about:
 - [The content model](diagnostics/content-model.md): `ascribe.toml`.
 - [Content checks](diagnostics/content-checks.md): the content's quality, which a project can set the level of.
 
-Each entry ends with the section of the [directive reference](../writing/directives.md) or the [`ascribe.toml` reference](../content-model/index.md) about what it checks, which has examples, and links to its part of the specification.
+Each entry ends with the section of the [directive reference](../writing/directives.md), [directive syntax](../writing/syntax.md), [frontmatter](../writing/frontmatter.md), [phrases, links, and images](../writing/inline.md), or the [`ascribe.toml` reference](../content-model/index.md) about what it checks, which has examples, and links to its part of the specification.
 
 In the editor, many diagnostics offer a quick fix. See [Quick fixes](../editor/problems.md#quick-fixes).
 

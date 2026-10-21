@@ -19,7 +19,14 @@ import { BuildLenses } from "./ui/lens.js";
 import { ProjectBuilds } from "./ui/projectBuilds.js";
 import { ReviewView, type ReviewViewApi } from "./ui/reviewView.js";
 import { ProjectView, type ProjectViewApi } from "./ui/projectView.js";
-import { SidebarViews, type SidebarApi, type ThisPageApi } from "./ui/sidebarViews.js";
+import { ProjectTasks } from "./ui/tasks.js";
+import { thisPageNotice } from "./ui/sidebar.js";
+import {
+  SidebarViews,
+  thisPageWebview,
+  type SidebarApi,
+  type ThisPageApi,
+} from "./ui/sidebarViews.js";
 import { showRestricted, StatusBar, type StatusBarApi } from "./ui/statusBar.js";
 import { SwitchProject, type SwitchProjectApi } from "./ui/switchProject.js";
 import { Walkthrough } from "./ui/walkthrough.js";
@@ -84,9 +91,13 @@ export interface AscribeApi {
 let registry: ProjectRegistry | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<AscribeApi> {
+  // This page is made first, so in Restricted Mode it can say so too.
+  const thisPage = thisPageWebview(context.extensionUri);
+  context.subscriptions.push(thisPage.register(), thisPage);
   // In Restricted Mode the extension runs nothing, since it would run the
   // project's own binary; it only says so, and starts once the folder is trusted.
   if (!vscode.workspace.isTrusted) {
+    thisPage.show(thisPageNotice({ kind: "restricted" }));
     const notice = showRestricted();
     context.subscriptions.push(notice);
     await new Promise<void>((resolve) => {
@@ -123,13 +134,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   reviewView.register();
   const actions = new ActionsController(projects);
   actions.register();
-  const sidebar = new SidebarViews(projects, preview.review, builds, actions, context.extensionUri);
+  const sidebar = new SidebarViews(projects, preview.review, builds, actions, thisPage);
   const switchProject = new SwitchProject(projects, builds, sidebar);
   switchProject.register();
   sidebar.register();
+  const tasks = new ProjectTasks(context, projects);
+  tasks.register();
   const agentFiles = new AgentFilesChecks(projects);
   agentFiles.register();
-  const projectView = new ProjectView(projects, sidebar, checks, agentFiles, context.extensionUri);
+  const projectView = new ProjectView(
+    projects,
+    sidebar,
+    checks,
+    agentFiles,
+    tasks,
+    context.extensionUri,
+  );
   projectView.register();
 
   const newPage = new NewPage(projects);
@@ -192,6 +212,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     switchProject,
     reviewView,
     sidebar,
+    tasks,
     projectView,
     walkthrough,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {

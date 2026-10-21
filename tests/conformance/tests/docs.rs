@@ -256,48 +256,119 @@ fn with_parts(page: &str) -> Vec<String> {
 }
 
 /// The `ascribe.toml` reference and its contract, each a page and its parts,
-/// take what they say alike
-/// from the fragments in `docs/content/_fragments/content-model/`, so no
-/// paragraph, list, table, or example is written in both. Headings, rules,
-/// and the includes themselves are the pages' shape, and alike on purpose.
-#[test]
-fn the_content_model_pages_share_text_only_through_fragments() {
-    // The blocks between blank lines, keeping a code block whole.
-    let blocks = |path: &str| -> Vec<String> {
-        let mut blocks = vec![String::new()];
-        let mut fenced = false;
-        for line in read(path).lines() {
-            fenced ^= line.trim_start().starts_with("```");
-            if line.trim().is_empty() && !fenced {
-                blocks.push(String::new());
-            } else if let Some(block) = blocks.last_mut() {
-                block.push_str(line);
-                block.push('\n');
+/// from the repository's root.
+fn content_model_pages() -> (Vec<String>, Vec<String>) {
+    (
+        with_parts("docs/content/content-model/index.md"),
+        with_parts("docs/content/contracts/content-model.md"),
+    )
+}
+
+/// The sentences of a page's own prose, lowercased, with each link's
+/// destination left out: not its headings, includes, directives, code
+/// blocks, tables, or contents list. A sentence ends at `.`, `:`, or `;`
+/// and a space, and one under five words is too short to be a second home.
+fn sentences(path: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut fenced = false;
+    for line in read(path).lines() {
+        let line = line.trim();
+        if line.starts_with("```") {
+            fenced = !fenced;
+            continue;
+        }
+        let contents = line
+            .split_once(". [")
+            .is_some_and(|(n, _)| n.chars().all(|c| c.is_ascii_digit()));
+        if fenced
+            || contents
+            || line.is_empty()
+            || line == "---"
+            || line.starts_with(['#', '@', '|'])
+        {
+            continue;
+        }
+        let mut text = String::new();
+        let mut rest = line;
+        while let Some(at) = rest.find("](") {
+            text.push_str(&rest[..at]);
+            rest = rest[at + 2..]
+                .split_once(')')
+                .map_or("", |(_, after)| after);
+        }
+        text.push_str(rest);
+        let text = text.replace('[', "").to_lowercase();
+        let mut sentence = String::new();
+        let mut chars = text.chars().peekable();
+        while let Some(c) = chars.next() {
+            sentence.push(c);
+            if matches!(c, '.' | ':' | ';') && chars.peek() == Some(&' ') {
+                out.push(std::mem::take(&mut sentence));
             }
         }
-        blocks.retain(|block| {
-            !(block.is_empty()
-                || block == "---\n"
-                || block.starts_with('#')
-                || block.starts_with("@include: "))
-        });
-        blocks
-    };
-    let pages = with_parts;
-    let contract: Vec<String> = pages("docs/content/contracts/content-model.md")
+        out.push(sentence);
+    }
+    out.into_iter()
+        .map(|s| s.trim_matches([' ', '-', '*']).to_owned())
+        .filter(|s| s.split_whitespace().count() >= 5)
+        .collect()
+}
+
+/// The `ascribe.toml` reference explains, and its contract states the rules
+/// (decision #689a), so what both say alike is a fragment in
+/// `docs/content/_fragments/content-model/` that each includes, and no
+/// sentence of one page's own prose is in the other's.
+#[test]
+fn the_content_model_pages_share_text_only_through_fragments() {
+    let (reference, contract) = content_model_pages();
+    let contract: Vec<String> = contract.iter().flat_map(|page| sentences(page)).collect();
+    let mut twice: Vec<String> = reference
         .iter()
-        .flat_map(|page| blocks(page))
+        .flat_map(|page| sentences(page))
+        .filter(|sentence| contract.contains(sentence))
         .collect();
-    let twice: Vec<String> = pages("docs/content/content-model/index.md")
-        .iter()
-        .flat_map(|page| blocks(page))
-        .filter(|block| contract.contains(block))
-        .collect();
+    twice.dedup();
     assert!(
         twice.is_empty(),
-        "move what both pages say into a fragment in docs/content/_fragments/content-model/, \
-         and include it from each:\n\n{}",
-        twice.join("\n\n")
+        "say it in the page it belongs to, the rule with MUST in the contract and the reason in \
+         the reference, or move what both say alike into a fragment in \
+         docs/content/_fragments/content-model/:\n\n{}",
+        twice.join("\n")
+    );
+}
+
+/// The `ascribe.toml` reference and the fragments it shares with its
+/// contract say no `MUST`, `SHOULD`, or `MAY`: the contract states the rules
+/// with them (decision #689a).
+#[test]
+fn the_content_model_reference_says_no_must() {
+    let (reference, _) = content_model_pages();
+    let fragments = std::fs::read_dir(repo().join(CONTENT_MODEL_DIRS[1]))
+        .unwrap()
+        .map(|e| {
+            format!(
+                "{}/{}",
+                CONTENT_MODEL_DIRS[1],
+                e.unwrap().file_name().to_string_lossy()
+            )
+        });
+    let mut found = Vec::new();
+    for path in reference.into_iter().chain(fragments) {
+        for (n, line) in read(&path).lines().enumerate() {
+            let words = line.split(|c: char| !c.is_ascii_alphabetic());
+            if words
+                .into_iter()
+                .any(|w| ["MUST", "SHOULD", "MAY"].contains(&w))
+            {
+                found.push(format!("{path}:{}: {line}", n + 1));
+            }
+        }
+    }
+    assert!(
+        found.is_empty(),
+        "say these in the contract, docs/content/contracts/content-model/, and in plain words \
+         here:\n{}",
+        found.join("\n")
     );
 }
 
@@ -633,20 +704,27 @@ fn the_content_model_tables_are_current() {
 }
 
 /// No `Key | Type | Default | Description` table of the `ascribe.toml`
-/// reference is written by hand: each is generated from the registry.
+/// reference or its contract is written by hand: each is generated from the
+/// registry, and both include it.
 #[test]
 fn no_content_model_table_is_written_by_hand() {
+    let (reference, contract) = content_model_pages();
+    let fragments = std::fs::read_dir(repo().join(CONTENT_MODEL_DIRS[1]))
+        .unwrap()
+        .map(|e| {
+            format!(
+                "{}/{}",
+                CONTENT_MODEL_DIRS[1],
+                e.unwrap().file_name().to_string_lossy()
+            )
+        });
     let mut written = Vec::new();
-    for dir in CONTENT_MODEL_DIRS {
-        for entry in std::fs::read_dir(repo().join(dir)).unwrap() {
-            let path = entry.unwrap().path();
-            let text = std::fs::read_to_string(&path).unwrap();
-            if text
-                .lines()
-                .any(|l| l == "| Key | Type | Default | Description |")
-            {
-                written.push(path.display().to_string());
-            }
+    for path in reference.into_iter().chain(contract).chain(fragments) {
+        if read(&path)
+            .lines()
+            .any(|l| l == "| Key | Type | Default | Description |")
+        {
+            written.push(path);
         }
     }
     written.sort();
@@ -1031,8 +1109,11 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
 /// The reference pages a diagnostic's entry can send its reader on to, and
 /// what the entry calls each: a page, from the content root, and its parts,
 /// as `content-model/checks.md`.
-const REFERENCES: [(&str, &str); 4] = [
+const REFERENCES: [(&str, &str); 7] = [
     ("writing/directives.md", "directive reference"),
+    ("writing/syntax.md", "directive syntax reference"),
+    ("writing/frontmatter.md", "frontmatter reference"),
+    ("writing/inline.md", "phrases and links reference"),
     ("writing/memo-files.md", "memo files reference"),
     ("content-model/index.md", "`ascribe.toml` reference"),
     ("navigation/index.md", "navigation reference"),

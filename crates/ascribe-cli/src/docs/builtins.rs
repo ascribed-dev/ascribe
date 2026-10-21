@@ -1,10 +1,9 @@
 //! The directive reference's table of built-ins, in
 //! `docs/content/_generated/directives-builtins.md`, is generated from
-//! `builtin_schemas()`, and the reference's contents line for the built-ins
-//! and its sections follow the same order, SPEC §4's. This test fails when
-//! any of them is out of date; run it with `ASCRIBE_BLESS=1` to rewrite the
-//! table and the contents line. To change what a row says, change the
-//! built-in's schema in `crates/ascribe-core/src/schema.rs`.
+//! `builtin_schemas()`, and the reference's sections follow the same order,
+//! SPEC §4's. This test fails when either is out of date; run it with
+//! `ASCRIBE_BLESS=1` to rewrite the table. To change what a row says, change
+//! the built-in's schema in `crates/ascribe-core/src/schema.rs`.
 
 use std::fmt::Write as _;
 
@@ -105,16 +104,6 @@ fn table() -> String {
     out
 }
 
-/// The reference's contents line for the built-ins.
-fn contents() -> String {
-    let links = builtins()
-        .iter()
-        .map(|(builtin, _)| format!("[`@{0}`](directives.md#{0})", builtin.name()))
-        .collect::<Vec<_>>()
-        .join(", ");
-    format!("- [Built-in directives](directives.md#built-in-directives): {links}")
-}
-
 #[test]
 fn the_directive_reference_s_built_ins_are_current() {
     check_fragments(
@@ -129,27 +118,10 @@ fn the_directive_reference_s_built_ins_are_current() {
         "{REFERENCE} doesn't include _generated/directives-builtins.md"
     );
 
-    let contents = contents();
-    let start = "- [Built-in directives](directives.md#built-in-directives)";
-    let line = page
-        .lines()
-        .find(|l| l.starts_with(start))
-        .unwrap_or_else(|| panic!("{REFERENCE} has no contents line starting `{start}`"));
-    if line != contents {
-        if std::env::var_os("ASCRIBE_BLESS").is_some() {
-            std::fs::write(&path, page.replacen(line, &contents, 1)).unwrap();
-        } else {
-            panic!(
-                "{REFERENCE}'s contents line for the built-ins is out of date. Run `{}`",
-                super::BLESS
-            );
-        }
-    }
-
-    // Each built-in has a section, `### `@name``, in the same order.
+    // Each built-in has a section, `## `@name``, in the same order.
     let sections: Vec<&str> = page
         .lines()
-        .filter_map(|l| l.strip_prefix("### `@")?.strip_suffix('`'))
+        .filter_map(|l| l.strip_prefix("## `@")?.strip_suffix('`'))
         .collect();
     let names: Vec<&str> = builtins().iter().map(|(b, _)| b.name()).collect();
     assert_eq!(

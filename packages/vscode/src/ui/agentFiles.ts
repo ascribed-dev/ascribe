@@ -16,6 +16,7 @@ import { changesCheck, readLayout, type Layout } from "../diskChanges.js";
 import { shellCommand, usesShell } from "../environment.js";
 import { comparable, type Project } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
+import { isAscribeTask } from "../tasks.js";
 import { staleFiles } from "./projectHealth.js";
 
 /** The shortest time between two checks of a project's agent files, after a save. */
@@ -110,6 +111,16 @@ export class AgentFilesChecks implements vscode.Disposable {
           this.soon(server);
         }
       }),
+      // Sync Agent Files, the task, finished: the files it wrote are checked again.
+      vscode.tasks.onDidEndTaskProcess(({ execution }) => {
+        const { definition } = execution.task;
+        if (!isAscribeTask(definition) || definition.task !== "syncAgentFiles") return;
+        for (const server of this.projects.servers) {
+          if (this.made.has(comparable(server.project.folder)) && this.shown(server)) {
+            this.soon(server);
+          }
+        }
+      }),
       this.projects.onDidChangeProjects(() => {
         const known = new Set(this.projects.projects.map((p) => comparable(p.folder)));
         for (const key of this.made.keys()) if (!known.has(key)) this.made.delete(key);
@@ -152,24 +163,6 @@ export class AgentFilesChecks implements vscode.Disposable {
       return runs.running;
     }
     return this.run(server, runs);
-  }
-
-  /**
-   * Runs `ascribe agents sync` for `server`'s project, logging what it wrote
-   * in the server's output, then checks the files again.
-   */
-  async sync(server: ProjectServer): Promise<void> {
-    const binary = server.binary;
-    if (!binary) return;
-    const name = this.projects.name(server.project);
-    const { code, stdout, stderr } = await runAgents(binary.path, server.project, []);
-    server.log(`ascribe agents sync:\n${stdout}${stderr}`);
-    if (code !== 0) {
-      void vscode.window.showErrorMessage(
-        `Ascribe couldn't sync the agent files of ${name}: ${stderr.trim() || `it exited with ${code}`}`,
-      );
-    }
-    await this.checkProject(server);
   }
 
   /** After a save: soon, but at most once every `AGENT_FILES_INTERVAL_MS`. */

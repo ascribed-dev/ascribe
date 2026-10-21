@@ -1,7 +1,10 @@
 import * as assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import * as path from "node:path";
 import * as vscode from "vscode";
 import type { AscribeApi } from "../../../src/extension.js";
-import { activated, uriOf, waitFor } from "./helpers.js";
+import { samePath } from "../../../src/projects.js";
+import { activated, uriOf, waitFor, workspace } from "./helpers.js";
 
 // The real `ascribe lsp` on a copy of examples/tested: the lens in a code
 // file a page shows, which says how many pages show it and lists them.
@@ -99,7 +102,9 @@ describe("a code file a page shows", () => {
       (item) => item.label === "Example" && item.description.startsWith("code:examples/greet.ts"),
     );
     assert.ok(greet, JSON.stringify(health));
-    assert.ok(greet.description.endsWith(", tested"), greet.description);
+    // It leads with its state, then what it was tested with.
+    assert.equal(greet.state, "tested", JSON.stringify(greet));
+    assert.ok(greet.description.includes(", with Node"), greet.description);
     // It opens the file its `@snippet` shows, beside the page.
     assert.ok(greet.opens?.endsWith("/code/examples/greet.ts"), greet.opens);
     const includes = items
@@ -152,5 +157,76 @@ describe("a code file a page shows", () => {
       assert.equal(after.report.focused, key);
       assert.equal(after.report.hasFocus, true);
     }
+  });
+});
+
+// The `ascribe` tasks, on the same project: the workspace folder's own, so
+// neither names `--config`.
+describe("the project's tasks", () => {
+  let api: AscribeApi;
+
+  before(async () => {
+    api = await activated();
+    await api.whenSettled();
+    await waitFor("the server", () => api.state() === "running");
+  });
+
+  afterEach(async () => {
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
+  const fetched = () => vscode.tasks.fetchTasks({ type: "ascribe" });
+
+  /** Resolves to the exit code of the next run of the task named `name` to end. */
+  function ended(name: string): Promise<number | undefined> {
+    return new Promise((resolve) => {
+      const listener = vscode.tasks.onDidEndTaskProcess((event) => {
+        if (event.execution.task.name !== name) return;
+        listener.dispose();
+        resolve(event.exitCode);
+      });
+    });
+  }
+
+  it("offers Build and Sync Agent Files, each running the server's binary in the project's folder", async () => {
+    const tasks = await fetched();
+    assert.deepEqual(
+      tasks.map((task) => task.name),
+      ["Build", "Sync Agent Files"],
+    );
+    const binary = api.binary()?.path;
+    assert.ok(binary);
+    for (const [name, args] of [
+      ["Build", ["build"]],
+      ["Sync Agent Files", ["agents", "sync"]],
+    ] as const) {
+      const execution = tasks.find((task) => task.name === name)?.execution;
+      assert.ok(execution instanceof vscode.ProcessExecution, name);
+      assert.equal(execution.process, binary);
+      assert.deepEqual(execution.args, args);
+      assert.ok(execution.options?.cwd && samePath(execution.options.cwd, workspace()));
+    }
+    const build = tasks.find((task) => task.name === "Build");
+    assert.deepEqual(build?.definition, { type: "ascribe", task: "build" });
+    assert.equal(build?.group, vscode.TaskGroup.Build);
+  });
+
+  it("builds from the Project view, in the terminal", async () => {
+    await vscode.window.showTextDocument(uriOf("docs", "index.md"));
+    const exit = ended("Build");
+    await vscode.commands.executeCommand("ascribe.project.focus");
+    await api.ui.project.whenDrawn("the tasks", (drawn) => drawn.report.buttons.includes("Build"));
+    await api.ui.project.choose("build");
+    assert.equal(await exit, 0);
+    assert.ok(existsSync(path.join(workspace(), ".ascribe", "build")));
+  });
+
+  it("syncs the agent files", async () => {
+    const sync = (await fetched()).find((task) => task.name === "Sync Agent Files");
+    assert.ok(sync);
+    const exit = ended(sync.name);
+    await vscode.tasks.executeTask(sync);
+    assert.equal(await exit, 0);
+    assert.ok(existsSync(path.join(workspace(), "AGENTS.md")));
   });
 });

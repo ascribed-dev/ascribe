@@ -28,6 +28,7 @@ import {
   type ProjectFacts,
 } from "./projectHealth.js";
 import type { SidebarViews } from "./sidebarViews.js";
+import type { ProjectTasks } from "./tasks.js";
 import { WebviewView, type Drawn } from "./webviewView.js";
 
 /** The Project view, for tests. */
@@ -59,6 +60,7 @@ export class ProjectView implements vscode.Disposable {
     private readonly sidebar: SidebarViews,
     private readonly checks: EveryBuildChecks,
     private readonly agentFiles: AgentFilesChecks,
+    private readonly tasks: ProjectTasks,
     extensionUri: vscode.Uri,
   ) {
     this.view = new WebviewView(
@@ -155,7 +157,7 @@ export class ProjectView implements vscode.Disposable {
       { modal: true, detail },
       sync,
     );
-    if (choice === sync) await this.agentFiles.sync(server);
+    if (choice === sync) await this.tasks.run(server.project, "syncAgentFiles");
   }
 
   /** Does what a count or an action of the view does, for the project it shows. */
@@ -194,6 +196,10 @@ export class ProjectView implements vscode.Disposable {
         return;
       case PROJECT_KEYS.checkAgentFiles:
         await this.agentFiles.checkProject(server);
+        return;
+      case PROJECT_KEYS.build:
+      case PROJECT_KEYS.syncAgentFiles:
+        await this.tasks.run(server.project, key);
         return;
       default:
         return;

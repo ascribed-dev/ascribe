@@ -24,8 +24,20 @@
     "label": "Writing pages",
     "pages": [
       {
+        "href": "/docs/writing/syntax/",
+        "label": "Directive syntax"
+      },
+      {
         "href": "/docs/writing/directives/",
         "label": "Directive reference"
+      },
+      {
+        "href": "/docs/writing/frontmatter/",
+        "label": "Frontmatter"
+      },
+      {
+        "href": "/docs/writing/inline/",
+        "label": "Phrases, links, and images"
       },
       {
         "href": "/docs/writing/memo-files/",

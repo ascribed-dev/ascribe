@@ -86,6 +86,16 @@ impl Pattern {
             .iter()
             .any(|alt| match_segments(alt, &segments))
     }
+
+    /// Whether `path` matches, or is a folder that may hold a path that
+    /// does: `a/b` for `a/b/**/*.rs`. The empty path is the folder the
+    /// pattern is relative to, which holds any match.
+    pub fn may_match_in(&self, path: &str) -> bool {
+        let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
+        self.alternatives
+            .iter()
+            .any(|alt| match_leading_segments(alt, &segments))
+    }
 }
 
 /// Splits `{a,b}` alternatives (no nesting) into separate patterns.
@@ -193,6 +203,22 @@ fn match_segments(pattern: &[Segment], path: &[&str]) -> bool {
     }
 }
 
+/// [`match_segments`], or `path` running out first: a folder the rest of
+/// the pattern may match below.
+fn match_leading_segments(pattern: &[Segment], path: &[&str]) -> bool {
+    match pattern.split_first() {
+        None => path.is_empty(),
+        _ if path.is_empty() => true,
+        Some((Segment::AnyDepth, rest)) => {
+            (0..=path.len()).any(|skip| match_leading_segments(rest, &path[skip..]))
+        }
+        Some((Segment::Glob(toks), rest)) => {
+            let (first, tail) = (path[0], &path[1..]);
+            match_glob(toks, first) && match_leading_segments(rest, tail)
+        }
+    }
+}
+
 fn match_glob(toks: &[Tok], text: &str) -> bool {
     let text: Vec<char> = text.chars().collect();
     // Classic wildcard matching with backtracking on the last star.
@@ -247,6 +273,23 @@ mod tests {
         assert!(m("a\\*.md", "a*.md") && !m("a\\*.md", "ab.md"));
         assert!(!m("Ref/**", "ref/a.md"));
         assert!(m("a*b*c", "aXbYc") && !m("a*b*c", "aXbY"));
+    }
+
+    #[test]
+    fn a_folder_that_may_hold_a_match() {
+        let may = |pattern: &str, path: &str| Pattern::new(pattern).unwrap().may_match_in(path);
+        assert!(may("crates/cli/tests/output/**", "crates"));
+        assert!(may("crates/cli/tests/output/**", "crates/cli"));
+        assert!(may(
+            "crates/cli/tests/output/**",
+            "crates/cli/tests/output/a.txt"
+        ));
+        assert!(!may("crates/cli/tests/output/**", "target"));
+        assert!(!may("crates/cli/tests/output/**", "crates/core"));
+        assert!(may("**/*.rs", "target/debug"));
+        assert!(may("{a,b}/*.md", "b") && !may("{a,b}/*.md", "c"));
+        assert!(!may("a/*.md", "a/b.md/c"));
+        assert!(may("a/*.md", ""));
     }
 
     #[test]

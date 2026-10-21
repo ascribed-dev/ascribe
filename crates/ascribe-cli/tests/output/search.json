@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "query": "\"sign in to quill cloud\"",
+  "builds": [
+    "site",
+    "site@3.4",
+    "cloud",
+    "self-managed-3.3"
+  ],
+  "places": [
+    {
+      "file": "docs/install-agent.md",
+      "line": 62,
+      "column": 1,
+      "end_line": null,
+      "in": "text",
+      "text": "Sign in to Quill Cloud and copy an API key from Settings → Keys, then add it to quill.yaml:",
+      "match": [
+        0,
+        22
+      ],
+      "through": [
+        {
+          "phrase": "cloud"
+        }
+      ],
+      "arm": "deployment=cloud",
+      "pages": [
+        {
+          "page": "install-agent.md",
+          "title": "Install the Quill agent",
+          "heading": "Connect to Quill",
+          "id": "connect",
+          "builds": [
+            "site",
+            "site@3.4",
+            "cloud",
+            "self-managed-3.3"
+          ]
+        }
+      ],
+      "pages_total": 1,
+      "refs_command": null
+    },
+    {
+      "file": "docs/keys.md",
+      "line": 10,
+      "column": 1,
+      "end_line": null,
+      "in": "text",
+      "text": "Sign in to Quill Cloud and open Settings → Keys.",
+      "match": [
+        0,
+        22
+      ],
+      "through": [
+        {
+          "phrase": "cloud"
+        }
+      ],
+      "arm": null,
+      "pages": [
+        {
+          "page": "keys.md",
+          "title": "API keys",
+          "heading": "Create a key",
+          "id": "create-key",
+          "builds": [
+            "site",
+            "site@3.4",
+            "cloud",
+            "self-managed-3.3"
+          ]
+        }
+      ],
+      "pages_total": 1,
+      "refs_command": null
+    }
+  ],
+  "pages": null,
+  "pages_matched": 2,
+  "total": 2,
+  "shown": 2,
+  "truncated": false,
+  "next_command": null,
+  "source_places": [],
+  "not_searched_builds": []
+}

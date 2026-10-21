@@ -16,10 +16,15 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
   const quickstart = uriOf("docs", "quickstart.md");
   const installAgent = uriOf("docs", "install-agent.md");
 
-  /** A view's items as `label (description)`, with their children, depth first. */
+  /** What an item says: a row's state first, then its description. */
+  function says(item: SidebarItem): string {
+    return [item.state ?? "", item.description].filter((part) => part !== "").join(", ");
+  }
+
+  /** A view's items as `label (state, description)`, with their children, depth first. */
   function flat(items: SidebarItem[], depth = 0): string[] {
     return items.flatMap((item) => [
-      `${"  ".repeat(depth)}${item.label}${item.description ? ` (${item.description})` : ""}`,
+      `${"  ".repeat(depth)}${item.label}${says(item) ? ` (${says(item)})` : ""}`,
       ...flat(item.children, depth + 1),
     ]);
   }
@@ -187,7 +192,7 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
       await api.ui.thisPage.whenSettled();
       return api.ui.thisPage.items().find((item) => item.label === "Health");
     });
-    const rows = health.children.map((item) => `${item.label} (${item.description})`);
+    const rows = health.children.map((item) => `${item.label} (${says(item)})`);
     // The same count the Problems panel has for the page.
     const problems = vscode.languages.getDiagnostics(keys);
     assert.match(
@@ -504,6 +509,62 @@ describe("This page's webview on examples/quill", () => {
     );
     assert.equal(moved.report.focused, "about/4");
     assert.equal(moved.report.scroll, placed.report.scroll);
+  });
+
+  it("heads the page with its title, its type, and its path, and names a fragment's kind", async () => {
+    const api = await activated();
+    const view = api.ui.thisPage;
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(installAgent));
+    const page = await view.whenDrawn(
+      "install-agent.md's head",
+      (drawn) => drawn.report.head[0] === "Install the Quill agent",
+    );
+    assert.deepEqual(page.report.head, ["Install the Quill agent", "page · install-agent.md"]);
+    assert.deepEqual(page.report.code, []);
+
+    const fragment = uriOf("docs", "_fragments", "prerequisites.md");
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(fragment));
+    const drawn = await view.whenDrawn("the fragment's head", (drawn) =>
+      (drawn.report.head[1] ?? "").startsWith("fragment · "),
+    );
+    assert.equal(drawn.report.head[1], "fragment · _fragments/prerequisites.md");
+    // A fragment has no size of its own: Health doesn't measure it.
+    const health = view.items().find((item) => item.label === "Health");
+    assert.ok(!health?.children.some((item) => item.label === "Size"), JSON.stringify(health));
+  });
+
+  it("badges the view with Health's things to do, as its header counts them", async () => {
+    const api = await activated();
+    const view = api.ui.thisPage;
+    const original = readFileSync(quickstart.fsPath, "utf8");
+    try {
+      await vscode.commands.executeCommand("ascribe.thisPage.focus");
+      const editor = await vscode.window.showTextDocument(
+        await vscode.workspace.openTextDocument(quickstart),
+      );
+      // A broken link, unsaved: an error in Problems, so one more thing to do.
+      const before = view.badge()?.value ?? 0;
+      await editor.edit((edit) =>
+        edit.insert(
+          editor.document.positionAt(original.length),
+          "\nSee [nothing](no-such-page.md).\n",
+        ),
+      );
+      const badge = await waitFor("the badge to count the problem", async () => {
+        await view.whenSettled();
+        const shown = view.badge();
+        return shown && shown.value > before ? shown : undefined;
+      });
+      const health = view.items().find((item) => item.label === "Health");
+      const warned = (health?.children ?? []).filter((item) => item.icon === "warning").length;
+      assert.equal(badge.value, warned, JSON.stringify(health));
+      assert.equal(health?.description, `${warned} ${warned === 1 ? "thing" : "things"} to do`);
+      assert.match(badge.tooltip, /^Health: \d+ things? to do on this page$/);
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.revertAndCloseActiveEditor");
+      writeFileSync(quickstart.fsPath, original);
+    }
   });
 });
 

@@ -2,7 +2,6 @@
 type: reference
 title: Actions, new pages, and memos
 description: "The VS Code extension's actions, which write Ascribe for you, starting a page from its template, and memo files."
-available: ascribe 0.3.0
 ---
 
 Actions write Ascribe for you: wrap a paragraph in a note, turn a numbered list into steps, link the selected text to a page, insert content that varies by a dimension, mark where a section is available. Each one asks what it needs in short steps, choosing from what the project has (its note types, pages and headings, phrases, dimensions and their values, features, images, fragments, sources, and widgets), so you never type a path, a key, or attribute syntax. What it writes is in canonical form, and one **Undo** takes it back.
@@ -36,7 +35,6 @@ The actions in the bar's **Content model** group change `ascribe.toml`, or the g
 These change `ascribe.toml` in place, keeping its comments, blank lines, and order, and an open `ascribe.toml` with unsaved changes is edited as it is. A rename that changes other files lists every change in the refactor preview first, where you check the changes to make and **Apply** them, or **Discard** them all.
 
 ## Start a page
-@available: ascribe 0.3.1
 
 **Ascribe: New Page** makes a page from its type's [template](../templates/index.md). Run it from the Command Palette, from the **Pages** view's title bar, or on a folder in the Explorer. It asks for the page's type, each with what it's for (the type's `purpose`, or for a type from the starter set, their summary of it), then its title. The page is the template with its `type` and `title` set, named for the title, in the content root; run on a folder, it makes the page in that folder. A page names its type in its frontmatter, so any folder of pages takes every type; a fragment's folder takes none. It's saved and opened with the first thing the template left to fill in selected, usually the description, so typing replaces it. A page is never made over a file: with a file of that name there, it says so, and you give another title.
 
