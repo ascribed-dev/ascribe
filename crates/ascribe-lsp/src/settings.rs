@@ -323,7 +323,7 @@ fn checks_now(now: &ModelNow, file: Option<&ModelFile<'_>>, index: &LineIndex) -
                         default_text: if size {
                             size_text(default)
                         } else {
-                            format!("{} characters", thousands(default))
+                            format!("{} characters", ascribe_check::page::thousands(default))
                         },
                         value: file
                             .and_then(|f| f.get(&limit_at))
@@ -366,19 +366,6 @@ fn sentence(when: &str) -> String {
     } else {
         format!("{when}.")
     }
-}
-
-/// A whole number with a comma between each three digits: `50,000`.
-fn thousands(n: u64) -> String {
-    let digits = n.to_string();
-    let mut out = String::new();
-    for (i, c) in digits.chars().enumerate() {
-        if i > 0 && (digits.len() - i) % 3 == 0 {
-            out.push(',');
-        }
-        out.push(c);
-    }
-    out
 }
 
 /// The answer to `ascribe/settings`.
