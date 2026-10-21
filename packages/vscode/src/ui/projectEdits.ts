@@ -22,8 +22,8 @@ import {
   type ProjectEditKind,
 } from "./projectHealth.js";
 
-export const APPLY_EVERY_SAFE_FIX_COMMAND = "ascribe.applyEverySafeFix";
-export const FORMAT_EVERY_PAGE_COMMAND = "ascribe.formatEveryPage";
+const APPLY_EVERY_SAFE_FIX_COMMAND = "ascribe.applyEverySafeFix";
+const FORMAT_EVERY_PAGE_COMMAND = "ascribe.formatEveryPage";
 
 /** Asks the question before an edit is applied, and says whether to apply it. */
 export type Confirm = (question: string, kind: ProjectEditKind) => Promise<boolean>;
