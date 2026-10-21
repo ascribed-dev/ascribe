@@ -1140,9 +1140,24 @@ impl Core {
         let Some(config) = self.config.clone() else {
             return;
         };
-        let (text, diagnostics): (&str, Vec<Diagnostic>) = match (&self.model_problem, &self.loaded)
-        {
-            (Some(problem), _) => (&problem.text, problem.diagnostics.clone()),
+        let Some((text, diagnostics)) = self.model_diagnostics() else {
+            return;
+        };
+        let index = LineIndex::new(text);
+        let lsp = diagnostics
+            .iter()
+            .map(|d| to_lsp(d, &index, self.encoding, &|_| None))
+            .collect();
+        self.publish(&config, lsp);
+    }
+
+    /// The text of `ascribe.toml` as the server has it now, and its
+    /// diagnostics as they're published: the model's own problems when it
+    /// doesn't load, otherwise its warnings and what the content checks
+    /// across the project found in it, at the levels `[checks]` sets.
+    fn model_diagnostics(&self) -> Option<(&str, Vec<Diagnostic>)> {
+        match (&self.model_problem, &self.loaded) {
+            (Some(problem), _) => Some((&problem.text, problem.diagnostics.clone())),
             (None, Some(loaded)) => {
                 let mut found: Vec<Diagnostic> = loaded
                     .model
@@ -1151,19 +1166,29 @@ impl Core {
                     .map(Diagnostic::from_issue)
                     .collect();
                 found.extend_from_slice(loaded.across.of_model(&loaded.model_text));
-                (
+                Some((
                     &loaded.model_text,
                     ascribe_check::apply_levels(&loaded.model.checks, found),
-                )
+                ))
             }
-            (None, None) => return,
-        };
-        let index = LineIndex::new(text);
-        let lsp = diagnostics
-            .iter()
-            .map(|d| to_lsp(d, &index, self.encoding, &|_| None))
-            .collect();
-        self.publish(&config, lsp);
+            (None, None) => None,
+        }
+    }
+
+    /// `ascribe.toml` as it is now, for Project Settings, asked through any
+    /// of the project's files: its text, even while it doesn't load, the
+    /// version of its open buffer, and its problems.
+    pub(crate) fn model_now(&self, uri: &Uri) -> Option<crate::settings::ModelNow> {
+        self.project_target(uri)?;
+        let config = self.config.clone()?;
+        let (text, diagnostics) = self.model_diagnostics()?;
+        Some(crate::settings::ModelNow {
+            text: text.to_owned(),
+            version: self.docs.get(&config).map(|d| d.version),
+            config,
+            diagnostics,
+            encoding: self.encoding,
+        })
     }
 
     // A closed file keeps its diagnostics.

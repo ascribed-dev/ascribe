@@ -1,0 +1,1 @@
+- **The daily report job keeps what `links` remembers as an artifact.** The job in [The project report](docs/content/checks/report.md) downloads the newest `ascribe-links` artifact before the report and uploads its own after it, in place of `actions/cache`, which GitHub evicts first in a busy repository, so a run often started with nothing remembered. It needs `actions: read`.

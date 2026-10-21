@@ -1,0 +1,11 @@
+description: >-
+  `ascribe report links` asks again, after a short wait, about an address
+  that answered with a server error (`5xx`), with or without history, and
+  only the second answer counts. A link that answers then isn't reported;
+  one that fails again is, with a message that says the server failed,
+  which may be temporary, rather than that the link is broken for readers.
+spec: ["5.2"]
+tags: [links]
+
+diagnostics:
+  - {slug: link-external-broken, file: input.md, line: 8, column: 5, severity: advice}

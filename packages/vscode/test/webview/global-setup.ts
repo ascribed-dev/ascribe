@@ -1,4 +1,4 @@
-// The webview tests load the preview and This page the way VS Code does: the shell HTML
+// The webview tests load the preview, This page, and Project Settings the way VS Code does: the shell HTML
 // and the bundled files under `dist/webview/`. Bundle them first, unless each
 // is already newer than everything esbuild.mjs bundles them from (this
 // package's source, the element library's source and stylesheet, and review's
@@ -21,6 +21,8 @@ const OUTPUTS = [
   "thisPage.js",
   "project.js",
   "views.css",
+  "settings.js",
+  "settings.css",
   "codicon.ttf",
 ];
 

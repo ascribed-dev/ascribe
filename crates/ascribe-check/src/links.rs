@@ -11,6 +11,12 @@
 //! run as a program ([`Lychee`]); a test gives a stand-in ([`LinkChecker`]).
 //! The binary itself makes no request.
 //!
+//! An address that answers with a server error (`5xx`) is asked about
+//! again after a short wait ([`RETRY_WAIT`]), and only the second answer
+//! counts: a server's error may pass. One that keeps answering with it is
+//! `link-external-broken` still, with a message that says the server
+//! failed, not that the page is gone (decision #745).
+//!
 //! An address that answered a few days ago isn't asked about again: its
 //! answer is reused from the project's store ([`cache`]). A link that
 //! answered before and fails now is held as unconfirmed until it has kept
@@ -37,6 +43,10 @@ use history::Seen;
 
 /// How long the link checker may take, in all.
 pub const TIMEOUT: Duration = Duration::from_secs(30 * 60);
+
+/// How long to wait before asking again about the addresses that answered
+/// with a server error.
+pub const RETRY_WAIT: Duration = Duration::from_secs(30);
 
 /// The most characters of the sentence around a link a prompt quotes.
 const MAX_SENTENCE: usize = 300;
@@ -186,17 +196,20 @@ pub fn external_links(project: &Project) -> Vec<Link> {
 
 /// Checks the project's external links with `checker`, leaving out the
 /// hosts `[checks.links] ignore` names, reusing the answers `cache` holds
-/// when there is one, and holding the failures `history` says answered
-/// before. The checker isn't run when there's nothing to ask about, or when
-/// `[checks]` turns both link checks off.
+/// when there is one, asking again about each address that answered with a
+/// server error after `retry_wait`, and holding the failures `history` says
+/// answered before. The checker isn't run when there's nothing to ask
+/// about, or when `[checks]` turns both link checks off.
 ///
 /// # Errors
 ///
-/// The link checker couldn't be run, failed, or ran out of time.
+/// The link checker couldn't be run, failed, or ran out of time the first
+/// time. When asking again fails, the first answers stand.
 pub fn check(
     project: &Project,
     checker: &dyn LinkChecker,
     timeout: Duration,
+    retry_wait: Duration,
     cache: Option<&Cache>,
     history: Option<&History>,
 ) -> Result<Checked, ToolError> {
@@ -243,16 +256,33 @@ pub fn check(
         }
     }
     out.asked = ask.len();
-    let answers = if ask.is_empty() {
+    let request = |urls: Vec<String>| Request {
+        command: checks.links.command.clone(),
+        root: project.root().to_owned(),
+        urls,
+        timeout,
+    };
+    let mut answers = if ask.is_empty() {
         BTreeMap::new()
     } else {
-        checker.check(&Request {
-            command: checks.links.command.clone(),
-            root: project.root().to_owned(),
-            urls: ask.clone(),
-            timeout,
-        })?
+        checker.check(&request(ask.clone()))?
     };
+    let again: Vec<String> = ask
+        .iter()
+        .filter(|url| answers.get(*url).is_some_and(is_server_error))
+        .cloned()
+        .collect();
+    if !again.is_empty() {
+        std::thread::sleep(retry_wait);
+        if let Ok(second) = checker.check(&request(again.clone())) {
+            for url in again {
+                match second.get(&url) {
+                    Some(answer) => answers.insert(url, answer.clone()),
+                    None => answers.remove(&url),
+                };
+            }
+        }
+    }
     if let Some(cache) = cache {
         for url in &ask {
             match answers.get(url) {
@@ -317,10 +347,16 @@ fn diagnostic(project: &Project, link: &Link, answer: &Answer) -> Option<Diagnos
             }
             issue
         }
-        Answer::Broken { status } => Issue::new(diagnostics::LINK_EXTERNAL_BROKEN, link.location)
-            .with_arg("url", link.url.clone())
-            .with_arg("status", status.clone())
-            .with_arg("sentence", sentence()),
+        Answer::Broken { status } => {
+            let mut issue = Issue::new(diagnostics::LINK_EXTERNAL_BROKEN, link.location);
+            if is_server_error(answer) {
+                issue = issue.with_variant("server");
+            }
+            issue
+                .with_arg("url", link.url.clone())
+                .with_arg("status", status.clone())
+                .with_arg("sentence", sentence())
+        }
         Answer::TimedOut { said } => Issue::new(diagnostics::LINK_EXTERNAL_BROKEN, link.location)
             .with_variant("timeout")
             .with_arg("url", link.url.clone())
@@ -335,6 +371,19 @@ fn diagnostic(project: &Project, link: &Link, answer: &Answer) -> Option<Diagnos
         }
     };
     Some(Diagnostic::from_issue(&issue))
+}
+
+/// Whether the checker's answer is a server error, a `5xx` status: the
+/// server failed, which may pass, rather than said the page isn't there.
+fn is_server_error(answer: &Answer) -> bool {
+    let Answer::Broken { status } = answer else {
+        return false;
+    };
+    status
+        .split_whitespace()
+        .next()
+        .and_then(|code| code.parse::<u16>().ok())
+        .is_some_and(|code| (500..600).contains(&code))
 }
 
 /// Whether `to` is where the site at `from` sends a visitor to its home

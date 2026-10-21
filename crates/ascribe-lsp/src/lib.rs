@@ -47,6 +47,7 @@ mod review;
 mod schema;
 mod search;
 mod server;
+mod settings;
 mod shown;
 mod targets;
 mod tokens;
@@ -107,6 +108,10 @@ pub use search::{
     SearchThrough,
 };
 pub use server::{Exit, ServeError, serve};
+pub use settings::{
+    METHOD as SETTINGS_METHOD, SettingEntry, SettingPiece, SettingPlace, SettingProblem,
+    SettingValue, SettingsParams, SettingsResult,
+};
 pub use targets::{
     AttributeKind, BindingKind, METHOD as TARGETS_METHOD, PrimaryKind, TargetAttribute,
     TargetBuild, TargetDimension, TargetDimensionValue, TargetFeature, TargetFragment,

@@ -81,7 +81,15 @@ fn day(s: &str) -> Date {
 
 fn run(project: &Project, checker: &StandIn, today: &str, recheck: bool) -> links::Checked {
     let cache = Cache::open(project, project.root(), day(today), recheck);
-    links::check(project, checker, Duration::from_secs(5), Some(&cache), None).expect("it runs")
+    links::check(
+        project,
+        checker,
+        Duration::from_secs(5),
+        Duration::ZERO,
+        Some(&cache),
+        None,
+    )
+    .expect("it runs")
 }
 
 #[test]

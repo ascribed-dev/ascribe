@@ -66,6 +66,8 @@ mod review;
 mod scenarios;
 #[path = "all/search.rs"]
 mod search;
+#[path = "all/settings.rs"]
+mod settings;
 #[path = "all/shown.rs"]
 mod shown;
 #[path = "all/tokens.rs"]

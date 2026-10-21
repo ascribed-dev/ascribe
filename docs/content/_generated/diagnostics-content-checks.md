@@ -521,7 +521,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block, or under the heading for a heading · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
-**When:** `ascribe report links`: the link checker found that an external link answers with an error, doesn't answer in time, or can't be reached. A host `[checks.links] ignore` names isn't checked.
+**When:** `ascribe report links`: the link checker found that an external link answers with an error, doesn't answer in time, or can't be reached. An address that answers with a server error (`5xx`) is asked about again after a short wait, and reported only when it fails again. A host `[checks.links] ignore` names isn't checked.
 
 **Message:** `{url}` answered \{status}, so the link is broken for readers
 
