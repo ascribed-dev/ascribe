@@ -1,12 +1,14 @@
 //! An address that answers with a server error is asked about again
 //! (`ascribe_check::links::check`), against a local server that answers 500
-//! and then 200: the second answer is the one that counts.
+//! and then 200: the second answer is the one that counts. When asking
+//! again fails, the first answer stands, and isn't said to be the second.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
 use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
 use std::time::Duration;
 
@@ -69,6 +71,24 @@ impl LinkChecker for Asker {
     }
 }
 
+/// Asks like [`Asker`] the first time, and fails to run every time after.
+#[derive(Default)]
+struct FailsAgain {
+    runs: AtomicUsize,
+}
+
+impl LinkChecker for FailsAgain {
+    fn check(&self, request: &Request) -> Result<BTreeMap<String, Answer>, ToolError> {
+        if self.runs.fetch_add(1, Ordering::Relaxed) > 0 {
+            return Err(ToolError::Failed {
+                command: "lychee".to_owned(),
+                reason: "it stopped".to_owned(),
+            });
+        }
+        Asker.check(request)
+    }
+}
+
 fn project(page: String) -> Project {
     let text = "spec = \"0.1\"\n";
     let model = ascribe_model::load_str(text, FileId::new(0)).expect("a model");
@@ -83,9 +103,13 @@ fn project(page: String) -> Project {
 }
 
 fn check(project: &Project) -> links::Checked {
+    check_with(project, &Asker)
+}
+
+fn check_with(project: &Project, checker: &dyn LinkChecker) -> links::Checked {
     links::check(
         project,
-        &Asker,
+        checker,
         Duration::from_secs(5),
         Duration::from_millis(10),
         None,
@@ -119,6 +143,31 @@ fn a_server_error_that_persists_is_reported_as_the_server_s() {
         d.message,
         format!(
             "`http://127.0.0.1:{port}/tools` answered 502 Bad Gateway when asked twice: the server failed, which may be temporary"
+        )
+    );
+}
+
+#[test]
+fn a_server_error_asked_about_once_isn_t_said_to_be_asked_twice() {
+    // Asking again fails to run, so the first answer stands.
+    let port = server(&["503 Service Unavailable"]);
+    let project = project(format!(
+        "# Links\n\nSee the [tools](http://127.0.0.1:{port}/tools).\n"
+    ));
+    let checker = FailsAgain::default();
+    let found = check_with(&project, &checker);
+    assert_eq!(
+        checker.runs.load(Ordering::Relaxed),
+        2,
+        "it tried to ask again"
+    );
+    let [d] = found.diagnostics.as_slice() else {
+        panic!("one diagnostic: {:?}", found.diagnostics);
+    };
+    assert_eq!(
+        d.message,
+        format!(
+            "`http://127.0.0.1:{port}/tools` answered 503 Service Unavailable: the server failed, which may be temporary"
         )
     );
 }
