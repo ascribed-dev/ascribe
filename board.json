@@ -3543,8 +3543,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/623"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBozgI",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/730"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "The docs' language server is told of every file under the repository during a build"
     },
     {
@@ -3558,7 +3561,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhB1Ilw",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs report: links and the published site"
     },
     {
@@ -3634,8 +3637,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/740"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Search: --format json, the ascribe_search tool, and telling agents to search first"
     },
     {
@@ -3808,8 +3814,11 @@
       "labels": [
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/737"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "This page: the head, the states, and the badge"
     },
     {
@@ -3834,7 +3843,7 @@
     },
     {
       "content": {
-        "body": "Phase V2 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-v-the-project-view). The spec is this phase's entry there and the sections of the [Project view proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-view.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** each task runs the server's binary in the project's folder, a project that isn't the workspace folder gets `--config`, Observe Examples shows its commands and asks, and none of them is offered in Restricted Mode.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #654\n",
+        "body": "Phase V2 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-v-the-project-view). The spec is this phase's entry there and the sections of the [Project view proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-view.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** each task runs the server's binary in the project's folder, a project that isn't the workspace folder gets `--config`, and none of them is offered in Restricted Mode.\n\n**Split, 21 October 2026:** Observe Examples is no longer part of this phase. It's V6, by the roadmap's decision 9: `ascribe observe` asks for itself, and the task is a plain process. This phase is Build and Sync Agent Files.\n\n**Decided:**\n- Nothing this phase reads is open.\n\n**Needs:** #654\n\n",
         "number": 655,
         "repository": "ascribed-dev/ascribe",
         "title": "Project view: tasks",
@@ -3845,8 +3854,11 @@
       "labels": [
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/735"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Project view: tasks"
     },
     {
@@ -3879,8 +3891,11 @@
       "labels": [
         "editor-webviews"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/734"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Project view: the rest of the counts"
     },
     {
@@ -3967,8 +3982,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/736"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Rename `ascribe render` to `ascribe resolve`, and its tool to `ascribe_resolve`"
     },
     {
@@ -4104,8 +4122,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/731"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Docs: The release's old marks"
     },
     {
@@ -4224,8 +4245,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/732"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Docs: A command's reference says what its help can't"
     },
     {
@@ -4404,8 +4428,11 @@
         "documentation",
         "docs-audit"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/733"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Docs: The reference and the contract, each with its own job"
     },
     {
@@ -4546,6 +4573,41 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "The language server's keystroke in a fragment is three times slower than its baseline"
+    },
+    {
+      "content": {
+        "body": "Phase V6 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-v-the-project-view), split from V2 (#655) by the roadmap's decision 9. The spec is this phase's entry there and the sections of the [Project view proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/project-view.md) it names. **Done when** below is what done looks like, and it's one pull request.\n\n**Done when:** `ascribe observe` in a terminal shows its commands and runs nothing when declined, with `--yes` it doesn't ask, and without a terminal it runs as today, in tests; the task runs in each such source's folder, in Run Task and the Project view; the extension reads no TOML to find the sources or the commands; the docs (`docs/content/examples/tested.md`, the command's reference) say how the question works; and AGENTS.md, CONTRIBUTING.md, and RELEASING.md, which tell people to run `ascribe observe`, say what it asks.\n\n**Decided:**\n- Decision 9 of the [roadmap](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#decisions): **How Observe Examples asks before it runs.** V2's pull request (#735) found that `ascribe observe` takes no `--config` and runs only the `ascribe.examples.toml` in the folder it's run from, and built the question as a modal in front of a hand-built terminal, with the sources and commands read from TOML by the extension. **Decided:** `ascribe observe` asks for itself. When standard input is a terminal, it shows the commands it will run, from its own reading of the file, and asks before running them; `--yes` skips the question; where standard input isn't a terminal, as in CI or a hook, it runs as today. The Observe Examples task is then a plain process, as Build and Sync Agent Files are, run in the folder of each source with tested examples, which the extension learns from the binary (the model's JSON), parsing no TOML of its own. A change to the CLI's behavior, so V6 adds a decision file and a test of the question.\n\n**Needs:** #655.\n\nThe review of #735, which first built this, says what to avoid: a `Pseudoterminal` in front of the process, and the extension reading `ascribe.toml` and `ascribe.examples.toml` itself.",
+        "number": 738,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Project view: Observe Examples, with ascribe observe asking for itself",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/738"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCSAWo",
+      "labels": [
+        "rust",
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Project view: Observe Examples, with ascribe observe asking for itself"
+    },
+    {
+      "content": {
+        "body": "The rest of phase V2 of the [editor's next views](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/roadmap.md#track-v-the-project-view) (#655), split out in review of #735, which ships Build and Sync Agent Files. The spec is V2's entry and the Project view proposal's \"Observe Examples runs commands the repository names\".\n\n**Done when:** Observe Examples runs `ascribe observe` as an `ascribe` task, offered only in a trusted workspace, showing the commands it will run and asking before each run, with nothing in the extension that keeps a second copy of what the binary knows (which sources have tested examples, or which commands observe runs).\n\n**Needs a decision from the maintainer before it's Ready:**\n\n1. **Where it runs.** The roadmap says each task runs \"in the project's folder, with `--config`\". `ascribe observe` takes no `--config` and runs only the `ascribe.examples.toml` in the folder it's run from, so it has to run in the folder of a source with tested examples. The review of #735 agreed that's right, and that the roadmap's wording is what's wrong; it needs to be recorded as the maintainer's call, along with how `tasks.json` names which source (a `source` property was proposed).\n2. **How its question is asked.** Two shapes from the review:\n   - **A:** `ascribe observe` shows the commands it will run and asks when standard input is a terminal, with `--yes` to skip; CI isn't a terminal and is unchanged. The task is then a `ProcessExecution` like Build's, and the question can't drift from what runs. A CLI behavior change: a decision file and a conformance case.\n   - **B:** the extension keeps a modal, taking the sources from the binary (the model's JSON, `ModelSource` in `crates/ascribe-query/src/model.rs`, or the language server) and the commands from a new `ascribe observe --list`. The pseudoterminal stays.\n3. **\"The editor never runs it.\"** `docs/content/examples/tested.md` says the editor never runs `ascribe observe`, and `packages/vscode/test/unit/manifest.test.ts` holds to it. Observe Examples replaces that, which is the maintainer's to record.\n\n**Needs:** #655 (#735)",
+        "number": 739,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Project view: Observe Examples",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/739"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCSAcw",
+      "labels": [
+        "editor-webviews"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "Project view: Observe Examples"
     }
   ]
 }
