@@ -3544,7 +3544,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBozgI",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The docs' language server is told of every file under the repository during a build"
     },
     {
@@ -3635,7 +3635,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Search: --format json, the ascribe_search tool, and telling agents to search first"
     },
     {
@@ -3809,7 +3809,7 @@
         "editor-webviews"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "This page: the head, the states, and the badge"
     },
     {
@@ -3846,7 +3846,7 @@
         "editor-webviews"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Project view: tasks"
     },
     {
@@ -3880,7 +3880,7 @@
         "editor-webviews"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Project view: the rest of the counts"
     },
     {
@@ -3968,7 +3968,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Rename `ascribe render` to `ascribe resolve`, and its tool to `ascribe_resolve`"
     },
     {
@@ -4105,7 +4105,7 @@
         "docs-audit"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: The release's old marks"
     },
     {
@@ -4225,7 +4225,7 @@
         "docs-audit"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: A command's reference says what its help can't"
     },
     {
@@ -4405,7 +4405,7 @@
         "docs-audit"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: The reference and the contract, each with its own job"
     },
     {
