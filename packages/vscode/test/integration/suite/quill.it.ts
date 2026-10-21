@@ -657,10 +657,12 @@ describe("the menus and filters of Pages and Content model on examples/quill", (
       l.every((line) => !line.includes("Not in")),
     );
     assert.ok(lines.includes("  Upgrade the agent (upgrade.md)"), lines.join("\n"));
+    // The label's dimming follows the build back: only what site leaves out keeps it.
     const items = all(api.ui.sidebar.items("pages"));
+    assert.equal(items.find((i) => i.label === "Upgrade the agent")?.labelColor, undefined);
     assert.deepEqual(
       items.filter((i) => i.labelColor !== undefined).map((i) => i.label),
-      [],
+      items.filter((i) => i.description === "Not in site").map((i) => i.label),
     );
   });
 
