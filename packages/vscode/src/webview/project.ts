@@ -7,15 +7,18 @@
 // Restart, its binary's version, and the build switch under it. The switch
 // is a `<select>`, so a screen reader and the keyboard get it from the HTML,
 // and choosing a build sends it back to the extension, which sets the one
-// choice the status bar and the preview follow. Health, Actions, and About
+// choice the status bar and the preview follow. Actions, Health, and About
 // are sections as This page draws them: a `<details>` and its `<summary>`
-// each, Health and Actions open at first and About closed, which stay as the
-// reader leaves them (the view's state). Health's counts are a description
-// list, each count's value and the action that brings it current buttons
-// when choosing them does something. A count that isn't current says so in
-// words, never by color alone. Actions are in their groups, each under its
-// heading; in Restricted Mode they're drawn off, under the sentence that
-// says why.
+// each, Actions and Health open at first and About closed, which stay as the
+// reader leaves them (the view's state). Actions come first, so they stay
+// where they are as Health's counts change. Actions are in their groups,
+// each under its heading; in Restricted Mode they're drawn off, under the
+// sentence that says why. Health's counts are in groups by when each is
+// from: the group's head says it once, with the action that brings its
+// counts current while they aren't, and each count is a line of a
+// description list, its label then its value, the value a button when
+// choosing it does something. A count that isn't current says so in words,
+// never by color alone: a dash is named by its group's note.
 //
 // The project's name and folder are the author's text: all of it is set as
 // text, never as HTML.
@@ -25,8 +28,10 @@ import type {
   ProjectActionGroup,
   ProjectAnswer,
   ProjectButton,
+  ProjectCheck,
   ProjectCount,
   ProjectHead,
+  ProjectHealthGroup,
   ProjectReport,
 } from "./viewProtocol.js";
 
@@ -202,37 +207,81 @@ function actionList(groups: readonly ProjectActionGroup[], channel: Channel): HT
   return body;
 }
 
-/** A count: its label, then its value, what it's from, and the action that brings it current. */
-function count(item: ProjectCount, channel: Channel): HTMLElement {
-  const made = element("div", `row count ${item.state}`);
+/** The action at a group's head, or beside a count's own note: what brings it current. */
+function check(item: ProjectCheck, channel: Channel): HTMLButtonElement {
+  const action = chooser(item.key, channel);
+  action.classList.add("action");
+  action.append(icon("play"), element("span", "label", item.label));
+  return action;
+}
+
+/** Out of date is a warning, in words as well as its icon. */
+function said(note: string, warns: boolean): HTMLElement {
+  const made = element("span", "note");
+  if (warns) made.append(icon("warning"));
+  made.append(element("span", undefined, note));
+  return made;
+}
+
+/**
+ * A count, on one line: its label, then its value. A count whose own note
+ * differs from its group's says it under them, with its action.
+ */
+function count(item: ProjectCount, group: ProjectHealthGroup, channel: Channel): HTMLElement {
+  const made = element("div", `count ${item.state}`);
   made.dataset["key"] = item.key;
   const term = element("dt");
   term.append(element("span", "label", item.label));
-  const details = element("dd");
+  const details = element("dd", "count-value");
+  // What the count's from, as its group's head says it.
+  const when = item.note ?? [group.label, group.note].filter(Boolean).join(", ");
   let value: HTMLElement;
   if (item.opens) {
     value = chooser(item.key, channel);
     value.textContent = item.value;
-    value.setAttribute("aria-label", `${item.label}: ${item.value}. ${item.note}`);
+    value.setAttribute("aria-label", `${item.label}: ${item.value}. ${when}`);
   } else {
     value = element("span", undefined, item.value);
-    // A dash is read as nothing: the note says why there's no count.
-    if (item.value === "—") value.setAttribute("aria-hidden", "true");
+    // A dash is read as why there's no count: its own note, or its group's.
+    if (item.value === "—") {
+      value.setAttribute("role", "img");
+      value.setAttribute("aria-label", item.note ?? group.note);
+    }
   }
   value.classList.add("value");
-  const note = element("span", "note");
-  // Out of date is a warning, in words as well as its icon.
-  if (item.state === "outOfDate") note.append(icon("warning"));
-  note.append(element("span", undefined, item.note));
-  details.append(value, note);
-  if (item.action) {
-    const action = chooser(item.action.key, channel);
-    action.classList.add("action");
-    action.append(icon("play"), element("span", "label", item.action.label));
-    details.append(action);
-  }
+  details.append(value);
   made.append(term, details);
+  if (item.note !== null) {
+    const own = element("dd", "count-note");
+    own.append(said(item.note, item.state === "outOfDate"));
+    if (item.action) own.append(check(item.action, channel));
+    made.append(own);
+  }
   return made;
+}
+
+/** Health: each group under its head, which says when its counts are from, with its action while they aren't current. */
+function healthList(groups: readonly ProjectHealthGroup[], channel: Channel): HTMLElement {
+  const body = element("div", "section-body");
+  for (const group of groups) {
+    const made = element("div", `group health-group ${group.state}`);
+    made.dataset["key"] = group.key;
+    const top = element("div", "group-top");
+    const heading = element("h3", "group-head");
+    heading.append(element("span", "label", group.label));
+    if (group.note) {
+      const separator = element("span", "separator", "·");
+      separator.setAttribute("aria-hidden", "true");
+      heading.append(separator, said(group.note, group.state === "outOfDate"));
+    }
+    top.append(heading);
+    if (group.action) top.append(check(group.action, channel));
+    const counts = element("dl");
+    for (const item of group.counts) counts.append(count(item, group, channel));
+    made.append(top, counts);
+    body.append(made);
+  }
+  return body;
 }
 
 /** The buttons' labels: their text, or an icon's label. */
@@ -272,6 +321,7 @@ function draw(answer: ProjectAnswer, channel: Channel): ProjectReport {
       head: [],
       build: null,
       sections: drawnSections(sections),
+      groups: [],
       health: [],
       buttons: labels(buttons),
       off: labels(buttons.filter((button) => button.disabled)),
@@ -279,12 +329,7 @@ function draw(answer: ProjectAnswer, channel: Channel): ProjectReport {
       violations: seenViolations(),
     };
   }
-  const counts = element("dl");
-  for (const item of answer.health) counts.append(count(item, channel));
-  const toDo =
-    answer.toDo === 0 ? "" : `${answer.toDo} ${answer.toDo === 1 ? "thing" : "things"} to do`;
-  const healthBody = element("div", "section-body");
-  healthBody.append(counts);
+  const toDo = answer.toDo === 0 ? "" : `${answer.toDo} to do`;
   const aboutRows = element("dl");
   for (const row of answer.about) {
     const made = element("div", "row");
@@ -296,8 +341,8 @@ function draw(answer: ProjectAnswer, channel: Channel): ProjectReport {
   const aboutBody = element("div", "section-body");
   aboutBody.append(aboutRows);
   const sections = [
-    section("health", "Health", toDo, healthBody, channel),
     section("actions", "Actions", "", actionList(answer.actions, channel), channel),
+    section("health", "Health", toDo, healthList(answer.health, channel), channel),
     section("about", "About", "", aboutBody, channel, true),
   ];
   const top = head(answer, channel);
@@ -322,20 +367,36 @@ function draw(answer: ProjectAnswer, channel: Channel): ProjectReport {
         }
       : null,
     sections: drawnSections(sections),
-    health: answer.health.map((item) => {
-      const row = view.querySelector(`.count[data-key="${item.key}"]`);
-      const value = row?.querySelector(".value");
-      const label = row?.querySelector("dt .label");
+    groups: answer.health.map((group) => {
+      const made = view.querySelector(`.health-group[data-key="${group.key}"]`);
       return {
-        key: item.key,
-        value: value?.textContent ?? "",
-        note: row?.querySelector(".note")?.textContent ?? "",
-        state: item.state,
-        // Drawn in another color than its label's, as the stylesheet dims a zero.
-        dimmed:
-          value && label ? getComputedStyle(value).color !== getComputedStyle(label).color : false,
+        key: group.key,
+        head: made?.querySelector(".group-head")?.textContent ?? "",
+        action: made?.querySelector(".group-top > .action")?.textContent ?? null,
       };
     }),
+    health: answer.health
+      .flatMap((group) => group.counts.map((item) => ({ item, group })))
+      .map(({ item, group }) => {
+        const row = view.querySelector(`.count[data-key="${item.key}"]`);
+        const value = row?.querySelector(".value");
+        const label = row?.querySelector("dt .label");
+        return {
+          key: item.key,
+          value: value?.textContent ?? "",
+          note:
+            row?.querySelector(".count-note .note")?.textContent ??
+            view.querySelector(`.health-group[data-key="${group.key}"] .group-head .note`)
+              ?.textContent ??
+            "",
+          state: item.state,
+          // Drawn in another color than its label's, as the stylesheet dims a zero.
+          dimmed:
+            value && label
+              ? getComputedStyle(value).color !== getComputedStyle(label).color
+              : false,
+        };
+      }),
     buttons: labels(buttons),
     off: labels(buttons.filter((button) => button.disabled)),
     about: [...aboutRows.querySelectorAll(".row")].map(line),

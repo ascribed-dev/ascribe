@@ -182,14 +182,14 @@ const made = (current: boolean, errors = 2, warnings = 1, examples = 0): EveryBu
 });
 
 describe("the Project view's webview", () => {
-  it("draws the head, Health and Actions open, and About closed, from its own files", async () => {
+  it("draws the head, then Actions and Health open, and About closed, from its own files", async () => {
     const view = await open();
     const report = await view.draw(1, projectAnswer(facts({ kind: "none" })));
     expect(report.head).toEqual(["docs", "Folder: docs", "Server: running", "Version: 0.4.0"]);
     expect(report.build).toBeNull();
     expect(report.sections).toEqual([
-      { key: "health", label: "Health4 things to do", open: true },
       { key: "actions", label: "Actions", open: true },
+      { key: "health", label: "Health", open: true },
       { key: "about", label: "About", open: false },
     ]);
     await expect(
@@ -203,10 +203,15 @@ describe("the Project view's webview", () => {
       "Content types: Known once the language server runs",
     ]);
     expect(report.off).toEqual([]);
+    expect(report.groups).toEqual([
+      { key: "everyBuild", head: "Every build·not checked yet", action: "Check Every Build" },
+      { key: "asYouType", head: "As you type", action: null },
+      { key: "lastSave", head: "At the last save·14:02", action: null },
+    ]);
     expect(report.health[0]).toEqual({
       key: "problems",
       value: "—",
-      note: "Needs every build checked",
+      note: "not checked yet",
       state: "unknown",
       dimmed: false,
     });
@@ -219,12 +224,58 @@ describe("the Project view's webview", () => {
       "unused",
       "agentFiles",
     ]);
-    // The head's, each count from the check with the check beside it, then the actions.
-    expect(report.buttons).toEqual([...HEAD, ...Array(5).fill("Check Every Build"), ...TASKS]);
+    // The head's, the actions', then one Check Every Build for the four counts from it.
+    expect(report.buttons).toEqual([...HEAD, "Check Every Build", ...TASKS, "Check Every Build"]);
+    // A dash is named by its group's note.
+    await expect(
+      view.page
+        .locator(".count[data-key=permalinks]")
+        .getByRole("img", { name: "not checked yet" })
+        .count(),
+    ).resolves.toBe(1);
     expect(report.violations).toEqual([]);
   });
 
-  it("tells none from not checked: a dimmed 0, and a dash that says why", async () => {
+  it("says Health's things to do: the current counts above zero", async () => {
+    const view = await open();
+    const report = await view.draw(
+      1,
+      projectAnswer(
+        facts({ kind: "none" }, "docs", {
+          inventory: { orphans: 0, unused: 5 },
+          agentFiles: {
+            kind: "made",
+            at: 0,
+            stale: ["AGENTS.md", "CLAUDE.md"],
+            error: null,
+            current: true,
+          },
+        }),
+      ),
+    );
+    expect(report.sections[1]).toEqual({ key: "health", label: "Health2 to do", open: true });
+  });
+
+  it("keeps a long label's value on its line in a narrow sidebar", async () => {
+    const view = await open();
+    await view.page.setViewportSize({ width: 160, height: 600 });
+    await view.draw(1, projectAnswer(facts(made(true, 0, 0, 2))));
+    const box = async (selector: string) => {
+      const found = await view.page.locator(selector).boundingBox();
+      if (!found) throw new Error(`no ${selector}`);
+      return found;
+    };
+    const label = await box(".count[data-key=orphans] dt");
+    const value = await box(".count[data-key=orphans] .value");
+    const next = await box(".count[data-key=unused]");
+    // The label wraps, and the value stays beside its first line, above the next count.
+    expect(label.height).toBeGreaterThan(value.height * 1.5);
+    expect(value.x).toBeGreaterThan(label.x + label.width - 1);
+    expect(value.y).toBeLessThan(label.y + value.height);
+    expect(value.y + value.height).toBeLessThanOrEqual(next.y);
+  });
+
+  it("tells none from not checked: a dimmed 0, and a dash under a head that says why", async () => {
     const view = await open();
     const some = await view.draw(1, projectAnswer(facts(made(true, 0))));
     expect(some.health[0]).toMatchObject({ value: "1 warning", dimmed: false });
@@ -233,49 +284,58 @@ describe("the Project view's webview", () => {
     expect(none.health.every((count) => count.value === "0" && count.dimmed)).toBe(true);
     expect(none.buttons).toEqual([...HEAD, "Check Every Build", ...TASKS]);
     const stale = await view.draw(3, projectAnswer(facts(made(false))));
+    expect(stale.groups[0]).toEqual({
+      key: "everyBuild",
+      head: "Every build·out of date: the project changed after the check at 14:02",
+      action: "Check Every Build",
+    });
     expect(stale.health[0]).toMatchObject({
       value: "—",
-      note: "Out of date: the project changed after the check at 14:02",
+      note: "out of date: the project changed after the check at 14:02",
       state: "outOfDate",
       dimmed: false,
     });
-    expect(stale.buttons).toEqual([...HEAD, ...Array(5).fill("Check Every Build"), ...TASKS]);
+    expect(stale.buttons).toEqual([...HEAD, "Check Every Build", ...TASKS, "Check Every Build"]);
   });
 
   it("opens a current count's list, and runs the check, from the keyboard", async () => {
     const view = await open();
-    const report = await view.draw(4, projectAnswer(facts(made(true))));
-    expect(report.buttons).toEqual([...HEAD, "2 errors, 1 warning", "Check Every Build", ...TASKS]);
-    await expect(
-      view.page
-        .getByRole("button", {
-          name: "Problems in every build: 2 errors, 1 warning. Checked at 14:02",
-        })
-        .count(),
-    ).resolves.toBe(1);
-    // Tab: the head's four buttons, Health's header, the count, Actions' header, then Check Every Build.
-    for (let i = 0; i < HEAD.length + 2; i++) await view.page.keyboard.press("Tab");
+    const report = await view.draw(4, projectAnswer(facts(made(false))));
+    expect(report.buttons).toEqual([...HEAD, "Check Every Build", ...TASKS, "Check Every Build"]);
+    // Tab: the head's four buttons, Actions' header, its buttons, Health's header, then its Check Every Build.
+    for (let i = 0; i < HEAD.length + TASKS.length + 4; i++) {
+      await view.page.keyboard.press("Tab");
+    }
     const from = view.posted.length;
-    await view.page.keyboard.press("Enter");
+    await view.page.keyboard.press("Space");
     await expect(view.next("open", from)).resolves.toEqual({
       type: "open",
       seq: 4,
-      key: "problems",
+      key: "checkEveryBuild",
     });
-    await view.page.keyboard.press("Tab");
-    await view.page.keyboard.press("Tab");
+    await view.draw(5, projectAnswer(facts(made(true))));
+    await expect(
+      view.page
+        .getByRole("button", {
+          name: "Problems: 2 errors, 1 warning. Every build, checked at 14:02",
+        })
+        .count(),
+    ).resolves.toBe(1);
+    await view.page
+      .getByRole("button", { name: "Problems: 2 errors, 1 warning. Every build, checked at 14:02" })
+      .focus();
     const later = view.posted.length;
-    await view.page.keyboard.press("Space");
+    await view.page.keyboard.press("Enter");
     await expect(view.next("open", later)).resolves.toEqual({
       type: "open",
-      seq: 4,
-      key: "checkEveryBuild",
+      seq: 5,
+      key: "problems",
     });
     await view.page.keyboard.press("Escape");
     await expect(view.next("focusEditor", from)).resolves.toEqual({ type: "focusEditor" });
   });
 
-  it("tells none from out of date for every count: a dimmed 0, or a dash with a warning that says why", async () => {
+  it("tells none from out of date for every count: a dimmed 0, or a dash under a head with a warning that says why", async () => {
     const view = await open();
     const current = await view.draw(
       1,
@@ -298,11 +358,11 @@ describe("the Project view's webview", () => {
     // The counts above zero open their lists.
     expect(current.buttons).toEqual([
       ...HEAD,
+      "Check Every Build",
+      ...TASKS,
       "2 examples",
       "3 pages",
       "1 file",
-      "Check Every Build",
-      ...TASKS,
     ]);
     const stale = await view.draw(
       2,
@@ -314,11 +374,44 @@ describe("the Project view's webview", () => {
     );
     for (const key of ["examples", "reviews", "permalinks", "agentFiles"]) {
       expect(byKey(stale)[key]).toMatchObject({ value: "—", state: "outOfDate", dimmed: false });
+    }
+    for (const key of ["everyBuild", "lastSave"]) {
       await expect(
-        view.page.locator(`.count[data-key=${key}] .note .codicon-warning`).count(),
+        view.page.locator(`.health-group[data-key=${key}] .group-head .codicon-warning`).count(),
       ).resolves.toBe(1);
     }
+    expect(stale.groups.map(({ action }) => action)).toEqual([
+      "Check Every Build",
+      null,
+      "Check Agent Files",
+    ]);
     await expect(view.page.locator(".count.none .codicon-warning").count()).resolves.toBe(0);
+  });
+
+  it("says overdue reviews from another day are a dash with their own note and the check", async () => {
+    const view = await open();
+    const report = await view.draw(
+      1,
+      projectAnswer(
+        facts(made(true, 0, 0), "docs", {
+          now: 1,
+          day: (at) => (at === 0 ? "20 October" : "21 October"),
+        }),
+      ),
+    );
+    expect(report.groups[0]).toMatchObject({ head: "Every build·checked at 14:02", action: null });
+    expect(report.health[2]).toMatchObject({
+      key: "reviews",
+      value: "—",
+      note: "checked on 20 October; reviews fall due by the day",
+      state: "outOfDate",
+    });
+    expect(report.buttons).toEqual([...HEAD, "Check Every Build", ...TASKS, "Check Every Build"]);
+    await expect(
+      view.page
+        .getByRole("img", { name: "checked on 20 October; reviews fall due by the day" })
+        .count(),
+    ).resolves.toBe(1);
   });
 
   it("runs a task by its key, saying in its tooltip that it's a task", async () => {
@@ -352,8 +445,8 @@ describe("the Project view's webview", () => {
     await view.draw(1, projectAnswer(facts({ kind: "none" })));
     await view.page.locator("details[data-key=actions] > summary").click();
     const again = await view.draw(2, projectAnswer(facts({ kind: "running" })));
-    expect(again.sections.map(({ open }) => open)).toEqual([true, false, false]);
-    expect(again.health[0]).toMatchObject({ note: "Checking every build…", state: "running" });
+    expect(again.sections.map(({ open }) => open)).toEqual([false, true, false]);
+    expect(again.health[0]).toMatchObject({ note: "checking…", state: "running" });
   });
 
   it("shows a message in place of a project, and sets the project's name as text", async () => {

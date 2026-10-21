@@ -19,8 +19,8 @@ The [status bar](#the-status-bar) item names the active file's project, with a m
 
 **Project** is about the whole project the sidebar shows, where This page is about one page. It shows the same project as the views below it, following the file you're in, and staying on its project when you click in it or open a file of no project.
 
-![The Project view for the project quill, with the rest of the Ascribe sidebar closed: at its top the project's name, with a gear and a settings button beside it, its folder, its server "running" with buttons to show its output and restart it, the version of `ascribe` the server runs, and a Build switch showing "site, line 3.5, the current line, editor build". Health, "3 things to do", counts each thing with when it's from: no problems in every build, no tested examples changed or never tested, no reviews overdue, and nothing the permalinks list is behind on, each "Checked at 02:02 PM", the overdue reviews "for October 21"; 1 page nothing links to or includes and 2 content model entries nothing uses, "As the pages are now, unsaved changes too"; and 3 agent files out of date, "Checked at 02:02 PM, after the last save". Actions lists Check Every Build under Check; Apply Every Safe Fix, Format Every Page, Build, Sync Agent Files, and Observe Examples under Write; and Start Review and Prompt Agent to Fix This Project under Review and agents. About is closed.](../images/project-light.png){scheme=light}
-![The Project view for the project quill, with the rest of the Ascribe sidebar closed: at its top the project's name, with a gear and a settings button beside it, its folder, its server "running" with buttons to show its output and restart it, the version of `ascribe` the server runs, and a Build switch showing "site, line 3.5, the current line, editor build". Health, "3 things to do", counts each thing with when it's from: no problems in every build, no tested examples changed or never tested, no reviews overdue, and nothing the permalinks list is behind on, each "Checked at 02:02 PM", the overdue reviews "for October 21"; 1 page nothing links to or includes and 2 content model entries nothing uses, "As the pages are now, unsaved changes too"; and 3 agent files out of date, "Checked at 02:02 PM, after the last save". Actions lists Check Every Build under Check; Apply Every Safe Fix, Format Every Page, Build, Sync Agent Files, and Observe Examples under Write; and Start Review and Prompt Agent to Fix This Project under Review and agents. About is closed.](../images/project-dark.png){scheme=dark}
+![The Project view for the project quill, with the rest of the Ascribe sidebar closed: at its top the project's name, with a gear and a settings button beside it, its folder, its server "running" with buttons to show its output and restart it, the version of `ascribe` the server runs, and a Build switch showing "site, line 3.5, the current line, editor build". Actions lists Check Every Build under Check; Apply Every Safe Fix, Format Every Page, Build, Sync Agent Files, and Observe Examples under Write; and Start Review and Prompt Agent to Fix This Project under Review and agents. Health, "3 to do", groups its counts by when each is from. Every build, "checked at 02:02 PM": no problems, no tested examples, no reviews overdue, and no permalinks behind. As you type: 1 page nothing links to and 2 unused model entries. At the last save, "02:02 PM": 3 agent files out of date. About is closed.](../images/project-light.png){scheme=light}
+![The Project view for the project quill, with the rest of the Ascribe sidebar closed: at its top the project's name, with a gear and a settings button beside it, its folder, its server "running" with buttons to show its output and restart it, the version of `ascribe` the server runs, and a Build switch showing "site, line 3.5, the current line, editor build". Actions lists Check Every Build under Check; Apply Every Safe Fix, Format Every Page, Build, Sync Agent Files, and Observe Examples under Write; and Start Review and Prompt Agent to Fix This Project under Review and agents. Health, "3 to do", groups its counts by when each is from. Every build, "checked at 02:02 PM": no problems, no tested examples, no reviews overdue, and no permalinks behind. As you type: 1 page nothing links to and 2 unused model entries. At the last save, "02:02 PM": 3 agent files out of date. About is closed.](../images/project-dark.png){scheme=dark}
 
 - **Show Output** and **Restart** are there once the server has started, so a failed server is restarted where it's seen. They do what the [status bar](#the-status-bar) menu's **Show output** and **Restart server** do, for the project the view shows.
 - **Build** is the build you're looking at, with every build of the project, and each line of a versioned build, to switch to. It's the same choice as the status bar's **Switch build** and the preview's **Build** picker: switching it in any of the three moves the others, the preview, and the [build lens](preview.md#the-build-lens) with it.
@@ -28,30 +28,47 @@ The [status bar](#the-status-bar) item names the active file's project, with a m
 
 The view has no badge: This page's badge is the one that counts what to do as you write.
 
-**Health** counts what needs doing in the project. Each count is shown as current only when it is:
+The view's sections are **Actions**, open at first, then **Health** and **About**. Actions come first so they stay where they are as Health's counts change.
 
-| Count | From | Opens |
-|---|---|---|
-| **Problems in every build** | "2 errors, 1 warning": the problems the last **Check Every Build** found in every build, by severity | The Problems panel |
-| **Tested examples changed or never tested** | The same check's `example-stale` and `example-unobserved` | The Problems panel, and the first of them in the editor |
-| **Reviews overdue** | The same check's `review-overdue`, for the day it ran | The Problems panel, and the first of them in the editor |
-| **Permalinks the list is behind on** | The same check's `permalinks-list-behind` | The Problems panel, and the first of them in the editor |
-| **Pages nothing links to or includes** | The language server's list of orphans, as Pages' **Orphans Only** has it | Pages, with **Orphans Only** on |
-| **Content model entries nothing uses** | The language server's count of each entry's uses, as Content model's **Unused Only** has it | Content model, with **Unused Only** on |
-| **Agent files out of date** | `ascribe agents sync --check`, from the last save | **Sync Agent Files**, which names the files it would change and asks first |
+**Health** counts what needs doing in the project, in groups by when each count is from. A group's head says it once, and each count is one line, its label then its value:
 
+```text
+Health                                   2 to do
+  Every build · not checked yet    ▷ Check Every Build
+    Problems                  —
+    Tested examples           —
+    Reviews overdue           —
+    Permalinks behind         —
+  As you type
+    Pages nothing links to    0
+    Unused model entries      5 entries
+  At the last save · 3:30 PM
+    Agent files out of date   4 files
+```
+
+| Group | Count | From | Opens |
+|---|---|---|---|
+| **Every build** | **Problems** | "2 errors, 1 warning": the problems the last **Check Every Build** found in every build, by severity | The Problems panel |
+| | **Tested examples** | The same check's `example-stale` and `example-unobserved`: examples changed since they were tested, or never tested | The Problems panel, and the first of them in the editor |
+| | **Reviews overdue** | The same check's `review-overdue`, for the day it ran | The Problems panel, and the first of them in the editor |
+| | **Permalinks behind** | The same check's `permalinks-list-behind`: permalinks the list is behind on | The Problems panel, and the first of them in the editor |
+| **As you type** | **Pages nothing links to** | The language server's list of orphans, pages and fragments nothing links to or includes, as Pages' **Orphans Only** has it | Pages, with **Orphans Only** on |
+| | **Unused model entries** | The language server's count of each content model entry's uses, as Content model's **Unused Only** has it | Content model, with **Unused Only** on |
+| **At the last save** | **Agent files out of date** | `ascribe agents sync --check` | **Sync Agent Files**, which names the files it would change and asks first |
+
+- A group's head says when its counts are from: "checked at 3:30 PM", or "not checked yet", "checking…", "out of date" with why, or why its check couldn't finish. While its counts aren't current, the action that brings them current is at its head, once for the group: **Check Every Build**, or **Check Agent Files**.
 - A count of none shows `0`, dimmed, and opens nothing.
-- A count that hasn't been made shows a dash and says what it needs, such as "Needs every build checked", with the action that makes it beside it.
-- A count that's out of date shows a dash and "Out of date", with why, the time it was made, and the action that brings it current beside it. A dash is never dimmed, and an out-of-date count has a warning icon, so none and not known never look alike.
+- A count that isn't current shows a dash, and its group's head says why. A dash is never dimmed, an out-of-date group has a warning icon, and a screen reader reads a dash as its group's note, so none and not known never look alike.
+- **To do**, in Health's header, counts the current counts above zero. A group that isn't current isn't a thing to do: its head says so, with its action.
 
-Each count goes out of date by its own rule:
+Each group goes out of date by its own rule:
 
-- **The counts from Check Every Build** go out of date together, on any change to a file of the project, saved or not: a page, `ascribe.toml`, `ascribe.nav`, `ascribe.permalinks`, a memo, a template, or a file in one of its [sources](../examples/sources.md)' folders. A check that read files with unsaved changes says so: it reads files as they're saved.
-- **Reviews overdue** depends on the day as well as the files: it says the day it's for, and goes out of date when the day changes, whatever else has.
-- **Orphans and unused entries** come from the language server, which reads your unsaved text, so they're current as you type. While the server is starting, or isn't running, they show a dash.
-- **Agent files** are made from the content model and the pages, so most saves can change them. The view checks them when it first shows the project, and again after each save of a file of the project while it's showing, at most once every few seconds and never as you type. A change on disk that isn't a save, such as a `git checkout`, makes the count out of date, with **Check Agent Files** beside it.
+- **Every build** goes out of date on any change to a file of the project, saved or not: a page, `ascribe.toml`, `ascribe.nav`, `ascribe.permalinks`, a memo, a template, or a file in one of its [sources](../examples/sources.md)' folders. A check that read files with unsaved changes says so: it reads files as they're saved.
+- **Reviews overdue** depends on the day as well as the files. When the check is current but from another day, that count alone is a dash, with its own note, such as "checked on 20 October; reviews fall due by the day", and **Check Every Build** beside it.
+- **As you type** comes from the language server, which reads your unsaved text, so its counts are current as you type. While the server is starting, or isn't running, they show a dash.
+- **At the last save**: agent files are made from the content model and the pages, so most saves can change them. The view checks them when it first shows the project, and again after each save of a file of the project while it's showing, at most once every few seconds and never as you type. A change on disk that isn't a save, such as a `git checkout`, makes the count out of date, with **Check Agent Files** at the group's head.
 
-The view never checks every build by itself, since that can take a few seconds on a large project. **Actions** acts on the project the view shows, wherever the cursor is, and each says how it runs in its tooltip:
+The view never checks every build by itself, since that can take a few seconds on a large project. **Actions** act on the project the view shows, wherever the cursor is, and each says how it runs in its tooltip:
 
 | Action | How it runs |
 |---|---|

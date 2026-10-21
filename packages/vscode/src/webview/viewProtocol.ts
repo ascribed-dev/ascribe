@@ -149,25 +149,57 @@ export interface ThisPageProbe {
 
 // The Project view.
 
-/** One count of the Project view's Health. */
+/** A choice that brings counts current: Check Every Build, or Check Agent Files. */
+export interface ProjectCheck {
+  key: string;
+  label: string;
+}
+
+/**
+ * One group of the Project view's Health: the counts that are from the same
+ * run, so the group's head says once when they're from and, while they
+ * aren't current, the action that brings them current.
+ */
+export interface ProjectHealthGroup {
+  /** `everyBuild`, `asYouType`, or `lastSave`. */
+  key: string;
+  /** "Every build", "As you type", or "At the last save". */
+  label: string;
+  /**
+   * `current`: its counts are as the project is now. `outOfDate`: from a run
+   * the project has changed since, or one that couldn't finish. `unknown`:
+   * never run. `running`: being run now.
+   */
+  state: "current" | "outOfDate" | "unknown" | "running";
+  /** When its counts are from, or why they aren't shown: "checked at 3:30 PM", "not checked yet". Empty when there's nothing to say. */
+  note: string;
+  /** The action at its head that brings it current, while it isn't. */
+  action: ProjectCheck | null;
+  counts: ProjectCount[];
+}
+
+/** One count of the Project view's Health, in its group. */
 export interface ProjectCount {
   /** Names the count, and what choosing it opens. */
   key: string;
   label: string;
   /**
    * `current`: a count of something, as the project is now. `none`: current,
-   * and zero. `outOfDate`: from a run the project has changed since, or one
-   * that couldn't finish. `unknown`: never run. `running`: being run now.
+   * and zero. `outOfDate`, `unknown`, `running`: as its group, or its own
+   * note says.
    */
   state: "current" | "none" | "outOfDate" | "unknown" | "running";
   /** The count as it's shown: "2 errors, 5 warnings", "0", or "—" when it isn't current. */
   value: string;
-  /** When it's from, or why it isn't shown. */
-  note: string;
+  /**
+   * Its own note, when it isn't current though its group is, as overdue
+   * reviews checked on another day; `null` when its group's says it.
+   */
+  note: string | null;
   /** Whether choosing the count opens its list, which only a current count above zero does. */
   opens: boolean;
-  /** The action beside it that brings it current, while it isn't. */
-  action: { key: string; label: string } | null;
+  /** Its own action, beside its own note. */
+  action: ProjectCheck | null;
 }
 
 /** One of the Project view's actions. */
@@ -237,9 +269,10 @@ export interface ProjectAnswer {
   /** The buttons under the message: Manage Workspace Trust, in Restricted Mode. */
   notice: { key: string; label: string }[];
   head: ProjectHead | null;
-  /** How many things there are to do, for Health's header: counts above zero, out of date, or never run. */
+  /** How many things there are to do, for Health's header: the current counts above zero. */
   toDo: number;
-  health: ProjectCount[];
+  /** Health's counts, in their groups. */
+  health: ProjectHealthGroup[];
   /** The actions, in their groups; in Restricted Mode, each off. */
   actions: ProjectActionGroup[];
   /** What the project is made of: its content root, builds, release lines, sources, and content types. */
@@ -255,11 +288,16 @@ export interface ProjectReport {
   build: { shown: string; choices: string[] } | null;
   /** Each section as drawn: its key, its header's text, and whether it's open. */
   sections: { key: string; label: string; open: boolean }[];
-  /** Each count as drawn: its value, its note, its state, and whether its value is dimmed. */
+  /** Health's groups as drawn: each head's text, and the action at it. */
+  groups: { key: string; head: string; action: string | null }[];
+  /**
+   * Each count as drawn: its value, its note (its own, or else its group's),
+   * its state, and whether its value is dimmed.
+   */
   health: { key: string; value: string; note: string; state: string; dimmed: boolean }[];
   /**
-   * The buttons' labels, in order: the head's, the counts' and their
-   * actions', then the actions'. An icon's button by its label.
+   * The buttons' labels, in order: the head's, the actions', then Health's
+   * groups' actions and their counts'. An icon's button by its label.
    */
   buttons: string[];
   /** The labels of the buttons that are off. */

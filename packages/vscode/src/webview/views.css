@@ -220,9 +220,9 @@ summary:hover {
   outline-offset: -1px;
 }
 
-/* The Project view. Its head names the project; Health's counts say what
-   they count, when it's from, and, while a count isn't current, the action
-   that brings it current. */
+/* The Project view. Its head names the project; Health's groups say when
+   their counts are from and, while they aren't current, the action that
+   brings them current; each count is a line, its label then its value. */
 .head {
   padding: 4px 12px 6px 30px;
 }
@@ -233,33 +233,82 @@ summary:hover {
   font-weight: 600;
 }
 
-.count dd {
+/* A group's head: its label and when it's from, then its action, which
+   wraps under them in a narrow sidebar. */
+.group-top {
   display: flex;
   flex-wrap: wrap;
+  gap: 0 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.section-body > .health-group:first-child .group-head {
+  margin-top: 0;
+}
+
+.health-group .group-head {
+  flex-wrap: wrap;
+  gap: 0 6px;
+}
+
+.health-group .group-head .separator,
+.health-group .group-head .note {
+  font-weight: normal;
+  color: var(--vscode-descriptionForeground);
+}
+
+.group-top > .action {
+  margin-top: 4px;
+}
+
+/* A count's label wraps in its own column, so its value stays on its line
+   and never moves under the next count's. A note of its own is under both. */
+.count {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 12px;
+  padding: 1px 0;
+}
+
+.count dd {
+  margin: 0;
+}
+
+.count .count-value {
+  text-align: end;
+}
+
+.count .count-note {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
   gap: 0 6px;
   align-items: flex-start;
+  color: var(--vscode-descriptionForeground);
 }
 
 .count .value {
   color: var(--vscode-foreground);
 }
 
-/* None is a dimmed 0; not current is a dash with why beside it. */
+/* None is a dimmed 0; not current is a dash, and its group's head says why. */
 .count.none .value {
   color: var(--vscode-disabledForeground);
 }
 
-.count .note {
+.health-group .note {
   display: flex;
   gap: 4px;
   align-items: flex-start;
 }
 
-.count.outOfDate .note .codicon {
+.health-group .outOfDate .note .codicon,
+.health-group.outOfDate .group-head .note .codicon {
   color: var(--vscode-editorWarning-foreground);
 }
 
-.count .action {
+.health-group .action {
   display: flex;
   gap: 4px;
   align-items: flex-start;

@@ -4,26 +4,23 @@ import type { InventoryResult } from "../../src/shapes.js";
 import type { AgentFilesResult } from "../../src/ui/agentFiles.js";
 import type { EveryBuildResult } from "../../src/ui/checkEveryBuild.js";
 import {
-  agentFilesCount,
-  examplesCount,
+  asYouTypeGroup,
+  everyBuildGroup,
   inventoryCounts,
+  lastSaveGroup,
   NO_PROJECT,
   nothingToEdit,
-  orphansCount,
-  permalinksCount,
   PROJECT_KEYS,
-  problemsCount,
   projectAnswer,
   projectEditQuestion,
   RESTRICTED,
   restrictedAnswer,
   aboutRows,
-  reviewsCount,
   staleFiles,
   syncQuestion,
-  unusedCount,
   type ProjectFacts,
 } from "../../src/ui/projectHealth.js";
+import type { ProjectHealthGroup } from "../../src/webview/viewProtocol.js";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -43,6 +40,10 @@ const facts = (everyBuild: EveryBuildResult, more: Partial<ProjectFacts> = {}): 
   about: { contentRoot: undefined, types: undefined, sources: "asking" },
   ...more,
 });
+
+/** A group's count of `key`. */
+const countOf = (group: ProjectHealthGroup, key: string) =>
+  group.counts.find((item) => item.key === key);
 
 /** Every action's key, in its group's order. */
 const actionKeys = (answer: ReturnType<typeof projectAnswer>) =>
@@ -193,103 +194,53 @@ describe("projectAnswer", () => {
     expect(format?.caption).toMatch(/as one edit left unsaved\.$/);
   });
 
-  it("counts a count to do while it's above zero, out of date, or never run, and not while it's running or none", () => {
-    // Every count from the check: problems, examples, reviews, and permalinks.
-    expect(projectAnswer(facts({ kind: "none" })).toDo).toBe(4);
+  it("counts a thing to do for each current count above zero, and none for a group that isn't current", () => {
+    const clean = { errors: 0, warnings: 0, advice: 0 };
+    // Not checked, being checked, or out of date: the group's head says so, with its action.
+    expect(projectAnswer(facts({ kind: "none" })).toDo).toBe(0);
     expect(projectAnswer(facts({ kind: "running" })).toDo).toBe(0);
+    expect(projectAnswer(facts(made(false))).toDo).toBe(0);
     expect(projectAnswer(facts(made(true))).toDo).toBe(1);
-    expect(projectAnswer(facts(made(false))).toDo).toBe(4);
-    expect(projectAnswer(facts(made(true, { errors: 0, warnings: 0, advice: 0 }))).toDo).toBe(0);
+    expect(projectAnswer(facts(made(true, clean))).toDo).toBe(0);
+    // The mock's: unused entries and agent files.
     expect(
       projectAnswer(
-        facts(made(true, { errors: 0, warnings: 0, advice: 0 }), {
-          inventory: { orphans: 2, unused: 1 },
-          agentFiles: { kind: "none" },
-        }),
+        facts(
+          { kind: "none" },
+          {
+            inventory: { orphans: 0, unused: 5 },
+            agentFiles: { kind: "made", at: 7000, stale: ["a", "b"], error: null, current: true },
+          },
+        ),
       ).toDo,
-    ).toBe(3);
-  });
-
-  it("lists Health's counts in the proposal's order", () => {
-    expect(projectAnswer(facts({ kind: "none" })).health.map((count) => count.key)).toEqual([
-      PROJECT_KEYS.problems,
-      PROJECT_KEYS.examples,
-      PROJECT_KEYS.reviews,
-      PROJECT_KEYS.permalinks,
-      PROJECT_KEYS.orphans,
-      PROJECT_KEYS.unused,
-      PROJECT_KEYS.agentFiles,
-    ]);
-  });
-});
-
-describe("problemsCount", () => {
-  it("is unknown until every build is checked, with the check beside it", () => {
-    expect(problemsCount(facts({ kind: "none" }))).toEqual({
-      key: PROJECT_KEYS.problems,
-      label: "Problems in every build",
-      state: "unknown",
-      value: "—",
-      note: "Needs every build checked",
-      opens: false,
-      action: { key: PROJECT_KEYS.checkEveryBuild, label: "Check Every Build" },
-    });
-  });
-
-  it("says it's checking while the check runs", () => {
-    expect(problemsCount(facts({ kind: "running" }))).toMatchObject({
-      state: "running",
-      value: "—",
-      note: "Checking every build…",
-      action: null,
-    });
-  });
-
-  it("counts by severity while current, says when it's from, and opens the Problems panel", () => {
-    expect(problemsCount(facts(made(true)))).toMatchObject({
-      state: "current",
-      value: "2 errors, 1 warning, 3 advice",
-      note: "Checked at 5s",
-      opens: true,
-      action: null,
-    });
-    expect(problemsCount(facts(made(true, { errors: 1, warnings: 0, advice: 0 })))).toMatchObject({
-      value: "1 error",
-    });
-  });
-
-  it("shows none as 0, which opens nothing", () => {
-    expect(problemsCount(facts(made(true, { errors: 0, warnings: 0, advice: 0 })))).toMatchObject({
-      state: "none",
-      value: "0",
-      opens: false,
-    });
-  });
-
-  it("says when files with unsaved changes were read as saved", () => {
-    expect(problemsCount(facts(made(true, undefined, { unsaved: 2 }))).note).toBe(
-      "Checked at 5s, 2 files with unsaved changes read as saved",
-    );
-  });
-
-  it("shows a dash once the project has changed, saying why, with the check beside it", () => {
-    expect(problemsCount(facts(made(false)))).toMatchObject({
-      state: "outOfDate",
-      value: "—",
-      note: "Out of date: the project changed after the check at 5s",
-      opens: false,
-      action: { key: PROJECT_KEYS.checkEveryBuild },
-    });
-  });
-
-  it("shows a dash for a check that couldn't finish, saying why", () => {
+    ).toBe(2);
+    // Overdue reviews from another day aren't counted, though their group is current.
     expect(
-      problemsCount(facts(made(false, undefined, { error: "ascribe.toml: bad" }))),
-    ).toMatchObject({
-      state: "outOfDate",
-      value: "—",
-      note: "The check at 5s couldn't finish: ascribe.toml: bad",
-    });
+      projectAnswer(facts(made(true, clean, { counted: { reviews: found(2) } }), { now: DAY + 1 }))
+        .toDo,
+    ).toBe(0);
+  });
+
+  it("groups Health's counts by when each is from", () => {
+    const health = projectAnswer(facts({ kind: "none" })).health;
+    expect(health.map((group) => [group.key, group.label])).toEqual([
+      ["everyBuild", "Every build"],
+      ["asYouType", "As you type"],
+      ["lastSave", "At the last save"],
+    ]);
+    expect(health.map((group) => group.counts.map((item) => [item.key, item.label]))).toEqual([
+      [
+        [PROJECT_KEYS.problems, "Problems"],
+        [PROJECT_KEYS.examples, "Tested examples"],
+        [PROJECT_KEYS.reviews, "Reviews overdue"],
+        [PROJECT_KEYS.permalinks, "Permalinks behind"],
+      ],
+      [
+        [PROJECT_KEYS.orphans, "Pages nothing links to"],
+        [PROJECT_KEYS.unused, "Unused model entries"],
+      ],
+      [[PROJECT_KEYS.agentFiles, "Agent files out of date"]],
+    ]);
   });
 });
 
@@ -322,72 +273,126 @@ describe("projectEditQuestion", () => {
   });
 });
 
-describe("the counts from the same check", () => {
-  const counts = [examplesCount, reviewsCount, permalinksCount];
+describe("everyBuildGroup", () => {
+  const keys = [
+    PROJECT_KEYS.problems,
+    PROJECT_KEYS.examples,
+    PROJECT_KEYS.reviews,
+    PROJECT_KEYS.permalinks,
+  ];
+  const check = { key: PROJECT_KEYS.checkEveryBuild, label: "Check Every Build" };
 
-  it("follow the check: a dash until it runs, while it runs, and once the project changes", () => {
-    for (const count of counts) {
-      expect(count(facts({ kind: "none" }))).toMatchObject({
-        state: "unknown",
-        value: "—",
-        note: "Needs every build checked",
-        action: { key: PROJECT_KEYS.checkEveryBuild },
-      });
-      expect(count(facts({ kind: "running" }))).toMatchObject({ state: "running", action: null });
-      expect(
-        count(facts(made(false, undefined, { counted: { examples: found(2) } }))),
-      ).toMatchObject({
-        state: "outOfDate",
-        value: "—",
-        note: "Out of date: the project changed after the check at 5s",
-        opens: false,
-      });
-      expect(count(facts(made(false, undefined, { error: "bad" })))).toMatchObject({
-        state: "outOfDate",
-        note: "The check at 5s couldn't finish: bad",
-      });
+  /** Each of the group's counts is a dash in `state`, with no note or action of its own. */
+  const dashes = (group: ProjectHealthGroup, state: string) =>
+    expect(group.counts).toEqual(
+      keys.map((key) =>
+        expect.objectContaining({ key, state, value: "—", note: null, opens: false, action: null }),
+      ),
+    );
+
+  it("says once that every build isn't checked yet, with Check Every Build at its head", () => {
+    const group = everyBuildGroup(facts({ kind: "none" }));
+    expect(group).toMatchObject({
+      key: "everyBuild",
+      label: "Every build",
+      state: "unknown",
+      note: "not checked yet",
+      action: check,
+    });
+    dashes(group, "unknown");
+  });
+
+  it("says it's checking while the check runs, with no action", () => {
+    const group = everyBuildGroup(facts({ kind: "running" }));
+    expect(group).toMatchObject({ state: "running", note: "checking…", action: null });
+    dashes(group, "running");
+  });
+
+  it("goes out of date once the project changes, saying why, with the check at its head", () => {
+    const group = everyBuildGroup(
+      facts(made(false, undefined, { counted: { examples: found(2) } })),
+    );
+    expect(group).toMatchObject({
+      state: "outOfDate",
+      note: "out of date: the project changed after the check at 5s",
+      action: check,
+    });
+    dashes(group, "outOfDate");
+  });
+
+  it("says why a check couldn't finish", () => {
+    const group = everyBuildGroup(facts(made(false, undefined, { error: "ascribe.toml: bad" })));
+    expect(group).toMatchObject({
+      state: "outOfDate",
+      note: "the check at 5s couldn't finish: ascribe.toml: bad",
+      action: check,
+    });
+    dashes(group, "outOfDate");
+  });
+
+  it("counts while current, saying when it's from, each count opening its list while above zero", () => {
+    const group = everyBuildGroup(
+      facts(
+        made(true, undefined, {
+          counted: { examples: found(3), reviews: found(1), permalinks: found(2) },
+        }),
+      ),
+    );
+    expect(group).toMatchObject({ state: "current", note: "checked at 5s", action: null });
+    expect(group.counts).toEqual([
+      {
+        key: PROJECT_KEYS.problems,
+        label: "Problems",
+        state: "current",
+        value: "2 errors, 1 warning, 3 advice",
+        note: null,
+        opens: true,
+        action: null,
+      },
+      expect.objectContaining({ state: "current", value: "3 examples", opens: true }),
+      expect.objectContaining({ state: "current", value: "1 page", opens: true }),
+      expect.objectContaining({ state: "current", value: "2 permalinks", opens: true }),
+    ]);
+    expect(
+      countOf(everyBuildGroup(facts(made(true, { errors: 1, warnings: 0, advice: 0 }))), "problems")
+        ?.value,
+    ).toBe("1 error");
+  });
+
+  it("shows none as 0, which opens nothing", () => {
+    const group = everyBuildGroup(facts(made(true, { errors: 0, warnings: 0, advice: 0 })));
+    for (const item of group.counts) {
+      expect(item).toMatchObject({ state: "none", value: "0", opens: false });
     }
   });
 
-  it("count their own problems, opening them while above zero, and show none as 0", () => {
-    const check = made(true, undefined, {
-      counted: { examples: found(3), reviews: found(1), permalinks: found(2) },
-    });
-    expect(examplesCount(facts(check))).toMatchObject({
-      key: PROJECT_KEYS.examples,
-      state: "current",
-      value: "3 examples",
-      note: "Checked at 5s",
-      opens: true,
-    });
-    expect(reviewsCount(facts(check))).toMatchObject({
-      state: "current",
-      value: "1 page",
-      note: "Checked at 5s, for day 0",
-      opens: true,
-    });
-    expect(permalinksCount(facts(check))).toMatchObject({ value: "2 permalinks", opens: true });
-    for (const count of counts) {
-      expect(count(facts(made(true)))).toMatchObject({ state: "none", value: "0", opens: false });
-    }
+  it("says when files with unsaved changes were read as saved", () => {
+    expect(everyBuildGroup(facts(made(true, undefined, { unsaved: 2 }))).note).toBe(
+      "checked at 5s, 2 files with unsaved changes read as saved",
+    );
   });
 
-  it("puts overdue reviews out of date when the day changes, whatever isCurrent says", () => {
-    const check = made(true, undefined, { counted: { reviews: found(1) } });
-    expect(reviewsCount(facts(check, { now: DAY + 1 }))).toMatchObject({
+  it("leaves overdue reviews alone a dash when the day changes, with their own note and the check", () => {
+    const group = everyBuildGroup(
+      facts(made(true, undefined, { counted: { reviews: found(1) } }), { now: DAY + 1 }),
+    );
+    expect(group).toMatchObject({ state: "current", note: "checked at 5s", action: null });
+    expect(countOf(group, PROJECT_KEYS.reviews)).toEqual({
+      key: PROJECT_KEYS.reviews,
+      label: "Reviews overdue",
       state: "outOfDate",
       value: "—",
-      note: "Out of date: checked on day 0, and reviews fall due by the day",
+      note: "checked on day 0; reviews fall due by the day",
       opens: false,
-      action: { key: PROJECT_KEYS.checkEveryBuild },
+      action: check,
     });
     // The other counts from the same check stay current.
-    expect(examplesCount(facts(check, { now: DAY + 1 })).state).toBe("none");
-    expect(problemsCount(facts(check, { now: DAY + 1 })).state).toBe("current");
+    expect(countOf(group, PROJECT_KEYS.examples)?.state).toBe("none");
+    expect(countOf(group, PROJECT_KEYS.problems)?.state).toBe("current");
   });
 });
 
-describe("the counts from the inventory", () => {
+describe("asYouTypeGroup", () => {
   const inventory = (orphans: string[], uses: (number | null)[]): InventoryResult => ({
     pages: [],
     fragments: [],
@@ -405,75 +410,82 @@ describe("the counts from the inventory", () => {
     });
   });
 
-  it("are current as the server answers, open their lists, and show none as 0", () => {
-    const counted = facts(made(true), { inventory: { orphans: 1, unused: 4 } });
-    expect(orphansCount(counted)).toMatchObject({
-      key: PROJECT_KEYS.orphans,
+  it("is current as the server answers, with nothing more to say, each count opening its list", () => {
+    const group = asYouTypeGroup(facts(made(true), { inventory: { orphans: 1, unused: 4 } }));
+    expect(group).toMatchObject({
+      key: "asYouType",
+      label: "As you type",
       state: "current",
-      value: "1 page",
-      opens: true,
+      note: "",
+      action: null,
     });
-    expect(unusedCount(counted)).toMatchObject({ value: "4 entries", opens: true });
-    const none = facts(made(true), { inventory: { orphans: 0, unused: 0 } });
-    expect(orphansCount(none)).toMatchObject({ state: "none", value: "0", opens: false });
-    expect(unusedCount(none)).toMatchObject({ state: "none", value: "0", opens: false });
+    expect(group.counts).toEqual([
+      expect.objectContaining({ key: PROJECT_KEYS.orphans, value: "1 page", opens: true }),
+      expect.objectContaining({ key: PROJECT_KEYS.unused, value: "4 entries", opens: true }),
+    ]);
+    const none = asYouTypeGroup(facts(made(true), { inventory: { orphans: 0, unused: 0 } }));
+    for (const item of none.counts) {
+      expect(item).toMatchObject({ state: "none", value: "0", opens: false });
+    }
   });
 
-  it("show a dash while the server counts, and while it isn't running", () => {
-    expect(orphansCount(facts(made(true), { inventory: undefined }))).toMatchObject({
+  it("shows dashes while the server counts, and while it isn't running", () => {
+    expect(asYouTypeGroup(facts(made(true), { inventory: undefined }))).toMatchObject({
       state: "running",
-      value: "—",
-      note: "Counting…",
+      note: "counting…",
+      action: null,
+      counts: [{ value: "—" }, { value: "—" }],
     });
-    expect(unusedCount(facts(made(true), { inventory: undefined, state: "failed" }))).toMatchObject(
-      {
-        state: "unknown",
-        value: "—",
-        note: "Counted while the language server runs: it's failed",
-      },
-    );
+    expect(
+      asYouTypeGroup(facts(made(true), { inventory: undefined, state: "failed" })),
+    ).toMatchObject({
+      state: "unknown",
+      note: "counted while the language server runs: it's failed",
+      action: null,
+    });
   });
 });
 
-describe("agentFilesCount", () => {
-  const files = (agentFiles: AgentFilesResult) =>
-    agentFilesCount(facts(made(true), { agentFiles }));
+describe("lastSaveGroup", () => {
+  const files = (agentFiles: AgentFilesResult) => lastSaveGroup(facts(made(true), { agentFiles }));
+  const check = { key: PROJECT_KEYS.checkAgentFiles, label: "Check Agent Files" };
 
-  it("is unknown until checked, with the check beside it, and says when it's checking", () => {
+  it("is unknown until checked, with the check at its head, and says when it's checking", () => {
     expect(files({ kind: "none" })).toMatchObject({
+      key: "lastSave",
+      label: "At the last save",
       state: "unknown",
-      value: "—",
-      note: "Needs the agent files checked",
-      action: { key: PROJECT_KEYS.checkAgentFiles, label: "Check Agent Files" },
+      note: "not checked yet",
+      action: check,
+      counts: [{ state: "unknown", value: "—", note: null, action: null }],
     });
     expect(files({ kind: "running" })).toMatchObject({
       state: "running",
-      note: "Checking the agent files…",
+      note: "checking…",
       action: null,
     });
   });
 
-  it("counts the stale files from the last save, opening Sync Agent Files", () => {
-    expect(
-      files({
-        kind: "made",
-        at: 7000,
-        stale: ["AGENTS.md", ".claude/skills/ascribe/SKILL.md"],
-        error: null,
-        current: true,
+  it("counts the stale files from the last save, at its time, opening Sync Agent Files", () => {
+    const group = files({
+      kind: "made",
+      at: 7000,
+      stale: ["AGENTS.md", ".claude/skills/ascribe/SKILL.md"],
+      error: null,
+      current: true,
+    });
+    expect(group).toMatchObject({ state: "current", note: "7s", action: null });
+    expect(group.counts).toEqual([
+      expect.objectContaining({
+        key: PROJECT_KEYS.agentFiles,
+        state: "current",
+        value: "2 files",
+        opens: true,
       }),
-    ).toMatchObject({
-      key: PROJECT_KEYS.agentFiles,
-      state: "current",
-      value: "2 files",
-      note: "Checked at 7s, after the last save",
-      opens: true,
-    });
-    expect(files({ kind: "made", at: 7000, stale: [], error: null, current: true })).toMatchObject({
-      state: "none",
-      value: "0",
-      opens: false,
-    });
+    ]);
+    expect(
+      files({ kind: "made", at: 7000, stale: [], error: null, current: true }).counts[0],
+    ).toMatchObject({ state: "none", value: "0", opens: false });
   });
 
   it("goes out of date on a change on disk, and says why a check couldn't finish", () => {
@@ -481,16 +493,15 @@ describe("agentFilesCount", () => {
       files({ kind: "made", at: 7000, stale: ["AGENTS.md"], error: null, current: false }),
     ).toMatchObject({
       state: "outOfDate",
-      value: "—",
-      note: "Out of date: a file changed on disk after the check at 7s",
-      opens: false,
-      action: { key: PROJECT_KEYS.checkAgentFiles },
+      note: "out of date: a file changed on disk after the check at 7s",
+      action: check,
+      counts: [{ value: "—", opens: false }],
     });
     expect(
       files({ kind: "made", at: 7000, stale: [], error: "no ascribe.toml", current: true }),
     ).toMatchObject({
       state: "outOfDate",
-      note: "The check at 7s couldn't finish: no ascribe.toml",
+      note: "the check at 7s couldn't finish: no ascribe.toml",
     });
   });
 
