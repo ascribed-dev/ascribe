@@ -160,3 +160,42 @@ button.link:hover {
   outline: 1px solid var(--vscode-focusBorder);
   outline-offset: 1px;
 }
+
+/* A heading for each table of settings, and one for the checks. */
+.section {
+  margin: 24px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--vscode-settings-headerBorder);
+  font-size: 1.2em;
+  font-weight: 600;
+  color: var(--vscode-settings-headerForeground);
+}
+
+.area {
+  color: var(--vscode-descriptionForeground);
+}
+
+/* A check's limit, under its level. */
+.limit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: baseline;
+  margin: 10px 0 0;
+  padding-left: 12px;
+  border-left: 2px solid transparent;
+}
+
+.limit.set {
+  border-left-color: var(--vscode-settings-modifiedItemIndicator);
+}
+
+.limit .meta,
+.limit .problems {
+  flex-basis: 100%;
+  margin-top: 4px;
+}
+
+.limit-name {
+  font-weight: 600;
+}

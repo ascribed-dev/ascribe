@@ -19,6 +19,7 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::path::PathBuf;
 
+use ascribe_check::registry::AREAS;
 use ascribe_conformance::registry::{Next, placeholders};
 use ascribe_conformance::{DiagnosticsRegistry, Entry, Level, Severity, Suite};
 
@@ -900,18 +901,6 @@ const RULE_GROUPS: &[(&str, &str)] = &[
     ("crawlers", "`[crawlers]`"),
     ("listing", "`[listing]`"),
     ("checks", "`[checks]`"),
-];
-
-/// The areas content checks are listed in, as they're titled in the
-/// diagnostics reference.
-const AREAS: &[(&str, &str)] = &[
-    ("pages", "Pages"),
-    ("project", "Across the project"),
-    ("outputs", "Outputs"),
-    ("prose", "Prose, through Vale"),
-    ("links", "External links"),
-    ("site", "The published site"),
-    ("examples", "Tested examples"),
 ];
 
 /// What each fragment starts with: a memo saying what generates it, and

@@ -22,8 +22,15 @@ import {
   whole,
   type Check,
 } from "../preview/messages.js";
-import type { SettingEntry, SettingsResult, SettingValue } from "../shapes.js";
 import type {
+  CheckEntry,
+  SettingEntry,
+  SettingPlace,
+  SettingsResult,
+  SettingValue,
+} from "../shapes.js";
+import type {
+  CheckView,
   FromSettings,
   SettingsAnswer,
   SettingsReport,
@@ -31,14 +38,8 @@ import type {
 } from "../webview/settingsProtocol.js";
 import type { FromView } from "../webview/viewProtocol.js";
 
-/**
- * The settings the tab shows, by id, in order. The server answers with every
- * simple setting; the tab shows these two until it shows them all.
- */
-export const SHOWN: readonly string[] = ["consumer.trailing-slash", "consumer.base-path"];
-
 /** A setting's id: `table.key`. */
-export function settingId(entry: Pick<SettingEntry, "table" | "key">): string {
+function settingId(entry: Pick<SettingEntry, "table" | "key">): string {
   return entry.table ? `${entry.table}.${entry.key}` : entry.key;
 }
 
@@ -47,21 +48,75 @@ function written(value: SettingValue): string {
   return typeof value === "string" ? JSON.stringify(value) : String(value);
 }
 
+function where(set: SettingPlace | null): string {
+  return set ? `ascribe.toml:${set.line}` : "Not set in ascribe.toml";
+}
+
 function view(entry: SettingEntry): SettingView {
   const set = entry.set !== null;
   return {
     id: settingId(entry),
+    section: entry.table ? `[${entry.table}]` : "The top level",
     name: entry.name,
     key: entry.table ? `[${entry.table}] ${entry.key}` : entry.key,
     kind: entry.kind,
     choices: entry.choices,
     value: entry.value ?? (set ? null : entry.default),
     defaultText: entry.default !== null ? written(entry.default) : (entry.defaultText ?? ""),
-    where: entry.set ? `ascribe.toml:${entry.set.line}` : "Not set in ascribe.toml",
+    where: where(entry.set),
     set,
-    editable: set && entry.value !== null,
+    // A value the file leaves out is added; one it writes as something the
+    // tab can't show, such as a list, is the file's.
+    editable: !set || entry.value !== null,
+    resettable: set,
     description: entry.description,
     problems: entry.problems,
+  };
+}
+
+/** A check's level and limit, as settings of the table `checks.<check>`. */
+function checkView(check: CheckEntry): CheckView {
+  const set = check.set !== null;
+  const level: SettingView = {
+    id: `checks.${check.slug}.level`,
+    section: check.area,
+    name: check.name,
+    key: `[checks] ${check.slug}`,
+    kind: "level",
+    choices: check.choices,
+    value: check.level ?? (set ? null : check.default),
+    defaultText: check.default,
+    where: where(check.set),
+    set,
+    editable: !set || check.level !== null,
+    resettable: set,
+    description: check.when,
+    problems: check.problems,
+  };
+  const limit = check.limit;
+  return {
+    slug: check.slug,
+    code: check.code,
+    named: check.named,
+    level,
+    limit: limit && {
+      id: `checks.${check.slug}.limit`,
+      section: check.area,
+      name: `${check.name} limit`,
+      key: `[checks.${check.slug}] limit`,
+      kind: limit.kind,
+      choices: [],
+      value:
+        limit.value ??
+        (limit.set ? null : limit.kind === "size" ? limit.defaultText : limit.default),
+      defaultText: limit.defaultText,
+      where: where(limit.set),
+      set: limit.set !== null,
+      editable: limit.set === null || limit.value !== null,
+      resettable: limit.set !== null,
+      description: [],
+      problems: limit.problems,
+    },
   };
 }
 
@@ -71,13 +126,41 @@ export function settingsAnswer(result: SettingsResult): SettingsAnswer {
     return {
       message: `${result.unreadable} Fix it in the file to see its settings.`,
       settings: [],
+      checks: [],
     };
   }
-  const settings = SHOWN.flatMap((id) => {
-    const entry = result.settings.find((s) => settingId(s) === id);
-    return entry ? [view(entry)] : [];
-  });
-  return { message: null, settings };
+  return {
+    message: null,
+    settings: result.settings.map(view),
+    checks: result.checks.map(checkView),
+  };
+}
+
+/** Every setting an answer draws a control for: the settings, then each check's level and limit. */
+export function allSettings(answer: SettingsAnswer): SettingView[] {
+  return [
+    ...answer.settings,
+    ...answer.checks.flatMap((c) => (c.limit ? [c.level, c.limit] : [c.level])),
+  ];
+}
+
+/**
+ * Where the server finds the setting `id` of its answer: the table and key
+ * `setSetting` names, and the place the file sets it, if it does.
+ */
+export function settingTarget(
+  result: SettingsResult,
+  id: string,
+): { table: string; key: string; set: SettingPlace | null } | undefined {
+  const entry = result.settings.find((s) => settingId(s) === id);
+  if (entry) return { table: entry.table, key: entry.key, set: entry.set };
+  for (const check of result.checks) {
+    const table = `checks.${check.slug}`;
+    if (id === `${table}.level`) return { table, key: "level", set: check.set };
+    if (id === `${table}.limit` && check.limit)
+      return { table, key: "limit", set: check.limit.set };
+  }
+  return undefined;
 }
 
 /**
@@ -130,6 +213,11 @@ export function checkedValue(setting: SettingView, value: unknown): SettingValue
       return typeof value === "string" && setting.choices.includes(value) ? value : undefined;
     case "text":
       return typeof value === "string" && !/[\r\n]/.test(value) ? value : undefined;
+    case "size":
+      return Number.isSafeInteger(value) ||
+        (typeof value === "string" && value.trim() !== "" && !/[\r\n]/.test(value))
+        ? (value as number | string)
+        : undefined;
     default:
       return undefined;
   }
@@ -144,6 +232,7 @@ const settingsReport: Check<SettingsReport> = shape<SettingsReport>({
       where: text,
       problems: listOf(text),
       editable: boolean,
+      resettable: boolean,
     }),
   ),
   violations: listOf(text),
@@ -176,6 +265,7 @@ export function checkSettingsMessage(
       })(message)
         ? (message as FromSettings)
         : undefined;
+    case "reset":
     case "openLine":
       return shape<{ seq: number; id: string }>({ seq: whole, id: text })(message)
         ? (message as FromSettings)

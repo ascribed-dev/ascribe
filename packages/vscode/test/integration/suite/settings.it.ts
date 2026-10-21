@@ -4,7 +4,10 @@
 // `ascribe.toml`, unsaved, with its comments as they were; the server reads
 // the edited text, and the tab draws what it now says; Undo in the file puts
 // it back, and the tab follows; and a base path with no leading `/` is set,
-// with the server's problem under it.
+// with the server's problem under it. Every simple setting is shown: one the
+// file leaves out is added to its table, and Reset to default takes one out
+// with its comment. The checks are listed, every configurable one, and a
+// check's level is set from the tab.
 import * as assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import * as vscode from "vscode";
@@ -14,6 +17,8 @@ import { activated, uriOf, waitFor } from "./helpers.js";
 
 const SLASH = "consumer.trailing-slash";
 const BASE = "consumer.base-path";
+const HTML = "consumer.html";
+const ORPHAN = "checks.page-orphan.level";
 
 /** A setting as the tab drew it. */
 const shown = (drawn: Drawn<SettingsReport>, id: string) => {
@@ -46,31 +51,43 @@ describe("Project Settings on examples/quill", () => {
     const api = await activated();
     await vscode.commands.executeCommand("ascribe.openProjectSettings");
     const settings = api.ui.projectSettings;
-    const drawn = await settings.whenDrawn(
-      "the two settings",
-      (d) => d.report.settings.length === 2,
+    const drawn = await settings.whenDrawn("the settings", (d) =>
+      d.report.settings.some((s) => s.id === SLASH),
     );
     const line = (text: string): number => onDisk.split("\n").indexOf(text) + 1;
-    assert.deepEqual(drawn.report, {
-      message: null,
-      settings: [
-        {
-          id: SLASH,
-          value: "always",
-          where: `ascribe.toml:${line('trailing-slash = "always" # as Astro\'s')}`,
-          problems: [],
-          editable: true,
-        },
-        {
-          id: BASE,
-          value: "/",
-          where: `ascribe.toml:${line('base-path = "/"')}`,
-          problems: [],
-          editable: true,
-        },
-      ],
-      violations: [],
+    assert.equal(drawn.report.message, null);
+    assert.deepEqual(drawn.report.violations, []);
+    assert.deepEqual(shown(drawn, SLASH), {
+      id: SLASH,
+      value: "always",
+      where: `ascribe.toml:${line('trailing-slash = "always" # as Astro\'s')}`,
+      problems: [],
+      editable: true,
+      resettable: true,
     });
+    assert.deepEqual(shown(drawn, BASE), {
+      id: BASE,
+      value: "/",
+      where: `ascribe.toml:${line('base-path = "/"')}`,
+      problems: [],
+      editable: true,
+      resettable: true,
+    });
+    // A setting the file leaves out, with its default, which the tab adds.
+    assert.deepEqual(shown(drawn, HTML), {
+      id: HTML,
+      value: "true",
+      where: "Not set in ascribe.toml",
+      problems: [],
+      editable: true,
+      resettable: false,
+    });
+    // Every configurable check, with its level.
+    const levels = drawn.report.settings.filter(
+      (s) =>
+        s.id.startsWith("checks.") && s.id.endsWith(".level") && s.id !== "checks.vale.max-level",
+    );
+    assert.equal(levels.length, 47);
     // Opening it again shows the tab that's open.
     await vscode.commands.executeCommand("ascribe.openProjectSettings");
     assert.equal(settings.tabs(), 1);
@@ -162,6 +179,61 @@ describe("Project Settings on examples/quill", () => {
       );
       return doc?.getText() === onDisk ? doc : undefined;
     });
+    assert.equal(document.getText(), onDisk);
+  });
+
+  it("adds a value the file leaves out to its table, and Reset to default takes it out", async () => {
+    const settings = (await activated()).ui.projectSettings;
+    await settings.set(HTML, false);
+    await settings.whenDrawn(
+      "html, false",
+      (d) => shown(d, HTML).value === "false" && shown(d, HTML).resettable,
+    );
+    const document = vscode.workspace.textDocuments.find(
+      (d) => d.uri.toString() === model().toString(),
+    );
+    assert.ok(document, "ascribe.toml isn't open");
+    assert.equal(
+      document.getText(),
+      onDisk.replace('base-path = "/"\n', 'base-path = "/"\nhtml = false\n'),
+    );
+    await settings.reset(HTML);
+    await settings.whenDrawn("html, its default", (d) => !shown(d, HTML).resettable);
+    assert.equal(document.getText(), onDisk);
+
+    // The comment that touches the line goes with it; Undo puts both back.
+    await settings.reset(SLASH);
+    await settings.whenDrawn("the trailing slash, its default", (d) => !shown(d, SLASH).resettable);
+    assert.equal(
+      document.getText(),
+      onDisk.replace('# Pages end in a slash.\ntrailing-slash = "always" # as Astro\'s\n', ""),
+    );
+    await vscode.window.showTextDocument(document, { viewColumn: vscode.ViewColumn.Two });
+    await vscode.commands.executeCommand("undo");
+    await settings.whenDrawn("the trailing slash, set again", (d) => shown(d, SLASH).resettable);
+    assert.equal(document.getText(), onDisk);
+  });
+
+  it("sets a check's level, and lists the check first once the file names it", async () => {
+    const settings = (await activated()).ui.projectSettings;
+    await settings.set(ORPHAN, "off");
+    const drawn = await settings.whenDrawn(
+      "page-orphan, off",
+      (d) => shown(d, ORPHAN).value === "off" && shown(d, ORPHAN).resettable,
+    );
+    const firstCheck = drawn.report.settings.find(
+      (s) =>
+        s.id.startsWith("checks.") && s.id.endsWith(".level") && s.id !== "checks.vale.max-level",
+    );
+    assert.equal(firstCheck?.id, ORPHAN);
+    const document = vscode.workspace.textDocuments.find(
+      (d) => d.uri.toString() === model().toString(),
+    );
+    assert.ok(document, "ascribe.toml isn't open");
+    assert.equal(document.getText(), `${onDisk}\n[checks.page-orphan]\nlevel = "off"\n`);
+    await vscode.window.showTextDocument(document, { viewColumn: vscode.ViewColumn.Two });
+    await vscode.commands.executeCommand("undo");
+    await settings.whenDrawn("page-orphan, its default", (d) => !shown(d, ORPHAN).resettable);
     assert.equal(document.getText(), onDisk);
   });
 
