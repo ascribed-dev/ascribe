@@ -297,8 +297,16 @@ fn health_lists_each_tested_example_and_includes_its_file() {
     let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/tested");
     let f = Fixture::new("", &[]);
     copy_dir(&source, &f.root());
+    // A heading over the example, which its row names.
+    let index = f.path("docs/index.md");
+    let text = std::fs::read_to_string(&index).unwrap();
+    std::fs::write(
+        &index,
+        text.replace("The example takes", "## Greet\n\nThe example takes"),
+    )
+    .unwrap();
     let mut client = started(&f.root());
-    let answer = page(&mut client, &f.path("docs/index.md"));
+    let answer = page(&mut client, &index);
     let examples = answer["health"]["examples"].as_array().unwrap();
     let greet = examples
         .iter()
@@ -310,6 +318,7 @@ fn health_lists_each_tested_example_and_includes_its_file() {
         })
         .unwrap_or_else(|| panic!("greet.ts: {examples:?}"));
     assert_eq!(greet["state"], "tested");
+    assert_eq!(greet["heading"], "Greet");
     assert!(
         greet["tested"].as_str().unwrap().contains("Node"),
         "{greet}"

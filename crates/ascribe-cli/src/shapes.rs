@@ -187,6 +187,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_query::Refs>(),
     },
     Shape {
+        file: "search",
+        title: "SearchReport",
+        written_by: "`ascribe search --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::Searched>(),
+    },
+    Shape {
         file: "agents-index",
         title: "AgentsIndexReport",
         written_by: "`ascribe agents index --format json`",

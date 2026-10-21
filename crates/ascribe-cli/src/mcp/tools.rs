@@ -12,7 +12,7 @@ use serde_json::{Map, Value, json};
 use super::Server;
 use crate::answer::{self, Format};
 use crate::cli::Global;
-use crate::commands::{check, diff, fmt, link, model, outline, refs, resolve};
+use crate::commands::{check, diff, fmt, link, model, outline, refs, resolve, search};
 
 /// A tool.
 pub struct Spec {
@@ -240,6 +240,80 @@ pub const TOOLS: &[Spec] = &[
         },
         output: || with_concise(schema(include_str!("../../../../schemas/refs.schema.json"))),
         call: call_refs,
+    },
+    Spec {
+        name: "ascribe_search",
+        title: "Search pages",
+        command: "ascribe search",
+        description: "Find where the pages say something, as their readers read it, with the \
+            line to edit for each place, before writing a page about a subject: phrases, \
+            fragments, and snippets resolved, which a text search of the source can't. Words \
+            must all be in one block; a phrase in double quotes is matched as written. When \
+            nothing matches, try other words for the subject. Example: {\"query\": \"\\\"sign \
+            in to quill cloud\\\"\", \"project\": \"docs\"} returns lines such as \
+            `docs/install-agent.md:62: Sign in to Quill Cloud and copy an API key…` and \
+            `Connect to Quill #connect · deployment=cloud arm · through phrase cloud`.",
+        input: || {
+            json!({
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Words, which must all be in one block in any order, \
+                            or a phrase in double quotes, matched as written. Case is ignored \
+                            unless `case`, and a word matches inside a longer one unless \
+                            `word`.",
+                    },
+                    "paths": {
+                        "type": "array",
+                        "items": { "type": "string" },
+                        "description": "Search only the pages in these folders, or these \
+                            pages, from the server's working directory. By default, every \
+                            page.",
+                    },
+                    "build": builds(),
+                    "type": {
+                        "type": "string",
+                        "description": "Search only the pages of this content type.",
+                    },
+                    "case": {
+                        "type": "boolean",
+                        "description": "Match case as written.",
+                    },
+                    "word": {
+                        "type": "boolean",
+                        "description": "Match a word or a phrase only where it isn't inside \
+                            a longer word.",
+                    },
+                    "summary": {
+                        "type": "boolean",
+                        "description": "List the pages and how many places each has, most \
+                            first, instead of the places.",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "List at most this many places, or with `summary`, \
+                            pages. By default, 50 places concise and 500 detailed, or 20 \
+                            pages.",
+                    },
+                    "project": {
+                        "type": "string",
+                        "description": "A file or folder in the project, when no `paths` \
+                            are given. By default, the server's working directory.",
+                    },
+                    "response_format": response_format(),
+                },
+                "required": ["query"],
+                "additionalProperties": false,
+            })
+        },
+        output: || {
+            with_concise(schema(include_str!(
+                "../../../../schemas/search.schema.json"
+            )))
+        },
+        call: call_search,
     },
     Spec {
         name: "ascribe_resolve",
@@ -693,6 +767,39 @@ fn call_refs(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
     }
     let mut out = Vec::new();
     refs::write_text(&mut out, &refs).map_err(|e| e.to_string())?;
+    Ok(concise_result(out))
+}
+
+fn call_search(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
+    let detailed = a.detailed()?;
+    let paths: Vec<PathBuf> = a.strings("paths")?.into_iter().map(PathBuf::from).collect();
+    let project = a.path("project")?;
+    if project.is_some() && !paths.is_empty() {
+        return Err("give `paths` or `project`, not both: `paths` find the project".into());
+    }
+    let global = global_at(project.as_deref())?;
+    let args = search::Args {
+        query: a.string("query")?.unwrap_or_default(),
+        paths,
+        page_type: a.string("type")?,
+        case: a.boolean("case")?,
+        word: a.boolean("word")?,
+        summary: a.boolean("summary")?,
+        builds: a.strings("build")?,
+        limit: a.count("limit")?,
+        format: if detailed { Format::Json } else { Format::Text },
+    };
+    let searched = search::answer(&server.cache, &global, &args).map_err(|s| s.message())?;
+    if detailed {
+        return json_result(&searched);
+    }
+    let mut out = Vec::new();
+    if args.summary {
+        search::write_summary(&mut out, &searched)
+    } else {
+        search::write_text(&mut out, &searched)
+    }
+    .map_err(|e| e.to_string())?;
     Ok(concise_result(out))
 }
 

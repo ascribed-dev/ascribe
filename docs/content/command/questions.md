@@ -8,7 +8,6 @@ The commands that answer questions about a project, for writers and for agents, 
 
 ## `ascribe explain`
 @id {permalink=true}: cli-explain
-@available: ascribe 0.3.0
 
 Says what a diagnostic means: its severity, its messages, how to fix it, a link to its entry in [Diagnostics](../checks/diagnostics.md), and, for the diagnostics people meet most, a short page that has the problem and the same page without it. It needs no project.
 
@@ -16,18 +15,19 @@ Says what a diagnostic means: its severity, its messages, how to fix it, a link 
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/explain.txt
 
-An example that needs something in `ascribe.toml` to go wrong shows that too: a few lines of the model it was checked against. Every example is checked, so each wrong page reports its diagnostic and nothing else, and each right page reports nothing. `ascribe explain --list` lists every diagnostic's code and name, one per line; with no code and no `--list`, it says so, and exits with `2`.
+An example that needs something in `ascribe.toml` to go wrong shows that too: a few lines of the model it was checked against. Every example is checked, so each wrong page reports its diagnostic and nothing else, and each right page reports nothing.
 
 | Code | Meaning |
 |---|---|
 | `0` | It explained the diagnostic, or listed them |
 | `2` | No diagnostic has that code or name, and it names the closest; or a usage error |
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `code`, `slug`, `severity`, `next` (the [kind of next step](../checks/diagnostics.md#what-to-do-next)), `level` (`file` or `page`), `message`, `variants` (the other messages it can give, each with `name` and `message`), `fix`, `docs` (the link), and `example`, null or with `wrong`, `right`, `model` (the model it was checked against, when it matters, or null), and `files` (other files the right page needs, each with `path` and `text`). With `--list`, it has `diagnostics`, each with `code`, `slug`, and `severity`.
+With `--format json`, the document is as follows. Its [schema](../contracts/json-reports/questions.md#ascribe-explain) has every field, and so does the schema of what `--list` writes:
+
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/explain.json
 
 ## `ascribe model`
 @id {permalink=true}: cli-model
-@available: ascribe 0.3.0
 
 Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. A source with an `ascribe.examples.toml` also says how many of its files are [tested examples](../examples/tested.md), and names each observation with what it was tested with and how many of its files are as it found them. For a source in another repository, that's read from its copies, and an observation's files are counted only where there's a copy. It's what an agent, or a new writer, reads before writing frontmatter, a directive's attributes, or a phrase.
 
@@ -42,17 +42,17 @@ The text is Markdown, at most about 4,000 characters: when the model has more th
 | `0` | It showed the model |
 | `2` | No `ascribe.toml`, or one with errors |
 
-With `--format json`, the document has `schema_version` (`3`), `ascribe_version`, and a field for each section shown: `types`, `dimensions`, `phrases`, `features`, `glossary`, `widgets`, `builds`, and `sources`. Without `--section`, every section is there, empty or not, and so is `navigation`: the project's [navigation](../navigation/index.md), its root section with each section's `folder`, `label`, own `page`, `pages`, nested `sections`, and `listed`, whether `ascribe.nav` lists it, and each page's `source`, `label`, and `type`, every page that isn't `unlisted`; with `--section`, only that one. A label is plain text, as a sidebar shows it: a title or `nav-label` with a code span in it is labeled without the backticks. The [schema](../contracts/json-reports/questions.md#ascribe-model) lists each section's fields.
+With `--format json`, the document has a field for each section shown, and without `--section`, every section, empty or not, and the project's [navigation](../navigation/index.md) as the sidebar shows it: a label with a code span in it is plain text, without the backticks. Its [schema](../contracts/json-reports/questions.md#ascribe-model) has each section's fields. `--section builds`:
 
-@available: ascribe 0.3.2
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/model-builds.json
+
 A project with [release lines](../versions/lines.md) has a section for them, `releases` in JSON: each target's lines, with their status and the build that is each line. A versioned build says which target versions it and which line it is.
 
 @available: next
-The rest of `ascribe.toml` is there too, a section of settings for each of its tables: `project`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, and `permalinks`. The text without `--section` names them at its end, and `--section` shows one, each key with the value in effect, and its default: `ascribe model --section consumer` shows `[consumer]`'s `site`, `base-path`, and the rest, the ones the file leaves out at their defaults. `[checks]` has the keys of `[checks.vale]` and `[checks.links]`, written `vale.preset` and `links.reuse-days`, and each check the file sets a level for. In JSON, each section is a list of keys, each with `table` (`consumer`, or `checks.vale`), `key`, `kind`, `value` (the value in effect, absent when the file leaves the key out and its default isn't one value), `set` (whether the file sets it), and `default` or `default_text`, the default in the [content model reference](../content-model/index.md)'s words when it isn't one value. The keys and defaults are the ones the loader reads, so `model` shows no key `ascribe check` would refuse.
+The rest of `ascribe.toml` is there too, a section of settings for each of its tables: `project`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, and `permalinks`. The text without `--section` names them at its end, and `--section` shows one, each key with the value in effect, and its default: `ascribe model --section consumer` shows `[consumer]`'s `site`, `base-path`, and the rest, the ones the file leaves out at their defaults. `[checks]` has the keys of `[checks.vale]` and `[checks.links]`, written `vale.preset` and `links.reuse-days`, and each check the file sets a level for. In JSON, each section is a list of keys, in the [schema](../contracts/json-reports/questions.md#ascribe-model). The keys and defaults are the ones the loader reads, so `model` shows no key `ascribe check` would refuse.
 
 ## `ascribe outline`
 @id {permalink=true}: cli-outline
-@available: ascribe 0.3.0
 
 Shows a page's title and type, and the headings a link to it can name, with the ids links write after `#`: the page's own headings and those that come from the fragments it includes. They're the headings the editor offers after `page.md#`.
 
@@ -82,7 +82,6 @@ With `--format json`, the document is:
 
 ## `ascribe link`
 @id {permalink=true}: cli-link
-@available: ascribe 0.3.0
 
 Says whether a link works, written on a given page: whether its target exists, the page's title or the heading's text, and the destination to write there. It resolves the link as `ascribe check` and the editor do, so the three agree.
 
@@ -112,7 +111,6 @@ With `--format json`, the document is:
 
 ## `ascribe refs`
 @id {permalink=true}: cli-refs
-@available: ascribe 0.3.0
 
 Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model, each as `file:line:column`, with what kind of use it is. It's the editor's **Find All References**, on the command line: it finds a phrase only where it's a phrase, and a heading in a fragment through every page that includes it, which a text search can't.
 
@@ -142,7 +140,6 @@ With `--format json`, the document is:
 
 ## `ascribe rename`
 @id {permalink=true}: cli-rename
-@available: ascribe 0.3.0
 
 Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. A text search and replace finds a phrase in the pages, but misses what a rename knows about: frontmatter fields with `phrases = true`, code blocks with `phrases=true`, the code a `@snippet {phrases=true}` shows, and a link whose path changes when the page it's on moves.
 
@@ -169,7 +166,6 @@ A path is from the current folder, or from the content root, and the project is 
 
 ## `ascribe resolve`
 @id {permalink=true}: cli-resolve
-@available: ascribe 0.3.0
 
 Resolves a page for one build and writes it as the build's plain Markdown output, as `ascribe build --emit plain` writes it: the page as a reader of that build sees it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. It writes nothing to disk.
 
@@ -179,9 +175,8 @@ Resolves a page for one build and writes it as the build's plain Markdown output
 
 A variant group the build keeps more than one arm of, which the site shows as tabs, is a line saying so, `A reader sees one of the next 3 sections at a time, chosen by operating system.`, then each arm under a heading that names its dimension and value, such as `### Operating system: macOS`, or its title for labeled arms, as the plain output writes it.
 
-`--build` is needed when `ascribe.toml` has more than one build. When the build doesn't publish the page, it writes nothing to standard output, says why on standard error, and exits with `1`. A fragment isn't resolved on its own; resolve a page that includes it.
+When the build doesn't publish the page, it writes nothing to standard output, says why on standard error, and exits with `1`. A fragment isn't resolved on its own; resolve a page that includes it.
 
-@available: ascribe 0.3.2
 A line of a [versioned build](../versions/index.md), such as `--build site@3.4`, resolves the page as that line publishes it, its route and links under the line's folder.
 
 | Code | Meaning |
@@ -190,7 +185,9 @@ A line of a [versioned build](../versions/index.md), such as `--build site@3.4`,
 | `1` | The build doesn't publish the page |
 | `2` | It couldn't run: no `ascribe.toml`, one with errors, a path that isn't a page, more than one build and no `--build`, an unknown build, or a page that can't be written |
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `page`, `build`, `not_published` (why the build doesn't publish it, or null), `route` (its route in the build's site, or null), and `text`, the page as text output writes it.
+With `--format json`, the document is as follows, and its [schema](../contracts/json-reports/questions.md#ascribe-resolve) has every field:
+
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/resolve.json
 
 ## `ascribe search`
 @id {permalink=true}: cli-search
@@ -269,3 +266,13 @@ When nothing matches, search looks for the query, by the same rules, in the sour
 | `0` | Something matched |
 | `1` | Nothing matched |
 | `2` | It couldn't run: no `ascribe.toml`, one with errors, an empty query, a quote that isn't closed, a path with no page or fragment of the project, or an unknown build or type |
+
+With `--format json`, the document is a contract of its own, whose schema is in the [JSON report contract](../contracts/json-reports/questions.md#ascribe-search). `ascribe search '"sign in to quill cloud"' --config examples/quill --format json`:
+
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/search.json
+
+Each place has its `file` from the project root, its `line`, and the `column` of the match's first character, in Unicode characters. `in` is what it is: `title`, `description`, `heading`, `text`, `table`, `code`, or `phrase`, a phrase's value at its line in `ascribe.toml`. `text` is the whole block as a reader reads it, and `match` is where the match is in it: its first character and the one after its last, in characters. `through` lists what the match reads through that the line doesn't spell, in order: `{"phrase": key}`, `{"title": page}` for a link with no text, which reads as the title of the page it links to, or the text of the heading it names (`page.md#id`), and `{"code": address}` for a snippet's code. `arm` is the arm of a variant group the line is in, or null.
+
+`pages` names the pages that show the place, at most three, each with its `title`, the `heading` the place is under there and its `id`, and the `builds` that show it there. `pages_total` is how many pages show it; for a phrase, how many places in the source use it. `refs_command` is the `ascribe refs` command that lists them: for a phrase, and for a fragment's line on more pages than `pages` names; otherwise it's null. A snippet's code that can't be lined up with its file is at the first line the snippet shows, and `end_line` is the last; every other place's `end_line` is null.
+
+`total` is how many places match, `pages_matched` how many pages show one, and `shown` how many places are listed, 500 unless `--limit` says otherwise. When the list was cut, `truncated` is true and `next_command` is the command that lists them all. With `--summary`, `places` is empty and `pages` lists each page, from the project root, with how many `places` it shows, and `shown` and `truncated` count pages; without it, `pages` is null. When nothing matched, `source_places` is where the source writes the words, at most three places, each a `file` and `line`, when no build searched publishes them, and `not_searched_builds` is the builds that weren't searched that publish them; both are empty otherwise.

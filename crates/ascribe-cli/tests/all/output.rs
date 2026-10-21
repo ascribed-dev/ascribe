@@ -846,7 +846,23 @@ fn answers() {
         "explain.txt",
         &stdout(&run(&root, &["explain", "link-target-missing"], 0)),
     );
+    expect(
+        "explain.json",
+        &json(&run(
+            &root,
+            &["explain", "link-target-missing", "--format", "json"],
+            0,
+        )),
+    );
     expect("model.txt", &stdout(&run(&root, &["model", quill], 0)));
+    expect(
+        "model-builds.json",
+        &json(&run(
+            &root,
+            &["model", quill, "--section", "builds", "--format", "json"],
+            0,
+        )),
+    );
     expect("outline.txt", &stdout(&run(&root, &["outline", keys], 0)));
     expect(
         "outline.json",
@@ -924,6 +940,24 @@ fn answers() {
     expect(
         "resolve.txt",
         &stdout(&run(&root, &["resolve", keys, "--build", "cloud"], 0)),
+    );
+    expect(
+        "resolve.json",
+        &json(&run(
+            &root,
+            &["resolve", keys, "--build", "cloud", "--format", "json"],
+            0,
+        )),
+    );
+    expect(
+        "agents-index.json",
+        &json(&run(
+            &root,
+            &[
+                "agents", "index", "--config", quill, "--build", "cloud", "--format", "json",
+            ],
+            0,
+        )),
     );
 }
 
@@ -1013,6 +1047,21 @@ fn search() {
             &root,
             &["search", "\"{cloud}\"", "--config", quill],
             1,
+        )),
+    );
+    expect(
+        "search.json",
+        &json(&run(
+            &root,
+            &[
+                "search",
+                "\"sign in to quill cloud\"",
+                "--config",
+                quill,
+                "--format",
+                "json",
+            ],
+            0,
         )),
     );
 }

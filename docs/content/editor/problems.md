@@ -10,7 +10,6 @@ What the editor reports, and the fixes it offers for it.
 
 Every [diagnostic](../checks/diagnostics.md) appears as you type, including in unsaved files, for every file of the project, open or not: fix a heading's id, and the broken links to it in other files clear. Page-level diagnostics are for the [build](../glossary.md#build) named by `[editor] build` in `ascribe.toml`.
 
-@available: ascribe 0.3.2
 When that build is [versioned](../versions/index.md), they're for every line of it, and a problem only some lines have says which, such as "(only in build `site@3.4`)".
 
 The [content checks](../checks/diagnostics/content-checks.md) about the whole project, such as a page nothing links to or a phrase nothing uses, need every page, so they run when you save, not as you type. Until you save a file you've changed, it doesn't show theirs. The image checks run only in `ascribe check`.
@@ -37,7 +36,6 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 - **List `page.md` in `[glossary] pages`**, for a [glossary term](../content-model/content.md#12-glossary) marked on a page that isn't a glossary page. Every term on the page is then linked on every other page, so it's yours to choose.
 - **Write a definition of** the term, for a term whose section doesn't open with a paragraph. It puts a paragraph under the heading and its directives, selected, for you to type the definition over.
 
-@available: ascribe 0.3.2
 - **Copy the command**, for an [example](../examples/tested.md) that changed after its last test run or that no test run lists. It copies the line that runs `ascribe observe` in the example's folder, for you to run in a terminal: for PowerShell on Windows, and for `sh` elsewhere. The editor never runs a test itself.
 
 ## Apply the safe fixes

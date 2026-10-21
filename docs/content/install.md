@@ -96,7 +96,6 @@ ascribe init --templates
 
 ### `ascribe init`
 @id {permalink=true}: cli-init
-@available: ascribe 0.3.1
 
 Starts a project: writes its first `ascribe.toml`, and makes the folder its pages go in, `docs/`. With `--templates`, it takes the page templates too, as [`ascribe templates eject`](templates/command.md#cli-templates-eject) with no name does.
 

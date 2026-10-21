@@ -58,6 +58,7 @@ export class WebviewView<Answer, Report> implements vscode.WebviewViewProvider, 
   private waiters: (() => void)[] = [];
   private readonly viewDisposables: vscode.Disposable[] = [];
   private readonly shown = new vscode.EventEmitter<void>();
+  private badgeShown: vscode.ViewBadge | undefined;
   /** The view was shown: made, or shown again after it was hidden. */
   readonly onDidShow = this.shown.event;
 
@@ -66,7 +67,8 @@ export class WebviewView<Answer, Report> implements vscode.WebviewViewProvider, 
     private readonly extensionUri: vscode.Uri,
     private readonly files: { script: string; title: string },
     private readonly report: Check<Report>,
-    private readonly handlers: ViewHandlers,
+    /** What the view does with what its webview asks: replaced when its owner changes. */
+    public handlers: ViewHandlers,
   ) {}
 
   register(): vscode.Disposable {
@@ -76,6 +78,18 @@ export class WebviewView<Answer, Report> implements vscode.WebviewViewProvider, 
   /** Whether the view is showing: made, and neither collapsed nor in a hidden container. */
   get visible(): boolean {
     return this.view?.visible ?? false;
+  }
+
+  /** The view's badge, kept for a webview made again. */
+  get badge(): vscode.ViewBadge | undefined {
+    return this.badgeShown;
+  }
+
+  set badge(badge: vscode.ViewBadge | undefined) {
+    const same =
+      badge?.value === this.badgeShown?.value && badge?.tooltip === this.badgeShown?.tooltip;
+    this.badgeShown = badge;
+    if (this.view && !same) this.view.badge = badge;
   }
 
   /** The newest answer: what the view draws next, or has drawn. */
@@ -117,6 +131,7 @@ export class WebviewView<Answer, Report> implements vscode.WebviewViewProvider, 
     for (const disposable of this.viewDisposables.splice(0)) disposable.dispose();
     this.view = view;
     this.handshake.reset();
+    view.badge = this.badgeShown;
     const root = vscode.Uri.joinPath(this.extensionUri, "dist", "webview");
     view.webview.options = { enableScripts: true, localResourceRoots: [root] };
     const file = (name: string) => view.webview.asWebviewUri(vscode.Uri.joinPath(root, name));

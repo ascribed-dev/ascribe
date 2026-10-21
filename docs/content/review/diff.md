@@ -19,20 +19,16 @@ The text output lists each build's changed pages with counts, and where a change
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff.txt
 
-@available: ascribe 0.3.2
 The [lines](../versions/lines.md) of a versioned build are listed together, under the build's name, and a page they share once, with the lines it changed in:
 
-@available: ascribe 0.3.2
 ```text
 site: 2 pages changed
   install.md: 1 changed, in every line
   upgrade.md: 1 changed, only in 3.4
 ```
 
-@available: ascribe 0.3.0
 Name a page to see its changes: every changed block, as it was (`-`) and as it is (`+`), with where it's written. In changed prose, the words removed are marked `[-like this-]` and the words added `{+like this+}`, as `git diff --word-diff` marks them; a block that isn't prose, such as a code block, shows its lines on both sides, and a moved block shows its lines once. A build the page didn't change in says so. Name a fragment, or another file pages take text from, to see the pages that changed through it. `--format json` and `--format html` are narrowed the same way, with the same shape and fewer pages, and `--exit-code` exits with `1` only when what's shown changed. A PAGE that isn't a file of the project, at the base or now, is a usage error.
 
-@available: ascribe 0.3.0
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff-page.txt
 
 Pages with errors are compared as they are. When `ascribe check` would find errors for the builds compared, `ascribe diff` says so on standard error, as review does in every place ([When the project has errors](how-it-works.md#when-the-project-has-errors) says why):
@@ -65,7 +61,6 @@ It lists the changed pages of each build, and marks a page that changed only thr
 
 Hovering over a block shows the source file and line it came from (`guides/install.md:12`).
 
-@available: ascribe 0.3.2
 The lines of a versioned build are one build in the list: a changed page is listed once, with "in every line" or the lines it changed in, and a **Line** switch shows it as each line publishes it.
 
 **Copy prompt** copies the page's [agent prompt](diff.md#the-agent-prompt), the one `ascribe diff --format prompt <page>` writes, to paste into your agent. The report has no link that opens an agent: a file opened from a disk or a CI artifact can't tell which editor you use, so it only copies.
@@ -94,7 +89,6 @@ The prompt asks for a report, not edits: a review reads the change, and its auth
 | `blocks_omitted` | boolean | Only with `--pages-only`, and then `true`: each page's `changes` is empty, and its `counts` still count them. |
 | `builds` | array | One entry per build compared: `build`, its name, and `pages`, the pages that changed, in path order. |
 
-@available: ascribe 0.3.2
 Each line of a versioned build is an entry of its own in `builds`, such as `site@3.4`, its pages' routes under the line's folder.
 
 Each page:
@@ -130,7 +124,6 @@ How blocks are matched: blocks are compared by their content without positions, 
 
 ## `ascribe drift`
 @id {permalink=true}: cli-drift
-@available: ascribe 0.2.0
 
 Lists the pages whose code examples changed between a git revision and the working tree, and whether the words around them changed too, and the pages whose examples no longer resolve. A page covers the code it shows, and nothing else: every region it takes a [snippet](../writing/directives.md#snippet) from, and every whole file it takes as one, including its fragments' snippets. It's for CI, where it says which pages a reviewer should reread; see [Report the pages whose examples changed](../examples/drift.md).
 

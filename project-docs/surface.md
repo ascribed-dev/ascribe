@@ -10,7 +10,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
-| `ascribe agents sync` | Writes `AGENTS.md` beside `ascribe.toml`, a short block in the repository root's `AGENTS.md` when the project is in a subfolder, and the skill in the root's `.agents/skills/ascribe/`. | `[--check] [--target agents-md\|skills\|claude\|claude-rules\|copilot\|codex]... [--with-hook] [--cloud] [--agent]` |  |
+| `ascribe agents sync` | Writes your project's rules and the Ascribe skill where each `--target`'s agents read them. | `[--check] [--target agents-md\|skills\|claude\|claude-rules\|copilot\|codex]... [--with-hook] [--cloud] [--agent]` |  |
 | `ascribe agents rules` | Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside `ascribe.toml`, as it would write it now. | `[PATH]` |  |
 | `ascribe agents index` | Writes a compact index of one build's docs, for the `AGENTS.md` of the product they're about: one line a page, with its title, its address, and its description, grouped in sections as the build's `llms.txt` is. | `[--build <NAME>] [--into <FILE>] [--pages <DIR>]` | `text`, `json` |
 | `ascribe agents skill` | Prints a file of the Ascribe skill, the same for every project: its `SKILL.md`, or its directive reference, `references/directives.md`. | `[FILE]` |  |
@@ -37,7 +37,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe rename` | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. | `TARGET NEW` |  |
 | `ascribe report` | Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. | `[SECTION]... [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice\|warning\|error]` | `text`, `markdown`, `json`, `prompt` |
 | `ascribe resolve` | Resolves a page for one build and writes it as the build's plain Markdown output, as `ascribe build --emit plain` writes it: the page as a reader of that build sees it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. | `PAGE [--build <NAME>] [--frontmatter]` | `text`, `json` |
-| `ascribe search` | Finds where the pages say something, as their readers read it, and names the line to edit for each place. | `QUERY [PATHS]... [--type <NAME>] [--case] [--word] [--summary] [--build <NAME>]... [--limit <N>]` |  |
+| `ascribe search` | Finds where the pages say something, as their readers read it, and names the line to edit for each place. | `QUERY [PATHS]... [--type <NAME>] [--case] [--word] [--summary] [--build <NAME>]... [--limit <N>]` | `text`, `json` |
 | `ascribe sources fetch` | Makes the copies match `ascribe.lock`: at each source's pin, it copies the files snippets name that have no copy or a wrong one, and removes the copies no snippet names. | `[NAME]...` |  |
 | `ascribe sources update` | Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20, or that the pin moved back), the copies that changed, the tested examples whose status changed, and the pages whose examples changed, grouped as `ascribe drift` groups them. | `[NAME]... [--to <REV>]` | `text`, `json`, `markdown` |
 | `ascribe sources status` | Shows each source in another repository: its repository and branch, its pin, and each copy's state (current, changed here, missing, not in the lock, unused, not copied yet, or not in the repository at the pin). |  | `text`, `json` |
@@ -564,6 +564,7 @@ Tools:
 | `ascribe_outline` | Outline a page | `ascribe outline` |
 | `ascribe_link` | Check a link | `ascribe link` |
 | `ascribe_refs` | Find uses | `ascribe refs` |
+| `ascribe_search` | Search pages | `ascribe search` |
 | `ascribe_resolve` | Resolve a page | `ascribe resolve` |
 | `ascribe_format` | Format pages | `ascribe fmt` |
 | `ascribe_changes` | List changed pages | `ascribe diff` |
@@ -779,6 +780,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/refs.schema.json` | RefsReport | What `ascribe refs <TARGET>` answers. |
 | `schemas/report.schema.json` | ReportReport | What `ascribe report --format json` writes: one document, whatever the outcome. |
 | `schemas/resolve.schema.json` | ResolveReport | What `ascribe resolve <PAGE> --format json` answers. |
+| `schemas/search.schema.json` | SearchReport | What `ascribe search <QUERY>` answers: what `--format json` writes. |
 | `schemas/sources-status.schema.json` | SourcesStatusReport | What `ascribe sources status --format json` writes: each source's pin and the state of its copies, read from the files alone. |
 | `schemas/sources-update.schema.json` | SourcesUpdateReport | What `ascribe sources update --format json` writes: how each source's pin moved, and the pages whose examples the new copies change. |
 | `schemas/templates-eject.schema.json` | TemplatesEjectReport | What `ascribe templates eject` did: the files it wrote and the types it added, or, when it refused anything, what it refused, and then it wrote nothing. |

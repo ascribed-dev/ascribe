@@ -56,6 +56,8 @@ pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPa
     head.push_str(&at.about());
     head.push_str("\n\n");
     head.push_str(&at.check());
+    head.push_str("\n\n");
+    head.push_str(&at.search());
     head.push('\n');
 
     let types = type_entries(model, &ascribe_templates::summaries(model, fs));
@@ -254,16 +256,33 @@ impl At {
 
     /// The loop, as a check to run.
     fn check(&self) -> String {
-        let whole = if self.root.is_root() {
-            "ascribe check".to_owned()
-        } else {
-            format!("ascribe check --config {}", shell_word(self.root.as_str()))
-        };
+        let whole = format!("ascribe check{}", self.config());
+
         format!(
             "Programmatic check: after editing a page, run `ascribe check <file> --format \
              concise` and fix every error. Before you finish, run `{whole}`. `ascribe explain \
              <code>` says what a problem means and how to fix it."
         )
+    }
+
+    /// Searching before writing a page.
+    fn search(&self) -> String {
+        format!(
+            "Before writing a page about a subject, run `ascribe search \"<words>\"{}` to find \
+             where the pages already say it, as readers read them, and link to what's there or \
+             extend it instead of saying it again.",
+            self.config()
+        )
+    }
+
+    /// ` --config <folder>` for a command run from the repository's root,
+    /// when the project isn't there; empty when it is.
+    fn config(&self) -> String {
+        if self.root.is_root() {
+            String::new()
+        } else {
+            format!(" --config {}", shell_word(self.root.as_str()))
+        }
     }
 }
 

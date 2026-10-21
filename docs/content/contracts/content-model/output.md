@@ -18,9 +18,9 @@ Part of the [`ascribe.toml` format contract](../content-model.md), whose [conten
 | `trailing-slash` | string | `"always"` | **Routing.** Whether page URLs end in `/`: `"always"` (`/guides/setup/`) or `"never"` (`/guides/setup`). Match the consumer's own setting (Astro's `trailingSlash` and `build.format`). |
 | `slugger` | string | `"github"` | **Slugging.** The algorithm for heading ids (SPEC §5.5), which must be the one the consumer uses. Supported: `"github"`, a port of `github-slugger`, which Astro uses. |
 | `html` | boolean | `true` | **HTML passthrough.** Whether the consumer renders raw HTML in markdown. The site output's custom elements need it, so the `astro` profile supports only `true`. |
-| `agents` {available="ascribe 0.3.0"} | boolean | `false` | **Outputs for agents.** Whether each build also publishes what AI agents read, following the Web Documentation Delivery Spec 0.6.0: `llms.txt` and each page's Markdown version, in the plain-markdown output laid out by URL, and a pointer to them on each page of the site output. It requires `site`. See below. |
-| `permalink-path` {available="ascribe 0.3.0"} | string | `go/` under `base-path` | **Permalinks.** The path each permalink's address is published under (SPEC §4.1), from the site's root: an address is the path, the permalink's id, and a final `/` when `trailing-slash` is `"always"`. It MUST start with `/` (`model-consumer-permalink-path`); a missing final `/` is added. The site output's `_ascribe/permalinks.json` gives it as `path` (contracts/output-layout.md §1.2). |
-| `headers` {available="ascribe 0.3.0"} | string | none | **Response headers.** The host whose format the site's response headers are written in. Supported: `"netlify"`, a `_headers` file at the root of what's deployed, which the consumer's integration writes from each build's `_ascribe/headers.json` (contracts/output-layout.md §1.4). The compiler writes the list whatever this says; without it, nothing is written for a host. Any other value is `model-invalid-value`. |
+| `agents` | boolean | `false` | **Outputs for agents.** Whether each build also publishes what AI agents read, following the Web Documentation Delivery Spec 0.6.0: `llms.txt` and each page's Markdown version, in the plain-markdown output laid out by URL, and a pointer to them on each page of the site output. It requires `site`. See below. |
+| `permalink-path` | string | `go/` under `base-path` | **Permalinks.** The path each permalink's address is published under (SPEC §4.1), from the site's root: an address is the path, the permalink's id, and a final `/` when `trailing-slash` is `"always"`. It MUST start with `/` (`model-consumer-permalink-path`); a missing final `/` is added. The site output's `_ascribe/permalinks.json` gives it as `path` (contracts/output-layout.md §1.2). |
+| `headers` | string | none | **Response headers.** The host whose format the site's response headers are written in. Supported: `"netlify"`, a `_headers` file at the root of what's deployed, which the consumer's integration writes from each build's `_ascribe/headers.json` (contracts/output-layout.md §1.4). The compiler writes the list whatever this says; without it, nothing is written for a host. Any other value is `model-invalid-value`. |
 
 **Heading ids, image attributes, and assets** (SPEC §9.5) are part of the profile, not keys. The `astro` profile has exactly one way to do each, defined by the contracts:
 
@@ -57,7 +57,6 @@ Without `site` the model is invalid (`model-consumer-agents-site`), since every 
 ---
 
 ## 18. `[sources.<name>]`
-@available: ascribe 0.2.0
 
 A source is a folder outside the project's content, or another repository, that its pages may take code examples from (SPEC §4.8, §7.3, §7.4). It's the only way a page can read a file outside the project's folder.
 
@@ -116,7 +115,6 @@ missing = ["examples/quickstart.ts"]
 
 **Rules** (§24.8): `path` is relative (`model-path-absolute`), and names an existing directory (`model-source-path-missing`) inside the project's repository (`model-source-outside-repository`).
 
-@available: ascribe 0.3.0
 With no repository around the project, the language server and `ascribe mcp` are bounded by what the user opened: a folder of the editor's workspace, or the folder `ascribe mcp` was started in. A source outside it is `model-source-outside-repository` with the variant `opened`. A command, such as `ascribe build` or `ascribe check`, reads a source wherever `path` leads, so a copy of a repository without `.git` still builds.
 
 A source has exactly one of `path` and `git`, `branch` only with `git`, a URL and a branch name `git` accepts, and copies outside the content root (`model-source-remote`).

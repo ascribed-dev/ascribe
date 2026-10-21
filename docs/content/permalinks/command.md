@@ -8,7 +8,6 @@ The commands that keep a project's list of permalinks, check names against it, a
 
 ## `ascribe permalinks`
 @id {permalink=true}: cli-permalinks
-@available: ascribe 0.3.0
 
 Keeps the project's list of [permalinks](../writing/directives.md#permalinks), `ascribe.permalinks` beside `ascribe.toml`, checks names against it, and retires permalinks. The list names each permalink the content declares and where, and each alias and retired permalink in `ascribe.toml`'s [`[permalinks]`](../content-model/checks.md#20-permalinks), and is committed with the docs: with it, `ascribe check` reports a permalink that goes away (`permalink-removed`) and one the list doesn't have yet (`permalinks-list-behind`), and a product's CI can check the names it links to with `verify`. A project without the list isn't told about either. Its format is in the [permalinks list contract](../contracts/permalinks-list.md).
 
