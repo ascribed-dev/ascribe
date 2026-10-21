@@ -45,7 +45,6 @@ Part of the [`ascribe.toml` format contract](../content-model.md), whose [conten
 ---
 
 ## 18. `[sources.<name>]`
-@available: ascribe 0.2.0
 
 A source is a folder outside the content root, or another repository, that a page's snippets MAY read (SPEC §4.8, §7.3, §7.4); a page MUST NOT read a file outside the project's folder any other way. `<name>` is the source's name (§1.2), and a snippet's address starts with it.
 

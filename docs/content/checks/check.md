@@ -19,19 +19,16 @@ How diagnostics are reported:
 - **A problem in included content is reported at the include**, with its place in the fragment as related information.
 - **Content that no build publishes is checked too**, so a problem in an arm no build selects isn't missed. Its diagnostics say "in content that no build publishes". Not with `--build`, which is about one build.
 
-@available: ascribe 0.3.0
 Two checks depend on the day they run: `review-overdue` reports a page whose review date has passed, and `release-line-ended` a live release line whose `ends` date has passed, each as of today's date in UTC. Set `ASCRIBE_TODAY=YYYY-MM-DD` to check as of another day, such as in a test that mustn't change with the calendar. Every command that checks, the editor and the hook's check server included, reads it.
 
 Every diagnostic, with its fix, is in the [diagnostics reference](diagnostics.md).
 
 ### Checking some files
 
-@available: ascribe 0.3.0
 `ascribe check docs/guides/install.md` reports on that file alone, from a repository's root as well as from inside the project. A fragment's problem is reported at every page that includes it, so checking the fragment shows it once, and its `repeats` says at how many other includes it appears too. The problems shown are the whole check's, in the same order.
 
 ### Checking text before it's saved
 
-@available: ascribe 0.3.0
 `--stdin` checks text that isn't on disk yet, such as an editor's unsaved buffer or an agent's draft. The file `--path` names has to be where a source file could be: a `.md` file in the content root. A link from another page that the new text breaks isn't shown, since it doesn't count for that file.
 
 ```sh
@@ -40,30 +37,24 @@ npx ascribe check --stdin --path docs/guides/new.md < draft.md
 
 ### Checking the prose
 
-@available: ascribe 0.3.0
 `--vale` reports Vale's `suggestion`, `warning`, and `error` alerts as advice, warnings, and errors, up to [`[checks.vale] max-level`](../content-model/checks.md#checksvale). Vale is given the prose alone, and a Vale that takes more than ten minutes is given up, as `prose-not-checked`. See [Prose, through Vale](vale.md).
 
 ### A quick check after each edit
 
-@available: ascribe 0.3.0
 `--editor-build` leaves out what the editor doesn't report: the pass over content no build publishes, the image checks (`image-unused` and `image-large`), and, with paths that name files, the [content checks](diagnostics/content-checks.md) across the project. It's quick enough to run after every edit; the timings are in [`tests/corpora/RESULTS.md`]({repo}/blob/main/tests/corpora/RESULTS.md#one-file). It can't be combined with `--build`. The summary line, and `builds_checked` in the JSON, name the build, so a clean result says what it covers.
 
 ### Output for agents
 
-@available: ascribe 0.3.0
 `--format concise` is grouped by file in file order, and by line within a file, and ends with the summary line:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check-concise.txt
 
-@available: ascribe 0.3.0
 `--format prompt` writes the prompt [Prompt your agent](../agents/prompts.md) describes. It lists at most 20 problems, or 20 files, then names the command that lists the rest. With `--stdin`, it says the file has unsaved changes.
 
-@available: ascribe 0.3.0
 `--summary` works in any format. The text lists at most 20 files, then the command whose JSON lists them all. On a project with hundreds of warnings, it shows which rule or file to work through first.
 
 ### Checking one rule at a time
 
-@available: ascribe 0.3.0
 `--code` lets an agent, or a person, fix one rule across the project instead of working file by file. The summary line names the codes (``reported on 12 for code `ASC037` ``), and the commands a report names keep them: the concise list's `and N more:`, and the JSON's `next_command`.
 
 ```sh
@@ -72,14 +63,12 @@ npx ascribe check --code link-id-missing --format concise
 
 ### Applying the safe fixes
 
-@available: ascribe 0.3.0
 An `unsafe` fix, such as the nearest spelling of a misspelled name, is never applied by `--fix`: it stays in the report for you to decide. `ascribe fmt` is the other command that rewrites what it can.
 
 ```sh
 npx ascribe check --fix
 ```
 
-@available: ascribe 0.3.0
 The output starts with a line for each file changed (`fixed 2 problems in docs/guides/install.md`). Two fixes that would edit the same text are one too many: the first is applied, and the other's problem is reported again, for the next run. `--fix` can't be combined with `--stdin`, whose text isn't on disk.
 
 @available: ascribe 0.4.0
@@ -101,7 +90,6 @@ Each diagnostic shows its code, message, and source, and its next step as `Help:
 
 Diagnostics go to standard output. A failure that stops the command (exit code 2) goes to standard error.
 
-@available: ascribe 0.3.0
 Advice, a diagnostic below a warning, is listed after the errors and warnings, in every format, and the summary counts it apart: `0 errors, 2 warnings, 5 advice`. It never fails the command, even with `--deny-warnings`. A project sets how loudly a check about its content's quality speaks in [`[checks]`](../content-model/checks.md#19-checks).
 
 A problem [acknowledged as intended](../writing/directives.md#intended) isn't listed, and doesn't fail the command; the summary counts it when there is one: `0 errors, 2 warnings, 0 advice, 1 acknowledged`. `ascribe build` counts it the same way.
@@ -119,7 +107,6 @@ Checks the project, then writes each build's outputs. The checks run first, exac
 
 @include: ../_generated/cli-build-options.md
 
-@available: ascribe 0.2.0
 The Astro integration turns the source anchors that `--anchors` writes into attributes on every block's element ([site-render contract](../contracts/site-render.md#7-source-anchors)).
 
 Progress (`built cloud/plain: 3 pages, 2 assets`) and warnings go to standard error.

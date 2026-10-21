@@ -8,7 +8,6 @@ The commands that look after the code a project's pages show: the copies it keep
 
 ## `ascribe sources`
 @id {permalink=true}: cli-sources
-@available: ascribe 0.2.0
 
 Copies code from [sources in other repositories](../content-model/output.md#a-source-in-another-repository) into the project, and moves their pins. `check` and `build` read only the copies, so `ascribe sources fetch` and `ascribe sources update` are the only commands that reach another repository. They run `git`, with `git`'s own credentials: whatever lets `git fetch <url>` work in your shell lets them fetch. They never prompt, so a missing credential fails at once.
 
@@ -83,7 +82,6 @@ With `--format json`, the same, as its [schema](../contracts/json-reports/source
 
 ## `ascribe observe`
 @id {permalink=true}: cli-observe
-@available: ascribe 0.3.1
 
 Runs the test of a folder of [tested examples](tested.md), and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. It's run in the code's folder, the one that holds `ascribe.examples.toml`, not the docs project's: it doesn't look in parent folders for a config, and doesn't read `ascribe.toml` or `--config`. For code in another repository, that's the code's repository: it refuses to run in a source's copies, which it knows from the `ascribe.lock` above them. So `ascribe` has to be installed where the code is: with npm, or on the path where there's no Node ([Install](../install.md)).
 

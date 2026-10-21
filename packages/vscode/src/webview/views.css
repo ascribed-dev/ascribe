@@ -31,6 +31,37 @@ main {
   color: var(--vscode-descriptionForeground);
 }
 
+/* The buttons under a message: Show Output, Restart, Manage Workspace Trust. */
+.notice-action {
+  display: block;
+  margin: 0 20px 4px;
+  color: var(--vscode-textLink-foreground);
+}
+
+/* This page's head: the page's title, then its type and path. */
+.head .page-title {
+  margin: 0 0 2px;
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.head code {
+  font-family: var(--vscode-editor-font-family);
+  font-size: 0.95em;
+  color: var(--vscode-textPreformat-foreground);
+  background: var(--vscode-textPreformat-background);
+  border-radius: 3px;
+  padding: 0 3px;
+}
+
+.head .page-where {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.75em;
+  margin: 0;
+  color: var(--vscode-descriptionForeground);
+}
+
 .codicon[class*="codicon-"] {
   flex: none;
   margin-top: 2px;
@@ -44,6 +75,15 @@ details.section > summary {
   font-weight: 600;
   cursor: pointer;
   list-style: none;
+}
+
+/* An open section's header sticks to the top while its rows scroll under
+   it, so the reader knows whose rows they are. It hides what's under it. */
+details.section[open] > summary {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--vscode-sideBar-background);
 }
 
 details.section > summary::-webkit-details-marker {
@@ -103,6 +143,17 @@ ul {
 }
 
 .row.warn .codicon {
+  color: var(--vscode-editorWarning-foreground);
+}
+
+/* A row's state comes first, colored: a warning's color when the row warns. */
+.row .state {
+  margin-right: 0.5em;
+  font-weight: 600;
+  color: var(--vscode-testing-iconPassed);
+}
+
+.row.warn .state {
   color: var(--vscode-editorWarning-foreground);
 }
 

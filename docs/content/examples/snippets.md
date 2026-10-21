@@ -2,7 +2,6 @@
 type: how-to
 title: Show an example from the code
 description: Declare a folder of code as a source, mark a region in a file, and show it on a page with @snippet, so the example changes when the code does.
-available: ascribe 0.2.0
 ---
 
 With `@snippet`, a page takes a code example from the file itself, and Ascribe reads the file whenever it checks, builds, or diffs, so changing the code changes every page that shows it. [Examples and drift](index.md) says what Ascribe reports when the code changes.

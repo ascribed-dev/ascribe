@@ -302,7 +302,7 @@ test("a variant group is a switcher, and the reader's choice holds on the next p
 });
 
 test("a page marked with an availability shows its badge", async () => {
-  const page = await open("/docs/review/");
+  const page = await open("/docs/navigation/");
   const badge = page.locator('ascribe-availability[scope="page"] ascribe-availability-target');
   // "unreleased" until a release ships the page's feature, then the release.
   expect(await badge.getAttribute("target")).toBe("ascribe");

@@ -23,11 +23,16 @@ import type {
   PagePlace,
   PageResult,
 } from "../shapes.js";
-import type { ViewItem } from "../webview/viewProtocol.js";
+import type { ThisPageAnswer, ThisPageHead, ViewItem } from "../webview/viewProtocol.js";
 
 /** How an item of a view looks. */
 export interface ItemLook {
   label: string;
+  /**
+   * A row's state, which This page draws first, as a colored label, before
+   * its description: "tested", "too long", "1 warning".
+   */
+  state?: string | undefined;
   description: string;
   tooltip: string;
   /** A codicon. */
@@ -823,9 +828,14 @@ export type ThisPageNode =
   | { kind: "include"; include: PageInclude }
   | { kind: "row"; row: AboutRow };
 
-/** A row of About or Health: a label and what it says, and where it goes. */
+/**
+ * A row of About or Health: a label and what it says, and where it goes. A
+ * row whose state can warn says the state first, and the rest after it.
+ */
 interface AboutRow {
   label: string;
+  /** Its state, when it has one: "tested", "overdue", "1 warning". */
+  state?: string | undefined;
   value: string;
   tooltip: string;
   /** Whether it says something needs doing: overdue, too long, stale. */
@@ -975,12 +985,13 @@ function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
     const long = description.reported;
     rows.push({
       label: "Description",
+      state: length === null ? "missing" : long ? "too long" : undefined,
       value:
         length === null
-          ? "missing"
+          ? ""
           : limit === null
             ? count(length, "character", "characters")
-            : `${length} of ${limit} characters${long ? ", too long" : ""}`,
+            : `${length} of ${limit} characters`,
       tooltip:
         length === null
           ? `No \`${description.field}\`: write a sentence saying what the page is for`
@@ -994,6 +1005,7 @@ function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
   if (review) {
     rows.push({
       label: "Review",
+      state: review.overdue ? "overdue" : undefined,
       value: reviewText(review.date, review.days, review.overdue),
       tooltip: `\`${review.field}\`: ${review.date}`,
       warn: review.reported,
@@ -1053,7 +1065,8 @@ function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
   if (template) {
     rows.push({
       label: "Template",
-      value: `${template.type} template, ${count(template.left, "placeholder", "placeholders")} left`,
+      state: `${count(template.left, "placeholder", "placeholders")} left`,
+      value: `${template.type} template`,
       tooltip: "Goes to the next place the template left to fill in",
       warn: true,
       opens: { kind: "command", command: NEXT_PLACEHOLDER, title: "Go to Next Placeholder" },
@@ -1062,7 +1075,7 @@ function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
   return rows;
 }
 
-/** "overdue since 3 October", "due in 12 days", "due today". */
+/** "since 3 October", after the state "overdue"; "due in 12 days", "due today". */
 function reviewText(date: string, days: number | null, overdue: boolean): string {
   const [year, month, day] = date.split("-").map(Number);
   const months = [
@@ -1084,7 +1097,7 @@ function reviewText(date: string, days: number | null, overdue: boolean): string
       ? undefined
       : new Date(Date.UTC(year ?? 0, (month ?? 1) - 1, (day ?? 1) - days)).getUTCFullYear();
   const named = `${day} ${months[(month ?? 1) - 1] ?? ""}${thisYear === year ? "" : ` ${year}`}`;
-  if (overdue) return `overdue since ${named}`;
+  if (overdue) return `since ${named}`;
   if (days === null) return `due ${named}`;
   if (days === 0) return "due today";
   return `due in ${count(days, "day", "days")}`;
@@ -1128,7 +1141,8 @@ function healthRows(
     ].filter((part) => part !== "");
     rows.push({
       label: "Problems",
-      value: parts.length > 0 ? parts.join(", ") : "none",
+      state: parts.length > 0 ? parts.join(", ") : "none",
+      value: "",
       tooltip: "Opens the Problems panel, where Show Active File Only keeps it to this page",
       warn: problems.errors > 0 || problems.warnings > 0,
       opens: { kind: "command", command: SHOW_PROBLEMS, title: "Show Problems" },
@@ -1139,6 +1153,7 @@ function healthRows(
     const over = size.limit !== null && size.characters >= size.limit;
     rows.push({
       label: "Size",
+      state: over ? "too large" : undefined,
       value: `${thousands(size.characters)}${size.limit === null ? "" : ` of ${thousands(size.limit)}`} characters, in ${size.build}`,
       tooltip: [
         `Its Markdown in build ${size.build}, the largest of the builds that publish it`,
@@ -1157,7 +1172,14 @@ function healthRows(
     )?.uri;
     rows.push({
       label: "Example",
-      value: `${example.address}, ${exampleState(example)}`,
+      state: exampleState(example),
+      value: [
+        example.address,
+        example.tested === null ? "" : `with ${example.tested}`,
+        example.heading === null ? "" : `under “${example.heading}”`,
+      ]
+        .filter((part) => part !== "")
+        .join(", "),
       tooltip: example.tested ?? exampleState(example),
       warn: example.state !== "tested",
       opens: shown
@@ -1191,6 +1213,88 @@ function byFile(places: readonly Place[]): PlacesInFile[] {
   // The server lists places file by file in content path order.
   return [...files.values()];
 }
+
+/** How many things there are to do: the rows that warn. */
+function toDo(rows: readonly AboutRow[]): number {
+  return rows.filter((row) => row.warn).length;
+}
+
+/**
+ * How many things Health says there are to do, which its header says and
+ * the view's badge shows, so they're seen with Health closed.
+ */
+function healthToDo(roots: readonly ThisPageNode[]): number {
+  const health = roots.find((node) => node.kind === "health");
+  return health?.kind === "health" ? toDo(health.rows) : 0;
+}
+
+/** The view's badge: Health's things to do, when there are any. */
+export function healthBadge(
+  roots: readonly ThisPageNode[],
+): { value: number; tooltip: string } | undefined {
+  const n = healthToDo(roots);
+  return n === 0
+    ? undefined
+    : { value: n, tooltip: `Health: ${count(n, "thing to do", "things to do")} on this page` };
+}
+
+/**
+ * This page's head: the page's title, its code spans as code when its type's
+ * `title` reads them, its type, and its path.
+ */
+export function thisPageHead(about: PageAbout): ThisPageHead {
+  return {
+    title: about.formattedTitle ?? [{ type: "text", value: about.title ?? basename(about.path) }],
+    type: about.fragment ? "fragment" : about.type,
+    path: about.path,
+  };
+}
+
+/**
+ * What This page shows in place of a page: none is open, the page's server
+ * is starting or has failed, or the folder is in Restricted Mode.
+ */
+export type ThisPageNotice =
+  | { kind: "noPage" }
+  | { kind: "starting" }
+  | { kind: "failed"; project: string }
+  | { kind: "restricted" };
+
+/** The keys of the buttons under This page's message, which the extension runs. */
+export const NOTICE_ACTIONS = {
+  showOutput: "notice/showOutput",
+  restart: "notice/restart",
+  manageTrust: "notice/manageTrust",
+} as const;
+
+/** What This page says in place of a page, with the buttons that help. */
+export function thisPageNotice(notice: ThisPageNotice): ThisPageAnswer {
+  const said = (message: string, actions: ThisPageAnswer["actions"] = []): ThisPageAnswer => ({
+    message,
+    actions,
+    head: null,
+    sections: [],
+  });
+  switch (notice.kind) {
+    case "noPage":
+      return said(NO_PAGE);
+    case "starting":
+      return said("Waiting for the project's language server.");
+    case "failed":
+      return said(`${notice.project}: the language server failed to start.`, [
+        { key: NOTICE_ACTIONS.showOutput, label: "Show Output" },
+        { key: NOTICE_ACTIONS.restart, label: "Restart" },
+      ]);
+    case "restricted":
+      return said(
+        "This folder is in Restricted Mode, so Ascribe doesn't run or check its projects.",
+        [{ key: NOTICE_ACTIONS.manageTrust, label: "Manage Workspace Trust" }],
+      );
+  }
+}
+
+/** What This page says when the active file isn't a page of a project. */
+export const NO_PAGE = "Open a page to see what's known about it.";
 
 /** An item's children in the This page view. */
 export function thisPageChildren(node: ThisPageNode): ThisPageNode[] {
@@ -1249,7 +1353,7 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
     case "about":
       return { ...section("About", "", "info", "What the page is"), expanded: true };
     case "health": {
-      const warned = node.rows.filter((row) => row.warn).length;
+      const warned = toDo(node.rows);
       return {
         ...section(
           "Health",
@@ -1393,6 +1497,7 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
     case "row":
       return {
         label: node.row.label,
+        state: node.row.state,
         description: node.row.value,
         tooltip: node.row.tooltip,
         icon: node.row.warn ? "warning" : "blank",
@@ -1434,6 +1539,7 @@ export function thisPageItems(
               ? "group"
               : "item",
       label: look.label,
+      state: look.state ?? "",
       description: look.description,
       tooltip: look.tooltip,
       icon: look.icon,

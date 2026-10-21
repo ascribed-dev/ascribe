@@ -191,6 +191,9 @@ pub struct PageExample {
     pub state: ExampleState,
     /// What it was tested with, when it's tested.
     pub tested: Option<String>,
+    /// The heading it's under: the innermost whose section holds it, as
+    /// plain text; `null` before the first heading.
+    pub heading: Option<String>,
     /// The `@snippet` line, in the negotiated position encoding.
     #[cfg_attr(feature = "json-schema", schemars(with = "crate::schema::LspRange"))]
     pub range: Range,
@@ -507,6 +510,13 @@ fn examples(ctx: &Ctx, file: &FileIndex, range: &dyn Fn(Span) -> Range) -> Vec<P
                     ExampleStatus::Unobserved => ExampleState::Untested,
                 },
                 tested: example.tested,
+                heading: file
+                    .headings
+                    .iter()
+                    .filter(|h| h.section.start() <= snippet.span.start())
+                    .filter(|h| snippet.span.start() < h.section.end())
+                    .min_by_key(|h| h.section.len())
+                    .map(|h| h.text.clone()),
                 range: range(snippet.span),
             })
         })

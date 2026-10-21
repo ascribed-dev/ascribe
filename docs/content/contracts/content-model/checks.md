@@ -7,7 +7,6 @@ description: "The normative contract for the content model's checks, permalinks,
 Part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. What these keys are for, with examples, is in the reference's [checks, permalinks, and listing](../../content-model/checks.md).
 
 ## 19. `[checks]`
-@available: ascribe 0.3.0
 
 Each key of `[checks]` other than `vale` and `links` is a check's slug, as the [diagnostics reference](../../checks/diagnostics.md) lists it, and its value is a level, `"off"`, `"advice"`, `"warning"`, or `"error"`, or a table, `[checks.<check>]`, with these keys and the check's own settings:
 
@@ -20,7 +19,6 @@ A level applies wherever the diagnostic is reported: by `ascribe check`, by `asc
 **Rules** (§24.9): a key MUST be a check's slug, or `vale` or `links`, and an unknown one is reported with a did-you-mean suggestion (`model-unknown-key`). The check MUST be one the diagnostics registry marks configurable (`model-check-not-configurable`), and a level one of the four (`model-invalid-value`). A value MUST be a string or a table, and a table MUST have only `level` and the check's settings (`model-unknown-key`). `page-size`'s and `memo-long`'s `limit` MUST be an integer above 0, and `image-large`'s an integer number of bytes or a string of a number and `B`, `KB`, or `MB`, with or without a space between, where a kilobyte is 1,000 bytes and a megabyte 1,000,000 (`model-wrong-type`).
 
 ### 19.1 `[[intended]]`
-@available: ascribe 0.3.0
 
 Each `[[intended]]` table acknowledges one review check's problem with one content model entry or image (SPEC §4.9). The problem MUST NOT be reported, and MUST be counted and listed with the reason instead, in every build.
 
@@ -31,7 +29,6 @@ An acknowledgement that covers nothing when every build is checked is advice (`i
 **Rules** (§24.9): `check` MUST name a check that exists, with a did-you-mean suggestion when it doesn't, whose registry entry has `next = "review"` and `place = "entry"` (`model-intended-check`). The table MUST name exactly one declared phrase, feature, or image (`model-intended-entry`). `check` and `reason` MUST be present (`model-missing-key`), `reason` MUST NOT be empty (`model-empty-text`), and the table MUST have no other key (`model-unknown-key`).
 
 ### 19.2 `[checks.vale]`
-@available: ascribe 0.3.0
 
 How the prose is checked with Vale, which the project installs and Ascribe runs, never links or downloads.
 
@@ -46,7 +43,6 @@ Each alert is a `prose` diagnostic (`ASC165`) on the source file, with the rule 
 **Rules** (§24.9): `[checks.vale]` MUST have exactly one of `preset` and `config`, and `off` MUST appear only with `preset` and name only its rules (`model-checks-vale`). `preset` and `max-level` MUST take one of their values (`model-invalid-value`), and the table no other key (`model-unknown-key`).
 
 ### 19.3 `[checks.links]`
-@available: ascribe 0.3.0
 
 How `ascribe report links` checks external links: with lychee, which the project installs, run in the project root with the addresses on its standard input. `ascribe check` MUST NOT reach the network.
 
@@ -65,7 +61,6 @@ How `ascribe report links` checks external links: with lychee, which the project
 ---
 
 ## 20. `[permalinks]`
-@available: ascribe 0.3.0
 
 `[permalinks.retired]` and `[permalinks.aliases]` hold names that no heading or page declares (SPEC §7.6). A key of `[permalinks.retired]` is a retired permalink's name, and its table takes:
 
@@ -78,7 +73,6 @@ A key of `[permalinks.aliases]` is an alias's name, and its value the name it le
 ---
 
 ## 21. `[crawlers]`
-@available: ascribe 0.3.0
 
 @include: ../../_fragments/content-model/crawlers.md
 
@@ -89,13 +83,11 @@ The crawlers of each purpose are data Ascribe ships, each with its operator, the
 ---
 
 ## 22. `[listing]`
-@available: ascribe 0.3.0
 
 @include: ../../_fragments/content-model/listing.md
 
 **Rules** (§24.12): each value MUST be one of `listed`, `unquoted`, and `unlisted` (`model-invalid-value`). A key of `[listing.folders]` MUST be a path from the content root ending in `/`, without `.` or `..` parts or a pattern's characters, of a folder that exists by its exact name (`model-listing-folder`, a filesystem rule), and a key of `[listing.types]` a content type the model declares, or `page` when it declares none (`model-listing-type`). A rule MUST NOT be looser than a folder's it's under, or than `default` (`model-listing-looser`), and the table MUST have no other key (`model-unknown-key`). A page looser than a rule it's under is checked with the project, not by the loader: SPEC §8.2's `listing-loosened`.
 
-@available: ascribe 0.3.2
 `older-lines` is held to `default` by `model-listing-looser`, as a folder's and a type's rules are. A page looser than `older-lines`, which only an older line's pages are under, is SPEC §8.2's `listing-loosened-in-line`.
 
 ---

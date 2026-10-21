@@ -2,7 +2,6 @@
 type: how-to
 title: Keep the docs in another repository
 description: Take code examples from the code's repository when the docs have a repository of their own, pinned to a commit, and keep them up to date with a pull request.
-available: ascribe 0.2.0
 permalink: docs-repository
 ---
 
