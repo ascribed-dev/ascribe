@@ -1,6 +1,7 @@
 //! The answers `ascribe report links` reuses (`ascribe_check::links::cache`)
-//! and what it remembers (`ascribe_check::links::history`): what a second
-//! run asks about and holds, and that only the report's code opens either.
+//! and what it remembers (`ascribe_check::links::history`, and
+//! `ascribe_check::report_history` for the other sections): what a second
+//! run asks about and holds, and that only the report's code opens any.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
@@ -194,6 +195,8 @@ const OPENS: &[&str] = &[
     "links::history",
     "links::History",
     "History::open(",
+    "report_history::",
+    "ReportHistory::open(",
 ];
 
 /// The report's code: the only code that opens `.ascribe/cache/` or
@@ -203,6 +206,7 @@ const OPENS: &[&str] = &[
 const REPORT: &[&str] = &[
     "crates/ascribe-check/src/links.rs",
     "crates/ascribe-check/src/links/",
+    "crates/ascribe-check/src/report_history.rs",
     "crates/ascribe-query/src/report.rs",
     "crates/ascribe-cli/src/commands/report/",
 ];

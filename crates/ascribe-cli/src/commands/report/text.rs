@@ -224,6 +224,7 @@ impl Writer<'_> {
             ));
         }
         self.line(&format!("{}.", capitalized(&line)))?;
+        self.problems_since(p)?;
         if p.diagnostics.is_empty() && p.acknowledged.is_empty() {
             return Ok(());
         }
@@ -250,6 +251,49 @@ impl Writer<'_> {
         }
         let list = self.code(self.about.list_command);
         self.line(&format!("To list each problem: {list}"))
+    }
+
+    /// What's new since the last report, and what's gone: `14 problems, 2
+    /// of them new since 9 October; 5 the last report listed are gone:`,
+    /// then the new ones. Nothing on a first run.
+    fn problems_since(&mut self, p: &Problems) -> io::Result<()> {
+        let (Some(since), Some(new), Some(resolved)) = (p.previous_run, &p.new, p.resolved) else {
+            return Ok(());
+        };
+        let since = day(since);
+        let total = p.diagnostics.len();
+        let mut line = match (total, new.len()) {
+            (0, _) => String::new(),
+            (1, 1) => format!("1 problem, new since {since}"),
+            (1, _) => format!("1 problem, listed on {since} too"),
+            (n, 0) => format!("{n} problems, none of them new since {since}"),
+            (n, k) => format!("{n} problems, {k} of them new since {since}"),
+        };
+        if resolved > 0 {
+            let gone = format!(
+                "{resolved} the last report listed {} gone",
+                plural(resolved, "is", "are")
+            );
+            if line.is_empty() {
+                // None now: every one the last report listed is gone.
+                line = match resolved {
+                    1 => format!("The problem the report of {since} listed is gone"),
+                    n => format!("The {n} problems the report of {since} listed are gone"),
+                };
+            } else {
+                line.push_str(&format!("; {gone}"));
+            }
+        }
+        if line.is_empty() {
+            return Ok(());
+        }
+        if new.is_empty() {
+            line.push('.');
+            return self.line(&line);
+        }
+        line.push(':');
+        self.line(&line)?;
+        self.items(new, |w, d| w.diagnostic(d))
     }
 
     fn inventory(&mut self, i: &Inventory) -> io::Result<()> {

@@ -36,7 +36,7 @@ use ascribe_core::Date;
 use serde::{Deserialize, Serialize};
 
 use super::Answer;
-use super::cache::{over_a_day_old, write_whole};
+use super::cache::{clean_beside, write_whole};
 
 /// The history's file, relative to the project's folder.
 pub const FILE: &str = ".ascribe/history/links.json";
@@ -236,7 +236,7 @@ impl History {
         text.push('\n');
         let path = self.path();
         let _ = write_whole(&self.root, &path, &text);
-        self.clean();
+        clean_beside(&path, self.today);
     }
 
     /// The file's path.
@@ -269,26 +269,6 @@ impl History {
                 })
                 .collect(),
         })
-    }
-
-    /// Deletes each `tmp-` file over a day old beside the file: a run that
-    /// stopped before its rename left it.
-    fn clean(&self) {
-        let path = self.path();
-        let Some(folder) = path.parent() else {
-            return;
-        };
-        // Outside FileSystem: as in `load`.
-        let Ok(files) = std::fs::read_dir(folder) else {
-            return;
-        };
-        for file in files.flatten() {
-            if file.file_name().to_string_lossy().starts_with("tmp-")
-                && over_a_day_old(&file, self.today)
-            {
-                let _ = std::fs::remove_file(file.path());
-            }
-        }
     }
 }
 

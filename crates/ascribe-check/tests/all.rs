@@ -13,6 +13,8 @@ mod checks;
 mod commands;
 #[path = "all/file_system.rs"]
 mod file_system;
+#[path = "all/identity.rs"]
+mod identity;
 #[path = "all/ids.rs"]
 mod ids;
 #[path = "all/link_cache.rs"]
