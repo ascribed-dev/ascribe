@@ -2,10 +2,6 @@
 // home, design/words.toml. A surface generated from the home is generated; one
 // that can't be is compared with it here, so changing a line in the home
 // fails this file until every surface agrees. design/README.md lists them.
-//
-// The landing page's description, site/home/content/index.md, isn't compared
-// yet: it becomes the sentence in the website plan's phase 1, and is added
-// here once that merges.
 
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -100,15 +96,38 @@ describe("design/words.toml", () => {
   });
 });
 
+const LANDING = "site/home/content/index.md";
+
+// The landing page's frontmatter `description`, which is written as a
+// double-quoted YAML string, since the sentence has a colon in it.
+const landingDescription = (): string => {
+  const line = read(LANDING)
+    .split("\n")
+    .find((l) => l.startsWith("description: "));
+  const value = (line ?? "").slice("description: ".length);
+  return value.startsWith('"') ? (JSON.parse(value) as string) : value;
+};
+
 describe("the headline", () => {
   test("is the social card's line", () => {
     expect(readSources().line).toBe(home.headline);
+  });
+
+  test("is the landing page's heading", () => {
+    const heading = read(LANDING)
+      .split("\n")
+      .find((l) => l.startsWith("# "));
+    expect(heading?.slice(2)).toBe(home.headline);
   });
 });
 
 describe("the sentence", () => {
   test("is the README's first paragraph", () => {
     expect(firstParagraph(read("README.md"))).toBe(home.sentence);
+  });
+
+  test("is the landing page's description", () => {
+    expect(landingDescription()).toBe(home.sentence);
   });
 
   test("opens getting started", () => {

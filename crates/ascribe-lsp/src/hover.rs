@@ -12,7 +12,7 @@ use ascribe_core::{LineIndex, RelPath};
 use ascribe_emit::labels::{availability_display, availability_display_of_text};
 use ascribe_model::{ContentModel, LineStatus, Placement};
 use ascribe_resolve::{DefaultRouter, Resolution, Snapshot, Usable};
-use lsp_types::{Hover, HoverContents, MarkupContent, MarkupKind, Position};
+use lsp_types::{Hover, HoverContents, MarkupContent, MarkupKind, Position, Range};
 
 use crate::nav::{Ctx, Hit, Lines, first_paragraph, hit_at};
 
@@ -87,8 +87,40 @@ fn markdown_hover(ctx: &Ctx, span: ascribe_core::Span, value: String) -> Option<
     })
 }
 
-/// The hover at a position of the requested file.
+/// The hover at a position of the requested file, and the advice
+/// `ascribe.baseline` holds back on its line, which isn't a diagnostic, so
+/// the hover is where the editor shows it (#790).
 pub(crate) fn hover(ctx: &Ctx, position: Position) -> Option<Hover> {
+    let held = crate::baseline::hover_text(ctx, position.line);
+    let Some(held) = held else {
+        return hover_at(ctx, position);
+    };
+    let Some(mut hover) = hover_at(ctx, position) else {
+        let line = Range::new(
+            Position::new(position.line, 0),
+            Position::new(position.line + 1, 0),
+        );
+        let range = ctx
+            .held
+            .iter()
+            .find(|d| d.range.start.line <= position.line && position.line <= d.range.end.line)
+            .map_or(line, |d| d.range);
+        return Some(Hover {
+            contents: HoverContents::Markup(MarkupContent {
+                kind: MarkupKind::Markdown,
+                value: held,
+            }),
+            range: Some(range),
+        });
+    };
+    if let HoverContents::Markup(markup) = &mut hover.contents {
+        markup.value = format!("{}\n\n---\n\n{held}", markup.value);
+    }
+    Some(hover)
+}
+
+/// What's at a position of the requested file.
+fn hover_at(ctx: &Ctx, position: Position) -> Option<Hover> {
     let file = ctx.file()?;
     let index = LineIndex::new(&file.source);
     let offset = ctx.encoding.offset_lenient(&index, &file.source, position);

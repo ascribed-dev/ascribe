@@ -139,6 +139,23 @@ impl Watched {
         own
     }
 
+    /// What's wrong with `ascribe.baseline`, when a line of it doesn't
+    /// parse, as `ascribe check` says it: the server then holds nothing
+    /// back.
+    pub fn baseline_problem(&self) -> Option<String> {
+        let loaded = self.core.loaded.as_ref()?;
+        match loaded.baseline.read.as_ref()? {
+            Ok(_) => None,
+            Err(e) => Some(e.to_string()),
+        }
+    }
+
+    /// How many advice `ascribe.baseline` holds back in `file`, which
+    /// [`Watched::problems`] leaves out, as of its last call.
+    pub fn held(&self, file: &Path) -> usize {
+        self.core.held_count(&normalize(file))
+    }
+
     /// The editor's build, which the problems are of; `None` before the
     /// project has loaded.
     pub fn build(&self) -> Option<String> {

@@ -1299,3 +1299,33 @@ fn with_no_repository_a_source_outside_the_servers_folder_isnt_read() {
     assert!(out.status.success(), "{out:?}");
     assert!(String::from_utf8_lossy(&out.stdout).contains("hunter2"));
 }
+
+#[test]
+fn check_holds_back_what_the_baseline_lists_and_counts_it() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(
+        &root.join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n",
+    );
+    write(
+        &root.join("docs/index.md"),
+        "---\ntitle: Home\n---\n\nSee [sync](sync.md).\n",
+    );
+    write(
+        &root.join("docs/sync.md"),
+        "---\ntitle: Sync\nnav-label: Synchronize two copies\n---\n\nText.\n",
+    );
+    assert!(ascribe(root, &["baseline", "write"]).status.success());
+    let mut server = Server::start(root);
+
+    // The project's backlog isn't the agent's: it's left out, and counted,
+    // as `ascribe check` does.
+    let (text, _) = server.call_ok("ascribe_check", json!({}));
+    assert_eq!(text, stdout(root, &["check", "--format", "concise"]));
+    assert!(!text.contains("nav-label"), "{text}");
+    assert!(text.contains(", 1 in the baseline"), "{text}");
+    let (_, structured) = server.call_ok("ascribe_check", json!({ "response_format": "detailed" }));
+    assert_eq!(structured["summary"]["baselined"], 1, "{structured}");
+    assert_eq!(structured["summary"]["advice"], 0, "{structured}");
+}

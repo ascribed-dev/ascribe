@@ -1,11 +1,14 @@
-# Cool and exact: blue-gray neutrals and an indigo accent, like ink on a
-# page. The semantic hues are pushed apart for red-green color blindness:
-# green leans teal and red leans vermilion, so added and removed differ in
-# blue and yellow as well as red and green.
+# Bryo Studio's Deep River, for dark, and Shallows, its light companion from
+# the same hues: deep blue-gray neutrals, river blue for the accent and what
+# changed, moss for a tip and what was added, and amber for focus. Red,
+# magenta, and yellow are tuned to the same cool cast, and kept apart from
+# moss, river, and amber for red-green color blindness: red leans crimson and
+# magenta violet, so they differ from moss and river in blue and lightness as
+# well as in red and green.
 
 [candidate]
-name = "Ink"
-summary = "The chosen palette and type scale: indigo accent over cool neutrals; tighter, heavier headings."
+name = "Deep River and Shallows"
+summary = "The chosen palette and type scale: Deep River in dark and Shallows in light, from the mark's colors; tighter, heavier headings in the system's serif."
 
 # Each hue's steps are made in OKLCH at fixed lightnesses, so the same step of
 # two hues has about the same lightness, and named as design/tokens.toml names
@@ -18,138 +21,149 @@ summary = "The chosen palette and type scale: indigo accent over cool neutrals; 
 # design/README.md says how.
 
 # Generated from design/tokens.toml by scripts/design/tokens.ts: the shared colors.
-[palette.gray]
+[palette.deep]
 0 = "#ffffff"
-18 = "#f7f9fd"
-37 = "#f0f3f7"
-76 = "#e3e6ec"
-266 = "#a5a9b2"
-470 = "#676c75"
-640 = "#393d46"
-729 = "#22272e"
-796 = "#13171f"
-831 = "#0c0f16"
+27 = "#f2f7f9"
+51 = "#e3f1f7"
+56 = "#e6eef2"
+66 = "#e1ebf1"
+70 = "#deeaf0"
+115 = "#ccdce4"
+290 = "#8aa6b8"
+525 = "#47606f"
+661 = "#263a4b"
+699 = "#1f303e"
+754 = "#112233"
+796 = "#0b1824"
+827 = "#07111b"
 
-[palette.indigo]
-25 = "#f5f6fe"
-180 = "#b3c0ff"
-265 = "#91a1fe"
-435 = "#5962e8"
-511 = "#474dc6"
-764 = "#161b3a"
+[palette.river]
+46 = "#dff4fc"
+80 = "#c5ecfa"
+199 = "#56d0f0"
+494 = "#0b6f8e"
+671 = "#0b3a4f"
+711 = "#0b2f40"
 
-[palette.green]
-25 = "#e1fff2"
-56 = "#c7fae5"
-266 = "#22c598"
-509 = "#057256"
-694 = "#003929"
-764 = "#02251a"
+[palette.moss]
+45 = "#e5f6e3"
+81 = "#cfefcb"
+169 = "#9fdc7c"
+528 = "#2f6b2b"
+669 = "#1b3f1d"
+710 = "#1a321b"
 
 [palette.amber]
-26 = "#fef5eb"
-56 = "#fee9d0"
-264 = "#e0992e"
-510 = "#845502"
-694 = "#432900"
-765 = "#2b1a03"
+65 = "#ffe4cc"
+223 = "#f0a35e"
+445 = "#b4530f"
+670 = "#4d2c15"
 
 [palette.red]
-26 = "#fef4f1"
-265 = "#fe7f57"
-436 = "#ca3f02"
-509 = "#a73303"
-696 = "#511b0a"
-764 = "#341308"
+40 = "#ffedec"
+299 = "#ed7477"
+455 = "#ca223c"
+710 = "#481b1c"
+731 = "#3d1a1b"
 
 [palette.magenta]
-26 = "#fff2fd"
-104 = "#ffc8f9"
-510 = "#932f8e"
-695 = "#461c43"
-764 = "#2d132b"
+41 = "#f6eefc"
+320 = "#b180d4"
+579 = "#6b2094"
+710 = "#362045"
+730 = "#2f1e3a"
+
+[palette.yellow]
+39 = "#fdf1d8"
+341 = "#b38c15"
+619 = "#583d01"
+729 = "#32240a"
 
 [color]
-text = { light = "gray.729", dark = "gray.37" }
-muted = { light = "gray.470", dark = "gray.266" }
-background = { light = "gray.0", dark = "gray.831" }
-surface = { light = "gray.18", dark = "gray.796" }
-border = { light = "gray.76", dark = "gray.640" }
-accent = { light = "indigo.435", dark = "indigo.265" }
-accent-surface = { light = "indigo.25", dark = "indigo.764" }
-accent-text = { light = "gray.0", dark = "gray.831" }
-code-background = { light = "gray.18", dark = "gray.796" }
-focus = { light = "indigo.435", dark = "indigo.180" }
-note = { light = "indigo.511", dark = "indigo.265" }
-note-background = { light = "indigo.25", dark = "indigo.764" }
-tip = { light = "green.509", dark = "green.266" }
-tip-background = { light = "green.25", dark = "green.764" }
-important = { light = "magenta.510", dark = "magenta.104" }
-important-background = { light = "magenta.26", dark = "magenta.764" }
-warning = { light = "amber.510", dark = "amber.264" }
-warning-background = { light = "amber.26", dark = "amber.765" }
-caution = { light = "red.509", dark = "red.265" }
-caution-background = { light = "red.26", dark = "red.764" }
-state = { light = "gray.470", dark = "gray.266" }
-state-background = { light = "gray.37", dark = "gray.729" }
-added = { light = "green.509", dark = "green.266" }
-added-background = { light = "green.56", dark = "green.694" }
-changed = { light = "amber.510", dark = "amber.264" }
-changed-background = { light = "amber.56", dark = "amber.694" }
-removed = { light = "red.436", dark = "red.265" }
-removed-background = { light = "red.26", dark = "red.696" }
-moved = { light = "magenta.510", dark = "magenta.104" }
-moved-background = { light = "magenta.26", dark = "magenta.695" }
-flash = { light = "amber.56", dark = "amber.694" }
+text = { light = "deep.796", dark = "deep.51" }
+muted = { light = "deep.525", dark = "deep.290" }
+background = { light = "deep.27", dark = "deep.796" }
+surface = { light = "deep.0", dark = "deep.754" }
+border = { light = "deep.115", dark = "deep.661" }
+accent = { light = "river.494", dark = "river.199" }
+accent-surface = { light = "river.46", dark = "river.711" }
+accent-text = { light = "deep.0", dark = "deep.796" }
+panel = { light = "deep.66", dark = "deep.699" }
+code-background = { light = "deep.56", dark = "deep.827" }
+focus = { light = "amber.445", dark = "amber.223" }
+note = { light = "river.494", dark = "river.199" }
+note-background = { light = "river.46", dark = "river.711" }
+tip = { light = "moss.528", dark = "moss.169" }
+tip-background = { light = "moss.45", dark = "moss.710" }
+important = { light = "magenta.579", dark = "magenta.320" }
+important-background = { light = "magenta.41", dark = "magenta.730" }
+warning = { light = "yellow.619", dark = "yellow.341" }
+warning-background = { light = "yellow.39", dark = "yellow.729" }
+caution = { light = "red.455", dark = "red.299" }
+caution-background = { light = "red.40", dark = "red.731" }
+state = { light = "deep.525", dark = "deep.290" }
+state-background = { light = "deep.70", dark = "deep.699" }
+added = { light = "moss.528", dark = "moss.169" }
+added-background = { light = "moss.81", dark = "moss.669" }
+changed = { light = "river.494", dark = "river.199" }
+changed-background = { light = "river.80", dark = "river.671" }
+removed = { light = "red.455", dark = "red.299" }
+removed-background = { light = "red.40", dark = "red.710" }
+moved = { light = "magenta.579", dark = "magenta.320" }
+moved-background = { light = "magenta.41", dark = "magenta.710" }
+flash = { light = "amber.65", dark = "amber.670" }
 # End of the shared colors.
 
 # The rest of each hue's ramp: the steps no shared color takes, which the
 # specimen shows beside the ones above. A step a color comes to take is added to
 # design/tokens.toml's palette and taken out of here.
-[ramp.gray]
-131 = "#d0d4db"
-374 = "#838891"
-559 = "#4e535c"
+[ramp.deep]
+201 = "#aac1d2"
+401 = "#6e8393"
+601 = "#364a59"
 
-[ramp.indigo]
-55 = "#e7ecff"
-104 = "#d2dbfe"
-349 = "#7180fe"
-594 = "#353b98"
-695 = "#23295b"
+[ramp.river]
+300 = "#2eaed5"
+600 = "#005065"
 
-[ramp.green]
-104 = "#a6efd2"
-179 = "#6eddb6"
-349 = "#0ba880"
-434 = "#028b69"
-594 = "#045741"
+[ramp.moss]
+201 = "#87d47f"
+300 = "#68b460"
+401 = "#499442"
+600 = "#065801"
 
 [ramp.amber]
-105 = "#ffd4a0"
-181 = "#f3b76a"
-350 = "#c27f05"
-435 = "#a16803"
-595 = "#654000"
+100 = "#ffd4b8"
+299 = "#e48233"
+400 = "#c16302"
+500 = "#974c02"
+600 = "#6f3600"
+699 = "#492200"
 
 [ramp.red]
-55 = "#ffe7e0"
-105 = "#ffd0c2"
-180 = "#fead94"
-350 = "#eb5927"
-594 = "#812500"
+101 = "#fed1d0"
+200 = "#ff9f9f"
+401 = "#de394b"
+500 = "#ba022f"
+601 = "#890120"
 
 [ramp.magenta]
-54 = "#ffe3fb"
-180 = "#fa9ff2"
-266 = "#e67ade"
-350 = "#cc5cc5"
-435 = "#b040aa"
-594 = "#71236d"
+100 = "#ebd3ff"
+201 = "#d8a4ff"
+400 = "#a15acf"
+500 = "#823bae"
+
+[ramp.yellow]
+100 = "#ffd988"
+199 = "#e4b750"
+300 = "#c3972a"
+400 = "#a27900"
+499 = "#7e5e01"
 
 [font]
 ui = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
 mono = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+heading = 'ui-serif, Charter, "Bitstream Charter", Cambria, Georgia, serif'
 
 # A compact scale, about 1.2 from step to step, with heavier headings.
 [type]

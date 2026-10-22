@@ -100,7 +100,8 @@ describe("review in the site preview", () => {
       await expect(page.locator("html").getAttribute("data-ascribe-scheme")).resolves.toBe("light");
       await expect(panel(page).getAttribute("data-scheme")).resolves.toBe("light");
       const background = await added.evaluate((el) => getComputedStyle(el).backgroundColor);
-      expect(background).toBe("rgb(199, 250, 229)");
+      // color.added-background's light value in design/tokens.toml.
+      expect(background).toBe("rgb(207, 239, 203)");
       // A theme switch on the page, as a site's toggle makes: review follows it.
       await page.evaluate(() => {
         document.body.style.background = "#16181d";

@@ -31,10 +31,10 @@ No asset animates it yet.
 - The docs site's header draws the wordmark 2 pixels a cell, with the change marks in `color.brand.gutter`.
 - The Marketplace banner is Deep River's ground.
 - Decision [#801](../decisions/801-pixel-mark.md) records the mark, its colors, and the font, which change decisions 48 and 49's particulars.
+- The pages' colors: the site, the element library, review, the HTML report, the archive, the Astro toolbar, and the preview's fallbacks take Deep River and Shallows, with headings in the system's serif ([the website plan](../website/README.md)'s phase 1, its decision 11).
 
 ## Next
 
-1. **The pages' colors.** The site, the element library, review, and the HTML report still take the indigo palette. Moving them to Deep River and Shallows changes every stylesheet's defaults: an output change, and a **Behavior change** for the `--ascribe-*` properties (decision 44). It's [the website plan](../website/README.md)'s first phase.
-2. **The avatar,** uploaded by hand where `project-docs/outside.md` lists it.
-3. **Motion:** the three states as an animated SVG for the site, holding still for anyone who prefers reduced motion.
-4. **The publisher's logo and banner.** The publisher stays `Ascribe` (story decision 7); its logo is the avatar, uploaded by hand.
+1. **The avatar,** uploaded by hand where `project-docs/outside.md` lists it.
+2. **Motion:** the three states as an animated SVG for the site, holding still for anyone who prefers reduced motion.
+3. **The publisher's logo and banner.** The publisher stays `Ascribe` (story decision 7); its logo is the avatar, uploaded by hand.

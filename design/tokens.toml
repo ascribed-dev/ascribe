@@ -25,85 +25,80 @@
 # a template, its tokens in braces.
 
 # The palette ---------------------------------------------------------------
+#
+# Bryo Studio's Deep River, for dark, and Shallows, its light companion from
+# the same hues (project-docs/brand/identity.md). Deep is the neutrals, river
+# the accent and what changed, moss a tip and what was added, and amber focus.
+# Red, magenta, and yellow are the notes' and review's other colors, tuned to
+# Deep River's cool cast and kept apart from moss, river, and amber for a
+# reader with red-green color blindness (design/candidates/pairs.toml).
 
-[palette.gray]
-0 = "#ffffff"
-18 = "#f7f9fd"
-37 = "#f0f3f7"
-76 = "#e3e6ec"
-266 = "#a5a9b2"
-470 = "#676c75"
-640 = "#393d46"
-729 = "#22272e"
-796 = "#13171f"
-831 = "#0c0f16"
-
-[palette.indigo]
-25 = "#f5f6fe"
-180 = "#b3c0ff"
-265 = "#91a1fe"
-435 = "#5962e8"
-511 = "#474dc6"
-764 = "#161b3a"
-
-[palette.green]
-25 = "#e1fff2"
-56 = "#c7fae5"
-266 = "#22c598"
-509 = "#057256"
-694 = "#003929"
-764 = "#02251a"
-
-[palette.amber]
-26 = "#fef5eb"
-56 = "#fee9d0"
-264 = "#e0992e"
-510 = "#845502"
-694 = "#432900"
-765 = "#2b1a03"
-
-[palette.red]
-26 = "#fef4f1"
-265 = "#fe7f57"
-436 = "#ca3f02"
-470 = "#cc0000"
-509 = "#a73303"
-696 = "#511b0a"
-764 = "#341308"
-
-[palette.magenta]
-26 = "#fff2fd"
-104 = "#ffc8f9"
-510 = "#932f8e"
-695 = "#461c43"
-764 = "#2d132b"
-
-[palette.yellow]
-341 = "#bb8800"
-
-# The mark's colors: Bryo Studio's Deep River for dark, and Shallows, its
-# light companion from the same hues.
 [palette.deep]
+0 = "#ffffff"
 27 = "#f2f7f9"
 51 = "#e3f1f7"
+56 = "#e6eef2"
+66 = "#e1ebf1"
+70 = "#deeaf0"
+115 = "#ccdce4"
 290 = "#8aa6b8"
 525 = "#47606f"
+661 = "#263a4b"
+699 = "#1f303e"
 754 = "#112233"
 796 = "#0b1824"
+827 = "#07111b"
+# Deep River's ground at an opacity, by its percent.
+a40 = "rgb(11 24 36 / 0.4)"
 
 [palette.river]
+46 = "#dff4fc"
+80 = "#c5ecfa"
 199 = "#56d0f0"
 413 = "#1689ab"
+494 = "#0b6f8e"
+671 = "#0b3a4f"
+711 = "#0b2f40"
 
 [palette.moss]
+45 = "#e5f6e3"
+81 = "#cfefcb"
 169 = "#9fdc7c"
 433 = "#3f8a3a"
+528 = "#2f6b2b"
+669 = "#1b3f1d"
+710 = "#1a321b"
+
+[palette.amber]
+65 = "#ffe4cc"
+223 = "#f0a35e"
+445 = "#b4530f"
+670 = "#4d2c15"
+
+[palette.red]
+40 = "#ffedec"
+299 = "#ed7477"
+455 = "#ca223c"
+710 = "#481b1c"
+731 = "#3d1a1b"
+
+[palette.magenta]
+41 = "#f6eefc"
+320 = "#b180d4"
+579 = "#6b2094"
+710 = "#362045"
+730 = "#2f1e3a"
+
+[palette.yellow]
+39 = "#fdf1d8"
+341 = "#b38c15"
+619 = "#583d01"
+729 = "#32240a"
 
 # Black at an opacity, by its percent.
 [palette.black]
 a22 = "rgb(0 0 0 / 0.22)"
 a30 = "rgb(0 0 0 / 0.3)"
-a40 = "rgb(0 0 0 / 0.4)"
 
 # The review overlay's bottom sheet.
 [color.review.shadow]
@@ -117,9 +112,11 @@ dark = "black.a30"
 
 # The VS Code preview: fallbacks for when the editor's theme gives none ------
 
+# One value for both schemes, since the editor's theme can be either: the
+# caution's red and the dark warning's gold, which read on light and dark.
 [color.preview.error]
-light = "red.470"
-dark = "red.470"
+light = "red.455"
+dark = "red.455"
 
 [color.preview.warning]
 light = "yellow.341"
@@ -127,8 +124,8 @@ dark = "yellow.341"
 
 # Behind a site's page, before it paints.
 [color.preview.frame]
-light = "gray.0"
-dark = "gray.0"
+light = "deep.0"
+dark = "deep.0"
 
 # The mark -------------------------------------------------------------------
 
@@ -159,154 +156,169 @@ dark = "deep.796"
 
 # A panel on the ground.
 [color.brand.surface]
-light = "gray.0"
+light = "deep.0"
 dark = "deep.754"
 
 # Shared ----------------------------------------------------------------------
 
 # Ascribe's own pages: the docs site, the element library, review, the HTML
-# report, and the Astro toolbar.
+# report, and the Astro toolbar. Shallows in light and Deep River in dark: the
+# background is the mark's ground, and a surface is a panel on it.
 [color.text]
-light = "gray.729"
-dark = "gray.37"
+light = "deep.796"
+dark = "deep.51"
 
 [color.muted]
-light = "gray.470"
-dark = "gray.266"
+light = "deep.525"
+dark = "deep.290"
 
 [color.background]
-light = "gray.0"
-dark = "gray.831"
+light = "deep.27"
+dark = "deep.796"
 
-# Panels, code, and table headers on the background; a thread; a tab under
-# the pointer.
+# Panels, code, and table headers on the background.
 [color.surface]
-light = "gray.18"
-dark = "gray.796"
+light = "deep.0"
+dark = "deep.754"
 
 [color.border]
-light = "gray.76"
-dark = "gray.640"
+light = "deep.115"
+dark = "deep.661"
 
-# Links, the current page, steps' markers, and the selected tab.
+# Links, the current page, steps' markers, the selected tab, and review's links
+# and primary buttons: river, the mark's change marks.
 [color.accent]
-light = "indigo.435"
-dark = "indigo.265"
+light = "river.494"
+dark = "river.199"
 
 # Text on the accent or the focus color: a step's number, a button's label.
 [color.accent-text]
-light = "gray.0"
-dark = "gray.831"
+light = "deep.0"
+dark = "deep.796"
+
+# A panel that shows on a white page as on the background, where the surface
+# wouldn't: a review thread, a tab under the pointer.
+[color.panel]
+light = "deep.66"
+dark = "deep.699"
 
 [color.code-background]
-light = "gray.18"
-dark = "gray.796"
+light = "deep.56"
+dark = "deep.827"
 
 # Behind accent text: the current page in a list, a search match.
 [color.accent-surface]
-light = "indigo.25"
-dark = "indigo.764"
+light = "river.46"
+dark = "river.711"
 
-# Focus rings, and review's links and primary buttons.
+# Focus rings and outlines, and nothing else: amber.
 [color.focus]
-light = "indigo.435"
-dark = "indigo.180"
+light = "amber.445"
+dark = "amber.223"
 
-# Notes, each a color and a tinted background.
+# Notes, each a color and a tinted background: a note is river, a tip moss,
+# an important note magenta, a warning yellow, and a caution red.
 [color.note]
-light = "indigo.511"
-dark = "indigo.265"
+light = "river.494"
+dark = "river.199"
 
 [color.note-background]
-light = "indigo.25"
-dark = "indigo.764"
+light = "river.46"
+dark = "river.711"
 
 [color.tip]
-light = "green.509"
-dark = "green.266"
+light = "moss.528"
+dark = "moss.169"
 
 [color.tip-background]
-light = "green.25"
-dark = "green.764"
+light = "moss.45"
+dark = "moss.710"
 
 [color.important]
-light = "magenta.510"
-dark = "magenta.104"
+light = "magenta.579"
+dark = "magenta.320"
 
 [color.important-background]
-light = "magenta.26"
-dark = "magenta.764"
+light = "magenta.41"
+dark = "magenta.730"
 
 [color.warning]
-light = "amber.510"
-dark = "amber.264"
+light = "yellow.619"
+dark = "yellow.341"
 
 [color.warning-background]
-light = "amber.26"
-dark = "amber.765"
+light = "yellow.39"
+dark = "yellow.729"
 
 [color.caution]
-light = "red.509"
-dark = "red.265"
+light = "red.455"
+dark = "red.299"
 
 [color.caution-background]
-light = "red.26"
-dark = "red.764"
+light = "red.40"
+dark = "red.731"
 
 # An availability state with no color of its own; the others take a note's.
 [color.state]
-light = "gray.470"
-dark = "gray.266"
+light = "deep.525"
+dark = "deep.290"
 
 [color.state-background]
-light = "gray.37"
-dark = "gray.729"
+light = "deep.70"
+dark = "deep.699"
 
-# Review's marks.
+# Review's marks: added is moss, changed river, as the mark's change marks
+# are, removed red, and moved magenta.
 [color.added]
-light = "green.509"
-dark = "green.266"
+light = "moss.528"
+dark = "moss.169"
 
 [color.added-background]
-light = "green.56"
-dark = "green.694"
+light = "moss.81"
+dark = "moss.669"
 
 [color.changed]
-light = "amber.510"
-dark = "amber.264"
+light = "river.494"
+dark = "river.199"
 
 [color.changed-background]
-light = "amber.56"
-dark = "amber.694"
+light = "river.80"
+dark = "river.671"
 
 [color.removed]
-light = "red.436"
-dark = "red.265"
+light = "red.455"
+dark = "red.299"
 
 [color.removed-background]
-light = "red.26"
-dark = "red.696"
+light = "red.40"
+dark = "red.710"
 
 [color.moved]
-light = "magenta.510"
-dark = "magenta.104"
+light = "magenta.579"
+dark = "magenta.320"
 
 [color.moved-background]
-light = "magenta.26"
-dark = "magenta.695"
+light = "magenta.41"
+dark = "magenta.710"
 
-# A block that was just scrolled to.
+# A block that was just scrolled to: amber, focus's hue.
 [color.flash]
-light = "amber.56"
-dark = "amber.694"
-# Behind a dialog: the docs site's search, review's dialogs.
+light = "amber.65"
+dark = "amber.670"
+# Behind a dialog: the docs site's search, review's dialogs. Deep River's
+# ground, so the page dims toward it.
 [color.scrim]
-light = "black.a40"
-dark = "black.a40"
+light = "deep.a40"
+dark = "deep.a40"
 
 [font]
 ui = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
 mono = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+# Headings on the docs site and in the HTML report's frame: the system's
+# serif, which is New York on Apple's systems, then Charter, the brand's
+# reading face, and the serifs Windows and Linux have. No font ships
+# (decision 48).
+heading = 'ui-serif, Charter, "Bitstream Charter", Cambria, Georgia, serif'
 # Review's code and paths.
 review-mono = 'ui-monospace, "SF Mono", Menlo, Consolas, monospace'
 # The review overlay's, when the page sets no --ascribe-review-font.
@@ -368,7 +380,7 @@ hero = "750 2.75rem/1.1"
 "--ascribe-tab-color" = "color.muted"
 "--ascribe-tab-active-color" = "color.accent"
 "--ascribe-tab-focus-color" = "color.focus"
-"--ascribe-tab-hover-background" = "color.surface"
+"--ascribe-tab-hover-background" = "color.panel"
 
 [emit."packages/elements/css/style.css".states]
 "--ascribe-state-color" = "color.state"
@@ -396,20 +408,24 @@ hero = "750 2.75rem/1.1"
 "--ascribe-review-muted" = "color.muted"
 "--ascribe-review-surface" = "color.background"
 "--ascribe-review-flash" = "color.flash"
-"--ascribe-review-focus" = "color.focus"
+"--ascribe-review-focus" = "color.accent"
 "--ascribe-review-mono" = "font.review-mono"
 "--ascribe-review-text" = "color.text"
 "--ascribe-review-border" = "color.border"
-"--ascribe-review-thread" = "color.surface"
+"--ascribe-review-thread" = "color.panel"
 "--ascribe-review-input" = "color.background"
 "--ascribe-review-accent-text" = "color.accent-text"
+# Not a public property: the overlay's focus rings, and the outline that
+# stands in for the flash when motion is reduced.
+"--_review-ring" = "color.focus"
 
 # The overlay's own names, from the page's --ascribe-review-* where it sets them.
 [emit."packages/review/src/overlay/style.ts".host]
 "--muted" = "var(--ascribe-review-muted, {color.muted})"
 "--line" = "var(--ascribe-review-border, {color.border})"
-"--thread" = "var(--ascribe-review-thread, {color.surface})"
-"--accent" = "var(--ascribe-review-focus, {color.focus})"
+"--thread" = "var(--ascribe-review-thread, {color.panel})"
+"--accent" = "var(--ascribe-review-focus, {color.accent})"
+"--ring" = "var(--_review-ring, {color.focus})"
 "--accent-text" = "var(--ascribe-review-accent-text, {color.accent-text})"
 "--flash" = "var(--ascribe-review-flash, {color.flash})"
 "--added" = "var(--ascribe-review-added, {color.added})"
@@ -433,10 +449,12 @@ hero = "750 2.75rem/1.1"
 "--r-side" = "color.surface"
 "--r-line" = "color.border"
 "--r-accent" = "color.accent"
+"--r-focus" = "color.focus"
 "--r-accent-ink" = "color.accent-text"
 "--r-code" = "color.code-background"
 "--r-notice" = "color.warning-background"
 "--r-ui" = "font.ui"
+"--r-heading" = "font.heading"
 "--r-mono" = "font.review-mono"
 "--r-caption" = "type.caption"
 "--r-small" = "type.small"
@@ -461,7 +479,7 @@ hero = "750 2.75rem/1.1"
 "--ascribe-tab-color" = "color.muted"
 "--ascribe-tab-active-color" = "color.accent"
 "--ascribe-tab-focus-color" = "color.focus"
-"--ascribe-tab-hover-background" = "color.surface"
+"--ascribe-tab-hover-background" = "color.panel"
 "--ascribe-state-color" = "color.state"
 "--ascribe-state-background" = "color.state-background"
 "--ascribe-state-ga-color" = "color.tip"
@@ -482,6 +500,7 @@ hero = "750 2.75rem/1.1"
 "--a-side" = "color.surface"
 "--a-line" = "color.border"
 "--a-accent" = "color.accent"
+"--a-focus" = "color.focus"
 "--a-code" = "color.code-background"
 "--a-notice" = "color.warning-background"
 "--a-ui" = "font.ui"
@@ -502,6 +521,7 @@ hero = "750 2.75rem/1.1"
 "--line" = "color.border"
 "--accent" = "color.accent"
 "--accent-ink" = "color.accent-text"
+"--focus" = "color.focus"
 "--notice" = "color.warning-background"
 "--ui" = "font.ui"
 "--mono" = "font.review-mono"
@@ -511,6 +531,7 @@ hero = "750 2.75rem/1.1"
 
 [emit."site/src/styles/site.css".root]
 "--font" = "font.ui"
+"--font-heading" = "font.heading"
 "--font-mono" = "font.mono"
 "--text" = "color.text"
 "--muted" = "color.muted"
@@ -549,7 +570,7 @@ hero = "750 2.75rem/1.1"
 "--ascribe-tab-color" = "var(--vscode-foreground, {color.muted})"
 "--ascribe-tab-active-color" = "var(--vscode-textLink-foreground, {color.accent})"
 "--ascribe-tab-focus-color" = "var(--vscode-focusBorder, {color.focus})"
-"--ascribe-tab-hover-background" = "var(--vscode-toolbar-hoverBackground, {color.surface})"
+"--ascribe-tab-hover-background" = "var(--vscode-toolbar-hoverBackground, {color.panel})"
 "--ascribe-state-color" = "var(--vscode-descriptionForeground, {color.state})"
 "--ascribe-state-ga-color" = "var(--vscode-charts-green, {color.tip})"
 "--ascribe-state-preview-color" = "var(--vscode-charts-purple, {color.important})"
@@ -562,7 +583,7 @@ hero = "750 2.75rem/1.1"
 "--ascribe-review-moved" = "var(--vscode-charts-purple, {color.moved})"
 "--ascribe-review-muted" = "var(--vscode-descriptionForeground, {color.muted})"
 "--ascribe-review-flash" = "color-mix(in srgb, var(--vscode-editor-findMatchHighlightBackground, {color.flash}) 50%, var(--vscode-editor-background, Canvas))"
-"--ascribe-review-focus" = "var(--vscode-textLink-foreground, {color.focus})"
+"--ascribe-review-focus" = "var(--vscode-textLink-foreground, {color.accent})"
 "--ascribe-review-mono" = "var(--vscode-editor-font-family, {font.fallback-mono})"
 "--ascribe-review-border" = "var(--vscode-widget-border, var(--vscode-panel-border, {color.border}))"
 "--ascribe-review-font" = "var(--vscode-font-family, {font.fallback-ui})"

@@ -54,10 +54,10 @@ Reuse a token when the new use means the same thing: a new panel is `color.surfa
 
 ### How `tokens.toml` is laid out
 
-- `[palette]`: every color value, by hue and step (`indigo.435`). Only `[color]` points here; no stylesheet does.
+- `[palette]`: every color value, by hue and step (`river.494`). Only `[color]` points here; no stylesheet does.
 - `[color]`: what each color is for, with a `light` and a `dark` value, each a palette name. The element library, review, the HTML report, the Astro toolbar, and the docs site share the top-level ones. The VS Code preview's fallbacks and a few colors of one surface's own are under that surface's name.
-- `[font]`, `[space]`, `[radius]`: values the stylesheets use as they are.
-- `[type]`: the type scale, each step a weight, a size, and a line height (`650 1.375rem/1.3`), for the `font` shorthand with a family after it: `font: var(--type-h2) var(--font)`. The docs site and the HTML report's frame set their text with it; the element library takes the site's type.
+- `[font]`, `[space]`, `[radius]`: values the stylesheets use as they are. `font.heading` is the system's serif, for headings on the docs site and in the HTML report's frame; body, UI, and code keep `font.ui` and `font.mono`.
+- `[type]`: the type scale, each step a weight, a size, and a line height (`650 1.375rem/1.3`), for the `font` shorthand with a family after it: `font: var(--type-h2) var(--font-heading)`. The docs site and the HTML report's frame set their text with it; the element library takes the site's type.
 - `[emit."<stylesheet>".<block>]`: what a stylesheet's generated block declares. Each key is a property, and its value is a token (`"color.muted"`) or a template with tokens in braces (`"var(--vscode-charts-blue, {color.note})"`).
 
 ### The stylesheets
@@ -82,7 +82,7 @@ A generated block starts and ends with a marker comment:
 ```css
 :root {
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, light. */
-  --ascribe-note-color: #474dc6;
+  --ascribe-note-color: #0b6f8e;
   /* End of generated root. */
 }
 ```
@@ -137,13 +137,13 @@ To change one, change the story first, then the line here, then run `pnpm exec v
 
 | Line | Where it goes |
 |---|---|
-| `headline` | The social card, `site/public/social-card.png`, drawn by `scripts/design/assets.ts`. The landing page leads with it |
+| `headline` | The social card, `site/public/social-card.png`, drawn by `scripts/design/assets.ts`. The landing page's heading, `site/home/content/index.md` |
 | `sentence` | The first paragraph of `README.md`, and the first sentence of getting started, `docs/content/getting-started.md`. The landing page's description |
 | `short` | `ascribe-cli`'s crate description in `crates/ascribe-cli/Cargo.toml`, which the binary takes as the command's about, the first line of `ascribe --help`, and as the start of the plugin's description, which `crates/ascribe-cli/src/agents/plugin.rs` writes into `plugins/ascribe/`. The start of each npm package's `description`, then the package's job, and of the extension's, which is the Marketplace's |
 | `keywords` | Each npm package's and the extension's `keywords`, the plugin's, and the GitHub repository's topics, which are set by hand ([project-docs/outside.md](../project-docs/outside.md)) |
 | `[maker]` | Each npm package's `author`, and the plugin's author and its marketplace's owner, which `plugin.rs` writes. The extension's publisher stays `Ascribe`, since a Marketplace publisher can't be renamed |
 
-The landing page, `site/home/content/index.md`, isn't compared yet: the website plan's phase 1 gives it the headline and the sentence, and the test takes it in once that's merged. The MCP server's instructions and the skill keep their own words, since they're for an agent doing a task, and SPEC.md and the docs keep "language", "content model", and "compiler" where they define them.
+The MCP server's instructions and the skill keep their own words, since they're for an agent doing a task, and SPEC.md and the docs keep "language", "content model", and "compiler" where they define them.
 
 ## In VS Code
 

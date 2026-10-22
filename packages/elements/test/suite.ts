@@ -241,8 +241,8 @@ export function suiteFor(engine: Engine): void {
   });
 
   describe("light and dark", () => {
-    const LIGHT = "rgb(71, 77, 198)";
-    const DARK = "rgb(145, 161, 254)";
+    const LIGHT = "rgb(11, 111, 142)";
+    const DARK = "rgb(86, 208, 240)";
     const optIn = "<style>:root { color-scheme: light dark; }</style>";
 
     async function noteColor(
@@ -543,7 +543,7 @@ export function suiteFor(engine: Engine): void {
       context = await browser.newContext({ colorScheme: "dark" });
       const page = await open(
         context,
-        `<style>:root { color-scheme: light dark; background: #0c0f16; color: #f0f3f7; }</style>${ALL}`,
+        `<style>:root { color-scheme: light dark; background: #0b1824; color: #e3f1f7; }</style>${ALL}`,
       );
       expect(await audit(page)).toEqual([]);
       await context.close();

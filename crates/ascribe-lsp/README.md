@@ -971,6 +971,20 @@ glossary page, not in `ascribe.toml`. Elsewhere in the file it answers `null`.
   them on that file until the next save. Those in `ascribe.toml` are
   published with the model's warnings, at the levels `[checks]` sets. The
   image checks aren't run.
+- **The baseline** (`baseline.rs`, decision #790). `ascribe.baseline`, its
+  open buffer over the disk, is read when the project loads and again when it
+  changes, which checks every file again. Each file's diagnostics, and the
+  checks across the project's, are held back a file at a time
+  (`ascribe_check::baseline::hold`): what it lists isn't published, and is
+  kept for the file with the entry's identity in `data.baseline`, for the
+  hover on its line and the quick fix that moves it to an `@intended`
+  (`baseline::actions`), offered at its range whatever diagnostics the
+  request sends. Vale's alerts are held back as they're found. Once no round
+  is due, the entries no finding of each file's last round matches are
+  published on `ascribe.baseline` as `baseline-entry-unmatched`, but only
+  when the editor's build is every build, and never Vale's or those of the
+  checks the editor doesn't run (`NOT_IN_EDITOR`); a line that
+  doesn't parse is published there as an error, and nothing is held back.
 - **Stale results.** A worker thread computes from a `Snapshot`. Before it
   publishes a file's diagnostics it checks, under the lock that serializes
   every change, that `IncrementalProject::is_file_current` holds for the file

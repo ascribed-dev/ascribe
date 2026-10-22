@@ -25,6 +25,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, PoisonError};
 
+use ascribe_check::identity::Identity;
 use ascribe_check::{
     Acknowledgements, Diagnostic, NAV_FILE_ID, PERMALINKS_FILE_ID, PageChecker, Project,
     ReadFailure, Registry, Severity, SourceFile, apply_levels, check_file,
@@ -66,6 +67,8 @@ pub(crate) struct Job {
     pub found: Arc<Across>,
     /// The day the checks run on.
     pub today: Option<ascribe_core::Date>,
+    /// `ascribe.baseline`, whose advice isn't published.
+    pub baseline: Arc<crate::baseline::Now>,
 }
 
 /// What the content checks across the project found when they last ran,
@@ -84,6 +87,12 @@ pub(crate) struct Across {
     /// from the project root, levels applied: every memo file the checks
     /// read, with nothing for one that has no problem.
     pub memos: BTreeMap<RelPath, Vec<lsp_types::Diagnostic>>,
+    /// What `ascribe.baseline` holds back of each source file's, and its
+    /// text.
+    pub held: BTreeMap<RelPath, (Arc<str>, Vec<lsp_types::Diagnostic>)>,
+    /// The identities of what they found that an entry of the baseline
+    /// matches, held back or not.
+    pub matched: Vec<Identity>,
 }
 
 impl Across {
@@ -92,6 +101,15 @@ impl Across {
     fn of_source(&self, path: &RelPath, text: &str) -> &[lsp_types::Diagnostic] {
         match self.sources.get(path) {
             Some((was, found)) if **was == *text => found,
+            _ => &[],
+        }
+    }
+
+    /// What the baseline holds back of a source file's, while its text is
+    /// still `text`.
+    fn of_held(&self, path: &RelPath, text: &str) -> &[lsp_types::Diagnostic] {
+        match self.held.get(path) {
+            Some((was, held)) if **was == *text => held,
             _ => &[],
         }
     }
@@ -110,14 +128,21 @@ impl Across {
 /// file's absolute path, and the diagnostic published there.
 pub(crate) type Shown = Vec<(PathBuf, lsp_types::Diagnostic)>;
 
-/// What a round produced: the diagnostics of each file it computed, with
-/// what they put on code files, and what the content checks across the
-/// project found when the round ran them.
+/// What a round found in one file: its diagnostics, what they put on code
+/// files, what the baseline holds back of them, and the identities of
+/// those an entry of the baseline matches, held back or not.
+pub(crate) type FileOutcome = (
+    RelPath,
+    Vec<lsp_types::Diagnostic>,
+    Shown,
+    Vec<lsp_types::Diagnostic>,
+    Vec<Identity>,
+);
+
+/// What a round produced: what it found in each file it computed, and what
+/// the content checks across the project found when the round ran them.
 pub(crate) enum Outcome {
-    Done(
-        Vec<(RelPath, Vec<lsp_types::Diagnostic>, Shown)>,
-        Option<Across>,
-    ),
+    Done(Vec<FileOutcome>, Option<Box<Across>>),
     /// A newer update overtook the round before it finished; its files are
     /// queued again.
     Abandoned,
@@ -160,6 +185,7 @@ impl Core {
             across: std::mem::take(&mut loaded.across_dirty),
             found: loaded.across.clone(),
             today,
+            baseline: loaded.baseline.clone(),
         })
     }
 
@@ -191,7 +217,7 @@ impl Core {
         let mut nav_changed = false;
         let mut memos_changed: Vec<(RelPath, Vec<lsp_types::Diagnostic>)> = Vec::new();
         if let Some(across) = across
-            && across != *loaded.across
+            && *across != *loaded.across
         {
             let paths: BTreeSet<&RelPath> = across
                 .sources
@@ -219,22 +245,24 @@ impl Core {
                     memos_changed.push((path.clone(), found.clone()));
                 }
             }
-            loaded.across = Arc::new(across);
+            loaded.across = Arc::new(*across);
         }
         let mut ready = Vec::new();
-        for (path, diagnostics, shown) in results {
+        for (path, diagnostics, shown, held, matched) in results {
             let abs = loaded.source_path(&path);
             let current = loaded.inc.is_file_current(&job.snapshot, &path);
             let version = self.docs.get(&abs).map(|d| d.version);
             if current && version == job.versions.get(&path).copied() {
-                ready.push((abs, diagnostics, shown));
+                loaded.matched.insert(path, matched);
+                ready.push((abs, diagnostics, shown, held, version));
             } else {
                 loaded.dirty.insert(path);
             }
         }
-        for (abs, diagnostics, shown) in ready {
+        for (abs, diagnostics, shown, held, version) in ready {
             self.publish(&abs, diagnostics);
             self.show_on_code_files(&abs, shown);
+            self.set_held(&abs, held, version);
         }
         if model_changed {
             self.publish_model_diagnostics();
@@ -255,6 +283,7 @@ impl Core {
             let found = loaded.across.nav.clone();
             self.publish(&path, found);
         }
+        self.publish_baseline();
     }
 }
 
@@ -410,11 +439,13 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
         if !still_wanted() {
             return Outcome::Abandoned;
         }
-        Some(run_across(job, &project, &checker, &build, &router))
+        Some(Box::new(run_across(
+            job, &project, &checker, &build, &router,
+        )))
     } else {
         None
     };
-    let found = across.as_ref().unwrap_or(&job.found);
+    let found: &Across = across.as_deref().unwrap_or(&job.found);
     // The acknowledgements that can cover them: in the content model, in
     // their files, and in the files of their related places (a block that
     // includes a fragment covers a problem in what it includes).
@@ -445,6 +476,12 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
             )
             .diagnostics;
         let index = LineIndex::new(&file.text);
+        // What `ascribe.baseline` lists isn't published, and is kept for
+        // the hover and the quick fix that moves it to an `@intended`.
+        let held = crate::baseline::hold(&job.baseline, &project, diagnostics);
+        let mut held_lsp = crate::baseline::held_to_lsp(&held, &index, job.encoding);
+        held_lsp.extend_from_slice(found.of_held(path, &file.text));
+        let diagnostics = held.diagnostics;
         let related = |r: &ascribe_check::RelatedInfo| -> Option<Location> {
             // A related location is in a source, the content model, or a code
             // file a snippet reads.
@@ -466,7 +503,7 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
             .collect();
         let shown = on_code_files(&diagnostics, &lsp, &project, job, file.id);
         lsp.extend_from_slice(found.of_source(path, &file.text));
-        results.push((path.clone(), lsp, shown));
+        results.push((path.clone(), lsp, shown, held_lsp, held.matched));
     }
     Outcome::Done(results, across)
 }
@@ -568,16 +605,27 @@ fn run_across(
     // What an acknowledgement covers isn't reported (SPEC §4.9); whether one
     // covers nothing takes every build, so the editor never says.
     let acknowledgements = Acknowledgements::of(project);
+    // What `ascribe.baseline` lists isn't published, a file at a time; the
+    // identities it matched are kept, so an entry isn't stale.
+    let mut matched: Vec<Identity> = Vec::new();
+    let mut hold = |diagnostics: Vec<Diagnostic>| {
+        let held = crate::baseline::hold(&job.baseline, project, diagnostics);
+        matched.extend(held.matched.iter().cloned());
+        held
+    };
     let mut found = Across {
         model: (
             job.model_text.clone(),
-            acknowledgements
-                .apply(
-                    &job.model,
-                    by_file.remove(&FileId::new(0)).unwrap_or_default(),
-                    false,
-                )
-                .diagnostics,
+            hold(
+                acknowledgements
+                    .apply(
+                        &job.model,
+                        by_file.remove(&FileId::new(0)).unwrap_or_default(),
+                        false,
+                    )
+                    .diagnostics,
+            )
+            .diagnostics,
         ),
         ..Across::default()
     };
@@ -587,7 +635,7 @@ fn run_across(
         (PERMALINKS_FILE_ID, &mut found.list),
         (NAV_FILE_ID, &mut found.nav),
     ] {
-        let list = by_file.remove(&id).unwrap_or_default();
+        let list = hold(by_file.remove(&id).unwrap_or_default()).diagnostics;
         if let Some(entry) = project.file(id) {
             let index = LineIndex::new(entry.text);
             *out = list
@@ -605,7 +653,11 @@ fn run_across(
         let Ok(path) = RelPath::parse(&entry.display_path) else {
             continue;
         };
-        let diagnostics = apply_levels(&job.model.checks, by_file.remove(&id).unwrap_or_default());
+        let diagnostics = hold(apply_levels(
+            &job.model.checks,
+            by_file.remove(&id).unwrap_or_default(),
+        ))
+        .diagnostics;
         let index = LineIndex::new(entry.text);
         let lsp = diagnostics
             .iter()
@@ -623,17 +675,26 @@ fn run_across(
         let Some(file) = snapshot.file(path) else {
             continue;
         };
-        let diagnostics = acknowledgements
-            .apply(
-                &job.model,
-                apply_levels(&job.model.checks, diagnostics),
-                false,
-            )
-            .diagnostics;
+        let held = hold(
+            acknowledgements
+                .apply(
+                    &job.model,
+                    apply_levels(&job.model.checks, diagnostics),
+                    false,
+                )
+                .diagnostics,
+        );
+        let index = LineIndex::new(entry.text);
+        let held_lsp = crate::baseline::held_to_lsp(&held, &index, job.encoding);
+        if !held_lsp.is_empty() {
+            found
+                .held
+                .insert(path.clone(), (file.source.clone(), held_lsp));
+        }
+        let diagnostics = held.diagnostics;
         if diagnostics.is_empty() {
             continue;
         }
-        let index = LineIndex::new(entry.text);
         let related = |r: &ascribe_check::RelatedInfo| -> Option<Location> {
             let other = project.file(r.location.file)?;
             let abs = normalize(&job.root.join(&other.display_path));
@@ -657,6 +718,7 @@ fn run_across(
             .sources
             .insert(path.clone(), (file.source.clone(), lsp));
     }
+    found.matched = matched;
     found
 }
 
