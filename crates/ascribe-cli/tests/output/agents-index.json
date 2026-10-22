@@ -3,7 +3,7 @@
   "ascribe_version": "{version}",
   "build": "cloud",
   "limit": 8192,
-  "bytes": 484,
+  "bytes": 490,
   "offered": 3,
   "listed": [
     "keys.md",
@@ -16,5 +16,5 @@
   "changed": false,
   "folder": null,
   "pages": [],
-  "text": "## docs.quill.dev\n\n> Every page of this documentation, each linked to its Markdown version.\n\n### Start\n\n- [API keys](https://docs.quill.dev/keys/): Create and rotate the API keys the Quill agent uses.\n- [Install the Quill agent](https://docs.quill.dev/install-agent/): Install and configure the Quill agent to sync your docs to Quill Cloud or a self-managed Quill server.\n- [Try Quill in the browser](https://docs.quill.dev/quickstart/): Run Quill in the browser with no local setup.\n"
+  "text": "## docs.quill.dev\n\n> Every page of this documentation, each linked to its Markdown version.\n\n### Start\n\n- [API keys](https://docs.quill.dev/keys.md): Create and rotate the API keys the Quill agent uses.\n- [Install the Quill agent](https://docs.quill.dev/install-agent.md): Install and configure the Quill agent to sync your docs to Quill Cloud or a self-managed Quill server.\n- [Try Quill in the browser](https://docs.quill.dev/quickstart.md): Run Quill in the browser with no local setup.\n"
 }

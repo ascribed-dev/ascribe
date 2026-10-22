@@ -1384,7 +1384,12 @@ fn setting(table: &str, key: &str, s: &Setting, value: Option<&toml::Value>) -> 
         SettingValue::Switch(b) => serde_json::Value::Bool(*b),
         SettingValue::Number(n) => serde_json::Value::from(*n),
         SettingValue::Text(t) => serde_json::Value::String(t.clone()),
-        SettingValue::EmptyList => serde_json::Value::Array(Vec::new()),
+        SettingValue::List(items) => serde_json::Value::Array(
+            items
+                .iter()
+                .map(|i| serde_json::Value::String(i.clone()))
+                .collect(),
+        ),
         SettingValue::EmptyTable => serde_json::Value::Object(serde_json::Map::new()),
     });
     let set = value.and_then(|v| serde_json::to_value(v).ok());

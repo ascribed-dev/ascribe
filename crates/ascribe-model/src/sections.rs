@@ -640,7 +640,7 @@ impl Loader<'_> {
             trailing_slash: trailing_slash(settings::default_text(CONSUMER, "trailing-slash")),
             slugger: settings::default_text(CONSUMER, "slugger").into(),
             html: settings::default_switch(CONSUMER, "html"),
-            agents: settings::default_switch(CONSUMER, "agents"),
+            agents: false,
             permalink_path: None,
             headers: None,
         };
@@ -703,6 +703,9 @@ impl Loader<'_> {
         {
             c.slugger = text;
         }
+        // Agents' outputs come with a site that has an address, unless
+        // `agents` says otherwise below (SPEC §9.4).
+        c.agents = c.site.is_some() && settings::default_switch(CONSUMER, "agents");
         if let Some(h) = t.get("html")
             && let Some(value) = self.boolean("consumer.html", h)
         {

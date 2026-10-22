@@ -418,7 +418,7 @@ pub(crate) fn settings_now(now: &ModelNow) -> SettingsResult {
                     Default_::Switch(b) => Some(SettingValue::Switch(*b)),
                     Default_::Number(n) => Some(SettingValue::Number(*n)),
                     Default_::Text(t) => Some(SettingValue::Text(t.clone())),
-                    Default_::EmptyList | Default_::EmptyTable => None,
+                    Default_::List(_) | Default_::EmptyTable => None,
                 }),
                 default_text: setting.default_text.clone(),
                 description: pieces(&setting.description),

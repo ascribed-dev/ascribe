@@ -1,0 +1,7 @@
+description: >-
+  `[consumer] agents` is `false` when `site` isn't set and `agents` is left
+  out: nothing for agents is published, and nothing is reported.
+spec: ["9.4", "9.5"]
+tags: [check]
+
+diagnostics: []

@@ -692,6 +692,19 @@ pub struct Remote {
     pub branch: Option<String>,
 }
 
+/// What every source leaves out, before its own `ignore` (SPEC §7.3): the
+/// registry's default for `ignore`, every `node_modules` and `.git` folder.
+/// A source's `ignore` holds only its own patterns.
+pub fn always_ignored() -> &'static [Pattern] {
+    static ALWAYS: std::sync::OnceLock<Vec<Pattern>> = std::sync::OnceLock::new();
+    ALWAYS.get_or_init(|| {
+        settings::default_list("sources.<name>", "ignore")
+            .iter()
+            .filter_map(|p| Pattern::new(p).ok())
+            .collect()
+    })
+}
+
 /// The folder, in the project's folder, that holds the copies of every
 /// source in another repository, each in a folder of its own.
 pub const COPIES_FOLDER: &str = "sources";
@@ -705,7 +718,16 @@ impl Source {
     pub fn reads(&self, path: &str) -> bool {
         !crate::examples::is_examples_file(path)
             && (self.include.is_empty() || self.include.iter().any(|p| p.matches(path)))
-            && !self.ignore.iter().any(|p| p.matches(path))
+            && !self.ignores(path)
+    }
+
+    /// Whether `ignore`, or what every source leaves out
+    /// ([`always_ignored`]), leaves out `path`.
+    fn ignores(&self, path: &str) -> bool {
+        always_ignored()
+            .iter()
+            .chain(&self.ignore)
+            .any(|p| p.matches(path))
     }
 
     /// Whether a change on disk to the file or folder at `path`, relative
@@ -717,7 +739,7 @@ impl Source {
         use crate::examples::{OBSERVATIONS_FOLDER, is_examples_file};
         is_examples_file(path)
             || path == OBSERVATIONS_FOLDER
-            || (!self.ignore.iter().any(|p| p.matches(path))
+            || (!self.ignores(path)
                 && (self.include.is_empty() || self.include.iter().any(|p| p.may_match_in(path))))
     }
 

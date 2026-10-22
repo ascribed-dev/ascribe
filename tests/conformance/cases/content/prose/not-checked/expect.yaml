@@ -1,7 +1,8 @@
 description: >-
-  When Vale can't be run, the prose isn't checked, and that's one
+  When Vale can't be run, the prose isn't checked, and in a project that
+  asks for its prose checked everywhere (`in-check`), that's one
   `prose-not-checked` advice on `[checks.vale]`.
-spec: ["2.1"]
+spec: ["2.1", "8.2"]
 tags: [prose]
 
 diagnostics:

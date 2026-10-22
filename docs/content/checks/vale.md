@@ -80,7 +80,7 @@ Your project already lists words Vale shouldn't take for misspellings: phrase va
 - **In the agents' hooks**, only with `in-check = true`, and only Vale's error-level alerts reach the agent. See [Agents](../agents/hooks.md).
 - **Never in the MCP server's tools**, which say they only read: `ascribe_check` reports that the prose wasn't checked.
 
-When Vale isn't installed, fails, or takes too long, you get one advice on `[checks.vale]` in `ascribe.toml` (`prose-not-checked`) saying why, and everything else is checked as usual. If you check prose only in CI, turn that advice off on other machines with `prose-not-checked = "off"` in `[checks]`.
+When Vale isn't installed, fails, or takes too long where the project asked for its prose checked everywhere, with `--vale` or `in-check = true`, you get one advice on `[checks.vale]` in `ascribe.toml` (`prose-not-checked`) saying why, and everything else is checked as usual. Without `in-check`, the editor checks the prose wherever Vale runs and says nothing where it doesn't, so a machine without Vale isn't told so. If you set `in-check` and check prose only in CI, turn that advice off on other machines with `prose-not-checked = "off"` in `[checks]`.
 
 To run a Vale that isn't on your `PATH`, set `command` to its path from the project root:
 
@@ -90,7 +90,7 @@ preset = "quiet"
 command = "tools/vale"
 ```
 
-A path is a program in the repository, so the editor asks you before it runs it, once a session, and the agents' hooks don't run it; each says so in `prose-not-checked`. To have Vale run everywhere it can, install it on your `PATH` and leave `command` out.
+A path is a program in the repository, so the editor asks you before it runs it, once a session, and the agents' hooks don't run it; with `in-check = true`, each says so in `prose-not-checked`. To have Vale run everywhere it can, install it on your `PATH` and leave `command` out.
 
 ## From the preset to a configuration of your own
 

@@ -104,9 +104,12 @@ fn builds_quill_under_every_build_with_both_emitters() {
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
     let built = dir.path().join(".ascribe/build");
     for build in ["site", "cloud", "self-managed-3.3"] {
-        for (emitter, page) in [
-            ("plain", "install-agent.md"),
-            ("json", "install-agent.json"),
+        // Quill has a site, so its plain output is what agents read: laid
+        // out by URL, with the files the pages link to under
+        // `_ascribe/files/`.
+        for (emitter, page, files) in [
+            ("plain", "install-agent.md", "_ascribe/files/"),
+            ("json", "install-agent.json", ""),
         ] {
             assert!(
                 built.join(build).join(emitter).join(page).is_file(),
@@ -122,10 +125,14 @@ fn builds_quill_under_every_build_with_both_emitters() {
                 built
                     .join(build)
                     .join(emitter)
-                    .join("_fragments/prerequisites.png")
+                    .join(format!("{files}_fragments/prerequisites.png"))
                     .is_file()
             );
         }
+        assert!(
+            built.join(build).join("plain/llms.txt").is_file(),
+            "{build}"
+        );
     }
     assert!(
         stderr(&out).contains("built cloud/plain: 3 pages, 2 assets"),
@@ -262,8 +269,14 @@ fn every_output_is_built_by_default() {
 
 #[test]
 fn two_pages_with_one_route_fail_the_site_output() {
+    // Without the outputs for agents, whose plain output is laid out by
+    // route too.
+    let model = MODEL.replace(
+        "site = \"https://docs.example.com\"",
+        "site = \"https://docs.example.com\"\nagents = false",
+    );
     let dir = project(
-        MODEL,
+        &model,
         &[("My File.md", &page("A.\n")), ("my-file.md", &page("B.\n"))],
     );
     let out = ascribe(dir.path(), &["build", "--emit", "site"]);

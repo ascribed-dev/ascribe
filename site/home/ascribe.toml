@@ -91,7 +91,6 @@ include = [
   "packages/astro/starter/**",
   "site/demo/**",
 ]
-ignore = ["**/node_modules/**"]
 
 # The site's root. A pull request's preview is built with its own address
 # here too (.github/workflows/site.yml).

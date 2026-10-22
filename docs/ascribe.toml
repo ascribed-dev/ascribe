@@ -155,7 +155,6 @@ include = [                               # what's readable; everything else isn
   "packages/astro/starter/**",
   "site/demo/**",
 ]
-ignore = ["**/node_modules/**"]
 
 # How the site in site/ routes. @ascribed/astro gives Astro its `site` and
 # `trailingSlash` from here (site/astro.config.mjs leaves them out), and
@@ -166,15 +165,15 @@ profile = "astro"
 # manifests, the binary's help, and site/home/ascribe.toml repeat it, and tests
 # check each against this line. A pull request's preview is built with its
 # own address here and in site/home/ascribe.toml (.github/workflows/site.yml).
+# With it, the build publishes llms.txt and each page's Markdown, for AI
+# agents, and `@ascribed/astro` publishes them with the site: `agents` is
+# `true` unless it says otherwise.
 site = "https://ascribed-dev.com"
 # The docs are under /docs/, and the site's own pages, site/home/, at its
 # root. The READMEs' links to pages, site/src/site.ts's `docsPath`, and
 # .github/workflows/report.yml's `--site` repeat it, and tests check each.
 base-path = "/docs/"
 trailing-slash = "always"
-# llms.txt and each page's Markdown, for AI agents: `@ascribed/astro` publishes
-# them with the site.
-agents = true
 # Each Markdown version's response headers, `X-Robots-Tag` for a page that
 # isn't listed and a canonical `Link` to its page, written into the built
 # site's `_headers`, which Netlify reads. site/test/headers.test.ts checks them.
@@ -200,17 +199,17 @@ availability = "badge"
 [editor]
 build = "site"
 
-# Prose checks through Vale, in the editor, for whoever has Vale 3.16 or
-# later installed; `ascribe check --vale` runs them too. Vale isn't needed
-# to work on the docs, so a machine without it isn't told so.
 [checks]
-prose-not-checked = "off"
 # The examples ../ascribe.examples.toml lists say on the page what they were
 # tested with. One changed since its last test run is an error here, so the
 # docs never publish a tested line that's no longer true; run `ascribe
 # observe` in the repository's root and commit what it writes.
 example-stale = "error"
 
+# Prose checks through Vale, in the editor, for whoever has Vale 3.16 or
+# later installed; `ascribe check --vale` runs them too. Vale isn't needed
+# to work on the docs, so without `in-check` a machine without it isn't told
+# so.
 [checks.vale]
 preset = "quiet"
 

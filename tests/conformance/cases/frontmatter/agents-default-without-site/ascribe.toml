@@ -1,0 +1,12 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+# No site, and `agents` left out: nothing for agents is published.
+[consumer]
+base-path = "/docs/"
+
+[types.page.frontmatter]
+title = "string"
+description = { type = "string?", role = "description" }

@@ -1,0 +1,8 @@
+description: >-
+  `prose-not-checked` is said only where the project asked for prose checks
+  everywhere. Without `[checks.vale] in-check`, a Vale that can't be run is
+  said nowhere.
+spec: ["2.1", "8.2"]
+tags: [prose]
+
+diagnostics: []

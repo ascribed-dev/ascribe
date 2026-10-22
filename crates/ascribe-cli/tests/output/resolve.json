@@ -5,5 +5,5 @@
   "build": "cloud",
   "not_published": null,
   "route": "/keys/",
-  "text": "# API keys\n\n## Create a key\n\nSign in to Quill Cloud and open **Settings → Keys**.\n\n## Rotate keys\n\nGenerate a new key, put it in `quill.yaml`, and restart the agent. To install the agent first, see [Install the agent](https://docs.quill.dev/install-agent/#install-agent).\n"
+  "text": "> For the complete documentation index, see [llms.txt](https://docs.quill.dev/llms.txt).\n\n# API keys\n\n## Create a key\n\nSign in to Quill Cloud and open **Settings → Keys**.\n\n## Rotate keys\n\nGenerate a new key, put it in `quill.yaml`, and restart the agent. To install the agent first, see [Install the agent](https://docs.quill.dev/install-agent/#install-agent).\n"
 }

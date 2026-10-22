@@ -606,8 +606,9 @@ table = "consumer"
 key = "agents"
 kind = "switch"
 type = "boolean"
-default = false
-description = '''**Outputs for agents.** Whether each build also publishes what AI agents read, as the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) lays it out: `llms.txt`, the index of every page, and each page's Markdown at its URL with `.md`. It needs `site`, since every link agents read is absolute. See below.'''
+default = true
+default-text = "`true` when `site` is set, `false` when it isn't"
+description = '''**Outputs for agents.** Whether each build also publishes what AI agents read, as the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) lays it out: `llms.txt`, the index of every page, and each page's Markdown at its URL with `.md`. It needs `site`, since every link agents read is absolute: a site with an address publishes them unless this is `false`. See below.'''
 
 [[setting]]
 table = "consumer"
@@ -720,9 +721,9 @@ table = "sources.<name>"
 key = "ignore"
 kind = "list"
 type = "array of patterns"
-default = []
-default-text = "none"
-description = '''Files left out even when `include` matches them.'''
+default = ["**/node_modules/**", "**/.git/**"]
+default-text = "`node_modules` and `.git` folders, always"
+description = '''Files left out even when `include` matches them. Every `node_modules` and `.git` folder is left out whatever the list says, before the patterns it adds.'''
 
 # ---- 19. `[checks]` -----------------------------------------------------------
 
@@ -835,7 +836,7 @@ key = "in-check"
 kind = "switch"
 type = "boolean"
 default = false
-description = '''Whether `ascribe check`, and the agents' hook, check the prose without `--vale`.'''
+description = '''Whether `ascribe check`, and the agents' hook, check the prose without `--vale`. It also says the project wants its prose checked everywhere: without it, the editor doesn't report that Vale couldn't be run (`prose-not-checked`), since a machine without Vale isn't one the project asked to check.'''
 
 [[setting]]
 table = "checks.vale"

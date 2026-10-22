@@ -1,0 +1,7 @@
+description: >-
+  `agents = false` with a site publishes nothing for agents, so a long
+  description is nothing to llms.txt.
+spec: ["9.4", "9.5"]
+tags: [check]
+
+diagnostics: []

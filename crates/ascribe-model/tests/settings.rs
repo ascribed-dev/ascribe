@@ -70,8 +70,10 @@ fn host(table: &str, key: &str) -> Host {
             "[permalinks.retired.old]",
             &[("reason", "\"Gone for good\"")],
         ),
-        "project" | "fragments" | "versions" | "glossary" | "images" | "consumer" | "editor"
-        | "checks" | "checks.links" | "permalinks" | "crawlers" | "listing" => {
+        // A site, since `agents` defaults to `true` only with one.
+        "consumer" => ("", "[consumer]", &[("site", "\"https://example.com\"")]),
+        "project" | "fragments" | "versions" | "glossary" | "images" | "editor" | "checks"
+        | "checks.links" | "permalinks" | "crawlers" | "listing" => {
             let header = Box::leak(format!("[{table}]").into_boxed_str());
             ("", header, &[])
         }
@@ -215,11 +217,16 @@ fn the_default_the_registry_gives_is_the_one_the_loader_uses() {
         if s.table == "listing" && matches!(s.key.as_str(), "default" | "older-lines") {
             continue;
         }
+        // What every source leaves out is applied whatever `ignore` says,
+        // not in its place: `always_ignored_folders_are_the_registry_s`.
+        if s.table == "sources.<name>" && s.key == "ignore" {
+            continue;
+        }
         let value = match default {
             SettingValue::Switch(b) => b.to_string(),
             SettingValue::Number(n) => n.to_string(),
             SettingValue::Text(t) => format!("{t:?}"),
-            SettingValue::EmptyList => "[]".to_owned(),
+            SettingValue::List(items) => format!("{items:?}"),
             SettingValue::EmptyTable => "{}".to_owned(),
         };
         let (absent, _) = with_line(&s.table, None);
@@ -235,4 +242,24 @@ fn the_default_the_registry_gives_is_the_one_the_loader_uses() {
         }
     }
     assert!(differ.is_empty(), "differ:\n{}", differ.join("\n"));
+}
+
+#[test]
+fn always_ignored_folders_are_the_registry_s() {
+    for own in ["", "ignore = [\"private/**\"]\n"] {
+        let text = format!("spec = \"0.1\"\n[sources.code]\npath = \".\"\n{own}");
+        let model = load_str(&text, FileId::new(0)).unwrap();
+        let source = &model.sources[0];
+        for left_out in [
+            "node_modules/pkg/index.js",
+            "lib/node_modules/dep/a.py",
+            ".git/config",
+            "vendor/sub/.git/HEAD",
+        ] {
+            assert!(!source.reads(left_out), "{own}{left_out}");
+            assert!(!source.may_use(left_out), "{own}{left_out}");
+        }
+        assert!(source.reads("src/app.py"), "{own}");
+        assert!(source.reads("src/node_modules.py"), "{own}");
+    }
 }

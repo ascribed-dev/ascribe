@@ -1,0 +1,11 @@
+description: >-
+  A source leaves out every `node_modules` folder, before its own `ignore`
+  patterns and whether it has any: a file in one is out of reach, as one its
+  patterns leave out is.
+spec: ["4.8", "7.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: snippet-file-missing, file: index.md, line: 7}
+  - {slug: snippet-file-missing, file: index.md, line: 9}
+  - {slug: snippet-file-missing, file: index.md, line: 11}

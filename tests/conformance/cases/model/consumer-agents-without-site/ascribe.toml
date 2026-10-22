@@ -1,0 +1,6 @@
+spec = "0.1"
+
+# The outputs for agents asked for, with no site to make their links
+# absolute.
+[consumer]
+agents = true

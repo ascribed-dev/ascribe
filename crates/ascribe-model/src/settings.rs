@@ -69,8 +69,8 @@ pub enum SettingValue {
     Number(i64),
     /// A string.
     Text(String),
-    /// An empty array.
-    EmptyList,
+    /// An array of strings, empty or not.
+    List(Vec<String>),
     /// An empty table.
     EmptyTable,
 }
@@ -140,7 +140,15 @@ fn entry(t: &DeTable<'_>) -> Option<Setting> {
             i.as_str().replace('_', "").parse().ok()?,
         )),
         Some(DeValue::String(s)) => Some(SettingValue::Text(s.to_string())),
-        Some(DeValue::Array(a)) if a.is_empty() => Some(SettingValue::EmptyList),
+        Some(DeValue::Array(items)) => Some(SettingValue::List(
+            items
+                .iter()
+                .map(|i| match i.get_ref() {
+                    DeValue::String(s) => Some(s.to_string()),
+                    _ => None,
+                })
+                .collect::<Option<Vec<_>>>()?,
+        )),
         Some(DeValue::Table(t)) if t.is_empty() => Some(SettingValue::EmptyTable),
         Some(_) => return None,
         None => None,
@@ -234,6 +242,15 @@ pub(crate) fn default_text(table: &str, key: &str) -> &'static str {
 /// The default of `key` in `table`, a boolean.
 pub(crate) fn default_switch(table: &str, key: &str) -> bool {
     matches!(default_of(table, key), Some(SettingValue::Switch(true)))
+}
+
+/// The default of `key` in `table`, a list of strings. Empty if the
+/// registry has none, which a test catches.
+pub(crate) fn default_list(table: &str, key: &str) -> &'static [String] {
+    match default_of(table, key) {
+        Some(SettingValue::List(items)) => items,
+        _ => &[],
+    }
 }
 
 /// The default of `key` in `table`, a whole number. 0 if the registry has

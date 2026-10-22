@@ -45,7 +45,7 @@ A host's or a CDN's own settings for bots can block a crawler before it reads `r
 
 ## What agents get
 
-With `[consumer] agents = true`, a build writes `llms.txt`, an index of the pages it offers agents, and a Markdown version of each page, beside the site at the page's address with `.md`; each page of the site points to both. [The outputs for agents](../content-model/output.md#consumer) says what each holds, and [Publish for AI agents](../astro/agents.md) publishes them with Astro.
+With a `[consumer] site`, a build writes `llms.txt`, an index of the pages it offers agents, and a Markdown version of each page, beside the site at the page's address with `.md`; each page of the site points to both. `agents = false` turns them off. [The outputs for agents](../content-model/output.md#consumer) says what each holds, and [Publish for AI agents](../astro/agents.md) publishes them with Astro.
 
 ## The Markdown versions' headers
 
