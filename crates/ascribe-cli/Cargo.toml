@@ -1,6 +1,9 @@
 [package]
 name = "ascribe-cli"
-description = "The ascribe command-line tool: check, build, diff, fmt, and lsp."
+# The short form in design/words.toml, which scripts/design/words.test.ts
+# compares: `ascribe --help` opens with it, and the plugin's description
+# starts with it.
+description = "A toolchain for documentation written as code."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

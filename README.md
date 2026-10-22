@@ -5,7 +5,7 @@
   </picture>
 </h1>
 
-Ascribe is a markup language, content model, and toolchain for documentation written as code. It's Markdown with a small set of directives for the structure documentation needs: callouts, procedures, alternatives by platform or product, availability by deployment and version, and reusable content. A schema, `ascribe.toml`, says what a documentation set may contain; the editor checks it as you type; and one compiler builds it into a website, plain Markdown, and JSON.
+Ascribe is a toolchain for documentation written as code: Markdown with the structure docs need, checked as you write, and built into a website, plain Markdown, and JSON.
 
 ````markdown
 ## Install the agent
@@ -26,10 +26,10 @@ pnpm add -g @quill/agent
 See [](keys.md#rotate-keys) to rotate your API key.
 ````
 
-- **It reads as Markdown.** A directive is one line that starts with `@`. There are no conditionals, loops, or computed content.
-- **It's checked.** Links and includes name files, not URLs, and must exist. Attributes, frontmatter, and availability are validated against the content model. `ascribe check` in CI reports exactly what the editor reports.
-- **One source, several builds.** A build can keep every alternative as tabs, or only one deployment's, or only what's available in a given version.
-- **It publishes with Astro.** The site output is Markdown with web components, loaded into an Astro content collection with a generated schema.
+- **The tools of a docs team.** Reusable content with `@include` and phrases, variants by platform or product shown as tabs, and a build for each release line from one source. A glossary, page types and templates from a content model in `ascribe.toml`, notes and steps, and a page and site preview in VS Code.
+- **Checked like code.** Broken links, missing headings, and undeclared names are errors, in the editor as you type and in CI. Code examples are read from the code's own files with `@snippet`, and a pull request is reviewed as rendered pages, with what changed marked.
+- **Built for agents, writing and reading.** AI agents that write pages get the project's rules from `ascribe agents sync`, the checks through the MCP server, and a hook that checks after each edit. Agents that read them get `llms.txt`, a Markdown version of every page, and JSON.
+- **Plain files you can leave.** A page reads as Markdown without Ascribe, and the plain output is CommonMark. Ascribe hosts nothing and calls no model, and it's open source under the MPL.
 
 ## Get started
 

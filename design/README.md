@@ -7,7 +7,8 @@ Ascribe's mark and design tokens, and the images made from them. Everything Ascr
 | File | What it is |
 |---|---|
 | `tokens.toml` | Every color of Ascribe's stylesheets, the only place one is written, and their font stacks, type scale, spaces, and radii. Some sizes and spaces are still written in the stylesheets by hand; a new one goes here |
-| `mark.toml` | The mark, its 16 px cut, and the wordmark's letters, as pixel grids, and the social card's line: the source of every image of the mark |
+| `mark.toml` | The mark, its 16 px cut, and the wordmark's letters, as pixel grids: the source of every image of the mark |
+| `words.toml` | What Ascribe says it is: the headline, the sentence, its short form, and the keywords, which every surface that describes Ascribe takes ([The words](#the-words)) |
 | `mark.svg`, `wordmark.svg` | The mark and the wordmark in one color, from `currentColor`, generated from `mark.toml`. The change marks carry `class="second"`, the part a second color goes on |
 | `mark-color.svg` | The mark in its light colors, for a light background, generated |
 | `fonts/Charter-Bold.ttf` | The font the social cards' text is drawn in, for generation only, with its license (Bitstream's, for the Charter fonts given to the X Consortium) in `fonts/LICENSE.txt` |
@@ -100,7 +101,7 @@ The mark is a heavy single-storey a with the change marks of a gutter beside it,
 
 ## The assets
 
-Every image of the mark that something needs is generated from `mark.toml` and the mark's colors, `color.brand` in `tokens.toml`, by one script, and the social cards from those, the font, and each page's title. Every one is on Deep River's ground but the README header for a light page, which is in Shallows' colors, and the one-color files.
+Every image of the mark that something needs is generated from `mark.toml` and the mark's colors, `color.brand` in `tokens.toml`, by one script, and the social cards from those, the font, and the headline in `words.toml` or each page's title. Every one is on Deep River's ground but the README header for a light page, which is in Shallows' colors, and the one-color files.
 
 | Asset | For | Form |
 |---|---|---|
@@ -109,7 +110,7 @@ Every image of the mark that something needs is generated from `mark.toml` and t
 | `site/public/favicon.svg` | The docs site's tab | The 16 px cut, 2 units a cell, in the ink and gutter colors, with a `prefers-color-scheme` rule inside for a dark tab |
 | `site/public/favicon.ico` | Browsers that want an `.ico` | 32 pixels: the mark 3 pixels a cell on a rounded Deep River tile, so it shows on a light or a dark tab |
 | `site/public/apple-touch-icon.png` | A phone's home screen | 180 pixels: the mark 12 pixels a cell on Deep River |
-| `site/public/social-card.png` | Links to the docs site and the repository | 1200 × 630: the wordmark 16 pixels a cell, and the line from `mark.toml` under it in Charter, on Deep River |
+| `site/public/social-card.png` | Links to the docs site and the repository | 1200 × 630: the wordmark 16 pixels a cell, and the headline from `words.toml` under it in Charter, on Deep River. The headline is a source of the card by itself (`design/words.toml#headline` in `assets.json`), so the other words can change without it |
 | `site/public/cards/<page>.png` | Links to a page of the site outside the docs: one for each page of `site/home/content/`, by its entry id (`index.png` for the landing page), and `changelog.png` | 1200 × 630: the wordmark at the top, and the page's level-1 heading below in Charter, on Deep River. A page's heading is a source of its card, by itself (`<file>#heading` in `assets.json`), so the rest of the page can change without the card. A new page of `site/home/` gets a card when the script runs |
 | `site/src/assets/logo.svg` | The docs site's header, inline | The wordmark, `currentColor` only, its change marks keeping `class="second"` for the page to color with `color.brand.gutter` |
 | `packages/vscode/media/icon.png` | The extension's Marketplace listing and Extensions view | 256 pixels: the mark 16 pixels a cell on a rounded Deep River tile, so it reads in a light or a dark editor |
@@ -127,6 +128,22 @@ node scripts/design/assets.ts
 ```
 
 `scripts/design/assets.test.ts` fails when a source has changed since the script last ran, naming the command, and when an asset is missing, the wrong size, or, for an SVG, different from what the script writes now. It doesn't compare a PNG's pixels. It also checks the mark's colors against each other, as `candidates/pairs.toml` checks the stylesheets': 4.5:1 for the ink and the muted line on the ground, and 3:1 for the change marks. A new page outside the docs, or a changed heading on one, is a changed source too. The avatar is uploaded by hand where [project-docs/outside.md](../project-docs/outside.md) lists it.
+
+## The words
+
+`words.toml` holds what Ascribe says it is, in the words of [the story](../project-docs/brand/story.md): the headline, the sentence that says what Ascribe is, its short form for where only a line fits, and the keywords. Every surface that says what Ascribe is takes them from here, or is compared with them by `scripts/design/words.test.ts` ([the website plan's decisions](../project-docs/website/README.md#decisions)).
+
+To change one, change the story first, then the line here, then run `pnpm exec vitest run scripts/design`: it names each surface that no longer agrees. After changing the headline, run `node scripts/design/assets.ts` too, for the social card.
+
+| Line | Where it goes |
+|---|---|
+| `headline` | The social card, `site/public/social-card.png`, drawn by `scripts/design/assets.ts`. The landing page's heading, `site/home/content/index.md` |
+| `sentence` | The first paragraph of `README.md`, and the first sentence of getting started, `docs/content/getting-started.md`. The landing page's description |
+| `short` | `ascribe-cli`'s crate description in `crates/ascribe-cli/Cargo.toml`, which the binary takes as the command's about, the first line of `ascribe --help`, and as the start of the plugin's description, which `crates/ascribe-cli/src/agents/plugin.rs` writes into `plugins/ascribe/`. The start of each npm package's `description`, then the package's job, and of the extension's, which is the Marketplace's |
+| `keywords` | Each npm package's and the extension's `keywords`, the plugin's, and the GitHub repository's topics, which are set by hand ([project-docs/outside.md](../project-docs/outside.md)) |
+| `[maker]` | Each npm package's `author`, and the plugin's author and its marketplace's owner, which `plugin.rs` writes. The extension's publisher stays `Ascribe`, since a Marketplace publisher can't be renamed |
+
+The MCP server's instructions and the skill keep their own words, since they're for an agent doing a task, and SPEC.md and the docs keep "language", "content model", and "compiler" where they define them.
 
 ## In VS Code
 

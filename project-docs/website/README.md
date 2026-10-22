@@ -4,7 +4,7 @@ The new brand applied: ascribed-dev.com rebuilt around [the story](../brand/stor
 
 ## Who does what
 
-- **The maintainer decides and looks:** the palette in the specimen before phase 1 merges, the landing page's mockup before phase 2 builds it, and the Marketplace publisher in phase 3, which only the maintainer can create.
+- **The maintainer decides and looks:** the palette in the specimen before phase 1 merges, and the landing page's mockup before phase 2 builds it.
 - **An agent does the rest,** a phase at a time, each phase its own pull request.
 
 ## Decisions
@@ -18,10 +18,13 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 5. **The colors' roles are the identity's.** River is the accent and what changed. Moss is a tip, what was added, and what was reviewed. Amber is focus. Each has a text value and a graphic value in light (`#0b6f8e` and `#1689ab` for river, `#2f6b2b` and `#3f8a3a` for moss) and one value in dark.
 6. **Headings are set in the system's serif:** `ui-serif`, then Charter, Cambria, and Georgia. Body and UI text stay in the system font, and code in `ui-monospace`. No web font ships (decision 48).
 7. **The site follows the system's scheme.** There's no theme picker.
-8. **Nothing has to be kept.** Ascribe is before 1.0 and has no users, so the extension's publisher and id can change without a migration.
+8. **Nothing has to be kept.** Ascribe is before 1.0 and has no users, so what the plan changes needs no migration.
 9. **The gutter's split bar on notes is the site's own look,** a rule in `site.css`. The element library's default stays one bar, so no `--ascribe-*` property is added. _From:_ the maintainer, 21 October 2026.
 10. **The mark moves.** Phase 4 builds the motion and isn't dropped. _From:_ the maintainer, 21 October 2026.
 11. **The pages' colors are Deep River and Shallows, and their headings are the system's serif.** Every shared `color.*` token in `design/tokens.toml` takes a step of the identity's hues, so the element library, review, the HTML report, the archive, the Astro toolbar, the site, and the VS Code preview's fallbacks change together. Deep is the neutrals: Shallows' `#f2f7f9` ground and white surface in light, Deep River's `#0b1824` ground and `#112233` surface in dark. River is the accent: links and primary buttons, review's among them, a note, steps, and review's changed; moss a tip, availability's GA, and review's added; amber focus rings and outlines only, and the flash's tint. A review thread and a tab under the pointer take `color.panel`, a step of deep that shows on a white page as on the ground. The other hues are derived and checked in `design/candidates/pairs.toml`: magenta leans violet for an important note and review's moved, red leans crimson for a caution and review's removed, and a warning is yellow, apart from amber. Headings on the site and in the report take `font.heading`, `ui-serif, Charter, "Bitstream Charter", Cambria, Georgia, serif`; body, UI, and code text don't change. Decisions 44 to 48 hold as they are: none names the old palette's values, and the serif is a system font, so decision 48's rule is kept. _Why:_ the mark's colors were the brand's and the pages' were still indigo; one palette makes every surface Ascribe draws read as the same product, and serif headings are the identity's reading face without shipping a font. Moss is the identity's and leans yellow-green, so red and violet were pushed in hue and lightness until each pair a reader sees side by side stays about as far apart for red-green color blindness as the indigo palette's did. _From:_ the maintainer, choosing board 11 on 21 October 2026 ([the identity](../brand/identity.md)); the derived values from phase 1, which the maintainer approved on 22 October 2026, keeping the pale ground and the bronze light warning as built.
+12. **The words live in `design/words.toml`: the headline, the sentence, the short form, and the keywords.** The social card's line moved there from `mark.toml`. Every surface that says what Ascribe is is generated from it, or compared with it by `scripts/design/words.test.ts`. The binary takes the short form from `ascribe-cli`'s crate description, which the test compares, so the command's help and the plugin's manifests are generated from it. _Why:_ the home sits beside the social card's line, as phase 3 suggested, but in a file of its own, since `mark.toml` is pixels. It's TOML so the scripts and the tests can read it, which the story's prose can't be. _From:_ phase 3, 21 October 2026.
+13. **The plugin's author and its marketplace's owner are Bryo Studio, `https://bryostudio.com`, the maker in `design/words.toml`.** `plugin.rs` writes them into the manifests, and every npm package's `author` names Bryo Studio too, the platform packages' included; `scripts/design/words.test.ts` compares each with the home. _Why:_ Bryo Studio is the maker, and Ascribe, a product rather than an organization, isn't named as a publisher, an author, or an owner (the story's decision 7). _From:_ the maintainer, 21 October 2026, in [the story](../brand/story.md).
+14. **The Marketplace publisher stays `Ascribe`, and the extension's id stays `Ascribe.ascribe-vscode`.** A publisher can't be renamed, and moving to a new one isn't worth what it cost to set up the first. The publisher is the one place Ascribe is still named as a maker. _Why:_ a new publisher means a new listing, a new identity for the release workflow, and every install command changed, for a name a user rarely reads. _From:_ the maintainer, 22 October 2026.
 
 ## The thread
 
@@ -40,7 +43,7 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 | The landing page's layout: the pillars, the audiences, the call to action above the fold | 2 |
 | Why Ascribe and Credits, read against the story | 2 |
 | The one sentence on every other surface: the README, npm, the Marketplace, the command's help, the plugin | 3 |
-| Bryo Studio as the publisher and the plugin's author | 3 |
+| Bryo Studio as the plugin's and the packages' author | 3 |
 | The gutter's split bar on notes, the three states, the mark in motion | 4 |
 
 ## Phases
@@ -49,7 +52,7 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 |---|---|
 | [1: The new colors and type, everywhere](phase-1-thread.md) | Every page and report Ascribe draws is in Deep River or Shallows with serif headings, and the landing page leads with the story's headline. |
 | [2: The landing page](phase-2-landing.md) | The landing page rebuilt around the story's pillars, from a mockup the maintainer approved, and Why Ascribe and Credits read against the story. |
-| [3: The words everywhere, and the maker](phase-3-words.md) | One file holds the sentence and the headline, every other surface takes it or is tested against it, and Bryo Studio publishes the extension and the plugin. |
+| [3: The words everywhere, and the maker](phase-3-words.md) | One file holds the sentence and the headline, every other surface takes it or is tested against it, and Bryo Studio is named as the maker of the packages and the plugin. |
 | [4: The gutter, and the mark in motion](phase-4-motif.md) | Notes carry the gutter's split bar, the three states show where the site shows writing, changes, and review, and the mark moves for anyone who hasn't asked it not to. |
 
 Phase 1 first. Phases 2 and 3 can run in either order after it. Phase 4 needs phase 2's layout.

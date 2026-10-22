@@ -1,6 +1,7 @@
 # Ascribe's mark and wordmark, as pixel grids: the source of every image of
 # them, which scripts/design/assets.ts draws. design/ascribe.af is the board
-# they came from, and design/README.md says how to use them.
+# they came from, and design/README.md says how to use them. The social card's
+# line under the wordmark is the headline, in design/words.toml.
 #
 # One character a cell: "#" is a letter, in the text color; "|" is a change
 # mark in the gutter, the second color (`class="second"` in an SVG); "." is
@@ -104,8 +105,3 @@ e = [
   "##....",
   ".#####",
 ]
-
-# The social card's line under the wordmark: the headline in
-# project-docs/brand/story.md, drawn in design/fonts/Charter-Bold.ttf.
-[card]
-line = "Docs as code, with the tools docs need."
