@@ -7,12 +7,13 @@ name: Canary
 # A canary is `<next>-next.<run number>`, stamped in the checkout and never
 # committed; each package's `gitHead`, and `ascribe --version`, name its
 # commit. A night when nothing that ships has changed since the last canary
-# publishes nothing, and passes. A canary whose build or smoke test fails
-# publishes nothing, so `next` stays on the newest canary that passed. Every
-# package is published under `next-pending` first, and `next` moves only when
-# all of them are on npm. A night when npm is slow to show one leaves `next`
-# where it was, on every package, and passes; the next run's `catch-up` moves
-# it, as does running this by hand.
+# publishes nothing, and passes. A canary whose build, smoke test, or test
+# suites (the Rust workspace on Linux and Windows, and the JavaScript tests)
+# fail publishes nothing, so `next` stays on the newest canary that passed. Every
+# package is published under `next-pending` first, and `next` moves only when all
+# of them are on npm. A night when npm is slow to show one leaves `next` where it
+# was, on every package, and passes; the next run's `catch-up` moves it, as does
+# running this by hand.
 # RELEASING.md describes it, and how to deprecate a bad one.
 on:
   schedule:
@@ -116,9 +117,74 @@ jobs:
       version: ${{ needs.version.outputs.version }}
       canary: ${{ github.run_number }}
 
+  # The test suites on the commit being published, as rust.yml and js.yml run
+  # them. They run beside the build, and the npm job waits for both.
+  rust-tests:
+    name: cargo test (${{ matrix.os }})
+    needs: version
+    if: needs.version.outputs.changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      RUST_BACKTRACE: 1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # With no arguments, rustup installs the toolchain rust-toolchain.toml pins.
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      # Vale, for crates/ascribe-check/tests/all/vale.rs, which fails on Linux without
+      # one. The same pinned release and checksum as rust.yml.
+      - if: runner.os == 'Linux'
+        name: Install Vale
+        run: |
+          version=3.24.0
+          sum=867534ddb678abca7f214bc4706ead0922bd5252ffe8035fc227013f66c8b214
+          archive="vale_${version}_Linux_64-bit.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$archive" "https://github.com/vale-cli/vale/releases/download/v${version}/${archive}"
+          echo "$sum  $RUNNER_TEMP/$archive" | sha256sum --check --strict
+          mkdir -p "$RUNNER_TEMP/vale"
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP/vale" vale
+          echo "ASCRIBE_TEST_VALE=$RUNNER_TEMP/vale/vale" >> "$GITHUB_ENV"
+      - run: cargo test --workspace --locked
+
+  js-tests:
+    name: JavaScript tests
+    needs: version
+    if: needs.version.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # The same container as js.yml, for the same reason: the element library's
+    # tests drive browsers, and its image has them. Its tag is the playwright-core
+    # version in pnpm-lock.yaml (scripts/ci/workflows.test.ts).
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
+    env:
+      # The job runs as root, and Firefox won't start under a home directory
+      # another user owns, which is what Actions gives a container.
+      HOME: /root
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # The checkout belongs to the runner's user and the job runs as root,
+      # which git refuses unless told to trust it. Tests run `git ls-files`.
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Astro and VS Code resolve declarations from these builds, as js.yml's check job does.
+      - run: pnpm --filter @ascribed/cli build
+      - run: pnpm --filter @ascribed/elements build
+      - run: pnpm test
+
   npm:
     name: publish to npm under next
-    needs: [version, build]
+    needs: [version, build, rust-tests, js-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     # Limited to `main`, with no reviewers: the canary is unattended.

@@ -9,10 +9,13 @@ name: CI
 #
 # - A change to plans and reports alone (project-docs/) runs the formatter
 #   and nothing else.
-# - A pull request runs Linux and Windows. `main` runs Linux and macOS. The
-#   rest of the platforms (the Astro end-to-end on arm64, macOS, and Windows)
-#   run every night and by hand, here, and the canary's smoke test installs
-#   the packed binaries on all four every night too.
+# - A pull request runs Linux, and Windows only when the change touches code
+#   Windows can break: the file system, path, link, and case handling, the
+#   workflows, and the toolchain pins (the `changes` job says which paths).
+#   `main` runs Linux and macOS. The rest of the platforms (the Astro
+#   end-to-end on arm64, macOS, and Windows) run every night and by hand,
+#   here, and the canary's smoke test installs the packed binaries on all four
+#   every night too.
 # - The docs and the site run when the docs, the site, Ascribe, or a file the
 #   docs take code examples from (docs/ascribe.toml's [sources]) changed.
 # - The review and drift reports run on their own (review.yml, drift.yml):
@@ -54,6 +57,7 @@ jobs:
       code: ${{ steps.find.outputs.code }}
       site: ${{ steps.find.outputs.site }}
       install: ${{ steps.find.outputs.install }}
+      windows: ${{ steps.find.outputs.windows }}
       rust-os: ${{ steps.find.outputs.rust-os }}
       vscode-os: ${{ steps.find.outputs.vscode-os }}
       astro-targets: ${{ steps.find.outputs.astro-targets }}
@@ -96,14 +100,36 @@ jobs:
             install=true
           fi
 
+          # Windows is slow, so a pull request runs it only where a change can
+          # break on it: the file system, path, link, and case handling in the
+          # crates and files below (`ascribe-resolve`'s FileSystem and the code
+          # that reads links, canonical paths, drive letters, or a `cfg` for a
+          # platform), the VS Code extension's project ownership and the suite
+          # that tests it, the workflows, and the toolchain pins. A file that
+          # isn't on the list is Linux's to prove on the pull request, and
+          # macOS's and Windows's after the merge (nightly). A push and the
+          # nightly run don't use this: their platforms are set below.
+          windows=false
+          if [ "$files" = all ] ||
+            printf '%s\n' "$files" | grep -qE '^(crates/(ascribe-(core|resolve|emit|fmt|sources|lsp))/|crates/ascribe-model/src/loader\.rs$|crates/ascribe-check/src/(scope|tool)\.rs$|crates/ascribe-check/src/prose/|crates/ascribe-cli/src/(agents/(checker|hook)|commands/observe)\.rs$|packages/vscode/(src/projects\.ts|test/integration/)|\.github/workflows/|rust-toolchain\.toml$|\.nvmrc$|Cargo\.lock$)'; then
+            windows=true
+          fi
+
           linux_x64='{"os":"ubuntu-24.04","target":"linux-x64","env_target":"LINUX_X64","exe":"ascribe"}'
           linux_arm64='{"os":"ubuntu-24.04-arm","target":"linux-arm64","env_target":"LINUX_ARM64","exe":"ascribe"}'
           darwin_arm64='{"os":"macos-latest","target":"darwin-arm64","env_target":"DARWIN_ARM64","exe":"ascribe"}'
           win32_x64='{"os":"windows-latest","target":"win32-x64","env_target":"WIN32_X64","exe":"ascribe.exe"}'
           case "$EVENT" in
             pull_request)
-              rust_os='["ubuntu-latest","windows-latest"]'
-              vscode_os='["windows-latest"]'
+              # Linux always. The VS Code list is empty without Windows, and js.yml
+              # skips its job for an empty list, so the matrix never starts empty.
+              if [ "$windows" = true ]; then
+                rust_os='["ubuntu-latest","windows-latest"]'
+                vscode_os='["windows-latest"]'
+              else
+                rust_os='["ubuntu-latest"]'
+                vscode_os='[]'
+              fi
               astro="[$linux_x64]"
               ;;
             push)
@@ -122,6 +148,7 @@ jobs:
             echo "code=$code"
             echo "site=$site"
             echo "install=$install"
+            echo "windows=$windows"
             echo "rust-os=$rust_os"
             echo "vscode-os=$vscode_os"
             echo "astro-targets=$astro"

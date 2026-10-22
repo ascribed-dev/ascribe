@@ -33,7 +33,7 @@ Setup: `corepack enable && pnpm install`. `pnpm typecheck` needs `@ascribed/cli`
 - **Two renderers must agree.** A change to the site output's markup changes the fixtures in `tests/render/`, and both `render_site_html` and the Astro plugin pass them.
 - **`crates/comrak-ascribe` is a fork.** Mark each change `// ASCRIBE:` and list it in `crates/comrak-ascribe/FORK.md`.
 - **Docs change with the code.** A change a user would notice updates its page under `docs/content/` and adds its changelog entry as a file of its own in `changes/` ([changes/README.md](changes/README.md)); it doesn't edit `CHANGELOG.md`, which a release gathers the entries into. Don't run a formatter over Markdown.
-- **Paths, case, and links differ by platform.** Pull requests run on Linux and Windows; macOS and arm64 run after the merge. A change about paths runs the full matrix from its branch (Actions → CI → Run workflow).
+- **Paths, case, and links differ by platform.** Pull requests run on Linux, and on Windows when the change touches the paths `ci.yml`'s `changes` job lists; macOS and arm64 run after the merge. A change about paths runs the full matrix from its branch (Actions → CI → Run workflow).
 
 ## Where to look
 
