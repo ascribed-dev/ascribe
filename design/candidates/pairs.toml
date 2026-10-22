@@ -37,7 +37,7 @@ where = "Muted text on a surface: the header's buttons, a code block's title"
 fg = "accent"
 bg = "background"
 kind = "text"
-where = "Links"
+where = "Links; review's Show and Moved links"
 
 [[pair]]
 fg = "accent"
@@ -61,7 +61,7 @@ where = "Inline code and code blocks"
 fg = "accent-text"
 bg = "accent"
 kind = "text"
-where = "A step's number on its marker; text on an accent button"
+where = "A step's number on its marker; text on an accent button, review's primary buttons among them"
 
 [[pair]]
 fg = "accent"
@@ -74,6 +74,31 @@ fg = "focus"
 bg = "background"
 kind = "graphic"
 where = "Focus rings"
+
+[[pair]]
+fg = "focus"
+bg = "surface"
+kind = "graphic"
+where = "Focus rings on a surface: the report's side, the toolbar's panel"
+
+# A panel: a review thread, and a tab under the pointer.
+[[pair]]
+fg = "text"
+bg = "panel"
+kind = "text"
+where = "A thread's comments; a hovered tab's label"
+
+[[pair]]
+fg = "muted"
+bg = "panel"
+kind = "text"
+where = "A thread's header and dates; a hovered tab's label"
+
+[[pair]]
+fg = "accent"
+bg = "panel"
+kind = "text"
+where = "Links in a thread; the selected tab, hovered"
 
 # Notes: the label is the note's color on its background; the bar is the
 # same color, against the same background.
@@ -198,25 +223,7 @@ bg = "flash"
 kind = "text"
 where = "A block flashed after a jump"
 
-[[pair]]
-fg = "focus"
-bg = "background"
-kind = "text"
-where = "Review's Show and Moved links"
-
 # Review's overlay: its threads, buttons, and the unsent bar.
-[[pair]]
-fg = "focus"
-bg = "surface"
-kind = "text"
-where = "Links in a thread"
-
-[[pair]]
-fg = "accent-text"
-bg = "focus"
-kind = "text"
-where = "A primary button's label"
-
 [[pair]]
 fg = "background"
 bg = "removed"
@@ -225,19 +232,19 @@ where = "The Discard button's label"
 
 [[pair]]
 fg = "added"
-bg = "surface"
+bg = "panel"
 kind = "text"
 where = "A resolved thread's badge"
 
 [[pair]]
 fg = "changed"
-bg = "surface"
+bg = "panel"
 kind = "text"
 where = "An unsent thread's badge"
 
 [[pair]]
 fg = "removed"
-bg = "surface"
+bg = "panel"
 kind = "text"
 where = "A removed or detached thread's badge"
 

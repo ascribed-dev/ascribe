@@ -24,13 +24,14 @@
   --ascribe-review-muted: #47606f;
   --ascribe-review-surface: #f2f7f9;
   --ascribe-review-flash: #ffe4cc;
-  --ascribe-review-focus: #b4530f;
+  --ascribe-review-focus: #0b6f8e;
   --ascribe-review-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --ascribe-review-text: #0b1824;
   --ascribe-review-border: #ccdce4;
-  --ascribe-review-thread: #ffffff;
+  --ascribe-review-thread: #e1ebf1;
   --ascribe-review-input: #f2f7f9;
   --ascribe-review-accent-text: #ffffff;
+  --_review-ring: #b4530f;
   /* End of generated root. */
   --ascribe-review-blend: multiply;
 }
@@ -49,12 +50,13 @@
     --ascribe-review-muted: #8aa6b8;
     --ascribe-review-surface: #0b1824;
     --ascribe-review-flash: #4d2c15;
-    --ascribe-review-focus: #f0a35e;
+    --ascribe-review-focus: #56d0f0;
     --ascribe-review-text: #e3f1f7;
     --ascribe-review-border: #263a4b;
-    --ascribe-review-thread: #112233;
+    --ascribe-review-thread: #1f303e;
     --ascribe-review-input: #0b1824;
     --ascribe-review-accent-text: #0b1824;
+    --_review-ring: #f0a35e;
     /* End of generated root. */
     --ascribe-review-blend: screen;
   }
@@ -73,12 +75,13 @@
   --ascribe-review-muted: #8aa6b8;
   --ascribe-review-surface: #0b1824;
   --ascribe-review-flash: #4d2c15;
-  --ascribe-review-focus: #f0a35e;
+  --ascribe-review-focus: #56d0f0;
   --ascribe-review-text: #e3f1f7;
   --ascribe-review-border: #263a4b;
-  --ascribe-review-thread: #112233;
+  --ascribe-review-thread: #1f303e;
   --ascribe-review-input: #0b1824;
   --ascribe-review-accent-text: #0b1824;
+  --_review-ring: #f0a35e;
   /* End of generated root. */
   --ascribe-review-blend: screen;
 }
@@ -361,6 +364,6 @@
 @media (prefers-reduced-motion: reduce) {
   .ascribe-flash {
     animation: none;
-    outline: 2px solid var(--ascribe-review-focus);
+    outline: 2px solid var(--_review-ring);
   }
 }

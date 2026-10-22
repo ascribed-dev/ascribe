@@ -60,7 +60,7 @@
   --ascribe-tab-color: #47606f;
   --ascribe-tab-active-color: #0b6f8e;
   --ascribe-tab-focus-color: #b4530f;
-  --ascribe-tab-hover-background: #ffffff;
+  --ascribe-tab-hover-background: #e1ebf1;
   /* End of generated tabs. */
 
   /* Availability lifecycle states: an accent color and a background each. */
@@ -115,7 +115,7 @@
     --ascribe-tab-color: light-dark(#47606f, #8aa6b8);
     --ascribe-tab-active-color: light-dark(#0b6f8e, #56d0f0);
     --ascribe-tab-focus-color: light-dark(#b4530f, #f0a35e);
-    --ascribe-tab-hover-background: light-dark(#ffffff, #112233);
+    --ascribe-tab-hover-background: light-dark(#e1ebf1, #1f303e);
     /* End of generated tabs. */
 
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: states, light-dark. */

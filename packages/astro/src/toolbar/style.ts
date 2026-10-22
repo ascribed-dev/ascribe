@@ -10,6 +10,7 @@ export const PANEL_CSS = `
   --line: #ccdce4;
   --accent: #0b6f8e;
   --accent-ink: #ffffff;
+  --focus: #b4530f;
   --notice: #fdf1d8;
   --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -26,6 +27,7 @@ export const PANEL_CSS = `
     --line: #263a4b;
     --accent: #56d0f0;
     --accent-ink: #0b1824;
+    --focus: #f0a35e;
     --notice: #32240a;
     /* End of generated panel. */
   }
@@ -39,6 +41,7 @@ export const PANEL_CSS = `
   --line: #263a4b;
   --accent: #56d0f0;
   --accent-ink: #0b1824;
+  --focus: #f0a35e;
   --notice: #32240a;
   /* End of generated panel. */
 }
@@ -183,7 +186,7 @@ button:disabled {
 }
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 .ghost {

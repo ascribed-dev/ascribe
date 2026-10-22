@@ -63,7 +63,7 @@
   --ascribe-tab-color: #47606f;
   --ascribe-tab-active-color: #0b6f8e;
   --ascribe-tab-focus-color: #b4530f;
-  --ascribe-tab-hover-background: #ffffff;
+  --ascribe-tab-hover-background: #e1ebf1;
   /* End of generated tabs. */
 
   /* Availability lifecycle states: an accent color and a background each. */
@@ -118,7 +118,7 @@
     --ascribe-tab-color: light-dark(#47606f, #8aa6b8);
     --ascribe-tab-active-color: light-dark(#0b6f8e, #56d0f0);
     --ascribe-tab-focus-color: light-dark(#b4530f, #f0a35e);
-    --ascribe-tab-hover-background: light-dark(#ffffff, #112233);
+    --ascribe-tab-hover-background: light-dark(#e1ebf1, #1f303e);
     /* End of generated tabs. */
 
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: states, light-dark. */
@@ -485,13 +485,14 @@ a[data-ascribe-release-line]::after {
   --ascribe-review-muted: #47606f;
   --ascribe-review-surface: #f2f7f9;
   --ascribe-review-flash: #ffe4cc;
-  --ascribe-review-focus: #b4530f;
+  --ascribe-review-focus: #0b6f8e;
   --ascribe-review-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --ascribe-review-text: #0b1824;
   --ascribe-review-border: #ccdce4;
-  --ascribe-review-thread: #ffffff;
+  --ascribe-review-thread: #e1ebf1;
   --ascribe-review-input: #f2f7f9;
   --ascribe-review-accent-text: #ffffff;
+  --_review-ring: #b4530f;
   /* End of generated root. */
   --ascribe-review-blend: multiply;
 }
@@ -510,12 +511,13 @@ a[data-ascribe-release-line]::after {
     --ascribe-review-muted: #8aa6b8;
     --ascribe-review-surface: #0b1824;
     --ascribe-review-flash: #4d2c15;
-    --ascribe-review-focus: #f0a35e;
+    --ascribe-review-focus: #56d0f0;
     --ascribe-review-text: #e3f1f7;
     --ascribe-review-border: #263a4b;
-    --ascribe-review-thread: #112233;
+    --ascribe-review-thread: #1f303e;
     --ascribe-review-input: #0b1824;
     --ascribe-review-accent-text: #0b1824;
+    --_review-ring: #f0a35e;
     /* End of generated root. */
     --ascribe-review-blend: screen;
   }
@@ -534,12 +536,13 @@ a[data-ascribe-release-line]::after {
   --ascribe-review-muted: #8aa6b8;
   --ascribe-review-surface: #0b1824;
   --ascribe-review-flash: #4d2c15;
-  --ascribe-review-focus: #f0a35e;
+  --ascribe-review-focus: #56d0f0;
   --ascribe-review-text: #e3f1f7;
   --ascribe-review-border: #263a4b;
-  --ascribe-review-thread: #112233;
+  --ascribe-review-thread: #1f303e;
   --ascribe-review-input: #0b1824;
   --ascribe-review-accent-text: #0b1824;
+  --_review-ring: #f0a35e;
   /* End of generated root. */
   --ascribe-review-blend: screen;
 }
@@ -822,7 +825,7 @@ a[data-ascribe-release-line]::after {
 @media (prefers-reduced-motion: reduce) {
   .ascribe-flash {
     animation: none;
-    outline: 2px solid var(--ascribe-review-focus);
+    outline: 2px solid var(--_review-ring);
   }
 }
 
@@ -841,6 +844,7 @@ a[data-ascribe-release-line]::after {
   --r-side: #ffffff;
   --r-line: #ccdce4;
   --r-accent: #0b6f8e;
+  --r-focus: #b4530f;
   --r-accent-ink: #ffffff;
   --r-code: #e6eef2;
   --r-notice: #fdf1d8;
@@ -864,6 +868,7 @@ a[data-ascribe-release-line]::after {
     --r-side: #112233;
     --r-line: #263a4b;
     --r-accent: #56d0f0;
+    --r-focus: #f0a35e;
     --r-accent-ink: #0b1824;
     --r-code: #07111b;
     --r-notice: #32240a;
@@ -888,7 +893,7 @@ a[data-ascribe-release-line]::after {
     --ascribe-tab-color: #8aa6b8;
     --ascribe-tab-active-color: #56d0f0;
     --ascribe-tab-focus-color: #f0a35e;
-    --ascribe-tab-hover-background: #112233;
+    --ascribe-tab-hover-background: #1f303e;
     --ascribe-state-color: #8aa6b8;
     --ascribe-state-background: #1f303e;
     --ascribe-state-ga-color: #9fdc7c;
@@ -1030,7 +1035,7 @@ body {
 .r-pages a:focus-visible,
 .r button:focus-visible,
 .r select:focus-visible {
-  outline: 2px solid var(--r-accent);
+  outline: 2px solid var(--r-focus);
   outline-offset: 1px;
 }
 

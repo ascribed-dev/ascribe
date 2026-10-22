@@ -26,6 +26,7 @@ summary = "The chosen palette and type scale: Deep River in dark and Shallows in
 27 = "#f2f7f9"
 51 = "#e3f1f7"
 56 = "#e6eef2"
+66 = "#e1ebf1"
 70 = "#deeaf0"
 115 = "#ccdce4"
 290 = "#8aa6b8"
@@ -87,6 +88,7 @@ border = { light = "deep.115", dark = "deep.661" }
 accent = { light = "river.494", dark = "river.199" }
 accent-surface = { light = "river.46", dark = "river.711" }
 accent-text = { light = "deep.0", dark = "deep.796" }
+panel = { light = "deep.66", dark = "deep.699" }
 code-background = { light = "deep.56", dark = "deep.827" }
 focus = { light = "amber.445", dark = "amber.223" }
 note = { light = "river.494", dark = "river.199" }

@@ -38,6 +38,7 @@
 27 = "#f2f7f9"
 51 = "#e3f1f7"
 56 = "#e6eef2"
+66 = "#e1ebf1"
 70 = "#deeaf0"
 115 = "#ccdce4"
 290 = "#8aa6b8"
@@ -175,8 +176,7 @@ dark = "deep.290"
 light = "deep.27"
 dark = "deep.796"
 
-# Panels, code, and table headers on the background; a thread; a tab under
-# the pointer.
+# Panels, code, and table headers on the background.
 [color.surface]
 light = "deep.0"
 dark = "deep.754"
@@ -185,8 +185,8 @@ dark = "deep.754"
 light = "deep.115"
 dark = "deep.661"
 
-# Links, the current page, steps' markers, and the selected tab: river, the
-# mark's change marks.
+# Links, the current page, steps' markers, the selected tab, and review's links
+# and primary buttons: river, the mark's change marks.
 [color.accent]
 light = "river.494"
 dark = "river.199"
@@ -195,6 +195,12 @@ dark = "river.199"
 [color.accent-text]
 light = "deep.0"
 dark = "deep.796"
+
+# A panel that shows on a white page as on the background, where the surface
+# wouldn't: a review thread, a tab under the pointer.
+[color.panel]
+light = "deep.66"
+dark = "deep.699"
 
 [color.code-background]
 light = "deep.56"
@@ -205,7 +211,7 @@ dark = "deep.827"
 light = "river.46"
 dark = "river.711"
 
-# Focus rings, and review's links and primary buttons: amber.
+# Focus rings and outlines, and nothing else: amber.
 [color.focus]
 light = "amber.445"
 dark = "amber.223"
@@ -374,7 +380,7 @@ hero = "750 2.75rem/1.1"
 "--ascribe-tab-color" = "color.muted"
 "--ascribe-tab-active-color" = "color.accent"
 "--ascribe-tab-focus-color" = "color.focus"
-"--ascribe-tab-hover-background" = "color.surface"
+"--ascribe-tab-hover-background" = "color.panel"
 
 [emit."packages/elements/css/style.css".states]
 "--ascribe-state-color" = "color.state"
@@ -402,20 +408,24 @@ hero = "750 2.75rem/1.1"
 "--ascribe-review-muted" = "color.muted"
 "--ascribe-review-surface" = "color.background"
 "--ascribe-review-flash" = "color.flash"
-"--ascribe-review-focus" = "color.focus"
+"--ascribe-review-focus" = "color.accent"
 "--ascribe-review-mono" = "font.review-mono"
 "--ascribe-review-text" = "color.text"
 "--ascribe-review-border" = "color.border"
-"--ascribe-review-thread" = "color.surface"
+"--ascribe-review-thread" = "color.panel"
 "--ascribe-review-input" = "color.background"
 "--ascribe-review-accent-text" = "color.accent-text"
+# Not a public property: the overlay's focus rings, and the outline that
+# stands in for the flash when motion is reduced.
+"--_review-ring" = "color.focus"
 
 # The overlay's own names, from the page's --ascribe-review-* where it sets them.
 [emit."packages/review/src/overlay/style.ts".host]
 "--muted" = "var(--ascribe-review-muted, {color.muted})"
 "--line" = "var(--ascribe-review-border, {color.border})"
-"--thread" = "var(--ascribe-review-thread, {color.surface})"
-"--accent" = "var(--ascribe-review-focus, {color.focus})"
+"--thread" = "var(--ascribe-review-thread, {color.panel})"
+"--accent" = "var(--ascribe-review-focus, {color.accent})"
+"--ring" = "var(--_review-ring, {color.focus})"
 "--accent-text" = "var(--ascribe-review-accent-text, {color.accent-text})"
 "--flash" = "var(--ascribe-review-flash, {color.flash})"
 "--added" = "var(--ascribe-review-added, {color.added})"
@@ -439,6 +449,7 @@ hero = "750 2.75rem/1.1"
 "--r-side" = "color.surface"
 "--r-line" = "color.border"
 "--r-accent" = "color.accent"
+"--r-focus" = "color.focus"
 "--r-accent-ink" = "color.accent-text"
 "--r-code" = "color.code-background"
 "--r-notice" = "color.warning-background"
@@ -468,7 +479,7 @@ hero = "750 2.75rem/1.1"
 "--ascribe-tab-color" = "color.muted"
 "--ascribe-tab-active-color" = "color.accent"
 "--ascribe-tab-focus-color" = "color.focus"
-"--ascribe-tab-hover-background" = "color.surface"
+"--ascribe-tab-hover-background" = "color.panel"
 "--ascribe-state-color" = "color.state"
 "--ascribe-state-background" = "color.state-background"
 "--ascribe-state-ga-color" = "color.tip"
@@ -489,6 +500,7 @@ hero = "750 2.75rem/1.1"
 "--a-side" = "color.surface"
 "--a-line" = "color.border"
 "--a-accent" = "color.accent"
+"--a-focus" = "color.focus"
 "--a-code" = "color.code-background"
 "--a-notice" = "color.warning-background"
 "--a-ui" = "font.ui"
@@ -509,6 +521,7 @@ hero = "750 2.75rem/1.1"
 "--line" = "color.border"
 "--accent" = "color.accent"
 "--accent-ink" = "color.accent-text"
+"--focus" = "color.focus"
 "--notice" = "color.warning-background"
 "--ui" = "font.ui"
 "--mono" = "font.review-mono"
@@ -557,7 +570,7 @@ hero = "750 2.75rem/1.1"
 "--ascribe-tab-color" = "var(--vscode-foreground, {color.muted})"
 "--ascribe-tab-active-color" = "var(--vscode-textLink-foreground, {color.accent})"
 "--ascribe-tab-focus-color" = "var(--vscode-focusBorder, {color.focus})"
-"--ascribe-tab-hover-background" = "var(--vscode-toolbar-hoverBackground, {color.surface})"
+"--ascribe-tab-hover-background" = "var(--vscode-toolbar-hoverBackground, {color.panel})"
 "--ascribe-state-color" = "var(--vscode-descriptionForeground, {color.state})"
 "--ascribe-state-ga-color" = "var(--vscode-charts-green, {color.tip})"
 "--ascribe-state-preview-color" = "var(--vscode-charts-purple, {color.important})"
@@ -570,7 +583,7 @@ hero = "750 2.75rem/1.1"
 "--ascribe-review-moved" = "var(--vscode-charts-purple, {color.moved})"
 "--ascribe-review-muted" = "var(--vscode-descriptionForeground, {color.muted})"
 "--ascribe-review-flash" = "color-mix(in srgb, var(--vscode-editor-findMatchHighlightBackground, {color.flash}) 50%, var(--vscode-editor-background, Canvas))"
-"--ascribe-review-focus" = "var(--vscode-textLink-foreground, {color.focus})"
+"--ascribe-review-focus" = "var(--vscode-textLink-foreground, {color.accent})"
 "--ascribe-review-mono" = "var(--vscode-editor-font-family, {font.fallback-mono})"
 "--ascribe-review-border" = "var(--vscode-widget-border, var(--vscode-panel-border, {color.border}))"
 "--ascribe-review-font" = "var(--vscode-font-family, {font.fallback-ui})"

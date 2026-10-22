@@ -13,6 +13,7 @@
   --r-side: #ffffff;
   --r-line: #ccdce4;
   --r-accent: #0b6f8e;
+  --r-focus: #b4530f;
   --r-accent-ink: #ffffff;
   --r-code: #e6eef2;
   --r-notice: #fdf1d8;
@@ -36,6 +37,7 @@
     --r-side: #112233;
     --r-line: #263a4b;
     --r-accent: #56d0f0;
+    --r-focus: #f0a35e;
     --r-accent-ink: #0b1824;
     --r-code: #07111b;
     --r-notice: #32240a;
@@ -60,7 +62,7 @@
     --ascribe-tab-color: #8aa6b8;
     --ascribe-tab-active-color: #56d0f0;
     --ascribe-tab-focus-color: #f0a35e;
-    --ascribe-tab-hover-background: #112233;
+    --ascribe-tab-hover-background: #1f303e;
     --ascribe-state-color: #8aa6b8;
     --ascribe-state-background: #1f303e;
     --ascribe-state-ga-color: #9fdc7c;
@@ -202,7 +204,7 @@ body {
 .r-pages a:focus-visible,
 .r button:focus-visible,
 .r select:focus-visible {
-  outline: 2px solid var(--r-accent);
+  outline: 2px solid var(--r-focus);
   outline-offset: 1px;
 }
 

@@ -10,8 +10,9 @@ export const OVERLAY_CSS = `
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: host, light. */
   --muted: var(--ascribe-review-muted, #47606f);
   --line: var(--ascribe-review-border, #ccdce4);
-  --thread: var(--ascribe-review-thread, #ffffff);
-  --accent: var(--ascribe-review-focus, #b4530f);
+  --thread: var(--ascribe-review-thread, #e1ebf1);
+  --accent: var(--ascribe-review-focus, #0b6f8e);
+  --ring: var(--_review-ring, #b4530f);
   --accent-text: var(--ascribe-review-accent-text, #ffffff);
   --flash: var(--ascribe-review-flash, #ffe4cc);
   --added: var(--ascribe-review-added, #2f6b2b);
@@ -53,7 +54,7 @@ button:focus-visible,
 textarea:focus-visible,
 input:focus-visible,
 .thread:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--ring);
   outline-offset: 1px;
 }
 .sr-only {
@@ -563,7 +564,7 @@ svg.connector path {
 }
 @keyframes flash {
   from {
-    box-shadow: 0 0 0 3px var(--accent);
+    box-shadow: 0 0 0 3px var(--ring);
   }
   to {
     box-shadow: 0 0 0 0 transparent;
@@ -572,7 +573,7 @@ svg.connector path {
 @media (prefers-reduced-motion: reduce) {
   .flash {
     animation: none;
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--ring);
   }
 }
 `;

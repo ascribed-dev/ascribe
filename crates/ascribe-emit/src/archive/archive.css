@@ -14,6 +14,7 @@
   --a-side: #ffffff;
   --a-line: #ccdce4;
   --a-accent: #0b6f8e;
+  --a-focus: #b4530f;
   --a-code: #e6eef2;
   --a-notice: #fdf1d8;
   --a-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -38,6 +39,7 @@
     --a-side: #112233;
     --a-line: #263a4b;
     --a-accent: #56d0f0;
+    --a-focus: #f0a35e;
     --a-code: #07111b;
     --a-notice: #32240a;
     /* End of generated frame. */
@@ -213,7 +215,7 @@ td {
 
 .archive-search input:focus-visible,
 .archive-search-results a:focus-visible {
-  outline: 2px solid var(--a-accent);
+  outline: 2px solid var(--a-focus);
   outline-offset: 1px;
 }
 

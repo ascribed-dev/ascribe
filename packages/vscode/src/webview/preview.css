@@ -25,7 +25,7 @@
   --ascribe-tab-color: var(--vscode-foreground, #47606f);
   --ascribe-tab-active-color: var(--vscode-textLink-foreground, #0b6f8e);
   --ascribe-tab-focus-color: var(--vscode-focusBorder, #b4530f);
-  --ascribe-tab-hover-background: var(--vscode-toolbar-hoverBackground, #ffffff);
+  --ascribe-tab-hover-background: var(--vscode-toolbar-hoverBackground, #e1ebf1);
   --ascribe-state-color: var(--vscode-descriptionForeground, #47606f);
   --ascribe-state-ga-color: var(--vscode-charts-green, #2f6b2b);
   --ascribe-state-preview-color: var(--vscode-charts-purple, #6b2094);
@@ -42,7 +42,7 @@
     var(--vscode-editor-findMatchHighlightBackground, #ffe4cc) 50%,
     var(--vscode-editor-background, Canvas)
   );
-  --ascribe-review-focus: var(--vscode-textLink-foreground, #b4530f);
+  --ascribe-review-focus: var(--vscode-textLink-foreground, #0b6f8e);
   --ascribe-review-mono: var(--vscode-editor-font-family, ui-monospace, monospace);
   --ascribe-review-border: var(--vscode-widget-border, var(--vscode-panel-border, #ccdce4));
   --ascribe-review-font: var(--vscode-font-family, system-ui, sans-serif);
