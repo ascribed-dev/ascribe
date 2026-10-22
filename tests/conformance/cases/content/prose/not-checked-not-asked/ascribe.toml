@@ -1,0 +1,7 @@
+spec = "0.1"
+
+# Vale can't be run, but the project didn't ask for its prose to be checked
+# everywhere: no `in-check`, so nothing says so.
+[checks.vale]
+preset = "quiet"
+command = "not-installed"

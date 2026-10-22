@@ -1,0 +1,13 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+# The site publishes nothing for agents.
+[consumer]
+site = "https://docs.example.com"
+agents = false
+
+[types.page.frontmatter]
+title = "string"
+description = { type = "string?", role = "description" }

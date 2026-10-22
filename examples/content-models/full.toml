@@ -201,6 +201,7 @@ base-path = "/docs/"
 trailing-slash = "never"
 slugger = "github"
 html = true
+agents = false
 
 # :snippet-start: builds
 [builds.site]

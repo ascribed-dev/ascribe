@@ -23,7 +23,7 @@ None of these is a score. Each problem is listed at its file, with what to do ab
 A check that fails or warns is reported by who changes what it checks, and none of it asks you to edit a page:
 
 - **The hosting** (`delivery-hosting`): status codes, caching, the type a `.md` file is served as, content negotiation, bot protection. The problem names the setting; [Serve the Markdown versions](../astro/serve-markdown.md) says how on the hosts it covers. `content-start-position` is here too, since it's the site's page template: a template that writes the navigation before the content warns, even with the content in `<main>`. Put the navigation after the content in the HTML, and place it with CSS. A check the checker added after the version Ascribe knows is counted here until Ascribe lists it.
-- **Ascribe** (`delivery-output`): `llms.txt`, the Markdown pages, and the pointer on each page, which Ascribe writes with `[consumer] agents = true`. Check first that the site publishes what the build wrote; when it does, it's a bug in Ascribe, and the problem says where to report it.
+- **Ascribe** (`delivery-output`): `llms.txt`, the Markdown pages, and the pointer on each page, which Ascribe writes with the outputs for agents, on by default with a `[consumer] site`. Check first that the site publishes what the build wrote; when it does, it's a bug in Ascribe, and the problem says where to report it.
 - **The pages**, such as a page too long for an agent to read in one fetch: `ascribe check` reports these on the page itself, so the report names the check and doesn't repeat it. A page over the checker's `page-size-html` limit that `ascribe check` doesn't report as too long is over it because of what the site's page template adds around the content.
 
 To check the site every day, run this section in the [scheduled job](../checks/report.md#on-a-schedule).
@@ -40,7 +40,7 @@ The search engines report on your site themselves, once you've shown them you ow
 
 Your host's request logs are the only place agents reading your docs show up. Look for:
 
-- **Requests for the Markdown versions,** the `.md` address of each page, which a site publishes with `[consumer] agents = true`. A browser never asks for them, so they're the cleanest sign of an agent reading, and the address says which page it read.
+- **Requests for the Markdown versions,** the `.md` address of each page, which a site publishes with the outputs for agents, on by default with a `[consumer] site`. A browser never asks for them, so they're the cleanest sign of an agent reading, and the address says which page it read.
 - **Requests for `llms.txt`,** which an agent reads to choose a page.
 - **The user agents** of the crawlers you've made a choice about in [`[crawlers]`](../content-model/checks.md#21-crawlers): the tokens of each purpose are listed there, with where each operator documents its own. An assistant fetching a page because a person asked often sends no token of its own, so these counts are low, never high.
 

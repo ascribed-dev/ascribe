@@ -30,7 +30,9 @@ use std::path::PathBuf;
 use ascribe_check::registry::AREAS;
 use ascribe_check::{Registry, default_limit, size_text};
 use ascribe_core::{DiagnosticSlug, LineIndex, Span, diagnostics};
-use ascribe_model::settings::{FIELD_TABLE, Setting, SettingValue as Default_, settings};
+use ascribe_model::settings::{
+    FIELD_TABLE, Setting, SettingValue as Default_, default_for, settings,
+};
 use lsp_types::{Range, TextDocumentIdentifier, WorkspaceEdit};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value as Json};
@@ -396,6 +398,13 @@ pub(crate) fn settings_now(now: &ModelNow) -> SettingsResult {
     let index = LineIndex::new(&now.text);
     let file = ModelFile::parse(&now.text);
     let unreadable = file.as_ref().err().cloned();
+    // Whether the file sets a key, for a default that follows another key.
+    let written = |t: &str, k: &str| {
+        file.as_ref()
+            .ok()
+            .and_then(|f| f.get(&path(&[t, k])))
+            .is_some()
+    };
     let settings = shown()
         .map(|setting| {
             let place = file
@@ -415,12 +424,14 @@ pub(crate) fn settings_now(now: &ModelNow) -> SettingsResult {
                 name: name(&setting.key),
                 kind: setting.kind.clone(),
                 choices: setting.choices.clone(),
-                default: setting.default.as_ref().and_then(|d| match d {
-                    Default_::Switch(b) => Some(SettingValue::Switch(*b)),
-                    Default_::Number(n) => Some(SettingValue::Number(*n)),
-                    Default_::Text(t) => Some(SettingValue::Text(t.clone())),
-                    Default_::EmptyList | Default_::EmptyTable => None,
-                }),
+                default: default_for(&setting.table, &setting.key, &written).and_then(
+                    |d| match d {
+                        Default_::Switch(b) => Some(SettingValue::Switch(b)),
+                        Default_::Number(n) => Some(SettingValue::Number(n)),
+                        Default_::Text(t) => Some(SettingValue::Text(t)),
+                        Default_::List(_) | Default_::EmptyTable => None,
+                    },
+                ),
                 default_text: setting.default_text.clone(),
                 description: pieces(&setting.description),
                 value,
