@@ -1,1 +1,0 @@
-- **Rename a release target from its `[releases.<target>]` header.** `F2` on the target in the header of a target the implicit `release` dimension has renames it everywhere a rename from a page does. See [Refactoring](docs/content/editor/writing.md#refactoring).

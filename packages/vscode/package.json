@@ -1,7 +1,7 @@
 {
   "name": "ascribe-vscode",
   "displayName": "Ascribe",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "A toolchain for documentation written as code. This extension checks pages as you type, previews them as the site shows them, and writes directives for you.",
   "private": true,
   "type": "module",
@@ -39,7 +39,7 @@
     "onWebviewPanel:ascribe.preview"
   ],
   "ascribe": {
-    "minServerVersion": "0.4.1"
+    "minServerVersion": "0.4.2"
   },
   "contributes": {
     "commands": [
