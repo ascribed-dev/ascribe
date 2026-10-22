@@ -486,6 +486,11 @@
         "nested": true
       },
       {
+        "href": "/docs/contracts/json-reports/model/",
+        "label": "JSON reports: ascribe model",
+        "nested": true
+      },
+      {
         "href": "/docs/contracts/json-reports/questions/",
         "label": "JSON reports: the commands that answer questions",
         "nested": true

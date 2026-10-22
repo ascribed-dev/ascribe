@@ -874,6 +874,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `contracts/content-model/validation.md` | `ascribe.toml` format contract: validation rules | reference |
 | `contracts/json-reports.md` | JSON report contract | reference |
 | `contracts/json-reports/diff.md` | JSON reports: `ascribe diff` and `ascribe drift` | reference |
+| `contracts/json-reports/model.md` | JSON reports: `ascribe model` | reference |
 | `contracts/json-reports/questions.md` | JSON reports: the commands that answer questions | reference |
 | `contracts/json-reports/report.md` | JSON reports: `ascribe report` | reference |
 | `contracts/json-reports/sources.md` | JSON reports: `ascribe init`, `ascribe sources`, `ascribe observe`, and `ascribe permalinks` | reference |
