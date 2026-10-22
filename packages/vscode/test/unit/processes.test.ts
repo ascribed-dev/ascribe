@@ -1,14 +1,22 @@
 import { spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { alive, follow, killAll, killTree } from "../../src/processes.js";
 
-/** Whether a process id is running. */
+/**
+ * Whether a process id is running. One killed and waiting to be reaped isn't:
+ * in a container whose first process doesn't reap, it waits for good.
+ */
 function running(pid: number): boolean {
   try {
     process.kill(pid, 0);
-    return true;
   } catch {
     return false;
+  }
+  try {
+    return readFileSync(`/proc/${pid}/stat`, "utf8").split(") ")[1]?.[0] !== "Z";
+  } catch {
+    return true;
   }
 }
 
