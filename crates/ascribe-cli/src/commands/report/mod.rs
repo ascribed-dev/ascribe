@@ -83,14 +83,15 @@ pub struct Args {
     pub recheck: bool,
 
     /// Report as a first run would: say nothing about what's new in
-    /// `problems` and `links`, and report every failure of `links`.
-    /// `problems` keeps nothing for the next report, and `links` still
-    /// keeps what this run sees.
+    /// `problems`, `links`, and `agents`, and report every failure of
+    /// `links`. `problems` and `agents` keep nothing for the next report,
+    /// and `links` still keeps what this run sees.
     ///
     /// By default, `problems` and `links` say which problems are new since
-    /// the last report and how many it listed are gone, and a link that
-    /// answered before and fails now is listed as unconfirmed until it has
-    /// kept failing for `[checks.links] confirm-days`.
+    /// the last report and how many it listed are gone, `agents` says which
+    /// checks are failing since the last report, and a link that answered
+    /// before and fails now is listed as unconfirmed until it has kept
+    /// failing for `[checks.links] confirm-days`.
     #[arg(long)]
     pub no_history: bool,
 
@@ -276,7 +277,10 @@ pub(crate) fn report(
     // with `--no-history`, it's neither read nor written.
     let history = project
         .today()
-        .filter(|_| sections.contains(&Section::Problems) && !args.no_history)
+        .filter(|_| {
+            (sections.contains(&Section::Problems) || sections.contains(&Section::Agents))
+                && !args.no_history
+        })
         .and_then(|today| {
             let builds = ascribe_check::select_builds(&project, &args.build).ok()?;
             let names: Vec<String> = builds.iter().map(|b| b.name.clone()).collect();
