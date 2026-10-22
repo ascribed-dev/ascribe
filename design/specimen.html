@@ -1262,8 +1262,8 @@ claim-example > :not(pre, figure, ascribe-tabs) {
 }
 
 /*
- * The mark (design/README.md, "The assets"), on a grid of square cells as
- * large as the picture's, 24 px, so each line falls on a cell's edge.
+ * The mark in motion (design/README.md, "The assets"), on a grid of square
+ * cells as large as the picture's, 24 px, so each line falls on a cell's edge.
  */
 .home hero-banner > p:has(> img[scheme]) {
   --cell: 24px;
@@ -1283,8 +1283,9 @@ claim-example > :not(pre, figure, ascribe-tabs) {
   background-size: var(--cell) var(--cell);
 }
 
+/* At its own size, which its width and height say, so its cells are the grid's. */
 .page.home hero-banner img[scheme] {
-  width: calc(16 * var(--cell));
+  max-width: none;
   border: 0;
   border-radius: 0;
 }

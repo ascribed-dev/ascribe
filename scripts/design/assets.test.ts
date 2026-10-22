@@ -15,6 +15,10 @@ import {
   manifest,
   MANIFEST,
   CARDS,
+  cursor,
+  HERO_CELL,
+  HERO_GRID,
+  MOTION,
   readGrids,
   readSource,
   readSources,
@@ -173,6 +177,72 @@ test("the favicon is the mark's 16 px cut, in the reader's scheme", () => {
   expect(text).toContain("@media (prefers-color-scheme:dark)");
 });
 
+describe("the landing page's mark, in motion", () => {
+  const { colors, grids } = readSources();
+  const bar = cursor(grids.mark);
+  const [width, height] = [grids.mark[0]?.length ?? 0, grids.mark.length];
+
+  describe.each(["light", "dark"] as const)("%s", (scheme) => {
+    const text = read(`site/home/content/images/hero-mark-${scheme}.svg`);
+    const style = /<style>(.*)<\/style>/.exec(text)?.[1] ?? "";
+
+    test("is drawn in the mark's colors for its scheme, and no others", () => {
+      expect(new Set(text.match(/#[0-9a-f]{6}/g))).toEqual(
+        new Set([colors.ink[scheme], colors.gutter[scheme], colors.reviewed[scheme]]),
+      );
+    });
+
+    test("without motion, it's the changed state: no cursor, and the marks in the gutter's color", () => {
+      expect(style).toContain(`.cursor{opacity:0;fill:${colors.gutter[scheme]};`);
+      expect(style).toContain(`.marks{fill:${colors.gutter[scheme]};`);
+      expect(style).toContain(
+        "@media (prefers-reduced-motion:reduce){.cursor,.marks{animation:none}}",
+      );
+    });
+
+    test("steps without easing, a whole cell at a time, from after the a to the gutter", () => {
+      expect(text).toContain(
+        `<path class="cursor" d="M${bar.start} 0h${bar.width}v${height}h-${bar.width}Z"/>`,
+      );
+      expect(style).toContain(`animation:${MOTION.duration}s step-end forwards`);
+      expect(style).toContain(`animation-timing-function:steps(${bar.start})`);
+      expect(style).toContain(`transform:translate(-${bar.start}px)`);
+      // Every other change is a step: no keyframe eases.
+      expect(style.match(/animation-timing-function:[^;}]+/g)).toEqual([
+        `animation-timing-function:steps(${bar.start})`,
+        "animation-timing-function:step-end",
+      ]);
+    });
+
+    test("ends with the marks turned moss, reviewed", () => {
+      expect(style).toMatch(
+        new RegExp(`@keyframes marks\\{.*,100%\\{opacity:1;fill:${colors.reviewed[scheme]}\\}\\}`),
+      );
+    });
+  });
+
+  test("its states come in the identity's order, and it reads calmly, in four to six seconds", () => {
+    const { blink, step, perCell, split, reviewed, duration } = MOTION;
+    const times = [0, blink[0], blink[1], step, step + bar.start * perCell, split, reviewed];
+    expect(times).toEqual([...times].sort((a, b) => a - b));
+    expect(reviewed).toBeLessThanOrEqual(duration);
+    expect(duration).toBeGreaterThanOrEqual(4);
+    expect(duration).toBeLessThanOrEqual(6);
+  });
+
+  test("the changed state sits in the middle of its grid, and the cursor has a cell to its right", () => {
+    const asset = ASSETS.find((a) => a.path.endsWith("hero-mark-light.svg"));
+    expect([asset?.width, asset?.height]).toEqual(HERO_GRID.map((n) => n * HERO_CELL));
+    const margin = new RegExp(`translate\\((\\d+) (\\d+)\\) scale\\(${HERO_CELL}\\)`).exec(
+      read("site/home/content/images/hero-mark-light.svg"),
+    );
+    const [x, y] = [Number(margin?.[1]) / HERO_CELL, Number(margin?.[2]) / HERO_CELL];
+    expect(HERO_GRID[0] - width - x).toBe(x);
+    expect(HERO_GRID[1] - height - y).toBe(y);
+    expect(HERO_GRID[0] - (x + bar.start + bar.width)).toBeGreaterThanOrEqual(1);
+  });
+});
+
 describe("design/mark.toml", () => {
   const grids = readGrids(readSource("design/mark.toml"));
 
@@ -212,6 +282,8 @@ test("the mark's colors pass their pairings, in light and dark", () => {
     ["gutter", "ground", 3],
     ["gutter", "surface", 3],
     ["reviewed", "ground", 3],
+    // The landing page's mark ends reviewed, on the page's surface.
+    ["reviewed", "surface", 3],
   ] as const;
   const failing = pairs.flatMap(([fg, bg, minimum]) =>
     (["light", "dark"] as const)

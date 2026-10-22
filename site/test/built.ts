@@ -118,10 +118,13 @@ export async function serve(): Promise<{ url: string; close: () => Promise<void>
   };
 }
 
-/** Chromium: `ASCRIBE_CHROMIUM`, or the bundled one in this environment, or Playwright's own. */
-export function launchChromium(): Promise<Browser> {
+/**
+ * Chromium: `ASCRIBE_CHROMIUM`, or the bundled one in this environment, or
+ * Playwright's own, started with `args`.
+ */
+export function launchChromium(args: string[] = []): Promise<Browser> {
   const configured = process.env["ASCRIBE_CHROMIUM"];
   const bundled = "/opt/pw-browsers/chromium";
   const executablePath = configured ?? (existsSync(bundled) ? bundled : undefined);
-  return chromium.launch(executablePath === undefined ? {} : { executablePath });
+  return chromium.launch(executablePath === undefined ? { args } : { executablePath, args });
 }

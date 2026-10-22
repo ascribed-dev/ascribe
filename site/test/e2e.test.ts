@@ -3,8 +3,8 @@
 // titles, links between pages, search, the edit link, the 404 page, the narrow
 // layout, the landing page's call to action, tools, mark, demonstration,
 // pillars and their links, audiences, marks, phone width, and reading without
-// a script, Why Ascribe, with its screenshots, and Credits; and the notes'
-// split bar.
+// a script, Why Ascribe, with its screenshots, and Credits; the notes' split
+// bar, and the hero's mark in motion, still for a reader who asks.
 import { afterAll, beforeAll, expect, test } from "vitest";
 import type { Browser, Page } from "playwright-core";
 import { readdirSync, readFileSync } from "node:fs";
@@ -204,6 +204,8 @@ test("the hero's mark is beside the headline on a wide screen, in the reader's s
     ];
     if (heading === null || mark === null) throw new Error("not drawn");
     expect(mark.x).toBeGreaterThan(heading.x + heading.width);
+    // At its own size, so each cell is whole pixels on the page's grid.
+    expect(mark.width).toBe(await shown.evaluate((img: HTMLImageElement) => img.naturalWidth));
     await page.close();
   }
   const phone = await open("/", 390);
@@ -524,6 +526,51 @@ test("every type of note has the gutter's split bar, in its own color, in both s
     expect(new Set(bars.map((b) => b.label)).size).toBe(NOTE_TYPES.length);
     await page.close();
   }
+});
+
+test("the hero's mark is the mark in motion, generated, which holds still for a reader who asks", async () => {
+  const page = await open("/");
+  const src = await page.locator("hero-banner img[scheme=light]").getAttribute("src");
+  const svg = await (await fetch(server.url + src)).text();
+  expect(svg).toContain("@keyframes cursor");
+  expect(svg).toContain("@media (prefers-reduced-motion:reduce){.cursor,.marks{animation:none}}");
+  // The image's own document follows the preference: still, in the changed
+  // state, with no cursor.
+  for (const [reducedMotion, cursor, marks] of [
+    ["no-preference", "cursor", "marks"],
+    ["reduce", "none", "none"],
+  ] as const) {
+    await page.emulateMedia({ reducedMotion });
+    await page.goto(server.url + src);
+    const animations = await page.evaluate(() =>
+      [".cursor", ".marks"].map((selector) => {
+        const el = document.querySelector(selector);
+        return el === null ? "missing" : getComputedStyle(el).animationName;
+      }),
+    );
+    expect(animations, reducedMotion).toEqual([cursor, marks]);
+    if (reducedMotion === "reduce") {
+      expect(await page.locator(".cursor").evaluate((el) => getComputedStyle(el).opacity)).toBe(
+        "0",
+      );
+    }
+  }
+  await page.close();
+});
+
+test("with reduced motion set in Chromium, the hero's mark on the page doesn't move", async () => {
+  // An image's own document takes the browser's setting, not a page's
+  // emulation, so this browser is started with the setting.
+  const still = await launchChromium(["--force-prefers-reduced-motion"]);
+  const page = await still.newPage({ viewport: { width: 1280, height: 900 } });
+  await page.goto(server.url + "/");
+  const mark = page.locator("hero-banner img[scheme]:visible");
+  await mark.evaluate((img: HTMLImageElement) => img.decode());
+  const first = await mark.screenshot();
+  // Long enough for the cursor to have blinked and stepped, were it moving.
+  await page.waitForTimeout(2000);
+  expect((await mark.screenshot()).equals(first)).toBe(true);
+  await still.close();
 });
 
 test("a code example taken from a file shows its title", async () => {
