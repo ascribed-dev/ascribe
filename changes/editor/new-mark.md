@@ -1,1 +1,0 @@
-- **Ascribe has a new mark.** The extension's Marketplace and activity bar icons, the docs site's logo and favicon, and the social cards are redrawn: a pixel a with the change marks of a gutter beside it, in deep blue.

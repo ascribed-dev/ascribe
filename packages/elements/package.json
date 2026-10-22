@@ -1,6 +1,6 @@
 {
   "name": "@ascribed/elements",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "A toolchain for documentation written as code. This package is the web components its site output uses.",
   "type": "module",
   "license": "MPL-2.0",

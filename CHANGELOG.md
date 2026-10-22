@@ -4,6 +4,178 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 
 ## Unreleased
 
+## 0.4.2 (2026-10-22)
+
+### The language
+
+- **Behavior change: a project with a `site` publishes `llms.txt` and each page's Markdown.** `[consumer] agents` is `true` when `site` is set and `false` when it isn't, so a site with an address publishes what agents read unless it says `agents = false`. Only an explicit `agents = true` without `site` is still `model-consumer-agents-site`. `@ascribed/astro` reads it the same way, and publishes them with the site. See [The outputs for agents](docs/content/content-model/output.md#consumer).
+- **Every source leaves out `node_modules` and `.git` folders.** Whatever its `ignore` says, no file in a `node_modules` or `.git` folder, at any depth, is readable from a source, so a source over a JavaScript project needs no `ignore = ["**/node_modules/**"]`. See [`[sources.<name>]`](docs/content/content-model/output.md#18-sourcesname).
+- **`prose-not-checked` is reported only where the project asked for prose checks everywhere.** With `[checks.vale] in-check = true`, or `ascribe check --vale`, a Vale that can't be run is still one advice; without either, the editor checks the prose wherever Vale runs and says nothing where it doesn't. See [Prose, through Vale](docs/content/checks/vale.md#where-vale-runs).
+- **`[from]` takes tables and keys from another project's `ascribe.toml`.** `[from."../../docs/ascribe.toml"] take = ["releases", "phrases.version", "consumer.site"]` reads what it names as if it were written here, so two projects in one repository keep one copy of what they share. The other file must be in the same repository; its own `[from]` isn't followed; a key both taken and written is an error (`model-from-written`); and `spec`, `project`, and `from` can't be taken. The editor watches the other file, hovers a taken key with where it's written, and goes to it; edit commands and `ascribe versions release` stop with an error naming the file that holds a taken key; and `@ascribed/astro` and the extension ask the binary for what's taken. See [the `ascribe.toml` reference](docs/content/content-model/index.md).
+- **The editor and `ascribe model` say where a field is declared, and a repeated field is advice.** Hovering a field's key in `ascribe.toml`, or a frontmatter key in a page, says whether the field is `[frontmatter]`'s, the type's own, or the implicit `title`; on a shared field it names the types that replace it. `ascribe model` says the same for each field, in its text and in a new `declared` field of its JSON. A type's field that's the same as `[frontmatter]`'s, key for key, is reported as advice at the type's field (`frontmatter-field-repeated`), with a safe fix that deletes it, so a copy that would drift from the shared one is cleaned up. See [the content model reference](docs/content/content-model/index.md#41-page-types).
+- **`planned` is a version word in an availability spec.** `@available: ascribe planned`, or `cloud, self-managed preview planned`, marks content for its target's planned line without writing the line's number, and reads, checks, filters, and shows as that line's version does. Each target says its own, so a spec can name two targets that each have a planned line, and a history can end in one: `self-managed (preview 3.5, ga planned)`. A target with no planned line, or more than one, is an error at the word, `available-planned-line`. `planned` isn't a feature key, a feature's spec can't use it, and no lifecycle state, dimension, value, or feature key can be named `planned`. The editor offers `planned` after a target and after a state, and its hover names the line. See `docs/content/writing/directives.md` and `docs/content/versions/lines.md`.
+- **`[releases.<target>]` declares its target, so a product needs no dimension of its own.** A target no declared dimension has is a value of an implicit dimension, `release`, which `@variant {release=…}`, builds' `variants`, and everything else that names a dimension can name. `[releases] label` labels the dimension, `Release` unless set, and `[releases.<target>] label` the target. A project that declares its own `release` dimension while a target is left to the implicit one gets `model-releases-target`. See [the `[releases]` reference](docs/content/content-model/content.md).
+- **Behavior change: `[frontmatter]` declares fields every page type has, and `title` is implicit.** A type's own field of the same name replaces a shared one whole, for that type, and a type can have no keys at all, as `[types.index]`. Every type has a required string `title` whether it declares it or not, so `model-type-title` is gone; a declared `title` that's optional or not a string is `model-field-reserved`. A field named `description`, `review-date`, or `owner` now has that role without `role`, unless the type gives the role to another field, so `page-description-missing` and `review-overdue` can report pages they didn't before. Project Settings shows `[frontmatter]` as a card under **Content types**, and `ascribe templates eject` leaves out of a type it adds the fields every type has already. See [the content model reference](docs/content/content-model/index.md#4-typesname-and-fragments).
+- **A type with no `template` or `guide` takes them from `templates/templates.lock`.** When the lock `ascribe templates eject` writes records a template under the type's name, the type has that template and its guide, with nothing about them in `ascribe.toml`; a type that names either keeps what it names. A file the lock gives that isn't there is the type's error, `model-type-template`, at its `[types.<name>]`. `ascribe templates eject` into `templates/` no longer writes the two keys, and with `--keep-type` leaves `ascribe.toml` untouched; with `--to` another folder it still names them. In the editor, the hover on a type's name in `ascribe.toml` says where its template comes from. The docs' own five set types drop their `template` and `guide` lines, with the same outputs ([page types](docs/content/content-model/index.md), [page templates](docs/content/templates/index.md)).
+
+### The `ascribe` command
+
+- **`ascribe.baseline` puts a project's existing advice off, so `ascribe check` reports only what's new.** `ascribe baseline write` lists every advice the project has in `ascribe.baseline`, beside `ascribe.toml`, to commit; from then on `ascribe check` holds those back and counts them (`2 advice, 3412 in the baseline`, and `summary.baselined` in its JSON), and reports an entry that matches nothing as `baseline-entry-unmatched`, which `ascribe baseline prune` removes. Only advice is ever held back, and `--no-baseline` reports everything. [The baseline](docs/content/checks/baseline.md) has the commands and the file's syntax.
+- **`ascribe --help` opens with what Ascribe is: a toolchain for documentation written as code.** It opened with a list of commands, which the help gives below it anyway.
+- **Behavior change: `ascribe versions release` rewrites `planned` and moves no features.** Releasing a target's planned line rewrites each mark's `planned` for that target to the line's version, as `ascribe planned` becomes `ascribe 0.4.2`, where it rewrote marks that named a feature before. A feature's spec names its versions, so it's left as it is, `--next` only adds the line planned after the release, and a release no longer stops for a feature with no line to move to. The JSON's schema version is 2: `features` is gone, and each mark's `from` is its spec as written. See `docs/content/versions/release.md`.
+- **`ascribe report agents` says which checks are failing since the last report.** From its second run on the same site, it says "23 checks: 21 passing, 2 failing, 1 of them failing since 9 October" and names the new ones; its JSON's `agents` gains `previous_run`, `new`, `resolved`, and `new_checks`, `null` or empty on a first run, on another site, and with `--no-history`. Every check still runs every time: the report only remembers how each came out, in `.ascribe/history/report.json`. [The project report](docs/content/checks/report.md#the-site-and-agents) says what's new means.
+- **`ascribe report` says which problems are new since the last report, and how many are gone.** From its second run, `problems` says "14 problems, 2 of them new since 9 October; 5 the last report listed are gone" and lists the new ones; its JSON gains `previous_run`, `new`, `resolved`, and `new_items`, `null` or empty on a first run and with `--no-history`, which neither reads nor writes the history. A problem keeps its identity when lines are added above it and is new when the text it's about is edited. The last run's problems are kept in `.ascribe/history/report.json`. [The project report](docs/content/checks/report.md) says how a problem is told from another.
+
+### The editor
+
+- **The Project view remembers the last Check Every Build between sessions.** When VS Code opens and nothing in the project changed since the check started, its counts are current, saying when ("checked yesterday at 3:30 PM"), and its problems are back in the Problems panel. A file of the project modified, added, or removed since, as a branch switch does, leaves them out of date, with **Check Every Build**. A check from another version of the extension isn't read. See [The Project view](docs/content/editor/sidebar.md#the-project-view).
+- **Ascribe has a new mark.** The extension's Marketplace and activity bar icons, the docs site's logo and favicon, and the social cards are redrawn: a pixel a with the change marks of a gutter beside it, in deep blue.
+- **This page and the Project view count problems as icons with counts, as the status bar does.** An error, warning, or info icon for advice, each with its count, leaving out a severity there's none of; the tooltip and a screen reader say them in words, such as "2 errors, 1 warning, and advice on 3 lines", and so does Check Every Build's notification. See [the sidebar](docs/content/editor/sidebar.md).
+- **The Project view's Health groups its counts by when each is from, under Actions.** Every build, As you type, and At the last save each say once when their counts are from, with **Check Every Build** or **Check Agent Files** at the group's head while they aren't current, and each count is one line, its label then its value. Health's "to do" counts only the current counts above zero. Actions come first, so they stay put as the counts change. See [The Project view](docs/content/editor/sidebar.md#the-project-view).
+- **The preview and a page's problems follow an edit to the code a `@snippet` shows.** When a code file a snippet shows is saved, created, or deleted, by you or by a branch switch, every page that shows it, directly or through a fragment, is checked again, and the preview of one redraws, its tested line included; a burst of changes checks each page once. An unsaved edit to the code file still waits for its save. The language server tells the client with a notification of its own, `ascribe/preview/changed`. See [the preview](docs/content/editor/preview.md).
+- **A code file's tag problems are shown in the code file, at the tag.** A `snippet-tags` problem, a region's tag never closed, an `-end` with nothing to close, a region named twice, or a reserved tag, is shown in the code file too while a page shows it, with the page's message and severity, once however many `@snippet`s show the file, naming each. The page keeps its own; saving the fixed file clears both. `ascribe check` and its JSON don't change. See [writing in the editor](docs/content/editor/writing.md#code-files-a-page-shows).
+- **This page's Address and Markdown rows open the page on the live site.** When the project names its `[consumer] site`, choosing either opens the site's origin and the address in your browser, through VS Code, which asks first about a domain it doesn't trust. It's the published site, so a page that's new or moved on your branch isn't there yet; the tooltip says so. Without a `site`, for a fragment, and where the build the status bar shows leaves the page out, they stay text ([the sidebar](docs/content/editor/sidebar.md)).
+
+### The language server
+
+- **The editor reads `ascribe.baseline`: what it holds back isn't shown, and a stale entry is.** The language server leaves out the advice the baseline lists, as `ascribe check` does, and follows the file as it's typed and on disk. The hover on a held-back finding's line says the baseline holds it, and its quick fix, **Move out of the baseline, mark as intended, and write why**, takes its entry out of the file and writes an `@intended` where the check's place says. An entry that matches nothing is shown on `ascribe.baseline` as `baseline-entry-unmatched`, when the editor's build is the project's every build. See [The baseline](docs/content/checks/baseline.md#in-the-editor).
+- **Rename a release target from its `[releases.<target>]` header.** `F2` on the target in the header of a target the implicit `release` dimension has renames it everywhere a rename from a page does. See [Refactoring](docs/content/editor/writing.md#refactoring).
+- **Go to Definition on a `@snippet`'s address opens its code, and its hover shows the code.** Go to Definition opens the code file at the region's start tag, or at its first line for a snippet of a whole file; a missing file or region goes nowhere, as a broken link does. The hover adds the code after what it said before, as the page shows it: the region, with its `remove` tags applied, in a fenced block in the snippet's language, cut at 20 lines with how many more there are ([writing in the editor](docs/content/editor/writing.md)).
+
+### Astro and the elements
+
+- **Behavior change: the elements and review take Deep River and Shallows, Ascribe's new colors.** The element library, review's marks and comment threads, the review panel in Astro's dev toolbar, the HTML report, and an archive's frame move from the indigo palette to the mark's: deep blue-gray neutrals, river blue for links, notes, steps, and what changed, moss for a tip and what was added, and amber for focus rings. Review's links and buttons are river, and a review thread and a hovered tab sit on a tinted panel that shows on a white page. Important notes and moved blocks are violet, warnings yellow, and cautions and removed blocks crimson, kept apart from moss and river for readers with red-green color blindness. Every text color passes 4.5:1 on its background, in light and in dark. The HTML report's headings are set in the system's serif. A site that doesn't set the `--ascribe-*` and `--ascribe-review-*` custom properties looks different; their names are unchanged. To keep the previous look, add this to the site's stylesheet, after the element library's and review's:
+
+  <details>
+  <summary>The previous default colors</summary>
+
+  ```css
+  /* The element library */
+  @supports (color: light-dark(#000, #fff)) {
+    :root {
+      --ascribe-border-color: light-dark(#e3e6ec, #393d46);
+      --ascribe-muted-color: light-dark(#676c75, #a5a9b2);
+      --ascribe-note-color: light-dark(#474dc6, #91a1fe);
+      --ascribe-note-background: light-dark(#f5f6fe, #161b3a);
+      --ascribe-tip-color: light-dark(#057256, #22c598);
+      --ascribe-tip-background: light-dark(#e1fff2, #02251a);
+      --ascribe-important-color: light-dark(#932f8e, #ffc8f9);
+      --ascribe-important-background: light-dark(#fff2fd, #2d132b);
+      --ascribe-warning-color: light-dark(#845502, #e0992e);
+      --ascribe-warning-background: light-dark(#fef5eb, #2b1a03);
+      --ascribe-caution-color: light-dark(#a73303, #fe7f57);
+      --ascribe-caution-background: light-dark(#fef4f1, #341308);
+      --ascribe-steps-color: light-dark(#5962e8, #91a1fe);
+      --ascribe-steps-marker-text-color: light-dark(#ffffff, #0c0f16);
+      --ascribe-tab-color: light-dark(#676c75, #a5a9b2);
+      --ascribe-tab-active-color: light-dark(#5962e8, #91a1fe);
+      --ascribe-tab-focus-color: light-dark(#5962e8, #b3c0ff);
+      --ascribe-tab-hover-background: light-dark(#f7f9fd, #13171f);
+      --ascribe-state-color: light-dark(#676c75, #a5a9b2);
+      --ascribe-state-background: light-dark(#f0f3f7, #22272e);
+      --ascribe-state-ga-color: light-dark(#057256, #22c598);
+      --ascribe-state-ga-background: light-dark(#e1fff2, #02251a);
+      --ascribe-state-preview-color: light-dark(#932f8e, #ffc8f9);
+      --ascribe-state-preview-background: light-dark(#fff2fd, #2d132b);
+      --ascribe-state-beta-color: light-dark(#474dc6, #91a1fe);
+      --ascribe-state-beta-background: light-dark(#f5f6fe, #161b3a);
+      --ascribe-state-deprecated-color: light-dark(#845502, #e0992e);
+      --ascribe-state-deprecated-background: light-dark(#fef5eb, #2b1a03);
+      --ascribe-state-removed-color: light-dark(#a73303, #fe7f57);
+      --ascribe-state-removed-background: light-dark(#fef4f1, #341308);
+    }
+  }
+
+  /* Review's marks and overlay */
+  :root {
+    --ascribe-review-added: #057256;
+    --ascribe-review-added-background: #c7fae5;
+    --ascribe-review-changed: #845502;
+    --ascribe-review-changed-background: #fee9d0;
+    --ascribe-review-removed: #ca3f02;
+    --ascribe-review-removed-background: #fef4f1;
+    --ascribe-review-moved: #932f8e;
+    --ascribe-review-moved-background: #fff2fd;
+    --ascribe-review-muted: #676c75;
+    --ascribe-review-surface: #ffffff;
+    --ascribe-review-flash: #fee9d0;
+    --ascribe-review-focus: #5962e8;
+    --ascribe-review-text: #22272e;
+    --ascribe-review-border: #e3e6ec;
+    --ascribe-review-thread: #f7f9fd;
+    --ascribe-review-input: #ffffff;
+    --ascribe-review-accent-text: #ffffff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-ascribe-scheme="light"]) {
+      --ascribe-review-added: #22c598;
+      --ascribe-review-added-background: #003929;
+      --ascribe-review-changed: #e0992e;
+      --ascribe-review-changed-background: #432900;
+      --ascribe-review-removed: #fe7f57;
+      --ascribe-review-removed-background: #511b0a;
+      --ascribe-review-moved: #ffc8f9;
+      --ascribe-review-moved-background: #461c43;
+      --ascribe-review-muted: #a5a9b2;
+      --ascribe-review-surface: #0c0f16;
+      --ascribe-review-flash: #432900;
+      --ascribe-review-focus: #b3c0ff;
+      --ascribe-review-text: #f0f3f7;
+      --ascribe-review-border: #393d46;
+      --ascribe-review-thread: #13171f;
+      --ascribe-review-input: #0c0f16;
+      --ascribe-review-accent-text: #0c0f16;
+    }
+  }
+
+  :root[data-ascribe-scheme="dark"] {
+    --ascribe-review-added: #22c598;
+    --ascribe-review-added-background: #003929;
+    --ascribe-review-changed: #e0992e;
+    --ascribe-review-changed-background: #432900;
+    --ascribe-review-removed: #fe7f57;
+    --ascribe-review-removed-background: #511b0a;
+    --ascribe-review-moved: #ffc8f9;
+    --ascribe-review-moved-background: #461c43;
+    --ascribe-review-muted: #a5a9b2;
+    --ascribe-review-surface: #0c0f16;
+    --ascribe-review-flash: #432900;
+    --ascribe-review-focus: #b3c0ff;
+    --ascribe-review-text: #f0f3f7;
+    --ascribe-review-border: #393d46;
+    --ascribe-review-thread: #13171f;
+    --ascribe-review-input: #0c0f16;
+    --ascribe-review-accent-text: #0c0f16;
+  }
+  ```
+
+  </details>
+
+  See [the elements' custom properties](docs/content/astro/elements.md#custom-properties).
+
+### Agents
+
+- **The agents' hook, `ascribe_check`, and the `fix` prompt hold back what `ascribe.baseline` lists.** An agent working on a page isn't sent after the project's backlog: the hook leaves the advice the baseline lists out and says how many it held back, and `ascribe_check` counts it as `ascribe check` does (`, 3 in the baseline`, and `summary.baselined`). See [The baseline](docs/content/checks/baseline.md#for-agents).
+- **The plugin names Bryo Studio, Ascribe's maker, as its author and its marketplace's owner.** Its manifests named Ascribe, with the GitHub organization's address; they now name Bryo Studio, with https://bryostudio.com. The npm packages already named Bryo Studio as their author, and the platform packages now do too.
+
+### The docs and the site
+
+- **Seven more of the docs' guides have a permalink.** [Content that varies](docs/content/writing/variants.md) is at `/go/variants/`, [Publish a site for each version](docs/content/versions/index.md) at `/go/versions/`, [Set up a glossary](docs/content/content-model/glossary.md) at `/go/glossary/`, [The preview and builds](docs/content/editor/preview.md) at `/go/preview/`, [Permalinks](docs/content/permalinks/index.md) at `/go/permalinks/`, [Leave a memo for whoever edits next](docs/content/writing/memos.md) at `/go/memos/`, and [Publish for AI agents](docs/content/astro/agents.md) at `/go/publish-for-agents/`, so a link to one keeps working when the page moves. The landing page links to each by it.
+- **The landing page is rebuilt around Ascribe's pillars.** ascribed-dev.com opens with the install command and getting started above the fold, then shows a page's source beside what readers see, the tools of a docs team, the checks, and what Ascribe gives AI agents, each with a real example and a permalink into the docs, then where engineers, writers, and agents each start. Why Ascribe says "docs as code" in its opening.
+- **The site takes the new colors and serif headings, and the landing page a new headline.** ascribed-dev.com follows the system's scheme in Shallows or Deep River, as the elements and review now do, and sets its headings in the system's serif. The landing page leads with "Docs as code, with the tools docs need.", and its sentence says what Ascribe is: a toolchain for documentation written as code. The screenshots in the docs are retaken in the new colors.
+- **The site's notes carry the gutter's split bar, and the landing page's mark moves.** On ascribed-dev.com, every note, tip, important note, warning, and caution draws its bar as the mark's two change marks, in its own color; the element library's own notes keep one bar. The mark beside the landing page's headline plays once through writing, changed, and reviewed, and holds still in the changed state for a reader who prefers reduced motion.
+- **Why Ascribe no longer says the content model has no navigation.** Its "What it doesn't do" list now says what `ascribe.nav` leaves out, that a section is a folder, and says the element library works on any site. The [Navigation](docs/content/navigation/index.md) page has the permalink `navigation`.
+
+### Installing
+
+- **The npm packages, the extension, and the plugin say what Ascribe is in the same words.** Each package's description on npm, the extension's on the Marketplace, and the agents' plugin's start with the line `ascribe --help` opens with, then say what that package does. Each package lists the same keywords, and its homepage is its guide on ascribed-dev.com rather than its folder on GitHub.
+
+### Fixes
+
+- **Fixed:** an empty widget is no longer wrapped in a paragraph by a CommonMark renderer. The site output writes its opening tag on one line and its closing tag on the next, an HTML block of its own, as the element contract promised, so `<p><story-pillar></story-pillar></p>` becomes `<story-pillar>` alone, in the editor's preview and in Astro alike. A site whose CSS selected the paragraph around an empty widget, such as `p:has(> my-widget)`, selects the element instead.
+- **Fixed:** This page and the Project view sit on the sidebar's color in a dark theme, not on gray. Their stylesheet set a color scheme on the view's root, which VS Code's own page doesn't, so Chromium painted its dark backdrop behind the view, and the sticky section headers showed as a strip of the sidebar's color across it. The build switch's dropdown still draws in the theme's scheme.
+
 ## 0.4.1 (2026-10-21)
 
 ### The language
