@@ -580,6 +580,37 @@ fn the_commands_json_has_what_the_tools_need() {
     );
 }
 
+/// Both revisions give the version `ascribe --version` prints, `+dev` and
+/// commit included, as the server's.
+#[test]
+fn the_server_info_has_the_full_version() {
+    let repo = repository();
+    let printed = stdout(repo.path(), &["--version"]);
+    let version = printed
+        .trim()
+        .strip_prefix("ascribe ")
+        .expect("the name, then the version");
+    assert!(version.starts_with(env!("CARGO_PKG_VERSION")), "{version}");
+
+    let mut modern = Server::start(repo.path());
+    let result = modern.result("tools/list", json!({}));
+    let info = &result["_meta"]["io.modelcontextprotocol/serverInfo"];
+    assert_eq!(info["name"], "ascribe", "{result}");
+    assert_eq!(info["version"], version, "{result}");
+
+    let mut legacy = Server::start(repo.path());
+    legacy.modern = false;
+    let result = legacy.result(
+        "initialize",
+        json!({
+            "protocolVersion": "2025-11-25",
+            "capabilities": {},
+            "clientInfo": { "name": "tests", "version": "0" },
+        }),
+    );
+    assert_eq!(result["serverInfo"]["version"], version, "{result}");
+}
+
 #[test]
 fn both_revisions_list_the_same_tools_in_the_same_order() {
     let repo = repository();

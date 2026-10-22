@@ -209,6 +209,8 @@ pub(crate) struct Core {
     next_id: i32,
     /// What gives the day the checks run on.
     pub(crate) clock: Option<crate::Clock>,
+    /// The version the first log line gives ([`crate::Options::version`]).
+    pub(crate) version: String,
 }
 
 impl Core {
@@ -242,6 +244,7 @@ impl Core {
             show_on_code: true,
             next_id: 0,
             clock: None,
+            version: env!("CARGO_PKG_VERSION").to_owned(),
         }
     }
 
@@ -269,7 +272,7 @@ impl Core {
                 typ: MessageType::INFO,
                 message: format!(
                     "ascribe-lsp {}: {}",
-                    env!("CARGO_PKG_VERSION"),
+                    self.version,
                     start_message(config, &self.folders)
                 ),
             },

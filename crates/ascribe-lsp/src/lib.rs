@@ -141,7 +141,8 @@ pub type RequestHook = Arc<dyn Fn(&str) + Send + Sync>;
 /// doesn't read the clock itself.
 pub type Clock = Arc<dyn Fn() -> Option<ascribe_core::Date> + Send + Sync>;
 
-/// Settings for [`serve`]. `ascribe lsp` sets only [`Options::today`].
+/// Settings for [`serve`]. `ascribe lsp` sets only [`Options::today`] and
+/// [`Options::version`].
 #[derive(Clone, Default)]
 pub struct Options {
     /// Called on the worker thread after a round has computed and before it
@@ -160,6 +161,10 @@ pub struct Options {
     /// What checks the prose on open and on save, for a project with
     /// `[checks.vale]`: Vale itself when `None`, or a test's stand-in.
     pub linter: Option<Arc<dyn ascribe_check::prose::Linter>>,
+    /// The version the server gives in its `serverInfo` and first log line:
+    /// what `ascribe --version` prints, such as `0.4.1+dev (7ae1340440fc)`.
+    /// The crate's version when `None`.
+    pub version: Option<String>,
 }
 
 /// Runs the server over standard input and output until the client ends the
