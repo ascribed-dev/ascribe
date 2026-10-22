@@ -5270,8 +5270,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/832"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "An empty widget is written on one line, so a CommonMark renderer puts it in a paragraph"
     },
     {
@@ -5325,8 +5328,25 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhCr1R4",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs report: links and the published site"
+    },
+    {
+      "content": {
+        "body": "The nightly canary failed on 22 October, and `next` was left mixing two nights. It's the third time npm has been slow to show a package the canary just published, always `@ascribed/cli-linux-arm64`. This issue is to find out why, and to change the canary so a slow package can't leave `next` split or fail the run. **Done when** below is what done looks like.\n\n**What happened:** [canary run 39755622994](https://github.com/ascribed-dev/ascribe/actions/runs/39755622994), attempt 1, published all eight packages as `0.4.2-next.29` under `next-pending` between 09:40:22 and 09:41:16 UTC, each `npm publish` succeeding. `tagNpm` in `scripts/release/publish.ts` then moved `next` package by package: `@ascribed/cli-darwin-arm64` at 09:42:32, then it polled `npm view @ascribed/cli-linux-arm64@0.4.2-next.29 --prefer-online` every 10 seconds until its 15-minute deadline, at 09:56:17, and failed. The tags were left split: `cli-darwin-arm64`'s `next` at `next.29`, every other package's, `@ascribed/cli` included, at `next.28`. The daily docs report then ran `@ascribed/cli@next`, a binary from before #807 and #810, against `main`'s `docs/ascribe.toml`, and failed (#830). Re-running the failed job, once every package showed, moved the rest.\n\n**What npm records:** the `time` npm keeps for each version is well after its publish returned:\n\n| Package | `npm publish` returned | npm's `time` for the version | Gap |\n|---|---|---|---|\n| `cli-darwin-arm64` | 09:40:29 | 09:42:13 | 2 min |\n| `cli-win32-x64` | 09:40:51 | 09:43:30 | 3 min |\n| `cli` | 09:40:57 | 09:44:11 | 3 min |\n| `cli-linux-x64` | 09:40:43 | 09:46:55 | 6 min |\n| `cli-linux-arm64` | 09:40:36 | 09:57:58 | 17 min |\n\nSo the version wasn't in the registry yet when the deadline passed: the delay is npm's processing after it accepts a publish, not a cache in front of it, which `--prefer-online` (989a4cbf) already skips. Size doesn't explain the order (linux-arm64 is 15.9 MB, smaller than linux-x64 and win32-x64).\n\n**Earlier times:** 989a4cbf (5 October), when the check answered from npm's cache; and 2ea7f50b (11 October, [run 38102695001](https://github.com/ascribed-dev/ascribe/actions/runs/38102695001)), when `cli-linux-arm64@0.2.1-next.13` didn't show within 3 minutes and the deadline went to 15.\n\n**To find out:**\n- Why `cli-linux-arm64` is the slow one each time: npm's own processing (a scan, provenance verification), something in that package's tarball or metadata, or chance. npm's status page and the published versions' `time`s across the canaries so far would show whether it's always last.\n- Whether `npm dist-tag add` succeeds for a version that `npm view` doesn't show yet, and whether a dist-tag pointing at a version npm hasn't finished is safe for an installer.\n\n**What the canary should do, whatever the cause:** never leave `next` split, and not fail a night for npm's delay. Options to weigh, recommending one in the pull request: wait for every package before tagging any (today it tags as it goes, which is how `next` split); move `next` in a separate job that retries later, or on the next night's run, when `next-pending` is ahead of `next`; or a longer deadline, which only moves the line.\n\n**Done when:** the cause is written down here, as far as it can be found; `tagNpm` moves no package's `next` until every package is on npm; a night whose packages take longer than the wait leaves `next` where it was, all of it, and a later run or a retry moves it; RELEASING.md's nightly canary section says how; and `scripts/release/publish.ts`'s tests cover a package that shows late.\n",
+        "number": 834,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The canary: npm is slow to show cli-linux-arm64, and next is left split",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/834"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCsbpI",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The canary: npm is slow to show cli-linux-arm64, and next is left split"
     }
   ]
 }
