@@ -118,7 +118,7 @@
     },
     {
       "path": "site/home/content/images/hero-mark-light.svg",
-      "width": 384,
+      "width": 432,
       "height": 264,
       "sources": {
         "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
@@ -127,7 +127,7 @@
     },
     {
       "path": "site/home/content/images/hero-mark-dark.svg",
-      "width": 384,
+      "width": 432,
       "height": 264,
       "sources": {
         "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",

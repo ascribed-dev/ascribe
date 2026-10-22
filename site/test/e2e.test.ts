@@ -3,7 +3,8 @@
 // titles, links between pages, search, the edit link, the 404 page, the narrow
 // layout, the landing page's call to action, tools, mark, demonstration,
 // pillars and their links, audiences, marks, phone width, and reading without
-// a script, Why Ascribe, with its screenshots, and Credits.
+// a script, Why Ascribe, with its screenshots, and Credits; the notes' split
+// bar, and the hero's mark in motion, still for a reader who asks.
 import { afterAll, beforeAll, expect, test } from "vitest";
 import type { Browser, Page } from "playwright-core";
 import { readdirSync, readFileSync } from "node:fs";
@@ -203,6 +204,8 @@ test("the hero's mark is beside the headline on a wide screen, in the reader's s
     ];
     if (heading === null || mark === null) throw new Error("not drawn");
     expect(mark.x).toBeGreaterThan(heading.x + heading.width);
+    // At its own size, so each cell is whole pixels on the page's grid.
+    expect(mark.width).toBe(await shown.evaluate((img: HTMLImageElement) => img.naturalWidth));
     await page.close();
   }
   const phone = await open("/", 390);
@@ -480,6 +483,94 @@ test("notes and steps render as elements", async () => {
   const page = await open("/docs/getting-started/");
   expect(await page.locator("ascribe-steps ol > li").count()).toBe(3);
   await page.close();
+});
+
+/** The element library's note types (packages/elements/CONTRACT.md, §1). */
+const NOTE_TYPES = ["note", "tip", "important", "warning", "caution"] as const;
+
+test("every type of note has the gutter's split bar, in its own color, in both schemes", async () => {
+  for (const scheme of ["light", "dark"] as const) {
+    const page = await open("/docs/install/");
+    await page.emulateMedia({ colorScheme: scheme });
+    // A note of each type, beside the page's tip, as the library draws it.
+    const bars = await page.locator('ascribe-note[type="tip"]').evaluate((tip, types) => {
+      return types.map((type) => {
+        const note = tip.cloneNode(true) as HTMLElement;
+        note.setAttribute("type", type);
+        tip.after(note);
+        const style = getComputedStyle(note);
+        return {
+          type,
+          label: getComputedStyle(note, "::before").color,
+          width: style.borderLeftWidth,
+          border: style.borderLeftColor,
+          radius: style.borderTopLeftRadius,
+          layers: style.backgroundImage,
+          clips: style.backgroundClip,
+        };
+      });
+    }, NOTE_TYPES);
+    for (const bar of bars) {
+      const where = `${scheme} ${bar.type}`;
+      // The library's border keeps the note's size, and the marks are drawn under it.
+      expect(bar.width, where).toBe("4px");
+      expect(bar.border, where).toBe("rgba(0, 0, 0, 0)");
+      expect(bar.radius, where).toBe("0px");
+      expect(bar.clips, where).toBe("padding-box, border-box");
+      // Two marks in the note's color, its label's, and the page between them.
+      const marks = bar.layers.split("linear-gradient(")[2] ?? "";
+      const colors = marks.match(/rgba?\([^)]*\)/g) ?? [];
+      const runs = colors.filter((c, i) => c !== colors[i - 1]);
+      expect(runs, `${where}: ${bar.layers}`).toEqual([bar.label, "rgba(0, 0, 0, 0)", bar.label]);
+    }
+    expect(new Set(bars.map((b) => b.label)).size).toBe(NOTE_TYPES.length);
+    await page.close();
+  }
+});
+
+test("the hero's mark is the mark in motion, generated, which holds still for a reader who asks", async () => {
+  const page = await open("/");
+  const src = await page.locator("hero-banner img[scheme=light]").getAttribute("src");
+  const svg = await (await fetch(server.url + src)).text();
+  expect(svg).toContain("@keyframes cursor");
+  expect(svg).toContain("@media (prefers-reduced-motion:reduce){.cursor,.marks{animation:none}}");
+  // The image's own document follows the preference: still, in the changed
+  // state, with no cursor.
+  for (const [reducedMotion, cursor, marks] of [
+    ["no-preference", "cursor", "marks"],
+    ["reduce", "none", "none"],
+  ] as const) {
+    await page.emulateMedia({ reducedMotion });
+    await page.goto(server.url + src);
+    const animations = await page.evaluate(() =>
+      [".cursor", ".marks"].map((selector) => {
+        const el = document.querySelector(selector);
+        return el === null ? "missing" : getComputedStyle(el).animationName;
+      }),
+    );
+    expect(animations, reducedMotion).toEqual([cursor, marks]);
+    if (reducedMotion === "reduce") {
+      expect(await page.locator(".cursor").evaluate((el) => getComputedStyle(el).opacity)).toBe(
+        "0",
+      );
+    }
+  }
+  await page.close();
+});
+
+test("with reduced motion set in Chromium, the hero's mark on the page doesn't move", async () => {
+  // An image's own document takes the browser's setting, not a page's
+  // emulation, so this browser is started with the setting.
+  const still = await launchChromium(["--force-prefers-reduced-motion"]);
+  const page = await still.newPage({ viewport: { width: 1280, height: 900 } });
+  await page.goto(server.url + "/");
+  const mark = page.locator("hero-banner img[scheme]:visible");
+  await mark.evaluate((img: HTMLImageElement) => img.decode());
+  const first = await mark.screenshot();
+  // Long enough for the cursor to have blinked and stepped, were it moving.
+  await page.waitForTimeout(2000);
+  expect((await mark.screenshot()).equals(first)).toBe(true);
+  await still.close();
 });
 
 test("a code example taken from a file shows its title", async () => {
