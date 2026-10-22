@@ -212,7 +212,8 @@ pub(crate) fn find_entry(text: &str, entry: &Entry<'_>) -> Option<Span> {
     })
 }
 
-/// Whether a declared dimension's `values` has `value`.
+/// Whether `value` is a declared dimension's name or one of its `values`,
+/// which the model leaves out of the implicit dimension.
 fn declared_value(text: &str, value: &str) -> bool {
     text.lines()
         .filter(|line| line.trim_start().starts_with('['))
@@ -222,14 +223,15 @@ fn declared_value(text: &str, value: &str) -> bool {
                 .map(str::to_owned)
         })
         .any(|dimension| {
-            find_declared(
-                text,
-                &Entry::DimensionValue {
-                    dimension: &dimension,
-                    value,
-                },
-            )
-            .is_some()
+            dimension == value
+                || find_declared(
+                    text,
+                    &Entry::DimensionValue {
+                        dimension: &dimension,
+                        value,
+                    },
+                )
+                .is_some()
         })
 }
 
@@ -445,6 +447,12 @@ mod tests {
         assert_eq!(
             find_entry(text, &Entry::Dimension("release")).map(|span| &text[span.range()]),
             Some("[releases.agent]")
+        );
+        // Nor is a target named for a declared dimension.
+        let text = "[dimensions.agent]\nvalues = [\"x\"]\n\n[releases.agent]\nlive = [\"1.2\"]\n\n[releases.cli]\nlive = [\"0.4\"]\n";
+        assert_eq!(
+            find_entry(text, &Entry::Dimension("release")).map(|span| &text[span.range()]),
+            Some("[releases.cli]")
         );
         // A declared `release` dimension is found where it's declared.
         let text = "[dimensions.release]\nvalues = [\"stable\"]\n";
