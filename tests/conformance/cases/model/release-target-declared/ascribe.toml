@@ -1,0 +1,16 @@
+spec = "0.1"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+
+# `self-managed` is a value of `deployment`, so there's no implicit dimension.
+[releases.self-managed]
+live = ["3.4"]
+
+[features.sso]
+name = "Single sign-on"
+available = "self-managed 3.4"
+
+[builds.self-managed]
+variants = { release = "self-managed" }

@@ -1,0 +1,9 @@
+description: >-
+  A target a declared dimension already has stays that dimension's value:
+  no implicit `release` dimension is declared for it, so a build can't
+  select along one.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-build-unknown-dimension, file: ascribe.toml, line: 16}

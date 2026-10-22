@@ -489,9 +489,9 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**Message:** `[releases.{target}]`: `{target}` isn't a declared dimension value
+**Message:** `[releases.{target}]`: `{target}` is in no declared dimension, so it would be a value of the implicit dimension `release`, but `[dimensions.release]` takes that name; add `{target}` to a dimension's `values`, or rename `[dimensions.release]`
 
-**Fix:** Name the table after a versioned dimension value, the target a mark gives a version to, such as `[releases.self-managed]`. A versionless value has no versions to list.
+**Fix:** Name the table after the target a mark gives a version to, such as `[releases.self-managed]`: a versioned value of a declared dimension, or a name no dimension has, which makes it a value of the implicit dimension `release`. A versionless value has no versions to list. While a target is left to the implicit dimension, no declared dimension can be named `release`.
 
 **Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
 
