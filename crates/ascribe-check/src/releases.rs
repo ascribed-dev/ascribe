@@ -97,27 +97,22 @@ pub(crate) fn placement_issue(
     }
 }
 
-/// Where a spec is written, which decides whether a mark that says nothing
-/// can go.
-#[derive(Clone, Copy)]
-pub(crate) enum Written {
-    /// A feature's spec in `ascribe.toml`, which marks name by its key.
-    Feature,
-    /// A mark on a page: an `@available` line, the `available` key, or a
-    /// row's `{available=…}`. `removal` is the text that removing the mark
-    /// deletes, when its place is known.
-    Mark { removal: Option<Span> },
-}
-
 /// The issues for each entry of `spec` that no output shows the version of,
 /// or that no output has at all. `at` gives where an entry is reported; a
 /// fix is offered only when `fixes` says the entry's span is its own.
+///
+/// `removal` is what removing the whole mark deletes, for a mark on a page
+/// that may go: an `@available` line, the `available` key, or a row's
+/// `{available=…}`. It's `None` for a feature's spec, which marks name by
+/// its key, for a mark whose place isn't known, and for one that a mark
+/// around it, which its content would read as instead, says something in.
+/// A mark that would say nothing is removed with it, and rewritten without.
 pub(crate) fn inert_issues(
     model: &ContentModel,
     spec: &AvailabilitySpec,
     at: &dyn Fn(Span) -> Location,
     fixes: bool,
-    written: Written,
+    removal: Option<Span>,
 ) -> Vec<Issue> {
     let same = !model
         .checks
@@ -180,14 +175,11 @@ pub(crate) fn inert_issues(
             } else {
                 Applicability::Safe
             };
-            let removal = match written {
-                Written::Mark { removal } if says_nothing(model, spec, &simpler) => Some(removal),
-                _ => None,
-            };
+            let removal = removal.filter(|_| says_nothing(model, spec, &simpler));
             let mut issue = issue(diagnostics::AVAILABLE_SAME_IN_EVERY_LINE);
-            if let Some(removal) = removal {
+            if let Some(span) = removal {
                 issue = issue.with_variant(if badge { "badge-remove" } else { "remove" });
-                if let (true, Some(span)) = (fixes, removal) {
+                if fixes {
                     issue = issue.with_fix(Fix {
                         title: "Remove the mark".to_owned(),
                         file: location.file,
@@ -232,6 +224,25 @@ fn says_nothing(model: &ContentModel, spec: &AvailabilitySpec, simpler: &Entry) 
         && !model.builds.iter().any(|build| {
             matches!(&build.availability, AvailabilityMode::Filter { target: t, .. } if t != target)
         })
+}
+
+/// Whether content marked `spec` reads, at every live line, as content
+/// with no mark does: `spec` without what it says at or before its
+/// target's oldest live line is a mark that says nothing, as
+/// [`says_nothing`] tells. A mark inside one that does can go, since its
+/// content then reads as that one's.
+pub(crate) fn reads_as_unmarked(model: &ContentModel, spec: &AvailabilitySpec) -> bool {
+    let [entry] = spec.entries.as_slice() else {
+        return false;
+    };
+    let target = entry.target.text.as_str();
+    let simpler = model
+        .releases_of(target)
+        .and_then(Releases::oldest_live)
+        .and_then(|oldest| without_versions_through(spec, target, oldest))
+        .and_then(|spec| spec.entries.into_iter().next())
+        .unwrap_or_else(|| entry.clone());
+    says_nothing(model, spec, &simpler)
 }
 
 /// How the builds show a mark about one target, in order: the last one any
@@ -326,11 +337,9 @@ mod tests {
 
     use super::*;
 
-    /// A mark whose place is known.
-    fn mark() -> Written {
-        Written::Mark {
-            removal: Some(Span::new(0, 0)),
-        }
+    /// A mark that may go.
+    fn mark() -> Option<Span> {
+        Some(Span::new(0, 0))
     }
 
     const MODEL: &str = "spec = \"0.1\"\n\
@@ -433,34 +442,22 @@ mod tests {
         [builds.site]\navailability = \"badge\"\n";
 
     /// A mark that would be its target alone, the only value of its
-    /// dimension, is removed, with the message that says so, and a feature's
-    /// spec, which marks name, is rewritten.
+    /// dimension, is removed, with the message that says so; one that may
+    /// not go, as a feature's spec, which marks name, is rewritten.
     #[test]
     fn a_mark_of_the_only_target_is_removed() {
         let model = ascribe_model::load_str(ONE, FileId::new(0)).expect("the model loads");
         let at = |span: Span| Location::new(FileId::new(1), span);
         let spec = parse_availability("ascribe 0.4.0", 0).expect("a spec");
         let removal = Span::new(3, 9);
-        let issues = inert_issues(
-            &model,
-            &spec,
-            &at,
-            true,
-            Written::Mark {
-                removal: Some(removal),
-            },
-        );
+        let issues = inert_issues(&model, &spec, &at, true, Some(removal));
         assert_eq!(issues.len(), 1);
         assert_eq!(issues[0].variant, Some("badge-remove"));
         let fix = &issues[0].fixes[0];
         assert_eq!(fix.title, "Remove the mark");
         assert_eq!(fix.edits, [TextEdit::delete(removal)]);
         assert_eq!(fix.applicability, Applicability::Unsafe);
-        // Where the mark's place isn't known, it's still reported, with no fix.
-        let issues = inert_issues(&model, &spec, &at, true, Written::Mark { removal: None });
-        assert_eq!(issues[0].variant, Some("badge-remove"));
-        assert!(issues[0].fixes.is_empty());
-        let issues = inert_issues(&model, &spec, &at, true, Written::Feature);
+        let issues = inert_issues(&model, &spec, &at, true, None);
         assert_eq!(issues[0].variant, Some("badge"));
         assert_eq!(issues[0].fixes[0].title, "Write `ascribe`");
     }

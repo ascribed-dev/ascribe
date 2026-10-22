@@ -7,8 +7,7 @@ use ascribe_core::{
     diagnostics,
 };
 use ascribe_model::AvailabilityProblem;
-
-use crate::releases::Written;
+use ascribe_syntax::{Block, BlockKind, PrimaryValue, bound_block, bound_heading};
 
 use super::Ctx;
 use super::attrs::Owner;
@@ -26,7 +25,7 @@ impl Ctx<'_> {
             description: None,
         }];
         self.check_block(block, &declared, Owner::Row);
-        let removal = self.row_removal(block);
+        let removal = self.nested_removal(block.span, block.span.start(), self.row_removal(block));
         match block.get("available").and_then(|a| a.value.as_ref()) {
             Some(AttributeValue::Token(t)) => {
                 self.check_availability_text(&t.text, t.span.start(), t.span, true, removal);
@@ -40,6 +39,73 @@ impl Ctx<'_> {
             // A value set is the wrong type, which `check_block` reported.
             Some(AttributeValue::Set { .. }) | None => {}
         }
+    }
+
+    /// Records where each mark in `blocks` that says something applies, as
+    /// [`crate::releases::reads_as_unmarked`] tells: the section of the
+    /// heading an `@available` line binds, or the block it binds. A mark
+    /// inside one of them can't go, since its content would read as that
+    /// mark instead.
+    pub(super) fn collect_mark_scopes(&mut self, blocks: &[Block]) {
+        for (i, block) in blocks.iter().enumerate() {
+            match &block.kind {
+                BlockKind::Directive(d) if d.name == "available" => {
+                    let Some(PrimaryValue::Line(p)) = &d.primary else {
+                        continue;
+                    };
+                    if self.reads_as_unmarked(&p.text, p.span.start()) {
+                        continue;
+                    }
+                    let scope = if let Some(h) = bound_heading(blocks, i) {
+                        Some(section(blocks, h))
+                    } else {
+                        bound_block(blocks, i).map(|k| blocks[k].span)
+                    };
+                    if let Some(scope) = scope {
+                        self.mark_scopes.push((d.span, scope));
+                    }
+                }
+                BlockKind::BlockQuote(q) => self.collect_mark_scopes(&q.children),
+                BlockKind::List(l) => {
+                    for item in &l.items {
+                        self.collect_mark_scopes(&item.children);
+                    }
+                }
+                BlockKind::Container(c) => self.collect_mark_scopes(&c.children),
+                BlockKind::Group(g) => {
+                    for arm in &g.arms {
+                        self.collect_mark_scopes(&arm.children);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    /// Whether the spec `text`, at `offset`, reads as no mark at every live
+    /// line. One that doesn't parse says something, to be safe.
+    pub(super) fn reads_as_unmarked(&self, text: &str, offset: usize) -> bool {
+        parse_availability(text, offset).is_ok_and(|spec| {
+            let spec = self.model.resolve_planned(&spec).spec;
+            crate::releases::reads_as_unmarked(self.model, &spec)
+        })
+    }
+
+    /// `removal` for the mark `mark`, which applies from `at`, when the
+    /// mark may go: the file isn't a fragment, whose content reads as the
+    /// scope it's included in, and no other mark that says something
+    /// applies at `at`.
+    pub(super) fn nested_removal(
+        &self,
+        mark: Span,
+        at: usize,
+        removal: Option<Span>,
+    ) -> Option<Span> {
+        let inside = self
+            .mark_scopes
+            .iter()
+            .any(|(other, scope)| *other != mark && scope.start() <= at && at < scope.end());
+        removal.filter(|_| !inside && !self.model.is_fragment(self.file.path.as_str()))
     }
 
     /// What removing a row's attribute block deletes: the block and the
@@ -156,16 +222,28 @@ impl Ctx<'_> {
             issues = crate::releases::placement_issues(self.model, &spec.entries, &at, precise);
         }
         if issues.is_empty() {
-            issues = crate::releases::inert_issues(
-                self.model,
-                &spec,
-                &at,
-                precise,
-                Written::Mark { removal },
-            );
+            issues = crate::releases::inert_issues(self.model, &spec, &at, precise, removal);
         }
         for issue in issues {
             self.report(issue);
         }
     }
+}
+
+/// The section of the heading `blocks[heading]`: from it up to the next
+/// heading of its level or a higher one, or the end of `blocks`.
+fn section(blocks: &[Block], heading: usize) -> Span {
+    let level = match &blocks[heading].kind {
+        BlockKind::Heading(h) => h.level,
+        _ => 0,
+    };
+    let start = blocks[heading].span.start();
+    let end = blocks[heading + 1..]
+        .iter()
+        .find(|b| matches!(&b.kind, BlockKind::Heading(h) if h.level <= level))
+        .map_or_else(
+            || blocks.last().map_or(start, |b| b.span.end()),
+            |b| b.span.start(),
+        );
+    Span::new(start, end)
 }

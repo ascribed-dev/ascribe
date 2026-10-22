@@ -1,9 +1,11 @@
 //! What `available-same-in-every-line`'s fix writes, on the conformance
-//! cases `tests/conformance/cases/checks/available-inert-only-target` and
-//! `available-inert-two-targets`, which hold where the check reports: a case
-//! can't hold a fix. A mark of the only value of its dimension that would
-//! be its target alone, generally available, is removed in each place it's
-//! written; with a second value in the dimension it's rewritten as before.
+//! cases `tests/conformance/cases/checks/available-inert-only-target`,
+//! `available-inert-two-targets`, and `available-inert-nested`, which hold
+//! where the check reports: a case can't hold a fix. A mark of the only
+//! value of its dimension that would be its target alone, generally
+//! available, is removed in each place it's written; with a second value in
+//! the dimension, or inside a mark that says something, it's rewritten as
+//! before.
 
 #![allow(clippy::expect_used)]
 
@@ -13,8 +15,8 @@ use ascribe_check::{Project, check_files};
 use ascribe_core::{Applicability, apply_edits};
 
 /// Each file with the check's fixes applied, by its path, with each fix's
-/// title.
-fn fixed(case: &str) -> Vec<(String, String, Vec<String>)> {
+/// title. `safe` is what each fix's applicability is expected to be.
+fn fixed(case: &str, safe: bool) -> Vec<(String, String, Vec<String>)> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../tests/conformance/cases/checks")
         .join(case);
@@ -30,8 +32,13 @@ fn fixed(case: &str) -> Vec<(String, String, Vec<String>)> {
             .filter(|d| d.location.file == source.id)
             .map(|d| {
                 assert_eq!(d.fixes.len(), 1, "{}", d.message);
-                // The badge build shows the mark, so no fix is safe.
-                assert_eq!(d.fixes[0].applicability, Applicability::Unsafe);
+                // A badge build shows the mark, so no fix there is safe.
+                let expected = if safe {
+                    Applicability::Safe
+                } else {
+                    Applicability::Unsafe
+                };
+                assert_eq!(d.fixes[0].applicability, expected);
                 &d.fixes[0]
             })
             .collect();
@@ -54,7 +61,7 @@ fn file<'a>(all: &'a [(String, String, Vec<String>)], path: &str) -> (&'a str, &
 
 #[test]
 fn a_mark_of_the_only_target_is_removed_in_each_place_it_is_written() {
-    let all = fixed("available-inert-only-target");
+    let all = fixed("available-inert-only-target", false);
     let (page, titles) = file(&all, "page.md");
     assert_eq!(
         page,
@@ -80,7 +87,7 @@ fn a_mark_of_the_only_target_is_removed_in_each_place_it_is_written() {
 
 #[test]
 fn a_mark_of_one_of_two_values_is_rewritten_as_before() {
-    let all = fixed("available-inert-two-targets");
+    let all = fixed("available-inert-two-targets", false);
     let (page, titles) = file(&all, "page.md");
     assert!(page.contains("\navailable: ascribe\n"), "{page}");
     assert_eq!(titles, ["Write `ascribe`"]);
@@ -94,4 +101,44 @@ fn a_mark_of_one_of_two_values_is_rewritten_as_before() {
     let (table, titles) = file(&all, "table.md");
     assert!(table.contains("{available=\"ascribe\"}"), "{table}");
     assert_eq!(titles, ["Write `ascribe`"]);
+}
+
+#[test]
+fn a_mark_inside_one_that_says_something_is_rewritten() {
+    let all = fixed("available-inert-nested", true);
+    let (nest, titles) = file(&all, "nest.md");
+    assert_eq!(
+        nest,
+        "---\ntype: page\ntitle: Nest\navailable: ascribe deprecated\n---\n\n\
+         ## Went GA\n\n@available: ascribe\n\n| Option | Meaning |\n|---|---|\n\
+         | `row` {available=\"ascribe\"} | GA row. |\n"
+    );
+    assert_eq!(
+        titles,
+        [
+            "Write `ascribe deprecated`",
+            "Write `ascribe`",
+            "Write `ascribe`"
+        ]
+    );
+    let (sections, titles) = file(&all, "sections.md");
+    assert!(
+        sections.contains("### Went GA\n\n@available: ascribe\n"),
+        "{sections}"
+    );
+    assert!(
+        sections.contains("## Plain\n\nNo mark around it says anything"),
+        "{sections}"
+    );
+    assert!(sections.contains("{available=\"ascribe\"}"), "{sections}");
+    assert_eq!(
+        titles,
+        [
+            "Write `ascribe preview`",
+            "Write `ascribe`",
+            "Remove the mark",
+            "Write `ascribe preview`",
+            "Write `ascribe`"
+        ]
+    );
 }

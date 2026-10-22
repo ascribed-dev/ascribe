@@ -58,6 +58,9 @@ struct Ctx<'a> {
     /// The page's content type, once the frontmatter is checked: `None` for
     /// a fragment, and for a page whose type is missing or unknown.
     page_type: Option<&'a ContentType>,
+    /// Each mark in the file that says something, with where it applies:
+    /// the whole file for the page's `available` key.
+    mark_scopes: Vec<(Span, Span)>,
     issues: Vec<Issue>,
 }
 
@@ -111,9 +114,11 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
         definitions: doc.definitions.clone(),
         first_paragraph: content::first_paragraph(&file.text, &doc.blocks),
         page_type: None,
+        mark_scopes: Vec::new(),
         issues: doc.issues.clone(),
     };
     cx.check_frontmatter(doc.frontmatter.as_ref());
+    cx.collect_mark_scopes(&doc.blocks);
     cx.blocks(&doc.blocks);
     cx.check_template_body(&doc.blocks);
     cx.parser_fixes();
@@ -323,6 +328,7 @@ impl Ctx<'_> {
             }
             ("available", Some(PrimaryValue::Line(p))) => {
                 let removal = memo::lines_removal(self.source(), d.span.start(), d.span.end());
+                let removal = self.nested_removal(d.span, d.span.start(), removal);
                 self.check_availability_text(&p.text, p.span.start(), p.span, true, removal);
             }
             ("snippet", Some(PrimaryValue::Identifier(_))) => self.check_snippet(d),

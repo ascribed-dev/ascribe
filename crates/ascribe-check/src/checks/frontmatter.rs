@@ -354,7 +354,14 @@ impl Ctx<'_> {
                     let (offset, precise) = node
                         .and_then(|n| self.scalar_offset(n, text))
                         .map_or((0, false), |o| (o, true));
-                    let removal = node.filter(|_| precise).and_then(|n| self.key_removal(n));
+                    if !self.reads_as_unmarked(text, offset) {
+                        let all = Span::new(0, self.file.text.len());
+                        self.mark_scopes.push((whole, all));
+                    }
+                    // A fragment's content reads as the scope it's included in.
+                    let removal = node
+                        .filter(|_| precise && !self.model.is_fragment(self.file.path.as_str()))
+                        .and_then(|n| self.key_removal(n));
                     self.check_availability_text(text, offset, whole, precise, removal);
                 }
                 other => self.mismatch(
