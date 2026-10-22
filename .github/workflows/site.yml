@@ -48,7 +48,10 @@ jobs:
       - run: target/debug/ascribe fmt --check --config site/home
       - run: npm ci
         working-directory: site
-      - run: npx playwright-core install --with-deps chromium
+      # Without `--with-deps`: the runner's image has what Chromium needs, and
+      # the Ubuntu mirror it would fetch them from can be slow enough to time
+      # the step out (js.yml's Astro job says more).
+      - run: npx playwright-core install chromium
         timeout-minutes: 5
         working-directory: site
       # The preview is built for its own address, so its links are right: as
