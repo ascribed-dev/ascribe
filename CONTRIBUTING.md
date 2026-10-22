@@ -60,7 +60,7 @@ A test, `cargo test -p ascribe-cli --test determinism`, holds that one binary wr
 
 ## Documenting a change
 
-The user docs are in `docs/`, an Ascribe project, and change in the same pull request as the code they describe. A change someone using Ascribe would notice updates the page that describes it, under `docs/content/`, and adds its changelog entry as a file of its own in its area's folder of [changes/](changes/README.md), which says how to name and write one. It doesn't edit [CHANGELOG.md](CHANGELOG.md): a release gathers the entries into it, so two pull requests never conflict there. What no release has yet is marked `@available: next` on its page or section. Every page must pass the checks CI runs on it (in `site.yml`):
+The user docs are in `docs/`, an Ascribe project, and change in the same pull request as the code they describe. A change someone using Ascribe would notice updates the page that describes it, under `docs/content/`, and adds its changelog entry as a file of its own in its area's folder of [changes/](changes/README.md), which says how to name and write one. It doesn't edit [CHANGELOG.md](CHANGELOG.md): a release gathers the entries into it, so two pull requests never conflict there. What no release has yet is marked `@available: ascribe planned` on its page or section. Every page must pass the checks CI runs on it (in `site.yml`):
 
 ```sh
 cargo build -p ascribe-cli

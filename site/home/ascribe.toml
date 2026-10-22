@@ -110,7 +110,7 @@ values = ["npm", "pnpm"]
 # What follows are copies of ../../docs/ascribe.toml's, so a claim here is
 # marked as the docs mark it. scripts/docs-site/facts.test.ts fails until
 # each agrees with the docs': the releases, with their labels and planned
-# label, the `next` feature, the `version` and `site`
+# label, the `version` and `site`
 # phrases, the sources, and `[consumer]`'s `site`, `trailing-slash`, and `permalink-path`.
 [releases]
 planned-label = "in main, not yet released"
@@ -124,10 +124,6 @@ planned = ["0.4.2"]
 "0.3.1" = {}
 "0.3.2" = {}
 "0.4.0" = {}
-
-[features.next]
-name = "In main, not yet released"
-available = "ascribe 0.4.2"
 
 [phrases]
 version = { line = "ascribe" }
@@ -168,6 +164,3 @@ availability = "badge"
 # The site prints no page's title as a heading: the hero holds the page's
 # one level-1 heading.
 heading-level-skipped = "off"
-# The `next` feature is the docs', copied for marks, and a page uses it only
-# while it says something no release has.
-feature-unused = "off"

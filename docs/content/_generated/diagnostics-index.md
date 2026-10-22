@@ -237,3 +237,4 @@
 | [ASC242](../checks/diagnostics/pages.md#ASC242) | `term-off-glossary-page` | Error | File | choose |
 | [ASC243](../checks/diagnostics/content-checks.md#ASC243) | `baseline-entry-unmatched` | Advice | File | outside |
 | [ASC244](../checks/diagnostics/content-checks.md#ASC244) | `frontmatter-field-repeated` | Advice | File | fix |
+| [ASC245](../checks/diagnostics/directives.md#ASC245) | `available-planned-line` | Error | File | write |

@@ -11,8 +11,8 @@ use std::process::{Command, Output};
 use serde_json::Value;
 use tempfile::TempDir;
 
-/// One site that knows its versions: `1.0` is live, `1.1` planned, and
-/// `next` points at it.
+/// One site that knows its versions: `1.0` is live, and `1.1` planned,
+/// which `planned` names.
 const MODEL: &str = r#"spec = "0.1"
 
 [project]
@@ -25,18 +25,14 @@ values = ["prod"]
 [releases.prod]
 live = ["1.0"]
 planned = ["1.1"]
-
-[features.next]
-name = "Not released yet"
-available = "prod 1.1"
 "#;
 
-/// A page marked with the feature in its frontmatter.
-const NEW: &str = "---\ntitle: New\navailable: next\n---\n\nText.\n";
+/// A page marked as planned in its frontmatter.
+const NEW: &str = "---\ntitle: New\navailable: prod planned\n---\n\nText.\n";
 
-/// A page with the feature on a block and on two rows, beside a mark for a
-/// release already out.
-const PAGE: &str = "---\ntitle: Page\n---\n\n## Options\n\nIntro.\n\n@available: next\nA new paragraph.\n\n@available: prod 1.0\nAn old one.\n\n| Option | Does |\n|---|---|\n| `a` {available=next} | A. |\n| `b` {available=\"next\"} | B. |\n";
+/// A page with `planned` on a block and on two rows, one with a state,
+/// beside a mark for a release already out.
+const PAGE: &str = "---\ntitle: Page\n---\n\n## Options\n\nIntro.\n\n@available: prod planned\nA new paragraph.\n\n@available: prod 1.0\nAn old one.\n\n| Option | Does |\n|---|---|\n| `a` {available=\"prod planned\"} | A. |\n| `b` {available=\"prod beta planned\"} | B. |\n";
 
 fn write(root: &Path, rel: &str, text: &str) {
     let path: PathBuf = rel.split('/').fold(root.to_path_buf(), |p, s| p.join(s));
@@ -123,7 +119,7 @@ fn files(dir: &Path) -> Vec<(String, String)> {
 }
 
 #[test]
-fn a_release_rewrites_the_marks_moves_the_feature_and_archives_the_old_line() {
+fn a_release_rewrites_the_planned_marks_and_archives_the_old_line() {
     let dir = repository(MODEL);
     let out = ascribe(
         dir.path(),
@@ -133,9 +129,14 @@ fn a_release_rewrites_the_marks_moves_the_feature_and_archives_the_old_line() {
     let text = stdout(&out);
     assert!(text.contains("prod 1.1 is live"), "{text}");
     assert!(
-        text.contains("4 marks from `next` to `prod 1.1`, in 2 files"),
+        text.contains("3 marks from `prod planned` to `prod 1.1`, in 2 files"),
         "{text}"
     );
+    assert!(
+        text.contains("1 mark from `prod beta planned` to `prod beta 1.1`, in 1 file"),
+        "{text}"
+    );
+    assert!(text.contains("prod 1.2 is planned"), "{text}");
 
     assert!(read(dir.path(), "docs/new.md").contains("available: prod 1.1\n"));
     let page = read(dir.path(), "docs/page.md");
@@ -145,7 +146,7 @@ fn a_release_rewrites_the_marks_moves_the_feature_and_archives_the_old_line() {
     );
     assert!(page.contains("@available: prod 1.0\nAn old one."), "{page}");
     assert!(page.contains("`a` {available=\"prod 1.1\"}"), "{page}");
-    assert!(page.contains("`b` {available=\"prod 1.1\"}"), "{page}");
+    assert!(page.contains("`b` {available=\"prod beta 1.1\"}"), "{page}");
 
     let model = read(dir.path(), "ascribe.toml");
     assert!(model.contains("live = [\"1.1\"]"), "{model}");
@@ -154,7 +155,6 @@ fn a_release_rewrites_the_marks_moves_the_feature_and_archives_the_old_line() {
         model.contains("[releases.prod.archived]\n\"1.0\" = {}"),
         "{model}"
     );
-    assert!(model.contains("available = \"prod 1.2\""), "{model}");
 
     let check = ascribe(dir.path(), &["check"]);
     assert_eq!(code_of(&check), 0, "{}{}", stdout(&check), stderr(&check));
@@ -184,13 +184,24 @@ fn a_second_release_of_the_same_line_is_refused() {
 }
 
 #[test]
-fn a_feature_with_no_line_to_move_to_stops_the_release_before_it_writes() {
+fn a_release_with_no_next_line_leaves_nothing_planned() {
     let dir = repository(MODEL);
-    let before = files(dir.path());
     let out = ascribe(dir.path(), &["versions", "release", "prod 1.1"]);
-    assert_eq!(code_of(&out), 2);
-    assert!(stderr(&out).contains("--next"), "{}", stderr(&out));
-    assert_eq!(files(dir.path()), before);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let model = read(dir.path(), "ascribe.toml");
+    assert!(model.contains("planned = []"), "{model}");
+    assert!(read(dir.path(), "docs/new.md").contains("available: prod 1.1\n"));
+    let check = ascribe(dir.path(), &["check"]);
+    assert_eq!(code_of(&check), 0, "{}{}", stdout(&check), stderr(&check));
+}
+
+#[test]
+fn planned_with_no_planned_line_is_an_error_at_the_mark() {
+    let dir = project(&MODEL.replace("planned = [\"1.1\"]\n", ""));
+    let out = ascribe(dir.path(), &["check", "--format", "json"]);
+    assert_eq!(code_of(&out), 1, "{}{}", stdout(&out), stderr(&out));
+    let text = stdout(&out);
+    assert_eq!(text.matches("available-planned-line").count(), 4, "{text}");
 }
 
 #[test]
@@ -208,11 +219,10 @@ fn a_versioned_build_keeps_the_old_line_live() {
 }
 
 #[test]
-fn a_patch_nobody_planned_is_released_and_next_names_what_it_named() {
+fn a_patch_nobody_planned_is_released_and_planned_names_what_it_named() {
     let model = MODEL
         .replace("live = [\"1.0\"]", "live = [\"1.0.0\"]")
-        .replace("planned = [\"1.1\"]", "planned = [\"1.1.0\"]")
-        .replace("prod 1.1\"", "prod 1.1.0\"");
+        .replace("planned = [\"1.1\"]", "planned = [\"1.1.0\"]");
     let dir = repository(&model);
     let before = files(dir.path());
     let out = ascribe(dir.path(), &["versions", "release", "prod 1.0.1"]);
@@ -220,7 +230,6 @@ fn a_patch_nobody_planned_is_released_and_next_names_what_it_named() {
     let after = read(dir.path(), "ascribe.toml");
     assert!(after.contains("live = [\"1.0.1\"]"), "{after}");
     assert!(after.contains("planned = [\"1.1.0\"]"), "{after}");
-    assert!(after.contains("available = \"prod 1.1.0\""), "{after}");
     assert!(after.contains("\"1.0.0\" = {}"), "{after}");
     // No mark names the patch.
     assert_eq!(files(dir.path())[1..], before[1..]);
@@ -306,7 +315,10 @@ fn the_release_json_lists_the_files_and_the_marks() {
         .collect();
     assert_eq!(files, ["docs/new.md", "docs/page.md"]);
     assert_eq!(json["files"][1]["marks"].as_array().unwrap().len(), 3);
-    assert_eq!(json["features"][0]["to"], "prod 1.2");
+    assert_eq!(json["schema_version"], 2);
+    assert_eq!(json["files"][0]["marks"][0]["from"], "prod planned");
+    assert_eq!(json["files"][0]["marks"][0]["to"], "prod 1.1");
+    assert!(json.get("features").is_none());
 }
 
 #[test]

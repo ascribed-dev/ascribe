@@ -74,8 +74,8 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 
 **The docs**
 
-- [ ] The reference: `docs/content/writing/directives.md` (or `syntax.md`, `frontmatter.md`, or `inline.md` beside it), or the page of `docs/content/content-model/` with the section, and any guide that shows the form. What no release has yet is marked `@available: next`.
-- [ ] A new built-in: the directive reference's table of built-ins, generated from `builtin_schemas()` by `crates/ascribe-cli/src/docs/builtins.rs` (`ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`), with its availability, `next`, in `available` there; and its section in the reference, in SPEC §4's order, which the same test holds.
+- [ ] The reference: `docs/content/writing/directives.md` (or `syntax.md`, `frontmatter.md`, or `inline.md` beside it), or the page of `docs/content/content-model/` with the section, and any guide that shows the form. What no release has yet is marked `@available: ascribe planned`.
+- [ ] A new built-in: the directive reference's table of built-ins, generated from `builtin_schemas()` by `crates/ascribe-cli/src/docs/builtins.rs` (`ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`), with its availability, `ascribe planned`, in `available` there; and its section in the reference, in SPEC §4's order, which the same test holds.
 - [ ] Its changelog entry, a file of its own in `changes/` ([changes/README.md](../changes/README.md)), not a line in `CHANGELOG.md`.
 
 ## A new command or option

@@ -107,13 +107,13 @@ A site not built with Astro reads the same from `versions.json` and the page rec
 ## When a line ships
 @id: release-day
 
-Before a line ships, mark what's written for it through a [feature](../content-model/content.md#9-featureskey) that names it, `[features.next] available = "self-managed 3.6"`, and `@available: next` on the pages. On the day, one command moves the docs:
+Before a line ships, mark what's written for it with [`planned`](../writing/directives.md#availability-specs) where its version goes: `@available: self-managed planned`, or `self-managed preview planned`, means the target's planned line, so the pages don't write its number until it's released. On the day, one command moves the docs:
 
 ```sh
 ascribe versions release "self-managed 3.6"
 ```
 
-It rewrites each mark that names 3.6 through a feature to `self-managed 3.6`, points the feature at the next planned line, or at `--next`, and moves 3.6 from `planned` to `live`. Where no build is versioned by the target, it also moves the old current line to `archived`, with its `ends` date, if it has one, as `ended`, since such a project publishes one line; a project that builds a site for each line keeps the old line live until you [retire it](archive.md). Commit the change it writes: it's one commit, and `git checkout` undoes it. Run it with `--dry-run` first to see what it would do; [the command's reference](release.md#cli-versions-release) has when it refuses and why.
+It rewrites each `planned` for `self-managed` to `3.6`, as `self-managed planned` becomes `self-managed 3.6`, adds the line after it to `planned` when `--next` names one, and moves 3.6 from `planned` to `live`. Where no build is versioned by the target, it also moves the old current line to `archived`, with its `ends` date, if it has one, as `ended`, since such a project publishes one line; a project that builds a site for each line keeps the old line live until you [retire it](archive.md). Commit the change it writes: it's one commit, and `git checkout` undoes it. Run it with `--dry-run` first to see what it would do; [the command's reference](release.md#cli-versions-release) has when it refuses and why.
 
 Then start the release notes from what the new line has that the one before didn't:
 

@@ -1,8 +1,8 @@
 //! Releasing a line, `ascribe versions release "<target> <line>"`: the
-//! marks that name a feature pointing at the line rewritten to the line's
-//! spec, each such feature pointed at the line after it, and the line moved
-//! from `planned` to `live`, in that order, so that only the last step
-//! changes what a reader sees (README decision 20).
+//! marks that write `planned` for the target rewritten to the line's
+//! version, and the line moved from `planned` to `live`, in that order, so
+//! that only the last step changes what a reader sees (README decision 20;
+//! decision #811).
 //!
 //! It writes nothing. [`release`] returns `ascribe.toml`'s text and each
 //! source file's after the release, and what the release changes in the
@@ -16,7 +16,7 @@ use ascribe_check::Project;
 use ascribe_core::availability::{Detail, Version, parse_availability};
 use ascribe_core::{Coded, Date, LineIndex, RelPath, Span, TextEdit, apply_edits};
 use ascribe_emit::{Contents, Output, WriteOptions, outputs_in_memory};
-use ascribe_model::{ContentModel, Feature, LineStatus, Releases, SourceBound, in_line};
+use ascribe_model::{ContentModel, LineStatus, Releases, SourceBound};
 use ascribe_resolve::FileIndex;
 use toml_edit::{Array, InlineTable, Value};
 
@@ -29,8 +29,8 @@ pub struct Releasing<'a> {
     pub target: &'a str,
     /// The line released.
     pub line: &'a Version,
-    /// `--next`: the line the features that name the released line move to,
-    /// added to `planned` when it isn't there.
+    /// `--next`: the line planned after it, added to `planned` when it
+    /// isn't there.
     pub next: Option<&'a Version>,
 }
 
@@ -48,10 +48,7 @@ pub struct Released {
     pub model_text: String,
     /// Each source file the release rewrites marks in, in path order.
     pub files: Vec<ReleasedFile>,
-    /// Each feature that named the line, pointed at the line after it.
-    pub features: Vec<MovedFeature>,
-    /// The line the features moved to: the oldest planned line after the
-    /// released one, or `--next`.
+    /// `--next`, the line planned after the released one.
     pub next: Option<String>,
     /// Whether `--next` was added to `planned`.
     pub next_added: bool,
@@ -78,13 +75,13 @@ pub struct ReleasedFile {
 pub struct RewrittenMark {
     /// Its line, from 1.
     pub line: u32,
-    /// The feature it named.
+    /// The spec as written.
     pub from: String,
-    /// The spec it names now: the feature's.
+    /// The spec as rewritten.
     pub to: String,
 }
 
-/// A feature that named the released line, pointed at the next.
+/// A feature whose spec a command rewrote.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MovedFeature {
     /// Its key.
@@ -172,18 +169,7 @@ pub enum ReleaseError {
         /// Where it falls instead.
         why: String,
     },
-    /// Features name the line, and no planned line follows it.
-    #[error(
-        "{} the line, and no planned line follows it; give the line {} move{} to with --next",
-        features_name(.features),
-        if .features.len() == 1 { "it" } else { "they" },
-        if .features.len() == 1 { "s" } else { "" }
-    )]
-    NeedsNext {
-        /// The features' keys.
-        features: Vec<String>,
-    },
-    /// `--next` isn't a line the features can move to.
+    /// `--next` isn't a line that can be planned after this one.
     #[error("--next {next} can't be the next line: {why}")]
     BadNext {
         /// The line given.
@@ -191,9 +177,9 @@ pub enum ReleaseError {
         /// Why.
         why: String,
     },
-    /// A mark names a feature in a way the command can't rewrite.
+    /// A mark writes `planned` in a way the command can't rewrite.
     #[error(
-        "{path}:{line}: the mark `{written}` can't be rewritten in place; write it as `{key}` on one line, then run the command again"
+        "{path}:{line}: the mark `{written}` can't be rewritten in place; write it on one line, then run the command again"
     )]
     MarkUnrewritable {
         /// The file's content path.
@@ -202,8 +188,6 @@ pub enum ReleaseError {
         line: u32,
         /// The mark as written.
         written: String,
-        /// The feature it names.
-        key: String,
     },
     /// `ascribe.toml` can't be changed in place.
     #[error("{0}")]
@@ -224,14 +208,6 @@ pub enum ReleaseError {
     },
 }
 
-fn features_name(keys: &[String]) -> String {
-    let quoted: Vec<String> = keys.iter().map(|k| format!("`{k}`")).collect();
-    match quoted.as_slice() {
-        [one] => format!("the feature {one} names"),
-        _ => format!("the features {} name", quoted.join(", ")),
-    }
-}
-
 impl Coded for ReleaseError {
     fn code(&self) -> &'static str {
         match self {
@@ -241,7 +217,6 @@ impl Coded for ReleaseError {
             ReleaseError::Archived { .. } => "release_line_archived",
             ReleaseError::NotOldestPlanned { .. } => "release_line_not_next",
             ReleaseError::Unplanned { .. } => "release_line_unplanned",
-            ReleaseError::NeedsNext { .. } => "release_next_missing",
             ReleaseError::BadNext { .. } => "release_next_bad",
             ReleaseError::MarkUnrewritable { .. } => "release_mark_unrewritable",
             ReleaseError::ModelEdit(_) => "model_edit_refused",
@@ -257,8 +232,9 @@ impl Coded for ReleaseError {
 struct Plan<'m> {
     releases: &'m Releases,
     was_planned: bool,
-    features: Vec<&'m Feature>,
-    /// The line the features move to.
+    /// Whether `planned` names the line, so its marks are rewritten.
+    rewrite_planned: bool,
+    /// `--next`.
     next: Option<Version>,
     /// Whether `next` is added to `planned`.
     add_next: bool,
@@ -273,8 +249,8 @@ struct Plan<'m> {
 ///
 /// The line can't be released (the [`ReleaseError`]s about the list, the
 /// line, and `--next`); a mark or `ascribe.toml` can't be rewritten in
-/// place; or rewriting the marks and moving the features, which should
-/// change no output, would change one.
+/// place; or rewriting the marks, which should change no output, would
+/// change one.
 pub fn release(project: &Project, releasing: &Releasing<'_>) -> Result<Released, ReleaseError> {
     let model = project.model();
     let plan = plan(model, releasing)?;
@@ -282,25 +258,20 @@ pub fn release(project: &Project, releasing: &Releasing<'_>) -> Result<Released,
     let line = releasing.line;
     let next = plan.next.as_ref();
 
-    // Steps 2 and 3: the marks, and the features.
+    // Steps 2 and 3: the marks, and `--next`.
     let index = project.held_index();
     let mut files = Vec::new();
-    for file in index.files() {
-        if let Some(released) = rewrite_marks(file, &plan.features)? {
-            files.push(released);
+    if plan.rewrite_planned {
+        for file in index.files() {
+            if let Some(released) = rewrite_marks(file, target, line)? {
+                files.push(released);
+            }
         }
     }
-    let mut features = Vec::new();
     let mut text = project.model_text().to_owned();
     {
         let model_file = ModelFile::parse(&text).map_err(ReleaseError::ModelEdit)?;
         let mut edits = Vec::new();
-        for feature in &plan.features {
-            let Some(next) = next else { break };
-            let (moved, edit) = move_feature(&model_file, feature, target, line, next)?;
-            features.push(moved);
-            edits.push(edit);
-        }
         if plan.add_next
             && let Some(next) = next
         {
@@ -363,7 +334,7 @@ pub fn release(project: &Project, releasing: &Releasing<'_>) -> Result<Released,
     let unexpected = compare(&before, &after_rewrite);
     if !unexpected.is_empty() {
         return Err(ReleaseError::OutputsChanged {
-            step: "rewriting the marks and moving the features",
+            step: "rewriting the marks",
             files: unexpected,
         });
     }
@@ -388,7 +359,6 @@ pub fn release(project: &Project, releasing: &Releasing<'_>) -> Result<Released,
         was_planned: plan.was_planned,
         model_text: text,
         files,
-        features,
         next: next.map(|n| n.text.clone()),
         next_added: plan.add_next,
         archived: plan.archive.map(|l| l.text.clone()),
@@ -480,11 +450,9 @@ fn plan<'m>(model: &'m ContentModel, r: &Releasing<'_>) -> Result<Plan<'m>, Rele
             false
         }
     };
-    let features: Vec<&Feature> = model
-        .features
-        .iter()
-        .filter(|f| names_line(f, target, line))
-        .collect();
+    let rewrite_planned = model
+        .planned_line(target)
+        .is_some_and(|p| p.components == line.components);
     let (next, add_next) = match r.next {
         Some(next) => {
             let bad_next = |why: String| ReleaseError::BadNext {
@@ -511,15 +479,7 @@ fn plan<'m>(model: &'m ContentModel, r: &Releasing<'_>) -> Result<Plan<'m>, Rele
                 }
             }
         }
-        None if features.is_empty() => (None, false),
-        None => match releases.following(line) {
-            Some(following) => (Some(following.clone()), false),
-            None => {
-                return Err(ReleaseError::NeedsNext {
-                    features: features.iter().map(|f| f.key.clone()).collect(),
-                });
-            }
-        },
+        None => (None, false),
     };
     let versioned = model
         .builds
@@ -528,22 +488,11 @@ fn plan<'m>(model: &'m ContentModel, r: &Releasing<'_>) -> Result<Plan<'m>, Rele
     Ok(Plan {
         releases,
         was_planned,
-        features,
+        rewrite_planned,
         next,
         add_next,
         archive: if versioned { None } else { releases.current() },
     })
-}
-
-/// Whether `feature`'s spec names a version of `target` in `line`.
-fn names_line(feature: &Feature, target: &str, line: &Version) -> bool {
-    feature
-        .available
-        .entries
-        .iter()
-        .filter(|e| e.target.text == target)
-        .flat_map(|e| entry_versions(&e.detail))
-        .any(|v| in_line(line, v))
 }
 
 pub(crate) fn entry_versions(detail: &Detail) -> Vec<&Version> {
@@ -555,52 +504,6 @@ pub(crate) fn entry_versions(detail: &Detail) -> Vec<&Version> {
         } => vec![v],
         Detail::History(steps) => steps.iter().map(|s| &s.version).collect(),
     }
-}
-
-/// The feature with each version of `target` in `line` changed to `next`,
-/// and the edit to `ascribe.toml` that makes it so.
-fn move_feature(
-    file: &ModelFile<'_>,
-    feature: &Feature,
-    target: &str,
-    line: &Version,
-    next: &Version,
-) -> Result<(MovedFeature, Edit), ReleaseError> {
-    let from = feature.available_text.trim().to_owned();
-    let spec = parse_availability(&from, 0).map_err(|e| {
-        ReleaseError::ModelEdit(format!("the feature `{}` doesn't parse: {e}", feature.key))
-    })?;
-    let mut edits = Vec::new();
-    let mut kept = Vec::new();
-    for entry in &spec.entries {
-        if entry.target.text != target {
-            kept.push(entry.target.text.clone());
-            continue;
-        }
-        for v in entry_versions(&entry.detail) {
-            if in_line(line, v) {
-                edits.push(TextEdit::replace(v.span, next.text.clone()));
-            }
-        }
-    }
-    let to = apply_edits(&from, &edits).map_err(|_| {
-        ReleaseError::ModelEdit(format!("the feature `{}` can't be moved", feature.key))
-    })?;
-    let edit = file
-        .replace_value(
-            &path(&["features", &feature.key, "available"]),
-            Value::from(to.as_str()),
-        )
-        .map_err(ReleaseError::ModelEdit)?;
-    Ok((
-        MovedFeature {
-            key: feature.key.clone(),
-            from,
-            to,
-            kept,
-        },
-        edit,
-    ))
 }
 
 /// The edit that sets one of a target's lists, newest first, written as
@@ -813,99 +716,94 @@ fn split_output(key: &str) -> Option<(String, String, String)> {
     Some((build.to_owned(), output.to_owned(), file.to_owned()))
 }
 
-/// The file with each mark that names one of `features` rewritten to the
-/// feature's spec; `None` when it has none.
+/// The file with each `planned` its marks write for `target` rewritten to
+/// `line`, the line `planned` names; `None` when it has none.
 fn rewrite_marks(
     file: &FileIndex,
-    features: &[&Feature],
+    target: &str,
+    line: &Version,
 ) -> Result<Option<ReleasedFile>, ReleaseError> {
-    if features.is_empty() {
-        return Ok(None);
-    }
     let source: &str = &file.source;
-    let feature = |name: &str| features.iter().find(|f| f.key == name).copied();
-    let mut found: Vec<(Span, &Feature, Place)> = Vec::new();
-    for marker in &file.availability {
-        let (Some(Ok(spec)), Some((_, span))) = (&marker.spec, &marker.primary) else {
-            continue;
-        };
-        let Some(f) = spec.bare_name().and_then(|n| feature(&n.text)) else {
-            continue;
-        };
-        let place = if marker.binding.is_some() {
-            Place::Directive
-        } else {
-            Place::Row
-        };
-        found.push((*span, f, place));
-    }
-    if let Some((text, span)) = frontmatter_available(file)
-        && let Some(f) = feature(text.trim())
-    {
-        found.push((span, f, Place::Frontmatter));
-    }
-    if found.is_empty() {
-        return Ok(None);
-    }
-    found.sort_by_key(|(span, ..)| (span.start(), span.end()));
+    let mut found: Vec<Span> = file
+        .availability
+        .iter()
+        .filter_map(|marker| match (&marker.spec, &marker.primary) {
+            (Some(Ok(_)), Some((_, span))) => Some(*span),
+            _ => None,
+        })
+        .collect();
+    found.extend(frontmatter_available(file).map(|(_, span)| span));
+    found.sort_by_key(|span| (span.start(), span.end()));
     let lines = LineIndex::new(source);
     let mut edits = Vec::new();
     let mut marks = Vec::new();
-    for (span, f, place) in found {
-        let line = lines.line_col(span.start()).map_or(0, |lc| lc.line + 1);
-        let written = source.get(span.range()).unwrap_or_default();
-        let spec = f.available_text.trim();
-        // A row's value is quoted when it holds a space; inside quotes
-        // already, its span is the text between them.
-        let quoted = span.start() > 0 && source.as_bytes().get(span.start() - 1) == Some(&b'"');
-        let replacement = if written == f.key {
-            match place {
-                Place::Directive => spec.to_owned(),
-                Place::Row if quoted => spec.to_owned(),
-                Place::Row => format!("\"{spec}\""),
-                Place::Frontmatter if yaml_plain(spec) => spec.to_owned(),
-                Place::Frontmatter => format!("\"{spec}\""),
-            }
-        } else if written == format!("\"{}\"", f.key) {
-            format!("\"{spec}\"")
-        } else {
+    for span in found {
+        let Some(written) = source.get(span.range()) else {
+            continue;
+        };
+        let Ok(spec) = parse_availability(written, span.start()) else {
+            continue;
+        };
+        let words: Vec<Span> = spec
+            .entries
+            .iter()
+            .filter(|e| e.target.text == target)
+            .flat_map(|e| entry_versions(&e.detail))
+            .filter(|v| v.is_planned())
+            .map(|v| v.span)
+            .collect();
+        if words.is_empty() {
+            continue;
+        }
+        let at = lines.line_col(span.start()).map_or(0, |lc| lc.line + 1);
+        // A row's value or a frontmatter value whose escapes or line breaks
+        // move the spec off its source can't be rewritten where it's
+        // written.
+        if written.contains(['\n', '\\']) {
             return Err(ReleaseError::MarkUnrewritable {
                 path: file.path.to_string(),
-                line,
-                written: written.to_owned(),
-                key: f.key.clone(),
+                line: at,
+                written: written.trim().to_owned(),
             });
-        };
-        edits.push(TextEdit::replace(span, replacement));
+        }
+        let mine: Vec<TextEdit> = words
+            .iter()
+            .map(|w| TextEdit::replace(*w, line.text.clone()))
+            .collect();
+        let local: Vec<TextEdit> = words
+            .iter()
+            .map(|w| {
+                TextEdit::replace(
+                    Span::new(w.start() - span.start(), w.end() - span.start()),
+                    line.text.clone(),
+                )
+            })
+            .collect();
+        let to = apply_edits(written, &local).map_err(|_| ReleaseError::MarkUnrewritable {
+            path: file.path.to_string(),
+            line: at,
+            written: written.trim().to_owned(),
+        })?;
+        edits.extend(mine);
         marks.push(RewrittenMark {
-            line,
-            from: f.key.clone(),
-            to: spec.to_owned(),
+            line: at,
+            from: written.trim().to_owned(),
+            to: to.trim().to_owned(),
         });
+    }
+    if marks.is_empty() {
+        return Ok(None);
     }
     let text = apply_edits(source, &edits).map_err(|_| ReleaseError::MarkUnrewritable {
         path: file.path.to_string(),
         line: marks.first().map_or(0, |m| m.line),
         written: String::new(),
-        key: String::new(),
     })?;
     Ok(Some(ReleasedFile {
         path: file.path.clone(),
         text,
         marks,
     }))
-}
-
-/// Where a mark is written.
-#[derive(Clone, Copy)]
-enum Place {
-    /// `@available:`'s primary.
-    Directive,
-    /// A table row's `available` attribute, whose value is quoted when it
-    /// holds a space.
-    Row,
-    /// The frontmatter's `available`.
-    Frontmatter,
 }
 
 /// The frontmatter's `available` value, unquoted, and where it's written,

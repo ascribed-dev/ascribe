@@ -1,0 +1,12 @@
+spec = "0.1"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+
+[releases.self-managed]
+live = ["3.5"]
+planned = ["3.6"]
+
+[features.sso]
+name = "Single sign-on"
+available = "self-managed planned"

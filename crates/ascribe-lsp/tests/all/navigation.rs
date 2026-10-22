@@ -296,6 +296,80 @@ fn availability_completes_targets_states_and_features() {
     assert!(items(&complete(&mut client, &page, "---\ntitle: T$0\n---\n")).is_empty());
 }
 
+/// A copy of `examples/quill` that plans 3.6.
+fn quill_planning() -> Fixture {
+    let f = quill();
+    let model = read(&f, "ascribe.toml");
+    let lines = "live = [\"3.4\", \"3.5\"]\n";
+    assert!(model.contains(lines), "examples/quill lists its lines");
+    f.write(
+        "ascribe.toml",
+        &model.replacen(lines, &format!("{lines}planned = [\"3.6\"]\n"), 1),
+    );
+    f
+}
+
+#[test]
+fn planned_is_offered_where_a_version_goes_for_a_target_with_a_planned_line() {
+    let f = quill_planning();
+    let page = f.path("docs/quickstart.md");
+    let mut client = Client::start(&f.root());
+    // After a target, before the states.
+    let after_target = complete(&mut client, &page, "@available: self-managed $0\n");
+    let names = labels(&after_target);
+    assert_eq!(
+        names.first().map(String::as_str),
+        Some("planned"),
+        "{names:?}"
+    );
+    assert!(names.contains(&"preview".to_owned()), "{names:?}");
+    assert_eq!(
+        item(&after_target, "planned")["detail"],
+        "The planned line, 3.6"
+    );
+    // After a state.
+    let after_state = complete(&mut client, &page, "@available: self-managed preview $0\n");
+    assert_eq!(labels(&after_state), ["planned"]);
+    // In a history.
+    let history = complete(
+        &mut client,
+        &page,
+        "@available: self-managed (preview 3.3, ga $0\n",
+    );
+    assert_eq!(labels(&history), ["planned"]);
+    // A versionless target has no planned line.
+    let cloud = complete(&mut client, &page, "@available: cloud $0\n");
+    assert!(!labels(&cloud).contains(&"planned".to_owned()));
+}
+
+#[test]
+fn planned_is_not_offered_without_one_planned_line() {
+    let f = quill();
+    let page = f.path("docs/quickstart.md");
+    let mut client = Client::start(&f.root());
+    let after_target = complete(&mut client, &page, "@available: self-managed $0\n");
+    assert!(!labels(&after_target).contains(&"planned".to_owned()));
+    let after_state = complete(&mut client, &page, "@available: self-managed preview $0\n");
+    assert!(items(&after_state).is_empty());
+}
+
+#[test]
+fn hovering_planned_names_the_line() {
+    let f = quill_planning();
+    let page = f.path("docs/install-agent.md");
+    let mut client = Client::start(&f.root());
+    client.open(
+        &page,
+        2,
+        "## S\n@available: cloud, self-managed preview planned\n",
+    );
+    let value = hover_text(&mut client, &page, json!({ "line": 1, "character": 16 }));
+    assert_eq!(
+        value,
+        "Available: Quill Cloud (GA); self-managed (planned, 3.6)\n\n- `planned`: `self-managed`'s planned line, 3.6\n- `self-managed 3.6`: in line 3.6, planned"
+    );
+}
+
 #[test]
 fn a_page_s_type_completes_the_declared_types() {
     let f = Fixture::new(

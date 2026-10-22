@@ -57,7 +57,7 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 ### `ascribe versions release`
 @id {permalink=true}: cli-versions-release
 
-Releases a line: rewrites the marks that name it through a feature, moves the feature on, makes the line live, and archives the old current line where no build is versioned by the target. [When a line ships](index.md#release-day) has each step. It edits `ascribe.toml` in place, keeping its comments and order, and each mark where it's written. In a copy of `examples/quill` that plans 3.6, with a section marked `@available: sso` and `[features.sso]` available in `self-managed 3.6`, `ascribe versions release "self-managed 3.6" --next 3.7 --dry-run` says what it would do. Its site is versioned, so 3.5 stays live, with an output of its own, `site@3.5`:
+Releases a line: rewrites each mark's [`planned`](../writing/directives.md#availability-specs) for its target to the line's version, makes the line live, and archives the old current line where no build is versioned by the target. [When a line ships](index.md#release-day) has each step. It edits `ascribe.toml` in place, keeping its comments and order, and each mark where it's written. A feature's spec names its versions, so the release leaves it as it is. In a copy of `examples/quill` that plans 3.6, with a section marked `@available: self-managed planned`, `ascribe versions release "self-managed 3.6" --next 3.7 --dry-run` says what it would do, `--next` adding 3.7 to `planned` so that `planned` names it from then on. Its site is versioned, so 3.5 stays live, with an output of its own, `site@3.5`:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-release.txt
 
@@ -65,9 +65,9 @@ It builds the project in memory before and after, and refuses when rewriting the
 
 It writes only files git can put back as they were: `ascribe.toml` and each page it rewrites must be tracked, and unchanged since the last commit. So the release is one commit to read, and `git checkout` undoes it. With `--force` it writes them anyway, as it must outside a repository.
 
-A line that isn't planned can be released too, as long as it falls between the current line and the oldest planned one: a patch release, `3.5.1` when the lines are written as patches, needs no entry first. A feature that names the next planned line keeps naming it.
+A line that isn't planned can be released too, as long as it falls between the current line and the oldest planned one: a patch release, `3.5.1` when the lines are written as patches, needs no entry first. `planned` keeps naming the planned line, so no mark is rewritten.
 
-It refuses a line that's live or archived already, so running it twice changes nothing the second time; a planned line with an older one planned before it; and a line a feature names when no planned line follows it and there's no `--next`. A mark it can't rewrite where it's written, such as a frontmatter `available:` that spans lines, is named with its file and line, to write on one line first.
+It refuses a line that's live or archived already, so running it twice changes nothing the second time, and a planned line with an older one planned before it. A mark it can't rewrite where it's written, such as a frontmatter `available:` that spans lines, is named with its file and line, to write on one line first.
 
 @include: ../_generated/cli-versions-release-options.md
 

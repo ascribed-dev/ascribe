@@ -64,13 +64,33 @@ impl Ctx<'_> {
                 return;
             }
         };
+        // `planned` reads as the line it names (SPEC §4.4); one that names
+        // none is its own problem, and the rest of the spec is checked as
+        // written.
+        let resolved = self.model.resolve_planned(&spec);
+        let spec = resolved.spec;
         let states: Vec<&str> = self
             .model
             .lifecycle
             .iter()
             .map(|s| s.name.as_str())
             .collect();
-        let mut issues = Vec::new();
+        let mut issues: Vec<Issue> = resolved
+            .problems
+            .into_iter()
+            .map(|p| {
+                let issue = Issue::new(diagnostics::AVAILABLE_PLANNED_LINE, at(p.span))
+                    .with_arg("target", p.target.text);
+                if p.lines.is_empty() {
+                    issue
+                } else {
+                    let lines: Vec<&str> = p.lines.iter().map(|l| l.text.as_str()).collect();
+                    issue
+                        .with_variant("several")
+                        .with_arg("lines", quoted_list(&lines))
+                }
+            })
+            .collect();
         for problem in self.model.check_availability(&spec) {
             issues.push(match problem {
                 AvailabilityProblem::UnknownTarget(name) => {

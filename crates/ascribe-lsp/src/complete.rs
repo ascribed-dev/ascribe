@@ -475,9 +475,33 @@ impl Cx<'_> {
                 items.push(item);
             }
         };
+        // `planned`, where a version goes, for a target whose one planned
+        // line it names (SPEC §4.4).
+        let planned = |items: &mut Vec<CompletionItem>, target: &str| {
+            if let Some(line) = model.planned_line(target) {
+                let mut item = self.item(
+                    ascribe_core::availability::PLANNED,
+                    CompletionItemKind::KEYWORD,
+                    word.len(),
+                    ascribe_core::availability::PLANNED,
+                );
+                item.detail = Some(format!("The planned line, {}", line.text));
+                item.sort_text = Some("!planned".to_owned());
+                items.push(item);
+            }
+        };
         if depth > 0 {
-            if complete == 0 {
-                states(&mut items);
+            match complete {
+                0 => states(&mut items),
+                1 if !word.starts_with(|c: char| c.is_ascii_digit()) => {
+                    // The target is the word before the history's `(`.
+                    let before = typed.rfind('(').map_or("", |i| &typed[..i]);
+                    let entry = &before[before.rfind(',').map_or(0, |i| i + 1)..];
+                    if let Some(target) = entry.split_whitespace().next() {
+                        planned(&mut items, target);
+                    }
+                }
+                _ => {}
             }
             return items;
         }
@@ -523,7 +547,13 @@ impl Cx<'_> {
             1 if !word.starts_with(|c: char| c.is_ascii_digit())
                 && words.first().is_some_and(|t| model.is_target(t)) =>
             {
+                planned(&mut items, words[0]);
                 states(&mut items);
+            }
+            2 if !word.starts_with(|c: char| c.is_ascii_digit())
+                && model.lifecycle_state(words[1]).is_some() =>
+            {
+                planned(&mut items, words[0]);
             }
             _ => {}
         }

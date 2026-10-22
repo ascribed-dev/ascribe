@@ -260,7 +260,6 @@ test("the site's own pages share the docs' release tables, sources, and address,
   // implicit `release` dimension.
   for (const keys of [
     ["releases"],
-    ["features", "next"],
     ["phrases", "version"],
     ["consumer", "site"],
     ["consumer", "trailing-slash"],

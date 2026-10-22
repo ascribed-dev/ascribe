@@ -1,0 +1,9 @@
+description: >-
+  `planned` is a version word: it's accepted where a version goes, alone,
+  after a state, for each of two targets that have one planned line, in a
+  history, and in a table row's spec, and checked as the line it names,
+  so none of these is a problem.
+spec: ["4.4"]
+tags: [check]
+
+diagnostics: []

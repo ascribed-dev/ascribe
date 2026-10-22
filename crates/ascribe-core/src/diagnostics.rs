@@ -746,6 +746,9 @@ pub const BASELINE_ENTRY_UNMATCHED: DiagnosticSlug = DiagnosticSlug("baseline-en
 /// `ASC244`, advice, file level: a content check (area `project`).
 pub const FRONTMATTER_FIELD_REPEATED: DiagnosticSlug = DiagnosticSlug("frontmatter-field-repeated");
 
+/// `ASC245`, error, file level: SPEC §8.2, "`@available` | `planned` for a target with no planned line, or more than one".
+pub const AVAILABLE_PLANNED_LINE: DiagnosticSlug = DiagnosticSlug("available-planned-line");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -984,6 +987,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     TERM_OFF_GLOSSARY_PAGE,
     BASELINE_ENTRY_UNMATCHED,
     FRONTMATTER_FIELD_REPEATED,
+    AVAILABLE_PLANNED_LINE,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

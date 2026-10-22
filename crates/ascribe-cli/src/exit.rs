@@ -242,10 +242,6 @@ mod tests {
             "release_line_unplanned",
             "release's line isn't planned, nor between current and planned",
         ),
-        (
-            "release_next_missing",
-            "a feature names the line and nothing says where it moves",
-        ),
         ("release_next_bad", "--next can't be the next line"),
         (
             "release_mark_unrewritable",
@@ -563,7 +559,6 @@ mod tests {
                 | ReleaseError::Archived { .. }
                 | ReleaseError::NotOldestPlanned { .. }
                 | ReleaseError::Unplanned { .. }
-                | ReleaseError::NeedsNext { .. }
                 | ReleaseError::BadNext { .. }
                 | ReleaseError::MarkUnrewritable { .. }
                 | ReleaseError::ModelEdit(_)
@@ -932,9 +927,6 @@ mod tests {
                 line: text(),
                 why: text(),
             }),
-            Box::new(ReleaseError::NeedsNext {
-                features: vec![text()],
-            }),
             Box::new(ReleaseError::BadNext {
                 next: text(),
                 why: text(),
@@ -943,7 +935,6 @@ mod tests {
                 path: text(),
                 line: 1,
                 written: text(),
-                key: text(),
             }),
             Box::new(ReleaseError::ModelEdit(text())),
             Box::new(ReleaseError::ModelInvalid(text())),

@@ -3193,7 +3193,7 @@ spec = "4.4"
 reference = "content-model/content.md#71-releasestarget"
 when = "a feature's availability names a version for every target, each target lists its lines in `[releases]`, and no version is later than its target's current line"
 message = "feature `{key}` names releases up to {version}, and the current line of `{target}` is {current}, so what it marks has shipped"
-fix = "When the feature stands for what the next release adds, as one named `next` does, write the shipped release's spec at the content that shipped in it (`@available: ascribe 0.2.0`), and point the feature at the next planned line. When it's a history worth keeping by name, acknowledge it in [`[[intended]]`](content-model/checks.md#intended-acknowledgements). After each release, move its line from `planned` to `live` in [`[releases.<target>]`](content-model/content.md#71-releasestarget)."
+fix = "When the feature stood for what a release would add, write the shipped release's spec at the content that shipped in it (`@available: ascribe 0.2.0`), and mark what the next release adds `<target> planned` instead of keeping a feature for it. When it's a history worth keeping by name, acknowledge it in [`[[intended]]`](content-model/checks.md#intended-acknowledgements). After each release, move its line from `planned` to `live` in [`[releases.<target>]`](content-model/content.md#71-releasestarget)."
 
 [[diagnostic]]
 code = "ASC173"
@@ -3861,7 +3861,7 @@ spec = "4.4"
 reference = "content-model/content.md#71-releasestarget"
 row = "`@available` | Version newer than every release line its target declares"
 message = "`{version}` is newer than every line `[releases.{target}]` declares, and the newest is `{newest}`"
-fix = "Correct the number to a declared line, such as the newest, or, for a line that's planned, add it to `planned` in `[releases.<target>]`. Work whose number isn't known yet is marked with a feature, such as `next`, that names the planned line."
+fix = "Correct the number to a declared line, such as the newest, or, for a line that's planned, add it to `planned` in `[releases.<target>]`. Work for the planned line is marked with `planned` in place of its number, as `<target> planned`, and `ascribe versions release` writes the number when the line ships."
 
 [[diagnostic]]
 code = "ASC211"
@@ -4415,3 +4415,42 @@ reference = "content-model/index.md#41-page-types"
 when = "A type's own `frontmatter` declares a field exactly as `[frontmatter]` does, key for key, so the type's copy changes nothing. Reported at the type's field"
 message = "the type `{type}` declares `{field}` exactly as `[frontmatter]` does, so this copy changes nothing; delete it, and the type has `[frontmatter]`'s"
 fix = "Delete the type's field, and the type has the one in `[frontmatter]`, which is the same. The fix deletes its line, with the comment lines directly above it, when it's written as `key = value` under the table's header; one written another way is deleted by hand. A type's field that differs from the shared one in any key replaces it whole, for that type, and isn't reported: keep it when the type needs it to differ."
+
+[[diagnostic]]
+code = "ASC245"
+slug = "available-planned-line"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "4.4"
+reference = "writing/directives.md#the-planned-line"
+row = "`@available` | `planned` for a target with no planned line, or more than one"
+message = "`{target}` has no planned line, so `planned` names no version; declare one in `[releases.{target}] planned`, or write the version"
+messages.several = "`{target}` has more than one planned line, {lines}, so `planned` could mean any of them; write the version"
+fix = "Write the version in place of `planned`, or, for work in a line that hasn't shipped, declare that line in `[releases.<target>] planned`. `planned` names a target's planned line, so it needs exactly one: with two, write the version of the one the content is in."
+example.model = '''
+[releases.self-managed]
+live = ["3.4"]
+planned = ["3.6", "3.5"]
+'''
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: self-managed planned
+
+Sign in with your company's identity provider.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: self-managed 3.5
+
+Sign in with your company's identity provider.
+'''

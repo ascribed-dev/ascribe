@@ -48,7 +48,7 @@ VS Code's own search, **Search: Find in Files**, reads the source as written: it
 
 - A version in an availability spec, for a target with [release lines](../versions/lines.md): the line it falls in, and that line's status, such as "in line 3.4, live".
 
-@available: next
+@available: ascribe planned
 - A frontmatter key, in a page or in `ascribe.toml`: the field's type, and whether `[frontmatter]` declares it, the page's type, or neither, for the `title` every type has. On a field of `[frontmatter]`, the types that declare their own and replace it; on a type's own, whether it replaces a shared one, or is the same and [can be deleted](../content-model/index.md#41-page-types).
 
 - `replaces` in frontmatter: the page it replaces, and which page each line publishes. Go to Definition opens the replaced page.

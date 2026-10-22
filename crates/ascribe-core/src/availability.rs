@@ -10,9 +10,16 @@
 //! ```text
 //! availability = entry *( OWS "," OWS entry ) / feature-key
 //! entry        = target [ RWS detail ]
-//! detail       = version / state [ RWS version ] / "(" OWS history OWS ")"
-//! history      = state RWS version *( OWS "," OWS state RWS version )
+//! detail       = when / state [ RWS when ] / "(" OWS history OWS ")"
+//! history      = state RWS when *( OWS "," OWS state RWS when )
+//! when         = version / %s"planned"
 //! ```
+//!
+//! `planned` is the version word for the target's planned line. The parser
+//! returns it as a [`Version`] whose [`Version::is_planned`] is true and
+//! which has no components; the content model says which line it is
+//! (`ascribe_model::ContentModel::resolve_planned`), and nothing compares it
+//! before then.
 //!
 //! A lone name, such as `streaming-sync`, matches both `entry` and
 //! `feature-key`. The parser doesn't decide which it is; it returns one entry
@@ -49,7 +56,26 @@ pub struct Version {
     pub span: Span,
 }
 
+/// The version word for a target's planned line (SPEC §4.4).
+pub const PLANNED: &str = "planned";
+
 impl Version {
+    /// The version word `planned`, written at `span`.
+    pub fn planned(span: Span) -> Version {
+        Version {
+            text: PLANNED.to_owned(),
+            components: Vec::new(),
+            span,
+        }
+    }
+
+    /// Whether this is the version word `planned`, not yet replaced by the
+    /// line it names. It has no components, so it compares as `0` until
+    /// then.
+    pub fn is_planned(&self) -> bool {
+        self.components.is_empty() && self.text == PLANNED
+    }
+
     /// Compares two versions under the `numeric` versioning scheme:
     /// component by component from the left, numerically, with missing
     /// trailing components treated as `0`. `3.4` equals `3.4.0`, and `3.10`
@@ -123,6 +149,24 @@ pub struct AvailabilitySpec {
 }
 
 impl AvailabilitySpec {
+    /// Every version the spec names, in the order written, `planned` among
+    /// them.
+    pub fn versions(&self) -> impl Iterator<Item = &Version> {
+        self.entries.iter().flat_map(|e| match &e.detail {
+            Detail::None | Detail::State { version: None, .. } => Vec::new(),
+            Detail::Version(v)
+            | Detail::State {
+                version: Some(v), ..
+            } => vec![v],
+            Detail::History(steps) => steps.iter().map(|s| &s.version).collect(),
+        })
+    }
+
+    /// Whether the spec writes `planned` anywhere.
+    pub fn has_planned(&self) -> bool {
+        self.versions().any(Version::is_planned)
+    }
+
     /// The name, when the whole spec is one bare name. Such a spec is a
     /// feature key if the content model declares one by that name, and a
     /// target that is generally available otherwise (SPEC §4.4).
@@ -161,7 +205,8 @@ pub fn without_versions_through(
     target: &str,
     oldest: &Version,
 ) -> Option<AvailabilitySpec> {
-    let old = |v: &Version| v.compare(oldest).is_le();
+    // `planned` is newer than every live line, whichever it names.
+    let old = |v: &Version| !v.is_planned() && v.compare(oldest).is_le();
     let state_alone = |state: &Name| {
         if state.text == "ga" {
             Detail::None
@@ -381,15 +426,22 @@ impl Parser<'_> {
             Some(b) if b.is_ascii_alphabetic() => {
                 let state = self.name("a lifecycle state")?;
                 end = self.pos;
-                let version = match self.after_ws() {
-                    Some(b) if b.is_ascii_digit() => {
-                        let v = self.version()?;
-                        end = self.pos;
-                        Some(v)
-                    }
-                    _ => None,
-                };
-                Detail::State { state, version }
+                if state.text == PLANNED {
+                    Detail::Version(Version::planned(state.span))
+                } else {
+                    let version = match self.after_ws() {
+                        Some(b) if b.is_ascii_digit() => {
+                            let v = self.version()?;
+                            end = self.pos;
+                            Some(v)
+                        }
+                        Some(b) if b.is_ascii_alphabetic() => self.planned_word().inspect(|_| {
+                            end = self.pos;
+                        }),
+                        _ => None,
+                    };
+                    Detail::State { state, version }
+                }
             }
             _ => Detail::None,
         };
@@ -438,14 +490,20 @@ impl Parser<'_> {
                 });
             }
             self.skip_ws();
-            if !matches!(self.peek(), Some(b) if b.is_ascii_digit()) {
-                return if self.at_end() {
-                    Err(self.error_here("expected a version after the state"))
-                } else {
-                    Err(self.unexpected("a history step is a state and the version where it begins, such as `preview 3.3`"))
-                };
-            }
-            let version = self.version()?;
+            let version = match self.peek() {
+                Some(b) if b.is_ascii_digit() => self.version()?,
+                Some(b) if b.is_ascii_alphabetic() => match self.planned_word() {
+                    Some(v) => v,
+                    None => return Err(self.unexpected("a history step is a state and the version where it begins, such as `preview 3.3`")),
+                },
+                _ => {
+                    return if self.at_end() {
+                        Err(self.error_here("expected a version after the state"))
+                    } else {
+                        Err(self.unexpected("a history step is a state and the version where it begins, such as `preview 3.3`"))
+                    };
+                }
+            };
             steps.push(HistoryStep {
                 state,
                 span: self.span(start, self.pos),
@@ -464,6 +522,19 @@ impl Parser<'_> {
                 None => return Err(self.error_here("expected `)` to close the history")),
                 Some(_) => return Err(self.unexpected("expected `,` or `)`")),
             }
+        }
+    }
+
+    /// The version word `planned` at the cursor, moving past it; `None`, with
+    /// the cursor where it was, for any other word.
+    fn planned_word(&mut self) -> Option<Version> {
+        let start = self.pos;
+        let name = self.name("").ok()?;
+        if name.text == PLANNED {
+            Some(Version::planned(name.span))
+        } else {
+            self.pos = start;
+            None
         }
     }
 
@@ -621,6 +692,39 @@ mod tests {
     }
 
     #[test]
+    fn planned_in_each_place_a_version_goes() {
+        let planned = |d: &Detail| match d {
+            Detail::Version(v)
+            | Detail::State {
+                version: Some(v), ..
+            } => vec![v.is_planned()],
+            Detail::History(steps) => steps.iter().map(|s| s.version.is_planned()).collect(),
+            _ => Vec::new(),
+        };
+        let spec = ok("ascribe planned");
+        assert_eq!(planned(&spec.entries[0].detail), [true]);
+        let Detail::Version(v) = &spec.entries[0].detail else {
+            panic!("{spec:?}")
+        };
+        assert_eq!(v.span, Span::new(8, 15));
+        assert!(spec.bare_name().is_none());
+
+        let spec = ok("cloud, self-managed preview planned");
+        assert_eq!(planned(&spec.entries[1].detail), [true]);
+        let spec = ok("self-managed (preview 3.3, ga planned)");
+        assert_eq!(planned(&spec.entries[0].detail), [false, true]);
+        assert_eq!(spec_text(&spec), "self-managed (preview 3.3, ga planned)");
+        // A word that isn't `planned` after a state is still an error.
+        assert_eq!(snippet("cloud ga later", &err("cloud ga later")), "l");
+        assert_eq!(snippet("cloud (ga later)", &err("cloud (ga later)")), "l");
+        // `planned` alone is a target, as any bare name is.
+        assert_eq!(
+            ok("planned").bare_name().map(|n| n.text.as_str()),
+            Some("planned")
+        );
+    }
+
+    #[test]
     fn two_targets() {
         let spec = ok("cloud, self-managed preview 3.3");
         assert_eq!(spec.entries.len(), 2);
@@ -741,6 +845,12 @@ mod tests {
             ("self-managed", None),
             ("cloud", None),
             ("other 3.1", None),
+            ("self-managed planned", None),
+            ("self-managed (preview 3.1, ga planned)", None),
+            (
+                "self-managed (preview 3.1, ga 3.4, deprecated planned)",
+                Some("self-managed (ga 3.4, deprecated planned)"),
+            ),
         ] {
             let got = without_versions_through(&ok(text), "self-managed", &oldest);
             assert_eq!(got.as_ref().map(spec_text).as_deref(), simpler, "{text}");

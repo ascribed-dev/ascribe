@@ -1,0 +1,63 @@
+description: >-
+  `planned` in a spec's version place means its target's planned line: it
+  filters as that line's version does, alone, after a state, for each of
+  two targets with planned lines of their own, and in a history, and a
+  retained annotation shows the line's version in its place.
+spec: ["4.4", "9.2", "9.3"]
+tags: [resolve]
+
+builds:
+  sm-3.5:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: History
+          - directive: available
+            primary: self-managed (preview 3.5, ga 3.6)
+            binding: heading
+          - paragraph: History text.
+  sm-3.6:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Sync
+          - directive: available
+            primary: self-managed 3.6
+            binding: heading
+          - paragraph: Sync text.
+          - heading: 2
+            text: Preview
+          - directive: available
+            primary: cloud, self-managed preview 3.6
+            binding: heading
+          - paragraph: Preview text.
+          - heading: 2
+            text: Both
+          - directive: available
+            primary: self-managed 3.6, edge beta 1.1
+            binding: heading
+          - paragraph: Both text.
+          - heading: 2
+            text: History
+          - directive: available
+            primary: self-managed (preview 3.5, ga 3.6)
+            binding: heading
+          - paragraph: History text.
+  edge-1.1:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Both
+          - directive: available
+            primary: self-managed 3.6, edge beta 1.1
+            binding: heading
+          - paragraph: Both text.

@@ -45,9 +45,9 @@ pub enum Command {
     /// other doesn't, and those whose state differs.
     #[command(after_help = docs_link!("cli-versions-changes"))]
     Changes(ChangesArgs),
-    /// Release a line: rewrite every mark that names a feature pointing at
-    /// the line to the line's spec, point the feature at the next planned
-    /// line, and move the line from planned to live. Where no build is
+    /// Release a line: rewrite every mark that writes `planned` for the
+    /// target to the line's version, and move the line from planned to
+    /// live. Where no build is
     /// versioned by the target, the line that was current moves to
     /// archived.
     ///
@@ -119,9 +119,8 @@ pub struct ReleaseArgs {
     #[arg(value_name = "LINE")]
     pub line: String,
 
-    /// The line the features that named the released line move to, added
-    /// to planned. Needed when a feature names the line and no planned
-    /// line follows it.
+    /// The line planned after the released one, added to planned, so that
+    /// `planned` names it from then on.
     #[arg(long, value_name = "LINE")]
     pub next: Option<String>,
 
@@ -568,16 +567,13 @@ pub(crate) struct ReleaseJson {
     /// Whether the line was in `planned`; a line that wasn't is a release
     /// nobody planned, such as a patch.
     was_planned: bool,
-    /// The line the features that named the released one move to, when
-    /// one does.
+    /// The line planned after the released one, from `--next`.
     next: Option<String>,
     /// Whether `next` was added to `planned`, from `--next`.
     next_added: bool,
     /// The line that was current, moved to `archived` with no address,
     /// because no build is versioned by the target.
     archived: Option<String>,
-    /// Each feature that named the line, pointed at `next`.
-    features: Vec<FeatureJson>,
     /// Each source file whose marks are rewritten, from the project root.
     files: Vec<FileJson>,
     /// What the release changes in the builds' outputs, by build and
@@ -615,9 +611,9 @@ struct FileJson {
 struct MarkJson {
     /// Its line, from 1.
     line: u32,
-    /// The feature it named.
+    /// The spec as written.
     from: String,
-    /// The spec it names now.
+    /// The spec as rewritten.
     to: String,
 }
 
@@ -640,7 +636,7 @@ struct OutputJson {
 }
 
 /// The version of the release's JSON.
-const RELEASE_SCHEMA_VERSION: u32 = 1;
+const RELEASE_SCHEMA_VERSION: u32 = 2;
 
 impl ReleaseJson {
     fn new(r: &Released, written: bool, layout: &ascribe_resolve::Layout) -> ReleaseJson {
@@ -654,16 +650,6 @@ impl ReleaseJson {
             next: r.next.clone(),
             next_added: r.next_added,
             archived: r.archived.clone(),
-            features: r
-                .features
-                .iter()
-                .map(|f| FeatureJson {
-                    key: f.key.clone(),
-                    from: f.from.clone(),
-                    to: f.to.clone(),
-                    kept: f.kept.clone(),
-                })
-                .collect(),
             files: r
                 .files
                 .iter()
@@ -696,9 +682,9 @@ impl ReleaseJson {
 }
 
 /// Exit codes: 0 when the line is released, or with `--dry-run` would be;
-/// 2 when it can't be: the line isn't one to release, a feature names it
-/// and nothing says where the feature goes, a file can't be put back or
-/// written, or a step that should change no output would.
+/// 2 when it can't be: the line isn't one to release, a mark can't be
+/// rewritten, a file can't be put back or written, or a step that should
+/// change no output would.
 fn run_release(
     global: &Global,
     args: &ReleaseArgs,
@@ -823,10 +809,10 @@ fn write_release(
     content: &Path,
 ) -> io::Result<()> {
     let (target, line) = (&r.target, &r.line);
-    let (is, rewrote, names, moved) = if dry_run {
-        ("would be", "Would rewrite", "would name", "would move")
+    let (is, rewrote, moved) = if dry_run {
+        ("would be", "Would rewrite", "would move")
     } else {
-        ("is", "Rewrote", "now names", "moved")
+        ("is", "Rewrote", "moved")
     };
     writeln!(out, "{target} {line} {is} live, and current.")?;
     let marks: usize = r.files.iter().map(|f| f.marks.len()).sum();
@@ -849,28 +835,9 @@ fn write_release(
             )?;
         }
     }
-    let next = r.next.as_deref().unwrap_or_default();
-    for f in &r.features {
-        writeln!(
-            out,
-            "`{}` {names} {next}, which is planned{}.",
-            f.key,
-            if f.kept.is_empty() {
-                String::new()
-            } else {
-                format!(
-                    "; it names {} too, left as {}: look at it",
-                    f.kept.join(", "),
-                    if f.kept.len() == 1 {
-                        "it was"
-                    } else {
-                        "they were"
-                    }
-                )
-            }
-        )?;
-    }
-    if r.features.is_empty() && r.next_added {
+    if let Some(next) = &r.next
+        && r.next_added
+    {
         writeln!(out, "{target} {next} {is} planned.")?;
     }
     if let Some(archived) = &r.archived {
