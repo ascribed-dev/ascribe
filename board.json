@@ -5109,7 +5109,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Content model: frontmatter every type shares, an implicit title, and roles by a field's name"
     },
     {
@@ -5163,7 +5163,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Releases declare their targets, in an implicit release dimension"
     },
     {
@@ -5181,7 +5181,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "planned as a version word in an availability spec"
     },
     {
@@ -5199,7 +5199,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Content model defaults: sources ignore node_modules, agents with a site, prose-not-checked when asked"
     },
     {
