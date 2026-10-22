@@ -100,7 +100,8 @@ impl Baseline {
                 message,
             };
             if i == 0 {
-                header(line).map_err(wrong)?;
+                // An editor on Windows may begin the file with a byte order mark.
+                header(line.strip_prefix('\u{feff}').unwrap_or(line)).map_err(wrong)?;
                 continue;
             }
             if line.trim().is_empty() || line.starts_with('#') {
@@ -171,7 +172,9 @@ fn entry(line: &str) -> Result<Identity, String> {
         .flatten()
         .filter(|_| order == "0" || !order.starts_with('0'))
         .ok_or_else(|| format!("{shape}; `{order}` isn't an order, a whole number from 0"))?;
-    if file.is_empty() || file.starts_with(' ') {
+    // The file is the rest of the line, spaces and all, so any path
+    // `text` writes reads back.
+    if file.is_empty() {
         return Err(format!("{shape}, and the file is missing"));
     }
     Ok(Identity {
@@ -409,6 +412,40 @@ mod tests {
     }
 
     #[test]
+    fn any_path_the_text_writes_reads_back() {
+        let written = [
+            identity("nav-label-long", " notes.md", "0123456789abcdef", 0),
+            identity("nav-label-long", "docs/a page.md", "0123456789abcdef", 1),
+            identity(
+                "link-text-generic",
+                "docs/#1 #tag.md",
+                "91c04e2d7b5a6f18",
+                0,
+            ),
+            identity("link-text-generic", "trailing .md ", "91c04e2d7b5a6f18", 2),
+        ];
+        let read = Baseline::parse(&text(&written))
+            .map(|b| {
+                b.entries
+                    .into_iter()
+                    .map(|e| e.identity)
+                    .collect::<HashSet<_>>()
+            })
+            .map_err(|e| e.to_string());
+        assert_eq!(read, Ok(written.into_iter().collect()));
+    }
+
+    #[test]
+    fn a_byte_order_mark_before_the_header_is_skipped() {
+        let read = Baseline::parse(
+            "\u{feff}# ascribe baseline 1\nnav-label-long 0123456789abcdef 0 a.md\n",
+        )
+        .map(|b| b.entries.len())
+        .map_err(|e| e.to_string());
+        assert_eq!(read, Ok(1));
+    }
+
+    #[test]
     fn a_line_that_doesnt_parse_is_named() {
         let wrong = |text: &str| Baseline::parse(text).map_err(|e| e.to_string());
         let ok = "# ascribe baseline 1\n";
@@ -443,10 +480,6 @@ mod tests {
             ("nav-label-long 0123456789abcdef -1 a.md", "isn't an order"),
             ("nav-label-long 0123456789abcdef 01 a.md", "isn't an order"),
             ("nav-label-long 0123456789abcdef 0 ", "the file is missing"),
-            (
-                "nav-label-long 0123456789abcdef 0  a.md",
-                "the file is missing",
-            ),
         ] {
             let got = line_2(line);
             assert!(

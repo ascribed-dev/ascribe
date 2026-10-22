@@ -79,8 +79,8 @@ link-text-generic 91c04e2d7b5a6f18 1 guides/install.md
 ```
 
 - **The first line** is `# ascribe baseline 1`: the format, and its version. A file of a later version is from a newer Ascribe.
-- **`#` starts a comment**, and a blank line is ignored. `ascribe baseline write` and `prune` write the file again in their own form, with their own comment, so a comment of yours isn't kept.
-- **An entry** is four fields, each separated from the next by one space: the check's name; the fingerprint, 16 lowercase hexadecimal digits; the order, a whole number from 0; and the file, last, so a path with spaces needs no quoting. The file is from the project's folder, the one `ascribe.toml` is in, with `/`.
+- **A line that starts with `#` is a comment**, and a blank line is ignored. A `#` anywhere else is part of the line: in a path it's just text, and a line with spaces before its `#` is read as an entry, so it doesn't parse. `ascribe baseline write` and `prune` write the file again in their own form, with their own comment, so a comment of yours isn't kept.
+- **An entry** is four fields, each separated from the next by one space: the check's name; the fingerprint, 16 lowercase hexadecimal digits; the order, a whole number from 0; and the file, last: the rest of the line after the third space, so a path with spaces needs no quoting. The file is from the project's folder, the one `ascribe.toml` is in, with `/`.
 - **The entries are sorted** by file, then check, then fingerprint, then order, so a file's entries are together, and a diff reads as a list of problems.
 
 **The fingerprint** is the first 16 hexadecimal digits of the SHA-256 of the text the problem is reported at, or of its line's text when it's reported at no text, with each run of spaces and line ends read as one space and the ends trimmed. **The order** tells apart problems with the same check, file, and fingerprint, as two links to one missing page in one paragraph: 0 for the first in the file, then 1, and so on.
