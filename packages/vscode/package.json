@@ -797,7 +797,7 @@
           },
           "default": [],
           "scope": "window",
-          "markdownDescription": "Glob patterns, from each workspace folder, for folders whose `ascribe.toml` isn't a project, such as test fixtures: `tests/**`. A project there gets no language server, and isn't listed. Folders named `node_modules`, and those `files.exclude` hides, are left out too."
+          "markdownDescription": "Glob patterns, from each workspace folder, for folders whose `ascribe.toml` isn't a project, such as test fixtures: `tests/**`. A project there gets no language server, and isn't listed. Left out too, without a pattern: an `ascribe.toml` git ignores, in a workspace folder that's a git repository; a source's copies, `sources/<name>/` in a project's folder; folders `files.exclude` hides; and every folder named `.ascribe`, `node_modules`, `bower_components`, `vendor`, `.venv`, `venv`, `__pypackages__`, `target`, `dist`, `.output`, `.next`, `.nuxt`, `.svelte-kit`, `.astro`, `.turbo`, `.vercel`, `.netlify`, `.cache`, `coverage`, `.gradle`, `.vscode-test`, `.tox`, or `.nox`. None of these can be brought back with a setting: to work on a project in one, open its folder as a workspace folder of its own."
         },
         "ascribe.formatOnSave": {
           "type": "boolean",

@@ -83,17 +83,52 @@ export function globFolder(folder: string): string {
 }
 
 /**
+ * The folders never searched for projects, wherever they are and whether or
+ * not git ignores them: Ascribe's own outputs and caches, dependencies, and
+ * build output and caches whose names are only ever that. Not `build`, `out`,
+ * or `bin`, which are also folders people write in; git's ignore rules leave
+ * those out where they're output. The setting's description and the editor's
+ * settings page list them too, and a unit test holds the three together.
+ */
+export const LEFT_OUT_FOLDERS = [
+  ".ascribe",
+  "node_modules",
+  "bower_components",
+  "vendor",
+  ".venv",
+  "venv",
+  "__pypackages__",
+  "target",
+  "dist",
+  ".output",
+  ".next",
+  ".nuxt",
+  ".svelte-kit",
+  ".astro",
+  ".turbo",
+  ".vercel",
+  ".netlify",
+  ".cache",
+  "coverage",
+  ".gradle",
+  ".vscode-test",
+  ".tox",
+  ".nox",
+] as const;
+
+/**
  * The pattern that leaves folders out of the search for projects: every
- * `node_modules`, each pattern `files.exclude` turns on (`true`, not a `when`
- * clause), and each of `ascribe.projects.exclude`, as one brace group.
- * VS Code's globs don't nest braces, so each pattern's own are expanded first.
+ * folder of `LEFT_OUT_FOLDERS`, each pattern `files.exclude` turns on
+ * (`true`, not a `when` clause), and each of `ascribe.projects.exclude`, as
+ * one brace group. VS Code's globs don't nest braces, so each pattern's own
+ * are expanded first.
  */
 export function projectExclude(
   filesExclude: Readonly<Record<string, unknown>>,
   projectsExclude: readonly unknown[],
 ): string {
   const patterns = [
-    "**/node_modules/**",
+    ...LEFT_OUT_FOLDERS.map((folder) => `**/${folder}/**`),
     ...Object.entries(filesExclude)
       .filter(([, on]) => on === true)
       .map(([pattern]) => pattern),
@@ -109,6 +144,21 @@ export function projectExclude(
   ];
   const [only] = all;
   return all.length === 1 && only !== undefined ? only : `{${all.join(",")}}`;
+}
+
+/**
+ * Whether an `ascribe.toml` is in a project's copies of a source in another
+ * repository, `sources/<name>/` in the folder of another of `configs` (SPEC
+ * §7.4): that repository's own project, which the project shows as code.
+ */
+export function inSourceCopies(config: string, configs: readonly string[]): boolean {
+  const file = comparable(config);
+  return configs.some((other) => {
+    const folder = path.posix.dirname(comparable(other));
+    const copies = folder.endsWith("/") ? `${folder}sources/` : `${folder}/sources/`;
+    // Below `sources/<name>/`, not `sources/` itself.
+    return file.startsWith(copies) && file.slice(copies.length).includes("/");
+  });
 }
 
 /**
