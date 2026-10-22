@@ -1,0 +1,9 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.index]
+
+[types.guide.frontmatter]
+level = "string?"

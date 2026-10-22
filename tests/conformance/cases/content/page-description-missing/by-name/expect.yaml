@@ -1,0 +1,8 @@
+description: >-
+  A string field named `description` has the `description` role by its name,
+  so a page without one is reported.
+spec: ["7.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: page-description-missing, line: 1, severity: advice}

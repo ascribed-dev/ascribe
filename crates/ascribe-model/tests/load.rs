@@ -777,6 +777,70 @@ fn full_marks_its_description_and_review_date() {
 }
 
 #[test]
+fn a_type_has_the_shared_fields_and_the_roles_of_their_names() {
+    use ascribe_model::FieldRole;
+    let toml = r#"spec = "0.1"
+
+[frontmatter]
+description = "string?"
+owner = "enum(docs, api)"
+review-date = "date?"
+audience = "string"
+
+[types.guide]
+
+[types.index.frontmatter]
+title = { type = "string", inline = "code" }
+description = { type = "number?" }
+summary = { type = "string?", role = "description" }
+team = { type = "string", role = "owner" }
+"#;
+    let m = load_str(toml, FileId::new(0)).unwrap();
+    let names = |i: usize| -> Vec<&str> {
+        m.types[i]
+            .frontmatter
+            .fields
+            .iter()
+            .map(|f| f.name.as_str())
+            .collect()
+    };
+    let role = |i: usize, role| {
+        m.types[i]
+            .frontmatter
+            .field_with_role(role)
+            .map(|f| f.name.as_str())
+    };
+    // `title` comes first when nothing declares it; a type's own field
+    // replaces a shared one in its place.
+    assert_eq!(
+        names(0),
+        ["title", "description", "owner", "review-date", "audience"]
+    );
+    assert_eq!(
+        names(1),
+        [
+            "description",
+            "owner",
+            "review-date",
+            "audience",
+            "title",
+            "summary",
+            "team"
+        ]
+    );
+    assert_eq!(role(0, FieldRole::Description), Some("description"));
+    assert_eq!(role(0, FieldRole::Owner), Some("owner"));
+    assert_eq!(role(0, FieldRole::ReviewDate), Some("review-date"));
+    // The type gives two roles to fields of other names.
+    assert_eq!(role(1, FieldRole::Description), Some("summary"));
+    assert_eq!(role(1, FieldRole::Owner), Some("team"));
+    assert_eq!(role(1, FieldRole::ReviewDate), Some("review-date"));
+    let title = &m.types[1].frontmatter.fields[4];
+    assert!(title.required && title.inline.is_some());
+    assert_eq!(m.frontmatter.len(), 4);
+}
+
+#[test]
 fn releases_say_which_lines_are_planned_ending_and_archived() {
     let m = example("full.toml");
     let r = m.releases_of("self-managed").unwrap();

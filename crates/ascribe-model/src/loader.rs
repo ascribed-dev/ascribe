@@ -363,7 +363,8 @@ impl<'s> Loader<'s> {
         let features = self.features_checked(features, &dimensions, &lifecycle);
 
         let fragments = self.fragments(root.get("fragments"));
-        let types = self.types(root.get("types"), &fragments);
+        let frontmatter = self.shared_frontmatter(root.get("frontmatter"));
+        let types = self.types(root.get("types"), &frontmatter);
         let glossary = self.glossary(root.get("glossary"), &fragments);
         let image_attributes = self.images(root.get("images"));
         let widgets = self.widgets(root.get("widgets"));
@@ -384,6 +385,7 @@ impl<'s> Loader<'s> {
         Some(ContentModel {
             spec: spec?,
             project: project.value,
+            frontmatter,
             types,
             fragments,
             dimensions,

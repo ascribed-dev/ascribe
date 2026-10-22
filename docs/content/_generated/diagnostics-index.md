@@ -69,7 +69,6 @@
 | [ASC068](../checks/diagnostics/content-model.md#ASC068) | `model-path-absolute` | Error | File | write |
 | [ASC069](../checks/diagnostics/content-model.md#ASC069) | `model-content-root-missing` | Error | File | write |
 | [ASC070](../checks/diagnostics/content-model.md#ASC070) | `model-output-overlaps-content` | Error | File | write |
-| [ASC073](../checks/diagnostics/content-model.md#ASC073) | `model-type-title` | Error | File | write |
 | [ASC074](../checks/diagnostics/content-model.md#ASC074) | `model-field-reserved` | Error | File | write |
 | [ASC075](../checks/diagnostics/content-model.md#ASC075) | `model-type-syntax` | Error | File | write |
 | [ASC076](../checks/diagnostics/content-model.md#ASC076) | `model-type-fields` | Error | File | write |

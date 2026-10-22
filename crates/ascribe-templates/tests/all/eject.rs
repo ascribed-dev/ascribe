@@ -308,12 +308,20 @@ fn the_docs_reference_is_what_keeping_the_type_writes_apart_from_its_purpose() {
         .filter(|l| !l.starts_with("template = ") && !l.starts_with("guide = "))
         .map(|l| format!("{l}\n"))
         .collect();
-    let model = format!("{MODEL}\n{without}");
+    // The fields every type has, which the template's frontmatter needs.
+    let shared_start = docs
+        .find("[frontmatter]\n")
+        .expect("the docs declare shared frontmatter");
+    let shared_end = docs[shared_start..]
+        .find("\n\n")
+        .map_or(docs.len(), |i| shared_start + i + 1);
+    let shared = &docs[shared_start..shared_end];
+    let model = format!("{MODEL}\n{shared}\n{without}");
     let dir = project(&model);
     keeping(dir.path(), &["reference"]).expect("ejected");
     assert_eq!(
         read(dir.path(), "ascribe.toml"),
-        format!("{MODEL}\n{table}")
+        format!("{MODEL}\n{shared}\n{table}")
     );
 }
 
@@ -489,9 +497,7 @@ fn a_project_with_no_types_keeps_the_page_type_its_pages_had() {
     assert!(answer.page_declared);
     let text = read(dir.path(), "ascribe.toml");
     assert!(
-        text.starts_with(
-            "spec = \"0.1\"\n\n[types.page.frontmatter]\ntitle = \"string\"\n\n[types.how-to]\n"
-        ),
+        text.starts_with("spec = \"0.1\"\n\n[types.page]\n\n[types.how-to]\n"),
         "{text}"
     );
     let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
@@ -707,5 +713,19 @@ fn the_pages_that_name_no_type_are_listed() {
     assert_eq!(
         answer.untyped,
         ["docs/guides/a.md", "docs/guides/b.md", "docs/index.md"]
+    );
+}
+
+#[test]
+fn a_type_added_leaves_out_the_fields_every_type_has() {
+    let model = "spec = \"0.1\"\n\n[frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\ndescription = \"string\"\n";
+    let dir = project(model);
+    run(dir.path(), &["how-to"], "templates").expect("ejected");
+    let text = read(dir.path(), "ascribe.toml");
+    assert!(
+        text.ends_with(
+            "[types.how-to]\ntemplate = \"templates/how-to.md\"\nguide = [\"templates/how-to.guide.md\", \"templates/how-to.ascribe.md\"]\n"
+        ),
+        "{text}"
     );
 }

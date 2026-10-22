@@ -1,0 +1,13 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+# Every page type has `[frontmatter]`'s fields; a type's own add to them.
+[frontmatter]
+audience = "enum(admins, developers)"
+
+[types.guide]
+
+[types.reference.frontmatter]
+api-version = "string"

@@ -169,13 +169,8 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\ntype = \"string?\" #!\n",
         ),
         case(
-            "model-type-title",
-            None,
-            "spec = \"0.1\"\n[types.a.frontmatter] #!\nother = \"string\"\n",
-        ),
-        case(
-            "model-type-title",
-            Some("not-string"),
+            "model-field-reserved",
+            Some("title"),
             "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string?\" #!\n",
         ),
         case(

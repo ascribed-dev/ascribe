@@ -161,25 +161,14 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 ## Content types, fields, and attributes
 
-### ASC073 `model-type-title`
-@id {permalink=true}: ASC073
-
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
-
-**Message:** content type `{type}` must declare title = "string": it's the page title, used for empty link text
-
-**Fix:** Declare `title = "string"` in the type's `frontmatter`.
-
-**Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
-
 ### ASC074 `model-field-reserved`
 @id {permalink=true}: ASC074
 
 Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
-**Message:** `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]`
+**Message:** `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[{table}]`
 
-**Fix:** Remove the field from the type. Every page accepts it already, with the meaning the specification gives it.
+**Fix:** Remove the field from the type. Every page accepts it already, with the meaning the specification gives it. Every page type has `title` as a required string: declare it only to set `inline` or `phrases`.
 
 **Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
 

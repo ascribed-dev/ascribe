@@ -1,0 +1,8 @@
+description: >-
+  A type with no keys is a type a page can name: its pages need only a
+  `title`.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-unknown-key, file: index.md, line: 4}
