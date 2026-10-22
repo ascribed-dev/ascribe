@@ -1,6 +1,7 @@
 // Problems counted by severity, in words: what the Project view's and This
 // page's icons mean, said in their tooltips and to a screen reader, and what
-// Check Every Build's notification says. No VS Code in this module.
+// Check Every Build's notification says; and the source their diagnostics
+// name. No VS Code in this module.
 
 import type { ProblemCounts } from "./webview/viewProtocol.js";
 
@@ -17,4 +18,21 @@ export function problemsText({ errors, warnings, advice }: ProblemCounts): strin
   ].filter(Boolean);
   if (parts.length < 3) return parts.join(" and ");
   return `${parts.slice(0, -1).join(", ")}, and ${parts.at(-1)}`;
+}
+
+/** The source the language server gives its diagnostics. */
+export const SOURCE = "ascribe";
+
+/**
+ * The source the Problems panel shows for a project's diagnostics: `ascribe`,
+ * or `ascribe · docs` with the project's name when the workspace has more
+ * than one, so it says which server found them.
+ */
+export function diagnosticSource(name: string | undefined): string {
+  return name === undefined ? SOURCE : `${SOURCE} · ${name}`;
+}
+
+/** Whether a diagnostic's source is Ascribe's, named for a project or not. */
+export function isAscribeSource(source: string | undefined): boolean {
+  return source === SOURCE || (source?.startsWith(`${SOURCE} · `) ?? false);
 }

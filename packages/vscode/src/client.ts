@@ -25,6 +25,8 @@ import {
 } from "./edit.js";
 import { nodeEnvironment, shellCommand, usesShell } from "./environment.js";
 import { PREVIEW_CHANGED, type PreviewChangedParams } from "./preview/protocol.js";
+import { isAscribeSource, SOURCE } from "./problems.js";
+import { follow, killTree } from "./processes.js";
 import { globFolder, samePath, type Project } from "./projects.js";
 import { scopeMiddleware, type LensScope } from "./scope.js";
 import { ServerStatus, type ServerState } from "./serverState.js";
@@ -55,6 +57,8 @@ export interface ProjectHost {
     document: vscode.TextDocument,
     sources: readonly string[],
   ): boolean;
+  /** The source `project`'s diagnostics show in the Problems panel (`diagnosticSource` in problems.ts). */
+  diagnosticSource(project: Project): string;
   /** The titles of `project`'s lenses in a document as the editor shows them, named for it where another server answers with lenses too. */
   lensTitles(
     project: Project,
@@ -266,7 +270,28 @@ export class ProjectServer implements vscode.Disposable {
 
   /** A diagnostic the server published, as the protocol has it: what `ascribe/agentPrompt` takes. */
   protocolDiagnostic(diagnostic: vscode.Diagnostic): unknown {
-    return this.client?.code2ProtocolConverter.asDiagnostic(diagnostic);
+    const converted = this.client?.code2ProtocolConverter.asDiagnostic(diagnostic);
+    // With the source the server gave it, not the project's name.
+    if (converted && isAscribeSource(converted.source)) converted.source = SOURCE;
+    return converted;
+  }
+
+  /**
+   * Names the server's diagnostics in the Problems panel again, as
+   * `host.diagnosticSource` has it now: when a second project appears, or
+   * all but one go.
+   */
+  renameDiagnostics(): void {
+    const collection = this.client?.diagnostics;
+    if (!collection) return;
+    const source = this.host.diagnosticSource(this.project);
+    const renamed: [vscode.Uri, vscode.Diagnostic[]][] = [];
+    collection.forEach((uri, diagnostics) => {
+      if (diagnostics.some((d) => isAscribeSource(d.source) && d.source !== source)) {
+        renamed.push([uri, diagnostics.map((d) => named(d, source))]);
+      }
+    });
+    for (const [uri, diagnostics] of renamed) collection.set(uri, diagnostics);
   }
 
   /** Settles when the current start or restart has finished, successfully or not. */
@@ -392,6 +417,7 @@ export class ProjectServer implements vscode.Disposable {
               this.host.lensTitles(this.project, document, titles, token),
           },
           (uri) => this.host.toldOfChange(this.project, uri, this.sources, this.from),
+          () => this.host.diagnosticSource(this.project),
         ),
         errorHandler: this.errorHandler(),
       },
@@ -401,6 +427,8 @@ export class ProjectServer implements vscode.Disposable {
     );
     client.onDidChangeState(({ newState }) => {
       if (newState === State.Running) {
+        // Each process the client starts, after a crash too.
+        if (client.serverProcess) follow(client.serverProcess);
         this.runningSince = Date.now();
         this.status.set("running");
         this.started.fire();
@@ -455,11 +483,18 @@ export class ProjectServer implements vscode.Disposable {
     this.from = [];
     this.status.set("stopped");
     if (!client) return;
+    // Read before stopping, which forgets it.
+    const child = client.serverProcess;
     try {
+      // The client clears its diagnostics as it starts to stop, whether or
+      // not it stops in time.
       await client.dispose();
     } catch (error) {
-      // A server that already died can't be stopped politely; there's nothing to do.
       this.output.appendLine(`Stopping the language server: ${String(error)}`);
+      // One that didn't stop in time is killed now, with what it started:
+      // the client would kill it two seconds later, but not if the host
+      // exits first. One that already died has nothing left to kill.
+      if (child) killTree(child);
     }
   }
 
@@ -561,6 +596,7 @@ function clientOptions(
   observe: (message: Message) => void,
   lenses: LensScope,
   toldOfChange: (uri: vscode.Uri) => boolean,
+  source: () => string,
 ): LanguageClientOptions {
   const scope = scopeMiddleware(ownedElsewhere, lenses, toldOfChange);
   const folder = globFolder(project.folder);
@@ -582,6 +618,16 @@ function clientOptions(
     outputChannel,
     middleware: {
       ...scope,
+      // Named for the project where the workspace has more than one.
+      handleDiagnostics: (uri, diagnostics, next) => {
+        const name = source();
+        const handle = scope.handleDiagnostics ?? ((u, d, n) => n(u, d));
+        handle(
+          uri,
+          diagnostics.map((d) => named(d, name)),
+          next,
+        );
+      },
       workspace: {
         ...scope.workspace,
         willRenameFiles: (event, next) =>
@@ -609,6 +655,12 @@ function clientOptions(
     // forwards, so files that aren't open are followed too. Watching them
     // here as well would deliver every event twice.
   };
+}
+
+/** A diagnostic of the server's with `source` in place of the server's own, in place. */
+function named(diagnostic: vscode.Diagnostic, source: string): vscode.Diagnostic {
+  if (isAscribeSource(diagnostic.source)) diagnostic.source = source;
+  return diagnostic;
 }
 
 /** Whether a message is a `textDocument/publishDiagnostics` notification. */

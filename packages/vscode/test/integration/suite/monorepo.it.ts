@@ -333,6 +333,19 @@ describe("with several projects, one nested in another", () => {
       assert.deepEqual(vscode.languages.getDiagnostics(nestedPage), []);
     });
 
+    it("names the project that found a problem in its source", async () => {
+      const sources = (uri: vscode.Uri) =>
+        vscode.languages.getDiagnostics(uri).map((diagnostic) => diagnostic.source);
+      await open(docsPage);
+      await diagnosticsOf(docsPage, (all) => all.length > 0);
+      assert.deepEqual(sources(docsPage), ["ascribe · docs"]);
+      await edit(handbookPage, (text) => `${text}\nA {flush} phrase.\n`);
+      await diagnosticsOf(handbookPage, () => codes(handbookPage).join() === "ASC044");
+      assert.deepEqual(sources(handbookPage), ["ascribe · handbook"]);
+      await restore(handbookPage);
+      await diagnosticsOf(handbookPage, (all) => all.length === 0);
+    });
+
     it("restarts the running servers and leaves the others stopped", async () => {
       const started: string[] = [];
       const listener = api.onDidStartServer((f) => started.push(comparable(f)));
@@ -935,6 +948,31 @@ describe("with several projects, one nested in another", () => {
       } finally {
         await vscode.commands.executeCommand("workbench.action.closeAllEditors");
         removeFolder(guides);
+      }
+    });
+
+    it("stops a project's server and clears its problems when its folder is deleted", async () => {
+      // As a git worktree is removed: the folder goes with everything in it,
+      // which the file watcher reports as the folder alone.
+      const gone = path.join(workspace(), "gone");
+      const page = vscode.Uri.file(path.join(gone, "docs", "index.md"));
+      await mkdirWatched(path.dirname(page.fsPath));
+      writeFileSync(page.fsPath, "---\ntype: page\ntitle: Gone\n---\n\nSee [](missing.md).\n");
+      try {
+        await createProject(gone);
+        await open(page);
+        await diagnosticsOf(page, () => codes(page).join() === "ASC036");
+        await api.whenSettled();
+        assert.equal(api.state(gone), "running");
+
+        await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+        removeFolder(gone);
+        await waitFor("the gone project to go", () => !known(gone));
+        await api.whenSettled();
+        await diagnosticsOf(page, (all) => all.length === 0);
+      } finally {
+        await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+        removeFolder(gone);
       }
     });
 

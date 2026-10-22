@@ -10,6 +10,7 @@ import * as vscode from "vscode";
 import { ascribeElsewhere } from "../agents/reach.js";
 import type { ProjectServer } from "../client.js";
 import { nodePathEnvironment } from "../environment.js";
+import { isAscribeSource } from "../problems.js";
 import type { ProjectRegistry } from "../registry.js";
 import type { AgentPromptResult } from "../shapes.js";
 import {
@@ -104,7 +105,7 @@ export class PromptAgent implements vscode.Disposable {
     if (context.only && !context.only.contains(KIND) && !KIND.contains(context.only)) return [];
     const server = this.projects.serverFor(document.uri);
     if (!server) return [];
-    const problems = context.diagnostics.filter((d) => d.source === "ascribe");
+    const problems = context.diagnostics.filter((d) => isAscribeSource(d.source));
     return problems.map((diagnostic) => {
       const title = promptActionTitle(codeOf(diagnostic.code), problems.length > 1);
       const action = new vscode.CodeAction(title, KIND);

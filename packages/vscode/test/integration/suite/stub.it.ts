@@ -64,6 +64,58 @@ describe("with ascribe.toml and the stub server", () => {
     await diagnosticsOf(uriOf("docs", "todo.md"), (all) => all.length > 0);
   });
 
+  it("kills a server that doesn't stop when asked, with the process it started", async () => {
+    const api = await activated();
+    const hangs = path.join(workspace(), ".stub-hangs");
+    const processes = path.join(workspace(), ".stub-processes");
+    const running = (pid: number): boolean => {
+      try {
+        process.kill(pid, 0);
+      } catch {
+        return false;
+      }
+      // Killed, and waiting to be reaped: the stub's own process is handed
+      // to the system's first process, which can take its time.
+      try {
+        return readFileSync(`/proc/${pid}/stat`, "utf8").split(") ")[1]?.[0] !== "Z";
+      } catch {
+        return true;
+      }
+    };
+    writeFileSync(hangs, "");
+    try {
+      // Started again, the stub reads the marker: it starts a process of its
+      // own, and won't stop.
+      await vscode.commands.executeCommand("ascribe.restartServer");
+      await api.whenSettled();
+      const pids = await waitFor("the stub's process ids", () => {
+        try {
+          return readFileSync(processes, "utf8").trim().split(" ").map(Number);
+        } catch {
+          return undefined;
+        }
+      });
+      assert.equal(pids.length, 2);
+      assert.ok(pids.every(running));
+
+      // Restarting asks it to stop, which times out.
+      await vscode.commands.executeCommand("ascribe.restartServer");
+      await api.whenSettled();
+      assert.equal(api.state(), "running");
+      // Killed before the new one started: the language client's own check
+      // would come two seconds after the stop timed out, and not at all once
+      // the host has exited.
+      await waitFor("the stub's processes to be gone", () => !pids.some(running), 1_000);
+      await diagnosticsOf(uriOf("docs", "todo.md"), (all) => all.length > 0);
+    } finally {
+      rmSync(hangs, { force: true });
+      // The server running now read the marker too.
+      await vscode.commands.executeCommand("ascribe.restartServer");
+      await api.whenSettled();
+      rmSync(processes, { force: true });
+    }
+  });
+
   it("registers its commands", async () => {
     const commands = await vscode.commands.getCommands(true);
     assert.ok(commands.includes("ascribe.restartServer"));

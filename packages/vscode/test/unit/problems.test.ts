@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { problemsText } from "../../src/problems.js";
+import { diagnosticSource, isAscribeSource, problemsText } from "../../src/problems.js";
 
 describe("problems in words", () => {
   it("says nothing for none", () => {
@@ -20,5 +20,21 @@ describe("problems in words", () => {
     expect(problemsText({ errors: 2, warnings: 1, advice: 3 })).toBe(
       "2 errors, 1 warning, and advice on 3 lines",
     );
+  });
+});
+
+describe("the source a diagnostic names", () => {
+  it("is the server's alone with one project, and names the project with several", () => {
+    expect(diagnosticSource(undefined)).toBe("ascribe");
+    expect(diagnosticSource("docs")).toBe("ascribe · docs");
+    expect(diagnosticSource("handbook/pages/nested")).toBe("ascribe · handbook/pages/nested");
+  });
+
+  it("is Ascribe's either way, and no other tool's", () => {
+    expect(isAscribeSource("ascribe")).toBe(true);
+    expect(isAscribeSource("ascribe · docs")).toBe(true);
+    expect(isAscribeSource(undefined)).toBe(false);
+    expect(isAscribeSource("ascribe-stub")).toBe(false);
+    expect(isAscribeSource("markdownlint")).toBe(false);
   });
 });
