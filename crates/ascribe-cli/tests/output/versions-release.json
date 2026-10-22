@@ -47,7 +47,6 @@
         "configure.md",
         "install-agent.md",
         "keys.md",
-        "llms.txt",
         "quickstart.md",
         "upgrade.md",
         "webhooks.md"
@@ -71,7 +70,6 @@
         "configure-legacy.md",
         "install-agent.md",
         "keys.md",
-        "llms.txt",
         "quickstart.md",
         "upgrade.md"
       ]
@@ -89,12 +87,11 @@
       "build": "site@3.5",
       "output": "plain",
       "added": [
-        "_ascribe/files/_fragments/prerequisites.png",
-        "_ascribe/files/playground.png",
+        "_fragments/prerequisites.png",
         "configure.md",
         "install-agent.md",
         "keys.md",
-        "llms.txt",
+        "playground.png",
         "quickstart.md",
         "upgrade.md",
         "webhooks.md"

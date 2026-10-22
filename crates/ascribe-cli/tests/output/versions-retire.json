@@ -126,8 +126,7 @@
       "removed": [],
       "changed": [
         "install-agent.md",
-        "keys.md",
-        "llms.txt"
+        "keys.md"
       ]
     },
     {
@@ -140,7 +139,6 @@
       ],
       "removed": [],
       "changed": [
-        "_ascribe/headers.json",
         "_ascribe/nav.json",
         "_ascribe/pages.json",
         "install-agent.md",

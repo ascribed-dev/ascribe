@@ -304,8 +304,9 @@ fn closing_a_page_clears_its_alerts() {
 }
 
 /// A model whose `[checks.vale] command` is `command`.
+/// With `in-check`, so a Vale that doesn't run is said.
 fn model_running(command: &str) -> String {
-    format!("{VALE_MODEL}command = \"{command}\"\n")
+    format!("{VALE_MODEL}command = \"{command}\"\nin-check = true\n")
 }
 
 /// Opens two pages and saves one, with a client set up to answer `ask`,
