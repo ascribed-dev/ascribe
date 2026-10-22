@@ -202,8 +202,8 @@ test("every package's homepage is a page of the docs, by its permalink", () => {
 });
 
 // The extension's publisher, `Ascribe` in packages/vscode/package.json, isn't
-// compared: a Marketplace publisher can't be renamed, so it stays (the
-// website plan's decision 14).
+// compared: a Marketplace publisher can't be renamed, so it stays
+// (project-docs/decisions/833h-bryo-studio-maker.md).
 describe("the maker", () => {
   test("is every npm package's author", () => {
     const files = published();

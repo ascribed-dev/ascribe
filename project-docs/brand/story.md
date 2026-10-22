@@ -95,8 +95,10 @@ Each concept gets one word in marketing copy. The docs keep their own reference 
 4. Use "toolchain", not "platform", "compiler", or "markup language", when saying what Ascribe is.
 5. Use "AI agents" on first mention and "agents" after.
 
-## After the story
+## Since the story
 
-1. **One home for the words.** The sentence and the headline are kept in one file. The README, the package descriptions, the Marketplace listing, the command's `about`, the plugin's description, and the site's meta description are generated from it or tested against it.
-2. **Bryo Studio everywhere a maker is named.** The plugin's `author` and `owner` change from Ascribe to Bryo Studio. The VS Code publisher stays `Ascribe`, as the extension's id, `Ascribe.ascribe-vscode`, does: a publisher can't be renamed, and a new one isn't worth the trouble.
-3. **The website.** The revamp starts from the pillars, and it's planned in this folder.
+The story was carried out on 22 October 2026, by the second website plan:
+
+1. **The words** live in `design/words.toml`, and every surface takes them or is tested against them (decision [#833g](../decisions/833g-words-home.md)).
+2. **Bryo Studio** is the maker everywhere one is named, but the Marketplace publisher, which stays `Ascribe` (decision [#833h](../decisions/833h-bryo-studio-maker.md)).
+3. **The site** leads with the headline and is built on the pillars, and its copy comes from here (decisions [#833d](../decisions/833d-landing-page-in-ascribe.md) and [#833e](../decisions/833e-site-copy-from-story.md)).

@@ -132,7 +132,7 @@ node scripts/design/assets.ts
 
 ## The words
 
-`words.toml` holds what Ascribe says it is, in the words of [the story](../project-docs/brand/story.md): the headline, the sentence that says what Ascribe is, its short form for where only a line fits, and the keywords. Every surface that says what Ascribe is takes them from here, or is compared with them by `scripts/design/words.test.ts` ([the website plan's decisions](../project-docs/website/README.md#decisions)).
+`words.toml` holds what Ascribe says it is, in the words of [the story](../project-docs/brand/story.md): the headline, the sentence that says what Ascribe is, its short form for where only a line fits, and the keywords. Every surface that says what Ascribe is takes them from here, or is compared with them by `scripts/design/words.test.ts` (decision [#833g](../project-docs/decisions/833g-words-home.md)).
 
 To change one, change the story first, then the line here, then run `pnpm exec vitest run scripts/design`: it names each surface that no longer agrees. After changing the headline, run `node scripts/design/assets.ts` too, for the social card.
 

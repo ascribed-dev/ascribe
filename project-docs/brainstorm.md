@@ -160,7 +160,7 @@ What didn't fit:
 - **A widget's title isn't a heading.** A title line becomes the element's `heading` attribute, which a stylesheet can show but which isn't in the page's outline or table of contents. Each claim's name is a `###` heading inside the widget instead.
 - **The drawn page's headings join the page's outline.** The demonstrated page's `##` headings are the landing page's too, inside the demonstration. The stylesheet makes them smaller; nothing makes them a level lower.
 
-The rebuilt landing page ([phase 2 of the website plan](website/phase-2-landing.md)) added eight widgets, and kept the page in Ascribe. What they couldn't say:
+The rebuilt landing page ([phase 2 of the second website plan](https://github.com/ascribed-dev/ascribe/blob/58afc492/project-docs/website/phase-2-landing.md)) added eight widgets, and kept the page in Ascribe. What they couldn't say:
 
 - **A section can't be a widget.** A pillar is a heading and everything to the next one, but a container around it puts the first pillar's example, a variant group, four containers deep, and `ascribe check` warns past two (`ASC013`). So `@story-pillar` is a line widget bound to the heading, an empty element after it, and the stylesheet finds the heading by what follows it (`h2:has(+ p > story-pillar)`). A binding that wraps the section it marks, as `heading-or-block` at a section's top names it, would let a widget be the section.
 - **Two widgets can't say they belong together.** A `@pillar-proof` and the `@proof-example` after it are set side by side only because the stylesheet places a proof's next sibling beside it, on a grid the whole article is. Nothing in the model says the example is the proof's, or checks that one follows the other.
