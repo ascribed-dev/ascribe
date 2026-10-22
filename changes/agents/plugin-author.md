@@ -1,0 +1,1 @@
+- **The plugin names Bryo Studio, Ascribe's maker, as its author and its marketplace's owner.** Its manifests named Ascribe, with the GitHub organization's address; they now name Bryo Studio, with https://bryostudio.com. The npm packages already named Bryo Studio as their author, and the platform packages now do too.

@@ -50,7 +50,10 @@ fn command_name(prompt: &str) -> &str {
 /// The plugin's files, relative to its folder, with their text.
 fn files() -> Vec<(String, String)> {
     let version = env!("CARGO_PKG_VERSION");
-    let author = json!({ "name": "Ascribe", "url": "https://github.com/ascribed-dev" });
+    // The maker in `design/words.toml`, which `scripts/design/words.test.ts`
+    // compares with the manifests: the plugin's author and its marketplace's
+    // owner.
+    let author = json!({ "name": "Bryo Studio", "url": "https://bryostudio.com" });
     let repository = "https://github.com/ascribed-dev/ascribe";
     let mut files = vec![
         (

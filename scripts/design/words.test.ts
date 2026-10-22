@@ -14,7 +14,7 @@ import { parse } from "smol-toml";
 import { describe, expect, test } from "vitest";
 import { readSources } from "./assets.ts";
 import { ROOT } from "./specimen.ts";
-import { readWords, SHORT_MAX, words, WORDS } from "./words.ts";
+import { author, readWords, SHORT_MAX, words, WORDS } from "./words.ts";
 
 const read = (file: string): string => readFileSync(join(ROOT, file), "utf8");
 const home = words();
@@ -26,6 +26,7 @@ interface Manifest {
   description?: string;
   keywords?: string[];
   homepage?: string;
+  author?: unknown;
 }
 
 const manifest = (file: string): Manifest => JSON.parse(read(file)) as Manifest;
@@ -93,6 +94,9 @@ describe("design/words.toml", () => {
     expect(() => readWords(text.replace(/^short = .*$/m, `short = "${"a".repeat(120)}"`))).toThrow(
       `${WORDS} short: under ${SHORT_MAX} characters, not 120`,
     );
+    expect(() => readWords(text.replace(/^url = .*$/m, ""))).toThrow(
+      `${WORDS} maker.url: a line of text`,
+    );
   });
 });
 
@@ -118,15 +122,11 @@ describe("the short form", () => {
   test("starts each npm package's description, then says the package's job", () => {
     const files = published();
     expect(files.length).toBeGreaterThan(5);
-    expect(files.filter((file) => !startsWithTheShortForm(manifest(file).description))).toEqual(
-      [],
-    );
+    expect(files.filter((file) => !startsWithTheShortForm(manifest(file).description))).toEqual([]);
   });
 
   test("starts the Marketplace's description, then says what the extension does", () => {
-    expect(startsWithTheShortForm(manifest("packages/vscode/package.json").description)).toBe(
-      true,
-    );
+    expect(startsWithTheShortForm(manifest("packages/vscode/package.json").description)).toBe(true);
   });
 
   test("is ascribe-cli's crate description, which the command's help opens with", () => {
@@ -180,4 +180,28 @@ test("every package's homepage is a page of the docs, by its permalink", () => {
       .map((file) => `${file}: ${manifest(file).homepage ?? "none"}`)
       .filter((each) => !addresses.has(each.slice(each.indexOf(": ") + 2))),
   ).toEqual([]);
+});
+
+// The extension's publisher, `Ascribe` in packages/vscode/package.json, isn't
+// compared: it moves to a publisher of the maker's once the maintainer has
+// made one on the Marketplace, in the website plan's phase 3, task 4.
+describe("the maker", () => {
+  test("is every npm package's author", () => {
+    const files = published();
+    expect(
+      files
+        .map((file) => `${file}: ${String(manifest(file).author)}`)
+        .filter((each) => !each.endsWith(`: ${author(home.maker)}`)),
+    ).toEqual([]);
+  });
+
+  test("is the plugin's author, in each manifest, and its marketplace's owner", () => {
+    const named = { name: home.maker.name, url: home.maker.url };
+    expect(manifest("plugins/ascribe/plugin.json").author).toEqual(named);
+    expect(manifest("plugins/ascribe/.claude-plugin/plugin.json").author).toEqual(named);
+    const marketplace = JSON.parse(read("plugins/ascribe/.claude-plugin/marketplace.json")) as {
+      owner: unknown;
+    };
+    expect(marketplace.owner).toEqual(named);
+  });
 });

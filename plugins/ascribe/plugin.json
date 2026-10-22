@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "author": {
-    "name": "Ascribe",
-    "url": "https://github.com/ascribed-dev"
+    "name": "Bryo Studio",
+    "url": "https://bryostudio.com"
   },
   "description": "A toolchain for documentation written as code. This plugin is Ascribe for AI agents. The Ascribe skill, for every agent: how to write, check, and fix pages. The MCP server's tools, for an agent with no shell. The stop hook, and the language server's diagnostics after each edit, for an agent that doesn't check its own work. Commands for the named prompts.",
   "homepage": "https://ascribed-dev.com/go/agents-guide/",

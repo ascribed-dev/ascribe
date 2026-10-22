@@ -3,6 +3,7 @@
   "version": "0.4.1",
   "description": "A toolchain for documentation written as code. This package is the ascribe binary for Windows x64, which @ascribed/cli installs.",
   "license": "MPL-2.0",
+  "author": "Bryo Studio <hello@bryostudio.com> (https://bryostudio.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ascribed-dev/ascribe.git",

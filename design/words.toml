@@ -1,8 +1,8 @@
-# What Ascribe says it is, in the words every surface takes from here. They
-# come from project-docs/brand/story.md, which changes first when they do.
-# scripts/design/words.test.ts compares each surface with them, so a line
-# changed here fails it until every surface says the same; design/README.md
-# lists the surfaces.
+# What Ascribe says it is, and who makes it, in the words every surface takes
+# from here. They come from project-docs/brand/story.md, which changes first
+# when they do. scripts/design/words.test.ts compares each surface with them,
+# so a line changed here fails it until every surface says the same;
+# design/README.md lists the surfaces.
 
 # The promise. The landing page leads with it, and the social card draws it
 # under the wordmark.
@@ -21,3 +21,11 @@ short = "A toolchain for documentation written as code."
 # The keywords every package and the plugin list, and the GitHub repository's
 # topics. "docs-as-code" is only ever a keyword; prose says "docs as code".
 keywords = ["ascribe", "documentation", "markdown", "docs-as-code"]
+
+# The maker, wherever one is named: each package's author, and the plugin's
+# author and owner. Ascribe is a product, so it's never named as a maker,
+# a publisher, an author, or an owner.
+[maker]
+name = "Bryo Studio"
+url = "https://bryostudio.com"
+email = "hello@bryostudio.com"
