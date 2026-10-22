@@ -1,6 +1,6 @@
 self-managed 3.6 would be live, and current.
-Would rewrite 1 mark from `sso` to `self-managed 3.6`, in 1 file.
-`sso` would name 3.7, which is planned.
+Would rewrite 1 mark from `self-managed planned` to `self-managed 3.6`, in 1 file.
+self-managed 3.7 would be planned.
 What a reader sees changes in:
   the file the lines share: 1 file changed
   site's plain output: 6 files changed

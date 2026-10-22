@@ -1,6 +1,6 @@
 # Written by `ascribe observe`. Don't edit it by hand.
 version = 1
-ascribe = "0.4.0"
+ascribe = "0.4.1"
 command = "cargo test --locked -p ascribe-cli --test all -- output:: agents:: && cargo test --locked -p ascribe-model --test load"
 
 [environment]
@@ -103,8 +103,8 @@ rust = "rustc 1.98.1 (48a229cea 2026-09-01)"
 "crates/ascribe-cli/tests/output/versions-list.json" = "sha256-lf:084d39a5508cf588033d952374da0b25b64eca31ee78b8f7d18626fcdccb7396"
 "crates/ascribe-cli/tests/output/versions-list.txt" = "sha256-lf:b0481c75d9ccbac8288b7f2433eebe22df4db6c9b27038d5410da003e898096c"
 "crates/ascribe-cli/tests/output/versions-notes.md" = "sha256-lf:08fa3ab5e1f4440dded41bdaa37c3480d7fac6281ad5fd7e9430464c005fb46d"
-"crates/ascribe-cli/tests/output/versions-release.json" = "sha256-lf:758be62787dae53ae0dff26c8aeef8d3819305086aeafacb0ccbd730582916ab"
-"crates/ascribe-cli/tests/output/versions-release.txt" = "sha256-lf:1fd0d63c52e4d6d6f8be64485a577d5770668ef581fbc244b17dfe10f916cdee"
+"crates/ascribe-cli/tests/output/versions-release.json" = "sha256-lf:e3859c77e551a5644433473310418e76d698cc91bf9e8f8325dc4cb7bb0a12d4"
+"crates/ascribe-cli/tests/output/versions-release.txt" = "sha256-lf:ec75150b51e7d870b87dab03551c040433c08d572521ef5d6af9c449284aed23"
 "crates/ascribe-cli/tests/output/versions-retire.json" = "sha256-lf:dc7d588c47c8b5d453c65a304493f1779146463da83f71feb82159f127fc6281"
 "crates/ascribe-cli/tests/output/versions-retire.txt" = "sha256-lf:51def50d4e49379cfe13cf85e8e5acb1851102dd88f6ceca21a4a9530a118170"
 "examples/content-models/full.toml" = "sha256-lf:749afa3045b0a94b5ab09825440fc92627e5e16241fb2902f93e95fce84542ca"

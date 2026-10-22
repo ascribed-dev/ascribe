@@ -27,8 +27,8 @@ const HEADER: &str = "@memo: Generated from the help text in crates/ascribe-cli/
 
 /// Options newer than their command, as `(command, option, availability)`:
 /// the reference marks each with `@available: <availability>`. An option no
-/// release has yet is `next`; when a release ships it, name the release, as
-/// `ascribe 0.2.0`. Remove an entry when the option's command section says
+/// release has yet is `ascribe planned`; when a release ships it, name the
+/// release, as `ascribe 0.2.0`. Remove an entry when the option's command section says
 /// the same, or when every live line has the option.
 const AVAILABLE: &[(&str, &str, &str)] = &[("observe", "yes", "ascribe 0.4.1")];
 

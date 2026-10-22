@@ -21,8 +21,8 @@ const HEADER: &str = "@memo: Generated from builtin_schemas() in crates/ascribe-
 
 /// The release a built-in first shipped in, when it's newer than the
 /// reference: its row is marked `{available="<availability>"}`. A built-in no
-/// release has yet is `next`; when a release ships it, name the release, as
-/// `ascribe 0.4.0`.
+/// release has yet is `ascribe planned`; when a release ships it, name the
+/// release, as `ascribe 0.4.0`.
 fn available(builtin: Builtin) -> Option<&'static str> {
     match builtin {
         Builtin::Id

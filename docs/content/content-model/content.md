@@ -11,7 +11,7 @@ Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#cont
 
 @include: ../_fragments/content-model/dimensions.md
 
-**Rules.** A value can be in one dimension only (`model-dimension-value-shared`), since a bare target such as `cloud` in an availability spec has to mean one thing. Dimension names and values also take part in the one-role rule: a name can be a dimension name, a dimension value, a lifecycle state, or a feature key, but only one of them (`model-name-multiple-roles`).
+**Rules.** A value can be in one dimension only (`model-dimension-value-shared`), since a bare target such as `cloud` in an availability spec has to mean one thing. Dimension names and values also take part in the one-role rule: a name can be a dimension name, a dimension value, a lifecycle state, or a feature key, but only one of them (`model-name-multiple-roles`), and none of them can be `planned`, the version word for a target's planned line.
 
 ---
 
@@ -48,6 +48,8 @@ No other scheme is defined. The table exists so a later spec version can add one
 | In a line between two declared ones that isn't declared | Advice, `available-line-undeclared`: declare the line, in `archived` with no address when nothing publishes it, or correct the number, with the declared lines either side offered as fixes |
 | Older than every declared line | Nothing: it's before the window, and a project doesn't declare every line it ever shipped |
 
+A mark's [`planned`](../writing/directives.md#the-planned-line) is the target's one planned line, so it's placed as that line's version; a target with no planned line, or more than one, makes it an error at the word, `available-planned-line`. [`ascribe versions release`](../versions/release.md#cli-versions-release) rewrites it to the version when the line ships.
+
 A mark does nothing only where no output shows it: when every build that publishes its content is versioned by the mark's target or filtered for it, since a line's output leaves out a version at or before the oldest live line. Then two content checks report a mark: `available-same-in-every-line` (advice), a version every live line has, so the mark can drop it and keep its state; and `available-in-no-line` (a warning), content removed before the oldest live line with nothing after, which no output has. A build that badges availability and isn't versioned, such as one site, shows every version, so there `ascribe 0.1.1` still reads "since 0.1.1", and content in no line is still published, so `available-in-no-line` stays quiet. When every version a mark names is before the oldest live line and every live line has the content, though, that badge says only that the content is older than any reader's line, so `available-same-in-every-line` reports it too, saying the badge is shown, with an unsafe fix, since removing the versions removes the badge. A version in the oldest live line still says what came with it, so `ascribe 0.4.0` with 0.4.0 the only live line isn't reported there. A project that keeps such badges, as "new in 0.2", sets `available-same-in-every-line = "off"` in `[checks]`. A build filtered for the target at a version before the oldest live line still decides by the mark's versions, so neither check reports a mark while one publishes it. [`availability-left-behind`](../checks/diagnostics/content-checks.md) compares a feature's versions with each target's current line, and a live line whose `ends` date has passed is advice, `release-line-ended`, as of [the day the checks run as](../checks/check.md#checking-as-of-another-day).
 
 ---
@@ -64,7 +66,7 @@ A mark does nothing only where no output shows it: when every build that publish
 
 @include: ../_fragments/content-model/features.md
 
-**Rules.** A feature's spec is checked as it would be in a page: it has to parse (`model-availability-syntax`), name declared targets and states (`model-availability-unknown-name`), give no versions to a versionless target or a dimension name (`model-availability-versionless`), and list a history oldest first (`model-availability-history-order`). It can't be another feature's key (`model-feature-nested`), so features never refer to each other, and feature keys take part in the one-role rule.
+**Rules.** A feature's spec is checked as it would be in a page: it has to parse (`model-availability-syntax`), name declared targets and states (`model-availability-unknown-name`), give no versions to a versionless target or a dimension name (`model-availability-versionless`), and list a history oldest first (`model-availability-history-order`). It can't be another feature's key (`model-feature-nested`), so features never refer to each other, and feature keys take part in the one-role rule. It names its versions: [`planned`](../writing/directives.md#the-planned-line) is for a page's mark, and in a feature's spec it's `model-availability-syntax`.
 
 ---
 

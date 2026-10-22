@@ -1,0 +1,8 @@
+description: >-
+  A feature's spec names its versions: `planned` is written in a page's
+  mark, and in a feature's spec it's an error at the word.
+spec: ["4.4", "7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-availability-syntax, file: ascribe.toml, line: 12, column: 27}

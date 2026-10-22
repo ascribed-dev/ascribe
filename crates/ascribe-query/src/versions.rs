@@ -480,11 +480,12 @@ fn compare(
     }
 }
 
-/// A spec with a feature key replaced by the feature's spec.
+/// A spec with a feature key replaced by the feature's spec, and
+/// `planned` by the line it names.
 fn resolved(model: &ContentModel, spec: AvailabilitySpec) -> AvailabilitySpec {
     match spec.bare_name().and_then(|n| model.feature(&n.text)) {
         Some(feature) => feature.available.clone(),
-        None => spec,
+        None => model.resolve_planned(&spec).spec,
     }
 }
 

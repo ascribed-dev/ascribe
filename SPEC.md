@@ -534,12 +534,14 @@ A spec is a comma-separated list of **targets**, each optionally followed by its
 | `self-managed preview 3.4` | In preview on `self-managed` since version 3.4 |
 | `self-managed (preview 3.3, ga 3.5, deprecated 4.0)` | A history: each state starts at its version and lasts until the next state begins |
 | `cloud, self-managed preview 3.3` | Two targets |
+| `self-managed preview planned` | In preview on `self-managed` from its planned line, as `self-managed preview 3.6` is when 3.6 is that line |
 
 - A **target** is a value of a declared dimension, or the name of a dimension, which stands for all of its values. A dimension name takes a state but never a version, since its values don't share one version line: write `deployment beta`, or name the value, as in `self-managed beta 3.4`.
 - A **state** is a declared lifecycle state (§7.2). A target with no state is generally available (`ga`). A bare version means generally available since that version. A state with no version on a versioned target (`self-managed beta`) is in effect at every version, as a bare target is.
 - Each lifecycle state declares whether content in that state **counts as available**. By default every state counts as available except `removed`.
 - States in a history MUST be in chronological order, compared using the content model's version scheme. A target that the content model declares as versionless takes a single state and no versions.
 - The language has no version ranges, alternatives, or negation. Each state names only the version where it begins.
+- **`planned`** is a version word: written where a version goes, it means the target's planned line (§7.2), and the spec reads as it would with that line's version in its place, wherever the spec is checked, filtered, compared, or shown. So content can be marked for a release whose work isn't done without writing the number twice: `self-managed planned`, `cloud, self-managed preview planned`, `self-managed (preview 3.5, ga planned)`. A target with no planned line, or more than one, is an error at the word, since `planned` names no single version there; a versionless target or a dimension name takes no version at all. `planned` is never a lifecycle state, dimension name, dimension value, or feature key (§7.2), and a feature's spec doesn't use it: a feature names its versions. When the line is released, each `planned` for its target is rewritten to the line's version.
 - **Commas here aren't `|`.** In `@variant`, `|` means "any of these values", a single membership test (`platform=cloud|on-prem`). In an availability spec, `,` separates targets, each with its own lifecycle (`cloud, self-managed preview 3.3`).
 - Targets, dimension names, and states are names (ABNF rule `name-word`): a letter followed by letters, digits, `_`, or `-`. They're spelled exactly as the content model declares them.
 
@@ -918,7 +920,7 @@ A content model declares the following.
 
 Built-in directive schemas are defined by this specification, not by the content model. A content model MAY extend the enumerations they use (note types, lifecycle states).
 
-Dimension names, dimension values, lifecycle states, and feature keys are names (ABNF rule `name-word`). A name MUST NOT be used in more than one of these roles, and a dimension value MUST NOT belong to more than one dimension; processors reject a content model that does either when loading it. This keeps every bare word in an availability spec unambiguous (§4.4). Dimension names are also attribute keys (§4.3), so they follow the attribute key rule (ABNF rule `key`, §3.3).
+Dimension names, dimension values, lifecycle states, and feature keys are names (ABNF rule `name-word`). A name MUST NOT be used in more than one of these roles, and a dimension value MUST NOT belong to more than one dimension; processors reject a content model that does either when loading it. `planned` is the version word (§4.4) and takes none of these roles. This keeps every bare word in an availability spec unambiguous (§4.4). Dimension names are also attribute keys (§4.3), so they follow the attribute key rule (ABNF rule `key`, §3.3).
 
 The site output writes image attributes onto `<img>` elements and project widgets' attributes onto custom elements (§9.4), so a content model MUST NOT declare an attribute key that HTML already gives a meaning there: `src`, `alt`, or `title` for images; `heading` or `primary` for widgets, which the site output uses for a widget's title and identifier primary; and, for both, HTML's global attributes (such as `id`, `class`, `style`, `title`, `hidden`, and `slot`), ARIA attributes (`aria-…`), and event-handler attributes such as `onclick`. Keys that merely begin with `on`, such as `online`, are allowed. Processors reject a content model that does when loading it.
 
@@ -1129,6 +1131,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | `@available` | Versions given for a versionless target | Error |
 | `@available` | Spec exceeds its enclosing scope | Error |
 | `@available` | Version newer than every release line its target declares | Error |
+| `@available` | `planned` for a target with no planned line, or more than one | Error |
 | `@steps` | Bound block isn't an ordered list | Error |
 | `@details` | Missing title | Error |
 | `@snippet` | Address that isn't `<source>:<path>`, optionally with `#<region>` | Error |
@@ -1470,8 +1473,9 @@ region-name     = 1*( ALPHA / DIGIT / "-" / "_" / "." )
 
 availability    = entry *( OWS "," OWS entry ) / feature-key
 entry           = target [ RWS detail ]
-detail          = version / state [ RWS version ] / "(" OWS history OWS ")"
-history         = state RWS version *( OWS "," OWS state RWS version )
+detail          = when / state [ RWS when ] / "(" OWS history OWS ")"
+history         = state RWS when *( OWS "," OWS state RWS when )
+when            = version / %s"planned"           ; the target's planned line (§4.4)
 target          = name-word
 state           = name-word
 feature-key     = name-word

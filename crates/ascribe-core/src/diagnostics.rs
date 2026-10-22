@@ -746,6 +746,9 @@ pub const TERM_OFF_GLOSSARY_PAGE: DiagnosticSlug = DiagnosticSlug("term-off-glos
 /// `ASC243`, advice, file level: a content check (area `project`).
 pub const BASELINE_ENTRY_UNMATCHED: DiagnosticSlug = DiagnosticSlug("baseline-entry-unmatched");
 
+/// `ASC244`, error, file level: SPEC §8.2, "`@available` | `planned` for a target with no planned line, or more than one".
+pub const AVAILABLE_PLANNED_LINE: DiagnosticSlug = DiagnosticSlug("available-planned-line");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -984,6 +987,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     GLOSSARY_DEFINITION_LONG,
     TERM_OFF_GLOSSARY_PAGE,
     BASELINE_ENTRY_UNMATCHED,
+    AVAILABLE_PLANNED_LINE,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

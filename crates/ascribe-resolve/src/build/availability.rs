@@ -10,7 +10,9 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use ascribe_core::availability::{AvailabilitySpec, Detail, Entry, Version, parse_availability};
+use ascribe_core::availability::{
+    AvailabilitySpec, Detail, Entry, Version, parse_availability, spec_text,
+};
 use ascribe_core::{Issue, Location, Span, diagnostics};
 use ascribe_model::{BuildLine, ContentModel};
 use ascribe_syntax::{Block, BlockKind, Bound, Table};
@@ -31,8 +33,9 @@ pub(crate) struct ResolvedSpec {
     pub feature: Option<String>,
 }
 
-/// Replaces a bare feature key by the spec it stands for (SPEC §4.4);
-/// any other spec stands for itself.
+/// Replaces a bare feature key by the spec it stands for, and `planned` by
+/// the line it names (SPEC §4.4); any other spec stands for itself. A
+/// `planned` that names no line is left as it is: the checks report it.
 pub(crate) fn resolve_spec(
     model: &ContentModel,
     text: &str,
@@ -45,6 +48,14 @@ pub(crate) fn resolve_spec(
             spec: feature.available.clone(),
             text: feature.available_text.clone(),
             feature: Some(feature.key.clone()),
+        };
+    }
+    let resolved = model.resolve_planned(spec);
+    if resolved.changed {
+        return ResolvedSpec {
+            text: spec_text(&resolved.spec),
+            spec: resolved.spec,
+            feature: None,
         };
     }
     ResolvedSpec {
@@ -169,13 +180,21 @@ pub struct InLine {
 /// What `spec` says about `target` in `line`, taking the line alone: a
 /// version in a later line isn't in it, whether or not the line is
 /// current. `None` when the spec doesn't name the target, directly or
-/// through its dimension, and so says the same of every line.
+/// through its dimension, and so says the same of every line. `planned`
+/// reads as the line it names.
 pub fn in_release_line(
     model: &ContentModel,
     spec: &AvailabilitySpec,
     target: &str,
     line: &Version,
 ) -> Option<InLine> {
+    let resolved;
+    let spec = if spec.has_planned() {
+        resolved = model.resolve_planned(spec).spec;
+        &resolved
+    } else {
+        spec
+    };
     let entry = entry_for(model, spec, target)?;
     let mut tried: Vec<&Version> = vec![line];
     let starts = match &entry.detail {

@@ -4411,3 +4411,42 @@ reference = "content-model/checks.md#19-checks"
 when = "`ascribe.baseline` has an entry that no problem of the project matches any more: the problem was fixed, or the text it was about changed. Reported at the entry's line, when `ascribe check` reads the baseline and checks the whole project for every build"
 message = "ascribe.baseline holds back `{check}` in `{file}`, and nothing there matches it any more; run `ascribe baseline prune`"
 fix = "Run `ascribe baseline prune`, which removes every entry that matches nothing, and commit ascribe.baseline. Left in the file, the entry would hold back a later problem of the same check whose text happens to be the same. See [The baseline](checks/baseline.md)."
+
+[[diagnostic]]
+code = "ASC244"
+slug = "available-planned-line"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "4.4"
+reference = "writing/directives.md#availability-specs"
+row = "`@available` | `planned` for a target with no planned line, or more than one"
+message = "`{target}` has no planned line, so `planned` names no version; declare one in `[releases.{target}] planned`, or write the version"
+messages.several = "`{target}` has more than one planned line, {lines}, so `planned` could mean any of them; write the version"
+fix = "Write the version in place of `planned`, or, for work in a line that hasn't shipped, declare that line in `[releases.<target>] planned`. `planned` names a target's planned line, so it needs exactly one: with two, write the version of the one the content is in."
+example.model = '''
+[releases.self-managed]
+live = ["3.4"]
+planned = ["3.6", "3.5"]
+'''
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: self-managed planned
+
+Sign in with your company's identity provider.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: self-managed 3.5
+
+Sign in with your company's identity provider.
+'''

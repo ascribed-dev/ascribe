@@ -128,6 +128,7 @@ A spec is a comma-separated list of **targets**, each with an optional lifecycle
 | `self-managed preview 3.4` | In preview on `self-managed` since version 3.4 |
 | `self-managed (preview 3.3, ga 3.5, deprecated 4.0)` | A history: each state lasts until the next begins |
 | `cloud, self-managed preview 3.3` | Two targets |
+| `self-managed preview planned` {available="ascribe planned"} | In preview on `self-managed` from its planned line |
 
 - A target is a dimension value, or a dimension's name, which stands for all its values. A dimension name takes a state but no version: `deployment beta`.
 - A state is a lifecycle state: `preview`, `beta`, `ga`, `deprecated`, `removed`, or one the project declares. No state means `ga`.
@@ -143,6 +144,21 @@ A spec is a comma-separated list of **targets**, each with an optional lifecycle
 ```
 
 Each build decides what happens to availability: `badge` keeps everything and marks it, and a filter such as `{ filter = "self-managed 3.3" }` removes what isn't available there.
+
+### The planned line
+@available: ascribe planned
+
+Where a version goes, `planned` means the target's planned line in [`[releases]`](../content-model/content.md#71-releasestarget), so content for a release that hasn't shipped is marked without its number:
+
+```markdown
+@available: self-managed planned
+```
+
+- It reads as the line's version does, in a filter, a badge, and the checks: with 3.6 planned, `self-managed preview planned` is `self-managed preview 3.6`. Each target says its own, as `self-managed planned, edge beta planned`, and a history can end in one, `self-managed (preview 3.5, ga planned)`.
+- The target needs exactly one planned line. With none, or with two, `planned` names no version, and it's an error at the word, [`available-planned-line`](../checks/diagnostics/directives.md#ASC244): write the version, or declare the line. A versionless target or a dimension name takes no version, `planned` included.
+- [`ascribe versions release`](../versions/release.md#cli-versions-release) rewrites each `planned` for the target to the released line's version, so the marks say which release the content came in.
+- It's a word, not a feature key: a feature's spec names its versions, and no state, dimension, value, or feature can be named `planned`.
+- The editor offers `planned` after a target or a state when the target has one planned line, and its hover on a spec names the line.
 
 ### Table rows
 

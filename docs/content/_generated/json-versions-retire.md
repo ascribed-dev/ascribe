@@ -60,7 +60,7 @@
       "description": "A mark the release rewrites.",
       "properties": {
         "from": {
-          "description": "The feature it named.",
+          "description": "The spec as written.",
           "type": "string"
         },
         "line": {
@@ -69,7 +69,7 @@
           "type": "integer"
         },
         "to": {
-          "description": "The spec it names now.",
+          "description": "The spec as rewritten.",
           "type": "string"
         }
       },

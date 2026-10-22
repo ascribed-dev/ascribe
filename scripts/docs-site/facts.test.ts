@@ -259,7 +259,6 @@ test("the site's own pages share the docs' release tables, sources, and address,
   for (const keys of [
     ["dimensions", "release"],
     ["releases"],
-    ["features", "next"],
     ["phrases", "version"],
     ["consumer", "site"],
     ["consumer", "trailing-slash"],

@@ -147,10 +147,14 @@ pub fn is_planned(model: &ContentModel, entry: &Entry) -> bool {
 }
 
 /// [`availability_display`] for a spec written as text, such as an
-/// annotation's. `None` when the text isn't a valid spec.
+/// annotation's or one written in a page, with `planned` read as the line
+/// it names. `None` when the text isn't a valid spec.
 pub fn availability_display_of_text(model: &ContentModel, text: &str) -> Option<String> {
     let spec = parse_availability(text, 0).ok()?;
-    Some(availability_display(model, &spec))
+    Some(availability_display(
+        model,
+        &model.resolve_planned(&spec).spec,
+    ))
 }
 
 /// The label of a dimensional arm, from the display labels of the values its

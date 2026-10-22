@@ -1182,8 +1182,7 @@ fn versions_archive() {
 }
 
 /// `ascribe versions release` on a copy of `examples/quill` that plans 3.6,
-/// with a section marked for it through a feature: the command reference's
-/// example.
+/// with a section marked `planned`: the command reference's example.
 #[test]
 fn versions_release() {
     let dir = tempfile::tempdir().unwrap();
@@ -1195,15 +1194,14 @@ fn versions_release() {
     let model = fs::read_to_string(root.join("ascribe.toml")).unwrap();
     let lines = "live = [\"3.4\", \"3.5\"]\n";
     assert!(model.contains(lines), "examples/quill lists its lines");
-    let model = model.replacen(lines, &format!("{lines}planned = [\"3.6\"]\n"), 1)
-        + "\n[features.sso]\nname = \"Single sign-on\"\navailable = \"self-managed 3.6\"\n";
+    let model = model.replacen(lines, &format!("{lines}planned = [\"3.6\"]\n"), 1);
     write(root, "ascribe.toml", &model);
     let keys = fs::read_to_string(root.join("docs/keys.md")).unwrap();
     write(
         root,
         "docs/keys.md",
         &format!(
-            "{keys}\n## Sign in with SSO\n@available: sso\n\nKeys can be created by single sign-on.\n"
+            "{keys}\n## Sign in with SSO\n@available: self-managed planned\n\nKeys can be created by single sign-on.\n"
         ),
     );
     expect(

@@ -550,6 +550,19 @@ Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.m
 
 **Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
 
+### ASC244 `available-planned-line`
+@id {permalink=true}: ASC244
+
+Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+
+**When:** `planned` for a target with no planned line, or more than one.
+
+**Message:** `{target}` has no planned line, so `planned` names no version; declare one in `[releases.{target}] planned`, or write the version
+
+**Fix:** Write the version in place of `planned`, or, for work in a line that hasn't shipped, declare that line in `[releases.<target>] planned`. `planned` names a target's planned line, so it needs exactly one: with two, write the version of the one the content is in.
+
+**Read more:** [Availability specs](../writing/directives.md#availability-specs) in the directive reference.
+
 ## `@steps`
 
 ### ASC033 `steps-not-ordered-list`

@@ -1114,6 +1114,14 @@ impl<'s> Loader<'s> {
                 builtin: true,
             });
         }
+        // The version word holds its name as a built-in state does (SPEC
+        // §4.4): `ascribe planned` must read one way.
+        all.push(RoleName {
+            name: ascribe_core::availability::PLANNED.to_owned(),
+            role: "the version word for a target's planned line (built in)".into(),
+            span: Span::empty(0),
+            builtin: true,
+        });
         for (name, span) in declared_states {
             all.push(RoleName {
                 name: name.clone(),
@@ -1262,6 +1270,20 @@ impl<'s> Loader<'s> {
                     continue;
                 }
             };
+            // A feature's spec names its versions: `planned` would follow
+            // the planned line, and no release rewrites a feature (SPEC §4.4).
+            if let Some(word) = spec.versions().find(|v| v.is_planned()).map(|v| v.span) {
+                self.push(
+                    self.issue(diagnostics::MODEL_AVAILABILITY_SYNTAX, word)
+                        .with_arg("key", f.key.as_str())
+                        .with_arg("spec", f.text.as_str())
+                        .with_arg(
+                            "detail",
+                            "`planned` is written in a page's mark, not a feature's spec; write the planned line's version",
+                        ),
+                );
+                continue;
+            }
             if let Some(n) = spec.bare_name()
                 && keys.contains(&n.text)
             {

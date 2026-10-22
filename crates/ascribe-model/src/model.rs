@@ -1369,7 +1369,94 @@ pub enum AvailabilityProblem {
     },
 }
 
+/// A `planned` that names no single line (SPEC §4.4): its target, a
+/// versioned dimension value, has no planned line, or more than one.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PlannedProblem {
+    /// The target.
+    pub target: Name,
+    /// The word, where it's written.
+    pub span: Span,
+    /// The target's planned lines, newest first: none, or more than one.
+    pub lines: Vec<Version>,
+}
+
+/// A spec with each `planned` that names one line replaced by that line.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ResolvedPlanned {
+    /// The spec. A `planned` that names no single line is left as it is.
+    pub spec: AvailabilitySpec,
+    /// Whether any `planned` was replaced.
+    pub changed: bool,
+    /// Each `planned` left as it is, whose target is a versioned dimension
+    /// value. On any other target, the version is
+    /// [`ContentModel::check_availability`]'s problem.
+    pub problems: Vec<PlannedProblem>,
+}
+
 impl ContentModel {
+    /// The line `planned` names for `target`: its one planned line. `None`
+    /// when it has none, or more than one.
+    pub fn planned_line(&self, target: &str) -> Option<&Version> {
+        match self.releases_of(target)?.planned.as_slice() {
+            [line] => Some(line),
+            _ => None,
+        }
+    }
+
+    /// `spec` with each `planned` replaced by its target's planned line
+    /// (SPEC §4.4), spanning the word. The result is what the mark means,
+    /// and what's compared, shown, and checked.
+    pub fn resolve_planned(&self, spec: &AvailabilitySpec) -> ResolvedPlanned {
+        let mut changed = false;
+        let mut problems = Vec::new();
+        let mut entries = spec.entries.clone();
+        for entry in &mut entries {
+            let line = self.planned_line(&entry.target.text);
+            let versions: Vec<&mut Version> = match &mut entry.detail {
+                Detail::None | Detail::State { version: None, .. } => Vec::new(),
+                Detail::Version(v)
+                | Detail::State {
+                    version: Some(v), ..
+                } => vec![v],
+                Detail::History(steps) => steps.iter_mut().map(|s| &mut s.version).collect(),
+            };
+            for v in versions.into_iter().filter(|v| v.is_planned()) {
+                match line {
+                    Some(line) => {
+                        *v = Version {
+                            span: v.span,
+                            ..line.clone()
+                        };
+                        changed = true;
+                    }
+                    None if self.dimension(&entry.target.text).is_none()
+                        && self.dimension_of_value(&entry.target.text).is_some()
+                        && !self.is_versionless(&entry.target.text) =>
+                    {
+                        problems.push(PlannedProblem {
+                            target: entry.target.clone(),
+                            span: v.span,
+                            lines: self
+                                .releases_of(&entry.target.text)
+                                .map(|r| r.planned.clone())
+                                .unwrap_or_default(),
+                        });
+                    }
+                    None => {}
+                }
+            }
+        }
+        ResolvedPlanned {
+            spec: AvailabilitySpec {
+                entries,
+                span: spec.span,
+            },
+            changed,
+            problems,
+        }
+    }
+
     /// Whether `key` is a declared phrase.
     pub fn has_phrase(&self, key: &str) -> bool {
         self.phrases.iter().any(|p| p.key == key)
@@ -1681,6 +1768,10 @@ pub(crate) fn check_entries(
                     check_version(&step.version, &mut problems);
                 }
                 for pair in steps.windows(2) {
+                    // A `planned` left in the spec names no line to compare.
+                    if pair.iter().any(|s| s.version.is_planned()) {
+                        continue;
+                    }
                     if pair[0].version.compare(&pair[1].version).is_gt() {
                         let show = |s: &ascribe_core::availability::HistoryStep| {
                             format!("{} {}", s.state.text, s.version.text)

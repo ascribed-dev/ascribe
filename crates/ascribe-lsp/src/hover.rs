@@ -339,15 +339,62 @@ fn availability_markdown(model: &ContentModel, text: &str) -> Option<String> {
     let display = availability_display_of_text(model, text)?;
     let mut out = format!("Available: {display}");
     if let Ok(spec) = parse_availability(text, 0) {
-        out.push_str(&release_lines(model, &spec));
+        let mut items = planned_lines(model, &spec);
+        items.extend(release_items(model, &model.resolve_planned(&spec).spec));
+        if !items.is_empty() {
+            out.push_str(&format!("\n\n{}", items.join("\n")));
+        }
     }
     Some(out)
+}
+
+/// For each `planned` a spec writes, the line it names, as list items.
+fn planned_lines(model: &ContentModel, spec: &AvailabilitySpec) -> Vec<String> {
+    let mut items: Vec<String> = Vec::new();
+    for entry in &spec.entries {
+        let target = &entry.target.text;
+        let one = AvailabilitySpec {
+            entries: vec![entry.clone()],
+            span: entry.span,
+        };
+        if !one.has_planned() {
+            continue;
+        }
+        let resolved = model.resolve_planned(&one);
+        let item = match (model.planned_line(target), resolved.problems.first()) {
+            (Some(line), _) => format!("- `planned`: `{target}`'s planned line, {}", line.text),
+            (None, Some(p)) if p.lines.is_empty() => {
+                format!("- `planned`: `{target}` has no planned line")
+            }
+            (None, Some(p)) => {
+                let lines: Vec<&str> = p.lines.iter().map(|l| l.text.as_str()).collect();
+                format!(
+                    "- `planned`: `{target}` has more than one planned line, {}",
+                    lines.join(", ")
+                )
+            }
+            (None, None) => continue,
+        };
+        if !items.contains(&item) {
+            items.push(item);
+        }
+    }
+    items
 }
 
 /// For each version a spec names of a target with `[releases]`, the line
 /// it's in and the line's status, as a list after a blank line; nothing
 /// when it names none.
 fn release_lines(model: &ContentModel, spec: &AvailabilitySpec) -> String {
+    let items = release_items(model, spec);
+    if items.is_empty() {
+        return String::new();
+    }
+    format!("\n\n{}", items.join("\n"))
+}
+
+/// [`release_lines`]'s items.
+fn release_items(model: &ContentModel, spec: &AvailabilitySpec) -> Vec<String> {
     let mut items: Vec<String> = Vec::new();
     for entry in &spec.entries {
         let Some(releases) = model.releases_of(&entry.target.text) else {
@@ -389,10 +436,7 @@ fn release_lines(model: &ContentModel, spec: &AvailabilitySpec) -> String {
             }
         }
     }
-    if items.is_empty() {
-        return String::new();
-    }
-    format!("\n\n{}", items.join("\n"))
+    items
 }
 
 pub(crate) fn describe_directive(schema: &DirectiveSchema) -> String {

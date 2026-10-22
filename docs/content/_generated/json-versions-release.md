@@ -4,37 +4,6 @@
 ```json
 {
   "$defs": {
-    "FeatureJson": {
-      "description": "A feature moved by the release.",
-      "properties": {
-        "from": {
-          "description": "Its spec before.",
-          "type": "string"
-        },
-        "kept": {
-          "description": "The other targets its spec names, left as they were.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "key": {
-          "description": "Its key.",
-          "type": "string"
-        },
-        "to": {
-          "description": "Its spec after.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "key",
-        "from",
-        "to",
-        "kept"
-      ],
-      "type": "object"
-    },
     "FileJson": {
       "description": "A source file the release rewrites.",
       "properties": {
@@ -60,7 +29,7 @@
       "description": "A mark the release rewrites.",
       "properties": {
         "from": {
-          "description": "The feature it named.",
+          "description": "The spec as written.",
           "type": "string"
         },
         "line": {
@@ -69,7 +38,7 @@
           "type": "integer"
         },
         "to": {
-          "description": "The spec it names now.",
+          "description": "The spec as rewritten.",
           "type": "string"
         }
       },
@@ -137,13 +106,6 @@
       "description": "The version of Ascribe that wrote it.",
       "type": "string"
     },
-    "features": {
-      "description": "Each feature that named the line, pointed at `next`.",
-      "items": {
-        "$ref": "#/$defs/FeatureJson"
-      },
-      "type": "array"
-    },
     "files": {
       "description": "Each source file whose marks are rewritten, from the project root.",
       "items": {
@@ -156,7 +118,7 @@
       "type": "string"
     },
     "next": {
-      "description": "The line the features that named the released one move to, when\none does.",
+      "description": "The line planned after the released one, from `--next`.",
       "type": [
         "string",
         "null"
@@ -201,7 +163,6 @@
     "next",
     "next_added",
     "archived",
-    "features",
     "files",
     "outputs"
   ],

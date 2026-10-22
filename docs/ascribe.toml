@@ -70,8 +70,8 @@ title = { type = "string", inline = "code" }
 description = { type = "string", role = "description" }
 
 # What isn't in the latest release is marked with availability. A feature in
-# `main` that no release has yet is `@available: next`, the planned line in
-# `[releases.ascribe]`, so the page reads "planned". When a release ships it,
+# `main` that no release has yet is `@available: ascribe planned`, the planned
+# line in `[releases.ascribe]`, so the page reads "planned". When a release ships it,
 # the line moves to `live` and the same marks read "since <version>".
 # Something that shipped in an earlier release says so directly:
 # `@available: ascribe 0.1.1`.
@@ -89,9 +89,8 @@ values = ["npm", "pnpm"]
 # The releases the docs know of: the latest release is the live line, and
 # the one `main` is building is planned. Earlier releases aren't declared: a
 # mark for one is before the window and reads as written. RELEASING.md's
-# step moves the lines when a release ships. `availability-left-behind`
-# reports a feature whose versions are all at or before the live line, such
-# as `next` once its release ships.
+# step moves the lines when a release ships, and rewrites each `planned` to
+# the released version.
 [releases]
 planned-label = "in main, not yet released"
 
@@ -103,10 +102,6 @@ planned = ["0.4.2"]
 "0.3.1" = {}
 "0.3.2" = {}
 "0.4.0" = {}
-
-[features.next]
-name = "In main, not yet released"
-available = "ascribe 0.4.2"
 
 [phrases]
 # The latest release: `[releases.ascribe]`'s live line, which

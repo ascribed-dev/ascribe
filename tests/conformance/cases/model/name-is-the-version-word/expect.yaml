@@ -1,0 +1,8 @@
+description: >-
+  `planned` is the version word for a target's planned line, so no
+  lifecycle state, dimension, value, or feature key may take its name.
+spec: ["4.4", "7.2", "8.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-name-multiple-roles, file: ascribe.toml, line: 3}
