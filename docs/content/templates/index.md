@@ -12,7 +12,6 @@ The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/tem
 
 Ascribe converts each one into an Ascribe page and changes nothing of their wording: each `{placeholder}` is written as `\{placeholder}`, so it shows as written and isn't read as a phrase. Each guide says at its top where it came from, and `ascribe templates list` shows the set and its release.
 
-@available: ascribe 0.4.0
 A template's instructions to the writer, such as `{This section is optional}`, are [memos](../writing/directives.md#memo): `@memo: This section is optional`. A memo is never published: follow it, then delete it or keep it. A paragraph that marks where the page's own text goes, such as the how-to's `{Optional: Explanatory text}` in a step, stays a placeholder.
 
 The set has six templates, for a how-to, a concept, a tutorial, a reference, a troubleshooting page, and release notes. Each is one of theirs, and has a type of the same name.

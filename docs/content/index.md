@@ -11,10 +11,8 @@ permalink: docs
 - [Directive syntax](writing/syntax.md): the language: how a directive is written, its attributes, forms, titles, and what it applies to.
 - [Directive reference](writing/directives.md): each built-in directive, its attributes, and its rules.
 - [Phrases, links, and images](writing/inline.md) and [frontmatter](writing/frontmatter.md): the rest of what a page writes.
-- @available: ascribe 0.4.0
-  [Memos](writing/memos.md): keeping the reason a page is written the way it is beside it, for the people and agents who change it, and never for its readers.
-- @available: ascribe 0.4.0
-  [Glossaries](content-model/glossary.md): setting up a glossary, so every page links the terms it uses to their definitions.
+- [Memos](writing/memos.md): keeping the reason a page is written the way it is beside it, for the people and agents who change it, and never for its readers.
+- [Glossaries](content-model/glossary.md): setting up a glossary, so every page links the terms it uses to their definitions.
 - [`ascribe.toml` reference](content-model/index.md): the content model: content types, dimensions, availability, phrases, widgets, and builds.
 - [Prose, through Vale](checks/vale.md): checking your pages' prose with Vale, in the editor and in `ascribe check`.
 - [The project report](checks/report.md): what state the whole project is in, from the problems and pages it counts to the published site, and running it every day in CI.

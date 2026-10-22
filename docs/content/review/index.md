@@ -41,7 +41,6 @@ The first time, VS Code asks you to sign in to GitHub. Allow it to see comments.
 
 Run **Ascribe: Changed Pages**, also the list button in the preview's title bar, to list every page the pull request changes. Choose one to open it and its preview.
 
-@available: ascribe 0.4.0
 The **Review** view, first in the Ascribe sidebar while review is on, lists the same pages with their counts and open threads ([The Review view](../editor/review.md#the-review-view)). Choose a page there to open it and its preview at its first change.
 
 In the preview, step through the changes with the header's arrows, and switch between **Changes**, **As it will be**, and **As it was** to read the page with and without the [marks](how-it-works.md#the-marks). Click a mark's label to open its source lines.

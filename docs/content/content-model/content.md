@@ -89,12 +89,10 @@ A mark does nothing only where no output shows it: when every build that publish
 
 @include: ../_fragments/content-model/glossary.md
 
-@available: ascribe 0.4.0
 To set one up, see [Set up a glossary](glossary.md).
 
 **Matching:** a term is found as a whole word, never inside one, and where two terms overlap, as `API key` and `API` do, the longer is linked. Only prose is searched, so a term in a heading, link text, code, raw HTML, or a directive's primary identifier stays as it is. A glossary page doesn't link the terms it shows, and a build doesn't link a term whose heading it leaves out, or that has no definition in it.
 
-@available: ascribe 0.4.0
 **Rules.** A path in `pages` names a page that's there, with its name's case as it is on disk (`model-glossary-page`). The rest are checked with the project, since terms are read from pages:
 
 - Two terms or aliases with the same text, compared ignoring case unless both terms are case-sensitive, are reported at the second, which isn't a term (`glossary-term-duplicate`); so are two terms with the same id, which two headings with the same text on different pages give them.

@@ -15,7 +15,6 @@ With review on, the preview's header shows the base, how many changes the page h
 A project that isn't in a git repository, a revision that doesn't exist, or `git` missing from the path stops review from starting, with a message that says which; the preview works as before. Starting review reads the project as it was at the base, which takes about as much memory again as the project; stopping review frees it.
 
 ## The Review view
-@available: ascribe 0.4.0
 
 While review is on for the active page's project, a **Review** view is first in the Ascribe sidebar, and it's gone once review stops. It lists the same pages as Changed Pages, the ones [`ascribe diff`](../review/diff.md#cli-diff) lists for the same base, under **Added**, **Changed**, and **Removed**: each by its title, with its counts, what it changed through when its own file didn't change (such as "via _fragments/requirements.md"), and how many open threads show on it, such as "3 changed · 1 open thread". Choosing a page opens it and its preview at its first change; a removed page has no file to open, so choosing it shows the page in the preview as it was at the base, with the review header saying so and no **As it will be** to switch to. Each page's diff button opens its own source changes: its file and the files it changed through. The pages follow your edits, saved or not.
 
