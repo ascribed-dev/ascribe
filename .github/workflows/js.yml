@@ -169,11 +169,16 @@ jobs:
       - run: pnpm --filter @ascribed/review build
       - run: pnpm --filter @ascribed/astro build
       - run: pnpm --filter @ascribed/astro test
+      # GitHub's x64 Ubuntu image has what Chromium needs, as it ships Chrome:
+      # `--with-deps` would fetch 26 MB of fonts and libraries from the Ubuntu
+      # mirror on every run, and a slow mirror timed the step out. The arm64
+      # image has no Chrome, so it still takes them.
       - run: pnpm --filter @ascribed/example-astro-site exec playwright-core install --with-deps chromium
         timeout-minutes: 5
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && runner.arch == 'ARM64'
       - run: pnpm --filter @ascribed/example-astro-site exec playwright-core install chromium
-        if: runner.os != 'Linux'
+        timeout-minutes: 5
+        if: runner.os != 'Linux' || runner.arch != 'ARM64'
       - run: pnpm --filter @ascribed/example-astro-site test:e2e
       # The editor preview against the site this job just proved.
       - run: pnpm --filter ascribe-vscode test:parity
