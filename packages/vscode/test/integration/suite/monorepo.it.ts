@@ -897,7 +897,7 @@ describe("with several projects, one nested in another", () => {
 
     it("follows a change on disk once its server is running", async () => {
       const written = page("written.md");
-      writeFileSync(written.fsPath, broken);
+      writeFileSync(written.fsPath, broken.replace("Broken", "Written"));
       await diagnosticsOf(written, () => codes(written).join() === "ASC036");
       // Nothing opened the file.
       assert.ok(
