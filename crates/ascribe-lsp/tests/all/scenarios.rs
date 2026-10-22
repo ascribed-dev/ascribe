@@ -328,6 +328,59 @@ fn a_model_that_does_not_load_is_reported_on_ascribe_toml_and_the_last_model_sta
 }
 
 #[test]
+fn a_model_that_stops_loading_clears_every_file_until_it_loads_again() {
+    let f = Fixture::new(
+        MODEL,
+        &[("docs/w.md", WIDGET_PAGE), ("docs/v.md", WIDGET_PAGE)],
+    );
+    let (page, other, config) = (
+        f.path("docs/w.md"),
+        f.path("docs/v.md"),
+        f.path("ascribe.toml"),
+    );
+    let mut client = Client::start(&f.root());
+    client.settle();
+    assert_eq!(client.codes(&page), ["directive-unknown"]);
+    assert_eq!(client.codes(&other), ["directive-unknown"]);
+
+    // An unknown key, on disk: the model's problem goes on `ascribe.toml`,
+    // and every page's diagnostics are cleared.
+    f.write("ascribe.toml", &format!("{MODEL}unknown-key = 1\n"));
+    client.watched(&[(&config, FileChangeType::CHANGED)]);
+    client.settle();
+    assert!(!client.diagnostics(&config).is_empty());
+    assert!(
+        client.codes(&page).is_empty(),
+        "{:?}",
+        client.diagnostics(&page)
+    );
+    assert!(client.codes(&other).is_empty());
+    let cleared = client.publications(&page).len();
+
+    // Nothing is published for a page edited meanwhile.
+    client.open(&page, 1, WIDGET_PAGE);
+    client.replace(&page, 2, &format!("{WIDGET_PAGE}\n@other: Hm.\n"));
+    client.settle();
+    assert_eq!(client.publications(&page).len(), cleared);
+
+    // Once the model loads, every page's diagnostics are published again,
+    // as it has them now.
+    f.write("ascribe.toml", MODEL);
+    client.watched(&[(&config, FileChangeType::CHANGED)]);
+    client.settle();
+    assert!(client.diagnostics(&config).is_empty());
+    assert_eq!(
+        client.codes(&page),
+        ["directive-unknown", "directive-unknown"]
+    );
+    assert_eq!(client.codes(&other), ["directive-unknown"]);
+    assert_eq!(
+        client.publications(&page).last().map(|p| p.version),
+        Some(Some(2))
+    );
+}
+
+#[test]
 fn changing_the_content_root_reloads_the_project() {
     let f = Fixture::new(
         MODEL,
