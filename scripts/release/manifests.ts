@@ -188,6 +188,22 @@ export function unreleasedSection(changelog: string): { version: string | undefi
 }
 
 /**
+ * The changelog as the extension's package carries it: the same, without an
+ * unreleased section that has nothing in it. The Marketplace shows the file as
+ * it is, and an empty section above the release reads as if the release
+ * weren't out yet.
+ */
+export function withoutEmptyUnreleased(changelog: string): string {
+  const lines = changelog.split("\n");
+  const start = lines.findIndex((line) => UNRELEASED.test(line));
+  if (start === -1) return changelog;
+  const next = lines.findIndex((line, i) => i > start && line.startsWith("## "));
+  const end = next === -1 ? lines.length : next;
+  if (lines.slice(start + 1, end).some((line) => line.trim() !== "")) return changelog;
+  return [...lines.slice(0, start), ...lines.slice(end)].join("\n");
+}
+
+/**
  * A canary's version: the version after `released` (the workspace's version,
  * the latest release), then `-next.<run>`. The next version is the one the
  * changelog's unreleased section names, or else a patch bump.
