@@ -311,7 +311,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 **Message:** feature `{key}` names releases up to \{version}, and the current line of `{target}` is \{current}, so what it marks has shipped
 
-**Fix:** When the feature stands for what the next release adds, as one named `next` does, write the shipped release's spec at the content that shipped in it (`@available: ascribe 0.2.0`), and point the feature at the next planned line. When it's a history worth keeping by name, acknowledge it in [`[[intended]]`](../content-model/checks.md#intended-acknowledgements). After each release, move its line from `planned` to `live` in [`[releases.<target>]`](../content-model/content.md#71-releasestarget).
+**Fix:** When the feature stood for what a release would add, write the shipped release's spec at the content that shipped in it (`@available: ascribe 0.2.0`), and mark what the next release adds `<target> planned` instead of keeping a feature for it. When it's a history worth keeping by name, acknowledge it in [`[[intended]]`](../content-model/checks.md#intended-acknowledgements). After each release, move its line from `planned` to `live` in [`[releases.<target>]`](../content-model/content.md#71-releasestarget).
 
 **Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
 

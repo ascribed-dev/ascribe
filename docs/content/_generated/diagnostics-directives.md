@@ -546,7 +546,7 @@ Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.m
 
 **Message:** `{version}` is newer than every line `[releases.{target}]` declares, and the newest is `{newest}`
 
-**Fix:** Correct the number to a declared line, such as the newest, or, for a line that's planned, add it to `planned` in `[releases.<target>]`. Work whose number isn't known yet is marked with a feature, such as `next`, that names the planned line.
+**Fix:** Correct the number to a declared line, such as the newest, or, for a line that's planned, add it to `planned` in `[releases.<target>]`. Work for the planned line is marked with `planned` in place of its number, as `<target> planned`, and `ascribe versions release` writes the number when the line ships.
 
 **Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
 
@@ -561,7 +561,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Write the version in place of `planned`, or, for work in a line that hasn't shipped, declare that line in `[releases.<target>] planned`. `planned` names a target's planned line, so it needs exactly one: with two, write the version of the one the content is in.
 
-**Read more:** [Availability specs](../writing/directives.md#availability-specs) in the directive reference.
+**Read more:** [The planned line](../writing/directives.md#the-planned-line) in the directive reference.
 
 ## `@steps`
 
