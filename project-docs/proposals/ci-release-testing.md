@@ -29,7 +29,7 @@ Three facts follow from the table:
 2. **Release testing doesn't run the test suite.** The release checks the tagged commit by building and smoking it. I found nothing in RELEASING.md or the release workflow that requires a passing CI run on that commit. I haven't read every line of `release.yml` to confirm the absence.
 3. **The PR gate's extra OS is Windows only.** macOS already runs only on `main` and nightly. Dropping macOS from the PR gate is already done.
 
-Not measured yet: how long each job takes, which job is on the critical path, and how often a change that passed CI needed a fix or revert afterwards. Without those three numbers, no step below can be sized.
+Step 0 measured the first two (see [Results of step 0](#results-of-step-0)). The third, how often a change needed a fix or revert afterwards, is only a lower bound from commit messages.
 
 ## The problem
 
@@ -37,16 +37,55 @@ Pull request wall-clock time is the cost people feel. The parallel jobs mean the
 
 The release and nightly gates are weaker than their names suggest. A test failure can reach `next` before anyone sees it, and a release can be tagged from a commit the test suite has never run on.
 
+## Results of step 0
+
+Collected on 22 October 2026, by reading the Actions API and first-parent `main` history. The proposal asked for two weeks; the data covers one day for runs and 90 days of history for fixes, and the sample is small. Read the numbers as rough.
+
+**Limits:** the 20 pull-request runs span 05:35 to 17:49 UTC on one day, from about eight branches (one branch has four of them). The 20 `main` runs span one day too. Seventeen runs per event completed; the rest were cancelled and are excluded. `ci.yml` changed during the window: #837 removed a Chromium install step from the Linux Astro job and the site job, which shortens those jobs by about 15 to 25 seconds. Four sampled runs failed in that Chromium install step, which was an Azure apt mirror slowdown, not a code failure.
+
+**Run wall-clock, median and 90th percentile:** pull requests 9.9 and 10.6 minutes; `main` 7.8 and 10.3 minutes.
+
+**Critical path on pull requests** (the last job to finish, out of 17 completed runs), with median job durations:
+
+| Job | Median (min) | Last to finish |
+|---|---|---|
+| clippy and test, Windows | 9.7 | 14 of 17 |
+| Astro end-to-end, Linux x64 | 7.1 | 2 |
+| VS Code integration, Linux | 5.0 | 0 |
+| clippy and test, Linux | 4.8 | 0 |
+| VS Code multi-project, Windows | 3.8 | 0 |
+| determinism, Windows | 3.6 | 0 |
+| site | 3.1 | 1 (a failed run) |
+| JavaScript format, lint, typecheck, and test | 1.9 | 0 |
+
+Inside the Windows clippy-and-test job, `cargo test --workspace` takes 6.6 minutes of its median 9.7.
+
+On `main`, the Linux Astro end-to-end job is last to finish in 15 of 17 runs, with a median of 7.5 minutes. The macOS clippy-and-test job is next at 5.3 minutes.
+
+**What this changes:**
+
+- Windows clippy and test is the critical path on pull requests. Step 0's guess (Windows clippy and test or determinism) was half right: determinism is not on the path.
+- If Windows were removed from pull requests, the critical path would move to the Linux Astro job at about 7 minutes. That figure comes from job medians, not from a run without Windows, so treat it as an estimate. Against a median of 9.9 minutes, the saving is about 3 minutes. Step 2 doesn't remove Windows from every change, so its saving depends on how often a change touches the selected paths.
+
+**Post-merge fixes** (first-parent `main`, 612 commits in the history, which begins 9 September 2026). Classified by commit subject and body only; no CI logs or review threads were read. The count is a lower bound, because fixes whose messages don't use the search words were not enumerated:
+
+| Class | Count | Examples |
+|---|---|---|
+| Windows | 2 | A retry around folder deletion in the VS Code tests, on Windows. A release smoke test fix whose title names Windows. Both are guesses. |
+| macOS | 0 | |
+| Linux or arm64 | 4 | The Chromium install change, which was infrastructure. An arm64 Astro e2e fix. Two others, one of them weak. |
+| Platform-independent | 10 | Canary `next` logic, repo-map path tests, and an editor bug. |
+| Unclear | 9 | Test races and flakes, and vague subjects. |
+
+Two Windows fixes in 90 days is a weak case for either keeping or dropping Windows on every pull request. It does support Step 2's selection, since a change to path and link code is the one most likely to break there.
+
 ## Proposal
 
-Each step is cheaper than the one after it, and each stands on its own. Later steps need the data from step 0.
+Each step is cheaper than the one after it, and each stands on its own. Step 0 is done and its results are above.
 
-### Step 0: measure (two weeks)
+### Step 0: measure (done)
 
-- Pull the job durations for the last 20 pull-request runs and the last 20 `main` runs from the Actions API. Record, for each run, which job finished last.
-- Log every fix, revert, or hotfix merged to `main`. For each, record the check that should have caught it, its platform, and whether it came from a pull request, a `main` push, or a nightly run.
-
-Output: a table of time per job, and a table of post-merge fixes by platform. Both go into this document as a new section.
+Pulled the job durations for recent pull-request and `main` runs, and logged fixes and reverts on `main`. Results are in [Results of step 0](#results-of-step-0). A standing log of post-merge fixes, by platform and by the check that should have caught each, is still not kept; a follow-up is needed to make that count exact.
 
 ### Step 1: make the nightly and release gates real (no coverage lost)
 
