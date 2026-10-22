@@ -614,22 +614,20 @@ export const ASSETS: Asset[] = [
     oneColor: true,
     draw: (s) => svg(WORD_W, WORD_H, paths(s.wordmark, "currentColor"), false),
   },
-  ...(["light", "dark"] as const).map(
-    (scheme): Asset => ({
-      path: `site/home/content/images/hero-mark-${scheme}.svg`,
-      width: (MARK_W + 2 * HERO_MARGIN[0]) * HERO_CELL,
-      height: (MARK_H + 2 * HERO_MARGIN[1]) * HERO_CELL,
-      from: [GRIDS, BRAND],
-      form: "svg",
-      draw: (s) =>
-        heroMark(
-          s.mark,
-          scheme === "light" ? lightInk(s.colors) : darkInk(s.colors),
-          HERO_MARGIN,
-          HERO_CELL,
-        ),
-    }),
-  ),
+  ...(["light", "dark"] as const).map((scheme): Asset => ({
+    path: `site/home/content/images/hero-mark-${scheme}.svg`,
+    width: (MARK_W + 2 * HERO_MARGIN[0]) * HERO_CELL,
+    height: (MARK_H + 2 * HERO_MARGIN[1]) * HERO_CELL,
+    from: [GRIDS, BRAND],
+    form: "svg",
+    draw: (s) =>
+      heroMark(
+        s.mark,
+        scheme === "light" ? lightInk(s.colors) : darkInk(s.colors),
+        HERO_MARGIN,
+        HERO_CELL,
+      ),
+  })),
   {
     path: "packages/vscode/media/icon.png",
     width: 256,

@@ -1188,6 +1188,10 @@ claim-example > :not(pre, figure, ascribe-tabs) {
   margin: 2rem 0 0;
 }
 
+.home source-and-result .result {
+  background: var(--surface);
+}
+
 /* The hero: the headline, the sentence, the tools, and what to do first, with the mark beside them. */
 .landing.home hero-banner {
   display: grid;
@@ -1313,6 +1317,10 @@ call-to-action > p:last-child > a:hover {
   text-decoration: underline;
 }
 
+.home hero-banner > call-to-action {
+  justify-self: stretch;
+}
+
 hero-banner call-to-action {
   display: flex;
   flex-wrap: wrap;
@@ -1354,6 +1362,11 @@ hero-banner call-to-action > pre code::before {
 .home article > call-to-action > ascribe-steps {
   grid-column: 1;
   grid-row: 1 / -1;
+  margin-block: 0;
+}
+
+.home article > call-to-action > ascribe-steps li > p:first-child {
+  margin: 0.125rem 0 0.5rem;
 }
 
 .home article > call-to-action > p:first-of-type {
@@ -1500,7 +1513,7 @@ pillar-proof li a {
 audience-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.25rem;
+  column-gap: 1.25rem;
 }
 
 audience-list > :not(audience-entry) {
@@ -1508,7 +1521,11 @@ audience-list > :not(audience-entry) {
 }
 
 .page.home audience-list > h2 + p {
-  margin: 0 0 0.75rem;
+  margin: 0;
+}
+
+audience-list > audience-entry {
+  margin-top: 2rem;
 }
 
 audience-entry {
@@ -1693,11 +1710,15 @@ quiet-pillar > ul + p {
     margin-bottom: 1.5rem;
   }
 
+  audience-list > audience-entry + audience-entry {
+    margin-top: 1.25rem;
+  }
+
   .landing.home quiet-pillar {
     column-count: auto;
   }
 
-  quiet-pillar > h2 ~ h2 {
+  .page quiet-pillar > h2 ~ h2 {
     margin-top: 2rem;
   }
 
@@ -1860,6 +1881,16 @@ quiet-pillar > ul + p {
   .home article > h2:has(+ p > story-pillar)::before {
     height: 1.8rem;
     margin-top: 0.15rem;
+  }
+
+  pillar-proof:has(> ul ~ h3) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-flow: row;
+  }
+
+  .page.home pillar-proof > ul ~ h3 {
+    margin-top: 1.5rem;
   }
 
   .landing.home quiet-pillar {

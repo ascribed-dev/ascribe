@@ -299,11 +299,7 @@ test("every link in the pillars is a permalink that lands on its page", async ()
 test("the audiences each say what leads for them and link to where they start", async () => {
   const page = await open("/");
   const entries = page.locator("audience-list > audience-entry");
-  expect(await entries.locator("h3").allTextContents()).toEqual([
-    "Engineers",
-    "Writers",
-    "Agents",
-  ]);
+  expect(await entries.locator("h3").allTextContents()).toEqual(["Engineers", "Writers", "Agents"]);
   const site = await siteAddress();
   const starts: string[] = [];
   for (const entry of await entries.all()) {
