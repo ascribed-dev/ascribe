@@ -54,7 +54,8 @@ export interface Candidate {
   palette: Map<string, Map<string, string>>;
   /** Each semantic color's palette reference and hex, per scheme. */
   colors: Map<string, Record<Scheme, { ref: string; hex: string }>>;
-  font: { ui: string; mono: string };
+  /** The font stacks: body and UI text, code, and headings. */
+  font: { ui: string; mono: string; heading: string };
   type: Map<string, TypeStep>;
 }
 
@@ -115,6 +116,7 @@ export const TYPE_STEPS = ["caption", "small", "body", "lead", "h3", "h2", "h1"]
 export const EMIT: Record<string, Record<string, string>> = {
   "site/src/styles/site.css": {
     "--font": "font.ui",
+    "--font-heading": "font.heading",
     "--font-mono": "font.mono",
     "--text": "color.text",
     "--muted": "color.muted",
@@ -264,7 +266,11 @@ export function readCandidate(id: string, text: string): Candidate {
     summary: string(meta.summary, `${file} candidate.summary`),
     palette,
     colors,
-    font: { ui: string(font.ui, `${file} font.ui`), mono: string(font.mono, `${file} font.mono`) },
+    font: {
+      ui: string(font.ui, `${file} font.ui`),
+      mono: string(font.mono, `${file} font.mono`),
+      heading: string(font.heading, `${file} font.heading`),
+    },
     type,
   };
 }
@@ -476,7 +482,13 @@ function hexOf(candidate: Candidate, name: string, scheme: Scheme): string {
 /** The value a token reference (`color.accent`, `font.mono`) has in a scheme. */
 function tokenValue(candidate: Candidate, token: string, scheme: Scheme): string {
   const [group, name = ""] = token.split(/\.(.*)/);
-  if (group === "font") return name === "mono" ? candidate.font.mono : candidate.font.ui;
+  if (group === "font") {
+    return name === "mono"
+      ? candidate.font.mono
+      : name === "heading"
+        ? candidate.font.heading
+        : candidate.font.ui;
+  }
   return hexOf(candidate, name, scheme);
 }
 
@@ -637,7 +649,8 @@ function typeBlock(candidate: Candidate): string {
         : step.startsWith("h")
           ? "Variants and availability"
           : "One source, resolved into a site, plain Markdown, and JSON.";
-    return `<tr><th>${step}</th><td class="spec"><code>${esc(s.size)} / ${s.line} / ${s.weight}</code></td><td style="font-size: ${s.size}; line-height: ${s.line}; font-weight: ${s.weight}">${sample}</td></tr>`;
+    const family = step.startsWith("h") ? ` font-family: ${esc(candidate.font.heading)};` : "";
+    return `<tr><th>${step}</th><td class="spec"><code>${esc(s.size)} / ${s.line} / ${s.weight}</code></td><td style="font-size: ${s.size}; line-height: ${s.line}; font-weight: ${s.weight};${family}">${sample}</td></tr>`;
   });
   return `<table class="type">${rows.join("\n")}</table>`;
 }
@@ -775,7 +788,7 @@ ${contrastBlock(candidate, inputs.pairs)}
 <p class="note">How far apart colors that sit side by side look, as a distance in OKLab, to a typical reader and to readers without red (protan) or green (deutan) cones. Below ${DISTINCT} is marked: those rely on the label and the bar's shape.</p>
 ${distinctBlock(candidate, inputs.distinct)}
 <h3>The type scale</h3>
-<p class="note">Over the system font stack: <code>${esc(candidate.font.ui)}</code>; code in <code>${esc(candidate.font.mono)}</code>. Size / line height / weight.</p>
+<p class="note">Over the system font stack: <code>${esc(candidate.font.ui)}</code>; headings in <code>${esc(candidate.font.heading)}</code>; code in <code>${esc(candidate.font.mono)}</code>. Size / line height / weight.</p>
 ${typeBlock(candidate)}
 </section>`;
 }

@@ -17,6 +17,7 @@
   --r-code: #e6eef2;
   --r-notice: #fdf1d8;
   --r-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r-heading: ui-serif, Charter, "Bitstream Charter", Cambria, Georgia, serif;
   --r-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --r-caption: 600 0.75rem/1.4;
   --r-small: 400 0.875rem/1.5;
@@ -372,7 +373,7 @@ body {
 
 /* The page: Ascribe's bare render, in a readable measure. */
 .r-page-heading {
-  font: var(--r-h1) var(--r-ui);
+  font: var(--r-h1) var(--r-heading);
   margin: 8px 0 12px;
 }
 
@@ -381,6 +382,11 @@ body {
   max-width: 46rem;
   padding-left: 12px;
   font: var(--r-body) var(--r-ui);
+}
+
+/* The page's own headings, in the serif the site sets them in. */
+.r-page :is(h1, h2, h3, h4) {
+  font-family: var(--r-heading);
 }
 
 .r-page img {

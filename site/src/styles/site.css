@@ -8,6 +8,7 @@
 
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, light. */
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-heading: ui-serif, Charter, "Bitstream Charter", Cambria, Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --text: #0b1824;
   --muted: #47606f;
@@ -379,18 +380,18 @@ pre {
 
 .page h1 {
   margin: 0 0 0.75rem;
-  font: var(--type-h1) var(--font);
+  font: var(--type-h1) var(--font-heading);
   letter-spacing: -0.01em;
 }
 
 .page h2 {
   margin: 2.5rem 0 0.75rem;
-  font: var(--type-h2) var(--font);
+  font: var(--type-h2) var(--font-heading);
 }
 
 .page h3 {
   margin: 2rem 0 0.5rem;
-  font: var(--type-h3) var(--font);
+  font: var(--type-h3) var(--font-heading);
 }
 
 .page .description {
@@ -731,7 +732,7 @@ hero-banner[status="stable"]::before {
 
 .page hero-banner h1 {
   margin: 0 0 1rem;
-  font: var(--type-hero) var(--font);
+  font: var(--type-hero) var(--font-heading);
   letter-spacing: -0.02em;
 }
 
@@ -770,12 +771,12 @@ source-and-result .result > :first-child {
 
 source-and-result .result-title {
   margin: 0 0 1rem;
-  font: var(--type-h1) var(--font);
+  font: var(--type-h1) var(--font-heading);
 }
 
 .page source-and-result .result h2 {
   margin: 1.5rem 0 0.75rem;
-  font: var(--type-h3) var(--font);
+  font: var(--type-h3) var(--font-heading);
 }
 
 /*
@@ -977,7 +978,7 @@ claim-example > :not(pre, figure, ascribe-tabs) {
   }
 
   .page hero-banner h1 {
-    font: var(--type-h1) var(--font);
+    font: var(--type-h1) var(--font-heading);
   }
 
   source-and-result {

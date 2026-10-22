@@ -308,6 +308,11 @@ dark = "deep.a40"
 [font]
 ui = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
 mono = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+# Headings on the docs site and in the HTML report's frame: the system's
+# serif, which is New York on Apple's systems, then Charter, the brand's
+# reading face, and the serifs Windows and Linux have. No font ships
+# (decision 48).
+heading = 'ui-serif, Charter, "Bitstream Charter", Cambria, Georgia, serif'
 # Review's code and paths.
 review-mono = 'ui-monospace, "SF Mono", Menlo, Consolas, monospace'
 # The review overlay's, when the page sets no --ascribe-review-font.
@@ -438,6 +443,7 @@ hero = "750 2.75rem/1.1"
 "--r-code" = "color.code-background"
 "--r-notice" = "color.warning-background"
 "--r-ui" = "font.ui"
+"--r-heading" = "font.heading"
 "--r-mono" = "font.review-mono"
 "--r-caption" = "type.caption"
 "--r-small" = "type.small"
@@ -512,6 +518,7 @@ hero = "750 2.75rem/1.1"
 
 [emit."site/src/styles/site.css".root]
 "--font" = "font.ui"
+"--font-heading" = "font.heading"
 "--font-mono" = "font.mono"
 "--text" = "color.text"
 "--muted" = "color.muted"
