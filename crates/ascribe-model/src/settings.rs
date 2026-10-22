@@ -214,6 +214,25 @@ pub fn find(table: &str, key: &str) -> Option<&'static Setting> {
     settings().iter().find(|s| s.table == table && s.key == key)
 }
 
+/// The default of `key` in `table` for a project whose `ascribe.toml` sets
+/// the keys `written` says it does, by table and key: the registry's,
+/// except where a default follows another key. `[consumer] agents` is the
+/// registry's `true` only when `[consumer] site` is set (SPEC §9.4), and
+/// `false` otherwise. The loader, `ascribe model`, and Project Settings all
+/// take a default from here.
+pub fn default_for(
+    table: &str,
+    key: &str,
+    written: &dyn Fn(&str, &str) -> bool,
+) -> Option<SettingValue> {
+    let default = find(table, key)?.default.clone();
+    if (table, key) == ("consumer", "agents") {
+        let on = matches!(default, Some(SettingValue::Switch(true)));
+        return Some(SettingValue::Switch(on && written("consumer", "site")));
+    }
+    default
+}
+
 /// The choices of `key` in `table`.
 pub(crate) fn choices(table: &str, key: &str) -> Vec<&'static str> {
     let found = find(table, key);

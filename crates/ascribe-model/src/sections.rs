@@ -705,7 +705,12 @@ impl Loader<'_> {
         }
         // Agents' outputs come with a site that has an address, unless
         // `agents` says otherwise below (SPEC §9.4).
-        c.agents = c.site.is_some() && settings::default_switch(CONSUMER, "agents");
+        let site = c.site.is_some();
+        c.agents = matches!(
+            settings::default_for(CONSUMER, "agents", &|t, k| (t, k) == (CONSUMER, "site")
+                && site),
+            Some(settings::SettingValue::Switch(true))
+        );
         if let Some(h) = t.get("html")
             && let Some(value) = self.boolean("consumer.html", h)
         {
