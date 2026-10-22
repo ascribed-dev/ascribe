@@ -53,7 +53,7 @@ Reuse a token when the new use means the same thing: a new panel is `color.surfa
 
 ### How `tokens.toml` is laid out
 
-- `[palette]`: every color value, by hue and step (`indigo.435`). Only `[color]` points here; no stylesheet does.
+- `[palette]`: every color value, by hue and step (`river.494`). Only `[color]` points here; no stylesheet does.
 - `[color]`: what each color is for, with a `light` and a `dark` value, each a palette name. The element library, review, the HTML report, the Astro toolbar, and the docs site share the top-level ones. The VS Code preview's fallbacks and a few colors of one surface's own are under that surface's name.
 - `[font]`, `[space]`, `[radius]`: values the stylesheets use as they are.
 - `[type]`: the type scale, each step a weight, a size, and a line height (`650 1.375rem/1.3`), for the `font` shorthand with a family after it: `font: var(--type-h2) var(--font)`. The docs site and the HTML report's frame set their text with it; the element library takes the site's type.
@@ -81,7 +81,7 @@ A generated block starts and ends with a marker comment:
 ```css
 :root {
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, light. */
-  --ascribe-note-color: #474dc6;
+  --ascribe-note-color: #0b6f8e;
   /* End of generated root. */
 }
 ```

@@ -8,17 +8,17 @@ export const OVERLAY_CSS = `
 :host {
   all: initial;
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: host, light. */
-  --muted: var(--ascribe-review-muted, #676c75);
-  --line: var(--ascribe-review-border, #e3e6ec);
-  --thread: var(--ascribe-review-thread, #f7f9fd);
-  --accent: var(--ascribe-review-focus, #5962e8);
+  --muted: var(--ascribe-review-muted, #47606f);
+  --line: var(--ascribe-review-border, #ccdce4);
+  --thread: var(--ascribe-review-thread, #ffffff);
+  --accent: var(--ascribe-review-focus, #b4530f);
   --accent-text: var(--ascribe-review-accent-text, #ffffff);
-  --flash: var(--ascribe-review-flash, #fee9d0);
-  --added: var(--ascribe-review-added, #057256);
-  --changed: var(--ascribe-review-changed, #845502);
-  --changed-background: var(--ascribe-review-changed-background, #fee9d0);
-  --removed: var(--ascribe-review-removed, #ca3f02);
-  --removed-background: var(--ascribe-review-removed-background, #fef4f1);
+  --flash: var(--ascribe-review-flash, #ffe4cc);
+  --added: var(--ascribe-review-added, #2f6b2b);
+  --changed: var(--ascribe-review-changed, #0b6f8e);
+  --changed-background: var(--ascribe-review-changed-background, #c5ecfa);
+  --removed: var(--ascribe-review-removed, #ca223c);
+  --removed-background: var(--ascribe-review-removed-background, #ffedec);
   --mono: var(--ascribe-review-mono, ui-monospace, monospace);
   font-family: var(--ascribe-review-font, system-ui, -apple-system, "Segoe UI", sans-serif);
   /* End of generated host. */
@@ -449,7 +449,7 @@ svg.connector path {
   position: fixed;
   inset: 0;
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: backdrop, light. */
-  background: rgb(0 0 0 / 0.4);
+  background: rgb(11 24 36 / 0.4);
   /* End of generated backdrop. */
   z-index: 8;
   display: grid;

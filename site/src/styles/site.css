@@ -9,14 +9,14 @@
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, light. */
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --text: #22272e;
-  --muted: #676c75;
-  --background: #ffffff;
-  --surface: #f7f9fd;
-  --border: #e3e6ec;
-  --accent: #5962e8;
-  --accent-surface: #f5f6fe;
-  --focus: #5962e8;
+  --text: #0b1824;
+  --muted: #47606f;
+  --background: #f2f7f9;
+  --surface: #ffffff;
+  --border: #ccdce4;
+  --accent: #0b6f8e;
+  --accent-surface: #dff4fc;
+  --focus: #b4530f;
   --mark-gutter: #1689ab;
   --radius: 0.375rem;
   --type-caption: 600 0.75rem/1.4;
@@ -41,14 +41,14 @@
 @media (prefers-color-scheme: dark) {
   :root {
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, dark. */
-    --text: #f0f3f7;
-    --muted: #a5a9b2;
-    --background: #0c0f16;
-    --surface: #13171f;
-    --border: #393d46;
-    --accent: #91a1fe;
-    --accent-surface: #161b3a;
-    --focus: #b3c0ff;
+    --text: #e3f1f7;
+    --muted: #8aa6b8;
+    --background: #0b1824;
+    --surface: #112233;
+    --border: #263a4b;
+    --accent: #56d0f0;
+    --accent-surface: #0b2f40;
+    --focus: #f0a35e;
     --mark-gutter: #56d0f0;
     /* End of generated root. */
   }
@@ -236,7 +236,7 @@ pre {
 
 .search-dialog::backdrop {
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: backdrop, light. */
-  background: rgb(0 0 0 / 0.4);
+  background: rgb(11 24 36 / 0.4);
   /* End of generated backdrop. */
 }
 
@@ -446,11 +446,11 @@ pre {
 
 /*
  * Astro's Shiki theme: github-light-default and github-dark-default, as the
- * system is. Code blocks sit on the page's background, where the light
- * theme's comments pass 4.5:1; on the surface color they don't.
+ * system is. Code blocks sit on the surface color, where the light theme's
+ * comments pass 4.5:1; on the page's background, Shallows, they don't.
  */
 .page pre.astro-code {
-  background-color: var(--background) !important;
+  background-color: var(--surface) !important;
 }
 
 @media (prefers-color-scheme: dark) {

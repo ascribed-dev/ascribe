@@ -41,6 +41,12 @@ where = "Links"
 
 [[pair]]
 fg = "accent"
+bg = "surface"
+kind = "text"
+where = "Links and the selected item on a surface: the report's and the toolbar's panels"
+
+[[pair]]
+fg = "accent"
 bg = "accent-surface"
 kind = "text"
 where = "The current page in the sidebar; a search match"
@@ -265,3 +271,13 @@ where = "GA and deprecated badges"
 a = "note"
 b = "important"
 where = "Note and important; beta and preview badges"
+
+[[distinct]]
+a = "note"
+b = "tip"
+where = "Note and tip; river and moss, the mark's changed and reviewed"
+
+[[distinct]]
+a = "warning"
+b = "focus"
+where = "A focus ring beside a warning; amber is focus, not a warning"
