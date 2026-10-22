@@ -1,0 +1,1 @@
+- **Why Ascribe no longer says the content model has no navigation.** Its "What it doesn't do" list now says what `ascribe.nav` leaves out, that a section is a folder, and says the element library works on any site. The [Navigation](docs/content/navigation/index.md) page has the permalink `navigation`.
