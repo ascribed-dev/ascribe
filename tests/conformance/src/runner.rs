@@ -536,6 +536,14 @@ fn compare_diagnostics(
                     .severity
                     .as_ref()
                     .is_none_or(|s| a.severity.as_ref() == Some(s))
+                && exp.related.as_ref().is_none_or(|related| {
+                    a.related.as_ref().is_some_and(|actual| {
+                        actual.len() == related.len()
+                            && actual.iter().zip(related).all(|(a, r)| {
+                                a.file == r.file.as_deref().unwrap_or(file) && a.line == r.line
+                            })
+                    })
+                })
         });
         match found {
             Some(i) => used[i] = true,

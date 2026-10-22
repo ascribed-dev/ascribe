@@ -40,6 +40,7 @@ mod checks;
 mod diagnostic;
 mod evidence;
 pub mod fix;
+pub mod generated;
 mod glossary;
 pub mod identity;
 pub mod intended;

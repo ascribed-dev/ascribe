@@ -43,6 +43,8 @@ A prompt about a page names the [memo files](../writing/memo-files.md) about it,
 
 A [personal memo](../writing/memo-files.md#personal-memos) is listed in prompts made on the machine that has it, marked as personal. Each list stops at ten memos, and says how many more there are and the `ascribe outline` command that lists them.
 
+A page whose own `@memo` says it's [generated](../writing/directives.md#memo) is told apart in every prompt about its problems: the prompt says the file is generated and not to edit it, with the memo's text, which names what to change instead and the command that writes the file again.
+
 ## In review
 
 While you [review](../review/index.md) a pull request, **Prompt agent** hands your agent a review comment, or the change itself:

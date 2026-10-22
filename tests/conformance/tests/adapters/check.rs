@@ -11,7 +11,7 @@
 
 use ascribe_check::{Acknowledgements, Project, apply_levels, check_files};
 use ascribe_conformance::{
-    AdapterError, AdapterResult, Case, CaseKind, ConformanceAdapter, Diagnostic,
+    AdapterError, AdapterResult, Case, CaseKind, ConformanceAdapter, Diagnostic, Related,
 };
 use ascribe_core::{RelPath, WideEncoding};
 use ascribe_resolve::{DiskFs, Layout};
@@ -108,7 +108,8 @@ fn reported(
     diagnostics: Vec<ascribe_check::Diagnostic>,
     unused: bool,
 ) -> Vec<ascribe_check::Diagnostic> {
-    let leveled = apply_levels(&project.model().checks, diagnostics);
+    let leveled =
+        ascribe_check::generated::mark(project, apply_levels(&project.model().checks, diagnostics));
     Acknowledgements::of(project)
         .apply(project.model(), leveled, unused)
         .diagnostics
@@ -141,12 +142,29 @@ pub fn to_conformance(
         let pos = index
             .wide_line_col(WideEncoding::Utf32, d.location.span.start())
             .ok_or_else(|| AdapterError(format!("bad location for {}", d.slug)))?;
+        let related = d
+            .related
+            .iter()
+            .filter_map(|r| {
+                let file = project.file(r.location.file)?;
+                let line = ascribe_core::LineIndex::new(file.text)
+                    .line_col(r.location.span.start())?
+                    .line;
+                Some(Related {
+                    file: file
+                        .content_path
+                        .map_or_else(|| file.display_path.clone(), |p| p.to_string()),
+                    line: line + 1,
+                })
+            })
+            .collect();
         out.push(Diagnostic {
             slug: d.slug.as_str().to_owned(),
             file: path,
             line: pos.line + 1,
             column: pos.col + 1,
             severity: Some(d.severity.as_str().to_owned()),
+            related: Some(related),
         });
     }
     Ok(out)

@@ -25,9 +25,12 @@ pub mod skips;
 
 pub use adapter::{
     AdapterError, AdapterResult, BuildResult, ConformanceAdapter, Diagnostic, PageResult, Registry,
+    Related,
 };
 pub use case::{Case, CaseError, CaseKind, discover};
-pub use expect::{BuildExpect, Expect, ExpectedDiagnostic, OutputKind, OutputSlot, PageExpect};
+pub use expect::{
+    BuildExpect, Expect, ExpectedDiagnostic, ExpectedRelated, OutputKind, OutputSlot, PageExpect,
+};
 pub use outline::{
     Arm, AttrValue, Attributes, Binding, Directive, Form, Group, Node, Outline, Row,
 };

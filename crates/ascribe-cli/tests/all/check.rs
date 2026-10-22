@@ -1554,6 +1554,56 @@ fn prompt_format_without_paths_writes_the_projects_prompt() {
     );
 }
 
+/// A page whose memo says it's generated, with a warning whose fix would
+/// edit it.
+const GENERATED: &str = "---\ntitle: Keys\n---\n\n@memo: Generated from keys.toml by scripts/keys.ts; edit the keys, then run `node scripts/keys.ts` to rewrite it.\n[Keys](/keys/)\n";
+
+/// What a prompt says of `docs/gen.md`, written from [`GENERATED`].
+const GENERATED_SAID: &str = "`docs/gen.md` is generated, and the next run of what generates it rewrites it: don't edit it, but change what it's generated from and run the command again, as its memo says: Generated from keys.toml by scripts/keys.ts; edit the keys, then run `node scripts/keys.ts` to rewrite it.";
+
+#[test]
+fn prompt_format_says_a_generated_file_is_changed_where_it_is_generated_from() {
+    let dir = project(&[("gen.md", GENERATED), ("keys.md", CLEAN)]);
+    let out = ascribe(dir.path(), &["check", "--format", "prompt"]);
+    assert_eq!(code(&out), 0, "{}", stdout(&out));
+    let text = stdout(&out);
+    assert!(
+        text.contains(&format!("- docs/gen.md: 1 warning. {GENERATED_SAID}\n")),
+        "{text}"
+    );
+
+    let out = ascribe(dir.path(), &["check", "docs/gen.md", "--format", "prompt"]);
+    let text = stdout(&out);
+    assert!(
+        text.contains(&format!("Where: docs/gen.md\n{GENERATED_SAID}\n")),
+        "{text}"
+    );
+}
+
+#[test]
+fn a_problem_in_a_generated_file_names_its_memo_and_has_no_fix() {
+    let dir = project(&[("gen.md", GENERATED), ("keys.md", CLEAN)]);
+    let out = ascribe(dir.path(), &["check", "--format", "json"]);
+    let report: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("valid JSON");
+    let d = &report["diagnostics"][0];
+    assert_eq!(d["file"], "docs/gen.md");
+    assert!(d["fixes"].as_array().expect("an array").is_empty(), "{d}");
+    let related = &d["related"][0];
+    assert_eq!(related["file"], "docs/gen.md");
+    assert_eq!(related["range"]["start"]["line"], 5);
+    assert_eq!(
+        related["message"],
+        "This file is generated, and an edit to it is lost: Generated from keys.toml by scripts/keys.ts; edit the keys, then run `node scripts/keys.ts` to rewrite it."
+    );
+
+    // `--fix` leaves the file as its generator wrote it.
+    ascribe(dir.path(), &["check", "--fix"]);
+    assert_eq!(
+        fs::read_to_string(dir.path().join("docs/gen.md")).expect("read the page"),
+        GENERATED
+    );
+}
+
 #[test]
 fn prompt_format_writes_nothing_without_problems() {
     let dir = project(&[("index.md", CLEAN)]);
