@@ -105,7 +105,7 @@ Test impact analysis, which the Claude Code team's [scaling-CI article](https://
 
 Once Step 1 holds, put `main` behind a merge queue that runs the full required set on the queued change. Two passing pull requests can't then combine into a broken `main`. The queue makes the expensive jobs run per merge instead of per push, which is what the pull-request gate needs.
 
-Whether the repository's plan supports a merge queue is unchecked.
+`ci.yml` runs on the `merge_group` event: Linux, Windows, and macOS, with the Astro end-to-end on Linux x64, and the docs, site, and install checks chosen by the paths changed against the queue's base. It does nothing until a repository admin turns on the queue (Settings → Rules → Rulesets → Require merge queue), with `all checks` as the required check.
 
 ### Step 4: decide on the pull-request Windows job (conditional)
 
@@ -131,7 +131,7 @@ Made on 22 October 2026:
 
 Still open:
 
-3. **Enable the merge queue** if the plan supports it (Step 3). A repository admin sets it, and `ci.yml` must also run on the `merge_group` event, or a queued change waits for a check that never starts.
+3. **Enable the merge queue** (Step 3). `ci.yml` runs on the `merge_group` event; a repository admin turns the queue on.
 4. **Name the owner** of branch protection and of the `all checks` gate in `ci.yml`, which is the only required check.
 
 ## Measures
