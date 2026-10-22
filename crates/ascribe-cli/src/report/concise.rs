@@ -1,17 +1,56 @@
 //! The concise report, `--format concise`: one line per diagnostic, for an
 //! agent reading text. `file:line: [code] message`, grouped by file, at most
-//! [`LIMIT`] of them, then the summary line.
+//! [`LIMIT`] of them unless `--limit` says otherwise, then the summary line.
 
 use std::io::{self, Write};
+use std::str::FromStr;
 
 use ascribe_check::{Reported, Severity};
 
 use super::FileTable;
 use super::text::repeats_note;
 
-/// The most diagnostics the report lists. The rest are counted, with the
-/// command that narrows the check.
+/// The most diagnostics the report lists, unless `--limit` says otherwise.
+/// The rest are counted, with the command that lists them all.
 pub const LIMIT: usize = 50;
+
+/// How many diagnostics the report lists: `--limit`, a number or `all`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Limit {
+    /// At most this many.
+    At(usize),
+    /// Every one.
+    All,
+}
+
+impl Default for Limit {
+    fn default() -> Self {
+        Limit::At(LIMIT)
+    }
+}
+
+impl FromStr for Limit {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s == "all" {
+            return Ok(Limit::All);
+        }
+        s.parse()
+            .map(Limit::At)
+            .map_err(|_| format!("`{s}` is neither a number nor `all`"))
+    }
+}
+
+impl Limit {
+    /// How many of `total` the report lists.
+    fn of(self, total: usize) -> usize {
+        match self {
+            Limit::At(n) => n.min(total),
+            Limit::All => total,
+        }
+    }
+}
 
 /// The order the concise report lists a report in: grouped by file, in file
 /// order (the content model, then the source files in path order), and in
@@ -32,27 +71,24 @@ pub fn order(files: &FileTable, reported: &[Reported]) -> Vec<usize> {
     order
 }
 
-/// Writes the first [`LIMIT`] diagnostics in [`order`], then, if some were
-/// left out, `and N more: <command>`, where `more` gives the command for the
-/// first one left out, then `summary`.
+/// Writes the first diagnostics in [`order`], as many as `limit` says, then,
+/// if some were left out, `and N more: <command>`, where `all` is the
+/// command that lists every one, then `summary`.
 pub fn write(
     out: &mut dyn Write,
     files: &FileTable,
     reported: &[Reported],
     summary: &str,
-    more: &dyn Fn(&Reported) -> String,
+    limit: Limit,
+    all: &str,
 ) -> io::Result<()> {
     let order = order(files, reported);
-    for &i in order.iter().take(LIMIT) {
+    let listed = limit.of(order.len());
+    for &i in &order[..listed] {
         write_line(out, files, &reported[i])?;
     }
-    if let Some(&next) = order.get(LIMIT) {
-        writeln!(
-            out,
-            "and {} more: {}",
-            order.len() - LIMIT,
-            more(&reported[next])
-        )?;
+    if listed < order.len() {
+        writeln!(out, "and {} more: {all}", order.len() - listed)?;
     }
     writeln!(out, "{summary}")
 }
