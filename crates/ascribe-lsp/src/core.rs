@@ -20,9 +20,9 @@ use ascribe_resolve::{
 use crossbeam_channel::Sender;
 use lsp_server::{Message, Notification, Request};
 use lsp_types::{
-    DidChangeWatchedFilesRegistrationOptions, FileChangeType, FileEvent, FileSystemWatcher,
-    GlobPattern, LogMessageParams, MessageType, PublishDiagnosticsParams, Registration,
-    RegistrationParams, TextDocumentContentChangeEvent, Uri,
+    DiagnosticSeverity, DidChangeWatchedFilesRegistrationOptions, FileChangeType, FileEvent,
+    FileSystemWatcher, GlobPattern, LogMessageParams, MessageType, PublishDiagnosticsParams,
+    Registration, RegistrationParams, TextDocumentContentChangeEvent, Uri,
 };
 
 use crate::compute::{Across, to_lsp};
@@ -174,8 +174,8 @@ pub(crate) struct Core {
     pub(crate) prose: crate::prose::State,
     epoch: u64,
     published: HashMap<PathBuf, Published>,
-    /// The diagnostics last published for a file, without Vale's: what a
-    /// change to Vale's publishes again.
+    /// The diagnostics last published for a file, without Vale's or what
+    /// `@snippet`s put on it: what a change to either publishes again.
     checked: HashMap<PathBuf, Vec<lsp_types::Diagnostic>>,
     /// Closed files changed on disk, published at their next diagnostics
     /// even when those didn't change, so a client waiting on the change
@@ -1223,14 +1223,16 @@ impl Core {
     }
 
     // A closed file keeps its diagnostics.
-    /// Publishes a file's diagnostics when they, or the version of the document
-    /// they're for, changed since the last time, or when the file was changed
-    /// on disk since.
+    /// Publishes a file's diagnostics, with Vale's and what `@snippet`s put
+    /// on it, when they, or the version of the document they're for, changed
+    /// since the last time, or when the file was changed on disk since.
     pub(crate) fn publish(&mut self, path: &Path, diagnostics: Vec<lsp_types::Diagnostic>) {
         let prose = self.prose.found(path);
         let mut all = Vec::with_capacity(diagnostics.len() + prose.len());
         all.extend(diagnostics.iter().cloned());
         all.extend(prose.iter().cloned());
+        // What `@snippet`s that show it put on it, when it's a code file.
+        all.extend(self.code_share(path));
         self.checked.insert(path.to_path_buf(), diagnostics);
         let diagnostics = all;
         let doc = self.docs.get(path);
@@ -1304,8 +1306,8 @@ impl Core {
 impl Core {
     /// Keeps what a file's problems put on code files, `shown`, in place of
     /// what they put there before, and publishes each code file either
-    /// touches: every file's share, a problem that several `@snippet`s, in
-    /// one page or several, show only once, naming each of them.
+    /// touches again, its own diagnostics, if it has any, with every file's
+    /// share ([`Core::code_share`]).
     pub(crate) fn show_on_code_files(&mut self, file: &Path, shown: crate::compute::Shown) {
         if !self.show_on_code {
             return;
@@ -1325,28 +1327,47 @@ impl Core {
             .map(|(path, _)| path)
             .collect();
         for code in code_files {
-            let mut all: Vec<lsp_types::Diagnostic> = Vec::new();
-            for (path, d) in self.shown.values().flatten() {
-                if *path != code {
-                    continue;
-                }
-                let same = all
-                    .iter_mut()
-                    .find(|o| o.range == d.range && o.code == d.code && o.message == d.message);
-                match same {
-                    Some(same) => {
-                        let have = same.related_information.get_or_insert_with(Vec::new);
-                        for r in d.related_information.iter().flatten() {
-                            if !have.contains(r) {
-                                have.push(r.clone());
-                            }
+            // A code file can be a source the server checks too: what it
+            // found there stays.
+            let own = self.checked.get(&code).cloned().unwrap_or_default();
+            self.publish(&code, own);
+        }
+    }
+
+    /// What the files' problems put on `code`, a problem that several
+    /// `@snippet`s show, in one file or several, once, naming each of them,
+    /// at the most severe level any of them has it.
+    fn code_share(&self, code: &Path) -> Vec<lsp_types::Diagnostic> {
+        let rank = |d: &lsp_types::Diagnostic| match d.severity {
+            Some(DiagnosticSeverity::ERROR) => 0,
+            Some(DiagnosticSeverity::WARNING) => 1,
+            Some(DiagnosticSeverity::INFORMATION) => 2,
+            _ => 3,
+        };
+        let mut all: Vec<lsp_types::Diagnostic> = Vec::new();
+        for (path, d) in self.shown.values().flatten() {
+            if path != code {
+                continue;
+            }
+            let same = all
+                .iter_mut()
+                .find(|o| o.range == d.range && o.code == d.code && o.message == d.message);
+            match same {
+                Some(same) => {
+                    if rank(d) < rank(same) {
+                        same.severity = d.severity;
+                    }
+                    let have = same.related_information.get_or_insert_with(Vec::new);
+                    for r in d.related_information.iter().flatten() {
+                        if !have.contains(r) {
+                            have.push(r.clone());
                         }
                     }
-                    None => all.push(d.clone()),
                 }
+                None => all.push(d.clone()),
             }
-            self.publish(&code, all);
         }
+        all
     }
 }
 

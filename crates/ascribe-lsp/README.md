@@ -955,8 +955,9 @@ glossary page, not in `ascribe.toml`. Elsewhere in the file it answers `null`.
   about, at the tag (`compute::on_code_files`): the same message, severity,
   and `data`, without the file's fixes, with the code file's other places
   and the `@snippet` as its related places. A problem that several
-  `@snippet`s show, in one file or several, is published once, naming each
-  (`Core::show_on_code_files`). It goes when the files that showed it are
+  `@snippet`s show, in one file or several, is published once, naming each,
+  at the most severe level any has it (`Core::code_share`). It's published
+  with the code file's own diagnostics when the code file is a source too. It goes when the files that showed it are
   checked again without it, or are deleted. `ascribe check` reports nothing
   on a code file, so the headless server `ascribe agents hook-server` keeps
   doesn't either.

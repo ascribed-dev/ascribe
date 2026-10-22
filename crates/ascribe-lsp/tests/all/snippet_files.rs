@@ -365,3 +365,43 @@ fn removing_the_last_snippet_that_shows_the_file_clears_its_problem() {
     client.settle();
     assert!(client.diagnostics(&code).is_empty());
 }
+
+#[test]
+fn a_source_a_snippet_shows_keeps_its_own_problems_beside_the_snippets() {
+    let f = tested();
+    f.write(
+        "ascribe.toml",
+        &format!(
+            "{}\n[sources.docs]\npath = \"docs\"\n",
+            read(&f, "ascribe.toml")
+        ),
+    );
+    f.write(
+        "docs/shown.md",
+        "---\ntitle: Shown\n---\n\nSee [nowhere](nowhere.md).\n\n<!-- :snippet-start: r -->\n\nText.\n",
+    );
+    f.write(
+        "docs/shows.md",
+        "---\ntitle: Shows\n---\n\n@snippet: docs:shown.md#r\n",
+    );
+    let shown = f.path("docs/shown.md");
+    let mut client = start(&f);
+    let codes = client.codes(&shown);
+    assert!(codes.contains(&"snippet-tags".to_owned()), "{codes:?}");
+    assert!(
+        codes.contains(&"link-target-missing".to_owned()),
+        "{codes:?}"
+    );
+
+    // Checked again on its own, it keeps the `@snippet`'s.
+    let text = read(&f, "docs/shown.md");
+    client.open(&shown, 1, &text);
+    client.replace(&shown, 2, &text.replace("Text.", "More text."));
+    client.settle();
+    let codes = client.codes(&shown);
+    assert!(codes.contains(&"snippet-tags".to_owned()), "{codes:?}");
+    assert!(
+        codes.contains(&"link-target-missing".to_owned()),
+        "{codes:?}"
+    );
+}
