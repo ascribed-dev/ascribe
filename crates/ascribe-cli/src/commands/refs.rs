@@ -1,11 +1,12 @@
-//! `ascribe refs`: where a page, a heading, a fragment, an image, or a
-//! content model entry is used.
+//! `ascribe refs`: where a page, a heading, a fragment, an image, a content
+//! model entry, or a line of a release target is used.
 
 use std::io::{self, Write};
 use std::path::Path;
 use std::process::ExitCode;
 
 use ascribe_core::RelPath;
+use ascribe_core::availability::Version;
 use ascribe_query::{Asked, QueryError, Refs};
 use clap::Args as ClapArgs;
 
@@ -25,7 +26,8 @@ pub struct Args {
     /// What to find the uses of: a page or fragment (`keys.md`), a heading
     /// (`keys.md#rotate-keys`), an image (`images/keys.png`),
     /// `phrase:<key>`, `feature:<key>`, `term:<id>`, `dimension:<name>`,
-    /// `note:<type>`, or `widget:<name>`.
+    /// `note:<type>`, `widget:<name>`, or a line of a release target,
+    /// `release:<target>@<version>` (`release:self-managed@3.4`).
     ///
     /// A path is from the current directory, or from the content root.
     #[arg(value_name = "TARGET")]
@@ -80,21 +82,26 @@ fn refs(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
 ///
 /// No project, or a target that can't be read.
 pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<Refs, Stop> {
-    let entry = Asked::entry(&args.target);
+    let release = ascribe_query::release_target(&args.target).transpose()?;
+    let entry = match release {
+        Some(_) => None,
+        None => Asked::entry(&args.target),
+    };
     // A path target finds its project from the path; an entry from the
     // current directory. `--config` says otherwise for either.
     let (path_part, _) = args
         .target
         .split_once('#')
         .unwrap_or((args.target.as_str(), ""));
-    let near = match entry {
-        None if !path_part.is_empty() => Some(Path::new(path_part)),
+    let near = match (&release, &entry) {
+        (None, None) if !path_part.is_empty() => Some(Path::new(path_part)),
         _ => None,
     };
     let loaded = answer::load(projects, global, near)?;
-    let target = match entry {
-        Some(asked) => asked.map(Target::Asked).map_err(QueryError::from),
-        None => path_target(&loaded.project, loaded.index(), &args.target),
+    let target = match (release, entry) {
+        (Some((target, line)), _) => Ok(Target::Release(target, line)),
+        (None, Some(asked)) => asked.map(Target::Asked).map_err(QueryError::from),
+        (None, None) => path_target(&loaded.project, loaded.index(), &args.target),
     }?;
     let limit = args.limit.unwrap_or(match args.format {
         Format::Text => TEXT_LIMIT,
@@ -105,6 +112,9 @@ pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<R
     let mut refs = match &target {
         Target::Asked(asked) => ascribe_query::refs(index, asked, &args.target, limit, memos),
         Target::Image(image) => ascribe_query::image_refs(index, image, &args.target, limit, memos),
+        Target::Release(target, line) => {
+            ascribe_query::release_refs(index, target, line, &args.target, limit)
+        }
     };
     if refs.truncated {
         // The same command, with the limit that lists them all, each word
@@ -130,6 +140,8 @@ enum Target {
     Asked(Asked),
     /// An image, by its path from the content root.
     Image(RelPath),
+    /// A line of a release target: the target, and the line.
+    Release(String, Version),
 }
 
 /// A path target, `page.md`, `page.md#id`, or an image, with the path read
@@ -197,9 +209,14 @@ pub fn write_text(out: &mut dyn Write, r: &Refs) -> io::Result<()> {
     }
     for place in &r.places {
         let personal = if place.personal { ", personal" } else { "" };
+        let spec = place
+            .spec
+            .as_ref()
+            .map(|spec| format!(" `{spec}`"))
+            .unwrap_or_default();
         writeln!(
             out,
-            "{}:{}:{}: {}{personal}",
+            "{}:{}:{}: {}{personal}{spec}",
             place.file, place.line, place.column, place.use_kind
         )?;
     }

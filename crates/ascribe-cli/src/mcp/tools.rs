@@ -218,7 +218,8 @@ pub const TOOLS: &[Spec] = &[
                         "description": "A page or fragment (`keys.md`), a heading \
                             (`keys.md#rotate-keys`), an image (`images/keys.png`), \
                             `phrase:<key>`, `feature:<key>`, `term:<id>`, `dimension:<name>`, \
-                            `note:<type>`, or `widget:<name>`. A path is from the server's \
+                            `note:<type>`, `widget:<name>`, or a line of a release target, \
+                            `release:<target>@<version>`. A path is from the server's \
                             working directory or from the content root.",
                     },
                     "project": {
