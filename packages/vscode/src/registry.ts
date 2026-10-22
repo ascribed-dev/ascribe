@@ -205,8 +205,13 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     return ownedElsewhere(project, uri.fsPath, this.projects);
   }
 
-  toldOfChange(project: Project, uri: vscode.Uri, sources: readonly Source[]): boolean {
-    return toldOfChange(uri.fsPath, project, sources, this.projects);
+  toldOfChange(
+    project: Project,
+    uri: vscode.Uri,
+    sources: readonly Source[],
+    from: readonly string[],
+  ): boolean {
+    return toldOfChange(uri.fsPath, project, sources, this.projects, from);
   }
 
   asksForLenses(

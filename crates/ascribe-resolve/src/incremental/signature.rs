@@ -243,6 +243,9 @@ impl Fingerprints {
             permalinks,
             crawlers,
             listing,
+            // What's taken is in the fields above; where it was taken from
+            // is read only by the editor's hover and Go to Definition.
+            taken: _,
             warnings,
         } = model;
         // `parse` reads the directive schemas (built-ins and widgets) and the

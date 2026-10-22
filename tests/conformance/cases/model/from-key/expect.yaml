@@ -1,0 +1,8 @@
+description: >-
+  A key `[from]` takes is the one key: `product` is the docs' phrase, and
+  `company`, which the docs have too, isn't taken, so it's undeclared here.
+spec: ["7.9"]
+tags: [check]
+
+diagnostics:
+  - {slug: phrase-undeclared, file: index.md, line: 7}

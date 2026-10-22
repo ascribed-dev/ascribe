@@ -454,6 +454,13 @@
             "null"
           ]
         },
+        "from": {
+          "description": "The file it's taken from, when `[from]` takes it: a path from the\nfolder `ascribe.toml` is in. Its value is that file's, and it's\n`set`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "key": {
           "description": "The key: in `checks`, a check's slug.",
           "type": "string"

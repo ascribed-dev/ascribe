@@ -42,6 +42,26 @@ fn cases() -> Vec<Case> {
         // 22.1 File and structure
         case("model-toml-syntax", None, "spec = \"0.1\"\nx = = 1 #!\n"),
         case(
+            "model-from-take",
+            Some("own"),
+            "spec = \"0.1\"\n[from.\"../docs/ascribe.toml\"]\ntake = [\"project.content-root\"] #!\n",
+        ),
+        case(
+            "model-from-take",
+            Some("twice"),
+            "spec = \"0.1\"\n[from.\"../docs/ascribe.toml\"]\ntake = [\"releases\"]\n[from.\"../api/ascribe.toml\"]\ntake = [\"releases.api\"] #!\n",
+        ),
+        case(
+            "model-from-take",
+            Some("name"),
+            "spec = \"0.1\"\n[from.\"../docs/ascribe.toml\"]\ntake = [\"consumer..site\"] #!\n",
+        ),
+        case(
+            "model-missing-key",
+            None,
+            "spec = \"0.1\"\n[from.\"../docs/ascribe.toml\"] #!\n",
+        ),
+        case(
             "model-unknown-key",
             None,
             "spec = \"0.1\"\n[project]\nbogus = 1 #!\n",
@@ -926,6 +946,9 @@ fn every_registered_rule_is_covered() {
             "model-content-root-missing",
             "model-source-path-missing",
             "model-source-outside-repository",
+            // Checked with the files `[from]` takes from: tests/from.rs.
+            "model-from-file",
+            "model-from-written",
             // Checked with the project's files, where they're read:
             // crates/ascribe-check/tests/all/type_files.rs.
             "model-type-file",

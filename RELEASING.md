@@ -155,18 +155,17 @@ node scripts/release/version.ts 0.2.0
 
 This sets the version in `Cargo.toml` (and `Cargo.lock`), every published `package.json`, and the extension's `ascribe.minServerVersion`, which makes the extension warn about a project binary older than itself. Lower `minServerVersion` by hand if the release still works with older binaries.
 
-Then release the docs' line, in `docs` and in `site/home`, naming the version after it as `--next`:
+Then release the docs' line, naming the version after it as `--next`:
 
 ```sh
 ascribe versions release "ascribe 0.2.0" --next 0.3.0 --config docs
-ascribe versions release "ascribe 0.2.0" --next 0.3.0 --config site/home
 ```
 
-Each makes the planned line the one `live` line, moves the line that was live to `archived`, rewrites every mark's `planned` to `0.2.0`, as `ascribe planned` becomes `ascribe 0.2.0`, and adds the next version to `planned`, for what `main` adds after the release ([`ascribe versions release`](docs/content/versions/release.md#cli-versions-release)). A mark a pull request adds after this commit is written `ascribe planned` and stays so. The `version` phrase is the live line, and a test fails until it matches `Cargo.toml`. If the release isn't the planned line's version, change the planned line to it first. To record the day the old line's support ended, give it in `[releases.ascribe.ends]` before running the command, which moves it to `archived` as `ended`; otherwise its entry is `{}`.
+`site/home` takes its releases from `docs/ascribe.toml` with `[from]`, so this moves its lines too. It makes the planned line the one `live` line, moves the line that was live to `archived`, rewrites every mark's `planned` to `0.2.0`, as `ascribe planned` becomes `ascribe 0.2.0`, and adds the next version to `planned`, for what `main` adds after the release ([`ascribe versions release`](docs/content/versions/release.md#cli-versions-release)). A mark a pull request adds after this commit is written `ascribe planned` and stays so. The `version` phrase is the live line, and a test fails until it matches `Cargo.toml`. If the release isn't the planned line's version, change the planned line to it first. To record the day the old line's support ended, give it in `[releases.ascribe.ends]` before running the command, which moves it to `archived` as `ended`; otherwise its entry is `{}`.
 
 Then, by hand:
 
-- **Remove the marks on the site's own pages** that the command rewrote, in `site/home/content/`, as `site/home/ascribe.toml` says: `git diff -- site/home/content` lists them.
+- **Remove the marks on the site's own pages** that name the released line, in `site/home/content/`: the command rewrites the docs' pages only, so each `ascribe planned` there is the release now. `git grep -n 'ascribe planned' -- site/home/content` lists them.
 - **Name the release in the tests' tables:** change `"ascribe planned"` to `"ascribe 0.2.0"` in what `git grep -n '"ascribe planned"' -- crates/ascribe-cli/src/docs.rs crates/ascribe-cli/src/docs/builtins.rs packages/vscode/test/unit/docs.test.ts` finds, then rewrite the generated tables: `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` and `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts`.
 - **Retake the site's screenshots** when the release leaves one more than a minor release behind, which `scripts/docs-site/screenshots.test.ts` fails on in step 3: the pictures of the editor and of review, whose records in `site/home/content/screenshots/` say the release each was taken at. After `ascribe versions release`, so each record names this release: `npm run build:checkout` in `site/`, then `node scripts/docs-site/screenshots.ts` at the repository's root, which retakes both on any system ([`site/README.md`](site/README.md#screenshots) says what each needs). Look at the pictures before committing them.
 

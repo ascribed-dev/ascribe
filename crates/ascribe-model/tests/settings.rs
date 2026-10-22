@@ -56,6 +56,11 @@ fn host(table: &str, key: &str) -> Host {
         "builds.<name>" => ("", "[builds.site]", &[]),
         "sources.<name>" => ("", "[sources.code]", &[("path", "\".\"")]),
         "checks.<check>" => ("", "[checks.page-size]", &[]),
+        "from.<path>" => (
+            "",
+            "[from.\"../docs/ascribe.toml\"]",
+            &[("take", "[\"phrases\"]")],
+        ),
         "intended" => (
             "",
             "[[intended]]",

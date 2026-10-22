@@ -1,0 +1,8 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+# Far enough up to leave any checkout of the repository the suite runs in.
+[from."../../../../../../../../../../../../../../../../ascribe.toml"]
+take = ["phrases"]

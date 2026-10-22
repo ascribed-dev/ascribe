@@ -11,6 +11,7 @@ use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, Place, Span, diagnos
 use toml::de::{DeTable, DeValue};
 
 use crate::SourceBound;
+use crate::from::TakenFiles;
 use crate::model::*;
 use crate::names::{self, is_key, is_name_word, list, suggest};
 use crate::settings;
@@ -22,6 +23,8 @@ pub(crate) struct Loader<'s> {
     pub project_dir: Option<&'s Path>,
     /// Where a source may be when no repository is around the project.
     pub bound: SourceBound<'s>,
+    /// Where the files `[from]` names are read; `None` takes nothing.
+    pub files: Option<&'s dyn TakenFiles>,
     /// The checks `[checks]` may name: the registry's configurable ones.
     pub configurable: &'s [DiagnosticSlug],
     /// The checks `[[intended]]` may name, with where each reports its
@@ -46,12 +49,14 @@ pub(crate) fn load_bounded(
     file: FileId,
     project_dir: &Path,
     bound: SourceBound<'_>,
+    files: Option<&dyn TakenFiles>,
 ) -> Result<ContentModel, Vec<Issue>> {
     load_with(
         src,
         file,
         Some(project_dir),
         bound,
+        files,
         diagnostics::CONFIGURABLE,
         diagnostics::ACKNOWLEDGEABLE,
     )
@@ -69,6 +74,7 @@ pub(crate) fn load_reviewing(
         file,
         None,
         SourceBound::Anywhere,
+        None,
         diagnostics::CONFIGURABLE,
         review,
     )
@@ -86,6 +92,7 @@ pub(crate) fn load_configurable(
         file,
         project_dir,
         SourceBound::Anywhere,
+        None,
         configurable,
         diagnostics::ACKNOWLEDGEABLE,
     )
@@ -96,6 +103,7 @@ fn load_with(
     file: FileId,
     project_dir: Option<&Path>,
     bound: SourceBound<'_>,
+    files: Option<&dyn TakenFiles>,
     configurable: &[DiagnosticSlug],
     review: &[(DiagnosticSlug, Place)],
 ) -> Result<ContentModel, Vec<Issue>> {
@@ -104,6 +112,7 @@ fn load_with(
         file,
         project_dir,
         bound,
+        files,
         configurable,
         review,
         issues: Vec::new(),
@@ -343,7 +352,13 @@ impl<'s> Loader<'s> {
             }
         };
         let root_span = sp(&parsed);
-        let root = parsed.get_ref();
+        let mut root = parsed.into_inner();
+        // What `[from]` takes is put in the tree before anything reads it,
+        // so every rule holds it as it holds what's written here.
+        let tables = self.froms(&root);
+        let texts = self.taken_texts(&tables);
+        let taken = self.take(&mut root, &tables, &texts);
+        let root = &root;
         self.check_table("ascribe.toml", root, "");
 
         let spec = self.spec(root, root_span);
@@ -409,6 +424,7 @@ impl<'s> Loader<'s> {
             permalinks,
             crawlers,
             listing,
+            taken,
             warnings: Vec::new(),
         })
     }
@@ -728,7 +744,7 @@ impl<'s> Loader<'s> {
     /// A path relative to the project root, normalized (`.` and `..`), and,
     /// when the project directory is known, with symbolic links resolved for
     /// as much of it as exists.
-    fn resolve(&self, rel: &str) -> PathBuf {
+    pub(crate) fn resolve(&self, rel: &str) -> PathBuf {
         let base = self.project_dir.map(Path::to_path_buf).unwrap_or_default();
         let mut joined = ascribe_core::path::normalize(&base.join(rel));
         // `docs` and `..` cancel out to nothing, which is the current
@@ -1383,7 +1399,7 @@ struct RawFeature {
 /// The root of the git repository `dir` is in, canonical: the nearest
 /// directory, from `dir` up, that holds a `.git` (a directory, or a file for
 /// a worktree or a submodule). Only the file system is read, not history.
-fn repository_root(dir: &Path) -> Option<PathBuf> {
+pub(crate) fn repository_root(dir: &Path) -> Option<PathBuf> {
     // Outside FileSystem: the repository around the project, not a file in it.
     let dir = dir.canonicalize().ok()?;
     dir.ancestors()

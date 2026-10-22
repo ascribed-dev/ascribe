@@ -370,6 +370,39 @@ fn link_out(path: impl std::fmt::Display) -> String {
     )
 }
 
+/// The text of a file `[from]` names in the content model (SPEC §7.9), read
+/// as a declared file outside the content root: with its exact name, through
+/// the links on its way.
+fn taken_text(fs: &dyn FileSystem, project_path: &RelPath) -> io::Result<String> {
+    match fs.probe(project_path) {
+        Probe::File => {}
+        Probe::Missing => {
+            return Err(io::Error::new(io::ErrorKind::NotFound, "no such file"));
+        }
+        Probe::CaseMismatch(actual) => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("no such file, though `{actual}` differs only in case"),
+            ));
+        }
+    }
+    let bytes = fs.read_file(project_path)?;
+    String::from_utf8(bytes)
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "it isn't valid UTF-8"))
+}
+
+impl ascribe_model::TakenFiles for DiskFs {
+    fn read_taken(&self, project_path: &RelPath) -> io::Result<String> {
+        taken_text(self, project_path)
+    }
+}
+
+impl ascribe_model::TakenFiles for MemoryFs {
+    fn read_taken(&self, project_path: &RelPath) -> io::Result<String> {
+        taken_text(self, project_path)
+    }
+}
+
 impl ascribe_core::SourceBoundary for DiskFs {
     fn check_link(&self, path: &Path) -> Result<(), String> {
         // Everything is compared once links are followed, so no other

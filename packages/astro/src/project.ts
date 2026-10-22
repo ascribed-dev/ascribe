@@ -1,10 +1,13 @@
 // What the integration needs from `ascribe.toml`: where a build's site output
 // goes, and the consumer settings that must agree with `astro.config`.
 // The compiler validates the whole file; this reads
-// only what it compiled.
+// only what it compiled. A file with `[from]` takes keys from another
+// project's, which only the binary follows, so then the binary is asked.
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { parse } from "smol-toml";
+import { findBinary } from "./binary.js";
 
 /** The parts of an Ascribe project the integration reads. */
 export interface ProjectInfo {
@@ -34,8 +37,20 @@ export interface ProjectInfo {
   plainRoot(build: string): string;
 }
 
-/** Reads `ascribe.toml` in `dir`. Throws a readable error if it can't be read. */
-export function readProject(dir: string): ProjectInfo {
+/** Where to find the binary, as the integration's `binary` option and Astro's root say. */
+export interface BinaryOption {
+  binary?: string | undefined;
+  root: string;
+}
+
+/**
+ * Reads `ascribe.toml` in `dir`. Throws a readable error if it can't be read.
+ * When it has `[from]`, what it takes is the other file's, which the binary
+ * reads: `[consumer]` and `[builds]` are then the binary's answer, from
+ * `ascribe model --format json`, run with the binary `binary` finds
+ * (`findBinary`).
+ */
+export function readProject(dir: string, binary?: BinaryOption): ProjectInfo {
   const configPath = path.join(dir, "ascribe.toml");
   let table: Record<string, unknown>;
   try {
@@ -47,7 +62,15 @@ export function readProject(dir: string): ProjectInfo {
     );
   }
   const project = section(table, "project");
-  const consumer = section(table, "consumer");
+  let consumer = section(table, "consumer");
+  let builds = Object.keys(section(table, "builds"));
+  if (Object.keys(section(table, "from")).length > 0) {
+    const model = askModel(configPath, findBinary(binary ?? { root: dir }));
+    consumer = Object.fromEntries(
+      model.consumer.filter((key) => key.set).map((key) => [key.key, key.value]),
+    );
+    if (takes(table, "builds")) builds = model.builds.map((build) => build.name);
+  }
   const outputDir =
     typeof project["output-dir"] === "string" ? project["output-dir"] : ".ascribe/build";
   const contentDir = typeof project["content-root"] === "string" ? project["content-root"] : "docs";
@@ -68,10 +91,55 @@ export function readProject(dir: string): ProjectInfo {
       agents: typeof consumer["agents"] === "boolean" ? consumer["agents"] : site !== undefined,
       headers: consumer["headers"] === "netlify" ? "netlify" : undefined,
     },
-    builds: Object.keys(section(table, "builds")),
+    builds,
     siteRoot: (build) => path.resolve(dir, outputDir, build, "site"),
     plainRoot: (build) => path.resolve(dir, outputDir, build, "plain"),
   };
+}
+
+/** What the integration reads of `ascribe model --format json`. */
+interface ModelReport {
+  consumer: { key: string; value?: unknown; set: boolean }[];
+  builds: { name: string; line?: string }[];
+}
+
+/** The content model as the binary reads it, `[from]` followed. Throws a readable error when it can't. */
+function askModel(configPath: string, binary: string): ModelReport {
+  try {
+    const out = execFileSync(binary, ["model", "--format", "json", "--config", configPath], {
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    const report = JSON.parse(out) as Partial<ModelReport>;
+    return {
+      consumer: report.consumer ?? [],
+      builds: (report.builds ?? []).filter((build) => build.line === undefined),
+    };
+  } catch (error) {
+    const stderr = (error as { stderr?: unknown }).stderr;
+    const detail =
+      typeof stderr === "string" && stderr.trim() !== ""
+        ? stderr.trim()
+        : error instanceof Error
+          ? error.message
+          : String(error);
+    throw new Error(
+      `@ascribed/astro can't read ${configPath}, whose [from] takes keys from another file, with \`ascribe model\`: ${detail}`,
+      { cause: error },
+    );
+  }
+}
+
+/** Whether a `take` list of `[from]` names `name`, or a key in it. */
+function takes(table: Record<string, unknown>, name: string): boolean {
+  return Object.values(section(table, "from")).some((from) => {
+    const take = typeof from === "object" && from !== null ? (from as { take?: unknown }).take : [];
+    return (
+      Array.isArray(take) &&
+      take.some((key) => typeof key === "string" && (key === name || key.startsWith(`${name}.`)))
+    );
+  });
 }
 
 function section(table: Record<string, unknown>, name: string): Record<string, unknown> {

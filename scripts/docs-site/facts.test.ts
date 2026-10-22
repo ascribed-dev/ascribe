@@ -3,8 +3,8 @@
 // (rust-toolchain.toml), the glibc floor (`GLIBC` in release-build.yml), and
 // the folders the docs take code examples from (`[sources.code] include` in
 // docs/ascribe.toml) and the changelog the site renders (`changelogFile` in
-// site/src/changelog.ts), the tables site/home/ascribe.toml copies from
-// docs/ascribe.toml, the docs' address the Report workflow checks, and the
+// site/src/changelog.ts), the `site` phrase site/home/ascribe.toml copies
+// from docs/ascribe.toml, the docs' address the Report workflow checks, and the
 // install commands the landing page, in its hero and in Start, and the
 // README repeat from getting started, and the language server's own
 // requests the editor's language server page lists. A copy that can't be generated is compared here, so
@@ -248,35 +248,17 @@ test("the docs' source folders and the changelog are named everywhere a build is
   }
 });
 
-test("the site's own pages share the docs' release tables, sources, and address, and the report checks the docs", () => {
+test("the site's own pages link into the docs at their address, and the report checks the docs", () => {
   type Toml = Record<string, unknown>;
   const docs = parse(read("docs/ascribe.toml")) as Toml;
   const home = parse(read("site/home/ascribe.toml")) as Toml;
   const at = (toml: Toml, ...keys: string[]): unknown =>
     keys.reduce<unknown>((value, key) => (value as Toml | undefined)?.[key], toml);
 
-  // What the pages' availability marks need, to mark a claim as the docs do:
-  // `[releases]` declares the `ascribe` target, with its label, in the
-  // implicit `release` dimension.
-  for (const keys of [
-    ["releases"],
-    ["phrases", "version"],
-    ["consumer", "site"],
-    ["consumer", "trailing-slash"],
-    ["consumer", "permalink-path"],
-  ]) {
-    expect(at(home, ...keys), keys.join(".")).toEqual(at(docs, ...keys));
-    expect(at(docs, ...keys), keys.join(".")).toBeDefined();
-  }
-  // The `site` phrase, which links into the docs start with.
+  // The `site` phrase, which links into the docs start with. The releases,
+  // the sources, and `[consumer]`'s address and routes the site's pages take
+  // from the docs with `[from]`, so there's no copy to compare.
   expect(at(home, "phrases", "site")).toBe(at(docs, "consumer", "site"));
-
-  // The same files for code examples, from each project's own folder.
-  const sources = (toml: Toml, folder: string) => {
-    const code = at(toml, "sources", "code") as Toml;
-    return { ...code, path: path.resolve(root, folder, String(code["path"])) };
-  };
-  expect(sources(home, "site/home")).toEqual(sources(docs, "docs"));
 
   // The nightly report checks the published docs, at their address and base path.
   const report = /--site (\S+)/.exec(read(".github/workflows/report.yml"))?.[1];

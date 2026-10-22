@@ -7,6 +7,23 @@ spec = "0.1"
 content-root = "content"
 output-dir = ".ascribe/build"
 
+# What this project shares with the docs, taken from their file, so a claim
+# here is marked as the docs mark it and links where they link: the releases,
+# with their labels and planned label, commands that differ by package
+# manager, the `version` phrase, the source the examples come from, and the
+# site's address and routes. A release moves the docs' lines, and these with
+# them. Each is read as if written here, and can't be written here too.
+[from."../../docs/ascribe.toml"]
+take = [
+  "releases",
+  "dimensions.pm",
+  "phrases.version",
+  "sources.code",
+  "consumer.site",
+  "consumer.trailing-slash",
+  "consumer.permalink-path",
+]
+
 # A page of the site, outside the docs. Its heading is the page's own, in the
 # hero, so `title` is for the <title> only.
 [types.page.frontmatter]
@@ -102,31 +119,7 @@ forms = ["container"]
 [images.attributes]
 scheme = "enum(light, dark)"
 
-# Commands that differ by package manager, as in the docs.
-[dimensions.pm]
-label = "Package manager"
-values = ["npm", "pnpm"]
-
-# What follows are copies of ../../docs/ascribe.toml's, so a claim here is
-# marked as the docs mark it. scripts/docs-site/facts.test.ts fails until
-# each agrees with the docs': the releases, with their labels and planned
-# label, the `version` and `site`
-# phrases, the sources, and `[consumer]`'s `site`, `trailing-slash`, and `permalink-path`.
-[releases]
-planned-label = "in main, not yet released"
-
-[releases.ascribe]
-label = "Ascribe"
-live = ["0.4.1"]
-planned = ["0.4.2"]
-
-[releases.ascribe.archived]
-"0.3.1" = {}
-"0.3.2" = {}
-"0.4.0" = {}
-
 [phrases]
-version = { line = "ascribe" }
 # `[consumer] site`, for links into the docs, which are another project: a
 # link that starts with `/` names a file in this one. Write a docs page by its
 # permalink, `{site}/go/<name>/`; the site's tests check each name.
@@ -136,26 +129,14 @@ site = "https://ascribed-dev.com"
 # from: scripts/docs-site/credits.test.ts fails until the two agree.
 comrak-release = "v0.55.0"
 
-[sources.code]
-path = "../.."                            # relative to the folder ascribe.toml is in
-include = [
-  ".github/workflows/**",
-  "crates/ascribe-cli/tests/output/**",
-  "examples/**",
-  "packages/astro/starter/**",
-  "site/demo/**",
-]
-
-# The site's root. A pull request's preview is built with its own address
-# here too (.github/workflows/site.yml).
+# The site's root. Its address is the docs', taken above; a pull request's
+# preview is built with its own address there and in the `site` phrase
+# (.github/workflows/site.yml).
 [consumer]
 profile = "astro"
-site = "https://ascribed-dev.com"
 base-path = "/"
-trailing-slash = "always"
 # The docs publish what agents read; these pages publish nothing for them.
 agents = false
-permalink-path = "/go/"
 
 [builds.site]
 availability = "badge"

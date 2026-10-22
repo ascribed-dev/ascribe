@@ -749,6 +749,15 @@ pub const FRONTMATTER_FIELD_REPEATED: DiagnosticSlug = DiagnosticSlug("frontmatt
 /// `ASC245`, error, file level: SPEC §8.2, "`@available` | `planned` for a target with no planned line, or more than one".
 pub const AVAILABLE_PLANNED_LINE: DiagnosticSlug = DiagnosticSlug("available-planned-line");
 
+/// `ASC246`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_FROM_FILE: DiagnosticSlug = DiagnosticSlug("model-from-file");
+
+/// `ASC247`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_FROM_TAKE: DiagnosticSlug = DiagnosticSlug("model-from-take");
+
+/// `ASC248`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_FROM_WRITTEN: DiagnosticSlug = DiagnosticSlug("model-from-written");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -988,6 +997,9 @@ pub const ALL: &[DiagnosticSlug] = &[
     BASELINE_ENTRY_UNMATCHED,
     FRONTMATTER_FIELD_REPEATED,
     AVAILABLE_PLANNED_LINE,
+    MODEL_FROM_FILE,
+    MODEL_FROM_TAKE,
+    MODEL_FROM_WRITTEN,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

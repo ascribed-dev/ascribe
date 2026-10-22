@@ -411,11 +411,19 @@ fn run_status(global: &Global, args: &StatusArgs, out: &mut dyn Write, err: &mut
     let model = match Project::load_model(&config) {
         Ok(file) => file.model,
         Err(LoadError::Model { text, diagnostics }) => {
-            match ascribe_model::load_str_bounded(
+            let taking = DiskFs::new(
+                &root,
+                &Layout {
+                    content_root: ascribe_core::RelPath::root(),
+                    output_dir: ascribe_core::RelPath::root(),
+                },
+            );
+            match ascribe_model::load_str_taking(
                 &text,
                 ascribe_core::FileId::new(0),
                 &root,
                 ascribe_model::SourceBound::Anywhere,
+                &taking,
             ) {
                 Ok(model) => model,
                 Err(_) => {

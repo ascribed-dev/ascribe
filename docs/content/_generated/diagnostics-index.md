@@ -238,3 +238,6 @@
 | [ASC243](../checks/diagnostics/content-checks.md#ASC243) | `baseline-entry-unmatched` | Advice | File | outside |
 | [ASC244](../checks/diagnostics/content-checks.md#ASC244) | `frontmatter-field-repeated` | Advice | File | fix |
 | [ASC245](../checks/diagnostics/directives.md#ASC245) | `available-planned-line` | Error | File | write |
+| [ASC246](../checks/diagnostics/content-model.md#ASC246) | `model-from-file` | Error | File | write |
+| [ASC247](../checks/diagnostics/content-model.md#ASC247) | `model-from-take` | Error | File | write |
+| [ASC248](../checks/diagnostics/content-model.md#ASC248) | `model-from-written` | Error | File | write |

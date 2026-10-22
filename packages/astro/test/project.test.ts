@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -15,6 +15,62 @@ function project(toml: string): string {
   writeFileSync(path.join(dir, "ascribe.toml"), toml);
   return dir;
 }
+
+// A stand-in for the compiler: a shell script that prints `json` and the
+// arguments it was given to a file beside it.
+function script(json: string): string {
+  const dir = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
+  const file = path.join(dir, "ascribe");
+  writeFileSync(path.join(dir, "answer.json"), json);
+  writeFileSync(file, `#!/bin/sh\necho "$*" > "${dir}/args"\ncat "${dir}/answer.json"\n`);
+  chmodSync(file, 0o755);
+  return file;
+}
+
+describe.skipIf(process.platform === "win32")("readProject with [from]", () => {
+  it("asks the binary for [consumer], since what's taken is in another file", () => {
+    const dir = project(`
+spec = "0.1"
+[from."../docs/ascribe.toml"]
+take = ["consumer.site", "consumer.trailing-slash"]
+[consumer]
+base-path = "/"
+agents = false
+`);
+    const binary = script(
+      JSON.stringify({
+        consumer: [
+          { key: "site", value: "https://docs.example.com", set: true },
+          { key: "base-path", value: "/", set: true },
+          { key: "trailing-slash", value: "never", set: true },
+          { key: "agents", value: false, set: true },
+          { key: "headers", set: false },
+        ],
+        builds: [{ name: "site" }],
+      }),
+    );
+    const info = readProject(dir, { binary, root: dir });
+    expect(info.consumer).toEqual({
+      site: "https://docs.example.com",
+      basePath: "/",
+      trailingSlash: "never",
+      agents: false,
+      headers: undefined,
+    });
+    // Its builds are its own: `[from]` doesn't take them.
+    expect(info.builds).toEqual([]);
+  });
+
+  it("says what the binary said when it can't read the model", () => {
+    const dir = project('spec = "0.1"\n[from."missing.toml"]\ntake = ["consumer.site"]\n');
+    const binary = path.join(mkdtempSync(path.join(tmpdir(), "ascribe-astro-")), "ascribe");
+    writeFileSync(binary, '#!/bin/sh\necho "error: missing.toml doesn\'t exist" >&2\nexit 2\n');
+    chmodSync(binary, 0o755);
+    expect(() => readProject(dir, { binary, root: dir })).toThrow(
+      /whose \[from\] takes keys from another file, with `ascribe model`: error: missing.toml doesn't exist/,
+    );
+  });
+});
 
 describe("readProject", () => {
   it("reads the output directory and consumer settings", () => {

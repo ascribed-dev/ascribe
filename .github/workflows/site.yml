@@ -55,8 +55,9 @@ jobs:
         timeout-minutes: 5
         working-directory: site
       # The preview is built for its own address, so its links are right: as
-      # `site` in each project's [consumer], which the Astro integration gives
-      # Astro, and as the site's pages' `site` phrase.
+      # `site` in the docs' [consumer], which the site's pages take with
+      # `[from]` and the Astro integration gives Astro, and as the site's
+      # pages' `site` phrase.
       - id: preview
         name: Use the preview's address
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
@@ -74,7 +75,7 @@ jobs:
           address="https://pr-$PR--$NETLIFY_SITE_NAME.netlify.app"
           sed -i "s|\"$site\"|\"$address\"|" docs/ascribe.toml site/home/ascribe.toml
           grep -q "\"$address\"" docs/ascribe.toml
-          [ "$(grep -c "\"$address\"" site/home/ascribe.toml)" = 2 ]
+          [ "$(grep -c "\"$address\"" site/home/ascribe.toml)" = 1 ]
           echo "Building for $address"
           echo "address=$address" >> "$GITHUB_OUTPUT"
           echo "alias=pr-$PR" >> "$GITHUB_OUTPUT"

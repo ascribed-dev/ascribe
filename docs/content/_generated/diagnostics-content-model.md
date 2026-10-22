@@ -89,6 +89,39 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [The file](../content-model/index.md#11-the-file) in the `ascribe.toml` reference.
 
+### ASC246 `model-from-file`
+@id {permalink=true}: ASC246
+
+Error · file level · next step: write · [SPEC §7.9]({repo}/blob/main/SPEC.md#79-taking-from-another-project)
+
+**Message:** `{path}`, the file `[from]` takes from, doesn't exist
+
+**Fix:** Fix the path after `from`, which is relative to the folder ascribe.toml is in, so it names the other project's `ascribe.toml`, inside the project's repository. With no repository, the editor and `ascribe mcp` read the file only inside the folder they were opened on: open the folder that contains it.
+
+**Read more:** [Taking from another project](../content-model/index.md#21-taking-from-another-project) in the `ascribe.toml` reference.
+
+### ASC247 `model-from-take`
+@id {permalink=true}: ASC247
+
+Error · file level · next step: write · [SPEC §7.9]({repo}/blob/main/SPEC.md#79-taking-from-another-project)
+
+**Message:** `{file}` has no `{key}` to take
+
+**Fix:** Name a table or a key the other file has, as a dotted path of keys: `releases` takes the whole table, `consumer.site` one key. Take each once, and not a table and a key in it. `spec`, `[project]`, and `[from]` are each project's own, so write them in this file.
+
+**Read more:** [Taking from another project](../content-model/index.md#21-taking-from-another-project) in the `ascribe.toml` reference.
+
+### ASC248 `model-from-written`
+@id {permalink=true}: ASC248
+
+Error · file level · next step: write · [SPEC §7.9]({repo}/blob/main/SPEC.md#79-taking-from-another-project)
+
+**Message:** `{key}` is taken from `{file}` and written here too; a key has one home
+
+**Fix:** Delete the key here, to use the other file's, or remove it from `take`, to keep this one. A table that's taken can't have a key of its own here: take the keys it shares instead, one by one.
+
+**Read more:** [Taking from another project](../content-model/index.md#21-taking-from-another-project) in the `ascribe.toml` reference.
+
 ## `[project]`
 
 ### ASC068 `model-path-absolute`

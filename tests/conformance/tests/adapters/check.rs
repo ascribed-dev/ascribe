@@ -13,7 +13,7 @@ use ascribe_check::{Acknowledgements, Project, apply_levels, check_files};
 use ascribe_conformance::{
     AdapterError, AdapterResult, Case, CaseKind, ConformanceAdapter, Diagnostic,
 };
-use ascribe_core::{FileId, RelPath, WideEncoding};
+use ascribe_core::{RelPath, WideEncoding};
 use ascribe_resolve::{DiskFs, Layout};
 
 /// Handles the cases that expect file-level diagnostics.
@@ -40,7 +40,7 @@ impl ConformanceAdapter for CheckAdapter {
 pub fn project(case: &Case) -> Result<Project, AdapterError> {
     let text = std::fs::read_to_string(&case.model)
         .map_err(|e| AdapterError(format!("couldn't read {}: {e}", case.model.display())))?;
-    let mut model = ascribe_model::load_str(&text, FileId::new(0)).map_err(|issues| {
+    let mut model = super::model::load_model(case, &text).map_err(|issues| {
         let slugs: Vec<_> = issues.iter().map(|i| i.slug.to_string()).collect();
         AdapterError(format!(
             "{} doesn't load: {}",

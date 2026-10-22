@@ -1,0 +1,8 @@
+description: >-
+  A table `[from]` takes is read from the other file as if written here:
+  every phrase of the docs' `[phrases]`, and the `pm` dimension the page's
+  variants name, with nothing reported.
+spec: ["7.9"]
+tags: [check]
+
+diagnostics: []

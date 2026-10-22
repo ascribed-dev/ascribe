@@ -13,7 +13,7 @@ Every file in [`examples/content-models/`]({repo}/tree/main/examples/content-mod
 ## Contents
 
 1. [Conventions](#1-conventions)
-2. [Top level: `spec`](#2-top-level-spec)
+2. [Top level: `spec`](#2-top-level-spec), and [`[from]`](#21-from)
 3. [`[project]`](#3-project)
 4. [`[types.<name>]` and `[fragments]`](#4-typesname-and-fragments)
 5. [Field and attribute types](#5-field-and-attribute-types)
@@ -51,6 +51,12 @@ Every file in [`examples/content-models/`]({repo}/tree/main/examples/content-mod
 ## 2. Top level: `spec`
 
 @include: ../_fragments/content-model/spec.md
+
+### 2.1 `[from]`
+
+@include: ../_fragments/content-model/from.md
+
+**Rules** (SPEC §7.9). The path MUST NOT be absolute (`model-path-absolute`). A loader MUST read the file as a file outside the content root, with its exact name and through the symbolic links on its way, and MUST report it when it isn't there or isn't TOML, and when the project is in a git repository and the file, its links resolved, isn't inside that repository (`model-from-file`). Each name in `take` MUST be a dotted path of keys the file has, MUST NOT start with `spec`, `project`, or `from`, and MUST NOT be named twice, from one file or two, or with a key it holds (`model-from-take`). A key this file writes MUST NOT be taken, nor a table this file writes a key in (`model-from-written`). A loader MUST NOT follow the other file's `[from]`. A problem with a taken value is reported at its name in `take`. A processor that edits `ascribe.toml` in place MUST NOT edit a taken key there, and MUST name the file that writes it.
 
 ---
 

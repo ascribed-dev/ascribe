@@ -629,8 +629,22 @@ pub fn model(
     fs: Option<&dyn FileSystem>,
 ) -> ModelReport {
     let wants = |s: Section| section.is_none_or(|wanted| wanted == s).then_some(());
-    let file: Option<toml::Table> = config.and_then(|text| text.parse().ok());
-    let settings = |s: Section| wants(s).map(|()| settings(s.name(), file.as_ref()));
+    let mut file: Option<toml::Table> = config.and_then(|text| text.parse().ok());
+    // What `[from]` takes is the project's as if written in its file.
+    if let Some(file) = file.as_mut() {
+        model.put_taken(file);
+    }
+    let settings = |s: Section| {
+        wants(s).map(|()| {
+            let mut keys = settings(s.name(), file.as_ref());
+            for key in &mut keys {
+                let mut path: Vec<&str> = key.table.split('.').collect();
+                path.push(&key.key);
+                key.from = model.taken_at(&path).map(|t| t.file.clone());
+            }
+            keys
+        })
+    };
     ModelReport {
         schema_version: MODEL_SCHEMA_VERSION,
         ascribe_version: ASCRIBE_VERSION,
@@ -1359,6 +1373,11 @@ pub struct ModelSetting {
     /// when that isn't one value.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default_text: Option<String>,
+    /// The file it's taken from, when `[from]` takes it: a path from the
+    /// folder `ascribe.toml` is in. Its value is that file's, and it's
+    /// `set`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
 }
 
 /// The keys of the section of settings `name`, from the registry, each with
@@ -1459,5 +1478,6 @@ fn setting(
         value: set.or_else(|| default.clone()),
         default,
         default_text: s.default_text.clone().filter(|t| !t.is_empty()),
+        from: None,
     }
 }

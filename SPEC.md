@@ -1071,6 +1071,23 @@ pages = ["install.md", "configure.md"]
 - A file that reads is an error where it names what the project doesn't have, and what it names wrongly is passed over: a `folder` that isn't a section; a `pages` entry that isn't a page in its folder, or that names the section's `index.md`; and a folder listed a second time, or a page named a second time in one section's `pages`, the second counting for nothing.
 - A processor SHOULD advise where the file leaves out what it could order: a page of a section that lists `pages`, and a section whose siblings the file lists, unless it's below the content root and its own page beside its folder places it among its parent's pages, where a table wouldn't move it. Each comes after what's listed, as above.
 
+### 7.9 Taking from another project
+
+A project MAY take tables and keys from another project's content model, so that two projects that share a fact, such as a site's address or a product's releases, write it once. It names the file, and what it takes:
+
+```toml
+[from."../../docs/ascribe.toml"]
+take = ["releases", "dimensions.pm", "consumer.site"]
+```
+
+- The key after `from` is the other file's path, relative to the project's folder. It MAY lead outside the folder, and when the project is in a version-control repository, it MUST be inside that same repository, as a source's `path` is (§7.3). The file MUST exist and be a content model a processor can read as TOML; it's read as a file outside the content root, never as one of the project's sources.
+- `take` lists what's taken, each a table or a key, as a dotted path of bare keys: `releases` takes the whole table, `consumer.site` one key of `[consumer]`. What's named MUST be in the other file.
+- What's taken is read as if written in this file, and every rule of the content model holds it there, with one exception: a source's `path` in a taken table is relative to the other file's folder, where it was written, and a processor reads it as the same folder from this project's.
+- A key taken and also written in this file is an error: a reader of either file can tell where a value comes from. So is a name taken twice, from one file or two, or a table taken with a key in it.
+- `spec`, `[project]`, and `[from]` can't be taken: they say what this project is. The other file's own `[from]` isn't followed, so what's taken is always written in the file named.
+- A processor that edits a content model in place edits a key where it's written. Until it can edit the other file, it MUST refuse an edit to a taken key and name the file that holds it.
+- An authoring environment SHOULD watch the other file as it watches `ascribe.toml`, and SHOULD say, at a name in `take`, where the taken key is written.
+
 ---
 
 ## 8. Validation

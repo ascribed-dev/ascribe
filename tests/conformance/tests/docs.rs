@@ -506,6 +506,13 @@ const SETTINGS_TABLES: &[SettingsTable] = &[
         releases: false,
     },
     SettingsTable {
+        name: "content-model-from.md",
+        page: "_fragments/content-model/from.md",
+        table: "from.<path>",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
         name: "content-model-project.md",
         page: "content-model/index.md",
         table: "project",
@@ -748,6 +755,7 @@ fn no_content_model_table_is_written_by_hand() {
 /// the paragraph under its heading. Their descriptions in the registry are
 /// what the editor shows, and aren't compared with the reference's.
 const DESCRIBED_IN_PROSE: &[(&str, &str)] = &[
+    ("", "from"),
     ("", "types"),
     ("", "fragments"),
     ("", "dimensions"),
