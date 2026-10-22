@@ -141,7 +141,7 @@ To change one, change the story first, then the line here, then run `pnpm exec v
 | `sentence` | The first paragraph of `README.md`, and the first sentence of getting started, `docs/content/getting-started.md`. The landing page's description |
 | `short` | `ascribe-cli`'s crate description in `crates/ascribe-cli/Cargo.toml`, which the binary takes as the command's about, the first line of `ascribe --help`, and as the start of the plugin's description, which `crates/ascribe-cli/src/agents/plugin.rs` writes into `plugins/ascribe/`. The start of each npm package's `description`, then the package's job, and of the extension's, which is the Marketplace's |
 | `keywords` | Each npm package's and the extension's `keywords`, the plugin's, and the GitHub repository's topics, which are set by hand ([project-docs/outside.md](../project-docs/outside.md)) |
-| `[maker]` | Each npm package's `author`, and the plugin's author and its marketplace's owner, which `plugin.rs` writes. The extension's publisher moves to the maker's once the maintainer has made it on the Marketplace |
+| `[maker]` | Each npm package's `author`, and the plugin's author and its marketplace's owner, which `plugin.rs` writes. The extension's publisher stays `Ascribe`, since a Marketplace publisher can't be renamed |
 
 The landing page, `site/home/content/index.md`, isn't compared yet: the website plan's phase 1 gives it the headline and the sentence, and the test takes it in once that's merged. The MCP server's instructions and the skill keep their own words, since they're for an agent doing a task, and SPEC.md and the docs keep "language", "content model", and "compiler" where they define them.
 
