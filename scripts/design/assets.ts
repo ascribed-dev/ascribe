@@ -1,5 +1,6 @@
 // Every image of the mark that something needs, drawn from the pixel grids in
-// design/mark.toml and the mark's colors in design/tokens.toml: the mark and
+// design/mark.toml, the mark's colors in design/tokens.toml, and the headline
+// in design/words.toml, which the social card draws: the mark and
 // wordmark as SVGs in design/, the favicons, touch icon, and social cards in
 // site/public/, the header logo in site/src/assets/, the Marketplace and
 // activity bar icons in packages/vscode/media/, and the README headers and the
@@ -15,6 +16,7 @@ import sharp from "sharp";
 import { parse } from "smol-toml";
 import { ROOT, type Scheme } from "./specimen.ts";
 import { load } from "./tokens.ts";
+import { readWords, WORDS } from "./words.ts";
 
 export const COMMAND = "node scripts/design/assets.ts";
 export const MANIFEST = "design/assets.json";
@@ -23,6 +25,8 @@ export const MANIFEST = "design/assets.json";
 const GRIDS = "design/mark.toml";
 /** The mark's colors: `color.brand` in the tokens, by name, light and dark. */
 const BRAND = "design/tokens.toml#brand";
+/** The social card's line under the wordmark: the headline, from the words' home. */
+const HEADLINE = `${WORDS}#headline`;
 /** The font the social cards' text is drawn in, for generation only: no reader downloads it. */
 const FONT = "design/fonts/Charter-Bold.ttf";
 /** The site's own pages, each of which gets a card titled with its heading. */
@@ -61,8 +65,6 @@ export interface Grids {
   mark: string[];
   small: string[];
   wordmark: string[];
-  /** The social card's line under the wordmark. */
-  line: string;
 }
 
 /** The letters after the mark's a. */
@@ -78,7 +80,6 @@ export function readGrids(toml: string): Grids {
     mark?: unknown;
     small?: unknown;
     letters?: Record<string, unknown>;
-    card?: { line?: unknown };
   };
   const grid = (value: unknown, where: string): string[] => {
     if (!Array.isArray(value) || value.length === 0 || value.some((r) => typeof r !== "string")) {
@@ -105,9 +106,7 @@ export function readGrids(toml: string): Grids {
   const above = height - mark.length;
   const first = [...Array<string>(above).fill(".".repeat(mark[0]?.length ?? 0)), ...mark];
   const wordmark = first.map((row, r) => [row, ...letters.map((l) => l[r])].join("."));
-  const line = doc.card?.line;
-  if (typeof line !== "string") throw new Error(`${GRIDS} card.line: a string`);
-  return { mark, small, wordmark, line };
+  return { mark, small, wordmark };
 }
 
 /** A path of a drawing, and whether it takes the second color. */
@@ -452,6 +451,7 @@ interface Sources {
   mark: Drawing;
   small: Drawing;
   wordmark: Drawing;
+  /** The social card's line: the headline. */
   line: string;
   colors: Colors;
   /** The cards' font, read only when a card is drawn. */
@@ -476,8 +476,8 @@ export interface Asset {
 
 /**
  * A source as text: a file's text, a font's bytes in base64, for
- * `<file>#heading` the file's level-1 heading, and for the tokens' `#brand`
- * the mark's colors.
+ * `<file>#heading` the file's level-1 heading, for the tokens' `#brand` the
+ * mark's colors, and for the words' `#headline` the headline.
  */
 export function readSource(source: string): string {
   const [file = source, part] = source.split("#");
@@ -486,6 +486,7 @@ export function readSource(source: string): string {
   const text = readFileSync(join(ROOT, file), "utf8").replace(/\r\n/g, "\n");
   if (part === undefined) return text;
   if (part === "brand" && file === "design/tokens.toml") return brandColors(text);
+  if (part === "headline" && file === WORDS) return readWords(text).headline;
   const found = /^# (.+)$/m.exec(text)?.[1];
   if (part !== "heading" || found === undefined) throw new Error(`${file} has no ${part}`);
   return found.trim();
@@ -572,7 +573,7 @@ export const ASSETS: Asset[] = [
     path: "site/public/social-card.png",
     width: 1200,
     height: 630,
-    from: [GRIDS, BRAND, FONT],
+    from: [GRIDS, BRAND, FONT, HEADLINE],
     form: "png",
     draw: (s) => card(s),
   },
@@ -657,7 +658,7 @@ export function readSources(reader: (file: string) => string = readSource): Sour
     mark: drawing(grids.mark),
     small: drawing(grids.small),
     wordmark: drawing(grids.wordmark),
-    line: grids.line,
+    line: reader(HEADLINE),
     colors: readColors(reader(BRAND)),
     font: () => {
       const bytes = Buffer.from(reader(FONT), "base64");

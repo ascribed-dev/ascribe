@@ -6,7 +6,7 @@
       "width": 10,
       "height": 7,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72"
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66"
       }
     },
     {
@@ -14,7 +14,7 @@
       "width": 10,
       "height": 7,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
         "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     },
@@ -23,7 +23,7 @@
       "width": 47,
       "height": 9,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72"
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66"
       }
     },
     {
@@ -31,7 +31,7 @@
       "width": 32,
       "height": 32,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
         "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     },
@@ -40,7 +40,7 @@
       "width": 32,
       "height": 32,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
         "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     },
@@ -49,7 +49,7 @@
       "width": 180,
       "height": 180,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
         "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     },
@@ -58,9 +58,10 @@
       "width": 1200,
       "height": 630,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
         "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c",
-        "design/fonts/Charter-Bold.ttf": "7b8959ea727a107748dbcb95bd509b23852cb1275d0d9ade0bb090733193b5d3"
+        "design/fonts/Charter-Bold.ttf": "7b8959ea727a107748dbcb95bd509b23852cb1275d0d9ade0bb090733193b5d3",
+        "design/words.toml#headline": "43df058dd8ac33d46fad653e1cd6f118580be8b6d0913649b32b75adb3a07b77"
       }
     },
     {
@@ -68,7 +69,7 @@
       "width": 1200,
       "height": 630,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
         "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c",
         "design/fonts/Charter-Bold.ttf": "7b8959ea727a107748dbcb95bd509b23852cb1275d0d9ade0bb090733193b5d3",
         "site/home/content/credits.md#heading": "2a6b24ad287220345e96eb8021fe29d42b0785766c8df658827e7251da2d36dc"
@@ -79,7 +80,7 @@
       "width": 1200,
       "height": 630,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
         "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c",
         "design/fonts/Charter-Bold.ttf": "7b8959ea727a107748dbcb95bd509b23852cb1275d0d9ade0bb090733193b5d3",
         "site/home/content/index.md#heading": "c945ce11b811a12af022f35d9b512bde04be0d382b6204de0f1bde9baa03156e"
@@ -90,7 +91,7 @@
       "width": 1200,
       "height": 630,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
         "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c",
         "design/fonts/Charter-Bold.ttf": "7b8959ea727a107748dbcb95bd509b23852cb1275d0d9ade0bb090733193b5d3",
         "site/home/content/why.md#heading": "81c83d34e56d4c9cb4e87ca2f8cf7b90164837580b8ee48c6f9999747e638952"
@@ -101,7 +102,7 @@
       "width": 1200,
       "height": 630,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
         "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c",
         "design/fonts/Charter-Bold.ttf": "7b8959ea727a107748dbcb95bd509b23852cb1275d0d9ade0bb090733193b5d3",
         "CHANGELOG.md#heading": "ead07c84baac57a9542f388a07a2a5209456ce790b04251bc9bd7d179ea85cb1"
@@ -112,7 +113,7 @@
       "width": 47,
       "height": 9,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72"
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66"
       }
     },
     {
@@ -120,7 +121,7 @@
       "width": 256,
       "height": 256,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
         "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     },
@@ -129,7 +130,7 @@
       "width": 24,
       "height": 24,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72"
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66"
       }
     },
     {
@@ -137,7 +138,7 @@
       "width": 235,
       "height": 45,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
         "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     },
@@ -146,7 +147,7 @@
       "width": 235,
       "height": 45,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
         "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     },
@@ -155,7 +156,7 @@
       "width": 572,
       "height": 192,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
         "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     },
@@ -164,7 +165,7 @@
       "width": 512,
       "height": 512,
       "sources": {
-        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
         "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     }

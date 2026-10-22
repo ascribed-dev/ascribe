@@ -123,6 +123,7 @@ test("every source is read", () => {
     "design/fonts/Charter-Bold.ttf",
     "design/mark.toml",
     "design/tokens.toml#brand",
+    "design/words.toml#headline",
     "site/home/content/credits.md#heading",
     "site/home/content/index.md#heading",
     "site/home/content/why.md#heading",

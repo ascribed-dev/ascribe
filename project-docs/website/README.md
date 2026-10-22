@@ -21,6 +21,7 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 8. **Nothing has to be kept.** Ascribe is before 1.0 and has no users, so the extension's publisher and id can change without a migration.
 9. **The gutter's split bar on notes is the site's own look,** a rule in `site.css`. The element library's default stays one bar, so no `--ascribe-*` property is added. _From:_ the maintainer, 21 October 2026.
 10. **The mark moves.** Phase 4 builds the motion and isn't dropped. _From:_ the maintainer, 21 October 2026.
+11. **The words live in `design/words.toml`: the headline, the sentence, the short form, and the keywords.** The social card's line moved there from `mark.toml`. Every surface that says what Ascribe is is generated from it, or compared with it by `scripts/design/words.test.ts`. The binary takes the short form from `ascribe-cli`'s crate description, which the test compares, so the command's help and the plugin's manifests are generated from it. _Why:_ the home sits beside the social card's line, as phase 3 suggested, but in a file of its own, since `mark.toml` is pixels. It's TOML so the scripts and the tests can read it, which the story's prose can't be. _From:_ phase 3, 21 October 2026.
 
 ## The thread
 
