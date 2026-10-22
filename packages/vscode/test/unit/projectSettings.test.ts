@@ -212,6 +212,22 @@ describe("Project Settings' answer", () => {
       },
     ]);
     // A card's link opens its line; no setting has its id, so none is set.
+    const shared = { table: "", name: "frontmatter", keys: ["title"], set: { range, line: 3 } };
+    expect(settingsAnswer(result({ parts: [shared] })).parts).toEqual([
+      {
+        id: "part:frontmatter",
+        section: "Content types",
+        name: "frontmatter",
+        key: "[frontmatter]",
+        summary: "Sets title",
+        where: "ascribe.toml:3",
+      },
+    ]);
+    expect(settingTarget(result({ parts: [shared] }), "part:frontmatter")).toEqual({
+      table: "",
+      key: "frontmatter",
+      set: { range, line: 3 },
+    });
     expect(settingTarget(result({ parts: [] }), "part:types.guide")).toBeUndefined();
     expect(
       settingTarget(

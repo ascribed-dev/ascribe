@@ -84,12 +84,22 @@ type = "table of tables"
 description = '''Content types: a frontmatter schema for each kind of page, by the type's name.'''
 
 [[setting]]
+table = ""
+key = "frontmatter"
+kind = "table"
+type = "table of fields"
+default = {}
+default-text = "`{}` (no fields)"
+description = '''The fields every page type has, as a type's own `frontmatter` declares them (below), so a field every page has is written once. A type's own fields add to them, and one of the same name replaces the shared field whole, for that type. The implicit `page` type of a project with no types has them too.'''
+
+[[setting]]
 table = "types.<name>"
 key = "frontmatter"
 kind = "table"
 type = "table of fields"
-required = true
-description = '''The frontmatter schema: one entry per field, keyed by field name (`name-word`). Values are field types (§5). It MUST declare `title` as a required string (below). A type can't declare a field `type`, which is reserved (`model-field-reserved`).'''
+default = {}
+default-text = "`{}` (no fields of its own)"
+description = '''The type's own frontmatter schema: one entry per field, keyed by field name (`name-word`). Values are field types (§5). Every type has a required string `title`, declared or not (below). A type can't declare a field `type`, which is reserved (`model-field-reserved`).'''
 
 [[setting]]
 table = "types.<name>"
@@ -187,7 +197,7 @@ kind = "choice"
 type = "string"
 choices = ["code"]
 only = "fields"
-description = '''`"code"` reads the value's code spans. Allowed only on a content type's top-level `string` fields (and `string?`). See §5.3.'''
+description = '''`"code"` reads the value's code spans. Allowed only on a page type's top-level `string` fields (and `string?`), its own or `[frontmatter]`'s. See §5.3.'''
 
 [[setting]]
 table = "<field>"
@@ -203,7 +213,7 @@ kind = "choice"
 type = "string"
 choices = ["description", "review-date", "owner"]
 only = "fields"
-description = '''What the field is for, which a check reads: `"description"`, `"review-date"`, or `"owner"`. Allowed only on a content type's top-level fields. See §5.4.'''
+description = '''What the field is for, which a check reads: `"description"`, `"review-date"`, or `"owner"`. Allowed only on a page type's top-level fields, its own or `[frontmatter]`'s. A field named for a role has it without `role`, unless the type gives it to another field. See §5.4.'''
 
 # ---- 6. `[dimensions.<name>]` -------------------------------------------------
 

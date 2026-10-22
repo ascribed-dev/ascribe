@@ -1,0 +1,10 @@
+description: >-
+  A field in `[frontmatter]` is a field of every page type: a page of a type
+  with no fields of its own, and one of a type with fields of its own, each
+  needs it, and its value is checked as the type's own fields' are.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-missing-field, file: reference.md, line: 1}
+  - {slug: frontmatter-type-mismatch, file: setup.md, line: 4}

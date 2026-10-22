@@ -70,9 +70,11 @@ Every file in [`examples/content-models/`]({repo}/tree/main/examples/content-mod
 
 @include: ../_fragments/content-model/types.md
 
-**The page title.** Every page type MUST declare `title` as a required `string` field (`model-type-title`), and a page's frontmatter `title` is its title wherever SPEC needs one (SPEC §5.2). The field MAY set `phrases = true` (§11) and `inline = "code"` (§5.3).
+**The page title.** Every page type has `title`, a required `string` field, whether `[frontmatter]` or the type declares it or not, and a page's frontmatter `title` is its title wherever SPEC needs one (SPEC §5.2). A declaration of it MAY set `phrases = true` (§11) and `inline = "code"` (§5.3), and MUST NOT make it optional, give it a default, or give it another type (`model-field-reserved`).
 
-**Reserved keys.** `type`, `available`, `variant`, `permalink`, `listing`, `replaces`, `nav-label` (SPEC §2.1, §4.3, §4.4, §7.2), and `intended` (SPEC §4.9) are reserved frontmatter keys. Every page MUST accept them, with the meaning SPEC gives them, whatever its type declares, and a type MUST NOT declare one (`model-field-reserved`). A generated consumer schema MUST include `type`, as the literal of the type's name on a type the project declares, `available`, `variant`, and `permalink`, and MUST NOT include `listing` (the page's record has it, output-layout contract §1.3), `replaces` (the versions file has it, §1.5), `nav-label` (the navigation has it, §1.6), or `intended`, which no output has. A page type MUST NOT declare `formatted` (§5.3) or `source` (SPEC §9.6), which the site output writes, nor, under the `astro` profile, `slug`, which Astro's content loader reads as an entry id (`model-field-reserved`); a page's frontmatter can't use `formatted` or `source`, since no type declares them.
+**Frontmatter every type shares.** A page type's fields are `[frontmatter]`'s, in their order, each replaced whole by the type's own field of its name, then the type's other fields in theirs, with `title` first when neither declares it. Fields are never merged key by key.
+
+**Reserved keys.** `type`, `available`, `variant`, `permalink`, `listing`, `replaces`, `nav-label` (SPEC §2.1, §4.3, §4.4, §7.2), and `intended` (SPEC §4.9) are reserved frontmatter keys. Every page MUST accept them, with the meaning SPEC gives them, whatever its type declares, and neither a type nor `[frontmatter]` MAY declare one (`model-field-reserved`). A generated consumer schema MUST include `type`, as the literal of the type's name on a type the project declares, `available`, `variant`, and `permalink`, and MUST NOT include `listing` (the page's record has it, output-layout contract §1.3), `replaces` (the versions file has it, §1.5), `nav-label` (the navigation has it, §1.6), or `intended`, which no output has. A page type MUST NOT declare `formatted` (§5.3) or `source` (SPEC §9.6), which the site output writes, nor, under the `astro` profile, `slug`, which Astro's content loader reads as an entry id (`model-field-reserved`); a page's frontmatter can't use `formatted` or `source`, since no type declares them.
 
 @include: ../_fragments/content-model/types-frontmatter-and-fragments.md
 
@@ -86,7 +88,7 @@ Every file in [`examples/content-models/`]({repo}/tree/main/examples/content-mod
 
 @include: ../_generated/content-model-fields.md
 
-**Rules** (§24.3): `fields` MUST be given exactly when the type is `object` or `list(object)`, optional or not (`model-type-fields`). `values` MUST appear only with bare `enum`, with at least one value and no two alike (`model-enum-values`), and a `set(enum)` attribute's values MUST be tokens (`model-set-token`). A `default` MUST have the declared type, and an enumeration's MUST be one of its values (`model-default-type`). `phrases = true` MUST be set only on `string` and `list(string)` fields, optional or not, including fields in objects (`model-phrases-field-type`). `inline` and `role` MUST be set only on a content type's top-level fields, not in an object or the fragment schema (`model-inline-field`, `model-field-role`).
+**Rules** (§24.3): `fields` MUST be given exactly when the type is `object` or `list(object)`, optional or not (`model-type-fields`). `values` MUST appear only with bare `enum`, with at least one value and no two alike (`model-enum-values`), and a `set(enum)` attribute's values MUST be tokens (`model-set-token`). A `default` MUST have the declared type, and an enumeration's MUST be one of its values (`model-default-type`). `phrases = true` MUST be set only on `string` and `list(string)` fields, optional or not, including fields in objects (`model-phrases-field-type`). `inline` and `role` MUST be set only on a page type's top-level fields, its own or `[frontmatter]`'s, not in an object or the fragment schema (`model-inline-field`, `model-field-role`).
 
 @include: ../_fragments/content-model/field-types-nesting.md
 
@@ -111,13 +113,13 @@ Each output carries two forms of the value. The **plain text** is the value with
 
 A field the page leaves out gets its default's formatted form, so `formatted.<field>` is there whenever the field has a value.
 
-**Rules** (§24.3): `inline` MUST be `"code"`, on a content type's top-level `string` or `string?` field (`model-inline-field`).
+**Rules** (§24.3): `inline` MUST be `"code"`, on a page type's top-level `string` or `string?` field, its own or `[frontmatter]`'s (`model-inline-field`).
 
 ---
 
 ### 5.4 Field roles
 
-A page type's top-level field MAY have a `role`, which says what the field is for, so a check or the report reads it whatever the field's name (SPEC §7.2):
+A page type's top-level field MAY have a `role`, which says what the field is for, so a check or the report reads it whatever the field's name (SPEC §7.2). A field named `description`, `review-date`, or `owner` has that role without `role`, unless another field of the type has it:
 
 | Role | The field's type | Read by |
 |---|---|---|
@@ -127,4 +129,4 @@ A page type's top-level field MAY have a `role`, which says what the field is fo
 
 A type without a field with the role has none of that check's diagnostics. A role changes no output: not the generated schemas, the JSON, or the pages.
 
-**Rules** (§24.3): the role is one of the three, on a field of its type, in a content type's own fields, and at most one field of a type has each role (`model-field-role`). A second field with a role keeps its type, and loses the role.
+**Rules** (§24.3): the role is one of the three, on a field of its type, in a page type's top-level fields, its own or `[frontmatter]`'s, and at most one field of a table has each role (`model-field-role`). A second field with a role keeps its type, and loses the role. A type's own field given a role with `role` has it, and a `[frontmatter]` field given the same role loses it, for that type. A role no field is given with `role` is the field's of the role's name, when its type is one the role takes; otherwise no field has it.

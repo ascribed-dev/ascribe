@@ -9,7 +9,7 @@ use ascribe_core::{
 
 use crate::pattern::Pattern;
 use crate::settings;
-use crate::types::FrontmatterSchema;
+use crate::types::{Field, FrontmatterSchema};
 
 /// The spec versions this crate implements (`spec`).
 pub const SUPPORTED_SPECS: &[&str] = &["0.1"];
@@ -26,6 +26,9 @@ pub struct ContentModel {
     pub spec: String,
     /// `[project]`.
     pub project: Project,
+    /// `[frontmatter]`: the fields every page type has, as written, in
+    /// declaration order. Each type's `frontmatter` has them already.
+    pub frontmatter: Vec<Field>,
     /// Page content types (`[types.<name>]`), or the implicit `page` type.
     pub types: Vec<ContentType>,
     /// `[fragments]`.

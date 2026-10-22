@@ -17,3 +17,8 @@ tags = "list(string)?"
 [types.reference.frontmatter]
 title = "string"
 api-version = "string"
+
+# `description` is the pages' description by its name, and a page without
+# one is a content check's advice, not this case's point.
+[checks]
+page-description-missing = "off"

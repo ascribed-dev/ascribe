@@ -1,0 +1,9 @@
+description: >-
+  A type that gives a role to another field keeps it from the field of the
+  role's name: the page has a `description`, and not the `summary` that's
+  its description.
+spec: ["7.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: page-description-missing, line: 1, severity: advice}

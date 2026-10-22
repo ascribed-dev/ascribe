@@ -1,0 +1,9 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+# No types are declared, so every page is of the implicit type `page`, which
+# has these fields too.
+[frontmatter]
+audience = "string"

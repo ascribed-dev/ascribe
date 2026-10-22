@@ -109,7 +109,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-236 in all. By severity: 47 advice, 164 error, 25 warning. By level: 210 file, 26 page. By kind of next step: 54 choose, 17 fix, 8 outside, 12 review, 145 write.
+235 in all. By severity: 47 advice, 163 error, 25 warning. By level: 209 file, 26 page. By kind of next step: 54 choose, 17 fix, 8 outside, 12 review, 144 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -181,8 +181,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC068` | `model-path-absolute` | error | write | `{key}` must be a path relative to ascribe.toml, not an absolute path |
 | `ASC069` | `model-content-root-missing` | error | write | content root `{path}` doesn't exist |
 | `ASC070` | `model-output-overlaps-content` | error | write | output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source |
-| `ASC073` | `model-type-title` | error | write | content type `{type}` must declare title = "string": it's the page title, used for empty link text |
-| `ASC074` | `model-field-reserved` | error | write | `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]` |
+| `ASC074` | `model-field-reserved` | error | write | `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[{table}]` |
 | `ASC075` | `model-type-syntax` | error | write | "{type}" isn't a valid {kind} type: {detail} |
 | `ASC076` | `model-type-fields` | error | write | field `{field}` is an object, so it needs `fields` |
 | `ASC077` | `model-enum-values` | error | write | `{field}` has an empty enumeration |

@@ -314,7 +314,7 @@ fn frontmatter(text: &str) -> Option<(usize, usize)> {
 
 /// The page a type with no template starts with: its type, its title, and
 /// each other field it requires, empty, in its frontmatter. Every type has a
-/// `title` field (`model-type-title`).
+/// `title` field (SPEC §7.2).
 fn frontmatter_only(page_type: &ContentType, title: &str) -> String {
     let mut lines = Vec::new();
     if !page_type.implicit {

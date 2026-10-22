@@ -582,6 +582,9 @@ struct Defaults {
     /// The types `ascribe.toml` declares, in order; none when it declares
     /// none.
     types: Vec<ContentType>,
+    /// The names of the fields `[frontmatter]` declares, which every type
+    /// has already.
+    shared: Vec<String>,
     /// `ascribe.toml`, parsed, when it parses.
     doc: Option<DocumentMut>,
 }
@@ -595,6 +598,7 @@ impl Defaults {
                 .filter(|t| !t.implicit)
                 .cloned()
                 .collect(),
+            shared: model.frontmatter.iter().map(|f| f.name.clone()).collect(),
             doc: text.parse().ok(),
         }
     }
@@ -641,19 +645,19 @@ impl Defaults {
 }
 
 /// The fields of the frontmatter of the type `template` is added as, in
-/// order, `title` first when the template's has none, each with how another
-/// of the project's types declares it, when it's copied from there.
+/// order, each with how another of the project's types declares it, when
+/// it's copied from there. A field `[frontmatter]` declares is left out,
+/// since the type has it already, and so is `title` declared as a plain
+/// string, which every type has without it.
 fn frontmatter(template: &Template, defaults: &Defaults) -> Vec<(String, Option<String>)> {
-    let mut fields = frontmatter_fields(template.text(&template.template));
-    if !fields.iter().any(|f| f == "title") {
-        fields.insert(0, "title".to_owned());
-    }
-    fields
+    frontmatter_fields(template.text(&template.template))
         .into_iter()
+        .filter(|field| !defaults.shared.contains(field))
         .map(|field| {
             let declared = defaults.declared(&field);
             (field, declared)
         })
+        .filter(|(field, declared)| field != "title" || declared.is_some())
         .collect()
 }
 
@@ -682,8 +686,9 @@ fn declares_types(text: &str) -> bool {
 }
 
 /// The lines of `[types.page]` as a content model with no types has it: a
-/// required title (contracts/content-model/validation.md, decision 18).
-const PAGE_TYPE: &[&str] = &["[types.page.frontmatter]", "title = \"string\""];
+/// type with nothing of its own, whose fields are `title` and
+/// `[frontmatter]`'s (SPEC §7.2).
+const PAGE_TYPE: &[&str] = &["[types.page]"];
 
 /// `ascribe.toml`'s text with the `template` and `guide` of each type kept
 /// added to its table, after its last entry, each a line of its own, and
@@ -884,10 +889,13 @@ fn type_table(template: &Template, added: &Added, defaults: &Defaults) -> Vec<St
         format!("[types.{name}]"),
         format!("template = {}", toml_string(&added.template)),
         format!("guide = {}", toml_list(&added.guide)),
-        String::new(),
-        format!("[types.{name}.frontmatter]"),
     ];
-    for (field, declared) in frontmatter(template, defaults) {
+    let fields = frontmatter(template, defaults);
+    if !fields.is_empty() {
+        lines.push(String::new());
+        lines.push(format!("[types.{name}.frontmatter]"));
+    }
+    for (field, declared) in fields {
         let declared = declared.unwrap_or_else(|| toml_string("string"));
         lines.push(format!("{} = {declared}", key(&field)));
     }

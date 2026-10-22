@@ -1,6 +1,6 @@
 description: >-
-  Without a field marked `role = "description"`, a page with no description
-  isn't reported, even when its type declares a field named `description`.
+  Without a field that has the `description` role, by `role` or by its
+  name, a page with no description isn't reported.
 spec: ["7.2", "8.2"]
 tags: [check]
 

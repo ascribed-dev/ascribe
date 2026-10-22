@@ -1,0 +1,9 @@
+spec = "0.1"
+
+[frontmatter]
+description = "string?"
+
+# The type gives the role to another field, so `description` is a field like
+# any other here.
+[types.page.frontmatter]
+summary = { type = "string?", role = "description" }

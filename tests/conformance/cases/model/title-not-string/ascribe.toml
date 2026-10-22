@@ -1,0 +1,9 @@
+spec = "0.1"
+
+[frontmatter]
+title = "string?"
+
+[types.page.frontmatter]
+title = "number"
+
+[types.guide]

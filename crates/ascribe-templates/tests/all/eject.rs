@@ -126,7 +126,7 @@ fn a_clean_project_gets_the_template_its_guide_ascribe_s_notes_the_lock_and_the_
     assert_eq!(
         model,
         format!(
-            "{MODEL}\n[types.how-to]\ntemplate = \"templates/how-to.md\"\nguide = [\"templates/how-to.guide.md\", \"templates/how-to.ascribe.md\"]\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
+            "{MODEL}\n[types.how-to]\ntemplate = \"templates/how-to.md\"\nguide = [\"templates/how-to.guide.md\", \"templates/how-to.ascribe.md\"]\n\n[types.how-to.frontmatter]\ndescription = \"string\"\n"
         )
     );
     // The project loads with its files checked, and a page copied from the
@@ -273,9 +273,7 @@ fn keeping_a_type_adds_the_ones_not_declared_as_eject_does() {
     assert_eq!(answer.added[0].name, "tutorial");
     let text = read(dir.path(), "ascribe.toml");
     assert!(
-        text.ends_with(
-            "[types.tutorial.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
-        ),
+        text.ends_with("[types.tutorial.frontmatter]\ndescription = \"string\"\n"),
         "{text}"
     );
     assert!(
@@ -308,12 +306,20 @@ fn the_docs_reference_is_what_keeping_the_type_writes_apart_from_its_purpose() {
         .filter(|l| !l.starts_with("template = ") && !l.starts_with("guide = "))
         .map(|l| format!("{l}\n"))
         .collect();
-    let model = format!("{MODEL}\n{without}");
+    // The fields every type has, which the template's frontmatter needs.
+    let shared_start = docs
+        .find("[frontmatter]\n")
+        .expect("the docs declare shared frontmatter");
+    let shared_end = docs[shared_start..]
+        .find("\n\n")
+        .map_or(docs.len(), |i| shared_start + i + 1);
+    let shared = &docs[shared_start..shared_end];
+    let model = format!("{MODEL}\n{shared}\n{without}");
     let dir = project(&model);
     keeping(dir.path(), &["reference"]).expect("ejected");
     assert_eq!(
         read(dir.path(), "ascribe.toml"),
-        format!("{MODEL}\n{table}")
+        format!("{MODEL}\n{shared}\n{table}")
     );
 }
 
@@ -489,9 +495,7 @@ fn a_project_with_no_types_keeps_the_page_type_its_pages_had() {
     assert!(answer.page_declared);
     let text = read(dir.path(), "ascribe.toml");
     assert!(
-        text.starts_with(
-            "spec = \"0.1\"\n\n[types.page.frontmatter]\ntitle = \"string\"\n\n[types.how-to]\n"
-        ),
+        text.starts_with("spec = \"0.1\"\n\n[types.page]\n\n[types.how-to]\n"),
         "{text}"
     );
     let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
@@ -682,10 +686,9 @@ fn a_field_another_type_declares_as_something_else_is_a_plain_string() {
     let answer = run(dir.path(), &["how-to"], "templates").expect("ejected");
     assert!(answer.added[0].copied.is_empty());
     let text = read(dir.path(), "ascribe.toml");
+    // `title`, a plain string, is every type's without a line of its own.
     assert!(
-        text.ends_with(
-            "[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
-        ),
+        text.ends_with("[types.how-to.frontmatter]\ndescription = \"string\"\n"),
         "{text}"
     );
 }
@@ -707,5 +710,19 @@ fn the_pages_that_name_no_type_are_listed() {
     assert_eq!(
         answer.untyped,
         ["docs/guides/a.md", "docs/guides/b.md", "docs/index.md"]
+    );
+}
+
+#[test]
+fn a_type_added_leaves_out_the_fields_every_type_has() {
+    let model = "spec = \"0.1\"\n\n[frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\ndescription = \"string\"\n";
+    let dir = project(model);
+    run(dir.path(), &["how-to"], "templates").expect("ejected");
+    let text = read(dir.path(), "ascribe.toml");
+    assert!(
+        text.ends_with(
+            "[types.how-to]\ntemplate = \"templates/how-to.md\"\nguide = [\"templates/how-to.guide.md\", \"templates/how-to.ascribe.md\"]\n"
+        ),
+        "{text}"
     );
 }
