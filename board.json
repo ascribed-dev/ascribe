@@ -5282,7 +5282,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Why Ascribe says the content model has no navigation, but ascribe.nav orders the docs"
     },
     {
@@ -5299,7 +5299,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Rename an implicit release target from its [releases.<target>] header"
     }
   ]
