@@ -2,6 +2,7 @@
 type: reference
 title: The baseline
 description: "Put a project's existing advice off for now with `ascribe.baseline`, so `ascribe check` reports only what's new: the commands that keep it, and its syntax."
+available: ascribe 0.4.2
 ---
 
 A project that turns on the [content checks](diagnostics/content-checks.md) can meet thousands of advice at once. The baseline puts them off for now: `ascribe baseline write` lists every advice the project has in `ascribe.baseline`, beside `ascribe.toml`, and from then on `ascribe check` holds those back, counts them, and reports only the advice that's new. The team fixes the backlog at its own pace, and `ascribe baseline prune` takes each fixed one out of the file.
