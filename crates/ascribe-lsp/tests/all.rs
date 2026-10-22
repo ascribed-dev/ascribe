@@ -78,3 +78,5 @@ mod snippet_files;
 mod snippets;
 #[path = "all/tokens.rs"]
 mod tokens;
+#[path = "all/type_hover.rs"]
+mod type_hover;

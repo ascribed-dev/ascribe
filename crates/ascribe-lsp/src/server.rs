@@ -764,8 +764,8 @@ fn config_completion(shared: &Shared, request: &Request) -> Option<Vec<lsp_types
         .config_completion(&at.text_document.uri, at.position)
 }
 
-/// The hover in `ascribe.toml`, which isn't a page; `None` for any other
-/// document, or a place with nothing to say.
+/// A hover in `ascribe.toml`, which isn't a page; `None` for any other
+/// document, or where there's nothing to say.
 fn model_hover(shared: &Shared, request: &Request) -> Option<lsp_types::Hover> {
     let params: lsp_types::HoverParams = serde_json::from_value(request.params.clone()).ok()?;
     let at = params.text_document_position_params;

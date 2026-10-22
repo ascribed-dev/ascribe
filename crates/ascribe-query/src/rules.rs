@@ -476,14 +476,17 @@ mod tests {
     /// The rules for a project with the content model `model`, and the
     /// files `files` beside it, read from the repository's root.
     fn rules_of(model: &str, files: &[(&str, &str)]) -> String {
-        let model = Arc::new(ascribe_model::load_str(model, FileId::new(0)).unwrap());
+        let mut model = ascribe_model::load_str(model, FileId::new(0)).unwrap();
         let layout = Layout::from_model(&model);
         let fs = files
             .iter()
             .fold(MemoryFs::new(&layout), |fs, (path, text)| {
                 fs.with_file(path, text)
             });
-        let project = Project::load(model, layout, &fs);
+        // The types take their templates from the lock, as when the project
+        // is loaded from its folder.
+        ascribe_check::type_files::from_lock(&mut model, &fs);
+        let project = Project::load(Arc::new(model), layout, &fs);
         rules(&project, &fs, &RelPath::root(), &RelPath::root())
     }
 

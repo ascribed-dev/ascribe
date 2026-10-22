@@ -300,7 +300,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Message:** can't read `{path}`, the template of content type `{type}`: \{reason}
 
-**Fix:** Fix the template so it reads as a page: valid YAML between its `---` lines, and no error in its Ascribe syntax. A template is read when the content model loads, so a problem in it is reported once, here, and not on every page made from it.
+**Fix:** Fix the template so it reads as a page: valid YAML between its `---` lines, and no error in its Ascribe syntax. A template is read when the content model loads, so a problem in it is reported once, here, and not on every page made from it. A type that names no `template` and no `guide` takes them from `templates/templates.lock`, which `ascribe templates eject` writes: put back a file it gives (`ascribe templates status` says what's changed), or name the type's own `template` and `guide`.
 
 **Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
 

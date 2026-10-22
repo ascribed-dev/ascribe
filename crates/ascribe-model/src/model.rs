@@ -696,6 +696,19 @@ pub struct Remote {
     pub branch: Option<String>,
 }
 
+/// What every source leaves out, before its own `ignore` (SPEC §7.3): the
+/// registry's default for `ignore`, every `node_modules` and `.git` folder.
+/// A source's `ignore` holds only its own patterns.
+pub fn always_ignored() -> &'static [Pattern] {
+    static ALWAYS: std::sync::OnceLock<Vec<Pattern>> = std::sync::OnceLock::new();
+    ALWAYS.get_or_init(|| {
+        settings::default_list("sources.<name>", "ignore")
+            .iter()
+            .filter_map(|p| Pattern::new(p).ok())
+            .collect()
+    })
+}
+
 /// The folder, in the project's folder, that holds the copies of every
 /// source in another repository, each in a folder of its own.
 pub const COPIES_FOLDER: &str = "sources";
@@ -709,7 +722,16 @@ impl Source {
     pub fn reads(&self, path: &str) -> bool {
         !crate::examples::is_examples_file(path)
             && (self.include.is_empty() || self.include.iter().any(|p| p.matches(path)))
-            && !self.ignore.iter().any(|p| p.matches(path))
+            && !self.ignores(path)
+    }
+
+    /// Whether `ignore`, or what every source leaves out
+    /// ([`always_ignored`]), leaves out `path`.
+    fn ignores(&self, path: &str) -> bool {
+        always_ignored()
+            .iter()
+            .chain(&self.ignore)
+            .any(|p| p.matches(path))
     }
 
     /// Whether a change on disk to the file or folder at `path`, relative
@@ -721,7 +743,7 @@ impl Source {
         use crate::examples::{OBSERVATIONS_FOLDER, is_examples_file};
         is_examples_file(path)
             || path == OBSERVATIONS_FOLDER
-            || (!self.ignore.iter().any(|p| p.matches(path))
+            || (!self.ignores(path)
                 && (self.include.is_empty() || self.include.iter().any(|p| p.may_match_in(path))))
     }
 
@@ -748,11 +770,15 @@ pub struct ContentType {
     pub own: Vec<Field>,
     /// What a page of the type is for, in a few words, `purpose`.
     pub purpose: Option<String>,
-    /// The page a page of the type starts from, `template`.
+    /// The page a page of the type starts from, `template`, or the one
+    /// `templates/templates.lock` gives it.
     pub template: Option<TypeFile>,
     /// What to read before writing a page of the type, `guide`, in the order
-    /// to read it.
+    /// to read it, or what `templates/templates.lock` gives it.
     pub guide: Vec<TypeFile>,
+    /// The `[types.<name>]` key in `ascribe.toml`; empty, at its start, for
+    /// the implicit type.
+    pub span: Span,
 }
 
 /// Which table declares a page type's field ([`ContentModel::field_source`]).
@@ -781,13 +807,18 @@ impl FieldSource {
 /// the folder `ascribe.toml` is in. Loading checks only what's written: that
 /// the file is there, outside the content root, and that a template reads as
 /// a page, is checked where the project's files are read
-/// (`ascribe_check::type_files`).
+/// (`ascribe_check::type_files`), which also gives a type that names neither
+/// the files `templates/templates.lock` records for it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TypeFile {
     /// The path, as written.
     pub path: String,
-    /// The path's string in `ascribe.toml`.
+    /// The path's string in `ascribe.toml`, or, for a file the lock gives,
+    /// the type's key.
     pub span: Span,
+    /// The lock that gives the file, from the folder `ascribe.toml` is in;
+    /// `None` for one `ascribe.toml` names.
+    pub lock: Option<String>,
 }
 
 /// `[fragments]`.

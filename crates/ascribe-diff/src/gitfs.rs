@@ -101,7 +101,7 @@ impl Revision {
         let model_text = String::from_utf8(bytes).map_err(|_| DiffError::BaseModelText {
             commit: commit.to_owned(),
         })?;
-        let model = ascribe_model::load_str(&model_text, FileId::new(0)).map_err(|issues| {
+        let mut model = ascribe_model::load_str(&model_text, FileId::new(0)).map_err(|issues| {
             DiffError::BaseModel {
                 commit: commit.to_owned(),
                 text: model_text.clone(),
@@ -117,6 +117,8 @@ impl Revision {
             tree.files.extend(repo.tree_in(commit, &more)?.files);
         }
         let fs = GitFs::read(repo, Arc::new(tree), &layout)?;
+        // The lock is in the project's folder, so in the tree read already.
+        ascribe_check::type_files::from_lock(&mut model, &fs);
         Ok(Some(Revision {
             model_text,
             model: Arc::new(model),

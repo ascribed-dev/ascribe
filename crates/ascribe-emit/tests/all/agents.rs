@@ -19,7 +19,7 @@ use crate::support::{FULL_MODEL, emit_build, memory_project, memory_project_with
 /// The full model with the outputs for agents on. Its site is
 /// `https://docs.quill.dev`, under the base path `/docs/`.
 fn agents_model() -> String {
-    let model = FULL_MODEL.replacen("html = true\n", "html = true\nagents = true\n", 1);
+    let model = FULL_MODEL.replacen("agents = false\n", "agents = true\n", 1);
     assert_ne!(model, FULL_MODEL, "the full model's [consumer] moved");
     model
 }

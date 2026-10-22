@@ -1,8 +1,9 @@
 //! The adapter for the prose checks: Vale's alerts, through `[checks.vale]`.
 //!
 //! It handles the `prose` tag. Its diagnostics are the case's file-level
-//! diagnostics with `ascribe_check::prose::lint`'s, the call `ascribe check
-//! --vale` makes. Vale itself isn't run: a stand-in for it flags each word
+//! diagnostics with `ascribe_check::prose::lint`'s, as the editor reports
+//! them: Vale runs whenever there's `[checks.vale]`, and that it couldn't is
+//! said only with `in-check` (`prose::said`). Vale itself isn't run: a stand-in for it flags each word
 //! written twice in a row outside code spans, as `Ascribe.Repeated` with the
 //! preset's ignored scopes does, so a case shows what
 //! Ascribe gives Vale and where an alert lands, on every platform. A
@@ -46,6 +47,7 @@ impl ConformanceAdapter for ProseAdapter {
             &Repeated,
             Duration::from_secs(5),
         ));
+        let found = prose::said(project.model(), false, found);
         let leveled = ascribe_check::apply_levels(&project.model().checks, found);
         super::to_conformance(&project, leveled).map(Some)
     }

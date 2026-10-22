@@ -83,7 +83,8 @@ fn it_lists_every_offered_page_grouped_as_llms_txt_is() {
 
 #[test]
 fn without_markdown_versions_a_page_s_address_is_its_own() {
-    let index = index(MODEL, None, COMPACT_INDEX_LIMIT);
+    let off = format!("{MODEL}agents = false\n");
+    let index = index(&off, None, COMPACT_INDEX_LIMIT);
     assert!(
         index
             .text
@@ -144,10 +145,11 @@ fn long_index(model: &str, folder: Option<&str>, limit: usize) -> CompactIndex {
 
 #[test]
 fn descriptions_are_left_out_from_the_last_page_back_before_any_page() {
-    let whole = long_index(MODEL, None, COMPACT_INDEX_LIMIT).text.len();
+    let off = format!("{MODEL}agents = false\n");
+    let whole = long_index(&off, None, COMPACT_INDEX_LIMIT).text.len();
     // Room for all but about two descriptions, and the sentence saying so.
     let limit = whole - 300;
-    let index = long_index(MODEL, None, limit);
+    let index = long_index(&off, None, limit);
     assert!(index.text.len() <= limit, "{}", index.text);
     assert!(index.left_out.is_empty(), "{}", index.text);
     assert_eq!(

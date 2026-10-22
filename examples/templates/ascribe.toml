@@ -7,48 +7,36 @@ content-root = "docs"
 title = "string"
 
 [types.how-to]
-template = "templates/how-to.md"
-guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 
 [types.how-to.frontmatter]
 title = "string"
 description = "string"
 
 [types.concept]
-template = "templates/concept.md"
-guide = ["templates/concept.guide.md", "templates/concept.ascribe.md"]
 
 [types.concept.frontmatter]
 title = "string"
 description = "string"
 
 [types.tutorial]
-template = "templates/tutorial.md"
-guide = ["templates/tutorial.guide.md", "templates/tutorial.ascribe.md"]
 
 [types.tutorial.frontmatter]
 title = "string"
 description = "string"
 
 [types.reference]
-template = "templates/reference.md"
-guide = ["templates/reference.guide.md", "templates/reference.ascribe.md"]
 
 [types.reference.frontmatter]
 title = "string"
 description = "string"
 
 [types.troubleshooting]
-template = "templates/troubleshooting.md"
-guide = ["templates/troubleshooting.guide.md", "templates/troubleshooting.ascribe.md"]
 
 [types.troubleshooting.frontmatter]
 title = "string"
 description = "string"
 
 [types.release-notes]
-template = "templates/release-notes.md"
-guide = ["templates/release-notes.guide.md", "templates/release-notes.ascribe.md"]
 
 [types.release-notes.frontmatter]
 title = "string"

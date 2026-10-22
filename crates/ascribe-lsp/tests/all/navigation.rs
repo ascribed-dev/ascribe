@@ -1498,4 +1498,14 @@ fn hovering_a_field_in_ascribe_toml_says_which_table_it_is_and_what_replaces_it(
     );
     // Anywhere else in the file, nothing.
     assert!(hover(&mut client, &model, own("content-root", "[project]")).is_none());
+    // With unsaved edits that move the keys, the hover finds them where they
+    // are now.
+    let edited = format!("# A comment the file doesn't have on disk.\n{SHARED}");
+    client.open(&model, 2, &edited);
+    let from = edited.find("[types.guide").expect("the table");
+    let steps = from + edited[from..].find("steps").expect("the key") + 1;
+    assert_eq!(
+        hover_text(&mut client, &model, position(&edited, steps)),
+        "**`steps`**: number, required\n\nDeclared by the type `guide`, its own."
+    );
 }

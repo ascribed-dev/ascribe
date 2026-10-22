@@ -424,6 +424,29 @@ fn model_shows_each_section_of_settings_with_its_values_and_defaults() {
 }
 
 #[test]
+fn model_shows_agents_on_by_default_only_with_a_site() {
+    for (consumer, on) in [("site = \"https://example.com\"\n", true), ("", false)] {
+        let dir = tempfile::tempdir().unwrap();
+        write(
+            &dir.path().join("ascribe.toml"),
+            &format!("spec = \"0.1\"\n\n[consumer]\n{consumer}"),
+        );
+        fs::create_dir(dir.path().join("docs")).unwrap();
+        let report = json(dir.path(), &["model", "--section", "consumer"], 0);
+        let agents = report["consumer"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|s| s["key"] == "agents")
+            .unwrap_or_else(|| panic!("no agents: {report}"))
+            .clone();
+        assert_eq!(agents["value"], on, "{agents}");
+        assert_eq!(agents["default"], on, "{agents}");
+        assert_eq!(agents["set"], false, "{agents}");
+    }
+}
+
+#[test]
 fn model_shows_settings_the_file_sets_and_the_defaults_it_leaves() {
     let dir = tempfile::tempdir().unwrap();
     write(

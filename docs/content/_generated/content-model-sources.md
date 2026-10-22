@@ -5,4 +5,4 @@
 | `git` | string (URL) | **required** without `path` | Another repository, as `git` takes it: `https://`, `http://`, `ssh://`, `git://`, `file://`, or `user@host:path`. |
 | `branch` | string | the repository's default branch | The branch `ascribe sources update` moves the pin to. |
 | `include` | array of patterns | every file | The files a snippet may read, matched against their paths relative to the source's folder (§1.3). |
-| `ignore` | array of patterns | none | Files left out even when `include` matches them. |
+| `ignore` | array of patterns | `node_modules` and `.git` folders, always | Files left out even when `include` matches them. Every `node_modules` and `.git` folder is left out whatever the list says, before the patterns it adds. |

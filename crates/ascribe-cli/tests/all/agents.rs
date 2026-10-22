@@ -1126,10 +1126,7 @@ fn the_index_of_a_line_is_headed_as_its_llms_txt_is() {
     let repo = repository("quill");
     let dir = repo.path();
     let config = dir.join("ascribe.toml");
-    let text = read(&config).replace(
-        "site = \"https://docs.quill.dev\"",
-        "site = \"https://docs.quill.dev\"\nagents = true",
-    );
+    let text = read(&config).replace("agents = false", "agents = true");
     write(&config, &text);
     run(dir, &["build", "--build", "site@3.4", "--emit", "plain"], 0);
     let llms = read(&dir.join(".ascribe/build/site@3.4/plain/llms.txt"));
@@ -1437,10 +1434,7 @@ fn quill_s_llms_txt_follows_its_navigation_and_keeps_each_title() {
     let repo = repository("quill");
     let dir = repo.path();
     let config = dir.join("ascribe.toml");
-    let text = read(&config).replace(
-        "site = \"https://docs.quill.dev\"",
-        "site = \"https://docs.quill.dev\"\nagents = true",
-    );
+    let text = read(&config).replace("agents = false", "agents = true");
     write(&config, &text);
     let keys = dir.join("docs/keys.md");
     let page = read(&keys).replace("title: API keys\n", "title: API keys\nnav-label: Keys\n");

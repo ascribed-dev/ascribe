@@ -46,6 +46,14 @@ headers = "netlify"
     expect(info.siteRoot("site")).toBe(path.join(info.dir, ".ascribe", "build", "site", "site"));
   });
 
+  it("publishes for agents with a site unless `agents` says otherwise", () => {
+    const site = '[consumer]\nsite = "https://docs.example.com"\n';
+    expect(readProject(project(`spec = "0.1"\n${site}`)).consumer.agents).toBe(true);
+    expect(readProject(project(`spec = "0.1"\n${site}agents = false\n`)).consumer.agents).toBe(
+      false,
+    );
+  });
+
   it("uses the profile's defaults", () => {
     const info = readProject(project('spec = "0.1"\n'));
     expect(info.contentRoot).toBe(path.join(info.dir, "docs"));

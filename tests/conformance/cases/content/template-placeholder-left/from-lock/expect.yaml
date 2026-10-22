@@ -1,0 +1,10 @@
+description: >-
+  A type that names no template and no guide takes them from
+  `templates/templates.lock`, which records the template under the type's
+  name, so a page of the type that still has one of its placeholders is
+  reported as it would be with `template` written in ascribe.toml.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: template-placeholder-left, file: how-to/rotate-keys.md, line: 8, severity: advice}

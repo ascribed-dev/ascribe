@@ -1505,8 +1505,8 @@ export interface ModelType {
   fields: ModelField[];
   /**
    * What to read before writing a page of the type, in the order to read
-   * it, from the folder `ascribe.toml` is in; absent when the type names
-   * none.
+   * it, from the folder `ascribe.toml` is in, from the type's `guide` or
+   * the lock, as `template` is; absent when it has none.
    */
   guide?: string[];
   /**
@@ -1516,7 +1516,9 @@ export interface ModelType {
   purpose?: string;
   /**
    * The page a page of the type starts from, from the folder
-   * `ascribe.toml` is in; absent when the type names none.
+   * `ascribe.toml` is in: the type's `template`, or the one
+   * `templates/templates.lock` gives a type that names neither a template
+   * nor a guide; absent when it has none.
    */
   template?: string;
 }

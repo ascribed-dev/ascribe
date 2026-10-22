@@ -52,18 +52,20 @@ export function readProject(dir: string): ProjectInfo {
     typeof project["output-dir"] === "string" ? project["output-dir"] : ".ascribe/build";
   const contentDir = typeof project["content-root"] === "string" ? project["content-root"] : "docs";
   const trailingSlash = consumer["trailing-slash"] === "never" ? "never" : "always";
+  const site = typeof consumer["site"] === "string" ? consumer["site"] : undefined;
   return {
     dir,
     configPath,
     contentRoot: path.resolve(dir, contentDir),
     outputRoot: path.resolve(dir, outputDir),
     consumer: {
-      site: typeof consumer["site"] === "string" ? consumer["site"] : undefined,
+      site,
       basePath: normalizeBase(
         typeof consumer["base-path"] === "string" ? consumer["base-path"] : "/",
       ),
       trailingSlash,
-      agents: consumer["agents"] === true,
+      // `true` with a site unless it says otherwise, as the binary reads it.
+      agents: typeof consumer["agents"] === "boolean" ? consumer["agents"] : site !== undefined,
       headers: consumer["headers"] === "netlify" ? "netlify" : undefined,
     },
     builds: Object.keys(section(table, "builds")),

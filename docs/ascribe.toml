@@ -20,37 +20,28 @@ description = "string"
 
 # Five of the types are the set's, from `ascribe templates eject`: each one's
 # template and guide are in templates/, with Ascribe's notes on it, and
-# templates.lock records where they came from. What the set's types don't
-# have is put back here: each type's purpose.
+# templates/templates.lock records where they came from, which is where each
+# type takes them from. What the set's types don't have is put back here:
+# each type's purpose.
 
 # The reference's template is the set's, taken with `ascribe templates eject
 # reference --keep-type`; the type is the docs' own. The contracts are written
 # for implementers but shaped as references, and the editor's pages are its
 # reference.
 [types.reference]
-template = "templates/reference.md"
-guide = ["templates/reference.guide.md", "templates/reference.ascribe.md"]
 purpose = "Looking up a command, a key of ascribe.toml, a directive, a diagnostic, the editor's features and settings, or a contract's rules."
 
 # The set's other four types, from `ascribe templates eject`.
 [types.how-to]
-template = "templates/how-to.md"
-guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 purpose = "Doing one thing with Ascribe once you know what it is: publishing a site, reviewing a pull request, keeping examples in step with code, setting up an agent, checking prose, acting on a report, publishing permalinks, taking the page templates, keeping a page's reasons in memos, or setting up a glossary."
 
 [types.tutorial]
-template = "templates/tutorial.md"
-guide = ["templates/tutorial.guide.md", "templates/tutorial.ascribe.md"]
 purpose = "Learning Ascribe by building an example project a step at a time: a first project, then content that varies."
 
 [types.concept]
-template = "templates/concept.md"
-guide = ["templates/concept.guide.md", "templates/concept.ascribe.md"]
 purpose = "Understanding an idea behind the docs a team publishes, such as what Ascribe can't measure and where to look instead."
 
 [types.troubleshooting]
-template = "templates/troubleshooting.md"
-guide = ["templates/troubleshooting.guide.md", "templates/troubleshooting.ascribe.md"]
 purpose = "Finding out why something isn't working, from what it shows, and what to do about it."
 
 # Commands that differ by package manager. The site shows them as tabs, and a
@@ -137,7 +128,6 @@ include = [                               # what's readable; everything else isn
   "packages/astro/starter/**",
   "site/demo/**",
 ]
-ignore = ["**/node_modules/**"]
 
 # How the site in site/ routes. @ascribed/astro gives Astro its `site` and
 # `trailingSlash` from here (site/astro.config.mjs leaves them out), and
@@ -148,15 +138,15 @@ profile = "astro"
 # manifests, the binary's help, and site/home/ascribe.toml repeat it, and tests
 # check each against this line. A pull request's preview is built with its
 # own address here and in site/home/ascribe.toml (.github/workflows/site.yml).
+# With it, the build publishes llms.txt and each page's Markdown, for AI
+# agents, and `@ascribed/astro` publishes them with the site: `agents` is
+# `true` unless it says otherwise.
 site = "https://ascribed-dev.com"
 # The docs are under /docs/, and the site's own pages, site/home/, at its
 # root. The READMEs' links to pages, site/src/site.ts's `docsPath`, and
 # .github/workflows/report.yml's `--site` repeat it, and tests check each.
 base-path = "/docs/"
 trailing-slash = "always"
-# llms.txt and each page's Markdown, for AI agents: `@ascribed/astro` publishes
-# them with the site.
-agents = true
 # Each Markdown version's response headers, `X-Robots-Tag` for a page that
 # isn't listed and a canonical `Link` to its page, written into the built
 # site's `_headers`, which Netlify reads. site/test/headers.test.ts checks them.
@@ -182,17 +172,17 @@ availability = "badge"
 [editor]
 build = "site"
 
-# Prose checks through Vale, in the editor, for whoever has Vale 3.16 or
-# later installed; `ascribe check --vale` runs them too. Vale isn't needed
-# to work on the docs, so a machine without it isn't told so.
 [checks]
-prose-not-checked = "off"
 # The examples ../ascribe.examples.toml lists say on the page what they were
 # tested with. One changed since its last test run is an error here, so the
 # docs never publish a tested line that's no longer true; run `ascribe
 # observe` in the repository's root and commit what it writes.
 example-stale = "error"
 
+# Prose checks through Vale, in the editor, for whoever has Vale 3.16 or
+# later installed; `ascribe check --vale` runs them too. Vale isn't needed
+# to work on the docs, so without `in-check` a machine without it isn't told
+# so.
 [checks.vale]
 preset = "quiet"
 

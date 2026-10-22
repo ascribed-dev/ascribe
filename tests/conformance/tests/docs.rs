@@ -853,7 +853,7 @@ fn settings_table(t: &SettingsTable) -> String {
             (None, Some(SettingValue::Switch(b))) => format!("`{b}`"),
             (None, Some(SettingValue::Number(n))) => format!("`{n}`"),
             (None, Some(SettingValue::Text(value))) => format!("`\"{value}\"`"),
-            (None, Some(SettingValue::EmptyList)) => "`[]`".to_owned(),
+            (None, Some(SettingValue::List(items))) => format!("`{items:?}`"),
             (None, Some(SettingValue::EmptyTable)) => "`{}`".to_owned(),
             (None, None) => "none".to_owned(),
         };
