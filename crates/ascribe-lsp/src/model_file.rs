@@ -74,6 +74,37 @@ impl<'a> ModelFile<'a> {
         Some(item)
     }
 
+    /// Refuses a change at `at` when `[from]` takes what's there, or a key
+    /// in it, from another file (SPEC §7.9): a taken key is edited where
+    /// it's written, and nothing here edits that file yet.
+    fn refuse_taken(&self, at: &[Seg]) -> Result<(), String> {
+        let keys: Vec<&str> = at
+            .iter()
+            .map_while(|seg| match seg {
+                Seg::Key(key) => Some(key.as_str()),
+                Seg::Index(_) => None,
+            })
+            .collect();
+        let Some(from) = self.doc.get("from").and_then(Item::as_table_like) else {
+            return Ok(());
+        };
+        for (file, table) in from.iter() {
+            let Some(take) = table.get("take").and_then(Item::as_array) else {
+                continue;
+            };
+            for name in take.iter().filter_map(Value::as_str) {
+                let taken: Vec<&str> = name.split('.').collect();
+                let n = taken.len().min(keys.len());
+                if n > 0 && taken[..n] == keys[..n] {
+                    return Err(format!(
+                        "`{name}` is taken from `{file}` by `[from]`, so it's changed there, not in this `ascribe.toml`. Edit `{file}`."
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+
     /// The key of the table-like item at `table` that `offset` is on, with
     /// its span.
     pub(crate) fn key_at(&self, table: &[&str], offset: usize) -> Option<(String, Span)> {
@@ -105,6 +136,7 @@ impl<'a> ModelFile<'a> {
             .into_iter()
             .chain([Seg::Key(key.to_owned())])
             .collect();
+        self.refuse_taken(&full)?;
         let change = Change::Set(full, value.clone());
         let key_text = Key::new(key).display_repr().into_owned();
         match self.get(&path(table)) {
@@ -166,6 +198,7 @@ impl<'a> ModelFile<'a> {
         entries: &[(&str, Value)],
         after: &[&str],
     ) -> Result<Edit, String> {
+        self.refuse_taken(&path(table))?;
         if self.get(&path(table)).is_some() {
             return Err(format!(
                 "`ascribe.toml` already has `[{}]`.",
@@ -209,6 +242,7 @@ impl<'a> ModelFile<'a> {
 
     /// Replaces the value at `path`, keeping what's around it.
     pub(crate) fn replace_value(&self, at: &[Seg], value: Value) -> Result<Edit, String> {
+        self.refuse_taken(at)?;
         let span = self
             .get(at)
             .and_then(Item::span)
@@ -219,6 +253,7 @@ impl<'a> ModelFile<'a> {
 
     /// Renames the last key of `at`.
     pub(crate) fn rename_key(&self, at: &[Seg], new: &str) -> Result<Edit, String> {
+        self.refuse_taken(at)?;
         let missing = || "The key can't be found in `ascribe.toml`.".to_owned();
         let (Some(Seg::Key(old)), parent) = (at.last(), &at[..at.len().saturating_sub(1)]) else {
             return Err(missing());
@@ -242,6 +277,7 @@ impl<'a> ModelFile<'a> {
     /// before the key stays, since it may be about the lines around it too
     /// (decision 8 of the editor's next views).
     pub(crate) fn remove_entry(&self, table: &[&str], key: &str) -> Result<Edit, String> {
+        self.refuse_taken(&path(&[table, &[key]].concat()))?;
         let refused = || {
             format!(
                 "`ascribe.toml` writes `{key}` in `{}` in a form this can't remove. Remove it by hand.",
@@ -555,6 +591,32 @@ mod tests {
         assert_eq!(
             after,
             "# The content model.\nspec = \"0.1\"\n\n[phrases]\n# The product.\nproduct = \"Quill\"   # its name\ncloud = \"Quill Cloud\"\n\n# Builds.\n[builds.site]\nvariants = \"switch\"\n"
+        );
+    }
+
+    #[test]
+    fn a_key_from_takes_is_edited_in_its_own_file_not_here() {
+        let text = "spec = \"0.1\"\n\n[from.\"../docs/ascribe.toml\"]\ntake = [\"releases\", \"consumer.site\"]\n\n[consumer]\nbase-path = \"/\"\n";
+        let file = ModelFile::parse(text).expect("parses");
+        let refused = file
+            .replace_value(
+                &path(&["releases", "ascribe", "live"]),
+                Value::from("0.5.0"),
+            )
+            .expect_err("refused");
+        assert!(
+            refused.contains("`releases` is taken from `../docs/ascribe.toml`"),
+            "{refused}"
+        );
+        assert!(
+            file.add_entry(&["consumer"], "site", Value::from("https://x.example"))
+                .is_err()
+        );
+        assert!(file.add_table(&["releases", "other"], &[], &[]).is_err());
+        // A key of the same table that isn't taken is this file's.
+        assert!(
+            file.add_entry(&["consumer"], "headers", Value::from("netlify"))
+                .is_ok()
         );
     }
 

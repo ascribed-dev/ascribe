@@ -79,6 +79,10 @@ pub struct ContentModel {
     pub crawlers: Crawlers,
     /// `[listing]`: how the site's, a folder's, or a type's pages are listed.
     pub listing: ListingRules,
+    /// What `[from]` takes from other projects' files, in the order `take`
+    /// names it. What's taken is in the fields above already, as if written
+    /// here; this says where each came from.
+    pub taken: Vec<Taken>,
     /// Warnings found while loading (`model-name-case`,
     /// `model-build-filter-excluded`). A model with errors doesn't load, so
     /// these are the only issues a loaded model has.
@@ -685,6 +689,64 @@ pub struct Source {
     pub git: Option<Remote>,
     /// The `[sources.<name>]` key in `ascribe.toml`.
     pub span: Span,
+}
+
+/// A table or a key `[from]` takes from another project's `ascribe.toml`
+/// (SPEC §7.9).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Taken {
+    /// What `take` names, as written: `releases`, `consumer.site`.
+    pub key: String,
+    /// The file it's taken from, as `[from]` names it: a path from the
+    /// folder `ascribe.toml` is in.
+    pub file: String,
+    /// The name in `take`, in this `ascribe.toml`. Every span of what's
+    /// taken is this one, so a problem with it is reported here.
+    pub span: Span,
+    /// The line of its key in the other file, from 1.
+    pub line: usize,
+    /// The column of its key on that line, in characters from 0.
+    pub column: usize,
+    /// Its value, as read here: a source's `path` is from this project's
+    /// folder.
+    pub value: toml::Value,
+}
+
+impl ContentModel {
+    /// Puts what `[from]` takes into `file`, the parsed `ascribe.toml`, as
+    /// the loader read it: for a reader of the file's values, such as
+    /// `ascribe model`'s settings.
+    pub fn put_taken(&self, file: &mut toml::Table) {
+        fn put(table: &mut toml::Table, segments: &[&str], value: &toml::Value) {
+            match segments {
+                [] => {}
+                [last] => {
+                    table.insert((*last).to_owned(), value.clone());
+                }
+                [first, rest @ ..] => {
+                    let entry = table
+                        .entry((*first).to_owned())
+                        .or_insert_with(|| toml::Value::Table(toml::Table::new()));
+                    if let toml::Value::Table(inner) = entry {
+                        put(inner, rest, value);
+                    }
+                }
+            }
+        }
+        for taken in &self.taken {
+            let segments: Vec<&str> = taken.key.split('.').collect();
+            put(file, &segments, &taken.value);
+        }
+    }
+
+    /// What `[from]` takes that holds the key at `path` (`consumer.site`,
+    /// `releases.ascribe.live`): the taken key itself, or a table around it.
+    pub fn taken_at(&self, path: &[&str]) -> Option<&Taken> {
+        self.taken.iter().find(|t| {
+            let segments: Vec<&str> = t.key.split('.').collect();
+            path.len() >= segments.len() && path[..segments.len()] == segments[..]
+        })
+    }
 }
 
 /// Another repository a source is in (SPEC §7.4).

@@ -1,9 +1,12 @@
 // Which files changed on disk start a project's server, which a running
 // server is told about, and the batching that turns a burst of changes into
 // one start per project. No VS Code in this module.
+import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import * as path from "node:path";
 import { parse } from "smol-toml";
+import { shellCommand, usesShell } from "./environment.js";
+import type { ModelReport } from "./shapes.js";
 import {
   comparable,
   ownedElsewhere,
@@ -19,8 +22,14 @@ export interface Layout {
   contentRoot: string;
   /** `[project] output-dir`. */
   outputDir: string;
-  /** Each `[sources.<name>]` that has a `path`. */
+  /** Each `[sources.<name>]` that has a `path`, as written in the file. */
   sources: Source[];
+  /**
+   * The files `[from]` takes tables from, other projects' `ascribe.toml`:
+   * a change to one is a change to this project's model. What's taken
+   * isn't read here; the binary follows it (`askSources`).
+   */
+  from: string[];
 }
 
 /** A source with a folder: where it is, absolute, and which of its files it reads. */
@@ -68,7 +77,51 @@ export function layoutOf(project: Project, text: string): Layout {
       },
     ];
   });
-  return { contentRoot: setting("content-root"), outputDir: setting("output-dir"), sources };
+  const from = Object.keys(section(table, "from")).map((file) =>
+    path.resolve(project.folder, file),
+  );
+  return { contentRoot: setting("content-root"), outputDir: setting("output-dir"), sources, from };
+}
+
+/**
+ * The project's sources with a folder, as the binary reads them: `ascribe
+ * model --section sources --format json`, in the project's folder, so that
+ * those `[from]` takes are there too. `undefined` when it can't answer, as
+ * for a content model with errors.
+ */
+export function askSources(binary: string, project: Project): Promise<Source[] | undefined> {
+  return new Promise((resolve) => {
+    execFile(
+      shellCommand(binary),
+      ["model", "--section", "sources", "--format", "json"],
+      { cwd: project.folder, windowsHide: true, shell: usesShell(binary) },
+      (error, stdout) => {
+        if (error) {
+          resolve(undefined);
+          return;
+        }
+        try {
+          const sources = (JSON.parse(stdout) as ModelReport).sources ?? [];
+          resolve(
+            sources
+              .filter((source) => source.git === null || source.git === undefined)
+              .map((source) => ({
+                folder: path.resolve(project.folder, source.path),
+                include: source.include,
+                ignore: source.ignore,
+              })),
+          );
+        } catch {
+          resolve(undefined);
+        }
+      },
+    );
+  });
+}
+
+/** Whether `file` is one that `[from]` takes tables from. */
+function isFrom(file: string, from: readonly string[]): boolean {
+  return from.some((other) => samePath(file, other));
 }
 
 /** A project's layout, read from disk; the defaults when its `ascribe.toml` can't be read. */
@@ -79,7 +132,7 @@ export async function readLayout(project: Project): Promise<Layout> {
 
 /**
  * Whether a change to `file` on disk should start `project`'s server: the
- * file is the project's `ascribe.toml`, is under its content root (and not
+ * file is the project's `ascribe.toml`, or a file its `[from]` takes from, is under its content root (and not
  * in a project nested there), or is in one of its sources' folders, and
  * isn't in its output directory, `node_modules`, or `.git`. Anything under the content root
  * counts, not just pages: assets are checked too, and deleting a folder of
@@ -91,7 +144,7 @@ export function startsServer(
   layout: Layout,
   projects: readonly Project[],
 ): boolean {
-  if (samePath(file, project.config)) return true;
+  if (samePath(file, project.config) || isFrom(file, layout.from)) return true;
   if (within(file, layout.outputDir)) return false;
   const inContent =
     within(file, layout.contentRoot) &&
@@ -118,7 +171,7 @@ export function changesCheck(
   layout: Layout,
   projects: readonly Project[],
 ): boolean {
-  if (samePath(file, project.config)) return true;
+  if (samePath(file, project.config) || isFrom(file, layout.from)) return true;
   if (within(file, layout.outputDir)) return false;
   const own =
     owningProject(file, projects)?.config === project.config &&
@@ -134,16 +187,20 @@ export function changesCheck(
  * The server answers its lenses and This page's rows again on these, and
  * reads a source's observations and `ascribe.examples.toml` from its folder.
  * The rest of a source's folder, such as a build's `target/`, isn't sent.
- * `sources` are the sources the server loaded.
+ * `sources` are the sources the server loaded, and `from` the files its
+ * `[from]` takes tables from, which it loads its model from too.
  */
 export function toldOfChange(
   file: string,
   project: Project,
   sources: readonly Source[],
   projects: readonly Project[],
+  from: readonly string[] = [],
 ): boolean {
   return (
-    !ownedElsewhere(project, file, projects) || sources.some((source) => sourceUses(file, source))
+    !ownedElsewhere(project, file, projects) ||
+    sources.some((source) => sourceUses(file, source)) ||
+    isFrom(file, from)
   );
 }
 

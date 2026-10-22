@@ -49,7 +49,17 @@ describe("layoutOf", () => {
           ignore: ["**/node_modules/**"],
         },
       ],
+      from: [],
     });
+  });
+
+  it("names the files `[from]` takes from, without reading them", () => {
+    const layout = layoutOf(
+      docs,
+      ['spec = "0.1"', '[from."../site/ascribe.toml"]', 'take = ["sources.code"]'].join("\n"),
+    );
+    expect(layout.from).toEqual([path.resolve("/repo/site/ascribe.toml")]);
+    expect(layout.sources).toEqual([]);
   });
 
   it("gives the defaults for what's missing, and for a model that doesn't parse", () => {
@@ -57,6 +67,7 @@ describe("layoutOf", () => {
       contentRoot: path.resolve("/repo/docs/docs"),
       outputDir: path.resolve("/repo/docs/.ascribe/build"),
       sources: [],
+      from: [],
     };
     expect(layoutOf(docs, 'spec = "0.1"\n')).toEqual(defaults);
     expect(layoutOf(docs, "[project\ncontent-root = ")).toEqual(defaults);
@@ -85,6 +96,7 @@ describe("startsServer", () => {
     contentRoot: path.join(repo, "handbook", "pages"),
     outputDir: path.join(repo, "handbook", ".ascribe", "build"),
     sources: [{ folder: path.join(repo, "code"), include: [], ignore: [] }],
+    from: [path.join(repo, "docs", "ascribe.toml")],
   };
   const starts = (...segments: string[]) =>
     startsServer(path.join(repo, ...segments), handbook, layout, projects);
@@ -103,6 +115,11 @@ describe("startsServer", () => {
 
   it("starts for a file in a source's folder", () => {
     expect(starts("code", "src", "main.rs")).toBe(true);
+  });
+
+  it("starts for a file `[from]` takes from, in another project", () => {
+    expect(starts("docs", "ascribe.toml")).toBe(true);
+    expect(starts("docs", "index.md")).toBe(false);
   });
 
   it("doesn't start for a file of a nested project, or outside the content root", () => {
@@ -132,6 +149,7 @@ describe("startsServer", () => {
       contentRoot: "C:\\Repo\\handbook\\pages",
       outputDir: "C:\\Repo\\handbook\\.ascribe\\build",
       sources: [],
+      from: [],
     };
     expect(startsServer("c:\\repo\\HANDBOOK\\pages\\a.md", windows, windowsLayout, [windows])).toBe(
       true,
@@ -153,6 +171,7 @@ describe("changesCheck", () => {
     contentRoot: path.join(repo, "handbook", "pages"),
     outputDir: path.join(repo, "handbook", "out"),
     sources: [{ folder: path.join(repo, "code"), include: [], ignore: [] }],
+    from: [],
   };
   const changes = (...segments: string[]) =>
     changesCheck(path.join(repo, ...segments), handbook, layout, projects);
@@ -198,6 +217,7 @@ describe("changesCheck", () => {
       contentRoot: "C:\\Repo\\handbook\\pages",
       outputDir: "C:\\Repo\\handbook\\.ascribe\\build",
       sources: [],
+      from: [],
     };
     expect(changesCheck("c:\\repo\\HANDBOOK\\ascribe.nav", windows, windowsLayout, [windows])).toBe(
       true,
@@ -276,6 +296,13 @@ describe("toldOfChange", () => {
   it("tells a server of its own files", () => {
     expect(toldOfChange(at("docs/content/a.md"), docs, [], projects)).toBe(true);
     expect(toldOfChange(at("docs/ascribe.toml"), docs, [], projects)).toBe(true);
+  });
+
+  it("tells a server of a file its `[from]` takes from, in another project", () => {
+    const from = [at("api/ascribe.toml")];
+    expect(toldOfChange(at("api/ascribe.toml"), docs, [], projects, from)).toBe(true);
+    expect(toldOfChange(at("api/ascribe.toml"), docs, [], projects)).toBe(false);
+    expect(toldOfChange(at("api/content/a.md"), docs, [], projects, from)).toBe(false);
   });
 
   it("tells a server of a file in its sources' folder that's in no project", () => {

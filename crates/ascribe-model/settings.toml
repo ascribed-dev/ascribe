@@ -49,6 +49,21 @@ type = "string"
 required = true
 description = '''The version of the Ascribe specification this project targets (SPEC §11). It MUST be quoted: `spec = 0.1` is a TOML float and is an error. A processor accepts only the spec versions it implements, compared as exact strings; this reference defines `"0.1"`.'''
 
+[[setting]]
+table = ""
+key = "from"
+kind = "table"
+type = "table of tables"
+description = '''Tables and keys taken from another project's `ascribe.toml`, by the file's path, relative to the folder ascribe.toml is in (§2.1).'''
+
+[[setting]]
+table = "from.<path>"
+key = "take"
+kind = "list"
+type = "array of strings"
+required = true
+description = '''What's taken from the file, each a table or a key as a dotted path: `releases` takes the whole table, `consumer.site` one key of `[consumer]`. It's read as if written here, and can't be written here too.'''
+
 # ---- 3. `[project]` -----------------------------------------------------------
 
 [[setting]]

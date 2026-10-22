@@ -457,6 +457,9 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     crate::hover::hover(ctx, at.position)
                 })
             }),
+            GotoDefinition::METHOD if let Some(location) = model_definition(shared, &request) => {
+                to_json(&request, GotoDefinitionResponse::Scalar(location))
+            }
             GotoDefinition::METHOD => {
                 navigation(shared, &request, |p: lsp_types::GotoDefinitionParams| {
                     let at = p.text_document_position_params;
@@ -772,6 +775,17 @@ fn model_hover(shared: &Shared, request: &Request) -> Option<lsp_types::Hover> {
     shared
         .lock()
         .model_hover(&at.text_document.uri, at.position)
+}
+
+/// Go to Definition in `ascribe.toml`, on a name `[from]` takes; `None` for
+/// any other place or document.
+fn model_definition(shared: &Shared, request: &Request) -> Option<lsp_types::Location> {
+    let params: lsp_types::GotoDefinitionParams =
+        serde_json::from_value(request.params.clone()).ok()?;
+    let at = params.text_document_position_params;
+    shared
+        .lock()
+        .model_definition(&at.text_document.uri, at.position)
 }
 
 /// Completion in a memo file, which isn't a page; `None` for any other

@@ -664,6 +664,14 @@ pub(crate) fn model_field_markdown(
 /// A content type, on its name in `ascribe.toml`: its purpose, and where its
 /// template and guide come from, the keys of its table or the lock `ascribe
 /// templates eject` wrote (decision 809).
+/// A name in `[from]`'s `take` list: where what it takes is written.
+pub(crate) fn taken_markdown(taken: &ascribe_model::Taken) -> String {
+    format!(
+        "**`{}`**, taken from `{}`, where it's written, at line {}. It's read as if written here, and edited there.",
+        taken.key, taken.file, taken.line
+    )
+}
+
 pub(crate) fn type_markdown(t: &ContentType) -> String {
     let mut out = format!("**Content type `{}`**", t.name);
     if let Some(purpose) = &t.purpose {

@@ -10,7 +10,7 @@
 use std::collections::{BTreeMap, HashMap};
 
 use ascribe_core::availability::parse_availability;
-use ascribe_core::{FileId, LineIndex, RelPath, Span, TextEdit, apply_edits};
+use ascribe_core::{LineIndex, RelPath, Span, TextEdit, apply_edits};
 use ascribe_resolve::FileIndex;
 use ascribe_syntax::{Block, BlockKind, DirectiveLine, Inline, InlineKind, LinkForm, PrimaryValue};
 use lsp_types::{Uri, WorkspaceEdit};
@@ -361,15 +361,19 @@ pub(super) fn finish(page: &Page<'_>, uri: &Uri, plan: Plan) -> Result<EditResul
         .parent()
         .map(std::path::Path::to_path_buf)
         .unwrap_or_default();
-    let model =
-        ascribe_model::load_str_in(&model_text, FileId::new(0), &root).map_err(|issues| {
-            let problem = issues
-                .iter()
-                .map(ascribe_check::Diagnostic::from_issue)
-                .find(|d| d.severity == ascribe_check::Severity::Error)
-                .map_or_else(|| "it wouldn't load".to_owned(), |d| d.message);
-            format!("The change would make a problem in `ascribe.toml`: {problem}")
-        })?;
+    let model = ascribe_check::type_files::load_model(
+        &model_text,
+        &root,
+        ascribe_model::SourceBound::Anywhere,
+    )
+    .map_err(|issues| {
+        let problem = issues
+            .iter()
+            .map(ascribe_check::Diagnostic::from_issue)
+            .find(|d| d.severity == ascribe_check::Severity::Error)
+            .map_or_else(|| "it wouldn't load".to_owned(), |d| d.message);
+        format!("The change would make a problem in `ascribe.toml`: {problem}")
+    })?;
 
     let mut page_edits = plan.edits;
     page_edits.sort_by_key(|e| (e.span.start(), e.span.end()));

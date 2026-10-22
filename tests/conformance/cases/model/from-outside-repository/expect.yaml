@@ -1,0 +1,9 @@
+description: >-
+  The file `[from]` names is inside the git repository the project is in,
+  as a source's folder is: one outside it is an error at its path, and
+  isn't read. The suite runs in Ascribe's repository.
+spec: ["7.9"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-from-file, file: ascribe.toml, line: 7}

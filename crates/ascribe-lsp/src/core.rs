@@ -164,6 +164,9 @@ pub(crate) struct Core {
     pub loaded: Option<Loaded>,
     /// Set while the current text of `ascribe.toml` doesn't load.
     pub model_problem: Option<ModelProblem>,
+    /// The files `ascribe.toml`'s `[from]` takes from, absolute: watched as
+    /// it is, whether or not the model loads (SPEC §7.9).
+    from_files: Vec<PathBuf>,
     pub shutdown: bool,
     pub can_watch: bool,
     /// Whether the client registers lenses dynamically, so the server asks
@@ -219,6 +222,7 @@ impl Core {
             config: None,
             loaded: None,
             model_problem: None,
+            from_files: Vec::new(),
             shutdown: false,
             can_watch: false,
             lens_registration: false,
@@ -312,6 +316,61 @@ impl Core {
         ));
     }
 
+    /// Asks the client to watch the files `[from]` takes from, which may be
+    /// outside the folders it watches, each by its folder and name; again
+    /// when they change, and none once there are none. `registered` says
+    /// whether some were asked for before, which are dropped first.
+    fn register_from_watchers(&mut self, registered: bool) {
+        if !self.can_watch {
+            return;
+        }
+        const ID: &str = "ascribe-from-files";
+        if registered {
+            self.next_id += 1;
+            self.send(Request::new(
+                lsp_server::RequestId::from(self.next_id),
+                "client/unregisterCapability".to_owned(),
+                lsp_types::UnregistrationParams {
+                    unregisterations: vec![lsp_types::Unregistration {
+                        id: ID.to_owned(),
+                        method: "workspace/didChangeWatchedFiles".to_owned(),
+                    }],
+                },
+            ));
+        }
+        let watchers: Vec<FileSystemWatcher> = self
+            .from_files
+            .iter()
+            .filter_map(|file| {
+                let folder = crate::uri::path_to_uri(file.parent()?)?;
+                let name = file.file_name()?.to_str()?.to_owned();
+                Some(FileSystemWatcher {
+                    glob_pattern: GlobPattern::Relative(lsp_types::RelativePattern {
+                        base_uri: lsp_types::OneOf::Right(folder),
+                        pattern: name,
+                    }),
+                    kind: None,
+                })
+            })
+            .collect();
+        if watchers.is_empty() {
+            return;
+        }
+        let options = DidChangeWatchedFilesRegistrationOptions { watchers };
+        self.next_id += 1;
+        self.send(Request::new(
+            lsp_server::RequestId::from(self.next_id),
+            "client/registerCapability".to_owned(),
+            RegistrationParams {
+                registrations: vec![Registration {
+                    id: ID.to_owned(),
+                    method: "workspace/didChangeWatchedFiles".to_owned(),
+                    register_options: serde_json::to_value(options).ok(),
+                }],
+            },
+        ));
+    }
+
     /// Registers lenses for the project's pages and its sources' files
     /// (`shown.rs`), when the client registers them dynamically, and again
     /// when the content model moves the sources.
@@ -401,6 +460,15 @@ impl Core {
         let root = config
             .parent()
             .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
+        let from_files: Vec<PathBuf> = ascribe_model::from_files(&text)
+            .iter()
+            .map(|file| normalize(&root.join(file)))
+            .collect();
+        if from_files != self.from_files {
+            let registered = !self.from_files.is_empty();
+            self.from_files = from_files;
+            self.register_from_watchers(registered);
+        }
         // With no repository around the project, a source is read only
         // inside a folder the editor opened (decision 77).
         let bound = if self.bound_sources {
@@ -772,8 +840,58 @@ impl Core {
         {
             return markdown(t.span, crate::hover::type_markdown(t));
         }
+        if let Some(taken) = Core::taken_at(loaded, text, offset) {
+            return markdown(taken.span, crate::hover::taken_markdown(taken));
+        }
         let (span, value) = crate::hover::model_field_markdown(&loaded.model, text, offset)?;
         markdown(span, value)
+    }
+
+    /// What `[from]` takes at `offset` of `text`, the open `ascribe.toml`,
+    /// when it's the text the model was loaded from: a name in a `take` list.
+    fn taken_at<'l>(
+        loaded: &'l Loaded,
+        text: &str,
+        offset: usize,
+    ) -> Option<&'l ascribe_model::Taken> {
+        if loaded.model_text != *text {
+            return None;
+        }
+        loaded
+            .model
+            .taken
+            .iter()
+            .find(|t| t.span.start() <= offset && offset <= t.span.end())
+    }
+
+    /// Go to Definition in the open `ascribe.toml`: on a name in a `take`
+    /// list, the key in the file it's taken from. `None` for any other
+    /// place or document.
+    pub(crate) fn model_definition(
+        &self,
+        uri: &Uri,
+        position: lsp_types::Position,
+    ) -> Option<lsp_types::Location> {
+        let path = Core::doc_path(uri)?;
+        if self.config.as_ref() != Some(&path) {
+            return None;
+        }
+        let text = &self.docs.get(&path)?.text;
+        let loaded = self.loaded.as_ref()?;
+        let index = ascribe_core::LineIndex::new(text);
+        let offset = self.encoding.offset_lenient(&index, text, position);
+        let taken = Core::taken_at(loaded, text, offset)?;
+        let file = normalize(&loaded.root.join(&taken.file));
+        // The column counts characters; past the first, it's exact only for
+        // a key whose line before it is ASCII, as a key's is.
+        let at = lsp_types::Position {
+            line: u32::try_from(taken.line.saturating_sub(1)).ok()?,
+            character: u32::try_from(taken.column).ok()?,
+        };
+        Some(lsp_types::Location {
+            uri: crate::uri::path_to_uri(&file)?,
+            range: lsp_types::Range { start: at, end: at },
+        })
     }
 
     /// What can be written at `position` of an open `ascribe.nav`: its keys,
@@ -973,6 +1091,11 @@ impl Core {
             let Some(path) = Core::doc_path(&event.uri) else {
                 continue;
             };
+            if self.from_files.contains(&path) {
+                // What `[from]` takes is the model's, wherever the file is.
+                sync_model = true;
+                continue;
+            }
             if let Some(loaded) = self.loaded.as_ref() {
                 if crate::shown::used_by_a_source(&loaded.root, &loaded.model, &path) {
                     refresh = true;

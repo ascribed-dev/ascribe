@@ -4454,3 +4454,48 @@ title: Install Quill
 
 Sign in with your company's identity provider.
 '''
+
+[[diagnostic]]
+code = "ASC246"
+slug = "model-from-file"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.9"
+reference = "content-model/index.md#21-taking-from-another-project"
+group = "file"
+message = "`{path}`, the file `[from]` takes from, doesn't exist"
+messages.unreadable = "`{path}`, the file `[from]` takes from, can't be read: {detail}"
+messages.outside-repository = "`{path}`, the file `[from]` takes from, is outside the git repository the project is in"
+messages.opened = "`{path}`, the file `[from]` takes from, is outside the folder that was opened, and with no git repository around the project, it isn't read from outside it; open the folder that contains it"
+fix = "Fix the path after `from`, which is relative to the folder ascribe.toml is in, so it names the other project's `ascribe.toml`, inside the project's repository. With no repository, the editor and `ascribe mcp` read the file only inside the folder they were opened on: open the folder that contains it."
+
+[[diagnostic]]
+code = "ASC247"
+slug = "model-from-take"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.9"
+reference = "content-model/index.md#21-taking-from-another-project"
+group = "file"
+message = "`{file}` has no `{key}` to take"
+messages.own = "`{key}` is this project's own and can't be taken; write it here"
+messages.twice = "`{key}` is taken twice: `{other}` is taken from `{file}` already"
+messages.name = "`{key}` isn't a table or a key to take: write a dotted path of keys, such as `consumer.site`"
+fix = "Name a table or a key the other file has, as a dotted path of keys: `releases` takes the whole table, `consumer.site` one key. Take each once, and not a table and a key in it. `spec`, `[project]`, and `[from]` are each project's own, so write them in this file."
+
+[[diagnostic]]
+code = "ASC248"
+slug = "model-from-written"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.9"
+reference = "content-model/index.md#21-taking-from-another-project"
+group = "file"
+message = "`{key}` is taken from `{file}` and written here too; a key has one home"
+fix = "Delete the key here, to use the other file's, or remove it from `take`, to keep this one. A table that's taken can't have a key of its own here: take the keys it shares instead, one by one."

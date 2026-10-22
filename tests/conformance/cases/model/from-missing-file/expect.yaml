@@ -1,0 +1,8 @@
+description: >-
+  The file `[from]` names must be there: one that isn't is an error at its
+  path, and nothing is taken from it.
+spec: ["7.9"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-from-file, file: ascribe.toml, line: 6}

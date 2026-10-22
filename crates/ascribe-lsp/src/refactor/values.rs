@@ -13,7 +13,7 @@
 use std::collections::HashMap;
 
 use ascribe_core::availability::parse_availability;
-use ascribe_core::{AttributeValue, FileId, LineIndex, RelPath, Span, TextEdit as ByteEdit};
+use ascribe_core::{AttributeValue, LineIndex, RelPath, Span, TextEdit as ByteEdit};
 use ascribe_resolve::FileIndex;
 use ascribe_syntax::{Block, BlockKind, DirectiveLine};
 use lsp_types::{TextEdit, WorkspaceEdit};
@@ -175,7 +175,8 @@ pub(crate) fn rename(ctx: &Ctx, value: &DimensionValue, new: &str) -> Option<Wor
     let file = ModelFile::parse(&ctx.model_text).ok()?;
     let (model_edits, model_text) = file.finish(model_edits(ctx, &file, value, new)?).ok()?;
     let root = ctx.config.parent()?;
-    ascribe_model::load_str_in(&model_text, FileId::new(0), root).ok()?;
+    ascribe_check::type_files::load_model(&model_text, root, ascribe_model::SourceBound::Anywhere)
+        .ok()?;
 
     let mut edits: HashMap<RelPath, Vec<ByteEdit>> = HashMap::new();
     for file in ctx.snapshot.files() {

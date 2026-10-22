@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import type { AstroIntegration } from "astro";
 import { permalinksText } from "./permalinks.js";
-import { consumerMismatches, readProject, type ProjectInfo } from "./project.js";
+import { consumerMismatches, readProject, type BinaryOption, type ProjectInfo } from "./project.js";
 
 type ServerOptions = Parameters<NonNullable<AstroIntegration["hooks"]["astro:server:setup"]>>[0];
 
@@ -97,6 +97,8 @@ export function watchDev(options: {
   onBuilt?: () => void;
   /** The sources as the first build read them. */
   seen?: SeenFiles;
+  /** Where to find the binary, to read a project whose `ascribe.toml` has `[from]`. */
+  binary?: BinaryOption;
 }): DevBuilds {
   const { server, refreshContent, logger, rebuild } = options;
   let project = options.project;
@@ -132,7 +134,7 @@ export function watchDev(options: {
     if (!failed) {
       options.onBuilt?.();
       try {
-        const reloaded = readProject(project.dir);
+        const reloaded = readProject(project.dir, options.binary);
         if (options.builds.some((build, i) => reloaded.siteRoot(build) !== previousSiteRoots[i])) {
           throw new Error(
             "ascribe.toml changed output-dir; restart astro dev to reload the collection.",

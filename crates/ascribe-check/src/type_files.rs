@@ -50,7 +50,8 @@ pub fn lock_path() -> RelPath {
 }
 
 /// Loads the content model in `text`, the `ascribe.toml` of the project in
-/// `root`, as [`ascribe_model::load_str_bounded`] does, gives its types the
+/// `root`, as [`ascribe_model::load_str_bounded`] does, with what `[from]`
+/// takes read through the project's [`DiskFs`], gives its types the
 /// files `templates.lock` records for them ([`from_lock`]), and then
 /// [`check`]s the files its types name, on disk. A problem with one fails the load, as
 /// any of the model's errors does, and the issues returned include the
@@ -64,7 +65,17 @@ pub fn load_model(
     root: &Path,
     bound: SourceBound<'_>,
 ) -> Result<ContentModel, Vec<Issue>> {
-    let mut model = ascribe_model::load_str_bounded(text, FileId::new(0), root, bound)?;
+    // What `[from]` takes is read as the lock is, as a file outside the
+    // content root; where the content root is isn't known yet, and a read
+    // from the project's folder doesn't need it.
+    let taking = DiskFs::new(
+        root,
+        &Layout {
+            content_root: RelPath::root(),
+            output_dir: RelPath::root(),
+        },
+    );
+    let mut model = ascribe_model::load_str_taking(text, FileId::new(0), root, bound, &taking)?;
     let disk = DiskFs::new(root, &Layout::from_model(&model));
     from_lock(&mut model, &disk);
     let problems = check(&model, &disk);

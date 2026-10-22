@@ -84,7 +84,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 | Section | What it's for | In the reference |
 |---|---|---|
-| Top level: `spec` | The only other top-level keys are the tables in §3–§22, `[releases]` (§7.1) and `[[intended]]` (§19.1) among them. | §2 |
+| Top level: `spec` | The only other top-level keys are `[from]` (§2.1) and the tables in §3–§22, `[releases]` (§7.1) and `[[intended]]` (§19.1) among them. | §2 |
 | `[project]` | Where the source lives and where builds write. | §3 |
 | `[types.<name>]` and `[fragments]` | A **content type** is a frontmatter schema for a kind of page. | §4 |
 | `[dimensions.<name>]` | A **dimension** is an axis content varies along (SPEC §4.3), and whose values are availability targets (SPEC §4.4). | §6 |
@@ -109,7 +109,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-237 in all. By severity: 48 advice, 164 error, 25 warning. By level: 211 file, 26 page. By kind of next step: 54 choose, 18 fix, 8 outside, 12 review, 145 write.
+240 in all. By severity: 48 advice, 167 error, 25 warning. By level: 214 file, 26 page. By kind of next step: 54 choose, 18 fix, 8 outside, 12 review, 148 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -350,6 +350,9 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC243` | `baseline-entry-unmatched` | advice | outside | ascribe.baseline holds back `{check}` in `{file}`, and nothing there matches it any more; run `ascribe baseline prune` |
 | `ASC244` | `frontmatter-field-repeated` | advice | fix | the type `{type}` declares `{field}` exactly as `[frontmatter]` does, so this copy changes nothing; delete it, and the type has `[frontmatter]`'s |
 | `ASC245` | `available-planned-line` | error | write | `{target}` has no planned line, so `planned` names no version; declare one in `[releases.{target}] planned`, or write the version |
+| `ASC246` | `model-from-file` | error | write | `{path}`, the file `[from]` takes from, doesn't exist |
+| `ASC247` | `model-from-take` | error | write | `{file}` has no `{key}` to take |
+| `ASC248` | `model-from-written` | error | write | `{key}` is taken from `{file}` and written here too; a key has one home |
 
 ## The VS Code extension
 

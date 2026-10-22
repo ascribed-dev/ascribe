@@ -1,0 +1,10 @@
+# Another project's content model, which the case's takes from.
+spec = "0.1"
+
+[dimensions.pm]
+label = "Package manager"
+values = ["npm", "pnpm"]
+
+[phrases]
+product = "Quill"
+company = "Acme"

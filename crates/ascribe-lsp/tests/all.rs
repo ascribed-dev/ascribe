@@ -32,6 +32,8 @@ mod edit;
 mod edit_examples;
 #[path = "all/examples.rs"]
 mod examples;
+#[path = "all/from.rs"]
+mod from;
 #[path = "all/glossary.rs"]
 mod glossary;
 #[path = "all/lines.rs"]

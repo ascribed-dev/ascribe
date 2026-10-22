@@ -21,7 +21,7 @@ In VS Code, [Project Settings](../editor/settings.md#project-settings) shows a p
 ## Contents
 
 1. [Conventions](index.md#1-conventions)
-2. [Top level: `spec`](index.md#2-top-level-spec)
+2. [Top level: `spec`](index.md#2-top-level-spec), and [taking from another project](index.md#21-taking-from-another-project)
 3. [`[project]`](index.md#3-project)
 4. [`[types.<name>]` and `[fragments]`](index.md#4-typesname-and-fragments)
 5. [Field and attribute types](index.md#5-field-and-attribute-types)
@@ -56,6 +56,18 @@ In VS Code, [Project Settings](../editor/settings.md#project-settings) shows a p
 ## 2. Top level: `spec`
 
 @include: ../_fragments/content-model/spec.md
+
+### 2.1 Taking from another project
+
+Two projects beside each other, such as a product's docs and its landing site, often share facts: the releases, the site's address, a phrase or two. One of them writes each, and the other takes it with `[from]`, so it's written once, and a change to it reaches both. Ascribe's own landing site takes its releases, its address, and the source its examples come from from the docs' `ascribe.toml`.
+
+@include: ../_fragments/content-model/from.md
+
+`spec`, `[project]`, and `[from]` itself can't be taken (`model-from-take`): they're what makes a project its own. Name each table or key once, and not a table and a key in it. Nothing taken can also be written here (`model-from-written`): to change a taken value for this project, remove it from `take` and write it here.
+
+**Rules.** The file must be there and be TOML (`model-from-file`), inside the git repository the project is in, as a source's folder must, and what `take` names must be in it (`model-from-take`). With no repository, the editor and `ascribe mcp` read it only inside the folder they were opened on.
+
+**Editing.** A taken key is changed in the file that writes it. `ascribe versions release` and the editor's actions that change `ascribe.toml` stop with an error naming that file rather than edit a taken key here, so a release is run in the project that writes the releases, and moves the lines of every project that takes them. In the editor, the hover on a name in `take` says where it's written, Go to Definition opens it there, and a change to the file reaches the project at once.
 
 ---
 

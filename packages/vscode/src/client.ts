@@ -16,7 +16,7 @@ import {
 import { PublishedDiagnostics } from "./agents/published.js";
 import { ancestorsWithin, resolveBinary, type Resolution, type ResolvedBinary } from "./binary.js";
 import { CrashCounter } from "./crash.js";
-import { layoutOf, readLayout, type Source } from "./diskChanges.js";
+import { askSources, layoutOf, readLayout, type Source } from "./diskChanges.js";
 import {
   convertEdit,
   convertProjectEdit,
@@ -43,7 +43,12 @@ export interface ProjectHost {
   /** Whether a file belongs to some other project than `project`, or to none. */
   ownedElsewhere(project: Project, uri: vscode.Uri): boolean;
   /** Whether `project`'s server is told a file changed on disk, given its sources (`diskChanges.ts`). */
-  toldOfChange(project: Project, uri: vscode.Uri, sources: readonly Source[]): boolean;
+  toldOfChange(
+    project: Project,
+    uri: vscode.Uri,
+    sources: readonly Source[],
+    from: readonly string[],
+  ): boolean;
   /** Whether `project`'s server is asked for a document's lenses, given its sources' folders (`codeLens.ts`). */
   asksForLenses(
     project: Project,
@@ -82,6 +87,8 @@ export class ProjectServer implements vscode.Disposable {
   private lensSelector: vscode.DocumentFilter[] | undefined;
   /** The sources the running server loaded, read when it registers its lenses. */
   private sources: readonly Source[] = [];
+  /** The files the model's `[from]` takes from, absolute, read with the sources. */
+  private from: readonly string[] = [];
   /** How many times the server has asked for every lens again (`workspace/codeLens/refresh`), for tests. */
   private refreshes = 0;
 
@@ -373,8 +380,10 @@ export class ProjectServer implements vscode.Disposable {
               this.lensSelector = lenses ?? undefined;
               // The server registers its lenses when it loads the model and
               // when the model moves its sources.
-              if (lenses === null) this.sources = [];
-              else void this.readSources();
+              if (lenses === null) {
+                this.sources = [];
+                this.from = [];
+              } else void this.readSources();
             }
           },
           {
@@ -382,7 +391,7 @@ export class ProjectServer implements vscode.Disposable {
             titles: (document, titles, token) =>
               this.host.lensTitles(this.project, document, titles, token),
           },
-          (uri) => this.host.toldOfChange(this.project, uri, this.sources),
+          (uri) => this.host.toldOfChange(this.project, uri, this.sources, this.from),
         ),
         errorHandler: this.errorHandler(),
       },
@@ -423,8 +432,17 @@ export class ProjectServer implements vscode.Disposable {
         document.uri.scheme === "file" && samePath(document.uri.fsPath, this.project.config),
     );
     const layout = open ? layoutOf(this.project, open.getText()) : await readLayout(this.project);
+    // What `[from]` takes is in another file, which the binary follows.
+    const binary = this.binary?.path;
+    const sources =
+      layout.from.length > 0 && binary !== undefined
+        ? ((await askSources(binary, this.project)) ?? layout.sources)
+        : layout.sources;
     // Stopped, or the registration dropped, while the file was read.
-    if (this.lensSelector !== undefined) this.sources = layout.sources;
+    if (this.lensSelector !== undefined) {
+      this.sources = sources;
+      this.from = layout.from;
+    }
   }
 
   private async stopNow(): Promise<void> {
@@ -434,6 +452,7 @@ export class ProjectServer implements vscode.Disposable {
     this.published.clear();
     this.lensSelector = undefined;
     this.sources = [];
+    this.from = [];
     this.status.set("stopped");
     if (!client) return;
     try {

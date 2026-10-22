@@ -1,0 +1,10 @@
+description: >-
+  A key taken and also written here is an error at its name in `take`, so a
+  reader of either file can tell where a value comes from; so is a table
+  taken when this file writes a table in it.
+spec: ["7.9"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-from-written, file: ascribe.toml, line: 7}
+  - {slug: model-from-written, file: ascribe.toml, line: 7}

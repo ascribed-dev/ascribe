@@ -1431,6 +1431,12 @@ export interface ModelSetting {
    */
   default_text?: string;
   /**
+   * The file it's taken from, when `[from]` takes it: a path from the
+   * folder `ascribe.toml` is in. Its value is that file's, and it's
+   * `set`.
+   */
+  from?: string;
+  /**
    * The value in effect: the file's, else the default. Absent when the
    * file leaves it out and its default isn't one value.
    */

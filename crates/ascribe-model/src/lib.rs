@@ -17,6 +17,7 @@
 //! | [`nav`] | [`NavFile`]: `ascribe.nav`, the order of the project's sections and pages |
 //! | [`permalinks`] | [`PermalinkList`]: `ascribe.permalinks`, the project's permalinks and where each is declared |
 //! | [`vale`] | [`vale::Preset`]: the Vale configurations `[checks.vale] preset` names |
+//! | `from` | [`TakenFiles`]: reading what `[from]` takes from another project's `ascribe.toml` |
 //! | [`settings`] | [`settings::settings`]: every key of `ascribe.toml`, from `settings.toml`, which the loader reads its keys and defaults from |
 //! | `crawlers` | [`known_crawlers`]: the crawlers Ascribe knows, by purpose, from `data/crawlers.toml` |
 //!
@@ -40,6 +41,7 @@ mod checks;
 mod crawlers;
 pub mod examples;
 mod fields;
+mod from;
 pub mod inline;
 mod intended;
 mod listing;
@@ -66,6 +68,7 @@ pub use crawlers::{
 };
 pub use examples::{EXAMPLES_FILE, ExamplesConfig, Observation, example_hash};
 pub use fields::{FieldPlace, field_default_span, own_field_place};
+pub use from::{TakenFiles, from_files};
 pub use inline::{InlineMarkup, Segment};
 pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_hash, short_commit};
 pub use model::*;
@@ -133,12 +136,14 @@ pub fn load_with_file(path: impl AsRef<Path>, file: FileId) -> Result<ContentMod
 
 /// Validates model text without touching the file system: the filesystem
 /// rules (`model-content-root-missing`, and the existence half of
-/// `model-glossary-page`) are skipped. For unsaved editor buffers and tests.
+/// `model-glossary-page`) are skipped, and `[from]` is checked as written,
+/// with nothing taken. For unsaved editor buffers and tests.
 pub fn load_str(text: &str, file: FileId) -> Result<ContentModel, Vec<Issue>> {
     loader::load(text, file, None)
 }
 
 /// [`load_str`], with the project directory, so the filesystem rules run.
+/// `[from]` takes nothing: [`load_str_taking`] reads what it takes.
 pub fn load_str_in(
     text: &str,
     file: FileId,
@@ -171,7 +176,19 @@ pub fn load_str_bounded(
     project_dir: &Path,
     bound: SourceBound<'_>,
 ) -> Result<ContentModel, Vec<Issue>> {
-    loader::load_bounded(text, file, project_dir, bound)
+    loader::load_bounded(text, file, project_dir, bound, None)
+}
+
+/// [`load_str_bounded`], with what `[from]` takes read through `files`
+/// (SPEC §7.9): the project's `FileSystem`, which the caller has.
+pub fn load_str_taking(
+    text: &str,
+    file: FileId,
+    project_dir: &Path,
+    bound: SourceBound<'_>,
+    files: &dyn TakenFiles,
+) -> Result<ContentModel, Vec<Issue>> {
+    loader::load_bounded(text, file, project_dir, bound, Some(files))
 }
 
 fn syntax_issue(file: FileId, detail: String) -> Issue {

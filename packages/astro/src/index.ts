@@ -280,7 +280,10 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         if (named) fail(nameProblems(list), "the `projects` option is wrong");
         const codegen = command === "preview" ? "" : fileURLToPath(createCodegenDir());
         entries = list.map((entry) => {
-          const project = readProject(path.resolve(root, entry.project ?? "."));
+          const project = readProject(path.resolve(root, entry.project ?? "."), {
+            binary: options.binary,
+            root,
+          });
           return {
             name: entry.name,
             build: entry.build,
@@ -404,7 +407,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
             if (entries.length < 2) return;
             const current = entries.map((entry) => ({
               ...entry,
-              project: readProject(entry.project.dir),
+              project: readProject(entry.project.dir, { binary: options.binary, root }),
             }));
             fail(basePathClashes(current), "two projects share a base path");
             fail(pagesUnderOtherPaths(current), "a page is under another project's base path");
@@ -569,6 +572,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
             astro: routing,
             builds: group.entries.map((entry) => entry.build),
             rebuild: group.rebuild,
+            ...(binary === undefined ? {} : { binary: { binary, root: group.project.dir } }),
             onBuilt: () => {
               if (reviewed !== undefined && group.entries.includes(reviewed)) review?.rebuilt();
             },
