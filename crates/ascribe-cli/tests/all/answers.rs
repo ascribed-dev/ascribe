@@ -887,6 +887,164 @@ fn refs_to_nothing_is_exit_code_1() {
     run(dir.path(), &["refs", "phrase:", "--config", "site"], 2);
 }
 
+/// A model with a release target, `server`, whose lines are 2.0 and 2.1,
+/// and 2.2 planned.
+const RELEASES: &str = r#"spec = "0.1"
+
+[project]
+content-root = "docs"
+
+[dimensions.deployment]
+values = ["cloud", "server"]
+versionless = ["cloud"]
+
+[releases.server]
+live = ["2.1", "2.0"]
+planned = ["2.2"]
+"#;
+
+fn releases() -> TempDir {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let site = dir.path().join("site");
+    write(&site.join("ascribe.toml"), RELEASES);
+    write(
+        &site.join("docs/a.md"),
+        "---\ntitle: A\navailable: server 2.1\n---\n\n## Old\n@available: server (preview 2.0, ga 2.1.3)\n\nOld.\n\n## Next\n@available: cloud, server preview planned\n\nNext.\n",
+    );
+    write(
+        &site.join("docs/b.md"),
+        "---\ntitle: B\n---\n\n@available: cloud\nCloud only.\n\n@available: deployment\nEverywhere.\n\n@available: server 2.0\nSince 2.0.\n",
+    );
+    dir
+}
+
+#[test]
+fn refs_lists_the_marks_that_name_a_version_in_a_release_line() {
+    let dir = releases();
+    let refs = |target: &str| {
+        let value = json(dir.path(), &["refs", target, "--config", "site"], 0);
+        assert_eq!(value["kind"], "release", "{value}");
+        assert_eq!(value["exists"], true, "{value}");
+        value["places"]
+            .as_array()
+            .expect("places")
+            .iter()
+            .map(|p| {
+                assert_eq!(p["use"], "availability", "{p}");
+                format!(
+                    "{}:{} {}",
+                    p["file"].as_str().unwrap(),
+                    p["line"],
+                    p["spec"].as_str().unwrap()
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+    // A history names each of its versions; a version is in each line its
+    // parts start with.
+    assert_eq!(
+        refs("release:server@2.1"),
+        [
+            "docs/a.md:3 server 2.1",
+            "docs/a.md:7 server (preview 2.0, ga 2.1.3)",
+        ]
+    );
+    assert_eq!(
+        refs("release:server@2.0"),
+        [
+            "docs/a.md:7 server (preview 2.0, ga 2.1.3)",
+            "docs/b.md:11 server 2.0",
+        ]
+    );
+    assert_eq!(
+        refs("release:server@2.1.3"),
+        ["docs/a.md:7 server (preview 2.0, ga 2.1.3)"]
+    );
+    // `planned` is the planned line.
+    assert_eq!(
+        refs("release:server@2.2"),
+        ["docs/a.md:12 cloud, server preview planned"]
+    );
+    assert!(refs("release:server@3").is_empty());
+
+    let text = stdout(&run(
+        dir.path(),
+        &["refs", "release:server@2.0", "--config", "site"],
+        0,
+    ));
+    assert_eq!(
+        text,
+        "docs/a.md:7:13: availability `server (preview 2.0, ga 2.1.3)`\n\
+         docs/b.md:11:13: availability `server 2.0`\n\
+         \n\
+         2 places use release:server@2.0.\n"
+    );
+}
+
+#[test]
+fn refs_of_a_release_line_needs_a_release_target_and_a_version() {
+    let dir = releases();
+    // `cloud` is a target the project lists no releases for.
+    let value = json(
+        dir.path(),
+        &["refs", "release:cloud@1.0", "--config", "site"],
+        1,
+    );
+    assert_eq!(value["exists"], false);
+    assert_eq!(value["total"], 0);
+    for bad in [
+        "release:server",
+        "release:@2.0",
+        "release:server@",
+        "release:server@v2",
+    ] {
+        let out = run(dir.path(), &["refs", bad, "--config", "site"], 2);
+        assert!(
+            stderr(&out).contains("isn't a target"),
+            "{bad}: {}",
+            stderr(&out)
+        );
+    }
+}
+
+#[test]
+fn refs_shows_the_spec_beside_each_availability() {
+    let dir = releases();
+    let value = json(
+        dir.path(),
+        &["refs", "dimension:deployment", "--config", "site"],
+        0,
+    );
+    let specs: Vec<&str> = value["places"]
+        .as_array()
+        .expect("places")
+        .iter()
+        .filter(|p| p["use"] == "availability")
+        .map(|p| p["spec"].as_str().expect("a spec"))
+        .collect();
+    assert!(specs.contains(&"cloud, server preview planned"), "{value}");
+    assert!(specs.contains(&"deployment"), "{value}");
+    let text = stdout(&run(
+        dir.path(),
+        &["refs", "dimension:deployment", "--config", "site"],
+        0,
+    ));
+    assert!(
+        text.contains("docs/b.md:8:13: availability `deployment`\n"),
+        "{text}"
+    );
+    // Every other use has none.
+    let other = json(dir.path(), &["refs", "site/docs/a.md"], 0);
+    assert!(other["places"].as_array().expect("places").is_empty());
+    let project = project();
+    let phrase = json(
+        project.path(),
+        &["refs", "phrase:product", "--config", "site"],
+        0,
+    );
+    assert!(phrase["places"][0]["spec"].is_null(), "{phrase}");
+}
+
 #[test]
 fn refs_lists_where_an_image_is_shown_linked_and_named() {
     let dir = project();

@@ -161,6 +161,7 @@ fn checked(global: &Global, err: &mut dyn Write) -> Result<(check::Outcome, Vec<
         code: Vec::new(),
         summary: false,
         format: check::Format::Text,
+        limit: None,
         deny_warnings: false,
         fix: false,
         vale: false,

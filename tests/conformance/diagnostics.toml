@@ -1591,12 +1591,12 @@ evidence = []
 spec = "7.1"
 reference = "content-model/index.md#11-the-file"
 group = "file"
-message = "unknown key `{key}` in `[{table}]`"
-messages.suggestion = "unknown key `{key}` in `[{table}]`; did you mean `{suggestion}`?"
+message = "unknown key `{key}` in `[{table}]`; this is ascribe {version}, and the project may need a newer one"
+messages.suggestion = "unknown key `{key}` in `[{table}]`; did you mean `{suggestion}`? This is ascribe {version}, and the project may need a newer one"
 messages.type-key = "`{key}` isn't a key of `[{table}]`: a page says what type it is in its frontmatter, with `type: {type}`"
 messages.glossary-terms = "`{key}` isn't a key of `[{table}]`: a term is a heading marked `@term` on a page that `[glossary] pages` lists"
 messages.intended-term = "`{key}` isn't a key of `[[{table}]]`: a glossary term is acknowledged with `@intended` at the top of its section, under its heading"
-fix = "Fix the key's spelling, or remove it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`. `[[intended]]` has no `term`: acknowledge a term's problem with `@intended` under its heading."
+fix = "Fix the key's spelling, or remove it. A key added in a later version of Ascribe is unknown to an older one: when the project was written for a newer Ascribe, install it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`. `[[intended]]` has no `term`: acknowledge a term's problem with `@intended` under its heading."
 
 [[diagnostic]]
 code = "ASC062"
@@ -2791,7 +2791,7 @@ area = "pages"
 when = "A page's Markdown, as a build writes it for agents to read, is as long as the limit or longer: 50,000 characters, or `[checks.page-size] limit`. A page over the limit in several builds is one problem, with its size in the build where it's longest"
 message = "this page's Markdown is {size} characters in build `{build}`, and an agent reads under {limit} in one piece; split the page, or move long tables and code below the prose"
 messages.builds = "this page's Markdown is up to {size} characters in builds {builds}, and an agent reads under {limit} in one piece; split the page, or move long tables and code below the prose"
-fix = "Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`. It's the spec's `page-size-markdown` check, made from the build before a deploy; `ascribe report agents` names this check for it, and for the spec's other checks of a page's size."
+fix = "Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The problem names the page's largest parts, up to five, largest first, each with its size: its sections, at their headings, and its includes, at their `@include` lines. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`. It's the spec's `page-size-markdown` check, made from the build before a deploy; `ascribe report agents` names this check for it, and for the spec's other checks of a page's size."
 
 [[diagnostic]]
 code = "ASC150"

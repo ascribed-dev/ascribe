@@ -70,6 +70,7 @@ impl ConformanceAdapter for SyntaxAdapter {
                     line: pos.line + 1,
                     column: pos.col + 1,
                     severity: None,
+                    related: Vec::new(),
                 });
             }
         }

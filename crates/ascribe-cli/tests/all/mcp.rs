@@ -580,6 +580,37 @@ fn the_commands_json_has_what_the_tools_need() {
     );
 }
 
+/// Both revisions give the version `ascribe --version` prints, `+dev` and
+/// commit included, as the server's.
+#[test]
+fn the_server_info_has_the_full_version() {
+    let repo = repository();
+    let printed = stdout(repo.path(), &["--version"]);
+    let version = printed
+        .trim()
+        .strip_prefix("ascribe ")
+        .expect("the name, then the version");
+    assert!(version.starts_with(env!("CARGO_PKG_VERSION")), "{version}");
+
+    let mut modern = Server::start(repo.path());
+    let result = modern.result("tools/list", json!({}));
+    let info = &result["_meta"]["io.modelcontextprotocol/serverInfo"];
+    assert_eq!(info["name"], "ascribe", "{result}");
+    assert_eq!(info["version"], version, "{result}");
+
+    let mut legacy = Server::start(repo.path());
+    legacy.modern = false;
+    let result = legacy.result(
+        "initialize",
+        json!({
+            "protocolVersion": "2025-11-25",
+            "capabilities": {},
+            "clientInfo": { "name": "tests", "version": "0" },
+        }),
+    );
+    assert_eq!(result["serverInfo"]["version"], version, "{result}");
+}
+
 #[test]
 fn both_revisions_list_the_same_tools_in_the_same_order() {
     let repo = repository();
@@ -1328,4 +1359,42 @@ fn check_holds_back_what_the_baseline_lists_and_counts_it() {
     let (_, structured) = server.call_ok("ascribe_check", json!({ "response_format": "detailed" }));
     assert_eq!(structured["summary"]["baselined"], 1, "{structured}");
     assert_eq!(structured["summary"]["advice"], 0, "{structured}");
+}
+
+/// A project written for a newer Ascribe has keys this one doesn't know: a
+/// tool's reply quotes the first, whose message names this Ascribe's version
+/// (#849), and so does the command's.
+#[test]
+fn an_unknown_key_says_which_ascribe_read_it() {
+    let dir = tempfile::tempdir().unwrap();
+    write_project(dir.path());
+    write(
+        &dir.path().join("ascribe.toml"),
+        &MODEL.replacen(
+            "spec = \"0.1\"\n",
+            "spec = \"0.1\"\nlayouts = \"wide\"\n",
+            1,
+        ),
+    );
+    let note = format!(
+        "unknown key `layouts` in `[ascribe.toml]`; this is ascribe {}, and the project may need a newer one",
+        env!("CARGO_PKG_VERSION")
+    );
+
+    let mut server = Server::start(dir.path());
+    let error = server.call_error("ascribe_outline", json!({ "page": "docs/install.md" }));
+    assert!(error.contains("ascribe.toml has errors"), "{error}");
+    assert!(error.contains(&note), "{error}");
+
+    let out = ascribe(dir.path(), &["outline", "docs/install.md"]);
+    assert!(!out.status.success(), "{out:?}");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains(&note), "{stderr}");
+    let out = ascribe(dir.path(), &["check"]);
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(text.contains(&note), "{text}");
 }

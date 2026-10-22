@@ -17,6 +17,9 @@ use crate::names::{self, is_key, is_name_word, list, suggest};
 use crate::settings;
 use crate::toml_util::{V, describe, entries, join, sp};
 
+/// This Ascribe's version, which an unknown key's message names.
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 pub(crate) struct Loader<'s> {
     pub src: &'s str,
     pub file: FileId,
@@ -155,6 +158,16 @@ impl<'s> Loader<'s> {
         Issue::new(slug, self.loc(span))
     }
 
+    /// `model-unknown-key` for `key` in `table`, as a message names it. The
+    /// message names this Ascribe's version: a key a later version added is
+    /// unknown to this one, and which keys those are can't be known here.
+    pub(crate) fn unknown_key(&self, span: Span, key: &str, table: &str) -> Issue {
+        self.issue(diagnostics::MODEL_UNKNOWN_KEY, span)
+            .with_arg("key", key)
+            .with_arg("table", table)
+            .with_arg("version", VERSION)
+    }
+
     pub fn push(&mut self, issue: Issue) {
         self.issues.push(issue);
     }
@@ -287,10 +300,7 @@ impl<'s> Loader<'s> {
             if allowed.contains(&key) {
                 continue;
             }
-            let mut issue = self
-                .issue(diagnostics::MODEL_UNKNOWN_KEY, span)
-                .with_arg("key", key)
-                .with_arg("table", path);
+            let mut issue = self.unknown_key(span, key, path);
             if let Some(s) = suggest(key, allowed.iter().copied()) {
                 issue = issue.with_variant("suggestion").with_arg("suggestion", s);
             }

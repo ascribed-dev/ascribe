@@ -392,6 +392,7 @@ fn fix(projects: &dyn Projects, arguments: &Arguments) -> Result<String, String>
         code: Vec::new(),
         summary: false,
         format: check::Format::Prompt,
+        limit: None,
         deny_warnings: false,
         fix: false,
         vale: false,

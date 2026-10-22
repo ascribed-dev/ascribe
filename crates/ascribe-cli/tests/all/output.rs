@@ -921,6 +921,14 @@ fn answers() {
         )),
     );
     expect(
+        "refs-release.txt",
+        &stdout(&run(
+            &root,
+            &["refs", "release:self-managed@3.5", "--config", quill],
+            0,
+        )),
+    );
+    expect(
         "refs.json",
         &json(&run(
             &root,

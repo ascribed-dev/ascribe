@@ -10,12 +10,19 @@
 //! language server already reports each edit, and a hook would report it
 //! twice.
 //!
+//! The language server, the hook, and the MCP server run `ascribe` through
+//! the plugin's launcher, `launcher/ascribe.sh`, which finds the binary the
+//! VS Code extension would: `ASCRIBE_PATH`, then the project's
+//! `node_modules/.bin/ascribe`, then `ascribe` on the path. A plugin is
+//! installed once for every project, so `ascribe` from the path alone would
+//! be whatever is installed globally, not the version the project pins.
+//!
 //! Only its test uses it: the test writes the plugin with
 //! `ASCRIBE_BLESS=1`, and fails when the plugin differs.
 
 use serde_json::{Value, json};
 
-use super::settings::{STOP_TIMEOUT, mcp_servers};
+use super::settings::STOP_TIMEOUT;
 use super::{prompts, skill};
 
 /// The plugin's name, which names its commands: `/ascribe:check`.
@@ -32,8 +39,22 @@ const DESCRIPTION: &str = concat!(
      own work. Commands for the named prompts."
 );
 
+/// The launcher, relative to the plugin's folder. Not in `bin/`, which
+/// Claude Code puts on the path and claude.ai won't install a plugin with.
+const LAUNCHER: &str = "launcher/ascribe.sh";
+
+/// The launcher's text: a POSIX shell script, run with `sh` so it needs no
+/// executable bit, and so it runs on Windows through Git's `sh`, which
+/// Claude Code needs there.
+const LAUNCHER_TEXT: &str = include_str!("launcher.sh");
+
+/// The launcher's path, as the harness expands it in a command or an
+/// argument.
+const LAUNCHER_PATH: &str = "${CLAUDE_PLUGIN_ROOT}/launcher/ascribe.sh";
+
 /// The stop hook's command.
-const STOP_HOOK: &str = "ascribe agents hook claude-code --event stop";
+const STOP_HOOK: &str =
+    "sh \"${CLAUDE_PLUGIN_ROOT}/launcher/ascribe.sh\" agents hook claude-code --event stop";
 
 /// The plugin's homepage: the agents guide.
 pub(crate) const HOMEPAGE: &str = ascribe_core::docs_permalink!("agents-guide");
@@ -100,14 +121,19 @@ fn files() -> Vec<(String, String)> {
             ".lsp.json".to_owned(),
             pretty(&json!({
                 NAME: {
-                    "command": "ascribe",
-                    "args": ["lsp"],
+                    "command": "sh",
+                    "args": [LAUNCHER_PATH, "lsp"],
                     "extensionToLanguage": { ".md": "markdown" },
                     "diagnostics": true,
                 }
             })),
         ),
-        (".mcp.json".to_owned(), pretty(&mcp_servers("ascribe"))),
+        (
+            ".mcp.json".to_owned(),
+            pretty(&json!({
+                "mcpServers": { NAME: { "command": "sh", "args": [LAUNCHER_PATH, "mcp"] } }
+            })),
+        ),
         (
             "hooks/hooks.json".to_owned(),
             pretty(&json!({
@@ -122,6 +148,7 @@ fn files() -> Vec<(String, String)> {
                 }
             })),
         ),
+        (LAUNCHER.to_owned(), LAUNCHER_TEXT.to_owned()),
     ];
     for (file, text) in skill::files(None) {
         files.push((format!("skills/{}/{file}", skill::NAME), text));
@@ -319,10 +346,16 @@ mod tests {
         assert_eq!(entry["name"], NAME);
         let source = folder().join(entry["source"].as_str().unwrap());
         assert!(source.join(".claude-plugin/plugin.json").is_file());
-        assert_eq!(read(".lsp.json")[NAME]["args"][0], "lsp");
-        assert_eq!(read(".mcp.json")["mcpServers"]["ascribe"]["args"][0], "mcp");
+        assert_eq!(read(".lsp.json")[NAME]["args"][0], LAUNCHER_PATH);
+        assert_eq!(read(".lsp.json")[NAME]["args"][1], "lsp");
+        let mcp = &read(".mcp.json")["mcpServers"]["ascribe"];
+        assert_eq!(mcp["args"][0], LAUNCHER_PATH);
+        assert_eq!(mcp["args"][1], "mcp");
         let stop = &read("hooks/hooks.json")["hooks"]["Stop"][0]["hooks"][0];
         assert_eq!(stop["command"], STOP_HOOK);
+        assert!(STOP_HOOK.contains(LAUNCHER_PATH));
+        assert_eq!(LAUNCHER_PATH, format!("${{CLAUDE_PLUGIN_ROOT}}/{LAUNCHER}"));
+        assert!(folder().join(LAUNCHER).is_file());
         assert!(folder().join("skills/ascribe/SKILL.md").is_file());
         for command in ["check", "new-page", "review"] {
             assert!(folder().join(format!("commands/{command}.md")).is_file());
@@ -360,5 +393,141 @@ mod tests {
             )
             .unwrap();
         assert!(model < prompt, "{text}");
+    }
+
+    /// The launcher runs the binary the VS Code extension would, in its
+    /// order: `ASCRIBE_PATH`, then the project's `node_modules/.bin/ascribe`
+    /// from the project's folder up to the repository's root, then
+    /// `ascribe` on the path. Each binary here is a script that prints its
+    /// name and arguments. Unix only: on Windows the launcher runs in Git's
+    /// `sh`, which a test can't count on finding.
+    #[cfg(unix)]
+    mod launcher {
+        use std::fs;
+        use std::os::unix::fs::PermissionsExt;
+        use std::path::Path;
+        use std::process::{Command, Output};
+
+        use super::super::LAUNCHER_TEXT;
+
+        /// A binary at `path` that prints `name` and its arguments.
+        fn fake(path: &Path, name: &str) {
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(path, format!("#!/bin/sh\necho {name} \"$@\"\n")).unwrap();
+            fs::set_permissions(path, fs::Permissions::from_mode(0o755)).unwrap();
+        }
+
+        /// A temporary folder with the launcher, a global `ascribe` in
+        /// `global/`, and a repository, `repo/`, whose project is
+        /// `repo/docs/`.
+        fn world() -> tempfile::TempDir {
+            let dir = tempfile::tempdir().unwrap();
+            fs::write(dir.path().join("ascribe.sh"), LAUNCHER_TEXT).unwrap();
+            fake(&dir.path().join("global/ascribe"), "global");
+            fs::create_dir_all(dir.path().join("repo/.git")).unwrap();
+            fs::create_dir_all(dir.path().join("repo/docs")).unwrap();
+            dir
+        }
+
+        /// Runs the launcher with `lsp`, from `cwd`, with `env` set and
+        /// `global/` first on the path.
+        fn run(dir: &Path, cwd: &Path, env: &[(&str, &Path)]) -> Output {
+            let path = format!("{}:/usr/bin:/bin", dir.join("global").display());
+            let mut command = Command::new("sh");
+            command
+                .arg(dir.join("ascribe.sh"))
+                .arg("lsp")
+                .current_dir(cwd)
+                .env("PATH", path)
+                .env_remove("ASCRIBE_PATH")
+                .env_remove("CLAUDE_PROJECT_DIR");
+            for (key, value) in env {
+                command.env(key, value);
+            }
+            command.output().unwrap()
+        }
+
+        fn ran(output: &Output) -> String {
+            assert!(output.status.success(), "{output:?}");
+            String::from_utf8_lossy(&output.stdout).trim().to_owned()
+        }
+
+        #[test]
+        fn ascribe_path_comes_first() {
+            let dir = world();
+            let root = dir.path();
+            fake(&root.join("repo/docs/node_modules/.bin/ascribe"), "project");
+            fake(&root.join("pinned/ascribe"), "setting");
+            let pinned = root.join("pinned/ascribe");
+            let out = run(root, &root.join("repo/docs"), &[("ASCRIBE_PATH", &pinned)]);
+            assert_eq!(ran(&out), "setting lsp");
+        }
+
+        #[test]
+        fn an_ascribe_path_that_isnt_a_binary_is_an_error_and_doesnt_fall_through() {
+            let dir = world();
+            let root = dir.path();
+            fake(&root.join("repo/docs/node_modules/.bin/ascribe"), "project");
+            let missing = root.join("nowhere/ascribe");
+            let out = run(root, &root.join("repo/docs"), &[("ASCRIBE_PATH", &missing)]);
+            assert_eq!(out.status.code(), Some(127), "{out:?}");
+            assert!(out.stdout.is_empty(), "{out:?}");
+            assert!(String::from_utf8_lossy(&out.stderr).contains("ASCRIBE_PATH"));
+        }
+
+        #[test]
+        fn the_projects_binary_comes_before_the_one_on_the_path() {
+            let dir = world();
+            let root = dir.path();
+            fake(&root.join("repo/docs/node_modules/.bin/ascribe"), "project");
+            assert_eq!(ran(&run(root, &root.join("repo/docs"), &[])), "project lsp");
+        }
+
+        /// A project in a monorepo finds the binary installed at the
+        /// repository's root, as the extension does.
+        #[test]
+        fn the_projects_binary_is_looked_for_up_to_the_repositorys_root() {
+            let dir = world();
+            let root = dir.path();
+            fake(&root.join("repo/node_modules/.bin/ascribe"), "root");
+            assert_eq!(ran(&run(root, &root.join("repo/docs"), &[])), "root lsp");
+        }
+
+        #[test]
+        fn a_binary_above_the_repository_isnt_the_projects() {
+            let dir = world();
+            let root = dir.path();
+            fake(&root.join("node_modules/.bin/ascribe"), "outside");
+            assert_eq!(ran(&run(root, &root.join("repo/docs"), &[])), "global lsp");
+        }
+
+        /// Claude Code runs a hook from wherever its session is, and says
+        /// where the project is in `CLAUDE_PROJECT_DIR`.
+        #[test]
+        fn claude_project_dir_is_where_the_project_is_looked_for() {
+            let dir = world();
+            let root = dir.path();
+            fake(&root.join("repo/docs/node_modules/.bin/ascribe"), "project");
+            let project = root.join("repo/docs");
+            let out = run(root, root, &[("CLAUDE_PROJECT_DIR", &project)]);
+            assert_eq!(ran(&out), "project lsp");
+        }
+
+        #[test]
+        fn without_a_project_binary_the_one_on_the_path_runs() {
+            let dir = world();
+            let root = dir.path();
+            assert_eq!(ran(&run(root, &root.join("repo/docs"), &[])), "global lsp");
+        }
+
+        #[test]
+        fn with_no_binary_at_all_it_says_how_to_install_one() {
+            let dir = world();
+            let root = dir.path();
+            fs::remove_file(root.join("global/ascribe")).unwrap();
+            let out = run(root, &root.join("repo/docs"), &[]);
+            assert_eq!(out.status.code(), Some(127), "{out:?}");
+            assert!(String::from_utf8_lossy(&out.stderr).contains("@ascribed/cli"));
+        }
     }
 }

@@ -65,6 +65,25 @@ pub struct ExpectedDiagnostic {
     /// levels. Compared only when given.
     #[serde(default)]
     pub severity: Option<String>,
+    /// The other places the diagnostic names, its related information, in
+    /// the order it names them. Compared only when given, and then exactly.
+    #[serde(default)]
+    pub related: Option<Vec<ExpectedRelated>>,
+}
+
+/// An expected place a diagnostic names besides its own.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ExpectedRelated {
+    /// The file, relative to the content root. Defaults to `input.md` in
+    /// single-file cases; required in project cases.
+    #[serde(default)]
+    pub file: Option<String>,
+    /// The 1-based line.
+    pub line: u32,
+    /// The note shown with it. Compared only when given.
+    #[serde(default)]
+    pub label: Option<String>,
 }
 
 impl fmt::Display for ExpectedDiagnostic {
@@ -81,6 +100,17 @@ impl fmt::Display for ExpectedDiagnostic {
         }
         if let Some(severity) = &self.severity {
             write!(f, " ({severity})")?;
+        }
+        for r in self.related.iter().flatten() {
+            write!(
+                f,
+                "; related {}:{}",
+                r.file.as_deref().unwrap_or("input.md"),
+                r.line
+            )?;
+            if let Some(label) = &r.label {
+                write!(f, " {label:?}")?;
+            }
         }
         Ok(())
     }

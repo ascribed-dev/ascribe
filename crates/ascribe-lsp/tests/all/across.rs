@@ -151,6 +151,32 @@ fn a_model_change_runs_them_again() {
 }
 
 #[test]
+fn a_model_that_stops_loading_clears_them_and_they_come_back_when_it_loads() {
+    let f = project();
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let (config, b) = (f.path("ascribe.toml"), f.path("docs/b.md"));
+    let before = found(&client, &config);
+    client.open(&config, 1, MODEL);
+    client.replace(&config, 2, &format!("{MODEL}unknown-key = 1\n"));
+    client.settle();
+    assert_eq!(client.codes(&config), ["model-unknown-key"]);
+    assert!(client.codes(&b).is_empty());
+    assert!(client.codes(&f.path("docs/glossary.md")).is_empty());
+
+    // The same model as before: nothing in it changed, yet every check
+    // runs again.
+    client.replace(&config, 3, MODEL);
+    client.settle();
+    assert_eq!(found(&client, &config), before);
+    assert_eq!(client.codes(&b), ["page-orphan"]);
+    assert_eq!(
+        client.codes(&f.path("docs/glossary.md")),
+        ["glossary-term-unused"]
+    );
+}
+
+#[test]
 fn what_is_unused_is_what_the_inventory_counts_no_use_of() {
     let f = project();
     let mut client = Client::start(&f.root());

@@ -101,6 +101,10 @@ mod tests {
             "fix_unwritable",
             "a file check --fix fixed can't be written",
         ),
+        (
+            "limit_not_concise",
+            "check --limit, and the format isn't concise",
+        ),
         ("vale_no_preset", "[checks.vale] names no preset to eject"),
         ("vale_config_exists", ".vale.ini or .vale is there already"),
         (
@@ -456,7 +460,8 @@ mod tests {
                 | CheckError::NoVale
                 | CheckError::Fix(_)
                 | CheckError::Code(_)
-                | CheckError::Baseline(_) => {}
+                | CheckError::Baseline(_)
+                | CheckError::LimitNotConcise => {}
             }
         }
         fn report(e: &ReportError) {
@@ -758,6 +763,7 @@ mod tests {
             Box::new(CheckError::Scope(ScopeError::Missing { path: path() })),
             Box::new(CheckError::Stdin(io_error())),
             Box::new(CheckError::NoVale),
+            Box::new(CheckError::LimitNotConcise),
             Box::new(CheckError::Fix(ascribe_check::fix::FixError {
                 path: path(),
                 source: io_error(),
