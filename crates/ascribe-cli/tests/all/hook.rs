@@ -802,3 +802,30 @@ fn what_the_baseline_holds_back_is_left_out_and_counted() {
         "{reason}"
     );
 }
+
+#[test]
+fn a_baseline_that_cant_be_read_is_named_after_an_edit() {
+    let dir = project();
+    let root = dir.path();
+    fs::write(
+        root.join("ascribe.baseline"),
+        "# ascribe baseline 1\nhtml-comment 0 docs/guide.md\n",
+    )
+    .unwrap();
+    let input = edit_input("claude-code", root, "docs/guide.md");
+    let cache = tempfile::tempdir().unwrap();
+    // In the hook, and through the check server: the errors still reach
+    // the agent, with the line to fix.
+    for out in [
+        hook(&["claude-code"], &input, None),
+        served(&["claude-code"], &input, cache.path()),
+    ] {
+        let said = context("claude-code", &out);
+        assert!(said.contains("[ASC036]"), "{said}");
+        assert!(
+            said.contains("`ascribe.baseline` can't be read, so the check held nothing back: ascribe.baseline:2: ")
+                && said.contains("Fix the line, then run `ascribe check`."),
+            "{said}"
+        );
+    }
+}

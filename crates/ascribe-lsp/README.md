@@ -982,7 +982,8 @@ glossary page, not in `ascribe.toml`. Elsewhere in the file it answers `null`.
   request sends. Vale's alerts are held back as they're found. Once no round
   is due, the entries no finding of each file's last round matches are
   published on `ascribe.baseline` as `baseline-entry-unmatched`, but only
-  when the editor's build is every build, and never Vale's; a line that
+  when the editor's build is every build, and never Vale's or those of the
+  checks the editor doesn't run (`NOT_IN_EDITOR`); a line that
   doesn't parse is published there as an error, and nothing is held back.
 - **Stale results.** A worker thread computes from a `Snapshot`. Before it
   publishes a file's diagnostics it checks, under the lock that serializes

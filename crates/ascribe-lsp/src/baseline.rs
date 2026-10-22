@@ -15,7 +15,8 @@
 //! of the checks across the project, matches it ([`published`]). The
 //! editor checks its own build, so it says so only when that build is the
 //! project's every build, as `ascribe check` says so only when it checks
-//! every build; and never for Vale's, which it runs on open documents only.
+//! every build; and never for Vale's, which it runs on open documents only,
+//! nor for the checks it doesn't run (`ascribe_check::NOT_IN_EDITOR`).
 
 use std::collections::{HashMap, HashSet};
 
@@ -158,8 +159,13 @@ pub(crate) fn published(
         }
         Ok(_) if !every_build => Vec::new(),
         Ok(baseline) => {
-            let prose = diagnostics::PROSE.as_str();
-            baseline::stale(&model.checks, baseline, matched, &[prose])
+            // Vale's, and the checks the editor doesn't run, such as
+            // `image-unused`: it found nothing of theirs to match.
+            let not_run: Vec<&str> = std::iter::once(diagnostics::PROSE)
+                .chain(ascribe_check::NOT_IN_EDITOR.iter().copied())
+                .map(|slug| slug.as_str())
+                .collect();
+            baseline::stale(&model.checks, baseline, matched, &not_run)
                 .iter()
                 .map(|d| to_lsp(d, &index, encoding, &|_| None))
                 .collect()

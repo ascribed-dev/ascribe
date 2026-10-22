@@ -236,3 +236,27 @@ fn a_held_findings_quick_fix_moves_it_to_an_intended_at_its_block() {
     assert!(!codes.iter().any(|c| c == "html-comment"), "{codes:?}");
     assert!(client.diagnostics(&baseline).is_empty());
 }
+
+#[test]
+fn an_entry_for_a_check_the_editor_doesnt_run_isnt_stale() {
+    let f = Fixture::new(
+        MODEL,
+        &[("docs/index.md", PAGE), ("docs/images/unused.png", "png")],
+    );
+    // What `ascribe baseline write` writes: every advice of the whole check,
+    // `image-unused` among them, which the editor doesn't run.
+    let project = ascribe_check::Project::load(&f.path("ascribe.toml")).unwrap();
+    let found = ascribe_check::diagnose(&project, &[]).unwrap();
+    let written = ascribe_check::baseline::write(&project, None, &found.diagnostics);
+    assert!(written.text.contains("image-unused "), "{}", written.text);
+    f.write("ascribe.baseline", &written.text);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let baseline = f.path("ascribe.baseline");
+    assert!(
+        client.diagnostics(&baseline).is_empty(),
+        "{:?}",
+        client.diagnostics(&baseline)
+    );
+    assert!(client.diagnostics(&f.path("docs/index.md")).is_empty());
+}
