@@ -37,6 +37,7 @@ import {
   root,
   skill,
   targets,
+  withoutEmptyUnreleased,
   type PackageManifest,
   type Target,
 } from "./manifests.ts";
@@ -89,13 +90,21 @@ const copyTemporary = (from: string, to: string): void => {
   copyFileSync(from, to);
   temporary.push(to);
 };
+const writeTemporary = (to: string, text: string): void => {
+  if (existsSync(to)) return;
+  writeFileSync(to, text);
+  temporary.push(to);
+};
 const vscodeBin = join(root, extension.dir, "bin");
 
 try {
   for (const { dir } of [...npmPackages, extension]) {
     copyTemporary(join(root, "LICENSE"), join(root, dir, "LICENSE"));
   }
-  copyTemporary(join(root, "CHANGELOG.md"), join(root, extension.dir, "CHANGELOG.md"));
+  writeTemporary(
+    join(root, extension.dir, "CHANGELOG.md"),
+    withoutEmptyUnreleased(readFileSync(join(root, "CHANGELOG.md"), "utf8")),
+  );
   // The packages that hold the binary carry the license text of the crates in it.
   const notices = join(out, "THIRD-PARTY-NOTICES");
   writeFileSync(notices, thirdPartyNotices());
@@ -225,6 +234,10 @@ function checkVsix(file: string, target: Target): void {
   if (!line) fail(`${where} has no ${entry}`);
   if (!target.exe.endsWith(".exe") && !line.startsWith("-rwx")) {
     fail(`${where} ${entry} isn't executable: ${line}`);
+  }
+  const changelog = unzip(["-p", file, "extension/CHANGELOG.md"]);
+  if (withoutEmptyUnreleased(changelog) !== changelog) {
+    fail(`${where} CHANGELOG.md has an empty unreleased section`);
   }
   for (const needed of [
     "extension/THIRD-PARTY-NOTICES",
