@@ -1,16 +1,16 @@
 ---
 type: page
 title: Ascribe
-description: Documentation written as code, checked like code, and built into a website, plain Markdown, and JSON.
+description: "Ascribe is a toolchain for documentation written as code: Markdown with the structure docs need, checked as you write, and built into a website, plain Markdown, and JSON."
 intended:
   - check: title-heading-differs
-    reason: The home page's title is the site's name, and its top heading is the tagline in the hero.
+    reason: The home page's title is the site's name, and its top heading is the headline in the hero.
 ---
 
 @hero-banner {status=early}:
-# Documentation written as code
+# Docs as code, with the tools docs need.
 
-Ascribe is Markdown with a small set of directives for the structure documentation needs, a content model that says what a page may use, and one compiler that checks the pages and builds them into a website, plain Markdown, and JSON.
+Ascribe is a toolchain for documentation written as code: Markdown with the structure docs need, checked as you write, and built into a website, plain Markdown, and JSON.
 @end
 
 ## A page, and what readers see

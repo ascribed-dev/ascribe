@@ -520,7 +520,7 @@ test("the landing page reads without a script", async () => {
   const page = await context.newPage();
   await page.goto(server.url + "/");
   for (const text of [
-    "Documentation written as code",
+    "Docs as code, with the tools docs need.",
     "Install Quill",
     "Checked",
     "Reviewed as pages",
