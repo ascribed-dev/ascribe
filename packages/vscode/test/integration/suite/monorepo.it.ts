@@ -5,7 +5,6 @@ import * as vscode from "vscode";
 import type { ServerState } from "../../../src/client.js";
 import type { AscribeApi } from "../../../src/extension.js";
 import type { PreviewApi, RenderRecord } from "../../../src/preview/controller.js";
-import { MAX_WAIT_MS } from "../../../src/diskChanges.js";
 import { comparable, samePath } from "../../../src/projects.js";
 import {
   activated,
@@ -134,11 +133,10 @@ describe("with several projects, one nested in another", () => {
   }
 
   /**
-   * Waits until changes just made on disk have been acted on: a project's
-   * files written before its ascribe.toml would otherwise start its server
-   * as soon as the project is found.
+   * Waits long enough for the file watcher to report changes just made on
+   * disk, and for anything they would start to have started.
    */
-  const afterDiskChanges = () => sleep(MAX_WAIT_MS + 1_000);
+  const afterDiskChanges = () => sleep(2_000);
 
   /**
    * Makes a folder and those above it one at a time, each once the file
@@ -841,63 +839,74 @@ describe("with several projects, one nested in another", () => {
 
   describe("files changed on disk", () => {
     // A project none of whose files is open, as an agent that edits files
-    // without opening them leaves it.
+    // without opening them, or a branch switch, leaves it.
     const agent = () => path.join(workspace(), "agent");
     const page = (name: string) => vscode.Uri.file(path.join(agent(), "docs", name));
+    const broken = "---\ntype: page\ntitle: Broken\n---\n\nSee [](missing.md).\n";
 
     before(async () => {
       await vscode.commands.executeCommand("workbench.action.closeAllEditors");
       await mkdirWatched(path.join(agent(), "docs"));
       writeFileSync(page("index.md").fsPath, "---\ntype: page\ntitle: Agent\n---\n\nAgent.\n");
-      await afterDiskChanges();
       await createProject(agent());
       assert.equal(api.state(agent()), "stopped");
     });
 
     after(async () => {
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
       rmSync(path.join(agent(), "ascribe.toml"), { force: true });
       await waitFor("the agent project to go", () => !known(agent()));
       await api.whenSettled();
       removeFolder(agent());
     });
 
-    it("starts nothing for a file written into the project's output directory", async () => {
-      const output = path.join(agent(), ".ascribe", "build", "site", "plain");
-      await mkdirWatched(output);
-      writeFileSync(path.join(output, "index.md"), "# Agent\n\nSee [](missing.md).\n");
-      await afterDiskChanges();
-      assert.equal(api.state(agent()), "stopped");
-    });
-
-    it("starts the project's server once for a burst of files, and shows their problems", async () => {
+    it("starts no server for files written into a project nobody opened", async () => {
       const started: string[] = [];
       const listener = api.onDidStartServer((folder) => started.push(comparable(folder)));
       try {
-        const broken = page("broken.md");
-        writeFileSync(
-          broken.fsPath,
-          "---\ntype: page\ntitle: Broken\n---\n\nSee [](missing.md).\n",
-        );
+        writeFileSync(page("broken.md").fsPath, broken);
         for (let i = 0; i < 30; i++) {
           writeFileSync(
             page(`page-${i}.md`).fsPath,
             `---\ntype: page\ntitle: Page ${i}\n---\n\nPage.\n`,
           );
         }
-        await diagnosticsOf(broken, () => codes(broken).join() === "ASC036");
-        assert.equal(api.state(agent()), "running");
-        // Nothing opened the file.
-        assert.ok(
-          !vscode.workspace.textDocuments.some((document) =>
-            samePath(document.uri.fsPath, broken.fsPath),
-          ),
+        // Its ascribe.toml changed on disk too, as a branch switch changes it.
+        writeFileSync(
+          path.join(agent(), "ascribe.toml"),
+          `${readFileSync(path.join(agent(), "ascribe.toml"), "utf8")}\n`,
         );
         await afterDiskChanges();
         await api.whenSettled();
-        assert.deepEqual(started, [comparable(agent())]);
+        assert.equal(api.state(agent()), "stopped");
+        assert.deepEqual(started, []);
+        assert.deepEqual(codes(page("broken.md")), []);
+        assert.equal(listed().get("agent")?.detail, "not checked yet");
       } finally {
         listener.dispose();
       }
+    });
+
+    it("starts the project's server when one of its files is opened", async () => {
+      await open(page("index.md"));
+      await waitFor("the agent project's server to run", () => api.state(agent()) === "running");
+      // The file written before it started, which isn't open, is checked.
+      const written = page("broken.md");
+      await diagnosticsOf(written, () => codes(written).join() === "ASC036");
+    });
+
+    it("follows a change on disk once its server is running", async () => {
+      const written = page("written.md");
+      writeFileSync(written.fsPath, broken.replace("Broken", "Written"));
+      await diagnosticsOf(written, () => codes(written).join() === "ASC036");
+      // Nothing opened the file.
+      assert.ok(
+        !vscode.workspace.textDocuments.some((document) =>
+          samePath(document.uri.fsPath, written.fsPath),
+        ),
+      );
+      writeFileSync(written.fsPath, "---\ntype: page\ntitle: Written\n---\n\nFixed.\n");
+      await diagnosticsOf(written, (all) => all.length === 0);
     });
   });
 
