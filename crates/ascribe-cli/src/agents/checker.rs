@@ -68,6 +68,10 @@ pub struct Found {
     /// writes it, and the title of its safe fix.
     #[serde(default)]
     pub fixes: Vec<(String, String)>,
+    /// How many advice `ascribe.baseline` holds back in what was checked,
+    /// which isn't reported (#790).
+    #[serde(default)]
+    pub baselined: usize,
 }
 
 impl Found {
@@ -173,8 +177,9 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         deny_warnings: false,
         fix: false,
         vale: false,
-        // The baseline is `ascribe check`'s; the agents read it later (#790).
-        no_baseline: true,
+        // What `ascribe.baseline` holds back, the project's backlog, isn't
+        // the agent's to fix now: it's left out, and counted (#790).
+        no_baseline: false,
         vale_timeout: Some(vale_timeout),
         // Nobody approves what a hook runs: Vale from the `PATH` only,
         // never a program in the project (decision 76).
@@ -226,6 +231,7 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         lines,
         build: editor_build.then(|| build.map(str::to_owned)).flatten(),
         prose,
+        baselined: outcome.baselined(),
         ..Found::default()
     };
     // After an edit, the advice with a safe fix: the file-level checks'
@@ -240,6 +246,13 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
                 .collect();
             ascribe_check::diagnose_every_build_in(project, &paths)
         });
+        // What the baseline lists is held back here too.
+        let across = match project.baseline() {
+            Some(Ok(baseline)) => {
+                ascribe_check::baseline::apply(project, baseline, across, false, &[]).diagnostics
+            }
+            _ => across,
+        };
         let across: Vec<Reported> = across
             .into_iter()
             .map(|diagnostic| Reported {
@@ -803,6 +816,8 @@ impl Kept {
                 }
             }
         }
+        // Counted once `problems` has checked them.
+        found.baselined = files.iter().map(|file| watched.held(file)).sum();
         drop(named);
         drop(by_case);
         *before = listing;

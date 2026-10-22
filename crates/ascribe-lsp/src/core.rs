@@ -80,6 +80,11 @@ pub(crate) struct Loaded {
     pub across_dirty: bool,
     /// What they found when they last ran.
     pub across: Arc<Across>,
+    /// `ascribe.baseline`, as the editor has it (`baseline.rs`).
+    pub baseline: Arc<crate::baseline::Now>,
+    /// The identities of each source file's findings at its last round
+    /// that an entry of the baseline matches, so the entry isn't stale.
+    pub matched: BTreeMap<RelPath, Vec<ascribe_check::identity::Identity>>,
 }
 
 impl Loaded {
@@ -91,6 +96,12 @@ impl Loaded {
                 .join(self.layout.content_root.as_str())
                 .join(path.as_str()),
         )
+    }
+
+    /// Whether `abs` is `ascribe.baseline`.
+    pub(crate) fn is_baseline(&self, abs: &Path) -> bool {
+        relative_path(&self.root, abs)
+            .is_some_and(|p| p.as_str() == ascribe_check::baseline::BASELINE_FILE)
     }
 
     /// `ascribe.nav`'s path from the project root, when `abs` is it.
@@ -184,6 +195,11 @@ pub(crate) struct Core {
     /// What each file's problems put on the code files its `@snippet`s show
     /// ([`Core::show_on_code_files`]), by the file's absolute path.
     shown: BTreeMap<PathBuf, crate::compute::Shown>,
+    /// What `ascribe.baseline` holds back of each source file's problems,
+    /// by its absolute path, and the version of the document it's for:
+    /// what the hover and the quick fix that moves one to an `@intended`
+    /// read (`baseline.rs`).
+    held: HashMap<PathBuf, (Vec<lsp_types::Diagnostic>, Option<i32>)>,
     /// Whether a code file gets its `snippet-tags` problems: an editor's,
     /// not the hook's headless server, whose problems are `ascribe check`'s.
     pub show_on_code: bool,
@@ -218,6 +234,7 @@ impl Core {
             checked: HashMap::new(),
             forced: HashSet::new(),
             shown: BTreeMap::new(),
+            held: HashMap::new(),
             show_on_code: true,
             next_id: 0,
             clock: None,
@@ -471,15 +488,18 @@ impl Core {
             BufferFs::new(disk.clone(), buffers),
         );
         let fs = Arc::new(LayerFs::new(disk));
-        // The open memo files and `ascribe.nav`, as the editor has them.
+        // The open memo files, `ascribe.nav`, and `ascribe.baseline`, as
+        // the editor has them.
         for (path, doc) in &self.docs {
             if let Some(project) = relative_path(&root, path)
                 && (ascribe_resolve::is_memo_path(&project, &layout)
-                    || project.as_str() == ascribe_model::NAV_FILE)
+                    || project.as_str() == ascribe_model::NAV_FILE
+                    || project.as_str() == ascribe_check::baseline::BASELINE_FILE)
             {
                 fs.set_buffer(&project, Some(doc.text.clone()));
             }
         }
+        let baseline = Arc::new(crate::baseline::Now::of(&fs));
         let snapshot = inc.snapshot();
         let mut dirty: BTreeSet<RelPath> = snapshot.files().map(|f| f.path.clone()).collect();
         dirty.extend(snapshot.unreadable().iter().map(|u| u.path.clone()));
@@ -499,6 +519,8 @@ impl Core {
             direct_includes: BTreeMap::new(),
             across_dirty: true,
             across: Arc::default(),
+            baseline,
+            matched: BTreeMap::new(),
         };
         // What was published for files the new project doesn't have goes.
         let keep: BTreeSet<PathBuf> = snapshot
@@ -522,6 +544,7 @@ impl Core {
         // Each file's share on the code files comes again with its
         // diagnostics; the code files are among `gone`.
         self.shown.clear();
+        self.held.clear();
         for path in gone {
             self.clear(&path);
         }
@@ -549,6 +572,102 @@ impl Core {
         if let Ok(affected) = loaded.inc.apply([Change::Nav(nav)]) {
             self.absorb(&affected);
         }
+    }
+
+    // -- `ascribe.baseline` ----------------------------------------------------
+
+    /// Gives the project `ascribe.baseline` as the editor has it, when
+    /// `abs` is it: its open buffer, or the disk's once `text` is `None`.
+    /// Whether it was.
+    fn set_baseline_buffer(&mut self, abs: &Path, text: Option<String>) -> bool {
+        let Some(loaded) = self.loaded.as_ref() else {
+            return false;
+        };
+        if !loaded.is_baseline(abs) {
+            return false;
+        }
+        if let Ok(project) = RelPath::parse(ascribe_check::baseline::BASELINE_FILE) {
+            loaded.fs.set_buffer(&project, text);
+        }
+        self.refresh_baseline();
+        true
+    }
+
+    /// Reads `ascribe.baseline` again, its open buffer over the disk. When
+    /// it changed, every file is checked again, so what it holds back
+    /// follows it, and what's published on it with them.
+    fn refresh_baseline(&mut self) {
+        let Some(loaded) = self.loaded.as_mut() else {
+            return;
+        };
+        let now = crate::baseline::Now::of(&loaded.fs);
+        if now == *loaded.baseline {
+            return;
+        }
+        loaded.baseline = Arc::new(now);
+        let snapshot = loaded.inc.snapshot();
+        loaded
+            .dirty
+            .extend(snapshot.files().map(|f| f.path.clone()));
+        loaded.across_dirty = true;
+        // Vale's alerts are held back as they're found.
+        self.queue_all_prose();
+    }
+
+    /// Keeps what the baseline holds back of a source file's problems, for
+    /// the version of the document they were found in.
+    pub(crate) fn set_held(
+        &mut self,
+        abs: &Path,
+        held: Vec<lsp_types::Diagnostic>,
+        version: Option<i32>,
+    ) {
+        if held.is_empty() {
+            self.held.remove(abs);
+        } else {
+            self.held.insert(abs.to_path_buf(), (held, version));
+        }
+    }
+
+    /// How many of a file's problems the baseline holds back.
+    pub(crate) fn held_count(&self, abs: &Path) -> usize {
+        self.held.get(abs).map_or(0, |(held, _)| held.len())
+    }
+
+    /// Publishes what's on `ascribe.baseline` (`baseline.rs`): the line that
+    /// doesn't parse, or each entry no finding matches. Its entries are
+    /// matched once every file is checked, so it waits until no round is
+    /// due.
+    pub(crate) fn publish_baseline(&mut self) {
+        let Some(loaded) = self.loaded.as_mut() else {
+            return;
+        };
+        if !loaded.dirty.is_empty() || loaded.across_dirty {
+            return;
+        }
+        // A file that's gone matches nothing.
+        let snapshot = loaded.inc.snapshot();
+        loaded
+            .matched
+            .retain(|path, _| snapshot.file(path).is_some());
+        let matched: HashSet<&ascribe_check::identity::Identity> = loaded
+            .matched
+            .values()
+            .flatten()
+            .chain(&loaded.across.matched)
+            .collect();
+        let found = crate::baseline::published(
+            &loaded.baseline,
+            &loaded.model,
+            &matched,
+            crate::baseline::every_build(&loaded.model),
+            self.encoding,
+        );
+        let path = loaded.root.join(ascribe_check::baseline::BASELINE_FILE);
+        if found.is_empty() && !self.published.contains_key(&path) {
+            return;
+        }
+        self.publish(&path, found);
     }
 
     // -- A source's `ascribe.examples.toml` -------------------------------------
@@ -721,6 +840,9 @@ impl Core {
             self.refresh_nav();
             return;
         }
+        if self.set_baseline_buffer(&path, None) {
+            return;
+        }
         self.refresh_from_disk(&path);
     }
 
@@ -769,6 +891,12 @@ impl Core {
             self.refresh_nav();
             return;
         }
+        // Nor is `ascribe.baseline`: what it holds back follows it as it's
+        // typed.
+        if loaded.is_baseline(path) {
+            self.set_baseline_buffer(path, Some(text));
+            return;
+        }
         if let Some(Kind::Source(content, project)) = loaded.classify(path) {
             self.apply(
                 vec![Change::Edited {
@@ -794,6 +922,7 @@ impl Core {
         let mut visited = Visited::default();
         let mut refresh = false;
         let mut nav = false;
+        let mut baseline = false;
         let mut redrawn = BTreeSet::new();
         for event in events {
             let Some(path) = Core::doc_path(&event.uri) else {
@@ -826,6 +955,14 @@ impl Core {
                 if !self.docs.contains_key(&path) {
                     sync_model = true;
                 }
+                continue;
+            }
+            if let Some(loaded) = self.loaded.as_ref()
+                && loaded.is_baseline(&path)
+            {
+                // Read again, as `ascribe baseline write` and `prune` change
+                // it; an open buffer of it wins.
+                baseline = true;
                 continue;
             }
             if let Some(loaded) = self.loaded.as_mut()
@@ -897,6 +1034,9 @@ impl Core {
         }
         if nav {
             self.refresh_nav();
+        }
+        if baseline {
+            self.refresh_baseline();
         }
         if sync_model {
             // Published again even when its diagnostics are what they were,
@@ -1277,6 +1417,7 @@ impl Core {
             self.show_on_code_files(path, Vec::new());
         }
         self.checked.remove(path);
+        self.held.remove(path);
         self.prose_closed_quietly(path);
         let forced = self.forced.remove(path);
         let had = self
@@ -1542,7 +1683,20 @@ impl Core {
             encoding: self.encoding,
             fs: loaded.fs.clone(),
             today: self.today(),
+            held: self.held_now(path),
+            baseline: loaded.baseline.clone(),
         })
+    }
+
+    /// What the baseline holds back of a file's problems, when they're for
+    /// the document as the editor has it now.
+    fn held_now(&self, path: &Path) -> Vec<lsp_types::Diagnostic> {
+        match self.held.get(path) {
+            Some((held, version)) if *version == self.docs.get(path).map(|d| d.version) => {
+                held.clone()
+            }
+            _ => Vec::new(),
+        }
     }
 
     /// What a lens request for a file that isn't a page works from: the

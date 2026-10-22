@@ -7,6 +7,7 @@
 //! semantic token legend, and how stale results are kept from the editor.
 
 mod agent_prompt;
+mod baseline;
 mod build_view;
 mod code_action;
 mod complete;

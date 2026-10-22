@@ -139,6 +139,12 @@ impl Watched {
         own
     }
 
+    /// How many advice `ascribe.baseline` holds back in `file`, which
+    /// [`Watched::problems`] leaves out, as of its last call.
+    pub fn held(&self, file: &Path) -> usize {
+        self.core.held_count(&normalize(file))
+    }
+
     /// The editor's build, which the problems are of; `None` before the
     /// project has loaded.
     pub fn build(&self) -> Option<String> {

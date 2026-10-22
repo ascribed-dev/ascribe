@@ -395,8 +395,9 @@ fn fix(projects: &dyn Projects, arguments: &Arguments) -> Result<String, String>
         deny_warnings: false,
         fix: false,
         vale: false,
-        // The baseline is `ascribe check`'s; the agents read it later (#790).
-        no_baseline: true,
+        // What `ascribe.baseline` holds back isn't the agent's to fix now
+        // (#790).
+        no_baseline: false,
         vale_timeout: None,
         // The MCP server serves this prompt too, and starts no program.
         vale_runs: check::ValeRuns::Never,

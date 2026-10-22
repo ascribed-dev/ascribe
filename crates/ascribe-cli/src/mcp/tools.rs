@@ -670,8 +670,9 @@ fn call_check(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> 
         deny_warnings: false,
         fix: false,
         vale: false,
-        // The baseline is `ascribe check`'s; the agents read it later (#790).
-        no_baseline: true,
+        // What `ascribe.baseline` holds back, the project's backlog, isn't
+        // the agent's to fix now: the summary counts it (#790).
+        no_baseline: false,
         vale_timeout: None,
         // The tool says it only reads: it starts no program the project
         // names (decision 76).

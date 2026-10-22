@@ -759,3 +759,46 @@ fn an_edit_that_adds_an_unplaced_page_names_the_fix_and_makes_none() {
         );
     }
 }
+
+#[test]
+fn what_the_baseline_holds_back_is_left_out_and_counted() {
+    let dir = project();
+    let root = dir.path();
+    fs::write(
+        root.join("docs/guide.md"),
+        format!("{ERROR}\n<!-- Ask Sam. -->\n"),
+    )
+    .unwrap();
+    let written = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(root)
+        .args(["baseline", "write"])
+        .output()
+        .unwrap();
+    assert!(written.status.success(), "{written:?}");
+    let held = "`ascribe.baseline` holds back 1 advice the project has put off for now, so the check leaves it out.";
+    let input = edit_input("claude-code", root, "docs/guide.md");
+    // Checked by the hook, and by the check server, which keeps the
+    // project as the language server does.
+    let cache = tempfile::tempdir().unwrap();
+    for out in [
+        hook(&["claude-code"], &input, None),
+        served(&["claude-code"], &input, cache.path()),
+    ] {
+        let said = context("claude-code", &out);
+        assert!(said.contains("[ASC036]"), "{said}");
+        assert!(!said.contains("html-comment"), "{said}");
+        assert!(said.contains(held), "{said}");
+    }
+    let out = hook(
+        &["claude-code", "--event", "stop"],
+        &stop_input("claude-code", root, false),
+        None,
+    );
+    let value: Value = serde_json::from_str(&stdout(&out)).unwrap();
+    // The whole project's: the page's comment, and the advice elsewhere.
+    let reason = value["reason"].as_str().unwrap();
+    assert!(
+        reason.contains("`ascribe.baseline` holds back 2 advice the project has put off for now, so the check leaves them out."),
+        "{reason}"
+    );
+}

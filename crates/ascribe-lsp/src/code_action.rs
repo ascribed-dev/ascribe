@@ -39,6 +39,14 @@ pub(crate) fn actions(
     {
         actions.push(fix_all);
     }
+    // The advice `ascribe.baseline` holds back isn't a diagnostic the
+    // editor sends back: its quick fix is offered where it is.
+    if asks_for(
+        params.context.only.as_deref(),
+        CodeActionKind::QUICKFIX.as_str(),
+    ) {
+        actions.extend(crate::baseline::actions(ctx, params.range));
+    }
 
     for diagnostic in params.context.diagnostics {
         let Some(slug) = diagnostic

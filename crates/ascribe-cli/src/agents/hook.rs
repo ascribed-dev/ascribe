@@ -213,6 +213,7 @@ fn edit_text(files: &[String], found: &Found) -> String {
             ));
         }
     }
+    lines.extend(baselined_text(found.baselined));
     let build = found.build.as_deref().unwrap_or_default();
     lines.push(format!(
         "Checked build `{build}` only. Run `ascribe explain <code>` for any you don't recognize."
@@ -288,9 +289,22 @@ fn stop_text(dir: &str, found: &Found) -> String {
             found.errors - LIMIT
         ));
     }
+    lines.extend(baselined_text(found.baselined));
     lines.push(format!("Fix these, then run `{command}`."));
     lines.extend(found.prose.iter().cloned());
     lines.join("\n") + "\n"
+}
+
+/// What the agent reads about the advice `ascribe.baseline` holds back:
+/// that it's the project's backlog, left for now, so the agent isn't sent
+/// after it (#790). Nothing when there's none.
+fn baselined_text(count: usize) -> Option<String> {
+    (count > 0).then(|| {
+        let them = if count == 1 { "it" } else { "them" };
+        format!(
+            "`ascribe.baseline` holds back {count} advice the project has put off for now, so the check leaves {them} out."
+        )
+    })
 }
 
 fn count(n: usize, what: &str) -> String {

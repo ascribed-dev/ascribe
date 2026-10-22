@@ -18,6 +18,8 @@ mod support;
 mod across;
 #[path = "all/agent_prompt.rs"]
 mod agent_prompt;
+#[path = "all/baseline.rs"]
+mod baseline;
 #[path = "all/build_view.rs"]
 mod build_view;
 #[path = "all/context.rs"]
