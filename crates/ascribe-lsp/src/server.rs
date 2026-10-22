@@ -1237,7 +1237,7 @@ fn worker(shared: &Shared) {
             {
                 hook(&PublishInfo {
                     version: job.snapshot.version().get(),
-                    files: results.iter().map(|(p, _)| p.to_string()).collect(),
+                    files: results.iter().map(|(p, ..)| p.to_string()).collect(),
                 });
             }
             outcome
