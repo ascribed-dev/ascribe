@@ -1,6 +1,6 @@
 # Ascribe's identity
 
-The mark, its colors, and its type, as they came out of the exploration boards in `design/ascribe.af`. [story.md](story.md) says what Ascribe is and promises; this says how it looks. [design/README.md](../../design/README.md) says how to use what's here.
+The mark, its colors, and its type, as they came out of the exploration boards in `design/ascribe.af`. The chosen board, 11, is exported to [boards/](boards/): the whole board, and its docs site mock in light and dark. [story.md](story.md) says what Ascribe is and promises; this says how it looks. [design/README.md](../../design/README.md) says how to use what's here.
 
 ## What's decided
 
@@ -34,7 +34,7 @@ No asset animates it yet.
 
 ## Next
 
-1. **The pages' colors.** The site, the element library, review, and the HTML report still take the indigo palette. Moving them to Deep River and Shallows changes every stylesheet's defaults: an output change, and a **Behavior change** for the `--ascribe-*` properties (decision 44). It's a plan of its own, and it starts from the website revamp.
+1. **The pages' colors.** The site, the element library, review, and the HTML report still take the indigo palette. Moving them to Deep River and Shallows changes every stylesheet's defaults: an output change, and a **Behavior change** for the `--ascribe-*` properties (decision 44). It's [the website plan](../website/README.md)'s first phase.
 2. **The avatar,** uploaded by hand where `project-docs/outside.md` lists it.
 3. **Motion:** the three states as an animated SVG for the site, holding still for anyone who prefers reduced motion.
 4. **The publisher.** Story item 2 moves the maker to Bryo Studio; the avatar and banner are ready for it.
