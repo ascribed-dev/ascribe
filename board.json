@@ -5129,8 +5129,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/828"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Content model: where a field is declared, and frontmatter-field-repeated"
     },
     {
@@ -5147,8 +5150,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/829"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "A type's template and guides from templates.lock"
     },
     {
@@ -5211,7 +5217,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/825"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Content model defaults: sources ignore node_modules, agents with a site, prose-not-checked when asked"
     },
     {
@@ -5265,7 +5271,7 @@
         "bug"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "An empty widget is written on one line, so a CommonMark renderer puts it in a paragraph"
     },
     {
@@ -5281,8 +5287,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/826"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Why Ascribe says the content model has no navigation, but ascribe.nav orders the docs"
     },
     {
@@ -5298,9 +5307,26 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/827"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Rename an implicit release target from its [releases.<target>] header"
+    },
+    {
+      "content": {
+        "body": "[The run](https://github.com/ascribed-dev/ascribe/actions/runs/39770686546)\n",
+        "number": 830,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs report: links and the published site",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/830"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCr1R4",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs report: links and the published site"
     }
   ]
 }
