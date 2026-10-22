@@ -1,0 +1,1 @@
+- **`ascribe --help` opens with what Ascribe is: a toolchain for documentation written as code.** It opened with a list of commands, which the help gives below it anyway.

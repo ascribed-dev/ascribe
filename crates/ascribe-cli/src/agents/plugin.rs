@@ -21,11 +21,16 @@ use super::{prompts, skill};
 /// The plugin's name, which names its commands: `/ascribe:check`.
 const NAME: &str = "ascribe";
 
-/// What the plugin is for, in its manifests.
-const DESCRIPTION: &str = "Ascribe for AI agents. The Ascribe skill, for every agent: how to \
-     write, check, and fix pages. The MCP server's tools, for an agent with no shell. The stop \
-     hook, and the language server's diagnostics after each edit, for an agent that doesn't \
-     check its own work. Commands for the named prompts.";
+/// What the plugin is for, in its manifests: the short form in
+/// `design/words.toml`, which is the crate's description, then what the
+/// plugin adds.
+const DESCRIPTION: &str = concat!(
+    env!("CARGO_PKG_DESCRIPTION"),
+    " This plugin is Ascribe for AI agents. The Ascribe skill, for every agent: how to write, \
+     check, and fix pages. The MCP server's tools, for an agent with no shell. The stop hook, \
+     and the language server's diagnostics after each edit, for an agent that doesn't check its \
+     own work. Commands for the named prompts."
+);
 
 /// The stop hook's command.
 const STOP_HOOK: &str = "ascribe agents hook claude-code --event stop";

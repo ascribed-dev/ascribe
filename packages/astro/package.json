@@ -1,7 +1,7 @@
 {
   "name": "@ascribed/astro",
   "version": "0.4.1",
-  "description": "The Astro integration for Ascribe.",
+  "description": "A toolchain for documentation written as code. This package is its Astro integration, which publishes a project's pages as a site.",
   "type": "module",
   "license": "MPL-2.0",
   "author": "Bryo Studio <hello@bryostudio.com> (https://bryostudio.com)",
@@ -10,7 +10,15 @@
     "url": "git+https://github.com/ascribed-dev/ascribe.git",
     "directory": "packages/astro"
   },
-  "homepage": "https://github.com/ascribed-dev/ascribe/tree/main/packages/astro#readme",
+  "keywords": [
+    "ascribe",
+    "documentation",
+    "markdown",
+    "docs-as-code",
+    "astro",
+    "astro-integration"
+  ],
+  "homepage": "https://ascribed-dev.com/go/astro-guide/",
   "bugs": "https://github.com/ascribed-dev/ascribe/issues",
   "sideEffects": false,
   "bin": {

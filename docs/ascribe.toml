@@ -162,8 +162,8 @@ ignore = ["**/node_modules/**"]
 # checks that `base-path` is under Astro's `base`.
 [consumer]
 profile = "astro"
-# The site's address, its domain on Netlify. The READMEs, the extension's
-# manifest, the binary's help, and site/home/ascribe.toml repeat it, and tests
+# The site's address, its domain on Netlify. The READMEs, the packages'
+# manifests, the binary's help, and site/home/ascribe.toml repeat it, and tests
 # check each against this line. A pull request's preview is built with its
 # own address here and in site/home/ascribe.toml (.github/workflows/site.yml).
 site = "https://ascribed-dev.com"

@@ -1,14 +1,20 @@
 {
   "name": "@ascribed/cli-darwin-arm64",
   "version": "0.4.1",
-  "description": "Ascribe native binary for macOS arm64.",
+  "description": "A toolchain for documentation written as code. This package is the ascribe binary for macOS arm64, which @ascribed/cli installs.",
   "license": "MPL-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ascribed-dev/ascribe.git",
     "directory": "packages/cli/platforms/cli-darwin-arm64"
   },
-  "homepage": "https://github.com/ascribed-dev/ascribe/tree/main/packages/cli#readme",
+  "keywords": [
+    "ascribe",
+    "documentation",
+    "markdown",
+    "docs-as-code"
+  ],
+  "homepage": "https://ascribed-dev.com/go/install/",
   "bugs": "https://github.com/ascribed-dev/ascribe/issues",
   "os": [
     "darwin"

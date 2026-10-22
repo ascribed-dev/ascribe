@@ -1,7 +1,7 @@
 {
   "name": "@ascribed/cli",
   "version": "0.4.1",
-  "description": "The Ascribe command-line tool.",
+  "description": "A toolchain for documentation written as code. This package installs its command, ascribe.",
   "type": "module",
   "license": "MPL-2.0",
   "author": "Bryo Studio <hello@bryostudio.com> (https://bryostudio.com)",
@@ -10,7 +10,14 @@
     "url": "git+https://github.com/ascribed-dev/ascribe.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://github.com/ascribed-dev/ascribe/tree/main/packages/cli#readme",
+  "keywords": [
+    "ascribe",
+    "documentation",
+    "markdown",
+    "docs-as-code",
+    "cli"
+  ],
+  "homepage": "https://ascribed-dev.com/go/getting-started/",
   "bugs": "https://github.com/ascribed-dev/ascribe/issues",
   "files": [
     "dist",
