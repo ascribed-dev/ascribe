@@ -169,13 +169,8 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\ntype = \"string?\" #!\n",
         ),
         case(
-            "model-type-title",
-            None,
-            "spec = \"0.1\"\n[types.a.frontmatter] #!\nother = \"string\"\n",
-        ),
-        case(
-            "model-type-title",
-            Some("not-string"),
+            "model-field-reserved",
+            Some("title"),
             "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string?\" #!\n",
         ),
         case(
@@ -610,7 +605,12 @@ fn cases() -> Vec<Case> {
         case(
             "model-releases-target",
             None,
-            "spec = \"0.1\"\n[releases.mars] #!\nlive = [\"1.0\"]\n",
+            "spec = \"0.1\"\n[dimensions.release]\nvalues = [\"a\"]\n[releases.mars] #!\nlive = [\"1.0\"]\n",
+        ),
+        case(
+            "model-releases-target",
+            Some("label"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlabel = \"A\" #!\n",
         ),
         case(
             "model-releases-target",

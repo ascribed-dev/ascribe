@@ -765,10 +765,16 @@ fn a_title_and_a_description_are_at_their_keys() {
 
 #[test]
 fn a_type_with_no_description_field_has_only_its_title_read() {
-    let project = project(&[(
-        "a.md",
-        "---\ntype: page\ntitle: Quill guide\ndescription: Quill text.\n---\n\nBody.\n",
-    )]);
+    // A field named `description` would be the page's description by its
+    // name.
+    let model = MODEL.replace("description = \"string?\"", "summary = \"string?\"");
+    let project = project_with(
+        &model,
+        &[(
+            "a.md",
+            "---\ntype: page\ntitle: Quill guide\nsummary: Quill text.\n---\n\nBody.\n",
+        )],
+    );
     let r = reading(&project, "a.md", "site");
     let kinds: Vec<In> = r.blocks.iter().map(|b| b.kind).collect();
     assert_eq!(kinds, [In::Title, In::Text]);

@@ -69,8 +69,8 @@ pub enum SettingValue {
     Number(i64),
     /// A string.
     Text(String),
-    /// An empty array.
-    EmptyList,
+    /// An array of strings, empty or not.
+    List(Vec<String>),
     /// An empty table.
     EmptyTable,
 }
@@ -140,7 +140,15 @@ fn entry(t: &DeTable<'_>) -> Option<Setting> {
             i.as_str().replace('_', "").parse().ok()?,
         )),
         Some(DeValue::String(s)) => Some(SettingValue::Text(s.to_string())),
-        Some(DeValue::Array(a)) if a.is_empty() => Some(SettingValue::EmptyList),
+        Some(DeValue::Array(items)) => Some(SettingValue::List(
+            items
+                .iter()
+                .map(|i| match i.get_ref() {
+                    DeValue::String(s) => Some(s.to_string()),
+                    _ => None,
+                })
+                .collect::<Option<Vec<_>>>()?,
+        )),
         Some(DeValue::Table(t)) if t.is_empty() => Some(SettingValue::EmptyTable),
         Some(_) => return None,
         None => None,
@@ -206,6 +214,25 @@ pub fn find(table: &str, key: &str) -> Option<&'static Setting> {
     settings().iter().find(|s| s.table == table && s.key == key)
 }
 
+/// The default of `key` in `table` for a project whose `ascribe.toml` sets
+/// the keys `written` says it does, by table and key: the registry's,
+/// except where a default follows another key. `[consumer] agents` is the
+/// registry's `true` only when `[consumer] site` is set (SPEC §9.4), and
+/// `false` otherwise. The loader, `ascribe model`, and Project Settings all
+/// take a default from here.
+pub fn default_for(
+    table: &str,
+    key: &str,
+    written: &dyn Fn(&str, &str) -> bool,
+) -> Option<SettingValue> {
+    let default = find(table, key)?.default.clone();
+    if (table, key) == ("consumer", "agents") {
+        let on = matches!(default, Some(SettingValue::Switch(true)));
+        return Some(SettingValue::Switch(on && written("consumer", "site")));
+    }
+    default
+}
+
 /// The choices of `key` in `table`.
 pub(crate) fn choices(table: &str, key: &str) -> Vec<&'static str> {
     let found = find(table, key);
@@ -234,6 +261,15 @@ pub(crate) fn default_text(table: &str, key: &str) -> &'static str {
 /// The default of `key` in `table`, a boolean.
 pub(crate) fn default_switch(table: &str, key: &str) -> bool {
     matches!(default_of(table, key), Some(SettingValue::Switch(true)))
+}
+
+/// The default of `key` in `table`, a list of strings. Empty if the
+/// registry has none, which a test catches.
+pub(crate) fn default_list(table: &str, key: &str) -> &'static [String] {
+    match default_of(table, key) {
+        Some(SettingValue::List(items)) => items,
+        _ => &[],
+    }
 }
 
 /// The default of `key` in `table`, a whole number. 0 if the registry has

@@ -262,8 +262,14 @@ fn every_output_is_built_by_default() {
 
 #[test]
 fn two_pages_with_one_route_fail_the_site_output() {
+    // Without the outputs for agents, whose plain output is laid out by
+    // route too.
+    let model = MODEL.replace(
+        "site = \"https://docs.example.com\"",
+        "site = \"https://docs.example.com\"\nagents = false",
+    );
     let dir = project(
-        MODEL,
+        &model,
         &[("My File.md", &page("A.\n")), ("my-file.md", &page("B.\n"))],
     );
     let out = ascribe(dir.path(), &["build", "--emit", "site"]);

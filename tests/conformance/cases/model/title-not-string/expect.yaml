@@ -1,0 +1,10 @@
+description: >-
+  Every page type's `title` is a required string, so a declaration of it,
+  shared or a type's own, that's optional or of another type is an error at
+  the field.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-field-reserved, file: ascribe.toml, line: 4}
+  - {slug: model-field-reserved, file: ascribe.toml, line: 7}

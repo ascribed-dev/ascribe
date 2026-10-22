@@ -1720,20 +1720,6 @@ messages.same = "output directory and content root are both `{path}`"
 fix = "Keep the output directory and the content root apart: neither inside the other, and not the same. The default output directory, `.ascribe/build`, is outside the default content root, `docs`."
 
 [[diagnostic]]
-code = "ASC073"
-slug = "model-type-title"
-severity = "error"
-level = "file"
-next = "write"
-evidence = []
-spec = "7.2"
-reference = "content-model/index.md#41-page-types"
-group = "content-types"
-message = "content type `{type}` must declare title = \"string\": it's the page title, used for empty link text"
-messages.not-string = "content type `{type}`: `title` must be a required string, not \"{found}\""
-fix = "Declare `title = \"string\"` in the type's `frontmatter`."
-
-[[diagnostic]]
 code = "ASC074"
 slug = "model-field-reserved"
 severity = "error"
@@ -1743,13 +1729,14 @@ evidence = []
 spec = "2.1"
 reference = "content-model/index.md#41-page-types"
 group = "content-types"
-message = "`{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]`"
+message = "`{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[{table}]`"
 messages.fragment = "`{field}` is reserved by the Ascribe spec, and fragments can't use it"
 messages.fragment-accepted = "`{field}` is reserved by the Ascribe spec and every fragment accepts it; remove it from `[fragments.frontmatter]`"
-messages.slug = "`slug` is reserved by the astro profile, which uses it as a page's URL id; remove it from `[types.{type}.frontmatter]`"
-messages.formatted = "`formatted` is reserved by the site output, which writes the formatted form of `inline` fields under it; remove it from `[types.{type}.frontmatter]`"
-messages.source = "`source` is reserved by the site output, which writes each page's path from the content root under it; remove it from `[types.{type}.frontmatter]`"
-fix = "Remove the field from the type. Every page accepts it already, with the meaning the specification gives it."
+messages.slug = "`slug` is reserved by the astro profile, which uses it as a page's URL id; remove it from `[{table}]`"
+messages.formatted = "`formatted` is reserved by the site output, which writes the formatted form of `inline` fields under it; remove it from `[{table}]`"
+messages.source = "`source` is reserved by the site output, which writes each page's path from the content root under it; remove it from `[{table}]`"
+messages.title = "every page type has `title`, the page's title, as a required string, so `[{table}]` can't make it \"{found}\"; declare it as \"string\", or leave it out"
+fix = "Remove the field from the type. Every page accepts it already, with the meaning the specification gives it. Every page type has `title` as a required string: declare it only to set `inline` or `phrases`."
 
 [[diagnostic]]
 code = "ASC075"
@@ -2680,7 +2667,7 @@ reference = "content-model/index.md#53-code-in-a-field"
 group = "content-types"
 message = "inline = \"code\" only works on string fields, and `{field}` is \"{type}\""
 messages.value = "inline must be \"code\", not \"{value}\""
-messages.nested = "inline = \"code\" only works on a content type's top-level fields, and `{field}` is in {place}"
+messages.nested = "inline = \"code\" only works on a page type's top-level fields, its own or `[frontmatter]`'s, and `{field}` is in {place}"
 fix = "Remove `inline`, or set it to \"code\" on a string field of a content type's `frontmatter`."
 
 [[diagnostic]]
@@ -2786,7 +2773,7 @@ reference = "content-model/index.md#54-field-roles"
 group = "content-types"
 message = "role = \"{role}\" only works on a {expected} field, and `{field}` is \"{type}\""
 messages.value = "role must be \"description\", \"review-date\", or \"owner\", not \"{value}\""
-messages.nested = "role only works on a content type's top-level fields, and `{field}` is in {place}"
+messages.nested = "role only works on a page type's top-level fields, its own or `[frontmatter]`'s, and `{field}` is in {place}"
 messages.duplicate = "`{other}` already has role = \"{role}\"; a content type has one field with each role"
 fix = "Give `role = \"description\"` to one string field of a content type's `frontmatter`, `role = \"review-date\"` to one date field, and `role = \"owner\"` to one string or enum field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles."
 
@@ -3589,7 +3576,8 @@ reference = "content-model/index.md#41-page-types"
 group = "content-types"
 message = "can't read `{path}`, the template of content type `{type}`: {reason}"
 messages.parse = "`{path}`, the template of content type `{type}`, isn't a page Ascribe can read: on its line {line}, {detail}"
-fix = "Fix the template so it reads as a page: valid YAML between its `---` lines, and no error in its Ascribe syntax. A template is read when the content model loads, so a problem in it is reported once, here, and not on every page made from it."
+messages.lock = "`{lock}` gives content type `{type}` the {key} `{path}`, and {reason}"
+fix = "Fix the template so it reads as a page: valid YAML between its `---` lines, and no error in its Ascribe syntax. A template is read when the content model loads, so a problem in it is reported once, here, and not on every page made from it. A type that names no `template` and no `guide` takes them from `templates/templates.lock`, which `ascribe templates eject` writes: put back a file it gives (`ascribe templates status` says what's changed), or name the type's own `template` and `guide`."
 
 [[diagnostic]]
 code = "ASC195"
@@ -3785,10 +3773,11 @@ evidence = ["allowed-values"]
 spec = "7.2"
 reference = "content-model/content.md#71-releasestarget"
 group = "releases"
-message = "`[releases.{target}]`: `{target}` isn't a declared dimension value"
+message = "`[releases.{target}]`: `{target}` is in no declared dimension, so it would be a value of the implicit dimension `release`, but `[dimensions.release]` takes that name; add `{target}` to a dimension's `values`, or rename `[dimensions.release]`"
 messages.versionless = "`[releases.{target}]`: `{target}` is versionless, so it has no releases"
 messages.dimension = "`[releases.{target}]`: `{target}` is a dimension; name one of its versioned values: {values}"
-fix = "Name the table after a versioned dimension value, the target a mark gives a version to, such as `[releases.self-managed]`. A versionless value has no versions to list."
+messages.label = "`[releases.{target}] label`: `{target}` is a value of `[dimensions.{dimension}]`, which labels it; set its label in that dimension's `labels`"
+fix = "Name the table after the target a mark gives a version to, such as `[releases.self-managed]`: a versioned value of a declared dimension, or a name no dimension has, which makes it a value of the implicit dimension `release`. A versionless value has no versions to list. While a target is left to the implicit dimension, no declared dimension can be named `release`."
 
 [[diagnostic]]
 code = "ASC205"
@@ -4411,3 +4400,18 @@ reference = "content-model/checks.md#19-checks"
 when = "`ascribe.baseline` has an entry that no problem of the project matches any more: the problem was fixed, or the text it was about changed. Reported at the entry's line, when `ascribe check` reads the baseline and checks the whole project for every build"
 message = "ascribe.baseline holds back `{check}` in `{file}`, and nothing there matches it any more; run `ascribe baseline prune`"
 fix = "Run `ascribe baseline prune`, which removes every entry that matches nothing, and commit ascribe.baseline. Left in the file, the entry would hold back a later problem of the same check whose text happens to be the same. See [The baseline](checks/baseline.md)."
+
+[[diagnostic]]
+code = "ASC244"
+slug = "frontmatter-field-repeated"
+severity = "advice"
+level = "file"
+next = "fix"
+evidence = []
+configurable = true
+area = "project"
+spec = "7.2"
+reference = "content-model/index.md#41-page-types"
+when = "A type's own `frontmatter` declares a field exactly as `[frontmatter]` does, key for key, so the type's copy changes nothing. Reported at the type's field"
+message = "the type `{type}` declares `{field}` exactly as `[frontmatter]` does, so this copy changes nothing; delete it, and the type has `[frontmatter]`'s"
+fix = "Delete the type's field, and the type has the one in `[frontmatter]`, which is the same. The fix deletes its line, with the comment lines directly above it, when it's written as `key = value` under the table's header; one written another way is deleted by hand. A type's field that differs from the shared one in any key replaces it whole, for that type, and isn't reported: keep it when the type needs it to differ."

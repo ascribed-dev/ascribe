@@ -234,6 +234,30 @@ fn frontmatter_line<'a>(
     Some((line, content.start()))
 }
 
+/// The key of the top-level frontmatter line `offset` is on, with its span,
+/// when `offset` is on the key.
+pub(crate) fn frontmatter_key(file: &FileIndex, offset: usize) -> Option<(&str, Span)> {
+    let content = file.document.frontmatter.as_ref()?.content;
+    if !(content.start() <= offset && offset <= content.end()) {
+        return None;
+    }
+    let source: &str = &file.source;
+    let text = source.get(content.range())?;
+    let start = line_start(source, offset).max(content.start()) - content.start();
+    let line = ascribe_syntax::frontmatter_lines(text)
+        .into_iter()
+        .find(|l| l.start == start && l.indent == 0 && l.item.is_none() && !l.block)?;
+    let key = line.key?;
+    // The key as written, quotes and all, up to its colon.
+    let written = text.get(line.start..line.value_start)?;
+    let written = written.get(..written.find(':')?)?.trim_end();
+    let span = Span::new(
+        content.start() + line.start,
+        content.start() + line.start + written.len(),
+    );
+    (span.start() <= offset && offset <= span.end()).then_some((key, span))
+}
+
 /// The span of the frontmatter's `listing:` line, its key to the end of its
 /// value, when `offset` is on it.
 pub(crate) fn frontmatter_listing(file: &FileIndex, offset: usize) -> Option<Span> {

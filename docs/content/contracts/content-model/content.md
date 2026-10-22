@@ -30,11 +30,11 @@ Part of the [`ascribe.toml` format contract](../content-model.md), whose [conten
 
 @include: ../../_generated/content-model-releases-target.md
 
-`[releases]` takes one key of its own, beside the targets' tables:
+`[releases]` takes two keys of its own, beside the targets' tables:
 
 @include: ../../_generated/content-model-releases.md
 
-**Rules.** `<target>` MUST be a declared dimension value that isn't versionless (`model-releases-target`). Each line MUST be a version (SPEC Appendix A rule `version`), listed once, and every line of one target, in every list, MUST have the same number of parts (`model-releases-line`). A line MUST be in one list, every planned line MUST be newer than every live line, and every archived line older (`model-releases-order`). A key of `ends` MUST be a live line, as written (`model-releases-ends`), and its value a TOML local date (`model-wrong-type`). A key of `archived` is a line as written, and its table MAY have `url`, a non-empty string, and `ended`, a TOML local date, and no other key. `planned-label` MUST NOT be empty. The order of a list carries no meaning.
+**Rules.** `<target>` MUST be a declared dimension value that isn't versionless, or a name (`name-word`) that's no declared dimension's value or name, which declares it a value of the implicit dimension `release`. A loader MUST add the implicit dimension, after the declared ones, when at least one target is left to it, and only then. While one is, a declared dimension MUST NOT be named `release`, and each such target is the error (`model-releases-target`). `[releases.<target>] label` MUST NOT be set for a target a declared dimension has (`model-releases-target`). The implicit dimension's name and values are subject to the one-role rule (`model-name-multiple-roles`). Each line MUST be a version (SPEC Appendix A rule `version`), listed once, and every line of one target, in every list, MUST have the same number of parts (`model-releases-line`). A line MUST be in one list, every planned line MUST be newer than every live line, and every archived line older (`model-releases-order`). A key of `ends` MUST be a live line, as written (`model-releases-ends`), and its value a TOML local date (`model-wrong-type`). A key of `archived` is a line as written, and its table MAY have `url`, a non-empty string, and `ended`, a TOML local date, and no other key. `planned-label` MUST NOT be empty. The order of a list carries no meaning.
 
 ---
 

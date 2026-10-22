@@ -27,8 +27,9 @@ impl ConformanceAdapter for ModelAdapter {
         let text = std::fs::read_to_string(&case.model)
             .map_err(|e| AdapterError(format!("couldn't read {}: {e}", case.model.display())))?;
         let issues = match ascribe_model::load_str(&text, FileId::new(0)) {
-            Ok(model) => {
+            Ok(mut model) => {
                 let disk = DiskFs::new(&case.dir, &Layout::from_model(&model));
+                ascribe_check::type_files::from_lock(&mut model, &disk);
                 let files = ascribe_check::type_files::check(&model, &disk);
                 model.warnings.into_iter().chain(files).collect()
             }

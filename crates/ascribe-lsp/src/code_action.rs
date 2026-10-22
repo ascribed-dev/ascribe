@@ -554,7 +554,7 @@ fn retire_permalink(ctx: &Ctx, diagnostic: Diagnostic) -> Option<CodeActionOrCom
 }
 
 /// The actions on `ascribe.toml`'s and `ascribe.permalinks`'s diagnostics:
-/// marking a problem about a content model entry or an image as intended,
+/// the fixes `ascribe.toml`'s carry, marking a problem about a content model entry or an image as intended,
 /// in `[[intended]]`, retiring a removed permalink, and bringing the list
 /// up to date with an alias or a retired permalink.
 fn model_actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCommand> {
@@ -570,7 +570,15 @@ fn model_actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCommand
         }
         return actions;
     }
+    // `ascribe.toml`'s problems carry their fixes too, such as the one that
+    // deletes a type's copy of a `[frontmatter]` field.
+    let in_model = crate::uri::uri_to_path(&params.text_document.uri)
+        .is_some_and(|p| ascribe_core::path::normalize(&p) == ctx.config);
     for diagnostic in params.context.diagnostics {
+        if in_model {
+            let uri = params.text_document.uri.clone();
+            actions.extend(fixes_in(&diagnostic, "fixes", |_| Some(uri.clone())));
+        }
         let data = diagnostic.data.as_ref();
         let field = |key: &str| {
             data.and_then(|d| d.get(key))

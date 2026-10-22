@@ -140,6 +140,9 @@ impl Job {
             linter,
             FILE_TIMEOUT,
         );
+        // Vale runs here whenever the project has `[checks.vale]`: that it
+        // couldn't is said only where the project asked for it everywhere.
+        let found = prose::said(&self.model, false, found);
         let page_index = LineIndex::new(&self.text);
         let model_index = LineIndex::new(&self.model_text);
         let mut on_page = Vec::new();

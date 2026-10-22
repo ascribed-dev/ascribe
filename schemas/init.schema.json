@@ -11,7 +11,7 @@
           "type": "array"
         },
         "guide": {
-          "description": "Its `guide`, from the folder `ascribe.toml` is in, in the order to\nread them: their guide, then Ascribe's notes on the type.",
+          "description": "Its guide, from the folder `ascribe.toml` is in, in the order to\nread them: their guide, then Ascribe's notes on the type.",
           "items": {
             "type": "string"
           },
@@ -26,7 +26,7 @@
           "type": "string"
         },
         "template": {
-          "description": "Its `template`, from the folder `ascribe.toml` is in.",
+          "description": "Its template, from the folder `ascribe.toml` is in.",
           "type": "string"
         }
       },
@@ -54,7 +54,7 @@
           "type": "string"
         },
         "kept": {
-          "description": "The types `ascribe.toml` declared already and kept, with `--keep-type`,\nin the order they were named: each was given its `template` and\n`guide`, and nothing else in it changed. Empty when anything was\nrefused.",
+          "description": "The types `ascribe.toml` declared already and kept, with `--keep-type`,\nin the order they were named: each takes its template and guide from\n`templates/templates.lock`, or, written in another folder, was given\nits `template` and `guide`, and nothing else in it changed. Empty when\nanything was refused.",
           "items": {
             "$ref": "#/$defs/Kept"
           },
@@ -84,7 +84,7 @@
           "type": "array"
         },
         "written": {
-          "description": "The files written, from the folder `ascribe.toml` is in,\n`/`-separated, in the order they were written: each template, its\nguide, and Ascribe's notes on its type, then `templates.lock`, then\n`ascribe.toml`. Empty when anything was refused.",
+          "description": "The files written, from the folder `ascribe.toml` is in,\n`/`-separated, in the order they were written: each template, its\nguide, and Ascribe's notes on its type, then `templates.lock`, then\n`ascribe.toml`, when it changed. Empty when anything was refused.",
           "items": {
             "type": "string"
           },
@@ -104,10 +104,10 @@
       "type": "object"
     },
     "Kept": {
-      "description": "A type `ascribe.toml` declared already, which eject kept, adding only\nits `template` and `guide`.",
+      "description": "A type `ascribe.toml` declared already, which eject kept, giving it only\nits template and guide.",
       "properties": {
         "guide": {
-          "description": "The `guide` added, from the folder `ascribe.toml` is in, in the order\nto read them: their guide, then Ascribe's notes on the type.",
+          "description": "The guide it was given, from the folder `ascribe.toml` is in, in the\norder to read them: their guide, then Ascribe's notes on the type.",
           "items": {
             "type": "string"
           },
@@ -129,7 +129,7 @@
           "type": "string"
         },
         "template": {
-          "description": "The `template` added, from the folder `ascribe.toml` is in.",
+          "description": "The template it was given, from the folder `ascribe.toml` is in.",
           "type": "string"
         }
       },
@@ -198,7 +198,7 @@
         },
         {
           "const": "type_has_template",
-          "description": "Asked to keep the type, it names a `template` or a `guide` already.",
+          "description": "Asked to keep the type, it names a `template` or a `guide` already,\nor `templates/templates.lock` gives it them.",
           "type": "string"
         },
         {

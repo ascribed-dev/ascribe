@@ -1,0 +1,13 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+# `page` doesn't declare `title`, and has it, as a required string read as
+# plain text.
+[types.page.frontmatter]
+level = "string?"
+
+# Declaring `title` changes only how it's read: here, with its code spans.
+[types.reference.frontmatter]
+title = { type = "string", inline = "code" }

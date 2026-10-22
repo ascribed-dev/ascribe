@@ -43,6 +43,9 @@ height = "number?"
 [consumer]
 profile = "astro"
 site = "https://docs.quill.dev"
+# Nothing for agents: Quill's outputs are the fixtures both renderers are
+# held to (tests/render/corpus/quill/), so they stay the site's alone.
+agents = false
 
 # Self-managed Quill's live lines, oldest first: 3.5 is the current line.
 [releases.self-managed]

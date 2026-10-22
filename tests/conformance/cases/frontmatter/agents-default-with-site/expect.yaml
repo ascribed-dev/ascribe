@@ -1,0 +1,9 @@
+description: >-
+  `[consumer] agents` is `true` when `site` is set and `agents` is left out,
+  so a description too long for a line of llms.txt is advice, as with
+  `agents = true`.
+spec: ["9.4", "9.5"]
+tags: [check]
+
+diagnostics:
+  - {slug: description-too-long, file: install.md, line: 4}

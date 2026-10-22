@@ -777,6 +777,70 @@ fn full_marks_its_description_and_review_date() {
 }
 
 #[test]
+fn a_type_has_the_shared_fields_and_the_roles_of_their_names() {
+    use ascribe_model::FieldRole;
+    let toml = r#"spec = "0.1"
+
+[frontmatter]
+description = "string?"
+owner = "enum(docs, api)"
+review-date = "date?"
+audience = "string"
+
+[types.guide]
+
+[types.index.frontmatter]
+title = { type = "string", inline = "code" }
+description = { type = "number?" }
+summary = { type = "string?", role = "description" }
+team = { type = "string", role = "owner" }
+"#;
+    let m = load_str(toml, FileId::new(0)).unwrap();
+    let names = |i: usize| -> Vec<&str> {
+        m.types[i]
+            .frontmatter
+            .fields
+            .iter()
+            .map(|f| f.name.as_str())
+            .collect()
+    };
+    let role = |i: usize, role| {
+        m.types[i]
+            .frontmatter
+            .field_with_role(role)
+            .map(|f| f.name.as_str())
+    };
+    // `title` comes first when nothing declares it; a type's own field
+    // replaces a shared one in its place.
+    assert_eq!(
+        names(0),
+        ["title", "description", "owner", "review-date", "audience"]
+    );
+    assert_eq!(
+        names(1),
+        [
+            "description",
+            "owner",
+            "review-date",
+            "audience",
+            "title",
+            "summary",
+            "team"
+        ]
+    );
+    assert_eq!(role(0, FieldRole::Description), Some("description"));
+    assert_eq!(role(0, FieldRole::Owner), Some("owner"));
+    assert_eq!(role(0, FieldRole::ReviewDate), Some("review-date"));
+    // The type gives two roles to fields of other names.
+    assert_eq!(role(1, FieldRole::Description), Some("summary"));
+    assert_eq!(role(1, FieldRole::Owner), Some("team"));
+    assert_eq!(role(1, FieldRole::ReviewDate), Some("review-date"));
+    let title = &m.types[1].frontmatter.fields[4];
+    assert!(title.required && title.inline.is_some());
+    assert_eq!(m.frontmatter.len(), 4);
+}
+
+#[test]
 fn releases_say_which_lines_are_planned_ending_and_archived() {
     let m = example("full.toml");
     let r = m.releases_of("self-managed").unwrap();
@@ -951,4 +1015,55 @@ fn full_says_what_reference_pages_are_for() {
     );
     let guide = m.types.iter().find(|t| t.name == "guide").unwrap();
     assert_eq!(guide.purpose, None);
+}
+
+#[test]
+fn a_target_no_dimension_has_is_a_value_of_the_implicit_release_dimension() {
+    let m = load_str(
+        "spec = \"0.1\"\n\
+         [dimensions.deployment]\nvalues = [\"cloud\", \"self-managed\"]\n\
+         [releases]\nlabel = \"Product\"\n\
+         [releases.self-managed]\nlive = [\"3.4\"]\n\
+         [releases.agent]\nlive = [\"1.2\"]\nlabel = \"Quill Agent\"\n\
+         [releases.cli]\nlive = [\"0.4\"]\n",
+        FileId::new(0),
+    )
+    .unwrap();
+    let names: Vec<(&str, bool)> = m
+        .dimensions
+        .iter()
+        .map(|d| (d.name.as_str(), d.implicit))
+        .collect();
+    assert_eq!(names, [("deployment", false), ("release", true)]);
+    let release = &m.dimensions[1];
+    assert_eq!(release.label, "Product");
+    let values: Vec<(&str, &str, bool)> = release
+        .values
+        .iter()
+        .map(|v| (v.value.as_str(), v.label.as_str(), v.versionless))
+        .collect();
+    assert_eq!(
+        values,
+        [("agent", "Quill Agent", false), ("cli", "cli", false)]
+    );
+    assert_eq!(m.value_label("agent"), Some("Quill Agent"));
+    assert_eq!(m.releases.len(), 3);
+}
+
+#[test]
+fn the_implicit_dimension_is_labeled_release_unless_set_and_only_exists_when_needed() {
+    let m = load_str(
+        "spec = \"0.1\"\n[releases.ascribe]\nlive = [\"0.4.1\"]\n",
+        FileId::new(0),
+    )
+    .unwrap();
+    assert_eq!(m.dimensions.len(), 1);
+    assert_eq!(m.dimensions[0].label, "Release");
+    assert_eq!(m.dimensions[0].values[0].label, "ascribe");
+    let m = load_str(
+        "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases]\nlabel = \"Unused\"\n[releases.a]\nlive = [\"1.0\"]\n",
+        FileId::new(0),
+    )
+    .unwrap();
+    assert!(m.dimensions.iter().all(|d| !d.implicit));
 }

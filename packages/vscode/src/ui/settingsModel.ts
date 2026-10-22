@@ -122,8 +122,12 @@ function checkView(check: CheckEntry): CheckView {
   };
 }
 
-/** The heading of each table whose parts are cards, by the table. */
+/**
+ * The heading of each table whose parts are cards, by the table. `[frontmatter]`,
+ * at the top level, is the fields every content type shares.
+ */
 const PART_SECTIONS: Readonly<Record<string, string>> = {
+  "": "Content types",
   types: "Content types",
   dimensions: "Dimensions",
   releases: "Releases",
@@ -131,9 +135,9 @@ const PART_SECTIONS: Readonly<Record<string, string>> = {
   sources: "Sources",
 };
 
-/** A part's id: `part:<table>.<name>`, apart from every setting's. */
+/** A part's id: `part:<table>.<name>`, or `part:<name>` at the top level, apart from every setting's. */
 function partId(part: Pick<PartEntry, "table" | "name">): string {
-  return `part:${part.table}.${part.name}`;
+  return part.table === "" ? `part:${part.name}` : `part:${part.table}.${part.name}`;
 }
 
 function partView(part: PartEntry): PartView {
@@ -141,7 +145,7 @@ function partView(part: PartEntry): PartView {
     id: partId(part),
     section: PART_SECTIONS[part.table] ?? `[${part.table}]`,
     name: part.name,
-    key: `[${part.table}.${part.name}]`,
+    key: part.table === "" ? `[${part.name}]` : `[${part.table}.${part.name}]`,
     summary: part.keys.length > 0 ? `Sets ${part.keys.join(", ")}` : "Sets nothing yet",
     where: where(part.set),
   };

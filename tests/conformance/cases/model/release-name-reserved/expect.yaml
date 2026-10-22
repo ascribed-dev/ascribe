@@ -1,0 +1,9 @@
+description: >-
+  While a target is left to the implicit dimension, `release` is reserved:
+  a project that declares its own `release` dimension gets an error at
+  each such target.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-releases-target, file: ascribe.toml, line: 8}

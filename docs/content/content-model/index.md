@@ -75,9 +75,9 @@ In VS Code, [Project Settings](../editor/settings.md#project-settings) shows a p
 
 @include: ../_fragments/content-model/types.md
 
-**The page title.** A page type has to declare `title`, as a required `string` field (`model-type-title`). It's the page's title everywhere Ascribe needs one: an empty link to the page shows it as its text, for one ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)). The field can accept phrases (§11), and code spans (§5.3).
+**The page title.** Every page type has `title`, a required `string` field, whether it declares it or not. It's the page's title everywhere Ascribe needs one: an empty link to the page shows it as its text, for one ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)). Declaring it, in `[frontmatter]` or in a type's own `frontmatter`, changes only how it's read: it can accept phrases (§11), and code spans (§5.3). A declared `title` that's optional, has a default, or isn't a string is an error at the field (`model-field-reserved`).
 
-**Reserved keys.** `type` (the page's [content type](#4-typesname-and-fragments)), `available` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)), `variant` ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)), `permalink` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's [permalink](../writing/frontmatter.md#a-pages-permalink)), `listing` (below), `replaces` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), the page [a page replaces](../writing/frontmatter.md#a-page-that-replaces-another)), and `nav-label` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's name in the sidebar and the previous and next links) are reserved frontmatter keys. Any page can use them, whatever its type says, and they mean what SPEC says; a type that declares one is an error (`model-field-reserved`). Generated consumer schemas include them automatically, except `listing`, which reaches a site in the page's record (output-layout contract §1.3), `replaces`, which reaches it in the versions file (output-layout contract §1.5), and `nav-label`, which reaches it in the navigation (output-layout contract §1.6). `intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](../writing/directives.md#intended), and since no output has it, generated consumer schemas leave it out. With the `astro` profile, a type can't declare `slug` either (`model-field-reserved`): Astro would take a page's `slug` as its entry id instead of its path, and publish the page at an address Ascribe never worked out.
+**Reserved keys.** `type` (the page's [content type](#4-typesname-and-fragments)), `available` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)), `variant` ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)), `permalink` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's [permalink](../writing/frontmatter.md#a-pages-permalink)), `listing` (below), `replaces` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), the page [a page replaces](../writing/frontmatter.md#a-page-that-replaces-another)), and `nav-label` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's name in the sidebar and the previous and next links) are reserved frontmatter keys. Any page can use them, whatever its type says, and they mean what SPEC says; a type, or `[frontmatter]`, that declares one is an error (`model-field-reserved`). Generated consumer schemas include them automatically, except `listing`, which reaches a site in the page's record (output-layout contract §1.3), `replaces`, which reaches it in the versions file (output-layout contract §1.5), and `nav-label`, which reaches it in the navigation (output-layout contract §1.6). `intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](../writing/directives.md#intended), and since no output has it, generated consumer schemas leave it out. With the `astro` profile, a type can't declare `slug` either (`model-field-reserved`): Astro would take a page's `slug` as its entry id instead of its path, and publish the page at an address Ascribe never worked out.
 
 `formatted` is reserved on page types too: the site output writes the formatted form of fields that set `inline` under it (§5.3), so a type must not declare it (`model-field-reserved`).
 
@@ -136,15 +136,26 @@ Each output has the title both ways: as plain text, `ascribe.toml reference`, an
 - **The JSON output** has the plain text in `title` and `frontmatter`, and the formatted form in `formatted.title`, a list of text and code pieces.
 - **Review** shows the formatted title where a page's title is a heading or a list entry: the heading of VS Code's page preview, the HTML report's list of pages and its page headings, and the list of comments in the editor and the site preview. **Ascribe: Changed Pages**, which can show only text, writes the code spans between backticks. Tooltips, buttons, and search keep the plain text.
 
-Only a content type's own `string` fields can set it, not fields in objects or the fragment schema, and `"code"` is its only value (`model-inline-field`).
+Only a page type's top-level `string` fields can set it, its own or `[frontmatter]`'s, not fields in objects or the fragment schema, and `"code"` is its only value (`model-inline-field`).
 
 ### 5.4 Field roles
 
-A field's name is yours to choose, so a check that needs a page's description or the date it's due for review, or a report that counts pages by owner, reads the field the content type marks with a `role`:
+A check that needs a page's description or the date it's due for review, or a report that counts pages by owner, reads the field with that role.
+
+@available: next
+A field named for a role has it, when its type is one the role takes:
+
+```toml
+[frontmatter]
+description = "string?"
+review-date = "date?"
+owner = "enum(docs, platform)"
+```
+
+A field's name is yours to choose, so a field of another name takes a role with `role`, and the field named for it then has none:
 
 ```toml
 [types.guide.frontmatter]
-title = "string"
 summary = { type = "string?", role = "description" }
 review-by = { type = "date?", role = "review-date" }
 team = { type = "enum(docs, platform)", role = "owner" }
@@ -156,9 +167,9 @@ team = { type = "enum(docs, platform)", role = "owner" }
 | `review-date` | `date`, optional or not | [`review-overdue`](../checks/diagnostics/content-checks.md#ASC153) reports a page whose date has passed. |
 | `owner` | `string` or `enum`, optional or not | [`ascribe report inventory`](../checks/report-command.md#cli-report) counts pages by owner. |
 
-Without a role, those checks don't look at the type's pages, and the report counts its pages as having no owner. A role changes nothing in the outputs.
+Without a field with the role, those checks don't look at the type's pages, and the report counts its pages as having no owner. A role changes nothing in the outputs.
 
 @available: ascribe 0.4.0
 In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) shows a page's description against its limit, and when it's due for review, from the fields with these roles.
 
-**Rules.** A role is one of the three (`model-field-role`), on a field of its type, in a content type's own fields: not a field in an object, nor in the fragment schema. Two fields of one type can't have the same role.
+**Rules.** A role is one of the three (`model-field-role`), on a field of its type, in a page type's top-level fields, its own or `[frontmatter]`'s: not a field in an object, nor in the fragment schema. Two fields of one table can't have the same role. A role a type gives one of its own fields with `role` is that field's, and not a field's in `[frontmatter]`. A field named for a role has it only when no other field of the type is given it, and its type is one the role takes: a `description` that's a number is a field like any other.

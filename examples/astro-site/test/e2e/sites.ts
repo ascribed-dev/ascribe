@@ -68,6 +68,8 @@ site = "https://docs.example.com"
 base-path = "/"
 trailing-slash = "never"
 permalink-path = "/go/"
+# The docs publish what agents read; the home page publishes nothing for them.
+agents = false
 
 [types.page.frontmatter]
 title = "string"

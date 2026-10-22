@@ -15,11 +15,11 @@ An AI agent reading your docs does better with Markdown than with HTML, and with
 @id: publish-for-ai-agents
 
 @steps
-1. In `ascribe.toml`'s `[consumer]`, set `agents = true`, beside `site`:
+1. In `ascribe.toml`'s `[consumer]`, set `site`, the site's address. With it, the outputs for agents are on; the example says so with `agents = true`, which is the default once `site` is set:
 
    @snippet: code:examples/astro-site/ascribe.toml#agents
 
-   `site` is required, because everything an agent reads links by absolute URL.
+   `site` is required, because everything an agent reads links by absolute URL. A site that publishes nothing for agents sets `agents = false`.
 
 2. Write each page's `description`, the field its type marks `role = "description"`, as one sentence saying what the page is for. It's what an agent picks a page by.
 3. Run `ascribe check`. It advises on a page whose description is too long for its line in `llms.txt`, and on an `llms.txt` that's still too long when split.

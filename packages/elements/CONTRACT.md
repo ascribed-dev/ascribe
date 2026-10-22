@@ -86,7 +86,7 @@ A `@variant` group that keeps more than one arm in the build (SPEC §9.3, §9.4)
 |---|---|---|
 | `sync` | dimensional groups only | The dimension this group switches on. Groups with the same `sync` on a page switch together, and the reader's choice is remembered across pages. Labeled groups have no `sync` and never sync (SPEC §4.3: they're local to their page). |
 
-**Choosing `sync`:** among the dimensions every surviving arm names, the first, in the content model's declaration order of `[dimensions]`, on which the arms' values differ; if the arms have the same values on every dimension they share, the first one they share. For the usual group, whose arms each name one dimension, it's that dimension.
+**Choosing `sync`:** among the dimensions every surviving arm names, the first, in the content model's declaration order of `[dimensions]`, then the implicit `release` dimension, on which the arms' values differ; if the arms have the same values on every dimension they share, the first one they share. For the usual group, whose arms each name one dimension, it's that dimension.
 
 **Children:** one `<ascribe-tab>` per surviving arm, in source order, and nothing else.
 

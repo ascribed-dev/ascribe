@@ -1,0 +1,8 @@
+spec = "0.1"
+
+# A string field named `description` is the page's description, without
+# `role`.
+[frontmatter]
+description = "string?"
+
+[types.page]

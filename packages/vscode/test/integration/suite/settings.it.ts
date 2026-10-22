@@ -90,7 +90,7 @@ describe("Project Settings on examples/quill", () => {
       (s) =>
         s.id.startsWith("checks.") && s.id.endsWith(".level") && s.id !== "checks.vale.max-level",
     );
-    assert.equal(levels.length, 48);
+    assert.equal(levels.length, 49);
     // Opening it again shows the tab that's open, with the focus. The focus
     // lands once the webview has loaded, which can be after the command is
     // done; a test that goes on to Undo in the file waits for it, or the
@@ -203,7 +203,8 @@ describe("Project Settings on examples/quill", () => {
     assert.ok(document, "ascribe.toml isn't open");
     assert.equal(
       document.getText(),
-      onDisk.replace('base-path = "/"\n', 'base-path = "/"\nhtml = false\n'),
+      // At the end of [consumer], after its last key.
+      onDisk.replace("agents = false\n", "agents = false\nhtml = false\n"),
     );
     await settings.reset(HTML);
     await settings.whenDrawn("html, its default", (d) => !shown(d, HTML).resettable);

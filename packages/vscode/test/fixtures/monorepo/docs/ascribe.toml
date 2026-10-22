@@ -29,6 +29,8 @@ availability = { filter = "cloud" }
 [editor]
 build = "site"
 
-# The tests write pages that nothing links to.
+# The tests write pages that nothing links to, and that have no
+# description, which `description` is by its name.
 [checks]
 page-orphan = "off"
+page-description-missing = "off"

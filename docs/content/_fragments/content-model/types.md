@@ -3,16 +3,26 @@
 A **content type** is a frontmatter schema for a kind of page. A page names its type in its frontmatter, with `type`.
 
 ```toml
-[types.guide.frontmatter]
-title = "string"
+[frontmatter]
 description = "string?"
 
+[types.guide]
+
 [types.reference.frontmatter]
-title = "string"
 api-version = "string"
 ```
 
 `<name>` is the type's name (`key` rule). It appears in diagnostics, in generated code (the Zod schema's name), and on each page of the type, as the value of `type`.
+
+@available: next
+**Frontmatter every type shares.** `[frontmatter]` declares the fields every page type has, written as a type's own are, so a field every page has is written once. A type's own `frontmatter` adds fields to them. A type that declares a field `[frontmatter]` has replaces it whole, for that type: an index page's type can make a shared `description` optional, or give it a default. The two aren't merged key by key, so a field reads as one declaration, wherever it's written. The implicit `page` type of a project that declares no types has them too.
+
+@available: next
+**Where a field is declared.** In VS Code, hover a field's key in `ascribe.toml`, or a frontmatter key in a page, to see whether the field is `[frontmatter]`'s, the type's own, or the `title` every type has; on a field of `[frontmatter]`, the hover names the types that replace it. `ascribe model --section types` says the same after each field's type, and its JSON in each field's `declared`: `frontmatter`, `type`, or `implicit`. A type's field that's the same as `[frontmatter]`'s, key for key, changes nothing, and is reported as advice at the type's field (`frontmatter-field-repeated`), with a fix that deletes it; written in another form, as `{ type = "string" }` for `"string"`, it's still the same field.
+
+@include: ../../_generated/content-model-frontmatter.md
+
+Every page type has a required string `title`, whether it's declared or not (below), so a type with nothing else of its own needs no keys: `[types.guide]` above is a type a page can name, with `title` and the shared fields.
 
 @include: ../../_generated/content-model-types.md
 
@@ -26,7 +36,7 @@ api-version: "3"
 ---
 ```
 
-- **A project that declares no types** has one, the implicit `page`, whose only field is a required string `title`. Its pages need no `type`, and a page that has one is an error (`content-type-unknown`), with a fix that removes it.
+- **A project that declares no types** has one, the implicit `page`, whose fields are a required string `title` and `[frontmatter]`'s. Its pages need no `type`, and a page that has one is an error (`content-type-unknown`), with a fix that removes it.
 - **A project that declares types** has no implicit one. A page that names no type is an error on the page (`content-type-missing`), with a fix for each declared type that adds `type:` to the page's frontmatter. A page whose `type` names a type that isn't declared is an error at the value (`content-type-unknown`), with a fix to the closest name when one is close.
 - **Fragments** have no type (§4.3), and can't use `type` (`frontmatter-reserved-in-fragment`).
 
@@ -40,7 +50,9 @@ template = "templates/how-to.md"
 guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 ```
 
-Each file must be there, with its name's case as it is on disk, inside the folder `ascribe.toml` is in, and outside the content root, where it would be read as a page, and the output directory, which a build writes and removes. A symbolic link is followed to where it leads (`model-type-file`). `guide` is always a list, even with one file in it (`model-wrong-type`). The template is read when the content model loads, and must read as a page: valid YAML between its `---` lines, and no error in its Ascribe syntax (`model-type-template`). Either is a problem with the content model, reported at the path, once, rather than on every page made from the template. A type with neither key is as it is without them.
+Each file must be there, with its name's case as it is on disk, inside the folder `ascribe.toml` is in, and outside the content root, where it would be read as a page, and the output directory, which a build writes and removes. A symbolic link is followed to where it leads (`model-type-file`). `guide` is always a list, even with one file in it (`model-wrong-type`). The template is read when the content model loads, and must read as a page: valid YAML between its `---` lines, and no error in its Ascribe syntax (`model-type-template`). Either is a problem with the content model, reported at the path, once, rather than on every page made from the template.
+
+**A template from the lock.** A type with neither key takes its template and guide from `templates/templates.lock`, the file [`ascribe templates eject`](../../templates/command.md#cli-templates-eject) writes, when the lock records a template under the type's name: its template, then their guide and Ascribe's notes on the type, in the order to read them. That's how a type `eject` added or kept has its template, with nothing about it in `ascribe.toml`. A type that names either key keeps what it names and takes nothing from the lock, so a project without one, or a template written by hand, names its files as above. The files the lock gives are held to the same rules, and a problem with one is the type's (`model-type-template`), reported at the type's `[types.<name>]`, since `ascribe.toml` has no path to point at. A lock that isn't there, or isn't one `eject` wrote, gives nothing; [`ascribe templates status`](../../templates/command.md#cli-templates-status) says what's wrong with it. In VS Code, the hover on a type's name in `ascribe.toml` says where its template comes from.
 
 **What a type is for.** `purpose` is one string, for a project's own types, and for a team that wants to say what one of the starter set's types means to it:
 

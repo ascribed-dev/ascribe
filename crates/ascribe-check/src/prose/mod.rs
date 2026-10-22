@@ -89,6 +89,21 @@ pub fn lint(
     )
 }
 
+/// `found` without the `prose-not-checked` advice, unless the project asked
+/// for its prose to be checked everywhere, with `[checks.vale] in-check`, or
+/// the caller was asked to check it (`--vale`): a machine without Vale isn't
+/// told so otherwise. `ascribe check` runs Vale only when asked, so it keeps
+/// everything; the editor runs it whenever the project has `[checks.vale]`.
+pub fn said(model: &ContentModel, asked: bool, found: Vec<Diagnostic>) -> Vec<Diagnostic> {
+    if asked || model.checks.vale.as_ref().is_some_and(|v| v.in_check) {
+        return found;
+    }
+    found
+        .into_iter()
+        .filter(|d| d.slug != diagnostics::PROSE_NOT_CHECKED)
+        .collect()
+}
+
 /// [`lint`], for pages given one by one: the language server's, which keeps
 /// the text it's sent. `terms` are the glossary's words, as
 /// [`glossary_words`] gives them.

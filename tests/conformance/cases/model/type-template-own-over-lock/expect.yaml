@@ -1,0 +1,9 @@
+description: >-
+  A type that names its own template keeps it, and takes nothing from
+  `templates/templates.lock`, though the lock records a template under the
+  type's name: so the files the lock names, which aren't there, aren't
+  looked for.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics: []

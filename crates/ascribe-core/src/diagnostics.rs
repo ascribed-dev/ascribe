@@ -221,9 +221,6 @@ pub const MODEL_CONTENT_ROOT_MISSING: DiagnosticSlug = DiagnosticSlug("model-con
 pub const MODEL_OUTPUT_OVERLAPS_CONTENT: DiagnosticSlug =
     DiagnosticSlug("model-output-overlaps-content");
 
-/// `ASC073`, error, file level: a rule for loading `ascribe.toml`.
-pub const MODEL_TYPE_TITLE: DiagnosticSlug = DiagnosticSlug("model-type-title");
-
 /// `ASC074`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_FIELD_RESERVED: DiagnosticSlug = DiagnosticSlug("model-field-reserved");
 
@@ -746,6 +743,9 @@ pub const TERM_OFF_GLOSSARY_PAGE: DiagnosticSlug = DiagnosticSlug("term-off-glos
 /// `ASC243`, advice, file level: a content check (area `project`).
 pub const BASELINE_ENTRY_UNMATCHED: DiagnosticSlug = DiagnosticSlug("baseline-entry-unmatched");
 
+/// `ASC244`, advice, file level: a content check (area `project`).
+pub const FRONTMATTER_FIELD_REPEATED: DiagnosticSlug = DiagnosticSlug("frontmatter-field-repeated");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -816,7 +816,6 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_PATH_ABSOLUTE,
     MODEL_CONTENT_ROOT_MISSING,
     MODEL_OUTPUT_OVERLAPS_CONTENT,
-    MODEL_TYPE_TITLE,
     MODEL_FIELD_RESERVED,
     MODEL_TYPE_SYNTAX,
     MODEL_TYPE_FIELDS,
@@ -984,6 +983,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     GLOSSARY_DEFINITION_LONG,
     TERM_OFF_GLOSSARY_PAGE,
     BASELINE_ENTRY_UNMATCHED,
+    FRONTMATTER_FIELD_REPEATED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1038,6 +1038,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     NAV_LABEL_LONG,
     GLOSSARY_DEFINITION_LONG,
     BASELINE_ENTRY_UNMATCHED,
+    FRONTMATTER_FIELD_REPEATED,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

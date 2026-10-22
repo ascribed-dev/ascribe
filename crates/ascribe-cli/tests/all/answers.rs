@@ -268,6 +268,89 @@ fn model_cuts_a_long_list_and_names_the_section() {
     assert!(one.get("types").is_none(), "{one}");
 }
 
+#[test]
+fn model_lists_the_implicit_release_dimension() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        &dir.path().join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[dimensions.pm]\nvalues = [\"npm\"]\n\n\
+         [releases.ascribe]\nlabel = \"Ascribe\"\nlive = [\"0.4.1\"]\n",
+    );
+    fs::create_dir(dir.path().join("docs")).unwrap();
+    let text = stdout(&run(dir.path(), &["model", "--section", "dimensions"], 0));
+    assert!(text.contains("- `pm` (pm): `npm`\n"), "{text}");
+    assert!(
+        text.contains("- `release` (Release): `ascribe`\n"),
+        "{text}"
+    );
+    let value = json(dir.path(), &["model", "--section", "dimensions"], 0);
+    let release = &value["dimensions"][1];
+    assert_eq!(release["name"], "release");
+    assert_eq!(release["values"][0]["label"], "Ascribe");
+}
+
+#[test]
+fn model_says_which_table_declares_each_field() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        &dir.path().join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[frontmatter]\ndescription = \"string\"\n\n\
+         [types.guide.frontmatter]\nsteps = \"number\"\n\n\
+         [types.index.frontmatter]\ndescription = \"string?\"\n\n\
+         [types.note]\n",
+    );
+    fs::create_dir(dir.path().join("docs")).unwrap();
+    let text = stdout(&run(dir.path(), &["model", "--section", "types"], 0));
+    assert!(
+        text.contains(
+            "- `guide`: frontmatter `title` (string, required, implicit), \
+             `description` (string, required, from `[frontmatter]`), `steps` (number, required, own)\n"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains(
+            "- `index`: frontmatter `title` (string, required, implicit), `description` (string, own)\n"
+        ),
+        "{text}"
+    );
+    let value = json(dir.path(), &["model", "--section", "types"], 0);
+    let declared = |ty: usize| -> Vec<(String, String)> {
+        value["types"][ty]["fields"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|f| {
+                (
+                    f["name"].as_str().unwrap().to_owned(),
+                    f["declared"].as_str().unwrap().to_owned(),
+                )
+            })
+            .collect()
+    };
+    let pairs = |list: &[(&str, &str)]| -> Vec<(String, String)> {
+        list.iter()
+            .map(|(a, b)| ((*a).to_owned(), (*b).to_owned()))
+            .collect()
+    };
+    assert_eq!(
+        declared(0),
+        pairs(&[
+            ("title", "implicit"),
+            ("description", "frontmatter"),
+            ("steps", "type")
+        ])
+    );
+    assert_eq!(
+        declared(1),
+        pairs(&[("title", "implicit"), ("description", "type")])
+    );
+    assert_eq!(
+        declared(2),
+        pairs(&[("title", "implicit"), ("description", "frontmatter")])
+    );
+}
+
 /// Every key of a section of settings, from the registry, as a JSON
 /// section has them: `(table, key)` for the keys a table of its own has, such
 /// as `[checks.vale]`'s, and the key alone for the rest.
@@ -337,6 +420,29 @@ fn model_shows_each_section_of_settings_with_its_values_and_defaults() {
             })
             .collect();
         assert_eq!(keys, registry_keys(section), "{section}");
+    }
+}
+
+#[test]
+fn model_shows_agents_on_by_default_only_with_a_site() {
+    for (consumer, on) in [("site = \"https://example.com\"\n", true), ("", false)] {
+        let dir = tempfile::tempdir().unwrap();
+        write(
+            &dir.path().join("ascribe.toml"),
+            &format!("spec = \"0.1\"\n\n[consumer]\n{consumer}"),
+        );
+        fs::create_dir(dir.path().join("docs")).unwrap();
+        let report = json(dir.path(), &["model", "--section", "consumer"], 0);
+        let agents = report["consumer"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|s| s["key"] == "agents")
+            .unwrap_or_else(|| panic!("no agents: {report}"))
+            .clone();
+        assert_eq!(agents["value"], on, "{agents}");
+        assert_eq!(agents["default"], on, "{agents}");
+        assert_eq!(agents["set"], false, "{agents}");
     }
 }
 
