@@ -2,6 +2,7 @@
 type: how-to
 title: Publish for AI agents
 description: Publish llms.txt and a Markdown version of each page with an Astro site, so an AI agent reading the docs gets Markdown and an index to choose pages from.
+permalink: publish-for-agents
 ---
 
 An AI agent reading your docs does better with Markdown than with HTML, and with an index to choose pages from. This guide turns on the outputs for agents, which each build then publishes with the site, as the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) lays them out.
