@@ -25,6 +25,14 @@ live = ["3.4", "3.5"]
 
 A line holds every version that starts with it: `3.4` holds `3.4.0` and `3.4.2`. Write lines as finely as you release, `["3.4", "3.5"]` for minor releases or `["0.2.0", "0.3.0"]` for patch releases. The newest is the current line.
 
+The target is the table's name. When a dimension already has it, as `deployment` has `self-managed`, it's that dimension's value. A product with no dimension of its own needs none: `[releases.quill]` declares `quill` as a value of the implicit dimension `release`, and `label` gives the name a reader sees:
+
+```toml
+[releases.quill]
+label = "Quill"
+live = ["3.4", "3.5"]
+```
+
 ### 2. Say what's planned, ending, and gone
 
 Add what a reader can't be on yet, and what they can't be on any more, if you have them:

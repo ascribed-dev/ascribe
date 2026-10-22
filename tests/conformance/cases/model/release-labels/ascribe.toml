@@ -1,0 +1,16 @@
+spec = "0.1"
+
+# The implicit dimension's label, and each target's.
+[releases]
+label = "Product"
+
+[releases.agent]
+label = "Quill Agent"
+live = ["1.2"]
+
+[releases.cli]
+live = ["0.4"]
+
+[features.sso]
+name = "Single sign-on"
+available = "agent 1.2, cli 0.4"

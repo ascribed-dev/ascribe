@@ -1,0 +1,17 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+# No declared dimension has `agent` or `cli`, so each is a value of the
+# implicit dimension `release`.
+[releases.agent]
+live = ["1.2"]
+
+[releases.cli]
+live = ["0.4"]
+
+[builds.site]
+
+[builds.agent]
+variants = { release = "agent" }
