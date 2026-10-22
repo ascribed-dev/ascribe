@@ -5,9 +5,9 @@
 // docs/ascribe.toml) and the changelog the site renders (`changelogFile` in
 // site/src/changelog.ts), the tables site/home/ascribe.toml copies from
 // docs/ascribe.toml, the docs' address the Report workflow checks, and the
-// install commands the landing page and the README repeat from getting
-// started, and the language server's own requests the editor's language
-// server page lists. A copy that can't be generated is compared here, so
+// install commands the landing page, in its hero and in Start, and the
+// README repeat from getting started, and the language server's own
+// requests the editor's language server page lists. A copy that can't be generated is compared here, so
 // changing one place and not the others fails. The npm platform packages are
 // checked the same way in scripts/release/manifests.test.ts.
 import { execFileSync } from "node:child_process";
@@ -300,10 +300,14 @@ function section(markdown: string, heading: string): string {
   return markdown.slice(start, end === -1 ? undefined : end);
 }
 
-/** The lines of each ```sh block in a text. */
-function shell(text: string): string[][] {
-  return Array.from(text.matchAll(/^```sh\n([\s\S]*?)^```$/gm), ([, block = ""]) =>
-    block.trim().split("\n"),
+/** The lines of each ```sh block in a text, and with `indented`, each in a list item too. */
+function shell(text: string, indented = false): string[][] {
+  const fence = indented ? /^[ \t]*```sh\n([\s\S]*?)^[ \t]*```$/gm : /^```sh\n([\s\S]*?)^```$/gm;
+  return Array.from(text.matchAll(fence), ([, block = ""]) =>
+    block
+      .trim()
+      .split("\n")
+      .map((line) => line.trim()),
   );
 }
 
@@ -317,9 +321,13 @@ test("the landing page and the README install what getting started's first two s
   });
   expect(installs[0]).toMatch(/^npm install /);
 
-  // The landing page shows the two, each in a block of its own.
-  const landing = shell(section(read("site/home/content/index.md"), "Start"));
+  // The landing page shows the two in Start, each in a block of its own, a
+  // step's, and the first in its hero, before the first section.
+  const page = read("site/home/content/index.md");
+  const landing = shell(section(page, "Start"), true);
   expect(landing).toEqual(installs.map((command) => [command]));
+  const hero = shell(page.slice(0, page.indexOf("\n## ")));
+  expect(hero).toEqual([[installs[0]]]);
 
   // The README's "Get started" block starts with them, then checks.
   const readme = shell(section(read("README.md"), "Get started"))[0];

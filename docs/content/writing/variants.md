@@ -2,6 +2,7 @@
 type: tutorial
 title: Content that varies
 description: Writing one page for readers on different platforms or products, with alternatives, availability, and a build for each audience.
+permalink: variants
 ---
 
 Some of a page is the same for every reader, and some isn't: the install command differs by platform, and a section applies to some platforms and not others. Ascribe keeps it all in one page, and lets each output decide what its readers get. This guide adds a section that differs by platform to an install page, marks one that doesn't apply everywhere, and builds the page twice: once for the site, with every platform, and once for Windows readers alone.
