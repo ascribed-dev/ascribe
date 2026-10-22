@@ -5,6 +5,14 @@
   </picture>
 </h1>
 
+[Website](https://ascribed-dev.com) · [Docs](https://ascribed-dev.com/go/docs/) · [Install](https://ascribed-dev.com/go/install/) · [Changelog](CHANGELOG.md)
+
+[![CI](https://github.com/ascribed-dev/ascribe/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ascribed-dev/ascribe/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@ascribed/cli?label=npm)](https://www.npmjs.com/package/@ascribed/cli)
+[![VS Code](https://vsmarketplacebadges.dev/version/Ascribe.ascribe-vscode.svg?label=VS%20Code)](https://marketplace.visualstudio.com/items?itemName=Ascribe.ascribe-vscode)
+[![License: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-blue)](LICENSE)
+[![Status: early](https://img.shields.io/badge/status-early-orange)](https://ascribed-dev.com)
+
 Ascribe is a toolchain for documentation written as code: Markdown with the structure docs need, checked as you write, and built into a website, plain Markdown, and JSON.
 
 ````markdown
