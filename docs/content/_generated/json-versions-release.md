@@ -4,6 +4,85 @@
 ```json
 {
   "$defs": {
+    "ClearedFileJson": {
+      "description": "A source file with marks that say nothing once the line that was\ncurrent is archived.",
+      "properties": {
+        "file": {
+          "description": "The file, from the project root.",
+          "type": "string"
+        },
+        "marks": {
+          "description": "Each mark removed or rewritten.",
+          "items": {
+            "$ref": "#/$defs/ClearedMarkJson"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "file",
+        "marks"
+      ],
+      "type": "object"
+    },
+    "ClearedMarkJson": {
+      "description": "A mark that says nothing, removed or rewritten.",
+      "properties": {
+        "from": {
+          "description": "Its entry for the target, as written.",
+          "type": "string"
+        },
+        "line": {
+          "description": "Its line, from 1, before the release.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "to": {
+          "description": "The entry as rewritten; null when the mark is removed.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "line",
+        "from",
+        "to"
+      ],
+      "type": "object"
+    },
+    "FeatureJson": {
+      "description": "A feature moved by the release.",
+      "properties": {
+        "from": {
+          "description": "Its spec before.",
+          "type": "string"
+        },
+        "kept": {
+          "description": "The other targets its spec names, left as they were.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "key": {
+          "description": "Its key.",
+          "type": "string"
+        },
+        "to": {
+          "description": "Its spec after.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "from",
+        "to",
+        "kept"
+      ],
+      "type": "object"
+    },
     "FileJson": {
       "description": "A source file the release rewrites.",
       "properties": {
@@ -106,6 +185,20 @@
       "description": "The version of Ascribe that wrote it.",
       "type": "string"
     },
+    "cleared": {
+      "description": "Each source file with marks for the target that say nothing once\n`archived` is, removed or rewritten, from the project root.",
+      "items": {
+        "$ref": "#/$defs/ClearedFileJson"
+      },
+      "type": "array"
+    },
+    "cleared_features": {
+      "description": "Each feature whose spec says nothing for the target once `archived`\nis, rewritten.",
+      "items": {
+        "$ref": "#/$defs/FeatureJson"
+      },
+      "type": "array"
+    },
     "files": {
       "description": "Each source file whose marks are rewritten, from the project root.",
       "items": {
@@ -164,6 +257,8 @@
     "next_added",
     "archived",
     "files",
+    "cleared",
+    "cleared_features",
     "outputs"
   ],
   "title": "VersionsReleaseReport",

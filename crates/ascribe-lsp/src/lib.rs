@@ -91,8 +91,8 @@ pub use project_edit::{
     METHOD as PROJECT_EDIT_METHOD, ProjectEditKind, ProjectEditParams, ProjectEditResult,
 };
 pub use release::{
-    ChangedOutput, MovedFeature, ReleaseError, Released, ReleasedFile, Releasing, RewrittenMark,
-    release,
+    ChangedOutput, ClearedFile, ClearedMark, MovedFeature, ReleaseError, Released, ReleasedFile,
+    Releasing, RewrittenMark, release,
 };
 pub use rename::{RenameError, Renamed, Renaming, Rewritten, rename};
 pub use retire::{Retired, Retirement, retire};
