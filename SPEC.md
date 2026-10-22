@@ -897,7 +897,7 @@ A content model declares the following.
 
 | Declaration | Contents | Used by |
 |---|---|---|
-| Content types | A frontmatter schema per page type, each requiring a string `title`, and a fragment schema. Fields are typed as string, number, boolean, date, enumeration, list, or object, and may be optional or have a default. A page type's string field may opt in to code spans, so a title can show code, and a page type's fields may have roles. A page names its type in its frontmatter, with `type` | §2, §5.2 |
+| Content types | A frontmatter schema per page type, each with a required string `title`, fields every page type shares, and a fragment schema. Fields are typed as string, number, boolean, date, enumeration, list, or object, and may be optional or have a default. A page type's string field may opt in to code spans, so a title can show code, and a page type's fields may have roles. A page names its type in its frontmatter, with `type` | §2, §5.2 |
 | Fragment patterns | Additional globs that mark files as fragments | §2.2 |
 | Directive schemas | For each project widget: forms, primary kind, attributes, binding, title, groupable, plain fallback | §3, §6 |
 | Dimensions | Each dimension's name, values, and display labels, and which values are versionless | §4.3, §4.4 |
@@ -924,9 +924,11 @@ The site output writes image attributes onto `<img>` elements and project widget
 
 A string field is plain text unless the content model opts it in to code spans. Such a field's value is read as CommonMark inline content that recognizes only code spans and backslash escapes; everything else in it is literal text. The outputs carry both its plain text, the value without markup, and its formatted form, which keeps the code spans: the site output writes the plain text as the field's value and the formatted form beside it, and a page title's formatted form is used for its level-1 heading in plain markdown and for empty link text (§5.2). Phrases in such a field are substituted outside its code spans only (§5.1).
 
-A page type's top-level field MAY have a role, which says what the field is for, whatever its name, so a tool can find it: `description`, on a string field, is the page's description; `review-date`, on a date field, is the date its content is due for review; and `owner`, on a string or enum field, names who looks after the page. A content type has at most one field with each role. Roles change no output.
+A page type's top-level field MAY have a role, which says what the field is for, whatever its name, so a tool can find it: `description`, on a string field, is the page's description; `review-date`, on a date field, is the date its content is due for review; and `owner`, on a string or enum field, names who looks after the page. A content type has at most one field with each role. A field named `description`, `review-date`, or `owner` has that role, when its type is one the role takes, unless the content model gives the role to another of the type's fields. Roles change no output.
 
-A page's content type is the one its frontmatter's `type` names (§2.1), wherever the page is: a type applies to pages by what they say, not by where their files are, so a folder can hold pages of every type. A content model that declares no types has one, the implicit `page`, whose only field is a required string `title`; its pages name no type. A content model that declares types has no implicit one: each of its pages names one of the declared types.
+Every page type has a required string field `title`, the page's title, whether the content model declares it or not; a declaration of it changes only how it's read, such as with code spans, and processors reject a content model that declares it optional, with a default, or of another type when loading it. A content model MAY declare fields every page type shares. A page type has each of them unless it declares a field of the same name, which replaces the shared one whole for that type, and it MAY declare no fields of its own.
+
+A page's content type is the one its frontmatter's `type` names (§2.1), wherever the page is: a type applies to pages by what they say, not by where their files are, so a folder can hold pages of every type. A content model that declares no types has one, the implicit `page`, whose fields are `title` and the shared ones; its pages name no type. A content model that declares types has no implicit one: each of its pages names one of the declared types.
 
 ### 7.3 Sources
 

@@ -198,7 +198,7 @@
           "type": "array"
         },
         "name": {
-          "description": "Its name in that table: `guide`.",
+          "description": "Its name in that table: `guide`, or `frontmatter`.",
           "type": "string"
         },
         "set": {
@@ -213,7 +213,7 @@
           "description": "Where the file names it: its key, in its table's header or its\ndotted key. `null` when it can't be placed."
         },
         "table": {
-          "description": "The table it's in: `types`, `dimensions`, `releases`, `builds`, or\n`sources`.",
+          "description": "The table it's in: `types`, `dimensions`, `releases`, `builds`, or\n`sources`; empty for a table at the top level, `[frontmatter]`.",
           "type": "string"
         }
       },
@@ -412,7 +412,7 @@
       ]
     },
     "parts": {
-      "description": "The parts of the project with structure the file names: each content\ntype, dimension, release target, build, and source, in the content\nmodel reference's order and the file's within each.",
+      "description": "The parts of the project with structure the file names: the\nfrontmatter every type shares, then each content type, dimension,\nrelease target, build, and source, in the content model reference's\norder and the file's within each.",
       "items": {
         "$ref": "#/$defs/PartEntry"
       },

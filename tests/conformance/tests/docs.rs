@@ -513,6 +513,13 @@ const SETTINGS_TABLES: &[SettingsTable] = &[
         releases: false,
     },
     SettingsTable {
+        name: "content-model-frontmatter.md",
+        page: "_fragments/content-model/types.md",
+        table: "",
+        keys: &["frontmatter"],
+        releases: false,
+    },
+    SettingsTable {
         name: "content-model-types.md",
         page: "_fragments/content-model/types.md",
         table: "types.<name>",

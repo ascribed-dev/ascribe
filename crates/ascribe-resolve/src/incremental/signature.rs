@@ -219,6 +219,8 @@ impl Fingerprints {
         let ContentModel {
             spec,
             project,
+            // Each type's fields have `[frontmatter]`'s already.
+            frontmatter: _,
             types,
             fragments,
             dimensions,

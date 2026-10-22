@@ -81,9 +81,10 @@ pub struct SettingsResult {
     /// Every configurable check: the ones the file sets first, then the
     /// rest, each in the diagnostics reference's order.
     pub checks: Vec<CheckEntry>,
-    /// The parts of the project with structure the file names: each content
-    /// type, dimension, release target, build, and source, in the content
-    /// model reference's order and the file's within each.
+    /// The parts of the project with structure the file names: the
+    /// frontmatter every type shares, then each content type, dimension,
+    /// release target, build, and source, in the content model reference's
+    /// order and the file's within each.
     pub parts: Vec<PartEntry>,
 }
 
@@ -94,9 +95,9 @@ pub struct SettingsResult {
 #[serde(rename_all = "camelCase")]
 pub struct PartEntry {
     /// The table it's in: `types`, `dimensions`, `releases`, `builds`, or
-    /// `sources`.
+    /// `sources`; empty for a table at the top level, `[frontmatter]`.
     pub table: String,
-    /// Its name in that table: `guide`.
+    /// Its name in that table: `guide`, or `frontmatter`.
     pub name: String,
     /// The keys the file sets in it, in the file's order.
     pub keys: Vec<String>,
@@ -458,11 +459,25 @@ pub(crate) fn settings_now(now: &ModelNow) -> SettingsResult {
 /// cards, in the content model reference's order.
 const PART_TABLES: [&str; 5] = ["types", "dimensions", "releases", "builds", "sources"];
 
-/// The parts the file names: each table of [`PART_TABLES`]'s entries that is
-/// a table itself, which leaves out a key of the table's own, such as
-/// `[releases] planned-label`.
+/// The parts the file names: `[frontmatter]`, whose keys are the fields every
+/// type shares, then each table of [`PART_TABLES`]'s entries that is a table
+/// itself, which leaves out a key of the table's own, such as `[releases]
+/// planned-label`.
 fn parts_now(now: &ModelNow, file: &ModelFile<'_>, index: &LineIndex) -> Vec<PartEntry> {
     let mut parts = Vec::new();
+    if let Some(root) = file.table_like(&path(&[]))
+        && let Some((key, item)) = root.get_key_value("frontmatter")
+        && let Some(shared) = item.as_table_like()
+    {
+        parts.push(PartEntry {
+            table: String::new(),
+            name: "frontmatter".to_owned(),
+            keys: shared.iter().map(|(k, _)| k.to_owned()).collect(),
+            set: key
+                .span()
+                .map(|span| setting_place(now, index, Span::new(span.start, span.end))),
+        });
+    }
     for table in PART_TABLES {
         let Some(entries) = file.table_like(&path(&[table])) else {
             continue;

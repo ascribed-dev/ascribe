@@ -221,9 +221,6 @@ pub const MODEL_CONTENT_ROOT_MISSING: DiagnosticSlug = DiagnosticSlug("model-con
 pub const MODEL_OUTPUT_OVERLAPS_CONTENT: DiagnosticSlug =
     DiagnosticSlug("model-output-overlaps-content");
 
-/// `ASC073`, error, file level: a rule for loading `ascribe.toml`.
-pub const MODEL_TYPE_TITLE: DiagnosticSlug = DiagnosticSlug("model-type-title");
-
 /// `ASC074`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_FIELD_RESERVED: DiagnosticSlug = DiagnosticSlug("model-field-reserved");
 
@@ -816,7 +813,6 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_PATH_ABSOLUTE,
     MODEL_CONTENT_ROOT_MISSING,
     MODEL_OUTPUT_OVERLAPS_CONTENT,
-    MODEL_TYPE_TITLE,
     MODEL_FIELD_RESERVED,
     MODEL_TYPE_SYNTAX,
     MODEL_TYPE_FIELDS,

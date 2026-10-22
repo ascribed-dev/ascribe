@@ -71,7 +71,6 @@ ASC067 = "_generated/diagnostics-content-model.md#ASC067"
 ASC068 = "_generated/diagnostics-content-model.md#ASC068"
 ASC069 = "_generated/diagnostics-content-model.md#ASC069"
 ASC070 = "_generated/diagnostics-content-model.md#ASC070"
-ASC073 = "_generated/diagnostics-content-model.md#ASC073"
 ASC074 = "_generated/diagnostics-content-model.md#ASC074"
 ASC075 = "_generated/diagnostics-content-model.md#ASC075"
 ASC076 = "_generated/diagnostics-content-model.md#ASC076"
@@ -324,4 +323,5 @@ versions = "versions/index.md"
 workspaces-with-several-projects = "editor/settings.md#workspaces-with-several-projects"
 
 [retired]
+ASC073 = "model-type-title is gone: every page type has a required string title, declared or not"
 cli-render = "The command ascribe render was renamed ascribe resolve"

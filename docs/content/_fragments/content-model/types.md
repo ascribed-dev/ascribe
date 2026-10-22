@@ -3,16 +3,23 @@
 A **content type** is a frontmatter schema for a kind of page. A page names its type in its frontmatter, with `type`.
 
 ```toml
-[types.guide.frontmatter]
-title = "string"
+[frontmatter]
 description = "string?"
 
+[types.guide]
+
 [types.reference.frontmatter]
-title = "string"
 api-version = "string"
 ```
 
 `<name>` is the type's name (`key` rule). It appears in diagnostics, in generated code (the Zod schema's name), and on each page of the type, as the value of `type`.
+
+@available: next
+**Frontmatter every type shares.** `[frontmatter]` declares the fields every page type has, written as a type's own are, so a field every page has is written once. A type's own `frontmatter` adds fields to them. A type that declares a field `[frontmatter]` has replaces it whole, for that type: an index page's type can make a shared `description` optional, or give it a default. The two aren't merged key by key, so a field reads as one declaration, wherever it's written. The implicit `page` type of a project that declares no types has them too.
+
+@include: ../../_generated/content-model-frontmatter.md
+
+Every page type has a required string `title`, whether it's declared or not (below), so a type with nothing else of its own needs no keys: `[types.guide]` above is a type a page can name, with `title` and the shared fields.
 
 @include: ../../_generated/content-model-types.md
 
@@ -26,7 +33,7 @@ api-version: "3"
 ---
 ```
 
-- **A project that declares no types** has one, the implicit `page`, whose only field is a required string `title`. Its pages need no `type`, and a page that has one is an error (`content-type-unknown`), with a fix that removes it.
+- **A project that declares no types** has one, the implicit `page`, whose fields are a required string `title` and `[frontmatter]`'s. Its pages need no `type`, and a page that has one is an error (`content-type-unknown`), with a fix that removes it.
 - **A project that declares types** has no implicit one. A page that names no type is an error on the page (`content-type-missing`), with a fix for each declared type that adds `type:` to the page's frontmatter. A page whose `type` names a type that isn't declared is an error at the value (`content-type-unknown`), with a fix to the closest name when one is close.
 - **Fragments** have no type (§4.3), and can't use `type` (`frontmatter-reserved-in-fragment`).
 

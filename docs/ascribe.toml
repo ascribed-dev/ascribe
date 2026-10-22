@@ -5,19 +5,23 @@ spec = "0.1"
 content-root = "content"
 output-dir = ".ascribe/build"
 
-# Every page names its type with `type:` in its frontmatter. Five of the
-# types are the set's, from `ascribe templates eject`: each one's template and
-# guide are in templates/, with Ascribe's notes on it, and templates.lock
-# records where they came from. What the set's types don't have is put back
-# here: each type's purpose, and the same frontmatter on all of them. Titles
-# can show code ("`ascribe.toml` reference"); the site's layout uses the
-# formatted title for the heading and the sidebar.
+# Every page names its type with `type:` in its frontmatter, and every type
+# has the fields in `[frontmatter]`. Titles can show code ("`ascribe.toml`
+# reference"); the site's layout uses the formatted title for the heading and
+# the sidebar. A field named `description` is the page's description, which
+# the checks and llms.txt read.
+[frontmatter]
+title = { type = "string", inline = "code" }
+description = "string"
 
 # The home page, a list of the other pages. No template is for a landing page,
-# so the type has none.
-[types.index.frontmatter]
-title = { type = "string", inline = "code" }
-description = { type = "string", role = "description" }
+# so the type has nothing of its own.
+[types.index]
+
+# Five of the types are the set's, from `ascribe templates eject`: each one's
+# template and guide are in templates/, with Ascribe's notes on it, and
+# templates.lock records where they came from. What the set's types don't
+# have is put back here: each type's purpose.
 
 # The reference's template is the set's, taken with `ascribe templates eject
 # reference --keep-type`; the type is the docs' own. The contracts are written
@@ -28,46 +32,26 @@ template = "templates/reference.md"
 guide = ["templates/reference.guide.md", "templates/reference.ascribe.md"]
 purpose = "Looking up a command, a key of ascribe.toml, a directive, a diagnostic, the editor's features and settings, or a contract's rules."
 
-[types.reference.frontmatter]
-title = { type = "string", inline = "code" }
-description = { type = "string", role = "description" }
-
 # The set's other four types, from `ascribe templates eject`.
 [types.how-to]
 template = "templates/how-to.md"
 guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 purpose = "Doing one thing with Ascribe once you know what it is: publishing a site, reviewing a pull request, keeping examples in step with code, setting up an agent, checking prose, acting on a report, publishing permalinks, taking the page templates, keeping a page's reasons in memos, or setting up a glossary."
 
-[types.how-to.frontmatter]
-title = { type = "string", inline = "code" }
-description = { type = "string", role = "description" }
-
 [types.tutorial]
 template = "templates/tutorial.md"
 guide = ["templates/tutorial.guide.md", "templates/tutorial.ascribe.md"]
 purpose = "Learning Ascribe by building an example project a step at a time: a first project, then content that varies."
-
-[types.tutorial.frontmatter]
-title = { type = "string", inline = "code" }
-description = { type = "string", role = "description" }
 
 [types.concept]
 template = "templates/concept.md"
 guide = ["templates/concept.guide.md", "templates/concept.ascribe.md"]
 purpose = "Understanding an idea behind the docs a team publishes, such as what Ascribe can't measure and where to look instead."
 
-[types.concept.frontmatter]
-title = { type = "string", inline = "code" }
-description = { type = "string", role = "description" }
-
 [types.troubleshooting]
 template = "templates/troubleshooting.md"
 guide = ["templates/troubleshooting.guide.md", "templates/troubleshooting.ascribe.md"]
 purpose = "Finding out why something isn't working, from what it shows, and what to do about it."
-
-[types.troubleshooting.frontmatter]
-title = { type = "string", inline = "code" }
-description = { type = "string", role = "description" }
 
 # Commands that differ by package manager. The site shows them as tabs, and a
 # reader's choice holds on every page.
@@ -213,3 +197,4 @@ preset = "quiet"
 
 [permalinks.retired]
 cli-render = { to = "command/questions.md#cli-resolve", reason = "The command ascribe render was renamed ascribe resolve" }
+ASC073 = { to = "content-model/index.md#41-page-types", reason = "model-type-title is gone: every page type has a required string title, declared or not" }

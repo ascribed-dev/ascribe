@@ -272,9 +272,12 @@ impl Loader<'_> {
         t: &DeTable<'_>,
         reserved: Option<&dyn Fn(&str) -> bool>,
     ) -> Vec<Field> {
-        // `inline` and `role` are for a content type's own fields: the outputs
-        // carry a formatted form only for those, and a role is the page's.
-        let place = if path.starts_with("types.") && path.ends_with(".frontmatter") {
+        // `inline` and `role` are for a page type's top-level fields, its own
+        // or `[frontmatter]`'s: the outputs carry a formatted form only for
+        // those, and a role is the page's.
+        let place = if path == "frontmatter"
+            || (path.starts_with("types.") && path.ends_with(".frontmatter"))
+        {
             None
         } else if path.starts_with("fragments.") {
             Some("`[fragments.frontmatter]`")
@@ -747,17 +750,30 @@ impl Loader<'_> {
 
 /// Where the content model's text `text` writes the `default` of the field
 /// `field` of the content type `ty`: the value's span, for a check that
-/// reports on it. `None` when it writes none, or doesn't parse.
+/// reports on it. The type's own field is the one it has, when it declares
+/// one, and `[frontmatter]`'s otherwise. `None` when it writes none, or
+/// doesn't parse.
 pub fn field_default_span(text: &str, ty: &str, field: &str) -> Option<Span> {
     let root = DeTable::parse(text).ok()?;
-    let mut table = root.get_ref();
-    for key in ["types", ty, "frontmatter", field] {
-        let DeValue::Table(t) = table.get(key)?.get_ref() else {
-            return None;
-        };
-        table = t;
-    }
-    table.get("default").map(sp)
+    let table = |keys: &[&str]| {
+        let mut table = root.get_ref();
+        for key in keys {
+            let DeValue::Table(t) = table.get(*key)?.get_ref() else {
+                return None;
+            };
+            table = t;
+        }
+        Some(table)
+    };
+    let own = table(&["types", ty, "frontmatter"]).and_then(|t| t.get(field));
+    let entry = match own {
+        Some(entry) => entry,
+        None => table(&["frontmatter"])?.get(field)?,
+    };
+    let DeValue::Table(t) = entry.get_ref() else {
+        return None;
+    };
+    t.get("default").map(sp)
 }
 
 /// The `default` value node of a table-form entry.

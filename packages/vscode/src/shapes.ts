@@ -1900,10 +1900,10 @@ export interface PageTemplate {
 export interface PartEntry {
   /**
    * The table it's in: `types`, `dimensions`, `releases`, `builds`, or
-   * `sources`.
+   * `sources`; empty for a table at the top level, `[frontmatter]`.
    */
   table: string;
-  /** Its name in that table: `guide`. */
+  /** Its name in that table: `guide`, or `frontmatter`. */
   name: string;
   /** The keys the file sets in it, in the file's order. */
   keys: string[];
@@ -2406,9 +2406,10 @@ export interface SettingsResult {
    */
   checks: CheckEntry[];
   /**
-   * The parts of the project with structure the file names: each content
-   * type, dimension, release target, build, and source, in the content
-   * model reference's order and the file's within each.
+   * The parts of the project with structure the file names: the
+   * frontmatter every type shares, then each content type, dimension,
+   * release target, build, and source, in the content model reference's
+   * order and the file's within each.
    */
   parts: PartEntry[];
 }
