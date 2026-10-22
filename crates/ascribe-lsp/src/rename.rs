@@ -175,7 +175,10 @@ fn phrase(ctx: &Ctx, key: &str, new: &str) -> Result<WorkspaceEdit, RenameError>
             "`{new}` is a phrase already."
         )));
     }
-    let span = refactor::phrase_entry_span(&ctx.model_text, key).ok_or_else(cant_change)?;
+    let Some(span) = refactor::phrase_entry_span(&ctx.model_text, key) else {
+        // A phrase `[from]` takes is renamed where it's written.
+        return refactor::rename_phrase(ctx, key, new, None).ok_or_else(cant_change);
+    };
     let position = position(&ctx.model_text, span.start())?;
     refactor::prepare_model(ctx, position).map_err(RenameError::Refused)?;
     refactor::rename_model_key(ctx, position, new).ok_or_else(cant_change)
@@ -366,12 +369,15 @@ fn rewritten(ctx: &Ctx, edit: WorkspaceEdit) -> Result<Vec<Rewritten>, RenameErr
     Ok(files.into_values().collect())
 }
 
-/// The text of a file an edit changes: `ascribe.toml`, a source file as the
-/// project was loaded, or another file of the project, such as the code a
-/// `@snippet` shows.
+/// The text of a file an edit changes: `ascribe.toml`, a file its `[from]`
+/// takes from, a source file as the project was loaded, or another file of
+/// the project, such as the code a `@snippet` shows.
 fn text_of(ctx: &Ctx, root: &Path, path: &Path) -> Option<String> {
     if *path == normalize(&ctx.config) {
         return Some(ctx.model_text.clone());
+    }
+    if let Some(taken) = ctx.taken().iter().find(|t| t.path == *path) {
+        return Some(taken.text.clone());
     }
     if let Some(content) = relative_path(&ctx.content_dir, path)
         && let Some(file) = ctx.snapshot.file(&content)

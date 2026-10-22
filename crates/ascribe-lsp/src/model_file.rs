@@ -9,6 +9,15 @@
 //! text, parsed, must hold the same values as the document changed through
 //! `toml_edit`'s own API. An edit that doesn't is refused, never made by
 //! rewriting the file.
+//!
+//! A key `[from]` takes from another project's `ascribe.toml` (SPEC §7.9) is
+//! edited where it's written: a file parsed with the files it takes from
+//! ([`ModelTexts`]) sends each change at a taken key to the file that holds
+//! it, at the same path, and [`ModelFile::finish`] checks each file's edits
+//! on their own.
+
+use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
 
 use ascribe_core::{Span, TextEdit, apply_edits};
 use serde_json::{Map, Value as Json};
@@ -40,30 +49,226 @@ pub(crate) enum Change {
     Remove(Vec<Seg>),
 }
 
-/// A text edit to the file, and the change it makes.
-pub(crate) type Edit = (TextEdit, Change);
+/// A text edit, the change it makes, and the file it's in: `None` for
+/// `ascribe.toml`, or a file it takes from, as `[from]` writes its path.
+#[derive(Clone, Debug)]
+pub(crate) struct Edit {
+    edit: TextEdit,
+    change: Change,
+    file: Option<String>,
+}
 
-/// `ascribe.toml`'s text, parsed with the spans of everything in it.
+impl Edit {
+    fn new(edit: TextEdit, change: Change) -> Edit {
+        Edit {
+            edit,
+            change,
+            file: None,
+        }
+    }
+
+    /// The same edit, made in `file`, a file `[from]` takes from.
+    fn in_taken(self, file: &TakenFile) -> Edit {
+        Edit {
+            file: Some(file.file.clone()),
+            ..self
+        }
+    }
+}
+
+/// Another project's `ascribe.toml` that `[from]` takes from (SPEC §7.9),
+/// as an edit reads it and leaves it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TakenFile {
+    /// Its path, as `[from]` writes it: from the folder `ascribe.toml` is in.
+    pub file: String,
+    /// Its path, absolute.
+    pub path: PathBuf,
+    /// Its text.
+    pub text: String,
+}
+
+/// `ascribe.toml`'s text, and each file `[from]` takes from that could be
+/// read, for edits that write a taken key where it's written. Edits are made
+/// to it in steps, each parsed from what the step before left.
+#[derive(Clone, Debug)]
+pub(crate) struct ModelTexts {
+    /// `ascribe.toml`'s text.
+    pub text: String,
+    /// The files it takes from.
+    taken: Vec<TakenFile>,
+    /// Which of `taken` an edit changed.
+    changed: Vec<bool>,
+}
+
+impl ModelTexts {
+    /// `text`, with the files of `taken` it takes from, as read already.
+    pub(crate) fn new(text: impl Into<String>, taken: Vec<TakenFile>) -> ModelTexts {
+        ModelTexts {
+            text: text.into(),
+            changed: vec![false; taken.len()],
+            taken,
+        }
+    }
+
+    /// The texts, parsed.
+    pub(crate) fn parse(&self) -> Result<ModelFile<'_>, String> {
+        ModelFile::parse_taking(&self.text, &self.taken)
+    }
+
+    /// The texts after `finished`, the edits of a step.
+    pub(crate) fn apply(&mut self, finished: &Finished) {
+        self.text.clone_from(&finished.text);
+        for changed in &finished.taken {
+            if let Some(i) = self.taken.iter().position(|t| t.file == changed.file.file) {
+                self.taken[i].text.clone_from(&changed.file.text);
+                self.changed[i] = true;
+            }
+        }
+    }
+
+    /// The files it takes from that the edits changed, with their texts now.
+    pub(crate) fn changed(&self) -> Vec<TakenFile> {
+        self.taken
+            .iter()
+            .zip(&self.changed)
+            .filter(|(_, changed)| **changed)
+            .map(|(t, _)| t.clone())
+            .collect()
+    }
+}
+
+/// The files the content model in `text`, the text of `config`, takes
+/// from with `[from]`, read from the disk as the loader reads them. One that
+/// can't be read is left out, so an edit of a key it holds is refused.
+pub fn read_taken(text: &str, config: &Path) -> Vec<TakenFile> {
+    let root = config.parent().unwrap_or(Path::new("."));
+    ascribe_model::from_files(text)
+        .into_iter()
+        .filter_map(|file| {
+            let read = ascribe_check::type_files::read_taken(root, &file).ok()?;
+            Some(TakenFile {
+                path: ascribe_core::path::normalize(&root.join(&file)),
+                file,
+                text: read,
+            })
+        })
+        .collect()
+}
+
+/// The edits of a step, checked: `ascribe.toml`'s and each other file's.
+#[derive(Clone, Debug)]
+pub(crate) struct Finished {
+    /// The edits to `ascribe.toml`, sorted.
+    pub edits: Vec<TextEdit>,
+    /// `ascribe.toml`'s text after them.
+    pub text: String,
+    /// Each file `[from]` takes from that the step changes.
+    pub taken: Vec<FinishedTaken>,
+}
+
+/// The edits to a file `[from]` takes from.
+#[derive(Clone, Debug)]
+pub(crate) struct FinishedTaken {
+    /// The file, with its text after the edits.
+    pub file: TakenFile,
+    /// Its text before them.
+    pub before: String,
+    /// The edits, sorted.
+    pub edits: Vec<TextEdit>,
+}
+
+impl Finished {
+    /// The files `[from]` takes from that the step changes, as the loader
+    /// reads them: each path as `[from]` writes it, and its text after.
+    pub(crate) fn taken_texts(&self) -> Vec<(String, String)> {
+        self.taken
+            .iter()
+            .map(|t| (t.file.file.clone(), t.file.text.clone()))
+            .collect()
+    }
+
+    /// The edits to the files `[from]` takes from as the client's, by the
+    /// file's URI, with `encoding`'s columns. `None` when a file can't be
+    /// named as a URI.
+    pub(crate) fn taken_changes(
+        &self,
+        encoding: crate::position::Encoding,
+    ) -> Option<Vec<(lsp_types::Uri, Vec<lsp_types::TextEdit>)>> {
+        self.taken
+            .iter()
+            .map(|t| {
+                let index = ascribe_core::LineIndex::new(&t.before);
+                let edits = t
+                    .edits
+                    .iter()
+                    .map(|e| lsp_types::TextEdit {
+                        range: encoding.range(&index, e.span),
+                        new_text: e.new_text.clone(),
+                    })
+                    .collect();
+                Some((crate::uri::path_to_uri(&t.file.path)?, edits))
+            })
+            .collect()
+    }
+}
+
+/// `ascribe.toml`'s text, parsed with the spans of everything in it, and the
+/// files `[from]` takes from, parsed too.
 pub(crate) struct ModelFile<'a> {
     text: &'a str,
     doc: Document<&'a str>,
     nl: &'static str,
+    taken: Vec<(&'a TakenFile, ModelFile<'a>)>,
+}
+
+/// The keys at the start of a path, up to an array's item.
+fn keys(at: &[Seg]) -> Vec<&str> {
+    at.iter()
+        .map_while(|seg| match seg {
+            Seg::Key(key) => Some(key.as_str()),
+            Seg::Index(_) => None,
+        })
+        .collect()
 }
 
 impl<'a> ModelFile<'a> {
-    /// Parses the text.
+    /// Parses the text alone: a change at a key `[from]` takes is refused.
     pub(crate) fn parse(text: &'a str) -> Result<ModelFile<'a>, String> {
+        ModelFile::parse_taking(text, &[])
+    }
+
+    /// Parses the text, and each file of `taken` it takes from, so a change
+    /// at a taken key is made in the file that holds it. One of `taken`
+    /// that isn't TOML is left out.
+    pub(crate) fn parse_taking(
+        text: &'a str,
+        taken: &'a [TakenFile],
+    ) -> Result<ModelFile<'a>, String> {
         let doc = Document::parse(text)
             .map_err(|e| format!("`ascribe.toml` isn't valid TOML: {}", e.message()))?;
         Ok(ModelFile {
             text,
             doc,
             nl: if text.contains("\r\n") { "\r\n" } else { "\n" },
+            taken: taken
+                .iter()
+                .filter_map(|t| Some((t, ModelFile::parse(&t.text).ok()?)))
+                .collect(),
         })
     }
 
-    /// The item at a path.
+    /// The item at a path, in the file that holds it.
     pub(crate) fn get(&self, path: &[Seg]) -> Option<&Item> {
+        match self.holder(path) {
+            Ok(Some(i)) => self.taken[i].1.get(path),
+            Err(_) if ascribe_model::taken_from(self.text, &keys(path)).is_some() => None,
+            _ => self.get_here(path),
+        }
+    }
+
+    /// The item at a path, in this file.
+    fn get_here(&self, path: &[Seg]) -> Option<&Item> {
         let mut item = self.doc.as_item();
         for seg in path {
             item = match seg {
@@ -74,41 +279,40 @@ impl<'a> ModelFile<'a> {
         Some(item)
     }
 
-    /// Refuses a change at `at` when `[from]` takes what's there, or a key
-    /// in it, from another file (SPEC §7.9): a taken key is edited where
-    /// it's written, and nothing here edits that file yet.
-    fn refuse_taken(&self, at: &[Seg]) -> Result<(), String> {
-        let keys: Vec<&str> = at
-            .iter()
-            .map_while(|seg| match seg {
-                Seg::Key(key) => Some(key.as_str()),
-                Seg::Index(_) => None,
-            })
-            .collect();
-        let Some(from) = self.doc.get("from").and_then(Item::as_table_like) else {
-            return Ok(());
-        };
-        for (file, table) in from.iter() {
-            let Some(take) = table.get("take").and_then(Item::as_array) else {
-                continue;
-            };
-            for name in take.iter().filter_map(Value::as_str) {
-                let taken: Vec<&str> = name.split('.').collect();
-                let n = taken.len().min(keys.len());
-                if n > 0 && taken[..n] == keys[..n] {
-                    return Err(format!(
-                        "`{name}` is taken from `{file}` by `[from]`, so it's changed there, not in this `ascribe.toml`. Edit `{file}`."
-                    ));
-                }
-            }
+    /// Which file holds what's at `at` (SPEC §7.9): `None` for this one, or
+    /// the index of the file `[from]` takes it from. Refused when that file
+    /// couldn't be read, or when `at` is a table `[from]` takes a key of,
+    /// which a change would split between two files.
+    fn holder(&self, at: &[Seg]) -> Result<Option<usize>, String> {
+        let keys = keys(at);
+        if let Some(taken) = ascribe_model::taken_from(self.text, &keys) {
+            return self
+                .taken
+                .iter()
+                .position(|(t, _)| t.file == taken.file)
+                .map(Some)
+                .ok_or_else(|| {
+                    format!(
+                        "`{}` is taken from `{}` by `[from]`, and that file can't be read, so it can't be changed. Edit `{}`.",
+                        taken.name, taken.file, taken.file
+                    )
+                });
         }
-        Ok(())
+        if let Some(taken) = ascribe_model::taken_inside(self.text, &keys) {
+            return Err(format!(
+                "`{}` is taken from `{}` by `[from]`, so `{}` is written in two files and can't be changed whole.",
+                taken.name,
+                taken.file,
+                keys.join(".")
+            ));
+        }
+        Ok(None)
     }
 
     /// The key of the table-like item at `table` that `offset` is on, with
-    /// its span.
+    /// its span, in this file.
     pub(crate) fn key_at(&self, table: &[&str], offset: usize) -> Option<(String, Span)> {
-        let t = self.table_like(&path(table))?;
+        let t = self.get_here(&path(table))?.as_table_like()?;
         t.iter().find_map(|(name, _)| {
             let (key, _) = t.get_key_value(name)?;
             let span = key.span()?;
@@ -136,7 +340,12 @@ impl<'a> ModelFile<'a> {
             .into_iter()
             .chain([Seg::Key(key.to_owned())])
             .collect();
-        self.refuse_taken(&full)?;
+        if let Some(i) = self.holder(&full)? {
+            return Ok(self.taken[i]
+                .1
+                .add_entry(table, key, value)?
+                .in_taken(self.taken[i].0));
+        }
         let change = Change::Set(full, value.clone());
         let key_text = Key::new(key).display_repr().into_owned();
         match self.get(&path(table)) {
@@ -149,7 +358,7 @@ impl<'a> ModelFile<'a> {
                 let nl = self.nl;
                 let sep = self.separator(None);
                 let text = format!("[{header}]{nl}{key_text}{sep}{value}{nl}");
-                Ok((self.append(&text), change))
+                Ok(Edit::new(self.append(&text), change))
             }
             Some(Item::Table(t)) if table.is_empty() => {
                 // The top level: after its last value, or before the first
@@ -173,14 +382,14 @@ impl<'a> ModelFile<'a> {
                         None => self.append(&format!("{line}{}", self.nl)),
                     },
                 };
-                Ok((edit, change))
+                Ok(Edit::new(edit, change))
             }
             Some(Item::Table(t)) if !t.is_dotted() && !t.is_implicit() => {
                 let (at, last) = self.after_entries(t);
                 let indent = last.map_or("", |(k, _)| self.indent(k));
                 let sep = self.separator(last);
                 let line = format!("{indent}{key_text}{sep}{value}");
-                Ok((self.insert_line(at, &line), change))
+                Ok(Edit::new(self.insert_line(at, &line), change))
             }
             Some(_) => Err(format!(
                 "`ascribe.toml` writes `{}` in a form this action can't add to. Add `{key}` to it by hand.",
@@ -198,7 +407,12 @@ impl<'a> ModelFile<'a> {
         entries: &[(&str, Value)],
         after: &[&str],
     ) -> Result<Edit, String> {
-        self.refuse_taken(&path(table))?;
+        if let Some(i) = self.holder(&path(table))? {
+            return Ok(self.taken[i]
+                .1
+                .add_table(table, entries, after)?
+                .in_taken(self.taken[i].0));
+        }
         if self.get(&path(table)).is_some() {
             return Err(format!(
                 "`ascribe.toml` already has `[{}]`.",
@@ -237,23 +451,66 @@ impl<'a> ModelFile<'a> {
                 self.insert_line(at, &format!("{nl}{}", text.trim_end()))
             }
         };
-        Ok((edit, change))
+        Ok(Edit::new(edit, change))
     }
 
     /// Replaces the value at `path`, keeping what's around it.
     pub(crate) fn replace_value(&self, at: &[Seg], value: Value) -> Result<Edit, String> {
-        self.refuse_taken(at)?;
+        if let Some(i) = self.holder(at)? {
+            return Ok(self.taken[i]
+                .1
+                .replace_value(at, value)?
+                .in_taken(self.taken[i].0));
+        }
         let span = self
             .get(at)
             .and_then(Item::span)
             .ok_or_else(|| "The value can't be found in `ascribe.toml`.".to_owned())?;
         let edit = TextEdit::replace(Span::new(span.start, span.end), value.to_string());
-        Ok((edit, Change::Set(at.to_vec(), value)))
+        Ok(Edit::new(edit, Change::Set(at.to_vec(), value)))
+    }
+
+    /// The edit to this file's `take` that follows a rename of the last key
+    /// of `at` to `new`, when `take` names that key itself, as
+    /// `releases.ascribe` or `phrases.version`: the key is renamed in the
+    /// file that holds it, and `take` names it by its new name. `None` when
+    /// `take` doesn't name it.
+    pub(crate) fn retake(&self, at: &[Seg], new: &str) -> Option<Edit> {
+        let keys = keys(at);
+        let taken = ascribe_model::taken_from(self.text, &keys)?;
+        if taken.name != keys.join(".") {
+            return None;
+        }
+        let take = vec![
+            Seg::Key("from".to_owned()),
+            Seg::Key(taken.file.clone()),
+            Seg::Key("take".to_owned()),
+        ];
+        let i = self
+            .get_here(&take)?
+            .as_array()?
+            .iter()
+            .position(|name| name.as_str() == Some(taken.name.as_str()))?;
+        let mut renamed = keys[..keys.len() - 1].to_vec();
+        renamed.push(new);
+        let mut item = take;
+        item.push(Seg::Index(i));
+        let value = Value::from(renamed.join("."));
+        let span = self.get_here(&item)?.span()?;
+        Some(Edit::new(
+            TextEdit::replace(Span::new(span.start, span.end), value.to_string()),
+            Change::Set(item, value),
+        ))
     }
 
     /// Renames the last key of `at`.
     pub(crate) fn rename_key(&self, at: &[Seg], new: &str) -> Result<Edit, String> {
-        self.refuse_taken(at)?;
+        if let Some(i) = self.holder(at)? {
+            return Ok(self.taken[i]
+                .1
+                .rename_key(at, new)?
+                .in_taken(self.taken[i].0));
+        }
         let missing = || "The key can't be found in `ascribe.toml`.".to_owned();
         let (Some(Seg::Key(old)), parent) = (at.last(), &at[..at.len().saturating_sub(1)]) else {
             return Err(missing());
@@ -267,7 +524,10 @@ impl<'a> ModelFile<'a> {
             Span::new(span.start, span.end),
             Key::new(new).display_repr().into_owned(),
         );
-        Ok((edit, Change::RenameKey(at.to_vec(), new.to_owned())))
+        Ok(Edit::new(
+            edit,
+            Change::RenameKey(at.to_vec(), new.to_owned()),
+        ))
     }
 
     /// Removes `key = value` from the `[header]` table at `table`, with its
@@ -277,7 +537,12 @@ impl<'a> ModelFile<'a> {
     /// before the key stays, since it may be about the lines around it too
     /// (decision 8 of the editor's next views).
     pub(crate) fn remove_entry(&self, table: &[&str], key: &str) -> Result<Edit, String> {
-        self.refuse_taken(&path(&[table, &[key]].concat()))?;
+        if let Some(i) = self.holder(&path(&[table, &[key]].concat()))? {
+            return Ok(self.taken[i]
+                .1
+                .remove_entry(table, key)?
+                .in_taken(self.taken[i].0));
+        }
         let refused = || {
             format!(
                 "`ascribe.toml` writes `{key}` in `{}` in a form this can't remove. Remove it by hand.",
@@ -306,16 +571,54 @@ impl<'a> ModelFile<'a> {
             .into_iter()
             .chain([Seg::Key(key.to_owned())])
             .collect();
-        Ok((
+        Ok(Edit::new(
             TextEdit::replace(Span::new(start, end), String::new()),
             Change::Remove(full),
         ))
     }
 
-    /// The edits, checked: applied to the text, they give a file with the
-    /// same values as the changes made through `toml_edit`'s API. Returns
-    /// the edits, sorted, and the text after them.
-    pub(crate) fn finish(&self, edits: Vec<Edit>) -> Result<(Vec<TextEdit>, String), String> {
+    /// The edits, checked: applied to each file's text, they give a file
+    /// with the same values as the changes made through `toml_edit`'s API.
+    /// Returns each file's edits, sorted, and its text after them.
+    pub(crate) fn finish(&self, edits: Vec<Edit>) -> Result<Finished, String> {
+        let mut here = Vec::new();
+        let mut taken: BTreeMap<String, Vec<Edit>> = BTreeMap::new();
+        for edit in edits {
+            match edit.file.clone() {
+                None => here.push(edit),
+                Some(file) => taken
+                    .entry(file)
+                    .or_default()
+                    .push(Edit { file: None, ..edit }),
+            }
+        }
+        let (edits, text) = self.finish_here(here)?;
+        let mut finished = Finished {
+            edits,
+            text,
+            taken: Vec::new(),
+        };
+        for (name, edits) in taken {
+            let (file, model) = self
+                .taken
+                .iter()
+                .find(|(t, _)| t.file == name)
+                .ok_or_else(|| format!("`{name}` can't be read, so it can't be changed."))?;
+            let (edits, text) = model.finish_here(edits)?;
+            finished.taken.push(FinishedTaken {
+                file: TakenFile {
+                    text,
+                    ..(*file).clone()
+                },
+                before: file.text.clone(),
+                edits,
+            });
+        }
+        Ok(finished)
+    }
+
+    /// [`ModelFile::finish`] for the edits to this file.
+    fn finish_here(&self, edits: Vec<Edit>) -> Result<(Vec<TextEdit>, String), String> {
         let refused =
             |why: &str| format!("The change can't be made in place in `ascribe.toml`: {why}.");
         let mut expected: DocumentMut = self
@@ -323,7 +626,7 @@ impl<'a> ModelFile<'a> {
             .parse()
             .map_err(|_| refused("the file isn't valid TOML"))?;
         let mut text_edits = Vec::with_capacity(edits.len());
-        for (edit, change) in edits {
+        for Edit { edit, change, .. } in edits {
             apply_change(expected.as_item_mut(), &change)
                 .ok_or_else(|| refused("its place in the file can't be found"))?;
             text_edits.push(edit);
@@ -569,12 +872,16 @@ fn plain_value(value: &Value) -> Json {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use toml_edit::Array;
 
     fn apply(text: &str, edits: Vec<Edit>) -> String {
         let file = ModelFile::parse(text).expect("parses");
-        let (edits, after) = file.finish(edits).expect("checks");
-        assert_eq!(apply_edits(text, &edits).expect("applies"), after);
-        after
+        let finished = file.finish(edits).expect("checks");
+        assert_eq!(
+            apply_edits(text, &finished.edits).expect("applies"),
+            finished.text
+        );
+        finished.text
     }
 
     const MODEL: &str = "# The content model.\nspec = \"0.1\"\n\n[phrases]\n# The product.\nproduct = \"Quill\"   # its name\n\n# Builds.\n[builds.site]\nvariants = \"switch\"\n";
@@ -585,8 +892,8 @@ mod tests {
         let edit = file
             .add_entry(&["phrases"], "cloud", Value::from("Quill Cloud"))
             .expect("adds");
-        assert!(edit.0.span.is_empty(), "an insertion, not a rewrite");
-        assert_eq!(edit.0.new_text, "cloud = \"Quill Cloud\"\n");
+        assert!(edit.edit.span.is_empty(), "an insertion, not a rewrite");
+        assert_eq!(edit.edit.new_text, "cloud = \"Quill Cloud\"\n");
         let after = apply(MODEL, vec![edit]);
         assert_eq!(
             after,
@@ -595,7 +902,82 @@ mod tests {
     }
 
     #[test]
-    fn a_key_from_takes_is_edited_in_its_own_file_not_here() {
+    fn a_key_from_takes_is_edited_where_it_s_written() {
+        let text = "spec = \"0.1\"\n\n[from.\"../docs/ascribe.toml\"]\ntake = [\"releases\", \"consumer.site\", \"phrases.version\"]\n\n[consumer]\nbase-path = \"/\"\n";
+        let docs = TakenFile {
+            file: "../docs/ascribe.toml".to_owned(),
+            path: PathBuf::from("/repo/docs/ascribe.toml"),
+            text: "spec = \"0.1\"\n\n[phrases]\nversion = \"0.4\"\n\n[consumer]\nsite = \"https://a.example\"\n\n[releases.ascribe]\nlive = [\"0.4\"]\n".to_owned(),
+        };
+        let taken = std::slice::from_ref(&docs);
+        let file = ModelFile::parse_taking(text, taken).expect("parses");
+        // What's taken is read and changed in the other file.
+        assert_eq!(
+            file.get(&path(&["consumer", "site"]))
+                .and_then(Item::as_str),
+            Some("https://a.example")
+        );
+        let edits = vec![
+            file.replace_value(
+                &path(&["releases", "ascribe", "live"]),
+                Value::from(Array::from_iter(["0.5", "0.4"])),
+            )
+            .expect("replaces"),
+            file.add_entry(
+                &["releases", "ascribe"],
+                "planned",
+                Value::from(Array::from_iter(["0.6"])),
+            )
+            .expect("adds"),
+            file.replace_value(
+                &path(&["consumer", "site"]),
+                Value::from("https://b.example"),
+            )
+            .expect("replaces"),
+            // A key of the same table that isn't taken is this file's.
+            file.add_entry(&["consumer"], "headers", Value::from("netlify"))
+                .expect("adds"),
+        ];
+        let finished = file.finish(edits).expect("checks");
+        assert_eq!(
+            finished.text,
+            "spec = \"0.1\"\n\n[from.\"../docs/ascribe.toml\"]\ntake = [\"releases\", \"consumer.site\", \"phrases.version\"]\n\n[consumer]\nbase-path = \"/\"\nheaders = \"netlify\"\n"
+        );
+        assert_eq!(finished.taken.len(), 1);
+        assert_eq!(finished.taken[0].before, docs.text);
+        assert_eq!(
+            finished.taken[0].file.text,
+            "spec = \"0.1\"\n\n[phrases]\nversion = \"0.4\"\n\n[consumer]\nsite = \"https://b.example\"\n\n[releases.ascribe]\nlive = [\"0.5\", \"0.4\"]\nplanned = [\"0.6\"]\n"
+        );
+        // A key taken by name is renamed there, and taken by its new name.
+        let rename = file
+            .rename_key(&path(&["phrases", "version"]), "release")
+            .expect("renames");
+        let retake = file
+            .retake(&path(&["phrases", "version"]), "release")
+            .expect("retakes");
+        let finished = file.finish(vec![rename, retake]).expect("checks");
+        assert!(
+            finished
+                .text
+                .contains("take = [\"releases\", \"consumer.site\", \"phrases.release\"]"),
+            "{}",
+            finished.text
+        );
+        assert!(
+            finished.taken[0].file.text.contains("release = \"0.4\""),
+            "{}",
+            finished.taken[0].file.text
+        );
+        // A table split between the two files isn't changed whole.
+        let split = file
+            .add_table(&["consumer"], &[], &[])
+            .expect_err("refused");
+        assert!(split.contains("written in two files"), "{split}");
+    }
+
+    #[test]
+    fn a_key_from_takes_is_refused_when_its_file_isn_t_read() {
         let text = "spec = \"0.1\"\n\n[from.\"../docs/ascribe.toml\"]\ntake = [\"releases\", \"consumer.site\"]\n\n[consumer]\nbase-path = \"/\"\n";
         let file = ModelFile::parse(text).expect("parses");
         let refused = file
@@ -810,7 +1192,7 @@ mod tests {
                 Value::from("cloud"),
             )
             .expect("found");
-        assert_eq!(&text[sso.0.span.range()], "\"cloud beta\"");
+        assert_eq!(&text[sso.edit.span.range()], "\"cloud beta\"");
         let log = file
             .replace_value(
                 &path(&["features", "log", "available"]),
@@ -842,10 +1224,10 @@ mod tests {
     #[test]
     fn an_edit_that_misses_its_change_is_refused() {
         let file = ModelFile::parse(MODEL).expect("parses");
-        let (mut edit, change) = file
+        let mut edit = file
             .add_entry(&["phrases"], "cloud", Value::from("Quill Cloud"))
             .expect("adds");
-        edit.new_text = "cloud = \"Quill\"\n".to_owned();
-        assert!(file.finish(vec![(edit, change)]).is_err());
+        edit.edit.new_text = "cloud = \"Quill\"\n".to_owned();
+        assert!(file.finish(vec![edit]).is_err());
     }
 }

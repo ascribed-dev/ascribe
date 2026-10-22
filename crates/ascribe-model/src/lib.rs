@@ -68,7 +68,7 @@ pub use crawlers::{
 };
 pub use examples::{EXAMPLES_FILE, ExamplesConfig, Observation, example_hash};
 pub use fields::{FieldPlace, field_default_span, own_field_place};
-pub use from::{TakenFiles, from_files};
+pub use from::{TakenFiles, TakenName, from_files, taken_from, taken_inside};
 pub use inline::{InlineMarkup, Segment};
 pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_hash, short_commit};
 pub use model::*;

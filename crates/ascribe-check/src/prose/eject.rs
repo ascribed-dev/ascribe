@@ -123,6 +123,14 @@ pub fn eject(root: &Path, model: &ContentModel, model_text: &str) -> Result<Ejec
         None => return Err(EjectError::NoPreset { config: None }),
     };
     let preset = Preset::find(name).ok_or(EjectError::NoPreset { config: None })?;
+    if let Some(taken) = ascribe_model::taken_from(model_text, &["checks", "vale", "preset"]) {
+        // The preset is written in another project's `ascribe.toml`, which
+        // can't name a configuration written beside this one.
+        return Err(EjectError::Model(format!(
+            "`{}` is taken from `{}` by `[from]`, and eject writes `{EJECTED_CONFIG}` beside this ascribe.toml, which that file can't name; run `ascribe vale eject` in that file's project",
+            taken.name, taken.file
+        )));
+    }
     for path in [EJECTED_CONFIG, EJECTED_STYLES] {
         // Outside FileSystem: Vale's configuration, which only Vale reads;
         // this asks whether the project has one, so as not to write over it.
@@ -265,6 +273,21 @@ mod tests {
             text
         );
         assert!(!dir.path().join(".vale").exists());
+    }
+
+    #[test]
+    fn a_preset_taken_from_another_file_is_ejected_there() {
+        let dir = tempfile::tempdir().unwrap();
+        let text = "spec = \"0.1\"\n[from.\"../docs/ascribe.toml\"]\ntake = [\"checks.vale\"]\n";
+        let taken = load("spec = \"0.1\"\n[checks.vale]\npreset = \"quiet\"\n");
+        let error = eject(dir.path(), &taken, text).unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("`checks.vale` is taken from `../docs/ascribe.toml` by `[from]`"),
+            "{error}"
+        );
+        assert!(!dir.path().join(".vale.ini").exists());
     }
 
     #[test]

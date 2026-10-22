@@ -1533,6 +1533,7 @@ impl Core {
         let config = self.config.clone()?;
         let (text, diagnostics) = self.model_diagnostics()?;
         Some(crate::settings::ModelNow {
+            taken: self.taken_files(text),
             text: text.to_owned(),
             version: self.docs.get(&config).map(|d| d.version),
             config,
@@ -1864,7 +1865,36 @@ impl Core {
             today: self.today(),
             held: self.held_now(path),
             baseline: loaded.baseline.clone(),
+            taken: self.taken_now(loaded),
         })
+    }
+
+    /// The files `[from]` takes from, for an edit: as the editor has each
+    /// one that's open, else as the disk has it. Unread when there are none,
+    /// so a request reads nothing more.
+    fn taken_now(&self, loaded: &Loaded) -> std::sync::OnceLock<Vec<crate::model_file::TakenFile>> {
+        let taken = std::sync::OnceLock::new();
+        if self.from_files.is_empty() {
+            return taken;
+        }
+        // A fresh lock, set once.
+        let _ = taken.set(self.taken_files(&loaded.model_text));
+        taken
+    }
+
+    /// The files the content model in `text` takes from with `[from]`: as
+    /// the editor has each one that's open, else as the disk has it.
+    fn taken_files(&self, text: &str) -> Vec<crate::model_file::TakenFile> {
+        let Some(config) = self.config.as_ref() else {
+            return Vec::new();
+        };
+        let mut files = crate::model_file::read_taken(text, config);
+        for file in &mut files {
+            if let Some(open) = self.docs.get(&file.path) {
+                file.text.clone_from(&open.text);
+            }
+        }
+        files
     }
 
     /// What the baseline holds back of a file's problems, when they're for

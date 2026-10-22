@@ -113,6 +113,13 @@
       },
       "type": "array"
     },
+    "from": {
+      "description": "The `ascribe.toml` the target's lines are written in, from the\ncurrent folder, when the project's `[from]` takes them from another\nproject's: the release is made in that project, and `files` are from\nits root. `null` when they're written in the project's own.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "line": {
       "description": "The line released, as given.",
       "type": "string"
@@ -164,7 +171,8 @@
     "next_added",
     "archived",
     "files",
-    "outputs"
+    "outputs",
+    "from"
   ],
   "title": "VersionsReleaseReport",
   "type": "object"

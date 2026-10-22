@@ -515,6 +515,26 @@ fn types_written_inline_can_t_be_added_to_and_nothing_is_written() {
 }
 
 #[test]
+fn types_taken_from_another_file_are_ejected_there_and_nothing_is_written() {
+    let model = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[from.\"shared/ascribe.toml\"]\ntake = [\"types\"]\n";
+    let dir = project(model);
+    std::fs::create_dir(dir.path().join("shared")).expect("made");
+    std::fs::write(
+        dir.path().join("shared/ascribe.toml"),
+        "spec = \"0.1\"\n\n[types.guide.frontmatter]\ntitle = \"string\"\n",
+    )
+    .expect("written");
+    let error = run(dir.path(), &["how-to"], "templates").expect_err("refused");
+    let message = error.to_string();
+    assert!(
+        message.contains("`types` is taken from `shared/ascribe.toml` by [from]"),
+        "{message}"
+    );
+    assert!(!dir.path().join("templates").exists());
+    assert_eq!(read(dir.path(), "ascribe.toml"), model);
+}
+
+#[test]
 fn a_project_with_no_types_keeps_the_page_type_its_pages_had() {
     let model = "spec = \"0.1\"\n";
     let dir = project(model);

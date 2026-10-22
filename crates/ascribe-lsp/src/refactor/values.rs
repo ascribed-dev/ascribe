@@ -54,22 +54,30 @@ pub(crate) fn in_page(file: &FileIndex, offset: usize) -> Option<DimensionValue>
 /// target in a `[releases.<target>]` header when it's a value of the
 /// implicit `release` dimension.
 pub(crate) fn in_model(ctx: &Ctx, offset: usize) -> Option<DimensionValue> {
-    find_in_model(ctx, |_, span| {
+    // Where it's written in this file: a value `[from]` takes is written in
+    // another.
+    let file = ModelFile::parse(&ctx.model_text).ok()?;
+    find_in_model(ctx, &file, |_, span| {
         span.start() <= offset && offset <= span.end()
     })
 }
 
-/// The value `value`, where a dimension's `values` in `ascribe.toml` has it,
-/// or where its `[releases.<target>]` header is.
+/// The value `value`, where a dimension's `values` has it, or where its
+/// `[releases.<target>]` header is: in `ascribe.toml`, or in the file
+/// `[from]` takes it from.
 pub(crate) fn named(ctx: &Ctx, value: &str) -> Option<DimensionValue> {
-    find_in_model(ctx, |text, _| text == value)
+    let file = ctx.model_file().ok()?;
+    find_in_model(ctx, &file, |text, _| text == value)
 }
 
 /// The first value in a dimension's `values`, or of the implicit `release`
 /// dimension in a `[releases.<target>]` header, that `wanted` takes, given
 /// its text and where it's written, quotes and all.
-fn find_in_model(ctx: &Ctx, wanted: impl Fn(&str, Span) -> bool) -> Option<DimensionValue> {
-    let file = ModelFile::parse(&ctx.model_text).ok()?;
+fn find_in_model(
+    ctx: &Ctx,
+    file: &ModelFile<'_>,
+    wanted: impl Fn(&str, Span) -> bool,
+) -> Option<DimensionValue> {
     for dimension in &ctx.model.dimensions {
         if dimension.implicit {
             let Some(releases) = file.table_like(&path(&["releases"])) else {
@@ -172,11 +180,17 @@ pub(crate) fn rename(ctx: &Ctx, value: &DimensionValue, new: &str) -> Option<Wor
     if refusal(ctx, value, new).is_some() {
         return None;
     }
-    let file = ModelFile::parse(&ctx.model_text).ok()?;
-    let (model_edits, model_text) = file.finish(model_edits(ctx, &file, value, new)?).ok()?;
+    let file = ctx.model_file().ok()?;
+    let finished = file.finish(model_edits(ctx, &file, value, new)?).ok()?;
     let root = ctx.config.parent()?;
-    ascribe_check::type_files::load_model(&model_text, root, ascribe_model::SourceBound::Anywhere)
-        .ok()?;
+    let taken = finished.taken_texts();
+    ascribe_check::type_files::load_model_changed(
+        &finished.text,
+        root,
+        ascribe_model::SourceBound::Anywhere,
+        &taken,
+    )
+    .ok()?;
 
     let mut edits: HashMap<RelPath, Vec<ByteEdit>> = HashMap::new();
     for file in ctx.snapshot.files() {
@@ -187,17 +201,18 @@ pub(crate) fn rename(ctx: &Ctx, value: &DimensionValue, new: &str) -> Option<Wor
     }
     let mut result = super::workspace_edit(ctx, edits);
     let index = LineIndex::new(&ctx.model_text);
-    let model_edits = model_edits
+    let model_edits = finished
+        .edits
         .iter()
         .map(|e| TextEdit {
             range: ctx.encoding.range(&index, e.span),
             new_text: e.new_text.clone(),
         })
         .collect();
-    result
-        .changes
-        .get_or_insert_with(HashMap::new)
-        .insert(crate::uri::path_to_uri(&ctx.config)?, model_edits);
+    let changes = result.changes.get_or_insert_with(HashMap::new);
+    changes.insert(crate::uri::path_to_uri(&ctx.config)?, model_edits);
+    // A value `[from]` takes is renamed in the file that holds it.
+    changes.extend(finished.taken_changes(ctx.encoding)?);
     Some(result)
 }
 
@@ -253,6 +268,8 @@ fn model_edits(
     let releases = path(&["releases", old]);
     if file.get(&releases).is_some() {
         out.push(file.rename_key(&releases, new).ok()?);
+        // Taken by name from another file, it's taken by its new name.
+        out.extend(file.retake(&releases, new));
     }
     // Builds' selections, filters, and the target they're versioned by: each
     // as declared, not each line.

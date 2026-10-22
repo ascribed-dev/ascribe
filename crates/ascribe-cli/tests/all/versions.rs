@@ -160,6 +160,105 @@ fn a_release_rewrites_the_planned_marks_and_archives_the_old_line() {
     assert_eq!(code_of(&check), 0, "{}{}", stdout(&check), stderr(&check));
 }
 
+/// A repository of two projects: `docs`, whose `ascribe.toml` writes the
+/// lines, and `site`, which takes them with `[from]`.
+fn two_projects() -> TempDir {
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "docs/ascribe.toml", MODEL);
+    write(dir.path(), "docs/docs/new.md", NEW);
+    write(dir.path(), "docs/docs/page.md", PAGE);
+    write(
+        dir.path(),
+        "site/ascribe.toml",
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"pages\"\n\n[from.\"../docs/ascribe.toml\"]\ntake = [\"dimensions.release\", \"releases\"]\n",
+    );
+    write(
+        dir.path(),
+        "site/pages/index.md",
+        "---\ntitle: Home\n---\n\nWelcome.\n",
+    );
+    git(dir.path(), &["init", "-q"]);
+    git(dir.path(), &["add", "-A"]);
+    git(dir.path(), &["commit", "-q", "-m", "Start"]);
+    dir
+}
+
+#[test]
+fn a_release_in_a_project_that_takes_the_lines_is_made_where_theyre_written() {
+    let dir = two_projects();
+    let site = dir.path().join("site");
+    let before = read(dir.path(), "site/ascribe.toml");
+    let out = ascribe(&site, &["versions", "release", "prod 1.1", "--next", "1.2"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(
+        text.contains("The lines of prod are written in ../docs/ascribe.toml, which [from] takes them from: this changes that project."),
+        "{text}"
+    );
+    assert!(text.contains("prod 1.1 is live"), "{text}");
+
+    // The lines move in the file that writes them, and that project's marks
+    // with them; this project's file is as it was.
+    let model = read(dir.path(), "docs/ascribe.toml");
+    assert!(model.contains("live = [\"1.1\"]"), "{model}");
+    assert!(model.contains("planned = [\"1.2\"]"), "{model}");
+    assert!(read(dir.path(), "docs/docs/new.md").contains("available: prod 1.1\n"));
+    assert_eq!(read(dir.path(), "site/ascribe.toml"), before);
+
+    // Both projects have the line live, from the one release.
+    for project in ["docs", "site"] {
+        let list = ascribe(&dir.path().join(project), &["versions", "list"]);
+        assert_eq!(code_of(&list), 0, "{}", stderr(&list));
+        let listed = stdout(&list);
+        assert!(
+            listed.contains("1.1") && listed.contains("current"),
+            "{project}: {listed}"
+        );
+        let check = ascribe(&dir.path().join(project), &["check"]);
+        assert_eq!(
+            code_of(&check),
+            0,
+            "{project}: {}{}",
+            stdout(&check),
+            stderr(&check)
+        );
+    }
+}
+
+#[test]
+fn the_release_json_names_the_file_the_lines_are_written_in() {
+    let dir = two_projects();
+    let out = ascribe(
+        &dir.path().join("site"),
+        &[
+            "versions",
+            "release",
+            "prod 1.1",
+            "--dry-run",
+            "--format",
+            "json",
+        ],
+    );
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let json: Value = serde_json::from_str(&stdout(&out)).unwrap();
+    assert_eq!(json["from"], "../docs/ascribe.toml");
+    assert_eq!(json["files"][0]["file"], "docs/new.md");
+    // Run where the lines are written, it's the project's own.
+    let out = ascribe(
+        &dir.path().join("docs"),
+        &[
+            "versions",
+            "release",
+            "prod 1.1",
+            "--dry-run",
+            "--format",
+            "json",
+        ],
+    );
+    let json: Value = serde_json::from_str(&stdout(&out)).unwrap();
+    assert_eq!(json["from"], Value::Null);
+}
+
 #[test]
 fn a_second_release_of_the_same_line_is_refused() {
     let dir = repository(MODEL);
@@ -797,6 +896,39 @@ fn retire(dir: &Path, extra: &[&str]) -> Output {
         .env_remove("GIT_WORK_TREE")
         .output()
         .expect("run ascribe")
+}
+
+#[test]
+fn a_retirement_in_a_project_that_takes_the_lines_is_made_where_theyre_written() {
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "docs/ascribe.toml", RETIRING);
+    write(dir.path(), "docs/docs/prod.md", PROD);
+    write(dir.path(), "docs/docs/both.md", BOTH);
+    let site = "spec = \"0.1\"\n\n[project]\ncontent-root = \"pages\"\n\n[from.\"../docs/ascribe.toml\"]\ntake = [\"dimensions.deployment\", \"releases\"]\n";
+    write(dir.path(), "site/ascribe.toml", site);
+    write(
+        dir.path(),
+        "site/pages/index.md",
+        "---\ntitle: Home\n---\n\nWelcome.\n",
+    );
+    git(dir.path(), &["init", "-q"]);
+    git(dir.path(), &["add", "-A"]);
+    git(dir.path(), &["commit", "-q", "-m", "Start"]);
+
+    let out = retire(&dir.path().join("site"), &["--force"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    assert!(
+        stdout(&out).contains("The lines of prod are written in ../docs/ascribe.toml"),
+        "{}",
+        stdout(&out)
+    );
+    let model = read(dir.path(), "docs/ascribe.toml");
+    assert!(model.contains("live = [\"1.1\"]"), "{model}");
+    assert!(
+        model.contains("\"1.0\" = { url = \"https://example.com/1.0/\""),
+        "{model}"
+    );
+    assert_eq!(read(dir.path(), "site/ascribe.toml"), site);
 }
 
 #[test]

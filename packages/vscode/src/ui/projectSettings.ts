@@ -45,6 +45,7 @@ import {
   settingsMessage,
 } from "./settingsModel.js";
 import type { Drawn } from "./webviewView.js";
+import { changedElsewhere, otherModels } from "../takenFiles.js";
 
 /** How many times an answer for other text is asked for again before the tab waits for the next change. */
 const TRIES = 5;
@@ -456,7 +457,18 @@ class SettingsPanel implements vscode.Disposable {
             action: "setSetting",
             args: { table: target.table, key: target.key, value: checked, shown: result.version },
           }),
-        (edit) => vscode.workspace.applyEdit(edit),
+        async (edit) => {
+          const applied = await vscode.workspace.applyEdit(edit);
+          const elsewhere = changedElsewhere(
+            otherModels(
+              edit.entries().map(([file]) => vscode.workspace.asRelativePath(file, false)),
+              vscode.workspace.asRelativePath(this.config, false),
+            ),
+          );
+          if (applied && elsewhere)
+            void vscode.window.showInformationMessage(`Ascribe: ${elsewhere}`);
+          return applied;
+        },
       );
       switch (outcome.type) {
         case "refused":

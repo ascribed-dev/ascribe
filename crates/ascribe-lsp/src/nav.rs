@@ -53,6 +53,9 @@ pub(crate) struct Ctx {
     pub held: Vec<lsp_types::Diagnostic>,
     /// `ascribe.baseline`, as the editor has it.
     pub baseline: Arc<crate::baseline::Now>,
+    /// The files `ascribe.toml`'s `[from]` takes from, read when an edit
+    /// first asks ([`Ctx::taken`]).
+    pub taken: std::sync::OnceLock<Vec<crate::model_file::TakenFile>>,
 }
 
 impl Ctx {
@@ -60,6 +63,18 @@ impl Ctx {
     /// that isn't a source ([`crate::core::Core::project_target`]): a name at
     /// the content root that no source file can have.
     pub(crate) const PROJECT: &'static str = "ascribe.toml";
+
+    /// The files `ascribe.toml`'s `[from]` takes from, as the disk has them,
+    /// for an edit that writes a taken key where it's written (SPEC §7.9).
+    pub(crate) fn taken(&self) -> &[crate::model_file::TakenFile] {
+        self.taken
+            .get_or_init(|| crate::model_file::read_taken(&self.model_text, &self.config))
+    }
+
+    /// `ascribe.toml`, parsed with the files it takes from.
+    pub(crate) fn model_file(&self) -> Result<crate::model_file::ModelFile<'_>, String> {
+        crate::model_file::ModelFile::parse_taking(&self.model_text, self.taken())
+    }
 
     /// The requested page's content type, as the source index has it: the
     /// one its `type` names. `None` for a fragment, and for a page with no

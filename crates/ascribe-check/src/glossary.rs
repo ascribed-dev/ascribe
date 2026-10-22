@@ -90,8 +90,12 @@ pub(crate) fn check(
 /// array's last item, `pages` after the table's last key, or the table at
 /// the end of the file. `None` when the file isn't valid TOML, or writes
 /// the glossary in a form an edit can't extend in place (an inline table, a
-/// dotted key), or the edited file wouldn't hold the path.
+/// dotted key), or the edited file wouldn't hold the path, or `[from]`
+/// takes the pages from another file, which a fix of this one can't edit.
 pub(crate) fn add_page(text: &str, path: &str) -> Option<TextEdit> {
+    if ascribe_model::taken_from(text, &["glossary", "pages"]).is_some() {
+        return None;
+    }
     let doc = Document::parse(text).ok()?;
     let nl = if text.contains("\r\n") { "\r\n" } else { "\n" };
     let quoted = Value::from(path).to_string();
@@ -196,6 +200,12 @@ mod tests {
             added("spec = \"0.1\"").unwrap(),
             "spec = \"0.1\"\n\n[glossary]\npages = [\"guide/terms.md\"]\n"
         );
+    }
+
+    #[test]
+    fn a_glossary_taken_from_another_file_gets_no_second_copy() {
+        let from = "spec = \"0.1\"\n[from.\"../docs/ascribe.toml\"]\ntake = [\"glossary\"]\n";
+        assert_eq!(added(from), None);
     }
 
     #[test]

@@ -198,6 +198,13 @@
       },
       "type": "array"
     },
+    "from": {
+      "description": "The `ascribe.toml` the target's lines are written in, from the\ncurrent folder, when the project's `[from]` takes them from another\nproject's: the retirement is made in that project, and `files` are\nfrom its root. `null` when they're written in the project's own.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "line": {
       "description": "The line, as `[releases.<target>]` writes it.",
       "type": "string"
@@ -266,7 +273,8 @@
     "unused",
     "removed",
     "redirects",
-    "outputs"
+    "outputs",
+    "from"
   ],
   "title": "VersionsRetireReport",
   "type": "object"

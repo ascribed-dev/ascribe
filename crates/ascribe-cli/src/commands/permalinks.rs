@@ -525,17 +525,42 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
             to: to.as_deref(),
         })
         .collect();
-    let retired = match ascribe_lsp::retire(project.model_text(), &entries) {
+    // `[permalinks.retired]` is written where it is: here, or in the file
+    // `[from]` takes it from.
+    let taken = ascribe_lsp::read_taken(project.model_text(), &config);
+    let retired = match ascribe_lsp::retire(project.model_text(), &taken, &entries) {
         Ok(retired) => retired,
         Err(message) => return answer::fail(err, &PermalinksError::ModelUnchanged(message)),
     };
-    if let Err(e) = std::fs::write(&config, &retired.text) {
-        let error = PermalinksError::ModelUnwritable {
-            path: config,
-            message: e.to_string(),
-        };
-        return answer::fail(err, &error);
+    let mut writes: Vec<(PathBuf, &str)> = Vec::new();
+    if retired.text != project.model_text() {
+        writes.push((config.clone(), &retired.text));
     }
+    writes.extend(
+        retired
+            .taken
+            .iter()
+            .map(|t| (t.path.clone(), t.text.as_str())),
+    );
+    for (path, text) in &writes {
+        if let Err(e) = std::fs::write(path, text) {
+            let error = PermalinksError::ModelUnwritable {
+                path: path.clone(),
+                message: e.to_string(),
+            };
+            return answer::fail(err, &error);
+        }
+    }
+    let wrote: Vec<String> = writes
+        .iter()
+        .map(|(path, _)| {
+            if *path == config {
+                ascribe_check::MODEL_FILE.to_owned()
+            } else {
+                answer::path_from_here(path)
+            }
+        })
+        .collect();
     let list = match project.permalinks() {
         Some(Ok(list)) => ascribe_query::permalinks::record_retired(&index, list, &names, reason),
         _ => None,
@@ -548,19 +573,26 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
     let done = RetireAnswer::new(names, reason, args.to.as_deref(), list.is_some());
     let result = match args.format {
         Format::Json => answer::write_json(out, &done),
-        Format::Text => write_retire(out, &done, project.permalinks().is_some()),
+        Format::Text => write_retire(out, &done, &wrote, project.permalinks().is_some()),
     };
     answer::written(result, err).unwrap_or(exit::OK)
 }
 
-fn write_retire(out: &mut dyn Write, r: &RetireAnswer, has_list: bool) -> io::Result<()> {
+fn write_retire(
+    out: &mut dyn Write,
+    r: &RetireAnswer,
+    wrote: &[String],
+    has_list: bool,
+) -> io::Result<()> {
     for name in &r.retired {
         match &r.to {
             Some(to) => writeln!(out, "retired {name}, leading to {to}")?,
             None => writeln!(out, "retired {name}")?,
         }
     }
-    writeln!(out, "wrote ascribe.toml")?;
+    for file in wrote {
+        writeln!(out, "wrote {file}")?;
+    }
     if r.list_changed {
         writeln!(out, "wrote {PERMALINKS_FILE}")?;
     } else if has_list {

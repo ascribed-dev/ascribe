@@ -62,6 +62,68 @@ pub fn from_files(text: &str) -> Vec<String> {
     }
 }
 
+/// Where the key at `keys` of the content model in `text` is written, when
+/// `[from]` takes it from another file (SPEC §7.9): what `take` names that
+/// holds it, the key itself or a table around it, with the file, as `[from]`
+/// writes both. `None` when this file holds it, or the text isn't TOML.
+///
+/// An editor of the content model writes a key where this says it's
+/// written. Paths are the same in both files, since what's taken is read at
+/// the path it has in the other.
+pub fn taken_from(text: &str, keys: &[&str]) -> Option<TakenName> {
+    named_in_take(text, |taken| {
+        keys.len() >= taken.len() && keys[..taken.len()] == *taken
+    })
+}
+
+/// What `take` names inside the table at `keys` of the content model in
+/// `text`, a key of it: a table around a taken key, which an edit of the
+/// whole table would split between two files. `None` when nothing is.
+pub fn taken_inside(text: &str, keys: &[&str]) -> Option<TakenName> {
+    named_in_take(text, |taken| {
+        keys.len() < taken.len() && taken[..keys.len()] == *keys
+    })
+}
+
+/// The first name in a `take` list that `matches`, by its segments.
+fn named_in_take(text: &str, matches: impl Fn(&[&str]) -> bool) -> Option<TakenName> {
+    let parsed = DeTable::parse(text).ok()?;
+    let DeValue::Table(from) = parsed.get_ref().get("from")?.get_ref() else {
+        return None;
+    };
+    for (file, _, table) in entries(from) {
+        let DeValue::Table(table) = table.get_ref() else {
+            continue;
+        };
+        let Some(DeValue::Array(take)) = table.get("take").map(Spanned::get_ref) else {
+            continue;
+        };
+        for name in take.iter() {
+            let DeValue::String(name) = name.get_ref() else {
+                continue;
+            };
+            let segments: Vec<&str> = name.split('.').collect();
+            if matches(&segments) {
+                return Some(TakenName {
+                    name: name.to_string(),
+                    file: file.to_owned(),
+                });
+            }
+        }
+    }
+    None
+}
+
+/// A name in a `take` list, and the file it's taken from.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TakenName {
+    /// The name, as `take` writes it: `releases`, `consumer.site`.
+    pub name: String,
+    /// The file, as `[from]` writes it: a path from the folder
+    /// `ascribe.toml` is in.
+    pub file: String,
+}
+
 /// `path`, written relative to the folder `base` names (a path relative to
 /// the project root), as a path relative to the project root, with `.` and
 /// `..` worked out: a source's `path` in a taken table, which is from the
@@ -489,5 +551,28 @@ mod tests {
         let text = "spec = \"0.1\"\n[from.\"../docs/ascribe.toml\"]\ntake = []\n";
         assert_eq!(from_files(text), vec!["../docs/ascribe.toml".to_owned()]);
         assert!(from_files("not = [toml").is_empty());
+    }
+
+    #[test]
+    fn a_key_is_written_where_take_says() {
+        let text = "spec = \"0.1\"\n[from.\"../docs/ascribe.toml\"]\ntake = [\"releases\", \"consumer.site\"]\n[consumer]\nheaders = \"netlify\"\n";
+        let taken = |keys: &[&str]| taken_from(text, keys).map(|t| (t.name, t.file));
+        let docs = "../docs/ascribe.toml".to_owned();
+        assert_eq!(
+            taken(&["releases", "ascribe", "live"]),
+            Some(("releases".to_owned(), docs.clone()))
+        );
+        assert_eq!(
+            taken(&["consumer", "site"]),
+            Some(("consumer.site".to_owned(), docs.clone()))
+        );
+        assert_eq!(taken(&["consumer", "headers"]), None);
+        assert_eq!(taken(&["consumer"]), None);
+        assert_eq!(
+            taken_inside(text, &["consumer"]).map(|t| t.name),
+            Some("consumer.site".to_owned())
+        );
+        assert_eq!(taken_inside(text, &["releases", "ascribe"]), None);
+        assert_eq!(taken_from("not = [toml", &["releases"]), None);
     }
 }

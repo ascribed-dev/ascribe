@@ -65,16 +65,26 @@ pub fn load_model(
     root: &Path,
     bound: SourceBound<'_>,
 ) -> Result<ContentModel, Vec<Issue>> {
-    // What `[from]` takes is read as the lock is, as a file outside the
-    // content root; where the content root is isn't known yet, and a read
-    // from the project's folder doesn't need it.
-    let taking = DiskFs::new(
-        root,
-        &Layout {
-            content_root: RelPath::root(),
-            output_dir: RelPath::root(),
-        },
-    );
+    load_model_changed(text, root, bound, &[])
+}
+
+/// [`load_model`], with the files `[from]` takes from that an edit has
+/// changed read as `changed` has them: each the path `[from]` writes, and
+/// its text after the edit.
+///
+/// # Errors
+///
+/// The content model's problems, at their places in `text`.
+pub fn load_model_changed(
+    text: &str,
+    root: &Path,
+    bound: SourceBound<'_>,
+    changed: &[(String, String)],
+) -> Result<ContentModel, Vec<Issue>> {
+    let taking = Taking {
+        disk: taking_fs(root),
+        changed,
+    };
     let mut model = ascribe_model::load_str_taking(text, FileId::new(0), root, bound, &taking)?;
     let disk = DiskFs::new(root, &Layout::from_model(&model));
     from_lock(&mut model, &disk);
@@ -83,6 +93,51 @@ pub fn load_model(
         return Ok(model);
     }
     Err(model.warnings.into_iter().chain(problems).collect())
+}
+
+/// The project's `FileSystem` for what `[from]` takes. It's read as the
+/// lock is, as a file outside the content root; where the content root is
+/// isn't known yet, and a read from the project's folder doesn't need it.
+fn taking_fs(root: &Path) -> DiskFs {
+    DiskFs::new(
+        root,
+        &Layout {
+            content_root: RelPath::root(),
+            output_dir: RelPath::root(),
+        },
+    )
+}
+
+/// The text of the file `[from]` names as `file` in the content model of
+/// the project in `root`, read as the loader reads it: for an edit of a key
+/// that file holds.
+///
+/// # Errors
+///
+/// The path isn't one, or the file isn't there or can't be read as text.
+pub fn read_taken(root: &Path, file: &str) -> std::io::Result<String> {
+    let path = RelPath::parse(file)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidInput, e.to_string()))?;
+    ascribe_model::TakenFiles::read_taken(&taking_fs(root), &path)
+}
+
+/// What `[from]` takes, read from the disk unless an edit changed it.
+struct Taking<'a> {
+    disk: DiskFs,
+    changed: &'a [(String, String)],
+}
+
+impl ascribe_model::TakenFiles for Taking<'_> {
+    fn read_taken(&self, project_path: &RelPath) -> std::io::Result<String> {
+        let changed = self
+            .changed
+            .iter()
+            .find(|(file, _)| RelPath::parse(file).is_ok_and(|p| p == *project_path));
+        match changed {
+            Some((_, text)) => Ok(text.clone()),
+            None => self.disk.read_taken(project_path),
+        }
+    }
 }
 
 /// Gives each type of `model` that names neither a `template` nor a `guide`

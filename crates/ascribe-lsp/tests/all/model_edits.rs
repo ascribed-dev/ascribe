@@ -276,6 +276,43 @@ fn the_selection_becomes_a_phrase_declared_in_place() {
 }
 
 #[test]
+fn a_phrase_is_declared_where_from_takes_the_phrases_from() {
+    let shared = "spec = \"0.1\"\n\n# Shared.\n[phrases]\nproduct = \"Quill\"\n";
+    let model = format!(
+        "{}\n[from.\"shared/ascribe.toml\"]\ntake = [\"phrases\"]\n",
+        support::MODEL
+    );
+    let f = Fixture::new(
+        &model,
+        &[
+            ("shared/ascribe.toml", shared),
+            (
+                "docs/index.md",
+                "---\ntitle: Home\n---\n# Home\n\nThe Quill Cloud console.\n",
+            ),
+        ],
+    );
+    let mut client = Client::start(&f.root());
+    let page = f.path("docs/index.md");
+    let text = std::fs::read_to_string(&page).unwrap();
+    let marked = text.replacen("Quill Cloud", "«Quill Cloud»", 1);
+    let done = run(
+        &mut client,
+        &page,
+        &marked,
+        "makePhrase",
+        json!({ "key": "cloud" }),
+    )
+    .unwrap();
+    assert_eq!(
+        done.after(&f.path("shared/ascribe.toml")),
+        format!("{shared}cloud = \"Quill Cloud\"\n")
+    );
+    assert!(!done.changed(&f.path("ascribe.toml")), "written there");
+    assert!(done.after(&page).contains("The {cloud} console."));
+}
+
+#[test]
 fn a_phrase_can_replace_every_occurrence_in_prose() {
     let f = fixture();
     let mut client = Client::start(&f.root());
