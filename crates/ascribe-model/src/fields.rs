@@ -616,11 +616,7 @@ impl Loader<'_> {
             ),
             (Some(vv), false, false) => {
                 let span = t.get_key_value("values").map_or(sp(vv), |(k, _)| sp(k));
-                self.push(
-                    self.issue(diagnostics::MODEL_UNKNOWN_KEY, span)
-                        .with_arg("key", "values")
-                        .with_arg("table", path),
-                );
+                self.push(self.unknown_key(span, "values", path));
             }
             (None, true, _) => self.push(
                 self.issue(diagnostics::MODEL_ENUM_VALUES, sp(v))

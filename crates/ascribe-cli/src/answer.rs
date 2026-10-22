@@ -11,7 +11,7 @@ use std::rc::Rc;
 
 use ascribe_check::{Acknowledged, Diagnostic, LoadError, LocateError, MODEL_FILE, Project};
 use ascribe_core::path::{normalize, relative_path};
-use ascribe_core::{Coded, RelPath};
+use ascribe_core::{Coded, RelPath, diagnostics};
 use ascribe_query::QueryError;
 use clap::ValueEnum;
 use serde::Serialize;
@@ -202,8 +202,21 @@ impl Stop {
 /// What a project that couldn't be loaded is reported as.
 fn failure_message(failure: &Failure) -> String {
     match failure {
-        Failure::Load(LoadError::Model { .. }) => {
-            format!("{MODEL_FILE} has errors; `ascribe check` lists them")
+        Failure::Load(LoadError::Model {
+            diagnostics: found, ..
+        }) => {
+            let mut text = format!("{MODEL_FILE} has errors; `ascribe check` lists them");
+            // An unknown key's message names this Ascribe's version, which
+            // says when the project is written for a newer one: so the
+            // first is quoted, where `ascribe check` isn't run.
+            if let Some(unknown) = found
+                .iter()
+                .find(|d| d.slug == diagnostics::MODEL_UNKNOWN_KEY)
+            {
+                text.push_str(", among them: ");
+                text.push_str(&unknown.message);
+            }
+            text
         }
         _ => failure.to_string(),
     }

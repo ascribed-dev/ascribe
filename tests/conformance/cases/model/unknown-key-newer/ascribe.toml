@@ -1,0 +1,9 @@
+spec = "0.1"
+
+# Keys a later Ascribe may add: one at the top level, and one in a table
+# this Ascribe knows.
+layouts = "wide"
+
+[project]
+content-root = "."
+theme = "dark"

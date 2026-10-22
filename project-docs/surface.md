@@ -171,7 +171,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC058` | `id-invalid` | error | write | `{id}` isn't a valid id: use only letters, digits, hyphens, underscores, and periods |
 | `ASC059` | `image-attribute-missing` | error | write | this image is missing the required attribute `{key}` |
 | `ASC060` | `model-toml-syntax` | error | write | ascribe.toml isn't valid TOML: {detail} |
-| `ASC061` | `model-unknown-key` | error | choose | unknown key `{key}` in `[{table}]` |
+| `ASC061` | `model-unknown-key` | error | choose | unknown key `{key}` in `[{table}]`; this is ascribe {version}, and the project may need a newer one |
 | `ASC062` | `model-missing-key` | error | write | `[{table}]` is missing the required key `{key}` |
 | `ASC063` | `model-wrong-type` | error | write | `{key}` must be {expected}, but it's {found} |
 | `ASC064` | `model-invalid-value` | error | choose | `{key}` can't be "{value}"; use one of: {values} |

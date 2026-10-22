@@ -922,6 +922,7 @@ mod tests {
             Issue::new(diagnostics::MODEL_UNKNOWN_KEY, at(start))
                 .with_arg("key", "x")
                 .with_arg("table", "ascribe.toml")
+                .with_arg("version", "0.4.0")
         };
         let mut advice = Diagnostic::from_issue(&issue(0));
         advice.severity = Severity::Advice;
