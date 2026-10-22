@@ -57,13 +57,29 @@ fn newer() -> Upstream {
     upstream
 }
 
+/// Names the files of `name`, which eject wrote in `templates/`, in its
+/// type's table, as a project that wrote its type by hand does: then the
+/// type has them without the lock.
+fn name_files(dir: &Path, name: &str) {
+    edit(dir, "ascribe.toml", |t| {
+        t.replace(
+            &format!("[types.{name}]\n"),
+            &format!(
+                "[types.{name}]\ntemplate = \"templates/{name}.md\"\nguide = [\"templates/{name}.guide.md\", \"templates/{name}.ascribe.md\"]\n"
+            ),
+        )
+    });
+}
+
 /// What status says of the project in `dir`, compared with `upstream`. The
-/// model is read as written, so a file it names may be gone.
+/// model is read as written, and given what the lock records, as the CLI
+/// reads it, so a file it names may be gone.
 fn run(dir: &Path, upstream: &Upstream) -> StatusAnswer {
     let text = std::fs::read_to_string(dir.join("ascribe.toml")).expect("read");
-    let model =
+    let mut model =
         ascribe_model::load_str(&text, ascribe_core::FileId::new(0)).expect("the model loads");
     let fs = DiskFs::new(dir, &Layout::from_model(&model));
+    ascribe_check::type_files::from_lock(&mut model, &fs);
     status(
         &Status {
             model: &model,
@@ -214,6 +230,7 @@ fn crlf_line_endings_from_a_checkout_are_not_a_change() {
 #[test]
 fn with_no_lock_it_says_so_and_compares_the_files_with_the_set() {
     let dir = project(&["how-to"]);
+    name_files(dir.path(), "how-to");
     std::fs::remove_file(dir.path().join("templates/templates.lock")).expect("removed");
     edit(dir.path(), "templates/how-to.md", |t| t + "\nOurs.\n");
     let answer = run(dir.path(), &newer());
@@ -243,6 +260,7 @@ fn with_no_lock_it_says_so_and_compares_the_files_with_the_set() {
 #[test]
 fn a_template_with_no_entry_is_told_so() {
     let dir = project(&["how-to", "concept"]);
+    name_files(dir.path(), "concept");
     edit(dir.path(), "templates/templates.lock", |t| {
         let at = t
             .find("[[template]]\nname = \"concept\"")
@@ -259,6 +277,7 @@ fn a_template_with_no_entry_is_told_so() {
 #[test]
 fn a_lock_eject_didn_t_write_is_told_so() {
     let dir = project(&["how-to"]);
+    name_files(dir.path(), "how-to");
     std::fs::write(dir.path().join("templates/templates.lock"), "version = 7\n").expect("written");
     let answer = run(dir.path(), &Upstream::carried());
     let how_to = template(&answer, "how-to");

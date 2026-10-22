@@ -590,7 +590,7 @@
           "type": "array"
         },
         "guide": {
-          "description": "What to read before writing a page of the type, in the order to read\nit, from the folder `ascribe.toml` is in; absent when the type names\nnone.",
+          "description": "What to read before writing a page of the type, in the order to read\nit, from the folder `ascribe.toml` is in, from the type's `guide` or\nthe lock, as `template` is; absent when it has none.",
           "items": {
             "type": "string"
           },
@@ -608,7 +608,7 @@
           ]
         },
         "template": {
-          "description": "The page a page of the type starts from, from the folder\n`ascribe.toml` is in; absent when the type names none.",
+          "description": "The page a page of the type starts from, from the folder\n`ascribe.toml` is in: the type's `template`, or the one\n`templates/templates.lock` gives a type that names neither a template\nnor a guide; absent when it has none.",
           "type": [
             "string",
             "null"

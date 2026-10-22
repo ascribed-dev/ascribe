@@ -20,37 +20,28 @@ description = "string"
 
 # Five of the types are the set's, from `ascribe templates eject`: each one's
 # template and guide are in templates/, with Ascribe's notes on it, and
-# templates.lock records where they came from. What the set's types don't
-# have is put back here: each type's purpose.
+# templates/templates.lock records where they came from, which is where each
+# type takes them from. What the set's types don't have is put back here:
+# each type's purpose.
 
 # The reference's template is the set's, taken with `ascribe templates eject
 # reference --keep-type`; the type is the docs' own. The contracts are written
 # for implementers but shaped as references, and the editor's pages are its
 # reference.
 [types.reference]
-template = "templates/reference.md"
-guide = ["templates/reference.guide.md", "templates/reference.ascribe.md"]
 purpose = "Looking up a command, a key of ascribe.toml, a directive, a diagnostic, the editor's features and settings, or a contract's rules."
 
 # The set's other four types, from `ascribe templates eject`.
 [types.how-to]
-template = "templates/how-to.md"
-guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 purpose = "Doing one thing with Ascribe once you know what it is: publishing a site, reviewing a pull request, keeping examples in step with code, setting up an agent, checking prose, acting on a report, publishing permalinks, taking the page templates, keeping a page's reasons in memos, or setting up a glossary."
 
 [types.tutorial]
-template = "templates/tutorial.md"
-guide = ["templates/tutorial.guide.md", "templates/tutorial.ascribe.md"]
 purpose = "Learning Ascribe by building an example project a step at a time: a first project, then content that varies."
 
 [types.concept]
-template = "templates/concept.md"
-guide = ["templates/concept.guide.md", "templates/concept.ascribe.md"]
 purpose = "Understanding an idea behind the docs a team publishes, such as what Ascribe can't measure and where to look instead."
 
 [types.troubleshooting]
-template = "templates/troubleshooting.md"
-guide = ["templates/troubleshooting.guide.md", "templates/troubleshooting.ascribe.md"]
 purpose = "Finding out why something isn't working, from what it shows, and what to do about it."
 
 # Commands that differ by package manager. The site shows them as tabs, and a

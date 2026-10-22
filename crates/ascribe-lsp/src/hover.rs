@@ -10,7 +10,7 @@ use ascribe_core::schema::{
 };
 use ascribe_core::{LineIndex, RelPath};
 use ascribe_emit::labels::{availability_display, availability_display_of_text};
-use ascribe_model::{ContentModel, LineStatus, Placement};
+use ascribe_model::{ContentModel, ContentType, LineStatus, Placement, TypeFile};
 use ascribe_resolve::{DefaultRouter, Resolution, Snapshot, Usable};
 use lsp_types::{Hover, HoverContents, MarkupContent, MarkupKind, Position, Range};
 
@@ -522,4 +522,59 @@ fn listing_markdown(model: &ContentModel, path: &str, type_name: Option<&str>) -
              Its own value says how it's listed, from {values}."
         ),
     }
+}
+
+/// A content type, on its name in `ascribe.toml`: its purpose, and where its
+/// template and guide come from, the keys of its table or the lock `ascribe
+/// templates eject` wrote (decision 809).
+pub(crate) fn type_markdown(t: &ContentType) -> String {
+    let mut out = format!("**Content type `{}`**", t.name);
+    if let Some(purpose) = &t.purpose {
+        out.push_str(&format!("\n\n{purpose}"));
+    }
+    let listed = |files: &[&TypeFile]| -> String {
+        files
+            .iter()
+            .map(|f| format!("`{}`", f.path))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    let guide: Vec<&TypeFile> = t.guide.iter().collect();
+    let lock = t
+        .template
+        .iter()
+        .chain(&t.guide)
+        .find_map(|f| f.lock.as_deref());
+    let mut said = Vec::new();
+    if let Some(template) = &t.template {
+        said.push(format!("Its template is `{}`", template.path));
+    }
+    if !guide.is_empty() {
+        said.push(format!("its guide {}", listed(&guide)));
+    }
+    let what = said.join(", and ");
+    out.push_str("\n\n");
+    match lock {
+        Some(lock) => out.push_str(&format!(
+            "{}, from `{lock}`: `ascribe templates eject` wrote them, and the lock records them under the type's name.",
+            capitalized(&what)
+        )),
+        None if !what.is_empty() => out.push_str(&format!(
+            "{}, named in this table.",
+            capitalized(&what)
+        )),
+        None => out.push_str(
+            "It has no template or guide. A type takes them from `template` and `guide` in its table, or, naming neither, from `templates/templates.lock` when `ascribe templates eject` wrote one for it.",
+        ),
+    }
+    out
+}
+
+/// `s` with its first letter a capital.
+fn capitalized(s: &str) -> String {
+    let mut chars = s.chars();
+    chars
+        .next()
+        .map(|c| c.to_uppercase().chain(chars).collect())
+        .unwrap_or_default()
 }

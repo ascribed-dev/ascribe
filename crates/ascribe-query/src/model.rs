@@ -321,12 +321,14 @@ pub struct ModelType {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub purpose: Option<String>,
     /// The page a page of the type starts from, from the folder
-    /// `ascribe.toml` is in; absent when the type names none.
+    /// `ascribe.toml` is in: the type's `template`, or the one
+    /// `templates/templates.lock` gives a type that names neither a template
+    /// nor a guide; absent when it has none.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub template: Option<String>,
     /// What to read before writing a page of the type, in the order to read
-    /// it, from the folder `ascribe.toml` is in; absent when the type names
-    /// none.
+    /// it, from the folder `ascribe.toml` is in, from the type's `guide` or
+    /// the lock, as `template` is; absent when it has none.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub guide: Vec<String>,
     /// Its frontmatter fields, in declaration order.

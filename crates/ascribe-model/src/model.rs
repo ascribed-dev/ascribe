@@ -766,24 +766,33 @@ pub struct ContentType {
     pub frontmatter: FrontmatterSchema,
     /// What a page of the type is for, in a few words, `purpose`.
     pub purpose: Option<String>,
-    /// The page a page of the type starts from, `template`.
+    /// The page a page of the type starts from, `template`, or the one
+    /// `templates/templates.lock` gives it.
     pub template: Option<TypeFile>,
     /// What to read before writing a page of the type, `guide`, in the order
-    /// to read it.
+    /// to read it, or what `templates/templates.lock` gives it.
     pub guide: Vec<TypeFile>,
+    /// The `[types.<name>]` key in `ascribe.toml`; empty, at its start, for
+    /// the implicit type.
+    pub span: Span,
 }
 
 /// A file a content type names, its `template` or one of its `guide`, from
 /// the folder `ascribe.toml` is in. Loading checks only what's written: that
 /// the file is there, outside the content root, and that a template reads as
 /// a page, is checked where the project's files are read
-/// (`ascribe_check::type_files`).
+/// (`ascribe_check::type_files`), which also gives a type that names neither
+/// the files `templates/templates.lock` records for it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TypeFile {
     /// The path, as written.
     pub path: String,
-    /// The path's string in `ascribe.toml`.
+    /// The path's string in `ascribe.toml`, or, for a file the lock gives,
+    /// the type's key.
     pub span: Span,
+    /// The lock that gives the file, from the folder `ascribe.toml` is in;
+    /// `None` for one `ascribe.toml` names.
+    pub lock: Option<String>,
 }
 
 /// `[fragments]`.

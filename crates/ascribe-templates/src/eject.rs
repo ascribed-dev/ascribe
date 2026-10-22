@@ -9,15 +9,22 @@
 //! from and a hash of it as written, with Ascribe's notes apart from their
 //! files; a second eject adds to it.
 //!
+//! A type that names no template or guide takes them from
+//! `templates/templates.lock` (decision 809), so in `templates/` eject
+//! writes neither key: a type added is its frontmatter only, and a type kept
+//! is left as it was. In another folder, which the content model doesn't
+//! look in, each type is given its `template` and `guide` in `ascribe.toml`.
+//!
 //! Everything is checked before anything is written: a type the project
 //! declares already, or a file in the way, is refused, and then nothing is
 //! written. From then on the files are the project's, and nothing here writes
 //! over them.
 //!
 //! Asked to keep a declared type ([`Eject::keep_type`]), eject takes the
-//! template for it instead of refusing it: it writes the same files and adds
-//! only `template` and `guide` to the type's table, in place, after its last
-//! entry, leaving its other keys and every comment as they were. A type
+//! template for it instead of refusing it: it writes the same files and, in
+//! another folder than `templates/`, adds only `template` and `guide` to the
+//! type's table, in place, after its last entry, leaving its other keys and
+//! every comment as they were. A type
 //! written as an inline or dotted table, one that names a template or a guide
 //! already, and one whose frontmatter doesn't take the template's are
 //! refused.
@@ -43,15 +50,9 @@ use toml_edit::{ArrayOfTables, Document, DocumentMut, Item, Table, value};
 
 use crate::{Set, Template, set};
 
-/// The folder eject writes into by default, from the project's folder.
-pub const TEMPLATES_DIR: &str = "templates";
-
-/// The file, in the folder eject writes into, that records what each file
-/// was copied from.
-pub const LOCK_FILE: &str = "templates.lock";
-
-/// The version of `templates.lock`'s format.
-pub const LOCK_VERSION: i64 = 1;
+// The content model reads the lock in the default folder, so the names are
+// `ascribe_check`'s.
+pub use ascribe_check::type_files::{LOCK_FILE, LOCK_VERSION, TEMPLATES_DIR};
 
 /// The version of [`EjectAnswer`]'s schema.
 pub const SCHEMA_VERSION: u32 = 2;
@@ -76,15 +77,16 @@ pub struct EjectAnswer {
     /// The files written, from the folder `ascribe.toml` is in,
     /// `/`-separated, in the order they were written: each template, its
     /// guide, and Ascribe's notes on its type, then `templates.lock`, then
-    /// `ascribe.toml`. Empty when anything was refused.
+    /// `ascribe.toml`, when it changed. Empty when anything was refused.
     pub written: Vec<String>,
     /// The types added to `ascribe.toml`, in the order they were named.
     /// Empty when anything was refused.
     pub added: Vec<Added>,
     /// The types `ascribe.toml` declared already and kept, with `--keep-type`,
-    /// in the order they were named: each was given its `template` and
-    /// `guide`, and nothing else in it changed. Empty when anything was
-    /// refused.
+    /// in the order they were named: each takes its template and guide from
+    /// `templates/templates.lock`, or, written in another folder, was given
+    /// its `template` and `guide`, and nothing else in it changed. Empty when
+    /// anything was refused.
     pub kept: Vec<Kept>,
     /// What was refused, in the order it was named. When it isn't empty,
     /// nothing was written.
@@ -107,9 +109,9 @@ pub struct Added {
     pub name: String,
     /// Their index's summary of it.
     pub summary: String,
-    /// Its `template`, from the folder `ascribe.toml` is in.
+    /// Its template, from the folder `ascribe.toml` is in.
     pub template: String,
-    /// Its `guide`, from the folder `ascribe.toml` is in, in the order to
+    /// Its guide, from the folder `ascribe.toml` is in, in the order to
     /// read them: their guide, then Ascribe's notes on the type.
     pub guide: Vec<String>,
     /// The fields of its frontmatter declared as another of the project's
@@ -117,8 +119,8 @@ pub struct Added {
     pub copied: Vec<String>,
 }
 
-/// A type `ascribe.toml` declared already, which eject kept, adding only
-/// its `template` and `guide`.
+/// A type `ascribe.toml` declared already, which eject kept, giving it only
+/// its template and guide.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct Kept {
@@ -126,10 +128,10 @@ pub struct Kept {
     pub name: String,
     /// Their index's summary of it.
     pub summary: String,
-    /// The `template` added, from the folder `ascribe.toml` is in.
+    /// The template it was given, from the folder `ascribe.toml` is in.
     pub template: String,
-    /// The `guide` added, from the folder `ascribe.toml` is in, in the order
-    /// to read them: their guide, then Ascribe's notes on the type.
+    /// The guide it was given, from the folder `ascribe.toml` is in, in the
+    /// order to read them: their guide, then Ascribe's notes on the type.
     pub guide: Vec<String>,
     /// The type's keys left as they were, in the order `ascribe.toml` has
     /// them, such as `purpose` and `frontmatter`.
@@ -165,7 +167,8 @@ pub enum RefusalReason {
     /// Asked to keep the type, `ascribe.toml` writes it as an inline or a
     /// dotted table, which eject doesn't add to.
     TypeNotTable,
-    /// Asked to keep the type, it names a `template` or a `guide` already.
+    /// Asked to keep the type, it names a `template` or a `guide` already,
+    /// or `templates/templates.lock` gives it them.
     TypeHasTemplate,
     /// Asked to keep the type, its frontmatter doesn't declare a field the
     /// template's has, or declares it as something other than a string.
@@ -304,7 +307,13 @@ pub fn eject(request: &Eject<'_>, fs: &dyn FileSystem) -> Result<EjectAnswer, Ej
         }
     }
     answer.page_declared = !declares_types(request.model_text);
-    let model_text = with_kept(request.model_text, doc.as_ref(), &answer.kept)?;
+    // In `templates/`, the lock gives each type its files.
+    let named = *request.to != at(&RelPath::root(), TEMPLATES_DIR);
+    let model_text = if named {
+        with_kept(request.model_text, doc.as_ref(), &answer.kept)?
+    } else {
+        request.model_text.to_owned()
+    };
     let (model_text, _) = with_types(
         &model_text,
         answer.page_declared,
@@ -314,6 +323,7 @@ pub fn eject(request: &Eject<'_>, fs: &dyn FileSystem) -> Result<EjectAnswer, Ej
             model: request.model,
             kept: &answer.kept,
             defaults: &defaults,
+            named,
         },
     )?;
     answer.untyped = untyped(request.model, &layout, fs);
@@ -345,8 +355,10 @@ pub fn eject(request: &Eject<'_>, fs: &dyn FileSystem) -> Result<EjectAnswer, Ej
     }
     write(request.root, lock_path.as_str(), &lock.to_string())?;
     answer.written.push(lock_path.to_string());
-    write(request.root, MODEL_FILE, &model_text)?;
-    answer.written.push(MODEL_FILE.to_owned());
+    if model_text != request.model_text {
+        write(request.root, MODEL_FILE, &model_text)?;
+        answer.written.push(MODEL_FILE.to_owned());
+    }
     Ok(answer)
 }
 
@@ -449,20 +461,21 @@ fn not_kept(
             ),
         ));
     }
-    let named = if declared.template.is_some() {
-        Some("template")
-    } else if !declared.guide.is_empty() {
-        Some("guide")
+    let named = if let Some(template) = &declared.template {
+        Some(("template", template))
     } else {
-        None
+        declared.guide.first().map(|g| ("guide", g))
     };
-    if let Some(key) = named {
-        return Some((
-            RefusalReason::TypeHasTemplate,
-            format!(
+    if let Some((key, file)) = named {
+        let message = match &file.lock {
+            Some(lock) => format!(
+                "[types.{name}] takes its template and guide from `{lock}` already, and eject never changes them; take its entry out of the lock first to replace them"
+            ),
+            None => format!(
                 "[types.{name}] names a `{key}` already, and eject never changes one; take it out first to replace it"
             ),
-        ));
+        };
+        return Some((RefusalReason::TypeHasTemplate, message));
     }
     frontmatter_differs(declared, template)
         .map(|message| (RefusalReason::FrontmatterDiffers, message))
@@ -763,13 +776,16 @@ struct Before<'a> {
     /// The project's types, which the types added take their frontmatter
     /// from.
     defaults: &'a Defaults,
+    /// Whether `ascribe.toml` names each type's `template` and `guide`,
+    /// rather than the lock giving them.
+    named: bool,
 }
 
 /// `ascribe.toml`'s text with a table for each type added at its end, and
 /// nothing before it changed; with `page` first, when the file declared no
 /// types. The result must load as a content model with the types in it, and
-/// with each type kept as it was, but for its `template` and `guide`; it's
-/// returned with the text.
+/// with each type kept as it was, but for its `template` and `guide` when
+/// it names them; it's returned with the text.
 fn with_types(
     text: &str,
     page: bool,
@@ -784,7 +800,7 @@ fn with_types(
         tables.push(PAGE_TYPE.iter().map(|l| (*l).to_owned()).collect());
     }
     for (template, added) in templates.iter().zip(added) {
-        tables.push(type_table(template, added, before.defaults));
+        tables.push(type_table(template, added, before.defaults, before.named));
     }
     for table in tables {
         if !out.is_empty() && !out.ends_with('\n') {
@@ -805,6 +821,7 @@ fn with_types(
             before
                 .kept
                 .iter()
+                .filter(|_| before.named)
                 .map(|k| format!("`template` and `guide` of [types.{}]", k.name)),
         )
         .collect::<Vec<_>>()
@@ -834,7 +851,7 @@ fn with_types(
         let is = model.types.iter().find(|t| t.name == kept.name);
         if !is
             .zip(was)
-            .is_some_and(|(is, was)| same_but_template(is, was, kept))
+            .is_some_and(|(is, was)| same_but_template(is, was, kept, before.named))
         {
             return Err(refuse(format!(
                 "[types.{}] wouldn't be read as it was with them added",
@@ -854,17 +871,22 @@ fn with_types(
     Ok((out, model))
 }
 
-/// Whether `is` is `was` with `kept`'s `template` and `guide`, and nothing
-/// else changed.
-fn same_but_template(is: &ContentType, was: &ContentType, kept: &Kept) -> bool {
+/// Whether `is` is `was` with `kept`'s `template` and `guide` when they're
+/// `named`, and with neither when they aren't, and nothing else changed.
+fn same_but_template(is: &ContentType, was: &ContentType, kept: &Kept, named: bool) -> bool {
+    let (template, guide): (Option<&str>, &[String]) = if named {
+        (Some(kept.template.as_str()), &kept.guide)
+    } else {
+        (None, &[])
+    };
     is.frontmatter == was.frontmatter
         && is.purpose == was.purpose
-        && is.template.as_ref().map(|t| t.path.as_str()) == Some(kept.template.as_str())
+        && is.template.as_ref().map(|t| t.path.as_str()) == template
         && is
             .guide
             .iter()
             .map(|g| g.path.as_str())
-            .eq(kept.guide.iter().map(String::as_str))
+            .eq(guide.iter().map(String::as_str))
 }
 
 /// `s` as a TOML string.
@@ -878,18 +900,19 @@ fn toml_list(items: &[String]) -> String {
     format!("[{}]", items.join(", "))
 }
 
-/// The lines of a type's tables: its template and guide, then its
-/// frontmatter, which is the template's own: each field the template's
-/// frontmatter has, as a string the page must have, `title` first, declared
-/// as another of the project's types declares it when it's a string there.
-fn type_table(template: &Template, added: &Added, defaults: &Defaults) -> Vec<String> {
+/// The lines of a type's tables: its template and guide, when they're
+/// `named`, then its frontmatter, which is the template's own: each field
+/// the template's frontmatter has, as a string the page must have, `title`
+/// first, declared as another of the project's types declares it when it's
+/// a string there.
+fn type_table(template: &Template, added: &Added, defaults: &Defaults, named: bool) -> Vec<String> {
     let key = |k: &str| toml_edit::Key::new(k).to_string();
     let name = key(&added.name);
-    let mut lines = vec![
-        format!("[types.{name}]"),
-        format!("template = {}", toml_string(&added.template)),
-        format!("guide = {}", toml_list(&added.guide)),
-    ];
+    let mut lines = vec![format!("[types.{name}]")];
+    if named {
+        lines.push(format!("template = {}", toml_string(&added.template)));
+        lines.push(format!("guide = {}", toml_list(&added.guide)));
+    }
     let fields = frontmatter(template, defaults);
     if !fields.is_empty() {
         lines.push(String::new());
@@ -1056,6 +1079,7 @@ mod tests {
                 model: &model,
                 kept: &[],
                 defaults: &defaults,
+                named: false,
             },
         )
         .unwrap();

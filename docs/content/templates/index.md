@@ -27,19 +27,19 @@ In a project that has its `ascribe.toml` already, take the whole set:
 ascribe templates eject
 ```
 
-It writes each template, its guide, and Ascribe's notes on its type into `templates/`, beside `ascribe.toml`, and adds the six types to `ascribe.toml`, below what's there. A type is declared like this:
+It writes each template, its guide, and Ascribe's notes on its type into `templates/`, beside `ascribe.toml`, with `templates/templates.lock`, which records what each was copied from, and adds the six types to `ascribe.toml`, below what's there. A type is declared like this:
 
 ```toml
 [types.how-to]
-template = "templates/how-to.md"
-guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 
 [types.how-to.frontmatter]
 title = "string"
 description = "string"
 ```
 
-A page says what type it is in its frontmatter, `type: how-to`, as each template does, so a page of any type can go in any folder. Commit the files, with `templates/templates.lock`, which records what each was copied from. The rules [`ascribe agents sync`](../agents/instructions.md) writes say what each type is for; to say it your own way, give the type a [`purpose`](../content-model/index.md#41-page-types).
+The type names no template: a type with no `template` and no `guide` takes both from the lock, which records them under the type's name. A type that names either keeps what it names, which is how a project without the lock, or with a template written by hand, gives a type its template. In VS Code, the hover on the type's name in `ascribe.toml` says where its template comes from.
+
+A page says what type it is in its frontmatter, `type: how-to`, as each template does, so a page of any type can go in any folder. Commit the files, the lock with them. The rules [`ascribe agents sync`](../agents/instructions.md) writes say what each type is for; to say it your own way, give the type a [`purpose`](../content-model/index.md#41-page-types).
 
 To take only some, name them: `ascribe templates eject how-to concept`. A type the project declares already is refused, and nothing is written; to keep it and take its template, add `--keep-type`. The [command reference](command.md#cli-templates-eject) has the rest.
 
@@ -104,4 +104,4 @@ The check finds only what was never touched, so read a page through before publi
 ## See also
 
 - [`ascribe templates`](command.md): `list`, `eject`, and `status`, their options, and their output.
-- [Page types](../content-model/index.md#41-page-types): a type's `template`, `guide`, and `purpose`.
+- [Page types](../content-model/index.md#41-page-types): a type's `template`, `guide`, and `purpose`, and the template it takes from the lock.

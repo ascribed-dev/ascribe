@@ -1,0 +1,11 @@
+version = 1
+
+[[template]]
+name = "how-to"
+
+[template.files]
+"templates/how-to.md" = "sha256:00"
+"templates/how-to.guide.md" = "sha256:00"
+
+[template.ascribe-files]
+"templates/how-to.ascribe.md" = "sha256:00"

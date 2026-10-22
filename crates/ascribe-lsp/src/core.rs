@@ -731,6 +731,44 @@ impl Core {
         Some(crate::examples::complete_config(text, offset))
     }
 
+    /// What's at `position` of the open `ascribe.toml`, when it's the text
+    /// the project's model loaded from: on a type's name, where its template
+    /// and guide come from (`hover::type_markdown`). `None` for any other
+    /// document.
+    pub(crate) fn model_hover(
+        &self,
+        uri: &Uri,
+        position: lsp_types::Position,
+    ) -> Option<lsp_types::Hover> {
+        let path = Core::doc_path(uri)?;
+        if self.config.as_ref() != Some(&path) {
+            return None;
+        }
+        let text = &self.docs.get(&path)?.text;
+        let loaded = self.loaded.as_ref()?;
+        // The spans are the loaded text's.
+        if loaded.model_text != *text {
+            return None;
+        }
+        let index = ascribe_core::LineIndex::new(text);
+        let offset = self.encoding.offset_lenient(&index, text, position);
+        let t = loaded
+            .model
+            .types
+            .iter()
+            .find(|t| !t.implicit && t.span.start() <= offset && offset <= t.span.end())?;
+        Some(lsp_types::Hover {
+            contents: lsp_types::HoverContents::Markup(lsp_types::MarkupContent {
+                kind: lsp_types::MarkupKind::Markdown,
+                value: crate::hover::type_markdown(t),
+            }),
+            range: Some(lsp_types::Range {
+                start: self.encoding.position(&index, t.span.start())?,
+                end: self.encoding.position(&index, t.span.end())?,
+            }),
+        })
+    }
+
     /// What can be written at `position` of an open `ascribe.nav`: its keys,
     /// the project's sections, and a section's pages (`nav_file.rs`).
     /// `None` for any other document.
@@ -955,6 +993,17 @@ impl Core {
                 if !self.docs.contains_key(&path) {
                     sync_model = true;
                 }
+                continue;
+            }
+            if let Some(loaded) = self.loaded.as_ref()
+                && path
+                    == loaded
+                        .root
+                        .join(ascribe_check::type_files::lock_path().as_str())
+            {
+                // A type that names no template or guide takes them from
+                // the lock, so the model is loaded again.
+                sync_model = true;
                 continue;
             }
             if let Some(loaded) = self.loaded.as_ref()
