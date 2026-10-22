@@ -2,6 +2,7 @@
 type: how-to
 title: Set up a glossary
 description: Write a project's terms on a glossary page, choose which of their occurrences are linked, and keep terms that differ by version or product, so every page links its terms to their definitions.
+permalink: glossary
 available: ascribe 0.4.0
 ---
 

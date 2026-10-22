@@ -1,13 +1,13 @@
 ---
 type: page
 title: Why Ascribe
-description: The problems teams that keep documentation as code report, what Ascribe does about each, and what it doesn't do.
+description: The problems teams that keep docs as code report, what Ascribe does about each, and what it doesn't do.
 ---
 
 @hero-banner:
 # Why Ascribe
 
-Teams that keep their documentation in a repository, beside the code, report the same few problems. This page says what they are, what Ascribe does about each, and what it doesn't do.
+Teams that keep docs as code, in a repository beside what they document, report the same few problems. This page says what they are, what Ascribe does about each, and what it doesn't do.
 @end
 
 ## What teams report, and what Ascribe does
@@ -73,7 +73,7 @@ For links from outside the docs, a page or a heading can have a [permalink]({sit
 @end
 
 @claim-example:
-### Pages that are code, and a toolchain to keep
+### Pages that are code, and a site to keep
 
 Teams that build their own docs site describe its upkeep as work nobody is funded for. Site generators stop releasing or change their plugin systems, sites move from one generator to the next, and where a page is compiled as code, as MDX pages are, an ordinary brace or angle bracket in a sentence can stop the build.
 

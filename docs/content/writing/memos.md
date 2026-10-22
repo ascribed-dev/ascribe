@@ -2,6 +2,7 @@
 type: how-to
 title: Leave a memo for whoever edits next
 description: Keeping the reason a page is written the way it is beside it, in the page or in a memo file, for the people and agents who change it, and never for its readers.
+permalink: memos
 available: ascribe 0.4.0
 ---
 

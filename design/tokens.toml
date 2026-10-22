@@ -348,6 +348,10 @@ h2 = "650 1.375rem/1.3"
 h1 = "700 1.875rem/1.2"
 # The heading of a page outside the docs, in its hero: the site's landing page.
 hero = "750 2.75rem/1.1"
+# The landing page's headline, larger than another page's hero, and the
+# headings of its sections: the pillars, the audiences, and Start.
+display = "700 3.75rem/1.04"
+section = "700 2.125rem/1.15"
 
 # What each stylesheet declares ---------------------------------------------
 
@@ -540,6 +544,7 @@ hero = "750 2.75rem/1.1"
 "--border" = "color.border"
 "--accent" = "color.accent"
 "--accent-surface" = "color.accent-surface"
+"--accent-text" = "color.accent-text"
 "--focus" = "color.focus"
 "--mark-gutter" = "color.brand.gutter"
 "--radius" = "radius.base"
@@ -551,6 +556,8 @@ hero = "750 2.75rem/1.1"
 "--type-h2" = "type.h2"
 "--type-h1" = "type.h1"
 "--type-hero" = "type.hero"
+"--type-display" = "type.display"
+"--type-section" = "type.section"
 
 [emit."site/src/styles/site.css".backdrop]
 "background" = "color.scrim"

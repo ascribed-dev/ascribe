@@ -117,6 +117,24 @@
       }
     },
     {
+      "path": "site/home/content/images/hero-mark-light.svg",
+      "width": 384,
+      "height": 264,
+      "sources": {
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
+      }
+    },
+    {
+      "path": "site/home/content/images/hero-mark-dark.svg",
+      "width": 384,
+      "height": 264,
+      "sources": {
+        "design/mark.toml": "ae425f439c6e5e6c968efe9842e74ea942a3948239dabad3d25a437009627e66",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
+      }
+    },
+    {
       "path": "packages/vscode/media/icon.png",
       "width": 256,
       "height": 256,
