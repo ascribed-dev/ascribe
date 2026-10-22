@@ -1085,3 +1085,50 @@ fn agents_says_what_s_failing_since_the_last_report() {
         "{text}"
     );
 }
+
+/// What afdocs writes: two checks, each failing while a file named for it
+/// is in the folder it runs in, and passing otherwise.
+#[cfg(unix)]
+const AFDOCS_FAILS_BY_FILE: &str = r#"status() { if [ -f "$1" ]; then echo fail; else echo pass; fi; }
+printf '{"url":"%s","results":[{"id":"llms-txt-exists","category":"content-discoverability","status":"%s","message":"checked"},{"id":"redirect-behavior","category":"url-stability","status":"%s","message":"checked"}]}' "$2" "$(status llms-txt-exists)" "$(status redirect-behavior)"
+exit 0"#;
+
+/// With nothing failing now or on the last report, `agents` leaves out the
+/// line about what's failing since then: the counts above it say it all.
+/// One that failed then and passes now keeps it.
+#[cfg(unix)]
+#[test]
+fn agents_says_nothing_since_when_nothing_fails_then_or_now() {
+    let dir = project(MODEL);
+    script(&dir.path().join("tools"), "afdocs", AFDOCS_FAILS_BY_FILE);
+    let site = "https://docs.example.com";
+
+    agents_on(dir.path(), "2026-10-09", site, &[]);
+    let text = stdout(&agents_on(dir.path(), "2026-10-10", site, &[]));
+    assert!(text.contains("2 pass."), "{text}");
+    assert!(!text.contains(" checks: "), "{text}");
+    let report = json(&agents_on(
+        dir.path(),
+        "2026-10-11",
+        site,
+        &["--format", "json"],
+    ));
+    let agents = &report["agents"];
+    assert_eq!(agents["previous_run"], "2026-10-10");
+    assert_eq!(
+        (&agents["new"], &agents["resolved"]),
+        (&0.into(), &0.into())
+    );
+
+    // The redirects fail, then pass again: the line says so.
+    fs::write(dir.path().join("redirect-behavior"), "").unwrap();
+    agents_on(dir.path(), "2026-10-12", site, &[]);
+    fs::remove_file(dir.path().join("redirect-behavior")).unwrap();
+    let text = stdout(&agents_on(dir.path(), "2026-10-13", site, &[]));
+    assert!(
+        text.contains(
+            "  2 checks: 2 passing, 0 failing; 1 that failed on 12 October no longer fails.\n"
+        ),
+        "{text}"
+    );
+}
