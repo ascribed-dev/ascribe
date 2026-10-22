@@ -90,7 +90,8 @@ jobs:
         continue-on-error: true
       - id: browser
         if: steps.build.outcome == 'success'
-        run: npx playwright-core install --with-deps chromium
+        # Without `--with-deps`, as site.yml installs it.
+        run: npx playwright-core install chromium
         timeout-minutes: 5
         working-directory: ${{ env.SITE_DIR }}
         continue-on-error: true
