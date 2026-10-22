@@ -93,8 +93,7 @@ const actionsRow = `Runs the action, such as **Ascribe: ${ACTIONS[0]?.title ?? "
  * first release, by id: `ascribe planned` until a release ships it, then
  * that release, as `ascribe 0.2.0`. Remove an entry once every live line has it.
  */
-const available: Record<string, string> = {
-};
+const available: Record<string, string> = {};
 
 /** The attribute block that ends a row's first cell, for an id in `available`. */
 function availability(id: string): string {
