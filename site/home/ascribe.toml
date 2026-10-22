@@ -15,10 +15,72 @@ description = { type = "string", role = "description" }
 
 # A page's opening: its heading and a sentence, drawn by the site's
 # stylesheet. `status`, on the landing page, says how far along Ascribe is.
+# The landing page's also holds a `@tool-list` and a `@call-to-action`, and
+# the mark, a picture for each scheme, which the site sets right of the
+# heading where there's room.
 [widgets.hero-banner]
-description = "A page's opening: its heading and a sentence, and on the landing page how far along Ascribe is."
+description = "A page's opening: its heading and a sentence, and on the landing page how far along Ascribe is, the tools, what to do first, and the mark."
 forms = ["container"]
 attributes = { status = "enum(early, stable)?" }
+
+# The tools the headline promises, named under it: a list of links, which
+# the site draws as a row.
+[widgets.tool-list]
+description = "The tools the headline promises, named under it as a list of links."
+forms = ["container"]
+
+# What a reader does first: the command to install, as a code block or in
+# `@steps`, and a paragraph that's only a link, which the site draws as a
+# button. In the hero, the two are side by side; in Start, the steps are
+# beside what follows them.
+[widgets.call-to-action]
+description = "What a reader does first: the command to install, then a link to follow, drawn as a button."
+forms = ["container"]
+
+# `@story-pillar` under a level-2 heading: the section is one of the story's
+# pillars (project-docs/brand/story.md), its heading the claim, which the
+# site marks with the gutter's split bar. What proves it follows, in
+# `@pillar-proof`s. It's an empty element after the heading, not a container
+# around the section: a container would put the variant group in the first
+# pillar's example three containers deep.
+[widgets.story-pillar]
+description = "Marks a section as one of the story's pillars: its heading is the claim, and what proves it follows."
+forms = ["line"]
+primary = "none"
+binding = "heading"
+
+# What proves a pillar: its features or a claim. The `@proof-example` right
+# after it is the example that shows it, which the site sets beside it where
+# there's room.
+[widgets.pillar-proof]
+description = "What proves a pillar: its features or a claim, beside the example that follows it."
+forms = ["container"]
+
+# The example that shows the `@pillar-proof` before it: a code block read
+# from a file, a command's tested output, a screenshot, or a variant group,
+# and a sentence under it that says what it is.
+[widgets.proof-example]
+description = "The example that shows a pillar's proof: a snippet, tested output, a screenshot, or a variant group, and what it is."
+forms = ["container"]
+
+# The readers the page speaks to: a heading and a sentence, then an
+# `@audience-entry` for each, side by side where there's room.
+[widgets.audience-list]
+description = "The readers the page speaks to: a heading and a sentence, then an audience for each."
+forms = ["container"]
+
+# One reader: who, as a level-3 heading; what leads for them; what they get;
+# and last, a paragraph that's only a link to where they start in the docs.
+[widgets.audience-entry]
+description = "One reader: who they are, what leads for them, what they get, and where they start in the docs."
+forms = ["container"]
+
+# The story's quieter pillar, that pages are plain files you can leave, and
+# that Ascribe is early and open source: the page's close, each under its
+# level-2 heading, side by side on a band.
+[widgets.quiet-pillar]
+description = "The page's quiet close: plain files you can leave, and that Ascribe is early and open source, side by side."
+forms = ["container"]
 
 # A page's source beside what a reader sees. Its content is the source, a
 # `@snippet` of the page's file; `page` names that page in ../demo, and the

@@ -101,7 +101,7 @@ The mark is a heavy single-storey a with the change marks of a gutter beside it,
 
 ## The assets
 
-Every image of the mark that something needs is generated from `mark.toml` and the mark's colors, `color.brand` in `tokens.toml`, by one script, and the social cards from those, the font, and the headline in `words.toml` or each page's title. Every one is on Deep River's ground but the README header for a light page, which is in Shallows' colors, and the one-color files.
+Every image of the mark that something needs is generated from `mark.toml` and the mark's colors, `color.brand` in `tokens.toml`, by one script, and the social cards from those, the font, and the headline in `words.toml` or each page's title. Every one is on Deep River's ground but the README header for a light page, which is in Shallows' colors, the landing page's marks, which have no ground of their own and sit on the page's grid, and the one-color files.
 
 | Asset | For | Form |
 |---|---|---|
@@ -113,6 +113,7 @@ Every image of the mark that something needs is generated from `mark.toml` and t
 | `site/public/social-card.png` | Links to the docs site and the repository | 1200 × 630: the wordmark 16 pixels a cell, and the headline from `words.toml` under it in Charter, on Deep River. The headline is a source of the card by itself (`design/words.toml#headline` in `assets.json`), so the other words can change without it |
 | `site/public/cards/<page>.png` | Links to a page of the site outside the docs: one for each page of `site/home/content/`, by its entry id (`index.png` for the landing page), and `changelog.png` | 1200 × 630: the wordmark at the top, and the page's level-1 heading below in Charter, on Deep River. A page's heading is a source of its card, by itself (`<file>#heading` in `assets.json`), so the rest of the page can change without the card. A new page of `site/home/` gets a card when the script runs |
 | `site/src/assets/logo.svg` | The docs site's header, inline | The wordmark, `currentColor` only, its change marks keeping `class="second"` for the page to color with `color.brand.gutter` |
+| `site/home/content/images/hero-mark-light.svg`, `hero-mark-dark.svg` | The landing page's hero, right of the headline, one for each scheme | 384 × 264: the mark 24 pixels a cell, three cells in from the sides and two from the top and bottom of a 16 × 11 grid, in the light or the dark colors. The grid's lines are the page's, drawn by `site.css` a cell apart. Still, in the changed state, until the mark moves |
 | `packages/vscode/media/icon.png` | The extension's Marketplace listing and Extensions view | 256 pixels: the mark 16 pixels a cell on a rounded Deep River tile, so it reads in a light or a dark editor |
 | `packages/vscode/media/activity.svg` | The extension's activity bar icon | 24 pixels, `currentColor` only, which VS Code tints: the mark 2 pixels a cell, 20 wide, as tall as the codicons beside it |
 | `design/out/header-light.svg`, `header-dark.svg` | The header of `README.md`, in GitHub's `<picture>` | The wordmark 5 pixels a cell, 45 tall, in the light and the dark colors |

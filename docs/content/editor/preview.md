@@ -2,6 +2,7 @@
 type: reference
 title: The preview and builds
 description: "The page preview and the site preview in VS Code, the build you're looking at, and the build lens."
+permalink: preview
 ---
 
 **Ascribe: Open Page Preview to the Side** (also the preview button in a Markdown editor's title bar), or **Ascribe: Open Page Preview** in the editor's own column, shows the current page as the published site shows it, with the same elements, including unsaved changes. It follows the editor: it updates as you type, keeps its scroll position, and opens a page or file you click in the editor. It scrolls with the editor by block, both ways: scrolling the editor brings the block at its top to the top of the preview, moving the cursor into a block the preview doesn't show brings it into view, scrolling the preview scrolls the editor to the block at its top, and double-clicking a block puts the cursor on its first line. A block from a fragment follows the line of its `@include`. Turn off `ascribe.preview.scrollPreviewWithEditor` or `ascribe.preview.scrollEditorWithPreview` to stop one direction. Its **Build** picker (also **Ascribe: Select Preview Build**) shows the page as any build publishes it, starting with the editor's build: it changes the [build you're looking at](#the-build-youre-looking-at).
