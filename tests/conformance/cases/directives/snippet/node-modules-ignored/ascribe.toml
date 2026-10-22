@@ -1,0 +1,13 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+# Neither source lists `node_modules`: every source leaves it out, whatever
+# its own `ignore` says.
+[sources.code]
+path = "code"
+
+[sources.own]
+path = "code"
+ignore = ["private/**"]

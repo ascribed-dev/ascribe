@@ -3,6 +3,9 @@
 
 # JavaScript
 node_modules/
+# A conformance case's source, to show that every source leaves these out.
+!/tests/conformance/cases/directives/snippet/node-modules-ignored/code/node_modules/
+!/tests/conformance/cases/directives/snippet/node-modules-ignored/code/lib/node_modules/
 dist/
 out/
 !/design/out/

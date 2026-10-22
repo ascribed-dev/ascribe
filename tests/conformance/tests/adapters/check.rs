@@ -14,6 +14,7 @@ use ascribe_conformance::{
     AdapterError, AdapterResult, Case, CaseKind, ConformanceAdapter, Diagnostic,
 };
 use ascribe_core::{FileId, RelPath, WideEncoding};
+use ascribe_resolve::{DiskFs, Layout};
 
 /// Handles the cases that expect file-level diagnostics.
 pub struct CheckAdapter;
@@ -39,7 +40,7 @@ impl ConformanceAdapter for CheckAdapter {
 pub fn project(case: &Case) -> Result<Project, AdapterError> {
     let text = std::fs::read_to_string(&case.model)
         .map_err(|e| AdapterError(format!("couldn't read {}: {e}", case.model.display())))?;
-    let model = ascribe_model::load_str(&text, FileId::new(0)).map_err(|issues| {
+    let mut model = ascribe_model::load_str(&text, FileId::new(0)).map_err(|issues| {
         let slugs: Vec<_> = issues.iter().map(|i| i.slug.to_string()).collect();
         AdapterError(format!(
             "{} doesn't load: {}",
@@ -51,6 +52,11 @@ pub fn project(case: &Case) -> Result<Project, AdapterError> {
         CaseKind::SingleFile => RelPath::root(),
         CaseKind::Project => RelPath::parse("files").map_err(|e| AdapterError(e.to_string()))?,
     };
+    // A type takes its template from the case's `templates/templates.lock`,
+    // as it does from a project's.
+    let mut layout = Layout::from_model(&model);
+    layout.content_root = content_root.clone();
+    ascribe_check::type_files::from_lock(&mut model, &DiskFs::new(&case.dir, &layout));
     let sources =
         Project::read_sources(&case.dir, &content_root).map_err(|e| AdapterError(e.to_string()))?;
     let today = match &case.expect.today {

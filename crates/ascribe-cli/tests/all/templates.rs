@@ -274,7 +274,7 @@ fn eject_refused_writes_nothing_and_exits_2() {
 }
 
 #[test]
-fn eject_keep_type_adds_the_template_and_guide_and_says_what_it_left() {
+fn eject_keep_type_leaves_ascribe_toml_untouched_and_the_lock_gives_the_template() {
     let dir = project();
     let model = format!(
         "{MODEL}\n[types.reference]\n\n# Titles show code.\n[types.reference.frontmatter]\ntitle = {{ type = \"string\", inline = \"code\" }}\ndescription = {{ type = \"string\", role = \"description\" }}\n"
@@ -291,17 +291,21 @@ fn eject_keep_type_adds_the_template_and_guide_and_says_what_it_left() {
          wrote templates/reference.guide.md\n\
          wrote templates/reference.ascribe.md\n\
          wrote templates/templates.lock\n\
-         wrote ascribe.toml\n\
-         added `template` and `guide` to [types.reference] in ascribe.toml, and left `frontmatter` as it was\n\
+         [types.reference] in ascribe.toml takes its template and guide from templates/templates.lock, and is left as it was\n\
          To start a page, copy templates/reference.md to where the page goes, and read templates/reference.guide.md and templates/reference.ascribe.md first. The page names its type in its frontmatter, as the template does.\n"
     );
     assert_eq!(
         fs::read_to_string(dir.path().join("ascribe.toml")).unwrap(),
-        model.replace(
-            "[types.reference]\n",
-            "[types.reference]\ntemplate = \"templates/reference.md\"\nguide = [\"templates/reference.guide.md\", \"templates/reference.ascribe.md\"]\n"
-        )
+        model
     );
+    // The type has the template the lock gives it.
+    let types = ascribe(
+        dir.path(),
+        &["model", "--section", "types", "--format", "json"],
+    );
+    assert_eq!(code_of(&types), 0, "{}", stderr(&types));
+    let text = stdout(&types);
+    assert!(text.contains("\"templates/reference.md\""), "{text}");
     let again = ascribe(
         dir.path(),
         &[
@@ -316,6 +320,12 @@ fn eject_keep_type_adds_the_template_and_guide_and_says_what_it_left() {
     assert_eq!(code_of(&again), 2);
     let answer: Value = serde_json::from_slice(&again.stdout).unwrap();
     assert_eq!(answer["refused"][0]["reason"], "type_has_template");
+    assert!(
+        answer["refused"][0]["message"]
+            .as_str()
+            .is_some_and(|m| m.contains("from `templates/templates.lock` already")),
+        "{answer}"
+    );
     assert_eq!(answer["kept"], Value::Array(Vec::new()));
 }
 

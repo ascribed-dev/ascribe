@@ -1,0 +1,9 @@
+description: >-
+  Only an explicit `agents = true` without `site` is an error, at the value:
+  the outputs for agents need the site's origin. Left out, `agents` is
+  `false` without a site, and nothing is reported.
+spec: ["9.4", "9.5"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-consumer-agents-site, file: ascribe.toml, line: 6}

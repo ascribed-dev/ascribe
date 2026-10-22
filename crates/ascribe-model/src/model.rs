@@ -9,7 +9,7 @@ use ascribe_core::{
 
 use crate::pattern::Pattern;
 use crate::settings;
-use crate::types::FrontmatterSchema;
+use crate::types::{Field, FrontmatterSchema};
 
 /// The spec versions this crate implements (`spec`).
 pub const SUPPORTED_SPECS: &[&str] = &["0.1"];
@@ -26,13 +26,17 @@ pub struct ContentModel {
     pub spec: String,
     /// `[project]`.
     pub project: Project,
+    /// `[frontmatter]`: the fields every page type has, as written, in
+    /// declaration order. Each type's `frontmatter` has them already.
+    pub frontmatter: Vec<Field>,
     /// Page content types (`[types.<name>]`), or the implicit `page` type.
     pub types: Vec<ContentType>,
     /// `[fragments]`.
     pub fragments: Fragments,
-    /// `[dimensions.<name>]`, in declaration order. That order is the
-    /// canonical order of `@variant` attributes and decides which dimension a
-    /// tab group syncs on.
+    /// `[dimensions.<name>]`, in declaration order, then the implicit
+    /// `release` dimension when `[releases]` has a target no declared
+    /// dimension has. That order is the canonical order of `@variant`
+    /// attributes and decides which dimension a tab group syncs on.
     pub dimensions: Vec<Dimension>,
     /// `[versions] scheme`.
     pub version_scheme: VersionScheme,
@@ -692,6 +696,19 @@ pub struct Remote {
     pub branch: Option<String>,
 }
 
+/// What every source leaves out, before its own `ignore` (SPEC §7.3): the
+/// registry's default for `ignore`, every `node_modules` and `.git` folder.
+/// A source's `ignore` holds only its own patterns.
+pub fn always_ignored() -> &'static [Pattern] {
+    static ALWAYS: std::sync::OnceLock<Vec<Pattern>> = std::sync::OnceLock::new();
+    ALWAYS.get_or_init(|| {
+        settings::default_list("sources.<name>", "ignore")
+            .iter()
+            .filter_map(|p| Pattern::new(p).ok())
+            .collect()
+    })
+}
+
 /// The folder, in the project's folder, that holds the copies of every
 /// source in another repository, each in a folder of its own.
 pub const COPIES_FOLDER: &str = "sources";
@@ -705,7 +722,16 @@ impl Source {
     pub fn reads(&self, path: &str) -> bool {
         !crate::examples::is_examples_file(path)
             && (self.include.is_empty() || self.include.iter().any(|p| p.matches(path)))
-            && !self.ignore.iter().any(|p| p.matches(path))
+            && !self.ignores(path)
+    }
+
+    /// Whether `ignore`, or what every source leaves out
+    /// ([`always_ignored`]), leaves out `path`.
+    fn ignores(&self, path: &str) -> bool {
+        always_ignored()
+            .iter()
+            .chain(&self.ignore)
+            .any(|p| p.matches(path))
     }
 
     /// Whether a change on disk to the file or folder at `path`, relative
@@ -717,7 +743,7 @@ impl Source {
         use crate::examples::{OBSERVATIONS_FOLDER, is_examples_file};
         is_examples_file(path)
             || path == OBSERVATIONS_FOLDER
-            || (!self.ignore.iter().any(|p| p.matches(path))
+            || (!self.ignores(path)
                 && (self.include.is_empty() || self.include.iter().any(|p| p.may_match_in(path))))
     }
 
@@ -736,28 +762,63 @@ pub struct ContentType {
     /// Whether it's the implicit `page` type of a project that declares no
     /// types, which every page has without naming it.
     pub implicit: bool,
-    /// The frontmatter schema.
+    /// The frontmatter schema: `[frontmatter]`'s fields, with the type's
+    /// own in place of those of their names.
     pub frontmatter: FrontmatterSchema,
+    /// The fields the type's own `frontmatter` declares, as written, in
+    /// declaration order.
+    pub own: Vec<Field>,
     /// What a page of the type is for, in a few words, `purpose`.
     pub purpose: Option<String>,
-    /// The page a page of the type starts from, `template`.
+    /// The page a page of the type starts from, `template`, or the one
+    /// `templates/templates.lock` gives it.
     pub template: Option<TypeFile>,
     /// What to read before writing a page of the type, `guide`, in the order
-    /// to read it.
+    /// to read it, or what `templates/templates.lock` gives it.
     pub guide: Vec<TypeFile>,
+    /// The `[types.<name>]` key in `ascribe.toml`; empty, at its start, for
+    /// the implicit type.
+    pub span: Span,
+}
+
+/// Which table declares a page type's field ([`ContentModel::field_source`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FieldSource {
+    /// `[frontmatter]`, which every type shares.
+    Frontmatter,
+    /// The type's own `frontmatter`.
+    Type,
+    /// Neither: the required string `title` every page type has.
+    Implicit,
+}
+
+impl FieldSource {
+    /// Its name in the commands' JSON.
+    pub fn name(self) -> &'static str {
+        match self {
+            FieldSource::Frontmatter => "frontmatter",
+            FieldSource::Type => "type",
+            FieldSource::Implicit => "implicit",
+        }
+    }
 }
 
 /// A file a content type names, its `template` or one of its `guide`, from
 /// the folder `ascribe.toml` is in. Loading checks only what's written: that
 /// the file is there, outside the content root, and that a template reads as
 /// a page, is checked where the project's files are read
-/// (`ascribe_check::type_files`).
+/// (`ascribe_check::type_files`), which also gives a type that names neither
+/// the files `templates/templates.lock` records for it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TypeFile {
     /// The path, as written.
     pub path: String,
-    /// The path's string in `ascribe.toml`.
+    /// The path's string in `ascribe.toml`, or, for a file the lock gives,
+    /// the type's key.
     pub span: Span,
+    /// The lock that gives the file, from the folder `ascribe.toml` is in;
+    /// `None` for one `ascribe.toml` names.
+    pub lock: Option<String>,
 }
 
 /// `[fragments]`.
@@ -769,6 +830,10 @@ pub struct Fragments {
     pub frontmatter: FrontmatterSchema,
 }
 
+/// The name of the implicit dimension `[releases.<target>]` declares its
+/// targets in, when no declared dimension has them.
+pub const RELEASE_DIMENSION: &str = "release";
+
 /// A dimension.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Dimension {
@@ -778,6 +843,9 @@ pub struct Dimension {
     pub label: String,
     /// Its values, in display order.
     pub values: Vec<DimensionValue>,
+    /// Whether it's the implicit `release` dimension, whose values are the
+    /// `[releases.<target>]` tables no declared dimension has.
+    pub implicit: bool,
 }
 
 /// One value of a dimension.
@@ -1674,6 +1742,20 @@ impl ContentModel {
             Some(serde_yaml_ng::Value::String(name)) => self.type_named(Some(name)),
             Some(_) => TypeMatch::Unknown,
         }
+    }
+
+    /// Which table declares the field `name` of the page type `ty`: the
+    /// type's own `frontmatter`, `[frontmatter]`, or neither, for the
+    /// implicit `title`. `None` when the type has no such field.
+    pub fn field_source(&self, ty: &ContentType, name: &str) -> Option<FieldSource> {
+        ty.frontmatter.fields.iter().find(|f| f.name == name)?;
+        Some(if ty.own.iter().any(|f| f.name == name) {
+            FieldSource::Type
+        } else if self.frontmatter.iter().any(|f| f.name == name) {
+            FieldSource::Frontmatter
+        } else {
+            FieldSource::Implicit
+        })
     }
 
     /// The content type a page that names `declared` with `type` has, or,

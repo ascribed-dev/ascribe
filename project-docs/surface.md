@@ -109,7 +109,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-237 in all. By severity: 47 advice, 165 error, 25 warning. By level: 211 file, 26 page. By kind of next step: 54 choose, 17 fix, 8 outside, 12 review, 146 write.
+237 in all. By severity: 48 advice, 164 error, 25 warning. By level: 211 file, 26 page. By kind of next step: 54 choose, 18 fix, 8 outside, 12 review, 145 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -181,8 +181,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC068` | `model-path-absolute` | error | write | `{key}` must be a path relative to ascribe.toml, not an absolute path |
 | `ASC069` | `model-content-root-missing` | error | write | content root `{path}` doesn't exist |
 | `ASC070` | `model-output-overlaps-content` | error | write | output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source |
-| `ASC073` | `model-type-title` | error | write | content type `{type}` must declare title = "string": it's the page title, used for empty link text |
-| `ASC074` | `model-field-reserved` | error | write | `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]` |
+| `ASC074` | `model-field-reserved` | error | write | `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[{table}]` |
 | `ASC075` | `model-type-syntax` | error | write | "{type}" isn't a valid {kind} type: {detail} |
 | `ASC076` | `model-type-fields` | error | write | field `{field}` is an object, so it needs `fields` |
 | `ASC077` | `model-enum-values` | error | write | `{field}` has an empty enumeration |
@@ -309,7 +308,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC200` | `example-unobserved` | advice | outside | `{path}` is an example, and no test run has covered it, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` |
 | `ASC201` | `examples-config-invalid` | warning | outside | the examples of source `{source}` can't be checked: `{file}` can't be read: {detail} |
 | `ASC202` | `observation-file-missing` | advice | outside | `{observation}` lists `{path}`, which isn't in `{folder}`; run `{command}` there to write the observation again |
-| `ASC204` | `model-releases-target` | error | choose | `[releases.{target}]`: `{target}` isn't a declared dimension value |
+| `ASC204` | `model-releases-target` | error | choose | `[releases.{target}]`: `{target}` is in no declared dimension, so it would be a value of the implicit dimension `release`, but `[dimensions.release]` takes that name; add `{target}` to a dimension's `values`, or rename `[dimensions.release]` |
 | `ASC205` | `model-releases-line` | error | write | `[releases.{target}]` mixes lines of different lengths, `{a}` and `{b}`; write every line of a target with the same number of parts |
 | `ASC206` | `model-build-versions` | error | write | build `{build}` is versioned by `{target}`, which has no live line; list its lines in `[releases.{target}]`, such as `live = ["3.4"]` |
 | `ASC207` | `model-releases-order` | error | write | `[releases.{target}]`: the planned line `{line}` isn't newer than every live line, and the newest is `{live}` |
@@ -349,7 +348,8 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC241` | `glossary-definition-long` | advice | write | the definition of the term "{term}" is over {limit} characters in build `{build}`, too long for a link's title or a hover |
 | `ASC242` | `term-off-glossary-page` | error | choose | `@term` is on `{path}`, which isn't a page `[glossary] pages` lists, so this heading isn't a term |
 | `ASC243` | `baseline-entry-unmatched` | advice | outside | ascribe.baseline holds back `{check}` in `{file}`, and nothing there matches it any more; run `ascribe baseline prune` |
-| `ASC244` | `available-planned-line` | error | write | `{target}` has no planned line, so `planned` names no version; declare one in `[releases.{target}] planned`, or write the version |
+| `ASC244` | `frontmatter-field-repeated` | advice | fix | the type `{type}` declares `{field}` exactly as `[frontmatter]` does, so this copy changes nothing; delete it, and the type has `[frontmatter]`'s |
+| `ASC245` | `available-planned-line` | error | write | `{target}` has no planned line, so `planned` names no version; declare one in `[releases.{target}] planned`, or write the version |
 
 ## The VS Code extension
 

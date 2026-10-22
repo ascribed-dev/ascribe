@@ -101,7 +101,8 @@ kind = "text"
 where = "Links in a thread; the selected tab, hovered"
 
 # Notes: the label is the note's color on its background; the bar is the
-# same color, against the same background.
+# same color, against the same background. On the site, the bar is the
+# gutter's split bar, outside the note's tint, so it's against the page too.
 [[pair]]
 fg = "note"
 bg = "note-background"
@@ -131,6 +132,66 @@ fg = "caution"
 bg = "caution-background"
 kind = "text"
 where = "Caution: label and bar; removed badge"
+
+[[pair]]
+fg = "note"
+bg = "background"
+kind = "graphic"
+where = "A note's split bar on the site, on the page, which shows between its marks"
+
+[[pair]]
+fg = "note"
+bg = "surface"
+kind = "graphic"
+where = "A note's split bar on the site, on a surface: the landing page's demonstration, which shows between its marks"
+
+[[pair]]
+fg = "tip"
+bg = "background"
+kind = "graphic"
+where = "A tip's split bar on the site, on the page, which shows between its marks"
+
+[[pair]]
+fg = "tip"
+bg = "surface"
+kind = "graphic"
+where = "A tip's split bar on the site, on a surface: the landing page's demonstration, which shows between its marks"
+
+[[pair]]
+fg = "important"
+bg = "background"
+kind = "graphic"
+where = "An important note's split bar on the site, on the page, which shows between its marks"
+
+[[pair]]
+fg = "important"
+bg = "surface"
+kind = "graphic"
+where = "An important note's split bar on the site, on a surface: the landing page's demonstration, which shows between its marks"
+
+[[pair]]
+fg = "warning"
+bg = "background"
+kind = "graphic"
+where = "A warning's split bar on the site, on the page, which shows between its marks"
+
+[[pair]]
+fg = "warning"
+bg = "surface"
+kind = "graphic"
+where = "A warning's split bar on the site, on a surface: the landing page's demonstration, which shows between its marks"
+
+[[pair]]
+fg = "caution"
+bg = "background"
+kind = "graphic"
+where = "A caution's split bar on the site, on the page, which shows between its marks"
+
+[[pair]]
+fg = "caution"
+bg = "surface"
+kind = "graphic"
+where = "A caution's split bar on the site, on a surface: the landing page's demonstration, which shows between its marks"
 
 [[pair]]
 fg = "text"

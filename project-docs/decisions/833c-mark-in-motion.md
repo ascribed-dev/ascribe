@@ -1,0 +1,5 @@
+---
+section: The look
+---
+
+**The landing page's mark moves once, from writing to reviewed, and holds still for a reader who prefers reduced motion.** `scripts/design/assets.ts` draws the hero's mark from the grids in `design/mark.toml` as an animated SVG in each scheme, whole cells only: the cursor after the a, a blink, a cell at a time left past the a into the gutter, the split change marks, then moss, where it stays. It plays once, in about 5 seconds, with no easing. Its base style is the changed state, which is what a reader with `prefers-reduced-motion: reduce` sees, and anywhere an image can't move. The motion is on the landing page's hero only, never in the header, which is on every page. _Why:_ the motion is the identity's three states of one bar; moss is its last state, and turning back to river would read as a new change, not the mark at rest. _From:_ the maintainer, 21 October 2026; [the website plan](https://github.com/ascribed-dev/ascribe/blob/58afc492/project-docs/website/README.md#decisions), decisions 10 and 16, carried out in #831.

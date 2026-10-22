@@ -118,7 +118,7 @@ The element contract ([`packages/elements/CONTRACT.md`]({repo}/blob/main/package
 
 ## 5. Everything else
 
-Apart from markers, both implementations render CommonMark with raw HTML passed through unchanged (SPEC §9.5, "HTML passthrough"). In particular, the site output's custom elements are HTML blocks, and the markdown they wrap is parsed as markdown because the emitter puts blank lines around it (SPEC §9.4). An implementation may also enable GFM and typographic replacements, as Astro does by default; the fixtures avoid content those would change, except inside markers, which they must not change.
+Apart from markers, both implementations render CommonMark with raw HTML passed through unchanged (SPEC §9.5, "HTML passthrough"). In particular, the site output's custom elements are HTML blocks, and the markdown they wrap is parsed as markdown because the emitter puts blank lines around it (SPEC §9.4). An element with nothing inside, such as an empty widget, is its opening tag on one line and its closing tag on the next, so it's an HTML block of its own, never in a paragraph (element contract §0). An implementation may also enable GFM and typographic replacements, as Astro does by default; the fixtures avoid content those would change, except inside markers, which they must not change.
 
 ### 5.1 A tested code block
 
@@ -157,6 +157,7 @@ Each construct below has at least one fixture in [`tests/render/`]({repo}/tree/m
 | `attribute-values` | §1, §3 | Escaped quotes, ampersands, and angle brackets decode; spaces and commas stay |
 | `not-a-marker` | §1, §2 | Markers after a space, mid-heading, or in a paragraph, and malformed markers, stay as raw HTML |
 | `raw-html` | §5 | Custom elements wrapping markdown, `<details>`, and markers inside them |
+| `widget-empty` | §5 | An empty widget after its heading, in a list item, and alone is an HTML block, with no paragraph around it |
 | `for-agents` | §5 | The pointer for agents at the top of a page (element contract §8) wraps a paragraph whose links stay as written |
 | `availability-row` | §5 | A table row's availability ends its first cell, its targets between the hidden `(Available: ` and `)` (element contract §4) |
 | `availability-planned` | §5 | A planned target keeps its empty `planned` attribute, in a block's availability and a row's (element contract §4) |

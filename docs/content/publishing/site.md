@@ -118,7 +118,6 @@ x-robots-tag: noindex
 [consumer]
 site = "https://docs.example.com"
 base-path = "/docs/"
-agents = true
 headers = "netlify"
 ```
 

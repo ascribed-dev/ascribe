@@ -50,23 +50,44 @@ pub(crate) fn in_page(file: &FileIndex, offset: usize) -> Option<DimensionValue>
     found
 }
 
-/// The value in a dimension's `values` at `offset` of `ascribe.toml`.
+/// The value in a dimension's `values` at `offset` of `ascribe.toml`, or the
+/// target in a `[releases.<target>]` header when it's a value of the
+/// implicit `release` dimension.
 pub(crate) fn in_model(ctx: &Ctx, offset: usize) -> Option<DimensionValue> {
     find_in_model(ctx, |_, span| {
         span.start() <= offset && offset <= span.end()
     })
 }
 
-/// The value `value`, where a dimension's `values` in `ascribe.toml` has it.
+/// The value `value`, where a dimension's `values` in `ascribe.toml` has it,
+/// or where its `[releases.<target>]` header is.
 pub(crate) fn named(ctx: &Ctx, value: &str) -> Option<DimensionValue> {
     find_in_model(ctx, |text, _| text == value)
 }
 
-/// The first value in a dimension's `values` that `wanted` takes, given its
-/// text and where it's written, quotes and all.
+/// The first value in a dimension's `values`, or of the implicit `release`
+/// dimension in a `[releases.<target>]` header, that `wanted` takes, given
+/// its text and where it's written, quotes and all.
 fn find_in_model(ctx: &Ctx, wanted: impl Fn(&str, Span) -> bool) -> Option<DimensionValue> {
     let file = ModelFile::parse(&ctx.model_text).ok()?;
     for dimension in &ctx.model.dimensions {
+        if dimension.implicit {
+            let Some(releases) = file.table_like(&path(&["releases"])) else {
+                continue;
+            };
+            for value in &dimension.values {
+                let Some((key, _)) = releases.get_key_value(&value.value) else {
+                    continue;
+                };
+                let Some(span) = key.span() else {
+                    continue;
+                };
+                if wanted(key.get(), Span::new(span.start, span.end)) {
+                    return Some(written(&dimension.name, key.get(), span));
+                }
+            }
+            continue;
+        }
         let values = path(&["dimensions", &dimension.name, "values"]);
         let Some(array) = file.get(&values).and_then(Item::as_array) else {
             continue;
@@ -76,22 +97,27 @@ fn find_in_model(ctx: &Ctx, wanted: impl Fn(&str, Span) -> bool) -> Option<Dimen
                 continue;
             };
             if wanted(text, Span::new(span.start, span.end)) {
-                // Inside the quotes, when the text is written as it is.
-                let inner = Span::new(span.start + 1, span.end.saturating_sub(1));
-                let span = if inner.len() == text.len() {
-                    inner
-                } else {
-                    Span::new(span.start, span.end)
-                };
-                return Some(DimensionValue {
-                    dimension: dimension.name.clone(),
-                    value: text.to_owned(),
-                    span,
-                });
+                return Some(written(&dimension.name, text, span));
             }
         }
     }
     None
+}
+
+/// The value `text` of `dimension`, written at `span`: inside the quotes,
+/// when it's quoted and written as it is.
+fn written(dimension: &str, text: &str, span: std::ops::Range<usize>) -> DimensionValue {
+    let inner = Span::new(span.start + 1, span.end.saturating_sub(1));
+    let span = if inner.len() == text.len() {
+        inner
+    } else {
+        Span::new(span.start, span.end)
+    };
+    DimensionValue {
+        dimension: dimension.to_owned(),
+        value: text.to_owned(),
+        span,
+    }
 }
 
 /// Why `new` can't be the value's new name, or `None` when it can.
@@ -116,6 +142,15 @@ pub(crate) fn refusal(ctx: &Ctx, value: &DimensionValue, new: &str) -> Option<St
         return Some(format!(
             "`{new}` can't be a dimension value: {}.",
             ascribe_model::NAME_WORD_RULE
+        ));
+    }
+    if model
+        .dimension(&value.dimension)
+        .is_some_and(|d| d.implicit)
+        && matches!(new, "label" | "planned-label")
+    {
+        return Some(format!(
+            "`{new}` can't be a release target: it's a key of `[releases]`."
         ));
     }
     if model.dimension(new).is_some()

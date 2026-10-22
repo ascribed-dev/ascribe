@@ -161,25 +161,14 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 ## Content types, fields, and attributes
 
-### ASC073 `model-type-title`
-@id {permalink=true}: ASC073
-
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
-
-**Message:** content type `{type}` must declare title = "string": it's the page title, used for empty link text
-
-**Fix:** Declare `title = "string"` in the type's `frontmatter`.
-
-**Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
-
 ### ASC074 `model-field-reserved`
 @id {permalink=true}: ASC074
 
 Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
-**Message:** `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]`
+**Message:** `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[{table}]`
 
-**Fix:** Remove the field from the type. Every page accepts it already, with the meaning the specification gives it.
+**Fix:** Remove the field from the type. Every page accepts it already, with the meaning the specification gives it. Every page type has `title` as a required string: declare it only to set `inline` or `phrases`.
 
 **Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
 
@@ -311,7 +300,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Message:** can't read `{path}`, the template of content type `{type}`: \{reason}
 
-**Fix:** Fix the template so it reads as a page: valid YAML between its `---` lines, and no error in its Ascribe syntax. A template is read when the content model loads, so a problem in it is reported once, here, and not on every page made from it.
+**Fix:** Fix the template so it reads as a page: valid YAML between its `---` lines, and no error in its Ascribe syntax. A template is read when the content model loads, so a problem in it is reported once, here, and not on every page made from it. A type that names no `template` and no `guide` takes them from `templates/templates.lock`, which `ascribe templates eject` writes: put back a file it gives (`ascribe templates status` says what's changed), or name the type's own `template` and `guide`.
 
 **Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
 
@@ -489,9 +478,9 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**Message:** `[releases.{target}]`: `{target}` isn't a declared dimension value
+**Message:** `[releases.{target}]`: `{target}` is in no declared dimension, so it would be a value of the implicit dimension `release`, but `[dimensions.release]` takes that name; add `{target}` to a dimension's `values`, or rename `[dimensions.release]`
 
-**Fix:** Name the table after a versioned dimension value, the target a mark gives a version to, such as `[releases.self-managed]`. A versionless value has no versions to list.
+**Fix:** Name the table after the target a mark gives a version to, such as `[releases.self-managed]`: a versioned value of a declared dimension, or a name no dimension has, which makes it a value of the implicit dimension `release`. A versionless value has no versions to list. While a target is left to the implicit dimension, no declared dimension can be named `release`.
 
 **Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
 

@@ -239,7 +239,8 @@ fn a_slow_vale_delays_nothing_else_and_a_result_for_an_older_text_is_dropped() {
 
 #[test]
 fn a_vale_that_can_t_run_is_one_advice_on_ascribe_toml() {
-    let f = Fixture::new(VALE_MODEL, &[("docs/a.md", PAGE)]);
+    let model_text = format!("{VALE_MODEL}in-check = true\n");
+    let f = Fixture::new(&model_text, &[("docs/a.md", PAGE)]);
     let a = f.path("docs/a.md");
     let model = f.path("ascribe.toml");
     let fake = Arc::new(Fake {
@@ -252,6 +253,26 @@ fn a_vale_that_can_t_run_is_one_advice_on_ascribe_toml() {
     assert_eq!(client.codes(&model), ["prose-not-checked"]);
     let advice = &client.diagnostics(&model)[0];
     assert_eq!(advice.range.start.line, 5, "on `[checks.vale]`");
+    assert!(prose_lines(&client, &a).is_empty());
+}
+
+#[test]
+fn a_vale_that_can_t_run_is_said_only_with_in_check() {
+    let f = Fixture::new(VALE_MODEL, &[("docs/a.md", PAGE)]);
+    let a = f.path("docs/a.md");
+    let model = f.path("ascribe.toml");
+    let fake = Arc::new(Fake {
+        fail: true,
+        ..Fake::new()
+    });
+    let mut client = start(&f, fake);
+    client.open(&a, 1, PAGE);
+    client.settle();
+    assert!(
+        client.codes(&model).is_empty(),
+        "{:?}",
+        client.codes(&model)
+    );
     assert!(prose_lines(&client, &a).is_empty());
 }
 
@@ -283,8 +304,9 @@ fn closing_a_page_clears_its_alerts() {
 }
 
 /// A model whose `[checks.vale] command` is `command`.
+/// With `in-check`, so a Vale that doesn't run is said.
 fn model_running(command: &str) -> String {
-    format!("{VALE_MODEL}command = \"{command}\"\n")
+    format!("{VALE_MODEL}command = \"{command}\"\nin-check = true\n")
 }
 
 /// Opens two pages and saves one, with a client set up to answer `ask`,

@@ -21,7 +21,7 @@ use ascribe_syntax::{
 };
 
 use super::anchor::{Anchor, html_tag};
-use super::element::{Attrs, close, empty, marker, open, wrap};
+use super::element::{Attrs, close, empty_block, marker, open, wrap};
 use super::inline::{Mode, render, value_text};
 use crate::emitter::PageContext;
 use crate::labels::{availability_target_text, is_planned, plain_text};
@@ -397,14 +397,7 @@ impl Renderer<'_> {
                     }
                     _ => Vec::new(),
                 };
-                if inner.is_empty() {
-                    // An empty element on a line of its own is a paragraph
-                    // to CommonMark, which gets the anchor too.
-                    let text = self.element(anchor, self.widget(line, &inner)).text;
-                    vec![self.anchored(block, "p", text, ChunkKind::Paragraph)]
-                } else {
-                    vec![self.element(anchor, self.widget(line, &inner))]
-                }
+                vec![self.element(anchor, self.widget(line, &inner))]
             }
             _ => Vec::new(),
         }
@@ -552,7 +545,7 @@ impl Renderer<'_> {
     fn widget(&self, line: &DirectiveLine, content: &[String]) -> String {
         let attrs = self.widget_attrs(line);
         if content.is_empty() {
-            empty(&line.name, &attrs)
+            empty_block(&line.name, &attrs)
         } else {
             wrap(&line.name, &attrs, content)
         }

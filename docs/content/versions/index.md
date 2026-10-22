@@ -2,6 +2,7 @@
 type: how-to
 title: Publish a site for each version
 description: Build the docs of every version a reader can be on from one source, a site for each release line, and move them on when a line ships.
+permalink: versions
 ---
 
 A reader on 3.4 should read the docs for 3.4, and find the same page for 3.5. This page builds an output for each version a reader can be on, from one source and the `@available` marks the pages already have, and moves them on when a version ships. [Release lines](lines.md) says what a line is and what its output holds, and [Archive and retire a line](archive.md) is for a line that leaves.
@@ -23,6 +24,14 @@ live = ["3.4", "3.5"]
 ```
 
 A line holds every version that starts with it: `3.4` holds `3.4.0` and `3.4.2`. Write lines as finely as you release, `["3.4", "3.5"]` for minor releases or `["0.2.0", "0.3.0"]` for patch releases. The newest is the current line.
+
+The target is the table's name. When a dimension already has it, as `deployment` has `self-managed`, it's that dimension's value. A product with no dimension of its own needs none: `[releases.quill]` declares `quill` as a value of the implicit dimension `release`, and `label` gives the name a reader sees:
+
+```toml
+[releases.quill]
+label = "Quill"
+live = ["3.4", "3.5"]
+```
 
 ### 2. Say what's planned, ending, and gone
 

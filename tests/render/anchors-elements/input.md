@@ -55,8 +55,8 @@ A cloud-only paragraph.
 <!--ascribe-anchor tag="p" source="index.md:32-32"-->
 Only some see this.
 
-<!--ascribe-anchor tag="p" source="index.md:34-34"-->
-<quill-labspace lab="first-sync" data-ascribe-source="index.md:34-34"></quill-labspace>
+<quill-labspace lab="first-sync" data-ascribe-source="index.md:34-34">
+</quill-labspace>
 
 <quill-aside data-ascribe-source="index.md:36-36">
 

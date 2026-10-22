@@ -11,6 +11,8 @@ Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#cont
 
 @include: ../_fragments/content-model/dimensions.md
 
+A target `[releases.<target>]` names, when no dimension has it, is a value of the implicit dimension `release` ([§7.1](#71-releasestarget)).
+
 **Rules.** A value can be in one dimension only (`model-dimension-value-shared`), since a bare target such as `cloud` in an availability spec has to mean one thing. Dimension names and values also take part in the one-role rule: a name can be a dimension name, a dimension value, a lifecycle state, or a feature key, but only one of them (`model-name-multiple-roles`), and none of them can be `planned`, the version word for a target's planned line.
 
 ---
@@ -33,11 +35,11 @@ No other scheme is defined. The table exists so a later spec version can add one
 
 @include: ../_generated/content-model-releases-target.md
 
-`[releases]` itself takes one key beside the targets' tables:
+`[releases]` itself takes two keys beside the targets' tables:
 
 @include: ../_generated/content-model-releases.md
 
-**Rules.** `<target>` is a declared dimension value that isn't versionless (`model-releases-target`). Each line is a version, quoted, listed once, and every line of one target, in every list, has the same number of parts (`model-releases-line`). A line is in one list, planned lines are newer than every live line, and archived lines older (`model-releases-order`). A line in `ends` is a live line (`model-releases-ends`), and a date is a TOML date (`model-wrong-type`). Any other key is an error (`model-unknown-key`).
+**Rules.** `<target>` is a declared dimension value that isn't versionless, or a name (`name-word`) no dimension has, which makes it a value of the implicit dimension `release`. While a target is left to the implicit dimension, `release` is reserved: a declared `[dimensions.release]` is an error at each such target, naming both. A target a declared dimension has takes no `label`, since that dimension's `labels` labels it (`model-releases-target`). The implicit dimension's name and values take part in the one-role rule, as a declared dimension's do (`model-name-multiple-roles`). Each line is a version, quoted, listed once, and every line of one target, in every list, has the same number of parts (`model-releases-line`). A line is in one list, planned lines are newer than every live line, and archived lines older (`model-releases-order`). A line in `ends` is a live line (`model-releases-ends`), and a date is a TOML date (`model-wrong-type`). Any other key is an error (`model-unknown-key`).
 
 **What the list checks.** For a target with a list, each version a mark, a feature, or a build's filter names is placed among the declared lines:
 

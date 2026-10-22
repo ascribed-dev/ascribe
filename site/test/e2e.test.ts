@@ -1,8 +1,10 @@
 // The built site in Chromium: the landing page, the changelog and its entries, the head, the
 // header and the footer, each page's social card, variants, availability, code
 // titles, links between pages, search, the edit link, the 404 page, the narrow
-// layout, the landing page's demonstration, marks, phone width, and reading
-// without a script, and Why Ascribe, with its screenshots.
+// layout, the landing page's call to action, tools, mark, demonstration,
+// pillars and their links, audiences, marks, phone width, and reading without
+// a script, Why Ascribe, with its screenshots, and Credits; the notes' split
+// bar, and the hero's mark in motion, still for a reader who asks.
 import { afterAll, beforeAll, expect, test } from "vitest";
 import type { Browser, Page } from "playwright-core";
 import { readdirSync, readFileSync } from "node:fs";
@@ -147,9 +149,73 @@ test("the landing page is at the root, with one heading in its hero and no docs 
   await page.close();
 });
 
+test("the hero's call to action, the install command and getting started, is above the fold", async () => {
+  for (const [width, height] of [
+    [1280, 800],
+    [375, 667],
+  ] as const) {
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.goto(server.url + "/");
+    const action = page.locator("hero-banner call-to-action");
+    // The command is getting started's; scripts/docs-site/facts.test.ts holds it there.
+    expect(await action.locator("pre").textContent()).toBe("npm install --save-dev @ascribed/cli");
+    const link = action.getByRole("link", { name: "Read getting started" });
+    for (const shown of [action.locator("pre"), link]) {
+      const box = await shown.boundingBox();
+      if (box === null) throw new Error("not drawn");
+      expect(box.y + box.height, `${width}: above the fold`).toBeLessThanOrEqual(height);
+      expect(box.x + box.width, `${width}: inside the page`).toBeLessThanOrEqual(width);
+    }
+    // Drawn as a button: the accent behind the label.
+    const background = await link.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(background).not.toBe("rgba(0, 0, 0, 0)");
+    await page.close();
+  }
+});
+
+test("the hero names the tools, each leading to the first pillar", async () => {
+  const page = await open("/");
+  const tools = page.locator("hero-banner tool-list a");
+  expect(await tools.allTextContents()).toEqual([
+    "Reusable content",
+    "Variants",
+    "Versions",
+    "A glossary",
+    "Preview",
+  ]);
+  for (const href of await tools.evaluateAll((links) => links.map((a) => a.getAttribute("href")))) {
+    expect(href).toBe("/#tools");
+  }
+  expect(await page.locator("h2#tools").textContent()).toBe("The tools of a docs team");
+  await page.close();
+});
+
+test("the hero's mark is beside the headline on a wide screen, in the reader's scheme, and gone on a phone", async () => {
+  for (const scheme of ["light", "dark"] as const) {
+    const page = await open("/");
+    await page.emulateMedia({ colorScheme: scheme });
+    const shown = page.locator("hero-banner img[scheme]:visible");
+    expect(await shown.count()).toBe(1);
+    expect(await shown.getAttribute("scheme")).toBe(scheme);
+    expect(await shown.getAttribute("src")).toMatch(/\/hero-mark-\w+\.[\w-]+\.svg$/);
+    const [heading, mark] = [
+      await page.locator("hero-banner h1").boundingBox(),
+      await shown.boundingBox(),
+    ];
+    if (heading === null || mark === null) throw new Error("not drawn");
+    expect(mark.x).toBeGreaterThan(heading.x + heading.width);
+    // At its own size, so each cell is whole pixels on the page's grid.
+    expect(mark.width).toBe(await shown.evaluate((img: HTMLImageElement) => img.naturalWidth));
+    await page.close();
+  }
+  const phone = await open("/", 390);
+  expect(await phone.locator("hero-banner img[scheme]:visible").count()).toBe(0);
+  await phone.close();
+});
+
 test("the landing page's link to getting started opens it under /docs/", async () => {
   const page = await open("/");
-  const link = page.getByRole("link", { name: "read getting started" });
+  const link = page.locator("hero-banner").getByRole("link", { name: "Read getting started" });
   // The permalink's address on the site the build was for.
   const href = new URL((await link.getAttribute("href")) ?? "");
   expect(href.origin).toBe(await siteAddress());
@@ -157,6 +223,103 @@ test("the landing page's link to getting started opens it under /docs/", async (
   await page.goto(server.url + href.pathname);
   await page.waitForURL(`${server.url}/docs/getting-started/`);
   expect(await page.locator("h1").textContent()).toBe("Getting started");
+  await page.close();
+});
+
+/** The story's three loud pillars, by their headings' ids, in the page's order. */
+const PILLARS = [
+  ["tools", "The tools of a docs team"],
+  ["checks", "Checked like code"],
+  ["for-agents", "Built for AI agents, writing and reading"],
+] as const;
+
+test("each pillar has its heading with the split bar, and its proofs beside their examples", async () => {
+  for (const [width, beside] of [
+    [1280, true],
+    [390, false],
+  ] as const) {
+    const page = await open("/", width);
+    const headings = page.locator("article > h2:has(+ story-pillar)");
+    expect(await headings.evaluateAll((hs) => hs.map((h) => [h.id, h.textContent]))).toEqual(
+      PILLARS.map(([id, text]) => [id, text]),
+    );
+    for (const [id] of PILLARS) {
+      // The split bar, the site's own, before the heading.
+      const bar = await page
+        .locator(`h2#${id}`)
+        .evaluate((h) => getComputedStyle(h, "::before").backgroundImage);
+      expect(bar, id).toContain("linear-gradient");
+    }
+    // Each proof is under a pillar's heading, and its example follows it.
+    const proofs = page.locator("article > pillar-proof");
+    const under = await proofs.evaluateAll((els) =>
+      els.map((el) => {
+        let at = el.previousElementSibling;
+        while (at !== null && at.localName !== "h2") at = at.previousElementSibling;
+        return [at?.id, el.nextElementSibling?.localName];
+      }),
+    );
+    expect(new Set(under.map(([id]) => id))).toEqual(new Set(PILLARS.map(([id]) => id)));
+    expect(under.every(([, next]) => next === "proof-example")).toBe(true);
+    for (const proof of await proofs.all()) {
+      const example = proof.locator("xpath=following-sibling::*[1]");
+      const [left, right] = [await proof.boundingBox(), await example.boundingBox()];
+      if (left === null || right === null) throw new Error("not drawn");
+      expect(right.x >= left.x + left.width, `${width}: beside`).toBe(beside);
+      expect(right.y >= left.y + left.height, `${width}: under`).toBe(!beside);
+    }
+    await page.close();
+  }
+});
+
+test("every link in the pillars is a permalink that lands on its page", async () => {
+  const page = await open("/");
+  const site = await siteAddress();
+  const hrefs = await page
+    .locator("article > :is(pillar-proof, proof-example) a")
+    .evaluateAll((links) => links.map((a) => a.getAttribute("href") ?? ""));
+  expect(hrefs.length).toBeGreaterThan(15);
+  const names = new Set<string>();
+  for (const href of hrefs) {
+    // Into the docs by permalink, which test/projects.test.ts verifies by name.
+    expect(href, href).toMatch(new RegExp(`^${site}/go/[\\w-]+/$`));
+    names.add(new URL(href).pathname);
+  }
+  for (const name of names) {
+    const response = await page.goto(server.url + name);
+    expect(response?.status(), name).toBe(200);
+    await page.waitForURL((url) => url.pathname.startsWith("/docs/"));
+    const landed = new URL(page.url());
+    expect(await page.locator("h1").count(), `${name}: ${landed.pathname}`).toBe(1);
+    expect(await page.title(), name).not.toContain("not found");
+    if (landed.hash !== "") {
+      expect(await page.locator(landed.hash).count(), `${name}: ${landed.hash}`).toBe(1);
+    }
+  }
+  await page.close();
+});
+
+test("the audiences each say what leads for them and link to where they start", async () => {
+  const page = await open("/");
+  const entries = page.locator("audience-list > audience-entry");
+  expect(await entries.locator("h3").allTextContents()).toEqual(["Engineers", "Writers", "Agents"]);
+  const site = await siteAddress();
+  const starts: string[] = [];
+  for (const entry of await entries.all()) {
+    // What leads: a link to a pillar on this page.
+    const leads = entry.locator("h3 + p a");
+    const target = (await leads.getAttribute("href")) ?? "";
+    expect(target).toMatch(/^\/#/);
+    expect(await page.locator(`h2${target.slice(1)}`).count(), target).toBe(1);
+    // Where they start: the last link, into the docs.
+    starts.push((await entry.locator("p:last-child a").getAttribute("href")) ?? "");
+  }
+  expect(starts).toEqual(
+    ["getting-started", "directives", "agents-guide"].map((name) => `${site}/go/${name}/`),
+  );
+  // Side by side on a wide screen.
+  const tops = await entries.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().top));
+  expect(new Set(tops).size).toBe(1);
   await page.close();
 });
 
@@ -320,6 +483,94 @@ test("notes and steps render as elements", async () => {
   const page = await open("/docs/getting-started/");
   expect(await page.locator("ascribe-steps ol > li").count()).toBe(3);
   await page.close();
+});
+
+/** The element library's note types (packages/elements/CONTRACT.md, §1). */
+const NOTE_TYPES = ["note", "tip", "important", "warning", "caution"] as const;
+
+test("every type of note has the gutter's split bar, in its own color, in both schemes", async () => {
+  for (const scheme of ["light", "dark"] as const) {
+    const page = await open("/docs/install/");
+    await page.emulateMedia({ colorScheme: scheme });
+    // A note of each type, beside the page's tip, as the library draws it.
+    const bars = await page.locator('ascribe-note[type="tip"]').evaluate((tip, types) => {
+      return types.map((type) => {
+        const note = tip.cloneNode(true) as HTMLElement;
+        note.setAttribute("type", type);
+        tip.after(note);
+        const style = getComputedStyle(note);
+        return {
+          type,
+          label: getComputedStyle(note, "::before").color,
+          width: style.borderLeftWidth,
+          border: style.borderLeftColor,
+          radius: style.borderTopLeftRadius,
+          layers: style.backgroundImage,
+          clips: style.backgroundClip,
+        };
+      });
+    }, NOTE_TYPES);
+    for (const bar of bars) {
+      const where = `${scheme} ${bar.type}`;
+      // The library's border keeps the note's size, and the marks are drawn under it.
+      expect(bar.width, where).toBe("4px");
+      expect(bar.border, where).toBe("rgba(0, 0, 0, 0)");
+      expect(bar.radius, where).toBe("0px");
+      expect(bar.clips, where).toBe("padding-box, border-box");
+      // Two marks in the note's color, its label's, and the page between them.
+      const marks = bar.layers.split("linear-gradient(")[2] ?? "";
+      const colors = marks.match(/rgba?\([^)]*\)/g) ?? [];
+      const runs = colors.filter((c, i) => c !== colors[i - 1]);
+      expect(runs, `${where}: ${bar.layers}`).toEqual([bar.label, "rgba(0, 0, 0, 0)", bar.label]);
+    }
+    expect(new Set(bars.map((b) => b.label)).size).toBe(NOTE_TYPES.length);
+    await page.close();
+  }
+});
+
+test("the hero's mark is the mark in motion, generated, which holds still for a reader who asks", async () => {
+  const page = await open("/");
+  const src = await page.locator("hero-banner img[scheme=light]").getAttribute("src");
+  const svg = await (await fetch(server.url + src)).text();
+  expect(svg).toContain("@keyframes cursor");
+  expect(svg).toContain("@media (prefers-reduced-motion:reduce){.cursor,.marks{animation:none}}");
+  // The image's own document follows the preference: still, in the changed
+  // state, with no cursor.
+  for (const [reducedMotion, cursor, marks] of [
+    ["no-preference", "cursor", "marks"],
+    ["reduce", "none", "none"],
+  ] as const) {
+    await page.emulateMedia({ reducedMotion });
+    await page.goto(server.url + src);
+    const animations = await page.evaluate(() =>
+      [".cursor", ".marks"].map((selector) => {
+        const el = document.querySelector(selector);
+        return el === null ? "missing" : getComputedStyle(el).animationName;
+      }),
+    );
+    expect(animations, reducedMotion).toEqual([cursor, marks]);
+    if (reducedMotion === "reduce") {
+      expect(await page.locator(".cursor").evaluate((el) => getComputedStyle(el).opacity)).toBe(
+        "0",
+      );
+    }
+  }
+  await page.close();
+});
+
+test("with reduced motion set in Chromium, the hero's mark on the page doesn't move", async () => {
+  // An image's own document takes the browser's setting, not a page's
+  // emulation, so this browser is started with the setting.
+  const still = await launchChromium(["--force-prefers-reduced-motion"]);
+  const page = await still.newPage({ viewport: { width: 1280, height: 900 } });
+  await page.goto(server.url + "/");
+  const mark = page.locator("hero-banner img[scheme]:visible");
+  await mark.evaluate((img: HTMLImageElement) => img.decode());
+  const first = await mark.screenshot();
+  // Long enough for the cursor to have blinked and stepped, were it moving.
+  await page.waitForTimeout(2000);
+  expect((await mark.screenshot()).equals(first)).toBe(true);
+  await still.close();
 });
 
 test("a code example taken from a file shows its title", async () => {
@@ -495,7 +746,7 @@ test("the demonstration draws its page beside its source, and under it at phone 
 test("the landing page marks a claim no release has, as the docs do", async () => {
   const page = await open("/");
   // Just after a release, every claim is one a release has, and none is marked.
-  const marks = page.locator("claim-example ascribe-availability");
+  const marks = page.locator("article ascribe-availability");
   if ((await marks.count()) > 0) {
     expect(await marks.first().isVisible()).toBe(true);
     expect(await marks.first().textContent()).toContain("not yet released");
@@ -588,6 +839,12 @@ test("the landing page and the footer link to Credits, which names comrak's rele
   expect(await landing.locator("hero-banner[status]").count()).toBe(0);
   // The `comrak-release` phrase, which scripts/docs-site/credits.test.ts holds to FORK.md.
   expect(await landing.locator("article").textContent()).toMatch(/at its release v\d+\.\d+\.\d+ /);
+  // Bryo Studio is the maker (project-docs/brand/story.md), named first.
+  const maker = landing.locator("h2#who-builds-ascribe + p");
+  expect(await maker.textContent()).toMatch(/^Made by Bryo Studio\b/);
+  expect(await maker.getByRole("link", { name: "Bryo Studio" }).getAttribute("href")).toBe(
+    "https://bryostudio.com",
+  );
   await landing.close();
 
   const footer = await open("/");

@@ -1,0 +1,31 @@
+description: >-
+  `[releases.<target>]` declares a target no declared dimension has as a
+  value of the implicit dimension `release`, which `@variant` and a build's
+  `variants` name as they name a declared one.
+spec: ["9.3"]
+tags: [resolve, check]
+
+diagnostics: []
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Install
+          - group: variant
+            arms:
+              - attributes: {release: agent}
+                children:
+                  - paragraph: Agent text.
+              - attributes: {release: cli}
+                children:
+                  - paragraph: CLI text.
+  agent:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Install
+          - paragraph: Agent text.

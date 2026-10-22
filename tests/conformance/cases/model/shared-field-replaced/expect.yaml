@@ -1,0 +1,9 @@
+description: >-
+  A type that declares a field `[frontmatter]` has replaces it whole, for that
+  type: the home page's type makes `summary` optional, and a guide still
+  needs it.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-missing-field, file: setup.md, line: 1}

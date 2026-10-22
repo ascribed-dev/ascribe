@@ -51,7 +51,7 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 
 | Thing | What uses it | Who can change it |
 |---|---|---|
-| VS Code Marketplace publisher `Ascribe`, extension `Ascribe.ascribe-vscode` | Users of the extension. It stays `Ascribe`, the one place Ascribe is named as a maker: a publisher can't be renamed ([the website plan](website/README.md), decision 14) | Maintainer, through a personal Microsoft account |
+| VS Code Marketplace publisher `Ascribe`, extension `Ascribe.ascribe-vscode` | Users of the extension. It stays `Ascribe`, the one place Ascribe is named as a maker: a publisher can't be renamed (decision [#833h](decisions/833h-bryo-studio-maker.md)) | Maintainer, through a personal Microsoft account |
 | Managed identity `ascribe-vscode-publisher` (Azure, resource group `ascribe-release`, East US), with a federated credential trusting this repository's `release` environment | `release.yml`'s `marketplace` job | Maintainer |
 | An Azure DevOps organization connected to that tenant | Gives the identity the profile the Marketplace needs. No projects or pipelines | Maintainer |
 

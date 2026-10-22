@@ -1,0 +1,8 @@
+description: >-
+  The implicit `page` type of a model that declares no types has
+  `[frontmatter]`'s fields, beside its `title`.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-missing-field, file: setup.md, line: 1}

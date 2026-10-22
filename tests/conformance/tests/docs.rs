@@ -513,6 +513,13 @@ const SETTINGS_TABLES: &[SettingsTable] = &[
         releases: false,
     },
     SettingsTable {
+        name: "content-model-frontmatter.md",
+        page: "_fragments/content-model/types.md",
+        table: "",
+        keys: &["frontmatter"],
+        releases: false,
+    },
+    SettingsTable {
         name: "content-model-types.md",
         page: "_fragments/content-model/types.md",
         table: "types.<name>",
@@ -846,7 +853,7 @@ fn settings_table(t: &SettingsTable) -> String {
             (None, Some(SettingValue::Switch(b))) => format!("`{b}`"),
             (None, Some(SettingValue::Number(n))) => format!("`{n}`"),
             (None, Some(SettingValue::Text(value))) => format!("`\"{value}\"`"),
-            (None, Some(SettingValue::EmptyList)) => "`[]`".to_owned(),
+            (None, Some(SettingValue::List(items))) => format!("`{items:?}`"),
             (None, Some(SettingValue::EmptyTable)) => "`{}`".to_owned(),
             (None, None) => "none".to_owned(),
         };

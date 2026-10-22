@@ -167,6 +167,28 @@ fn a_setting_shows_its_value_its_default_its_description_and_its_line() {
 }
 
 #[test]
+fn agents_defaults_on_with_a_site_and_off_without_one() {
+    let fixture = fixture();
+    let mut client = Client::start(&fixture.root());
+    client.settle();
+    let answer = settings(&mut client, &fixture);
+    let agents = setting(&answer, "consumer", "agents");
+    assert_eq!(agents["value"], Value::Null);
+    assert_eq!(agents["default"], true, "the file sets a site");
+
+    let without = Fixture::new(
+        &MODEL.replace("site = \"https://docs.example.com\"\n", ""),
+        &[("docs/index.md", "# Home\n\nHello.\n")],
+    );
+    let mut client = Client::start(&without.root());
+    client.settle();
+    let answer = settings(&mut client, &without);
+    let agents = setting(&answer, "consumer", "agents");
+    assert_eq!(agents["value"], Value::Null);
+    assert_eq!(agents["default"], false, "the file sets no site");
+}
+
+#[test]
 fn setting_a_value_changes_one_line_and_the_answer_follows_the_buffer() {
     let fixture = fixture();
     let config = fixture.path("ascribe.toml");
@@ -428,6 +450,10 @@ planned-label = "Coming soon"
 
 [releases.cloud]
 live = ["2.0"]
+
+[frontmatter]
+description = "string?"
+owner = "string?"
 "#;
     let fixture = Fixture::new(model, &[("docs/index.md", "# Home\n\nHello.\n")]);
     let mut client = Client::start(&fixture.root());
@@ -451,11 +477,18 @@ live = ["2.0"]
             )
         })
         .collect();
-    // In the reference's order, not the file's; `planned-label`, a key of
-    // `[releases]` itself, isn't a part.
+    // In the reference's order, not the file's, with the frontmatter every
+    // type shares first; `planned-label`, a key of `[releases]` itself, isn't
+    // a part.
     assert_eq!(
         parts,
         vec![
+            (
+                String::new(),
+                "frontmatter".to_owned(),
+                vec!["description".to_owned(), "owner".to_owned()],
+                json!(20)
+            ),
             (
                 "types".to_owned(),
                 "guide".to_owned(),

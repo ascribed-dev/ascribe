@@ -445,6 +445,19 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 **Read more:** [`[checks]`](../content-model/checks.md#19-checks) in the `ascribe.toml` reference.
 
+### ASC244 `frontmatter-field-repeated`
+@id {permalink=true}: ASC244
+
+Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** A type's own `frontmatter` declares a field exactly as `[frontmatter]` does, key for key, so the type's copy changes nothing. Reported at the type's field.
+
+**Message:** the type `{type}` declares `{field}` exactly as `[frontmatter]` does, so this copy changes nothing; delete it, and the type has `[frontmatter]`'s
+
+**Fix:** Delete the type's field, and the type has the one in `[frontmatter]`, which is the same. The fix deletes its line, with the comment lines directly above it, when it's written as `key = value` under the table's header; one written another way is deleted by hand. A type's field that differs from the shared one in any key replaces it whole, for that type, and isn't reported: keep it when the type needs it to differ.
+
+**Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
+
 ## Outputs
 
 ### ASC163 `description-too-long`

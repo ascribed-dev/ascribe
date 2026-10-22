@@ -1,7 +1,8 @@
 spec = "0.1"
 
 # A Vale that can't be run is one advice here, and the rest of the check
-# is the same.
+# is the same: `in-check` asks for the prose to be checked everywhere.
 [checks.vale]
 preset = "quiet"
 command = "not-installed"
+in-check = true

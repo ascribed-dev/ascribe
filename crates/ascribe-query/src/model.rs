@@ -12,7 +12,8 @@ use ascribe_core::RelPath;
 use ascribe_model::examples::Status;
 use ascribe_model::settings::{self as registry, Setting, SettingValue};
 use ascribe_model::{
-    AvailabilityMode, ContentModel, Field, FieldType, GlossaryMatch, Listing, Source, VariantMode,
+    AvailabilityMode, ContentModel, Field, FieldSource, FieldType, GlossaryMatch, Listing, Source,
+    VariantMode,
 };
 use ascribe_resolve::navigation::ROOT_LABEL;
 use ascribe_resolve::{
@@ -321,12 +322,14 @@ pub struct ModelType {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub purpose: Option<String>,
     /// The page a page of the type starts from, from the folder
-    /// `ascribe.toml` is in; absent when the type names none.
+    /// `ascribe.toml` is in: the type's `template`, or the one
+    /// `templates/templates.lock` gives a type that names neither a template
+    /// nor a guide; absent when it has none.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub template: Option<String>,
     /// What to read before writing a page of the type, in the order to read
-    /// it, from the folder `ascribe.toml` is in; absent when the type names
-    /// none.
+    /// it, from the folder `ascribe.toml` is in, from the type's `guide` or
+    /// the lock, as `template` is; absent when it has none.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub guide: Vec<String>,
     /// Its frontmatter fields, in declaration order.
@@ -351,6 +354,12 @@ pub struct ModelField {
     pub description: Option<String>,
     /// An object's fields; empty for any other type.
     pub fields: Vec<ModelField>,
+    /// Which table declares a page type's field: `frontmatter` for
+    /// `[frontmatter]`, which every type shares, `type` for the type's own
+    /// `frontmatter`, or `implicit` for the required string `title` neither
+    /// declares. Absent on an object's fields.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub declared: Option<&'static str>,
 }
 
 /// A dimension.
@@ -761,7 +770,15 @@ fn types(model: &ContentModel) -> Vec<ModelType> {
             purpose: t.purpose.clone(),
             template: t.template.as_ref().map(|f| f.path.clone()),
             guide: t.guide.iter().map(|f| f.path.clone()).collect(),
-            fields: t.frontmatter.fields.iter().map(field).collect(),
+            fields: t
+                .frontmatter
+                .fields
+                .iter()
+                .map(|f| ModelField {
+                    declared: model.field_source(t, &f.name).map(FieldSource::name),
+                    ..field(f)
+                })
+                .collect(),
         })
         .collect()
 }
@@ -785,6 +802,7 @@ fn field(f: &Field) -> ModelField {
             FieldType::Object(fields) => fields.iter().map(field).collect(),
             _ => Vec::new(),
         },
+        declared: None,
     }
 }
 
@@ -1012,7 +1030,7 @@ pub(crate) fn type_entries(
             if t.purpose.is_none() {
                 t.purpose = summaries.get(&t.name).cloned();
             }
-            type_line(&t)
+            type_line(&t, false)
         })
         .collect()
 }
@@ -1043,7 +1061,12 @@ fn render(sections: &[(Section, Vec<String>)], taken: &[usize]) -> String {
 fn lines(report: &ModelReport, section: Section) -> Vec<String> {
     let code = |s: &str| format!("`{s}`");
     match section {
-        Section::Types => report.types.iter().flatten().map(type_line).collect(),
+        Section::Types => report
+            .types
+            .iter()
+            .flatten()
+            .map(|t| type_line(t, true))
+            .collect(),
         Section::Dimensions => report
             .dimensions
             .iter()
@@ -1236,7 +1259,10 @@ fn markdown_text(text: &str) -> String {
     out
 }
 
-fn type_line(t: &ModelType) -> String {
+/// A page type's line. With `sources`, each field says which table
+/// declares it, when they aren't all the type's own: `[frontmatter]`'s, the
+/// type's own, or the implicit `title`.
+fn type_line(t: &ModelType, sources: bool) -> String {
     let mut text = format!("`{}`", t.name);
     let mut notes = Vec::new();
     if let Some(template) = &t.template {
@@ -1254,7 +1280,14 @@ fn type_line(t: &ModelType) -> String {
         .iter()
         .map(|f| {
             let required = if f.required { ", required" } else { "" };
-            format!("`{}` ({}{required})", f.name, f.field_type)
+            let declared = match f.declared {
+                _ if !sources || t.fields.iter().all(|f| f.declared == Some("type")) => "",
+                Some("frontmatter") => ", from `[frontmatter]`",
+                Some("type") => ", own",
+                Some("implicit") => ", implicit",
+                _ => "",
+            };
+            format!("`{}` ({}{required}{declared})", f.name, f.field_type)
         })
         .collect();
     if fields.is_empty() {
@@ -1335,7 +1368,13 @@ fn settings(name: &str, file: Option<&toml::Table>) -> Vec<ModelSetting> {
     let table = file
         .and_then(|f| f.get(name))
         .and_then(toml::Value::as_table);
-    settings_of(name, name, table, &mut out);
+    // Whether the file sets a key, for a default that follows another key.
+    let written = |t: &str, k: &str| {
+        file.and_then(|f| f.get(t))
+            .and_then(toml::Value::as_table)
+            .is_some_and(|t| t.contains_key(k))
+    };
+    settings_of(name, name, table, &written, &mut out);
     out
 }
 
@@ -1343,7 +1382,13 @@ fn settings(name: &str, file: Option<&toml::Table>) -> Vec<ModelSetting> {
 /// `path`, with their values in `values`: a table of keys of its own, such
 /// as `[checks.vale]`, by each of its keys, and a part the project names,
 /// such as a check in `[checks]`, for each one `values` has.
-fn settings_of(table: &str, path: &str, values: Option<&toml::Table>, out: &mut Vec<ModelSetting>) {
+fn settings_of(
+    table: &str,
+    path: &str,
+    values: Option<&toml::Table>,
+    written: &dyn Fn(&str, &str) -> bool,
+    out: &mut Vec<ModelSetting>,
+) {
     let all = registry::settings();
     let own: Vec<&Setting> = all.iter().filter(|s| s.table == table).collect();
     for s in &own {
@@ -1351,9 +1396,16 @@ fn settings_of(table: &str, path: &str, values: Option<&toml::Table>, out: &mut 
         let inner = format!("{table}.{}", s.key);
         if s.kind == "table" && all.iter().any(|t| t.table == inner) {
             let path = format!("{path}.{}", s.key);
-            settings_of(&inner, &path, value.and_then(toml::Value::as_table), out);
+            settings_of(
+                &inner,
+                &path,
+                value.and_then(toml::Value::as_table),
+                written,
+                out,
+            );
         } else {
-            out.push(setting(path, &s.key, s, value));
+            let default = registry::default_for(&s.table, &s.key, written);
+            out.push(setting(path, &s.key, s, default.as_ref(), value));
         }
     }
     // A part the project names is a table of the registry's, such as
@@ -1371,7 +1423,7 @@ fn settings_of(table: &str, path: &str, values: Option<&toml::Table>, out: &mut 
         if own.iter().any(|s| &s.key == key) {
             continue;
         }
-        let mut entry = setting(path, key, named, Some(value));
+        let mut entry = setting(path, key, named, named.default.as_ref(), Some(value));
         if value.is_table() {
             entry.kind = "table".to_owned();
         }
@@ -1379,12 +1431,23 @@ fn settings_of(table: &str, path: &str, values: Option<&toml::Table>, out: &mut 
     }
 }
 
-fn setting(table: &str, key: &str, s: &Setting, value: Option<&toml::Value>) -> ModelSetting {
-    let default = s.default.as_ref().map(|d| match d {
+fn setting(
+    table: &str,
+    key: &str,
+    s: &Setting,
+    default: Option<&SettingValue>,
+    value: Option<&toml::Value>,
+) -> ModelSetting {
+    let default = default.map(|d| match d {
         SettingValue::Switch(b) => serde_json::Value::Bool(*b),
         SettingValue::Number(n) => serde_json::Value::from(*n),
         SettingValue::Text(t) => serde_json::Value::String(t.clone()),
-        SettingValue::EmptyList => serde_json::Value::Array(Vec::new()),
+        SettingValue::List(items) => serde_json::Value::Array(
+            items
+                .iter()
+                .map(|i| serde_json::Value::String(i.clone()))
+                .collect(),
+        ),
         SettingValue::EmptyTable => serde_json::Value::Object(serde_json::Map::new()),
     });
     let set = value.and_then(|v| serde_json::to_value(v).ok());

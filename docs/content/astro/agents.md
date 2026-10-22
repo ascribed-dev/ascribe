@@ -2,6 +2,7 @@
 type: how-to
 title: Publish for AI agents
 description: Publish llms.txt and a Markdown version of each page with an Astro site, so an AI agent reading the docs gets Markdown and an index to choose pages from.
+permalink: publish-for-agents
 ---
 
 An AI agent reading your docs does better with Markdown than with HTML, and with an index to choose pages from. This guide turns on the outputs for agents, which each build then publishes with the site, as the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) lays them out.
@@ -14,11 +15,11 @@ An AI agent reading your docs does better with Markdown than with HTML, and with
 @id: publish-for-ai-agents
 
 @steps
-1. In `ascribe.toml`'s `[consumer]`, set `agents = true`, beside `site`:
+1. In `ascribe.toml`'s `[consumer]`, set `site`, the site's address. With it, the outputs for agents are on; the example says so with `agents = true`, which is the default once `site` is set:
 
    @snippet: code:examples/astro-site/ascribe.toml#agents
 
-   `site` is required, because everything an agent reads links by absolute URL.
+   `site` is required, because everything an agent reads links by absolute URL. A site that publishes nothing for agents sets `agents = false`.
 
 2. Write each page's `description`, the field its type marks `role = "description"`, as one sentence saying what the page is for. It's what an agent picks a page by.
 3. Run `ascribe check`. It advises on a page whose description is too long for its line in `llms.txt`, and on an `llms.txt` that's still too long when split.

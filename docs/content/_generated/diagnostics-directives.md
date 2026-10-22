@@ -550,8 +550,8 @@ Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.m
 
 **Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
 
-### ASC244 `available-planned-line`
-@id {permalink=true}: ASC244
+### ASC245 `available-planned-line`
+@id {permalink=true}: ASC245
 
 Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 

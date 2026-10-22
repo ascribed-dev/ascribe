@@ -398,3 +398,65 @@ fn a_check_turned_off_is_not_run() {
         .expect("a duplicate title");
     assert_eq!(duplicate.severity, Severity::Error);
 }
+
+/// A type that repeats both of `[frontmatter]`'s fields: `description` as
+/// a line under its header, with a comment about it, and `owner` in a table
+/// of its own, which the fix can't delete with nothing else.
+const REPEATED: &str = r#"
+spec = "0.1"
+
+[project]
+content-root = "docs"
+
+[frontmatter]
+description = "string"
+owner = "string?"
+
+[types.guide.frontmatter]
+# The same as everywhere.
+description = { type = "string" } # repeated
+steps = "number"
+
+[types.guide.frontmatter.owner]
+type = "string?"
+"#;
+
+#[test]
+fn a_repeated_field_s_fix_deletes_its_line_and_changes_nothing_else() {
+    let page = "---\ntype: guide\ntitle: Setup\ndescription: How.\nsteps: 2\n---\n\nText.\n";
+    let p = project_with(REPEATED, &[("setup.md", page)], &[]);
+    let all = check_all_builds(&p);
+    let repeated: Vec<&Diagnostic> = all
+        .iter()
+        .filter(|d| d.slug.as_str() == "frontmatter-field-repeated")
+        .collect();
+    assert_eq!(
+        found(&p, &all, "frontmatter-field-repeated"),
+        [
+            ("ascribe.toml: description".to_owned(), Vec::new()),
+            ("ascribe.toml: owner".to_owned(), Vec::new()),
+        ]
+    );
+    // The table of its own has no fix: deleting it is left to the author.
+    assert!(repeated[1].fixes.is_empty());
+    let fix = &repeated[0].fixes[0];
+    assert_eq!(fix.title, "Delete the type's `description`");
+    assert_eq!(fix.applicability, ascribe_core::Applicability::Safe);
+    let after = ascribe_core::apply_edits(REPEATED, &fix.edits).expect("the edits apply");
+    assert_eq!(
+        after,
+        REPEATED.replace(
+            "# The same as everywhere.\ndescription = { type = \"string\" } # repeated\n",
+            ""
+        )
+    );
+    // The type is the same without it, and only `owner` is left to report.
+    let before = ascribe_model::load_str(REPEATED, FileId::new(0)).expect("loads");
+    let fixed = ascribe_model::load_str(&after, FileId::new(0)).expect("loads");
+    assert_eq!(fixed.types[0].frontmatter, before.types[0].frontmatter);
+    let p = project_with(&after, &[("setup.md", page)], &[]);
+    assert_eq!(
+        found(&p, &check_all_builds(&p), "frontmatter-field-repeated"),
+        [("ascribe.toml: owner".to_owned(), Vec::new())]
+    );
+}

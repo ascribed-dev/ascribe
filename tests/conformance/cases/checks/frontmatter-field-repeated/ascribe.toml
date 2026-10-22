@@ -1,0 +1,16 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[frontmatter]
+description = "string"
+owner = { type = "string?", description = "The team that keeps the page." }
+
+# A copy of the shared field, key for key, written another way.
+[types.guide.frontmatter]
+description = { type = "string" }
+owner = { type = "string?", description = "The team that keeps the page." }
+steps = "number"
+
+[types.index]

@@ -55,7 +55,7 @@ A reader who lands on an older line from a search should know it's older, and fi
 
   > Documentation for Self-managed 3.4. Support ends on 31 January 2027. The current version is 3.5: <https://docs.example.com/docs/install/>.
 
-  The current line's says its own version alone. The date comes from `ends`, and the sentence is left out without one; the target is named by its [label](../content-model/content.md#dimensions).
+  The current line's says its own version alone. The date comes from `ends`, and the sentence is left out without one; the target is named by its [label](../content-model/content.md#dimensions), or by `[releases.<target>] label` for a target of the implicit `release` dimension.
 - **A site's banner** says the same to a person: [`VersionBanner.astro`](#the-astro-components) with Astro, or the site's own from `versions.json`.
 
 Nothing is added to `robots.txt`. An older line is kept out of an index by its pages, not by a rule over its folder, which would also stop a crawler reading the canonical link.
@@ -99,7 +99,7 @@ The last sentence links to the page in the current line, or the page that replac
 
 The sidebar shows the pages of the page's own line when the layout passes the entry: `sidebar(entries, { entry })`, or, with a site's own list, `sidebar(entries, { nav, entry })`.
 
-`astro build` and `astro dev` build every line, and `astro dev` rebuilds them all on a change. With `[consumer] agents = true`, each line's `llms.txt` and Markdown are published at its base path, `/docs/3.4/llms.txt`, with the response headers each line's pages need. A permalink forwards to the current line, whichever lines have the page: it's the address a product prints, and it should land on the newest docs.
+`astro build` and `astro dev` build every line, and `astro dev` rebuilds them all on a change. When the build publishes the outputs for agents (on by default with a `[consumer] site`), each line's `llms.txt` and Markdown are published at its base path, `/docs/3.4/llms.txt`, with the response headers each line's pages need. A permalink forwards to the current line, whichever lines have the page: it's the address a product prints, and it should land on the newest docs.
 
 ## In the editor, in review, and in the tools
 
@@ -111,7 +111,7 @@ The lines show wherever a build does, and a page that's the same in every line s
 
 ## For agents
 
-With [`[consumer] agents = true`](../agents/index.md), each line has its own outputs for agents, in its plain output:
+When the build publishes [the outputs for agents](../agents/index.md), on by default with a `[consumer] site`, each line has its own outputs for agents, in its plain output:
 
 - **`llms.txt`** lists the line's pages, and its heading names the line: `# Loom (Self-managed 3.4)`. An older line's opens with a line pointing at the current line's: "This is an older version. The current version is 3.5: [llms.txt](https://docs.example.com/docs/llms.txt)."
 - **Each page's Markdown** opens with the line that says which version it is, [above](#what-an-older-line-says-about-itself).

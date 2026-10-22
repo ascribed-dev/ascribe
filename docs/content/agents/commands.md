@@ -57,7 +57,7 @@ Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside
 
 Writes a compact index of one build's docs, for the `AGENTS.md` of the product they're about: one line a page, with its title, its address, and its description, grouped in sections as the build's `llms.txt` is. It's for your product's agents, where `sync` is for the agents that write your docs; [Index your docs for your product's agents](product-index.md) says when it's worth it.
 
-It lists the pages the build offers, the ones in `llms.txt`: a page that's `unlisted` isn't in it. A page's address is its Markdown version's, with `[consumer] agents = true`, or else its own. The index holds to 8 KB: past that, it leaves out descriptions, from the last page back, then pages, from the last back, and ends with a sentence saying how many it left out and where every page is.
+It lists the pages the build offers, the ones in `llms.txt`: a page that's `unlisted` isn't in it. A page's address is its Markdown version's, when the build publishes the outputs for agents (on by default with a `[consumer] site`), or else its own. The index holds to 8 KB: past that, it leaves out descriptions, from the last page back, then pages, from the last back, and ends with a sentence saying how many it left out and where every page is.
 
 Of a [versioned build](../versions/lines.md#for-agents), `--build site@3.4` names an older line, and without `--build` it's the current line's. When the build has more than one live line, the index's heading names the line, as that line's `llms.txt` does: `## Loom (Self-managed 3.4)`.
 

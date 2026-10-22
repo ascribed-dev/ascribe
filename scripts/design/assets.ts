@@ -432,6 +432,91 @@ function plate(wordmark: Drawing, ink: Ink, background: string, cell: number, pa
   );
 }
 
+/**
+ * The mark in motion: one bar in three states (project-docs/brand/identity.md,
+ * "The mark in motion"), each a frame of whole cells, with no easing between
+ * them. Times are in seconds from the start; it plays once.
+ *
+ * 1. Writing: the bar is a cursor, the marks' width and the mark's height, a
+ *    cell after the a. It blinks once, off from `blink[0]` to `blink[1]`.
+ * 2. From `step`, it steps left a cell every `perCell` seconds, past the a, to the
+ *    gutter, where it stands a beat, then splits into the change marks at
+ *    `split`: changed.
+ * 3. At `reviewed`, the marks turn moss, and it ends there (the website plan's
+ *    decision 16).
+ *
+ * Without motion, it's the changed state: the marks in the gutter's color.
+ */
+export const MOTION = {
+  duration: 5,
+  blink: [0.6, 1.1],
+  step: 1.7,
+  perCell: 0.12,
+  split: 3.5,
+  reviewed: 4.8,
+} as const;
+
+/** Where the cursor starts, in cells from the mark's left edge, and its size. */
+export function cursor(rows: string[]): { start: number; width: number; height: number } {
+  const width = /^\|+/.exec(rows[0] ?? "")?.[0].length ?? 0;
+  // One cell after the a, whose right edge is the grid's.
+  return { start: (rows[0]?.length ?? 0) + 1, width, height: rows.length };
+}
+
+/**
+ * The mark on the landing page's grid, right of its headline, in motion: the
+ * mark in `ink`, `margin` cells in from each side of a grid `cell` pixels a
+ * cell, with room on the right for the cursor. The grid's lines are the
+ * page's (site.css draws them behind it, a cell apart), so this is the mark
+ * alone, on whole cells of that grid. Its style moves the cursor and the
+ * marks; with `prefers-reduced-motion: reduce`, or where an image can't move,
+ * it holds still in the changed state (decision 10).
+ */
+function heroMark(
+  mark: Drawing,
+  rows: string[],
+  ink: Ink & { reviewed: string },
+  margin: [x: number, y: number],
+  grid: [width: number, height: number],
+  cell: number,
+): string {
+  const bar = cursor(rows);
+  const [W, H] = grid;
+  const at = (seconds: number) => `${num((seconds / MOTION.duration) * 100)}%`;
+  const steps = bar.start;
+  // The cursor's and the marks' cells are drawn on the group's scale, one
+  // unit a cell, so a translation of 1px moves them a cell.
+  const moved = `translate(-${steps}px)`;
+  const style =
+    `.cursor,.marks{animation:${MOTION.duration}s step-end forwards}` +
+    `.cursor{opacity:0;fill:${ink.second};animation-name:cursor}` +
+    `.marks{fill:${ink.second};animation-name:marks}` +
+    `@keyframes cursor{` +
+    `0%{opacity:1;transform:translate(0)}` +
+    `${at(MOTION.blink[0])}{opacity:0}` +
+    `${at(MOTION.blink[1])}{opacity:1}` +
+    `${at(MOTION.step)}{transform:translate(0);animation-timing-function:steps(${steps})}` +
+    `${at(MOTION.step + steps * MOTION.perCell)}{transform:${moved};animation-timing-function:step-end}` +
+    `${at(MOTION.split)},100%{opacity:0;transform:${moved}}}` +
+    `@keyframes marks{` +
+    `0%{opacity:0}` +
+    `${at(MOTION.split)}{opacity:1;fill:${ink.second}}` +
+    `${at(MOTION.reviewed)},100%{opacity:1;fill:${ink.reviewed}}}` +
+    `@media (prefers-reduced-motion:reduce){.cursor,.marks{animation:none}}`;
+  const letters = mark.shapes.filter((s) => !s.second).map((s) => s.d);
+  const marks = mark.shapes.filter((s) => s.second).map((s) => s.d);
+  const body =
+    `<path fill="${ink.first}" d="${letters.join("")}"/>` +
+    `<path class="marks" d="${marks.join("")}"/>` +
+    `<path class="cursor" d="M${bar.start} 0h${bar.width}v${bar.height}h-${bar.width}Z"/>`;
+  return svg(
+    W * cell,
+    H * cell,
+    `${title("Ascribe")}<style>${style}</style>` +
+      `<g transform="translate(${margin[0] * cell} ${margin[1] * cell}) scale(${cell})">${body}</g>`,
+  );
+}
+
 /** A Windows icon holding one PNG, as every browser since 2009 reads one. */
 export function ico(png: Buffer, size: number): Buffer {
   const head = Buffer.alloc(22);
@@ -448,6 +533,8 @@ export function ico(png: Buffer, size: number): Buffer {
 }
 
 interface Sources {
+  /** The grids, for what's drawn from their cells rather than their paths: the cursor. */
+  grids: Grids;
   mark: Drawing;
   small: Drawing;
   wordmark: Drawing;
@@ -499,6 +586,17 @@ const [MARK_W, MARK_H] = [GRID.mark[0]?.length ?? 0, GRID.mark.length];
 const HEADER_CELL = 5;
 const PLATE_CELL = 10;
 const PLATE_PAD = 51;
+// The landing page's mark: cells in from the grid's sides and top, and the
+// pixels a cell, which site.css's grid for it matches (`--cell`). The grid
+// takes the mark, `HERO_MARGIN` either side of it, and on the right the
+// cursor, a cell after the a, and a cell after that.
+const HERO_MARGIN: [number, number] = [4, 2];
+export const HERO_CELL = 24;
+const HERO_CURSOR = cursor(GRID.mark);
+export const HERO_GRID: [number, number] = [
+  HERO_CURSOR.start + HERO_CURSOR.width + HERO_MARGIN[0] + 1,
+  MARK_H + 2 * HERO_MARGIN[1],
+];
 
 export const ASSETS: Asset[] = [
   {
@@ -594,6 +692,25 @@ export const ASSETS: Asset[] = [
     oneColor: true,
     draw: (s) => svg(WORD_W, WORD_H, paths(s.wordmark, "currentColor"), false),
   },
+  ...(["light", "dark"] as const).map((scheme): Asset => ({
+    path: `site/home/content/images/hero-mark-${scheme}.svg`,
+    width: HERO_GRID[0] * HERO_CELL,
+    height: HERO_GRID[1] * HERO_CELL,
+    from: [GRIDS, BRAND],
+    form: "svg",
+    draw: (s) =>
+      heroMark(
+        s.mark,
+        s.grids.mark,
+        {
+          ...(scheme === "light" ? lightInk(s.colors) : darkInk(s.colors)),
+          reviewed: s.colors.reviewed[scheme],
+        },
+        HERO_MARGIN,
+        HERO_GRID,
+        HERO_CELL,
+      ),
+  })),
   {
     path: "packages/vscode/media/icon.png",
     width: 256,
@@ -655,6 +772,7 @@ export function readSources(reader: (file: string) => string = readSource): Sour
   let font: opentype.Font | undefined;
   const grids = readGrids(reader(GRIDS));
   return {
+    grids,
     mark: drawing(grids.mark),
     small: drawing(grids.small),
     wordmark: drawing(grids.wordmark),

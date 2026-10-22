@@ -666,7 +666,7 @@ function projectFiles(): Section {
     /^\| (?!File \|)(`.*?) \| (.*?) \| (Yes|No) \|$/gm,
     "file Ascribe writes",
   )
-    // A cell's attributes, such as `{available=next}`, and its links to other pages are the
+    // A cell's attributes, such as `{available="ascribe planned"}`, and its links to other pages are the
     // page's, not the map's.
     .map(([, file = "", what = "", commit = ""]) => [
       file.replace(/ \{[^}]*\}$/, ""),

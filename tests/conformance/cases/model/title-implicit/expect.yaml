@@ -1,0 +1,13 @@
+description: >-
+  Every page type has a required string `title`, declared or not. Declared
+  with `inline = "code"`, it's read with its code spans, so a reader sees
+  the title below without its backticks, and a `nav-label` one character
+  longer than that is long; read as plain text, the backticks count, and the
+  same label isn't.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-missing-field, file: untitled.md, line: 1}
+  - {slug: frontmatter-type-mismatch, file: number.md, line: 3}
+  - {slug: nav-label-long, file: file.md, line: 4, severity: advice}

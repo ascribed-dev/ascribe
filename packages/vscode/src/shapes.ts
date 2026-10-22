@@ -1225,6 +1225,13 @@ export interface ModelField {
   description: string | null;
   /** An object's fields; empty for any other type. */
   fields: ModelField[];
+  /**
+   * Which table declares a page type's field: `frontmatter` for
+   * `[frontmatter]`, which every type shares, `type` for the type's own
+   * `frontmatter`, or `implicit` for the required string `title` neither
+   * declares. Absent on an object's fields.
+   */
+  declared?: string;
 }
 
 /** A kind of content model entry. */
@@ -1498,8 +1505,8 @@ export interface ModelType {
   fields: ModelField[];
   /**
    * What to read before writing a page of the type, in the order to read
-   * it, from the folder `ascribe.toml` is in; absent when the type names
-   * none.
+   * it, from the folder `ascribe.toml` is in, from the type's `guide` or
+   * the lock, as `template` is; absent when it has none.
    */
   guide?: string[];
   /**
@@ -1509,7 +1516,9 @@ export interface ModelType {
   purpose?: string;
   /**
    * The page a page of the type starts from, from the folder
-   * `ascribe.toml` is in; absent when the type names none.
+   * `ascribe.toml` is in: the type's `template`, or the one
+   * `templates/templates.lock` gives a type that names neither a template
+   * nor a guide; absent when it has none.
    */
   template?: string;
 }
@@ -1900,10 +1909,10 @@ export interface PageTemplate {
 export interface PartEntry {
   /**
    * The table it's in: `types`, `dimensions`, `releases`, `builds`, or
-   * `sources`.
+   * `sources`; empty for a table at the top level, `[frontmatter]`.
    */
   table: string;
-  /** Its name in that table: `guide`. */
+  /** Its name in that table: `guide`, or `frontmatter`. */
   name: string;
   /** The keys the file sets in it, in the file's order. */
   keys: string[];
@@ -2406,9 +2415,10 @@ export interface SettingsResult {
    */
   checks: CheckEntry[];
   /**
-   * The parts of the project with structure the file names: each content
-   * type, dimension, release target, build, and source, in the content
-   * model reference's order and the file's within each.
+   * The parts of the project with structure the file names: the
+   * frontmatter every type shares, then each content type, dimension,
+   * release target, build, and source, in the content model reference's
+   * order and the file's within each.
    */
   parts: PartEntry[];
 }

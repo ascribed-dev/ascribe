@@ -21,7 +21,7 @@ The bar is one bar in three states:
 2. **Changed:** it steps left past the a, a cell at a time, and lands in the margin as the split change marks.
 3. **Reviewed:** the marks turn moss.
 
-No asset animates it yet.
+The landing page's hero is drawn in motion by `scripts/design/assets.ts` (`hero-mark-light.svg` and `hero-mark-dark.svg`): it steps through the three states once, a cell at a time with no easing, and ends reviewed. For a reader who prefers reduced motion, it holds still in the changed state (decision [#833c](../decisions/833c-mark-in-motion.md)).
 
 ## What's done
 
@@ -31,10 +31,10 @@ No asset animates it yet.
 - The docs site's header draws the wordmark 2 pixels a cell, with the change marks in `color.brand.gutter`.
 - The Marketplace banner is Deep River's ground.
 - Decision [#801](../decisions/801-pixel-mark.md) records the mark, its colors, and the font, which change decisions 48 and 49's particulars.
-- The pages' colors: the site, the element library, review, the HTML report, the archive, the Astro toolbar, and the preview's fallbacks take Deep River and Shallows, with headings in the system's serif ([the website plan](../website/README.md)'s phase 1, its decision 11).
+- The pages' colors: the site, the element library, review, the HTML report, the archive, the Astro toolbar, and the preview's fallbacks take Deep River and Shallows, with headings in the system's serif (decision [#833a](../decisions/833a-pages-palette.md)).
+- Motion: the three states, generated as the landing page's hero, holding still for anyone who prefers reduced motion; and the site's notes drawn with the gutter's split bar (decisions [#833b](../decisions/833b-site-split-bar.md) and [#833c](../decisions/833c-mark-in-motion.md)).
 
 ## Next
 
 1. **The avatar,** uploaded by hand where `project-docs/outside.md` lists it.
-2. **Motion:** the three states as an animated SVG for the site, holding still for anyone who prefers reduced motion.
-3. **The publisher's logo and banner.** The publisher stays `Ascribe` (story decision 7); its logo is the avatar, uploaded by hand.
+2. **The publisher's logo and banner.** The publisher stays `Ascribe` (story decision 7); its logo is the avatar, uploaded by hand.

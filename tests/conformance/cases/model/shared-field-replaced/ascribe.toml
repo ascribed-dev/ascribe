@@ -1,0 +1,14 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[frontmatter]
+summary = "string"
+
+# The home page's summary is optional: the type's own field replaces the
+# shared one whole, for this type.
+[types.index.frontmatter]
+summary = "string?"
+
+[types.guide]

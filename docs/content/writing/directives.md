@@ -155,7 +155,7 @@ Where a version goes, `planned` means the target's planned line in [`[releases]`
 ```
 
 - It reads as the line's version does, in a filter, a badge, and the checks: with 3.6 planned, `self-managed preview planned` is `self-managed preview 3.6`. Each target says its own, as `self-managed planned, edge beta planned`, and a history can end in one, `self-managed (preview 3.5, ga planned)`.
-- The target needs exactly one planned line. With none, or with two, `planned` names no version, and it's an error at the word, [`available-planned-line`](../checks/diagnostics/directives.md#ASC244): write the version, or declare the line. A versionless target or a dimension name takes no version, `planned` included.
+- The target needs exactly one planned line. With none, or with two, `planned` names no version, and it's an error at the word, [`available-planned-line`](../checks/diagnostics/directives.md#ASC245): write the version, or declare the line. A versionless target or a dimension name takes no version, `planned` included.
 - [`ascribe versions release`](../versions/release.md#cli-versions-release) rewrites each `planned` for the target to the released line's version, so the marks say which release the content came in.
 - It's a word, not a feature key: a feature's spec names its versions, and no state, dimension, value, or feature can be named `planned`.
 - The editor offers `planned` after a target or a state when the target has one planned line, and its hover on a spec names the line.

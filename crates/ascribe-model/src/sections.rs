@@ -10,13 +10,13 @@ use ascribe_core::{
 };
 use toml::de::DeValue;
 
-use crate::loader::{Loader, NameRule, is_absolute};
+use crate::loader::{DimSpans, Loader, NameRule, is_absolute};
 use crate::model::*;
 use crate::names::{is_version, list};
 use crate::pattern::{Pattern, PatternError};
 use crate::settings;
 use crate::toml_util::{V, entries, join, sp};
-use crate::types::{Field, FieldType, FrontmatterSchema, SchemaOwner};
+use crate::types::{Field, FieldRole, FieldType, FrontmatterSchema, SchemaOwner};
 
 /// HTML's reserved custom-element names.
 const HTML_RESERVED_ELEMENTS: &[&str] = &[
@@ -113,7 +113,18 @@ impl Loader<'_> {
         out
     }
 
-    pub fn types(&mut self, v: Option<&V<'_>>, _fragments: &Fragments) -> Vec<ContentType> {
+    /// `[frontmatter]`: the fields every page type has (SPEC §7.2), as
+    /// written. A field named `title` that isn't a required string is
+    /// reported and left out.
+    pub fn shared_frontmatter(&mut self, v: Option<&V<'_>>) -> Vec<Field> {
+        let Some(v) = v else { return Vec::new() };
+        let Some(ft) = self.as_table("frontmatter", v) else {
+            return Vec::new();
+        };
+        self.page_fields("frontmatter", None, ft)
+    }
+
+    pub fn types(&mut self, v: Option<&V<'_>>, shared: &[Field]) -> Vec<ContentType> {
         let mut out: Vec<ContentType> = Vec::new();
         if let Some(v) = v
             && let Some(t) = self.as_table("types", v)
@@ -150,57 +161,24 @@ impl Loader<'_> {
                     .map(|g| self.type_files(&format!("{path}.guide"), g))
                     .unwrap_or_default();
                 let fm_path = format!("{path}.frontmatter");
-                let mut fields = Vec::new();
-                if let Some(fm) = self.require(&path, tt, sp(item), "frontmatter")
+                let mut own = Vec::new();
+                if let Some(fm) = tt.get("frontmatter")
                     && let Some(ft) = self.as_table(&fm_path, fm)
                 {
-                    // Under the `astro` profile, `slug` is
-                    // the entry id Astro's loader uses instead of the path.
-                    // The site output writes `inline` fields' formatted form
-                    // under `formatted`, and each page's path under `source`.
-                    let reserved: &dyn Fn(&str) -> bool = &|n| {
-                        matches!(
-                            n,
-                            "available"
-                                | "variant"
-                                | "permalink"
-                                | "listing"
-                                | "replaces"
-                                | "intended"
-                                | "type"
-                                | "nav-label"
-                                | "slug"
-                                | "formatted"
-                                | "source"
-                        )
-                    };
-                    for (fname, span, _) in entries(ft) {
-                        if reserved(fname) {
-                            let issue = self
-                                .issue(diagnostics::MODEL_FIELD_RESERVED, span)
-                                .with_arg("field", fname)
-                                .with_arg("type", name);
-                            self.push(match fname {
-                                "slug" => issue.with_variant("slug"),
-                                "formatted" => issue.with_variant("formatted"),
-                                "source" => issue.with_variant("source"),
-                                _ => issue,
-                            });
-                        }
-                    }
-                    fields = self.field_table(&fm_path, ft, Some(reserved));
-                    self.check_title(name, &fields, ft, sp(fm));
+                    own = self.page_fields(&fm_path, Some(name), ft);
                 }
                 out.push(ContentType {
                     name: name.to_owned(),
                     implicit: false,
                     frontmatter: FrontmatterSchema {
                         owner: SchemaOwner::Type(name.to_owned()),
-                        fields,
+                        fields: type_fields(shared, own.clone()),
                     },
+                    own,
                     purpose,
                     template,
                     guide,
+                    span: name_span,
                 });
             }
         }
@@ -210,23 +188,86 @@ impl Loader<'_> {
                 implicit: true,
                 frontmatter: FrontmatterSchema {
                     owner: SchemaOwner::Type("page".into()),
-                    fields: vec![Field {
-                        name: "title".into(),
-                        ty: FieldType::String,
-                        required: true,
-                        default: None,
-                        phrases: false,
-                        inline: None,
-                        role: None,
-                        description: None,
-                    }],
+                    fields: type_fields(shared, Vec::new()),
                 },
+                own: Vec::new(),
                 purpose: None,
                 template: None,
                 guide: Vec::new(),
+                span: Span::empty(0),
             });
         }
         out
+    }
+
+    /// The fields of a page's frontmatter table, `[frontmatter]` or
+    /// `[types.<name>.frontmatter]` (`type_name`), with the keys a page type
+    /// can't declare reported and left out.
+    fn page_fields(
+        &mut self,
+        path: &str,
+        type_name: Option<&str>,
+        ft: &toml::de::DeTable<'_>,
+    ) -> Vec<Field> {
+        // Under the `astro` profile, `slug` is
+        // the entry id Astro's loader uses instead of the path.
+        // The site output writes `inline` fields' formatted form
+        // under `formatted`, and each page's path under `source`.
+        let reserved: &dyn Fn(&str) -> bool = &|n| {
+            matches!(
+                n,
+                "available"
+                    | "variant"
+                    | "permalink"
+                    | "listing"
+                    | "replaces"
+                    | "intended"
+                    | "type"
+                    | "nav-label"
+                    | "slug"
+                    | "formatted"
+                    | "source"
+            )
+        };
+        for (fname, span, _) in entries(ft) {
+            if reserved(fname) {
+                let issue = self
+                    .issue(diagnostics::MODEL_FIELD_RESERVED, span)
+                    .with_arg("field", fname)
+                    .with_arg("table", path);
+                self.push(match fname {
+                    "slug" => issue.with_variant("slug"),
+                    "formatted" => issue.with_variant("formatted"),
+                    "source" => issue.with_variant("source"),
+                    _ => issue,
+                });
+            }
+        }
+        let mut fields = self.field_table(path, ft, Some(reserved));
+        // Every page type has a required string `title` (SPEC §7.2); one
+        // that's declared changes only how it's read.
+        if let Some(i) = fields.iter().position(|f| f.name == "title")
+            && !(fields[i].ty == FieldType::String && fields[i].required)
+        {
+            let f = fields.remove(i);
+            let found = if f.required {
+                f.ty.describe()
+            } else {
+                format!("{} (optional)", f.ty.describe())
+            };
+            let span = ft.get("title").map_or(Span::empty(0), sp);
+            let mut issue = self
+                .issue(diagnostics::MODEL_FIELD_RESERVED, span)
+                .with_variant("title")
+                .with_arg("field", "title")
+                .with_arg("table", path)
+                .with_arg("found", found);
+            if let Some(name) = type_name {
+                issue = issue.with_arg("type", name);
+            }
+            self.push(issue);
+        }
+        fields
     }
 
     /// A type's `template`, or one entry of its `guide`: a path from the
@@ -262,40 +303,11 @@ impl Loader<'_> {
             self.push(issue.with_arg("key", key));
             return None;
         }
-        Some(TypeFile { path: text, span })
-    }
-
-    /// Every page type declares `title` as a required string.
-    fn check_title(
-        &mut self,
-        type_name: &str,
-        fields: &[Field],
-        table: &toml::de::DeTable<'_>,
-        fm_span: Span,
-    ) {
-        match fields.iter().find(|f| f.name == "title") {
-            Some(f) if f.ty == FieldType::String && f.required => {}
-            Some(f) => {
-                let span = table.get("title").map_or(fm_span, sp);
-                let found = if f.required {
-                    f.ty.describe()
-                } else {
-                    format!("{} (optional)", f.ty.describe())
-                };
-                self.push(
-                    self.issue(diagnostics::MODEL_TYPE_TITLE, span)
-                        .with_variant("not-string")
-                        .with_arg("type", type_name)
-                        .with_arg("found", found),
-                );
-            }
-            // A `title` that failed to build already reported why.
-            None if table.get("title").is_some() => {}
-            None => self.push(
-                self.issue(diagnostics::MODEL_TYPE_TITLE, fm_span)
-                    .with_arg("type", type_name),
-            ),
-        }
+        Some(TypeFile {
+            path: text,
+            span,
+            lock: None,
+        })
     }
 
     // ---- glossary ---------------------------------------------------------------
@@ -640,7 +652,7 @@ impl Loader<'_> {
             trailing_slash: trailing_slash(settings::default_text(CONSUMER, "trailing-slash")),
             slugger: settings::default_text(CONSUMER, "slugger").into(),
             html: settings::default_switch(CONSUMER, "html"),
-            agents: settings::default_switch(CONSUMER, "agents"),
+            agents: false,
             permalink_path: None,
             headers: None,
         };
@@ -703,6 +715,14 @@ impl Loader<'_> {
         {
             c.slugger = text;
         }
+        // Agents' outputs come with a site that has an address, unless
+        // `agents` says otherwise below (SPEC §9.4).
+        let site = c.site.is_some();
+        c.agents = matches!(
+            settings::default_for(CONSUMER, "agents", &|t, k| (t, k) == (CONSUMER, "site")
+                && site),
+            Some(settings::SettingValue::Switch(true))
+        );
         if let Some(h) = t.get("html")
             && let Some(value) = self.boolean("consumer.html", h)
         {
@@ -844,6 +864,83 @@ impl Loader<'_> {
 
     // ---- releases ---------------------------------------------------------------------------
 
+    /// The implicit `release` dimension: each `[releases.<target>]` no
+    /// declared dimension has, as a value or as its name, is a value of it,
+    /// labeled by `[releases.<target>] label`, and the dimension is labeled
+    /// by `[releases] label`. A project that declares its own `release`
+    /// dimension has no implicit one, and `releases` reports each target left
+    /// to it.
+    pub(crate) fn release_dimension(
+        &mut self,
+        v: Option<&V<'_>>,
+        dimensions: &mut Vec<Dimension>,
+        spans: &mut Vec<DimSpans>,
+    ) {
+        let Some(DeValue::Table(t)) = v.map(|v| v.get_ref()) else {
+            return;
+        };
+        let mut label = settings::default_text("releases", "label").to_owned();
+        let mut values: Vec<(DimensionValue, Span)> = Vec::new();
+        for (target, target_span, item) in entries(t) {
+            if target == "label" {
+                if let Some(text) = self.string("releases.label", item, true) {
+                    label = text;
+                }
+                continue;
+            }
+            let DeValue::Table(rt) = item.get_ref() else {
+                continue;
+            };
+            let target_label = rt.get("label");
+            let declared = dimensions
+                .iter()
+                .find(|d| d.values.iter().any(|v| v.value == target));
+            if let Some(dimension) = declared {
+                if let Some(l) = target_label {
+                    self.push(
+                        self.issue(diagnostics::MODEL_RELEASES_TARGET, sp(l))
+                            .with_variant("label")
+                            .with_arg("target", target)
+                            .with_arg("dimension", dimension.name.as_str()),
+                    );
+                }
+                continue;
+            }
+            if dimensions.iter().any(|d| d.name == target)
+                || dimensions.iter().any(|d| d.name == RELEASE_DIMENSION)
+                || !self.name_ok(target, target_span, "dimension value", NameRule::NameWord)
+            {
+                continue;
+            }
+            let path = format!("{}.label", join("releases", target));
+            let target_label = match target_label {
+                Some(l) => self.string(&path, l, true),
+                None => None,
+            };
+            values.push((
+                DimensionValue {
+                    value: target.to_owned(),
+                    label: target_label.unwrap_or_else(|| target.to_owned()),
+                    versionless: false,
+                },
+                target_span,
+            ));
+        }
+        let Some((_, first)) = values.first() else {
+            return;
+        };
+        spans.push(DimSpans {
+            name_span: *first,
+            value_spans: values.iter().map(|(_, span)| *span).collect(),
+        });
+        dimensions.push(Dimension {
+            name: RELEASE_DIMENSION.to_owned(),
+            label,
+            values: values.into_iter().map(|(value, _)| value).collect(),
+            implicit: true,
+        });
+    }
+
     /// `[releases]`: each target's lines, newest first, and
     /// `planned-label`.
     pub fn releases(
@@ -860,6 +957,10 @@ impl Loader<'_> {
             return (out, planned_label);
         };
         for (target, target_span, item) in entries(t) {
+            // `release_dimension` read the dimension's label.
+            if target == "label" {
+                continue;
+            }
             if target == "planned-label" {
                 if let Some(label) = self.string("releases.planned-label", item, true) {
                     planned_label = label;
@@ -1124,7 +1225,7 @@ impl Loader<'_> {
                 false
             }
             None => {
-                let mut issue = self
+                let issue = self
                     .issue(diagnostics::MODEL_RELEASES_TARGET, span)
                     .with_arg("target", target);
                 if let Some(d) = dimensions.iter().find(|d| d.name == target) {
@@ -1134,11 +1235,20 @@ impl Loader<'_> {
                         .filter(|v| !v.versionless)
                         .map(|v| v.value.clone())
                         .collect();
-                    issue = issue
-                        .with_variant("dimension")
-                        .with_arg("values", list(&values));
+                    self.push(
+                        issue
+                            .with_variant("dimension")
+                            .with_arg("values", list(&values)),
+                    );
+                } else if dimensions
+                    .iter()
+                    .any(|d| d.name == RELEASE_DIMENSION && !d.implicit)
+                {
+                    // The implicit dimension's name is taken.
+                    self.push(issue);
                 }
-                self.push(issue);
+                // Otherwise the target isn't a name, which
+                // `release_dimension` reported.
                 false
             }
         }
@@ -1544,4 +1654,56 @@ fn lines_of(build: Build, releases: &[Releases]) -> Vec<Build> {
             }
         })
         .collect()
+}
+
+/// A page type's fields: `[frontmatter]`'s, each in its place unless the
+/// type declares a field of its name, which replaces it whole, then the
+/// type's others, with `title` first when neither declares it (SPEC §7.2).
+/// A role is the field's that's given it, the type's own before a shared
+/// one; one no field is given is the field's of its name, when its type
+/// takes the role.
+fn type_fields(shared: &[Field], own: Vec<Field>) -> Vec<Field> {
+    // Each field, and whether the type declares it.
+    let mut fields: Vec<(Field, bool)> = shared.iter().map(|f| (f.clone(), false)).collect();
+    for f in own {
+        match fields.iter_mut().find(|(s, _)| s.name == f.name) {
+            Some(slot) => *slot = (f, true),
+            None => fields.push((f, true)),
+        }
+    }
+    if !fields.iter().any(|(f, _)| f.name == "title") {
+        fields.insert(0, (title_field(), false));
+    }
+    for role in FieldRole::ALL {
+        if fields.iter().any(|(f, own)| *own && f.role == Some(role)) {
+            for (f, own) in &mut fields {
+                if !*own && f.role == Some(role) {
+                    f.role = None;
+                }
+            }
+        }
+        if !fields.iter().any(|(f, _)| f.role == Some(role))
+            && let Some((f, _)) = fields
+                .iter_mut()
+                .find(|(f, _)| f.name == role.name() && f.role.is_none() && role.accepts(&f.ty))
+        {
+            f.role = Some(role);
+        }
+    }
+    fields.into_iter().map(|(f, _)| f).collect()
+}
+
+/// The `title` a page type has when it doesn't declare one: a required
+/// string.
+fn title_field() -> Field {
+    Field {
+        name: "title".into(),
+        ty: FieldType::String,
+        required: true,
+        default: None,
+        phrases: false,
+        inline: None,
+        role: None,
+        description: None,
+    }
 }

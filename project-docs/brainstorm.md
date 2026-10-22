@@ -160,6 +160,14 @@ What didn't fit:
 - **A widget's title isn't a heading.** A title line becomes the element's `heading` attribute, which a stylesheet can show but which isn't in the page's outline or table of contents. Each claim's name is a `###` heading inside the widget instead.
 - **The drawn page's headings join the page's outline.** The demonstrated page's `##` headings are the landing page's too, inside the demonstration. The stylesheet makes them smaller; nothing makes them a level lower.
 
+The rebuilt landing page ([phase 2 of the second website plan](https://github.com/ascribed-dev/ascribe/blob/58afc492/project-docs/website/phase-2-landing.md)) added eight widgets, and kept the page in Ascribe. What they couldn't say:
+
+- **A section can't be a widget.** A pillar is a heading and everything to the next one, but a container around it puts the first pillar's example, a variant group, four containers deep, and `ascribe check` warns past two (`ASC013`). So `@story-pillar` is a line widget bound to the heading, an empty element after it, and the stylesheet finds the heading by what follows it (`h2:has(+ p > story-pillar)`). A binding that wraps the section it marks, as `heading-or-block` at a section's top names it, would let a widget be the section.
+- **Two widgets can't say they belong together.** A `@pillar-proof` and the `@proof-example` after it are set side by side only because the stylesheet places a proof's next sibling beside it, on a grid the whole article is. Nothing in the model says the example is the proof's, or checks that one follows the other.
+- **An empty widget lands in a paragraph.** `<story-pillar></story-pillar>` on a line of its own isn't an HTML block to CommonMark, whose seventh kind needs the line to hold one tag alone, so the site's Markdown wraps it in `<p>`, and the stylesheet hides the paragraph. The element contract says an empty widget is written as one HTML block; whether the site output should write it so that it is one is a question for its own issue.
+- **A link can't say it's the call to action.** The hero's button is the link in a `@call-to-action`'s last paragraph, by position. A primary link has no mark of its own.
+- **An image can't say it's decoration.** The mark beside the headline repeats the header's, so it says nothing a reader needs, but every image needs alt text (`image-alt-missing`), so a screen reader reads it.
+
 ## 19. One selector for a whole site
 
 Added 2026-10-11. Not planned.

@@ -84,12 +84,22 @@ type = "table of tables"
 description = '''Content types: a frontmatter schema for each kind of page, by the type's name.'''
 
 [[setting]]
+table = ""
+key = "frontmatter"
+kind = "table"
+type = "table of fields"
+default = {}
+default-text = "`{}` (no fields)"
+description = '''The fields every page type has, as a type's own `frontmatter` declares them (below), so a field every page has is written once. A type's own fields add to them, and one of the same name replaces the shared field whole, for that type. The implicit `page` type of a project with no types has them too.'''
+
+[[setting]]
 table = "types.<name>"
 key = "frontmatter"
 kind = "table"
 type = "table of fields"
-required = true
-description = '''The frontmatter schema: one entry per field, keyed by field name (`name-word`). Values are field types (§5). It MUST declare `title` as a required string (below). A type can't declare a field `type`, which is reserved (`model-field-reserved`).'''
+default = {}
+default-text = "`{}` (no fields of its own)"
+description = '''The type's own frontmatter schema: one entry per field, keyed by field name (`name-word`). Values are field types (§5). Every type has a required string `title`, declared or not (below). A type can't declare a field `type`, which is reserved (`model-field-reserved`).'''
 
 [[setting]]
 table = "types.<name>"
@@ -103,7 +113,7 @@ table = "types.<name>"
 key = "template"
 kind = "text"
 type = "string (path)"
-description = '''The page a page of the type starts from: a file from the folder `ascribe.toml` is in, outside the content root (below).'''
+description = '''The page a page of the type starts from: a file from the folder `ascribe.toml` is in, outside the content root (below). A type with no `template` and no `guide` takes both from `templates/templates.lock`, when the lock `ascribe templates eject` wrote records the type.'''
 
 [[setting]]
 table = "types.<name>"
@@ -111,7 +121,7 @@ key = "guide"
 kind = "list"
 type = "array of paths"
 default = []
-description = '''What to read before writing a page of the type, in the order to read it, such as a guide and a project's own notes on it: files from the folder `ascribe.toml` is in, outside the content root (below).'''
+description = '''What to read before writing a page of the type, in the order to read it, such as a guide and a project's own notes on it: files from the folder `ascribe.toml` is in, outside the content root (below). Without it or `template`, from `templates/templates.lock`, as `template` is.'''
 
 [[setting]]
 table = ""
@@ -187,7 +197,7 @@ kind = "choice"
 type = "string"
 choices = ["code"]
 only = "fields"
-description = '''`"code"` reads the value's code spans. Allowed only on a content type's top-level `string` fields (and `string?`). See §5.3.'''
+description = '''`"code"` reads the value's code spans. Allowed only on a page type's top-level `string` fields (and `string?`), its own or `[frontmatter]`'s. See §5.3.'''
 
 [[setting]]
 table = "<field>"
@@ -203,7 +213,7 @@ kind = "choice"
 type = "string"
 choices = ["description", "review-date", "owner"]
 only = "fields"
-description = '''What the field is for, which a check reads: `"description"`, `"review-date"`, or `"owner"`. Allowed only on a content type's top-level fields. See §5.4.'''
+description = '''What the field is for, which a check reads: `"description"`, `"review-date"`, or `"owner"`. Allowed only on a page type's top-level fields, its own or `[frontmatter]`'s. A field named for a role has it without `role`, unless the type gives it to another field. See §5.4.'''
 
 # ---- 6. `[dimensions.<name>]` -------------------------------------------------
 
@@ -302,6 +312,14 @@ type = "table of tables"
 description = '''Lines that have left the window, each older than every live line, by line. Each takes `url`, where the line can still be read, and `ended`, the day its support ended, both optional: `"3.2" = {}` declares a line that's readable nowhere.'''
 
 [[setting]]
+table = "releases.<target>"
+key = "label"
+kind = "text"
+type = "string"
+default-text = "the target's name"
+description = '''The target's display label, as `[dimensions.<name>] labels` gives a value's, when the target is a value of the implicit `release` dimension: `label = "Ascribe"`. A target a declared dimension has takes its label from that dimension's `labels` instead.'''
+
+[[setting]]
 table = "releases.<target>.archived.<line>"
 key = "url"
 kind = "text"
@@ -314,6 +332,14 @@ key = "ended"
 kind = "text"
 type = "date"
 description = '''The day its support ended.'''
+
+[[setting]]
+table = "releases"
+key = "label"
+kind = "text"
+type = "string"
+default = "Release"
+description = '''The display label of the implicit `release` dimension, as `[dimensions.<name>] label` gives a declared dimension's. The implicit dimension holds each target no declared dimension has, so `[releases.ascribe]` alone makes `ascribe` a value of `release`.'''
 
 [[setting]]
 table = "releases"
@@ -606,8 +632,9 @@ table = "consumer"
 key = "agents"
 kind = "switch"
 type = "boolean"
-default = false
-description = '''**Outputs for agents.** Whether each build also publishes what AI agents read, as the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) lays it out: `llms.txt`, the index of every page, and each page's Markdown at its URL with `.md`. It needs `site`, since every link agents read is absolute. See below.'''
+default = true
+default-text = "`true` when `site` is set, `false` when it isn't"
+description = '''**Outputs for agents.** Whether each build also publishes what AI agents read, as the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) lays it out: `llms.txt`, the index of every page, and each page's Markdown at its URL with `.md`. It needs `site`, since every link agents read is absolute: a site with an address publishes them unless this is `false`. See below.'''
 
 [[setting]]
 table = "consumer"
@@ -720,9 +747,9 @@ table = "sources.<name>"
 key = "ignore"
 kind = "list"
 type = "array of patterns"
-default = []
-default-text = "none"
-description = '''Files left out even when `include` matches them.'''
+default = ["**/node_modules/**", "**/.git/**"]
+default-text = "`node_modules` and `.git` folders, always"
+description = '''Files left out even when `include` matches them. Every `node_modules` and `.git` folder is left out whatever the list says, before the patterns it adds.'''
 
 # ---- 19. `[checks]` -----------------------------------------------------------
 
@@ -835,7 +862,7 @@ key = "in-check"
 kind = "switch"
 type = "boolean"
 default = false
-description = '''Whether `ascribe check`, and the agents' hook, check the prose without `--vale`.'''
+description = '''Whether `ascribe check`, and the agents' hook, check the prose without `--vale`. It also says the project wants its prose checked everywhere: without it, the editor doesn't report that Vale couldn't be run (`prose-not-checked`), since a machine without Vale isn't one the project asked to check.'''
 
 [[setting]]
 table = "checks.vale"
