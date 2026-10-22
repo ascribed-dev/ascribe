@@ -448,6 +448,9 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     crate::complete::complete(ctx, at.position)
                 })
             }),
+            HoverRequest::METHOD if let Some(hover) = model_hover(shared, &request) => {
+                to_json(&request, hover)
+            }
             HoverRequest::METHOD => navigation(shared, &request, |p: lsp_types::HoverParams| {
                 let at = p.text_document_position_params;
                 (at.text_document.uri, move |ctx: &Ctx| {
@@ -759,6 +762,16 @@ fn config_completion(shared: &Shared, request: &Request) -> Option<Vec<lsp_types
     shared
         .lock()
         .config_completion(&at.text_document.uri, at.position)
+}
+
+/// The hover in `ascribe.toml`, which isn't a page; `None` for any other
+/// document, or a place with nothing to say.
+fn model_hover(shared: &Shared, request: &Request) -> Option<lsp_types::Hover> {
+    let params: lsp_types::HoverParams = serde_json::from_value(request.params.clone()).ok()?;
+    let at = params.text_document_position_params;
+    shared
+        .lock()
+        .model_hover(&at.text_document.uri, at.position)
 }
 
 /// Completion in a memo file, which isn't a page; `None` for any other

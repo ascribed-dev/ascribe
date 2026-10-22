@@ -1,0 +1,8 @@
+description: >-
+  A type's own field that differs from `[frontmatter]`'s in any key, its
+  type, whether it's optional, its default, or its description, replaces
+  the shared one for the type, and isn't reported.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics: []

@@ -1047,7 +1047,10 @@ items and marked incomplete, so the client asks again as the author types.
 **Hover**: a link or image (its project-relative path, the title, a
 plain-text preview of the first paragraph), an include (the same; a fragment
 says so), a phrase (its value), an availability spec or feature key (SPEC
-§9.4's text), and a directive or attribute key (its schema).
+§9.4's text), a directive or attribute key (its schema), and a frontmatter
+key a page's type declares, or a field's key in `ascribe.toml`'s
+`[frontmatter]` or a type's own `frontmatter` (which table declares it, and
+which types replace a shared one).
 
 **Folding ranges**: each closed container `@memo`, from its opening line to
 its `@end`, so it folds to its first line. A page's other folding (headings,

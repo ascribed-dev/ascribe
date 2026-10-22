@@ -731,6 +731,32 @@ impl Core {
         Some(crate::examples::complete_config(text, offset))
     }
 
+    /// The hover at `position` of an open `ascribe.toml`: on a frontmatter
+    /// field's key, which table declares it (`hover.rs`). `None` for any
+    /// other document.
+    pub(crate) fn model_hover(
+        &self,
+        uri: &Uri,
+        position: lsp_types::Position,
+    ) -> Option<lsp_types::Hover> {
+        let path = Core::doc_path(uri)?;
+        if self.config.as_ref() != Some(&path) {
+            return None;
+        }
+        let ctx = self.project_target(uri)?;
+        let text = &self.docs.get(&path)?.text;
+        let index = LineIndex::new(text);
+        let offset = self.encoding.offset_lenient(&index, text, position);
+        let (span, value) = crate::hover::model_field_markdown(&ctx.model, text, offset)?;
+        Some(lsp_types::Hover {
+            contents: lsp_types::HoverContents::Markup(lsp_types::MarkupContent {
+                kind: lsp_types::MarkupKind::Markdown,
+                value,
+            }),
+            range: Some(self.encoding.range(&index, span)),
+        })
+    }
+
     /// What can be written at `position` of an open `ascribe.nav`: its keys,
     /// the project's sections, and a section's pages (`nav_file.rs`).
     /// `None` for any other document.

@@ -195,6 +195,13 @@
     "ModelField": {
       "description": "A frontmatter field.",
       "properties": {
+        "declared": {
+          "description": "Which table declares a page type's field: `frontmatter` for\n`[frontmatter]`, which every type shares, `type` for the type's own\n`frontmatter`, or `implicit` for the required string `title` neither\ndeclares. Absent on an object's fields.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "description": {
           "description": "What it's for, as the content model describes it.",
           "type": [

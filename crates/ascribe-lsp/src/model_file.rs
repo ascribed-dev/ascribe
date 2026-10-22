@@ -74,6 +74,18 @@ impl<'a> ModelFile<'a> {
         Some(item)
     }
 
+    /// The key of the table-like item at `table` that `offset` is on, with
+    /// its span.
+    pub(crate) fn key_at(&self, table: &[&str], offset: usize) -> Option<(String, Span)> {
+        let t = self.table_like(&path(table))?;
+        t.iter().find_map(|(name, _)| {
+            let (key, _) = t.get_key_value(name)?;
+            let span = key.span()?;
+            (span.start <= offset && offset <= span.end)
+                .then(|| (name.to_owned(), Span::new(span.start, span.end)))
+        })
+    }
+
     /// The table-like item at a path: a `[header]` table, a dotted one, or an
     /// inline table.
     pub(crate) fn table_like(&self, path: &[Seg]) -> Option<&dyn TableLike> {
