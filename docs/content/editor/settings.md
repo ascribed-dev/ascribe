@@ -9,9 +9,18 @@ How the [VS Code extension](index.md) works in a workspace that holds more than 
 ## Workspaces with several projects
 @id {permalink=true}: workspaces-with-several-projects
 
-Every `ascribe.toml` in the workspace is a project, with its own language server. A repository that keeps its code and its documentation together can hold several, such as `site/ascribe.toml` and `handbook/ascribe.toml`, and you can work on all of them in one window. Folders named `node_modules` aren't searched.
+Every `ascribe.toml` in the workspace is a project, with its own language server. A repository that keeps its code and its documentation together can hold several, such as `site/ascribe.toml` and `handbook/ascribe.toml`, and you can work on all of them in one window.
 
-A folder whose `ascribe.toml` isn't a project, such as test fixtures, is left out with `ascribe.projects.exclude`: a list of glob patterns, from each workspace folder, in your workspace's settings, such as `"ascribe.projects.exclude": ["tests/**"]`. A project there isn't listed in **Switch Project** and gets no language server, so its pages get no diagnostics and no preview. Folders that `files.exclude` hides are left out too.
+Some folders hold an `ascribe.toml` that isn't a project to work on, and the editor leaves them out on its own:
+
+- **What git ignores.** In a workspace folder that's a git repository, an `ascribe.toml` git ignores isn't a project, such as one a test run writes into a build folder. One git tracks is, whatever the ignore rules say. Without git, or outside a repository, the folders below are still left out.
+- **Output, dependencies, and caches,** in every folder with one of these names, whether or not git ignores it: `.ascribe`, each project's outputs and caches; `node_modules`, `bower_components`, `vendor`, `.venv`, `venv`, and `__pypackages__`; and `target`, `dist`, `.output`, `.next`, `.nuxt`, `.svelte-kit`, `.astro`, `.turbo`, `.vercel`, `.netlify`, `.cache`, `coverage`, `.gradle`, `.vscode-test`, `.tox`, and `.nox`. Not `build`, `out`, or `bin`, which are also names of folders people write in: where they're output, git ignores them.
+- **A source's copies.** The copies of a [source in another repository](../content-model/output.md#18-sourcesname), `sources/<name>/` in a project's folder, can hold that repository's own `ascribe.toml`: it's code the project shows, not a project.
+- **Folders that `files.exclude` hides.**
+
+Anything else whose `ascribe.toml` isn't a project, such as test fixtures, is left out with `ascribe.projects.exclude`: a list of glob patterns, from each workspace folder, in your workspace's settings, such as `"ascribe.projects.exclude": ["tests/**"]`.
+
+A project left out isn't listed in **Switch Project** and gets no language server, so its pages get no diagnostics and no preview. To bring one back, open its folder as a workspace folder of its own (**File > Add Folder to Workspace**): a workspace folder's own `ascribe.toml` is always a project, unless `files.exclude` or `ascribe.projects.exclude` names it. One that `ascribe.projects.exclude` leaves out comes back when you take its pattern out, and one git ignores comes back when git tracks its `ascribe.toml` (`git add -f`).
 
 A file belongs to the nearest `ascribe.toml` above it, and only that project's server reports on it. Projects can be nested: a file in `handbook/internal/` belongs to `handbook/internal/ascribe.toml`, not to `handbook/ascribe.toml`. A project nested in another's content root isn't part of it: the outer project's server, `ascribe check`, and `ascribe build` skip the nested project's folder, so a link or an include from the outer project to one of its pages is reported as a missing file. A file in a project's folder but outside its content root isn't one of the project's sources, and gets no diagnostics.
 
@@ -23,7 +32,7 @@ A project's server starts the first time you open one of its Markdown files or i
 
 To start every project's server when the workspace opens, set `ascribe.startServers` to `"all"`.
 
-An `ascribe.toml` you add or delete is picked up as you work. If the editor misses a new one, opening or switching to one of the new project's files picks it up. The extension serves at most 50 projects in a workspace: the first 50 by path. When there are more, the first project's output says so, and that **Switch Project** lists only those 50; `ascribe.projects.exclude` leaves out the folders that aren't projects.
+An `ascribe.toml` you add or delete is picked up as you work. If the editor misses a new one, opening or switching to one of the new project's files picks it up. The extension serves at most 50 projects in a workspace: the first 50 by path. When there are more, the first project's output says so, and that **Switch Project** lists only those 50; `ascribe.projects.exclude` leaves out the folders that aren't projects, beside [those left out on their own](#workspaces-with-several-projects).
 
 Each server uses about 6 MB of memory, plus about 70 KB per page of its project.
 

@@ -2,11 +2,13 @@ import { stat } from "node:fs/promises";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { ProjectServer, type ProjectHost } from "./client.js";
+import { gitIgnored } from "./gitIgnored.js";
 import { asksForLenses, lensTitle } from "./codeLens.js";
 import { ChangeBatch, readLayout, startsServer, toldOfChange, type Source } from "./diskChanges.js";
 import {
   channelName,
   comparable,
+  inSourceCopies,
   nestedProjects,
   ownedElsewhere,
   owningProject,
@@ -23,6 +25,12 @@ type StartServers = "onDemand" | "all";
 
 /** The most projects found in one workspace. */
 const MAX_PROJECTS = 50;
+
+/**
+ * The most `ascribe.toml` files a search for projects reads, before those
+ * git ignores are left out and the rest are held to `MAX_PROJECTS`.
+ */
+const MAX_SEARCHED = 1000;
 
 /** How long opened files with an unknown `ascribe.toml` are gathered before looking for projects again. */
 const LOOK_AGAIN_DELAY_MS = 300;
@@ -41,7 +49,7 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   private refreshing: Promise<void> = Promise.resolve();
   /** `ascribe.toml` files found beside opened files, for the next refresh to pick up. */
   private unknownConfigs = new Set<string>();
-  /** Those a refresh didn't pick up (left out by `projectExclude`, or past the cap), so they aren't asked for again. */
+  /** Those a refresh didn't pick up (left out by `projectExclude`, git, or a source's copies, or past the cap), so they aren't asked for again. */
   private readonly passedOver = new Set<string>();
   private lookAgainTimer: ReturnType<typeof setTimeout> | undefined;
   /** One watcher per workspace folder for changes on disk, by the folder's URI. */
@@ -262,13 +270,14 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   private async refreshNow(): Promise<void> {
     const asked = this.unknownConfigs;
     this.unknownConfigs = new Set();
-    // One more than the cap, to know there were more.
-    const found = await vscode.workspace.findFiles(
-      "**/ascribe.toml",
-      readProjectExclude(),
-      MAX_PROJECTS + 1,
-    );
-    const all = found.map((uri) => uri.fsPath).sort();
+    const found = (
+      await vscode.workspace.findFiles("**/ascribe.toml", readProjectExclude(), MAX_SEARCHED)
+    ).map((uri) => uri.fsPath);
+    const all = (
+      await leaveOutIgnored(
+        found.filter((config) => atWorkspaceRoot(config) || !inSourceCopies(config, found)),
+      )
+    ).sort();
     const configs = all.slice(0, MAX_PROJECTS);
     let changed = false;
 
@@ -461,6 +470,32 @@ async function nearestConfig(uri: vscode.Uri): Promise<string | undefined> {
   }
 }
 
+/**
+ * The `ascribe.toml` files git doesn't ignore: those in each workspace
+ * folder are asked of the repository around it in one call. Git's answer
+ * is none ignored where there's no git or no repository. A workspace
+ * folder's own `ascribe.toml` isn't asked about: opening the folder is how
+ * a project in an ignored folder is brought back.
+ */
+async function leaveOutIgnored(configs: readonly string[]): Promise<string[]> {
+  const byFolder = new Map<string, string[]>();
+  for (const config of configs) {
+    const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(config))?.uri.fsPath;
+    if (folder === undefined || samePath(path.dirname(config), folder)) continue;
+    byFolder.set(folder, [...(byFolder.get(folder) ?? []), config]);
+  }
+  const ignored = await Promise.all(
+    [...byFolder].map(([folder, files]) => gitIgnored(folder, files)),
+  );
+  return configs.filter((config) => !ignored.some((set) => set.has(config)));
+}
+
+/** Whether an `ascribe.toml` is at the root of its workspace folder. */
+function atWorkspaceRoot(config: string): boolean {
+  const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(config))?.uri.fsPath;
+  return folder !== undefined && samePath(path.dirname(config), folder);
+}
+
 function workspaceFolderOf(project: Project): WorkspaceFolder | undefined {
   const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(project.folder));
   return folder && { path: folder.uri.fsPath, name: folder.name };
@@ -471,7 +506,7 @@ function readStartServers(): StartServers {
   return value === "all" ? "all" : "onDemand";
 }
 
-/** What the search for projects leaves out: `node_modules`, `files.exclude`, and `ascribe.projects.exclude`. */
+/** What the search for projects leaves out by pattern: `LEFT_OUT_FOLDERS`, `files.exclude`, and `ascribe.projects.exclude`. */
 function readProjectExclude(): string {
   const filesExclude = vscode.workspace
     .getConfiguration("files")

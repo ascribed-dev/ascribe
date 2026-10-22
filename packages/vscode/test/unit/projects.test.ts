@@ -1,11 +1,23 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
+import { gitIgnored } from "../../src/gitIgnored.js";
 import {
   channelName,
   expandBraces,
   globFolder,
+  inSourceCopies,
+  LEFT_OUT_FOLDERS,
   nestedProjects,
   ownedElsewhere,
   owningProject,
@@ -255,29 +267,137 @@ describe("throughFolder", () => {
 });
 
 describe("projectExclude", () => {
-  it("leaves out node_modules alone when nothing else is set", () => {
-    expect(projectExclude({}, [])).toBe("**/node_modules/**");
+  const defaults = LEFT_OUT_FOLDERS.map((folder) => `**/${folder}/**`).join(",");
+
+  it("leaves out the default folders alone when nothing else is set", () => {
+    expect(projectExclude({}, [])).toBe(`{${defaults}}`);
   });
 
-  it("adds the files.exclude patterns that are on, and the setting's", () => {
+  it("leaves out Ascribe's outputs, dependencies, and build output, but not build, out, or bin", () => {
+    for (const folder of [
+      ".ascribe",
+      "node_modules",
+      "vendor",
+      ".venv",
+      "target",
+      "dist",
+      ".next",
+    ]) {
+      expect(LEFT_OUT_FOLDERS).toContain(folder);
+    }
+    for (const folder of ["build", "out", "bin"]) {
+      expect(LEFT_OUT_FOLDERS).not.toContain(folder);
+    }
+  });
+
+  it("adds the files.exclude patterns that are on, and the setting's, after the defaults", () => {
     expect(
       projectExclude(
         { "**/.git": true, "**/build": false, "**/*.js": { when: "$(basename).ts" } },
         ["tests/**", "packages/vscode/test/**"],
       ),
-    ).toBe("{**/node_modules/**,**/.git,tests/**,packages/vscode/test/**}");
+    ).toBe(`{${defaults},**/.git,tests/**,packages/vscode/test/**}`);
   });
 
   it("expands a pattern's own braces, since VS Code's don't nest", () => {
     expect(projectExclude({}, ["fixtures/{a,b}/**"])).toBe(
-      "{**/node_modules/**,fixtures/a/**,fixtures/b/**}",
+      `{${defaults},fixtures/a/**,fixtures/b/**}`,
     );
   });
 
   it("drops what isn't a pattern, blanks, and repeats", () => {
     expect(projectExclude({}, ["", "  ", 3, "**/node_modules/**", "tests/**"])).toBe(
-      "{**/node_modules/**,tests/**}",
+      `{${defaults},tests/**}`,
     );
+  });
+
+  it("names each default folder in the setting's description and the editor's settings page", () => {
+    const manifest = JSON.parse(
+      readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+    ) as {
+      contributes: {
+        configuration: { properties: Record<string, { markdownDescription: string }> };
+      };
+    };
+    const description =
+      manifest.contributes.configuration.properties["ascribe.projects.exclude"]
+        ?.markdownDescription ?? "";
+    const page = readFileSync(
+      new URL("../../../../docs/content/editor/settings.md", import.meta.url),
+      "utf8",
+    );
+    for (const folder of LEFT_OUT_FOLDERS) {
+      expect(description, "the setting's description").toContain(`\`${folder}\``);
+      expect(page, "docs/content/editor/settings.md").toContain(`\`${folder}\``);
+    }
+  });
+});
+
+describe("inSourceCopies", () => {
+  const configs = ["/repo/docs/ascribe.toml", "/repo/docs/sources/api/ascribe.toml"];
+
+  it("is true for an ascribe.toml in a project's sources/<name>/", () => {
+    expect(inSourceCopies("/repo/docs/sources/api/ascribe.toml", configs)).toBe(true);
+    expect(inSourceCopies("/repo/docs/sources/api/site/ascribe.toml", configs)).toBe(true);
+  });
+
+  it("is false for a project's own, one in sources/ itself, and one with no project above", () => {
+    expect(inSourceCopies("/repo/docs/ascribe.toml", configs)).toBe(false);
+    expect(inSourceCopies("/repo/docs/sources/ascribe.toml", configs)).toBe(false);
+    expect(inSourceCopies("/repo/sources/api/ascribe.toml", configs)).toBe(false);
+    expect(inSourceCopies("/repo/docs/sourcesx/api/ascribe.toml", configs)).toBe(false);
+  });
+
+  it("compares Windows paths whatever their case and separators", () => {
+    const docs = ["C:\\repo\\docs\\ascribe.toml"];
+    expect(inSourceCopies("c:\\Repo\\Docs\\Sources\\api\\ascribe.toml", docs)).toBe(true);
+    expect(inSourceCopies("c:/repo/docs/sources/api/ascribe.toml", docs)).toBe(true);
+    expect(inSourceCopies("c:\\Repo\\Sources\\api\\ascribe.toml", docs)).toBe(false);
+  });
+});
+
+describe("gitIgnored", () => {
+  const git = (cwd: string, ...args: string[]) =>
+    execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.com", ...args], {
+      cwd,
+    });
+  const write = (file: string) => {
+    mkdirSync(path.dirname(file), { recursive: true });
+    writeFileSync(file, "");
+  };
+
+  it("gives the files the repository ignores, but not one git tracks", async () => {
+    const repo = mkdtempSync(path.join(tmpdir(), "ascribe-ignored-"));
+    try {
+      git(repo, "init", "-q");
+      writeFileSync(path.join(repo, ".gitignore"), "generated/\nforced/\n");
+      const files = ["docs", "generated/a", "forced/b", "with space/c"].map((folder) =>
+        path.join(repo, folder, "ascribe.toml"),
+      );
+      files.forEach(write);
+      git(repo, "add", "-f", path.join("forced", "b", "ascribe.toml"));
+      const ignored = await gitIgnored(repo, files);
+      expect([...ignored]).toEqual([path.join(repo, "generated", "a", "ascribe.toml")]);
+      // Asked from a folder inside the repository, as a workspace folder can be.
+      const generated = path.join(repo, "generated");
+      expect([...(await gitIgnored(generated, [files[1] ?? ""]))]).toEqual([files[1]]);
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
+    }
+  });
+
+  it("gives none outside a repository", async () => {
+    const folder = mkdtempSync(path.join(tmpdir(), "ascribe-no-repo-"));
+    try {
+      const file = path.join(folder, "target", "ascribe.toml");
+      write(file);
+      // Git looks no higher than the temporary directory's parent.
+      process.env["GIT_CEILING_DIRECTORIES"] = path.dirname(folder);
+      expect([...(await gitIgnored(folder, [file]))]).toEqual([]);
+    } finally {
+      delete process.env["GIT_CEILING_DIRECTORIES"];
+      rmSync(folder, { recursive: true, force: true });
+    }
   });
 });
 
