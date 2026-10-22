@@ -42,13 +42,13 @@ The text is Markdown, at most about 4,000 characters: when the model has more th
 | `0` | It showed the model |
 | `2` | No `ascribe.toml`, or one with errors |
 
-With `--format json`, the document has a field for each section shown, and without `--section`, every section, empty or not, and the project's [navigation](../navigation/index.md) as the sidebar shows it: a label with a code span in it is plain text, without the backticks. Its [schema](../contracts/json-reports/questions.md#ascribe-model) has each section's fields. `--section builds`:
+With `--format json`, the document has a field for each section shown, and without `--section`, every section, empty or not, and the project's [navigation](../navigation/index.md) as the sidebar shows it: a label with a code span in it is plain text, without the backticks. Its [schema](../contracts/json-reports/model.md#ascribe-model) has each section's fields. `--section builds`:
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/model-builds.json
 
 A project with [release lines](../versions/lines.md) has a section for them, `releases` in JSON: each target's lines, with their status and the build that is each line. A versioned build says which target versions it and which line it is.
 
-The rest of `ascribe.toml` is there too, a section of settings for each of its tables: `project`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, and `permalinks`. The text without `--section` names them at its end, and `--section` shows one, each key with the value in effect, and its default: `ascribe model --section consumer` shows `[consumer]`'s `site`, `base-path`, and the rest, the ones the file leaves out at their defaults. `[checks]` has the keys of `[checks.vale]` and `[checks.links]`, written `vale.preset` and `links.reuse-days`, and each check the file sets a level for. In JSON, each section is a list of keys, in the [schema](../contracts/json-reports/questions.md#ascribe-model). The keys and defaults are the ones the loader reads, so `model` shows no key `ascribe check` would refuse.
+The rest of `ascribe.toml` is there too, a section of settings for each of its tables: `project`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, and `permalinks`. The text without `--section` names them at its end, and `--section` shows one, each key with the value in effect, and its default: `ascribe model --section consumer` shows `[consumer]`'s `site`, `base-path`, and the rest, the ones the file leaves out at their defaults. `[checks]` has the keys of `[checks.vale]` and `[checks.links]`, written `vale.preset` and `links.reuse-days`, and each check the file sets a level for. In JSON, each section is a list of keys, in the [schema](../contracts/json-reports/model.md#ascribe-model). The keys and defaults are the ones the loader reads, so `model` shows no key `ascribe check` would refuse.
 
 ## `ascribe outline`
 @id {permalink=true}: cli-outline

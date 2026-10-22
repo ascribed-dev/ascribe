@@ -1,0 +1,5 @@
+---
+section: The docs and the site
+---
+
+**The JSON report contract gives `ascribe model`'s schema a page of its own, `docs/content/contracts/json-reports/model.md`.** Its section, `## ascribe model` with its include of `docs/content/_generated/json-model.md`, moves whole from `docs/content/contracts/json-reports/questions.md`, with its heading and id, and the questions page keeps the other commands that answer questions. The contract's first page lists the new page with the others, the sidebar and `docs/ascribe.nav` place it before the questions page, and the links to the schema lead to it. The schema doesn't change, so this isn't a change to the contract, as [decision #394](394-long-pages-split.md) says of a split. _Why:_ the questions page was 61,112 characters in build `site`, over `page-size`'s 50,000, and `json-model.md` alone was 24,832 and grows with every content model key; raising the limit would hide what it's for. _From:_ Kyle, 22 October 2026, in [issue #845](https://github.com/ascribed-dev/ascribe/issues/845).
