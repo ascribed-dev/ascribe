@@ -120,6 +120,14 @@ Lists the places that use a page, a fragment, a heading, an image, or an entry o
 
 A target that's a path, with or without `#id`, finds its project from the path. An entry of the model, or a glossary term, is written with a prefix: `phrase:product` (or `phrase:{product}`), `feature:sso`, `term:api-key`, `dimension:deployment`, `note:warning`, or `widget:release-note`, and the project is found from the current directory, or from `--config`. The places are in path order, and in order within a file. A use is `link`, `include`, `phrase`, `availability`, `term`, `variant`, `note`, or `widget`.
 
+@available: ascribe planned
+An `availability` place shows its spec as written, after the use: ``docs/keys.md:25:13: availability `self-managed 3.5` ``.
+
+@available: ascribe planned
+A line of a release target, one with `[releases.<target>]`, is written `release:<target>@<version>`. Its places are the availability specs that name a version in that line, as each is written, with `planned` read as the target's planned line. A line holds every version that starts with its parts, so `release:ascribe@0.4` finds `ascribe 0.4.1` and `ascribe (preview 0.4.0, ga 0.5.0)`, and `release:ascribe@0.4.1` only the first. A spec that names the target's dimension, such as `release`, names no version of it. A target with no `[releases.<target>]` doesn't exist.
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/refs-release.txt
+
 @available: ascribe 0.4.1
 An image under the content root is a target too, named as a page is: `ascribe refs images/keys.png`. Its places are each file that shows it (`image`), links to it (`link`), names it in raw HTML such as `<img src>` (`html`), or names it in a frontmatter field such as `cover` (`frontmatter`): the uses that keep [`image-unused`](../checks/diagnostics/content-checks.md#ASC159) from reporting it. An image nothing uses has no places, and exits with `0`, as any target that exists does.
 
@@ -136,7 +144,7 @@ With `--format json`, the document is:
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/refs.json
 
-`total` is how many places use the target, and `shown` how many are listed. When the list was cut, `truncated` is true and `next_command` is the command that lists them all; otherwise it's null.
+`kind` is what the target is: `page`, `fragment`, `heading`, `image`, `phrase`, `feature`, `term`, `dimension`, `note`, `widget`, or `release`. Each place's `spec` is its availability spec as written, for an `availability` place, and null for any other. `total` is how many places use the target, and `shown` how many are listed. When the list was cut, `truncated` is true and `next_command` is the command that lists them all; otherwise it's null.
 
 ## `ascribe rename`
 @id {permalink=true}: cli-rename

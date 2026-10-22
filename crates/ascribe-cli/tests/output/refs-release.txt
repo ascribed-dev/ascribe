@@ -1,0 +1,6 @@
+docs/configure-legacy.md:5:1: availability `self-managed (ga 3.4, removed 3.5)`
+docs/configure.md:5:1: availability `self-managed 3.5`
+docs/keys.md:25:13: availability `self-managed 3.5`
+docs/webhooks.md:5:1: availability `self-managed 3.5`
+
+4 places use release:self-managed@3.5.

@@ -53,7 +53,7 @@ pub use model::{
 };
 pub use outline::{Outline, OutlineHeading, OutlineMemo, OutlineMemoState, outline};
 pub use permalinks::{PermalinksAnswer, Retire, RetireAnswer, SyncAnswer, VerifyAnswer};
-pub use refs::{Asked, Place, Refs, TargetKind, image_refs, refs};
+pub use refs::{Asked, Place, Refs, TargetKind, image_refs, refs, release_refs, release_target};
 pub use report::{Report, report};
 pub use resolve::{Resolved, resolve};
 pub use rules::{pointer, rules};
