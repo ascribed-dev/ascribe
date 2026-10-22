@@ -259,6 +259,12 @@ impl Outcome {
         &self.loaded.project
     }
 
+    /// How many problems `ascribe.baseline` holds back in the files
+    /// reported on, which the report leaves out.
+    pub fn baselined(&self) -> usize {
+        self.baselined
+    }
+
     /// What's reported, the files it's in, and the first build checked.
     pub fn parts(&self) -> (&[Reported], &FileTable, Option<&str>) {
         (

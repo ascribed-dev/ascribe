@@ -17,6 +17,8 @@ coverage/
 # OS and editor files
 .DS_Store
 .playwright-mcp/
+# Affinity's lock beside an open file.
+*~lock~
 
 # The shared launch and task configurations for running the extension, and
 # the workspace settings that leave the test fixtures out of its projects; the

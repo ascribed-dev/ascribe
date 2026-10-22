@@ -661,7 +661,8 @@ impl Writer<'_> {
 
     /// What's failing since the last report on the site, and what isn't
     /// any more: `23 checks: 21 passing, 2 failing, 1 of them failing since
-    /// 9 October: `content-negotiation`.` Nothing on a first run.
+    /// 9 October: `content-negotiation`.` Nothing on a first run, or when
+    /// nothing fails now or did then.
     fn agents_since(&mut self, agents: &Agents) -> io::Result<()> {
         let (Some(since), Some(new), Some(resolved)) =
             (agents.previous_run, &agents.new, agents.resolved)
@@ -675,6 +676,10 @@ impl Writer<'_> {
             .filter(|r| r.status == ascribe_check::site::Status::Pass)
             .count();
         let failing = results.iter().filter(|r| r.status.is_finding()).count();
+        if failing == 0 && resolved == 0 {
+            // Nothing failing, then or now: the counts above say it.
+            return Ok(());
+        }
         let mut line = format!(
             "{}: {passing} passing, {failing} failing",
             counted(results.len(), "check", "checks")

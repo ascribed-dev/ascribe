@@ -4,15 +4,16 @@ Ideas for Ascribe that nobody has built, planned, or started. This is exploratio
 
 Written on 2 October 2026, after 0.1.1, and cut back on 11 October 2026 to what's still open. Most of what it held then has been built, and the rest of it has a plan or a proposal of its own, so it's gone from here:
 
-- **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, and external links), [permalinks](../docs/content/permalinks/index.md), [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), [versions](../docs/content/versions/index.md), [navigation](../docs/content/navigation/index.md), [the glossary as pages](../docs/content/content-model/glossary.md), the editor's [sidebar](../docs/content/editor/sidebar.md), [search](../docs/content/command/questions.md#ascribe-search), and what a search engine and a crawler are told, in [Publishing](../docs/content/publishing/index.md).
-- **Proposed.** [The rest of the cache](proposals/cache.md).
+- **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, external links, and what's new since the last run), [a baseline](../docs/content/checks/baseline.md) of existing advice, [permalinks](../docs/content/permalinks/index.md), [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), [versions](../docs/content/versions/index.md), [navigation](../docs/content/navigation/index.md), [the glossary as pages](../docs/content/content-model/glossary.md), the editor's [sidebar](../docs/content/editor/sidebar.md), with This page and the Project view, and Project Settings, [search](../docs/content/command/questions.md#ascribe-search), and what a search engine and a crawler are told, in [Publishing](../docs/content/publishing/index.md).
+- **Proposed.** [An `ascribe.toml` that says only what's the project's own](proposals/shorter-content-model.md).
+- **Proposed and waiting.** [The rest of the cache](proposals/cache.md) is built, apart from Vale's results, which wait for a project that needs them.
 
 The sections keep the numbers they had, since other documents name them, so the numbers have gaps.
 
 Three groups of ideas:
 
 - [Product features](#product-features): what's left of snippets and Vale, editable previews, OpenAPI, redirects, and other things a docs system does, embedded help, what the landing page showed about widgets, what's left of the editor's views, a page in any output from the command line, and passages written twice.
-- [Beyond the pages](#beyond-the-pages): what's left of the cache.
+- [Beyond the pages](#beyond-the-pages): the cache, whose one piece left waits for a project that needs it.
 - [Paid features](#paid-features): what could be charged for, if Ascribe ever goes that way. A list to keep, not a plan.
 
 ## What the ideas are judged against
@@ -29,10 +30,9 @@ Three groups of ideas:
 
 ## 1. Code snippets: what's left
 
-`@snippet`, sources, and `ascribe drift` are built ([Examples and drift](../docs/content/examples/index.md)), and Ascribe's own docs take their examples that way. Knowing whether an example's code was tested, and with what, is built: [tested examples](../docs/content/examples/tested.md). So is part of moving between a page and its code: a code file says which pages show it, in a lens, and a `@snippet`'s hover gives its address ([the editor](../docs/content/editor/writing.md#code-files-a-page-shows)). What's left:
+`@snippet`, sources, and `ascribe drift` are built ([Examples and drift](../docs/content/examples/index.md)), and Ascribe's own docs take their examples that way. Knowing whether an example's code was tested, and with what, is built: [tested examples](../docs/content/examples/tested.md). So is moving between a page and its code in the editor ([the editor](../docs/content/editor/writing.md#code-files-a-page-shows)): a code file says which pages show it and shows its tags' problems, a `@snippet`'s hover shows the code and Go to Definition opens its region, and the preview and a page's problems follow an edit to the code. What's left:
 
 - **The rest of Bluehawk's tags.** `snippet` and `remove` work as they are. `replace`, `uncomment`, `state`, and `emphasize` are reserved and do nothing. States are the interesting one: versions of one example, such as a tutorial's start and finish, which map onto Ascribe's own model as `@snippet {state=start}` inside a `@variant` arm, or a build that picks a state for a whole tutorial. The tested examples plan leaves new tags to a proposal of their own, designed fresh for a project starting clean, so whether to finish Bluehawk's set is a question about who's migrating.
-- **The rest of the editor's part, filed:** the preview and a page's problems following an edit to the code ([#791](https://github.com/ascribed-dev/ascribe/issues/791)), Go to Definition from a `@snippet` to its region and the code in its hover ([#792](https://github.com/ascribed-dev/ascribe/issues/792)), and the tags' problems shown in the code file ([#793](https://github.com/ascribed-dev/ascribe/issues/793)).
 
 ## 2. Editable previews
 
@@ -80,7 +80,7 @@ A general WYSIWYG editor that serializes back to Markdown tends to produce sourc
 
 - Embedded rendering needs elements in `@ascribed/elements` (operation, schema, example), and an Astro story.
 - Start with OpenAPI 3.1 only? GraphQL and AsyncAPI would follow the same design later.
-- Generated pages raise navigation and URL questions (see [navigation](#navigation-and-site-structure)).
+- Generated pages raise navigation and URL questions (see [navigation](../docs/content/navigation/index.md)).
 
 ## 5. Vale: what's left
 
@@ -91,11 +91,7 @@ Ascribe runs Vale on a page's prose, with phrases substituted and directives lef
 
 ## 6. Other things a docs system does
 
-Review dates, the inventory, external link checking, and the checks for unused and oversized images are built. These aren't.
-
-### Navigation and site structure
-
-Built: [navigation](../docs/content/navigation/index.md). Sections are folders, their order and their pages' order are in a file beside `ascribe.toml`, and the editor reorders by dragging.
+Review dates, the inventory, external link checking, the checks for unused and oversized images, and [navigation](../docs/content/navigation/index.md) are built. These aren't.
 
 ### Redirects
 
@@ -184,7 +180,7 @@ The [versions plan](https://github.com/ascribed-dev/ascribe/blob/395fe80d/projec
 
 ## 20. `ascribe.toml` in more than one file
 
-Added 2026-10-11. Not planned.
+Added 2026-10-11. Answered in part by [an `ascribe.toml` that says only what's the project's own](proposals/shorter-content-model.md), which finds the file long because it repeats itself, and leaves one file per table for a project whose tables outgrow it.
 
 TOML has no include, and everything in the content model is in one file. The table that most needed splitting was the glossary, and the [glossary proposal](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/glossary-pages.md) moves that into pages instead. `[phrases]`, `[features]`, and the `[[intended]]` acknowledgements can grow long too.
 
@@ -196,14 +192,14 @@ Either touches the editor, whose diagnostics and hovers assume one file, and eve
 
 Added 2026-10-18, from what the [editor's views plan](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/editor-ui/README.md) left for later. Not planned.
 
-- **A webview for a view.** Answered for This page: it becomes a webview, and the other views stay trees, in its [proposal](https://github.com/ascribed-dev/ascribe/blob/62bf76a9/project-docs/proposals/this-page-webview.md). Whether the Review view follows is the question left, once This page has been used.
+- **A webview for the Review view.** This page and the Project view are webviews, and Project Settings a webview tab ([proposal](https://github.com/ascribed-dev/ascribe/blob/62bf76a9/project-docs/proposals/this-page-webview.md)); Review, Pages, and Content model stay trees. Whether Review follows is the question left, now that This page has been used.
 - **A drop handler that asks for alt text.** Dropping or pasting an image into a page is VS Code's Markdown extension's, which writes the image's link with no alt text, where **Insert an image** asks for it. A handler of Ascribe's own would ask as that action does, and put the image where the project keeps its images. [Decision #544h](decisions/544h-editor-leaves-out.md) holds it back until what VS Code's drop writes fails `ascribe check`, which nobody has yet checked by hand: drop and paste an image, and drop a page, into a page of `examples/quill` with the settings at their defaults, then run `ascribe check`.
 
 ## 22. A page in any output, from the command line
 
 Added 2026-10-20. Not planned.
 
-`ascribe render` writes one page as a build's plain output writes it, and [#665](https://github.com/ascribed-dev/ascribe/issues/665) renames it `ascribe resolve`, since what it does is SPEC §9's resolution, then the plain emitter. The rename leaves room for what the old name promised: a page in the other outputs, without building the project.
+`ascribe resolve`, `ascribe render` until [#665](https://github.com/ascribed-dev/ascribe/issues/665) renamed it, writes one page as a build's plain output writes it: SPEC §9's resolution, then the plain emitter. The rename leaves room for what the old name promised: a page in the other outputs, without building the project.
 
 - **`--emit site`:** the page as the site output writes it, Markdown with Ascribe's elements (`<ascribe-note>`, `<ascribe-tabs>`, availability badges), as `@ascribed/astro` receives it. The option is `ascribe build`'s own word, so `ascribe resolve PAGE --emit plain` is today's answer and `--emit site` the new one. It shows what a site's integration is given, which the plain output can't: what a switcher, a badge, or a glossary link becomes before a site draws it.
 - **`--emit json`:** the page as the JSON output writes it, blocks and all, for a tool that reads one page.
@@ -224,7 +220,7 @@ Added 2026-10-20, from the [docs audit](https://github.com/ascribed-dev/ascribe/
 
 The audit found a dozen rules stated three to six times across Ascribe's own pages, and option paragraphs that say again what the generated tables under them say. It found them by reading and with a script: no tool says "this paragraph is on three pages". A writer who repeats a passage instead of including a fragment gets copies that drift apart, and a reader gets the same rule in three wordings.
 
-Ascribe can find this where a prose linter can't, because it knows every page's blocks as a build publishes them. `ascribe diff` already fingerprints each block's content without its position (`crates/ascribe-diff/src/tree.rs`), and the [search plan](https://github.com/ascribed-dev/ascribe/blob/62bf76a9/project-docs/search/README.md)'s reading gives each block's text with its place in the source. A report of blocks whose text is the same, or nearly, on more than one page, each with its places, would point at the feature built for the problem: a fragment, written once and included where it's needed.
+Ascribe can find this where a prose linter can't, because it knows every page's blocks as a build publishes them. `ascribe diff` already fingerprints each block's content without its position (`crates/ascribe-diff/src/tree.rs`), and the reading search is built on (`ascribe_resolve::reading`) gives each block's text with its place in the source. A report of blocks whose text is the same, or nearly, on more than one page, each with its places, would point at the feature built for the problem: a fragment, written once and included where it's needed.
 
 - **A report, not a check.** Some repetition is right: a warning that belongs on every page it applies to, or a sentence a page needs to stand alone. A diagnostic on each copy would push writers to fragment everything. A section of `ascribe report` that lists what's repeated, largest first, leaves the judgment to the writer.
 - **What's the same.** Exact matches are cheap with fingerprints. Near matches, a rule reworded, are what the audit mostly found, and need a measure of similarity: the shingles a near-duplicate detector uses, over the reading's text. Exact first, and near only if exact finds too little.
@@ -241,11 +237,9 @@ Questions:
 
 ## 15. The cache: what's left
 
-This section held three ideas that share no layer. Two are built: [memos](../docs/content/writing/memos.md), for what people know about a page and have nowhere to put, and [search](../docs/content/command/questions.md#ascribe-search), which was measured and needs no index.
+This section held three ideas that share no layer, and all are built but one piece. [Memos](../docs/content/writing/memos.md) and [search](../docs/content/command/questions.md#ascribe-search) were the first two. The third was a cache: `ascribe report links` keeps the answers it reuses, the report says what's new since its last run, and [a baseline](../docs/content/checks/baseline.md) puts a project's existing advice off, from [the rest of the cache](proposals/cache.md). The rule they're built on stays the rule for anything added: deleting a cache changes nothing but time, so nothing may need it to be correct.
 
-The third was a cache, and its first use is built: `ascribe report links` keeps the answers it reuses under `.ascribe/cache/links/`, with an expiry, and holds a link that answered before until it keeps failing. The rule it's built on stays the rule for anything added: deleting the cache changes nothing but time, so nothing may need it to be correct. CI starts with none.
-
-The rest has a proposal of its own, [the rest of the cache](proposals/cache.md), and its first steps are filed: differences between runs for the whole report ([#787](https://github.com/ascribed-dev/ascribe/issues/787), [#788](https://github.com/ascribed-dev/ascribe/issues/788)), and a baseline of a project's existing advice, a committed record rather than a cache ([#789](https://github.com/ascribed-dev/ascribe/issues/789), [#790](https://github.com/ascribed-dev/ascribe/issues/790)). Vale's results wait for a project that needs them, and the delivery spec's turned out not to fit a cache.
+Left: Vale's results, kept by the hash of a page's prose. The proposal designs them, and holds them until a project's full Vale run is slow enough to matter (its Settled 4).
 
 ---
 
@@ -271,7 +265,7 @@ Added 2026-10-09. A place to collect ideas, so they're on record if the question
 | Hosted previews with comments | A deployed preview of each pull request, with the review overlay, and no local setup | Netlify and Vercel give this away for the page; only the resolved diff and block anchors are Ascribe's | Review |
 | Sign-off | A required status check that a named person approved the rendered change, for AI-written pull requests | The one competitor moved to exactly this pitch, which suggests review alone didn't sell | The report |
 | Notes for people outside git | Subject experts and support leaving notes on published pages, visible to the team at once | Small audience; committed notes already serve teams in git | Section 15 |
-| Project history | Check and report results kept across CI runs: trends, "new since last week", a dashboard | A CI artifact and a committed file get most of the way for free | Section 15; the content checks plan |
+| Project history | Check and report results kept across CI runs: trends over months, and a dashboard | The report already says what's new since its last run, and a CI artifact keeps that run | Section 15; the content checks plan |
 | Scheduled link and site checks | External links and the delivery spec checked on a schedule, with alerts | A scheduled workflow in the team's own CI does this already | The content checks plan |
 | A docs service for agents | A hosted endpoint that answers an agent's question with a small, correct piece of the docs for the product and version in use | The most metered and stateful idea here, and the least proven; see the agent-first docs experiment | The agent-first docs research |
 | Proposed doc updates | An agent that drafts changes when code or an API changes | Needs a model, so it has a cost per use and no published accuracy; a team's own agent can do it through Ascribe's commands at no cost to anyone | The report |
@@ -294,7 +288,7 @@ Added 2026-10-09. A place to collect ideas, so they're on record if the question
 
 # Suggested order
 
-Ahead of everything here are the three plans in progress and the four proposals named at the top. Navigation is the one of those with the most waiting on it: the docs' own sidebar, `llms.txt`'s sections, the archive's way around, and generated pages each work around its absence. Of what's left in this document:
+No plan is in progress, and the one proposal left waits for a project that needs it. Of what's left in this document:
 
 1. **Redirects** (section 6), once something records what was published. The versions plan's `retire` gives it a first input.
 2. **OpenAPI links and embeds** (section 3, levels 1 and 2).
@@ -305,7 +299,7 @@ Ahead of everything here are the three plans in progress and the four proposals 
 
 - **Who are the main users?** Writers on a docs team favor preview editing and the features of a docs system; engineers documenting their own code favor snippets, OpenAPI, review, and agent support. The research found engineers feel drift most and do the reviewing.
 - **Bluehawk's remaining tags:** finish the set for teams migrating, or leave them reserved and design fresh ones with tested examples?
-- **Should Ascribe apply more edits for an agent?** `ascribe check --fix` applies the fixes marked safe. Everything else returns edits for the harness to apply with its own approvals. The next candidate is a `rename` that applies its changes, with a dry run.
+- **Should Ascribe apply more edits for an agent?** `ascribe check --fix` applies the fixes marked safe, and `ascribe rename` applies a rename. Everything else returns edits for the harness to apply with its own approvals. Whether `rename` needs a dry run is the next question.
 - **Review beyond a checkout:** is a hosted review service (guest reviewers, deployed previews) ever in scope, and would it be paid? Section 16 lists it with the other ideas.
 - **Review hosts:** GitHub only, or GitLab too?
 - **The delivery spec is a draft.** Ascribe follows 0.6.0. Its version is pinned, and its changes need watching.

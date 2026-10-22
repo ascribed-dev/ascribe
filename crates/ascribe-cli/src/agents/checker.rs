@@ -68,6 +68,15 @@ pub struct Found {
     /// writes it, and the title of its safe fix.
     #[serde(default)]
     pub fixes: Vec<(String, String)>,
+    /// How many advice `ascribe.baseline` holds back in what was checked,
+    /// which isn't reported (#790).
+    #[serde(default)]
+    pub baselined: usize,
+    /// After an edit, what's wrong with `ascribe.baseline` when a line of
+    /// it doesn't parse: the check held nothing back, and the agent hears
+    /// why.
+    #[serde(default)]
+    pub baseline_problem: Option<String>,
 }
 
 impl Found {
@@ -161,7 +170,7 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         Ask::Files(files) => (files.clone(), true, limits.edit / 2),
         Ask::Project => (Vec::new(), false, limits.stop / 2),
     };
-    let args = check::Args {
+    let mut args = check::Args {
         paths,
         stdin: false,
         path: None,
@@ -173,14 +182,30 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         deny_warnings: false,
         fix: false,
         vale: false,
-        // The baseline is `ascribe check`'s; the agents read it later (#790).
-        no_baseline: true,
+        // What `ascribe.baseline` holds back, the project's backlog, isn't
+        // the agent's to fix now: it's left out, and counted (#790).
+        no_baseline: false,
         vale_timeout: Some(vale_timeout),
         // Nobody approves what a hook runs: Vale from the `PATH` only,
         // never a program in the project (decision 76).
         vale_runs: check::ValeRuns::OnPath,
     };
-    let outcome = match check::run_check(projects, &global, &args, &mut Cursor::new("")) {
+    let mut baseline_problem = None;
+    let mut run = check::run_check(projects, &global, &args, &mut Cursor::new(""));
+    // After an edit, a baseline that can't be read doesn't hide the
+    // errors: the files are checked without it, and the agent hears why,
+    // as the check server answers. Before the agent finishes, it stops the
+    // check, as it stops `ascribe check`.
+    if let (
+        Ask::Files(_),
+        Err(check::Stopped::Failure(check::Failure::Check(check::CheckError::Baseline(e)))),
+    ) = (ask, &run)
+    {
+        baseline_problem = Some(e.to_string());
+        args.no_baseline = true;
+        run = check::run_check(projects, &global, &args, &mut Cursor::new(""));
+    }
+    let outcome = match run {
         Ok(outcome) => outcome,
         Err(stopped) => {
             let mut out = Vec::new();
@@ -226,6 +251,8 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         lines,
         build: editor_build.then(|| build.map(str::to_owned)).flatten(),
         prose,
+        baselined: outcome.baselined(),
+        baseline_problem,
         ..Found::default()
     };
     // After an edit, the advice with a safe fix: the file-level checks'
@@ -240,6 +267,13 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
                 .collect();
             ascribe_check::diagnose_every_build_in(project, &paths)
         });
+        // What the baseline lists is held back here too.
+        let across = match project.baseline() {
+            Some(Ok(baseline)) => {
+                ascribe_check::baseline::apply(project, baseline, across, false, &[]).diagnostics
+            }
+            _ => across,
+        };
         let across: Vec<Reported> = across
             .into_iter()
             .map(|diagnostic| Reported {
@@ -803,6 +837,9 @@ impl Kept {
                 }
             }
         }
+        // Counted once `problems` has checked them.
+        found.baselined = files.iter().map(|file| watched.held(file)).sum();
+        found.baseline_problem = watched.baseline_problem();
         drop(named);
         drop(by_case);
         *before = listing;

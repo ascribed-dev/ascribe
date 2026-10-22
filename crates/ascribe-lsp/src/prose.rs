@@ -114,6 +114,8 @@ pub(crate) struct Job {
     /// Why Vale isn't run, when the person didn't let it or couldn't be
     /// asked.
     refused: Option<String>,
+    /// `ascribe.baseline`, whose advice isn't published.
+    baseline: Arc<crate::baseline::Now>,
 }
 
 impl Job {
@@ -142,13 +144,19 @@ impl Job {
         let model_index = LineIndex::new(&self.model_text);
         let mut on_page = Vec::new();
         let mut on_model = Vec::new();
-        for d in &found {
+        for d in found {
             if d.slug == diagnostics::PROSE_NOT_CHECKED {
-                on_model.push(to_lsp(d, &model_index, self.encoding, &|_| None));
+                on_model.push(to_lsp(&d, &model_index, self.encoding, &|_| None));
             } else {
-                on_page.push(to_lsp(d, &page_index, self.encoding, &|_| None));
+                on_page.push(d);
             }
         }
+        // What `ascribe.baseline` lists isn't published.
+        let on_page = crate::baseline::hold_in(&self.baseline, &self.display, &self.text, on_page)
+            .diagnostics
+            .iter()
+            .map(|d| to_lsp(d, &page_index, self.encoding, &|_| None))
+            .collect();
         vec![
             (self.path.clone(), on_page),
             (self.config.clone(), on_model),
@@ -175,7 +183,7 @@ impl Core {
     }
 
     /// Queues a check of every open source document.
-    fn queue_all_prose(&mut self) {
+    pub(crate) fn queue_all_prose(&mut self) {
         let mut open: Vec<PathBuf> = self.docs.keys().cloned().collect();
         open.sort();
         for path in open {
@@ -225,6 +233,7 @@ impl Core {
                 text: doc.text.clone(),
                 encoding: self.encoding,
                 refused,
+                baseline: loaded.baseline.clone(),
             });
         }
         None

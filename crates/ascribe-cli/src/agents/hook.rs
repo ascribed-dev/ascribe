@@ -149,7 +149,9 @@ fn edit(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bo
         }
         let shown: Vec<String> = files.iter().map(|f| from(cwd, f)).collect();
         match check_by(&config, Ask::Files(files), deadline, server) {
-            Some(Ok(f)) if f.errors > 0 || f.fixable > 0 => found.push((shown, f)),
+            Some(Ok(f)) if f.errors > 0 || f.fixable > 0 || f.baseline_problem.is_some() => {
+                found.push((shown, f));
+            }
             // Nothing to report, a project that can't be checked (the stop
             // hook says why), or out of time: nothing to say.
             _ => {}
@@ -212,6 +214,12 @@ fn edit_text(files: &[String], found: &Found) -> String {
                 found.fixable - LIMIT
             ));
         }
+    }
+    lines.extend(baselined_text(found.baselined));
+    if let Some(problem) = &found.baseline_problem {
+        lines.push(format!(
+            "`ascribe.baseline` can't be read, so the check held nothing back: {problem}. Fix the line, then run `ascribe check`."
+        ));
     }
     let build = found.build.as_deref().unwrap_or_default();
     lines.push(format!(
@@ -288,9 +296,22 @@ fn stop_text(dir: &str, found: &Found) -> String {
             found.errors - LIMIT
         ));
     }
+    lines.extend(baselined_text(found.baselined));
     lines.push(format!("Fix these, then run `{command}`."));
     lines.extend(found.prose.iter().cloned());
     lines.join("\n") + "\n"
+}
+
+/// What the agent reads about the advice `ascribe.baseline` holds back:
+/// that it's the project's backlog, left for now, so the agent isn't sent
+/// after it (#790). Nothing when there's none.
+fn baselined_text(count: usize) -> Option<String> {
+    (count > 0).then(|| {
+        let them = if count == 1 { "it" } else { "them" };
+        format!(
+            "`ascribe.baseline` holds back {count} advice the project has put off for now, so the check leaves {them} out."
+        )
+    })
 }
 
 fn count(n: usize, what: &str) -> String {
