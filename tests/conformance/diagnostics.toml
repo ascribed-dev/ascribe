@@ -2667,7 +2667,7 @@ reference = "content-model/index.md#53-code-in-a-field"
 group = "content-types"
 message = "inline = \"code\" only works on string fields, and `{field}` is \"{type}\""
 messages.value = "inline must be \"code\", not \"{value}\""
-messages.nested = "inline = \"code\" only works on a content type's top-level fields, and `{field}` is in {place}"
+messages.nested = "inline = \"code\" only works on a page type's top-level fields, its own or `[frontmatter]`'s, and `{field}` is in {place}"
 fix = "Remove `inline`, or set it to \"code\" on a string field of a content type's `frontmatter`."
 
 [[diagnostic]]
@@ -2773,7 +2773,7 @@ reference = "content-model/index.md#54-field-roles"
 group = "content-types"
 message = "role = \"{role}\" only works on a {expected} field, and `{field}` is \"{type}\""
 messages.value = "role must be \"description\", \"review-date\", or \"owner\", not \"{value}\""
-messages.nested = "role only works on a content type's top-level fields, and `{field}` is in {place}"
+messages.nested = "role only works on a page type's top-level fields, its own or `[frontmatter]`'s, and `{field}` is in {place}"
 messages.duplicate = "`{other}` already has role = \"{role}\"; a content type has one field with each role"
 fix = "Give `role = \"description\"` to one string field of a content type's `frontmatter`, `role = \"review-date\"` to one date field, and `role = \"owner\"` to one string or enum field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles."
 

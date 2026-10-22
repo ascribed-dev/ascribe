@@ -428,6 +428,10 @@ planned-label = "Coming soon"
 
 [releases.cloud]
 live = ["2.0"]
+
+[frontmatter]
+description = "string?"
+owner = "string?"
 "#;
     let fixture = Fixture::new(model, &[("docs/index.md", "# Home\n\nHello.\n")]);
     let mut client = Client::start(&fixture.root());
@@ -451,11 +455,18 @@ live = ["2.0"]
             )
         })
         .collect();
-    // In the reference's order, not the file's; `planned-label`, a key of
-    // `[releases]` itself, isn't a part.
+    // In the reference's order, not the file's, with the frontmatter every
+    // type shares first; `planned-label`, a key of `[releases]` itself, isn't
+    // a part.
     assert_eq!(
         parts,
         vec![
+            (
+                String::new(),
+                "frontmatter".to_owned(),
+                vec!["description".to_owned(), "owner".to_owned()],
+                json!(20)
+            ),
             (
                 "types".to_owned(),
                 "guide".to_owned(),

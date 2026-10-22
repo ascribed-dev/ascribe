@@ -647,7 +647,8 @@ impl Defaults {
 /// The fields of the frontmatter of the type `template` is added as, in
 /// order, each with how another of the project's types declares it, when
 /// it's copied from there. A field `[frontmatter]` declares is left out,
-/// since the type has it already, and `title` is every type's.
+/// since the type has it already, and so is `title` declared as a plain
+/// string, which every type has without it.
 fn frontmatter(template: &Template, defaults: &Defaults) -> Vec<(String, Option<String>)> {
     frontmatter_fields(template.text(&template.template))
         .into_iter()
@@ -656,6 +657,7 @@ fn frontmatter(template: &Template, defaults: &Defaults) -> Vec<(String, Option<
             let declared = defaults.declared(&field);
             (field, declared)
         })
+        .filter(|(field, declared)| field != "title" || declared.is_some())
         .collect()
 }
 

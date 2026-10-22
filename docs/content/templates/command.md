@@ -39,15 +39,13 @@ template = "templates/how-to.md"
 guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 
 [types.how-to.frontmatter]
-title = "string"
 description = "string"
 ```
 
-The type's `guide` lists their guide, then Ascribe's notes, in the order to read them. Its frontmatter has the fields the template's has, apart from `type`, each a string a page must have. When one of the project's types declares one of those fields as a string with more to it, such as `title = { type = "string", inline = "code" }` or `description = { type = "string", role = "description" }`, the type added declares it the same way, so its pages' titles and descriptions read as the project's other pages' do. A project that declared no types had every page of the implicit `page` type, so `eject` writes that type out first, as it was:
+The type's `guide` lists their guide, then Ascribe's notes, in the order to read them. Its frontmatter has the fields the template's has, apart from `type`, each a string a page must have, and apart from those every type has already: a field `[frontmatter]` declares, and `title` as a plain string. When one of the project's types declares one of those fields as a string with more to it, such as `title = { type = "string", inline = "code" }` or `description = { type = "string", role = "description" }`, the type added declares it the same way, so its pages' titles and descriptions read as the project's other pages' do. A project that declared no types had every page of the implicit `page` type, so `eject` writes that type out first, as it was, a type with nothing of its own:
 
 ```toml
-[types.page.frontmatter]
-title = "string"
+[types.page]
 ```
 
 A project that declares types has each page name one, so its pages that named none, which were of `page`, now need `type: page`: `eject` lists them, and `ascribe check` reports each with a fix that adds it.

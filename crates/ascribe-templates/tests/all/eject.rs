@@ -126,7 +126,7 @@ fn a_clean_project_gets_the_template_its_guide_ascribe_s_notes_the_lock_and_the_
     assert_eq!(
         model,
         format!(
-            "{MODEL}\n[types.how-to]\ntemplate = \"templates/how-to.md\"\nguide = [\"templates/how-to.guide.md\", \"templates/how-to.ascribe.md\"]\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
+            "{MODEL}\n[types.how-to]\ntemplate = \"templates/how-to.md\"\nguide = [\"templates/how-to.guide.md\", \"templates/how-to.ascribe.md\"]\n\n[types.how-to.frontmatter]\ndescription = \"string\"\n"
         )
     );
     // The project loads with its files checked, and a page copied from the
@@ -273,9 +273,7 @@ fn keeping_a_type_adds_the_ones_not_declared_as_eject_does() {
     assert_eq!(answer.added[0].name, "tutorial");
     let text = read(dir.path(), "ascribe.toml");
     assert!(
-        text.ends_with(
-            "[types.tutorial.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
-        ),
+        text.ends_with("[types.tutorial.frontmatter]\ndescription = \"string\"\n"),
         "{text}"
     );
     assert!(
@@ -688,10 +686,9 @@ fn a_field_another_type_declares_as_something_else_is_a_plain_string() {
     let answer = run(dir.path(), &["how-to"], "templates").expect("ejected");
     assert!(answer.added[0].copied.is_empty());
     let text = read(dir.path(), "ascribe.toml");
+    // `title`, a plain string, is every type's without a line of its own.
     assert!(
-        text.ends_with(
-            "[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
-        ),
+        text.ends_with("[types.how-to.frontmatter]\ndescription = \"string\"\n"),
         "{text}"
     );
 }

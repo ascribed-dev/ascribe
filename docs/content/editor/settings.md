@@ -60,7 +60,7 @@ A setting the file leaves out is shown with its default, and changing it adds it
 
 ### Content types, builds, and the rest
 
-A content type, a dimension, a release target, a build, and a source are tables of their own, which the file holds as text for a reviewer to read. Each is a card under its section, **Content types**, **Dimensions**, **Releases**, **Builds**, or **Sources**, with its name, its table (`[types.guide]`), the keys the file sets in it, and its line. **Edit in ascribe.toml** opens the file at its table. Phrases, features, and glossary terms are added, renamed, and found in the [Content model view](sidebar.md#content-model), which **Open Content model** shows.
+A content type, a dimension, a release target, a build, and a source are tables of their own, which the file holds as text for a reviewer to read. Each is a card under its section, **Content types**, **Dimensions**, **Releases**, **Builds**, or **Sources**, with its name, its table (`[types.guide]`), the keys the file sets in it, and its line. **Edit in ascribe.toml** opens the file at its table. `[frontmatter]`, the fields every content type shares, is a card of its own, first under **Content types**, with the fields it declares. Phrases, features, and glossary terms are added, renamed, and found in the [Content model view](sidebar.md#content-model), which **Open Content model** shows.
 
 ### Checks
 
