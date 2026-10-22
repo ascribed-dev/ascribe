@@ -81,8 +81,16 @@ pub(crate) fn wrap(name: &str, attrs: &Attrs, blocks: &[String]) -> String {
 }
 
 /// An element with no markdown inside, as one line: `<name a="v"></name>`.
+/// Inline, as the attribute marker is: on a line alone it's a paragraph.
 pub(crate) fn empty(name: &str, attrs: &Attrs) -> String {
     format!("{}{}", open(name, attrs), close(name))
+}
+
+/// An empty element written as an HTML block of its own (contract §0): its
+/// opening tag alone on a line and its closing tag on the next, which
+/// CommonMark reads as a block (kind 7), not as a paragraph.
+pub(crate) fn empty_block(name: &str, attrs: &Attrs) -> String {
+    format!("{}\n{}", open(name, attrs), close(name))
 }
 
 /// The attribute marker: an empty

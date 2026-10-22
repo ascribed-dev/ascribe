@@ -24,7 +24,7 @@ A change to this contract changes the site emitter (`crates/ascribe-emit`), the 
 **How the emitter writes elements.** Custom elements are raw HTML blocks in CommonMark, so the layout matters:
 
 - An element that **wraps markdown** is written as its opening tag alone on a line, a blank line, the markdown, a blank line, and its closing tag alone on a line (SPEC §9.4). Nested wrapping elements follow the same rule.
-- An element that holds **no markdown** (`<ascribe-availability>`, an empty widget) is written as one HTML block: its lines are consecutive, with no blank line inside.
+- An element that holds **no markdown** (`<ascribe-availability>`, an empty widget) is written as one HTML block: its lines are consecutive, with no blank line inside, and its opening tag is alone on the first line. An element with nothing inside is its opening tag on one line and its closing tag on the next. A custom element's tags on one line aren't an HTML block to CommonMark, which reads them as inline HTML and wraps them in a paragraph; an opening tag alone on its line starts a block (CommonMark's HTML block kind 7).
 - Every element is separated from the blocks around it by a blank line, or starts or ends its container.
 - Inside a list item or blockquote, every line carries the container's indentation or `>` markers, like any other block there.
 - A list whose items hold an element is written loose, whatever it was in the source, because an element needs a blank line before it and CommonMark then reads the list as loose: its items render `<p>`. A list whose items hold no element keeps its tightness.
@@ -224,7 +224,12 @@ A project widget (SPEC §6) becomes a custom element whose tag is the widget's n
 | `binding = "heading"`, or `"heading-or-block"` at a section's top | Empty, directly after the section's heading |
 | `binding = "self"` | Empty, where the directive was |
 
-A wrapping widget follows §0's layout for elements that wrap markdown; an empty one is a single line: `<quill-labspace lab="first-sync"></quill-labspace>`.
+A wrapping widget follows §0's layout for elements that wrap markdown; an empty one follows its layout for elements with nothing inside, the opening tag on one line and the closing tag on the next, so it's an HTML block, never in a paragraph:
+
+```html
+<quill-labspace lab="first-sync">
+</quill-labspace>
+```
 
 **Groups:** the arms of a groupable widget's group become one element per arm, as above, wrapped in `<ascribe-group widget="<name>">`, which follows §0's layout. `<ascribe-group>` is part of the element library: it has no behavior and no styling beyond `display: block`, and exists so a project's CSS or script can find a group's arms together.
 

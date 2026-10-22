@@ -236,7 +236,7 @@ test("each pillar has its heading with the split bar, and its proofs beside thei
     [390, false],
   ] as const) {
     const page = await open("/", width);
-    const headings = page.locator("article > h2:has(+ p > story-pillar)");
+    const headings = page.locator("article > h2:has(+ story-pillar)");
     expect(await headings.evaluateAll((hs) => hs.map((h) => [h.id, h.textContent]))).toEqual(
       PILLARS.map(([id, text]) => [id, text]),
     );

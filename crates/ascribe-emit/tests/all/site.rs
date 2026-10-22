@@ -260,12 +260,12 @@ fn project_widgets_are_elements_named_after_them() {
     // A line widget bound to itself is empty, with its declared attributes.
     assert_eq!(
         body("@quill-labspace {lab=first}\n"),
-        "<quill-labspace lab=\"first\"></quill-labspace>\n"
+        "<quill-labspace lab=\"first\">\n</quill-labspace>\n"
     );
     // Bound to its heading: empty, after the heading, with a primary.
     assert_eq!(
         body("## Api\n@quill-api-ref {version=2}: op-1\n"),
-        "## Api <ascribe-attributes id=\"api\"></ascribe-attributes>\n\n<quill-api-ref primary=\"op-1\" version=\"2\"></quill-api-ref>\n"
+        "## Api <ascribe-attributes id=\"api\"></ascribe-attributes>\n\n<quill-api-ref primary=\"op-1\" version=\"2\">\n</quill-api-ref>\n"
     );
     // Bound to a block: wraps it.
     assert_eq!(
@@ -284,8 +284,29 @@ fn project_widgets_are_elements_named_after_them() {
     // A set value's members are joined with spaces.
     let out = body("## H\n@quill-audience {audience=admin|writer}\n");
     assert!(
-        out.contains("<quill-audience audience=\"admin writer\"></quill-audience>"),
+        out.contains("<quill-audience audience=\"admin writer\">\n</quill-audience>"),
         "{out}"
+    );
+}
+
+#[test]
+fn an_empty_widget_is_an_html_block_not_a_paragraph() {
+    // Written on one line, a custom element is inline HTML to CommonMark,
+    // which wraps it in a paragraph (#818). Bound to its heading, in a list
+    // item, or to itself, it renders as the element alone.
+    for source in [
+        "## Api\n@quill-api-ref {version=2}: op-1\n",
+        "- Item\n\n  @quill-labspace {lab=first}\n",
+        "@quill-labspace {lab=first}\n",
+    ] {
+        let html = render_site_html(&body(source));
+        assert!(!html.contains("<p><quill-"), "{source:?} renders {html}");
+        assert!(html.contains("</quill-"), "{source:?} renders {html}");
+    }
+    let html = render_site_html(&body("## Api\n@quill-api-ref {version=2}: op-1\n"));
+    assert!(
+        html.contains("</h2>\n<quill-api-ref primary=\"op-1\" version=\"2\">\n</quill-api-ref>"),
+        "{html}"
     );
 }
 

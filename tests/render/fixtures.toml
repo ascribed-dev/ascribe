@@ -119,3 +119,8 @@ description = "A planned target keeps its empty `planned` attribute, in a block'
 name = "code-tested"
 covers = ["code-tested"]
 description = "A code block whose info string has `tested=\"…\"` is put in a figure whose caption holds its title, when it has one, then the tested line, escaped as text, in a line of its own."
+
+[[fixture]]
+name = "widget-empty"
+covers = ["widget-empty"]
+description = "An empty widget, after its heading, in a list item, and alone, is its opening tag on one line and its closing tag on the next: an HTML block of its own, with no paragraph around it."
