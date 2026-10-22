@@ -1,0 +1,1 @@
+- **Fixed: `ascribe --help` describes `baseline` and `build` each as itself.** `baseline` read "Build the documentation set's outputs", and `build` read "Arguments of `ascribe build`". A test now holds every command in `--help` to a description of its own.

@@ -109,9 +109,11 @@ pub enum Command {
     /// the Ascribe skill.
     #[command(after_help = docs_link!("cli-agents"))]
     Agents(commands::agents::Args),
-    /// Build the documentation set's outputs.
+    /// Put the project's existing advice off for now, so `ascribe check`
+    /// reports only what's new.
     #[command(after_help = docs_link!("cli-baseline"))]
     Baseline(commands::baseline::Args),
+    /// Build the documentation set's outputs.
     #[command(after_help = docs_link!("cli-build"))]
     Build(commands::build::Args),
     /// Check every source file for problems, without building anything.
@@ -279,5 +281,28 @@ mod tests {
             Some(env!("CARGO_PKG_DESCRIPTION"))
         );
         assert!(command.get_long_about().is_none());
+    }
+
+    /// Every command in `--help` has a description of its own: none falls
+    /// back to its `Args` struct's doc comment, and no two are the same
+    /// (#857).
+    #[test]
+    fn every_command_has_its_own_description() {
+        let command = Cli::command();
+        let mut seen = std::collections::BTreeMap::new();
+        for sub in command.get_subcommands() {
+            let name = sub.get_name();
+            let about = sub
+                .get_about()
+                .map(ToString::to_string)
+                .unwrap_or_else(|| panic!("`ascribe {name}` has no description"));
+            assert!(
+                !about.starts_with("Arguments of"),
+                "`ascribe {name}` took its Args struct's description: {about}"
+            );
+            if let Some(other) = seen.insert(about.clone(), name.to_string()) {
+                panic!("`ascribe {name}` and `ascribe {other}` share the description: {about}");
+            }
+        }
     }
 }
