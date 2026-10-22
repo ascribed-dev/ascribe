@@ -5108,8 +5108,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/822"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Content model: frontmatter every type shares, an implicit title, and roles by a field's name"
     },
     {
@@ -5127,7 +5130,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Content model: where a field is declared, and frontmatter-field-repeated"
     },
     {
@@ -5145,7 +5148,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "A type's template and guides from templates.lock"
     },
     {
@@ -5162,8 +5165,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/821"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Releases declare their targets, in an implicit release dimension"
     },
     {
@@ -5180,8 +5186,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/820"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "planned as a version word in an availability spec"
     },
     {
@@ -5198,8 +5207,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/825"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Content model defaults: sources ignore node_modules, agents with a site, prose-not-checked when asked"
     },
     {
@@ -5272,6 +5284,23 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "Why Ascribe says the content model has no navigation, but ascribe.nav orders the docs"
+    },
+    {
+      "content": {
+        "body": "Follow-up from the review of #821 (#810).\n\nA value of the implicit `release` dimension is declared by its `[releases.<target>]` table, not by a `[dimensions.<name>] values` entry. Renaming it from a page already works: it goes through the existing path, which renames the `[releases.<old>]` table. But the language server doesn't offer a rename from the `[releases.<target>]` header in `ascribe.toml`, because `crates/ascribe-lsp/src/refactor/values.rs`'s `in_model` only reads `dimensions.*.values`.\n\n**Done when:** a rename on a `[releases.<target>]` header whose target is in the implicit dimension renames it everywhere a page rename does. There's an LSP test for it.",
+        "number": 823,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Rename an implicit release target from its [releases.<target>] header",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/823"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCmTjs",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Rename an implicit release target from its [releases.<target>] header"
     }
   ]
 }
