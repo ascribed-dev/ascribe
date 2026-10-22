@@ -3,6 +3,9 @@ name: Release
 # Manual only. A person starts it from the Actions
 # tab and picks the version tag under "Use workflow from".
 #
+# Before anything else, the version job checks that the commit has a passing CI
+# run (ci.yml's `all checks`). Without one, a release fails; a dry run only warns.
+#
 # With `publish` off (the default), it's a dry run: it builds the binary on
 # every platform, packs every npm package and extension package, installs
 # them on every platform and checks them against examples/quill, and runs the
@@ -37,6 +40,10 @@ jobs:
     name: check the version
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: read
+      # The commit's check runs, for the CI check below.
+      checks: read
     outputs:
       version: ${{ steps.check.outputs.version }}
     steps:
@@ -59,6 +66,28 @@ jobs:
             version=$(node scripts/release/version.ts --check)
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
+      # A release is only of a commit CI has passed: ci.yml's gate job, `all
+      # checks`, is the check run of each commit it ran on. A dry run warns
+      # instead, since it publishes nothing and may run from a branch not yet green.
+      - name: Check that the commit has a passing CI run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLISH: ${{ inputs.publish }}
+          SHA: ${{ github.sha }}
+        run: |
+          runs=$(gh api --method GET "repos/$GITHUB_REPOSITORY/commits/$SHA/check-runs" \
+            -f check_name="all checks" -f per_page=100 \
+            --jq '[.check_runs[] | select(.name == "all checks" and .conclusion == "success")] | length')
+          if [ "$runs" -gt 0 ]; then
+            echo "$SHA has a passing CI run."
+            exit 0
+          fi
+          message="$SHA has no passing CI run (ci.yml's \"all checks\"). Run CI on it (Actions → CI → Run workflow, with this tag selected), then run this again."
+          if [ "$PUBLISH" = true ]; then
+            echo "::error::$message"
+            exit 1
+          fi
+          echo "::warning::$message A release with publish on would fail here."
 
   # Build, pack, and smoke-test, shared with the nightly canary.
   build:
@@ -261,3 +290,39 @@ jobs:
             commit --quiet --message "ascribe $VERSION"
           git push --quiet origin "$branch"
           gh pr create --repo "$TAP" --head "$branch" --title "ascribe $VERSION" --body "$BODY"
+
+  # A release that was publishing and failed opens one issue, or updates the
+  # one that's open for this tag. Some packages may already be published by
+  # then, which is what the issue tells whoever reads it to check.
+  notify:
+    name: open an issue for the failure
+    needs: [version, build, npm, marketplace, github, formula, tap]
+    if: failure() && inputs.publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TITLE: "Release failed: ${{ github.ref_name }}"
+        run: |
+          {
+            echo "The release of \`$GITHUB_REF_NAME\` failed while publishing."
+            echo
+            echo "[The run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID). Failed jobs:"
+            echo
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --paginate \
+              --jq '.jobs[] | select(.conclusion == "failure") | "- " + .name'
+            echo
+            echo "Some packages may already be published. Check npm, the Marketplace, and the GitHub release before running this again."
+          } > failure.md
+          number=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file failure.md
+          else
+            gh issue create --title "$TITLE" --body-file failure.md
+          fi
