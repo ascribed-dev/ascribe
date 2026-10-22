@@ -2,7 +2,8 @@
 // A page of the site outside the docs, from home/: the header and a wide
 // measure, with no sidebar, table of contents, or search. The page's heading
 // is its own, in its hero, so the frame prints no title; the frontmatter's
-// title is for the <title>.
+// title is for the <title>. The landing page, `index`, is wider, and laid out
+// in sections by its widgets (`home` in src/styles/site.css).
 import type { CollectionEntry } from "astro:content";
 import Base from "./Base.astro";
 
@@ -19,7 +20,7 @@ const { entry, heading } = Astro.props;
   entry={entry}
   card={{ name: entry.id, alt: `Ascribe: ${heading}` }}
 >
-  <main id="content" class="page landing">
+  <main id="content" class:list={["page", "landing", { home: entry.id === "index" }]}>
     <article>
       <slot />
     </article>

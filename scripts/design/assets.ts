@@ -433,6 +433,23 @@ function plate(wordmark: Drawing, ink: Ink, background: string, cell: number, pa
   );
 }
 
+/**
+ * The mark on the landing page's grid, right of its headline: the mark in
+ * `ink`, `margin` cells in from each side of a grid `cell` pixels a cell. The
+ * grid's lines are the page's (site.css draws them behind it, a cell apart),
+ * so this is the mark alone, on whole cells of that grid. It's still, in the
+ * changed state; the mark in motion replaces it (decision 10).
+ */
+function heroMark(mark: Drawing, ink: Ink, margin: [x: number, y: number], cell: number): string {
+  const [w, h] = mark.box;
+  const [W, H] = [w + 2 * margin[0], h + 2 * margin[1]];
+  return svg(
+    W * cell,
+    H * cell,
+    title("Ascribe") + paths(mark, ink, margin[0] * cell, margin[1] * cell, cell),
+  );
+}
+
 /** A Windows icon holding one PNG, as every browser since 2009 reads one. */
 export function ico(png: Buffer, size: number): Buffer {
   const head = Buffer.alloc(22);
@@ -498,6 +515,10 @@ const [MARK_W, MARK_H] = [GRID.mark[0]?.length ?? 0, GRID.mark.length];
 const HEADER_CELL = 5;
 const PLATE_CELL = 10;
 const PLATE_PAD = 51;
+// The landing page's mark: cells in from the grid's sides and top, and the
+// pixels a cell, which site.css's grid for it matches (`--hero-cell`).
+const HERO_MARGIN: [number, number] = [3, 2];
+const HERO_CELL = 24;
 
 export const ASSETS: Asset[] = [
   {
@@ -593,6 +614,22 @@ export const ASSETS: Asset[] = [
     oneColor: true,
     draw: (s) => svg(WORD_W, WORD_H, paths(s.wordmark, "currentColor"), false),
   },
+  ...(["light", "dark"] as const).map(
+    (scheme): Asset => ({
+      path: `site/home/content/images/hero-mark-${scheme}.svg`,
+      width: (MARK_W + 2 * HERO_MARGIN[0]) * HERO_CELL,
+      height: (MARK_H + 2 * HERO_MARGIN[1]) * HERO_CELL,
+      from: [GRIDS, BRAND],
+      form: "svg",
+      draw: (s) =>
+        heroMark(
+          s.mark,
+          scheme === "light" ? lightInk(s.colors) : darkInk(s.colors),
+          HERO_MARGIN,
+          HERO_CELL,
+        ),
+    }),
+  ),
   {
     path: "packages/vscode/media/icon.png",
     width: 256,
