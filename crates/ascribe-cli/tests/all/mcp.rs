@@ -1329,3 +1329,41 @@ fn check_holds_back_what_the_baseline_lists_and_counts_it() {
     assert_eq!(structured["summary"]["baselined"], 1, "{structured}");
     assert_eq!(structured["summary"]["advice"], 0, "{structured}");
 }
+
+/// A project written for a newer Ascribe has keys this one doesn't know: a
+/// tool's reply quotes the first, whose message names this Ascribe's version
+/// (#849), and so does the command's.
+#[test]
+fn an_unknown_key_says_which_ascribe_read_it() {
+    let dir = tempfile::tempdir().unwrap();
+    write_project(dir.path());
+    write(
+        &dir.path().join("ascribe.toml"),
+        &MODEL.replacen(
+            "spec = \"0.1\"\n",
+            "spec = \"0.1\"\nlayouts = \"wide\"\n",
+            1,
+        ),
+    );
+    let note = format!(
+        "unknown key `layouts` in `[ascribe.toml]`; this is ascribe {}, and the project may need a newer one",
+        env!("CARGO_PKG_VERSION")
+    );
+
+    let mut server = Server::start(dir.path());
+    let error = server.call_error("ascribe_outline", json!({ "page": "docs/install.md" }));
+    assert!(error.contains("ascribe.toml has errors"), "{error}");
+    assert!(error.contains(&note), "{error}");
+
+    let out = ascribe(dir.path(), &["outline", "docs/install.md"]);
+    assert!(!out.status.success(), "{out:?}");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains(&note), "{stderr}");
+    let out = ascribe(dir.path(), &["check"]);
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(text.contains(&note), "{text}");
+}

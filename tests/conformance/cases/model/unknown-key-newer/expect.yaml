@@ -1,0 +1,10 @@
+description: >-
+  A key this Ascribe doesn't know is an unknown key, at the top level and in a
+  table it knows alike, since it may be one a later version added: its message
+  names this Ascribe's version and says the project may need a newer one.
+spec: ["7.1"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-unknown-key, file: ascribe.toml, line: 5}
+  - {slug: model-unknown-key, file: ascribe.toml, line: 9}

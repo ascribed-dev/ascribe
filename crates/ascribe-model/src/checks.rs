@@ -51,10 +51,7 @@ impl Loader<'_> {
                 continue;
             }
             let Some(slug) = DiagnosticSlug::from_name(key) else {
-                let mut issue = self
-                    .issue(diagnostics::MODEL_UNKNOWN_KEY, span)
-                    .with_arg("key", key)
-                    .with_arg("table", "checks");
+                let mut issue = self.unknown_key(span, key, "checks");
                 let slugs = diagnostics::ALL.iter().map(|s| s.as_str());
                 if let Some(s) = suggest(key, slugs) {
                     issue = issue.with_variant("suggestion").with_arg("suggestion", s);
