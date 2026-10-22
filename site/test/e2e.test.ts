@@ -752,6 +752,12 @@ test("the landing page and the footer link to Credits, which names comrak's rele
   expect(await landing.locator("hero-banner[status]").count()).toBe(0);
   // The `comrak-release` phrase, which scripts/docs-site/credits.test.ts holds to FORK.md.
   expect(await landing.locator("article").textContent()).toMatch(/at its release v\d+\.\d+\.\d+ /);
+  // Bryo Studio is the maker (project-docs/brand/story.md), named first.
+  const maker = landing.locator("h2#who-builds-ascribe + p");
+  expect(await maker.textContent()).toMatch(/^Made by Bryo Studio\b/);
+  expect(await maker.getByRole("link", { name: "Bryo Studio" }).getAttribute("href")).toBe(
+    "https://bryostudio.com",
+  );
   await landing.close();
 
   const footer = await open("/");
