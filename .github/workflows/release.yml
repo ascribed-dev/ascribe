@@ -290,3 +290,39 @@ jobs:
             commit --quiet --message "ascribe $VERSION"
           git push --quiet origin "$branch"
           gh pr create --repo "$TAP" --head "$branch" --title "ascribe $VERSION" --body "$BODY"
+
+  # A release that was publishing and failed opens one issue, or updates the
+  # one that's open for this tag. Some packages may already be published by
+  # then, which is what the issue tells whoever reads it to check.
+  notify:
+    name: open an issue for the failure
+    needs: [version, build, npm, marketplace, github, formula, tap]
+    if: failure() && inputs.publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TITLE: "Release failed: ${{ github.ref_name }}"
+        run: |
+          {
+            echo "The release of \`$GITHUB_REF_NAME\` failed while publishing."
+            echo
+            echo "[The run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID). Failed jobs:"
+            echo
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --paginate \
+              --jq '.jobs[] | select(.conclusion == "failure") | "- " + .name'
+            echo
+            echo "Some packages may already be published. Check npm, the Marketplace, and the GitHub release before running this again."
+          } > failure.md
+          number=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file failure.md
+          else
+            gh issue create --title "$TITLE" --body-file failure.md
+          fi

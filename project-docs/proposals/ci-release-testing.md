@@ -91,7 +91,7 @@ Pulled the job durations for recent pull-request and `main` runs, and logged fix
 
 - **Canary.** Run the test suite before `next` moves: Linux and Windows `cargo test`, and the JavaScript tests. The canary already tolerates a late night, so a slower publish costs nothing that matters.
 - **Release.** Require that the tagged commit already has a passing CI run, and fail the release otherwise. A tag pushed from a commit nobody tested is the case this closes.
-- **Failure signal.** A failing nightly run should notify whoever owns the release, not only appear in the Actions tab.
+- **Failure signal.** A failing canary, or a failing release that was publishing, opens one GitHub issue, or updates the one that's open, with a link to the run and the failed jobs. It needs no secret, and follows what `report.yml` does for the docs report.
 
 This step adds checks, so it can't reduce coverage. It's the first thing to do whatever the measurements show.
 
@@ -122,12 +122,17 @@ Otherwise it stays.
 - Dropping Windows or macOS entirely.
 - An AI reviewer on this repository. The Claude Code team's write-up is a reason to consider one later, as a separate experiment with its own proposal. It doesn't replace any CI step.
 
-## Decisions needed
+## Decisions
 
-1. **Accept a Windows-only failure landing on `main`** for paths outside Step 2's selection, as long as the nightly run catches it and the fix follows within a day.
-2. **Enable the merge queue** if the plan supports it (Step 3).
-3. **Name the owner** of branch protection and of the `all checks` gate in `ci.yml`, which is the only required check.
-4. **Approve the two-week measurement** in Step 0.
+Made on 22 October 2026:
+
+1. **A Windows-only failure may land on `main`** for paths outside Step 2's selection, as long as the nightly run catches it and the fix follows within a day. Accepted.
+2. **Failure notifications are a GitHub issue** (Step 1). Accepted.
+
+Still open:
+
+3. **Enable the merge queue** if the plan supports it (Step 3). A repository admin sets it, and `ci.yml` must also run on the `merge_group` event, or a queued change waits for a check that never starts.
+4. **Name the owner** of branch protection and of the `all checks` gate in `ci.yml`, which is the only required check.
 
 ## Measures
 

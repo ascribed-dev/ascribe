@@ -254,3 +254,37 @@ jobs:
         run: >
           curl --fail --silent --show-error --request POST --data '{}'
           "$SITE_BUILD_HOOK?trigger_title=canary+$VERSION"
+
+  # A night that fails opens one issue, or updates the one that's open, so a
+  # broken canary is seen by whoever reads the repository's issues and not only
+  # by whoever opens the Actions tab. Close the issue once a later night passes.
+  notify:
+    name: open an issue for the failure
+    needs: [catch-up, version, build, rust-tests, js-tests, npm, site]
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TITLE: Canary failed
+        run: |
+          {
+            echo "The nightly canary failed, so \`next\` stays on the newest canary that passed."
+            echo
+            echo "[The run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) on \`$GITHUB_SHA\`. Failed jobs:"
+            echo
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --paginate \
+              --jq '.jobs[] | select(.conclusion == "failure") | "- " + .name'
+          } > failure.md
+          number=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file failure.md
+          else
+            gh issue create --title "$TITLE" --body-file failure.md
+          fi
