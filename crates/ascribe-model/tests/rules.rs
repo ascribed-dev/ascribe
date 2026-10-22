@@ -605,7 +605,12 @@ fn cases() -> Vec<Case> {
         case(
             "model-releases-target",
             None,
-            "spec = \"0.1\"\n[releases.mars] #!\nlive = [\"1.0\"]\n",
+            "spec = \"0.1\"\n[dimensions.release]\nvalues = [\"a\"]\n[releases.mars] #!\nlive = [\"1.0\"]\n",
+        ),
+        case(
+            "model-releases-target",
+            Some("label"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlabel = \"A\" #!\n",
         ),
         case(
             "model-releases-target",

@@ -268,6 +268,27 @@ fn model_cuts_a_long_list_and_names_the_section() {
     assert!(one.get("types").is_none(), "{one}");
 }
 
+#[test]
+fn model_lists_the_implicit_release_dimension() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        &dir.path().join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[dimensions.pm]\nvalues = [\"npm\"]\n\n\
+         [releases.ascribe]\nlabel = \"Ascribe\"\nlive = [\"0.4.1\"]\n",
+    );
+    fs::create_dir(dir.path().join("docs")).unwrap();
+    let text = stdout(&run(dir.path(), &["model", "--section", "dimensions"], 0));
+    assert!(text.contains("- `pm` (pm): `npm`\n"), "{text}");
+    assert!(
+        text.contains("- `release` (Release): `ascribe`\n"),
+        "{text}"
+    );
+    let value = json(dir.path(), &["model", "--section", "dimensions"], 0);
+    let release = &value["dimensions"][1];
+    assert_eq!(release["name"], "release");
+    assert_eq!(release["values"][0]["label"], "Ascribe");
+}
+
 /// Every key of a section of settings, from the registry, as a JSON
 /// section has them: `(table, key)` for the keys a table of its own has, such
 /// as `[checks.vale]`'s, and the key alone for the rest.

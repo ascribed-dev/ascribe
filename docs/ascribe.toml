@@ -53,17 +53,6 @@ template = "templates/troubleshooting.md"
 guide = ["templates/troubleshooting.guide.md", "templates/troubleshooting.ascribe.md"]
 purpose = "Finding out why something isn't working, from what it shows, and what to do about it."
 
-# What isn't in the latest release is marked with availability. A feature in
-# `main` that no release has yet is `@available: next`, the planned line in
-# `[releases.ascribe]`, so the page reads "planned". When a release ships it,
-# the line moves to `live` and the same marks read "since <version>".
-# Something that shipped in an earlier release says so directly:
-# `@available: ascribe 0.1.1`.
-[dimensions.release]
-label = "Ascribe"
-values = ["ascribe"]
-labels = { ascribe = "Ascribe" }
-
 # Commands that differ by package manager. The site shows them as tabs, and a
 # reader's choice holds on every page.
 [dimensions.pm]
@@ -76,10 +65,19 @@ values = ["npm", "pnpm"]
 # step moves the lines when a release ships. `availability-left-behind`
 # reports a feature whose versions are all at or before the live line, such
 # as `next` once its release ships.
+#
+# What isn't in the latest release is marked with availability. A feature in
+# `main` that no release has yet is `@available: next`, the planned line in
+# `[releases.ascribe]`, so the page reads "planned". When a release ships it,
+# the line moves to `live` and the same marks read "since <version>".
+# Something that shipped in an earlier release says so directly:
+# `@available: ascribe 0.1.1`. `ascribe` is a value of the implicit `release`
+# dimension, since no declared dimension has it.
 [releases]
 planned-label = "in main, not yet released"
 
 [releases.ascribe]
+label = "Ascribe"
 live = ["0.4.1"]
 planned = ["0.4.2"]
 

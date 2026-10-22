@@ -348,7 +348,8 @@ impl<'s> Loader<'s> {
 
         let spec = self.spec(root, root_span);
         let project = self.project(root.get("project"));
-        let (dimensions, dim_spans) = self.dimensions(root.get("dimensions"));
+        let (mut dimensions, mut dim_spans) = self.dimensions(root.get("dimensions"));
+        self.release_dimension(root.get("releases"), &mut dimensions, &mut dim_spans);
         let (lifecycle, declared_states) = self.lifecycle(root.get("lifecycle"));
         let features = self.features_raw(root.get("features"));
         let notes = self.notes(root.get("notes"));
@@ -873,6 +874,7 @@ impl<'s> Loader<'s> {
                         value,
                     })
                     .collect(),
+                implicit: false,
             });
         }
         (out, spans)
@@ -1343,9 +1345,9 @@ pub(crate) struct ProjectInfo {
     pub output_span: Option<Span>,
 }
 
-struct DimSpans {
-    name_span: Span,
-    value_spans: Vec<Span>,
+pub(crate) struct DimSpans {
+    pub(crate) name_span: Span,
+    pub(crate) value_spans: Vec<Span>,
 }
 
 struct RawFeature {

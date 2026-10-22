@@ -1,0 +1,9 @@
+spec = "0.1"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+
+# A declared dimension labels its own values, in `labels`.
+[releases.self-managed]
+label = "Self-managed"
+live = ["3.4"]
