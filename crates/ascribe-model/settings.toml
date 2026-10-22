@@ -302,6 +302,14 @@ type = "table of tables"
 description = '''Lines that have left the window, each older than every live line, by line. Each takes `url`, where the line can still be read, and `ended`, the day its support ended, both optional: `"3.2" = {}` declares a line that's readable nowhere.'''
 
 [[setting]]
+table = "releases.<target>"
+key = "label"
+kind = "text"
+type = "string"
+default-text = "the target's name"
+description = '''The target's display label, as `[dimensions.<name>] labels` gives a value's, when the target is a value of the implicit `release` dimension: `label = "Ascribe"`. A target a declared dimension has takes its label from that dimension's `labels` instead.'''
+
+[[setting]]
 table = "releases.<target>.archived.<line>"
 key = "url"
 kind = "text"
@@ -314,6 +322,14 @@ key = "ended"
 kind = "text"
 type = "date"
 description = '''The day its support ended.'''
+
+[[setting]]
+table = "releases"
+key = "label"
+kind = "text"
+type = "string"
+default = "Release"
+description = '''The display label of the implicit `release` dimension, as `[dimensions.<name>] label` gives a declared dimension's. The implicit dimension holds each target no declared dimension has, so `[releases.ascribe]` alone makes `ascribe` a value of `release`.'''
 
 [[setting]]
 table = "releases"

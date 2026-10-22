@@ -255,9 +255,10 @@ test("the site's own pages share the docs' release tables, sources, and address,
   const at = (toml: Toml, ...keys: string[]): unknown =>
     keys.reduce<unknown>((value, key) => (value as Toml | undefined)?.[key], toml);
 
-  // What the pages' availability marks need, to mark a claim as the docs do.
+  // What the pages' availability marks need, to mark a claim as the docs do:
+  // `[releases]` declares the `ascribe` target, with its label, in the
+  // implicit `release` dimension.
   for (const keys of [
-    ["dimensions", "release"],
     ["releases"],
     ["features", "next"],
     ["phrases", "version"],

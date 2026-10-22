@@ -1,0 +1,9 @@
+description: >-
+  `[releases.<target>] label` labels a target of the implicit dimension
+  only: a declared dimension's value takes its label from that dimension's
+  `labels`.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-releases-target, file: ascribe.toml, line: 8}

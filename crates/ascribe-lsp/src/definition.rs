@@ -4,6 +4,7 @@
 //! `@snippet`'s address to its region's start tag in the code file.
 
 use ascribe_core::{LineIndex, RelPath, Span};
+use ascribe_model::RELEASE_DIMENSION;
 use ascribe_resolve::{Resolution, Usable};
 use lsp_types::{Location, Position};
 
@@ -190,8 +191,54 @@ impl Entry<'_> {
 /// the table that declares a feature, dimension, note type, widget, build,
 /// or content type, or a dimension value's text inside its quotes. The model
 /// keeps no spans, so this reads the text; it finds entries written as tables
-/// and keys, which is how `ascribe.toml` declares them.
+/// and keys, which is how `ascribe.toml` declares them. The implicit
+/// `release` dimension is found at its first `[releases.<target>]` table,
+/// and each of its values at its own.
 pub(crate) fn find_entry(text: &str, entry: &Entry<'_>) -> Option<Span> {
+    find_declared(text, entry).or_else(|| match entry {
+        Entry::Dimension(RELEASE_DIMENSION) => {
+            find_header(text, |table| table.starts_with("releases."))
+        }
+        Entry::DimensionValue {
+            dimension: RELEASE_DIMENSION,
+            value,
+        } => find_header(text, |table| {
+            table.strip_prefix("releases.") == Some(*value)
+        }),
+        _ => None,
+    })
+}
+
+/// The span of the first table header whose name, without brackets or
+/// quotes, `wanted` takes.
+fn find_header(text: &str, wanted: impl Fn(&str) -> bool) -> Option<Span> {
+    let mut at = 0;
+    for line in text.split_inclusive('\n') {
+        let start = at;
+        at += line.len();
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') && wanted(&header_name(trimmed)) {
+            let lead = line.len() - line.trim_start().len();
+            return Some(Span::new(start + lead, start + lead + trimmed.len()));
+        }
+    }
+    None
+}
+
+/// A table header's name, without brackets, quotes, or spaces.
+fn header_name(header: &str) -> String {
+    header
+        .trim_start_matches('[')
+        .split(']')
+        .next()
+        .unwrap_or_default()
+        .chars()
+        .filter(|c| !c.is_whitespace() && *c != '"' && *c != '\'')
+        .collect()
+}
+
+/// [`find_entry`] for an entry `ascribe.toml` declares in its own words.
+fn find_declared(text: &str, entry: &Entry<'_>) -> Option<Span> {
     let own_table = entry.table();
     // A content type declared only through its nested tables,
     // `[types.page.frontmatter]` without `[types.page]`, is found at the
@@ -211,14 +258,7 @@ pub(crate) fn find_entry(text: &str, entry: &Entry<'_>) -> Option<Span> {
             continue;
         }
         if trimmed.starts_with('[') {
-            table = trimmed
-                .trim_start_matches('[')
-                .split(']')
-                .next()
-                .unwrap_or_default()
-                .chars()
-                .filter(|c| !c.is_whitespace() && *c != '"' && *c != '\'')
-                .collect();
+            table = header_name(trimmed);
             let lead = line.len() - line.trim_start().len();
             let span = Span::new(start + lead, start + lead + trimmed.len());
             if own_table.as_ref() == Some(&table) {
@@ -363,5 +403,24 @@ mod tests {
         assert_eq!(find("os", "linux"), Some("linux"));
         assert_eq!(find("os", "npm"), None);
         assert_eq!(find("pm", "no"), None);
+    }
+
+    #[test]
+    fn the_implicit_release_dimension_is_found_at_its_targets_tables() {
+        let text = "[releases]\nlabel = \"Product\"\n\n[releases.agent]\nlive = [\"1.2\"]\n\n[releases.\"cli\"]\nlive = [\"0.4\"]\n";
+        let find = |entry| find_entry(text, &entry).map(|span| &text[span.range()]);
+        assert_eq!(find(Entry::Dimension("release")), Some("[releases.agent]"));
+        let value = |value| Entry::DimensionValue {
+            dimension: "release",
+            value,
+        };
+        assert_eq!(find(value("cli")), Some("[releases.\"cli\"]"));
+        assert_eq!(find(value("web")), None);
+        // A declared `release` dimension is found where it's declared.
+        let text = "[dimensions.release]\nvalues = [\"stable\"]\n";
+        assert_eq!(
+            find_entry(text, &Entry::Dimension("release")).map(|span| &text[span.range()]),
+            Some("[dimensions.release]")
+        );
     }
 }

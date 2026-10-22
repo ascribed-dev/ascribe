@@ -30,9 +30,10 @@ pub struct ContentModel {
     pub types: Vec<ContentType>,
     /// `[fragments]`.
     pub fragments: Fragments,
-    /// `[dimensions.<name>]`, in declaration order. That order is the
-    /// canonical order of `@variant` attributes and decides which dimension a
-    /// tab group syncs on.
+    /// `[dimensions.<name>]`, in declaration order, then the implicit
+    /// `release` dimension when `[releases]` has a target no declared
+    /// dimension has. That order is the canonical order of `@variant`
+    /// attributes and decides which dimension a tab group syncs on.
     pub dimensions: Vec<Dimension>,
     /// `[versions] scheme`.
     pub version_scheme: VersionScheme,
@@ -791,6 +792,10 @@ pub struct Fragments {
     pub frontmatter: FrontmatterSchema,
 }
 
+/// The name of the implicit dimension `[releases.<target>]` declares its
+/// targets in, when no declared dimension has them.
+pub const RELEASE_DIMENSION: &str = "release";
+
 /// A dimension.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Dimension {
@@ -800,6 +805,9 @@ pub struct Dimension {
     pub label: String,
     /// Its values, in display order.
     pub values: Vec<DimensionValue>,
+    /// Whether it's the implicit `release` dimension, whose values are the
+    /// `[releases.<target>]` tables no declared dimension has.
+    pub implicit: bool,
 }
 
 /// One value of a dimension.

@@ -10,7 +10,7 @@ use ascribe_core::{
 };
 use toml::de::DeValue;
 
-use crate::loader::{Loader, NameRule, is_absolute};
+use crate::loader::{DimSpans, Loader, NameRule, is_absolute};
 use crate::model::*;
 use crate::names::{is_version, list};
 use crate::pattern::{Pattern, PatternError};
@@ -847,6 +847,83 @@ impl Loader<'_> {
 
     // ---- releases ---------------------------------------------------------------------------
 
+    /// The implicit `release` dimension: each `[releases.<target>]` no
+    /// declared dimension has, as a value or as its name, is a value of it,
+    /// labeled by `[releases.<target>] label`, and the dimension is labeled
+    /// by `[releases] label`. A project that declares its own `release`
+    /// dimension has no implicit one, and `releases` reports each target left
+    /// to it.
+    pub(crate) fn release_dimension(
+        &mut self,
+        v: Option<&V<'_>>,
+        dimensions: &mut Vec<Dimension>,
+        spans: &mut Vec<DimSpans>,
+    ) {
+        let Some(DeValue::Table(t)) = v.map(|v| v.get_ref()) else {
+            return;
+        };
+        let mut label = settings::default_text("releases", "label").to_owned();
+        let mut values: Vec<(DimensionValue, Span)> = Vec::new();
+        for (target, target_span, item) in entries(t) {
+            if target == "label" {
+                if let Some(text) = self.string("releases.label", item, true) {
+                    label = text;
+                }
+                continue;
+            }
+            let DeValue::Table(rt) = item.get_ref() else {
+                continue;
+            };
+            let target_label = rt.get("label");
+            let declared = dimensions
+                .iter()
+                .find(|d| d.values.iter().any(|v| v.value == target));
+            if let Some(dimension) = declared {
+                if let Some(l) = target_label {
+                    self.push(
+                        self.issue(diagnostics::MODEL_RELEASES_TARGET, sp(l))
+                            .with_variant("label")
+                            .with_arg("target", target)
+                            .with_arg("dimension", dimension.name.as_str()),
+                    );
+                }
+                continue;
+            }
+            if dimensions.iter().any(|d| d.name == target)
+                || dimensions.iter().any(|d| d.name == RELEASE_DIMENSION)
+                || !self.name_ok(target, target_span, "dimension value", NameRule::NameWord)
+            {
+                continue;
+            }
+            let path = format!("{}.label", join("releases", target));
+            let target_label = match target_label {
+                Some(l) => self.string(&path, l, true),
+                None => None,
+            };
+            values.push((
+                DimensionValue {
+                    value: target.to_owned(),
+                    label: target_label.unwrap_or_else(|| target.to_owned()),
+                    versionless: false,
+                },
+                target_span,
+            ));
+        }
+        let Some((_, first)) = values.first() else {
+            return;
+        };
+        spans.push(DimSpans {
+            name_span: *first,
+            value_spans: values.iter().map(|(_, span)| *span).collect(),
+        });
+        dimensions.push(Dimension {
+            name: RELEASE_DIMENSION.to_owned(),
+            label,
+            values: values.into_iter().map(|(value, _)| value).collect(),
+            implicit: true,
+        });
+    }
+
     /// `[releases]`: each target's lines, newest first, and
     /// `planned-label`.
     pub fn releases(
@@ -863,6 +940,10 @@ impl Loader<'_> {
             return (out, planned_label);
         };
         for (target, target_span, item) in entries(t) {
+            // `release_dimension` read the dimension's label.
+            if target == "label" {
+                continue;
+            }
             if target == "planned-label" {
                 if let Some(label) = self.string("releases.planned-label", item, true) {
                     planned_label = label;
@@ -1127,7 +1208,7 @@ impl Loader<'_> {
                 false
             }
             None => {
-                let mut issue = self
+                let issue = self
                     .issue(diagnostics::MODEL_RELEASES_TARGET, span)
                     .with_arg("target", target);
                 if let Some(d) = dimensions.iter().find(|d| d.name == target) {
@@ -1137,11 +1218,20 @@ impl Loader<'_> {
                         .filter(|v| !v.versionless)
                         .map(|v| v.value.clone())
                         .collect();
-                    issue = issue
-                        .with_variant("dimension")
-                        .with_arg("values", list(&values));
+                    self.push(
+                        issue
+                            .with_variant("dimension")
+                            .with_arg("values", list(&values)),
+                    );
+                } else if dimensions
+                    .iter()
+                    .any(|d| d.name == RELEASE_DIMENSION && !d.implicit)
+                {
+                    // The implicit dimension's name is taken.
+                    self.push(issue);
                 }
-                self.push(issue);
+                // Otherwise the target isn't a name, which
+                // `release_dimension` reported.
                 false
             }
         }

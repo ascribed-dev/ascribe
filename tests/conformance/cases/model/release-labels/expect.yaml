@@ -1,0 +1,8 @@
+description: >-
+  `[releases] label` labels the implicit `release` dimension and
+  `[releases.<target>] label` labels its target; a target without one is
+  labeled by its name.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics: []

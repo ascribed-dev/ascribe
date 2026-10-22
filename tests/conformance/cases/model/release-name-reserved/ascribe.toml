@@ -1,0 +1,13 @@
+spec = "0.1"
+
+[dimensions.release]
+values = ["stable", "edge"]
+
+# `agent` is in no declared dimension, so it would be a value of the
+# implicit `release` dimension, whose name the declared one takes.
+[releases.agent]
+live = ["1.2"]
+
+# A target the declared dimension has is fine.
+[releases.stable]
+live = ["2.0"]
