@@ -15,6 +15,7 @@ import {
   type Found,
   type PanelProblem,
 } from "../everyBuild.js";
+import { isAscribeSource } from "../problems.js";
 import { comparable, owningProject, type Project } from "../projects.js";
 import { changedSince, projectFiles, readKept, type KeptCheck } from "../lastCheck.js";
 import type { ProjectRegistry } from "../registry.js";
@@ -320,16 +321,17 @@ export class EveryBuildChecks implements vscode.Disposable {
           .getDiagnostics(vscode.Uri.file(file))
           .some(
             (d) =>
-              d.source === "ascribe" &&
+              isAscribeSource(d.source) &&
               codeOf(d) === code &&
               d.range.start.line === start.line &&
               d.range.start.character === start.character,
           ),
     );
     const byFile = new Map<string, vscode.Diagnostic[]>();
+    const source = this.projects.diagnosticSource(project);
     for (const problem of problems) {
       const uri = vscode.Uri.file(problem.file).toString();
-      byFile.set(uri, [...(byFile.get(uri) ?? []), toDiagnostic(problem)]);
+      byFile.set(uri, [...(byFile.get(uri) ?? []), toDiagnostic(problem, source)]);
     }
     for (const [uri, diagnostics] of byFile)
       this.collection.set(vscode.Uri.parse(uri), diagnostics);
@@ -482,9 +484,13 @@ export class EveryBuildChecks implements vscode.Disposable {
     if (this.checking && comparable(this.checking.project.folder) === key) return;
     if (!this.projects.projects.some((p) => p.config === project.config)) return;
     if (run.current) {
+      const source = this.projects.diagnosticSource(project);
       for (const problem of kept.problems) {
         const uri = vscode.Uri.file(problem.file);
-        this.collection.set(uri, [...(this.collection.get(uri) ?? []), toDiagnostic(problem)]);
+        this.collection.set(uri, [
+          ...(this.collection.get(uri) ?? []),
+          toDiagnostic(problem, source),
+        ]);
         run.files.add(uri.toString());
       }
     } else if (kept.current) {
@@ -611,7 +617,7 @@ async function readTexts(root: string, report: CheckReport): Promise<Map<string,
   return texts;
 }
 
-function toDiagnostic(problem: PanelProblem): vscode.Diagnostic {
+function toDiagnostic(problem: PanelProblem, source: string): vscode.Diagnostic {
   const { entry } = problem;
   const diagnostic = new vscode.Diagnostic(
     toRange(problem.range),
@@ -622,7 +628,7 @@ function toDiagnostic(problem: PanelProblem): vscode.Diagnostic {
         ? vscode.DiagnosticSeverity.Warning
         : vscode.DiagnosticSeverity.Information,
   );
-  diagnostic.source = "ascribe";
+  diagnostic.source = source;
   diagnostic.code = entry.docs
     ? { value: entry.code, target: vscode.Uri.parse(entry.docs) }
     : entry.code;

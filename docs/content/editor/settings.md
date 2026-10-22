@@ -24,11 +24,13 @@ A project left out isn't listed in **Switch Project** and gets no language serve
 
 A file belongs to the nearest `ascribe.toml` above it, and only that project's server reports on it. Projects can be nested: a file in `handbook/internal/` belongs to `handbook/internal/ascribe.toml`, not to `handbook/ascribe.toml`. A project nested in another's content root isn't part of it: the outer project's server, `ascribe check`, and `ascribe build` skip the nested project's folder, so a link or an include from the outer project to one of its pages is reported as a missing file. A file in a project's folder but outside its content root isn't one of the project's sources, and gets no diagnostics.
 
+In the Problems panel, the source of each problem names the project whose server found it, such as `ascribe · handbook`, when the workspace has more than one project.
+
 Each project runs its own `ascribe`, found as [Which `ascribe` it runs](index.md#which-ascribe-it-runs) describes.
 
 ### When servers start
 
-A project's server starts the first time you open one of its Markdown files or its `ascribe.toml`, or preview one of its pages. It also starts when something asks for the project: choosing it in **Switch Project** or the Project view, a command run on it, or **Check Every Build**. A change on disk starts nothing: a branch switch, a pull, a test run that rewrites files, or an agent that writes files without opening them leaves a project that hasn't started as it was, with no problems in the Problems panel and "not checked yet" in **Switch Project**. Opening the window starts nothing either, and neither does adding an `ascribe.toml`. Once a server is running, it follows changes on disk to its project's files. A server runs until you close the window or delete its `ascribe.toml`. A project nothing opens costs nothing.
+A project's server starts the first time you open one of its Markdown files or its `ascribe.toml`, or preview one of its pages. It also starts when something asks for the project: choosing it in **Switch Project** or the Project view, a command run on it, or **Check Every Build**. A change on disk starts nothing: a branch switch, a pull, a test run that rewrites files, or an agent that writes files without opening them leaves a project that hasn't started as it was, with no problems in the Problems panel and "not checked yet" in **Switch Project**. Opening the window starts nothing either, and neither does adding an `ascribe.toml`. Once a server is running, it follows changes on disk to its project's files. A server runs until you close the window or delete its `ascribe.toml` or its folder, and its problems leave the Problems panel with it. A server that doesn't stop when asked is killed, with any process it started, and none outlives the window. A project nothing opens costs nothing.
 
 To start every project's server when the workspace opens, set `ascribe.startServers` to `"all"`.
 

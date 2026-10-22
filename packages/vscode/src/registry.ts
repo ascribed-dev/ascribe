@@ -5,6 +5,7 @@ import { ProjectServer, type ProjectHost } from "./client.js";
 import { gitIgnored } from "./gitIgnored.js";
 import { asksForLenses, lensTitle } from "./codeLens.js";
 import { toldOfChange, type Source } from "./diskChanges.js";
+import { diagnosticSource } from "./problems.js";
 import {
   channelName,
   comparable,
@@ -98,10 +99,19 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
    */
   register(): void {
     const watcher = vscode.workspace.createFileSystemWatcher("**/ascribe.toml");
+    // A folder deleted with its files is reported as the folder alone, so
+    // the watcher above misses the `ascribe.toml` files that went with it.
+    const deletions = vscode.workspace.createFileSystemWatcher("**", true, true, false);
     this.disposables.push(
       watcher,
       watcher.onDidCreate(() => void this.refresh()),
       watcher.onDidDelete(() => void this.refresh()),
+      deletions,
+      deletions.onDidDelete((uri) => {
+        if (this.projects.some((project) => within(project.folder, uri.fsPath))) {
+          void this.refresh();
+        }
+      }),
       vscode.workspace.onDidChangeWorkspaceFolders(() => void this.refresh()),
       vscode.workspace.onDidOpenTextDocument((document) => void this.startFor(document)),
       vscode.window.onDidChangeActiveTextEditor((editor) => {
@@ -195,6 +205,10 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
 
   channelName(project: Project): string {
     return channelName(project, workspaceFolderOf(project), this.byConfig.size <= 1);
+  }
+
+  diagnosticSource(project: Project): string {
+    return diagnosticSource(this.byConfig.size <= 1 ? undefined : this.name(project));
   }
 
   /** A project's name for people: its folder relative to its workspace folder. */
@@ -325,7 +339,10 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     }
     await Promise.all(restarts);
 
-    if (changed) this.projectsChanged.fire();
+    if (changed) {
+      for (const server of this.servers) server.renameDiagnostics();
+      this.projectsChanged.fire();
+    }
     await this.startAllIfConfigured();
     await this.startForOpenDocuments();
   }

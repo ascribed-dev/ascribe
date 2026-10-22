@@ -6,11 +6,16 @@
 //  - a warning on every line of a markdown file that contains "TODO", for open
 //    documents (from their buffers) and for the rest of the project (read from
 //    disk at start-up and whenever a watched file changes);
-//  - a crash (exit code 1) on any file that contains "CRASH".
+//  - a crash (exit code 1) on any file that contains "CRASH";
+//  - a server that never stops, when its project has a `.stub-hangs` file as
+//    it starts: it starts a process of its own that ignores everything, as
+//    `@ascribed/cli`'s script starts the native binary, writes both ids to
+//    `.stub-processes`, and blocks when asked to shut down.
 //
 // It asks the client to watch `**/*.md` with a dynamic registration, as the
 // real server does, so the tests cover on-disk changes.
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import lsp from "vscode-languageserver/node";
@@ -85,8 +90,16 @@ function publishFromDisk(uri) {
   }
 }
 
+let hangs = false;
+
 connection.onInitialize((params) => {
   roots = (params.workspaceFolders ?? []).map((folder) => fileURLToPath(folder.uri));
+  hangs = roots.some((root) => existsSync(join(root, ".stub-hangs")));
+  if (hangs) {
+    const ignoring = "process.on('SIGTERM', () => {}); setInterval(() => {}, 1e9);";
+    const child = spawn(process.execPath, ["-e", ignoring], { stdio: "ignore" });
+    writeFileSync(join(roots[0], ".stub-processes"), `${process.pid} ${child.pid}\n`);
+  }
   return { capabilities: { textDocumentSync: TextDocumentSyncKind.Incremental } };
 });
 
@@ -108,6 +121,11 @@ connection.onDidChangeWatchedFiles(({ changes }) => {
       publishFromDisk(change.uri);
     }
   }
+});
+
+connection.onShutdown(() => {
+  // Blocks the event loop for good: no exit, and the end of input unread.
+  if (hangs) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0);
 });
 
 documents.onDidChangeContent(({ document }) => publish(document.uri, document.getText()));
