@@ -109,7 +109,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-235 in all. By severity: 47 advice, 163 error, 25 warning. By level: 209 file, 26 page. By kind of next step: 54 choose, 17 fix, 8 outside, 12 review, 144 write.
+236 in all. By severity: 48 advice, 163 error, 25 warning. By level: 210 file, 26 page. By kind of next step: 54 choose, 18 fix, 8 outside, 12 review, 144 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -348,6 +348,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC241` | `glossary-definition-long` | advice | write | the definition of the term "{term}" is over {limit} characters in build `{build}`, too long for a link's title or a hover |
 | `ASC242` | `term-off-glossary-page` | error | choose | `@term` is on `{path}`, which isn't a page `[glossary] pages` lists, so this heading isn't a term |
 | `ASC243` | `baseline-entry-unmatched` | advice | outside | ascribe.baseline holds back `{check}` in `{file}`, and nothing there matches it any more; run `ascribe baseline prune` |
+| `ASC244` | `frontmatter-field-repeated` | advice | fix | the type `{type}` declares `{field}` exactly as `[frontmatter]` does, so this copy changes nothing; delete it, and the type has `[frontmatter]`'s |
 
 ## The VS Code extension
 

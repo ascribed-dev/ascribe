@@ -1100,6 +1100,9 @@ fn every_fix_diagnostic_has_a_quick_fix() {
         // Its fix writes `ascribe.permalinks`, not the page: `across.rs`
         // applies it and sees the warning go.
         .filter(|e| e.slug.as_str() != "permalinks-list-behind")
+        // It's reported in `ascribe.toml`, not a page:
+        // `a_repeated_field_is_deleted_from_ascribe_toml` applies its fix.
+        .filter(|e| e.slug.as_str() != "frontmatter-field-repeated")
         // Theirs edit `ascribe.nav`, from the file or from a page:
         // `nav_file.rs` applies them and sees the problem go.
         .filter(|e| {
@@ -1453,5 +1456,38 @@ fn a_project_edit_through_a_file_of_no_project_says_so() {
     assert_eq!(
         answer,
         json!({ "error": "This file isn't one of the project's." })
+    );
+}
+
+#[test]
+fn a_repeated_field_is_deleted_from_ascribe_toml() {
+    let model = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n\
+                 [frontmatter]\ndescription = \"string\"\n\n\
+                 [types.guide.frontmatter]\ndescription = \"string\"\nsteps = \"number\"\n";
+    let page = "---\ntype: guide\ntitle: Setup\ndescription: How.\nsteps: 2\n---\n\nText.\n";
+    let f = Fixture::new(model, &[("docs/setup.md", page)]);
+    let path = f.path("ascribe.toml");
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let diag = diagnostic(&client, &path, "frontmatter-field-repeated");
+    let action = actions(&mut client, &path, diag)
+        .into_iter()
+        .find(|action| action.get("edit").is_some())
+        .expect("a quick fix");
+    assert_eq!(action["title"], "Delete the type's `description`");
+    let changed = apply_workspace_edit(&f, &action["edit"]);
+    notify_changed(&mut client, &changed);
+    assert_eq!(
+        read(&f, "ascribe.toml"),
+        model.replace(
+            "[types.guide.frontmatter]\ndescription = \"string\"\n",
+            "[types.guide.frontmatter]\n"
+        )
+    );
+    assert!(
+        !client
+            .diagnostics(&path)
+            .iter()
+            .any(|d| support::slug(d) == "frontmatter-field-repeated")
     );
 }

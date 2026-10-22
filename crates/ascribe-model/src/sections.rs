@@ -172,8 +172,9 @@ impl Loader<'_> {
                     implicit: false,
                     frontmatter: FrontmatterSchema {
                         owner: SchemaOwner::Type(name.to_owned()),
-                        fields: type_fields(shared, own),
+                        fields: type_fields(shared, own.clone()),
                     },
+                    own,
                     purpose,
                     template,
                     guide,
@@ -189,6 +190,7 @@ impl Loader<'_> {
                     owner: SchemaOwner::Type("page".into()),
                     fields: type_fields(shared, Vec::new()),
                 },
+                own: Vec::new(),
                 purpose: None,
                 template: None,
                 guide: Vec::new(),

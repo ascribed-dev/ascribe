@@ -289,6 +289,68 @@ fn model_lists_the_implicit_release_dimension() {
     assert_eq!(release["values"][0]["label"], "Ascribe");
 }
 
+#[test]
+fn model_says_which_table_declares_each_field() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        &dir.path().join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[frontmatter]\ndescription = \"string\"\n\n\
+         [types.guide.frontmatter]\nsteps = \"number\"\n\n\
+         [types.index.frontmatter]\ndescription = \"string?\"\n\n\
+         [types.note]\n",
+    );
+    fs::create_dir(dir.path().join("docs")).unwrap();
+    let text = stdout(&run(dir.path(), &["model", "--section", "types"], 0));
+    assert!(
+        text.contains(
+            "- `guide`: frontmatter `title` (string, required, implicit), \
+             `description` (string, required, from `[frontmatter]`), `steps` (number, required, own)\n"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains(
+            "- `index`: frontmatter `title` (string, required, implicit), `description` (string, own)\n"
+        ),
+        "{text}"
+    );
+    let value = json(dir.path(), &["model", "--section", "types"], 0);
+    let declared = |ty: usize| -> Vec<(String, String)> {
+        value["types"][ty]["fields"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|f| {
+                (
+                    f["name"].as_str().unwrap().to_owned(),
+                    f["declared"].as_str().unwrap().to_owned(),
+                )
+            })
+            .collect()
+    };
+    let pairs = |list: &[(&str, &str)]| -> Vec<(String, String)> {
+        list.iter()
+            .map(|(a, b)| ((*a).to_owned(), (*b).to_owned()))
+            .collect()
+    };
+    assert_eq!(
+        declared(0),
+        pairs(&[
+            ("title", "implicit"),
+            ("description", "frontmatter"),
+            ("steps", "type")
+        ])
+    );
+    assert_eq!(
+        declared(1),
+        pairs(&[("title", "implicit"), ("description", "type")])
+    );
+    assert_eq!(
+        declared(2),
+        pairs(&[("title", "implicit"), ("description", "frontmatter")])
+    );
+}
+
 /// Every key of a section of settings, from the registry, as a JSON
 /// section has them: `(table, key)` for the keys a table of its own has, such
 /// as `[checks.vale]`'s, and the key alone for the rest.

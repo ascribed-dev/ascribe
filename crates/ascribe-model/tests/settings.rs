@@ -27,11 +27,8 @@ const LIVE: &str = "[dimensions.deployment]\nvalues = [\"self-managed\"]\n\
 fn host(table: &str, key: &str) -> Host {
     let (before, header, needs): (&str, &str, &[(&str, &str)]) = match table {
         "" => ("", "", &[]),
-        "types.<name>" => (
-            "",
-            "[types.page]",
-            &[("frontmatter", "{ title = \"string\" }")],
-        ),
+        // A type needs no keys: its `title` is implicit.
+        "types.<name>" => ("", "[types.page]", &[]),
         // `values` is for a bare `enum`, and an unknown key on any other type.
         FIELD_TABLE if key == "values" => {
             ("", "[types.page.frontmatter.kind]", &[("type", "\"enum\"")])

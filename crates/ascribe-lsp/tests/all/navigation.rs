@@ -608,7 +608,7 @@ fn hovering_a_link_shows_its_path_and_a_preview() {
         hover(
             &mut client,
             &quickstart,
-            json!({ "line": 3, "character": 0 })
+            json!({ "line": 5, "character": 0 })
         )
         .is_none()
     );
@@ -1404,4 +1404,108 @@ fn hovering_a_glossary_term_shows_its_definition_as_the_glossary_page_says_it() 
     client.settle();
     let value = hover_text(&mut client, &page, at(index, "API key", 2));
     assert_eq!(value, "**API key**\n\nA secret token.");
+}
+
+/// A content model with fields every type shares, a type that replaces one,
+/// a type that repeats one, and a type with a field of its own.
+const SHARED: &str = r#"spec = "0.1"
+
+[project]
+content-root = "docs"
+
+[frontmatter]
+description = "string"
+owner = "string?"
+
+[types.index.frontmatter]
+description = "string?"
+
+[types.guide.frontmatter]
+owner = "string?"
+steps = "number"
+"#;
+
+#[test]
+fn hovering_a_frontmatter_key_says_which_table_declares_the_field() {
+    let page = "---\ntype: guide\ntitle: Setting up\ndescription: How.\nowner: docs\nsteps: 3\n---\n\nText.\n";
+    let f = Fixture::new(SHARED, &[("docs/setup.md", page)]);
+    let path = f.path("docs/setup.md");
+    let mut client = Client::start(&f.root());
+    assert_eq!(
+        hover_text(&mut client, &path, at(page, "description:", 3)),
+        "**`description`**: string, required\n\nDeclared in `[frontmatter]`, which every page type shares."
+    );
+    assert_eq!(
+        hover_text(&mut client, &path, at(page, "steps:", 0)),
+        "**`steps`**: number, required\n\nDeclared by the type `guide`, its own, in `[types.guide.frontmatter]`."
+    );
+    assert_eq!(
+        hover_text(&mut client, &path, at(page, "owner:", 5)),
+        "**`owner`**: string\n\nDeclared by the type `guide`, its own, in `[types.guide.frontmatter]`."
+    );
+    assert_eq!(
+        hover_text(&mut client, &path, at(page, "title:", 1)),
+        "**`title`**: string, required\n\nEvery page type has it, a required string, though neither `[frontmatter]` nor the page's type declares it."
+    );
+    // Only on the key: the value, and a key that isn't a field, say nothing.
+    assert!(hover(&mut client, &path, at(page, "How.", 1)).is_none());
+    assert!(hover(&mut client, &path, at(page, "type:", 1)).is_none());
+}
+
+#[test]
+fn hovering_a_field_in_ascribe_toml_says_which_table_it_is_and_what_replaces_it() {
+    let f = Fixture::new(
+        SHARED,
+        &[("docs/index.md", "---\ntype: index\ntitle: Home\n---\n")],
+    );
+    let model = f.path("ascribe.toml");
+    let mut client = Client::start(&f.root());
+    client.open(&model, 1, SHARED);
+    let shared = SHARED.find("[frontmatter]").expect("the table");
+    let own = |needle: &str, after: &str| {
+        let from = SHARED.find(after).expect("the table");
+        position(
+            SHARED,
+            from + SHARED[from..].find(needle).expect("the key") + 1,
+        )
+    };
+    assert_eq!(
+        hover_text(&mut client, &model, own("description", "[frontmatter]")),
+        "**`description`**: string, required\n\nDeclared in `[frontmatter]`: every page type has it, but the type `index` declares its own, which replaces it."
+    );
+    assert_eq!(
+        hover_text(
+            &mut client,
+            &model,
+            position(
+                SHARED,
+                shared + SHARED[shared..].find("owner").expect("owner")
+            )
+        ),
+        "**`owner`**: string\n\nDeclared in `[frontmatter]`: every page type has it, but the type `guide` declares its own, which replaces it."
+    );
+    assert_eq!(
+        hover_text(&mut client, &model, own("description", "[types.index")),
+        "**`description`**: string\n\nDeclared by the type `index`, its own. It replaces `[frontmatter]`'s, for this type."
+    );
+    assert_eq!(
+        hover_text(&mut client, &model, own("owner", "[types.guide")),
+        "**`owner`**: string\n\nDeclared by the type `guide`, its own. It's the same as `[frontmatter]`'s, key for key, so it can be deleted: the type has that one without it."
+    );
+    assert_eq!(
+        hover_text(&mut client, &model, own("steps", "[types.guide")),
+        "**`steps`**: number, required\n\nDeclared by the type `guide`, its own."
+    );
+    // Anywhere else in the file, nothing.
+    assert!(hover(&mut client, &model, own("content-root", "[project]")).is_none());
+    // With unsaved edits that move the keys, the hover finds them where they
+    // are now.
+    let edited = format!("# A comment the file doesn't have on disk.\n{SHARED}");
+    client.open(&model, 2, &edited);
+    let from = edited.find("[types.guide").expect("the table");
+    let steps = from + edited[from..].find("steps").expect("the key") + 1;
+    assert_eq!(
+        hover_text(&mut client, &model, position(&edited, steps)),
+        "**`steps`**: number, required\n\nDeclared by the type `guide`, its own."
+    );
 }

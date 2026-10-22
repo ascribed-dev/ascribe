@@ -15,7 +15,9 @@
 //!   each live line's `ends` with the day the check runs as;
 //!   `crawlers-disallowed` reads `[crawlers]`; and `description-too-long`
 //!   measures a description field's `default`, once, where `ascribe.toml`
-//!   writes it, since every page that leaves the field to it shares it.
+//!   writes it, since every page that leaves the field to it shares it;
+//!   and `frontmatter-field-repeated` compares each type's own fields with
+//!   `[frontmatter]`'s.
 //! - **Per build**, from the build's resolved pages, so they're page level:
 //!   `page-orphan`, a page no other page the build publishes links to or
 //!   includes, which only the sidebar reaches, or nothing for one that's
@@ -32,7 +34,10 @@ use std::sync::Arc;
 
 use ascribe_core::availability::{AvailabilitySpec, Detail, Version};
 use ascribe_core::intended::{ENTRY_ARG, EntryKind, entry_arg};
-use ascribe_core::{Date, DiagnosticSlug, FileId, Issue, Location, RelPath, Span, diagnostics};
+use ascribe_core::{
+    Applicability, Date, DiagnosticSlug, FileId, Fix, Issue, Location, RelPath, Span, TextEdit,
+    diagnostics,
+};
 use ascribe_model::{
     AvailabilityMode, CheckLevel, Checks, ContentModel, FieldRole, Listing, Permission, Purpose,
     in_line,
@@ -70,6 +75,7 @@ const FILE_LEVEL: &[DiagnosticSlug] = &[
     diagnostics::RELEASE_LINE_ENDED,
     diagnostics::CRAWLERS_DISALLOWED,
     diagnostics::DESCRIPTION_TOO_LONG,
+    diagnostics::FRONTMATTER_FIELD_REPEATED,
 ];
 
 /// The checks of this module the editor doesn't report: an image isn't a
@@ -211,6 +217,10 @@ pub(crate) fn for_every_build(
         long_default_descriptions(project, &mut issues);
     }
 
+    if on(diagnostics::FRONTMATTER_FIELD_REPEATED) {
+        repeated_fields(project, &mut issues);
+    }
+
     if on(diagnostics::IMAGE_UNUSED) || on(diagnostics::IMAGE_LARGE) {
         self::images(project, index, &on, &mut issues);
     }
@@ -274,6 +284,36 @@ fn line_ended(model: &ContentModel, today: Date, issues: &mut Vec<Issue>) {
                 .with_arg("line", end.line.text.clone())
                 .with_arg("date", end.date.to_string()),
             );
+        }
+    }
+}
+
+/// `frontmatter-field-repeated`: a type's own field equal to
+/// `[frontmatter]`'s, key for key, at its key in `ascribe.toml`, with a fix
+/// that deletes it. The type has the same field without it, in the same
+/// place, so deleting it changes nothing (SPEC §7.2).
+fn repeated_fields(project: &Project, issues: &mut Vec<Issue>) {
+    let model = project.model();
+    for ty in &model.types {
+        for field in ty.own.iter().filter(|f| model.frontmatter.contains(f)) {
+            let Some(place) =
+                ascribe_model::own_field_place(project.model_text(), &ty.name, &field.name)
+            else {
+                continue;
+            };
+            let at = Location::new(FileId::new(0), place.key);
+            let mut issue = Issue::new(diagnostics::FRONTMATTER_FIELD_REPEATED, at)
+                .with_arg("type", ty.name.clone())
+                .with_arg("field", field.name.clone());
+            if let Some(line) = place.line {
+                issue = issue.with_fix(Fix {
+                    title: format!("Delete the type's `{}`", field.name),
+                    file: at.file,
+                    edits: vec![TextEdit::delete(line)],
+                    applicability: Applicability::Safe,
+                });
+            }
+            issues.push(issue);
         }
     }
 }

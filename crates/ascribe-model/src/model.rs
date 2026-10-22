@@ -762,8 +762,12 @@ pub struct ContentType {
     /// Whether it's the implicit `page` type of a project that declares no
     /// types, which every page has without naming it.
     pub implicit: bool,
-    /// The frontmatter schema.
+    /// The frontmatter schema: `[frontmatter]`'s fields, with the type's
+    /// own in place of those of their names.
     pub frontmatter: FrontmatterSchema,
+    /// The fields the type's own `frontmatter` declares, as written, in
+    /// declaration order.
+    pub own: Vec<Field>,
     /// What a page of the type is for, in a few words, `purpose`.
     pub purpose: Option<String>,
     /// The page a page of the type starts from, `template`, or the one
@@ -775,6 +779,28 @@ pub struct ContentType {
     /// The `[types.<name>]` key in `ascribe.toml`; empty, at its start, for
     /// the implicit type.
     pub span: Span,
+}
+
+/// Which table declares a page type's field ([`ContentModel::field_source`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FieldSource {
+    /// `[frontmatter]`, which every type shares.
+    Frontmatter,
+    /// The type's own `frontmatter`.
+    Type,
+    /// Neither: the required string `title` every page type has.
+    Implicit,
+}
+
+impl FieldSource {
+    /// Its name in the commands' JSON.
+    pub fn name(self) -> &'static str {
+        match self {
+            FieldSource::Frontmatter => "frontmatter",
+            FieldSource::Type => "type",
+            FieldSource::Implicit => "implicit",
+        }
+    }
 }
 
 /// A file a content type names, its `template` or one of its `guide`, from
@@ -1629,6 +1655,20 @@ impl ContentModel {
             Some(serde_yaml_ng::Value::String(name)) => self.type_named(Some(name)),
             Some(_) => TypeMatch::Unknown,
         }
+    }
+
+    /// Which table declares the field `name` of the page type `ty`: the
+    /// type's own `frontmatter`, `[frontmatter]`, or neither, for the
+    /// implicit `title`. `None` when the type has no such field.
+    pub fn field_source(&self, ty: &ContentType, name: &str) -> Option<FieldSource> {
+        ty.frontmatter.fields.iter().find(|f| f.name == name)?;
+        Some(if ty.own.iter().any(|f| f.name == name) {
+            FieldSource::Type
+        } else if self.frontmatter.iter().any(|f| f.name == name) {
+            FieldSource::Frontmatter
+        } else {
+            FieldSource::Implicit
+        })
     }
 
     /// The content type a page that names `declared` with `type` has, or,

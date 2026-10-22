@@ -1,0 +1,17 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[frontmatter]
+description = "string"
+owner = { type = "string?", description = "The team that keeps the page." }
+
+# Each differs from the shared field in one key, so each replaces it whole,
+# for this type.
+[types.index.frontmatter]
+description = "string?"
+owner = { type = "string?", description = "Who keeps the home page." }
+
+[types.guide.frontmatter]
+description = { type = "string", default = "A guide." }

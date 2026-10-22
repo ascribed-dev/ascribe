@@ -1,19 +1,23 @@
 //! Hover (SPEC §10): what a link or include points at, a phrase's value, a
 //! glossary term's definition (on its heading, with how many pages use it),
 //! the availability a spec resolves to, the rule of `[listing]` a page is
-//! under, and what a directive is.
+//! under, what a directive is, and which table of `ascribe.toml` declares a
+//! frontmatter field, on its key in a page or in `ascribe.toml`.
 
 use ascribe_core::availability::{AvailabilitySpec, Detail, Version, parse_availability};
 use ascribe_core::schema::{
     AttributeSchema, AttributeType, Attributes, Builtin, DefaultValue, DirectiveSchema, Origin,
     Primary, SetMember,
 };
-use ascribe_core::{LineIndex, RelPath};
+use ascribe_core::{LineIndex, RelPath, Span};
 use ascribe_emit::labels::{availability_display, availability_display_of_text};
-use ascribe_model::{ContentModel, ContentType, LineStatus, Placement, TypeFile};
+use ascribe_model::{
+    ContentModel, ContentType, Field, FieldSource, LineStatus, Placement, TypeFile,
+};
 use ascribe_resolve::{DefaultRouter, Resolution, Snapshot, Usable};
 use lsp_types::{Hover, HoverContents, MarkupContent, MarkupKind, Position, Range};
 
+use crate::model_file::ModelFile;
 use crate::nav::{Ctx, Hit, Lines, first_paragraph, hit_at};
 
 /// On an occurrence of a glossary term in prose, the term and its
@@ -76,7 +80,7 @@ fn term_definition(ctx: &Ctx, id: &str) -> String {
         .unwrap_or_else(|| "The editor's build doesn't link this glossary term.".to_owned())
 }
 
-fn markdown_hover(ctx: &Ctx, span: ascribe_core::Span, value: String) -> Option<Hover> {
+fn markdown_hover(ctx: &Ctx, span: Span, value: String) -> Option<Hover> {
     let range = Lines::new(ctx).range(&ctx.path, span)?;
     Some(Hover {
         contents: HoverContents::Markup(MarkupContent {
@@ -124,6 +128,12 @@ fn hover_at(ctx: &Ctx, position: Position) -> Option<Hover> {
     let file = ctx.file()?;
     let index = LineIndex::new(&file.source);
     let offset = ctx.encoding.offset_lenient(&index, &file.source, position);
+    if let Some((name, span)) = crate::nav::frontmatter_key(file, offset)
+        && let Some(ty) = ctx.page_type()
+        && let Some(text) = page_field_markdown(&ctx.model, ty, name)
+    {
+        return markdown_hover(ctx, span, text);
+    }
     let Some(hit) = hit_at(file, offset) else {
         return term_hover(ctx, offset).or_else(|| term_heading_hover(ctx, offset));
     };
@@ -522,6 +532,89 @@ fn listing_markdown(model: &ContentModel, path: &str, type_name: Option<&str>) -
              Its own value says how it's listed, from {values}."
         ),
     }
+}
+
+/// On a frontmatter key of a page of the type `ty`, the field and which
+/// table of `ascribe.toml` declares it. `None` when the type has no field
+/// of that name.
+fn page_field_markdown(model: &ContentModel, ty: &ContentType, name: &str) -> Option<String> {
+    let field = ty.frontmatter.fields.iter().find(|f| f.name == name)?;
+    let declared = match model.field_source(ty, name)? {
+        FieldSource::Frontmatter => {
+            "Declared in `[frontmatter]`, which every page type shares.".to_owned()
+        }
+        FieldSource::Type if ty.implicit => {
+            format!("Declared by the type `{}`.", ty.name)
+        }
+        FieldSource::Type => format!(
+            "Declared by the type `{0}`, its own, in `[types.{0}.frontmatter]`.",
+            ty.name
+        ),
+        FieldSource::Implicit => {
+            "Every page type has it, a required string, though neither `[frontmatter]` nor the page's type declares it.".to_owned()
+        }
+    };
+    Some(format!("{}\n\n{declared}", field_heading(field)))
+}
+
+/// A field's name and type, as a hover's first line.
+fn field_heading(field: &Field) -> String {
+    let required = if field.required { ", required" } else { "" };
+    format!("**`{}`**: {}{required}", field.name, field.ty.describe())
+}
+
+/// On a field's key in `ascribe.toml`'s `[frontmatter]`, or in a type's own
+/// `frontmatter`, which table it is, and what it means for the types: a
+/// shared field says which types replace it, and a type's own says whether
+/// it replaces a shared one. `text` is `ascribe.toml`'s text, and `offset`
+/// is in it.
+pub(crate) fn model_field_markdown(
+    model: &ContentModel,
+    text: &str,
+    offset: usize,
+) -> Option<(Span, String)> {
+    let file = ModelFile::parse(text).ok()?;
+    if let Some((name, span)) = file.key_at(&["frontmatter"], offset) {
+        let field = model.frontmatter.iter().find(|f| f.name == name)?;
+        let replaced: Vec<String> = model
+            .types
+            .iter()
+            .filter(|t| t.own.iter().any(|f| f.name == name))
+            .map(|t| format!("`{}`", t.name))
+            .collect();
+        let mut value = format!(
+            "{}\n\nDeclared in `[frontmatter]`: every page type has it",
+            field_heading(field)
+        );
+        match replaced.as_slice() {
+            [] => value.push('.'),
+            [one] => value.push_str(&format!(
+                ", but the type {one} declares its own, which replaces it."
+            )),
+            many => value.push_str(&format!(
+                ", but the types {} declare their own, which replace it.",
+                many.join(", ")
+            )),
+        }
+        return Some((span, value));
+    }
+    model.types.iter().filter(|t| !t.implicit).find_map(|ty| {
+        let (name, span) = file.key_at(&["types", &ty.name, "frontmatter"], offset)?;
+        let field = ty.own.iter().find(|f| f.name == name)?;
+        let mut value = format!(
+            "{}\n\nDeclared by the type `{}`, its own.",
+            field_heading(field),
+            ty.name
+        );
+        match model.frontmatter.iter().find(|f| f.name == name) {
+            Some(shared) if shared == field => value.push_str(
+                " It's the same as `[frontmatter]`'s, key for key, so it can be deleted: the type has that one without it.",
+            ),
+            Some(_) => value.push_str(" It replaces `[frontmatter]`'s, for this type."),
+            None => {}
+        }
+        Some((span, value))
+    })
 }
 
 /// A content type, on its name in `ascribe.toml`: its purpose, and where its

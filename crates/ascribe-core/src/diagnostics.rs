@@ -743,6 +743,9 @@ pub const TERM_OFF_GLOSSARY_PAGE: DiagnosticSlug = DiagnosticSlug("term-off-glos
 /// `ASC243`, advice, file level: a content check (area `project`).
 pub const BASELINE_ENTRY_UNMATCHED: DiagnosticSlug = DiagnosticSlug("baseline-entry-unmatched");
 
+/// `ASC244`, advice, file level: a content check (area `project`).
+pub const FRONTMATTER_FIELD_REPEATED: DiagnosticSlug = DiagnosticSlug("frontmatter-field-repeated");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -980,6 +983,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     GLOSSARY_DEFINITION_LONG,
     TERM_OFF_GLOSSARY_PAGE,
     BASELINE_ENTRY_UNMATCHED,
+    FRONTMATTER_FIELD_REPEATED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1034,6 +1038,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     NAV_LABEL_LONG,
     GLOSSARY_DEFINITION_LONG,
     BASELINE_ENTRY_UNMATCHED,
+    FRONTMATTER_FIELD_REPEATED,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

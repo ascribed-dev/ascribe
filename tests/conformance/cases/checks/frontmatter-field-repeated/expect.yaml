@@ -1,0 +1,12 @@
+description: >-
+  A type's own field that's the same as `[frontmatter]`'s, key for key, is
+  reported at the type's field, however it's written: the short form and the
+  table form of one declaration are the same field. A field the type has
+  only from `[frontmatter]`, and one of its own that `[frontmatter]` doesn't
+  have, aren't.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-field-repeated, file: ascribe.toml, line: 12}
+  - {slug: frontmatter-field-repeated, file: ascribe.toml, line: 13}

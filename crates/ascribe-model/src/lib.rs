@@ -65,7 +65,7 @@ pub use crawlers::{
     KNOWN_CRAWLERS_FILE, KnownCrawler, crawler_tokens, known_crawlers, parse_known, user_agent,
 };
 pub use examples::{EXAMPLES_FILE, ExamplesConfig, Observation, example_hash};
-pub use fields::field_default_span;
+pub use fields::{FieldPlace, field_default_span, own_field_place};
 pub use inline::{InlineMarkup, Segment};
 pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_hash, short_commit};
 pub use model::*;

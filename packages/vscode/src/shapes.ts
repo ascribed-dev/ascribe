@@ -1225,6 +1225,13 @@ export interface ModelField {
   description: string | null;
   /** An object's fields; empty for any other type. */
   fields: ModelField[];
+  /**
+   * Which table declares a page type's field: `frontmatter` for
+   * `[frontmatter]`, which every type shares, `type` for the type's own
+   * `frontmatter`, or `implicit` for the required string `title` neither
+   * declares. Absent on an object's fields.
+   */
+  declared?: string;
 }
 
 /** A kind of content model entry. */

@@ -776,6 +776,66 @@ pub fn field_default_span(text: &str, ty: &str, field: &str) -> Option<Span> {
     t.get("default").map(sp)
 }
 
+/// Where the content model's text `text` declares the field `field` in the
+/// content type `ty`'s own `frontmatter`, for a check that reports on it.
+/// `None` when the type doesn't declare it, or the text doesn't parse.
+pub fn own_field_place(text: &str, ty: &str, field: &str) -> Option<FieldPlace> {
+    let root = DeTable::parse(text).ok()?;
+    let mut table = root.get_ref();
+    for key in ["types", ty, "frontmatter"] {
+        let DeValue::Table(t) = table.get(key)?.get_ref() else {
+            return None;
+        };
+        table = t;
+    }
+    let (_, key, value) = entries(table).find(|(name, _, _)| *name == field)?;
+    Some(FieldPlace {
+        key,
+        line: entry_lines(text, key, sp(value)),
+    })
+}
+
+/// Where a type's own field is declared in `ascribe.toml`
+/// ([`own_field_place`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct FieldPlace {
+    /// Its key.
+    pub key: Span,
+    /// Its `key = value` line, with the comment lines directly above it,
+    /// when it's written as one under the table's header, which deleting
+    /// takes it away with nothing else: `None` for a field written as a
+    /// table of its own (`[types.<name>.frontmatter.<field>]`), with a
+    /// dotted key, or in an inline table with other entries on its line.
+    pub line: Option<Span>,
+}
+
+/// The lines of the entry whose key is at `key` and value at `value`, from
+/// the comment lines directly above it to the end of the value's line, when
+/// the key starts its line and nothing but a comment follows the value. A
+/// comment with a blank line before the key stays, since it may be about
+/// the lines around it too, as the editor's removal of an entry leaves it.
+fn entry_lines(text: &str, key: Span, value: Span) -> Option<Span> {
+    let line = text.get(..key.start())?.rfind('\n').map_or(0, |i| i + 1);
+    if !text.get(line..key.start())?.trim().is_empty() {
+        return None;
+    }
+    let rest = text.get(value.end()..)?;
+    let end = rest.find('\n').map_or(text.len(), |i| value.end() + i + 1);
+    let after = text.get(value.end()..end)?.trim();
+    if !(after.is_empty() || after.starts_with('#')) {
+        return None;
+    }
+    let mut start = line;
+    while start > 0 {
+        let above = text.get(..start - 1)?.rfind('\n').map_or(0, |i| i + 1);
+        if !text.get(above..start)?.trim_start().starts_with('#') {
+            break;
+        }
+        start = above;
+    }
+    Some(Span::new(start, end))
+}
+
 /// The `default` value node of a table-form entry.
 fn default_value<'a, 'i>(entry: &'a V<'i>, span: Span) -> Option<&'a V<'i>> {
     let DeValue::Table(t) = entry.get_ref() else {

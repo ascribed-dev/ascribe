@@ -731,10 +731,12 @@ impl Core {
         Some(crate::examples::complete_config(text, offset))
     }
 
-    /// What's at `position` of the open `ascribe.toml`, when it's the text
-    /// the project's model loaded from: on a type's name, where its template
-    /// and guide come from (`hover::type_markdown`). `None` for any other
-    /// document.
+    /// What's at `position` of the open `ascribe.toml`: on a type's name,
+    /// where its template and guide come from (`hover::type_markdown`), when
+    /// the file is the text the project's model loaded from; on a frontmatter
+    /// field's key, which table declares it (`hover::model_field_markdown`),
+    /// which finds the key in the text as it is and the field by its name.
+    /// `None` for any other document.
     pub(crate) fn model_hover(
         &self,
         uri: &Uri,
@@ -746,27 +748,32 @@ impl Core {
         }
         let text = &self.docs.get(&path)?.text;
         let loaded = self.loaded.as_ref()?;
-        // The spans are the loaded text's.
-        if loaded.model_text != *text {
-            return None;
-        }
         let index = ascribe_core::LineIndex::new(text);
         let offset = self.encoding.offset_lenient(&index, text, position);
-        let t = loaded
-            .model
-            .types
-            .iter()
-            .find(|t| !t.implicit && t.span.start() <= offset && offset <= t.span.end())?;
-        Some(lsp_types::Hover {
-            contents: lsp_types::HoverContents::Markup(lsp_types::MarkupContent {
-                kind: lsp_types::MarkupKind::Markdown,
-                value: crate::hover::type_markdown(t),
-            }),
-            range: Some(lsp_types::Range {
-                start: self.encoding.position(&index, t.span.start())?,
-                end: self.encoding.position(&index, t.span.end())?,
-            }),
-        })
+        let markdown = |span: ascribe_core::Span, value: String| {
+            Some(lsp_types::Hover {
+                contents: lsp_types::HoverContents::Markup(lsp_types::MarkupContent {
+                    kind: lsp_types::MarkupKind::Markdown,
+                    value,
+                }),
+                range: Some(lsp_types::Range {
+                    start: self.encoding.position(&index, span.start())?,
+                    end: self.encoding.position(&index, span.end())?,
+                }),
+            })
+        };
+        // A type's span is the loaded text's.
+        if loaded.model_text == *text
+            && let Some(t) = loaded
+                .model
+                .types
+                .iter()
+                .find(|t| !t.implicit && t.span.start() <= offset && offset <= t.span.end())
+        {
+            return markdown(t.span, crate::hover::type_markdown(t));
+        }
+        let (span, value) = crate::hover::model_field_markdown(&loaded.model, text, offset)?;
+        markdown(span, value)
     }
 
     /// What can be written at `position` of an open `ascribe.nav`: its keys,

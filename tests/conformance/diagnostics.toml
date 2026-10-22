@@ -4400,3 +4400,18 @@ reference = "content-model/checks.md#19-checks"
 when = "`ascribe.baseline` has an entry that no problem of the project matches any more: the problem was fixed, or the text it was about changed. Reported at the entry's line, when `ascribe check` reads the baseline and checks the whole project for every build"
 message = "ascribe.baseline holds back `{check}` in `{file}`, and nothing there matches it any more; run `ascribe baseline prune`"
 fix = "Run `ascribe baseline prune`, which removes every entry that matches nothing, and commit ascribe.baseline. Left in the file, the entry would hold back a later problem of the same check whose text happens to be the same. See [The baseline](checks/baseline.md)."
+
+[[diagnostic]]
+code = "ASC244"
+slug = "frontmatter-field-repeated"
+severity = "advice"
+level = "file"
+next = "fix"
+evidence = []
+configurable = true
+area = "project"
+spec = "7.2"
+reference = "content-model/index.md#41-page-types"
+when = "A type's own `frontmatter` declares a field exactly as `[frontmatter]` does, key for key, so the type's copy changes nothing. Reported at the type's field"
+message = "the type `{type}` declares `{field}` exactly as `[frontmatter]` does, so this copy changes nothing; delete it, and the type has `[frontmatter]`'s"
+fix = "Delete the type's field, and the type has the one in `[frontmatter]`, which is the same. The fix deletes its line, with the comment lines directly above it, when it's written as `key = value` under the table's header; one written another way is deleted by hand. A type's field that differs from the shared one in any key replaces it whole, for that type, and isn't reported: keep it when the type needs it to differ."

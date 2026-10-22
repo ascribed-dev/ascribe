@@ -12,7 +12,8 @@ use ascribe_core::RelPath;
 use ascribe_model::examples::Status;
 use ascribe_model::settings::{self as registry, Setting, SettingValue};
 use ascribe_model::{
-    AvailabilityMode, ContentModel, Field, FieldType, GlossaryMatch, Listing, Source, VariantMode,
+    AvailabilityMode, ContentModel, Field, FieldSource, FieldType, GlossaryMatch, Listing, Source,
+    VariantMode,
 };
 use ascribe_resolve::navigation::ROOT_LABEL;
 use ascribe_resolve::{
@@ -353,6 +354,12 @@ pub struct ModelField {
     pub description: Option<String>,
     /// An object's fields; empty for any other type.
     pub fields: Vec<ModelField>,
+    /// Which table declares a page type's field: `frontmatter` for
+    /// `[frontmatter]`, which every type shares, `type` for the type's own
+    /// `frontmatter`, or `implicit` for the required string `title` neither
+    /// declares. Absent on an object's fields.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub declared: Option<&'static str>,
 }
 
 /// A dimension.
@@ -763,7 +770,15 @@ fn types(model: &ContentModel) -> Vec<ModelType> {
             purpose: t.purpose.clone(),
             template: t.template.as_ref().map(|f| f.path.clone()),
             guide: t.guide.iter().map(|f| f.path.clone()).collect(),
-            fields: t.frontmatter.fields.iter().map(field).collect(),
+            fields: t
+                .frontmatter
+                .fields
+                .iter()
+                .map(|f| ModelField {
+                    declared: model.field_source(t, &f.name).map(FieldSource::name),
+                    ..field(f)
+                })
+                .collect(),
         })
         .collect()
 }
@@ -787,6 +802,7 @@ fn field(f: &Field) -> ModelField {
             FieldType::Object(fields) => fields.iter().map(field).collect(),
             _ => Vec::new(),
         },
+        declared: None,
     }
 }
 
@@ -1014,7 +1030,7 @@ pub(crate) fn type_entries(
             if t.purpose.is_none() {
                 t.purpose = summaries.get(&t.name).cloned();
             }
-            type_line(&t)
+            type_line(&t, false)
         })
         .collect()
 }
@@ -1045,7 +1061,12 @@ fn render(sections: &[(Section, Vec<String>)], taken: &[usize]) -> String {
 fn lines(report: &ModelReport, section: Section) -> Vec<String> {
     let code = |s: &str| format!("`{s}`");
     match section {
-        Section::Types => report.types.iter().flatten().map(type_line).collect(),
+        Section::Types => report
+            .types
+            .iter()
+            .flatten()
+            .map(|t| type_line(t, true))
+            .collect(),
         Section::Dimensions => report
             .dimensions
             .iter()
@@ -1238,7 +1259,10 @@ fn markdown_text(text: &str) -> String {
     out
 }
 
-fn type_line(t: &ModelType) -> String {
+/// A page type's line. With `sources`, each field says which table
+/// declares it, when they aren't all the type's own: `[frontmatter]`'s, the
+/// type's own, or the implicit `title`.
+fn type_line(t: &ModelType, sources: bool) -> String {
     let mut text = format!("`{}`", t.name);
     let mut notes = Vec::new();
     if let Some(template) = &t.template {
@@ -1256,7 +1280,14 @@ fn type_line(t: &ModelType) -> String {
         .iter()
         .map(|f| {
             let required = if f.required { ", required" } else { "" };
-            format!("`{}` ({}{required})", f.name, f.field_type)
+            let declared = match f.declared {
+                _ if !sources || t.fields.iter().all(|f| f.declared == Some("type")) => "",
+                Some("frontmatter") => ", from `[frontmatter]`",
+                Some("type") => ", own",
+                Some("implicit") => ", implicit",
+                _ => "",
+            };
+            format!("`{}` ({}{required}{declared})", f.name, f.field_type)
         })
         .collect();
     if fields.is_empty() {
