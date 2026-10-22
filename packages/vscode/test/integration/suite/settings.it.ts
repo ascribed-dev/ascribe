@@ -203,7 +203,8 @@ describe("Project Settings on examples/quill", () => {
     assert.ok(document, "ascribe.toml isn't open");
     assert.equal(
       document.getText(),
-      onDisk.replace('base-path = "/"\n', 'base-path = "/"\nhtml = false\n'),
+      // At the end of [consumer], after its last key.
+      onDisk.replace("agents = false\n", "agents = false\nhtml = false\n"),
     );
     await settings.reset(HTML);
     await settings.whenDrawn("html, its default", (d) => !shown(d, HTML).resettable);
