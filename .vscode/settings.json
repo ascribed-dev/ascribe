@@ -1,8 +1,19 @@
 {
-  // The test fixtures' ascribe.toml files aren't projects to work on: leaving
-  // them out keeps Switch Project to the docs, the site, and the examples,
-  // and under the extension's cap of 50 projects.
-  "ascribe.projects.exclude": ["tests/**", "crates/*/tests/**", "packages/vscode/test/**"],
+  // Only the docs and the site's pages are projects to work on here, so each
+  // other ascribe.toml gets no language server and isn't in Switch Project:
+  // the test fixtures; target/, where `cargo test` writes projects
+  // (CARGO_TARGET_TMPDIR), each of which would start a server when a test
+  // run rewrites it; and the examples and site/demo, which the docs read as
+  // code, not as projects. To work on an example with the editor's help,
+  // take its pattern out while you do.
+  "ascribe.projects.exclude": [
+    "tests/**",
+    "crates/*/tests/**",
+    "packages/vscode/test/**",
+    "target/**",
+    "examples/**",
+    "site/demo/**"
+  ],
   "[markdown]": {
     "editor.defaultFormatter": "Ascribe.ascribe-vscode"
   }
