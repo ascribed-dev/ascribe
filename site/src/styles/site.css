@@ -42,6 +42,8 @@
   --wide-measure: 52rem;
   /* The landing page's own: its sections are wider still, for a column beside the text. */
   --home-measure: 72rem;
+  /* The gap between the gutter's change marks, in a split bar: a pillar's, a note's. */
+  --split-gap: 6px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -490,6 +492,28 @@ pre {
 .page img {
   max-width: 100%;
   height: auto;
+}
+
+/*
+ * A note, of every type: its bar is the gutter's split bar, two change marks
+ * in the note's color with the page showing between them, the site's own
+ * (the website plan's decision 9). The element library's border stays, made
+ * transparent, so the note keeps its size; the marks are drawn under it, and
+ * the note's tint is drawn inside it. `body` puts this after the library's
+ * rule, whichever stylesheet loads first.
+ */
+body ascribe-note {
+  border-inline-start-color: transparent;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  background:
+    linear-gradient(var(--_background) 0 0) padding-box,
+    linear-gradient(
+        var(--_color) 0 calc(50% - var(--split-gap) / 2),
+        transparent 0 calc(50% + var(--split-gap) / 2),
+        var(--_color) 0
+      )
+      border-box;
 }
 
 /* A page outside the docs: its hero, then text at the page's measure. */
@@ -1099,9 +1123,9 @@ hero-banner call-to-action > pre code::before {
   height: 2.2rem;
   margin-top: 0.25rem;
   background: linear-gradient(
-    var(--mark-gutter) 0 calc(50% - 3px),
-    transparent calc(50% - 3px) calc(50% + 3px),
-    var(--mark-gutter) calc(50% + 3px)
+    var(--mark-gutter) 0 calc(50% - var(--split-gap) / 2),
+    transparent calc(50% - var(--split-gap) / 2) calc(50% + var(--split-gap) / 2),
+    var(--mark-gutter) calc(50% + var(--split-gap) / 2)
   );
   content: "";
 }
