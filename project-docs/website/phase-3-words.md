@@ -5,7 +5,7 @@ Part of [The website, and the brand on everything else](README.md). Needs phase 
 ## Goal
 
 - **One home for the sentence and the headline.** Every other surface that says what Ascribe is either takes them from it or is tested against it.
-- **Bryo Studio as the maker** everywhere a maker is named, except the Marketplace publisher, which stays `Ascribe` (decision 13).
+- **Bryo Studio as the maker** everywhere a maker is named, except the Marketplace publisher, which stays `Ascribe` (decision 14).
 
 ## Context
 
@@ -53,7 +53,7 @@ A test compares each surface with the home. Where a file can be generated from i
 ### The maker
 
 - **The plugin's `author` and `owner`** become Bryo Studio, `https://bryostudio.com`, in `plugin.rs`, and the generated manifests are rewritten.
-- **The VS Code publisher stays `Ascribe`,** and the extension's id stays `Ascribe.ascribe-vscode` (decision 13).
+- **The VS Code publisher stays `Ascribe`,** and the extension's id stays `Ascribe.ascribe-vscode` (decision 14).
 - **`project-docs/outside.md`** records the GitHub repository's description and topics, set by hand from the home.
 
 ### The record
