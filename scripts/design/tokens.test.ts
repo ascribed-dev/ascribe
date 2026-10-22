@@ -229,6 +229,16 @@ describe("the shared colors", () => {
   });
 });
 
+test(`${CHOSEN}'s font stacks are design/tokens.toml's`, () => {
+  const tokens = source();
+  const { font } = readCandidate("chosen", read(CHOSEN));
+  expect(font).toEqual({
+    ui: tokens.values.get("font.ui"),
+    mono: tokens.values.get("font.mono"),
+    heading: tokens.values.get("font.heading"),
+  });
+});
+
 // The public custom properties: a site themes the elements and review's marks
 // with these names, so none is renamed or removed (decision 44 in
 // project-docs/decisions.md). Their default values may change.

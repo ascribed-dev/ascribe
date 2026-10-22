@@ -7,16 +7,18 @@
 
 :root {
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: frame, light. */
-  --r-page: #ffffff;
-  --r-ink: #22272e;
-  --r-muted: #676c75;
-  --r-side: #f7f9fd;
-  --r-line: #e3e6ec;
-  --r-accent: #5962e8;
+  --r-page: #f2f7f9;
+  --r-ink: #0b1824;
+  --r-muted: #47606f;
+  --r-side: #ffffff;
+  --r-line: #ccdce4;
+  --r-accent: #0b6f8e;
+  --r-focus: #b4530f;
   --r-accent-ink: #ffffff;
-  --r-code: #f7f9fd;
-  --r-notice: #fef5eb;
+  --r-code: #e6eef2;
+  --r-notice: #fdf1d8;
   --r-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r-heading: ui-serif, Charter, "Bitstream Charter", Cambria, Georgia, serif;
   --r-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --r-caption: 600 0.75rem/1.4;
   --r-small: 400 0.875rem/1.5;
@@ -29,49 +31,50 @@
 @media (prefers-color-scheme: dark) {
   :root {
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: frame, dark. */
-    --r-page: #0c0f16;
-    --r-ink: #f0f3f7;
-    --r-muted: #a5a9b2;
-    --r-side: #13171f;
-    --r-line: #393d46;
-    --r-accent: #91a1fe;
-    --r-accent-ink: #0c0f16;
-    --r-code: #13171f;
-    --r-notice: #2b1a03;
+    --r-page: #0b1824;
+    --r-ink: #e3f1f7;
+    --r-muted: #8aa6b8;
+    --r-side: #112233;
+    --r-line: #263a4b;
+    --r-accent: #56d0f0;
+    --r-focus: #f0a35e;
+    --r-accent-ink: #0b1824;
+    --r-code: #07111b;
+    --r-notice: #32240a;
     /* End of generated frame. */
 
     /* The element library's colors, for a dark page. */
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: elements, dark. */
-    --ascribe-border-color: #393d46;
-    --ascribe-muted-color: #a5a9b2;
-    --ascribe-note-color: #91a1fe;
-    --ascribe-note-background: #161b3a;
-    --ascribe-tip-color: #22c598;
-    --ascribe-tip-background: #02251a;
-    --ascribe-important-color: #ffc8f9;
-    --ascribe-important-background: #2d132b;
-    --ascribe-warning-color: #e0992e;
-    --ascribe-warning-background: #2b1a03;
-    --ascribe-caution-color: #fe7f57;
-    --ascribe-caution-background: #341308;
-    --ascribe-steps-color: #91a1fe;
-    --ascribe-steps-marker-text-color: #0c0f16;
-    --ascribe-tab-color: #a5a9b2;
-    --ascribe-tab-active-color: #91a1fe;
-    --ascribe-tab-focus-color: #b3c0ff;
-    --ascribe-tab-hover-background: #13171f;
-    --ascribe-state-color: #a5a9b2;
-    --ascribe-state-background: #22272e;
-    --ascribe-state-ga-color: #22c598;
-    --ascribe-state-ga-background: #02251a;
-    --ascribe-state-preview-color: #ffc8f9;
-    --ascribe-state-preview-background: #2d132b;
-    --ascribe-state-beta-color: #91a1fe;
-    --ascribe-state-beta-background: #161b3a;
-    --ascribe-state-deprecated-color: #e0992e;
-    --ascribe-state-deprecated-background: #2b1a03;
-    --ascribe-state-removed-color: #fe7f57;
-    --ascribe-state-removed-background: #341308;
+    --ascribe-border-color: #263a4b;
+    --ascribe-muted-color: #8aa6b8;
+    --ascribe-note-color: #56d0f0;
+    --ascribe-note-background: #0b2f40;
+    --ascribe-tip-color: #9fdc7c;
+    --ascribe-tip-background: #1a321b;
+    --ascribe-important-color: #b180d4;
+    --ascribe-important-background: #2f1e3a;
+    --ascribe-warning-color: #b38c15;
+    --ascribe-warning-background: #32240a;
+    --ascribe-caution-color: #ed7477;
+    --ascribe-caution-background: #3d1a1b;
+    --ascribe-steps-color: #56d0f0;
+    --ascribe-steps-marker-text-color: #0b1824;
+    --ascribe-tab-color: #8aa6b8;
+    --ascribe-tab-active-color: #56d0f0;
+    --ascribe-tab-focus-color: #f0a35e;
+    --ascribe-tab-hover-background: #1f303e;
+    --ascribe-state-color: #8aa6b8;
+    --ascribe-state-background: #1f303e;
+    --ascribe-state-ga-color: #9fdc7c;
+    --ascribe-state-ga-background: #1a321b;
+    --ascribe-state-preview-color: #b180d4;
+    --ascribe-state-preview-background: #2f1e3a;
+    --ascribe-state-beta-color: #56d0f0;
+    --ascribe-state-beta-background: #0b2f40;
+    --ascribe-state-deprecated-color: #b38c15;
+    --ascribe-state-deprecated-background: #32240a;
+    --ascribe-state-removed-color: #ed7477;
+    --ascribe-state-removed-background: #3d1a1b;
     /* End of generated elements. */
   }
 }
@@ -201,7 +204,7 @@ body {
 .r-pages a:focus-visible,
 .r button:focus-visible,
 .r select:focus-visible {
-  outline: 2px solid var(--r-accent);
+  outline: 2px solid var(--r-focus);
   outline-offset: 1px;
 }
 
@@ -372,7 +375,7 @@ body {
 
 /* The page: Ascribe's bare render, in a readable measure. */
 .r-page-heading {
-  font: var(--r-h1) var(--r-ui);
+  font: var(--r-h1) var(--r-heading);
   margin: 8px 0 12px;
 }
 
@@ -381,6 +384,11 @@ body {
   max-width: 46rem;
   padding-left: 12px;
   font: var(--r-body) var(--r-ui);
+}
+
+/* The page's own headings, in the serif the site sets them in. */
+.r-page :is(h1, h2, h3, h4) {
+  font-family: var(--r-heading);
 }
 
 .r-page img {
