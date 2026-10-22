@@ -7,6 +7,7 @@ use ascribe_core::{
     diagnostics,
 };
 use ascribe_model::AvailabilityProblem;
+use ascribe_syntax::{Block, BlockKind, PrimaryValue, bound_block, bound_heading};
 
 use super::Ctx;
 use super::attrs::Owner;
@@ -24,18 +25,104 @@ impl Ctx<'_> {
             description: None,
         }];
         self.check_block(block, &declared, Owner::Row);
+        let removal = self.nested_removal(block.span, block.span.start(), self.row_removal(block));
         match block.get("available").and_then(|a| a.value.as_ref()) {
             Some(AttributeValue::Token(t)) => {
-                self.check_availability_text(&t.text, t.span.start(), t.span, true);
+                self.check_availability_text(&t.text, t.span.start(), t.span, true, removal);
             }
             Some(AttributeValue::Quoted { text, span }) => {
                 // Escapes inside the quotes move the spec off its source.
                 let precise = text.len() + 2 == span.len();
-                self.check_availability_text(text, span.start() + 1, *span, precise);
+                let removal = removal.filter(|_| precise);
+                self.check_availability_text(text, span.start() + 1, *span, precise, removal);
             }
             // A value set is the wrong type, which `check_block` reported.
             Some(AttributeValue::Set { .. }) | None => {}
         }
+    }
+
+    /// Records where each mark in `blocks` that says something applies, as
+    /// [`crate::releases::reads_as_unmarked`] tells: the section of the
+    /// heading an `@available` line binds, or the block it binds. A mark
+    /// inside one of them can't go, since its content would read as that
+    /// mark instead.
+    pub(super) fn collect_mark_scopes(&mut self, blocks: &[Block]) {
+        for (i, block) in blocks.iter().enumerate() {
+            match &block.kind {
+                BlockKind::Directive(d) if d.name == "available" => {
+                    let Some(PrimaryValue::Line(p)) = &d.primary else {
+                        continue;
+                    };
+                    if self.reads_as_unmarked(&p.text, p.span.start()) {
+                        continue;
+                    }
+                    let scope = if let Some(h) = bound_heading(blocks, i) {
+                        Some(section(blocks, h))
+                    } else {
+                        bound_block(blocks, i).map(|k| blocks[k].span)
+                    };
+                    if let Some(scope) = scope {
+                        self.mark_scopes.push((d.span, scope));
+                    }
+                }
+                BlockKind::BlockQuote(q) => self.collect_mark_scopes(&q.children),
+                BlockKind::List(l) => {
+                    for item in &l.items {
+                        self.collect_mark_scopes(&item.children);
+                    }
+                }
+                BlockKind::Container(c) => self.collect_mark_scopes(&c.children),
+                BlockKind::Group(g) => {
+                    for arm in &g.arms {
+                        self.collect_mark_scopes(&arm.children);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    /// Whether the spec `text`, at `offset`, reads as no mark at every live
+    /// line. One that doesn't parse says something, to be safe.
+    pub(super) fn reads_as_unmarked(&self, text: &str, offset: usize) -> bool {
+        parse_availability(text, offset).is_ok_and(|spec| {
+            let spec = self.model.resolve_planned(&spec).spec;
+            crate::releases::reads_as_unmarked(self.model, &spec)
+        })
+    }
+
+    /// `removal` for the mark `mark`, which applies from `at`, when the
+    /// mark may go: the file isn't a fragment, whose content reads as the
+    /// scope it's included in, and no other mark that says something
+    /// applies at `at`.
+    pub(super) fn nested_removal(
+        &self,
+        mark: Span,
+        at: usize,
+        removal: Option<Span>,
+    ) -> Option<Span> {
+        let inside = self
+            .mark_scopes
+            .iter()
+            .any(|(other, scope)| *other != mark && scope.start() <= at && at < scope.end());
+        removal.filter(|_| !inside && !self.model.is_fragment(self.file.path.as_str()))
+    }
+
+    /// What removing a row's attribute block deletes: the block and the
+    /// space before it, keeping one after the `|` when the block is alone
+    /// in its cell. `None` when the block holds more than `available`.
+    fn row_removal(&self, block: &AttributeBlock) -> Option<Span> {
+        if block.attributes.len() != 1 {
+            return None;
+        }
+        let before = self.source().get(..block.span.start())?;
+        let text = before.trim_end_matches([' ', '\t']);
+        let start = if text.ends_with('|') {
+            (text.len() + 1).min(block.span.start())
+        } else {
+            text.len()
+        };
+        Some(Span::new(start, block.span.end()))
     }
 
     /// Parses a spec and checks it against the content model: syntax,
@@ -45,13 +132,15 @@ impl Ctx<'_> {
     ///
     /// `offset` is where `text` starts in the file. When `precise` is false
     /// the offset can't be trusted (a multi-line or escaped YAML scalar), so
-    /// everything is reported at `whole`.
+    /// everything is reported at `whole`. `removal` is what removing the
+    /// whole mark deletes, when that's known.
     pub(super) fn check_availability_text(
         &mut self,
         text: &str,
         offset: usize,
         whole: Span,
         precise: bool,
+        removal: Option<Span>,
     ) {
         let at = |span: Span| Location::new(self.id, if precise { span } else { whole });
         let spec = match parse_availability(text, offset) {
@@ -133,10 +222,28 @@ impl Ctx<'_> {
             issues = crate::releases::placement_issues(self.model, &spec.entries, &at, precise);
         }
         if issues.is_empty() {
-            issues = crate::releases::inert_issues(self.model, &spec, &at, precise);
+            issues = crate::releases::inert_issues(self.model, &spec, &at, precise, removal);
         }
         for issue in issues {
             self.report(issue);
         }
     }
+}
+
+/// The section of the heading `blocks[heading]`: from it up to the next
+/// heading of its level or a higher one, or the end of `blocks`.
+fn section(blocks: &[Block], heading: usize) -> Span {
+    let level = match &blocks[heading].kind {
+        BlockKind::Heading(h) => h.level,
+        _ => 0,
+    };
+    let start = blocks[heading].span.start();
+    let end = blocks[heading + 1..]
+        .iter()
+        .find(|b| matches!(&b.kind, BlockKind::Heading(h) if h.level <= level))
+        .map_or_else(
+            || blocks.last().map_or(start, |b| b.span.end()),
+            |b| b.span.start(),
+        );
+    Span::new(start, end)
 }

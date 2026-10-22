@@ -17,6 +17,8 @@ mod file_system;
 mod identity;
 #[path = "all/ids.rs"]
 mod ids;
+#[path = "all/inert_marks.rs"]
+mod inert_marks;
 #[path = "all/link_cache.rs"]
 mod link_cache;
 #[path = "all/link_retry.rs"]

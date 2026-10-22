@@ -100,11 +100,19 @@ pub(crate) fn placement_issue(
 /// The issues for each entry of `spec` that no output shows the version of,
 /// or that no output has at all. `at` gives where an entry is reported; a
 /// fix is offered only when `fixes` says the entry's span is its own.
+///
+/// `removal` is what removing the whole mark deletes, for a mark on a page
+/// that may go: an `@available` line, the `available` key, or a row's
+/// `{available=…}`. It's `None` for a feature's spec, which marks name by
+/// its key, for a mark whose place isn't known, and for one that a mark
+/// around it, which its content would read as instead, says something in.
+/// A mark that would say nothing is removed with it, and rewritten without.
 pub(crate) fn inert_issues(
     model: &ContentModel,
     spec: &AvailabilitySpec,
     at: &dyn Fn(Span) -> Location,
     fixes: bool,
+    removal: Option<Span>,
 ) -> Vec<Issue> {
     let same = !model
         .checks
@@ -160,30 +168,81 @@ pub(crate) fn inert_issues(
             && let Some(simpler) = simpler
             && model.state_is_available(last) == Some(true)
         {
-            let simpler = entry_text(&simpler);
-            let mut issue = issue(diagnostics::AVAILABLE_SAME_IN_EVERY_LINE)
-                .with_arg("simpler", simpler.clone());
-            if badge {
-                issue = issue.with_variant("badge");
-            }
-            if fixes {
-                issue = issue.with_fix(Fix {
-                    title: format!("Write `{simpler}`"),
-                    file: location.file,
-                    edits: vec![TextEdit::replace(entry.span, simpler)],
-                    // Where no output shows the version, none changes; a
-                    // badge that shows it goes, which changes the page.
-                    applicability: if badge {
-                        Applicability::Unsafe
-                    } else {
-                        Applicability::Safe
-                    },
-                });
+            // Where no output shows the version, none changes; a badge that
+            // shows it goes, which changes the page.
+            let applicability = if badge {
+                Applicability::Unsafe
+            } else {
+                Applicability::Safe
+            };
+            let removal = removal.filter(|_| says_nothing(model, spec, &simpler));
+            let mut issue = issue(diagnostics::AVAILABLE_SAME_IN_EVERY_LINE);
+            if let Some(span) = removal {
+                issue = issue.with_variant(if badge { "badge-remove" } else { "remove" });
+                if fixes {
+                    issue = issue.with_fix(Fix {
+                        title: "Remove the mark".to_owned(),
+                        file: location.file,
+                        edits: vec![TextEdit::delete(span)],
+                        applicability,
+                    });
+                }
+            } else {
+                let simpler = entry_text(&simpler);
+                issue = issue.with_arg("simpler", simpler.clone());
+                if badge {
+                    issue = issue.with_variant("badge");
+                }
+                if fixes {
+                    issue = issue.with_fix(Fix {
+                        title: format!("Write `{simpler}`"),
+                        file: location.file,
+                        edits: vec![TextEdit::replace(entry.span, simpler)],
+                        applicability,
+                    });
+                }
             }
             out.push(issue);
         }
     }
     out
+}
+
+/// Whether a mark whose one entry would be written `simpler` says nothing
+/// once its versions go: `simpler` is its target alone, generally
+/// available, the target is the only value of its dimension, and no build
+/// filters for another target, which a mark of this one keeps the content
+/// out of and no mark lets in. A page with no mark applies everywhere, and
+/// here that's the one target.
+fn says_nothing(model: &ContentModel, spec: &AvailabilitySpec, simpler: &Entry) -> bool {
+    let target = simpler.target.text.as_str();
+    spec.entries.len() == 1
+        && simpler.detail == Detail::None
+        && model
+            .dimension_of_value(target)
+            .is_some_and(|d| d.values.len() == 1)
+        && !model.builds.iter().any(|build| {
+            matches!(&build.availability, AvailabilityMode::Filter { target: t, .. } if t != target)
+        })
+}
+
+/// Whether content marked `spec` reads, at every live line, as content
+/// with no mark does: `spec` without what it says at or before its
+/// target's oldest live line is a mark that says nothing, as
+/// [`says_nothing`] tells. A mark inside one that does can go, since its
+/// content then reads as that one's.
+pub(crate) fn reads_as_unmarked(model: &ContentModel, spec: &AvailabilitySpec) -> bool {
+    let [entry] = spec.entries.as_slice() else {
+        return false;
+    };
+    let target = entry.target.text.as_str();
+    let simpler = model
+        .releases_of(target)
+        .and_then(Releases::oldest_live)
+        .and_then(|oldest| without_versions_through(spec, target, oldest))
+        .and_then(|spec| spec.entries.into_iter().next())
+        .unwrap_or_else(|| entry.clone());
+    says_nothing(model, spec, &simpler)
 }
 
 /// How the builds show a mark about one target, in order: the last one any
@@ -278,6 +337,11 @@ mod tests {
 
     use super::*;
 
+    /// A mark that may go.
+    fn mark() -> Option<Span> {
+        Some(Span::new(0, 0))
+    }
+
     const MODEL: &str = "spec = \"0.1\"\n\
         [dimensions.deployment]\nvalues = [\"cloud\", \"self-managed\"]\nversionless = [\"cloud\"]\n\
         [releases.self-managed]\nlive = [\"3.4\", \"3.5\"]\n\
@@ -294,7 +358,7 @@ mod tests {
             ("self-managed (preview 3.1, ga 3.3)", "self-managed"),
         ] {
             let spec = parse_availability(text, 0).expect("a spec");
-            let issues = inert_issues(&model, &spec, &at, true);
+            let issues = inert_issues(&model, &spec, &at, true, mark());
             assert_eq!(issues.len(), 1, "{text}");
             let fix = &issues[0].fixes[0];
             assert_eq!(fix.applicability, Applicability::Safe);
@@ -302,7 +366,11 @@ mod tests {
         }
         for text in ["self-managed 3.4", "self-managed preview 3.4"] {
             let spec = parse_availability(text, 0).expect("a spec");
-            assert_eq!(inert_issues(&model, &spec, &at, true).len(), 1, "{text}");
+            assert_eq!(
+                inert_issues(&model, &spec, &at, true, mark()).len(),
+                1,
+                "{text}"
+            );
         }
     }
 
@@ -319,7 +387,10 @@ mod tests {
             "self-managed 3.5",
         ] {
             let spec = parse_availability(text, 0).expect("a spec");
-            assert!(inert_issues(&model, &spec, &at, true).is_empty(), "{text}");
+            assert!(
+                inert_issues(&model, &spec, &at, true, mark()).is_empty(),
+                "{text}"
+            );
         }
     }
 
@@ -335,7 +406,7 @@ mod tests {
         let model = ascribe_model::load_str(&model, FileId::new(0)).expect("the model loads");
         let at = |span: Span| Location::new(FileId::new(1), span);
         let spec = parse_availability("self-managed 3.1", 0).expect("a spec");
-        let issues = inert_issues(&model, &spec, &at, true);
+        let issues = inert_issues(&model, &spec, &at, true, mark());
         assert_eq!(issues.len(), 1);
         assert_eq!(issues[0].variant, Some("badge"));
         assert_eq!(issues[0].fixes[0].applicability, Applicability::Unsafe);
@@ -346,7 +417,10 @@ mod tests {
             "self-managed (ga 3.0, removed 3.2)",
         ] {
             let spec = parse_availability(text, 0).expect("a spec");
-            assert!(inert_issues(&model, &spec, &at, true).is_empty(), "{text}");
+            assert!(
+                inert_issues(&model, &spec, &at, true, mark()).is_empty(),
+                "{text}"
+            );
         }
     }
 
@@ -356,8 +430,70 @@ mod tests {
         let model = ascribe_model::load_str(MODEL, FileId::new(0)).expect("the model loads");
         let at = |span: Span| Location::new(FileId::new(1), span);
         let spec = parse_availability("self-managed 3.1", 0).expect("a spec");
-        let issues = inert_issues(&model, &spec, &at, true);
+        let issues = inert_issues(&model, &spec, &at, true, mark());
         assert_eq!(issues.len(), 1);
         assert_eq!(issues[0].variant, None);
+    }
+
+    /// A project with one release target, the only value of the implicit
+    /// `release` dimension, in a badge build.
+    const ONE: &str = "spec = \"0.1\"\n\
+        [releases.ascribe]\nlive = [\"0.4.2\"]\n\
+        [builds.site]\navailability = \"badge\"\n";
+
+    /// A mark that would be its target alone, the only value of its
+    /// dimension, is removed, with the message that says so; one that may
+    /// not go, as a feature's spec, which marks name, is rewritten.
+    #[test]
+    fn a_mark_of_the_only_target_is_removed() {
+        let model = ascribe_model::load_str(ONE, FileId::new(0)).expect("the model loads");
+        let at = |span: Span| Location::new(FileId::new(1), span);
+        let spec = parse_availability("ascribe 0.4.0", 0).expect("a spec");
+        let removal = Span::new(3, 9);
+        let issues = inert_issues(&model, &spec, &at, true, Some(removal));
+        assert_eq!(issues.len(), 1);
+        assert_eq!(issues[0].variant, Some("badge-remove"));
+        let fix = &issues[0].fixes[0];
+        assert_eq!(fix.title, "Remove the mark");
+        assert_eq!(fix.edits, [TextEdit::delete(removal)]);
+        assert_eq!(fix.applicability, Applicability::Unsafe);
+        let issues = inert_issues(&model, &spec, &at, true, None);
+        assert_eq!(issues[0].variant, Some("badge"));
+        assert_eq!(issues[0].fixes[0].title, "Write `ascribe`");
+    }
+
+    /// A mark that keeps a state other than `ga`, or that a build filtered
+    /// for another target keeps content out of, is rewritten as before.
+    #[test]
+    fn a_mark_that_still_says_something_is_rewritten() {
+        let model = ascribe_model::load_str(ONE, FileId::new(0)).expect("the model loads");
+        let at = |span: Span| Location::new(FileId::new(1), span);
+        let spec = parse_availability("ascribe preview 0.4.0", 0).expect("a spec");
+        let issues = inert_issues(&model, &spec, &at, true, mark());
+        assert_eq!(issues[0].variant, Some("badge"));
+        assert_eq!(issues[0].fixes[0].title, "Write `ascribe preview`");
+
+        let filtered = ONE.replace(
+            "[builds.site]",
+            "[dimensions.product]\nvalues = [\"quill\"]\nversionless = [\"quill\"]\n\
+             [builds.quill]\navailability = { filter = \"quill\" }\n[builds.site]",
+        );
+        let model = ascribe_model::load_str(&filtered, FileId::new(0)).expect("the model loads");
+        let spec = parse_availability("ascribe 0.4.0", 0).expect("a spec");
+        let issues = inert_issues(&model, &spec, &at, true, mark());
+        assert_eq!(issues[0].variant, Some("badge"));
+        assert_eq!(issues[0].fixes[0].title, "Write `ascribe`");
+    }
+
+    /// With no output showing the versions, the removal is safe.
+    #[test]
+    fn a_mark_no_output_shows_is_removed_safely() {
+        let model = ONE.replace("availability = \"badge\"", "versions = \"ascribe\"");
+        let model = ascribe_model::load_str(&model, FileId::new(0)).expect("the model loads");
+        let at = |span: Span| Location::new(FileId::new(1), span);
+        let spec = parse_availability("ascribe 0.4.0", 0).expect("a spec");
+        let issues = inert_issues(&model, &spec, &at, true, mark());
+        assert_eq!(issues[0].variant, Some("remove"));
+        assert_eq!(issues[0].fixes[0].applicability, Applicability::Safe);
     }
 }
