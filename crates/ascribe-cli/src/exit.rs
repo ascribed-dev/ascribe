@@ -41,7 +41,7 @@ mod tests {
     use std::path::PathBuf;
 
     use ascribe_check::prose::EjectError;
-    use ascribe_check::{LoadError, LocateError, ScopeError, UnknownBuild};
+    use ascribe_check::{BaselineError, LoadError, LocateError, ScopeError, UnknownBuild};
     use ascribe_core::Coded;
     use ascribe_diff::DiffError;
     use ascribe_emit::{EmitError, StoreError};
@@ -53,6 +53,7 @@ mod tests {
 
     use crate::agents::markers::Damage;
     use crate::agents::sync::SyncError;
+    use crate::commands::baseline::BaselineCommandError;
     use crate::commands::check::CheckError;
     use crate::commands::fmt::FmtError;
     use crate::commands::permalinks::PermalinksError;
@@ -91,6 +92,11 @@ mod tests {
             "vale_not_set_up",
             "--vale, and ascribe.toml has no [checks.vale]",
         ),
+        (
+            "baseline_invalid",
+            "a line of ascribe.baseline doesn't parse",
+        ),
+        ("baseline_unwritable", "ascribe.baseline can't be written"),
         (
             "fix_unwritable",
             "a file check --fix fixed can't be written",
@@ -453,7 +459,8 @@ mod tests {
                 | CheckError::Stdin(_)
                 | CheckError::NoVale
                 | CheckError::Fix(_)
-                | CheckError::Code(_) => {}
+                | CheckError::Code(_)
+                | CheckError::Baseline(_) => {}
             }
         }
         fn report(e: &ReportError) {
@@ -503,6 +510,11 @@ mod tests {
                 | SyncError::Read { .. }
                 | SyncError::Settings { .. }
                 | SyncError::Write { .. } => {}
+            }
+        }
+        fn baseline(e: &BaselineCommandError) {
+            match e {
+                BaselineCommandError::Unwritable(_) => {}
             }
         }
         fn permalinks(e: &PermalinksError) {
@@ -610,6 +622,7 @@ mod tests {
             serve,
             query,
             agents,
+            baseline,
             permalinks,
             rename,
             rename_command,
@@ -758,6 +771,11 @@ mod tests {
                 given: text(),
                 closest: Vec::new(),
             })),
+            Box::new(CheckError::Baseline(BaselineError {
+                line: 1,
+                message: text(),
+            })),
+            Box::new(BaselineCommandError::Unwritable(text())),
             Box::new(ReportError::PromptSection),
             Box::new(EjectError::NoPreset { config: None }),
             Box::new(EjectError::Exists { path: text() }),

@@ -231,6 +231,16 @@ pub fn acknowledged(count: usize) -> String {
     }
 }
 
+/// What a summary line adds for the problems the baseline holds back:
+/// `, 3 in the baseline`, or nothing when there are none.
+pub fn baselined(count: usize) -> String {
+    if count == 0 {
+        String::new()
+    } else {
+        format!(", {count} in the baseline")
+    }
+}
+
 /// Writes one diagnostic with its snippet, from the report's source cache.
 fn write_diagnostic(
     out: &mut dyn Write,

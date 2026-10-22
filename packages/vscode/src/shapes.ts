@@ -2426,6 +2426,12 @@ export interface Summary {
    * are none.
    */
   acknowledged?: number;
+  /**
+   * How many problems `ascribe.baseline` holds back, which `diagnostics`
+   * leaves out and which are advice. Left out when there are none, and by
+   * `ascribe build`, which doesn't read the baseline.
+   */
+  baselined?: number;
   /** With `--summary`: how many diagnostics have each code, most first. */
   by_code?: CodeCount[];
   /** With `--summary`: how many diagnostics are in each file, most first. */

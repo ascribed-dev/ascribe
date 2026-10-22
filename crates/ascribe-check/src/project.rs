@@ -18,6 +18,7 @@ use ascribe_resolve::{
 };
 
 use crate::Diagnostic;
+use crate::baseline::{BASELINE_FILE, BASELINE_FILE_ID, Baseline, BaselineError};
 use crate::checks::template::Template;
 
 pub use ascribe_model::MODEL_FILE;
@@ -78,7 +79,7 @@ pub struct FileEntry<'a> {
     pub text: &'a str,
     /// The path relative to the content root, for a source file or an image
     /// file under it; `None` for the content model, the lock, the
-    /// permalinks list, and the navigation file.
+    /// permalinks list, the navigation file, and the baseline.
     pub content_path: Option<&'a RelPath>,
 }
 
@@ -251,6 +252,11 @@ pub struct Project {
     nav_text: Option<String>,
     /// `ascribe.nav` read, or its problems, when there's one.
     nav: Option<Result<NavFile, Vec<Issue>>>,
+    /// The text of `ascribe.baseline`, when there is one.
+    baseline_text: Option<String>,
+    /// `ascribe.baseline` read, or the line that doesn't parse, when
+    /// there's one.
+    baseline: Option<Result<Baseline, BaselineError>>,
     /// The image files under the content root, by path from the project
     /// root and from the content root, once the image checks have listed
     /// them.
@@ -572,6 +578,11 @@ impl Project {
         let nav = nav_text
             .as_deref()
             .map(|text| NavFile::parse(text, NAV_FILE_ID));
+        let baseline_text = RelPath::parse(BASELINE_FILE)
+            .ok()
+            .and_then(|path| fs.read_file(&path).ok())
+            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
+        let baseline = baseline_text.as_deref().map(Baseline::parse);
         Project {
             root,
             layout,
@@ -588,6 +599,8 @@ impl Project {
             permalinks,
             nav_text,
             nav,
+            baseline_text,
+            baseline,
             images: OnceLock::new(),
             link_index: OnceLock::new(),
             today: None,
@@ -718,6 +731,17 @@ impl Project {
         self.nav.as_ref()
     }
 
+    /// The text of `ascribe.baseline`, when the project has one.
+    pub fn baseline_text(&self) -> Option<&str> {
+        self.baseline_text.as_deref()
+    }
+
+    /// `ascribe.baseline` read, or the line that doesn't parse, when the
+    /// project has one.
+    pub fn baseline(&self) -> Option<&Result<Baseline, BaselineError>> {
+        self.baseline.as_ref()
+    }
+
     /// The pin of the source `name` in another repository, when
     /// `ascribe.lock` can be read and pins it to the repository the content
     /// model names.
@@ -759,7 +783,7 @@ impl Project {
             });
         }
         if let Some(i) = id.index().checked_sub(IMAGE_FILE_IDS)
-            && id.index() < NAV_FILE_ID.index()
+            && id.index() < BASELINE_FILE_ID.index()
         {
             let (path, content) = self.images.get()?.get(i as usize)?;
             return Some(FileEntry {
@@ -789,6 +813,14 @@ impl Project {
             return self.nav_text.as_deref().map(|text| FileEntry {
                 id,
                 display_path: NAV_FILE.to_owned(),
+                text,
+                content_path: None,
+            });
+        }
+        if id == BASELINE_FILE_ID {
+            return self.baseline_text.as_deref().map(|text| FileEntry {
+                id,
+                display_path: BASELINE_FILE.to_owned(),
                 text,
                 content_path: None,
             });

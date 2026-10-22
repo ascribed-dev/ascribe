@@ -34,6 +34,7 @@
 //! ([`Diagnostic::builds`]).
 
 mod across;
+pub mod baseline;
 mod builds;
 mod checks;
 mod diagnostic;
@@ -63,6 +64,7 @@ mod yaml;
 
 pub use across::{IMAGE_EXTENSIONS, IMAGE_LIMIT, NOT_IN_EDITOR, image_file, size_text};
 use ascribe_core::FileId;
+pub use baseline::{BASELINE_FILE, BASELINE_FILE_ID, Baseline, BaselineError};
 pub use builds::{
     Diagnosed, UnknownBuild, count_errors, count_errors_in, diagnose, diagnose_editor_build,
     diagnose_editor_build_in, diagnose_every_build_in, select_builds,

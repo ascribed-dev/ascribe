@@ -6,7 +6,7 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
@@ -16,8 +16,10 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe agents skill` | Prints a file of the Ascribe skill, the same for every project: its `SKILL.md`, or its directive reference, `references/directives.md`. | `[FILE]` |  |
 | `ascribe agents prompt` | Prints a named prompt for an agent, in the same form as Prompt agent's. | `[NAME] [--arg <KEY=VALUE>]... [--list]` |  |
 | `ascribe agents hook` | Checks an agent's work as its hook runs it: after the agent writes a file, or before it finishes. | `HARNESS [--event edit\|stop]` |  |
+| `ascribe baseline write` | Adds every advice `ascribe check` reports to `ascribe.baseline`, and makes the file when there's none. |  | `text`, `json` |
+| `ascribe baseline prune` | Removes the entries of `ascribe.baseline` that match nothing the project has any more: the problems that were fixed, and those whose text changed, which `ascribe check` reports as new. |  | `text`, `json` |
 | `ascribe build` | Checks the project, then writes each build's outputs. | `[--build <NAME>]... [--emit site,plain,json] [--anchors]` | `text`, `json` |
-| `ascribe check` | Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. | `[PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--deny-warnings] [--fix] [--vale]` | `text`, `concise`, `json`, `prompt` |
+| `ascribe check` | Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. | `[PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--deny-warnings] [--fix] [--vale] [--no-baseline]` | `text`, `concise`, `json`, `prompt` |
 | `ascribe diff` | Shows what changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved. | `[PAGE] [--base <REV>] [--base-exact] [--build <NAME>]... [--exit-code] [--pages-only]` | `text`, `json`, `html`, `prompt` |
 | `ascribe drift` | Lists the pages whose code examples changed between a git revision and the working tree, and whether the words around them changed too, and the pages whose examples no longer resolve. | `[--base <REV>] [--build <NAME>]... [--exit-code]` | `text`, `json`, `markdown` |
 | `ascribe explain` | Says what a diagnostic means: its severity, its messages, how to fix it, a link to its entry in Diagnostics, and, for the diagnostics people meet most, a short page that has the problem and the same page without it. | `[CODE] [--list]` | `text`, `json` |
@@ -107,7 +109,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-235 in all. By severity: 46 advice, 164 error, 25 warning. By level: 209 file, 26 page. By kind of next step: 54 choose, 17 fix, 7 outside, 12 review, 145 write.
+236 in all. By severity: 47 advice, 164 error, 25 warning. By level: 210 file, 26 page. By kind of next step: 54 choose, 17 fix, 8 outside, 12 review, 145 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -346,6 +348,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC240` | `glossary-definition-missing` | error | write | the term "{term}" has no definition: its section doesn't start with a paragraph |
 | `ASC241` | `glossary-definition-long` | advice | write | the definition of the term "{term}" is over {limit} characters in build `{build}`, too long for a link's title or a hover |
 | `ASC242` | `term-off-glossary-page` | error | choose | `@term` is on `{path}`, which isn't a page `[glossary] pages` lists, so this heading isn't a term |
+| `ASC243` | `baseline-entry-unmatched` | advice | outside | ascribe.baseline holds back `{check}` in `{file}`, and nothing there matches it any more; run `ascribe baseline prune` |
 
 ## The VS Code extension
 
@@ -765,6 +768,8 @@ The JSON the commands and the language server write, each with a schema:
 | Schema | Shape | What it is |
 |---|---|---|
 | `schemas/agents-index.schema.json` | AgentsIndexReport | What `ascribe agents index --format json` answers. |
+| `schemas/baseline-prune.schema.json` | BaselinePruneReport | What `ascribe baseline prune --format json` writes. |
+| `schemas/baseline-write.schema.json` | BaselineWriteReport | What `ascribe baseline write --format json` writes. |
 | `schemas/check.schema.json` | CheckReport | What `ascribe check --format json` and `ascribe build --format json` write: one document, whatever the outcome. |
 | `schemas/diff-html-data.schema.json` | ReportData | The data the report's script draws from. |
 | `schemas/diff.schema.json` | DiffReport | The whole report, as `ascribe diff --format json` writes it. |
@@ -835,6 +840,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `astro/more-than-docs.md` | Put the docs in a site with more than the docs | how-to |
 | `astro/reference.md` | `@ascribed/astro` reference | reference |
 | `astro/serve-markdown.md` | Serve the Markdown versions | how-to |
+| `checks/baseline.md` | The baseline | reference |
 | `checks/check.md` | `ascribe check`, `build`, and `fmt` | reference |
 | `checks/ci.md` | Checks in CI | how-to |
 | `checks/diagnostics.md` | Diagnostics | reference |
@@ -968,6 +974,7 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 | `sources/` | `ascribe sources fetch` and `ascribe sources update`: copies of the files your snippets use from another repository, in `sources/<name>/`. | Yes |
 | `examples.observations/` | `ascribe observe`, beside `ascribe.examples.toml` in the code's folder: what its tested examples passed with, in `default.toml`, or `<name>.toml` with `--name`. `ascribe observe --check` fails without it. | Yes |
 | `ascribe.permalinks` | `ascribe permalinks sync` and `ascribe permalinks retire`: the list of the docs' permalinks a product checks its links against. | Yes |
+| `ascribe.baseline` | `ascribe baseline write` and `ascribe baseline prune`: the advice `ascribe check` holds back for now. | Yes |
 | `ascribe.nav` | You do: the order of the project's sections and pages, and their labels, beside `ascribe.toml`. Ascribe reads it; with none, a project has the default order. | Yes |
 | `memos/` | You do: memo files, which say why a page is written the way it is. Ascribe reads them, and writes one only when you ask: the editor's **Ascribe: Add a memo** creates one, and a rename (`ascribe rename`, `F2`, or moving a file in the editor) rewrites the `about` of each that names what it renames. They're in no output. | Yes |
 | `.vale.ini` and `.vale/` | `ascribe vale eject`, once. From then on they're yours, and Ascribe doesn't write them again. | Yes |

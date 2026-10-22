@@ -381,6 +381,11 @@
           "minimum": 0,
           "type": "integer"
         },
+        "baselined": {
+          "description": "How many problems `ascribe.baseline` holds back, which `diagnostics`\nleaves out and which are advice. Left out when there are none, and by\n`ascribe build`, which doesn't read the baseline.",
+          "minimum": 0,
+          "type": "integer"
+        },
         "by_code": {
           "description": "With `--summary`: how many diagnostics have each code, most first.",
           "items": {

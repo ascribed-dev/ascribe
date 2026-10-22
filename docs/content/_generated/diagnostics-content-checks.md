@@ -432,6 +432,19 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 
 **Read more:** [The file](../navigation/index.md#the-file) in the navigation reference.
 
+### ASC243 `baseline-entry-unmatched`
+@id {permalink=true}: ASC243
+
+Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+
+**When:** `ascribe.baseline` has an entry that no problem of the project matches any more: the problem was fixed, or the text it was about changed. Reported at the entry's line, when `ascribe check` reads the baseline and checks the whole project for every build.
+
+**Message:** ascribe.baseline holds back `{check}` in `{file}`, and nothing there matches it any more; run `ascribe baseline prune`
+
+**Fix:** Run `ascribe baseline prune`, which removes every entry that matches nothing, and commit ascribe.baseline. Left in the file, the entry would hold back a later problem of the same check whose text happens to be the same. See [The baseline](../checks/baseline.md).
+
+**Read more:** [`[checks]`](../content-model/checks.md#19-checks) in the `ascribe.toml` reference.
+
 ## Outputs
 
 ### ASC163 `description-too-long`

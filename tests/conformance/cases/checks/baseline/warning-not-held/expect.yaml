@@ -1,0 +1,9 @@
+description: >-
+  Only advice is held back. The project has raised `nav-label-long` to a
+  warning since the baseline listed the problem on sync.md, so the entry
+  matches it and doesn't hide it, and isn't reported as matching nothing.
+spec: ["2.1"]
+tags: [baseline]
+
+diagnostics:
+  - {slug: nav-label-long, file: sync.md, line: 3, severity: warning}

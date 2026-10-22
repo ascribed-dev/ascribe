@@ -13,7 +13,7 @@ Every document follows these rules:
 - A field the schema doesn't list as required is left out when it has no value. A required field that can be `null` is always written.
 - Keys are snake_case.
 
-The schemas of `ascribe check`, `ascribe build`, and `ascribe fmt` are on this page, and the rest on six more:
+The schemas of `ascribe check`, `ascribe build`, `ascribe fmt`, and `ascribe baseline` are on this page, and the rest on six more:
 
 - [`ascribe diff` and `ascribe drift`](json-reports/diff.md)
 - [`ascribe report`](json-reports/report.md)
@@ -29,3 +29,11 @@ The schemas of `ascribe check`, `ascribe build`, and `ascribe fmt` are on this p
 ## `ascribe fmt`
 
 @include: ../_generated/json-fmt.md
+
+## `ascribe baseline write`
+
+@include: ../_generated/json-baseline-write.md
+
+## `ascribe baseline prune`
+
+@include: ../_generated/json-baseline-prune.md

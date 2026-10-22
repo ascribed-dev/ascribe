@@ -17,6 +17,8 @@ mod links;
 mod agents;
 #[path = "all/answers.rs"]
 mod answers;
+#[path = "all/baseline.rs"]
+mod baseline;
 #[path = "all/build.rs"]
 mod build;
 #[path = "all/build_view_parity.rs"]
