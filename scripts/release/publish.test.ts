@@ -1,7 +1,7 @@
 // publish.ts's tag commands against a stand-in for npm, whose packages show
 // when the test says: a canary's `next` moves on every package or on none.
 import { expect, test, vi } from "vitest";
-import { catchUp, moveTag, type Npm } from "./publish.ts";
+import { catchUp, compareVersions, moveTag, type Npm } from "./publish.ts";
 
 vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
@@ -94,4 +94,34 @@ test("catch-up leaves a deprecated canary behind", () => {
   const npm = fakeNpm({}, tags, ["@ascribed/cli@1.0.0-next.2"]);
   expect(catchUp(names, "next-pending", "next", npm)).toBeUndefined();
   expect(npm.added).toEqual([]);
+});
+
+test("catch-up never moves the tag back to an older canary", () => {
+  // A pre-release from release.yml takes `next`, and leaves `next-pending` alone.
+  const tags = Object.fromEntries(
+    names.map((name) => [name, { next: "0.5.0-rc.1", "next-pending": "0.4.2-next.29" }]),
+  );
+  const npm = fakeNpm({}, tags);
+  expect(catchUp(names, "next-pending", "next", npm)).toBeUndefined();
+  expect(npm.added).toEqual([]);
+  for (const name of names) expect(npm.tags[name]?.next).toBe("0.5.0-rc.1");
+});
+
+test("compares versions by semver precedence", () => {
+  const ordered = [
+    "0.4.1",
+    "0.4.2-next.9",
+    "0.4.2-next.29",
+    "0.4.2-rc.1",
+    "0.4.2",
+    "0.5.0-next.1",
+    "0.5.0-rc.1",
+    "0.5.0-rc.1.1",
+    "0.10.0",
+  ];
+  for (let i = 0; i < ordered.length; i++) {
+    for (let j = 0; j < ordered.length; j++) {
+      expect(compareVersions(ordered[i] ?? "", ordered[j] ?? "")).toBe(Math.sign(i - j));
+    }
+  }
 });

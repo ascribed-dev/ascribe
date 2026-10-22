@@ -200,7 +200,8 @@ export function moveTag(
  * Moves `to` to the version `from` names on @ascribed/cli (the canary a run
  * published), when that's a different version, npm shows it for every
  * package now, and it isn't deprecated: a bad canary, deprecated and with
- * `next` pointed back, stays behind. Returns the version it moved to, if it did.
+ * `next` pointed back, stays behind, and so does `to` where it names a newer
+ * version. Returns the version it moved to, if it did.
  */
 export function catchUp(
   names: readonly string[],
@@ -213,8 +214,18 @@ export function catchUp(
     log(`@ascribed/cli has no \`${from}\`; nothing to catch up`);
     return undefined;
   }
-  if (names.every((name) => npm.tagged(name, to) === version)) {
+  const current = names.map((name) => npm.tagged(name, to));
+  if (current.every((tagged) => tagged === version)) {
     log(`\`${to}\` is already at ${version} on every package`);
+    return undefined;
+  }
+  // `next` only moves forward (canary.ts counts on it): a pre-release from
+  // release.yml takes `next` without touching `next-pending`.
+  const ahead = current.find(
+    (tagged) => tagged !== undefined && compareVersions(tagged, version) > 0,
+  );
+  if (ahead !== undefined) {
+    log(`\`${to}\` is at ${ahead}, newer than ${version}; it stays where it is`);
     return undefined;
   }
   if (names.some((name) => npm.shows(name, version) && npm.deprecated(name, version))) {
@@ -224,6 +235,43 @@ export function catchUp(
   if (moveTag(names, version, to, npm, { wait: 0 })) return version;
   log(`\`${to}\` stays where it is until every package shows ${version}`);
   return undefined;
+}
+
+/**
+ * Orders two versions by semver precedence: a pre-release before its release,
+ * and pre-release identifiers one by one, numbers by value and before words.
+ */
+export function compareVersions(a: string, b: string): number {
+  const [aCore, aPre] = splitVersion(a);
+  const [bCore, bPre] = splitVersion(b);
+  const aParts = aCore.split(".").map(Number);
+  const bParts = bCore.split(".").map(Number);
+  for (let i = 0; i < 3; i++) {
+    const diff = (aParts[i] ?? 0) - (bParts[i] ?? 0);
+    if (diff !== 0) return Math.sign(diff);
+  }
+  if (aPre === undefined || bPre === undefined) {
+    return aPre === bPre ? 0 : aPre === undefined ? 1 : -1;
+  }
+  const aIds = aPre.split(".");
+  const bIds = bPre.split(".");
+  for (let i = 0; i < Math.max(aIds.length, bIds.length); i++) {
+    const x = aIds[i];
+    const y = bIds[i];
+    if (x === undefined || y === undefined) return x === undefined ? -1 : 1;
+    if (x === y) continue;
+    const xNumber = /^\d+$/.test(x);
+    const yNumber = /^\d+$/.test(y);
+    if (xNumber && yNumber) return Math.sign(Number(x) - Number(y));
+    if (xNumber !== yNumber) return xNumber ? -1 : 1;
+    return x < y ? -1 : 1;
+  }
+  return 0;
+}
+
+function splitVersion(version: string): [string, string | undefined] {
+  const dash = version.indexOf("-");
+  return dash === -1 ? [version, undefined] : [version.slice(0, dash), version.slice(dash + 1)];
 }
 
 /** npm itself. With `dryRun`, it moves no tag. */

@@ -62,7 +62,8 @@ jobs:
     name: stamp the version
     needs: catch-up
     # By hand, it runs from `main` only; the `canary` environment enforces it too.
-    if: github.ref == 'refs/heads/main'
+    # A catch-up that failed doesn't stop the night's canary.
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     outputs:
