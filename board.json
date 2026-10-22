@@ -5196,7 +5196,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/820"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "planned as a version word in an availability spec"
     },
     {
@@ -5236,7 +5236,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "[from]: one project takes tables from another's ascribe.toml"
     },
     {
@@ -5344,8 +5344,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/835"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "The canary: npm is slow to show cli-linux-arm64, and next is left split"
     }
   ]
