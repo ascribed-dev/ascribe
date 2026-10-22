@@ -38,7 +38,7 @@ pub struct Position {
 
 impl FileTable {
     /// The files of a loaded project: the content model, the lock, the
-    /// permalinks list, the navigation file, every source, every memo file, and every code file
+    /// permalinks list, the navigation file, the baseline, every source, every memo file, and every code file
     /// the checks read for a snippet. Made after the checks, so the code
     /// files are there.
     pub fn of_project(project: &Project) -> FileTable {
@@ -47,6 +47,7 @@ impl FileTable {
             ascribe_check::LOCK_FILE_ID,
             ascribe_check::PERMALINKS_FILE_ID,
             ascribe_check::NAV_FILE_ID,
+            ascribe_check::BASELINE_FILE_ID,
         ];
         ids.extend(project.sources().iter().map(|s| s.id));
         ids.extend(project.memo_ids());

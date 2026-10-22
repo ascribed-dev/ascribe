@@ -47,6 +47,20 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<crate::report::json::Report<'static>>(),
     },
     Shape {
+        file: "baseline-write",
+        title: "BaselineWriteReport",
+        written_by: "`ascribe baseline write --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::baseline::WriteJson>(),
+    },
+    Shape {
+        file: "baseline-prune",
+        title: "BaselinePruneReport",
+        written_by: "`ascribe baseline prune --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::baseline::PruneJson>(),
+    },
+    Shape {
         file: "diff",
         title: "DiffReport",
         written_by: "`ascribe diff --format json`",

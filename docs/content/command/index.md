@@ -18,6 +18,7 @@ Each command's options, output, and exit codes are on the page for its kind of w
 - [`ascribe check`, `build`, and `fmt`](../checks/check.md): check a project, build its outputs, and format its Markdown.
 - [`ascribe diff` and `drift`](../review/diff.md): compare a project with another revision, and find what drifted from its sources.
 - [`ascribe report`](../checks/report-command.md): report on a project's health.
+- [`ascribe baseline`](../checks/baseline.md#cli-baseline): put a project's existing advice off for now, so `ascribe check` reports only what's new.
 - [`ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, `resolve`, and `search`](questions.md): answer questions about a project, find where its pages say something, and rename what pages link to.
 - [`ascribe agents` and `mcp`](../agents/commands.md): set a repository up for agents, and serve a project to agents.
 - [`ascribe lsp`](../editor/language-server.md#cli-lsp): serve a project to an editor.

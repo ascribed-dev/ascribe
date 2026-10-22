@@ -111,6 +111,11 @@ struct Summary {
     /// are none.
     #[serde(skip_serializing_if = "is_zero")]
     acknowledged: usize,
+    /// How many problems `ascribe.baseline` holds back, which `diagnostics`
+    /// leaves out and which are advice. Left out when there are none, and by
+    /// `ascribe build`, which doesn't read the baseline.
+    #[serde(skip_serializing_if = "is_zero")]
+    baselined: usize,
     /// With `--summary`: how many diagnostics have each code, most first.
     #[serde(skip_serializing_if = "Option::is_none")]
     by_code: Option<Vec<CodeCount>>,
@@ -409,6 +414,8 @@ pub struct About<'a> {
     pub builds_checked: Vec<String>,
     /// The problems acknowledged as intended.
     pub acknowledged: &'a [Acknowledged],
+    /// How many problems the baseline holds back.
+    pub baselined: usize,
     /// With `--summary`, the command that lists the diagnostics: the list is
     /// left out, and counted instead.
     pub summary_only: Option<String>,
@@ -425,6 +432,7 @@ impl About<'_> {
             files_reported: 0,
             builds_checked: Vec::new(),
             acknowledged: &[],
+            baselined: 0,
             summary_only: None,
             fixed: &[],
         }
@@ -497,6 +505,7 @@ pub fn write(
             warnings: counts.warnings,
             advice: counts.advice,
             acknowledged: about.acknowledged.len(),
+            baselined: about.baselined,
             by_code,
             by_file,
         },

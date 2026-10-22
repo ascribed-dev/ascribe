@@ -173,6 +173,8 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         deny_warnings: false,
         fix: false,
         vale: false,
+        // The baseline is `ascribe check`'s; the agents read it later (#790).
+        no_baseline: true,
         vale_timeout: Some(vale_timeout),
         // Nobody approves what a hook runs: Vale from the `PATH` only,
         // never a program in the project (decision 76).

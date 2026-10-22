@@ -4396,3 +4396,18 @@ row = "Glossary | `@term` on a heading that no page the glossary lists shows"
 message = "`@term` is on `{path}`, which isn't a page `[glossary] pages` lists, so this heading isn't a term"
 messages.fragment = "`@term` is in the fragment `{path}`, which no page `[glossary] pages` lists includes, so this heading isn't a term"
 fix = "List the page in `[glossary] pages` in ascribe.toml, or move the term to a glossary page, or remove `@term`. Listing the page links its terms on every other page, so the fix that adds it is offered in the editor and never applied by `ascribe check --fix`. A fragment is listed through a page that includes it."
+
+[[diagnostic]]
+code = "ASC243"
+slug = "baseline-entry-unmatched"
+severity = "advice"
+level = "file"
+next = "outside"
+evidence = []
+configurable = true
+area = "project"
+spec = "2.1"
+reference = "content-model/checks.md#19-checks"
+when = "`ascribe.baseline` has an entry that no problem of the project matches any more: the problem was fixed, or the text it was about changed. Reported at the entry's line, when `ascribe check` reads the baseline and checks the whole project for every build"
+message = "ascribe.baseline holds back `{check}` in `{file}`, and nothing there matches it any more; run `ascribe baseline prune`"
+fix = "Run `ascribe baseline prune`, which removes every entry that matches nothing, and commit ascribe.baseline. Left in the file, the entry would hold back a later problem of the same check whose text happens to be the same. See [The baseline](checks/baseline.md)."

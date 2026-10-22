@@ -670,6 +670,8 @@ fn call_check(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> 
         deny_warnings: false,
         fix: false,
         vale: false,
+        // The baseline is `ascribe check`'s; the agents read it later (#790).
+        no_baseline: true,
         vale_timeout: None,
         // The tool says it only reads: it starts no program the project
         // names (decision 76).

@@ -6,12 +6,13 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::rc::Rc;
 
+use ascribe_check::baseline;
 use ascribe_check::fix;
 use ascribe_check::prompt::{self, Builds};
 use ascribe_check::prose;
 use ascribe_check::{
-    Acknowledged, Diagnosed, Diagnostic, LoadError, Project, Reported, Scope, ScopeError, Severity,
-    diagnose, diagnose_editor_build_in, locate_for,
+    Acknowledged, BaselineError, Diagnosed, Diagnostic, LoadError, Project, Reported, Scope,
+    ScopeError, Severity, diagnose, diagnose_editor_build_in, locate_for,
 };
 use ascribe_core::Coded;
 use clap::{Args as ClapArgs, ValueEnum};
@@ -116,6 +117,16 @@ pub struct Args {
     #[arg(long)]
     pub vale: bool,
 
+    /// Report the advice `ascribe.baseline` holds back too, without reading
+    /// the file.
+    ///
+    /// By default, a problem the baseline lists isn't reported while it's
+    /// advice, and is counted instead, and an entry that matches nothing is
+    /// reported, as `baseline-entry-unmatched`. A baseline that can't be read
+    /// stops the check, unless this is given.
+    #[arg(long)]
+    pub no_baseline: bool,
+
     /// How long Vale may take, when it runs: the hooks give it less than
     /// they wait. `None` is the time a check of the whole project has.
     #[arg(skip)]
@@ -178,6 +189,9 @@ pub enum CheckError {
     /// `--code` names no diagnostic.
     #[error("--code: {0}")]
     Code(ascribe_query::QueryError),
+    /// `ascribe.baseline` can't be read.
+    #[error("{0}; fix the line, or pass --no-baseline to check without the baseline")]
+    Baseline(BaselineError),
 }
 
 impl Coded for CheckError {
@@ -188,6 +202,7 @@ impl Coded for CheckError {
             CheckError::NoVale => "vale_not_set_up",
             CheckError::Fix(e) => e.code(),
             CheckError::Code(e) => e.code(),
+            CheckError::Baseline(e) => e.code(),
         }
     }
 }
@@ -225,6 +240,9 @@ pub struct Outcome {
     builds_checked: Vec<String>,
     /// The problems acknowledged as intended in the files reported on.
     acknowledged: Vec<Acknowledged>,
+    /// How many problems `ascribe.baseline` holds back in the files
+    /// reported on, of the codes named.
+    baselined: usize,
     files: FileTable,
     /// The codes `--code` names, as the registry writes them, in the order
     /// given; empty for every code.
@@ -356,6 +374,15 @@ pub fn run_check(
             .map_err(Stopped::Build)?
     };
     let (diagnostics, about_vale) = with_prose(project, scope.as_ref(), args, diagnostics)?;
+    let (diagnostics, mut held) = with_baseline(project, scope.as_ref(), args, diagnostics, {
+        let in_check = project
+            .model()
+            .checks
+            .vale
+            .as_ref()
+            .is_some_and(|v| v.in_check);
+        about_vale.is_empty() && (args.vale || in_check)
+    })?;
     let mut reported = match &scope {
         Some(scope) => scope.report(project, diagnostics),
         None => Reported::all(diagnostics),
@@ -363,11 +390,13 @@ pub fn run_check(
     reported.extend(Reported::all(about_vale));
     if let Some(scope) = &scope {
         acknowledged.retain(|a| scope.contains_file(project, a.problem.location.file));
+        held.retain(|d| scope.contains_file(project, d.location.file));
     }
     if !codes.is_empty() {
         let named = |code: &str| codes.iter().any(|c| c == code);
         reported.retain(|r| named(r.diagnostic.code));
         acknowledged.retain(|a| named(a.problem.code));
+        held.retain(|d| named(d.code));
     }
     // Advice after errors and warnings; stable, so each keeps its order.
     reported.sort_by_key(|r| r.diagnostic.severity == Severity::Advice);
@@ -380,6 +409,7 @@ pub fn run_check(
         reported,
         builds_checked,
         acknowledged,
+        baselined: held.len(),
         files,
         codes,
         fixed: Vec::new(),
@@ -449,6 +479,37 @@ fn with_prose(
     Ok((diagnostics, about_vale))
 }
 
+/// `diagnostics`, the whole project's, without the advice `ascribe.baseline`
+/// holds back, which comes back apart, unless `--no-baseline` says not to
+/// read it. An entry that matches nothing is reported when the check covers
+/// every build and the whole project, and so would have found what it
+/// lists; an entry of Vale's only when `prose_checked` says Vale ran.
+fn with_baseline(
+    project: &Project,
+    scope: Option<&Scope>,
+    args: &Args,
+    diagnostics: Vec<Diagnostic>,
+    prose_checked: bool,
+) -> Result<(Vec<Diagnostic>, Vec<Diagnostic>), Stopped> {
+    let baseline = match project.baseline() {
+        Some(_) if args.no_baseline => return Ok((diagnostics, Vec::new())),
+        None => return Ok((diagnostics, Vec::new())),
+        Some(Err(e)) => {
+            let e = CheckError::Baseline(e.clone());
+            return Err(Stopped::Failure(Failure::Check(e)));
+        }
+        Some(Ok(baseline)) => baseline,
+    };
+    let whole = scope.is_none() && args.build.is_empty() && !args.editor_build;
+    let not_run: &[&str] = if prose_checked {
+        &[]
+    } else {
+        &[ascribe_core::diagnostics::PROSE.as_str()]
+    };
+    let held = baseline::apply(project, baseline, diagnostics, whole, not_run);
+    Ok((held.diagnostics, held.held))
+}
+
 /// Writes what a check found in `args.format`, as `ascribe check` does.
 ///
 /// # Errors
@@ -468,6 +529,7 @@ pub fn write(
         reported,
         builds_checked,
         acknowledged,
+        baselined,
         files,
         codes,
         fixed,
@@ -487,7 +549,8 @@ pub fn write(
         &covered,
         files_reported.unwrap_or(checked),
         codes,
-    ) + &text::acknowledged(acknowledged.len());
+    ) + &text::acknowledged(acknowledged.len())
+        + &text::baselined(*baselined);
     let command = Command::new(global, args, codes);
     if matches!(args.format, Format::Text | Format::Concise) {
         write_fixed(out, fixed)?;
@@ -503,6 +566,7 @@ pub fn write(
                 files_reported: files_reported.unwrap_or(checked),
                 builds_checked: builds_checked.clone(),
                 acknowledged,
+                baselined: *baselined,
                 summary_only: summary_only.then(|| command.listing()),
                 fixed,
             },
@@ -923,6 +987,7 @@ mod tests {
             files_reported: 1,
             builds_checked: Vec::new(),
             acknowledged: &[],
+            baselined: 0,
             summary_only: None,
             fixed: &[],
         };

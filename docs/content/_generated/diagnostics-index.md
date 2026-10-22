@@ -236,3 +236,4 @@
 | [ASC240](../checks/diagnostics/pages.md#ASC240) | `glossary-definition-missing` | Error | File | write |
 | [ASC241](../checks/diagnostics/content-checks.md#ASC241) | `glossary-definition-long` | Advice | Page | write |
 | [ASC242](../checks/diagnostics/pages.md#ASC242) | `term-off-glossary-page` | Error | File | choose |
+| [ASC243](../checks/diagnostics/content-checks.md#ASC243) | `baseline-entry-unmatched` | Advice | File | outside |

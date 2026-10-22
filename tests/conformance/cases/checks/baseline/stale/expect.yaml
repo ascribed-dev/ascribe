@@ -1,0 +1,10 @@
+description: >-
+  An entry that matches nothing is reported, as advice, at its line. The
+  baseline lists sync.md's long `nav-label` as it was before its text
+  changed, so the problem it has now is a new one and is reported too.
+spec: ["2.1"]
+tags: [baseline]
+
+diagnostics:
+  - {slug: nav-label-long, file: sync.md, line: 3, severity: advice}
+  - {slug: baseline-entry-unmatched, file: ascribe.baseline, line: 4, column: 1, severity: advice}

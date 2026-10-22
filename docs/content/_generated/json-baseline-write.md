@@ -1,0 +1,86 @@
+@memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/baseline-write.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
+[`schemas/baseline-write.schema.json`]({repo}/blob/main/schemas/baseline-write.schema.json):
+
+```json
+{
+  "$defs": {
+    "Skipped": {
+      "description": "The errors and warnings `ascribe baseline write` left out.",
+      "properties": {
+        "errors": {
+          "description": "How many errors.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "warnings": {
+          "description": "How many warnings.",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "errors",
+        "warnings"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "What `ascribe baseline write --format json` writes.",
+  "properties": {
+    "added": {
+      "description": "How many of them this added.",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "ascribe_version": {
+      "description": "The version of Ascribe that wrote it.",
+      "type": "string"
+    },
+    "changed": {
+      "description": "Whether the file changed: it's new, or its text differs.",
+      "type": "boolean"
+    },
+    "created": {
+      "description": "Whether the project had no baseline, so this made one.",
+      "type": "boolean"
+    },
+    "entries": {
+      "description": "How many problems the baseline holds, after this.",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "file": {
+      "description": "The file written, from the project's folder: `ascribe.baseline`.",
+      "type": "string"
+    },
+    "files": {
+      "description": "How many files they're in.",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "schema_version": {
+      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "skipped": {
+      "$ref": "#/$defs/Skipped",
+      "description": "How many errors and warnings it left out, which a baseline never\nholds."
+    }
+  },
+  "required": [
+    "schema_version",
+    "ascribe_version",
+    "file",
+    "created",
+    "changed",
+    "entries",
+    "files",
+    "added",
+    "skipped"
+  ],
+  "title": "BaselineWriteReport",
+  "type": "object"
+}
+```

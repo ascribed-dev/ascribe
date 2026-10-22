@@ -90,7 +90,7 @@ describe("Project Settings on examples/quill", () => {
       (s) =>
         s.id.startsWith("checks.") && s.id.endsWith(".level") && s.id !== "checks.vale.max-level",
     );
-    assert.equal(levels.length, 47);
+    assert.equal(levels.length, 48);
     // Opening it again shows the tab that's open, with the focus. The focus
     // lands once the webview has loaded, which can be after the command is
     // done; a test that goes on to Undo in the file waits for it, or the

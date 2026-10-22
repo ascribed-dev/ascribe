@@ -137,6 +137,7 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
                 files_reported: checked,
                 builds_checked: names.clone(),
                 acknowledged: &acknowledged,
+                baselined: 0,
                 summary_only: None,
                 fixed: &[],
             },

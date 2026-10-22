@@ -114,6 +114,10 @@
         "nested": true
       },
       {
+        "href": "/docs/checks/baseline/",
+        "label": "The baseline"
+      },
+      {
         "href": "/docs/checks/external-links/",
         "label": "Check external links"
       },

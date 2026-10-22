@@ -106,6 +106,8 @@ pub enum Command {
     #[command(after_help = docs_link!("cli-agents"))]
     Agents(commands::agents::Args),
     /// Build the documentation set's outputs.
+    #[command(after_help = docs_link!("cli-baseline"))]
+    Baseline(commands::baseline::Args),
     #[command(after_help = docs_link!("cli-build"))]
     Build(commands::build::Args),
     /// Check every source file for problems, without building anything.
@@ -209,6 +211,7 @@ impl Command {
     fn run(self, global: &Global) -> ExitCode {
         match self {
             Command::Agents(args) => commands::agents::run(global, args),
+            Command::Baseline(args) => commands::baseline::run(global, args),
             Command::Build(args) => commands::build::run(global, args),
             Command::Check(args) => commands::check::run(global, args),
             Command::Diff(args) => commands::diff::run(global, args),

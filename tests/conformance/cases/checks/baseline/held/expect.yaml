@@ -1,0 +1,9 @@
+description: >-
+  `ascribe.baseline` holds back the advice it lists, by its check, file,
+  fingerprint, and order: the long `nav-label` on sync.md isn't reported,
+  and the one on keys.md, which it doesn't list, is.
+spec: ["2.1"]
+tags: [baseline]
+
+diagnostics:
+  - {slug: nav-label-long, file: keys.md, line: 3, severity: advice}

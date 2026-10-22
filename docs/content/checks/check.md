@@ -82,7 +82,7 @@ In VS Code, **Source Action… → Apply the safe fixes in this page** applies a
 |---|---|
 | `0` | No errors. Warnings don't fail the command unless you pass `--deny-warnings`, and advice never does. |
 | `1` | There are errors, or warnings with `--deny-warnings`. |
-| `2` | The project couldn't be checked: a usage error, a `--code` no diagnostic has, no `ascribe.toml`, a content model with errors (they're shown, and nothing else is checked), a path that doesn't exist or isn't in the project, or, with `--fix`, a file it fixed that can't be written. A source file that can't be read, or isn't UTF-8, is a `source-unreadable` error in the list instead, and the rest of the project is still checked. |
+| `2` | The project couldn't be checked: a usage error, a `--code` no diagnostic has, no `ascribe.toml`, a content model with errors (they're shown, and nothing else is checked), a path that doesn't exist or isn't in the project, an `ascribe.baseline` with a line that doesn't parse (the error names it; `--no-baseline` checks without the file), or, with `--fix`, a file it fixed that can't be written. A source file that can't be read, or isn't UTF-8, is a `source-unreadable` error in the list instead, and the rest of the project is still checked. |
 
 ### Text output
 
@@ -95,6 +95,8 @@ Diagnostics go to standard output. A failure that stops the command (exit code 2
 Advice, a diagnostic below a warning, is listed after the errors and warnings, in every format, and the summary counts it apart: `0 errors, 2 warnings, 5 advice`. It never fails the command, even with `--deny-warnings`. A project sets how loudly a check about its content's quality speaks in [`[checks]`](../content-model/checks.md#19-checks).
 
 A problem [acknowledged as intended](../writing/directives.md#intended) isn't listed, and doesn't fail the command; the summary counts it when there is one: `0 errors, 2 warnings, 0 advice, 1 acknowledged`. `ascribe build` counts it the same way.
+
+Advice the project's [baseline](baseline.md), `ascribe.baseline`, holds back isn't listed either, and the summary counts it: `0 errors, 0 warnings, 2 advice, 3412 in the baseline`, and the JSON's `summary` as `baselined`. An entry of the baseline that matches nothing is reported, as `baseline-entry-unmatched`, when the check covers the whole project and every build. `--no-baseline` lists everything, without reading the file.
 
 ### JSON output
 
