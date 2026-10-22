@@ -962,3 +962,126 @@ fn problems_says_what_s_new_since_the_last_report() {
     assert_eq!(on("2026-10-17", &["one", "two"]), serde_json::Value::Null);
     assert_eq!(on("2026-10-18", &["two", "one"]), "2026-10-17");
 }
+
+/// What afdocs writes: content negotiation fails, and the redirects fail
+/// too once a file named `failing` is in the folder it runs in.
+#[cfg(unix)]
+const AFDOCS_REDIRECTS_FAIL_LATER: &str = r#"redirects=pass
+[ -f failing ] && redirects=fail
+printf '{"url":"%s","results":[{"id":"llms-txt-exists","category":"content-discoverability","status":"pass","message":"found"},{"id":"content-negotiation","category":"markdown-availability","status":"fail","message":"Markdown is never served for Accept: text/markdown"},{"id":"redirect-behavior","category":"url-stability","status":"%s","message":"A redirect goes to another host"}]}' "$2" "$redirects"
+exit 1"#;
+
+/// `ascribe report agents` on `site`, in `dir` on `today`, with the stand-in
+/// afdocs in `dir/tools`.
+#[cfg(unix)]
+fn agents_on(dir: &Path, today: &str, site: &str, args: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(dir)
+        .args(["report", "agents", "--site", site])
+        .args(args)
+        .env("NO_COLOR", "1")
+        .env("PATH", dir.join("tools"))
+        .env("ASCRIBE_TODAY", today)
+        .output()
+        .expect("run ascribe")
+}
+
+/// `agents` says which checks are failing since the last report on the
+/// same site (decision #788): a check's identity is the site and its id.
+#[cfg(unix)]
+#[test]
+fn agents_says_what_s_failing_since_the_last_report() {
+    let dir = project(MODEL);
+    script(
+        &dir.path().join("tools"),
+        "afdocs",
+        AFDOCS_REDIRECTS_FAIL_LATER,
+    );
+    let site = "https://docs.example.com";
+
+    // A first run says nothing about what's new, and keeps what it found.
+    let first = agents_on(dir.path(), "2026-10-09", site, &[]);
+    assert_eq!(code_of(&first), 0, "{}", stderr(&first));
+    let text = stdout(&first);
+    assert!(
+        text.contains("checks on https://docs.example.com: 2 pass, 1 fail.\n  To change:"),
+        "{text}"
+    );
+    assert!(!text.contains("since"), "{text}");
+    let history = dir.path().join(".ascribe/history/report.json");
+    assert!(history.is_file());
+
+    // The redirects fail the second time: the report names the check.
+    fs::write(dir.path().join("failing"), "").unwrap();
+    let report = json(&agents_on(
+        dir.path(),
+        "2026-10-10",
+        site,
+        &["--format", "json"],
+    ));
+    let agents = &report["agents"];
+    assert_eq!(agents["previous_run"], "2026-10-09");
+    assert_eq!(
+        (&agents["new"], &agents["resolved"]),
+        (&1.into(), &0.into())
+    );
+    assert_eq!(
+        agents["new_checks"],
+        serde_json::json!(["redirect-behavior"])
+    );
+    let text = stdout(&agents_on(dir.path(), "2026-10-11", site, &[]));
+    assert!(
+        text.contains("  3 checks: 1 passing, 2 failing, none of them new since 10 October.\n"),
+        "{text}"
+    );
+
+    // `--no-history` says nothing about what's new, and neither reads nor
+    // writes the history.
+    fs::remove_file(dir.path().join("failing")).unwrap();
+    let before = fs::read_to_string(&history).unwrap();
+    let report = json(&agents_on(
+        dir.path(),
+        "2026-10-12",
+        site,
+        &["--no-history", "--format", "json"],
+    ));
+    let agents = &report["agents"];
+    assert_eq!(agents["previous_run"], serde_json::Value::Null);
+    assert_eq!(
+        (&agents["new"], &agents["resolved"]),
+        (&serde_json::Value::Null, &serde_json::Value::Null)
+    );
+    assert_eq!(agents["new_checks"], serde_json::json!([]));
+    assert_eq!(fs::read_to_string(&history).unwrap(), before);
+
+    // The redirects pass again: one that failed no longer does.
+    let text = stdout(&agents_on(dir.path(), "2026-10-13", site, &[]));
+    assert!(
+        text.contains(
+            "  3 checks: 2 passing, 1 failing, not new since 11 October; 1 that failed on 11 October no longer fails.\n"
+        ),
+        "{text}"
+    );
+
+    // Another site has nothing to go by; and the next run on it compares
+    // with it.
+    fs::write(dir.path().join("failing"), "").unwrap();
+    let preview = "http://localhost:4321";
+    let text = stdout(&agents_on(dir.path(), "2026-10-14", preview, &[]));
+    assert!(!text.contains("since"), "{text}");
+    let text = stdout(&agents_on(dir.path(), "2026-10-15", preview, &[]));
+    assert!(
+        text.contains("  3 checks: 1 passing, 2 failing, none of them new since 14 October.\n"),
+        "{text}"
+    );
+
+    // A report of `problems` alone keeps what `agents` found.
+    let out = problems_on(dir.path(), "2026-10-16", &[]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    fs::remove_file(dir.path().join("failing")).unwrap();
+    let text = stdout(&agents_on(dir.path(), "2026-10-17", preview, &[]));
+    assert!(
+        text.contains("  3 checks: 2 passing, 1 failing, not new since 15 October; 1 that failed on 15 October no longer fails.\n"),
+        "{text}"
+    );
+}

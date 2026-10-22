@@ -26,7 +26,7 @@ use std::time::Duration;
 
 use ascribe_check::identity::{self, Identity};
 use ascribe_check::links::{self, LinkChecker};
-use ascribe_check::report_history::ReportHistory;
+use ascribe_check::report_history::{self, ReportHistory, SiteChecks};
 use ascribe_check::site::{self, CheckResult, SiteChecker};
 use ascribe_check::tool::ToolError;
 use ascribe_check::{
@@ -348,6 +348,16 @@ pub struct Agents {
     /// A diagnostic for each check that failed or warned that Ascribe or the
     /// hosting owns, at its `[checks]` level.
     pub diagnostics: Vec<Diagnostic>,
+    /// The day of the run the history is from, when there's one to go by:
+    /// one on the same site.
+    pub previous_run: Option<ascribe_core::Date>,
+    /// The ids of the checks failing now, failed or warned, that passed or
+    /// weren't run on the previous run, in the checker's order, when
+    /// there's one to go by.
+    pub new: Option<Vec<String>>,
+    /// How many checks failing on the previous run pass now or aren't run,
+    /// when there's one to go by.
+    pub resolved: Option<usize>,
 }
 
 /// The report: each section asked for, and the builds it's about.
@@ -413,18 +423,22 @@ pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, Unknow
         builds_checked: selected.iter().map(|b| b.name.clone()).collect(),
         ..Report::default()
     };
+    // What this run found, for the history to keep.
+    let mut kept = report_history::Found::default();
     if asked(Section::Problems) || asked(Section::Inventory) {
         let diagnosed = diagnose(project, options.builds)?;
         if asked(Section::Inventory) {
             out.inventory = Some(inventory(project, &diagnosed.diagnostics));
         }
         if asked(Section::Problems) {
-            out.problems = Some(problems(
+            let (problems, found) = problems(
                 project,
                 diagnosed.diagnostics,
                 diagnosed.acknowledged,
                 options.history,
-            ));
+            );
+            out.problems = Some(problems);
+            kept.problems = found;
         }
     }
     if asked(Section::Builds) {
@@ -441,30 +455,39 @@ pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, Unknow
         out.links = Some(links(project, options));
     }
     if asked(Section::Agents) {
-        out.agents = Some(agents(project, options.site, options.tools));
+        let mut ran = agents(project, options.site, options.tools);
+        if let (Ran::Done(agents), Some(history)) = (&mut ran, options.history) {
+            kept.agents = Some(agents_since(agents, history));
+        }
+        out.agents = Some(ran);
+    }
+    if let Some(history) = options.history
+        && (kept.problems.is_some() || kept.agents.is_some())
+    {
+        history.save(kept);
     }
     Ok(out)
 }
 
 /// `problems`: what `ascribe check` found, and, from the history, which of
 /// it is new since the last run and how many of that run's findings are
-/// gone. What this run found is kept in the history.
+/// gone; with what this run found, for the history to keep.
 fn problems(
     project: &Project,
     diagnostics: Vec<Diagnostic>,
     acknowledged: Vec<Acknowledged>,
     history: Option<&ReportHistory>,
-) -> Problems {
+) -> (Problems, Option<BTreeSet<Identity>>) {
     let mut out = Problems {
         diagnostics,
         acknowledged,
         ..Problems::default()
     };
     let Some(history) = history else {
-        return out;
+        return (out, None);
     };
     let found = identity::identities(project, &out.diagnostics);
-    if let (Some(run), Some(before)) = (history.previous_run(), history.problems_before()) {
+    if let Some((run, before)) = history.problems_before() {
         out.previous_run = Some(run);
         out.new = Some(
             out.diagnostics
@@ -477,8 +500,48 @@ fn problems(
         let now: BTreeSet<&Identity> = found.iter().collect();
         out.resolved = Some(before.iter().filter(|id| !now.contains(id)).count());
     }
-    history.save(found.into_iter().collect());
-    out
+    (out, Some(found.into_iter().collect()))
+}
+
+/// Which of `agents`' checks are failing since the last run on its site,
+/// and how many failing then aren't now, from the history; and what this
+/// run found, for the history to keep. A check's identity is the site's
+/// address and its id. Failing is failed or warned; one that was skipped
+/// or couldn't run, then or now, counts as neither new nor resolved.
+fn agents_since(agents: &mut Agents, history: &ReportHistory) -> SiteChecks {
+    let found = SiteChecks {
+        site: agents.site.clone(),
+        checks: agents
+            .results
+            .iter()
+            .map(|r| (r.id.clone(), r.status))
+            .collect(),
+    };
+    if let Some((run, before)) = history.agents_before(&agents.site) {
+        let passing = |id: &str| before.get(id).is_none_or(|s| *s == site::Status::Pass);
+        agents.previous_run = Some(run);
+        agents.new = Some(
+            agents
+                .results
+                .iter()
+                .filter(|r| r.status.is_finding() && passing(&r.id))
+                .map(|r| r.id.clone())
+                .collect(),
+        );
+        agents.resolved = Some(
+            before
+                .iter()
+                .filter(|(id, status)| {
+                    status.is_finding()
+                        && found
+                            .checks
+                            .get(**id)
+                            .is_none_or(|s| *s == site::Status::Pass)
+                })
+                .count(),
+        );
+    }
+    found
 }
 
 /// `inventory`, from the project's pages and what `ascribe check` found.
@@ -805,6 +868,7 @@ fn agents(project: &Project, site: Option<&str>, tools: &Tools<'_>) -> Ran<Agent
             site: site.to_owned(),
             results: found.results,
             diagnostics: apply_levels(&project.model().checks, found.diagnostics),
+            ..Agents::default()
         }),
         Err(e) => {
             let how = format!(

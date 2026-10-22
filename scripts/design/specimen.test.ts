@@ -36,19 +36,6 @@ test("the chosen palette is the only one", () => {
   expect(inputs.candidates.map((c) => c.id)).toEqual(["chosen"]);
 });
 
-test("the full-color mark is the one-color mark in the chosen palette's light colors", () => {
-  const chosen = inputs.candidates.find((c) => c.id === "chosen");
-  const color = readFileSync(new URL("../../design/mark-color.svg", import.meta.url), "utf8");
-  const one = readFileSync(new URL("../../design/mark.svg", import.meta.url), "utf8");
-  const fills = [...color.matchAll(/fill="(#[0-9a-f]{6})"/g)].map((m) => m[1]);
-  expect(fills).toEqual([
-    chosen?.colors.get("text")?.light.hex,
-    chosen?.colors.get("accent")?.light.hex,
-  ]);
-  const paths = (svg: string) => [...svg.matchAll(/ d="([^"]+)"/g)].map((m) => m[1]);
-  expect(paths(color)).toEqual(paths(one));
-});
-
 test("every candidate palette passes every pairing, in light and dark", () => {
   for (const candidate of inputs.candidates) {
     const failing = checkPairs(candidate, inputs.pairs)

@@ -2,12 +2,37 @@
   "command": "node scripts/design/assets.ts",
   "assets": [
     {
+      "path": "design/mark.svg",
+      "width": 10,
+      "height": 7,
+      "sources": {
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72"
+      }
+    },
+    {
+      "path": "design/mark-color.svg",
+      "width": 10,
+      "height": 7,
+      "sources": {
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
+      }
+    },
+    {
+      "path": "design/wordmark.svg",
+      "width": 47,
+      "height": 9,
+      "sources": {
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72"
+      }
+    },
+    {
       "path": "site/public/favicon.svg",
       "width": 32,
       "height": 32,
       "sources": {
-        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     },
     {
@@ -15,8 +40,8 @@
       "width": 32,
       "height": 32,
       "sources": {
-        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     },
     {
@@ -24,8 +49,8 @@
       "width": 180,
       "height": 180,
       "sources": {
-        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     },
     {
@@ -33,10 +58,9 @@
       "width": 1200,
       "height": 630,
       "sources": {
-        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
-        "design/tagline.svg": "cca9325d1bf75647e96ce85b35d66b02efcc948c3e867e40612cab6fc740010f",
-        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c",
+        "design/fonts/Charter-Bold.ttf": "7b8959ea727a107748dbcb95bd509b23852cb1275d0d9ade0bb090733193b5d3"
       }
     },
     {
@@ -44,10 +68,9 @@
       "width": 1200,
       "height": 630,
       "sources": {
-        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
-        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d",
-        "design/fonts/InterDisplay-SemiBold.ttf": "9d7a047d4d226e3fe401347199a6554f84d8b017ac0976544fd5701af61c1660",
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c",
+        "design/fonts/Charter-Bold.ttf": "7b8959ea727a107748dbcb95bd509b23852cb1275d0d9ade0bb090733193b5d3",
         "site/home/content/credits.md#heading": "2a6b24ad287220345e96eb8021fe29d42b0785766c8df658827e7251da2d36dc"
       }
     },
@@ -56,10 +79,9 @@
       "width": 1200,
       "height": 630,
       "sources": {
-        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
-        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d",
-        "design/fonts/InterDisplay-SemiBold.ttf": "9d7a047d4d226e3fe401347199a6554f84d8b017ac0976544fd5701af61c1660",
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c",
+        "design/fonts/Charter-Bold.ttf": "7b8959ea727a107748dbcb95bd509b23852cb1275d0d9ade0bb090733193b5d3",
         "site/home/content/index.md#heading": "c945ce11b811a12af022f35d9b512bde04be0d382b6204de0f1bde9baa03156e"
       }
     },
@@ -68,10 +90,9 @@
       "width": 1200,
       "height": 630,
       "sources": {
-        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
-        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d",
-        "design/fonts/InterDisplay-SemiBold.ttf": "9d7a047d4d226e3fe401347199a6554f84d8b017ac0976544fd5701af61c1660",
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c",
+        "design/fonts/Charter-Bold.ttf": "7b8959ea727a107748dbcb95bd509b23852cb1275d0d9ade0bb090733193b5d3",
         "site/home/content/why.md#heading": "81c83d34e56d4c9cb4e87ca2f8cf7b90164837580b8ee48c6f9999747e638952"
       }
     },
@@ -80,20 +101,18 @@
       "width": 1200,
       "height": 630,
       "sources": {
-        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
-        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d",
-        "design/fonts/InterDisplay-SemiBold.ttf": "9d7a047d4d226e3fe401347199a6554f84d8b017ac0976544fd5701af61c1660",
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c",
+        "design/fonts/Charter-Bold.ttf": "7b8959ea727a107748dbcb95bd509b23852cb1275d0d9ade0bb090733193b5d3",
         "CHANGELOG.md#heading": "ead07c84baac57a9542f388a07a2a5209456ce790b04251bc9bd7d179ea85cb1"
       }
     },
     {
       "path": "site/src/assets/logo.svg",
-      "width": 153,
-      "height": 32,
+      "width": 47,
+      "height": 9,
       "sources": {
-        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f"
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72"
       }
     },
     {
@@ -101,8 +120,8 @@
       "width": 256,
       "height": 256,
       "sources": {
-        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     },
     {
@@ -110,34 +129,34 @@
       "width": 24,
       "height": 24,
       "sources": {
-        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442"
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72"
       }
     },
     {
       "path": "design/out/header-light.svg",
-      "width": 218,
-      "height": 48,
+      "width": 235,
+      "height": 45,
       "sources": {
-        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
-        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     },
     {
       "path": "design/out/header-dark.svg",
-      "width": 218,
-      "height": 48,
+      "width": 235,
+      "height": 45,
       "sources": {
-        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
-        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     },
     {
       "path": "design/out/header-vscode.png",
-      "width": 532,
+      "width": 572,
       "height": 192,
       "sources": {
-        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
-        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     },
     {
@@ -145,8 +164,8 @@
       "width": 512,
       "height": 512,
       "sources": {
-        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
+        "design/mark.toml": "fcb2675aecb4be38014a5eadd11e0d931b4d4f2bab3b70a49bb250c322b24f72",
+        "design/tokens.toml#brand": "ce7884602d8a0d03b93e277bafb4de055025be2f2eb1c9360100c86652b2587c"
       }
     }
   ]

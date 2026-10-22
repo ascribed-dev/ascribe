@@ -108,7 +108,10 @@ export function load(text: string): Tokens {
     }
   }
   for (const token of [...colors.keys(), ...values.keys()]) {
-    if (!used.has(token)) problems.push(`${token} isn't used by any stylesheet`);
+    // The mark's colors are taken by its images, which scripts/design/assets.ts draws.
+    if (!used.has(token) && !token.startsWith("color.brand.")) {
+      problems.push(`${token} isn't used by any stylesheet`);
+    }
   }
   const pointed = new Set([...colors.values()].flatMap(({ light, dark }) => [light, dark]));
   for (const name of palette.keys()) {

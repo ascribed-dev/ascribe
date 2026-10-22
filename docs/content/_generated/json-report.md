@@ -62,6 +62,21 @@
           "$ref": "#/$defs/Capped_Entry",
           "description": "A diagnostic for each check that failed or warned that the hosting\nor Ascribe owns. One a page owns is `ascribe check`'s, and isn't\nrepeated."
         },
+        "new": {
+          "description": "How many checks fail or warn now that passed on the last report or\nweren't in it, or `null` when `previous_run` is. A check is told from\nanother by the site's address and its id.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "new_checks": {
+          "description": "The ids of the checks `new` counts, in the checker's order; empty\nwhen `previous_run` is `null`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "not_run": {
           "anyOf": [
             {
@@ -72,6 +87,21 @@
             }
           ],
           "description": "Why it couldn't run, or `null` when it ran. When it isn't `null`,\nthe rest is empty."
+        },
+        "previous_run": {
+          "description": "The day of the last report that checked the same site,\n`YYYY-MM-DD`, or `null` on a first run, with `--no-history`, or when\nthe last report checked another site or none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "resolved": {
+          "description": "How many checks that failed or warned on the last report pass now or\naren't in this one, or `null` when `previous_run` is.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
         },
         "results": {
           "description": "Each check's result, in the checker's order.",
@@ -89,7 +119,11 @@
         "not_run",
         "site",
         "results",
-        "diagnostics"
+        "diagnostics",
+        "previous_run",
+        "new",
+        "resolved",
+        "new_checks"
       ],
       "type": "object"
     },
