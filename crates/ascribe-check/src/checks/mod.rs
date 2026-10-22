@@ -322,7 +322,8 @@ impl Ctx<'_> {
                 self.check_include_heading(d, &p.text);
             }
             ("available", Some(PrimaryValue::Line(p))) => {
-                self.check_availability_text(&p.text, p.span.start(), p.span, true);
+                let removal = memo::lines_removal(self.source(), d.span.start(), d.span.end());
+                self.check_availability_text(&p.text, p.span.start(), p.span, true, removal);
             }
             ("snippet", Some(PrimaryValue::Identifier(_))) => self.check_snippet(d),
             ("intended", _) => self.check_intended_directive(d),

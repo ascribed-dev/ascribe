@@ -37,33 +37,38 @@ impl Ctx<'_> {
         self.report(issue);
     }
 
-    /// The fix that removes the lines from the one `start` is on through
-    /// the one `end` is on, and a blank line after them when one is before
-    /// them too, so the blocks around keep one blank line between them.
+    /// The fix that removes the memo's lines, as [`lines_removal`] says.
     fn remove_memo(&self, start: usize, end: usize) -> Option<Fix> {
-        let source = self.source();
-        let from = line_start(source, start);
-        // A list marker before the memo starts its item's first line.
-        if !source[from..start]
-            .chars()
-            .all(|c| matches!(c, '>' | ' ' | '\t'))
-        {
-            return None;
-        }
-        let mut to = next_line_start(source, end);
-        let blank_before = from == 0 || is_blank(line_before(source, from));
-        let after = &source[to..source[to..].find('\n').map_or(source.len(), |i| to + i + 1)];
-        if blank_before && to < source.len() && is_blank(after) {
-            to += after.len();
-        }
         Some(Fix {
             title: "Remove the empty memo".to_owned(),
             file: self.id,
-            edits: vec![TextEdit::delete(Span::new(from, to))],
+            edits: vec![TextEdit::delete(lines_removal(self.source(), start, end)?)],
             // A memo is in no output, and an empty one says nothing.
             applicability: Applicability::Safe,
         })
     }
+}
+
+/// The lines from the one `start` is on through the one `end` is on, and a
+/// blank line after them when one is before them too, so the blocks around
+/// keep one blank line between them. `None` when something other than
+/// indentation and blockquote markers comes before `start` on its line, as
+/// a list marker does.
+pub(super) fn lines_removal(source: &str, start: usize, end: usize) -> Option<Span> {
+    let from = line_start(source, start);
+    if !source[from..start]
+        .chars()
+        .all(|c| matches!(c, '>' | ' ' | '\t'))
+    {
+        return None;
+    }
+    let mut to = next_line_start(source, end);
+    let blank_before = from == 0 || is_blank(line_before(source, from));
+    let after = &source[to..source[to..].find('\n').map_or(source.len(), |i| to + i + 1)];
+    if blank_before && to < source.len() && is_blank(after) {
+        to += after.len();
+    }
+    Some(Span::new(from, to))
 }
 
 /// The line before the one starting at `at`, which isn't the first.

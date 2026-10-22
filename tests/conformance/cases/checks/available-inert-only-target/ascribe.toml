@@ -1,0 +1,18 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page.frontmatter]
+title = "string"
+
+# `ascribe` is the one value of the implicit `release` dimension.
+[releases.ascribe]
+live = ["0.4.2"]
+
+[releases.ascribe.archived]
+"0.4.0" = {}
+"0.4.1" = {}
+
+[builds.site]
+availability = "badge"

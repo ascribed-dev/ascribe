@@ -8,6 +8,8 @@ use ascribe_core::{
 };
 use ascribe_model::AvailabilityProblem;
 
+use crate::releases::Written;
+
 use super::Ctx;
 use super::attrs::Owner;
 use super::text::quoted_list;
@@ -24,18 +26,37 @@ impl Ctx<'_> {
             description: None,
         }];
         self.check_block(block, &declared, Owner::Row);
+        let removal = self.row_removal(block);
         match block.get("available").and_then(|a| a.value.as_ref()) {
             Some(AttributeValue::Token(t)) => {
-                self.check_availability_text(&t.text, t.span.start(), t.span, true);
+                self.check_availability_text(&t.text, t.span.start(), t.span, true, removal);
             }
             Some(AttributeValue::Quoted { text, span }) => {
                 // Escapes inside the quotes move the spec off its source.
                 let precise = text.len() + 2 == span.len();
-                self.check_availability_text(text, span.start() + 1, *span, precise);
+                let removal = removal.filter(|_| precise);
+                self.check_availability_text(text, span.start() + 1, *span, precise, removal);
             }
             // A value set is the wrong type, which `check_block` reported.
             Some(AttributeValue::Set { .. }) | None => {}
         }
+    }
+
+    /// What removing a row's attribute block deletes: the block and the
+    /// space before it, keeping one after the `|` when the block is alone
+    /// in its cell. `None` when the block holds more than `available`.
+    fn row_removal(&self, block: &AttributeBlock) -> Option<Span> {
+        if block.attributes.len() != 1 {
+            return None;
+        }
+        let before = self.source().get(..block.span.start())?;
+        let text = before.trim_end_matches([' ', '\t']);
+        let start = if text.ends_with('|') {
+            (text.len() + 1).min(block.span.start())
+        } else {
+            text.len()
+        };
+        Some(Span::new(start, block.span.end()))
     }
 
     /// Parses a spec and checks it against the content model: syntax,
@@ -45,13 +66,15 @@ impl Ctx<'_> {
     ///
     /// `offset` is where `text` starts in the file. When `precise` is false
     /// the offset can't be trusted (a multi-line or escaped YAML scalar), so
-    /// everything is reported at `whole`.
+    /// everything is reported at `whole`. `removal` is what removing the
+    /// whole mark deletes, when that's known.
     pub(super) fn check_availability_text(
         &mut self,
         text: &str,
         offset: usize,
         whole: Span,
         precise: bool,
+        removal: Option<Span>,
     ) {
         let at = |span: Span| Location::new(self.id, if precise { span } else { whole });
         let spec = match parse_availability(text, offset) {
@@ -133,7 +156,13 @@ impl Ctx<'_> {
             issues = crate::releases::placement_issues(self.model, &spec.entries, &at, precise);
         }
         if issues.is_empty() {
-            issues = crate::releases::inert_issues(self.model, &spec, &at, precise);
+            issues = crate::releases::inert_issues(
+                self.model,
+                &spec,
+                &at,
+                precise,
+                Written::Mark { removal },
+            );
         }
         for issue in issues {
             self.report(issue);

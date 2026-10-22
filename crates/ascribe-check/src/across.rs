@@ -251,7 +251,13 @@ fn placement(model: &ContentModel, issues: &mut Vec<Issue>) {
     for f in &model.features {
         let placed = releases::placement_issues(model, &f.available.entries, &at, true);
         if placed.is_empty() {
-            issues.extend(releases::inert_issues(model, &f.available, &at, true));
+            issues.extend(releases::inert_issues(
+                model,
+                &f.available,
+                &at,
+                true,
+                releases::Written::Feature,
+            ));
         }
         issues.extend(placed);
     }
