@@ -1,7 +1,7 @@
 {
   "name": "@ascribed/elements",
   "version": "0.4.1",
-  "description": "Ascribe's web component library for the site output.",
+  "description": "A toolchain for documentation written as code. This package is the web components its site output uses.",
   "type": "module",
   "license": "MPL-2.0",
   "author": "Bryo Studio <hello@bryostudio.com> (https://bryostudio.com)",
@@ -10,7 +10,14 @@
     "url": "git+https://github.com/ascribed-dev/ascribe.git",
     "directory": "packages/elements"
   },
-  "homepage": "https://github.com/ascribed-dev/ascribe/tree/main/packages/elements#readme",
+  "keywords": [
+    "ascribe",
+    "documentation",
+    "markdown",
+    "docs-as-code",
+    "web-components"
+  ],
+  "homepage": "https://ascribed-dev.com/go/elements/",
   "bugs": "https://github.com/ascribed-dev/ascribe/issues",
   "sideEffects": [
     "./dist/index.js",

@@ -5,7 +5,7 @@ Part of [The website, and the brand on everything else](README.md). Needs phase 
 ## Goal
 
 - **One home for the sentence and the headline.** Every other surface that says what Ascribe is either takes them from it or is tested against it.
-- **Bryo Studio as the maker** everywhere a maker is named, the extension's publisher included.
+- **Bryo Studio as the maker** everywhere a maker is named, except the Marketplace publisher, which stays `Ascribe` (decision 14).
 
 ## Context
 
@@ -53,21 +53,20 @@ A test compares each surface with the home. Where a file can be generated from i
 ### The maker
 
 - **The plugin's `author` and `owner`** become Bryo Studio, `https://bryostudio.com`, in `plugin.rs`, and the generated manifests are rewritten.
-- **The VS Code publisher** moves to a Bryo Studio publisher, which the maintainer creates on the Marketplace. The extension's id changes from `Ascribe.ascribe-vscode` to the new publisher's. Every place that names the id changes with it: the landing page's and getting started's install commands, which a test keeps the same, the docs, and the release workflow. The old listing is unpublished. There's no migration (decision 8).
-- **`project-docs/outside.md`** records the new publisher, who can change it, and the GitHub repository's description and topics, set by hand from the home.
+- **The VS Code publisher stays `Ascribe`,** and the extension's id stays `Ascribe.ascribe-vscode` (decision 14).
+- **`project-docs/outside.md`** records the GitHub repository's description and topics, set by hand from the home.
 
 ### The record
 
-- **A decision** for the publisher and the extension's new id.
-- **A changelog entry** under the editor's area. It's a **Behavior change**, because the extension's id changes and it's installed from a new listing.
+- **Decisions** for where the words live and for the plugin's author.
+- **Changelog entries** for what a user notices: the command's help, the packages' descriptions, and the plugin's author.
 
 ## Tasks
 
 1. Choose the home, write the three lines in it, and add the test.
 2. Change each surface in the table, generating where possible.
 3. Move the plugin's author and owner to Bryo Studio.
-4. Once the maintainer has created the publisher, change the extension's id everywhere, and publish from the new listing at the next release.
-5. Update `outside.md`, write the decision, and write the changelog entry.
+4. Update `outside.md`, write the decision, and write the changelog entry.
 
 ## Out of scope
 
@@ -78,8 +77,7 @@ A test compares each surface with the home. Where a file can be generated from i
 ## Acceptance criteria
 
 - Changing the sentence in its home fails a test until every surface in the table agrees.
-- No surface names Ascribe as a maker, publisher, author, or owner.
-- `code --install-extension` with the new id installs the extension, once the next release is published.
+- No surface but the Marketplace publisher names Ascribe as a maker, author, or owner.
 
 ## Verify
 
@@ -90,4 +88,3 @@ The full set in `AGENTS.md`, and `cd site && npm test` after a build.
 1. "Give the sentence and the headline one home"
 2. "Say what Ascribe is the same way on every surface"
 3. "Name Bryo Studio as the plugin's author"
-4. "Publish the extension as Bryo Studio"

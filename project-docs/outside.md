@@ -11,6 +11,7 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 | Thing | What uses it | Who can change it |
 |---|---|---|
 | `ascribed-dev/ascribe` (public) | Everything. Branch `main` only; one required check, `all checks`, no required review, and admins can bypass | Maintainer |
+| `ascribed-dev/ascribe`'s description, website, and topics (the repository's page, About) | What GitHub shows beside the code and in search. They're set by hand from the words' home, `design/words.toml`: the description is its `short`, the website <https://ascribed-dev.com>, and the topics its `keywords`. Nothing in the repository sets or checks them, so they're set again when the home changes | Maintainer, in the repository's settings |
 | `ascribed-dev/homebrew-tap` (public) | `brew install ascribed-dev/tap/ascribe`: its `Formula/ascribe.rb`, written for each release by `scripts/release/formula.ts`. It needs a default branch for a pull request to target | Maintainer, who merges each release's pull request ([decision #463b](decisions/463b-homebrew-tap-pull-request.md)) |
 | `ascribed-dev/review-fixture` (private) | `scripts/review-fixture/setup.ts` rebuilds it, for trying review by hand | Maintainer, or anyone running the script with access |
 | `ascribed-dev/sources-fixture-code`, `ascribed-dev/sources-fixture-docs` (private) | `scripts/sources-fixture/setup.ts`, for running the sources update workflow for real. The docs repository runs `examples/docs-repository`'s workflow on a schedule. The code repository is `CODE` in `scripts/sources-fixture/changes.ts`: the client library, its quickstart, and the quickstart's tested examples config, test, and observation, which a scripted change (`untested`) makes stale. A change to `CODE` reaches GitHub when the maintainer runs `setup.ts ascribed-dev` again | Maintainer, or anyone running the script with access |
@@ -50,7 +51,7 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 
 | Thing | What uses it | Who can change it |
 |---|---|---|
-| VS Code Marketplace publisher `Ascribe`, extension `Ascribe.ascribe-vscode` | Users of the extension | Maintainer, through a personal Microsoft account |
+| VS Code Marketplace publisher `Ascribe`, extension `Ascribe.ascribe-vscode` | Users of the extension. It stays `Ascribe`, the one place Ascribe is named as a maker: a publisher can't be renamed ([the website plan](website/README.md), decision 14) | Maintainer, through a personal Microsoft account |
 | Managed identity `ascribe-vscode-publisher` (Azure, resource group `ascribe-release`, East US), with a federated credential trusting this repository's `release` environment | `release.yml`'s `marketplace` job | Maintainer |
 | An Azure DevOps organization connected to that tenant | Gives the identity the profile the Marketplace needs. No projects or pipelines | Maintainer |
 

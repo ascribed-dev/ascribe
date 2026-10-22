@@ -52,11 +52,15 @@ what it reports; `ascribe explain <CODE>` says how to fix a diagnostic, with
 an example. Before writing frontmatter, a directive's attributes, or a
 phrase, read `ascribe model` for what this project allows.";
 
-/// Ascribe: check, build, format, and serve documentation written as code.
+/// The command line. Its about, which `--help` opens with, is the crate's
+/// description: the short form in `design/words.toml`. The subcommands are
+/// listed by `--help` itself.
 #[derive(Debug, Parser)]
 #[command(
     name = "ascribe",
     version = env!("ASCRIBE_VERSION"),
+    about,
+    long_about = None,
     arg_required_else_help = true,
     help_template = "{about-with-newline}\n{usage-heading} {usage}\n\n{before-help}{all-args}{after-help}",
     before_help = EXAMPLES,
@@ -256,4 +260,24 @@ pub fn run(args: impl IntoIterator<Item = OsString>) -> ExitCode {
         }
     };
     cli.command.run(&cli.global)
+}
+
+#[cfg(test)]
+mod tests {
+    use clap::CommandFactory;
+
+    use super::Cli;
+
+    /// `--help` opens with the crate's description, which
+    /// `scripts/design/words.test.ts` holds to the short form in
+    /// `design/words.toml`, and with nothing more.
+    #[test]
+    fn the_help_opens_with_the_crates_description() {
+        let command = Cli::command();
+        assert_eq!(
+            command.get_about().map(ToString::to_string).as_deref(),
+            Some(env!("CARGO_PKG_DESCRIPTION"))
+        );
+        assert!(command.get_long_about().is_none());
+    }
 }

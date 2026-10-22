@@ -1,7 +1,7 @@
 {
   "name": "@ascribed/review",
   "version": "0.4.1",
-  "description": "Reviewing Ascribe pages as readers see them: changed blocks marked on the rendered page, and a pull request's review threads beside them.",
+  "description": "A toolchain for documentation written as code. This package reviews pages as readers see them: changed blocks marked on the rendered page, and a pull request's review threads beside them.",
   "type": "module",
   "license": "MPL-2.0",
   "author": "Bryo Studio <hello@bryostudio.com> (https://bryostudio.com)",
@@ -10,7 +10,15 @@
     "url": "git+https://github.com/ascribed-dev/ascribe.git",
     "directory": "packages/review"
   },
-  "homepage": "https://github.com/ascribed-dev/ascribe/tree/main/packages/review#readme",
+  "keywords": [
+    "ascribe",
+    "documentation",
+    "markdown",
+    "docs-as-code",
+    "review",
+    "pull-request"
+  ],
+  "homepage": "https://ascribed-dev.com/go/review-guide/",
   "bugs": "https://github.com/ascribed-dev/ascribe/issues",
   "sideEffects": false,
   "files": [

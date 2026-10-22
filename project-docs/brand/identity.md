@@ -37,4 +37,4 @@ No asset animates it yet.
 
 1. **The avatar,** uploaded by hand where `project-docs/outside.md` lists it.
 2. **Motion:** the three states as an animated SVG for the site, holding still for anyone who prefers reduced motion.
-3. **The publisher.** Story item 2 moves the maker to Bryo Studio; the avatar and banner are ready for it.
+3. **The publisher's logo and banner.** The publisher stays `Ascribe` (story decision 7); its logo is the avatar, uploaded by hand.

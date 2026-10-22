@@ -12,7 +12,7 @@ These came from Kyle on 21 October 2026, after an inventory of how the surfaces 
 4. **The site names no other tools.** This keeps the decision the first website plan made.
 5. **The headline is "Docs as code, with the tools docs need."**
 6. **"Help authoring tool" stays out of the copy** unless a page has a very good reason to use it. Most engineers don't know the term, and the promise reads without it. This file uses it only to say where the tools come from.
-7. **Bryo Studio is the maker.** Ascribe is a product, not an organization, so it isn't named as a publisher, an author, or an owner.
+7. **Bryo Studio is the maker.** Ascribe is a product, not an organization, so it isn't named as an author or an owner. The one exception is the VS Code Marketplace publisher, `Ascribe`, which can't be renamed and isn't worth replacing.
 
 ## The problem
 
@@ -98,5 +98,5 @@ Each concept gets one word in marketing copy. The docs keep their own reference 
 ## After the story
 
 1. **One home for the words.** The sentence and the headline are kept in one file. The README, the package descriptions, the Marketplace listing, the command's `about`, the plugin's description, and the site's meta description are generated from it or tested against it.
-2. **Bryo Studio everywhere a maker is named.** The plugin's `author` and `owner` change from Ascribe to Bryo Studio. The VS Code publisher is `Ascribe`, and it's part of the extension's id, `Ascribe.ascribe-vscode`. Changing it means publishing under a new publisher, which costs little while Ascribe has no users.
+2. **Bryo Studio everywhere a maker is named.** The plugin's `author` and `owner` change from Ascribe to Bryo Studio. The VS Code publisher stays `Ascribe`, as the extension's id, `Ascribe.ascribe-vscode`, does: a publisher can't be renamed, and a new one isn't worth the trouble.
 3. **The website.** The revamp starts from the pillars, and it's planned in this folder.

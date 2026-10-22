@@ -5,7 +5,7 @@ description: Install Ascribe, write a first page, check it, build it, and publis
 permalink: getting-started
 ---
 
-Ascribe is documentation written as code: Markdown with a small set of directives for the structure documentation needs (notes, procedures, alternatives by platform or product, availability, includes), checked like code, and built into a website, plain Markdown, and JSON. This guide sets up a project and writes, checks, and builds a first page. Its second half, [Astro](astro/index.md), publishes the page as a site.
+Ascribe is a toolchain for documentation written as code: Markdown with the structure docs need, checked as you write, and built into a website, plain Markdown, and JSON. This guide sets up a project and writes, checks, and builds a first page. Its second half, [Astro](astro/index.md), publishes the page as a site.
 
 It's for someone new to Ascribe who knows Markdown and a terminal. By the end, you'll have a project with a content model, a page that the editor checks as you write it, and a build of it ready for a site.
 
