@@ -3,6 +3,7 @@
 //   node scripts/release/publish.ts npm [--from <dir>] [--dry-run] [--tag <tag>]
 //   node scripts/release/publish.ts marketplace [--from <dir>] [--dry-run]
 //   node scripts/release/publish.ts tag <tag> [--dry-run]
+//   node scripts/release/publish.ts catch-up <from> <to> [--dry-run]
 //   node scripts/release/publish.ts missing
 //
 // Every target is required, unless --targets names the ones packed (a local
@@ -21,14 +22,19 @@
 // --tag publishes under that dist-tag instead of `latest` (or `next` for a
 // pre-release). `tag` then points a dist-tag at this version of every package,
 // so a canary can publish everything under a holding tag and move `next` only
-// once all of it is on npm. `missing` lists the packages npm has never had.
+// once all of it is on npm. It waits a while for npm to show every package,
+// and moves no tag until all of them show; when one is still missing at the
+// deadline, it moves none, warns, and passes. `catch-up` moves `<to>` to the
+// version `<from>` names on @ascribed/cli, if every package shows that version
+// now and it isn't deprecated: a later run's catch-up moves the `next` an
+// earlier run's `tag` left. `missing` lists the packages npm has never had.
 //
 // Both skip what's already published, so a release that failed partway can be
 // run again. With --dry-run, nothing is published: npm checks each tarball
 // with `npm publish --dry-run`, and each extension package's manifest is read
 // and checked.
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
+import { appendFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import process from "node:process";
 import { parseArgs } from "node:util";
@@ -50,6 +56,8 @@ const { values: options, positionals } = parseArgs({
     targets: { type: "string" },
     tag: { type: "string" },
   },
+  // Only the command line's own run reads it; a test imports the functions.
+  args: import.meta.main ? process.argv.slice(2) : [],
 });
 const dryRun = options["dry-run"];
 const [registry] = positionals;
@@ -58,16 +66,39 @@ const expected = npmPackages.filter(
   (pkg) => pkg.target === undefined || selected.includes(pkg.target),
 );
 
-const { version, problems } = checkVersion();
-if (problems.length > 0) fail(problems.join("\n"));
+if (import.meta.main) {
+  if (registry === "npm") publishNpm();
+  else if (registry === "marketplace") publishMarketplace();
+  else if (registry === "tag" && positionals[1] !== undefined) tag(positionals[1]);
+  else if (
+    registry === "catch-up" &&
+    positionals[1] !== undefined &&
+    positionals[2] !== undefined
+  ) {
+    const caughtUp = catchUp(packageNames(), positionals[1], positionals[2], registryNpm(dryRun));
+    setOutput("moved", String(caughtUp !== undefined));
+    if (caughtUp !== undefined) setOutput("version", caughtUp);
+  } else if (registry === "missing") listMissing();
+  else {
+    fail(
+      "usage: publish.ts npm|marketplace [--from <dir>] [--dry-run] | tag <tag> | catch-up <from> <to> | missing",
+    );
+  }
+}
 
-if (registry === "npm") publishNpm();
-else if (registry === "marketplace") publishMarketplace();
-else if (registry === "tag" && positionals[1] !== undefined) tagNpm(positionals[1]);
-else if (registry === "missing") listMissing();
-else fail("usage: publish.ts npm|marketplace [--from <dir>] [--dry-run] | tag <tag> | missing");
+/** The checkout's version, which `npm`, `marketplace`, and `tag` publish or tag. */
+function checkoutVersion(): string {
+  const { version, problems } = checkVersion();
+  if (problems.length > 0) fail(problems.join("\n"));
+  return version;
+}
+
+function packageNames(): string[] {
+  return expected.map((pkg) => pkg.name);
+}
 
 function publishNpm(): void {
+  const version = checkoutVersion();
   checkRepository();
   const dir = join(options.from, "npm");
   const tarballs = new Map<string, string>(
@@ -88,7 +119,7 @@ function publishNpm(): void {
   for (const { name } of expected) {
     const tarball = tarballs.get(name);
     if (tarball === undefined) fail(`no tarball for ${name} in ${dir}`);
-    if (isPublished(name)) {
+    if (isPublished(name, version)) {
       log(`${name}@${version} is already on npm; skipping`);
       continue;
     }
@@ -101,23 +132,129 @@ function publishNpm(): void {
   }
 }
 
-/** Points a dist-tag at this version of every package, each of which must be on npm. */
-function tagNpm(tag: string): void {
+function tag(name: string): void {
+  const version = checkoutVersion();
   // A version published a moment ago can take a while to show: one canary's
-  // linux-arm64 package was still missing from `npm view` after 3 minutes,
-  // though its publish had succeeded. All of them were published together,
-  // so they share one deadline, well inside the job's timeout.
-  const deadline = Date.now() + (dryRun ? 0 : 15 * 60_000);
-  for (const { name } of expected) {
-    while (!isPublished(name)) {
-      if (Date.now() >= deadline) fail(`${name}@${version} isn't on npm`);
-      log(`waiting for ${name}@${version} to show on npm`);
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10_000);
-    }
-    const args = ["dist-tag", "add", `${name}@${version}`, tag];
-    log(`npm ${args.join(" ")}`);
-    if (!dryRun) run("npm", args);
+  // linux-arm64 package showed 54 minutes after the others (RELEASING.md, the
+  // nightly canary). This waits a while, well inside the job's timeout, and a
+  // later run's catch-up moves the tag if it gives up.
+  const moved = moveTag(packageNames(), version, name, registryNpm(dryRun), {
+    wait: dryRun ? 0 : 15 * 60_000,
+  });
+  setOutput("moved", String(moved));
+  if (!moved) {
+    log(
+      `::warning::Not every package shows ${version} on npm yet, so \`${name}\` hasn't moved on any of them. ` +
+        "The next canary run moves it once they all show, or run the Canary workflow by hand.",
+    );
   }
+}
+
+/** What the tag commands ask of npm, so a test can stand in for it. */
+export interface Npm {
+  /** Whether npm shows this version of a package. */
+  shows(name: string, version: string): boolean;
+  /** The version a dist-tag names on a package, if any. */
+  tagged(name: string, tag: string): string | undefined;
+  /** Whether this version of a package is deprecated. */
+  deprecated(name: string, version: string): boolean;
+  addTag(name: string, version: string, tag: string): void;
+  /** Milliseconds since the epoch. */
+  now(): number;
+  sleep(ms: number): void;
+}
+
+/**
+ * Points `tag` at `version` of every package, once npm shows all of them; one
+ * still missing after `wait` milliseconds leaves every package's `tag` where
+ * it was. Moving them only together is what keeps `next` from mixing two
+ * canaries. Returns whether it moved them.
+ */
+export function moveTag(
+  names: readonly string[],
+  version: string,
+  tag: string,
+  npm: Npm,
+  { wait, poll = 10_000 }: { wait: number; poll?: number },
+): boolean {
+  const deadline = npm.now() + wait;
+  let missing = names.filter((name) => !npm.shows(name, version));
+  while (missing.length > 0) {
+    if (npm.now() >= deadline) {
+      log(`${missing.join(", ")} still ${missing.length === 1 ? "isn't" : "aren't"} on npm`);
+      return false;
+    }
+    log(`waiting for ${missing.join(", ")} @${version} to show on npm`);
+    npm.sleep(poll);
+    missing = missing.filter((name) => !npm.shows(name, version));
+  }
+  for (const name of names) {
+    if (npm.tagged(name, tag) === version) continue;
+    log(`npm dist-tag add ${name}@${version} ${tag}`);
+    npm.addTag(name, version, tag);
+  }
+  return true;
+}
+
+/**
+ * Moves `to` to the version `from` names on @ascribed/cli (the canary a run
+ * published), when that's a different version, npm shows it for every
+ * package now, and it isn't deprecated: a bad canary, deprecated and with
+ * `next` pointed back, stays behind. Returns the version it moved to, if it did.
+ */
+export function catchUp(
+  names: readonly string[],
+  from: string,
+  to: string,
+  npm: Npm,
+): string | undefined {
+  const version = npm.tagged("@ascribed/cli", from);
+  if (version === undefined) {
+    log(`@ascribed/cli has no \`${from}\`; nothing to catch up`);
+    return undefined;
+  }
+  if (names.every((name) => npm.tagged(name, to) === version)) {
+    log(`\`${to}\` is already at ${version} on every package`);
+    return undefined;
+  }
+  if (names.some((name) => npm.shows(name, version) && npm.deprecated(name, version))) {
+    log(`${version} is deprecated; \`${to}\` stays where it is`);
+    return undefined;
+  }
+  if (moveTag(names, version, to, npm, { wait: 0 })) return version;
+  log(`\`${to}\` stays where it is until every package shows ${version}`);
+  return undefined;
+}
+
+/** npm itself. With `dryRun`, it moves no tag. */
+function registryNpm(dryRun: boolean): Npm {
+  return {
+    shows: isPublished,
+    tagged(name, tag) {
+      const result = spawnSync("npm", ["view", name, "dist-tags", "--json", "--prefer-online"], {
+        encoding: "utf8",
+        shell: process.platform === "win32",
+      });
+      if (result.status !== 0) fail(`couldn't ask npm about ${name}: ${result.stderr.trim()}`);
+      return (JSON.parse(result.stdout) as Record<string, string>)[tag];
+    },
+    deprecated(name, version) {
+      const result = spawnSync(
+        "npm",
+        ["view", `${name}@${version}`, "deprecated", "--prefer-online"],
+        { encoding: "utf8", shell: process.platform === "win32" },
+      );
+      if (result.status !== 0) fail(`couldn't ask npm about ${name}: ${result.stderr.trim()}`);
+      return result.stdout.trim() !== "";
+    },
+    addTag(name, version, tag) {
+      if (!dryRun) run("npm", ["dist-tag", "add", `${name}@${version}`, tag]);
+    },
+    now: () => Date.now(),
+    sleep(ms) {
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+    },
+  };
 }
 
 /** Prints each package npm has no version of. */
@@ -134,7 +271,7 @@ function listMissing(): void {
 }
 
 /** Whether npm already has this version of a package. */
-function isPublished(name: string): boolean {
+function isPublished(name: string, version: string): boolean {
   // `--prefer-online`: npm otherwise answers from its cache for some minutes,
   // so a check made before a publish would hide the version just published.
   const result = spawnSync("npm", ["view", `${name}@${version}`, "version", "--prefer-online"], {
@@ -165,6 +302,7 @@ function checkRepository(): void {
 }
 
 function publishMarketplace(): void {
+  const version = checkoutVersion();
   const dir = join(options.from, "vsix");
   const packages = selected.map((target) => ({
     target,
@@ -199,6 +337,12 @@ function run(command: string, args: string[]): void {
     shell: process.platform === "win32",
   });
   if (result.status !== 0) fail(`${command} ${args.join(" ")} failed`);
+}
+
+/** Sets a step output, when this runs in GitHub Actions. */
+function setOutput(name: string, value: string): void {
+  const output = process.env.GITHUB_OUTPUT;
+  if (output !== undefined && output !== "") appendFileSync(output, `${name}=${value}\n`);
 }
 
 function log(message: string): void {

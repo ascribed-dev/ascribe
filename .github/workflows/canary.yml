@@ -10,7 +10,9 @@ name: Canary
 # publishes nothing, and passes. A canary whose build or smoke test fails
 # publishes nothing, so `next` stays on the newest canary that passed. Every
 # package is published under `next-pending` first, and `next` moves only when
-# all of them are on npm.
+# all of them are on npm. A night when npm is slow to show one leaves `next`
+# where it was, on every package, and passes; the next run's `catch-up` moves
+# it, as does running this by hand.
 # RELEASING.md describes it, and how to deprecate a bad one.
 on:
   schedule:
@@ -30,8 +32,35 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Moves `next` to the canary an earlier run left under `next-pending`, when
+  # npm now shows every package of it (scripts/release/publish.ts). It runs
+  # first, so the comparison below is with that canary.
+  catch-up:
+    name: catch up next
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: canary
+    permissions:
+      contents: read
+      # Moving a dist-tag through trusted publishing uses the job's OIDC token.
+      id-token: write
+    outputs:
+      moved: ${{ steps.catch-up.outputs.moved }}
+      version: ${{ steps.catch-up.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      # Moving a dist-tag through trusted publishing needs npm 11.21.0 or later.
+      - run: npm install --global npm@^11.21.0
+      - id: catch-up
+        run: node scripts/release/publish.ts catch-up next-pending next
+
   version:
     name: stamp the version
+    needs: catch-up
     # By hand, it runs from `main` only; the `canary` environment enforces it too.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -93,6 +122,8 @@ jobs:
     timeout-minutes: 60
     # Limited to `main`, with no reviewers: the canary is unattended.
     environment: canary
+    outputs:
+      moved: ${{ steps.tag.outputs.moved }}
     permissions:
       contents: read
       # npm trusted publishing and provenance both use the job's OIDC token.
@@ -126,21 +157,28 @@ jobs:
       # Everything goes under a holding tag first, and `next` moves only once every
       # package is on npm, so `next` never names two canaries. A run that fails
       # partway can be re-run: it skips what's published, and then moves `next`.
+      # When npm is still missing a package after the wait, `next` stays on
+      # every package and this passes with a warning; a later run catches up.
       - run: node scripts/release/publish.ts npm --tag next-pending
-      - run: node scripts/release/publish.ts tag next
+      - id: tag
+        run: node scripts/release/publish.ts tag next
 
   # Tells Netlify to rebuild the docs site, which installs the canary `next`
   # now names (site/netlify.toml). The site's build hook is the SITE_BUILD_HOOK
-  # secret; without it, this says so and passes. A night that published
-  # nothing rebuilds nothing.
+  # secret; without it, this says so and passes. A night that moved `next`
+  # nowhere rebuilds nothing.
   site:
     name: rebuild the docs site
-    needs: [version, npm]
+    needs: [catch-up, version, npm]
+    if: >-
+      !cancelled() &&
+      (needs.npm.outputs.moved == 'true' || needs.catch-up.outputs.moved == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
       SITE_BUILD_HOOK: ${{ secrets.SITE_BUILD_HOOK }}
-      VERSION: ${{ needs.version.outputs.version }}
+      # The canary `next` now names: tonight's, or the one catch-up moved it to.
+      VERSION: ${{ needs.npm.outputs.moved == 'true' && needs.version.outputs.version || needs.catch-up.outputs.version }}
     steps:
       - if: env.SITE_BUILD_HOOK == ''
         run: echo "::notice::No SITE_BUILD_HOOK secret; the site isn't told to rebuild."
