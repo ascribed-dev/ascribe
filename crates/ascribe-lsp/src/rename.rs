@@ -112,6 +112,41 @@ impl Coded for RenameError {
 /// name can't be its name, or the files can't be changed in place
 /// ([`RenameError::Refused`]).
 pub fn rename(config: &Path, renaming: &Renaming) -> Result<Renamed, RenameError> {
+    let core = load(config);
+    if core.model_problem.is_some() {
+        return Err(model_problem());
+    }
+    let ctx = core
+        .project_nav_target()
+        .ok_or_else(|| refused("The project has no pages to rename in."))?;
+    let mut outside = BTreeMap::new();
+    let (edit, moved) = match renaming {
+        Renaming::Phrase { key, new } => (phrase(&ctx, key, new, &mut outside)?, None),
+        Renaming::Value { value, new } => (value_edit(&ctx, value, new, &mut outside)?, None),
+        Renaming::Id { file, id, new } => (heading_id(&core, &ctx, file, id, new)?, None),
+        Renaming::File { from, to } => {
+            let (edit, moved) = file_move(&ctx, from, to)?;
+            (edit, Some(moved))
+        }
+    };
+    let files = changes(&ctx, edit, &outside)?
+        .into_iter()
+        .map(|(path, (text, edits))| {
+            let after = ascribe_core::apply_edits(&text, &edits).map_err(|_| cant_change())?;
+            Ok((after != text).then_some(Rewritten {
+                path,
+                text: after,
+                edits: edits.len(),
+            }))
+        })
+        .filter_map(Result::transpose)
+        .collect::<Result<_, _>>()?;
+    Ok(Renamed { files, moved })
+}
+
+/// The project of `config`, an `ascribe.toml`, loaded as the server loads
+/// it.
+fn load(config: &Path) -> Core {
     let (out, sent) = crossbeam_channel::unbounded();
     let mut core = Core::new(out);
     let config = normalize(config);
@@ -123,27 +158,135 @@ pub fn rename(config: &Path, renaming: &Renaming) -> Result<Renamed, RenameError
     core.config = Some(config);
     core.start();
     sent.try_iter().for_each(drop);
-    if core.model_problem.is_some() {
-        return Err(refused(
-            "`ascribe.toml` has a problem. Fix it, then try again.",
-        ));
-    }
-    let ctx = core
-        .project_nav_target()
-        .ok_or_else(|| refused("The project has no pages to rename in."))?;
-    let (edit, moved) = match renaming {
-        Renaming::Phrase { key, new } => (phrase(&ctx, key, new)?, None),
-        Renaming::Value { value, new } => (value_edit(&ctx, value, new)?, None),
-        Renaming::Id { file, id, new } => (heading_id(&core, &ctx, file, id, new)?, None),
-        Renaming::File { from, to } => {
-            let (edit, moved) = file_move(&ctx, from, to)?;
-            (edit, Some(moved))
+    core
+}
+
+fn model_problem() -> RenameError {
+    refused("`ascribe.toml` has a problem. Fix it, then try again.")
+}
+
+thread_local! {
+    /// The `ascribe.toml` of each project a rename is being made in, so that
+    /// a project isn't renamed in twice.
+    static RENAMING_IN: std::cell::RefCell<Vec<PathBuf>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// `edit`, a rename made in `ctx`'s project, with the same rename made in
+/// the project of each file `[from]` takes from that it changes (SPEC
+/// §7.9): that project declares what's renamed, so its pages use it too, and
+/// they're renamed with it. `outside` gets the text of each file the other
+/// projects change, in UTF-8, as `edit` is made.
+///
+/// # Errors
+///
+/// The other project can't take the rename: [`RenameError::Refused`],
+/// naming the file.
+#[allow(clippy::mutable_key_type)]
+pub(crate) fn in_holders(
+    ctx: &Ctx,
+    renaming: &Renaming,
+    mut edit: WorkspaceEdit,
+    outside: &mut BTreeMap<PathBuf, String>,
+) -> Result<WorkspaceEdit, RenameError> {
+    let here = normalize(&ctx.config);
+    let pushed = RENAMING_IN.with(|r| {
+        let mut r = r.borrow_mut();
+        let fresh = !r.contains(&here);
+        if fresh {
+            r.push(here.clone());
         }
+        fresh
+    });
+    let result = (|| {
+        for taken in ctx.taken() {
+            let holder = normalize(&taken.path);
+            let Some(uri) = path_to_uri(&holder) else {
+                continue;
+            };
+            let changed = edit.changes.as_ref().is_some_and(|c| c.contains_key(&uri));
+            if !changed || RENAMING_IN.with(|r| r.borrow().contains(&holder)) {
+                continue;
+            }
+            let theirs = match holder_changes(&holder, renaming) {
+                Ok(theirs) => theirs,
+                // It doesn't declare it as such: what's taken is all it has.
+                Err(RenameError::Missing(_)) => continue,
+                Err(RenameError::Refused(why)) => {
+                    return Err(RenameError::Refused(format!(
+                        "`{}` writes `{}`, and its project uses it too, so it's renamed there as well, but it can't be: {why}",
+                        taken.file,
+                        renaming.name(),
+                    )));
+                }
+            };
+            let changes = edit.changes.get_or_insert_with(Default::default);
+            for (path, (text, edits)) in theirs {
+                let uri_there = path_to_uri(&path).ok_or_else(cant_change)?;
+                // The other project's edits to its own `ascribe.toml` are this
+                // project's and more; anything else both change can't be
+                // both.
+                if path != holder && changes.contains_key(&uri_there) {
+                    return Err(cant_change());
+                }
+                let index = LineIndex::new(&text);
+                let edits = edits
+                    .into_iter()
+                    .map(|e| lsp_types::TextEdit {
+                        range: ctx.encoding.range(&index, e.span),
+                        new_text: e.new_text,
+                    })
+                    .collect();
+                changes.insert(uri_there, edits);
+                outside.insert(path, text);
+            }
+        }
+        Ok(edit)
+    })();
+    if pushed {
+        RENAMING_IN.with(|r| r.borrow_mut().retain(|p| *p != here));
+    }
+    result
+}
+
+/// What renaming `renaming` changes in the project of `config`, as each
+/// file's text before and its edits; nothing when it has no pages.
+fn holder_changes(config: &Path, renaming: &Renaming) -> Result<Changes, RenameError> {
+    let core = load(config);
+    if let Some(problem) = &core.model_problem {
+        // A file that only holds what other projects take has no content
+        // root, and so no pages.
+        let no_pages = problem
+            .diagnostics
+            .iter()
+            .all(|d| d.slug == ascribe_core::diagnostics::MODEL_CONTENT_ROOT_MISSING);
+        return if no_pages {
+            Ok(Changes::new())
+        } else {
+            Err(model_problem())
+        };
+    }
+    let Some(ctx) = core.project_nav_target() else {
+        return Ok(Changes::new());
     };
-    Ok(Renamed {
-        files: rewritten(&ctx, edit)?,
-        moved,
-    })
+    let mut outside = BTreeMap::new();
+    let edit = match renaming {
+        Renaming::Phrase { key, new } => phrase(&ctx, key, new, &mut outside)?,
+        Renaming::Value { value, new } => value_edit(&ctx, value, new, &mut outside)?,
+        Renaming::Id { .. } | Renaming::File { .. } => return Ok(Changes::new()),
+    };
+    changes(&ctx, edit, &outside)
+}
+
+impl Renaming {
+    /// What's renamed, as `ascribe rename` names it.
+    fn name(&self) -> String {
+        match self {
+            Renaming::Phrase { key, .. } => format!("phrase:{key}"),
+            Renaming::Value { value, .. } => format!("value:{value}"),
+            Renaming::Id { file, id, .. } => format!("{file}#{id}"),
+            Renaming::File { from, .. } => from.to_string(),
+        }
+    }
 }
 
 fn refused(message: &str) -> RenameError {
@@ -156,7 +299,12 @@ fn cant_change() -> RenameError {
     )
 }
 
-fn phrase(ctx: &Ctx, key: &str, new: &str) -> Result<WorkspaceEdit, RenameError> {
+fn phrase(
+    ctx: &Ctx,
+    key: &str,
+    new: &str,
+    outside: &mut BTreeMap<PathBuf, String>,
+) -> Result<WorkspaceEdit, RenameError> {
     if !ctx.model.has_phrase(key) {
         return Err(RenameError::Missing(format!(
             "`phrase:{key}` doesn't exist: `ascribe.toml` declares no phrase `{key}`."
@@ -175,16 +323,28 @@ fn phrase(ctx: &Ctx, key: &str, new: &str) -> Result<WorkspaceEdit, RenameError>
             "`{new}` is a phrase already."
         )));
     }
-    let Some(span) = refactor::phrase_entry_span(&ctx.model_text, key) else {
+    let edit = match refactor::phrase_entry_span(&ctx.model_text, key) {
+        Some(span) => {
+            let position = position(&ctx.model_text, span.start())?;
+            refactor::prepare_model(ctx, position).map_err(RenameError::Refused)?;
+            refactor::rename_model_key_here(ctx, position, new)
+        }
         // A phrase `[from]` takes is renamed where it's written.
-        return refactor::rename_phrase(ctx, key, new, None).ok_or_else(cant_change);
+        None => refactor::rename_phrase_here(ctx, key, new, None),
     };
-    let position = position(&ctx.model_text, span.start())?;
-    refactor::prepare_model(ctx, position).map_err(RenameError::Refused)?;
-    refactor::rename_model_key(ctx, position, new).ok_or_else(cant_change)
+    let renaming = Renaming::Phrase {
+        key: key.to_owned(),
+        new: new.to_owned(),
+    };
+    in_holders(ctx, &renaming, edit.ok_or_else(cant_change)?, outside)
 }
 
-fn value_edit(ctx: &Ctx, value: &str, new: &str) -> Result<WorkspaceEdit, RenameError> {
+fn value_edit(
+    ctx: &Ctx,
+    value: &str,
+    new: &str,
+    outside: &mut BTreeMap<PathBuf, String>,
+) -> Result<WorkspaceEdit, RenameError> {
     let Some(found) = refactor::values::named(ctx, value) else {
         return Err(RenameError::Missing(format!(
             "`value:{value}` doesn't exist: no dimension in `ascribe.toml` has the value `{value}`."
@@ -193,7 +353,12 @@ fn value_edit(ctx: &Ctx, value: &str, new: &str) -> Result<WorkspaceEdit, Rename
     if let Some(message) = refactor::values::refusal(ctx, &found, new) {
         return Err(RenameError::Refused(message));
     }
-    refactor::values::rename(ctx, &found, new).ok_or_else(cant_change)
+    let edit = refactor::values::rename_here(ctx, &found, new).ok_or_else(cant_change)?;
+    let renaming = Renaming::Value {
+        value: value.to_owned(),
+        new: new.to_owned(),
+    };
+    in_holders(ctx, &renaming, edit, outside)
 }
 
 fn heading_id(
@@ -327,9 +492,17 @@ fn position(text: &str, offset: usize) -> Result<Position, RenameError> {
         .ok_or_else(cant_change)
 }
 
-/// Each file `edit` changes, with its text after.
+/// Each file a rename changes, by path: its text before, and its edits.
+type Changes = BTreeMap<PathBuf, (String, Vec<ByteEdit>)>;
+
+/// Each file `edit` changes, with its text before and its edits in bytes.
+/// `outside` has the text of the files another project's rename changes.
 #[allow(clippy::mutable_key_type)]
-fn rewritten(ctx: &Ctx, edit: WorkspaceEdit) -> Result<Vec<Rewritten>, RenameError> {
+fn changes(
+    ctx: &Ctx,
+    edit: WorkspaceEdit,
+    outside: &BTreeMap<PathBuf, String>,
+) -> Result<Changes, RenameError> {
     let root = ctx.config.parent().unwrap_or(Path::new("."));
     let mut files = BTreeMap::new();
     for (uri, edits) in edit.changes.unwrap_or_default() {
@@ -339,7 +512,10 @@ fn rewritten(ctx: &Ctx, edit: WorkspaceEdit) -> Result<Vec<Rewritten>, RenameErr
         let path = uri_to_path(&uri)
             .map(|p| normalize(&p))
             .ok_or_else(cant_change)?;
-        let text = text_of(ctx, root, &path)
+        let text = outside
+            .get(&path)
+            .cloned()
+            .or_else(|| text_of(ctx, root, &path))
             .ok_or_else(|| RenameError::Refused(format!("`{}` can't be read.", path.display())))?;
         let index = LineIndex::new(&text);
         let edits = edits
@@ -354,19 +530,9 @@ fn rewritten(ctx: &Ctx, edit: WorkspaceEdit) -> Result<Vec<Rewritten>, RenameErr
             })
             .collect::<Option<Vec<_>>>()
             .ok_or_else(cant_change)?;
-        let after = ascribe_core::apply_edits(&text, &edits).map_err(|_| cant_change())?;
-        if after != text {
-            files.insert(
-                path.clone(),
-                Rewritten {
-                    path,
-                    text: after,
-                    edits: edits.len(),
-                },
-            );
-        }
+        files.insert(path, (text, edits));
     }
-    Ok(files.into_values().collect())
+    Ok(files)
 }
 
 /// The text of a file an edit changes: `ascribe.toml`, a file its `[from]`
@@ -384,7 +550,7 @@ fn text_of(ctx: &Ctx, root: &Path, path: &Path) -> Option<String> {
     {
         return Some(file.source.to_string());
     }
-    let project = relative_path(root, path).filter(RelPath::is_inside)?;
+    let project = relative_path(root, path)?;
     let bytes = ascribe_resolve::FileSystem::read_file(&*ctx.fs, &project).ok()?;
     String::from_utf8(bytes).ok()
 }

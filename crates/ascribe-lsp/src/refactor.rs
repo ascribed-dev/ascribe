@@ -506,8 +506,47 @@ pub(crate) fn rename_model_key(
     values::rename(ctx, &value, new_name)
 }
 
-#[allow(clippy::mutable_key_type)]
+/// [`rename_model_key`] in this project only, without the projects of the
+/// files `[from]` takes from.
+pub(crate) fn rename_model_key_here(
+    ctx: &Ctx,
+    position: lsp_types::Position,
+    new_name: &str,
+) -> Option<WorkspaceEdit> {
+    let index = LineIndex::new(&ctx.model_text);
+    let offset = ctx
+        .encoding
+        .offset_lenient(&index, &ctx.model_text, position);
+    if let Some((old, span)) = phrase_entry_at(&ctx.model_text, offset) {
+        if !valid_phrase_key(new_name) {
+            return None;
+        }
+        return rename_phrase_here(ctx, &old, new_name, Some(span));
+    }
+    let value = values::in_model(ctx, offset)?;
+    values::rename_here(ctx, &value, new_name)
+}
+
+/// The edit that renames the phrase `old` to `new`: its key where it's
+/// written, and every use, in this project and in the project of the file
+/// `[from]` takes it from.
 pub(crate) fn rename_phrase(
+    ctx: &Ctx,
+    old: &str,
+    new: &str,
+    config_key: Option<Span>,
+) -> Option<WorkspaceEdit> {
+    let edit = rename_phrase_here(ctx, old, new, config_key)?;
+    let renaming = crate::rename::Renaming::Phrase {
+        key: old.to_owned(),
+        new: new.to_owned(),
+    };
+    crate::rename::in_holders(ctx, &renaming, edit, &mut Default::default()).ok()
+}
+
+/// [`rename_phrase`] in this project only.
+#[allow(clippy::mutable_key_type)]
+pub(crate) fn rename_phrase_here(
     ctx: &Ctx,
     old: &str,
     new: &str,

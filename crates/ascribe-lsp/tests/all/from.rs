@@ -373,3 +373,150 @@ fn renaming_a_taken_value_or_a_page_a_taken_key_names_edits_where_its_written() 
     assert!(renamed.files.iter().all(|r| r.path != config));
     assert_eq!(std::fs::read_to_string(&config).unwrap(), model);
 }
+
+/// A project that takes a phrase and a dimension from `shared`, a project
+/// of its own whose pages use them too.
+fn taking_from_a_project() -> Fixture {
+    Fixture::new(
+        &format!(
+            "{MODEL}\n[from.\"shared/ascribe.toml\"]\ntake = [\"phrases.product\", \"dimensions.pm\"]\n"
+        ),
+        &[
+            (
+                "shared/ascribe.toml",
+                &format!(
+                    "{MODEL}\n[phrases]\nproduct = \"Quill\"\n\n[dimensions.pm]\nvalues = [\"npm\", \"yarn\"]\n"
+                ),
+            ),
+            (
+                "shared/docs/index.md",
+                "---\ntitle: Shared\n---\n\n{product} installs.\n\n@variant {pm=yarn}:\nWith yarn.\n@end\n",
+            ),
+            (
+                "docs/index.md",
+                "---\ntitle: Home\n---\n\n{product} writes docs.\n",
+            ),
+        ],
+    )
+}
+
+#[test]
+fn renaming_a_taken_key_renames_it_in_the_pages_of_the_project_that_writes_it() {
+    use ascribe_lsp::{Renaming, rename};
+    let f = taking_from_a_project();
+    let config = f.path("ascribe.toml");
+    let shared = f.path("shared/ascribe.toml");
+    let shared_page = f.path("shared/docs/index.md");
+    let page = f.path("docs/index.md");
+    let text_of = |renamed: &ascribe_lsp::Renamed, path: &Path| {
+        renamed
+            .files
+            .iter()
+            .find(|r| r.path == path)
+            .unwrap_or_else(|| panic!("{} didn't change: {renamed:?}", path.display()))
+            .text
+            .clone()
+    };
+
+    let renamed = rename(
+        &config,
+        &Renaming::Phrase {
+            key: "product".to_owned(),
+            new: "name".to_owned(),
+        },
+    )
+    .expect("renamed");
+    let files: Vec<_> = renamed.files.iter().map(|r| r.path.clone()).collect();
+    assert_eq!(
+        files,
+        vec![
+            config.clone(),
+            page.clone(),
+            shared.clone(),
+            shared_page.clone()
+        ]
+    );
+    assert!(text_of(&renamed, &config).contains("\"phrases.name\""));
+    assert!(text_of(&renamed, &page).contains("{name} writes docs."));
+    assert!(text_of(&renamed, &shared).contains("\nname = \"Quill\""));
+    assert!(text_of(&renamed, &shared_page).contains("{name} installs."));
+
+    let renamed = rename(
+        &config,
+        &Renaming::Value {
+            value: "yarn".to_owned(),
+            new: "pnpm".to_owned(),
+        },
+    )
+    .expect("renamed");
+    let files: Vec<_> = renamed.files.iter().map(|r| r.path.clone()).collect();
+    assert_eq!(files, vec![shared.clone(), shared_page.clone()]);
+    assert!(text_of(&renamed, &shared).contains("values = [\"npm\", \"pnpm\"]"));
+    assert!(text_of(&renamed, &shared_page).contains("@variant {pm=pnpm}:"));
+
+    // A new name the other project has already is refused, naming the file.
+    f.write(
+        "shared/ascribe.toml",
+        &format!(
+            "{MODEL}\n[phrases]\nproduct = \"Quill\"\nname = \"Q\"\n\n[dimensions.pm]\nvalues = [\"npm\", \"yarn\"]\n"
+        ),
+    );
+    let refused = rename(
+        &config,
+        &Renaming::Phrase {
+            key: "product".to_owned(),
+            new: "name".to_owned(),
+        },
+    )
+    .expect_err("refused");
+    assert!(
+        refused.to_string().contains("`shared/ascribe.toml`"),
+        "{refused}"
+    );
+}
+
+#[test]
+fn the_editors_rename_of_a_taken_phrase_renames_it_in_the_other_projects_pages() {
+    let f = taking_from_a_project();
+    let shared_page = f.path("shared/docs/index.md");
+    let page = f.path("docs/index.md");
+    let mut client = Client::start(&f.root());
+    let text = "---\ntitle: Home\n---\n\n{product} writes docs.\n";
+    client.open(&page, 1, text);
+    client.settle();
+
+    let edit = client
+        .request(
+            "textDocument/rename",
+            json!({
+                "textDocument": { "uri": uri(&page).as_str() },
+                "position": { "line": 4, "character": 3 },
+                "newName": "name",
+            }),
+        )
+        .response_result
+        .expect("an edit");
+    let after = applied(&edit, |u| {
+        let path = [
+            "ascribe.toml",
+            "shared/ascribe.toml",
+            "docs/index.md",
+            "shared/docs/index.md",
+        ]
+        .iter()
+        .map(|p| f.path(p))
+        .find(|p| uri(p).as_str() == u)
+        .unwrap_or_else(|| panic!("{u} isn't one of the projects' files"));
+        std::fs::read_to_string(path).unwrap()
+    });
+    let shared_after = after
+        .iter()
+        .find(|(u, _)| u == uri(&shared_page).as_str())
+        .unwrap_or_else(|| panic!("the other project's page didn't change: {edit}"));
+    assert!(
+        shared_after.1.contains("{name} installs."),
+        "{}",
+        shared_after.1
+    );
+    assert_eq!(after.len(), 4, "{edit}");
+}

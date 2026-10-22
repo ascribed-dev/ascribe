@@ -173,10 +173,21 @@ pub(crate) fn refusal(ctx: &Ctx, value: &DimensionValue, new: &str) -> Option<St
     None
 }
 
-/// The edit that renames the value everywhere; `None` when `new` can't be
-/// its name, or `ascribe.toml` can't be edited in place.
-#[allow(clippy::mutable_key_type)]
+/// The edit that renames the value everywhere, the project of a file
+/// `[from]` takes it from included; `None` when `new` can't be its name, or
+/// a file can't be edited in place.
 pub(crate) fn rename(ctx: &Ctx, value: &DimensionValue, new: &str) -> Option<WorkspaceEdit> {
+    let edit = rename_here(ctx, value, new)?;
+    let renaming = crate::rename::Renaming::Value {
+        value: value.value.clone(),
+        new: new.to_owned(),
+    };
+    crate::rename::in_holders(ctx, &renaming, edit, &mut Default::default()).ok()
+}
+
+/// [`rename`] in this project only.
+#[allow(clippy::mutable_key_type)]
+pub(crate) fn rename_here(ctx: &Ctx, value: &DimensionValue, new: &str) -> Option<WorkspaceEdit> {
     if refusal(ctx, value, new).is_some() {
         return None;
     }

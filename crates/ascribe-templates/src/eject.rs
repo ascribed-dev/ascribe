@@ -291,7 +291,7 @@ pub fn eject(request: &Eject<'_>, fs: &dyn FileSystem) -> Result<EjectAnswer, Ej
             return Err(EjectError::Model {
                 types: format!("[types.{}]", template.name),
                 reason: format!(
-                    "`{}` is taken from `{}` by [from], and the files eject writes beside this ascribe.toml can't be named there; run eject in that file's project",
+                    "`{}` is taken from `{}` by [from], and the files eject writes beside this ascribe.toml can't be named there; run eject in that file's project, or stop taking it here and eject then",
                     taken.name, taken.file
                 ),
             });

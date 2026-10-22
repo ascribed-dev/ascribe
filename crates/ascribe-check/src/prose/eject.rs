@@ -127,7 +127,7 @@ pub fn eject(root: &Path, model: &ContentModel, model_text: &str) -> Result<Ejec
         // The preset is written in another project's `ascribe.toml`, which
         // can't name a configuration written beside this one.
         return Err(EjectError::Model(format!(
-            "`{}` is taken from `{}` by `[from]`, and eject writes `{EJECTED_CONFIG}` beside this ascribe.toml, which that file can't name; run `ascribe vale eject` in that file's project",
+            "`{}` is taken from `{}` by `[from]`, and eject writes `{EJECTED_CONFIG}` beside this ascribe.toml, which that file can't name; run `ascribe vale eject` in that file's project, or stop taking it here and eject then",
             taken.name, taken.file
         )));
     }
