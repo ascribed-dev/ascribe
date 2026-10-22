@@ -4,7 +4,7 @@
       {
         "hooks": [
           {
-            "command": "ascribe agents hook claude-code --event stop",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/launcher/ascribe.sh\" agents hook claude-code --event stop",
             "timeout": 60,
             "type": "command"
           }

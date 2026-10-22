@@ -644,6 +644,7 @@ For agents. Read from `plugins/ascribe/`.
 | `plugins/ascribe/commands/new-page.md` | A command, `/ascribe:new-page` |
 | `plugins/ascribe/commands/review.md` | A command, `/ascribe:review` |
 | `plugins/ascribe/hooks/hooks.json` | Hooks: Stop |
+| `plugins/ascribe/launcher/ascribe.sh` | The launcher, which finds the `ascribe` binary to run |
 | `plugins/ascribe/plugin.json` | The manifest |
 | `plugins/ascribe/skills/ascribe/SKILL.md` | The skill |
 | `plugins/ascribe/skills/ascribe/references/directives.md` | A reference the skill reads when it needs it |

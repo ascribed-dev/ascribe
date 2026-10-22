@@ -1,9 +1,10 @@
 {
   "ascribe": {
     "args": [
+      "${CLAUDE_PLUGIN_ROOT}/launcher/ascribe.sh",
       "lsp"
     ],
-    "command": "ascribe",
+    "command": "sh",
     "diagnostics": true,
     "extensionToLanguage": {
       ".md": "markdown"
