@@ -29,11 +29,10 @@ Three groups of ideas:
 
 ## 1. Code snippets: what's left
 
-`@snippet`, sources, and `ascribe drift` are built ([Examples and drift](../docs/content/examples/index.md)), and Ascribe's own docs take their examples that way. Knowing whether an example's code was tested, and with what, is built: [tested examples](../docs/content/examples/tested.md). Three things from the first idea are in neither:
+`@snippet`, sources, and `ascribe drift` are built ([Examples and drift](../docs/content/examples/index.md)), and Ascribe's own docs take their examples that way. Knowing whether an example's code was tested, and with what, is built: [tested examples](../docs/content/examples/tested.md). So is part of moving between a page and its code: a code file says which pages show it, in a lens, and a `@snippet`'s hover gives its address ([the editor](../docs/content/editor/writing.md#code-files-a-page-shows)). What's left:
 
 - **The rest of Bluehawk's tags.** `snippet` and `remove` work as they are. `replace`, `uncomment`, `state`, and `emphasize` are reserved and do nothing. States are the interesting one: versions of one example, such as a tutorial's start and finish, which map onto Ascribe's own model as `@snippet {state=start}` inside a `@variant` arm, or a build that picks a state for a whole tutorial. The tested examples plan leaves new tags to a proposal of their own, designed fresh for a project starting clean, so whether to finish Bluehawk's set is a question about who's migrating.
-- **A preview that follows the code.** A snippet is read again when its page changes, not when its code file does, so the preview and a page's problems don't follow an edit to the code. The editor guide says so.
-- **Moving between a page and its code.** Go to definition from a `@snippet` line to the region in the code, a hover showing the extracted code, a lens in the code file saying "Used by 3 pages", and problems with the tags reported in the code file and not only on the page.
+- **The rest of the editor's part, filed:** the preview and a page's problems following an edit to the code ([#791](https://github.com/ascribed-dev/ascribe/issues/791)), Go to Definition from a `@snippet` to its region and the code in its hover ([#792](https://github.com/ascribed-dev/ascribe/issues/792)), and the tags' problems shown in the code file ([#793](https://github.com/ascribed-dev/ascribe/issues/793)).
 
 ## 2. Editable previews
 
@@ -88,7 +87,7 @@ A general WYSIWYG editor that serializes back to Markdown tends to produce sourc
 Ascribe runs Vale on a page's prose, with phrases substituted and directives left out, reports each alert at its place in the source, and writes the project's own words into a Vale vocabulary ([Vale](../docs/content/checks/vale.md)). Two things from the first idea aren't built:
 
 - **Linting what a build's readers see.** The text with variants and availability resolved, for a team whose rules should apply to an output and not to the source. Nobody has asked for it.
-- **Keeping results between runs,** by the hash of a page's prose, so a hook or a check lints only what changed. See [the cache](#15-the-cache-whats-left).
+- **Keeping results between runs,** by the hash of a page's prose, so a hook or a check lints only what changed. The [cache proposal](proposals/cache.md#vale-results) designs it, and holds it until a project's full Vale run is slow enough to matter (its Settled 4).
 
 ## 6. Other things a docs system does
 
@@ -234,11 +233,11 @@ Questions:
 
 ## 15. The cache: what's left
 
-This section held three ideas that share no layer. Two have proposals of their own, which are the later thinking: [memos](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/memos.md), for what people know about a page and have nowhere to put, and [search](https://github.com/ascribed-dev/ascribe/blob/62bf76a9/project-docs/proposals/search.md), which was measured and needs no index.
+This section held three ideas that share no layer. Two are built: [memos](../docs/content/writing/memos.md), for what people know about a page and have nowhere to put, and [search](../docs/content/command/questions.md#ascribe-search), which was measured and needs no index.
 
 The third was a cache, and its first use is built: `ascribe report links` keeps the answers it reuses under `.ascribe/cache/links/`, with an expiry, and holds a link that answered before until it keeps failing. The rule it's built on stays the rule for anything added: deleting the cache changes nothing but time, so nothing may need it to be correct. CI starts with none.
 
-The rest has a proposal of its own, [the rest of the cache](proposals/cache.md): Vale's results by the hash of a page's prose, the delivery spec's results, differences between runs for the whole report (links already have them), and a baseline of a project's existing findings, which is a committed record rather than a cache.
+The rest has a proposal of its own, [the rest of the cache](proposals/cache.md), and its first steps are filed: differences between runs for the whole report ([#787](https://github.com/ascribed-dev/ascribe/issues/787), [#788](https://github.com/ascribed-dev/ascribe/issues/788)), and a baseline of a project's existing advice, a committed record rather than a cache ([#789](https://github.com/ascribed-dev/ascribe/issues/789), [#790](https://github.com/ascribed-dev/ascribe/issues/790)). Vale's results wait for a project that needs them, and the delivery spec's turned out not to fit a cache.
 
 ---
 
