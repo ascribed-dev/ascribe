@@ -94,13 +94,6 @@ const actionsRow = `Runs the action, such as **Ascribe: ${ACTIONS[0]?.title ?? "
  * that release, as `ascribe 0.2.0`. Remove an entry once every live line has it.
  */
 const available: Record<string, string> = {
-  "ascribe.submitReview": "ascribe 0.4.0",
-  "ascribe.openSourceChanges": "ascribe 0.4.0",
-  "ascribe.switchProject": "ascribe 0.4.0",
-  "ascribe.search": "ascribe 0.4.1",
-  "ascribe.applyEverySafeFix": "ascribe 0.4.1",
-  "ascribe.formatEveryPage": "ascribe 0.4.1",
-  "ascribe.openProjectSettings": "ascribe 0.4.1",
 };
 
 /** The attribute block that ends a row's first cell, for an id in `available`. */

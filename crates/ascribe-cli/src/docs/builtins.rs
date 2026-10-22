@@ -33,8 +33,9 @@ fn available(builtin: Builtin) -> Option<&'static str> {
         | Builtin::Steps
         | Builtin::Details
         | Builtin::Snippet
-        | Builtin::Intended => None,
-        Builtin::Memo | Builtin::Term => Some("ascribe 0.4.0"),
+        | Builtin::Intended
+        | Builtin::Memo
+        | Builtin::Term => None,
     }
 }
 

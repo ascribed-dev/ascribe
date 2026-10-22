@@ -2,7 +2,6 @@
 type: reference
 title: Navigation
 description: The order a project's sections and pages come in, from ascribe.nav or the default, and their labels, which every sidebar is drawn from.
-available: ascribe 0.4.0
 permalink: navigation
 ---
 

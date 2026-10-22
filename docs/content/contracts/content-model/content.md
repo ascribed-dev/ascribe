@@ -76,7 +76,6 @@ Part of the [`ascribe.toml` format contract](../content-model.md), whose [conten
 
 **Matching.** A term MUST match only whole words, and where two terms overlap, only the longer (`API key`, not `API`). Only prose MUST be matched: never a heading, link text, code, raw HTML, or a directive's primary identifier. A term MUST NOT be linked on a glossary page that shows it, nor in a build that doesn't publish its heading or gives it no definition. SPEC §5.4 gives the rest: what a term is, its definition, and what an author's link to its heading is.
 
-@available: ascribe 0.4.0
 **Rules** (§24.5): each path in `pages` MUST be a page under the content root, not a fragment, with its name's case as on disk (`model-glossary-page`). Terms are read from pages, so the rest are checked with the project, not by the loader: two terms or aliases MUST NOT have the same text, compared ignoring case unless both terms are case-sensitive, nor two terms the same id, and the second of either isn't a term (`glossary-term-duplicate`); a term's section MUST open with a paragraph, its definition (`glossary-definition-missing`), of at most 300 characters in a build, or it's advice (`glossary-definition-long`); and `@term` is a term only on a page `pages` lists, or in a fragment such a page includes (`term-off-glossary-page`), whose fix MUST NOT be applied by `ascribe check --fix`.
 
 ---

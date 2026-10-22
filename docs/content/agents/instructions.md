@@ -20,7 +20,6 @@ Beside each file it writes, `sync` says which agents read it, and when an agent 
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/agents-sync.txt
 
-@available: ascribe 0.4.0
 When a page has a [`@memo`](../writing/directives.md#memo), `AGENTS.md` also tells the agent to read a block's memo before changing the block, and to keep the two together. When the project has a [memo file](../writing/memo-files.md) in `memos/`, a sentence after it says that `ascribe outline <page>` lists the memos about a page and its headings, and to read a memo before changing the block it's about. A [personal memo](../writing/memo-files.md#personal-memos) doesn't count, so the rules are the same on every machine. When the rules run over their 4,000 characters, those sentences are cut first, before the page types.
 
 What a type is for is its `purpose` in `ascribe.toml`, or, for a type [`ascribe templates eject`](../templates/index.md) added, The Good Docs Project's summary of it, from `templates.lock` (the [content model reference](../content-model/index.md#41-page-types)).
@@ -61,7 +60,6 @@ The skill is one folder, `ascribe`, in the [Agent Skills](https://agentskills.io
 
 `sync` writes it to `.agents/skills/ascribe/` at the repository's root, where Codex, Cursor, Gemini CLI, and Copilot find it, and with the `claude` target to `.claude/skills/ascribe/`, where Claude Code does. `ascribe agents skill` prints its `SKILL.md`. The `@ascribed/cli` package ships it too, as `skills/ascribe/`, for tools that install skills from packages.
 
-@available: ascribe 0.4.0
 In VS Code, chat has the skill before you run `sync`: the [extension](../editor/agents.md#agents-in-vs-code) ships it.
 
 See [`ascribe agents`](commands.md#cli-agents) for every option.

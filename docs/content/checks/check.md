@@ -73,7 +73,6 @@ npx ascribe check --fix
 
 The output starts with a line for each file changed (`fixed 2 problems in docs/guides/install.md`). Two fixes that would edit the same text are one too many: the first is applied, and the other's problem is reported again, for the next run. `--fix` can't be combined with `--stdin`, whose text isn't on disk.
 
-@available: ascribe 0.4.0
 In VS Code, **Source Action… → Apply the safe fixes in this page** applies a page's safe fixes the same way, to the text in the editor, saved or not, for the problems the editor shows, and can run each time you save. See [Apply the safe fixes](../editor/problems.md#apply-the-safe-fixes).
 
 ### Exit codes
