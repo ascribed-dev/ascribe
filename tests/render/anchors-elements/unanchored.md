@@ -46,7 +46,8 @@ A cloud-only paragraph.
 
 Only some see this.
 
-<quill-labspace lab="first-sync"></quill-labspace>
+<quill-labspace lab="first-sync">
+</quill-labspace>
 
 <quill-aside>
 

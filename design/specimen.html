@@ -1411,21 +1411,21 @@ hero-banner call-to-action > pre code::before {
 }
 
 /*
- * A pillar (`[widgets.story-pillar]`, an empty element after its heading,
- * which Markdown puts in a paragraph of its own): the heading has the
- * gutter's split bar before it, the mark's change marks, the site's own.
+ * A pillar (`[widgets.story-pillar]`, an empty element after its heading):
+ * the heading has the gutter's split bar before it, the mark's change marks,
+ * the site's own. The element draws nothing, and takes no place in the grid.
  */
-.home p:has(> story-pillar:only-child) {
+story-pillar {
   display: none;
 }
 
-.page.home article > h2:has(+ p > story-pillar) {
+.page.home article > h2:has(+ story-pillar) {
   display: flex;
   align-items: flex-start;
   gap: 1rem;
 }
 
-.home article > h2:has(+ p > story-pillar)::before {
+.home article > h2:has(+ story-pillar)::before {
   flex: none;
   width: 7px;
   height: 2.2rem;
@@ -1913,7 +1913,7 @@ quiet-pillar > ul + p {
     font-size: 1.75rem;
   }
 
-  .home article > h2:has(+ p > story-pillar)::before {
+  .home article > h2:has(+ story-pillar)::before {
     height: 1.8rem;
     margin-top: 0.15rem;
   }
