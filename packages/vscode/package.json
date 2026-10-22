@@ -783,7 +783,7 @@
             "all"
           ],
           "enumDescriptions": [
-            "Start a project's language server the first time one of its files is opened, or changes on disk while the window is open.",
+            "Start a project's language server the first time one of its files is opened, or something asks for the project, such as Switch Project or Check Every Build. A change on disk starts nothing.",
             "Start every project's language server when the workspace opens."
           ],
           "default": "onDemand",

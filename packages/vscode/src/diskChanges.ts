@@ -1,6 +1,5 @@
-// Which files changed on disk start a project's server, which a running
-// server is told about, and the batching that turns a burst of changes into
-// one start per project. No VS Code in this module.
+// Which files changed on disk a running server is told about, and which make
+// a check of every build out of date. No VS Code in this module.
 import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import * as path from "node:path";
@@ -47,7 +46,7 @@ export interface Source {
  */
 export const PROJECT_DEFAULTS = { "content-root": "docs", "output-dir": ".ascribe/build" };
 
-/** Folders whose files never start a server, wherever they are. */
+/** Folders whose files never count as a project's, wherever they are. */
 const SKIPPED = new Set(["node_modules", ".git"]);
 
 /**
@@ -128,29 +127,6 @@ function isFrom(file: string, from: readonly string[]): boolean {
 export async function readLayout(project: Project): Promise<Layout> {
   const text = await readFile(project.config, "utf8").catch(() => "");
   return layoutOf(project, text);
-}
-
-/**
- * Whether a change to `file` on disk should start `project`'s server: the
- * file is the project's `ascribe.toml`, or a file its `[from]` takes from, is under its content root (and not
- * in a project nested there), or is in one of its sources' folders, and
- * isn't in its output directory, `node_modules`, or `.git`. Anything under the content root
- * counts, not just pages: assets are checked too, and deleting a folder of
- * pages is reported as one change to the folder.
- */
-export function startsServer(
-  file: string,
-  project: Project,
-  layout: Layout,
-  projects: readonly Project[],
-): boolean {
-  if (samePath(file, project.config) || isFrom(file, layout.from)) return true;
-  if (within(file, layout.outputDir)) return false;
-  const inContent =
-    within(file, layout.contentRoot) &&
-    owningProject(file, projects)?.config === project.config &&
-    !skipped(file, layout.contentRoot);
-  return inContent || inASource(file, folders(layout.sources));
 }
 
 /**
@@ -360,50 +336,6 @@ function segmentGlob(segment: string): RegExp | undefined {
     }
   }
   return new RegExp(`^${source}$`, "iu");
-}
-
-/** How long a burst of changes must go quiet before it's acted on. */
-export const QUIET_MS = 250;
-/** The longest a change waits, however long the burst. */
-export const MAX_WAIT_MS = 1_000;
-
-/**
- * Gathers changed files and hands them over together: once no change has
- * come for `QUIET_MS`, or `MAX_WAIT_MS` after the first, whichever is sooner.
- * A `git checkout` that touches 400 files is one call.
- */
-export class ChangeBatch {
-  private readonly files = new Map<string, string>();
-  private quiet: ReturnType<typeof setTimeout> | undefined;
-  private longest: ReturnType<typeof setTimeout> | undefined;
-
-  constructor(private readonly flush: (files: string[]) => void) {}
-
-  add(file: string): void {
-    this.files.set(comparable(file), file);
-    clearTimeout(this.quiet);
-    this.quiet = setTimeout(() => this.flushNow(), QUIET_MS);
-    this.longest ??= setTimeout(() => this.flushNow(), MAX_WAIT_MS);
-  }
-
-  dispose(): void {
-    this.clear();
-    this.files.clear();
-  }
-
-  private flushNow(): void {
-    this.clear();
-    const files = [...this.files.values()];
-    this.files.clear();
-    if (files.length > 0) this.flush(files);
-  }
-
-  private clear(): void {
-    clearTimeout(this.quiet);
-    clearTimeout(this.longest);
-    this.quiet = undefined;
-    this.longest = undefined;
-  }
 }
 
 function section(table: Record<string, unknown>, name: string): Record<string, unknown> {
