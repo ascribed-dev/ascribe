@@ -4967,8 +4967,11 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/804"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "The editor and the agents read the baseline, and a quick fix moves a finding to @intended"
     },
     {
@@ -5070,6 +5073,205 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "New mark and brand assets: Margin × Cursor in Deep River"
+    },
+    {
+      "content": {
+        "body": "A follow-up to #788 (#800), from that pull request's review. From its second run on a site, `ascribe report agents` prints \"3 checks: 3 passing, 0 failing.\" even when nothing is failing now and nothing failed on the last report. That line only repeats the counts above it.\n\n**Done when:** the line is left out when nothing fails now and nothing failed last time. It still appears whenever a check is failing now or one that failed last time no longer does. One pull request.",
+        "number": 805,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Report: leave out agents' \"N checks\" line when nothing fails now or did last time",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/805"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCkt0A",
+      "labels": [
+        "rust"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/806"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "Report: leave out agents' \"N checks\" line when nothing fails now or did last time"
+    },
+    {
+      "content": {
+        "body": "Piece 1 of [an `ascribe.toml` that says only what's the project's own](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/shorter-content-model.md#1-frontmatter-every-type-shares), and its steel thread. **Done when** below is what done looks like, and it's one pull request.\n\n**What to build:**\n- **`[frontmatter]`,** a top-level table of fields every type has. A type's own `frontmatter` adds fields; a type that declares a field `[frontmatter]` has replaces it whole, for that type (Settled 3). The implicit `page` type of a model with no types has the shared fields too.\n- **`title` is implicit:** every type has a required string `title`, declared or not; declaring it changes only how it's read (`inline`). The loader keeps the rule, and `model-type-title` goes.\n- **Roles by name:** a field named `description` (string), `review-date` (date), or `owner` (string or enum) takes that role unless the type gives the role to another field.\n- **A type with no keys,** `[types.index]`, is valid.\n- `[frontmatter]` is a row in the registry (`crates/ascribe-model/settings.toml`), so the reference's tables and Project Settings show it.\n\n**The thread:** `docs/ascribe.toml`'s six types cut down to `[frontmatter]` and each type's `purpose`, `template`, and `guide`, with every output of the docs and of `site/` byte for byte the same (`node scripts/compare/outputs.ts --base main`). The comments stay, reworded for what's now shared.\n\n**Done when:** conformance cases for a shared field, a type that replaces one, the implicit `title` with and without `inline`, each role taken by name, a role given to another field, and an empty type; the thread above; SPEC §7.2 and `docs/content/content-model/index.md` §4 and §5.4 say it; the generated tables rewritten; `model-type-title` removed from `diagnostics.toml` and `diagnostics.rs`; a changelog entry; and a decision file, since SPEC §7.2 is a contract.\n\n**Decided:** the proposal's Settled 3, by the maintainer on 21 October 2026; breaking changes are acceptable.\n",
+        "number": 807,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Content model: frontmatter every type shares, an implicit title, and roles by a field's name",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/807"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhClIzo",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Content model: frontmatter every type shares, an implicit title, and roles by a field's name"
+    },
+    {
+      "content": {
+        "body": "The rest of piece 1 of [an `ascribe.toml` that says only what's the project's own](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/shorter-content-model.md#1-frontmatter-every-type-shares): seeing where a field is declared, and a check for a copy. **Done when** below is what done looks like, and it's one pull request.\n\n**What to build:**\n- **Where a field is declared:** the language server's hover on a field in `ascribe.toml`, and on a frontmatter key in a page, says whether it's `[frontmatter]`'s or the type's own; `ascribe model` says the same for each field, in its text and its JSON (a field added to the JSON, nothing changed).\n- **`frontmatter-field-repeated`,** advice: a type's field equal to `[frontmatter]`'s, key for key, is reported at the type's field, with a safe fix that deletes it. A new diagnostic, in `tests/conformance/diagnostics.toml` and `diagnostics.rs`.\n\n**Done when:** conformance cases for a repeated field and a differing one; language server tests for both hovers; a CLI test for `ascribe model`'s text and JSON; the fix's test; `docs/content/content-model/index.md` says where to see a field's source; a changelog entry; and a decision file for the JSON field.\n\n**Decided:** the proposal's Settled 3, by the maintainer on 21 October 2026.\n\n**Needs:** #807.\n",
+        "number": 808,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Content model: where a field is declared, and frontmatter-field-repeated",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/808"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhClI1c",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Content model: where a field is declared, and frontmatter-field-repeated"
+    },
+    {
+      "content": {
+        "body": "Piece 2 of [an `ascribe.toml` that says only what's the project's own](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/shorter-content-model.md#2-a-types-template-from-the-lock). **Done when** below is what done looks like, and it's one pull request.\n\n**What to build:**\n- A type with no `template` or `guide` takes them from `templates/templates.lock` when the lock has the type's name; a type that sets either keeps what it sets. `template` and `guide` stay on a type, for a project without the lock and a template written by hand.\n- The lock is read through `FileSystem`, as the template files are; a lock that names a missing file is the type's error, `model-type-template`, as a wrong `template` is today.\n- `ascribe templates eject` stops writing the two keys into `ascribe.toml`.\n- The editor's hover on a type says where its template comes from.\n- `docs/ascribe.toml`'s five types lose their `template` and `guide` lines, with no output changing.\n\n**Done when:** conformance cases for a type with its template from the lock, one that sets its own, and a lock naming a missing file; `templates eject`'s CLI tests show `ascribe.toml` untouched; a hover test; `docs/content/templates/` and the reference say where a type's template comes from; a changelog entry; and a decision file that amends the page templates plan's [decisions 7 and 14](https://github.com/ascribed-dev/ascribe/blob/180eee83/project-docs/page-templates/README.md#decisions).\n\n**Needs:** #807, which edits the same tables of `docs/ascribe.toml`.\n",
+        "number": 809,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A type's template and guides from templates.lock",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/809"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhClI2E",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "A type's template and guides from templates.lock"
+    },
+    {
+      "content": {
+        "body": "Piece 3 of [an `ascribe.toml` that says only what's the project's own](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/shorter-content-model.md#3-releases-declare-their-targets): releases declare their targets. **Done when** below is what done looks like, and it's one pull request.\n\n**What to build:**\n- **`[releases.<target>]` declares `<target>`** as a value of an implicit dimension named `release`, unless a declared dimension already has that value.\n- **`release` is reserved** while the implicit dimension exists: a project that declares its own `release` dimension and leaves a target to the implicit one gets an error naming both.\n- **Two labels:** `[releases] label` is the dimension's, `Release` unless set; `[releases.<target>] label` is the target's, its name unless set. Both are rows in the registry.\n- Everything that names a dimension takes `release`: `@variant {release=…}`, a switcher's `sync`, `dimension:` targets in `ascribe refs`, `[listing]`, and the elements' `dimension` attribute.\n- `docs/ascribe.toml` and `site/home/ascribe.toml` drop `[dimensions.release]` and set `[releases.ascribe] label = \"Ascribe\"`, with no output changing.\n\n**Done when:** conformance cases for an implicit target, a target a declared dimension already has, both labels, and the reserved name's error; `ascribe model` lists the implicit dimension; the docs (`docs/content/content-model/content.md` §7.1 and `docs/content/versions/`) say it; `scripts/docs-site/facts.test.ts` follows the moved facts; a changelog entry; and a decision file.\n",
+        "number": 810,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Releases declare their targets, in an implicit release dimension",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/810"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhClI2o",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Releases declare their targets, in an implicit release dimension"
+    },
+    {
+      "content": {
+        "body": "Piece 3 of [an `ascribe.toml` that says only what's the project's own](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/shorter-content-model.md#3-releases-declare-their-targets): the planned line's word. **Done when** below is what done looks like, and it's one pull request.\n\n**What to build:**\n- **`planned` is a version word** in an availability spec (SPEC §4.4, Appendix A): `@available: ascribe planned`, `cloud, self-managed preview planned`. It means the target's planned line and reads as that line does. A target with no planned line, or more than one, is an error at the mark: a new diagnostic.\n- **It's the only form:** not a feature key (Settled 5).\n- **`ascribe versions release`** rewrites a target's `planned` marks to the released version, and has no feature to move.\n- **The repository moves to it:** marks written `next` become `ascribe planned`; `[features.next]` goes from `docs/ascribe.toml` and `site/home/ascribe.toml`; RELEASING.md's step and the tests that name `\"next\"` follow.\n\n**Done when:** conformance cases for `planned` in a spec, with a state, with two targets each planned, and the error with no planned line; `versions release`'s tests rewrite `planned`; the editor's hover and completion offer it; the docs (`docs/content/versions/`, the `@available` reference) say it; a changelog entry; and a decision file, since SPEC §4.4 is a contract.\n\n**Decided:** the proposal's Settled 1 and 5, by the maintainer on 21 October 2026.\n",
+        "number": 811,
+        "repository": "ascribed-dev/ascribe",
+        "title": "planned as a version word in an availability spec",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/811"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhClI4I",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "planned as a version word in an availability spec"
+    },
+    {
+      "content": {
+        "body": "Piece 4 of [an `ascribe.toml` that says only what's the project's own](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/shorter-content-model.md#4-defaults-that-change). **Done when** below is what done looks like, and it's one pull request.\n\n**What to build:** three defaults, each a row in the registry, so the loader, the reference's tables, and Project Settings change together.\n- **A source ignores `**/node_modules/**` and `.git/`,** before its own `ignore`. `docs/ascribe.toml` and `site/home/ascribe.toml` drop their `ignore`.\n- **`[consumer] agents` defaults to `true` when `[consumer] site` is set,** and `false` when it isn't; only an explicit `agents = true` without `site` is `model-consumer-agents-site` (Settled 2).\n- **`prose-not-checked`** is reported only where the project asked for prose checks everywhere: `[checks.vale] in-check = true`, or `--vale`. `docs/ascribe.toml`'s `prose-not-checked = \"off\"` stays only if the docs still want it.\n\n**Done when:** conformance cases for each default, set and unset, and for `agents` with and without `site`; an output comparison showing what changes for a project that never set `agents` (CI's `outputs changed` block); SPEC §7.3 and §9.4 and the reference say the defaults; a changelog entry; and a decision file.\n\n**Decided:** the proposal's Settled 2, by the maintainer on 21 October 2026.\n",
+        "number": 812,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Content model defaults: sources ignore node_modules, agents with a site, prose-not-checked when asked",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/812"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhClI5A",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Content model defaults: sources ignore node_modules, agents with a site, prose-not-checked when asked"
+    },
+    {
+      "content": {
+        "body": "Piece 5 of [an `ascribe.toml` that says only what's the project's own](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/shorter-content-model.md#5-one-project-takes-tables-from-another), for reading: one project takes tables from another. **Done when** below is what done looks like, and it's one pull request.\n\n**What to build:**\n- **`[from.\"<path>\"] take = [...]`:** a table names a key or a table, and what's named is read from the other file as if written here. One step only: the other file's own `[from]` isn't followed. A key taken and also written here is an error (Settled 4).\n- **The path** leaves the project's folder as a source's `path` may (SPEC §7.3): relative to the folder `ascribe.toml` is in, and inside the same version-control repository when there is one. It's read through `FileSystem` as a declared file outside the content root.\n- **The editor:** the language server watches the file, hover on a taken key says where it is, and Go to Definition opens it.\n- **The packages that read `ascribe.toml` themselves** (`@ascribed/astro`'s `project.ts`, review's `session.ts`, the extension's `diskChanges.ts`) see taken keys, preferably by asking the binary for the model, as the extension does for Observe Examples (decision #738a), rather than each following `[from]`.\n- **Until edits follow it:** a command that would edit a taken key in place stops with an error naming the file that holds it.\n- **`site/home/ascribe.toml`** takes the releases, `dimensions.pm`, `phrases.version`, `sources.code`, and `[consumer]`'s `site`, `trailing-slash`, and `permalink-path` from the docs, and `scripts/docs-site/facts.test.ts` drops the checks the copies needed. The site builds the same.\n\n**Done when:** conformance cases for a taken table, a taken key, a key taken and written, a path outside the repository, and a missing file; language server tests for the watch, hover, and definition; the site's build unchanged; a SPEC §7 section and the reference; a changelog entry; and a decision file.\n\n**Decided:** the proposal's Settled 4, by the maintainer on 21 October 2026.\n\n**Needs:** #810 and #811, so the tables taken are their final shape.\n",
+        "number": 813,
+        "repository": "ascribed-dev/ascribe",
+        "title": "[from]: one project takes tables from another's ascribe.toml",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/813"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhClI6A",
+      "labels": [
+        "enhancement",
+        "rust",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "[from]: one project takes tables from another's ascribe.toml"
+    },
+    {
+      "content": {
+        "body": "The rest of piece 5 of [an `ascribe.toml` that says only what's the project's own](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/shorter-content-model.md#5-one-project-takes-tables-from-another): edits go to the file that holds the key. **Done when** below is what done looks like, and it's one pull request.\n\n**What to build:** every command and editor action that edits `ascribe.toml` in place writes to the file that holds the key it edits, taken or not, in place of #813's error. That's the language server's model edits (`edit/model.rs`, `refactor`, `rename.rs`, `settings.rs`'s `setSetting`), `versions release` and `retire` (`release.rs`, `retire.rs`, `retire_line.rs`), templates' `eject` and `status`, Vale's `eject`, and the glossary's.\n- **`ascribe versions release` in the docs** moves the lines for every project that takes them; RELEASING.md's second `versions release`, for `site/home`, goes.\n- An edit that would change a project other than the one it was run in says which files it changed.\n\n**Done when:** a test for each kind of edit on a taken key, writing the other file and leaving this one; `versions release` run once moves both projects; RELEASING.md updated; the editor's rename and Project Settings tests on a taken key; a changelog entry.\n\n**Needs:** #813.\n",
+        "number": 814,
+        "repository": "ascribed-dev/ascribe",
+        "title": "[from]: edits go to the file that holds the key",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/814"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhClI64",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "[from]: edits go to the file that holds the key"
+    },
+    {
+      "content": {
+        "body": "**Ascribe version** (`ascribe --version`): 0.4.1, and `main` at f537dc4d\n\n**Platform:** any. Seen on macOS, building the site with Astro.\n\n**What happened, and what you expected:**\n\n`packages/elements/CONTRACT.md` says an element that holds no markdown, an empty widget among them, \"is written as one HTML block\" (§0). §5 says an empty widget \"is a single line\": `<quill-labspace lab=\"first-sync\"></quill-labspace>`.\n\nA single line like that isn't an HTML block in CommonMark:\n- A custom element isn't one of the names in kind 6.\n- Kind 7 needs the open tag alone on its line, followed only by whitespace.\n\nSo a renderer of the site output, such as Astro's, reads the line as inline HTML and wraps it in a paragraph. The landing page in #817 gets `<p><story-pillar></story-pillar></p>` for a widget bound to its heading, and `site.css` hides the paragraph to work around it.\n\nWhat I expected: the element is an HTML block on its own, as the contract says. Either:\n- the emitter writes an empty widget so it starts an HTML block, for example the open tag alone on its line and the closing tag on the next, which kind 7 accepts; or\n- the contract stops promising a block.\n\nEither is a contract change (§0 and §5 of CONTRACT.md, and the fixtures in `tests/render/`), so it needs a recorded decision. `render_site_html` and the Astro plugin must agree on the result.\n\n**The smallest input that shows it:**\n\nA widget with `binding = \"heading\"` and no content, as `story-pillar` in `site/home/ascribe.toml` on the `website-phase-2` branch (#817). Build it and render the site Markdown with any CommonMark renderer: the element comes out inside `<p>`.\n\nFound while building the landing page (website plan, phase 2), and noted in `project-docs/brainstorm.md` §18.",
+        "number": 818,
+        "repository": "ascribed-dev/ascribe",
+        "title": "An empty widget is written on one line, so a CommonMark renderer puts it in a paragraph",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/818"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhClt9A",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "An empty widget is written on one line, so a CommonMark renderer puts it in a paragraph"
+    },
+    {
+      "content": {
+        "body": "`site/home/content/why.md`, under \"What it doesn't do\", says:\n\n> **No navigation in the content model yet.** The order of a site's pages and their groups are the site's to say. Ascribe's own site lists its pages by hand, with a test that fails when one is missing. An order and groups in `ascribe.toml` are an idea for later, with nothing built.\n\nThat's out of date:\n- A project's order and labels are in `ascribe.nav`, which every sidebar is drawn from ([Navigation](https://ascribed-dev.com/docs/navigation/), `docs/content/navigation/`).\n- Ascribe's own site draws its sidebar from `docs/ascribe.nav`, not a hand-written list.\n\nThe bullet should go, or say what's still missing, if anything. Check it against the navigation pages before rewriting.\n\nFound while rebuilding the landing page (website plan, phase 2, #817). The page's other \"doesn't do\" bullets are worth a read for the same reason.",
+        "number": 819,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Why Ascribe says the content model has no navigation, but ascribe.nav orders the docs",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/819"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhClt94",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Why Ascribe says the content model has no navigation, but ascribe.nav orders the docs"
     }
   ]
 }
