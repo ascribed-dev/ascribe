@@ -1,7 +1,7 @@
 <h1>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="design/out/header-dark.svg" />
-    <img src="design/out/header-light.svg" alt="Ascribe" width="218" height="48" />
+    <img src="design/out/header-light.svg" alt="Ascribe" width="235" height="45" />
   </picture>
 </h1>
 

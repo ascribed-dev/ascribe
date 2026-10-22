@@ -11,7 +11,9 @@
 # palette name. The element library, review, the HTML report, the Astro
 # toolbar, and the docs site share the top-level ones (`color.text`,
 # `color.note`); a color only one surface uses is under its name
-# (`color.preview.error`).
+# (`color.preview.error`). The mark's colors are under `color.brand`: the
+# images of the mark take them (scripts/design/assets.ts), so they need no
+# stylesheet.
 #
 # [font], [space], [radius], [type]: values the stylesheets use as they are.
 #
@@ -79,6 +81,24 @@
 [palette.yellow]
 341 = "#bb8800"
 
+# The mark's colors: Bryo Studio's Deep River for dark, and Shallows, its
+# light companion from the same hues.
+[palette.deep]
+27 = "#f2f7f9"
+51 = "#e3f1f7"
+290 = "#8aa6b8"
+525 = "#47606f"
+754 = "#112233"
+796 = "#0b1824"
+
+[palette.river]
+199 = "#56d0f0"
+413 = "#1689ab"
+
+[palette.moss]
+169 = "#9fdc7c"
+433 = "#3f8a3a"
+
 # Black at an opacity, by its percent.
 [palette.black]
 a22 = "rgb(0 0 0 / 0.22)"
@@ -109,6 +129,38 @@ dark = "yellow.341"
 [color.preview.frame]
 light = "gray.0"
 dark = "gray.0"
+
+# The mark -------------------------------------------------------------------
+
+# The mark's letters, and text beside it: the social cards' titles.
+[color.brand.ink]
+light = "deep.796"
+dark = "deep.51"
+
+# The social card's line under the wordmark.
+[color.brand.muted]
+light = "deep.525"
+dark = "deep.290"
+
+# The gutter's change marks beside the a: the mark's second color.
+[color.brand.gutter]
+light = "river.413"
+dark = "river.199"
+
+# The change marks once the change is reviewed, in the mark's motion.
+[color.brand.reviewed]
+light = "moss.433"
+dark = "moss.169"
+
+# Behind the mark: the icons' tiles, the social cards, the avatar.
+[color.brand.ground]
+light = "deep.27"
+dark = "deep.796"
+
+# A panel on the ground.
+[color.brand.surface]
+light = "gray.0"
+dark = "deep.754"
 
 # Shared ----------------------------------------------------------------------
 
@@ -468,6 +520,7 @@ hero = "750 2.75rem/1.1"
 "--accent" = "color.accent"
 "--accent-surface" = "color.accent-surface"
 "--focus" = "color.focus"
+"--mark-gutter" = "color.brand.gutter"
 "--radius" = "radius.base"
 "--type-caption" = "type.caption"
 "--type-small" = "type.small"
