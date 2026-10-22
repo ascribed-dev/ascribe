@@ -1,0 +1,20 @@
+description: >-
+  A page over the limit names its largest parts as related information,
+  largest first, each with its size: its sections, at their headings, and
+  its includes, at the `@include` line. A section written in a fragment is
+  named at its heading in the fragment, and an include that is exactly one
+  section is named once, as the section.
+spec: ["8.2", "9.4"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - slug: page-size
+        file: questions.md
+        line: 1
+        related:
+          - {file: _long.md, line: 1, label: "`## Long`: 659 characters"}
+          - {file: questions.md, line: 13, label: "`## After`: 282 characters"}
+          - {file: questions.md, line: 17, label: "`@include: _note.md`: 163 characters"}
+          - {file: questions.md, line: 7, label: "`## Short`: 65 characters"}
