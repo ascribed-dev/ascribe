@@ -1,7 +1,7 @@
 // Content negotiation, the host's part of the Web Documentation Delivery Spec:
 // a page asked for with `Accept: text/markdown` is answered with its Markdown,
 // which the build publishes at the page's address with `.md` (`[consumer]
-// agents = true` in ../docs/ascribe.toml), with the `.md` file's headers that
+// agents`, on with `site` in ../docs/ascribe.toml), with the `.md` file's headers that
 // say how it's listed. Any other request, and a page without a Markdown file,
 // goes on to the page as it is.
 //
