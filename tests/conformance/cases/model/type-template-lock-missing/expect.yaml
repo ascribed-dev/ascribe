@@ -1,0 +1,10 @@
+description: >-
+  A type that names no template and no guide takes them from
+  `templates/templates.lock`. A file the lock gives that isn't there is the
+  type's error, `model-type-template`, at the type's table in ascribe.toml,
+  since ascribe.toml has no path to point at: here the guide.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-type-template, file: ascribe.toml, line: 6}

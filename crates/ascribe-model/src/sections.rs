@@ -177,6 +177,7 @@ impl Loader<'_> {
                     purpose,
                     template,
                     guide,
+                    span: name_span,
                 });
             }
         }
@@ -191,6 +192,7 @@ impl Loader<'_> {
                 purpose: None,
                 template: None,
                 guide: Vec::new(),
+                span: Span::empty(0),
             });
         }
         out
@@ -299,7 +301,11 @@ impl Loader<'_> {
             self.push(issue.with_arg("key", key));
             return None;
         }
-        Some(TypeFile { path: text, span })
+        Some(TypeFile {
+            path: text,
+            span,
+            lock: None,
+        })
     }
 
     // ---- glossary ---------------------------------------------------------------

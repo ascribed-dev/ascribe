@@ -9,7 +9,7 @@ The commands that write the page templates into a project and say what's changed
 ## `ascribe templates`
 @id {permalink=true}: cli-templates
 
-Writes the page templates Ascribe carries into a project, as the project's own files, and declares a content type for each, whose [`template` and `guide`](../content-model/index.md#41-page-types) name them. The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, converted into Ascribe pages, as [Where the templates come from](index.md#where-the-templates-come-from) says.
+Writes the page templates Ascribe carries into a project, as the project's own files, and declares a content type for each, which takes them as its [template and guide](../content-model/index.md#41-page-types) from `templates/templates.lock`. The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, converted into Ascribe pages, as [Where the templates come from](index.md#where-the-templates-come-from) says.
 
 The set has six templates, which `ascribe templates list` names. A page is started by copying the template's file to where the page goes; the template names its type in its frontmatter, as the page must. `eject` adds to a project, and never starts one: [`ascribe init --templates`](../install.md#cli-init) does, with the set. `status` says what's changed in the set since the project's copy, and changes nothing.
 
@@ -31,18 +31,24 @@ ascribe templates eject how-to
 
 @include: ../_generated/cli-templates-eject-options.md
 
-For each template, it writes the template, its guide, and Ascribe's notes on the type into `templates/`, beside `ascribe.toml`, or into `--to`'s folder, which is a path from the current folder. The folder must be inside the folder `ascribe.toml` is in, and outside the content root and the output directory, where no type can name a file. Then it adds the type at the end of `ascribe.toml`, changing nothing above it, so its comments and order stay as they are. The paths in it are from the folder `ascribe.toml` is in, whatever folder `--to` was given from:
+For each template, it writes the template, its guide, and Ascribe's notes on the type into `templates/`, beside `ascribe.toml`, or into `--to`'s folder, which is a path from the current folder. The folder must be inside the folder `ascribe.toml` is in, and outside the content root and the output directory, where no type can name a file. Then it adds the type at the end of `ascribe.toml`, changing nothing above it, so its comments and order stay as they are:
 
 ```toml
 [types.how-to]
-template = "templates/how-to.md"
-guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 
 [types.how-to.frontmatter]
 description = "string"
 ```
 
-The type's `guide` lists their guide, then Ascribe's notes, in the order to read them. Its frontmatter has the fields the template's has, apart from `type`, each a string a page must have, and apart from those every type has already: a field `[frontmatter]` declares, and `title` as a plain string. When one of the project's types declares one of those fields as a string with more to it, such as `title = { type = "string", inline = "code" }` or `description = { type = "string", role = "description" }`, the type added declares it the same way, so its pages' titles and descriptions read as the project's other pages' do. A project that declared no types had every page of the implicit `page` type, so `eject` writes that type out first, as it was, a type with nothing of its own:
+The type names no `template` or `guide`: a type that names neither takes them from `templates/templates.lock`, which records them under its name, the guide theirs and then Ascribe's notes, in the order to read them. The content model looks for the lock only in `templates/`, so with `--to` another folder, `eject` names them in the type's table, as paths from the folder `ascribe.toml` is in, whatever folder `--to` was given from:
+
+```toml
+[types.how-to]
+template = "writing/how-to.md"
+guide = ["writing/how-to.guide.md", "writing/how-to.ascribe.md"]
+```
+
+Its frontmatter has the fields the template's has, apart from `type`, each a string a page must have, and apart from those every type has already: a field `[frontmatter]` declares, and `title` as a plain string. When one of the project's types declares one of those fields as a string with more to it, such as `title = { type = "string", inline = "code" }` or `description = { type = "string", role = "description" }`, the type added declares it the same way, so its pages' titles and descriptions read as the project's other pages' do. A project that declared no types had every page of the implicit `page` type, so `eject` writes that type out first, as it was, a type with nothing of its own:
 
 ```toml
 [types.page]
@@ -50,7 +56,7 @@ The type's `guide` lists their guide, then Ascribe's notes, in the order to read
 
 A project that declares types has each page name one, so its pages that named none, which were of `page`, now need `type: page`: `eject` lists them, and `ascribe check` reports each with a fix that adds it.
 
-Beside the templates, it writes `templates.lock`: for each template, the files written, with a hash of each as written, their template and guide under `files` and Ascribe's notes under `ascribe-files`, then their repository, tag, commit, and license, their summary of the type, and the version of Ascribe that wrote it. A later `eject` adds to it. Commit it with the templates, and don't edit it.
+Beside the templates, it writes `templates.lock`: for each template, the files written, with a hash of each as written, their template and guide under `files` and Ascribe's notes under `ascribe-files`, then their repository, tag, commit, and license, their summary of the type, and the version of Ascribe that wrote it. A later `eject` adds to it. Commit it with the templates, and don't edit it: the types take their templates from it, and a file it names that isn't there is the type's error, `model-type-template`.
 
 A project that declares a template's type already, with its own frontmatter, takes the template for it with `--keep-type`:
 
@@ -58,7 +64,7 @@ A project that declares a template's type already, with its own frontmatter, tak
 ascribe templates eject reference --keep-type
 ```
 
-It writes the same files and `templates.lock`, and adds only `template` and `guide` to the type's table, after its last entry, leaving its frontmatter, its other keys, and every comment as they are. A template whose type isn't declared is added as without it. It refuses a type written as an inline or a dotted table, which it can't add a line to, rather than a table under a `[types.<name>]` header of its own; a type that names a `template` or a `guide` already; and a type whose frontmatter doesn't declare each field the template's frontmatter has as a string, since no page started from the template would check. It names the field.
+It writes the same files and `templates.lock`, and leaves `ascribe.toml` as it is: the type takes its template and guide from the lock. With `--to` another folder, it adds only `template` and `guide` to the type's table, after its last entry, leaving its frontmatter, its other keys, and every comment as they are. A template whose type isn't declared is added as without it. It refuses a type written as an inline or a dotted table, which it can't add a line to, rather than a table under a `[types.<name>]` header of its own; a type that names a `template` or a `guide` already, or takes them from the lock; and a type whose frontmatter doesn't declare each field the template's frontmatter has as a string, since no page started from the template would check. It names the field.
 
 It checks everything before it writes anything. A type `ascribe.toml` declares already, without `--keep-type`, a file where one would be written, and a name the set doesn't have are each named, on standard error, and then nothing is written. Without `ascribe.toml`, it says so, and that `ascribe init --templates` starts a project with the templates.
 
@@ -75,7 +81,7 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 
 | Code | Meaning |
 |---|---|
-| `0` | Every template named was written, and its type added, or kept with its `template` and `guide` added |
+| `0` | Every template named was written, and its type added, or kept, taking its template and guide from the lock |
 | `2` | It wrote nothing: a template was refused, there's no `ascribe.toml`, the content model has errors, the folder can't hold templates, `templates.lock` isn't one it can add to, or the types can't be added to `ascribe.toml`. Or a file couldn't be written; the files it wrote before that stay. |
 
 ### `ascribe templates status`

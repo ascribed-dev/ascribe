@@ -330,7 +330,20 @@ pub(crate) fn write_added(
             )?;
         }
     }
-    for kept in &ejected.kept {
+    // In `templates/`, the lock eject wrote gives each type its files, and
+    // a type kept isn't changed.
+    let lock = ascribe_check::type_files::lock_path();
+    let from_lock = ejected.written.iter().any(|w| w == lock.as_str());
+    for kept in ejected.kept.iter().filter(|_| from_lock) {
+        writeln!(
+            out,
+            "[types.{}] in {} takes its template and guide from {}, and is left as it was",
+            kept.name,
+            from_here(root, ascribe_check::MODEL_FILE),
+            from_here(root, lock.as_str()),
+        )?;
+    }
+    for kept in ejected.kept.iter().filter(|_| !from_lock) {
         writeln!(
             out,
             "added `template` and `guide` to [types.{}] in {}, and left {} as {}",
