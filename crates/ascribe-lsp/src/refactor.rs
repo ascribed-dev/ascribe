@@ -451,7 +451,7 @@ pub(crate) fn prepare_model(
         return Ok(answer(value.span, &value.value));
     }
     Err(
-        "Put the cursor on a phrase's key under `[phrases]`, or a value in a dimension's `values`, to rename it."
+        "Put the cursor on a phrase's key under `[phrases]`, a value in a dimension's `values`, or the target in a `[releases.<target>]` header, to rename it."
             .to_owned(),
     )
 }

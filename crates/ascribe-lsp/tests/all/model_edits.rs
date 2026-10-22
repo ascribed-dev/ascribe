@@ -947,6 +947,146 @@ fn a_dimension_value_is_renamed_everywhere_from_a_page_or_the_model() {
     }
 }
 
+const RELEASE_MODEL: &str = r#"spec = "0.1"
+
+[project]
+content-root = "docs"
+
+[releases]
+label = "Product"
+
+[releases.agent]
+label = "Agent"
+live = ["1.2"]
+
+[releases."cli"]
+live = ["0.4"]
+
+[features.sync]
+name = "Sync"
+available = "agent 1.2, cli"
+
+[builds.site]
+
+[builds.agent]
+variants = { release = "agent" }
+availability = { filter = "agent 1.2" }
+
+[builds.agent-lines]
+versions = "agent"
+"#;
+
+const RELEASE_PAGE: &str = "---\ntitle: Install\navailable: agent 1.2, cli\n---\n@variant {release=agent}:\nAgent text.\n@variant {release=cli}:\nCLI text.\n@end\n\n@available: sync\nSynced.\n\n@available: agent 1.2\nPara.\n";
+
+const RELEASE_AGENT_PAGE: &str =
+    "---\ntitle: Agent\nvariant:\n  release: agent\n---\nAgent only.\n";
+
+#[test]
+fn an_implicit_release_target_is_renamed_from_its_releases_header() {
+    let f = Fixture::new(
+        RELEASE_MODEL,
+        &[
+            ("docs/index.md", RELEASE_PAGE),
+            ("docs/agent.md", RELEASE_AGENT_PAGE),
+        ],
+    );
+    let mut client = Client::start(&f.root());
+    let model = f.path("ascribe.toml");
+    let page = f.path("docs/index.md");
+    let agent_page = f.path("docs/agent.md");
+    client.open(&page, 1, RELEASE_PAGE);
+    client.open(&model, 1, RELEASE_MODEL);
+
+    let mut ask = |offset| prepare(&mut client, &model, RELEASE_MODEL, offset);
+    assert_eq!(
+        ask(at(
+            RELEASE_MODEL,
+            "[releases.agent]",
+            0,
+            "[releases.".len() + 1
+        )),
+        Ok(("agent".to_owned(), "agent".to_owned()))
+    );
+    assert_eq!(
+        ask(at(
+            RELEASE_MODEL,
+            "[releases.\"cli\"]",
+            0,
+            "[releases.\"".len()
+        )),
+        Ok(("cli".to_owned(), "cli".to_owned()))
+    );
+    assert!(ask(at(RELEASE_MODEL, "[releases]", 0, 2)).is_err());
+
+    // From the header, the same edits a page's rename makes.
+    let from_model = rename(
+        &mut client,
+        &model,
+        RELEASE_MODEL,
+        at(RELEASE_MODEL, "[releases.agent]", 0, "[releases.".len() + 2),
+        "daemon",
+    )
+    .expect("renamed");
+    let from_page = rename(
+        &mut client,
+        &page,
+        RELEASE_PAGE,
+        at(RELEASE_PAGE, "release=agent", 0, "release=".len() + 1),
+        "daemon",
+    )
+    .expect("renamed");
+    let expected_model = RELEASE_MODEL
+        .replace("[releases.agent]", "[releases.daemon]")
+        .replace("\"agent 1.2, cli\"", "\"daemon 1.2, cli\"")
+        .replace("release = \"agent\"", "release = \"daemon\"")
+        .replace("filter = \"agent 1.2\"", "filter = \"daemon 1.2\"")
+        .replace("versions = \"agent\"", "versions = \"daemon\"");
+    let expected_page = RELEASE_PAGE
+        .replace("available: agent", "available: daemon")
+        .replace("release=agent", "release=daemon");
+    assert_eq!(from_model.after(&model), expected_model);
+    assert_eq!(from_model.after(&page), expected_page);
+    assert_eq!(
+        from_model.after(&agent_page),
+        RELEASE_AGENT_PAGE.replace("release: agent", "release: daemon")
+    );
+    assert_eq!(
+        renamed_by_editor(&from_model),
+        renamed_by_editor(&from_page)
+    );
+
+    // A quoted header is renamed too.
+    let quoted = rename(
+        &mut client,
+        &model,
+        RELEASE_MODEL,
+        at(RELEASE_MODEL, "[releases.\"cli\"]", 0, "[releases.\"".len()),
+        "tool",
+    )
+    .expect("renamed");
+    assert!(
+        quoted.after(&model).contains("[releases.tool]"),
+        "{}",
+        quoted.after(&model)
+    );
+    assert!(quoted.after(&page).contains("@variant {release=tool}:"));
+
+    // `[releases]`'s own keys, and names taken, rename nothing.
+    for taken in ["label", "planned-label", "cli", "release", "sync"] {
+        assert!(
+            rename(
+                &mut client,
+                &model,
+                RELEASE_MODEL,
+                at(RELEASE_MODEL, "[releases.agent]", 0, "[releases.".len() + 2),
+                taken
+            )
+            .is_none(),
+            "{taken}"
+        );
+    }
+}
+
 /// What `ascribe rename` writes, as [`Done`]'s files: each file's text
 /// after, by path.
 fn renamed_by_name(f: &Fixture, renaming: &ascribe_lsp::Renaming) -> BTreeMap<String, String> {
