@@ -1055,22 +1055,98 @@ title: Many
     assert!(lines[49].starts_with("docs/b.md:"), "{text}");
     assert_eq!(
         lines[50],
-        "and 10 more: ascribe check docs/b.md --format concise"
+        "and 10 more: ascribe check --format concise --limit all"
     );
     assert_eq!(
         lines[51],
         "checked 2 files for every build, reported on 2: 0 errors, 60 warnings, 0 advice"
     );
-    // Checking one file, the rest of it is in the JSON.
+    // The command it names lists them all: the 50 shown, then exactly the
+    // 10 left out, and nothing more.
+    let command = lines[50].split_once(": ").unwrap().1;
+    let words: Vec<&str> = command.split(' ').skip(1).collect();
+    let all = stdout(&ascribe(dir.path(), &words));
+    let all: Vec<&str> = all.lines().collect();
+    assert_eq!(all.len(), 61, "{}", all.join("\n"));
+    assert_eq!(all[..50], lines[..50]);
+    assert!(all[50..60].iter().all(|l| l.starts_with("docs/b.md:")));
+    let shown: std::collections::BTreeSet<&str> = lines[..50].iter().copied().collect();
+    assert!(all[50..60].iter().all(|l| !shown.contains(l)), "{all:?}");
+    assert_eq!(all[60], lines[51]);
+    // Checking one file, the command keeps the path.
     let dir = project(&[("a.md", &format!("{page}{many}"))]);
     let text = stdout(&ascribe(
         dir.path(),
         &["check", "docs/a.md", "--format", "concise"],
     ));
     assert!(
-        text.contains("\nand 10 more: ascribe check docs/a.md --format json\n"),
+        text.contains("\nand 10 more: ascribe check docs/a.md --format concise --limit all\n"),
         "{text}"
     );
+}
+
+#[test]
+fn limit_sets_how_many_problems_the_concise_list_shows() {
+    let many: String = (0..8).map(|i| format!("See {{nope{i}}}.\n\n")).collect();
+    let page = format!("---\ntitle: Many\n---\n\n{many}");
+    let dir = project(&[("a.md", &page)]);
+    let concise = |limit: &str| {
+        stdout(&ascribe(
+            dir.path(),
+            &["check", "--format", "concise", "--limit", limit],
+        ))
+    };
+    let summary = "checked 1 file for every build, reported on 1: 0 errors, 8 warnings, 0 advice";
+
+    let three = concise("3");
+    let lines: Vec<&str> = three.lines().collect();
+    assert_eq!(lines.len(), 5, "{three}");
+    assert!(
+        lines[..3].iter().all(|l| l.starts_with("docs/a.md:")),
+        "{three}"
+    );
+    assert_eq!(
+        lines[3],
+        "and 5 more: ascribe check --format concise --limit all"
+    );
+    assert_eq!(lines[4], summary);
+
+    // `all`, or a limit as high as the count, lists them all, with no
+    // command after them.
+    let all = concise("all");
+    assert_eq!(all.lines().count(), 9, "{all}");
+    assert!(!all.contains("more:"), "{all}");
+    assert_eq!(concise("8"), all);
+    assert_eq!(concise("100"), all);
+    // 0 lists none, and counts them.
+    assert_eq!(
+        concise("0"),
+        format!("and 8 more: ascribe check --format concise --limit all\n{summary}\n")
+    );
+
+    // Neither a number nor `all`, or with another format or `--summary`,
+    // it's a usage error.
+    let out = ascribe(
+        dir.path(),
+        &["check", "--format", "concise", "--limit", "some"],
+    );
+    assert_eq!(code(&out), 2);
+    assert!(
+        stderr(&out).contains("neither a number nor `all`"),
+        "{}",
+        stderr(&out)
+    );
+    let out = ascribe(dir.path(), &["check", "--limit", "3"]);
+    assert_eq!(code(&out), 2);
+    assert_eq!(
+        stderr(&out),
+        "error: --limit sets how many problems `--format concise` lists; add `--format concise`\n"
+    );
+    let out = ascribe(
+        dir.path(),
+        &["check", "--summary", "--format", "concise", "--limit", "3"],
+    );
+    assert_eq!(code(&out), 2);
 }
 
 #[test]
@@ -1208,7 +1284,7 @@ fn the_commands_a_narrowed_check_names_keep_its_codes() {
         ],
     ));
     assert!(
-        text.contains("\nand 70 more: ascribe check docs/a.md --code ASC044 --format concise\n"),
+        text.contains("\nand 70 more: ascribe check --code ASC044 --format concise --limit all\n"),
         "{text}"
     );
     assert!(!text.contains("ASC036"), "{text}");

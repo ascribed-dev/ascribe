@@ -92,6 +92,15 @@ pub struct Args {
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
 
+    /// List at most this many problems with `--format concise`, or `all` of
+    /// them.
+    ///
+    /// By default, 50. When some are left out, the list ends with how many,
+    /// and the command that lists them all. Only with `--format concise`, and
+    /// not with `--summary`, which lists none.
+    #[arg(long, value_name = "N", conflicts_with = "summary")]
+    pub limit: Option<concise::Limit>,
+
     /// Make warnings fail the command too (exit code 1), for CI.
     #[arg(long)]
     pub deny_warnings: bool,
@@ -160,8 +169,8 @@ pub enum Format {
     /// Problems with source snippets, for people.
     Text,
     /// One line per problem, `file:line: [code] message`, grouped by file:
-    /// for an agent. At most 50, then how many more and the command that
-    /// narrows the check.
+    /// for an agent. At most 50, or as many as `--limit` says, then how many
+    /// more and the command that lists them all.
     Concise,
     /// One JSON document, for tools.
     Json,
@@ -192,6 +201,9 @@ pub enum CheckError {
     /// `ascribe.baseline` can't be read.
     #[error("{0}; fix the line, or pass --no-baseline to check without the baseline")]
     Baseline(BaselineError),
+    /// `--limit` was given to a format that lists every problem.
+    #[error("--limit sets how many problems `--format concise` lists; add `--format concise`")]
+    LimitNotConcise,
 }
 
 impl Coded for CheckError {
@@ -203,6 +215,7 @@ impl Coded for CheckError {
             CheckError::Fix(e) => e.code(),
             CheckError::Code(e) => e.code(),
             CheckError::Baseline(e) => e.code(),
+            CheckError::LimitNotConcise => "limit_not_concise",
         }
     }
 }
@@ -349,6 +362,11 @@ pub fn run_check(
     args: &Args,
     stdin: &mut dyn Read,
 ) -> Result<Outcome, Stopped> {
+    if args.limit.is_some() && args.format != Format::Concise {
+        return Err(Stopped::Failure(Failure::Check(
+            CheckError::LimitNotConcise,
+        )));
+    }
     let codes = codes(&args.code).map_err(Stopped::Failure)?;
     let Checked {
         loaded,
@@ -585,12 +603,14 @@ pub fn write(
                 .and_then(|()| writeln!(out, "{summary}"))
         }
         (Format::Text, false) => text::write_reported(out, files, reported, &summary, color),
-        (Format::Concise, false) => {
-            let more = |next: &Reported| {
-                command.narrowed(project, &files.path(next.diagnostic.location.file), scope)
-            };
-            concise::write(out, files, reported, &summary, &more)
-        }
+        (Format::Concise, false) => concise::write(
+            out,
+            files,
+            reported,
+            &summary,
+            args.limit.unwrap_or_default(),
+            &command.concise_all(),
+        ),
     }
 }
 
@@ -821,20 +841,17 @@ impl<'a> Command<'a> {
         words.join(" ")
     }
 
-    /// The command that narrows the check to `file` (relative to the project
-    /// root), in concise form; or, when the check is already that file
-    /// alone, the one that lists all of it, as JSON.
-    fn narrowed(&self, project: &Project, file: &str, scope: &Option<Scope>) -> String {
-        let only_this = scope.as_ref().is_some_and(|s| {
-            s.paths().len() == 1 && s.paths().first().is_some_and(|p| p.as_str() == file)
-        });
-        if only_this {
-            return self.listing();
-        }
-        let mut words = vec!["ascribe".to_owned(), "check".to_owned()];
-        words.push(quote(&crate::answer::from_here(project.root(), file)));
+    /// This command in concise form with `--limit all`: what lists every
+    /// problem a cut concise list leaves out.
+    fn concise_all(&self) -> String {
+        let mut words = self.on_paths();
         words.extend(self.options());
-        words.extend(["--format".to_owned(), "concise".to_owned()]);
+        words.extend([
+            "--format".to_owned(),
+            "concise".to_owned(),
+            "--limit".to_owned(),
+            "all".to_owned(),
+        ]);
         words.join(" ")
     }
 }

@@ -667,6 +667,7 @@ fn call_check(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> 
         } else {
             check::Format::Concise
         },
+        limit: None,
         deny_warnings: false,
         fix: false,
         vale: false,

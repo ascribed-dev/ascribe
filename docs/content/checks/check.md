@@ -51,6 +51,8 @@ npx ascribe check --stdin --path docs/guides/new.md < draft.md
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check-concise.txt
 
+It lists at most 50 problems. When there are more, the line before the summary says how many it left out, and the command that lists them all: the same check with `--limit all` (`and 11 more: ascribe check docs --code ASC212 --format concise --limit all`). `--limit <n>` sets how many it lists, and `--limit all` lists every one. `--limit` is only for `--format concise`; with another format, or with `--summary`, it's a usage error.
+
 `--format prompt` writes the prompt [Prompt your agent](../agents/prompts.md) describes. It lists at most 20 problems, or 20 files, then names the command that lists the rest. With `--stdin`, it says the file has unsaved changes.
 
 `--summary` works in any format. The text lists at most 20 files, then the command whose JSON lists them all. On a project with hundreds of warnings, it shows which rule or file to work through first.
