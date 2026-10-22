@@ -48,6 +48,11 @@ pub(crate) struct Ctx {
     pub fs: Arc<LayerFs>,
     /// The day the checks run on.
     pub today: Option<ascribe_core::Date>,
+    /// What `ascribe.baseline` holds back of the requested file's problems,
+    /// when they're for its text as the request has it.
+    pub held: Vec<lsp_types::Diagnostic>,
+    /// `ascribe.baseline`, as the editor has it.
+    pub baseline: Arc<crate::baseline::Now>,
 }
 
 impl Ctx {

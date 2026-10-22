@@ -30,6 +30,8 @@ An agent that reads the Problems panel sees the same: before calling a project c
 npx ascribe check --config handbook
 ```
 
+A project with an [`ascribe.baseline`](../checks/baseline.md#in-the-editor) has the advice it lists left out, as `ascribe check` does: the hover on its line says the baseline holds it, and a quick fix there moves it to an `@intended`.
+
 ## Quick fixes
 
 Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):

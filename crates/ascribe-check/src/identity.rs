@@ -76,7 +76,7 @@ fn line_at(text: &str, offset: usize) -> &str {
 
 /// The identity of each of `diagnostics`, in their order, in `project`.
 pub fn identities(project: &Project, diagnostics: &[Diagnostic]) -> Vec<Identity> {
-    let mut found: Vec<(Identity, Span)> = diagnostics
+    let found = diagnostics
         .iter()
         .map(|d| {
             let file = d.location.file;
@@ -95,6 +95,31 @@ pub fn identities(project: &Project, diagnostics: &[Diagnostic]) -> Vec<Identity
             (identity, d.location.span)
         })
         .collect();
+    ordered(found)
+}
+
+/// The identity of each of `diagnostics`, in their order, when all of them
+/// are located in one file: `file`, from the project's root with `/`, whose
+/// text is `text`. What the editor works out for a file it checks on its
+/// own, such as Vale's alerts in a page (#790).
+pub fn identities_in(file: &str, text: &str, diagnostics: &[Diagnostic]) -> Vec<Identity> {
+    let found = diagnostics
+        .iter()
+        .map(|d| {
+            let identity = Identity {
+                check: d.slug.to_string(),
+                file: file.to_owned(),
+                fingerprint: fingerprint(text, d.location.span),
+                order: 0,
+            };
+            (identity, d.location.span)
+        })
+        .collect();
+    ordered(found)
+}
+
+/// `found`'s identities, each with its order among those alike.
+fn ordered(mut found: Vec<(Identity, Span)>) -> Vec<Identity> {
     // Each group of alike findings, in the file's order: by where each
     // starts and ends, then in the order given.
     let mut groups: BTreeMap<(String, String, String), Vec<usize>> = BTreeMap::new();

@@ -25,7 +25,7 @@ In Claude Code, [the plugin](claude-code.md) has the stop hook too: use the plug
 
 ## What the agent hears
 
-- **After an edit,** the errors in the files the agent wrote, in the editor's build, and the advice in them that has a safe fix, with what to change and where. The hook makes no fix, so the agent makes the edit itself and sees every change. It says nothing when there's neither.
+- **After an edit,** the errors in the files the agent wrote, in the editor's build, and the advice in them that has a safe fix, with what to change and where. The hook makes no fix, so the agent makes the edit itself and sees every change. It says nothing when there's neither. The advice a project put off in [`ascribe.baseline`](../checks/baseline.md#for-agents) isn't the agent's to fix: it's left out, and counted.
 - **Before the agent finishes,** the errors in every build of each project the working tree changes. While there are any, it keeps the agent working, once. Changes the agent has committed before it stops aren't in the working tree, so they aren't checked; check them in CI.
 
 Neither stops an edit, writes a file, or holds the agent up: a check that takes too long is given up. [`ascribe agents hook`](commands.md#cli-agents-hook) says exactly what each reports, and how the check server it starts keeps a check after an edit to milliseconds.

@@ -26,6 +26,7 @@
 use std::collections::{BTreeSet, HashSet};
 
 use ascribe_core::{FileId, Issue, Location, Span, diagnostics};
+use ascribe_model::Checks;
 
 use crate::identity::{Identity, identities};
 use crate::{Diagnostic, Project, Severity, apply_levels};
@@ -215,6 +216,12 @@ pub struct Held {
     pub diagnostics: Vec<Diagnostic>,
     /// The advice the baseline holds back, which isn't reported.
     pub held: Vec<Diagnostic>,
+    /// The identity of each of `held`, in its order: the entry that holds
+    /// it back.
+    pub held_as: Vec<Identity>,
+    /// The identities of the diagnostics an entry matched, held back or
+    /// not, so the entry isn't stale.
+    pub matched: Vec<Identity>,
 }
 
 /// `diagnostics`, a check's, with what `baseline` holds back set aside:
@@ -233,41 +240,79 @@ pub fn apply(
     unmatched: bool,
     not_run: &[&str],
 ) -> Held {
-    let listed: HashSet<&Identity> = baseline.entries.iter().map(|e| &e.identity).collect();
     let found = identities(project, &diagnostics);
-    let mut matched: HashSet<&Identity> = HashSet::new();
+    let mut held = hold(baseline, diagnostics, found);
+    if unmatched {
+        let matched: HashSet<&Identity> = held.matched.iter().collect();
+        let stale = stale(&project.model().checks, baseline, &matched, not_run);
+        held.diagnostics.extend(stale);
+    }
+    held
+}
+
+/// `diagnostics`, whose identities are `found`, in their order, with the
+/// advice `baseline` lists set aside: [`apply`] without the stale entries.
+/// The editor holds back a file's diagnostics at a time with it, since an
+/// identity's order is among the findings of one file (#790).
+pub fn hold(baseline: &Baseline, diagnostics: Vec<Diagnostic>, found: Vec<Identity>) -> Held {
+    let listed: HashSet<&Identity> = baseline.entries.iter().map(|e| &e.identity).collect();
     let mut held = Held::default();
-    for (d, identity) in diagnostics.into_iter().zip(&found) {
-        let Some(&entry) = listed.get(identity) else {
+    for (d, identity) in diagnostics.into_iter().zip(found) {
+        if !listed.contains(&identity) {
             held.diagnostics.push(d);
             continue;
-        };
-        matched.insert(entry);
+        }
         if d.severity == Severity::Advice {
             held.held.push(d);
+            held.held_as.push(identity.clone());
         } else {
             held.diagnostics.push(d);
         }
-    }
-    if unmatched {
-        let stale = baseline
-            .entries
-            .iter()
-            .filter(|e| !matched.contains(&e.identity))
-            .filter(|e| !not_run.contains(&e.identity.check.as_str()))
-            .map(|e| {
-                let at = Location::new(BASELINE_FILE_ID, e.span);
-                Diagnostic::from_issue(
-                    &Issue::new(diagnostics::BASELINE_ENTRY_UNMATCHED, at)
-                        .with_arg("check", &e.identity.check)
-                        .with_arg("file", &e.identity.file),
-                )
-            })
-            .collect();
-        held.diagnostics
-            .extend(apply_levels(&project.model().checks, stale));
+        held.matched.push(identity);
     }
     held
+}
+
+/// A `baseline-entry-unmatched` at the line of each entry of `baseline`
+/// that isn't `matched`, with the level `checks`, the content model's, sets
+/// for it, apart from the entries of the checks `not_run` names.
+pub fn stale(
+    checks: &Checks,
+    baseline: &Baseline,
+    matched: &HashSet<&Identity>,
+    not_run: &[&str],
+) -> Vec<Diagnostic> {
+    let stale = baseline
+        .entries
+        .iter()
+        .filter(|e| !matched.contains(&e.identity))
+        .filter(|e| !not_run.contains(&e.identity.check.as_str()))
+        .map(|e| {
+            let at = Location::new(BASELINE_FILE_ID, e.span);
+            Diagnostic::from_issue(
+                &Issue::new(diagnostics::BASELINE_ENTRY_UNMATCHED, at)
+                    .with_arg("check", &e.identity.check)
+                    .with_arg("file", &e.identity.file),
+            )
+        })
+        .collect();
+    apply_levels(checks, stale)
+}
+
+/// The line of `baseline`'s entry for `identity` in `text`, the file's
+/// text, with its line end: what's deleted to take a finding out of the
+/// baseline. `None` when no entry is for it.
+pub fn removal(text: &str, baseline: &Baseline, identity: &Identity) -> Option<Span> {
+    let entry = baseline.entries.iter().find(|e| e.identity == *identity)?;
+    let rest = text.get(entry.span.end()..)?;
+    let end = if rest.starts_with("\r\n") {
+        entry.span.end() + 2
+    } else if rest.starts_with('\n') {
+        entry.span.end() + 1
+    } else {
+        entry.span.end()
+    };
+    Some(Span::new(entry.span.start(), end))
 }
 
 /// What `ascribe baseline write` makes of a baseline.
@@ -443,6 +488,28 @@ mod tests {
         .map(|b| b.entries.len())
         .map_err(|e| e.to_string());
         assert_eq!(read, Ok(1));
+    }
+
+    #[test]
+    fn an_entrys_removal_is_its_line_with_its_end() {
+        let removed = |text: &str, file: &str| {
+            let baseline = Baseline::parse(text).map_err(|e| e.to_string())?;
+            let wanted = identity("nav-label-long", file, "0123456789abcdef", 0);
+            let span = removal(text, &baseline, &wanted).ok_or("no entry")?;
+            let mut text = text.to_owned();
+            text.replace_range(span.range(), "");
+            Ok::<_, String>(text)
+        };
+        let text = "# ascribe baseline 1\r\nnav-label-long 0123456789abcdef 0 a.md\r\nnav-label-long 0123456789abcdef 0 b.md";
+        assert_eq!(
+            removed(text, "a.md").as_deref(),
+            Ok("# ascribe baseline 1\r\nnav-label-long 0123456789abcdef 0 b.md")
+        );
+        assert_eq!(
+            removed(text, "b.md").as_deref(),
+            Ok("# ascribe baseline 1\r\nnav-label-long 0123456789abcdef 0 a.md\r\n")
+        );
+        assert_eq!(removed(text, "c.md"), Err("no entry".to_owned()));
     }
 
     #[test]
