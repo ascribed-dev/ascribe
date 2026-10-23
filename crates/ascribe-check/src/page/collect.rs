@@ -199,7 +199,7 @@ fn summaries_missing(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>)
 }
 
 /// The most characters of a section's text a prompt quotes.
-const MAX_SECTION: usize = 1_500;
+const MAX_SECTION: usize = 800;
 
 /// The text of a heading's section as written in its file, for a prompt
 /// that asks for its summary: at most [`MAX_SECTION`] characters.
