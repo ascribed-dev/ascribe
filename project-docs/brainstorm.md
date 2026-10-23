@@ -5,6 +5,7 @@ Ideas for Ascribe that nobody has built, planned, or started. This is exploratio
 Written on 2 October 2026, after 0.1.1, and cut back on 11 October 2026 to what's still open. Most of what it held then has been built, and the rest of it has a plan or a proposal of its own, so it's gone from here:
 
 - **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, external links, and what's new since the last run), [a baseline](../docs/content/checks/baseline.md) of existing advice, [permalinks](../docs/content/permalinks/index.md), [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), [versions](../docs/content/versions/index.md), [navigation](../docs/content/navigation/index.md), [the glossary as pages](../docs/content/content-model/glossary.md), a content model that says only what's the project's own ([shared frontmatter, defaults, and `[from]`](../docs/content/content-model/index.md)), the editor's [sidebar](../docs/content/editor/sidebar.md), with This page and the Project view, and Project Settings, [search](../docs/content/command/questions.md#ascribe-search), and what a search engine and a crawler are told, in [Publishing](../docs/content/publishing/index.md).
+- **Planned.** [Embedded help](embedded-help/README.md), from its [proposal](proposals/embedded-help.md).
 - **Waiting.** [The rest of the cache](https://github.com/ascribed-dev/ascribe/blob/bb56bfb3/project-docs/proposals/cache.md) is built, apart from Vale's results, which wait for a project that needs them (section 15).
 
 The sections keep the numbers they had, since other documents name them, so the numbers have gaps.
@@ -114,7 +115,7 @@ A PDF or print output of a build. The versions plan gives an archive a print sty
 
 ## 17. Embedded help
 
-Added 2026-10-09. Not planned. It builds on permalinks, which are built since ([Permalinks](../docs/content/permalinks/index.md)).
+Added 2026-10-09. Proposed in [embedded help](proposals/embedded-help.md). It builds on permalinks, which are built since ([Permalinks](../docs/content/permalinks/index.md)).
 
 ### The idea
 
