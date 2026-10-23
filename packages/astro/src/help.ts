@@ -15,7 +15,7 @@ import { olderLines } from "./versions.js";
 const VERSION = 1;
 
 /** A permalink's section, as `_ascribe/help.json` has it. */
-export interface HelpEntry {
+interface HelpEntry {
   title: string;
   summary?: string;
   text: string;
