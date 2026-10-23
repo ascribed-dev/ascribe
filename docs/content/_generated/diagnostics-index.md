@@ -243,4 +243,4 @@
 | [ASC248](../checks/diagnostics/content-model.md#ASC248) | `model-from-written` | Error | File | write |
 | [ASC249](../checks/diagnostics/pages.md#ASC249) | `summary-not-paragraph` | Error | File | write |
 | [ASC250](../checks/diagnostics/pages.md#ASC250) | `summary-repeated` | Error | Page | write |
-| [ASC251](../checks/diagnostics/pages.md#ASC251) | `summary-in-variant` | Error | File | write |
+| [ASC251](../checks/diagnostics/pages.md#ASC251) | `summary-in-variant` | Error | Page | write |

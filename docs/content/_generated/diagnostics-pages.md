@@ -923,11 +923,11 @@ Error · page level · next step: write · [SPEC §4.12]({repo}/blob/main/SPEC.m
 
 ### ASC251 `summary-in-variant`
 @id {permalink=true}: ASC251
-@summary: Summary inside a `@variant` arm.
+@summary: Summary inside a `@variant` arm, including one an include brings into an arm.
 
-Error · file level · next step: write · [SPEC §4.12]({repo}/blob/main/SPEC.md#412-summary)
+Error · page level · next step: write · [SPEC §4.12]({repo}/blob/main/SPEC.md#412-summary)
 
-**When:** Summary inside a `@variant` arm.
+**When:** Summary inside a `@variant` arm, including one an include brings into an arm.
 
 **Message:** `@summary` is inside a `@variant` arm, and a summary can't differ by arm
 

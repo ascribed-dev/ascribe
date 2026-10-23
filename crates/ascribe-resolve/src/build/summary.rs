@@ -6,13 +6,23 @@
 //! A summary's section is the section of the nearest heading before it in
 //! its own list of blocks, or, with none, the one its enclosing block is in;
 //! with none at all, the page's opening.
+//!
+//! A summary inside a `@variant` arm, written there or brought into one by an
+//! include, is `summary-in-variant`, and is no section's summary: it's found
+//! and removed before the build's modes, since a build that selects one arm
+//! makes that arm's blocks plain content.
 
+use ascribe_core::{Issue, Location, diagnostics};
 use ascribe_syntax::{Block, BlockKind, Bound, Inline, PrimaryValue};
 
 use super::tree::{ResolvedBlock, ResolvedKind, ResolvedPage};
+use crate::expand::PageProblem;
 
 /// The directive that gives a section its summary.
 const SUMMARY: &str = "summary";
+
+/// The groupable directive whose arms a summary can't be in.
+const VARIANT: &str = "variant";
 
 /// How a section's summary is given.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -107,6 +117,43 @@ pub(super) fn section_summaries(blocks: &[ResolvedBlock]) -> Vec<SectionSummary>
         });
     }
     out
+}
+
+/// Removes each `@summary` line inside a `@variant` arm, at any depth, and
+/// records `summary-in-variant` for it. The block a following form marks
+/// stays, as content.
+pub(super) fn out_of_arms(
+    blocks: &mut Vec<ResolvedBlock>,
+    in_arm: bool,
+    problems: &mut Vec<PageProblem>,
+) {
+    blocks.retain(|block| {
+        let ResolvedKind::Leaf(Block {
+            kind: BlockKind::Directive(line),
+            ..
+        }) = &block.kind
+        else {
+            return true;
+        };
+        if !in_arm || line.name != SUMMARY {
+            return true;
+        }
+        problems.push(PageProblem {
+            issue: Issue::new(
+                diagnostics::SUMMARY_IN_VARIANT,
+                Location::new(block.file, line.name_span),
+            ),
+            via: block.via.clone(),
+        });
+        false
+    });
+    for block in blocks {
+        let arm =
+            in_arm || matches!(&block.kind, ResolvedKind::Group { name, .. } if name == VARIANT);
+        for list in block.child_lists_mut() {
+            out_of_arms(list, arm, problems);
+        }
+    }
 }
 
 fn walk<'a>(

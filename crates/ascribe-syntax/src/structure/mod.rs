@@ -16,8 +16,6 @@
 //!    of sibling blocks is final (the scope's, a container's, or an arm's),
 //!    each line-form directive gets its binding and the checks that need
 //!    neighbors run.
-//! 4. **Summaries in arms** ([`summary`]): once the whole tree is final, a
-//!    `@summary` inside a `@variant` arm is reported.
 //!
 //! Everything here reads one file and the directive schemas. What needs
 //! another file, or the content model's data, is for later passes (the source
@@ -26,7 +24,6 @@
 mod bind;
 mod lists;
 mod nest;
-mod summary;
 mod titles;
 
 pub use bind::{bound_block, bound_heading};
@@ -53,9 +50,7 @@ pub(crate) fn run(
         open: Vec::new(),
         orphans: Vec::new(),
     };
-    let blocks = pass.scope(blocks, Scope::Document);
-    pass.summaries_in_arms(&blocks, false);
-    blocks
+    pass.scope(blocks, Scope::Document)
 }
 
 /// What kind of list of sibling blocks the pass is working on.

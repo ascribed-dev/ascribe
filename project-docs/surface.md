@@ -110,7 +110,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-243 in all. By severity: 48 advice, 170 error, 25 warning. By level: 216 file, 27 page. By kind of next step: 54 choose, 18 fix, 8 outside, 12 review, 151 write.
+243 in all. By severity: 48 advice, 170 error, 25 warning. By level: 215 file, 28 page. By kind of next step: 54 choose, 18 fix, 8 outside, 12 review, 151 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|

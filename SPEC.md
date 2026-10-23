@@ -804,7 +804,7 @@ It rewrites each mark's `planned` for its target to the line's version.
 - **Primary:** OPTIONAL text (§3.4): inline content, as a note's, with code spans, links, emphasis, and phrases. **Attributes:** none. **Title:** none.
 - **Its section** is the section of the nearest heading before it in the page after includes are expanded (§9.2), so a summary in a fragment is the summary of the section it lands in, on each page that includes it. A following-form summary before a page's first heading is the summary of the page's opening.
 - **One per section.** A second summary in a section is an error, at the second (page level, §8.2). A subsection's summary is its own.
-- **Not in a `@variant` arm.** A summary inside an arm, at any depth, is an error, since a summary can't differ by arm.
+- **Not in a `@variant` arm.** A summary inside an arm, at any depth, is an error, since a summary can't differ by arm, and so is one an include brings into an arm. Either is reported on the page (§8.2), and is no section's summary in any build, including one that picks that arm.
 - **Optional.** Nothing requires a summary, and nothing guesses one from a section's prose.
 - **In the outputs.** The site and plain outputs write nothing for the primary form, and the following form's block as they would without the directive. The JSON output gives a heading its section's summary (§9.4).
 
@@ -1222,7 +1222,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Glossary | `@term` on a heading that no page the glossary lists shows | Error |
 | `@summary` | Following form whose block isn't a paragraph | Error |
 | `@summary` | A second summary in one section, including summaries from included content (page level) | Error |
-| `@summary` | Summary inside a `@variant` arm | Error |
+| `@summary` | Summary inside a `@variant` arm, including one an include brings into an arm (page level) | Error |
 | Project widget | Violates its declared schema | Error |
 | Links | Target file doesn't exist | Error |
 | Links | Target id doesn't exist in the target file (page level) | Error |

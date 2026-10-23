@@ -346,6 +346,11 @@ impl<'p> BuildResolver<'p> {
             page_availability.clone(),
             &mut scope_problems,
         );
+        // A summary can't differ by arm, in a build that keeps the arms or
+        // one that picks one of them.
+        let mut blocks = blocks;
+        let mut summary_problems = Vec::new();
+        summary::out_of_arms(&mut blocks, false, &mut summary_problems);
         // Step 3: build modes.
         let mut mode_problems = Vec::new();
         let (mut blocks, _) = modes::apply(blocks, self.build, model, &mut mode_problems);
@@ -365,6 +370,7 @@ impl<'p> BuildResolver<'p> {
                 .map(|(_, problem)| problem),
         );
         problems.extend(mode_problems);
+        problems.extend(summary_problems);
         problems.extend(self.replaces_problems(index));
         // A line shows no version from before the window.
         let mut page_availability = page_availability;

@@ -4663,12 +4663,12 @@ Quill installs in a minute.
 code = "ASC251"
 slug = "summary-in-variant"
 severity = "error"
-level = "file"
+level = "page"
 next = "write"
 evidence = []
 spec = "4.12"
 reference = "writing/directives.md#summary"
-row = "`@summary` | Summary inside a `@variant` arm"
+row = "`@summary` | Summary inside a `@variant` arm, including one an include brings into an arm (page level)"
 message = "`@summary` is inside a `@variant` arm, and a summary can't differ by arm"
 fix = "Move the summary out of the group, to the top of its section, with text that holds for every arm."
 example.wrong = '''

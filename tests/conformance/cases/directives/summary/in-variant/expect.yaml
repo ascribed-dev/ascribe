@@ -2,8 +2,10 @@ description: >-
   A summary inside a `@variant` arm is an error, at any depth, since a
   summary can't differ by arm.
 spec: ["4.12", "8.2"]
-tags: [check]
+tags: [page-check]
 
-diagnostics:
-  - {slug: summary-in-variant, line: 8}
-  - {slug: summary-in-variant, line: 11}
+builds:
+  site:
+    diagnostics:
+      - {slug: summary-in-variant, line: 8}
+      - {slug: summary-in-variant, line: 11}

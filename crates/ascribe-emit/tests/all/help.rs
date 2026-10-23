@@ -191,6 +191,27 @@ fn a_section_without_a_summary_has_none() {
 }
 
 #[test]
+fn a_summary_an_include_brings_into_an_arm_is_none() {
+    // In a build that keeps the arms and in one that picks the arm, the
+    // paragraph it marks stays, as content.
+    let files = [
+        (
+            "install.md",
+            "---\ntitle: Install\n---\n\n## Connect\n@id {permalink=true}: connect\n\n\
+             @variant {deployment=cloud}:\n@include: _cloud.md\n\
+             @variant {deployment=self-managed}:\nPoint it at your server.\n@end\n",
+        ),
+        ("_cloud.md", "@summary\nSign in to the cloud.\n"),
+    ];
+    for build in ["site", "cloud"] {
+        let help = file(MODEL, &files, build)["help"]["connect"].clone();
+        assert!(help.get("summary").is_none(), "{build}: {help}");
+        let text = help["text"].as_str().unwrap_or_default();
+        assert!(text.contains("Sign in to the cloud."), "{build}: {text}");
+    }
+}
+
+#[test]
 fn an_alias_has_its_permalink_s_entry_and_a_retired_permalink_none() {
     let model = format!(
         "{MODEL}[permalinks.aliases]\nrotate = \"rotate-keys\"\n\
