@@ -250,7 +250,7 @@ The site output holds `_ascribe/help.json`: each permalink's section of the docs
     "prerequisites": {
       "title": "Prerequisites",
       "summary": "Before you install the agent, make sure you have:",
-      "text": "Before you install the agent, make sure you have:\n\n- Node.js 20 or later.\n- A docs repository that Quill can read.\n\nChecklist of prerequisites",
+      "text": "Before you install the agent, make sure you have:\n\n- …\n\nChecklist of prerequisites",
       "address": "https://docs.quill.dev/go/prerequisites/",
       "source": "install-agent.md"
     }

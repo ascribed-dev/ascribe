@@ -909,6 +909,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `navigation/order.md` | Put your pages in order | how-to |
 | `navigation/site-list.md` | Move a site's own list to the navigation | how-to |
 | `permalinks/command.md` | `ascribe permalinks` | reference |
+| `permalinks/in-your-product.md` | Show the docs in your product | how-to |
 | `permalinks/index.md` | Permalinks | how-to |
 | `publishing/index.md` | Publishing | concept |
 | `publishing/site.md` | The head, sitemap, `robots.txt`, and headers | reference |
