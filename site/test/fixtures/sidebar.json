@@ -119,6 +119,11 @@
         "nested": true
       },
       {
+        "href": "/docs/checks/diagnostics/content-model-builds/",
+        "label": "Diagnostics: the content model's builds and site",
+        "nested": true
+      },
+      {
         "href": "/docs/checks/baseline/",
         "label": "The baseline"
       },

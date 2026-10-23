@@ -167,4 +167,4 @@ In an older line of a versioned build, a page isn't looser than `older-lines` ei
 
 ## 24. Validation
 
-A content model with errors is reported, and nothing else is checked, since every other check depends on it. Its warnings are reported with the rest of the diagnostics. Every rule the loader enforces is listed in the [diagnostics reference](../checks/diagnostics/content-model.md), with its code and how to fix it. The [contract's §24](../contracts/content-model/validation.md#24-validation-rules) states each rule for someone writing a loader.
+A content model with errors is reported, and nothing else is checked, since every other check depends on it. Its warnings are reported with the rest of the diagnostics. Every rule the loader enforces is listed in the diagnostics reference, on [Diagnostics: the content model](../checks/diagnostics/content-model.md) and [Diagnostics: the content model's builds and site](../checks/diagnostics/content-model-builds.md), with its code and how to fix it. The [contract's §24](../contracts/content-model/validation.md#24-validation-rules) states each rule for someone writing a loader.
