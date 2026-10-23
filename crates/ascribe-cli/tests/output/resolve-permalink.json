@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "version": 1,
+  "build": "site",
+  "line": "3.5",
+  "name": "prerequisites",
+  "title": "Prerequisites",
+  "summary": "Before you install the agent, make sure you have:",
+  "text": "Before you install the agent, make sure you have:\n\n- Node.js 20 or later.\n- A docs repository that Quill can read.\n\nChecklist of prerequisites",
+  "address": "https://docs.quill.dev/go/prerequisites/",
+  "source": "install-agent.md"
+}

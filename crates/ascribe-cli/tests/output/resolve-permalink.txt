@@ -1,0 +1,9 @@
+Prerequisites
+Before you install the agent, make sure you have:
+
+- Node.js 20 or later.
+- A docs repository that Quill can read.
+
+Checklist of prerequisites
+
+Read more: https://docs.quill.dev/go/prerequisites/

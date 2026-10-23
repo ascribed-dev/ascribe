@@ -40,6 +40,13 @@ node examples/quill/product/help.ts examples/quill/.ascribe/build/site/site/_asc
 
 A product renders `text` as Markdown its own way: it's CommonMark with no HTML.
 
+@available: ascribe planned
+To see an entry without building the site, run [`ascribe resolve go:<name>`](../command/questions.md#cli-resolve), with the build: it prints what the file has for the name, from the code that writes the file, and `--format json` prints the entry as the file writes it. An agent writing your product's message can read what it will show the same way, with the `ascribe_resolve` tool or the command, which the rules [`ascribe agents sync`](../agents/index.md) writes tell it about.
+
+```sh
+ascribe resolve go:prerequisites --build site --config examples/quill
+```
+
 ## Bundle your own line's file
 @id: bundling-the-file
 

@@ -44,7 +44,7 @@ Write the phrase (`{product}`), not the text it stands for.
 
 ### Links
 
-Link to the source file, with a relative path such as `../guides/install.md#configure`, not to the site's address. `ascribe outline <page>` lists a page's headings with their ids, and `ascribe link <target> --from <page>` says whether a link works and what to write.
+Link to the source file, with a relative path such as `../guides/install.md#configure`, not to the site's address. `ascribe outline <page>` lists a page's headings with their ids, and `ascribe link <target> --from <page>` says whether a link works and what to write. A product's message that links to these docs by a permalink can read what the docs will show for it first: `ascribe resolve go:<name>` prints the help a product shows, from the build's `help.json`.
 
 ### More
 
