@@ -10,12 +10,16 @@
 //! connection, opens a page, types into it, and prints the load time and the
 //! min, median, and 95th percentile of the keystroke latency. Then it writes
 //! a page that isn't open on disk, as an agent's edit tool does, and times
-//! `workspace/didChangeWatchedFiles` to that page's diagnostics. Each size
-//! runs again with `[checks.vale]` and a stand-in for Vale that takes 50 ms
-//! and finds nothing, which shows what checking the prose on open and on save
-//! costs a keystroke: it should cost nothing. A plain `main`
-//! rather than a benchmark framework: nothing here needs more statistics than
-//! that.
+//! `workspace/didChangeWatchedFiles` to that page's diagnostics, and writes a
+//! file no page reads, as a build's output or a dev server's cache is, and
+//! times the same event to the server having nothing left to do; from 1,000
+//! pages up, the process fails if that costs more than a tenth of what the
+//! page written on disk did, as running the checks across the project for it
+//! would. Each size runs again with `[checks.vale]` and a stand-in for Vale
+//! that takes 50 ms and finds nothing, which shows what checking the prose
+//! on open and on save costs a keystroke: it should cost nothing. A plain
+//! `main` rather than a benchmark framework: nothing here needs more
+//! statistics than that.
 
 #![allow(
     clippy::expect_used,
@@ -27,7 +31,7 @@
 use std::collections::BTreeMap;
 use std::str::FromStr;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -76,6 +80,8 @@ fn run(pages: usize, vale: bool) {
     let project = Synthetic::new(pages);
     project.write_to(&root).unwrap();
     let mut options = Options::default();
+    let idle = Arc::new(AtomicBool::new(false));
+    options.idle = Some(idle.clone());
     let slow_vale = Arc::new(SlowVale(AtomicUsize::new(0)));
     if vale {
         let model = root.join("ascribe.toml");
@@ -357,6 +363,43 @@ fn run(pages: usize, vale: bool) {
     }
     disk_times.sort();
     let d = |x: f64| disk_times[((disk_times.len() as f64 - 1.0) * x).round() as usize];
+
+    // Write a file no page reads under the project's folder, as a build's
+    // output or a dev server's cache is, and time the event to the server
+    // having nothing left to do. It should cost no more than the event takes
+    // to arrive: nothing the checks find can change.
+    let unread = root.join("dist/out.js");
+    std::fs::create_dir_all(unread.parent().unwrap()).unwrap();
+    let unread_uri = Uri::from_str(&format!("file://{}", unread.display())).unwrap();
+    settle(&mut client, &idle);
+    let mut unread_times = Vec::new();
+    for k in 0..KEYSTROKES {
+        std::fs::write(&unread, format!("// build {k}\n")).unwrap();
+        let began = Instant::now();
+        client
+            .conn
+            .sender
+            .send(
+                Notification::new(
+                    "workspace/didChangeWatchedFiles".into(),
+                    DidChangeWatchedFilesParams {
+                        changes: vec![FileEvent {
+                            uri: unread_uri.clone(),
+                            typ: FileChangeType::CHANGED,
+                        }],
+                    },
+                )
+                .into(),
+            )
+            .unwrap();
+        settle(&mut client, &idle);
+        unread_times.push(began.elapsed());
+    }
+    if pages == 3000 {
+        ascribe_synthetic::report::record("lsp/watched-unread-3000", &mut unread_times.clone());
+    }
+    unread_times.sort();
+    let u = |x: f64| unread_times[((unread_times.len() as f64 - 1.0) * x).round() as usize];
     println!(
         "{pages:>5} pages{}: load+first diagnostics {load:>10.3?}   page keystroke: median {:>9.3?} p95 {:>9.3?}   fragment keystroke ({} includers): median {:>9.3?} p95 {:>9.3?}",
         if vale { ", Vale on" } else { "" },
@@ -378,6 +421,19 @@ fn run(pages: usize, vale: bool) {
         d(0.5),
         d(0.95)
     );
+    println!(
+        "        a file no page reads written on disk: change to settled median {:>9.3?} p95 {:>9.3?}",
+        u(0.5),
+        u(0.95)
+    );
+    // The checks across the project cost about what a page written on disk
+    // does; a file no page reads runs none of them.
+    assert!(
+        pages < 1000 || u(0.5) * 10 < d(0.5),
+        "a file no page reads cost {:?}, a page written on disk {:?}",
+        u(0.5),
+        d(0.5)
+    );
     client.request("shutdown", json!(null));
     client
         .conn
@@ -390,6 +446,21 @@ fn run(pages: usize, vale: bool) {
         vale,
         "Vale ran only with `[checks.vale]`"
     );
+}
+
+/// Waits until the server has handled every message sent so far and has
+/// nothing left to do: a request is answered after the notifications before
+/// it, and the worker sets `idle` once nothing is queued.
+fn settle(client: &mut Client, idle: &AtomicBool) {
+    client.request(
+        "textDocument/semanticTokens/full",
+        json!({ "textDocument": { "uri": "untitled:settle" } }),
+    );
+    let deadline = Instant::now() + Duration::from_secs(60);
+    while !idle.load(Ordering::SeqCst) {
+        assert!(Instant::now() < deadline, "the server never settled");
+        thread::yield_now();
+    }
 }
 
 fn main() {

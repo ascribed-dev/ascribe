@@ -151,6 +151,48 @@ fn a_model_change_runs_them_again() {
 }
 
 #[test]
+fn a_file_the_project_doesnt_read_doesnt_run_them_again_and_a_page_on_disk_does() {
+    let f = project();
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let (a, b, c) = (
+        f.path("docs/a.md"),
+        f.path("docs/b.md"),
+        f.path("docs/c.md"),
+    );
+    // Retitled in the editor, not saved: the other page keeps the
+    // duplicate title the checks found until they run again.
+    client.open(&c, 1, C);
+    client.replace(&c, 2, &C.replace("title: Alpha", "title: Gamma"));
+    client.settle();
+    assert_eq!(client.codes(&a), ["title-duplicate"]);
+
+    // A build's output, a cache, and an image nothing shows, written, and a
+    // file that was never there deleted: what the checks find can't change.
+    f.write("dist/out.js", "x\n");
+    f.write(".ascribe/build/index.html", "<p></p>\n");
+    f.write("docs/new.png", "");
+    client.watched(&[
+        (&f.path("dist/out.js"), lsp_types::FileChangeType::CHANGED),
+        (
+            &f.path(".ascribe/build/index.html"),
+            lsp_types::FileChangeType::CREATED,
+        ),
+        (&f.path("docs/new.png"), lsp_types::FileChangeType::CREATED),
+        (&f.path("dist/gone.js"), lsp_types::FileChangeType::DELETED),
+    ]);
+    client.settle();
+    assert_eq!(client.codes(&a), ["title-duplicate"]);
+
+    // A page deleted on disk changes the project: they run again, with the
+    // retitled page as the editor has it.
+    f.remove("docs/b.md");
+    client.watched(&[(&b, lsp_types::FileChangeType::DELETED)]);
+    client.settle();
+    assert!(client.codes(&a).is_empty());
+}
+
+#[test]
 fn a_model_that_stops_loading_clears_them_and_they_come_back_when_it_loads() {
     let f = project();
     let mut client = Client::start(&f.root());

@@ -73,6 +73,7 @@ pub const REQUIRED: &[&str] = &[
     "drift/synthetic-3000-snippets-unchanged",
     "lsp/keystroke-page-3000",
     "lsp/keystroke-fragment-3000",
+    "lsp/watched-unread-3000",
     "lsp/completion-3000",
     "lsp/search-3000",
     "memory/check-synthetic-3000",
