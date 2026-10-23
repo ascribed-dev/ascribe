@@ -473,9 +473,12 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
         let diagnostics = acknowledgements
             .apply(
                 &job.model,
-                apply_levels(
-                    &job.model.checks,
-                    by_file.remove(&file.id).unwrap_or_default(),
+                ascribe_check::generated::mark(
+                    &project,
+                    apply_levels(
+                        &job.model.checks,
+                        by_file.remove(&file.id).unwrap_or_default(),
+                    ),
                 ),
                 false,
             )
@@ -684,7 +687,10 @@ fn run_across(
             acknowledgements
                 .apply(
                     &job.model,
-                    apply_levels(&job.model.checks, diagnostics),
+                    ascribe_check::generated::mark(
+                        project,
+                        apply_levels(&job.model.checks, diagnostics),
+                    ),
                     false,
                 )
                 .diagnostics,

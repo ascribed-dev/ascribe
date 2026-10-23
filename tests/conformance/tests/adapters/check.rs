@@ -108,7 +108,8 @@ fn reported(
     diagnostics: Vec<ascribe_check::Diagnostic>,
     unused: bool,
 ) -> Vec<ascribe_check::Diagnostic> {
-    let leveled = apply_levels(&project.model().checks, diagnostics);
+    let leveled =
+        ascribe_check::generated::mark(project, apply_levels(&project.model().checks, diagnostics));
     Acknowledgements::of(project)
         .apply(project.model(), leveled, unused)
         .diagnostics

@@ -260,7 +260,39 @@ pub(crate) fn actions(
             vec![text_edit(ctx, &file.source, edit)],
         ));
     }
+    // A generated file is rewritten the next time its generator runs, so
+    // nothing offers to edit it: its memo says where to make the change.
+    if ascribe_check::generated::generated_memo(&file.source, &file.document.blocks).is_some()
+        && let Some(uri) = ctx.uri_of(&ctx.path)
+    {
+        actions.retain(|action| !edits(action, &uri));
+    }
     actions
+}
+
+/// Whether `action` edits the document `uri`.
+#[allow(clippy::mutable_key_type)]
+fn edits(action: &CodeActionOrCommand, uri: &lsp_types::Uri) -> bool {
+    let CodeActionOrCommand::CodeAction(action) = action else {
+        return false;
+    };
+    let Some(edit) = &action.edit else {
+        return false;
+    };
+    let in_changes = edit
+        .changes
+        .as_ref()
+        .is_some_and(|changes| changes.get(uri).is_some_and(|e| !e.is_empty()));
+    let in_document_changes = match &edit.document_changes {
+        Some(lsp_types::DocumentChanges::Edits(edits)) => {
+            edits.iter().any(|e| &e.text_document.uri == uri)
+        }
+        Some(lsp_types::DocumentChanges::Operations(ops)) => ops.iter().any(|op| {
+            matches!(op, lsp_types::DocumentChangeOperation::Edit(e) if &e.text_document.uri == uri)
+        }),
+        None => false,
+    };
+    in_changes || in_document_changes
 }
 
 /// The kind of the action that applies a page's safe fixes.
