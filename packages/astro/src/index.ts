@@ -58,6 +58,7 @@ import {
 } from "./files.js";
 import { WARN as HEAD_WARN } from "./head-check.js";
 import { headersFor, headersOutcome, mergeRules, readHeaders } from "./headers.js";
+import { helpPatterns } from "./help.js";
 import { forwardingRoutes, hasPermalinks, permalinkPattern, readPermalinks } from "./permalinks.js";
 import {
   consumerMismatches,
@@ -192,7 +193,7 @@ function fail(problems: string[], what: string): void {
 
 /**
  * Runs `ascribe build` for each project, checks the site's routing, adds the markdown plugin, adds a
- * page for each permalink's address, and serves published files, and, with `[consumer] agents = true`,
+ * page for each permalink's address and an answer for each line's help entries, and serves published files, and, with `[consumer] agents = true`,
  * `llms.txt` and each page's Markdown, each at its project's base path; and writes the site's one
  * sitemap and `robots.txt` from every project's page records, and, with `[consumer] headers =
  * "netlify"`, its `_headers` from their headers lists.
@@ -461,6 +462,19 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
               prerender: true,
             });
           }
+          // Each permalink's help, at `<name>.json` beside its address, and each older line's
+          // under the line's base path. One route for each folder: the current line's, then each
+          // older line's.
+          for (const pattern of helpPatterns(
+            entries.map((entry) => entry.siteRoot),
+            astro.base,
+          )) {
+            injectRoute({
+              pattern,
+              entrypoint: new URL("./help-route.js", import.meta.url),
+              prerender: true,
+            });
+          }
         }
 
         const projectHome = (entry: Entry) =>
@@ -483,6 +497,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
                     ? `export const siteRoot = ${JSON.stringify(entries[0]?.siteRoot ?? "")};\n` +
                       `export const astroRoot = ${JSON.stringify(root)};\n` +
                       `export const home = ${JSON.stringify(homeRoute(astro.base, astro.trailingSlash))};\n` +
+                      `export const base = ${JSON.stringify(astro.base)};\n` +
                       `export const collections = ${JSON.stringify(
                         named ? Object.fromEntries(entries.map((e) => [e.name, e.siteRoot])) : {},
                       )};\n` +
