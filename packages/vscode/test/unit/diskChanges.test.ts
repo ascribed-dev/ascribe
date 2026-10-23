@@ -1,14 +1,10 @@
 import { readFileSync } from "node:fs";
 import * as path from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  ChangeBatch,
   changesCheck,
   layoutOf,
-  MAX_WAIT_MS,
   PROJECT_DEFAULTS,
-  QUIET_MS,
-  startsServer,
   toldOfChange,
   type Layout,
   type Source,
@@ -87,81 +83,6 @@ describe("layoutOf", () => {
   });
 });
 
-describe("startsServer", () => {
-  const repo = path.resolve("/repo");
-  const handbook = project(path.join(repo, "handbook"));
-  const nested = project(path.join(repo, "handbook", "pages", "nested"));
-  const projects = [handbook, nested];
-  const layout: Layout = {
-    contentRoot: path.join(repo, "handbook", "pages"),
-    outputDir: path.join(repo, "handbook", ".ascribe", "build"),
-    sources: [{ folder: path.join(repo, "code"), include: [], ignore: [] }],
-    from: [path.join(repo, "docs", "ascribe.toml")],
-  };
-  const starts = (...segments: string[]) =>
-    startsServer(path.join(repo, ...segments), handbook, layout, projects);
-
-  it("starts for a file under the content root, page or not, and for the folder itself", () => {
-    expect(starts("handbook", "pages", "index.md")).toBe(true);
-    expect(starts("handbook", "pages", "guides", "new.md")).toBe(true);
-    expect(starts("handbook", "pages", "images", "logo.png")).toBe(true);
-    expect(starts("handbook", "pages", "guides")).toBe(true);
-  });
-
-  it("starts for the project's ascribe.toml, and not a nested project's", () => {
-    expect(starts("handbook", "ascribe.toml")).toBe(true);
-    expect(starts("handbook", "pages", "nested", "ascribe.toml")).toBe(false);
-  });
-
-  it("starts for a file in a source's folder", () => {
-    expect(starts("code", "src", "main.rs")).toBe(true);
-  });
-
-  it("starts for a file `[from]` takes from, in another project", () => {
-    expect(starts("docs", "ascribe.toml")).toBe(true);
-    expect(starts("docs", "index.md")).toBe(false);
-  });
-
-  it("doesn't start for a file of a nested project, or outside the content root", () => {
-    expect(starts("handbook", "pages", "nested", "content", "index.md")).toBe(false);
-    expect(starts("handbook", "README.md")).toBe(false);
-    expect(starts("elsewhere", "index.md")).toBe(false);
-    expect(starts("handbook", "pages-old", "index.md")).toBe(false);
-  });
-
-  it("doesn't start for the output directory, node_modules, or .git", () => {
-    expect(starts("handbook", ".ascribe", "build", "site", "plain", "index.md")).toBe(false);
-    expect(starts("handbook", "pages", "node_modules", "x", "README.md")).toBe(false);
-    expect(starts("code", "node_modules", "x", "index.js")).toBe(false);
-    expect(starts("code", ".git", "index")).toBe(false);
-  });
-
-  it("doesn't start for an output directory inside a source's folder", () => {
-    const inSource: Layout = { ...layout, outputDir: path.join(repo, "code", "out") };
-    expect(startsServer(path.join(repo, "code", "out", "a.md"), handbook, inSource, projects)).toBe(
-      false,
-    );
-  });
-
-  it("folds the case of Windows paths", () => {
-    const windows = project("C:\\Repo\\handbook");
-    const windowsLayout: Layout = {
-      contentRoot: "C:\\Repo\\handbook\\pages",
-      outputDir: "C:\\Repo\\handbook\\.ascribe\\build",
-      sources: [],
-      from: [],
-    };
-    expect(startsServer("c:\\repo\\HANDBOOK\\pages\\a.md", windows, windowsLayout, [windows])).toBe(
-      true,
-    );
-    expect(
-      startsServer("c:\\repo\\handbook\\pages\\Node_Modules\\a.md", windows, windowsLayout, [
-        windows,
-      ]),
-    ).toBe(false);
-  });
-});
-
 describe("changesCheck", () => {
   const repo = path.resolve("/repo");
   const handbook = project(path.join(repo, "handbook"));
@@ -176,7 +97,7 @@ describe("changesCheck", () => {
   const changes = (...segments: string[]) =>
     changesCheck(path.join(repo, ...segments), handbook, layout, projects);
 
-  it("counts what startsServer counts", () => {
+  it("counts the project's ascribe.toml, its content, and its sources", () => {
     expect(changes("handbook", "ascribe.toml")).toBe(true);
     expect(changes("handbook", "pages", "index.md")).toBe(true);
     expect(changes("handbook", "pages", "images", "logo.png")).toBe(true);
@@ -186,9 +107,6 @@ describe("changesCheck", () => {
   it("counts the project's files beside ascribe.toml, which the check reads too", () => {
     for (const file of ["ascribe.nav", "ascribe.permalinks", "ascribe.lock", "README.md"]) {
       expect(changes("handbook", file)).toBe(true);
-      expect(startsServer(path.join(repo, "handbook", file), handbook, layout, projects)).toBe(
-        false,
-      );
     }
     expect(changes("handbook", "memos", "index.md")).toBe(true);
     expect(changes("handbook", "templates", "how-to.md")).toBe(true);
@@ -225,62 +143,6 @@ describe("changesCheck", () => {
     expect(
       changesCheck("c:\\repo\\handbook\\.Ascribe\\vale\\a.ini", windows, windowsLayout, [windows]),
     ).toBe(false);
-  });
-});
-
-describe("ChangeBatch", () => {
-  let flushed: string[][];
-  let batch: ChangeBatch;
-
-  beforeEach(() => {
-    vi.useFakeTimers();
-    flushed = [];
-    batch = new ChangeBatch((files) => flushed.push(files));
-  });
-
-  afterEach(() => {
-    batch.dispose();
-    vi.useRealTimers();
-  });
-
-  it("hands over a burst once it goes quiet, each file once", () => {
-    for (let i = 0; i < 400; i++) batch.add(path.resolve(`/repo/docs/docs/page-${i % 200}.md`));
-    vi.advanceTimersByTime(QUIET_MS - 1);
-    expect(flushed).toEqual([]);
-    vi.advanceTimersByTime(1);
-    expect(flushed.length).toBe(1);
-    expect(flushed[0]?.length).toBe(200);
-  });
-
-  it("waits again for each change in a burst, up to the longest wait", () => {
-    batch.add("/a.md");
-    vi.advanceTimersByTime(QUIET_MS - 10);
-    batch.add("/b.md");
-    vi.advanceTimersByTime(QUIET_MS - 10);
-    expect(flushed).toEqual([]);
-    vi.advanceTimersByTime(10);
-    expect(flushed).toEqual([["/a.md", "/b.md"]]);
-  });
-
-  it("hands over a burst that never goes quiet after the longest wait", () => {
-    const step = QUIET_MS / 2;
-    for (let t = 0; t < MAX_WAIT_MS; t += step) {
-      batch.add(`/file-${t}.md`);
-      vi.advanceTimersByTime(step);
-    }
-    expect(flushed.length).toBe(1);
-    expect(flushed[0]?.length).toBe(MAX_WAIT_MS / step);
-    // The next change starts a new batch.
-    batch.add("/later.md");
-    vi.advanceTimersByTime(QUIET_MS);
-    expect(flushed.at(-1)).toEqual(["/later.md"]);
-  });
-
-  it("hands over nothing once disposed", () => {
-    batch.add("/a.md");
-    batch.dispose();
-    vi.advanceTimersByTime(MAX_WAIT_MS);
-    expect(flushed).toEqual([]);
   });
 });
 

@@ -42,14 +42,13 @@ The text is Markdown, at most about 4,000 characters: when the model has more th
 | `0` | It showed the model |
 | `2` | No `ascribe.toml`, or one with errors |
 
-With `--format json`, the document has a field for each section shown, and without `--section`, every section, empty or not, and the project's [navigation](../navigation/index.md) as the sidebar shows it: a label with a code span in it is plain text, without the backticks. Its [schema](../contracts/json-reports/questions.md#ascribe-model) has each section's fields. `--section builds`:
+With `--format json`, the document has a field for each section shown, and without `--section`, every section, empty or not, and the project's [navigation](../navigation/index.md) as the sidebar shows it: a label with a code span in it is plain text, without the backticks. Its [schema](../contracts/json-reports/model.md#ascribe-model) has each section's fields. `--section builds`:
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/model-builds.json
 
 A project with [release lines](../versions/lines.md) has a section for them, `releases` in JSON: each target's lines, with their status and the build that is each line. A versioned build says which target versions it and which line it is.
 
-@available: ascribe 0.4.1
-The rest of `ascribe.toml` is there too, a section of settings for each of its tables: `project`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, and `permalinks`. The text without `--section` names them at its end, and `--section` shows one, each key with the value in effect, and its default: `ascribe model --section consumer` shows `[consumer]`'s `site`, `base-path`, and the rest, the ones the file leaves out at their defaults. `[checks]` has the keys of `[checks.vale]` and `[checks.links]`, written `vale.preset` and `links.reuse-days`, and each check the file sets a level for. In JSON, each section is a list of keys, in the [schema](../contracts/json-reports/questions.md#ascribe-model). The keys and defaults are the ones the loader reads, so `model` shows no key `ascribe check` would refuse.
+The rest of `ascribe.toml` is there too, a section of settings for each of its tables: `project`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, and `permalinks`. The text without `--section` names them at its end, and `--section` shows one, each key with the value in effect, and its default: `ascribe model --section consumer` shows `[consumer]`'s `site`, `base-path`, and the rest, the ones the file leaves out at their defaults. `[checks]` has the keys of `[checks.vale]` and `[checks.links]`, written `vale.preset` and `links.reuse-days`, and each check the file sets a level for. In JSON, each section is a list of keys, in the [schema](../contracts/json-reports/model.md#ascribe-model). The keys and defaults are the ones the loader reads, so `model` shows no key `ascribe check` would refuse.
 
 ## `ascribe outline`
 @id {permalink=true}: cli-outline
@@ -62,7 +61,6 @@ Shows a page's title and type, and the headings a link to it can name, with the 
 
 A heading from a fragment says which fragment. With `--build`, it shows only the headings that build publishes: a heading in a variant the build leaves out, or in a block it filters out by availability, isn't listed. When the build doesn't publish the page at all, it says why, lists no headings, and exits with `1`. A fragment's outline lists its headings, and those of the fragments it includes.
 
-@available: ascribe 0.4.0
 Under the page, and under each heading, a line lists each [memo file](../writing/memo-files.md) about it, with its first line, and `(outdated)` when the words it quotes aren't there any more. A detached memo isn't listed.
 
 | Code | Meaning |
@@ -77,7 +75,6 @@ With `--format json`, the document is:
 
 `page` is the path from the content root, as links write it, and `file` is from the project root, as `ascribe check` reports it. `type` is null for a fragment. `explicit_id` is true when the heading has an `@id`, which stays when its text changes; prefer those in links. `fragment` is the fragment a heading comes from, or null.
 
-@available: ascribe 0.4.0
 `memos`, on the page and on each heading, lists the memo files about it, in path order: `file`, from the project root; `state`, `placed` or `outdated`; `quote`, or null; `first_line`, the first line of its text; and `personal`, which is false for the project's `memos/`.
 
 ## `ascribe link`
@@ -120,10 +117,16 @@ Lists the places that use a page, a fragment, a heading, an image, or an entry o
 
 A target that's a path, with or without `#id`, finds its project from the path. An entry of the model, or a glossary term, is written with a prefix: `phrase:product` (or `phrase:{product}`), `feature:sso`, `term:api-key`, `dimension:deployment`, `note:warning`, or `widget:release-note`, and the project is found from the current directory, or from `--config`. The places are in path order, and in order within a file. A use is `link`, `include`, `phrase`, `availability`, `term`, `variant`, `note`, or `widget`.
 
-@available: ascribe 0.4.1
+@available: ascribe planned
+An `availability` place shows its spec as written, after the use: ``docs/keys.md:25:13: availability `self-managed 3.5` ``.
+
+@available: ascribe planned
+A line of a release target, one with `[releases.<target>]`, is written `release:<target>@<version>`. Its places are the availability specs that name a version in that line, as each is written, with `planned` read as the target's planned line. A line holds every version that starts with its parts, so `release:ascribe@0.4` finds `ascribe 0.4.1` and `ascribe (preview 0.4.0, ga 0.5.0)`, and `release:ascribe@0.4.1` only the first. A spec that names the target's dimension, such as `release`, names no version of it. A target with no `[releases.<target>]` doesn't exist.
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/refs-release.txt
+
 An image under the content root is a target too, named as a page is: `ascribe refs images/keys.png`. Its places are each file that shows it (`image`), links to it (`link`), names it in raw HTML such as `<img src>` (`html`), or names it in a frontmatter field such as `cover` (`frontmatter`): the uses that keep [`image-unused`](../checks/diagnostics/content-checks.md#ASC159) from reporting it. An image nothing uses has no places, and exits with `0`, as any target that exists does.
 
-@available: ascribe 0.4.0
 A [memo file](../writing/memo-files.md) about the target is a place too, with the use `memo`, at its `about` line, after the uses. One whose `about` names a target that doesn't exist is listed under that target, so `ascribe refs` finds the memos a rename left behind.
 
 | Code | Meaning |
@@ -136,7 +139,7 @@ With `--format json`, the document is:
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/refs.json
 
-`total` is how many places use the target, and `shown` how many are listed. When the list was cut, `truncated` is true and `next_command` is the command that lists them all; otherwise it's null.
+`kind` is what the target is: `page`, `fragment`, `heading`, `image`, `phrase`, `feature`, `term`, `dimension`, `note`, `widget`, or `release`. Each place's `spec` is its availability spec as written, for an `availability` place, and null for any other. `total` is how many places use the target, and `shown` how many are listed. When the list was cut, `truncated` is true and `next_command` is the command that lists them all; otherwise it's null.
 
 ## `ascribe rename`
 @id {permalink=true}: cli-rename
@@ -191,7 +194,6 @@ With `--format json`, the document is as follows, and its [schema](../contracts/
 
 ## `ascribe search`
 @id {permalink=true}: cli-search
-@available: ascribe 0.4.1
 
 Finds where the pages say something, as their readers read it, and names the line to edit for each place. A text search reads the source, where a page says `Sign in to {cloud}`; `ascribe search` reads each page as every build publishes it, where it says "Sign in to Quill Cloud", and says which line wrote that, and through which phrase.
 

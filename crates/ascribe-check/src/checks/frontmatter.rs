@@ -354,7 +354,15 @@ impl Ctx<'_> {
                     let (offset, precise) = node
                         .and_then(|n| self.scalar_offset(n, text))
                         .map_or((0, false), |o| (o, true));
-                    self.check_availability_text(text, offset, whole, precise);
+                    if !self.reads_as_unmarked(text, offset) {
+                        let all = Span::new(0, self.file.text.len());
+                        self.mark_scopes.push((whole, all));
+                    }
+                    // A fragment's content reads as the scope it's included in.
+                    let removal = node
+                        .filter(|_| precise && !self.model.is_fragment(self.file.path.as_str()))
+                        .and_then(|n| self.key_removal(n));
+                    self.check_availability_text(text, offset, whole, precise, removal);
                 }
                 other => self.mismatch(
                     "available",
@@ -511,6 +519,19 @@ impl Ctx<'_> {
             issue = issue.with_fix(fix);
         }
         self.report(issue);
+    }
+
+    /// The lines of a top-level key whose value is on the key's line, line
+    /// break and all. `None` when the key's place isn't known, or its value
+    /// runs onto another line.
+    fn key_removal(&self, node: &Node) -> Option<Span> {
+        let key = node.key?;
+        let text = &self.file.text;
+        let start = text[..key.start()].rfind('\n').map_or(0, |n| n + 1);
+        let end = text[key.start()..]
+            .find('\n')
+            .map_or(text.len(), |n| key.start() + n + 1);
+        (node.value.end() <= end).then(|| Span::new(start, end))
     }
 
     /// A fix that removes a top-level key's line, line break and all.

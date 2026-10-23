@@ -1,0 +1,11 @@
+description: >-
+  A memo that begins `Generated from` says its file is generated: each problem
+  in the file names the memo as a related place, since what it says to change
+  is where the problem is fixed.
+spec: ["4.10", "8.2"]
+tags: [check]
+
+diagnostics:
+  - slug: attribute-unknown-key
+    line: 8
+    related: [{line: 5}]

@@ -11,7 +11,7 @@
 
 use ascribe_check::{Acknowledgements, Project, apply_levels, check_files};
 use ascribe_conformance::{
-    AdapterError, AdapterResult, Case, CaseKind, ConformanceAdapter, Diagnostic,
+    AdapterError, AdapterResult, Case, CaseKind, ConformanceAdapter, Diagnostic, RelatedPlace,
 };
 use ascribe_core::{RelPath, WideEncoding};
 use ascribe_resolve::{DiskFs, Layout};
@@ -108,7 +108,8 @@ fn reported(
     diagnostics: Vec<ascribe_check::Diagnostic>,
     unused: bool,
 ) -> Vec<ascribe_check::Diagnostic> {
-    let leveled = apply_levels(&project.model().checks, diagnostics);
+    let leveled =
+        ascribe_check::generated::mark(project, apply_levels(&project.model().checks, diagnostics));
     Acknowledgements::of(project)
         .apply(project.model(), leveled, unused)
         .diagnostics
@@ -122,32 +123,50 @@ pub fn to_conformance(
 ) -> Result<Vec<Diagnostic>, AdapterError> {
     let mut out = Vec::new();
     for d in diagnostics {
-        // A diagnostic in a code file a check read, such as an observation,
-        // is at the file's path from the project's folder.
-        let (path, text) = match project.file(d.location.file) {
-            Some(file) => (
-                file.content_path
-                    .map_or_else(|| file.display_path.clone(), |p| p.to_string()),
-                file.text.to_owned(),
-            ),
-            None => {
-                let code = project
-                    .code_file(d.location.file)
-                    .ok_or_else(|| AdapterError(format!("{} has no file", d.slug)))?;
-                (code.path.to_string(), code.text.to_string())
-            }
-        };
-        let index = ascribe_core::LineIndex::new(&text);
-        let pos = index
-            .wide_line_col(WideEncoding::Utf32, d.location.span.start())
+        let (file, line, column) = place(project, d.location)
             .ok_or_else(|| AdapterError(format!("bad location for {}", d.slug)))?;
+        let related = d
+            .related
+            .iter()
+            .map(|r| {
+                let (file, line, _) = place(project, r.location)
+                    .ok_or_else(|| AdapterError(format!("bad related location for {}", d.slug)))?;
+                Ok(RelatedPlace {
+                    file,
+                    line,
+                    label: r.message.clone(),
+                })
+            })
+            .collect::<Result<_, AdapterError>>()?;
         out.push(Diagnostic {
             slug: d.slug.as_str().to_owned(),
-            file: path,
-            line: pos.line + 1,
-            column: pos.col + 1,
+            file,
+            line,
+            column,
             severity: Some(d.severity.as_str().to_owned()),
+            related,
         });
     }
     Ok(out)
+}
+
+/// Where `location` is: the file relative to the content root, a 1-based
+/// line, and a column in Unicode scalar values.
+fn place(project: &Project, location: ascribe_core::Location) -> Option<(String, u32, u32)> {
+    // A diagnostic in a code file a check read, such as an observation,
+    // is at the file's path from the project's folder.
+    let (path, text) = match project.file(location.file) {
+        Some(file) => (
+            file.content_path
+                .map_or_else(|| file.display_path.clone(), |p| p.to_string()),
+            file.text.to_owned(),
+        ),
+        None => {
+            let code = project.code_file(location.file)?;
+            (code.path.to_string(), code.text.to_string())
+        }
+    };
+    let index = ascribe_core::LineIndex::new(&text);
+    let pos = index.wide_line_col(WideEncoding::Utf32, location.span.start())?;
+    Some((path, pos.line + 1, pos.col + 1))
 }

@@ -1055,22 +1055,98 @@ title: Many
     assert!(lines[49].starts_with("docs/b.md:"), "{text}");
     assert_eq!(
         lines[50],
-        "and 10 more: ascribe check docs/b.md --format concise"
+        "and 10 more: ascribe check --format concise --limit all"
     );
     assert_eq!(
         lines[51],
         "checked 2 files for every build, reported on 2: 0 errors, 60 warnings, 0 advice"
     );
-    // Checking one file, the rest of it is in the JSON.
+    // The command it names lists them all: the 50 shown, then exactly the
+    // 10 left out, and nothing more.
+    let command = lines[50].split_once(": ").unwrap().1;
+    let words: Vec<&str> = command.split(' ').skip(1).collect();
+    let all = stdout(&ascribe(dir.path(), &words));
+    let all: Vec<&str> = all.lines().collect();
+    assert_eq!(all.len(), 61, "{}", all.join("\n"));
+    assert_eq!(all[..50], lines[..50]);
+    assert!(all[50..60].iter().all(|l| l.starts_with("docs/b.md:")));
+    let shown: std::collections::BTreeSet<&str> = lines[..50].iter().copied().collect();
+    assert!(all[50..60].iter().all(|l| !shown.contains(l)), "{all:?}");
+    assert_eq!(all[60], lines[51]);
+    // Checking one file, the command keeps the path.
     let dir = project(&[("a.md", &format!("{page}{many}"))]);
     let text = stdout(&ascribe(
         dir.path(),
         &["check", "docs/a.md", "--format", "concise"],
     ));
     assert!(
-        text.contains("\nand 10 more: ascribe check docs/a.md --format json\n"),
+        text.contains("\nand 10 more: ascribe check docs/a.md --format concise --limit all\n"),
         "{text}"
     );
+}
+
+#[test]
+fn limit_sets_how_many_problems_the_concise_list_shows() {
+    let many: String = (0..8).map(|i| format!("See {{nope{i}}}.\n\n")).collect();
+    let page = format!("---\ntitle: Many\n---\n\n{many}");
+    let dir = project(&[("a.md", &page)]);
+    let concise = |limit: &str| {
+        stdout(&ascribe(
+            dir.path(),
+            &["check", "--format", "concise", "--limit", limit],
+        ))
+    };
+    let summary = "checked 1 file for every build, reported on 1: 0 errors, 8 warnings, 0 advice";
+
+    let three = concise("3");
+    let lines: Vec<&str> = three.lines().collect();
+    assert_eq!(lines.len(), 5, "{three}");
+    assert!(
+        lines[..3].iter().all(|l| l.starts_with("docs/a.md:")),
+        "{three}"
+    );
+    assert_eq!(
+        lines[3],
+        "and 5 more: ascribe check --format concise --limit all"
+    );
+    assert_eq!(lines[4], summary);
+
+    // `all`, or a limit as high as the count, lists them all, with no
+    // command after them.
+    let all = concise("all");
+    assert_eq!(all.lines().count(), 9, "{all}");
+    assert!(!all.contains("more:"), "{all}");
+    assert_eq!(concise("8"), all);
+    assert_eq!(concise("100"), all);
+    // 0 lists none, and counts them.
+    assert_eq!(
+        concise("0"),
+        format!("and 8 more: ascribe check --format concise --limit all\n{summary}\n")
+    );
+
+    // Neither a number nor `all`, or with another format or `--summary`,
+    // it's a usage error.
+    let out = ascribe(
+        dir.path(),
+        &["check", "--format", "concise", "--limit", "some"],
+    );
+    assert_eq!(code(&out), 2);
+    assert!(
+        stderr(&out).contains("neither a number nor `all`"),
+        "{}",
+        stderr(&out)
+    );
+    let out = ascribe(dir.path(), &["check", "--limit", "3"]);
+    assert_eq!(code(&out), 2);
+    assert_eq!(
+        stderr(&out),
+        "error: --limit sets how many problems `--format concise` lists; add `--format concise`\n"
+    );
+    let out = ascribe(
+        dir.path(),
+        &["check", "--summary", "--format", "concise", "--limit", "3"],
+    );
+    assert_eq!(code(&out), 2);
 }
 
 #[test]
@@ -1208,7 +1284,7 @@ fn the_commands_a_narrowed_check_names_keep_its_codes() {
         ],
     ));
     assert!(
-        text.contains("\nand 70 more: ascribe check docs/a.md --code ASC044 --format concise\n"),
+        text.contains("\nand 70 more: ascribe check --code ASC044 --format concise --limit all\n"),
         "{text}"
     );
     assert!(!text.contains("ASC036"), "{text}");
@@ -1551,6 +1627,56 @@ fn prompt_format_without_paths_writes_the_projects_prompt() {
     assert!(
         text.contains("- docs/index.md: 1 error\n- docs/other.md: 1 warning\n"),
         "{text}"
+    );
+}
+
+/// A page whose memo says it's generated, with a warning whose fix would
+/// edit it.
+const GENERATED: &str = "---\ntitle: Keys\n---\n\n@memo: Generated from keys.toml by scripts/keys.ts; edit the keys, then run `node scripts/keys.ts` to rewrite it.\n[Keys](/keys/)\n";
+
+/// What a prompt says of `docs/gen.md`, written from [`GENERATED`].
+const GENERATED_SAID: &str = "`docs/gen.md` is generated, and the next run of what generates it rewrites it: don't edit it, but change what it's generated from and run the command again, as its memo says: Generated from keys.toml by scripts/keys.ts; edit the keys, then run `node scripts/keys.ts` to rewrite it.";
+
+#[test]
+fn prompt_format_says_a_generated_file_is_changed_where_it_is_generated_from() {
+    let dir = project(&[("gen.md", GENERATED), ("keys.md", CLEAN)]);
+    let out = ascribe(dir.path(), &["check", "--format", "prompt"]);
+    assert_eq!(code(&out), 0, "{}", stdout(&out));
+    let text = stdout(&out);
+    assert!(
+        text.contains(&format!("- docs/gen.md: 1 warning. {GENERATED_SAID}\n")),
+        "{text}"
+    );
+
+    let out = ascribe(dir.path(), &["check", "docs/gen.md", "--format", "prompt"]);
+    let text = stdout(&out);
+    assert!(
+        text.contains(&format!("Where: docs/gen.md\n{GENERATED_SAID}\n")),
+        "{text}"
+    );
+}
+
+#[test]
+fn a_problem_in_a_generated_file_names_its_memo_and_has_no_fix() {
+    let dir = project(&[("gen.md", GENERATED), ("keys.md", CLEAN)]);
+    let out = ascribe(dir.path(), &["check", "--format", "json"]);
+    let report: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("valid JSON");
+    let d = &report["diagnostics"][0];
+    assert_eq!(d["file"], "docs/gen.md");
+    assert!(d["fixes"].as_array().expect("an array").is_empty(), "{d}");
+    let related = &d["related"][0];
+    assert_eq!(related["file"], "docs/gen.md");
+    assert_eq!(related["range"]["start"]["line"], 5);
+    assert_eq!(
+        related["message"],
+        "This file is generated, and an edit to it is lost: Generated from keys.toml by scripts/keys.ts; edit the keys, then run `node scripts/keys.ts` to rewrite it."
+    );
+
+    // `--fix` leaves the file as its generator wrote it.
+    ascribe(dir.path(), &["check", "--fix"]);
+    assert_eq!(
+        fs::read_to_string(dir.path().join("docs/gen.md")).expect("read the page"),
+        GENERATED
     );
 }
 

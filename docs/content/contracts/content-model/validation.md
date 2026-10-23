@@ -20,7 +20,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | Slug | Rule | Message |
 |---|---|---|
 | `model-toml-syntax` | The file is valid TOML 1.0. | `` ascribe.toml isn't valid TOML: {detail} `` |
-| `model-unknown-key` | Every key is one this reference defines for its table, except in tables keyed by names the project chooses. | `` unknown key `{key}` in `[{table}]` ``<br>`` unknown key `{key}` in `[{table}]`; did you mean `{suggestion}`? ``<br>`` `{key}` isn't a key of `[{table}]`: a page says what type it is in its frontmatter, with `type: {type}` ``, for `files` and `default` in a type's table |
+| `model-unknown-key` | Every key is one this reference defines for its table, except in tables keyed by names the project chooses. The message names the processor's version, `{version}`, since a key a later version added is unknown to an earlier one. | `` unknown key `{key}` in `[{table}]`; this is ascribe {version}, and the project may need a newer one ``<br>`` unknown key `{key}` in `[{table}]`; did you mean `{suggestion}`? This is ascribe {version}, and the project may need a newer one ``<br>`` `{key}` isn't a key of `[{table}]`: a page says what type it is in its frontmatter, with `type: {type}` ``, for `files` and `default` in a type's table |
 | `model-missing-key` | Every required key is present. | `` `[{table}]` is missing the required key `{key}` `` |
 | `model-wrong-type` | Every value has the TOML type its key requires. | `` `{key}` must be {expected}, but it's {found} ``<br>`` `{key}` must be a string, but it's a number; quote it: {key} = "{value}" `` |
 | `model-invalid-value` | A key with a fixed set of values has one of them. | `` `{key}` can't be "{value}"; use one of: {values} `` |

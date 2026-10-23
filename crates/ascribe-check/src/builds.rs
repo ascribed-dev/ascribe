@@ -92,6 +92,7 @@ pub fn diagnose<'p>(project: &'p Project, names: &[String]) -> Result<Diagnosed<
         check_builds(project, &builds)
     };
     let diagnostics = apply_levels(&project.model().checks, diagnostics);
+    let diagnostics = crate::generated::mark(project, diagnostics);
     let applied =
         Acknowledgements::of(project).apply(project.model(), diagnostics, names.is_empty());
     let mut diagnostics = applied.diagnostics;
@@ -171,12 +172,10 @@ pub fn diagnose_every_build_in(project: &Project, files: &[RelPath]) -> Vec<Diag
         .filter(|(id, _)| ids.contains(id))
         .flat_map(|(_, found)| found)
         .collect();
+    let diagnostics =
+        crate::generated::mark(project, apply_levels(&project.model().checks, diagnostics));
     Acknowledgements::of(project)
-        .apply(
-            project.model(),
-            apply_levels(&project.model().checks, diagnostics),
-            false,
-        )
+        .apply(project.model(), diagnostics, false)
         .diagnostics
 }
 
@@ -232,11 +231,9 @@ pub fn diagnose_editor_build_in<'p>(
     };
     // One build: whether an acknowledgement covers nothing in the others
     // can't be told.
-    let applied = Acknowledgements::of(project).apply(
-        project.model(),
-        apply_levels(&project.model().checks, diagnostics),
-        false,
-    );
+    let diagnostics =
+        crate::generated::mark(project, apply_levels(&project.model().checks, diagnostics));
+    let applied = Acknowledgements::of(project).apply(project.model(), diagnostics, false);
     Diagnosed {
         diagnostics: applied.diagnostics,
         acknowledged: applied.acknowledged,

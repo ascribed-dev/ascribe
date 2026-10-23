@@ -923,7 +923,9 @@ glossary page, not in `ascribe.toml`. Elsewhere in the file it answers `null`.
 - **The model.** An `ascribe.toml` that loads is applied as `Change::Model`
   (`ascribe-resolve`'s tiers decide what is re-parsed, re-indexed, or re-resolved). One
   that doesn't load has its problems published on `ascribe.toml`, and the
-  project keeps the last model that did. A change to the content root or
+  project keeps the last model that did; every other file's diagnostics are
+  cleared, and no round runs, until the model loads again, when every file
+  is checked again and published. A change to the content root or
   output directory can't be applied in place (`ApplyError::LayoutChanged`),
   so the server reloads the whole project and republishes everything.
 - **Diagnostics** are `ascribe_check::check_file` for each file in

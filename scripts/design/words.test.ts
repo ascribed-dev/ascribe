@@ -37,13 +37,17 @@ function published(): string[] {
     .filter((file) => file !== "" && manifest(file).private !== true);
 }
 
-/** A Markdown file's first paragraph: its first block after the frontmatter that isn't HTML. */
+/**
+ * A Markdown file's first paragraph of prose: its first block after the
+ * frontmatter that starts with a word, past an HTML header and a row of links
+ * or badges, as the README opens with.
+ */
 function firstParagraph(markdown: string): string {
   const body = markdown.replace(/\r\n/g, "\n").replace(/^---\n[\s\S]*?\n---\n/, "");
   const block = body
     .split(/\n\s*\n/)
     .map((each) => each.trim())
-    .find((each) => each !== "" && !each.startsWith("<"));
+    .find((each) => /^\p{L}/u.test(each));
   return (block ?? "").replace(/\s*\n\s*/g, " ");
 }
 

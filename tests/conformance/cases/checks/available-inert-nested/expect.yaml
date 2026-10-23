@@ -1,0 +1,19 @@
+description: >-
+  Content with no mark reads as the scope around it, so a mark of the only
+  target inside a mark that says something, as a page that's deprecated or a
+  section or table in preview, doesn't say nothing: it keeps its content
+  generally available. It's reported with the message that offers it without
+  its versions, as before. A mark that no mark saying something is around is
+  reported with the message that says to remove it.
+spec: ["4.4", "9.3"]
+tags: [check]
+
+diagnostics:
+  - {slug: available-same-in-every-line, file: nest.md, line: 4, column: 12}
+  - {slug: available-same-in-every-line, file: nest.md, line: 9, column: 13}
+  - {slug: available-same-in-every-line, file: nest.md, line: 13, column: 21}
+  - {slug: available-same-in-every-line, file: sections.md, line: 8, column: 13}
+  - {slug: available-same-in-every-line, file: sections.md, line: 14, column: 13}
+  - {slug: available-same-in-every-line, file: sections.md, line: 20, column: 13}
+  - {slug: available-same-in-every-line, file: sections.md, line: 24, column: 13}
+  - {slug: available-same-in-every-line, file: sections.md, line: 27, column: 21}

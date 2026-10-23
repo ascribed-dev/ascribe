@@ -1,7 +1,7 @@
 {
   "name": "ascribe-vscode",
   "displayName": "Ascribe",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "A toolchain for documentation written as code. This extension checks pages as you type, previews them as the site shows them, and writes directives for you.",
   "private": true,
   "type": "module",
@@ -39,7 +39,7 @@
     "onWebviewPanel:ascribe.preview"
   ],
   "ascribe": {
-    "minServerVersion": "0.4.1"
+    "minServerVersion": "0.4.2"
   },
   "contributes": {
     "commands": [
@@ -783,7 +783,7 @@
             "all"
           ],
           "enumDescriptions": [
-            "Start a project's language server the first time one of its files is opened, or changes on disk while the window is open.",
+            "Start a project's language server the first time one of its files is opened, or something asks for the project, such as Switch Project or Check Every Build. A change on disk starts nothing.",
             "Start every project's language server when the workspace opens."
           ],
           "default": "onDemand",
@@ -797,7 +797,7 @@
           },
           "default": [],
           "scope": "window",
-          "markdownDescription": "Glob patterns, from each workspace folder, for folders whose `ascribe.toml` isn't a project, such as test fixtures: `tests/**`. A project there gets no language server, and isn't listed. Folders named `node_modules`, and those `files.exclude` hides, are left out too."
+          "markdownDescription": "Glob patterns, from each workspace folder, for folders whose `ascribe.toml` isn't a project, such as test fixtures: `tests/**`. A project there gets no language server, and isn't listed. Left out too, without a pattern: an `ascribe.toml` git ignores, in a workspace folder that's a git repository; a source's copies, `sources/<name>/` in a project's folder; folders `files.exclude` hides; and every folder named `.ascribe`, `node_modules`, `bower_components`, `vendor`, `.venv`, `venv`, `__pypackages__`, `target`, `dist`, `.output`, `.next`, `.nuxt`, `.svelte-kit`, `.astro`, `.turbo`, `.vercel`, `.netlify`, `.cache`, `coverage`, `.gradle`, `.vscode-test`, `.tox`, or `.nox`. None of these can be brought back with a setting: to work on a project in one, open its folder as a workspace folder of its own."
         },
         "ascribe.formatOnSave": {
           "type": "boolean",

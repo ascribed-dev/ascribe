@@ -33,7 +33,7 @@ Setup: `corepack enable && pnpm install`. `pnpm typecheck` needs `@ascribed/cli`
 - **Two renderers must agree.** A change to the site output's markup changes the fixtures in `tests/render/`, and both `render_site_html` and the Astro plugin pass them.
 - **`crates/comrak-ascribe` is a fork.** Mark each change `// ASCRIBE:` and list it in `crates/comrak-ascribe/FORK.md`.
 - **Docs change with the code.** A change a user would notice updates its page under `docs/content/` and adds its changelog entry as a file of its own in `changes/` ([changes/README.md](changes/README.md)); it doesn't edit `CHANGELOG.md`, which a release gathers the entries into. Don't run a formatter over Markdown.
-- **Paths, case, and links differ by platform.** Pull requests run on Linux and Windows; macOS and arm64 run after the merge. A change about paths runs the full matrix from its branch (Actions → CI → Run workflow).
+- **Paths, case, and links differ by platform.** Pull requests run on Linux, and on Windows when the change touches the paths `ci.yml`'s `changes` job lists; macOS and arm64 run after the merge. A change about paths runs the full matrix from its branch (Actions → CI → Run workflow).
 
 ## Where to look
 
@@ -44,5 +44,5 @@ Setup: `corepack enable && pnpm install`. `pnpm typecheck` needs `@ascribed/cli`
 - [.claude/skills/board/SKILL.md](.claude/skills/board/SKILL.md): working from [the project board](https://github.com/orgs/ascribed-dev/projects/1), and the skills for each role on it: `triage`, `implement`, `review`, and `steward` for driving a pull request.
 - [project-docs/surface.md](project-docs/surface.md): everything a person or an agent touches, generated from where each is declared: the commands, the directives, `ascribe.toml`'s sections, the diagnostics, the editor's commands and settings, the tools, and the packages' entries. Read it before adding to any of them; `node scripts/surface/inventory.ts` rewrites it.
 - [project-docs/decisions.md](project-docs/decisions.md) and [project-docs/decisions/](project-docs/decisions/README.md): the decisions in force: the numbered ones in the first, and each since as a file of its own in the folder, numbered by its issue. A decision made in an issue or a review is added to the folder in the pull request that acts on it.
-- [project-docs/outside.md](project-docs/outside.md): every account, secret, and package Ascribe relies on outside the repository, and who can change each. [project-docs/lints.md](project-docs/lints.md): the lints tried, and why each was kept or not.
+- [project-docs/outside.md](project-docs/outside.md): every account, secret, and package Ascribe relies on outside the repository, and who can change each.
 - `project-docs/`: plans, each with its decisions. A plan says what was intended; the code and ARCHITECTURE.md say what is.

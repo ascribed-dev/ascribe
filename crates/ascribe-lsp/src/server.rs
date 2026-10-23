@@ -131,6 +131,10 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         .and_then(|t| t.code_lens.as_ref())
         .and_then(|c| c.dynamic_registration)
         .unwrap_or(false);
+    let version = options
+        .version
+        .clone()
+        .unwrap_or_else(|| env!("CARGO_PKG_VERSION").to_owned());
     let result = InitializeResult {
         capabilities: ServerCapabilities {
             position_encoding: Some(encoding.kind()),
@@ -200,12 +204,13 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         },
         server_info: Some(ServerInfo {
             name: "ascribe".to_owned(),
-            version: Some(env!("CARGO_PKG_VERSION").to_owned()),
+            version: Some(version.clone()),
         }),
     };
     connection.initialize_finish(id, serde_json::to_value(result)?)?;
 
     let mut core = Core::new(connection.sender.clone());
+    core.version = version;
     core.encoding = encoding;
     core.can_watch = params
         .capabilities

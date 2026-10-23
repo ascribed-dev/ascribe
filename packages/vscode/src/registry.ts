@@ -2,11 +2,14 @@ import { stat } from "node:fs/promises";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { ProjectServer, type ProjectHost } from "./client.js";
+import { gitIgnored } from "./gitIgnored.js";
 import { asksForLenses, lensTitle } from "./codeLens.js";
-import { ChangeBatch, readLayout, startsServer, toldOfChange, type Source } from "./diskChanges.js";
+import { toldOfChange, type Source } from "./diskChanges.js";
+import { diagnosticSource } from "./problems.js";
 import {
   channelName,
   comparable,
+  inSourceCopies,
   nestedProjects,
   ownedElsewhere,
   owningProject,
@@ -24,14 +27,20 @@ type StartServers = "onDemand" | "all";
 /** The most projects found in one workspace. */
 const MAX_PROJECTS = 50;
 
+/**
+ * The most `ascribe.toml` files a search for projects reads, before those
+ * git ignores are left out and the rest are held to `MAX_PROJECTS`.
+ */
+const MAX_SEARCHED = 1000;
+
 /** How long opened files with an unknown `ascribe.toml` are gathered before looking for projects again. */
 const LOOK_AGAIN_DELAY_MS = 300;
 
 /**
  * Finds every `ascribe.toml` in the workspace and runs one language server
- * for each. Discovery starts nothing: a server starts the first time one of
- * its files is needed or changes on disk (or at discovery, with
- * `ascribe.startServers: "all"`).
+ * for each. Discovery starts nothing, and nor does a change on disk: a
+ * server starts the first time one of its files is opened or something asks
+ * for its project (or at discovery, with `ascribe.startServers: "all"`).
  */
 export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   private readonly byConfig = new Map<string, ProjectServer>();
@@ -41,12 +50,9 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   private refreshing: Promise<void> = Promise.resolve();
   /** `ascribe.toml` files found beside opened files, for the next refresh to pick up. */
   private unknownConfigs = new Set<string>();
-  /** Those a refresh didn't pick up (left out by `projectExclude`, or past the cap), so they aren't asked for again. */
+  /** Those a refresh didn't pick up (left out by `projectExclude`, git, or a source's copies, or past the cap), so they aren't asked for again. */
   private readonly passedOver = new Set<string>();
   private lookAgainTimer: ReturnType<typeof setTimeout> | undefined;
-  /** One watcher per workspace folder for changes on disk, by the folder's URI. */
-  private readonly folderWatchers = new Map<string, vscode.Disposable>();
-  private readonly diskChanges = new ChangeBatch((files) => void this.startForDiskChanges(files));
   private readonly projectsChanged = new vscode.EventEmitter<void>();
   private readonly started = new vscode.EventEmitter<ProjectServer>();
   private readonly stateChanged = new vscode.EventEmitter<ProjectServer>();
@@ -89,19 +95,24 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
 
   /**
    * Starts following the workspace: its `ascribe.toml` files, open documents,
-   * the settings, and changes on disk to the files of projects not yet started.
+   * and the settings.
    */
   register(): void {
     const watcher = vscode.workspace.createFileSystemWatcher("**/ascribe.toml");
-    this.watchFolders();
+    // A folder deleted with its files is reported as the folder alone, so
+    // the watcher above misses the `ascribe.toml` files that went with it.
+    const deletions = vscode.workspace.createFileSystemWatcher("**", true, true, false);
     this.disposables.push(
       watcher,
       watcher.onDidCreate(() => void this.refresh()),
       watcher.onDidDelete(() => void this.refresh()),
-      vscode.workspace.onDidChangeWorkspaceFolders(() => {
-        this.watchFolders();
-        void this.refresh();
+      deletions,
+      deletions.onDidDelete((uri) => {
+        if (this.projects.some((project) => within(project.folder, uri.fsPath))) {
+          void this.refresh();
+        }
       }),
+      vscode.workspace.onDidChangeWorkspaceFolders(() => void this.refresh()),
       vscode.workspace.onDidOpenTextDocument((document) => void this.startFor(document)),
       vscode.window.onDidChangeActiveTextEditor((editor) => {
         if (editor) void this.startFor(editor.document);
@@ -196,6 +207,10 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     return channelName(project, workspaceFolderOf(project), this.byConfig.size <= 1);
   }
 
+  diagnosticSource(project: Project): string {
+    return diagnosticSource(this.byConfig.size <= 1 ? undefined : this.name(project));
+  }
+
   /** A project's name for people: its folder relative to its workspace folder. */
   name(project: Project): string {
     return projectName(project, workspaceFolderOf(project));
@@ -246,9 +261,6 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   async dispose(): Promise<void> {
     clearTimeout(this.lookAgainTimer);
     this.lookAgainTimer = undefined;
-    this.diskChanges.dispose();
-    for (const watcher of this.folderWatchers.values()) watcher.dispose();
-    this.folderWatchers.clear();
     for (const disposable of this.disposables.splice(0)) disposable.dispose();
     await this.refreshing.catch(() => undefined);
     await Promise.all(this.servers.map((server) => server.dispose()));
@@ -262,13 +274,14 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   private async refreshNow(): Promise<void> {
     const asked = this.unknownConfigs;
     this.unknownConfigs = new Set();
-    // One more than the cap, to know there were more.
-    const found = await vscode.workspace.findFiles(
-      "**/ascribe.toml",
-      readProjectExclude(),
-      MAX_PROJECTS + 1,
-    );
-    const all = found.map((uri) => uri.fsPath).sort();
+    const found = (
+      await vscode.workspace.findFiles("**/ascribe.toml", readProjectExclude(), MAX_SEARCHED)
+    ).map((uri) => uri.fsPath);
+    const all = (
+      await leaveOutIgnored(
+        found.filter((config) => atWorkspaceRoot(config) || !inSourceCopies(config, found)),
+      )
+    ).sort();
     const configs = all.slice(0, MAX_PROJECTS);
     let changed = false;
 
@@ -326,7 +339,10 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     }
     await Promise.all(restarts);
 
-    if (changed) this.projectsChanged.fire();
+    if (changed) {
+      for (const server of this.servers) server.renameDiagnostics();
+      this.projectsChanged.fire();
+    }
     await this.startAllIfConfigured();
     await this.startForOpenDocuments();
   }
@@ -362,67 +378,6 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
       }
     }
     await this.ensureStartedFor(document.uri);
-  }
-
-  /**
-   * Watches each workspace folder for files created, changed, or deleted on
-   * disk. One glob per folder, which VS Code serves from the watcher it
-   * already runs on the folder.
-   */
-  private watchFolders(): void {
-    const folders = vscode.workspace.workspaceFolders ?? [];
-    const current = new Set(folders.map((folder) => folder.uri.toString()));
-    for (const [key, watcher] of this.folderWatchers) {
-      if (current.has(key)) continue;
-      watcher.dispose();
-      this.folderWatchers.delete(key);
-    }
-    for (const folder of folders) {
-      const key = folder.uri.toString();
-      if (this.folderWatchers.has(key)) continue;
-      const watcher = vscode.workspace.createFileSystemWatcher(
-        new vscode.RelativePattern(folder, "**/*"),
-      );
-      const changed = (uri: vscode.Uri) => {
-        if (uri.scheme === "file") this.diskChanges.add(uri.fsPath);
-      };
-      // An `ascribe.toml` created or deleted is a project coming or going,
-      // which starts nothing; one that changes is a project's model.
-      const createdOrDeleted = (uri: vscode.Uri) => {
-        if (!/[\\/]ascribe\.toml$/.test(uri.fsPath)) changed(uri);
-      };
-      this.folderWatchers.set(
-        key,
-        vscode.Disposable.from(
-          watcher,
-          watcher.onDidCreate(createdOrDeleted),
-          watcher.onDidChange(changed),
-          watcher.onDidDelete(createdOrDeleted),
-        ),
-      );
-    }
-  }
-
-  /**
-   * Starts the server of each project that hasn't started and has a file
-   * among those changed on disk, so an agent that edits files without
-   * opening them still gets their problems. A running server follows the
-   * disk itself.
-   */
-  private async startForDiskChanges(files: string[]): Promise<void> {
-    const projects = this.projects;
-    const idle = this.servers.filter((server) => server.state === "stopped");
-    await Promise.all(
-      idle.map(async (server) => {
-        const layout = await readLayout(server.project);
-        const file = files.find((f) => startsServer(f, server.project, layout, projects));
-        if (file === undefined || server.state !== "stopped") return;
-        server.log(
-          `${path.relative(server.project.folder, file)} changed on disk; starting the server.`,
-        );
-        await server.start();
-      }),
-    );
   }
 
   /** Whether a project has this `ascribe.toml`. */
@@ -461,6 +416,32 @@ async function nearestConfig(uri: vscode.Uri): Promise<string | undefined> {
   }
 }
 
+/**
+ * The `ascribe.toml` files git doesn't ignore: those in each workspace
+ * folder are asked of the repository around it in one call. Git's answer
+ * is none ignored where there's no git or no repository. A workspace
+ * folder's own `ascribe.toml` isn't asked about: opening the folder is how
+ * a project in an ignored folder is brought back.
+ */
+async function leaveOutIgnored(configs: readonly string[]): Promise<string[]> {
+  const byFolder = new Map<string, string[]>();
+  for (const config of configs) {
+    const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(config))?.uri.fsPath;
+    if (folder === undefined || samePath(path.dirname(config), folder)) continue;
+    byFolder.set(folder, [...(byFolder.get(folder) ?? []), config]);
+  }
+  const ignored = await Promise.all(
+    [...byFolder].map(([folder, files]) => gitIgnored(folder, files)),
+  );
+  return configs.filter((config) => !ignored.some((set) => set.has(config)));
+}
+
+/** Whether an `ascribe.toml` is at the root of its workspace folder. */
+function atWorkspaceRoot(config: string): boolean {
+  const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(config))?.uri.fsPath;
+  return folder !== undefined && samePath(path.dirname(config), folder);
+}
+
 function workspaceFolderOf(project: Project): WorkspaceFolder | undefined {
   const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(project.folder));
   return folder && { path: folder.uri.fsPath, name: folder.name };
@@ -471,7 +452,7 @@ function readStartServers(): StartServers {
   return value === "all" ? "all" : "onDemand";
 }
 
-/** What the search for projects leaves out: `node_modules`, `files.exclude`, and `ascribe.projects.exclude`. */
+/** What the search for projects leaves out by pattern: `LEFT_OUT_FOLDERS`, `files.exclude`, and `ascribe.projects.exclude`. */
 function readProjectExclude(): string {
   const filesExclude = vscode.workspace
     .getConfiguration("files")

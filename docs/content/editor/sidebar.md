@@ -6,16 +6,13 @@ description: "The Ascribe sidebar in VS Code, with its Project, This page, Pages
 
 The Ascribe icon in the activity bar opens the Ascribe sidebar, with three views: **This page**, **Pages**, and **Content model**. In a workspace with no project, Pages says how to start one, and in Restricted Mode, how to trust the folder. The views show the active file's project, named beside Pages' and Content model's titles. They follow the active editor, and show nothing for a project whose server hasn't started: filling them never starts one. When a project's server fails to start, Pages and Content model say so, with **Show Output** and **Restart**.
 
-@available: ascribe 0.4.0
 While review is on, a **Review** view comes first: see [The Review view](review.md#the-review-view).
 
-@available: ascribe 0.4.1
 A **Project** view comes first of all, above Review: see [The Project view](#the-project-view).
 
 The [status bar](#the-status-bar) item names the active file's project, with a menu of the jobs the Project view has.
 
 ## The Project view
-@available: ascribe 0.4.1
 
 **Project** is about the whole project the sidebar shows, where This page is about one page. It shows the same project as the views below it, following the file you're in, and staying on its project when you click in it or open a file of no project.
 
@@ -91,7 +88,6 @@ In a workspace with several projects, **Switch Project** is in the view's title 
 In Restricted Mode, Ascribe runs nothing, since it would run the project's own `ascribe` binary. The view says so in place of the counts, with **Manage Workspace Trust**, and every action is off until you trust the folder.
 
 ### Edits to the whole project
-@available: ascribe 0.4.1
 
 **Apply Every Safe Fix** applies every [safe fix](problems.md#apply-the-safe-fixes) of the problems the editor shows, in every page and fragment of the project, as **Apply the safe fixes in this page** applies one page's. They're the editor's build's problems, the ones in the Problems panel; a problem only another build has, or one that takes every build to tell, is [`ascribe check --fix`](../checks/check.md#applying-the-safe-fixes)'s to fix. **Format Every Page** formats every page and fragment as [Format Document](writing.md#formatting) and `ascribe fmt` do. Both are in the Command Palette too, as **Ascribe: Apply Every Safe Fix** and **Ascribe: Format Every Page**, for the active file's project.
 
@@ -100,17 +96,14 @@ Each is one edit to the text the editor has, so a page you've changed and not sa
 The files are left unsaved on purpose. On a large project an edit can change hundreds of files, and each is opened with its changes unsaved, so you can read them before you save them: **File: Save All** saves them. **Undo** takes the edit back: VS Code asks whether to undo it in every file it changed or only in the one you're in. If a file changes while the question is up, nothing is applied; choose the action again.
 
 ## This page
-@available: ascribe 0.4.0
 
 **This page** says what's known about the active page, in four sections, and five while review is on, with **Review** after About ([Review in the preview](review.md#the-review-view)). About's **Markdown** row is the Markdown version's address, or "not published" when the project publishes no Markdown versions ([`[consumer] agents`](../content-model/output.md#consumer), on by default with a `site`), and a fragment's address is only where it's included. With the cursor under a heading, Connections narrows to that heading's links and the includes of its section, whichever page they reach it through; Includes stays the page's. **Memos** lists the [memo files](actions.md#memo-files) about the heading, or about the page outside any heading, including those about a block in it, marked personal or outdated when it is. Each item opens the link, the include, or the memo; an include opens in the editor group beside the page's, with the focus left in the view, and This page stays on the page. Unsaved edits count.
 
 ![The This page view, with the rest of the Ascribe sidebar closed, beside the page Install the Quill agent with the cursor under its heading "Install the agent". At the view's top are the page's title, its type, page, and its path, install-agent.md. About gives its title, its type, its address, /install-agent/, its Markdown version, not published, its description's length, 102 characters, its availability, the builds that publish it, and its listing, "Listed (the default)". Health says its problems, none, and its size, "2,567 of 50,000 characters, in site@3.4". Connections, titled to “Install the agent”, lists under Linked from the file keys.md and its line that links there, with its line number, under Included by none, and under Includes the fragment _fragments/prerequisites.md. Memos, titled about “Install the agent”, lists one memo by its first line, with its file, memos/agent-first.md, beside it.](../images/this-page-light.png){scheme=light}
 ![The This page view, with the rest of the Ascribe sidebar closed, beside the page Install the Quill agent with the cursor under its heading "Install the agent". At the view's top are the page's title, its type, page, and its path, install-agent.md. About gives its title, its type, its address, /install-agent/, its Markdown version, not published, its description's length, 102 characters, its availability, the builds that publish it, and its listing, "Listed (the default)". Health says its problems, none, and its size, "2,567 of 50,000 characters, in site@3.4". Connections, titled to “Install the agent”, lists under Linked from the file keys.md and its line that links there, with its line number, under Included by none, and under Includes the fragment _fragments/prerequisites.md. Memos, titled about “Install the agent”, lists one memo by its first line, with its file, memos/agent-first.md, beside it.](../images/this-page-dark.png){scheme=dark}
 
-@available: ascribe 0.4.1
 This page follows the page you're working in: the last editor of a page that was active. Clicking in the view, or moving to the preview, another view, a panel, or a file that isn't a page leaves it on its page; when that page's editor closes, it shows the page of the editor that takes its place. Only **About** starts open. The other sections' headers say whether to open them: Health's count of things to do, Connections' heading, and Memos' "none". Open or close a section and it stays that way on every page. Rows wrap, so each shows all it says at any width, with more in its tooltip, and an open section's header stays at the top of the view while you scroll through its rows. **Tab**, or **Up** and **Down**, moves between the section headers and the rows that open something, **Enter** or **Space** opens a section or a row, and **Escape** puts the cursor back in the page. As the cursor moves and the checks run, the view changes what it says in place, keeping its scroll and the row you're on.
 
-@available: ascribe 0.4.1
 The title above the sections draws its code spans as code where its type's `title` field reads them ([`inline = "code"`](../content-model/index.md#53-code-in-a-field)), and a fragment's type is "fragment". A row whose state can warn says the state first, in the warning color when there's something to do: an example's "changed since it was tested" before its address, a description's "too long" before its length. The view's badge counts Health's things to do, so you see them with This page collapsed or Health closed; it goes when you move to another page while the view is collapsed, until you open it again. In place of a page, This page says when no page is open, when the page's language server is starting, and when it failed to start, with **Show Output** and **Restart**; in Restricted Mode it says Ascribe isn't checking the folder, with **Manage Workspace Trust**.
 
 About's other rows say where the page is, and whether it's published, listed, due, and finished. **Address** is always shown, and **Markdown** for a page; each of the rest only when it has something to say, apart from a description, which is shown "missing" where [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports the page. A row with somewhere to go opens it:
@@ -177,8 +170,7 @@ In Restricted Mode, Ascribe runs nothing, since it would run the project's own `
 Click it, or run **Ascribe: Project Menu**, for a menu of the project: **Switch build**, **Check every build**, **Show output**, **Switch project** in a workspace with several projects, **Restart server**, and, for a page, **Dim what the build leaves out** and **Open preview**. The [Project view](#the-project-view) has the same jobs for the project it shows, and each does the same there as here.
 
 ## Switch Project
-@available: ascribe 0.4.0
 
-In a workspace with several projects, **Ascribe: Switch Project** chooses the project the sidebar shows. It's in the Command Palette, in the [Project view](#the-project-view)'s title bar, and in the [status bar](#the-status-bar) item's menu; with one project, it's in none of them. It lists every project, the sidebar's first and marked, each with its folder, its server's state, such as "running, site build", "not checked yet", or "failed", and the `ascribe` binary in use. Each has buttons to show its server's output, and to restart its server when it's running or failed, and **Refresh** in its title asks the running servers for their builds again. Listing them starts no server.
+In a workspace with several projects, **Ascribe: Switch Project** chooses the project the sidebar shows. It's in the Command Palette, in the [Project view](#the-project-view)'s title bar, and in the [status bar](#the-status-bar) item's menu; with one project, it's in none of them. It lists every project the editor found, which leaves out [build output, dependencies, and what git ignores](settings.md#workspaces-with-several-projects), the sidebar's first and marked, each with its folder, its server's state, such as "running, site build", "not checked yet", or "failed", and the `ascribe` binary in use. Each has buttons to show its server's output, and to restart its server when it's running or failed, and **Refresh** in its title asks the running servers for their builds again. Listing them starts no server.
 
 Choosing a project shows it in the sidebar and starts its server if it hasn't started. It's a jump, not a pin: the sidebar stays on it until a file of another project becomes active, and then follows that file as before.

@@ -3,12 +3,13 @@
 //! serves a page's Markdown, so the check measures it, rendered as the build
 //! renders it.
 
+use std::ops::Range;
 use std::path::Path;
 
 use ascribe_core::{FileId, Issue, Location, Span, diagnostics};
 use ascribe_emit::{EmitContext, PlainEmitter, emit_page};
 use ascribe_model::Build;
-use ascribe_resolve::{Project, ResolvedPage};
+use ascribe_resolve::{Project, ResolvedBlock, ResolvedPage};
 
 use super::collect::Found;
 
@@ -18,6 +19,10 @@ pub const DEFAULT_LIMIT: u64 = 50_000;
 
 /// The most sections a prompt lists.
 const MAX_SECTIONS: usize = 10;
+
+/// The most parts, includes and sections, the problem names as related
+/// information.
+const MAX_PARTS: usize = 5;
 
 /// The limit a project sets, or the default; `None` when the check is off.
 pub fn limit(index: &Project) -> Option<u64> {
@@ -47,11 +52,15 @@ pub(super) fn page_size(
         return None;
     }
     let first_line = first_line(index, page.file);
-    let issue = Issue::new(diagnostics::PAGE_SIZE, Location::new(page.file, first_line))
+    let mut issue = Issue::new(diagnostics::PAGE_SIZE, Location::new(page.file, first_line))
         .with_arg("size", thousands(size))
         .with_arg("limit", thousands(limit))
         .with_arg("build", build.name.clone())
         .with_arg("sections", sections(&text));
+    for (at, size) in largest_parts(index, root, build, page) {
+        let label = format!("`{}`: {} characters", line_at(index, at), thousands(size));
+        issue = issue.with_related(at, label);
+    }
     Some(Found {
         issue,
         cause: (page.file, first_line, Default::default()),
@@ -80,6 +89,79 @@ fn markdown(index: &Project, root: &Path, build: &Build, page: &ResolvedPage) ->
         .map(|page| page.text)
 }
 
+/// The page's largest parts, largest first, at most [`MAX_PARTS`]: its
+/// sections, each from a heading of the page's top level to the next, located
+/// at the heading, wherever it's written; and its includes, each the run of
+/// top-level blocks one include of the page's own file brought, located at
+/// the `@include` line. An include that's exactly one section is named as
+/// the section. Each part's size is what it adds to the page's Markdown.
+fn largest_parts(
+    index: &Project,
+    root: &Path,
+    build: &Build,
+    page: &ResolvedPage,
+) -> Vec<(Location, u64)> {
+    let blocks = &page.blocks;
+    let mut sections: Vec<(Location, Range<usize>)> = Vec::new();
+    for (i, block) in blocks.iter().enumerate() {
+        if block.heading.is_some() {
+            if let Some(last) = sections.last_mut() {
+                last.1.end = i;
+            }
+            let line = first_line_of(index, block.file, block.span);
+            sections.push((Location::new(block.file, line), i..blocks.len()));
+        }
+    }
+    let mut includes: Vec<(Location, Range<usize>)> = Vec::new();
+    for (i, block) in blocks.iter().enumerate() {
+        let Some(site) = block.via.first() else {
+            continue;
+        };
+        let at = Location::new(site.file, site.span);
+        match includes.last_mut() {
+            Some((last, range)) if *last == at && range.end == i => range.end = i + 1,
+            _ => includes.push((at, i..i + 1)),
+        }
+    }
+    includes.retain(|(_, range)| !sections.iter().any(|(_, s)| s == range));
+    let empty = markdown_of(index, root, build, page, Vec::new()).unwrap_or(0);
+    let mut parts: Vec<(Location, u64)> = sections
+        .into_iter()
+        .chain(includes)
+        .filter_map(|(at, range)| {
+            let size = markdown_of(index, root, build, page, blocks[range].to_vec())?;
+            Some((at, size.saturating_sub(empty)))
+        })
+        .collect();
+    parts.sort_by_key(|(_, size)| std::cmp::Reverse(*size));
+    parts.truncate(MAX_PARTS);
+    parts
+}
+
+/// The size of the page's Markdown in `build` with only `blocks`.
+fn markdown_of(
+    index: &Project,
+    root: &Path,
+    build: &Build,
+    page: &ResolvedPage,
+    blocks: Vec<ResolvedBlock>,
+) -> Option<u64> {
+    let part = ResolvedPage {
+        blocks,
+        ..page.clone()
+    };
+    markdown_size(index, root, build, &part)
+}
+
+/// The text of the first line at `at`, trimmed.
+fn line_at(index: &Project, at: Location) -> String {
+    let text = index.file_by_id(at.file).map_or("", |f| &*f.source);
+    text.get(at.span.start()..at.span.end())
+        .unwrap_or_default()
+        .trim()
+        .to_owned()
+}
+
 /// The size an issue's `size` argument says, for keeping the largest.
 pub(super) fn size_of(issue: &Issue) -> u64 {
     issue
@@ -91,9 +173,15 @@ pub(super) fn size_of(issue: &Issue) -> u64 {
 
 /// The first line of a file, without its line ending.
 fn first_line(index: &Project, file: FileId) -> Span {
+    first_line_of(index, file, Span::new(0, 0))
+}
+
+/// The first line of `span` in `file`, without its line ending.
+fn first_line_of(index: &Project, file: FileId, span: Span) -> Span {
     let text = index.file_by_id(file).map_or("", |f| &*f.source);
-    let end = text.find(['\n', '\r']).unwrap_or(text.len());
-    Span::new(0, end)
+    let rest = text.get(span.start()..).unwrap_or_default();
+    let end = rest.find(['\n', '\r']).unwrap_or(rest.len());
+    Span::new(span.start(), span.start() + end)
 }
 
 /// The page's sections, largest first: each heading of the Markdown, from

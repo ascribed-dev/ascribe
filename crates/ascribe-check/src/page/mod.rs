@@ -516,6 +516,7 @@ fn largest_page_sizes(
                 // Every argument but the build, which says where it's found.
                 let build = f.issue.arg("build").unwrap_or_default().to_owned();
                 f.issue.args = l.args.clone();
+                f.issue.related = l.related.clone();
                 for arg in &mut f.issue.args {
                     if arg.name == "build" {
                         arg.value.clone_from(&build);

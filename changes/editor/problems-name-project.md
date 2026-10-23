@@ -1,0 +1,1 @@
+- **A problem's source names its project when the workspace has several.** The Problems panel shows `ascribe · handbook` where it showed `ascribe`, so you can tell which project's server found it ([Workspaces with several projects](docs/content/editor/settings.md)).

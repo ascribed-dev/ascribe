@@ -1491,3 +1491,46 @@ fn a_repeated_field_is_deleted_from_ascribe_toml() {
             .any(|d| support::slug(d) == "frontmatter-field-repeated")
     );
 }
+
+/// A page whose memo says it's generated, with a link to a route, whose fix
+/// is safe, and a blank line under a directive, which has a quick fix of its
+/// own.
+const GENERATED: &str = "---\ntitle: Generated\n---\n\n@memo: Generated from keys.toml by scripts/keys.ts; edit the keys, then run `node scripts/keys.ts` to rewrite it.\nSee [Keys](/keys/).\n\n@note\n\nA bound block.\n";
+
+#[test]
+fn a_generated_page_names_its_memo_and_offers_no_edit() {
+    let f = quill();
+    write(&f, "docs/generated.md", GENERATED);
+    let path = f.path("docs/generated.md");
+    let mut client = Client::start(&f.root());
+    client.open(&path, 1, GENERATED);
+    client.settle();
+
+    let page = uri(&path);
+    for slug in ["link-route", "binding-blank-line"] {
+        let diag = diagnostic(&client, &path, slug);
+        let related = &diag["relatedInformation"][0];
+        assert_eq!(related["location"]["uri"], page.as_str(), "{diag}");
+        assert_eq!(related["location"]["range"]["start"]["line"], 4, "{diag}");
+        assert!(
+            related["message"]
+                .as_str()
+                .unwrap()
+                .ends_with("then run `node scripts/keys.ts` to rewrite it."),
+            "{diag}"
+        );
+        assert!(
+            diag["data"]["fixes"].as_array().unwrap().is_empty(),
+            "{diag}"
+        );
+        let offered = actions(&mut client, &path, diag);
+        assert!(
+            offered.iter().all(|action| {
+                action["edit"]["changes"].get(page.as_str()).is_none()
+                    && action["edit"]["documentChanges"].is_null()
+            }),
+            "{offered:?}"
+        );
+    }
+    assert!(fix_all(&mut client, &path).is_none());
+}

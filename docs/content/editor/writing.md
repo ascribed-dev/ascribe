@@ -16,19 +16,15 @@ What the editor does as you write a page: what it completes, what it shows on ho
 - In `@include:`: source files, then, after `#`, the ids of the file.
 - In a link destination: pages and headings, **searched by title**. It inserts the file path and id, so you never need to type a path.
 
-@available: ascribe 0.4.0
 - `@term` only at the top of a section on a glossary page, or in a fragment one includes, under the heading and the directives that bind it, and not on a heading that's a term already. Inside its braces, `aliases`, `match`, and `case-sensitive`, and `match`'s values `first`, `every`, and `marked`.
 
-@available: ascribe 0.4.0
 - In a [memo file](actions.md#memo-files), after `about:`: the project's pages, their headings with ids as `page.md#id`, and its phrases, features, glossary terms, and the rest by `prefix:name`, as [`ascribe refs`](../command/questions.md#cli-refs) takes them. `about` is a link to what it names, and the file shows the problems `ascribe check` would report in it as you type, a personal memo's too.
 
 - In a source's [`ascribe.examples.toml`](../examples/tested.md): its keys, and an environment entry's `label` and `command`. The file's problems appear as you type, where each is. A config no source in `ascribe.toml` names is just a TOML file.
 
-@available: ascribe 0.4.0
 - In the [navigation file](../navigation/index.md), `ascribe.nav`: its keys, a `folder` from the project's sections it doesn't list yet, and in `pages` the section's pages it doesn't name yet. The file's [problems](../navigation/index.md#problems) appear as you type, where each is, with their fixes, and a page its section leaves out offers **Add `name.md` to `folder/`'s pages in ascribe.nav**, which edits the file.
 
 ## Search
-@available: ascribe 0.4.1
 
 **Ascribe: Search Pages as Readers See Them**, in the Command Palette, finds words where the pages say them as their readers read them, and opens the line to edit. It's [`ascribe search`](../command/questions.md#cli-search) in the editor: the same query, the same places, in the same order. Type words, which must all be in one block in any order, or a phrase in double quotes, matched as written; case is ignored. The places arrive as you type, each the reader's text cut around the match, and under it the file and line, the heading it's under, and the phrase it reads through: `install-agent.md:62 · Connect to Quill · through phrase cloud`. A place many pages show, from a fragment, says how many. Choose one to open its line. A match wholly inside a phrase's value opens the phrase in `ascribe.toml`.
 
@@ -43,12 +39,11 @@ VS Code's own search, **Search: Find in Files**, reads the source as written: it
 - An availability spec or feature key: what it means, in the words the published site uses.
 - A directive or attribute key: its description. A dimension key: its values and labels.
 
-@available: ascribe 0.4.0
 - A glossary term, in prose: its definition for the editor's build. On the term's heading: the definition, and how many pages use the term.
 
 - A version in an availability spec, for a target with [release lines](../versions/lines.md): the line it falls in, and that line's status, such as "in line 3.4, live".
 
-@available: ascribe planned
+@available: ascribe 0.4.2
 - A frontmatter key, in a page or in `ascribe.toml`: the field's type, and whether `[frontmatter]` declares it, the page's type, or neither, for the `title` every type has. On a field of `[frontmatter]`, the types that declare their own and replace it; on a type's own, whether it replaces a shared one, or is the same and [can be deleted](../content-model/index.md#41-page-types).
 
 - `replaces` in frontmatter: the page it replaces, and which page each line publishes. Go to Definition opens the replaced page.
@@ -64,7 +59,6 @@ VS Code's own search, **Search: Find in Files**, reads the source as written: it
 - **Inline hints** show the title an empty-text link, `[](keys.md#rotate-keys)`, will get.
 
 ## Code files a page shows
-@available: ascribe 0.4.0
 
 A code file a page shows with [`@snippet`](../writing/directives.md#snippet) says which pages show it, in a lens above each region a snippet takes, and on the first line of a file a snippet takes whole. A page counts once however many of its `@snippet`s show the region, and a fragment's `@snippet` counts each page that includes the fragment. Choose the lens to list the pages, and choose one to open the page at its `@snippet`. It's how you find the pages a change to your code will change, as you make it.
 
@@ -98,8 +92,6 @@ In VS Code, when another extension is the formatter for Markdown, such as Pretti
 
 Directive lines, attribute blocks, `@end`, and phrases are highlighted as soon as a file opens. Once the server is running, it adds what depends on the content model: declared and undeclared phrases, project widgets, and **title lines**, shown distinctly so a paragraph that accidentally became a title stands out.
 
-@available: ascribe 0.4.0
 The extension gives `ascribe.nav`, `ascribe.permalinks`, and `ascribe.lock` to VS Code's TOML language, like `ascribe.toml`. VS Code has no TOML coloring of its own, so they're colored only with a TOML extension installed, such as Even Better TOML.
 
-@available: ascribe 0.4.0
 A [memo](../writing/directives.md#memo)'s text is colored as a comment, in either form, and nothing in it is colored as a link, a phrase, or a heading. A container memo folds to its first line, beside the folding of headings, lists, and code blocks.

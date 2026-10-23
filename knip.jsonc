@@ -1,7 +1,8 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  // `ascribe` comes from this repository's own build, not a package.
-  "ignoreBinaries": ["ascribe"],
+  // `ascribe` comes from this repository's own build, not a package, and
+  // `pgrep` from the system, where the extension finds a server's children.
+  "ignoreBinaries": ["ascribe", "pgrep"],
   // The docs site is its own npm project, installed from the published
   // packages, and "Site from npm" checks it (site-npm.yml).
   "ignore": ["site/**"],

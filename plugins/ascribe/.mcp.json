@@ -2,9 +2,10 @@
   "mcpServers": {
     "ascribe": {
       "args": [
+        "${CLAUDE_PLUGIN_ROOT}/launcher/ascribe.sh",
         "mcp"
       ],
-      "command": "ascribe"
+      "command": "sh"
     }
   }
 }

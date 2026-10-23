@@ -28,6 +28,7 @@ use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{Applicability, FileId, LineIndex, Location, RelPath};
 
 use crate::evidence;
+use crate::generated::NOTE as GENERATED_NOTE;
 use crate::{Diagnostic, MODEL_FILE, Project, Registry, Reported, Severity};
 
 mod memos;
@@ -365,6 +366,9 @@ pub fn problem(
         ),
         format!("Message: {}", d.message),
     ];
+    let generated = generated_line(project, &file, d.location.file);
+    let said = generated.is_some();
+    known.extend(generated);
     if reported.repeats > 0 {
         known.push(format!(
             "It's reported at {} other {} too.",
@@ -406,7 +410,11 @@ pub fn problem(
             Applicability::Unsafe => format!("Ascribe has a fix to review: `{}`.", fix.title),
         });
     }
-    for related in d.related.iter().take(MAX_RELATED) {
+    // The memo that says the file is generated has been said already.
+    let related = d.related.iter().filter(|r| {
+        !(said && r.location.file == d.location.file && r.message.starts_with(GENERATED_NOTE))
+    });
+    for related in related.take(MAX_RELATED) {
         let at = context.shown(&path_of(project, related.location.file));
         let line = lines_of(project, related.location).map_or(1, |l| l.first);
         known.push(format!("Related: {at}:{line}: {}", related.message));
@@ -447,6 +455,7 @@ pub fn file(
     let in_project = path_of(project, file);
     let path = context.shown(&in_project);
     let mut place = vec![format!("Where: {path}")];
+    place.extend(generated_line(project, &path, file));
     unsaved_line(context, &in_project, &mut place);
     context.project_lines(&mut place);
     shown_on_line(project, context, file, shown_on, &mut place);
@@ -514,7 +523,7 @@ pub fn project(
     let mut place = Vec::new();
     let unsaved: Vec<String> = files_of(project, reported)
         .iter()
-        .map(|(path, _)| path.clone())
+        .map(|(_, path, _)| path.clone())
         .filter(|p| context.unsaved.contains(p))
         .map(|p| context.shown(&p))
         .collect();
@@ -529,12 +538,14 @@ pub fn project(
     let concise = context.check_command(&targets, &["--format", "concise"]);
     let files = files_of(project, reported);
     let mut listed = vec!["Problems by file:".to_owned()];
-    listed.extend(
-        files
-            .iter()
-            .take(MAX_LISTED)
-            .map(|(path, counts)| format!("- {}: {}", context.shown(path), counts.words())),
-    );
+    listed.extend(files.iter().take(MAX_LISTED).map(|(file, path, counts)| {
+        let path = context.shown(path);
+        let mut line = format!("- {path}: {}", counts.words());
+        if let Some(generated) = generated_line(project, &path, *file) {
+            line.push_str(&format!(". {generated}"));
+        }
+        line
+    }));
     if files.len() > MAX_LISTED {
         listed.push(format!("and {} more files.", files.len() - MAX_LISTED));
     }
@@ -776,6 +787,17 @@ fn shown_on_line(
     lines.push(line);
 }
 
+/// What a prompt says of a generated file, shown as `path`: that an edit to
+/// it is lost, and what its memo says to do instead. `None` for a file that
+/// isn't generated.
+fn generated_line(project: &Project, path: &str, file: FileId) -> Option<String> {
+    let memo = crate::generated::of_file(project, file)?;
+    Some(format!(
+        "`{path}` is generated, and the next run of what generates it rewrites it: don't edit it, but change what it's generated from and run the command again, as its memo says: {}",
+        memo.text
+    ))
+}
+
 /// The path a prompt shows for a file: relative to the project root.
 fn path_of(project: &Project, file: FileId) -> String {
     project
@@ -937,7 +959,7 @@ fn counts_of(reported: &[Reported]) -> Counts {
 }
 
 /// Each file's counts, most problems first; a tie keeps file order.
-fn files_of(project: &Project, reported: &[Reported]) -> Vec<(String, Counts)> {
+fn files_of(project: &Project, reported: &[Reported]) -> Vec<(FileId, String, Counts)> {
     let mut by_file: Vec<(FileId, Counts)> = Vec::new();
     for r in in_order(reported) {
         let file = r.diagnostic.location.file;
@@ -953,7 +975,7 @@ fn files_of(project: &Project, reported: &[Reported]) -> Vec<(String, Counts)> {
     by_file.sort_by_key(|(_, counts)| std::cmp::Reverse(counts.total()));
     by_file
         .into_iter()
-        .map(|(file, counts)| (path_of(project, file), counts))
+        .map(|(file, counts)| (file, path_of(project, file), counts))
         .collect()
 }
 

@@ -29,6 +29,7 @@ pub fn run(global: &Global, _args: Args) -> ExitCode {
     }
     let options = ascribe_lsp::Options {
         today: Some(std::sync::Arc::new(crate::clock::today)),
+        version: Some(env!("ASCRIBE_VERSION").to_owned()),
         ..ascribe_lsp::Options::default()
     };
     match ascribe_lsp::run_stdio(options) {

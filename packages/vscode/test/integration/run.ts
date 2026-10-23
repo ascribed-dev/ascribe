@@ -9,6 +9,10 @@
 //   activation  a workspace without ascribe.toml: the extension stays inactive
 //   stub        a workspace with ascribe.toml, against test/stub-server, and
 //               the skill chat gets
+//   ignored     test/fixtures/stub-project made into a git repository, with
+//               an `ascribe.toml` in `target/`, in a folder git ignores, and
+//               in a source's copies, none of them a project, and one in
+//               `guides/` that is, against test/stub-server.
 //   quill       a copy of examples/quill with a broken page added, against the
 //               real `ascribe lsp`. Needs ASCRIBE_BIN, the path to a built
 //               `ascribe`; skipped without it.
@@ -155,6 +159,31 @@ const suites: Suite[] = [
       // Code starts so its watcher reports what's written in it.
       mkdirSync(path.join(workspace, ".agents/skills/ascribe"), { recursive: true });
       return { "ascribe.path": stubServer, "ascribe.maxCrashes": 2, ...startAll };
+    },
+  },
+  {
+    name: "ignored",
+    fixture: path.join(packageRoot, "test/fixtures/stub-project"),
+    prepare: (workspace) => {
+      const project = (folder: string) => {
+        mkdirSync(path.join(workspace, folder, "docs"), { recursive: true });
+        writeFileSync(
+          path.join(workspace, folder, "ascribe.toml"),
+          '[project]\ncontent-root = "docs"\n',
+        );
+        writeFileSync(path.join(workspace, folder, "docs/page.md"), "# Page\n");
+      };
+      // A project beside the ones left out.
+      project("guides");
+      // Where `cargo test` writes projects; left out whether or not git ignores it.
+      project("target/tmp/case");
+      // A folder git ignores.
+      project("generated/site");
+      // The root project's copies of a source in another repository.
+      project("sources/api");
+      writeFileSync(path.join(workspace, ".gitignore"), "generated/\n");
+      gitIn(workspace)("init", "-q", "-b", "main");
+      return { "ascribe.path": stubServer, ...startAll };
     },
   },
   {

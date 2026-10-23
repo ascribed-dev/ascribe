@@ -1,6 +1,8 @@
 //! `ascribe lsp` names the project it loaded, with its version, in a
 //! `window/logMessage` at Info: the nearest `ascribe.toml` at or above its
 //! workspace folder, even when that folder is a project nested inside another.
+//! The version, there and in `serverInfo`, is the one `ascribe --version`
+//! prints, `+dev` and commit included.
 
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
@@ -57,8 +59,23 @@ fn send(stdin: &mut impl Write, message: &Value) {
     stdin.flush().expect("flush");
 }
 
+/// What `ascribe --version` prints after the name, such as
+/// `0.4.1+dev (7ae1340440fc)`.
+fn full_version() -> String {
+    let output = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .arg("--version")
+        .output()
+        .expect("run ascribe --version");
+    let text = String::from_utf8(output.stdout).expect("utf-8");
+    text.trim()
+        .strip_prefix("ascribe ")
+        .expect("the name, then the version")
+        .to_owned()
+}
+
 #[test]
 fn the_server_logs_the_nearest_project() {
+    let version = full_version();
     let dir = tempfile::tempdir().expect("temp dir");
     let outer = dir.path().join("outer");
     let inner = outer.join("pages").join("inner");
@@ -83,10 +100,13 @@ fn the_server_logs_the_nearest_project() {
     // Read every message, so the server never blocks, and pass on its log.
     let stdout = child.stdout.take().expect("stdout");
     let (tx, logged) = mpsc::channel();
+    let (init_tx, initialized) = mpsc::channel();
     thread::spawn(move || {
         let mut reader = BufReader::new(stdout);
         while let Some(message) = read_frame(&mut reader) {
-            if message["method"] == "window/logMessage"
+            if message["id"] == 1 {
+                let _ = init_tx.send(message["result"].clone());
+            } else if message["method"] == "window/logMessage"
                 && tx.send(message["params"].clone()).is_err()
             {
                 break;
@@ -105,6 +125,15 @@ fn the_server_logs_the_nearest_project() {
             },
         }),
     );
+    let result = initialized
+        .recv_timeout(TIMEOUT)
+        .expect("the server answers initialize");
+    assert_eq!(result["serverInfo"]["name"], "ascribe", "{result}");
+    assert_eq!(
+        result["serverInfo"]["version"],
+        version.as_str(),
+        "{result}"
+    );
     send(
         &mut stdin,
         &json!({ "jsonrpc": "2.0", "method": "initialized", "params": {} }),
@@ -119,7 +148,7 @@ fn the_server_logs_the_nearest_project() {
             // Info, since nothing is wrong, and with the server's version.
             assert_eq!(params["type"], 3, "{params}");
             assert!(
-                message.starts_with(&format!("ascribe-lsp {}: ", env!("CARGO_PKG_VERSION"))),
+                message.starts_with(&format!("ascribe-lsp {version}: ")),
                 "{message}"
             );
             break path.to_owned();

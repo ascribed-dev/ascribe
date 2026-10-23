@@ -4,9 +4,8 @@ Ideas for Ascribe that nobody has built, planned, or started. This is exploratio
 
 Written on 2 October 2026, after 0.1.1, and cut back on 11 October 2026 to what's still open. Most of what it held then has been built, and the rest of it has a plan or a proposal of its own, so it's gone from here:
 
-- **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, external links, and what's new since the last run), [a baseline](../docs/content/checks/baseline.md) of existing advice, [permalinks](../docs/content/permalinks/index.md), [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), [versions](../docs/content/versions/index.md), [navigation](../docs/content/navigation/index.md), [the glossary as pages](../docs/content/content-model/glossary.md), the editor's [sidebar](../docs/content/editor/sidebar.md), with This page and the Project view, and Project Settings, [search](../docs/content/command/questions.md#ascribe-search), and what a search engine and a crawler are told, in [Publishing](../docs/content/publishing/index.md).
-- **Proposed.** [An `ascribe.toml` that says only what's the project's own](proposals/shorter-content-model.md).
-- **Proposed and waiting.** [The rest of the cache](proposals/cache.md) is built, apart from Vale's results, which wait for a project that needs them.
+- **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, external links, and what's new since the last run), [a baseline](../docs/content/checks/baseline.md) of existing advice, [permalinks](../docs/content/permalinks/index.md), [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), [versions](../docs/content/versions/index.md), [navigation](../docs/content/navigation/index.md), [the glossary as pages](../docs/content/content-model/glossary.md), a content model that says only what's the project's own ([shared frontmatter, defaults, and `[from]`](../docs/content/content-model/index.md)), the editor's [sidebar](../docs/content/editor/sidebar.md), with This page and the Project view, and Project Settings, [search](../docs/content/command/questions.md#ascribe-search), and what a search engine and a crawler are told, in [Publishing](../docs/content/publishing/index.md).
+- **Waiting.** [The rest of the cache](https://github.com/ascribed-dev/ascribe/blob/bb56bfb3/project-docs/proposals/cache.md) is built, apart from Vale's results, which wait for a project that needs them (section 15).
 
 The sections keep the numbers they had, since other documents name them, so the numbers have gaps.
 
@@ -87,7 +86,7 @@ A general WYSIWYG editor that serializes back to Markdown tends to produce sourc
 Ascribe runs Vale on a page's prose, with phrases substituted and directives left out, reports each alert at its place in the source, and writes the project's own words into a Vale vocabulary ([Vale](../docs/content/checks/vale.md)). Two things from the first idea aren't built:
 
 - **Linting what a build's readers see.** The text with variants and availability resolved, for a team whose rules should apply to an output and not to the source. Nobody has asked for it.
-- **Keeping results between runs,** by the hash of a page's prose, so a hook or a check lints only what changed. The [cache proposal](proposals/cache.md#vale-results) designs it, and holds it until a project's full Vale run is slow enough to matter (its Settled 4).
+- **Keeping results between runs,** by the hash of a page's prose, so a hook or a check lints only what changed. The [cache proposal](https://github.com/ascribed-dev/ascribe/blob/bb56bfb3/project-docs/proposals/cache.md#vale-results) designs it, and holds it until a project's full Vale run is slow enough to matter (its Settled 4).
 
 ## 6. Other things a docs system does
 
@@ -180,7 +179,7 @@ The [versions plan](https://github.com/ascribed-dev/ascribe/blob/395fe80d/projec
 
 ## 20. `ascribe.toml` in more than one file
 
-Added 2026-10-11. Answered in part by [an `ascribe.toml` that says only what's the project's own](proposals/shorter-content-model.md), which finds the file long because it repeats itself, and leaves one file per table for a project whose tables outgrow it.
+Added 2026-10-11. Answered in part by [an `ascribe.toml` that says only what's the project's own](https://github.com/ascribed-dev/ascribe/blob/bb56bfb3/project-docs/proposals/shorter-content-model.md), which finds the file long because it repeats itself, and leaves one file per table for a project whose tables outgrow it.
 
 TOML has no include, and everything in the content model is in one file. The table that most needed splitting was the glossary, and the [glossary proposal](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/glossary-pages.md) moves that into pages instead. `[phrases]`, `[features]`, and the `[[intended]]` acknowledgements can grow long too.
 
@@ -237,7 +236,7 @@ Questions:
 
 ## 15. The cache: what's left
 
-This section held three ideas that share no layer, and all are built but one piece. [Memos](../docs/content/writing/memos.md) and [search](../docs/content/command/questions.md#ascribe-search) were the first two. The third was a cache: `ascribe report links` keeps the answers it reuses, the report says what's new since its last run, and [a baseline](../docs/content/checks/baseline.md) puts a project's existing advice off, from [the rest of the cache](proposals/cache.md). The rule they're built on stays the rule for anything added: deleting a cache changes nothing but time, so nothing may need it to be correct.
+This section held three ideas that share no layer, and all are built but one piece. [Memos](../docs/content/writing/memos.md) and [search](../docs/content/command/questions.md#ascribe-search) were the first two. The third was a cache: `ascribe report links` keeps the answers it reuses, the report says what's new since its last run, and [a baseline](../docs/content/checks/baseline.md) puts a project's existing advice off, from [the rest of the cache](https://github.com/ascribed-dev/ascribe/blob/bb56bfb3/project-docs/proposals/cache.md). The rule they're built on stays the rule for anything added: deleting a cache changes nothing but time, so nothing may need it to be correct.
 
 Left: Vale's results, kept by the hash of a page's prose. The proposal designs them, and holds them until a project's full Vale run is slow enough to matter (its Settled 4).
 
@@ -288,7 +287,7 @@ Added 2026-10-09. A place to collect ideas, so they're on record if the question
 
 # Suggested order
 
-No plan is in progress, and the one proposal left waits for a project that needs it. Of what's left in this document:
+No plan or proposal is in progress here, apart from the cache's Vale results, which wait for a project that needs them. Of what's left in this document:
 
 1. **Redirects** (section 6), once something records what was published. The versions plan's `retire` gives it a first input.
 2. **OpenAPI links and embeds** (section 3, levels 1 and 2).

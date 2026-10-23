@@ -10,6 +10,7 @@ import {
   root,
   targets,
   unreleasedSection,
+  withoutEmptyUnreleased,
 } from "./manifests.ts";
 
 const changelog = (heading: string): string =>
@@ -47,6 +48,29 @@ describe("unreleasedSection", () => {
     expect(unreleasedSection(changelog("## Unreleased"))).toEqual({ version: undefined });
     expect(unreleasedSection(changelog("## 0.3.0 (unreleased)"))).toEqual({ version: "0.3.0" });
     expect(unreleasedSection(changelog("## 0.3.0 (2026-10-09)"))).toBeUndefined();
+  });
+});
+
+describe("withoutEmptyUnreleased", () => {
+  const empty = "# Changelog\n\nIntro.\n\n## Unreleased\n\n## 0.1.1 (2026-10-02)\n\n- Earlier.\n";
+
+  it("leaves out an unreleased section with nothing in it", () => {
+    expect(withoutEmptyUnreleased(empty)).toBe(
+      "# Changelog\n\nIntro.\n\n## 0.1.1 (2026-10-02)\n\n- Earlier.\n",
+    );
+    expect(withoutEmptyUnreleased(empty.replace("## Unreleased", "## 0.2.0 (unreleased)"))).toBe(
+      withoutEmptyUnreleased(empty),
+    );
+  });
+
+  it("keeps one with entries, and a changelog with none", () => {
+    expect(withoutEmptyUnreleased(changelog("## Unreleased"))).toBe(changelog("## Unreleased"));
+    const released = changelog("## 0.2.0 (2026-10-09)");
+    expect(withoutEmptyUnreleased(released)).toBe(released);
+  });
+
+  it("leaves out an empty one at the end", () => {
+    expect(withoutEmptyUnreleased("# Changelog\n\n## Unreleased\n")).toBe("# Changelog\n");
   });
 });
 

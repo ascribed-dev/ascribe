@@ -144,7 +144,8 @@ fn a_release_rewrites_the_planned_marks_and_archives_the_old_line() {
         page.contains("@available: prod 1.1\nA new paragraph."),
         "{page}"
     );
-    assert!(page.contains("@available: prod 1.0\nAn old one."), "{page}");
+    // 1.0 is archived, so its mark says nothing and goes.
+    assert!(page.contains("A new paragraph.\n\nAn old one."), "{page}");
     assert!(page.contains("`a` {available=\"prod 1.1\"}"), "{page}");
     assert!(page.contains("`b` {available=\"prod beta 1.1\"}"), "{page}");
 
@@ -158,6 +159,103 @@ fn a_release_rewrites_the_planned_marks_and_archives_the_old_line() {
 
     let check = ascribe(dir.path(), &["check"]);
     assert_eq!(code_of(&check), 0, "{}{}", stdout(&check), stderr(&check));
+}
+
+/// A page with marks naming the live line, 1.0, and an older one, 0.9,
+/// beside a feature marked 1.0.
+const OLD_MARKS: &str = "---\ntitle: Old\n---\n\n@available: prod 1.0\nGone.\n\n@available: prod beta 1.0\nStill beta.\n\n@available: prod 0.9\nOlder.\n\n@available: prod planned\nNew.\n\n| Option | Does |\n|---|---|\n| `a` {available=\"prod 1.0.2\"} | A. |\n| `b` | B. |\n";
+
+#[test]
+fn a_release_removes_the_marks_of_the_line_it_archives_and_leaves_the_others() {
+    let model = format!("{MODEL}\n[features.thing]\nname = \"Thing\"\navailable = \"prod 1.0\"\n");
+    let dir = project(&model);
+    write(dir.path(), "docs/old.md", OLD_MARKS);
+    git(dir.path(), &["init", "-q"]);
+    git(dir.path(), &["add", "-A"]);
+    git(dir.path(), &["commit", "-q", "-m", "Start"]);
+
+    let before: Vec<String> = ["ascribe.toml", "docs/old.md"]
+        .iter()
+        .map(|p| read(dir.path(), p))
+        .collect();
+    let dry = ascribe(
+        dir.path(),
+        &["versions", "release", "prod 1.1", "--dry-run"],
+    );
+    assert_eq!(code_of(&dry), 0, "{}", stderr(&dry));
+    let text = stdout(&dry);
+    assert!(
+        text.contains(
+            "With prod 1.0 archived, 5 marks say nothing: would remove 3, would rewrite 2."
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains("docs/old.md:5: `prod 1.0`, removed"),
+        "{text}"
+    );
+    assert!(
+        text.contains("docs/old.md:8: `prod beta 1.0` to `prod beta`"),
+        "{text}"
+    );
+    assert!(
+        text.contains("feature thing: `prod 1.0` to `prod`"),
+        "{text}"
+    );
+    assert!(!text.contains("prod 0.9"), "{text}");
+    let after: Vec<String> = ["ascribe.toml", "docs/old.md"]
+        .iter()
+        .map(|p| read(dir.path(), p))
+        .collect();
+    assert_eq!(before, after, "a dry run writes nothing");
+
+    let json = ascribe(
+        dir.path(),
+        &[
+            "versions",
+            "release",
+            "prod 1.1",
+            "--dry-run",
+            "--format",
+            "json",
+        ],
+    );
+    let json: Value = serde_json::from_slice(&json.stdout).unwrap();
+    let cleared = &json["cleared"];
+    assert_eq!(cleared.as_array().unwrap().len(), 2, "{json}");
+    assert_eq!(cleared[0]["file"], "docs/old.md");
+    assert_eq!(cleared[0]["marks"][0]["from"], "prod 1.0");
+    assert_eq!(cleared[0]["marks"][0]["to"], Value::Null);
+    assert_eq!(cleared[0]["marks"][1]["to"], "prod beta");
+    assert_eq!(json["cleared_features"][0]["key"], "thing");
+    assert_eq!(json["cleared_features"][0]["to"], "prod");
+
+    let out = ascribe(dir.path(), &["versions", "release", "prod 1.1"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let old = read(dir.path(), "docs/old.md");
+    assert_eq!(
+        old,
+        "---\ntitle: Old\n---\n\nGone.\n\n@available: prod beta\nStill beta.\n\n@available: prod 0.9\nOlder.\n\n@available: prod 1.1\nNew.\n\n| Option | Does |\n|---|---|\n| `a` | A. |\n| `b` | B. |\n"
+    );
+    assert!(
+        read(dir.path(), "ascribe.toml").contains("available = \"prod\"\n"),
+        "{}",
+        read(dir.path(), "ascribe.toml")
+    );
+
+    // What's left of 1.0 says nothing to `ascribe check`; the mark for 0.9,
+    // which said nothing before the release, is still reported.
+    let check = ascribe(dir.path(), &["check", "--format", "json"]);
+    let report: Value = serde_json::from_slice(&check.stdout).unwrap();
+    let same: Vec<String> = report["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|d| d["slug"] == "available-same-in-every-line")
+        .map(|d| d["message"].as_str().unwrap().to_owned())
+        .collect();
+    assert_eq!(same.len(), 1, "{same:?}");
+    assert!(same[0].contains("`prod 0.9`"), "{same:?}");
 }
 
 /// A repository of two projects: `docs`, whose `ascribe.toml` writes the

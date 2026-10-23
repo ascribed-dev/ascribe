@@ -94,9 +94,12 @@ jobs:
 
   # The multi-project suite on Windows and macOS, where paths differ from
   # Linux: drive letters, backslashes, and case-insensitive file systems in
-  # each project's document selector and ownership. Ubuntu runs it above.
+  # each project's document selector and ownership. Ubuntu runs it above. An
+  # empty list (a pull request with no Windows-sensitive change, in ci.yml) skips
+  # the job: a matrix can't be empty.
   vscode-platforms:
     name: VS Code multi-project integration tests (${{ matrix.os }})
+    if: inputs.vscode-os != '[]'
     strategy:
       fail-fast: false
       matrix:

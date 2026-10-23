@@ -15,7 +15,6 @@ A file containing only `spec = "0.1"` is valid; every section has a default ([§
 
 Every problem the loader reports is in the [diagnostics reference](../checks/diagnostics/content-model.md), with its fix. References to "SPEC" are to the [Ascribe specification]({repo}/blob/main/SPEC.md). The rules a loader enforces, stated for someone writing one, are in the [`ascribe.toml` format contract](../contracts/content-model.md), with the same section numbers and key tables.
 
-@available: ascribe 0.4.1
 In VS Code, [Project Settings](../editor/settings.md#project-settings) shows a project's settings beside its `ascribe.toml`, each with its value, its default, and its line, and changes a value the file sets in place.
 
 ## Contents
@@ -154,7 +153,7 @@ Only a page type's top-level `string` fields can set it, its own or `[frontmatte
 
 A check that needs a page's description or the date it's due for review, or a report that counts pages by owner, reads the field with that role.
 
-@available: ascribe planned
+@available: ascribe 0.4.2
 A field named for a role has it, when its type is one the role takes:
 
 ```toml
@@ -181,7 +180,6 @@ team = { type = "enum(docs, platform)", role = "owner" }
 
 Without a field with the role, those checks don't look at the type's pages, and the report counts its pages as having no owner. A role changes nothing in the outputs.
 
-@available: ascribe 0.4.0
 In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) shows a page's description against its limit, and when it's due for review, from the fields with these roles.
 
 **Rules.** A role is one of the three (`model-field-role`), on a field of its type, in a page type's top-level fields, its own or `[frontmatter]`'s: not a field in an object, nor in the fragment schema. Two fields of one table can't have the same role. A role a type gives one of its own fields with `role` is that field's, and not a field's in `[frontmatter]`. A field named for a role has it only when no other field of the type is given it, and its type is one the role takes: a `description` that's a number is a field like any other.

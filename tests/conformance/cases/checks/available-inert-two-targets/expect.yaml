@@ -1,0 +1,13 @@
+description: >-
+  In a project with another value in the release target's dimension, a mark
+  of the target alone still keeps that other value out, so a mark with
+  versions every live line has is reported as before, offered the mark
+  without its versions, in each place a mark is written.
+spec: ["4.4", "9.3"]
+tags: [check]
+
+diagnostics:
+  - {slug: available-same-in-every-line, file: page.md, line: 4, column: 12}
+  - {slug: available-same-in-every-line, file: section.md, line: 8, column: 13}
+  - {slug: available-same-in-every-line, file: section.md, line: 14, column: 13}
+  - {slug: available-same-in-every-line, file: table.md, line: 8, column: 25}

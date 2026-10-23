@@ -2,7 +2,9 @@
 //! marks that write `planned` for the target rewritten to the line's
 //! version, and the line moved from `planned` to `live`, in that order, so
 //! that only the last step changes what a reader sees (README decision 20;
-//! decision #811).
+//! decision #811). When the release archives the line that was current, the
+//! marks for the target that then say nothing are removed or rewritten, as
+//! `available-same-in-every-line`'s fix does (#847).
 //!
 //! It writes nothing. [`release`] returns `ascribe.toml`'s text and each
 //! source file's after the release, and what the release changes in the
@@ -14,9 +16,11 @@ use std::path::Path;
 
 use ascribe_check::Project;
 use ascribe_core::availability::{Detail, Version, parse_availability};
-use ascribe_core::{Coded, Date, LineIndex, RelPath, Span, TextEdit, apply_edits};
+use ascribe_core::{
+    Coded, Date, FileId, Fix, LineIndex, RelPath, Span, TextEdit, apply_edits, diagnostics,
+};
 use ascribe_emit::{Contents, Output, WriteOptions, outputs_in_memory};
-use ascribe_model::{ContentModel, LineStatus, Releases, SourceBound};
+use ascribe_model::{ContentModel, LineStatus, Releases, SourceBound, in_line};
 use ascribe_resolve::FileIndex;
 use toml_edit::{Array, InlineTable, Value};
 
@@ -55,8 +59,38 @@ pub struct Released {
     /// The line that was current, moved to `archived` with no address,
     /// when no build is versioned by the target.
     pub archived: Option<String>,
+    /// Each source file with marks for the target that say nothing once
+    /// `archived` is, removed or rewritten, in path order. Its text is the
+    /// file's after the release, and replaces its text in `files`.
+    pub cleared: Vec<ClearedFile>,
+    /// Each feature whose spec says nothing for the target once `archived`
+    /// is, rewritten.
+    pub cleared_features: Vec<MovedFeature>,
     /// The builds' outputs the release changes, by build and output.
     pub outputs: Vec<ChangedOutput>,
+}
+
+/// A source file with marks that say nothing once the line that was
+/// current is archived.
+#[derive(Clone, Debug)]
+pub struct ClearedFile {
+    /// Its content path.
+    pub path: RelPath,
+    /// Its text after the release.
+    pub text: String,
+    /// Each mark removed or rewritten, in order.
+    pub marks: Vec<ClearedMark>,
+}
+
+/// One mark that says nothing, removed or rewritten.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClearedMark {
+    /// Its line, from 1, before the marks are cleared.
+    pub line: u32,
+    /// Its entry for the target, as written.
+    pub from: String,
+    /// The entry as rewritten; `None` when the mark is removed.
+    pub to: Option<String>,
 }
 
 /// A source file whose marks the release rewrites.
@@ -339,7 +373,9 @@ pub fn release(project: &Project, releasing: &Releasing<'_>) -> Result<Released,
         });
     }
     let after_move = outputs(project, load(&moved, root)?, &moved, &edited)?;
-    let after = if plan.archive.is_some() {
+    let mut cleared = Vec::new();
+    let mut cleared_features = Vec::new();
+    let after = if let Some(current) = plan.archive {
         let archived = outputs(project, load(&text, root)?, &text, &edited)?;
         let unexpected = compare(&after_move, &archived);
         if !unexpected.is_empty() {
@@ -348,7 +384,22 @@ pub fn release(project: &Project, releasing: &Releasing<'_>) -> Result<Released,
                 files: unexpected,
             });
         }
-        archived
+        // Step 7: the marks that say nothing once the line is archived.
+        let model = load(&text, root)?;
+        let clearing = clear(project, &model, &text, &edited, target, current)?;
+        if clearing.files.is_empty() && clearing.features.is_empty() {
+            archived
+        } else {
+            text = clearing.model_text;
+            cleared = clearing.files;
+            cleared_features = clearing.features;
+            let mut edited = edited;
+            for file in &cleared {
+                edited.retain(|(p, _)| *p != file.path);
+                edited.push((file.path.clone(), file.text.clone()));
+            }
+            outputs(project, load(&text, root)?, &text, &edited)?
+        }
     } else {
         after_move
     };
@@ -362,9 +413,148 @@ pub fn release(project: &Project, releasing: &Releasing<'_>) -> Result<Released,
         next: next.map(|n| n.text.clone()),
         next_added: plan.add_next,
         archived: plan.archive.map(|l| l.text.clone()),
+        cleared,
+        cleared_features,
         outputs: changed_outputs(&before, &after),
     })
 }
+
+/// What clearing the marks that say nothing changes.
+struct Clearing {
+    model_text: String,
+    files: Vec<ClearedFile>,
+    features: Vec<MovedFeature>,
+}
+
+/// The marks and features for `target` that name a version in `archived`
+/// and say nothing with `model`, whose text is `model_text`, and the source
+/// files in `edited` holding their texts after: each one
+/// `available-same-in-every-line` reports, removed or rewritten by its fix. A fix whose edits overlap one already taken in the
+/// same file is left for `ascribe check` to report.
+fn clear(
+    project: &Project,
+    model: &ContentModel,
+    model_text: &str,
+    edited: &[(RelPath, String)],
+    target: &str,
+    archived: &Version,
+) -> Result<Clearing, ReleaseError> {
+    let after = with_sources(project, model.clone(), model_text, edited);
+    let found = ascribe_check::check_files(&after);
+    let mut by: BTreeMap<FileId, Vec<(Span, &Fix)>> = BTreeMap::new();
+    for d in &found {
+        if d.slug != diagnostics::AVAILABLE_SAME_IN_EVERY_LINE {
+            continue;
+        }
+        let Some(fix) = d.fixes.first() else {
+            continue;
+        };
+        let file = d.location.file;
+        let text = if file == MODEL_FILE_ID {
+            Some(model_text)
+        } else {
+            after
+                .sources()
+                .iter()
+                .find(|s| s.id == file)
+                .map(|s| s.text.as_str())
+        };
+        // The entry the diagnostic is reported at, which names a version
+        // in the archived line. One that said nothing before is left as it
+        // was: the release didn't make it so.
+        let entry = text
+            .and_then(|t| t.get(d.location.span.range()))
+            .and_then(|entry| parse_availability(entry, 0).ok());
+        let archived_names = entry.is_some_and(|spec| {
+            spec.entries.iter().any(|e| {
+                e.target.text == target
+                    && entry_versions(&e.detail)
+                        .iter()
+                        .any(|v| in_line(archived, v))
+            })
+        });
+        if archived_names && fix.file == file {
+            by.entry(file).or_default().push((d.location.span, fix));
+        }
+    }
+    let mut out = Clearing {
+        model_text: model_text.to_owned(),
+        files: Vec::new(),
+        features: Vec::new(),
+    };
+    for (file, fixes) in by {
+        let (path, text) = if file == MODEL_FILE_ID {
+            (None, model_text)
+        } else {
+            match after.sources().iter().find(|s| s.id == file) {
+                Some(s) => (Some(&s.path), s.text.as_str()),
+                None => continue,
+            }
+        };
+        let lines = LineIndex::new(text);
+        let mut edits: Vec<TextEdit> = Vec::new();
+        let mut marks = Vec::new();
+        for (entry, fix) in fixes {
+            let overlaps = fix.edits.iter().any(|e| {
+                edits
+                    .iter()
+                    .any(|t| e.span.start() < t.span.end() && t.span.start() < e.span.end())
+            });
+            if overlaps {
+                continue;
+            }
+            edits.extend(fix.edits.iter().cloned());
+            let removed = fix.edits.iter().any(|e| e.new_text.is_empty());
+            marks.push(ClearedMark {
+                line: lines.line_col(entry.start()).map_or(0, |lc| lc.line + 1),
+                from: text.get(entry.range()).unwrap_or_default().to_owned(),
+                to: if removed {
+                    None
+                } else {
+                    fix.edits.first().map(|e| e.new_text.clone())
+                },
+            });
+        }
+        if marks.is_empty() {
+            continue;
+        }
+        let unrewritable = || ReleaseError::MarkUnrewritable {
+            path: path.map_or_else(|| "ascribe.toml".to_owned(), ToString::to_string),
+            line: marks.first().map_or(0, |m| m.line),
+            written: marks.first().map(|m| m.from.clone()).unwrap_or_default(),
+        };
+        let rewritten = apply_edits(text, &edits).map_err(|_| unrewritable())?;
+        match path {
+            Some(path) => out.files.push(ClearedFile {
+                path: path.clone(),
+                text: rewritten,
+                marks,
+            }),
+            None => {
+                let now = load(&rewritten, project.root())?;
+                for feature in &model.features {
+                    let Some(to) = now.features.iter().find(|f| f.key == feature.key) else {
+                        continue;
+                    };
+                    if to.available_text != feature.available_text {
+                        out.features.push(MovedFeature {
+                            key: feature.key.clone(),
+                            from: feature.available_text.trim().to_owned(),
+                            to: to.available_text.trim().to_owned(),
+                            kept: Vec::new(),
+                        });
+                    }
+                }
+                out.model_text = rewritten;
+            }
+        }
+    }
+    out.files.sort_by(|a, b| a.path.cmp(&b.path));
+    Ok(out)
+}
+
+/// The id a diagnostic about `ascribe.toml` is reported in.
+const MODEL_FILE_ID: FileId = FileId::new(0);
 
 /// Step 1: whether the line can be released, and what the release does.
 fn plan<'m>(model: &'m ContentModel, r: &Releasing<'_>) -> Result<Plan<'m>, ReleaseError> {
@@ -617,6 +807,26 @@ pub(crate) fn outputs(
     model_text: &str,
     edited: &[(RelPath, String)],
 ) -> Result<BTreeMap<String, Contents>, ReleaseError> {
+    let after = with_sources(project, model, model_text, edited);
+    // What a reader sees. The JSON output records where each block is
+    // written in its source and each mark as written, so every rewritten
+    // mark changes it.
+    let options = WriteOptions {
+        outputs: vec![Output::Site, Output::Plain],
+        anchors: false,
+    };
+    outputs_in_memory(&after.held_index(), project.root(), &options)
+        .map_err(|e| ReleaseError::Build(e.to_string()))
+}
+
+/// `project` with `model`, and the source files in `edited` holding their
+/// texts after.
+fn with_sources(
+    project: &Project,
+    model: ContentModel,
+    model_text: &str,
+    edited: &[(RelPath, String)],
+) -> Project {
     let sources = project
         .sources()
         .iter()
@@ -628,22 +838,13 @@ pub(crate) fn outputs(
             s
         })
         .collect();
-    let after = Project::from_parts(
+    Project::from_parts(
         project.root().to_path_buf(),
         project.content_root().clone(),
         model,
         model_text.to_owned(),
         sources,
-    );
-    // What a reader sees. The JSON output records where each block is
-    // written in its source and each mark as written, so every rewritten
-    // mark changes it.
-    let options = WriteOptions {
-        outputs: vec![Output::Site, Output::Plain],
-        anchors: false,
-    };
-    outputs_in_memory(&after.held_index(), project.root(), &options)
-        .map_err(|e| ReleaseError::Build(e.to_string()))
+    )
 }
 
 /// The files that differ between two sets of outputs.

@@ -23,7 +23,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.4.1"
+version = "0.4.2"
 edition = "2024"
 rust-version = "1.98"
 license = "MPL-2.0"
@@ -83,8 +83,10 @@ expect_used = "warn"
 panic = "warn"
 dbg_macro = "warn"
 todo = "warn"
-# Stops new long functions; the threshold is in .cargo/clippy.toml. Functions that
-# were already longer allow it by name.
+# Stops new long functions; the threshold is in .cargo/clippy.toml. At 150 it
+# flagged the worst nine of 3,011 functions when it was turned on, with no
+# natural gap lower down (clippy's default, 100, flagged 33). Those nine allow
+# it by name, and are split only while being changed for another reason.
 too_many_lines = "warn"
 # Only the binary prints: a library returns what happened and its caller
 # reports it. The crates that print (the CLI, the language server's log, the
@@ -92,6 +94,15 @@ too_many_lines = "warn"
 # through .cargo/clippy.toml.
 print_stdout = "warn"
 print_stderr = "warn"
+# Tried and not kept:
+# - `unreachable_pub` flags only `pub` items other crates can't reach anyway, so
+#   `pub(crate)` changes nothing a caller sees, and it misses what it was tried
+#   for: public items no other crate uses (#130).
+# - `indexing_slicing`: none of a sample of its ~190 hits in library code could
+#   panic on input (each is inside a bounds check or indexes data it was built
+#   from), and `get` with fallbacks that can't run hides the invariant. Try it
+#   again if a fuzz or property test finds an index panic, with
+#   `allow-indexing-slicing-in-tests`.
 
 # What ships: the binary in the npm packages and the VS Code extension. Link-time
 # optimization across every crate, in one code generation unit, makes it about

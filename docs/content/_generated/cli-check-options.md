@@ -8,9 +8,10 @@
 - `--summary`: Show how many problems each code and each file has, most first, instead of listing them, then the command that lists the first code's problems.
 - `--format <FORMAT>`: How to show the results.
   - `text` (the default): Problems with source snippets, for people.
-  - `concise`: One line per problem, `file:line: [code] message`, grouped by file: for an agent. At most 50, then how many more and the command that narrows the check.
+  - `concise`: One line per problem, `file:line: [code] message`, grouped by file: for an agent. At most 50, or as many as `--limit` says, then how many more and the command that lists them all.
   - `json`: One JSON document, for tools.
   - `prompt`: A prompt for an agent that fixes the problems: about the file, when the paths name one file, else about the project or the paths. Nothing when there are no problems.
+- `--limit <N>`: List at most this many problems with `--format concise`, or `all` of them. By default, 50. When some are left out, the list ends with how many, and the command that lists them all. Only with `--format concise`, and not with `--summary`, which lists none.
 - `--deny-warnings`: Make warnings fail the command too (exit code 1), for CI.
 - `--fix`: Apply the fixes marked safe, then report what's left. A fix is safe when applying it can't change what the page says and leaves nothing to decide, such as linking to a page's file instead of its route. Only the fixes of the diagnostics reported are applied, so with paths, those that count for them. Unsafe fixes are never applied. The report, and the exit code, are the check after the fixes.
 - `--vale`: Check the prose with Vale too, as `[checks.vale]` in `ascribe.toml` sets it up. Vale runs once, on the files reported on. Its alerts are `prose` diagnostics, at their place in the source. A Vale that can't be run is one `prose-not-checked` advice, and the rest of the check is the same. `[checks.vale] in-check = true` checks the prose without this option. Without `[checks.vale]`, it's a usage error.

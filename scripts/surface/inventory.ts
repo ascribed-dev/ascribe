@@ -496,6 +496,7 @@ function plugin(): Section {
     }
     if (file.endsWith(".lsp.json")) return "The language server";
     if (file.endsWith(".mcp.json")) return "The MCP server";
+    if (file.includes("/launcher/")) return "The launcher, which finds the `ascribe` binary to run";
     if (file.endsWith("SKILL.md")) return "The skill";
     if (file.includes("/skills/")) return "A reference the skill reads when it needs it";
     if (file.endsWith("README.md")) return "Its README, written by hand";
