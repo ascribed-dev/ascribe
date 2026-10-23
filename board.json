@@ -5765,7 +5765,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Embedded help 3: section summaries with @summary, and the diagnostics' when"
     },
     {
@@ -5854,7 +5854,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhC8-Tc",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Canary failed"
     }
   ]
