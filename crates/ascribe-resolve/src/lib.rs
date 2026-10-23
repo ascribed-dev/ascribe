@@ -103,7 +103,7 @@ pub use build::{
     DropReason, DroppedPage, FormattedField, GlossaryUse, HeadingIds, InLine, LinkTarget,
     NAV_LABEL, NavLabel, PagePermalink, PageSection, Permalink, Removal, Removed, ResolvedArm,
     ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage,
-    ResolvedRow, Scope, Substitution, glossary_targets, in_release_line, permalinks,
+    ResolvedRow, Scope, Substitution, glossary_targets, in_release_line, permalinks, select,
 };
 pub use closest::{Closest, closest_fixes, closest_targets, link_href};
 pub use expand::{

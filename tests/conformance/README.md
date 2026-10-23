@@ -434,6 +434,7 @@ outline:
   - heading: 2
     text: Install the agent
   - directive: id
+    attributes: {permalink: "true"}
     primary: install-agent
     binding: heading
   - directive: steps

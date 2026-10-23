@@ -146,6 +146,33 @@ pub(crate) fn apply(
     (blocks, modes.removed)
 }
 
+/// `blocks` as a build that selects `selection` and keeps every arm of
+/// every other dimension writes them (SPEC §9.3): conflicting arms are
+/// removed, a group left with one arm is that arm's blocks, and a group left
+/// with none is gone. Availability isn't touched: the blocks are already
+/// their build's.
+pub fn select(
+    blocks: &[ResolvedBlock],
+    selection: &[(String, Vec<String>)],
+    model: &ContentModel,
+) -> Vec<ResolvedBlock> {
+    let build = Build {
+        name: String::new(),
+        variants: VariantMode::Select(selection.to_vec()),
+        availability: AvailabilityMode::Badge,
+        versions: None,
+        line: None,
+    };
+    let mut problems = Vec::new();
+    let mut modes = Modes {
+        build: &build,
+        model,
+        problems: &mut problems,
+        removed: Vec::new(),
+    };
+    modes.list(blocks.to_vec())
+}
+
 struct Modes<'a> {
     build: &'a Build,
     model: &'a ContentModel,

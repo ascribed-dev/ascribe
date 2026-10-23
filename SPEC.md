@@ -1542,7 +1542,7 @@ You can run {product} in the browser at play.quill.dev with no local setup.
 @include: _fragments/prerequisites.md
 
 ## Install the agent
-@id: install-agent
+@id {permalink=true}: install-agent
 
 @steps
 1. Install the agent package:

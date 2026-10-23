@@ -7,7 +7,9 @@
 //! text is found in its page's plain output, images read as their alt text.
 //! An empty text would pass that, so quill's `prerequisites` and `connect`
 //! are also held the other way: the page's output under the heading is the
-//! entry's text.
+//! entry's text. Each of an entry's choices is held the same way, to the
+//! page's plain output with that value selected, and to a build's that
+//! selects it where the project has one.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
@@ -17,7 +19,8 @@ use std::path::Path;
 
 use ascribe_emit::site::HELP_PATH;
 use ascribe_emit::{Contents, EmitContext, Emitter, PlainEmitter, SiteEmitter, emit_page};
-use ascribe_resolve::{AstroRouter, Project};
+use ascribe_model::VariantMode;
+use ascribe_resolve::{AstroRouter, Project, ResolvedPage, select};
 use serde_json::{Value, json};
 use support::{cases, emit_build, example, memory_project, models, repository};
 
@@ -25,6 +28,7 @@ const MODEL: &str = "spec = \"0.1\"\n\
     [types.page.frontmatter]\ntitle = \"string\"\n\
     description = { type = \"string?\", role = \"description\" }\n\
     [dimensions.deployment]\nvalues = [\"cloud\", \"self-managed\"]\n\
+    [dimensions.pm]\nlabel = \"Package manager\"\nvalues = [\"npm\", \"pnpm\", \"yarn\"]\n\
     [phrases]\nproduct = \"Quill\"\n\
     [builds.site]\navailability = \"badge\"\n\
     [builds.cloud]\nvariants = { deployment = \"cloud\" }\navailability = \"badge\"\n\
@@ -238,6 +242,117 @@ fn a_build_with_no_permalinks_has_an_empty_table() {
     );
 }
 
+/// The goal: a product that knows its reader uses pnpm shows the section
+/// with the pnpm arm alone, as a build that selects it writes it.
+#[test]
+fn a_switcher_s_section_has_its_text_with_each_arm_chosen() {
+    let files = [(
+        "install.md",
+        "---\ntitle: Install\n---\n\n## Install\n@id {permalink=true}: install\n\n\
+         Install the agent.\n\n\
+         @variant {pm=npm}:\n```sh\nnpm install quill\n```\n\
+         @variant {pm=pnpm|yarn}:\nUse your package manager's `add`.\n\n\
+         ### Pinning\n\nPin the version.\n\
+         @end\n",
+    )];
+    let help = entry(&files, "install");
+    assert_eq!(help["summary"], "Install the agent.");
+    assert_eq!(
+        help["choices"],
+        json!({
+            "pm": {
+                "npm": "Install the agent.\n\n```sh\nnpm install quill\n```",
+                "pnpm": "Install the agent.\n\nUse your package manager's `add`.\n\n### Pinning\n\nPin the version.",
+                "yarn": "Install the agent.\n\nUse your package manager's `add`.\n\n### Pinning\n\nPin the version.",
+            },
+        })
+    );
+    // The values are in the dimension's order.
+    let values: Vec<&str> = help["choices"]["pm"]
+        .as_object()
+        .expect("a table")
+        .keys()
+        .map(String::as_str)
+        .collect();
+    assert_eq!(values, ["npm", "pnpm", "yarn"]);
+    // `text` is the switcher, as before.
+    assert!(
+        help["text"].as_str().expect("a text").contains(
+            "A reader sees one of the next 2 sections at a time, chosen by package manager."
+        ),
+        "{help}"
+    );
+}
+
+#[test]
+fn each_dimension_varies_its_own_switcher_and_leaves_the_other() {
+    let files = [(
+        "setup.md",
+        "---\ntitle: Setup\n---\n\n## Setup\n@id {permalink=true}: setup\n\n\
+         @variant {pm=npm}:\nWith npm.\n@variant {pm=pnpm}:\nWith pnpm.\n@end\n\n\
+         @variant {deployment=cloud}:\nOn cloud.\n@variant {deployment=self-managed}:\nOn your server.\n@end\n",
+    )];
+    let choices = &entry(&files, "setup")["choices"];
+    let dimensions: Vec<&str> = choices
+        .as_object()
+        .expect("a table")
+        .keys()
+        .map(String::as_str)
+        .collect();
+    assert_eq!(dimensions, ["deployment", "pm"]);
+    let deployment = "A reader sees one of the next 2 sections at a time, chosen by deployment.\n\n\
+        ### deployment: cloud\n\nOn cloud.\n\n### deployment: self-managed\n\nOn your server.";
+    let pm = "A reader sees one of the next 2 sections at a time, chosen by package manager.\n\n\
+        ### Package manager: npm\n\nWith npm.\n\n### Package manager: pnpm\n\nWith pnpm.";
+    assert_eq!(choices["pm"]["pnpm"], format!("With pnpm.\n\n{deployment}"));
+    assert_eq!(choices["deployment"]["cloud"], format!("{pm}\n\nOn cloud."));
+}
+
+#[test]
+fn a_labeled_group_is_no_choice_and_stays_in_each() {
+    let labeled = "A reader sees one of the next 2 sections at a time.\n\n\
+        ### Hardened images\n\nHardened.\n\n### Other images\n\nOther.";
+    let files = [(
+        "images.md",
+        "---\ntitle: Images\n---\n\n## Images\n@id {permalink=true}: images\n\n\
+         .Hardened images\n@variant:\nHardened.\n\n.Other images\n@variant:\nOther.\n@end\n\n\
+         ## Run\n@id {permalink=true}: run\n\n\
+         .Hardened images\n@variant:\nHardened.\n\n.Other images\n@variant:\nOther.\n@end\n\n\
+         @variant {pm=npm}:\nWith npm.\n@variant {pm=pnpm}:\nWith pnpm.\n@end\n",
+    )];
+    let images = entry(&files, "images");
+    assert_eq!(images["text"], labeled);
+    assert!(images.get("choices").is_none(), "{images}");
+    let run = entry(&files, "run");
+    assert_eq!(
+        run["choices"]["pm"]["npm"],
+        format!("{labeled}\n\nWith npm.")
+    );
+}
+
+#[test]
+fn a_section_with_no_switcher_has_no_choices() {
+    let files = [(
+        "keys.md",
+        "---\ntitle: Keys\n---\n\n## Rotate\n@id {permalink=true}: rotate\n\nRotate them.\n\n\
+         ## Cloud\n@id {permalink=true}: cloud\n\n@variant {deployment=cloud}:\nOn cloud.\n@end\n",
+    )];
+    let help = file(MODEL, &files, "site");
+    for name in ["rotate", "cloud"] {
+        let entry = &help["help"][name];
+        assert!(entry.get("choices").is_none(), "{name}: {entry}");
+    }
+    // A build that selects the dimension has reduced the switcher already.
+    let files = [(
+        "setup.md",
+        "---\ntitle: Setup\n---\n\n## Setup\n@id {permalink=true}: setup\n\n\
+         @variant {deployment=cloud}:\nOn cloud.\n@variant {deployment=self-managed}:\nOn your server.\n@end\n",
+    )];
+    let setup = &file(MODEL, &files, "cloud")["help"]["setup"];
+    assert_eq!(setup["text"], "On cloud.");
+    assert!(setup.get("choices").is_none(), "{setup}");
+}
+
 /// A page's plain output with each image read as its alt text, as an
 /// entry's text writes it.
 fn images_as_alt_text(text: &str) -> String {
@@ -266,9 +381,24 @@ fn images_as_alt_text(text: &str) -> String {
     out
 }
 
-/// Each build of `project`'s entries, each with its page's plain output,
-/// images read as their alt text: `(build, name, entry, page output)`.
-fn entries_with_pages(root: &Path, project: &Project) -> Vec<(String, String, Value, String)> {
+/// A text of an entry and the plain output it must be found in, images
+/// read as their alt text.
+struct Held {
+    build: String,
+    /// The permalink's name.
+    name: String,
+    /// What the text is: `text`, or a choice, as `choices.pm.pnpm`.
+    what: String,
+    text: String,
+    page: String,
+}
+
+/// Each build of `project`'s entries with the plain output each text must be
+/// found in: `text` in its page's plain output, and each choice in the
+/// page's output in a build that selects that value too and is otherwise
+/// the same as this one, where the project has one, and in any case in the
+/// page's plain output with its blocks selected so.
+fn entries_with_pages(root: &Path, project: &Project) -> Vec<Held> {
     let mut out = Vec::new();
     for build in &project.model().builds {
         let project = project.for_build(build);
@@ -288,6 +418,10 @@ fn entries_with_pages(root: &Path, project: &Project) -> Vec<(String, String, Va
         };
         let file: Value = serde_json::from_str(&text).expect("the file is JSON");
         let plain = PlainEmitter::new(project.model());
+        let render = |cx: &EmitContext<'_>, page: &ResolvedPage| {
+            let emitted = emit_page(&plain, cx, page).expect("the page renders");
+            images_as_alt_text(&emitted.text)
+        };
         for (name, entry) in file["help"].as_object().expect("a table") {
             let source = entry["source"].as_str().expect("a source");
             let page = resolved
@@ -295,29 +429,73 @@ fn entries_with_pages(root: &Path, project: &Project) -> Vec<(String, String, Va
                 .iter()
                 .find(|p| p.path.as_str() == source)
                 .expect("the entry's page is in the build");
-            let emitted = emit_page(&plain, &cx, page).expect("the page renders");
-            out.push((
-                build.name.clone(),
-                name.clone(),
-                entry.clone(),
-                images_as_alt_text(&emitted.text),
-            ));
+            let held = |what: String, text: &Value, page: String| Held {
+                build: build.name.clone(),
+                name: name.clone(),
+                what,
+                text: text.as_str().expect("a text").to_owned(),
+                page,
+            };
+            out.push(held("text".to_owned(), &entry["text"], render(&cx, page)));
+            let Some(choices) = entry.get("choices") else {
+                continue;
+            };
+            for (dimension, values) in choices.as_object().expect("a table") {
+                for (value, text) in values.as_object().expect("a table") {
+                    let what = format!("choices.{dimension}.{value}");
+                    let selection = vec![(dimension.clone(), vec![value.clone()])];
+                    let mut chosen = page.clone();
+                    chosen.blocks = select(&page.blocks, &selection, project.model());
+                    out.push(held(what.clone(), text, render(&cx, &chosen)));
+                    // This build's selection, with the value added.
+                    let mut wanted = match &build.variants {
+                        VariantMode::Select(selected) => selected.clone(),
+                        VariantMode::Switch => Vec::new(),
+                    };
+                    wanted.retain(|(d, _)| d != dimension);
+                    wanted.extend(selection.iter().cloned());
+                    wanted.sort();
+                    let selecting = project.model().builds.iter().find(|b| {
+                        let VariantMode::Select(selected) = &b.variants else {
+                            return false;
+                        };
+                        let mut selected = selected.clone();
+                        selected.sort();
+                        selected == wanted
+                            && b.availability == build.availability
+                            && b.versions == build.versions
+                            && b.line == build.line
+                    });
+                    if let Some(selecting) = selecting {
+                        let resolved = project.resolve_build(selecting, &router);
+                        let cx = EmitContext::new(project, root, selecting);
+                        let page = resolved
+                            .pages
+                            .iter()
+                            .find(|p| p.path.as_str() == source)
+                            .expect("a build that selects a value keeps a page that has it");
+                        out.push(held(
+                            format!("{what}, in build {}", selecting.name),
+                            text,
+                            render(&cx, page),
+                        ));
+                    }
+                }
+            }
         }
     }
     out
 }
 
-/// Every entry's text that isn't found in its page's plain output.
+/// Every entry's text that isn't found in the plain output it must be.
 fn disagreements(root: &Path, name: &str, project: &Project) -> Vec<String> {
     entries_with_pages(root, project)
         .into_iter()
-        .filter_map(|(build, permalink, entry, page)| {
-            let text = entry["text"].as_str().expect("a text");
-            (!page.contains(text)).then(|| {
-                format!(
-                    "{name}, build {build}, {permalink}: its text isn't in its page's plain output:\n{text}\n--- the page:\n{page}"
-                )
-            })
+        .filter(|held| !held.page.contains(&held.text))
+        .map(|Held { build, name: permalink, what, text, page }| {
+            format!(
+                "{name}, build {build}, {permalink}: its {what} isn't in its page's plain output:\n{text}\n--- the page:\n{page}"
+            )
         })
         .collect()
 }
@@ -381,14 +559,15 @@ fn quill_s_sections_are_their_pages_text_both_ways() {
         ("prerequisites", "## Prerequisites"),
         ("connect", "## Connect to Quill"),
     ] {
-        for (build, name, entry, page) in &entries {
-            if name != permalink {
+        for held in &entries {
+            if held.name != permalink || held.what != "text" {
                 continue;
             }
             assert_eq!(
-                entry["text"].as_str().expect("a text"),
-                after_heading(page, heading),
-                "{build}, {permalink}"
+                held.text,
+                after_heading(&held.page, heading),
+                "{}, {permalink}",
+                held.build
             );
             checked += 1;
         }

@@ -244,6 +244,12 @@ The site output holds `_ascribe/help.json`: each permalink's section of the docs
     "connect": {
       "title": "Connect to Quill",
       "text": "A reader sees one of the next 2 sections at a time, chosen by deployment.\n\n### Deployment: Quill Cloud\n\n…",
+      "choices": {
+        "deployment": {
+          "cloud": "Sign in to Quill Cloud and copy an API key from **Settings → Keys**, …",
+          "self-managed": "Point the agent at your server. …"
+        }
+      },
       "address": "https://docs.quill.dev/go/connect/",
       "source": "install-agent.md"
     },
@@ -267,10 +273,11 @@ The site output holds `_ascribe/help.json`: each permalink's section of the docs
 | `help.*.title` | The heading's text, or the page's title for a page's own permalink, as plain text: phrases substituted, and code spans as their text, without backticks. |
 | `help.*.summary` | The section's first block of content when it's a paragraph, as `text` writes it; an `@id` or `@available` before it is passed over, and the availability line an `@available` adds isn't in it. A page's own permalink has its description, or its opening's first paragraph when it has none. Absent when there's none. |
 | `help.*.text` | The section as the plain output writes it (SPEC §9.4): Markdown, with each image written as its alt text, since a product showing a bundled copy can't load an image from the docs' host. A heading's section runs from the block after the heading to the next heading at its level or above, or to the end of the container it's in (a variant arm, a note), whichever comes first; the heading itself is `title`. A page's own permalink has the page's blocks before its first heading, its opening, which may be empty. Links are absolute with `[consumer] site`, and routes from the host's root without it. Availability is written as the build has it: with badges, each mark in the section is an `Available:` line. |
+| `help.*.choices` | For a section with a switcher (SPEC §9.4), its text with each arm chosen: keyed by each dimension the section's switchers are on, then by each value their arms name, both in the content model's order. Each is `text` as a build that selects that value, and nothing else, writes it (SPEC §9.3): a switcher on the dimension is the chosen arm's content, and every other group in the section is as it was. A product that knows its reader's choice, such as their package manager, shows `choices.pm.pnpm`, and one that doesn't shows `text`. A labeled group isn't along a dimension, so it adds no key. `summary` is the section's, the same for every choice. Absent when the section has no switcher on a dimension, as in a build that selects every dimension its arms are on. |
 | `help.*.address` | The permalink's address: `[consumer] site`, the permalinks' path (§1.2's `path`), the name, and a final `/` when `trailing-slash` is `"always"`. Absent without `site`. |
 | `help.*.source` | The source path of the page the section is on, relative to the content root: §1.2's `source`. A heading in a fragment is cut from that page. |
 
-An entry's `text` is rendered from the page's resolved blocks by the plain output's own renderer, so it reads as the section does in the page's plain output. A later version adds keys and changes none of these: a formatted title, as `pages.json` has, would be a key beside `title`.
+An entry's `text` and each of its `choices` are rendered from the page's resolved blocks by the plain output's own renderer, so each reads as the section does in the page's plain output, with that value selected for a choice. A later version adds keys and changes none of these: a formatted title, as `pages.json` has, would be a key beside `title`.
 
 ## 2. What Ascribe owns
 

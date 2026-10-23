@@ -80,6 +80,7 @@ pub use availability::{InLine, in_release_line};
 pub(crate) use glossary::Terms;
 pub use glossary::glossary_targets;
 pub(crate) use inlines::prose_lists;
+pub use modes::select;
 pub use permalinks::{DeclaredPermalink, Destination, Permalink, permalinks};
 pub(crate) use phrases::substitute_text;
 pub use router::DefaultRouter;

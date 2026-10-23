@@ -1483,7 +1483,8 @@ fn templates() {
 /// The docs in a product (`docs/content/permalinks/in-your-product.md`):
 /// quill's build writes `_ascribe/help.json`, and its product's program,
 /// run with Node, prints a permalink's title, summary, and address from it,
-/// or exits 1 for a name the file doesn't have.
+/// or exits 1 for a name the file doesn't have. With `--choose pm=pnpm`, it
+/// prints the section with its pnpm arm chosen.
 #[test]
 fn help_in_a_product() {
     let dir = tempfile::tempdir().unwrap();
@@ -1495,18 +1496,18 @@ fn help_in_a_product() {
         &quill,
     );
     run(root, &["build", "--config", "examples/quill"], 0);
-    let help = |name: &str| {
+    let help = |args: &[&str]| {
         Command::new("node")
             .current_dir(root)
             .args([
                 "examples/quill/product/help.ts",
                 "examples/quill/.ascribe/build/site/site/_ascribe/help.json",
-                name,
             ])
+            .args(args)
             .output()
             .expect("run node, which the repository's engines name")
     };
-    let found = help("prerequisites");
+    let found = help(&["prerequisites"]);
     assert_eq!(
         found.status.code(),
         Some(0),
@@ -1514,7 +1515,15 @@ fn help_in_a_product() {
         String::from_utf8_lossy(&found.stderr)
     );
     expect("help-product.txt", &stdout(&found));
-    let missing = help("weave-config");
+    let chosen = help(&["install-agent", "--choose", "pm=pnpm"]);
+    assert_eq!(
+        chosen.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&chosen.stderr)
+    );
+    expect("help-product-pnpm.txt", &stdout(&chosen));
+    let missing = help(&["weave-config"]);
     assert_eq!(missing.status.code(), Some(1));
     assert_eq!(stdout(&missing), "No help for weave-config\n");
 }

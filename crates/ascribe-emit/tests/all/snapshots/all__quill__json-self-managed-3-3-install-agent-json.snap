@@ -74,7 +74,7 @@ expression: text
       "explicit": true,
       "source": {
         "file": "install-agent.md",
-        "span": [1388, 1411],
+        "span": [1405, 1428],
         "lines": [58, 58]
       }
     },
@@ -86,7 +86,7 @@ expression: text
       "explicit": true,
       "source": {
         "file": "install-agent.md",
-        "span": [2119, 2137],
+        "span": [2136, 2154],
         "lines": [88, 88]
       }
     }
@@ -445,7 +445,12 @@ expression: text
     {
       "type": "directive",
       "name": "id",
-      "attributes": [],
+      "attributes": [
+        {
+          "key": "permalink",
+          "values": ["true"]
+        }
+      ],
       "title": null,
       "primary": {
         "kind": "identifier",
@@ -455,7 +460,7 @@ expression: text
       "annotation": null,
       "source": {
         "file": "install-agent.md",
-        "span": [761, 779],
+        "span": [761, 796],
         "lines": [20, 20]
       }
     },
@@ -469,7 +474,7 @@ expression: text
       "annotation": null,
       "source": {
         "file": "install-agent.md",
-        "span": [781, 787],
+        "span": [798, 804],
         "lines": [22, 22]
       }
     },
@@ -487,12 +492,12 @@ expression: text
                 {
                   "type": "text",
                   "value": "Install the agent package:",
-                  "span": [791, 817]
+                  "span": [808, 834]
                 }
               ],
               "source": {
                 "file": "install-agent.md",
-                "span": [791, 817],
+                "span": [808, 834],
                 "lines": [23, 23]
               }
             },
@@ -509,7 +514,7 @@ expression: text
                     }
                   ],
                   "title": null,
-                  "span": [822, 890],
+                  "span": [839, 907],
                   "children": [
                     {
                       "type": "code",
@@ -518,7 +523,7 @@ expression: text
                       "literal": "npm install -g @quill/agent\n",
                       "source": {
                         "file": "install-agent.md",
-                        "span": [844, 890],
+                        "span": [861, 907],
                         "lines": [26, 28]
                       }
                     }
@@ -533,7 +538,7 @@ expression: text
                     }
                   ],
                   "title": null,
-                  "span": [894, 960],
+                  "span": [911, 977],
                   "children": [
                     {
                       "type": "code",
@@ -542,7 +547,7 @@ expression: text
                       "literal": "pnpm add -g @quill/agent\n",
                       "source": {
                         "file": "install-agent.md",
-                        "span": [917, 960],
+                        "span": [934, 977],
                         "lines": [30, 32]
                       }
                     }
@@ -557,7 +562,7 @@ expression: text
                     }
                   ],
                   "title": null,
-                  "span": [964, 1034],
+                  "span": [981, 1051],
                   "children": [
                     {
                       "type": "code",
@@ -566,7 +571,7 @@ expression: text
                       "literal": "yarn global add @quill/agent\n",
                       "source": {
                         "file": "install-agent.md",
-                        "span": [987, 1034],
+                        "span": [1004, 1051],
                         "lines": [34, 36]
                       }
                     }
@@ -575,7 +580,7 @@ expression: text
               ],
               "source": {
                 "file": "install-agent.md",
-                "span": [822, 1042],
+                "span": [839, 1059],
                 "lines": [25, 37]
               }
             }
@@ -589,12 +594,12 @@ expression: text
                 {
                   "type": "text",
                   "value": "Verify the install:",
-                  "span": [1047, 1066]
+                  "span": [1064, 1083]
                 }
               ],
               "source": {
                 "file": "install-agent.md",
-                "span": [1047, 1066],
+                "span": [1064, 1083],
                 "lines": [39, 39]
               }
             },
@@ -605,7 +610,7 @@ expression: text
               "literal": "quill --version\n",
               "source": {
                 "file": "install-agent.md",
-                "span": [1071, 1105],
+                "span": [1088, 1122],
                 "lines": [41, 43]
               }
             },
@@ -615,17 +620,17 @@ expression: text
                 {
                   "type": "text",
                   "value": "The command prints the installed version, 3.4.1.",
-                  "span": [1110, 1162]
+                  "span": [1127, 1179]
                 }
               ],
               "source": {
                 "file": "install-agent.md",
-                "span": [1110, 1162],
+                "span": [1127, 1179],
                 "lines": [45, 45]
               },
               "substitutions": [
                 {
-                  "span": [1152, 1161],
+                  "span": [1169, 1178],
                   "key": "version",
                   "value": "3.4.1"
                 }
@@ -641,7 +646,7 @@ expression: text
               "annotation": null,
               "source": {
                 "file": "install-agent.md",
-                "span": [1167, 1172],
+                "span": [1184, 1189],
                 "lines": [47, 47]
               }
             },
@@ -651,22 +656,22 @@ expression: text
                 {
                   "type": "text",
                   "value": "The agent needs write access to your repository's ",
-                  "span": [1176, 1226]
+                  "span": [1193, 1243]
                 },
                 {
                   "type": "code",
                   "value": ".quill/",
-                  "span": [1226, 1235]
+                  "span": [1243, 1252]
                 },
                 {
                   "type": "text",
                   "value": " directory.",
-                  "span": [1235, 1246]
+                  "span": [1252, 1263]
                 }
               ],
               "source": {
                 "file": "install-agent.md",
-                "span": [1176, 1246],
+                "span": [1193, 1263],
                 "lines": [48, 48]
               }
             }
@@ -680,22 +685,22 @@ expression: text
                 {
                   "type": "text",
                   "value": "Create ",
-                  "span": [1251, 1258]
+                  "span": [1268, 1275]
                 },
                 {
                   "type": "code",
                   "value": "quill.yaml",
-                  "span": [1258, 1270]
+                  "span": [1275, 1287]
                 },
                 {
                   "type": "text",
                   "value": " at the root of your repository:",
-                  "span": [1270, 1302]
+                  "span": [1287, 1319]
                 }
               ],
               "source": {
                 "file": "install-agent.md",
-                "span": [1251, 1302],
+                "span": [1268, 1319],
                 "lines": [50, 50]
               }
             },
@@ -706,12 +711,12 @@ expression: text
               "literal": "agent:\n  version: 3.4.1\n  watch: docs/\n",
               "source": {
                 "file": "install-agent.md",
-                "span": [1307, 1386],
+                "span": [1324, 1403],
                 "lines": [52, 56]
               },
               "substitutions": [
                 {
-                  "span": [1352, 1361],
+                  "span": [1369, 1378],
                   "key": "version",
                   "value": "3.4.1"
                 }
@@ -722,7 +727,7 @@ expression: text
       ],
       "source": {
         "file": "install-agent.md",
-        "span": [788, 1386],
+        "span": [805, 1403],
         "lines": [23, 56]
       }
     },
@@ -737,17 +742,17 @@ expression: text
         {
           "type": "text",
           "value": "Connect to Quill",
-          "span": [1391, 1411]
+          "span": [1408, 1428]
         }
       ],
       "source": {
         "file": "install-agent.md",
-        "span": [1388, 1411],
+        "span": [1405, 1428],
         "lines": [58, 58]
       },
       "substitutions": [
         {
-          "span": [1402, 1411],
+          "span": [1419, 1428],
           "key": "product",
           "value": "Quill"
         }
@@ -771,7 +776,7 @@ expression: text
       "annotation": null,
       "source": {
         "file": "install-agent.md",
-        "span": [1412, 1441],
+        "span": [1429, 1458],
         "lines": [59, 59]
       }
     },
@@ -788,7 +793,7 @@ expression: text
             }
           ],
           "title": null,
-          "span": [1443, 1611],
+          "span": [1460, 1628],
           "children": [
             {
               "type": "paragraph",
@@ -796,7 +801,7 @@ expression: text
                 {
                   "type": "text",
                   "value": "Sign in to Quill Cloud and copy an API key from ",
-                  "span": [1472, 1516]
+                  "span": [1489, 1533]
                 },
                 {
                   "type": "strong",
@@ -804,35 +809,35 @@ expression: text
                     {
                       "type": "text",
                       "value": "Settings → Keys",
-                      "span": [1518, 1535]
+                      "span": [1535, 1552]
                     }
                   ],
-                  "span": [1516, 1537]
+                  "span": [1533, 1554]
                 },
                 {
                   "type": "text",
                   "value": ", then add it to ",
-                  "span": [1537, 1554]
+                  "span": [1554, 1571]
                 },
                 {
                   "type": "code",
                   "value": "quill.yaml",
-                  "span": [1554, 1566]
+                  "span": [1571, 1583]
                 },
                 {
                   "type": "text",
                   "value": ":",
-                  "span": [1566, 1567]
+                  "span": [1583, 1584]
                 }
               ],
               "source": {
                 "file": "install-agent.md",
-                "span": [1472, 1567],
+                "span": [1489, 1584],
                 "lines": [62, 62]
               },
               "substitutions": [
                 {
-                  "span": [1483, 1490],
+                  "span": [1500, 1507],
                   "key": "cloud",
                   "value": "Quill Cloud"
                 }
@@ -845,7 +850,7 @@ expression: text
               "literal": "cloud:\n  api_key: ${QUILL_KEY}\n",
               "source": {
                 "file": "install-agent.md",
-                "span": [1569, 1611],
+                "span": [1586, 1628],
                 "lines": [64, 67]
               }
             }
@@ -860,7 +865,7 @@ expression: text
             }
           ],
           "title": null,
-          "span": [1613, 1804],
+          "span": [1630, 1821],
           "children": [
             {
               "type": "paragraph",
@@ -868,17 +873,17 @@ expression: text
                 {
                   "type": "text",
                   "value": "Point the agent at your server. Self-managed servers must run Quill Server 3.3 or later.",
-                  "span": [1649, 1741]
+                  "span": [1666, 1758]
                 }
               ],
               "source": {
                 "file": "install-agent.md",
-                "span": [1649, 1741],
+                "span": [1666, 1758],
                 "lines": [70, 70]
               },
               "substitutions": [
                 {
-                  "span": [1711, 1720],
+                  "span": [1728, 1737],
                   "key": "product",
                   "value": "Quill"
                 }
@@ -891,7 +896,7 @@ expression: text
               "literal": "server:\n  url: https://quill.internal.example.com\n",
               "source": {
                 "file": "install-agent.md",
-                "span": [1743, 1804],
+                "span": [1760, 1821],
                 "lines": [72, 75]
               }
             }
@@ -900,7 +905,7 @@ expression: text
       ],
       "source": {
         "file": "install-agent.md",
-        "span": [1443, 1809],
+        "span": [1460, 1826],
         "lines": [61, 76]
       }
     },
@@ -915,12 +920,12 @@ expression: text
         {
           "type": "text",
           "value": "Troubleshooting",
-          "span": [2122, 2137]
+          "span": [2139, 2154]
         }
       ],
       "source": {
         "file": "install-agent.md",
-        "span": [2119, 2137],
+        "span": [2136, 2154],
         "lines": [88, 88]
       }
     },
@@ -937,7 +942,7 @@ expression: text
       "annotation": null,
       "source": {
         "file": "install-agent.md",
-        "span": [2138, 2158],
+        "span": [2155, 2175],
         "lines": [89, 89]
       }
     },
@@ -958,22 +963,22 @@ expression: text
             {
               "type": "text",
               "value": "If the agent exits immediately, check the log at ",
-              "span": [2182, 2231]
+              "span": [2199, 2248]
             },
             {
               "type": "code",
               "value": "~/.quill/agent.log",
-              "span": [2231, 2251]
+              "span": [2248, 2268]
             },
             {
               "type": "text",
               "value": ".",
-              "span": [2251, 2252]
+              "span": [2268, 2269]
             }
           ],
           "source": {
             "file": "install-agent.md",
-            "span": [2182, 2252],
+            "span": [2199, 2269],
             "lines": [92, 92]
           }
         },
@@ -983,7 +988,7 @@ expression: text
             {
               "type": "text",
               "value": "A common cause is an expired API key. Generate a new key, then restart the agent. See ",
-              "span": [2254, 2340]
+              "span": [2271, 2357]
             },
             {
               "type": "link",
@@ -1000,25 +1005,25 @@ expression: text
                 {
                   "type": "text",
                   "value": "Rotate keys",
-                  "span": [2340, 2363]
+                  "span": [2357, 2380]
                 }
               ],
-              "span": [2340, 2363]
+              "span": [2357, 2380]
             },
             {
               "type": "text",
               "value": ".",
-              "span": [2363, 2364]
+              "span": [2380, 2381]
             }
           ],
           "source": {
             "file": "install-agent.md",
-            "span": [2254, 2364],
+            "span": [2271, 2381],
             "lines": [94, 94]
           },
           "links": [
             {
-              "span": [2340, 2363],
+              "span": [2357, 2380],
               "kind": "link",
               "destination": "keys.md#rotate-keys",
               "target": {
@@ -1034,7 +1039,7 @@ expression: text
       ],
       "source": {
         "file": "install-agent.md",
-        "span": [2160, 2369],
+        "span": [2177, 2386],
         "lines": [91, 95]
       }
     }
