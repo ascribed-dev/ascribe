@@ -431,8 +431,11 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 ### ASC082 `model-name-multiple-roles`
 @id {permalink=true}: ASC082
+@summary: A name used in more than one role (dimension name, dimension value, lifecycle state, or feature key), or a dimension value in more than one dimension.
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** A name used in more than one role (dimension name, dimension value, lifecycle state, or feature key), or a dimension value in more than one dimension.
 
 **Message:** `{name}` is used as both \{role-a} and \{role-b}; a name can have only one role, so availability specs stay unambiguous
 

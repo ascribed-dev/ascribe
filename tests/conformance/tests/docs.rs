@@ -150,6 +150,14 @@ fn the_diagnostics_reference_is_current() {
             "docs/content/{page} doesn't include _generated/{name}"
         );
     }
+    // Each diagnostic's section has a summary, for a product's help.
+    let missing: Vec<&str> = fragments
+        .iter()
+        .flat_map(|(_, text)| text.split("\n### ").skip(1))
+        .filter(|entry| !entry.contains("\n@summary: "))
+        .map(|entry| entry.lines().next().unwrap_or_default())
+        .collect();
+    assert!(missing.is_empty(), "no @summary: {missing:?}");
 }
 
 /// The pages of the diagnostics reference, in `docs/content/checks/diagnostics/`,
@@ -977,7 +985,13 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
             .filter(|e| is_model(e) && model_group(e) == *group)
         {
             page_of.insert(&entry.code, "content-model");
-            write_entry(&mut content_model, entry, entry.when.as_deref(), pages);
+            // A model diagnostic with a row in the spec's table says when by
+            // the row's condition, as the source-file diagnostics do.
+            let condition = entry.when.as_deref().or_else(|| {
+                let row = entry.row.as_deref()?;
+                Some(row.split_once(" | ").map_or(row, |(_, c)| c))
+            });
+            write_entry(&mut content_model, entry, condition, pages);
         }
     }
 
