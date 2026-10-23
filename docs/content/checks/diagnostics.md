@@ -14,12 +14,13 @@ A *problem* is what Ascribe found in your project, at one place. A *diagnostic* 
 - A diagnostic about `ascribe.toml` (a name that starts with `model-`) stops everything else when it's an error: every other check depends on the content model.
 - In the messages below, `{name}` stands for a value filled in from your source.
 
-The diagnostics are on four pages, by what they're about:
+The diagnostics are on five pages, by what they're about:
 
 - [Directives](diagnostics/directives.md): attributes, directives and their containers, binding, titles, ids, includes, variants, availability, steps, details, and widgets.
 - [Links, pages, and sources](diagnostics/pages.md): links, images, phrases, headings, frontmatter, lists, files, snippets, source copies, acknowledgements, permalinks, memo files, navigation, and the glossary.
 - [The content model](diagnostics/content-model.md): `ascribe.toml`.
-- [Content checks](diagnostics/content-checks.md): the content's quality, which a project can set the level of.
+- [Content checks](diagnostics/content-checks.md): the content's quality, which a project can set the level of: the checks of pages and of the project as a whole.
+- [Content checks of outputs and the site](diagnostics/output-checks.md): the rest of the content checks: outputs, prose through Vale, external links, the published site, and tested examples.
 
 Each entry ends with the section of the [directive reference](../writing/directives.md), [directive syntax](../writing/syntax.md), [frontmatter](../writing/frontmatter.md), [phrases, links, and images](../writing/inline.md), or the [`ascribe.toml` reference](../content-model/index.md) about what it checks, which has examples, and links to its part of the specification.
 
@@ -39,7 +40,7 @@ Each diagnostic says what kind of next step it has. `ascribe check --format json
 
 ## Setting a check's level
 
-A check about the content's quality, rather than whether the project is valid, can be set to another level, or turned off, in [`[checks]`](../content-model/checks.md#19-checks) in `ascribe.toml`. Those checks are listed under [Content checks](diagnostics/content-checks.md), and their entries say they're configurable. Every other diagnostic is about whether the project is valid, which a project can't lower or turn off.
+A check about the content's quality, rather than whether the project is valid, can be set to another level, or turned off, in [`[checks]`](../content-model/checks.md#19-checks) in `ascribe.toml`. Those checks are listed under [Content checks](diagnostics/content-checks.md) and [Content checks of outputs and the site](diagnostics/output-checks.md), and their entries say they're configurable. Every other diagnostic is about whether the project is valid, which a project can't lower or turn off.
 
 ## Index
 

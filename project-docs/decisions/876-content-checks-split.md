@@ -1,0 +1,5 @@
+---
+section: The docs and the site
+---
+
+**The diagnostics reference's content checks are two pages, split at `FIRST_ON_OUTPUT_CHECKS` in `tests/conformance/tests/docs.rs`.** `docs/content/checks/diagnostics/content-checks.md` keeps the checks of pages and of the project as a whole, with what it says about setting a check's level; `docs/content/checks/diagnostics/output-checks.md` has the rest, from outputs to tested examples, each area whole and in `AREAS`' order. The generator writes each page its fragment, as it does the source-file entries at `FIRST_ON_PAGES` ([decision #394](394-long-pages-split.md)), the index links each entry to its page, and the links and permalinks into the moved entries follow. _Why:_ the content checks' page was 50,673 characters in build `site`, over `page-size`'s 50,000, and its fragment grows with every content check; raising the limit would hide what it's for. _From:_ Kyle, 22 October 2026, in [issue #876](https://github.com/ascribed-dev/ascribe/issues/876).

@@ -29,7 +29,7 @@ For a source in another repository, the folder is its copies, `sources/<name>/`.
 - **`label`** is what a page shows before the entry's value: `Node` in "Node 24.9.0". Without one, it's the entry's name.
 - **A key not in this table,** or in an entry, is an error, as in `ascribe.toml`.
 
-A config that can't be read is an error for `ascribe observe`, which exits 2, and the warning [`examples-config-invalid`](../checks/diagnostics/content-checks.md#ASC201) for `ascribe check`, at the source in `ascribe.toml`. Then none of the source's files is an example.
+A config that can't be read is an error for `ascribe observe`, which exits 2, and the warning [`examples-config-invalid`](../checks/diagnostics/output-checks.md#ASC201) for `ascribe check`, at the source in `ascribe.toml`. Then none of the source's files is an example.
 
 ## 3. The observation
 
@@ -62,9 +62,9 @@ node = "v24.9.0"
 - **A hash** is `sha256-lf:` and 64 lowercase hexadecimal digits: the SHA-256 of the file's bytes with each CR LF read as LF, so a file hashes the same on a Windows checkout and a Linux one.
 - **The text** is the same for the same observation on every platform: the keys in the order above, LF line endings, and nothing that changes from run to run, such as a time.
 
-An observation with a key not in this table can't be read, and reports [`examples-config-invalid`](../checks/diagnostics/content-checks.md#ASC201), once for each problem. One whose `version` isn't `1` is in a format this version of Ascribe doesn't know: it's one `examples-config-invalid`, naming the `ascribe` that wrote it, and nothing else in it is read. Either way it counts for none of its files, and the other observations still count.
+An observation with a key not in this table can't be read, and reports [`examples-config-invalid`](../checks/diagnostics/output-checks.md#ASC201), once for each problem. One whose `version` isn't `1` is in a format this version of Ascribe doesn't know: it's one `examples-config-invalid`, naming the `ascribe` that wrote it, and nothing else in it is read. Either way it counts for none of its files, and the other observations still count.
 
-Each observation is whole and separate, with its own environment and hashes. One whose name nothing writes any more stays until someone deletes it, and goes stale like any other. A file one lists that isn't in the folder reports [`observation-file-missing`](../checks/diagnostics/content-checks.md#ASC202), advice, at its line in the observation.
+Each observation is whole and separate, with its own environment and hashes. One whose name nothing writes any more stays until someone deletes it, and goes stale like any other. A file one lists that isn't in the folder reports [`observation-file-missing`](../checks/diagnostics/output-checks.md#ASC202), advice, at its line in the observation.
 
 ## 4. An example's status
 
@@ -73,8 +73,8 @@ For a snippet of an example, the observations that can be read decide its status
 | Status | When | What the page shows | What `ascribe check` reports |
 |---|---|---|---|
 | current | At least one lists it with the hash it has now | The tested line, from those | Nothing |
-| stale | One or more list it, none with the hash it has now | Nothing | [`example-stale`](../checks/diagnostics/content-checks.md#ASC199), advice |
-| unobserved | None lists it, or there's no observation | Nothing | [`example-unobserved`](../checks/diagnostics/content-checks.md#ASC200), advice |
+| stale | One or more list it, none with the hash it has now | Nothing | [`example-stale`](../checks/diagnostics/output-checks.md#ASC199), advice |
+| unobserved | None lists it, or there's no observation | Nothing | [`example-unobserved`](../checks/diagnostics/output-checks.md#ASC200), advice |
 
 For a source in another repository, the observation and the file are the copies, so an example's status is what it was at the pin. Its advice says the fix is in that repository, and arrives with the next `ascribe sources update`. The observation usually lists more files than the docs have copies of, which is expected: only the files snippets use are copied.
 

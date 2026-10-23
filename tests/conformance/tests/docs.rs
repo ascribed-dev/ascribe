@@ -155,16 +155,21 @@ fn the_diagnostics_reference_is_current() {
 /// The pages of the diagnostics reference, in `docs/content/checks/diagnostics/`,
 /// each with the fragment it lists the diagnostics of. The reference's own page has
 /// the index.
-const DIAGNOSTICS_PAGES: [(&str, &str); 4] = [
+const DIAGNOSTICS_PAGES: [(&str, &str); 5] = [
     ("directives", "diagnostics-directives.md"),
     ("pages", "diagnostics-pages.md"),
     ("content-model", "diagnostics-content-model.md"),
     ("content-checks", "diagnostics-content-checks.md"),
+    ("output-checks", "diagnostics-output-checks.md"),
 ];
 
 /// The first construct of the source-file diagnostics listed on the `pages`
 /// page; those before it are on the `directives` page.
 const FIRST_ON_PAGES: &str = "Links";
+
+/// The first area of the content checks listed on the `output-checks` page;
+/// those before it are on the `content-checks` page.
+const FIRST_ON_OUTPUT_CHECKS: &str = "outputs";
 
 /// Each phrase in `docs/ascribe.toml` whose value is also in another file
 /// has the value that file has. The `version` phrase is `[releases.ascribe]`'s
@@ -927,7 +932,8 @@ const HEADER: &str = "@memo: Generated from tests/conformance/diagnostics.toml b
 
 /// The fragments, by file name: an index of every diagnostic, the
 /// source-file diagnostics in two (directives, and links, pages, and
-/// sources), the content model's, and the content checks. The index links to each entry on the page
+/// sources), the content model's, and the content checks in two (pages and
+/// the project, and outputs, prose, links, the site, and examples). The index links to each entry on the page
 /// that includes its fragment (SPEC §4.2).
 fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)> {
     let active: Vec<&Entry> = registry.entries.iter().collect();
@@ -975,12 +981,24 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         }
     }
 
+    let split = AREAS
+        .iter()
+        .position(|(area, _)| *area == FIRST_ON_OUTPUT_CHECKS)
+        .unwrap_or_else(|| {
+            panic!("no area {FIRST_ON_OUTPUT_CHECKS}: change FIRST_ON_OUTPUT_CHECKS")
+        });
     let mut content_checks = String::new();
-    for (area, title) in AREAS {
-        let _ = write!(content_checks, "\n## {title}\n");
+    let mut output_checks = String::new();
+    for (i, (area, title)) in AREAS.iter().enumerate() {
+        let (out, page) = if i < split {
+            (&mut content_checks, "content-checks")
+        } else {
+            (&mut output_checks, "output-checks")
+        };
+        let _ = write!(out, "\n## {title}\n");
         for entry in active.iter().filter(|e| e.area.as_deref() == Some(*area)) {
-            page_of.insert(&entry.code, "content-checks");
-            write_entry(&mut content_checks, entry, entry.when.as_deref(), pages);
+            page_of.insert(&entry.code, page);
+            write_entry(out, entry, entry.when.as_deref(), pages);
         }
     }
     let unlisted: Vec<&str> = active
@@ -1005,6 +1023,10 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         (
             "diagnostics-content-checks.md".to_owned(),
             with_memo(&content_checks),
+        ),
+        (
+            "diagnostics-output-checks.md".to_owned(),
+            with_memo(&output_checks),
         ),
     ]
 }
