@@ -42,14 +42,14 @@ From the proposal's design:
 
 From this plan:
 
-10. **The summary, until phase 3:** the section's first block of content when it's a paragraph, as the plain output writes it; absent otherwise. A `@memo`, an `@intended`, or an `@available` between the heading and that block is passed over, and the availability line `@available` adds isn't in the summary. Phase 3 adds the marker in front of this rule, and changes no key.
+10. **The summary, until phase 3:** the section's first block of content when it's a paragraph, as the plain output writes it; absent otherwise. A `@memo`, an `@intended`, or an `@available` between the heading and that block is passed over, and the availability line `@available` adds isn't in the summary. Phase 3 replaces this with the section's own `@summary`, and from then on nothing is guessed from the prose: `summary` is the section's summary, or absent. The key doesn't change.
 11. **The section is rendered, not cut.** An entry's `text` comes from the plain renderer's own block loop (`Renderer::blocks`) over the section's blocks, so a section can't read differently in the file and on the page. A test holds every entry's `text` to its page's plain output: found there, in order, once images are read as their alt text. Since an empty `text` passes that, the thread's two sections are also held the other way: the page's plain output between the heading and the section's end is the entry's `text`. If a section can't be rendered alone and agree, stop and report: the fallback is cutting the plain output's text by its headings, which changes how decision 10 finds the summary.
 12. **The file is the site emitter's,** in `crates/ascribe-emit/src/site/help.rs` beside `permalinks.rs`, calling the plain renderer through a `pub(crate)` entry. It's listed `generated` in the site output's manifest.
 13. **Without `[consumer] site`,** links in `text` stay routes from the host's root and `address` is absent. The docs page says a project whose product shows its help sets `site`; nothing reports it, as nothing reports `permalinks.json`'s routes.
-14. **The marker is a decision of its own, before phase 3** (phase 2). Nothing before phase 3 depends on its syntax.
+14. **The section summary is a decision of its own, before phase 3** (phase 2). Phase 1's measurements showed no rule over the prose picks well, so a summary is something a writer or an agent decides. The recommendation there: `@summary`, general to every section, with `@note`'s two bindings: `@summary: text` gives its own text, which the page's body doesn't show; `@summary` alone makes the next block the summary, rendered where it is. Embedded help is its first reader, and a check asks for one only on a permalink, as advice unless a project raises it. Nothing before phase 3 depends on its syntax.
 15. **The CLI surface is the proposal's,** `ascribe resolve go:<name>` and `ascribe_resolve` with the same, in phase 7. A name after `go:` is a permalink, never a page path, since a page path can't start with `go:` and a colon.
 
-The contracts, and the phase that records each in `project-docs/decisions/`: the file and its format, output-layout contract §1.7 (phase 1); the marker, SPEC §4 and Appendix A, what the site output writes for it (`site-render.md`, with review's source anchors), and the JSON output's shape for it (phases 2 and 3); the check, `diagnostics.toml` (phase 4); the per-line addresses, `@ascribed/astro`'s reference (phase 5); the arms' key, §1.7 (phase 6); `resolve`'s `go:` and its JSON (phase 7).
+The contracts, and the phase that records each in `project-docs/decisions/`: the file and its format, output-layout contract §1.7 (phase 1); the section summary, SPEC §3, §4, and Appendix A, what each output writes for it (`site-render.md`, with review's source anchors), and the JSON output's shape for it (phases 2 and 3); the checks, `diagnostics.toml` (phase 4); the per-line addresses, `@ascribed/astro`'s reference (phase 5); the arms' key, §1.7 (phase 6); `resolve`'s `go:` and its JSON (phase 7).
 
 ## The thread
 
@@ -73,8 +73,8 @@ The thread also builds Ascribe's own docs' file and records what the first-parag
 
 | Left out | Phase |
 |---|---|
-| A section marking its summary, and the diagnostics' **When** paragraphs as theirs | 2 (the decision), 3 |
-| A check of the summary, and seeing an entry in the editor | 4 |
+| A section's own summary, `@summary`, and the diagnostics' `when` as theirs | 2 (the decision), 3 |
+| Checks for a missing or long summary, seeing a summary in the editor, and agents told to write them | 4 |
 | Fetching an entry for the product's line from the docs site | 5 |
 | A product choosing its reader's arm of a switcher | 6 |
 | Reading an entry from the command line and the MCP server | 7 |
@@ -84,14 +84,14 @@ The thread also builds Ascribe's own docs' file and records what the first-parag
 | Phase | Result |
 |---|---|
 | [1: The thread](phase-1-thread.md) | A build writes `_ascribe/help.json`, and a product's build shows a permalink's summary and text from it, with "Read more". |
-| [2: Decide the marker](phase-2-marker-decision.md) | The maintainer settles how a section marks its summary. |
-| [3: The marked summary](phase-3-marked-summary.md) | A writer marks a section's summary with `@summary`, and the docs' diagnostics show their **When** paragraphs. |
-| [4: Sized for a product](phase-4-sized.md) | `ascribe check` reports a summary too long or missing, and the editor shows what a product gets for a permalink. |
+| [2: Decide the section summary](phase-2-marker-decision.md) | The maintainer settles how a section has a summary. |
+| [3: Section summaries](phase-3-marked-summary.md) | A writer gives any section a summary with `@summary`, its own text or a block on the page, and the docs' diagnostics have theirs. |
+| [4: Summaries checked and shown](phase-4-sized.md) | `ascribe check` reports a permalink with no summary and a summary too long, the editor shows a section's summary, and agents are told to write them. |
 | [5: Fetched for its line](phase-5-fetched.md) | `@ascribed/astro` serves each entry of each line's `help.json` at its own address, and a product fetches its line's, falling back to its bundled copy. |
 | [6: The reader's arm](phase-6-arms.md) | A product shows a section's `pnpm` arm to a reader it knows uses pnpm. |
 | [7: For agents](phase-7-agents.md) | `ascribe resolve go:weave-config` and `ascribe_resolve` show an entry. |
 
-Phase 1 is the thread, through the riskiest seam. After it, the order is by risk: the marker is a language change and the summary's design, so its decision and its build come next, while phase 1's measurements are fresh; the check and the editor follow, once a summary can be marked; phase 5 adds a second contract, addresses on a host, and meets versioned builds; phase 6 adds a key products ask for after using phase 1; phase 7 is a surface over what exists.
+Phase 1 is the thread, through the riskiest seam. After it, the order is by risk: the section summary is a language change and the summary's design, so its decision and its build come next, while phase 1's measurements are fresh; the check and the editor follow, once a summary can be marked; phase 5 adds a second contract, addresses on a host, and meets versioned builds; phase 6 adds a key products ask for after using phase 1; phase 7 is a surface over what exists.
 
 Every phase's result is something a person or an agent can use, but phase 2's: a decision, which comes before phase 3 because phase 3 ships a contract.
 

@@ -1,38 +1,61 @@
-# Phase 2: Decide the marker
+# Phase 2: Decide the section summary
 
 Part of [Embedded help](README.md). Needs phase 1's measurements. A decision by the maintainer; no code.
 
 ## Goal
 
-The maintainer settles how a section marks its summary, so phase 3 can build it. Phase 3 ships a change to the language, which is a contract (SPEC §4, Appendix A), so the syntax is settled first, not chosen while building.
+The maintainer settles how a section has a summary, so phase 3 can build it. Phase 3 changes the language, which is a contract (SPEC §4, Appendix A), so the syntax is settled first, not chosen while building.
 
-## Context
+## What the measurements say
 
-- The proposal's "Why these choices", and its open question on the marker.
-- Phase 1's measurements of the docs' file: how often the first paragraph is the right summary, too long, or missing, and the diagnostics' metadata lines.
-- SPEC §3 (the directive line and its forms), §4 (the built-in directives), and `@steps` and `@available`, which are the nearest: a directive that wraps content and changes how it's read, not what it says.
-- `tests/conformance/tests/docs.rs`: how the diagnostics reference writes each section, which phase 3's generator changes.
+Phase 1 ([#885](https://github.com/ascribed-dev/ascribe/pull/885)) built the docs' `help.json`: 326 entries. With the first-paragraph rule:
 
-## The question
+- **Diagnostics, 240 entries:** every summary is the metadata line ("Error · file level · next step: choose · SPEC §3.3"). 155 have a **When** paragraph (median 72 characters, 7 over 300); 85 have none, since `diagnostics.toml` gives them no `when`.
+- **Long openings, 37 entries:** the first paragraph is over 300 characters (the longest 867), all command and guide sections. Their first sentence would do: median 185, 5 still over 300.
+- **Lead-ins, 7 entries:** the first paragraph ends in ":" and introduces a list or code, as quill's `prerequisites` does ("Before you install the agent, make sure you have:").
+- **No summary, 2 entries:** one section opens with a heading, one with a table.
 
-How does a section mark the paragraph a product shows as its summary?
+So no rule over the prose picks well: the right summary is in the wrong paragraph for diagnostics, inside a paragraph for long openings, and spread over two blocks for lead-ins. A summary is something a writer, or an agent, decides.
 
-1. **A container around the text,** `@summary:` … `@end`, which every output writes as its content. It marks the text itself, survives the paragraph moving within the section, and needs no counting. The site output writes nothing for it; the plain output writes its content; the JSON output carries it as a container, as `@steps` is.
-2. **An attribute on the section's heading,** `@id {permalink=true, summary=2}`, naming a paragraph by its place. It adds no directive, and breaks when a paragraph is added above.
-3. **A line form before the paragraph,** `@summary`, wrapping the block after it, as `@available` does. Shorter than the container, and limited to one block.
+## The recommendation
 
-**Recommended:** 1, the container, or 3 if one block is always enough: the measurements say whether any section wants two paragraphs.
+**A section summary, `@summary`, for every section, with `@note`'s two bindings** (SPEC §4: "self (with primary), else following block"):
 
-Also settled here, whichever form:
+```markdown
+## `ascribe versions release`
+@id {permalink=true}: cli-versions-release
 
-- **More than one marker in a section** is an error, at the second.
-- **A marker in a section with no permalink** is advice: it marks nothing anyone reads.
-- **A marker in a fragment** marks the summary of the section it lands in, on each page that includes it, as a fragment's heading permalink is cut from its recorded page (decision 7).
-- **What the marker may hold:** paragraphs only, or any block. Recommended: paragraphs, since a summary is shown as a sentence or two.
-- **What the site output writes for it,** a contract (`docs/content/contracts/site-render.md`). Every container directive writes an element today, and §7's source anchors are built on that. A marker that writes nothing needs a sentence there, and a rule for what review anchors the marked paragraphs to: recommended, their own source, as if the marker weren't there.
-- **Its shape in the JSON output,** a contract too: a container, as `@steps` is, for option 1; an annotation on the block, for option 3.
-- **A marker inside a variant arm:** the summary of the section for that arm, which phase 6's `choices` would carry, or an error. Recommended: an error until phase 6, which can allow it.
-- **A label at the start of the marked paragraph.** The diagnostics reference writes each paragraph as `**When:** …`, so marking it as it is gives every diagnostic the summary "When: …". Either the summary drops a leading bold run that ends in a colon, a rule that also serves a writer's `**Note:** …`, and the reference's pages read as they do; or the generator writes the label outside the marker and the sentence inside, and the reference's look changes. Recommended: the rule, since it leaves the generated pages as they are.
+@summary
+Releases a line.
+
+It rewrites each mark's `planned` for its target to the line's version, …
+```
+
+```markdown
+## ASC149 `page-size`
+@id {permalink=true}: ASC149
+@summary: A page's Markdown, as a build writes it for agents to read, is as long as the limit or longer.
+```
+
+- **`@summary` with no primary** makes the next block the summary, and the block renders where it is: a writer picks a sentence the page already shows, and nothing is written twice. To pick a first sentence, the writer makes it a paragraph of its own.
+- **`@summary: text`** gives the summary as its own text, which the page's body doesn't show, as a page's `description` isn't in its body: for when nothing on the page reads well alone, as for a lead-in or a diagnostic.
+- **General, not help's:** any section may have one, with or without a permalink, as any page may have a description. Embedded help is its first reader; the JSON output, the editor's hover on a link to the section, search results, and a site's link previews can read it later.
+- **Optional:** nothing requires one, except where a project asks: phase 4's check reports a permalink with no summary, as advice unless the project raises it.
+- **No guessing:** from phase 3, `help.json`'s `summary` is the section's `@summary` or absent. Phase 1's first-paragraph rule goes.
+
+The alternatives the measurements rule out: a container, `@summary:` … `@end`, which holds a lead-in and its list but adds a form no reader needs once the line form exists; an attribute on the heading naming a paragraph by its place (`summary=2`), which breaks when a paragraph is added; and an attribute, `{render=true}`, that switches whether the summary shows, which makes one attribute change both where the text comes from and whether it shows, where the two bindings say each in their own spelling.
+
+## Also settled here
+
+- **One summary per section.** A second is an error, at the second.
+- **Where it goes:** the line form at the top of its section, after the heading and its `@id`, as `@id` is; the following form anywhere in the section, before the block it marks.
+- **What the following form may mark:** a paragraph. Recommended: a paragraph only, since a summary is shown as a sentence or two, and a lead-in takes the line form.
+- **What the line form's text may hold:** inline content, as `@note`'s text does: code spans, links, emphasis, and phrases.
+- **A summary in a fragment** is the summary of the section it lands in, on each page that includes it, as a fragment's heading permalink is cut from its recorded page (README decision 7).
+- **A summary inside a variant arm** is an error until phase 6, which can give each arm its own.
+- **What each output writes:** the line form writes nothing in the site and plain outputs' bodies; the following form's block is written as it would be without it, with no element, and review's source anchors are its own (a sentence in `site-render.md`). The JSON output carries the section's summary on its heading: its text, and which form gave it.
+- **The diagnostics:** the generator writes `@summary:` from each diagnostic's `when`, and each of the 85 with none gets a `when` in `diagnostics.toml`. A `**When:**` label never reaches a summary, so no rule for dropping one is needed.
+- **The check:** a section with a permalink and no summary is advice, configurable in `[checks]`, so a project that only links to its permalinks isn't asked for summaries, and one that ships embedded help raises it.
 
 ## Output
 

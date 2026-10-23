@@ -18,7 +18,7 @@ A product shows a section's `pnpm` arm to a reader it knows uses pnpm.
 ## Design
 
 - **`choices`,** present only when the section has a switcher: keyed by the switcher's dimension, then each value in declaration order, each the section's text with that value selected and every other group in the section as it was. A section with switchers on two dimensions has both, each varying its own.
-- **The summary** isn't varied: it's one paragraph, and a marked summary inside an arm is phase 2's rule's to settle.
+- **The summary** isn't varied: it's the section's. A `@summary` inside an arm, an error since phase 3, stays one until a product asks for a summary per arm, which would be a key of its own.
 - **Size:** each value repeats the section. A fetch is one entry (phase 5), so the size matters only in the bundled file, which the README's "Carved out" answers: a smaller file, if a product finds it costs.
 
 ## Tasks
