@@ -5743,8 +5743,11 @@
         "documentation",
         "question"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/888"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Embedded help 2: decide the section summary, @summary"
     },
     {
@@ -5833,8 +5836,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/889"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Embedded help 7: ascribe resolve go:<name> and ascribe_resolve show an entry"
     },
     {
