@@ -1,0 +1,3 @@
+Prerequisites
+Before you install the agent, make sure you have:
+Read more: https://docs.quill.dev/go/prerequisites/

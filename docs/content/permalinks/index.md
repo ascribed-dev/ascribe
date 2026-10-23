@@ -76,6 +76,7 @@ Retire rather than delete the line from the list: a deleted line makes the addre
 ## See also
 
 - [Permalinks](../writing/directives.md#permalinks), in the directive reference: how a heading or a page gets one, and the names it may have.
+- [Show the docs in your product](in-your-product.md): a permalink's section, from the build's `_ascribe/help.json`, in a tooltip or beside an error.
 - [`[permalinks]`](../content-model/checks.md#20-permalinks): the moved, aliased, and retired names in `ascribe.toml`.
 - [`ascribe permalinks`](command.md): `sync`, `list`, `verify`, and `retire`, their options, and their output.
 - [The permalinks list](../contracts/permalinks-list.md): the file a product's CI checks against.
