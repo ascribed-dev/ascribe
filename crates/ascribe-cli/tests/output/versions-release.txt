@@ -4,9 +4,9 @@ self-managed 3.7 would be planned.
 What a reader sees changes in:
   the file the lines share: 1 file changed
   site's plain output: 6 files changed
-  site's site output: 1 file changed
+  site's site output: 2 files changed
   site@3.4's plain output: 5 files changed
   site@3.4's site output: 1 file changed
   site@3.5's plain output: 8 files added
-  site@3.5's site output: 13 files added
+  site@3.5's site output: 14 files added
 Dry run: nothing written. It would write ascribe.toml and 1 file under docs.

@@ -424,6 +424,7 @@ outline:
   - heading: 2
     text: Prerequisites
   - directive: id
+    attributes: {permalink: "true"}
     primary: prerequisites
     binding: heading
   - directive: include
@@ -475,6 +476,7 @@ outline:
   - heading: 2
     text: "Connect to {product}"
   - directive: id
+    attributes: {permalink: "true"}
     primary: connect
     binding: heading
   - group: variant

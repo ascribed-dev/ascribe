@@ -162,8 +162,13 @@ pub fn plain(inlines: &[Inline]) -> String {
 /// indented: `h2 Title`, `p text`, `code text`, `@directive primary`,
 /// `group[pm=npm | pm=yarn]`.
 pub fn summary(page: &ResolvedPage) -> Vec<String> {
+    blocks_summary(&page.blocks)
+}
+
+/// [`summary`] of a list of blocks.
+pub fn blocks_summary(blocks: &[ResolvedBlock]) -> Vec<String> {
     let mut out = Vec::new();
-    lines(&page.blocks, 0, &mut out);
+    lines(blocks, 0, &mut out);
     out
 }
 

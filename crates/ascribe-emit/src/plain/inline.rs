@@ -271,6 +271,7 @@ fn image_inline(
         .find(|l| l.span == node.span && l.kind == RefKind::Image);
     let alt = escape(&plain_text(&image.children), false);
     let destination = match resolved.map(|l| &l.target) {
+        _ if r.alt_text => None,
         Some(LinkTarget::Asset { path, fragment }) => Some(asset_destination(
             r,
             path,

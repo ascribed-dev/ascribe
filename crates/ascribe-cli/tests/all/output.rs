@@ -1479,3 +1479,42 @@ fn templates() {
         &json(&run(root, &["templates", "status", "--format", "json"], 0)),
     );
 }
+
+/// The docs in a product (`docs/content/permalinks/in-your-product.md`):
+/// quill's build writes `_ascribe/help.json`, and its product's program,
+/// run with Node, prints a permalink's title, summary, and address from it,
+/// or exits 1 for a name the file doesn't have.
+#[test]
+fn help_in_a_product() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    let quill = root.join("examples/quill");
+    fs::create_dir_all(&quill).unwrap();
+    copy_tree(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill"),
+        &quill,
+    );
+    run(root, &["build", "--config", "examples/quill"], 0);
+    let help = |name: &str| {
+        Command::new("node")
+            .current_dir(root)
+            .args([
+                "examples/quill/product/help.ts",
+                "examples/quill/.ascribe/build/site/site/_ascribe/help.json",
+                name,
+            ])
+            .output()
+            .expect("run node, which the repository's engines name")
+    };
+    let found = help("prerequisites");
+    assert_eq!(
+        found.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&found.stderr)
+    );
+    expect("help-product.txt", &stdout(&found));
+    let missing = help("weave-config");
+    assert_eq!(missing.status.code(), Some(1));
+    assert_eq!(stdout(&missing), "No help for weave-config\n");
+}

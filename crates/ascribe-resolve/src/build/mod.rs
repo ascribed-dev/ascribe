@@ -64,6 +64,7 @@ mod modes;
 mod permalinks;
 mod phrases;
 mod router;
+mod section;
 mod tree;
 
 use std::cell::{OnceCell, RefCell};
@@ -82,6 +83,7 @@ pub(crate) use inlines::prose_lists;
 pub use permalinks::{DeclaredPermalink, Destination, Permalink, permalinks};
 pub(crate) use phrases::substitute_text;
 pub use router::DefaultRouter;
+pub use section::PageSection;
 pub use tree::{
     Annotation, Availability, DropReason, DroppedPage, FormattedField, GlossaryUse, HeadingIds,
     LinkTarget, NAV_LABEL, NavLabel, PagePermalink, Removal, Removed, ResolvedArm, ResolvedBlock,

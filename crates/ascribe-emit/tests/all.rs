@@ -19,6 +19,8 @@ mod archive;
 mod assets;
 #[path = "all/formatted.rs"]
 mod formatted;
+#[path = "all/help.rs"]
+mod help;
 #[path = "all/lines.rs"]
 mod lines;
 #[path = "all/pages.rs"]
