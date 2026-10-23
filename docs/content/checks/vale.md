@@ -116,4 +116,4 @@ It takes no options but the ones every command accepts ([command reference](../c
 ## See also
 
 - [`[checks.vale]`](../content-model/checks.md#checksvale): every key.
-- [Prose, through Vale](diagnostics/content-checks.md#prose-through-vale): the two diagnostics.
+- [Prose, through Vale](diagnostics/output-checks.md#prose-through-vale): the two diagnostics.
