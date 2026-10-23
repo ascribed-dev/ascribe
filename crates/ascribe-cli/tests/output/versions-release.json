@@ -52,6 +52,7 @@
       "added": [],
       "removed": [],
       "changed": [
+        "_ascribe/help.json",
         "keys.md"
       ]
     },
@@ -98,6 +99,7 @@
       "output": "site",
       "added": [
         "_ascribe/headers.json",
+        "_ascribe/help.json",
         "_ascribe/nav.json",
         "_ascribe/pages.json",
         "_ascribe/permalinks.json",

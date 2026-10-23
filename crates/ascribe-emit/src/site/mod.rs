@@ -27,14 +27,17 @@
 //! schema of every content type ([`crate::zod`]), and
 //! `_ascribe/permalinks.json`, the build's permalinks (output-layout
 //! contract §1.2), `_ascribe/pages.json`, its page records (§1.3),
-//! `_ascribe/headers.json`, the response headers its files need (§1.4), and
-//! `_ascribe/nav.json`, its share of the project's navigation (§1.6).
+//! `_ascribe/headers.json`, the response headers its files need (§1.4),
+//! `_ascribe/nav.json`, its share of the project's navigation (§1.6), and
+//! `_ascribe/help.json`, each permalink's section for a product to show
+//! (§1.7).
 
 mod anchor;
 pub(crate) mod blocks;
 mod element;
 pub(crate) mod frontmatter;
 mod headers;
+mod help;
 mod inline;
 pub(crate) mod nav;
 mod pages;
@@ -59,6 +62,10 @@ pub const SCHEMA_PATH: &str = "_ascribe/schema.ts";
 
 /// The path of the list of the build's permalinks in the emitter root.
 pub const PERMALINKS_PATH: &str = "_ascribe/permalinks.json";
+
+/// The path of each permalink's section of the docs, for a product to show,
+/// in the emitter root.
+pub const HELP_PATH: &str = "_ascribe/help.json";
 
 /// The path of the build's page records in the emitter root.
 pub const PAGES_PATH: &str = "_ascribe/pages.json";
@@ -184,6 +191,7 @@ impl Emitter for SiteEmitter {
         };
         Ok(vec![
             generated(HEADERS_PATH, headers::list(cx.model, build))?,
+            generated(HELP_PATH, help::file(cx, build))?,
             generated(
                 NAV_PATH,
                 nav::list(cx.project(), &cx.project().navigation(), build, &|s| {

@@ -47,7 +47,7 @@ Beside the pages it holds `llms.txt`, and one `<folder>/llms.txt` per section wh
 
 Assets go where the [asset contract](assets.md) §3 puts them: at their mirrored path, or, for links in the site output, under `_ascribe/files/`.
 
-**`_ascribe/` is reserved** in every emitter root for files Ascribe places other than pages and assets inside the content root: assets from outside the content root (`_ascribe/up/`), the site output's published files (`_ascribe/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (`_ascribe/schema.ts`), its list of permalinks (`_ascribe/permalinks.json`, §1.2), its page records (`_ascribe/pages.json`, §1.3), the headers its files need (`_ascribe/headers.json`, §1.4), and its navigation (`_ascribe/nav.json`, §1.6).
+**`_ascribe/` is reserved** in every emitter root for files Ascribe places other than pages and assets inside the content root: assets from outside the content root (`_ascribe/up/`), the site output's published files (`_ascribe/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (`_ascribe/schema.ts`), its list of permalinks (`_ascribe/permalinks.json`, §1.2), its page records (`_ascribe/pages.json`, §1.3), the headers its files need (`_ascribe/headers.json`, §1.4), its navigation (`_ascribe/nav.json`, §1.6), and each permalink's section for a product to show (`_ascribe/help.json`, §1.7).
 
 ### 1.2 The permalinks list
 
@@ -229,6 +229,48 @@ A later version adds keys and changes none of these.
 ### 1.6 The navigation
 
 The site output holds `_ascribe/nav.json`: the build's share of the project's navigation (SPEC §7.8), the sections and pages in order with their labels, for a site to draw its sidebar from, joined to the page records (§1.3) on `source`. It's `generated` in the manifest, and written for every build, with an empty root section when the build has no pages. Its fields, and how a reader places a nested section, are the [navigation contract](navigation.md). A versioned build's lines each have their own, in their own roots. The JSON output holds the same file, its formatted labels as pieces, as its pages' formatted titles are.
+
+### 1.7 The help file
+@available: ascribe planned
+
+The site output holds `_ascribe/help.json`: each permalink's section of the docs (SPEC §4.1), for a product to show where its user is, in a tooltip, a side panel, or beside an error, by the name it already links to. It's `generated` in the manifest, and written for every build, with an empty table when the build publishes no permalink, so a product can tell "no help" from an Ascribe that doesn't write the file. A product bundles the file from its own line's build, which `line` lets it check.
+
+```json
+{
+  "version": 1,
+  "build": "site",
+  "line": "3.5",
+  "help": {
+    "connect": {
+      "title": "Connect to Quill",
+      "text": "A reader sees one of the next 2 sections at a time, chosen by deployment.\n\n### Deployment: Quill Cloud\n\n…",
+      "address": "https://docs.quill.dev/go/connect/",
+      "source": "install-agent.md"
+    },
+    "prerequisites": {
+      "title": "Prerequisites",
+      "summary": "Before you install the agent, make sure you have:",
+      "text": "Before you install the agent, make sure you have:\n\n- Node.js 20 or later.\n- A docs repository that Quill can read.\n\nChecklist of prerequisites",
+      "address": "https://docs.quill.dev/go/prerequisites/",
+      "source": "install-agent.md"
+    }
+  }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `version` | The file's format version: `1`. A reader rejects versions it doesn't know. |
+| `build` | The build's name, as `ascribe.toml` declares it: a line of a versioned build has its build's name, and the line in `line`. |
+| `line` | For a line of a versioned build (content-model.md §16), the line, as `[releases.<target>] live` writes it. Absent for a build that isn't versioned, and for a versioned build with one live line, which writes what it would unversioned. |
+| `help` | One entry for each name the build answers to, keyed by name and sorted by name: each permalink the build publishes, and each alias of one (SPEC §7.6), under its own name with the entry of the permalink it ends at. A retired permalink has none. A name the build publishes twice (`permalink-duplicate`) has its first page's. |
+| `help.*.title` | The heading's text, or the page's title for a page's own permalink, as plain text: phrases substituted, and code spans as their text, without backticks. |
+| `help.*.summary` | The section's first block of content when it's a paragraph, as `text` writes it; an `@id` or `@available` before it is passed over, and the availability line an `@available` adds isn't in it. A page's own permalink has its description, or its opening's first paragraph when it has none. Absent when there's none. |
+| `help.*.text` | The section as the plain output writes it (SPEC §9.4): Markdown, with each image written as its alt text, since a product showing a bundled copy can't load an image from the docs' host. A heading's section runs from the block after the heading to the next heading at its level or above, or to the end of the container it's in (a variant arm, a note), whichever comes first; the heading itself is `title`. A page's own permalink has the page's blocks before its first heading, its opening, which may be empty. Links are absolute with `[consumer] site`, and routes from the host's root without it. Availability is written as the build has it: with badges, each mark in the section is an `Available:` line. |
+| `help.*.address` | The permalink's address: `[consumer] site`, the permalinks' path (§1.2's `path`), the name, and a final `/` when `trailing-slash` is `"always"`. Absent without `site`. |
+| `help.*.source` | The source path of the page the section is on, relative to the content root: §1.2's `source`. A heading in a fragment is cut from that page. |
+
+An entry's `text` is rendered from the page's resolved blocks by the plain output's own renderer, so it reads as the section does in the page's plain output. A later version adds keys and changes none of these: a formatted title, as `pages.json` has, would be a key beside `title`.
 
 ## 2. What Ascribe owns
 

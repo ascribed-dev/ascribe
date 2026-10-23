@@ -1,13 +1,13 @@
 //! Shared by the emitter tests: load a project from disk, resolve a build, and
 //! emit it in memory.
 
-#![allow(dead_code, clippy::expect_used, clippy::panic)]
+#![allow(dead_code, clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use ascribe_core::FileId;
+use ascribe_core::{FileId, RelPath};
 use ascribe_emit::{Contents, EmitContext, Emitter, emit};
 use ascribe_resolve::{AstroRouter, DiskFs, Layout, Project};
 use html5ever::tendril::TendrilSink;
@@ -192,4 +192,67 @@ pub fn first_difference(want: &[String], got: &[String]) -> Option<(usize, Strin
         want.get(at).cloned().unwrap_or_default(),
         got.get(at).cloned().unwrap_or_default(),
     ))
+}
+
+/// The repository's root.
+pub fn repository() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+/// Every `ascribe.toml` under `dir`, outside `node_modules` and outputs.
+pub fn models(dir: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    let mut entries: Vec<_> = entries.flatten().map(|e| e.path()).collect();
+    entries.sort();
+    for path in entries {
+        let name = path.file_name().unwrap().to_string_lossy();
+        if path.is_dir() && !name.starts_with('.') && name != "node_modules" {
+            models(&path, out);
+        } else if name == "ascribe.toml" {
+            out.push(path);
+        }
+    }
+}
+
+/// A project under `examples/`, as `ascribe build` loads it.
+pub fn example(model: &Path) -> Option<(PathBuf, Project)> {
+    let root = model.parent()?.to_owned();
+    let model = ascribe_model::load(model).ok()?;
+    let layout = Layout::from_model(&model);
+    let fs = DiskFs::new(&root, &layout);
+    let project = Project::load(Arc::new(model), layout, &fs);
+    Some((root, project))
+}
+
+/// Every conformance case with a model that loads, as its adapters load it:
+/// its own model or the shared one, and its `files/` or its `input.md`.
+pub fn cases(dir: &Path, shared: &Path, out: &mut Vec<(PathBuf, Project)>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    let mut entries: Vec<_> = entries.flatten().map(|e| e.path()).collect();
+    entries.sort();
+    if dir.join("expect.yaml").is_file() {
+        let own = dir.join("ascribe.toml");
+        let model = if own.is_file() {
+            own
+        } else {
+            shared.to_owned()
+        };
+        let text = std::fs::read_to_string(&model).unwrap();
+        let Ok(model) = ascribe_model::load_str(&text, FileId::new(0)) else {
+            return;
+        };
+        let mut layout = Layout::from_model(&model);
+        let files = dir.join("files").is_dir();
+        layout.content_root = RelPath::parse(if files { "files" } else { "" }).unwrap();
+        let fs = DiskFs::new(dir, &layout);
+        out.push((dir.to_owned(), Project::load(Arc::new(model), layout, &fs)));
+        return;
+    }
+    for path in entries.into_iter().filter(|p| p.is_dir()) {
+        cases(&path, shared, out);
+    }
 }
