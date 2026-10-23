@@ -252,6 +252,8 @@ pub(crate) struct ModelNow {
     /// Its problems, as they're published.
     pub diagnostics: Vec<ascribe_check::Diagnostic>,
     pub encoding: Encoding,
+    /// The files its `[from]` takes from, where a taken setting is set.
+    pub taken: Vec<crate::model_file::TakenFile>,
 }
 
 /// The settings Project Settings shows: the registry's simple keys of the
@@ -398,9 +400,12 @@ pub(crate) fn settings_now(now: &ModelNow) -> SettingsResult {
     let index = LineIndex::new(&now.text);
     let file = ModelFile::parse(&now.text);
     let unreadable = file.as_ref().err().cloned();
+    // A value `[from]` takes is shown from the file that holds it; where a
+    // value is set is a place in this one.
+    let held = ModelFile::parse_taking(&now.text, &now.taken);
     // Whether the file sets a key, for a default that follows another key.
     let written = |t: &str, k: &str| {
-        file.as_ref()
+        held.as_ref()
             .ok()
             .and_then(|f| f.get(&path(&[t, k])))
             .is_some()
@@ -411,7 +416,7 @@ pub(crate) fn settings_now(now: &ModelNow) -> SettingsResult {
                 .as_ref()
                 .ok()
                 .and_then(|f| place(f, &key_path(setting)));
-            let value = file
+            let value = held
                 .as_ref()
                 .ok()
                 .and_then(|f| f.get(&key_path(setting)))
@@ -541,7 +546,7 @@ fn plan(now: &ModelNow, args: &Map<String, Json>) -> Result<WorkspaceEdit, Strin
         _ => Err(format!("`{name}` must be a string.")),
     };
     let (table, key) = (text_arg("table")?, text_arg("key")?);
-    let file = ModelFile::parse(&now.text)?;
+    let file = ModelFile::parse_taking(&now.text, &now.taken)?;
     let edits = match check_of(table) {
         Some(slug) => plan_check(&file, slug, key, args.get("value"))?,
         None => {
@@ -583,21 +588,31 @@ fn plan(now: &ModelNow, args: &Map<String, Json>) -> Result<WorkspaceEdit, Strin
     };
     let uri = crate::uri::path_to_uri(&now.config)
         .ok_or_else(|| "`ascribe.toml` can't be named as a URI.".to_owned())?;
-    let edits = if edits.is_empty() {
-        Vec::new()
+    let mut changes = HashMap::new();
+    if edits.is_empty() {
+        changes.insert(uri, Vec::new());
     } else {
-        let (edits, _) = file.finish(edits)?;
+        let finished = file.finish(edits)?;
         let index = LineIndex::new(&now.text);
-        edits
+        let edits: Vec<lsp_types::TextEdit> = finished
+            .edits
             .iter()
             .map(|e| lsp_types::TextEdit {
                 range: now.encoding.range(&index, e.span),
                 new_text: e.new_text.clone(),
             })
-            .collect()
-    };
+            .collect();
+        // A setting `[from]` takes is set in the file that holds it.
+        let taken = finished
+            .taken_changes(now.encoding)
+            .ok_or_else(|| "A file `[from]` takes from can't be named as a URI.".to_owned())?;
+        if !edits.is_empty() || taken.is_empty() {
+            changes.insert(uri, edits);
+        }
+        changes.extend(taken);
+    }
     Ok(WorkspaceEdit {
-        changes: Some(HashMap::from([(uri, edits)])),
+        changes: Some(changes),
         document_changes: None,
         change_annotations: None,
     })

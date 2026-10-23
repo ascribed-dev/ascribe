@@ -168,12 +168,13 @@ pub(crate) fn promote_feature(page: &Page<'_>) -> Outcome {
     Ok(plan)
 }
 
-/// `ascribe.toml`, parsed, when it's the model the project has now.
+/// `ascribe.toml`, parsed with the files `[from]` takes from, when it's the
+/// model the project has now.
 fn model_file(ctx: &Ctx) -> Result<ModelFile<'_>, String> {
     if ctx.model_problem {
         return Err("`ascribe.toml` has a problem. Fix it, then try again.".to_owned());
     }
-    ModelFile::parse(&ctx.model_text)
+    ctx.model_file()
 }
 
 /// The selected text a phrase can take the place of: inside one run of
@@ -355,16 +356,19 @@ fn prose_text(_ctx: &Ctx, file: &FileIndex, f: &mut dyn FnMut(Span, bool)) {
 pub(super) fn finish(page: &Page<'_>, uri: &Uri, plan: Plan) -> Result<EditResult, String> {
     let ctx = page.ctx;
     let file = model_file(ctx)?;
-    let (model_edits, model_text) = file.finish(plan.model)?;
+    let finished = file.finish(plan.model)?;
+    let (model_edits, model_text) = (&finished.edits, &finished.text);
     let root = ctx
         .config
         .parent()
         .map(std::path::Path::to_path_buf)
         .unwrap_or_default();
-    let model = ascribe_check::type_files::load_model(
-        &model_text,
+    let taken = finished.taken_texts();
+    let model = ascribe_check::type_files::load_model_changed(
+        model_text,
         &root,
         ascribe_model::SourceBound::Anywhere,
+        &taken,
     )
     .map_err(|issues| {
         let problem = issues
@@ -395,7 +399,7 @@ pub(super) fn finish(page: &Page<'_>, uri: &Uri, plan: Plan) -> Result<EditResul
         ));
     }
     let replaced: Vec<(&RelPath, &str)> = texts.iter().map(|(p, t)| (p, t.as_str())).collect();
-    check_project(ctx, &root, &model, &model_text, &replaced)?;
+    check_project(ctx, &root, &model, model_text, &replaced)?;
 
     let mut changes = HashMap::new();
     let convert = |index: &LineIndex, edits: &[TextEdit]| -> Vec<lsp_types::TextEdit> {
@@ -430,9 +434,14 @@ pub(super) fn finish(page: &Page<'_>, uri: &Uri, plan: Plan) -> Result<EditResul
             .ok_or_else(|| "`ascribe.toml` can't be named as a URI.".to_owned())?;
         changes.insert(
             model_uri,
-            convert(&LineIndex::new(&ctx.model_text), &model_edits),
+            convert(&LineIndex::new(&ctx.model_text), model_edits),
         );
     }
+    // A key `[from]` takes is changed in the file that holds it.
+    let taken = finished
+        .taken_changes(ctx.encoding)
+        .ok_or_else(|| "A file `[from]` takes from can't be named as a URI.".to_owned())?;
+    changes.extend(taken);
     Ok(EditResult::Edit {
         edit: WorkspaceEdit {
             changes: Some(changes),

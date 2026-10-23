@@ -7,6 +7,7 @@ import * as vscode from "vscode";
 import type { ProjectServer } from "../client.js";
 import type { ProjectRegistry } from "../registry.js";
 import type { TargetsResult } from "../shapes.js";
+import { changedElsewhere, otherModels } from "../takenFiles.js";
 import { isCancellation, type ContextCache, type Where } from "./context.js";
 import type { Action, Effects } from "./registry.js";
 import { runWizard, type Args, type Prompter } from "./steps.js";
@@ -144,6 +145,13 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
         return record;
       }
       record.done = true;
+      const elsewhere = changedElsewhere(
+        otherModels(
+          result.edit.entries().map(([file]) => vscode.workspace.asRelativePath(file, false)),
+          vscode.workspace.asRelativePath(vscode.Uri.file(server.project.config), false),
+        ),
+      );
+      if (elsewhere) say(elsewhere);
       if (action.does.opens) {
         await openMade(result.edit, result.select, document.uri, record);
         return record;

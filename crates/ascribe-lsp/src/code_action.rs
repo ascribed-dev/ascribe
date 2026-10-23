@@ -543,6 +543,7 @@ fn retire_permalink(ctx: &Ctx, diagnostic: Diagnostic) -> Option<CodeActionOrCom
         .find(|name| list.span_of(name).is_some_and(|span| span.start() == at))?;
     let retired = crate::retire::retire(
         &ctx.model_text,
+        ctx.taken(),
         &[crate::retire::Retirement {
             name,
             reason: RETIRED_PLACEHOLDER,
@@ -550,17 +551,36 @@ fn retire_permalink(ctx: &Ctx, diagnostic: Diagnostic) -> Option<CodeActionOrCom
         }],
     )
     .ok()?;
-    let edit = retired.edits.first()?;
+    // The entry is written where `[permalinks.retired]` is: in
+    // `ascribe.toml`, or in the file `[from]` takes it from.
+    let (path, before, after) = match retired.taken.first() {
+        Some(file) => (
+            file.path.clone(),
+            ctx.taken()
+                .iter()
+                .find(|t| t.file == file.file)?
+                .text
+                .as_str(),
+            file.text.as_str(),
+        ),
+        None => (
+            ctx.config.clone(),
+            ctx.model_text.as_str(),
+            retired.text.as_str(),
+        ),
+    };
+    let edit = match retired.edits.first() {
+        Some(edit) => edit.clone(),
+        None => crate::edit::navigation::text_edit(before, after),
+    };
     let start = edit.span.start() + edit.new_text.find(RETIRED_PLACEHOLDER)?;
     let selection = ctx.encoding.range(
-        &LineIndex::new(&retired.text),
+        &LineIndex::new(after),
         Span::new(start, start + RETIRED_PLACEHOLDER.len()),
     );
-    let config = crate::uri::path_to_uri(&ctx.config)?;
+    let config = crate::uri::path_to_uri(&path)?;
     let change = TextEdit {
-        range: ctx
-            .encoding
-            .range(&LineIndex::new(&ctx.model_text), edit.span),
+        range: ctx.encoding.range(&LineIndex::new(before), edit.span),
         new_text: edit.new_text.clone(),
     };
     Some(CodeActionOrCommand::CodeAction(CodeAction {

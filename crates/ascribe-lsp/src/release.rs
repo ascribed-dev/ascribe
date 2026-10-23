@@ -782,7 +782,7 @@ fn remove_end(file: &ModelFile<'_>, target: &str, line: &str) -> Result<Edit, Re
 /// The text the edits give, checked.
 pub(crate) fn finish(file: &ModelFile<'_>, edits: Vec<Edit>) -> Result<String, ReleaseError> {
     file.finish(edits)
-        .map(|(_, text)| text)
+        .map(|finished| finished.text)
         .map_err(ReleaseError::ModelEdit)
 }
 

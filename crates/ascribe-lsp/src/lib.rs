@@ -75,6 +75,7 @@ pub use inventory::{
     InventoryEntry, InventoryFragment, InventoryPage, InventoryParams, InventoryResult,
     InventoryValue, METHOD as INVENTORY_METHOD, ModelKind,
 };
+pub use model_file::{TakenFile, read_taken};
 pub use page::{
     METHOD as PAGE_METHOD, PageAbout, PageHeading, PageMemo, PageParams, PagePlace, PageResult,
 };

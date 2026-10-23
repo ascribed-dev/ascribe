@@ -23,7 +23,7 @@ use lsp_types::{
     RenameParams, TextEdit, Uri, WorkspaceEdit,
 };
 
-use crate::model_file::{self, ModelFile};
+use crate::model_file;
 use crate::nav::{Ctx, Lines, directive_at, encode_destination, hit_at, identifier_primary};
 
 pub(crate) fn file_operation_capability() -> FileOperationRegistrationOptions {
@@ -47,6 +47,9 @@ pub(crate) fn file_operation_capability() -> FileOperationRegistrationOptions {
     }
 }
 
+// `Uri` hashes by its text; the map is built once and never mutated through
+// a key.
+#[allow(clippy::mutable_key_type)]
 pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<WorkspaceEdit> {
     let mut mappings = Vec::new();
     let root = ctx.config.parent()?;
@@ -119,17 +122,21 @@ pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<Worksp
                 if let Some(phrase) = destination_phrase
                     && phrase_uses(ctx, &phrase.phrase.key) == 1
                     && let Some(value) = ctx.model.phrase(&phrase.phrase.key)
-                    && let Some(span) = phrase_value_span(&ctx.model_text, &phrase.phrase.key)
+                    && let Some((home, text)) = phrase_home(ctx, &phrase.phrase.key)
+                    && let Some(span) = phrase_value_span(text, &phrase.phrase.key)
                 {
                     let old_value_path_end = value.find(['?', '#']).unwrap_or(value.len());
                     let phrase_value = format!("{new_path}{}", &value[old_value_path_end..]);
                     if phrase_value != value {
                         phrase_edits.insert(
                             phrase.phrase.key.clone(),
-                            TextEdit {
-                                range: ctx.encoding.range(&LineIndex::new(&ctx.model_text), span),
-                                new_text: serde_json::to_string(&phrase_value).ok()?,
-                            },
+                            (
+                                home,
+                                TextEdit {
+                                    range: ctx.encoding.range(&LineIndex::new(text), span),
+                                    new_text: serde_json::to_string(&phrase_value).ok()?,
+                                },
+                            ),
                         );
                     }
                     continue;
@@ -189,14 +196,11 @@ pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<Worksp
         workspace_edit(ctx, edits),
         crate::memos::move_edits(ctx, |path| remap(path, &mappings)),
     );
-    let mut model_edits: Vec<TextEdit> = phrase_edits.into_values().collect();
+    let mut model_edits: Vec<(Uri, TextEdit)> = phrase_edits.into_values().collect();
     model_edits.extend(model_path_edits(ctx, &mappings)?);
-    if !model_edits.is_empty() {
-        let uri = crate::uri::path_to_uri(&ctx.config)?;
-        result
-            .changes
-            .get_or_insert_with(HashMap::new)
-            .insert(uri, model_edits);
+    let changes = result.changes.get_or_insert_with(HashMap::new);
+    for (uri, edit) in model_edits {
+        changes.entry(uri).or_default().push(edit);
     }
     add_nav_edit(ctx, root, &mappings, &mut result);
     Some(result)
@@ -239,20 +243,21 @@ fn add_nav_edit(
 /// the files that move: a glossary page in `[glossary] pages`, and a retired
 /// permalink's `to`, keeping its `#id`. `None` when they can't be made in
 /// place.
-fn model_path_edits(ctx: &Ctx, mappings: &[(RelPath, RelPath)]) -> Option<Vec<TextEdit>> {
+fn model_path_edits(ctx: &Ctx, mappings: &[(RelPath, RelPath)]) -> Option<Vec<(Uri, TextEdit)>> {
     model_link_edits(ctx, |written| moved_path(written, mappings))
 }
 
 /// The edits to `ascribe.toml` that change what it names by a path from the
 /// content root, a glossary page and a retired permalink's `to`, to what
 /// `change` gives for each as it's written, leaving those it gives `None`
-/// for. `None` when they can't be made in place.
+/// for, each with its file's URI: `ascribe.toml`'s, or that of the file
+/// `[from]` takes it from. `None` when they can't be made in place.
 fn model_link_edits(
     ctx: &Ctx,
     mut change: impl FnMut(&str) -> Option<String>,
-) -> Option<Vec<TextEdit>> {
+) -> Option<Vec<(Uri, TextEdit)>> {
     // A file that isn't TOML loads no model, so names no path to follow.
-    let Ok(file) = ModelFile::parse(&ctx.model_text) else {
+    let Ok(file) = ctx.model_file() else {
         return Some(Vec::new());
     };
     let mut named: Vec<Vec<model_file::Seg>> = Vec::new();
@@ -284,17 +289,38 @@ fn model_link_edits(
     if edits.is_empty() {
         return Some(Vec::new());
     }
-    let (edits, _) = file.finish(edits).ok()?;
+    let finished = file.finish(edits).ok()?;
     let index = LineIndex::new(&ctx.model_text);
-    Some(
-        edits
-            .into_iter()
-            .map(|edit| TextEdit {
-                range: ctx.encoding.range(&index, edit.span),
-                new_text: edit.new_text,
-            })
-            .collect(),
-    )
+    let uri = crate::uri::path_to_uri(&ctx.config)?;
+    let mut out: Vec<(Uri, TextEdit)> = finished
+        .edits
+        .iter()
+        .map(|edit| {
+            (
+                uri.clone(),
+                TextEdit {
+                    range: ctx.encoding.range(&index, edit.span),
+                    new_text: edit.new_text.clone(),
+                },
+            )
+        })
+        .collect();
+    for (uri, edits) in finished.taken_changes(ctx.encoding)? {
+        out.extend(edits.into_iter().map(|edit| (uri.clone(), edit)));
+    }
+    Some(out)
+}
+
+/// Where the phrase `key` is written, by URI, and that file's text:
+/// `ascribe.toml`, or the file `[from]` takes it from (SPEC §7.9).
+fn phrase_home<'c>(ctx: &'c Ctx, key: &str) -> Option<(Uri, &'c str)> {
+    match ascribe_model::taken_from(&ctx.model_text, &["phrases", key]) {
+        None => Some((crate::uri::path_to_uri(&ctx.config)?, &ctx.model_text)),
+        Some(taken) => {
+            let file = ctx.taken().iter().find(|t| t.file == taken.file)?;
+            Some((crate::uri::path_to_uri(&file.path)?, &file.text))
+        }
+    }
 }
 
 /// `written`, a path from the content root with an optional `/` before it
@@ -480,8 +506,47 @@ pub(crate) fn rename_model_key(
     values::rename(ctx, &value, new_name)
 }
 
+/// [`rename_model_key`] in this project only, without the projects of the
+/// files `[from]` takes from.
+pub(crate) fn rename_model_key_here(
+    ctx: &Ctx,
+    position: lsp_types::Position,
+    new_name: &str,
+) -> Option<WorkspaceEdit> {
+    let index = LineIndex::new(&ctx.model_text);
+    let offset = ctx
+        .encoding
+        .offset_lenient(&index, &ctx.model_text, position);
+    if let Some((old, span)) = phrase_entry_at(&ctx.model_text, offset) {
+        if !valid_phrase_key(new_name) {
+            return None;
+        }
+        return rename_phrase_here(ctx, &old, new_name, Some(span));
+    }
+    let value = values::in_model(ctx, offset)?;
+    values::rename_here(ctx, &value, new_name)
+}
+
+/// The edit that renames the phrase `old` to `new`: its key where it's
+/// written, and every use, in this project and in the project of the file
+/// `[from]` takes it from.
+pub(crate) fn rename_phrase(
+    ctx: &Ctx,
+    old: &str,
+    new: &str,
+    config_key: Option<Span>,
+) -> Option<WorkspaceEdit> {
+    let edit = rename_phrase_here(ctx, old, new, config_key)?;
+    let renaming = crate::rename::Renaming::Phrase {
+        key: old.to_owned(),
+        new: new.to_owned(),
+    };
+    crate::rename::in_holders(ctx, &renaming, edit, &mut Default::default()).ok()
+}
+
+/// [`rename_phrase`] in this project only.
 #[allow(clippy::mutable_key_type)]
-fn rename_phrase(
+pub(crate) fn rename_phrase_here(
     ctx: &Ctx,
     old: &str,
     new: &str,
@@ -509,14 +574,37 @@ fn rename_phrase(
     let mut result = workspace_edit(ctx, edits);
     let mut changes = result.changes.take().unwrap_or_default();
     changes.extend(code);
-    let model_span = config_key.or_else(|| phrase_entry_span(&ctx.model_text, old))?;
+    // The key where it's written: in `ascribe.toml`, at the cursor or found,
+    // or in the file `[from]` takes it from.
+    let (home, text) = match config_key {
+        Some(_) => (
+            crate::uri::path_to_uri(&ctx.config)?,
+            ctx.model_text.as_str(),
+        ),
+        None => phrase_home(ctx, old)?,
+    };
+    let model_span = config_key.or_else(|| phrase_entry_span(text, old))?;
     let model_edit = TextEdit {
-        range: ctx
-            .encoding
-            .range(&LineIndex::new(&ctx.model_text), model_span),
+        range: ctx.encoding.range(&LineIndex::new(text), model_span),
         new_text: new.to_owned(),
     };
-    changes.insert(crate::uri::path_to_uri(&ctx.config)?, vec![model_edit]);
+    changes.insert(home, vec![model_edit]);
+    // A phrase `take` names is taken by its new name.
+    let at = model_file::path(&["phrases", old]);
+    if let Ok(file) = model_file::ModelFile::parse(&ctx.model_text)
+        && let Some(retake) = file.retake(&at, new)
+    {
+        let finished = file.finish(vec![retake]).ok()?;
+        let index = LineIndex::new(&ctx.model_text);
+        let edits = finished.edits.iter().map(|e| TextEdit {
+            range: ctx.encoding.range(&index, e.span),
+            new_text: e.new_text.clone(),
+        });
+        changes
+            .entry(crate::uri::path_to_uri(&ctx.config)?)
+            .or_default()
+            .extend(edits);
+    }
     result.changes = Some(changes);
     let memo_edits = crate::memos::entry_edits(ctx, ascribe_resolve::EntryKind::Phrase, old, new);
     Some(with_memo_edits(result, memo_edits))
@@ -761,7 +849,7 @@ fn add_id_reference_edits(
     old_id: &str,
     new_id: &str,
     edits: &mut HashMap<RelPath, Vec<ByteEdit>>,
-    phrase_edits: &mut HashMap<String, TextEdit>,
+    phrase_edits: &mut HashMap<String, (Uri, TextEdit)>,
 ) -> Option<()> {
     // A link names the heading through the page it's on: the file itself, or
     // a page that includes it (SPEC §4.2).
@@ -826,17 +914,18 @@ fn add_id_reference_edits(
                         && phrase_uses(ctx, &phrase.phrase.key) == 1
                         && let Some(value) = ctx.model.phrase(&phrase.phrase.key)
                         && let Some(updated) = replace_phrase_fragment(value, old_id, new_id)
-                        && let Some(model_span) =
-                            phrase_value_span(&ctx.model_text, &phrase.phrase.key)
+                        && let Some((home, text)) = phrase_home(ctx, &phrase.phrase.key)
+                        && let Some(model_span) = phrase_value_span(text, &phrase.phrase.key)
                     {
                         phrase_edits.insert(
                             phrase.phrase.key.clone(),
-                            TextEdit {
-                                range: ctx
-                                    .encoding
-                                    .range(&LineIndex::new(&ctx.model_text), model_span),
-                                new_text: serde_json::to_string(&updated).ok()?,
-                            },
+                            (
+                                home,
+                                TextEdit {
+                                    range: ctx.encoding.range(&LineIndex::new(text), model_span),
+                                    new_text: serde_json::to_string(&updated).ok()?,
+                                },
+                            ),
                         );
                         continue;
                     }
@@ -865,7 +954,12 @@ fn add_id_reference_edits(
     for edit in model_link_edits(ctx, |written| {
         renamed_fragment(written, old_id, new_id, &mut links_here)
     })? {
-        let at = format!("#{}:{}", edit.range.start.line, edit.range.start.character);
+        let at = format!(
+            "#{}#{}:{}",
+            edit.0.as_str(),
+            edit.1.range.start.line,
+            edit.1.range.start.character
+        );
         phrase_edits.insert(at, edit);
     }
     Some(())
@@ -908,14 +1002,19 @@ fn with_memo_edits(mut result: WorkspaceEdit, memo_edits: Vec<(Uri, TextEdit)>) 
 fn workspace_edit_with_config(
     ctx: &Ctx,
     mut result: WorkspaceEdit,
-    phrase_edits: HashMap<String, TextEdit>,
+    phrase_edits: HashMap<String, (Uri, TextEdit)>,
 ) -> Option<WorkspaceEdit> {
     if phrase_edits.is_empty() {
         return Some(result);
     }
-    let uri = crate::uri::path_to_uri(&ctx.config)?;
     let mut changes = result.changes.take().unwrap_or_default();
-    changes.insert(uri, phrase_edits.into_values().collect());
+    // `ascribe.toml`'s edits replace any it had, as they always have.
+    if let Some(uri) = crate::uri::path_to_uri(&ctx.config) {
+        changes.remove(&uri);
+    }
+    for (uri, edit) in phrase_edits.into_values() {
+        changes.entry(uri).or_default().push(edit);
+    }
     result.changes = Some(changes);
     Some(result)
 }

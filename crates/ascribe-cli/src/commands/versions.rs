@@ -586,6 +586,11 @@ pub(crate) struct ReleaseJson {
     /// What the release changes in the builds' outputs, by build and
     /// output.
     outputs: Vec<OutputJson>,
+    /// The `ascribe.toml` the target's lines are written in, from the
+    /// current folder, when the project's `[from]` takes them from another
+    /// project's: the release is made in that project, and `files` are from
+    /// its root. `null` when they're written in the project's own.
+    from: Option<String>,
 }
 
 /// A feature moved by the release.
@@ -669,8 +674,14 @@ struct OutputJson {
 const RELEASE_SCHEMA_VERSION: u32 = 2;
 
 impl ReleaseJson {
-    fn new(r: &Released, written: bool, layout: &ascribe_resolve::Layout) -> ReleaseJson {
+    fn new(
+        r: &Released,
+        written: bool,
+        layout: &ascribe_resolve::Layout,
+        from: Option<&Path>,
+    ) -> ReleaseJson {
         ReleaseJson {
+            from: from.map(answer::path_from_here),
             schema_version: RELEASE_SCHEMA_VERSION,
             ascribe_version: env!("CARGO_PKG_VERSION"),
             written,
@@ -765,6 +776,10 @@ fn run_release(
         Ok(project) => project,
         Err(failure) => return answer::report_failure(err, &failure),
     };
+    let (config, project, from) = match lines_project(config, project, &target) {
+        Ok(found) => found,
+        Err(failure) => return answer::report_failure(err, &failure),
+    };
     let releasing = Releasing {
         target: &target,
         line: &line,
@@ -811,9 +826,9 @@ fn run_release(
     let result = match args.format {
         Format::Json => answer::write_json(
             out,
-            &ReleaseJson::new(&released, !args.dry_run, project.layout()),
+            &ReleaseJson::new(&released, !args.dry_run, project.layout(), from.as_deref()),
         ),
-        Format::Text => write_release(out, &released, args.dry_run, &content),
+        Format::Text => write_release(out, &released, args.dry_run, &content, from.as_deref()),
     };
     answer::written(result, err).unwrap_or(exit::OK)
 }
@@ -868,6 +883,7 @@ fn write_release(
     r: &Released,
     dry_run: bool,
     content: &Path,
+    from: Option<&Path>,
 ) -> io::Result<()> {
     let (target, line) = (&r.target, &r.line);
     let (is, rewrote, moved) = if dry_run {
@@ -875,6 +891,9 @@ fn write_release(
     } else {
         ("is", "Rewrote", "moved")
     };
+    if let Some(from) = from {
+        write_lines_from(out, target, from)?;
+    }
     writeln!(out, "{target} {line} {is} live, and current.")?;
     let marks: usize = r.files.iter().map(|f| f.marks.len()).sum();
     if marks > 0 {
@@ -940,9 +959,10 @@ fn write_release(
         paths.sort();
         paths.dedup();
         let files = paths.len() + 1;
+        let model = from.map_or_else(|| "ascribe.toml".to_owned(), answer::path_from_here);
         writeln!(
             out,
-            "Dry run: nothing written. It would write ascribe.toml{}.",
+            "Dry run: nothing written. It would write {model}{}.",
             if files > 1 {
                 format!(
                     " and {} file{} under {}",
@@ -1328,6 +1348,11 @@ pub(crate) struct RetireJson {
     /// rewrite changes, by build and output: they need `--force`, and a dry
     /// run lists them.
     outputs: Vec<OutputJson>,
+    /// The `ascribe.toml` the target's lines are written in, from the
+    /// current folder, when the project's `[from]` takes them from another
+    /// project's: the retirement is made in that project, and `files` are
+    /// from its root. `null` when they're written in the project's own.
+    from: Option<String>,
 }
 
 /// Content no line has, or a mark that says nothing.
@@ -1375,6 +1400,7 @@ fn unused_json(unused: &[Unused], layout: &ascribe_resolve::Layout) -> Vec<Unuse
 impl RetireJson {
     fn new(r: &RetiredLine, written: bool, layout: &ascribe_resolve::Layout) -> RetireJson {
         RetireJson {
+            from: None,
             schema_version: RETIRE_SCHEMA_VERSION,
             ascribe_version: env!("CARGO_PKG_VERSION"),
             written,
@@ -1452,6 +1478,10 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         Ok(project) => project,
         Err(failure) => return answer::report_failure(err, &failure),
     };
+    let (config, project, from) = match lines_project(config, project, &target) {
+        Ok(found) => found,
+        Err(failure) => return answer::report_failure(err, &failure),
+    };
     let releases = project.model().releases_of(&target);
     let archived = releases.and_then(|r| {
         r.archived
@@ -1484,6 +1514,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
             removed: !removals.is_empty(),
             redirects: Vec::new(),
             outputs: Vec::new(),
+            from: from.as_deref().map(answer::path_from_here),
         };
         let result = match args.format {
             Format::Json => answer::write_json(out, &json),
@@ -1522,13 +1553,48 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         }
     }
     let result = match args.format {
-        Format::Json => answer::write_json(
-            out,
-            &RetireJson::new(&retired, !args.dry_run, project.layout()),
-        ),
-        Format::Text => write_retire(out, &retired, args, project.root(), project.layout()),
+        Format::Json => {
+            let mut json = RetireJson::new(&retired, !args.dry_run, project.layout());
+            json.from = from.as_deref().map(answer::path_from_here);
+            answer::write_json(out, &json)
+        }
+        Format::Text => match from.as_deref().map(|f| write_lines_from(out, &target, f)) {
+            Some(Err(e)) => Err(e),
+            _ => write_retire(out, &retired, args, project.root(), project.layout()),
+        },
     };
     answer::written(result, err).unwrap_or(exit::OK)
+}
+
+/// The project whose `ascribe.toml` writes the lines of `target`, with that
+/// file's path: the project of `config`, or, when its `[from]` takes the
+/// lines from another project's `ascribe.toml`, that project, where a
+/// release or a retirement is made, its marks rewritten and its outputs
+/// compared (SPEC §7.9). The third is `Some` in that case: the path of that
+/// project's `ascribe.toml` again.
+fn lines_project(
+    config: PathBuf,
+    project: ascribe_check::Project,
+    target: &str,
+) -> Result<(PathBuf, ascribe_check::Project, Option<PathBuf>), crate::context::Failure> {
+    let Some(taken) = project.model().taken_at(&["releases", target]) else {
+        return Ok((config, project, None));
+    };
+    let holder = ascribe_core::path::normalize(&project.root().join(&taken.file));
+    let other = ascribe_check::Project::load(&holder)
+        .map_err(crate::context::Failure::Load)?
+        .with_today(crate::clock::today());
+    Ok((holder.clone(), other, Some(holder)))
+}
+
+/// Says that the lines of `target` are written in `from`, another project's
+/// `ascribe.toml`, so the command changed that project.
+fn write_lines_from(out: &mut dyn Write, target: &str, from: &Path) -> io::Result<()> {
+    writeln!(
+        out,
+        "The lines of {target} are written in {}, which [from] takes them from: this changes that project.",
+        answer::path_from_here(from)
+    )
 }
 
 /// Writes `ascribe.toml`'s new text, each rewritten file, and then each

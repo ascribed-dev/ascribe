@@ -282,6 +282,21 @@ pub fn eject(request: &Eject<'_>, fs: &dyn FileSystem) -> Result<EjectAnswer, Ej
             reason,
         });
     }
+    // A type `[from]` takes is written in another project's `ascribe.toml`,
+    // which can't name the files eject writes beside this one.
+    for template in &chosen {
+        if let Some(taken) =
+            ascribe_model::taken_from(request.model_text, &["types", &template.name])
+        {
+            return Err(EjectError::Model {
+                types: format!("[types.{}]", template.name),
+                reason: format!(
+                    "`{}` is taken from `{}` by [from], and the files eject writes beside this ascribe.toml can't be named there; run eject in that file's project, or stop taking it here and eject then",
+                    taken.name, taken.file
+                ),
+            });
+        }
+    }
     let lock_path = at(request.to, LOCK_FILE);
     let mut lock = read_lock(&lock_path, fs)?;
     let doc = Document::parse(request.model_text).ok();
