@@ -1537,7 +1537,7 @@ The {product} agent watches your docs repository and syncs changes to {product}.
 You can run {product} in the browser at play.quill.dev with no local setup.
 
 ## Prerequisites
-@id: prerequisites
+@id {permalink=true}: prerequisites
 
 @include: _fragments/prerequisites.md
 
@@ -1581,7 +1581,7 @@ You can run {product} in the browser at play.quill.dev with no local setup.
    ```
 
 ## Connect to {product}
-@id: connect
+@id {permalink=true}: connect
 
 @variant {deployment=cloud}:
 Sign in to {cloud} and copy an API key from **Settings → Keys**, then add it to `quill.yaml`:
