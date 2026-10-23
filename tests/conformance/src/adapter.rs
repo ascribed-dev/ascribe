@@ -22,24 +22,19 @@ pub struct Diagnostic {
     /// `error`, `warning`, or `advice`, when the adapter reports it: the
     /// severity after the content model's `[checks]` levels.
     pub severity: Option<String>,
-    /// The other places that help explain it, when the adapter reports
-    /// them.
-    pub related: Option<Vec<Related>>,
+    /// The other places it names, in order, when the adapter reports them.
+    pub related: Vec<RelatedPlace>,
 }
 
-/// A place a diagnostic names besides its own.
+/// A place a diagnostic names besides its own: its related information.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Related {
-    /// The file, as [`Diagnostic::file`] is written.
+pub struct RelatedPlace {
+    /// The file, relative to the case's content root, with `/` separators.
     pub file: String,
     /// The 1-based line.
     pub line: u32,
-}
-
-impl fmt::Display for Related {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}:{}", self.file, self.line)
-    }
+    /// The note shown with it.
+    pub label: String,
 }
 
 impl fmt::Display for Diagnostic {
@@ -52,11 +47,8 @@ impl fmt::Display for Diagnostic {
         if let Some(severity) = &self.severity {
             write!(f, " ({severity})")?;
         }
-        if let Some(related) = &self.related
-            && !related.is_empty()
-        {
-            let places: Vec<String> = related.iter().map(ToString::to_string).collect();
-            write!(f, " (related: {})", places.join(", "))?;
+        for r in &self.related {
+            write!(f, "; related {}:{} {:?}", r.file, r.line, r.label)?;
         }
         Ok(())
     }

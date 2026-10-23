@@ -23,6 +23,8 @@
 //! - a **dimension** by each `@variant` attribute and frontmatter `variant`
 //!   key that names it, and each availability spec entry that names it or
 //!   one of its values;
+//! - a **line of a release target** by each availability spec that names a
+//!   version in it ([`Project::release_uses`]);
 //! - a **note type** by each `@note` of that type (`note` when it gives none);
 //! - a **widget** by each directive line, container, or arm that opens it;
 //! - a declared **page content type** by the `type` value of each page's
@@ -31,9 +33,10 @@
 
 use std::collections::{BTreeSet, HashMap};
 
+use ascribe_core::availability::{AvailabilitySpec, Detail, Entry, Version, parse_availability};
 use ascribe_core::schema::{Attributes, Builtin, DefaultValue};
 use ascribe_core::{RelPath, Span};
-use ascribe_model::{ContentModel, GlossaryMatch, TYPE_KEY};
+use ascribe_model::{ContentModel, GlossaryMatch, TYPE_KEY, in_line};
 use ascribe_syntax::{Block, BlockKind, DirectiveLine, Inline, InlineKind};
 
 use crate::build::{Terms, prose_lists};
@@ -103,6 +106,9 @@ pub struct Use {
     pub span: Span,
     /// How.
     pub kind: UseKind,
+    /// The availability spec, as written, for a use in one; `None` for every
+    /// other use.
+    pub spec: Option<String>,
 }
 
 impl Project {
@@ -115,6 +121,38 @@ impl Project {
                 out.push(place);
             }
         });
+        out
+    }
+
+    /// Every availability spec that names a version in `line` of the release
+    /// target `target`, file by file in content path order and in document
+    /// order within a file. `planned` is read as the target's planned line
+    /// (SPEC §4.4), and a spec that names the target's dimension, which
+    /// takes no version, doesn't name a version of it.
+    pub fn release_uses(&self, target: &str, line: &Version) -> Vec<Use> {
+        let model = self.model();
+        let mut out = Vec::new();
+        for file in self.files() {
+            let mut found: Vec<Use> = availability_specs(file)
+                .into_iter()
+                .filter(|(spec, ..)| {
+                    let spec = model.resolve_planned(spec).spec;
+                    spec.entries
+                        .iter()
+                        .filter(|e| e.target.text == target)
+                        .flat_map(entry_versions)
+                        .any(|v| !v.is_planned() && in_line(line, v))
+                })
+                .map(|(_, span, text)| Use {
+                    file: file.path.clone(),
+                    span,
+                    kind: UseKind::Availability,
+                    spec: Some(text.to_owned()),
+                })
+                .collect();
+            found.sort_by_key(|u| u.span.start());
+            out.extend(found);
+        }
         out
     }
 
@@ -247,6 +285,7 @@ fn visit(
             file: file.path.clone(),
             span,
             kind,
+            spec: None,
         };
         if wants.files {
             file_uses(project, file, &mut |used, span, kind| {
@@ -262,8 +301,14 @@ fn visit(
             }
         }
         if wants.availability {
-            availability_uses(model, file, &mut |used, span| {
-                f(used, place(span, UseKind::Availability));
+            availability_uses(model, file, &mut |used, span, spec| {
+                f(
+                    used,
+                    Use {
+                        spec: Some(spec.to_owned()),
+                        ..place(span, UseKind::Availability)
+                    },
+                );
             });
         }
         if let Some(glossary) = &glossary {
@@ -363,14 +408,18 @@ fn file_uses(project: &Project, file: &FileIndex, f: &mut dyn FnMut(&Usable, Spa
 }
 
 /// The availability specs in `file` that name a feature, a dimension, or a
-/// dimension's value.
-fn availability_uses(model: &ContentModel, file: &FileIndex, f: &mut dyn FnMut(&Usable, Span)) {
-    let mut spec = |spec: &ascribe_core::availability::AvailabilitySpec, at: Span| {
+/// dimension's value, with the spec as written.
+fn availability_uses(
+    model: &ContentModel,
+    file: &FileIndex,
+    f: &mut dyn FnMut(&Usable, Span, &str),
+) {
+    for (spec, at, text) in availability_specs(file) {
         if let Some(name) = spec.bare_name()
             && model.feature(&name.text).is_some()
         {
-            f(&Usable::Feature(name.text.clone()), at);
-            return;
+            f(&Usable::Feature(name.text.clone()), at, text);
+            continue;
         }
         for entry in &spec.entries {
             let name = &entry.target.text;
@@ -378,25 +427,47 @@ fn availability_uses(model: &ContentModel, file: &FileIndex, f: &mut dyn FnMut(&
                 .dimension(name)
                 .or_else(|| model.dimension_of_value(name));
             if let Some(dimension) = dimension {
-                f(&Usable::Dimension(dimension.name.clone()), at);
+                f(&Usable::Dimension(dimension.name.clone()), at, text);
             }
         }
-    };
-    for marker in &file.availability {
-        if let (Some(Ok(parsed)), Some((_, at))) = (&marker.spec, &marker.primary) {
-            spec(parsed, *at);
-        }
     }
+}
+
+/// The versions an availability spec's entry names, in the order written.
+fn entry_versions(entry: &Entry) -> Vec<&Version> {
+    match &entry.detail {
+        Detail::None | Detail::State { version: None, .. } => Vec::new(),
+        Detail::Version(v)
+        | Detail::State {
+            version: Some(v), ..
+        } => vec![v],
+        Detail::History(steps) => steps.iter().map(|s| &s.version).collect(),
+    }
+}
+
+/// Every availability spec in `file` that parses: each mark's, then the
+/// frontmatter's `available`, with where each use is reported and the spec
+/// as written.
+fn availability_specs(file: &FileIndex) -> Vec<(AvailabilitySpec, Span, &str)> {
+    let mut out: Vec<(AvailabilitySpec, Span, &str)> = file
+        .availability
+        .iter()
+        .filter_map(|marker| match (&marker.spec, &marker.primary) {
+            (Some(Ok(parsed)), Some((text, at))) => Some((parsed.clone(), *at, text.trim())),
+            _ => None,
+        })
+        .collect();
     if let Some(text) = file
         .frontmatter
         .as_ref()
         .and_then(|fm| fm.get("available"))
         .and_then(|v| v.as_str())
-        && let Ok(parsed) = ascribe_core::availability::parse_availability(text, 0)
+        && let Ok(parsed) = parse_availability(text, 0)
         && let Some(at) = frontmatter_key(file, "available")
     {
-        spec(&parsed, at);
+        out.push((parsed, at, text.trim()));
     }
+    out
 }
 
 /// The links in `file` to a term's heading, on a glossary page that shows

@@ -1,0 +1,16 @@
+description: >-
+  In a project whose one release target is the only value of its dimension,
+  a mark with versions every live line has, generally available, says
+  nothing once its versions go: content with no mark applies everywhere,
+  and here that's the one target. It's reported with the message that says
+  to remove it, in each place a mark is written: the `available` key, an
+  `@available` line, and a row's `{available=…}`. A mark with a state other
+  than `ga` keeps its state, so it's reported as before.
+spec: ["4.4", "9.3"]
+tags: [check]
+
+diagnostics:
+  - {slug: available-same-in-every-line, file: page.md, line: 4, column: 12}
+  - {slug: available-same-in-every-line, file: section.md, line: 8, column: 13}
+  - {slug: available-same-in-every-line, file: section.md, line: 14, column: 13}
+  - {slug: available-same-in-every-line, file: table.md, line: 8, column: 25}

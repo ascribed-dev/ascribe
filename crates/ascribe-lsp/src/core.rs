@@ -209,6 +209,8 @@ pub(crate) struct Core {
     next_id: i32,
     /// What gives the day the checks run on.
     pub(crate) clock: Option<crate::Clock>,
+    /// The version the first log line gives ([`crate::Options::version`]).
+    pub(crate) version: String,
 }
 
 impl Core {
@@ -242,6 +244,7 @@ impl Core {
             show_on_code: true,
             next_id: 0,
             clock: None,
+            version: env!("CARGO_PKG_VERSION").to_owned(),
         }
     }
 
@@ -269,7 +272,7 @@ impl Core {
                 typ: MessageType::INFO,
                 message: format!(
                     "ascribe-lsp {}: {}",
-                    env!("CARGO_PKG_VERSION"),
+                    self.version,
                     start_message(config, &self.folders)
                 ),
             },
@@ -478,20 +481,26 @@ impl Core {
         };
         match ascribe_check::type_files::load_model(&text, &root, bound) {
             Err(issues) => {
-                // The project keeps the last model that
-                // loaded, and the problems go on `ascribe.toml`.
+                // The project keeps the last model that loaded, and the
+                // problems go on `ascribe.toml`. What every other file had
+                // was found with a model that no longer loads, so it goes
+                // until the model loads again.
                 self.model_problem = Some(ModelProblem {
                     text,
                     diagnostics: issues.iter().map(Diagnostic::from_issue).collect(),
                 });
+                self.clear_all_but_model();
             }
             Ok(model) => {
-                self.model_problem = None;
+                let recovered = self.model_problem.take().is_some();
                 let vale = self
                     .loaded
                     .as_ref()
                     .and_then(|l| l.model.checks.vale.clone());
                 self.adopt_model(Arc::new(model), text);
+                if recovered {
+                    self.check_everything_again();
+                }
                 self.prose_settings_changed(vale.as_ref());
                 self.register_lenses();
             }
@@ -516,6 +525,43 @@ impl Core {
                 self.load_project(model, text);
             }
         }
+    }
+
+    /// Clears every file's diagnostics but `ascribe.toml`'s, while the
+    /// model doesn't load.
+    fn clear_all_but_model(&mut self) {
+        let config = self.config.clone();
+        let paths: Vec<PathBuf> = self
+            .published
+            .keys()
+            .filter(|path| Some(*path) != config.as_ref())
+            .cloned()
+            .collect();
+        for path in paths {
+            self.clear(&path);
+        }
+    }
+
+    /// Checks every file again, and Vale too, once the model loads after it
+    /// didn't: what was cleared meanwhile is published again. What the
+    /// content checks across the project found is forgotten, so the round
+    /// publishes the files that keeps on: `ascribe.nav`, the permalinks
+    /// list, and the memos.
+    fn check_everything_again(&mut self) {
+        let Some(loaded) = self.loaded.as_mut() else {
+            return;
+        };
+        let snapshot = loaded.inc.snapshot();
+        loaded
+            .dirty
+            .extend(snapshot.files().map(|f| f.path.clone()));
+        loaded
+            .dirty
+            .extend(snapshot.unreadable().iter().map(|u| u.path.clone()));
+        loaded.across = Arc::default();
+        loaded.across_dirty = true;
+        self.queue_all_prose();
+        self.publish_open_configs();
     }
 
     /// Loads the project again with the model it has, after a change the
@@ -1546,6 +1592,11 @@ impl Core {
     /// on it, when they, or the version of the document they're for, changed
     /// since the last time, or when the file was changed on disk since.
     pub(crate) fn publish(&mut self, path: &Path, diagnostics: Vec<lsp_types::Diagnostic>) {
+        // While the model doesn't load, only `ascribe.toml` has any; the
+        // rest are published once it does ([`Core::check_everything_again`]).
+        if self.model_problem.is_some() && self.config.as_deref() != Some(path) {
+            return;
+        }
         let prose = self.prose.found(path);
         let mut all = Vec::with_capacity(diagnostics.len() + prose.len());
         all.extend(diagnostics.iter().cloned());
@@ -1740,11 +1791,14 @@ impl Core {
         self.has_work() || self.computing || self.prose.has_work()
     }
 
-    /// Whether files are waiting to have their diagnostics computed.
+    /// Whether files are waiting to have their diagnostics computed: none
+    /// while the model doesn't load ([`Core::plan`]).
     pub(crate) fn has_work(&self) -> bool {
-        self.loaded
-            .as_ref()
-            .is_some_and(|l| !l.dirty.is_empty() || l.across_dirty)
+        self.model_problem.is_none()
+            && self
+                .loaded
+                .as_ref()
+                .is_some_and(|l| !l.dirty.is_empty() || l.across_dirty)
     }
 
     /// What a semantic tokens request needs for a document: the snapshot, the

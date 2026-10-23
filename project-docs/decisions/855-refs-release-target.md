@@ -1,0 +1,5 @@
+---
+section: The binary
+---
+
+**`ascribe refs` names a line of a release target as `release:<target>@<version>`, and each place's JSON has a `spec`.** The target's places are the availability specs that name a version in the line, a version being in it when it starts with the line's parts, with `planned` read as the target's planned line; a target with no `[releases.<target>]` doesn't exist, and exits `1`. Its `kind` is `release`. Every place in `refs`' JSON gains `spec`: the availability spec as written for an `availability` place, null for any other; text shows it after the use, in backticks. The schema version stays 1, since no field is removed or changes meaning. `release:` is read by `refs` alone, not by a memo's `about`, whose grammar (SPEC §7.7) doesn't change, and the editor's Find All References, which asks about what's under the cursor rather than a written target, doesn't take it. _Why:_ finding every mark for one release took a text search: `ascribe refs dimension:release` listed 87 places in Ascribe's docs, each only as `availability`, with no way to tell which release each named. _From:_ the maintainer, 22 October 2026, in #855.

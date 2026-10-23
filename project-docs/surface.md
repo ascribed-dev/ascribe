@@ -19,7 +19,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe baseline write` | Adds every advice `ascribe check` reports to `ascribe.baseline`, and makes the file when there's none. |  | `text`, `json` |
 | `ascribe baseline prune` | Removes the entries of `ascribe.baseline` that match nothing the project has any more: the problems that were fixed, and those whose text changed, which `ascribe check` reports as new. |  | `text`, `json` |
 | `ascribe build` | Checks the project, then writes each build's outputs. | `[--build <NAME>]... [--emit site,plain,json] [--anchors]` | `text`, `json` |
-| `ascribe check` | Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. | `[PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--deny-warnings] [--fix] [--vale] [--no-baseline]` | `text`, `concise`, `json`, `prompt` |
+| `ascribe check` | Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. | `[PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--limit <N>] [--deny-warnings] [--fix] [--vale] [--no-baseline]` | `text`, `concise`, `json`, `prompt` |
 | `ascribe diff` | Shows what changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved. | `[PAGE] [--base <REV>] [--base-exact] [--build <NAME>]... [--exit-code] [--pages-only]` | `text`, `json`, `html`, `prompt` |
 | `ascribe drift` | Lists the pages whose code examples changed between a git revision and the working tree, and whether the words around them changed too, and the pages whose examples no longer resolve. | `[--base <REV>] [--build <NAME>]... [--exit-code]` | `text`, `json`, `markdown` |
 | `ascribe explain` | Says what a diagnostic means: its severity, its messages, how to fix it, a link to its entry in Diagnostics, and, for the diagnostics people meet most, a short page that has the problem and the same page without it. | `[CODE] [--list]` | `text`, `json` |
@@ -171,7 +171,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC058` | `id-invalid` | error | write | `{id}` isn't a valid id: use only letters, digits, hyphens, underscores, and periods |
 | `ASC059` | `image-attribute-missing` | error | write | this image is missing the required attribute `{key}` |
 | `ASC060` | `model-toml-syntax` | error | write | ascribe.toml isn't valid TOML: {detail} |
-| `ASC061` | `model-unknown-key` | error | choose | unknown key `{key}` in `[{table}]` |
+| `ASC061` | `model-unknown-key` | error | choose | unknown key `{key}` in `[{table}]`; this is ascribe {version}, and the project may need a newer one |
 | `ASC062` | `model-missing-key` | error | write | `[{table}]` is missing the required key `{key}` |
 | `ASC063` | `model-wrong-type` | error | write | `{key}` must be {expected}, but it's {found} |
 | `ASC064` | `model-invalid-value` | error | choose | `{key}` can't be "{value}"; use one of: {values} |
@@ -644,6 +644,7 @@ For agents. Read from `plugins/ascribe/`.
 | `plugins/ascribe/commands/new-page.md` | A command, `/ascribe:new-page` |
 | `plugins/ascribe/commands/review.md` | A command, `/ascribe:review` |
 | `plugins/ascribe/hooks/hooks.json` | Hooks: Stop |
+| `plugins/ascribe/launcher/ascribe.sh` | The launcher, which finds the `ascribe` binary to run |
 | `plugins/ascribe/plugin.json` | The manifest |
 | `plugins/ascribe/skills/ascribe/SKILL.md` | The skill |
 | `plugins/ascribe/skills/ascribe/references/directives.md` | A reference the skill reads when it needs it |
@@ -873,6 +874,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `contracts/content-model/validation.md` | `ascribe.toml` format contract: validation rules | reference |
 | `contracts/json-reports.md` | JSON report contract | reference |
 | `contracts/json-reports/diff.md` | JSON reports: `ascribe diff` and `ascribe drift` | reference |
+| `contracts/json-reports/model.md` | JSON reports: `ascribe model` | reference |
 | `contracts/json-reports/questions.md` | JSON reports: the commands that answer questions | reference |
 | `contracts/json-reports/report.md` | JSON reports: `ascribe report` | reference |
 | `contracts/json-reports/sources.md` | JSON reports: `ascribe init`, `ascribe sources`, `ascribe observe`, and `ascribe permalinks` | reference |

@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import type { ProjectServer, ServerState } from "./client.js";
 import { ProjectRegistry } from "./registry.js";
+import { killAll } from "./processes.js";
 import type { ResolvedBinary } from "./binary.js";
 import { PreviewController, type PreviewApi } from "./preview/controller.js";
 import { ActionsController, type ActionsApi } from "./actions/controller.js";
@@ -128,6 +129,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   }
   const projects = new ProjectRegistry(context);
   registry = projects;
+  // A host that exits without deactivating the extension, or before every
+  // server has stopped, takes its servers with it.
+  process.on("exit", killAll);
+  context.subscriptions.push({ dispose: () => process.off("exit", killAll) });
 
   const chosen = new ChosenBuilds();
   const promptAgent = new PromptAgent(context, projects);
@@ -498,4 +503,5 @@ function protocolRange(range: { start: ProtocolPosition; end: ProtocolPosition }
 export async function deactivate(): Promise<void> {
   await registry?.dispose();
   registry = undefined;
+  killAll();
 }

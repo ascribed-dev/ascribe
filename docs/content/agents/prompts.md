@@ -34,7 +34,6 @@ ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 [`ascribe agents prompt`](commands.md#cli-agents-prompt) says where `new-page` puts the page, and what it gives the agent to start from.
 
 ## Memos in a prompt
-@available: ascribe 0.4.0
 
 A prompt about a page names the [memo files](../writing/memo-files.md) about it, so your agent reads why the page is written as it is before it changes it. They come after the problems, under a heading of their own, a line each: the memo's path, what its `about` names, and its state when it isn't placed. The agent opens the file and reads it whole; a prompt never has a memo's text in it.
 

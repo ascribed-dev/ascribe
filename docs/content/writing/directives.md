@@ -254,7 +254,6 @@ A region is marked in the code with [Bluehawk](https://github.com/mongodb-univer
 
 Every problem is reported at the `@snippet` line ([source files](../checks/diagnostics/directives.md), in the diagnostics reference).
 
-@available: ascribe 0.4.0
 In VS Code, a code file says which pages show it: see [code files a page shows](../editor/writing.md#code-files-a-page-shows).
 
 ## `@intended`
@@ -297,7 +296,6 @@ An acknowledged problem isn't reported, but `ascribe check` and `ascribe build` 
 In the editor, a review check's problem has a quick fix, **Mark as intended, and write why**, that writes the acknowledgement in the right place for you to fill in the reason. Its placeholder reason is reported as an error until you replace it, so the fix alone silences nothing.
 
 ## `@memo`
-@available: ascribe 0.4.0
 
 ([SPEC §4.10]({repo}/blob/main/SPEC.md#410-memo))
 
@@ -324,7 +322,6 @@ Revoke the old key once every agent uses the new one.
 - **An HTML comment isn't a memo:** [`html-comment`](../checks/diagnostics/content-checks.md#ASC223) says why, and how to rewrite one as a memo.
 
 ## `@term`
-@available: ascribe 0.4.0
 
 ([SPEC §4.11]({repo}/blob/main/SPEC.md#411-term))
 

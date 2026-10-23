@@ -153,6 +153,11 @@ impl Core {
     pub(crate) fn plan(&mut self) -> Option<Job> {
         let encoding = self.encoding;
         let today = self.today();
+        // Nothing is published while the model doesn't load; what's queued
+        // waits for it.
+        if self.model_problem.is_some() {
+            return None;
+        }
         let loaded = self.loaded.as_mut()?;
         if loaded.dirty.is_empty() && !loaded.across_dirty {
             return None;

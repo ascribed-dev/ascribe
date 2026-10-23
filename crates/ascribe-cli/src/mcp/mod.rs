@@ -92,7 +92,8 @@ impl Server {
     pub fn info() -> ServerInfo {
         ServerInfo {
             name: "ascribe".to_owned(),
-            version: env!("CARGO_PKG_VERSION").to_owned(),
+            // What `ascribe --version` prints, `+dev` and commit included.
+            version: env!("ASCRIBE_VERSION").to_owned(),
             instructions: INSTRUCTIONS_TEXT.to_owned(),
         }
     }

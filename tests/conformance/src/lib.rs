@@ -25,7 +25,7 @@ pub mod skips;
 
 pub use adapter::{
     AdapterError, AdapterResult, BuildResult, ConformanceAdapter, Diagnostic, PageResult, Registry,
-    Related,
+    RelatedPlace,
 };
 pub use case::{Case, CaseError, CaseKind, discover};
 pub use expect::{

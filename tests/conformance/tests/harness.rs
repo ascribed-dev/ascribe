@@ -63,7 +63,7 @@ fn fake_diagnostics(file: &str, text: &str) -> Vec<Diagnostic> {
                 line: i as u32 + 1,
                 column: line[..byte].chars().count() as u32 + 1,
                 severity: None,
-                related: None,
+                related: Vec::new(),
             })
         })
         .collect()

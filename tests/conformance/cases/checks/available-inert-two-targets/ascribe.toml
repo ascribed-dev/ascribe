@@ -1,0 +1,20 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page.frontmatter]
+title = "string"
+
+[dimensions.product]
+values = ["ascribe", "quill"]
+
+[releases.ascribe]
+live = ["0.4.2"]
+
+[releases.ascribe.archived]
+"0.4.0" = {}
+"0.4.1" = {}
+
+[builds.site]
+availability = "badge"

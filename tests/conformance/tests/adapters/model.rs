@@ -48,7 +48,7 @@ impl ConformanceAdapter for ModelAdapter {
                 line: pos.line + 1,
                 column: pos.col + 1,
                 severity: None,
-                related: None,
+                related: Vec::new(),
             });
         }
         Ok(Some(out))

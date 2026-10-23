@@ -49,7 +49,8 @@ pub enum Command {
     /// target to the line's version, and move the line from planned to
     /// live. Where no build is
     /// versioned by the target, the line that was current moves to
-    /// archived.
+    /// archived, and the marks for the target that then say nothing are
+    /// removed or rewritten.
     ///
     /// Writes only files git can put back: each must be tracked and
     /// unchanged, unless --force.
@@ -576,6 +577,12 @@ pub(crate) struct ReleaseJson {
     archived: Option<String>,
     /// Each source file whose marks are rewritten, from the project root.
     files: Vec<FileJson>,
+    /// Each source file with marks for the target that say nothing once
+    /// `archived` is, removed or rewritten, from the project root.
+    cleared: Vec<ClearedFileJson>,
+    /// Each feature whose spec says nothing for the target once `archived`
+    /// is, rewritten.
+    cleared_features: Vec<FeatureJson>,
     /// What the release changes in the builds' outputs, by build and
     /// output.
     outputs: Vec<OutputJson>,
@@ -615,6 +622,29 @@ struct MarkJson {
     from: String,
     /// The spec as rewritten.
     to: String,
+}
+
+/// A source file with marks that say nothing once the line that was
+/// current is archived.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct ClearedFileJson {
+    /// The file, from the project root.
+    file: String,
+    /// Each mark removed or rewritten.
+    marks: Vec<ClearedMarkJson>,
+}
+
+/// A mark that says nothing, removed or rewritten.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct ClearedMarkJson {
+    /// Its line, from 1, before the release.
+    line: u32,
+    /// Its entry for the target, as written.
+    from: String,
+    /// The entry as rewritten; null when the mark is removed.
+    to: Option<String>,
 }
 
 /// One output the release changes.
@@ -664,6 +694,32 @@ impl ReleaseJson {
                             to: m.to.clone(),
                         })
                         .collect(),
+                })
+                .collect(),
+            cleared: r
+                .cleared
+                .iter()
+                .map(|f| ClearedFileJson {
+                    file: layout.project_path(&f.path).to_string(),
+                    marks: f
+                        .marks
+                        .iter()
+                        .map(|m| ClearedMarkJson {
+                            line: m.line,
+                            from: m.from.clone(),
+                            to: m.to.clone(),
+                        })
+                        .collect(),
+                })
+                .collect(),
+            cleared_features: r
+                .cleared_features
+                .iter()
+                .map(|f| FeatureJson {
+                    key: f.key.clone(),
+                    from: f.from.clone(),
+                    to: f.to.clone(),
+                    kept: f.kept.clone(),
                 })
                 .collect(),
             outputs: r
@@ -726,14 +782,19 @@ fn run_release(
             .iter()
             .map(|f| (content.join(f.path.as_str()), f.text.as_str())),
     );
+    // A cleared file's text is after its planned marks are rewritten too.
+    for f in &released.cleared {
+        let path = content.join(f.path.as_str());
+        writes.retain(|(p, _)| *p != path);
+        writes.push((path, f.text.as_str()));
+    }
     if !args.dry_run {
+        let mut paths: Vec<&RelPath> = released.files.iter().map(|f| &f.path).collect();
+        paths.extend(released.cleared.iter().map(|f| &f.path));
+        paths.sort();
+        paths.dedup();
         if !args.force
-            && let Err(e) = restorable(
-                &project,
-                &config,
-                &released.files.iter().map(|f| &f.path).collect::<Vec<_>>(),
-                "release",
-            )
+            && let Err(e) = restorable(&project, &config, &paths, "release")
         {
             return answer::fail(err, &e);
         }
@@ -846,6 +907,7 @@ fn write_release(
             "{target} {archived} {moved} to archived, with no address: no build is versioned by {target}."
         )?;
     }
+    write_cleared(out, r, dry_run, content)?;
     if r.outputs.is_empty() {
         writeln!(out, "No output changed.")?;
     } else {
@@ -873,7 +935,11 @@ fn write_release(
         }
     }
     if dry_run {
-        let files = r.files.len() + 1;
+        let mut paths: Vec<&RelPath> = r.files.iter().map(|f| &f.path).collect();
+        paths.extend(r.cleared.iter().map(|f| &f.path));
+        paths.sort();
+        paths.dedup();
+        let files = paths.len() + 1;
         writeln!(
             out,
             "Dry run: nothing written. It would write ascribe.toml{}.",
@@ -888,6 +954,66 @@ fn write_release(
                 String::new()
             }
         )?;
+    }
+    Ok(())
+}
+
+/// The marks and features that say nothing once the line that was current
+/// is archived: how many are removed and rewritten, and each one.
+fn write_cleared(
+    out: &mut dyn Write,
+    r: &Released,
+    dry_run: bool,
+    content: &Path,
+) -> io::Result<()> {
+    let marks: Vec<(&ascribe_lsp::ClearedFile, &ascribe_lsp::ClearedMark)> = r
+        .cleared
+        .iter()
+        .flat_map(|f| f.marks.iter().map(move |m| (f, m)))
+        .collect();
+    let (Some(archived), false) = (
+        &r.archived,
+        marks.is_empty() && r.cleared_features.is_empty(),
+    ) else {
+        return Ok(());
+    };
+    let target = &r.target;
+    let removed = marks.iter().filter(|(_, m)| m.to.is_none()).count();
+    let rewritten = marks.len() - removed + r.cleared_features.len();
+    let plural = |n: usize| if n == 1 { "" } else { "s" };
+    let (remove, rewrite) = if dry_run {
+        ("Would remove", "would rewrite")
+    } else {
+        ("Removed", "rewrote")
+    };
+    writeln!(
+        out,
+        "With {target} {archived} archived, {} mark{} say{} nothing: {}.",
+        marks.len() + r.cleared_features.len(),
+        plural(marks.len() + r.cleared_features.len()),
+        if marks.len() + r.cleared_features.len() == 1 {
+            "s"
+        } else {
+            ""
+        },
+        [
+            (removed > 0).then(|| format!("{} {removed}", remove.to_lowercase())),
+            (rewritten > 0).then(|| format!("{rewrite} {rewritten}")),
+        ]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>()
+        .join(", ")
+    )?;
+    for (file, mark) in marks {
+        let at = answer::path_from_here(&content.join(file.path.as_str()));
+        match &mark.to {
+            Some(to) => writeln!(out, "  {at}:{}: `{}` to `{to}`", mark.line, mark.from)?,
+            None => writeln!(out, "  {at}:{}: `{}`, removed", mark.line, mark.from)?,
+        }
+    }
+    for f in &r.cleared_features {
+        writeln!(out, "  feature {}: `{}` to `{}`", f.key, f.from, f.to)?;
     }
     Ok(())
 }

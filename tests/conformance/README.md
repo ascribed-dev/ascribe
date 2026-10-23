@@ -284,15 +284,18 @@ diagnostics:
     column: 1                   # optional, 1-based
     file: guides/setup.md       # required in project cases
     severity: advice            # optional: error, warning, or advice
-    related: [{line: 1}]        # optional: the other places it names
+    related:                    # optional: the other places it names
+      - file: _fragments/setup.md   # required in project cases
+        line: 3
+        label: "first used here"    # optional
 ```
 
 - `slug` names an entry of the diagnostics registry, `tests/conformance/diagnostics.toml` (its header documents the format). Cases refer to diagnostics by slug, never by code or message. The runner checks every expected slug before the case runs, even when the case is skipped: the slug must be registered; a `file`-level slug goes in the top-level `diagnostics` and and a `page`-level slug under a build.
 - `line` is 1-based and counts every line of the file, including frontmatter.
 - `column` is 1-based and counts Unicode scalar values (characters), not bytes or UTF-16 units. It's compared only when written.
 - `file` is relative to the content root. It defaults to `input.md` in single-file cases.
+- `related` is compared only when written, and then exactly: the diagnostic's related information, every place in the order the diagnostic names them. Each place's `label`, the note shown with it, is compared only when written.
 - `severity` is compared only when written: the diagnostic's severity after the content model's `[checks]` levels, which the adapters apply as every tool does. A check set to `off` isn't reported.
-- `related` is compared only when written: the other places the diagnostic names, in order, each a `line` and a `file` (relative to the content root; it defaults to the diagnostic's own). `[]` says it names none. A related place's note, like a message, isn't compared.
 - A check that compares with today's date (a review date) has no day unless the case names one in `today`, so a case's result doesn't change with the day it runs.
 - The expected list must match the reported diagnostics exactly, as a multiset: every expected diagnostic must be reported, and every reported diagnostic must be expected. Order doesn't matter.
 - Top-level `diagnostics` holds **file-level** diagnostics (§8.1) from every source file in the case. **Page-level** diagnostics depend on a build, so they go under that build (see below).

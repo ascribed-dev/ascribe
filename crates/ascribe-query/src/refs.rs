@@ -7,8 +7,11 @@
 //! included. A memo file about the target is a place too (SPEC §7.7), at
 //! its `about` line, whether or not the target exists. An image's places
 //! are the files that show it, link to it, or name it in raw HTML or a
-//! frontmatter field, as `image-unused` finds them.
+//! frontmatter field, as `image-unused` finds them. A line of a release
+//! target, `release:<target>@<version>`, is used by each availability spec
+//! that names a version in it.
 
+use ascribe_core::availability::{Version, parse_version};
 use ascribe_core::{LineIndex, RelPath, Span, WideEncoding};
 use ascribe_resolve::{
     BadTarget, EntryKind, FileKind, MemoFile, MentionKind, Project, RefKind, Usable, UseKind,
@@ -74,6 +77,8 @@ pub enum TargetKind {
     Note,
     /// A project widget, `widget:<name>`.
     Widget,
+    /// A line of a release target, `release:<target>@<version>`.
+    Release,
 }
 
 /// A place a target is used.
@@ -96,6 +101,9 @@ pub struct Place {
     /// `.ascribe/memos/`, rather than the project's `memos/`; `false` for
     /// every place that isn't a memo.
     pub personal: bool,
+    /// The availability spec, as written, for an `availability` place; null
+    /// for every other place.
+    pub spec: Option<String>,
 }
 
 /// What `refs` asks about: a target as `ascribe refs` and a memo's `about`
@@ -129,7 +137,7 @@ pub fn refs(
         .map(|target| project.uses(target))
         .unwrap_or_default()
         .into_iter()
-        .map(|place| (place.file, place.span, use_name(place.kind)))
+        .map(|place| (place.file, place.span, use_name(place.kind), place.spec))
         .collect();
     // A placed memo is about what the target is, however each names it, and
     // a term's memo is on its heading; a detached one, about what it names
@@ -169,7 +177,7 @@ pub fn image_refs(
     limit: usize,
     memos: &[MemoFile],
 ) -> Refs {
-    let mut places: Vec<(RelPath, Span, &'static str)> = project
+    let mut places: Vec<Spot> = project
         .asset_users(image)
         .iter()
         .map(|site| {
@@ -177,7 +185,7 @@ pub fn image_refs(
                 RefKind::Image => "image",
                 RefKind::Link => "link",
             };
-            (site.file.clone(), site.span, used)
+            (site.file.clone(), site.span, used, None)
         })
         .collect();
     for file in project.files() {
@@ -190,7 +198,7 @@ pub fn image_refs(
                         MentionKind::Html => "html",
                         MentionKind::Frontmatter => "frontmatter",
                     };
-                    (file.path.clone(), m.span, used)
+                    (file.path.clone(), m.span, used, None)
                 }),
         );
     }
@@ -219,12 +227,78 @@ pub fn image_refs(
     )
 }
 
+/// A line of a release target, as `refs` reads `release:<target>@<version>`;
+/// `None` when `given` doesn't start with `release:`.
+///
+/// # Errors
+///
+/// No target before `@`, or no version after it, or one that isn't a
+/// version.
+pub fn release_target(given: &str) -> Option<Result<(String, Version), QueryError>> {
+    let rest = given.strip_prefix("release:")?;
+    let bad = |reason: &str| QueryError::BadTarget {
+        given: given.to_owned(),
+        reason: reason.to_owned(),
+    };
+    let Some((target, version)) = rest.split_once('@') else {
+        return Some(Err(bad(
+            "give a release target and a version: `release:<target>@<version>`",
+        )));
+    };
+    let target = target.trim();
+    if target.is_empty() {
+        return Some(Err(bad("give a release target before `@`")));
+    }
+    Some(
+        parse_version(version.trim(), 0)
+            .map(|v| (target.to_owned(), v))
+            .map_err(|_| bad("give a version after `@`, such as `3.4`")),
+    )
+}
+
+/// The availability specs that name a version in `line` of the release
+/// target `target`, at most `limit` of them; `given` is the target as the
+/// person wrote it. A target the project lists no releases for doesn't
+/// exist, and has no places.
+pub fn release_refs(
+    project: &Project,
+    target: &str,
+    line: &Version,
+    given: &str,
+    limit: usize,
+) -> Refs {
+    let exists = project.model().releases_of(target).is_some();
+    let places = if exists {
+        project
+            .release_uses(target, line)
+            .into_iter()
+            .map(|place| (place.file, place.span, use_name(place.kind), place.spec))
+            .collect()
+    } else {
+        Vec::new()
+    };
+    answer(
+        project,
+        Found {
+            kind: TargetKind::Release,
+            exists,
+            places,
+            about: Vec::new(),
+        },
+        given,
+        limit,
+    )
+}
+
+/// One place: its file, where it is, its `use`, and its spec.
+type Spot = (RelPath, Span, &'static str, Option<String>);
+
 /// What a target is, and what names it.
 struct Found<'m> {
     kind: TargetKind,
     exists: bool,
-    /// The places that use it: each one's file, where it is, and its `use`.
-    places: Vec<(RelPath, Span, &'static str)>,
+    /// The places that use it.
+    places: Vec<Spot>,
     /// The memo files about it.
     about: Vec<&'m MemoFile>,
 }
@@ -242,7 +316,7 @@ fn answer(project: &Project, found: Found<'_>, given: &str, limit: usize) -> Ref
     let mut listed: Vec<Place> = places
         .iter()
         .take(limit)
-        .map(|(file, span, used)| {
+        .map(|(file, span, used, spec)| {
             let (line, column) = lines.at(file, span.start());
             Place {
                 file: project_path(project, file),
@@ -250,6 +324,7 @@ fn answer(project: &Project, found: Found<'_>, given: &str, limit: usize) -> Ref
                 column,
                 use_kind: used,
                 personal: false,
+                spec: spec.clone(),
             }
         })
         .collect();
@@ -265,6 +340,7 @@ fn answer(project: &Project, found: Found<'_>, given: &str, limit: usize) -> Ref
             column,
             use_kind: "memo",
             personal: memo.personal(),
+            spec: None,
         }
     }));
     Refs {

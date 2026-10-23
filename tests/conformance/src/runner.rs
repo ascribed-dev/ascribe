@@ -5,9 +5,11 @@ use std::fmt::Write as _;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
 
-use crate::adapter::{AdapterResult, BuildResult, ConformanceAdapter, Diagnostic, Registry};
+use crate::adapter::{
+    AdapterResult, BuildResult, ConformanceAdapter, Diagnostic, Registry, RelatedPlace,
+};
 use crate::case::{Case, CaseError, CaseKind, discover};
-use crate::expect::{BuildExpect, ExpectedDiagnostic, OutputKind, OutputSlot};
+use crate::expect::{BuildExpect, ExpectedDiagnostic, ExpectedRelated, OutputKind, OutputSlot};
 use crate::outline::{compare, outline_to_yaml};
 use crate::registry::{DiagnosticsRegistry, Level, RegistryError};
 use crate::skips::{Check, SkipTarget, Skips, SkipsError};
@@ -536,14 +538,10 @@ fn compare_diagnostics(
                     .severity
                     .as_ref()
                     .is_none_or(|s| a.severity.as_ref() == Some(s))
-                && exp.related.as_ref().is_none_or(|related| {
-                    a.related.as_ref().is_some_and(|actual| {
-                        actual.len() == related.len()
-                            && actual.iter().zip(related).all(|(a, r)| {
-                                a.file == r.file.as_deref().unwrap_or(file) && a.line == r.line
-                            })
-                    })
-                })
+                && exp
+                    .related
+                    .as_ref()
+                    .is_none_or(|r| related_match(r, &a.related, default_file))
         });
         match found {
             Some(i) => used[i] = true,
@@ -560,6 +558,20 @@ fn compare_diagnostics(
         }
     }
     problems
+}
+
+/// Whether a diagnostic's related places are the expected ones, in order.
+fn related_match(
+    expected: &[ExpectedRelated],
+    actual: &[RelatedPlace],
+    default_file: &str,
+) -> bool {
+    expected.len() == actual.len()
+        && expected.iter().zip(actual).all(|(e, a)| {
+            e.file.as_deref().unwrap_or(default_file) == a.file
+                && e.line == a.line
+                && e.label.as_ref().is_none_or(|l| *l == a.label)
+        })
 }
 
 impl Report {

@@ -12,13 +12,19 @@ It has no edit hook: the language server already reports each edit, and a hook w
 
 ## Install
 
-The plugin runs `ascribe` from your path. Install it first:
+The plugin runs the `ascribe` binary the VS Code extension would, so a project that pins a version gets that version, not whichever is installed globally. Its launcher, `launcher/ascribe.sh`, runs the first of these that it finds:
+
+1. The binary the `ASCRIBE_PATH` environment variable names. If it names nothing that runs, the launcher says so and stops, rather than run another.
+2. The project's own, `node_modules/.bin/ascribe`, looked for from the project's folder (`CLAUDE_PROJECT_DIR`, or the working directory) up to the repository's root, so a project in a monorepo finds the one at the root.
+3. `ascribe` on your path.
+
+So install it in the project:
 
 ```shell
-npm install -g @ascribed/cli
+npm install --save-dev @ascribed/cli
 ```
 
-or put the binary from a [release](https://github.com/ascribed-dev/ascribe/releases) on your path, which starts quicker.
+or, for every project, install it globally (`npm install -g @ascribed/cli`) or put the binary from a [release](https://github.com/ascribed-dev/ascribe/releases) on your path, which starts quicker. The launcher is a POSIX shell script, run with `sh`; on Windows, that's the `sh` that comes with Git, which Claude Code needs there.
 
 Then, in Claude Code in a terminal, from a copy of the repository (its VS Code extension doesn't offer `/plugin`):
 
@@ -36,8 +42,8 @@ On a project with many problems, the diagnostics Claude Code pushes after each e
 ```json
 {
   "ascribe": {
-    "command": "ascribe",
-    "args": ["lsp"],
+    "command": "sh",
+    "args": ["${CLAUDE_PLUGIN_ROOT}/launcher/ascribe.sh", "lsp"],
     "extensionToLanguage": { ".md": "markdown" },
     "diagnostics": false
   }

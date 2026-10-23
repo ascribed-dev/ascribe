@@ -21,6 +21,13 @@
           "description": "Whether it's a memo file kept on this machine only, in\n`.ascribe/memos/`, rather than the project's `memos/`; `false` for\nevery place that isn't a memo.",
           "type": "boolean"
         },
+        "spec": {
+          "description": "The availability spec, as written, for an `availability` place; null\nfor every other place.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "use": {
           "description": "How it uses the target: `link`, `include`, `phrase`, `availability`,\n`term`, `variant`, `note`, `widget`, `image`, an image that shows it,\n`html` or `frontmatter`, raw HTML or a frontmatter field that names\nit, or `memo`, a memo file about it.",
           "type": "string"
@@ -31,7 +38,8 @@
         "line",
         "column",
         "use",
-        "personal"
+        "personal",
+        "spec"
       ],
       "type": "object"
     },
@@ -86,6 +94,11 @@
         {
           "const": "widget",
           "description": "A project widget, `widget:<name>`.",
+          "type": "string"
+        },
+        {
+          "const": "release",
+          "description": "A line of a release target, `release:<target>@<version>`.",
           "type": "string"
         }
       ]
