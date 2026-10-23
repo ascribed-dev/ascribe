@@ -490,7 +490,11 @@ fn a_permalink_that_differs_only_in_case_names_both_spellings() {
             "---\ntitle: B\npermalink: setup\n---\n\n@include: _f.md\n",
         ),
     ]);
-    let found = page_level(&p);
+    // The permalinks have no summaries, which `summary-missing` reports.
+    let found: Vec<_> = page_level(&p)
+        .into_iter()
+        .filter(|d| d.slug.as_str() == "permalink-duplicate")
+        .collect();
     assert_eq!(
         at(&p, &found),
         [

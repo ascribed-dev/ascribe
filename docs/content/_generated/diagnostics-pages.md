@@ -749,7 +749,7 @@ Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md
 
 ### ASC225 `memo-invalid`
 @id {permalink=true}: ASC225
-@summary: A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry other than a glossary term; or a `memos/` folder inside the content root.
+@summary: A memo file can't be read, its frontmatter isn't valid, or its `about` or `quote` isn't one a memo can have; or a `memos/` folder is inside the content root.
 
 Error · file level · next step: write · [SPEC §7.7]({repo}/blob/main/SPEC.md#77-memo-files)
 

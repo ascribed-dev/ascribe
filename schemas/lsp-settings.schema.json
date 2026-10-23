@@ -38,7 +38,7 @@
               "type": "null"
             }
           ],
-          "description": "Its `limit`, for a check that takes one: `page-size`, `image-large`,\nand `memo-long`."
+          "description": "Its `limit`, for a check that takes one: `page-size`, `image-large`,\n`memo-long`, and `summary-long`."
         },
         "name": {
           "description": "Its name for people: the slug in words, `Page size`.",

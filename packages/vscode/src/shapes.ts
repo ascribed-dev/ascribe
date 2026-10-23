@@ -277,7 +277,7 @@ export interface CheckEntry {
   problems: SettingProblem[];
   /**
    * Its `limit`, for a check that takes one: `page-size`, `image-large`,
-   * and `memo-long`.
+   * `memo-long`, and `summary-long`.
    */
   limit: CheckLimit | null;
 }

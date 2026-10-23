@@ -583,7 +583,7 @@ TypeScript type is `SettingsResult` in `packages/vscode/src/shapes.ts`
   reference's order. `when` is the registry's, as a sentence, in pieces as a
   description is; `default` is the check's own level; `level` and `set` are
   the file's, from `<check> = "<level>"` or a table's `level`; and `limit`,
-  for `page-size`, `image-large` (a `size`), and `memo-long`, has its default
+  for `page-size`, `image-large` (a `size`), `memo-long`, and `summary-long`, has its default
   and the file's value.
 - The parts are the tables the file names in `[types]`, `[dimensions]`,
   `[releases]`, `[builds]`, and `[sources]`, in that order, the reference's,

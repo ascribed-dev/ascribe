@@ -62,6 +62,16 @@ impl SectionSummary {
     pub fn inlines(&self) -> &[Inline] {
         summary_inlines(&self.block)
     }
+
+    /// The summary as plain text on one line, phrases replaced and
+    /// formatting dropped: what `summary-long` measures, as
+    /// `description-too-long` measures a description.
+    pub fn text(&self) -> String {
+        super::inlines::inline_text(self.inlines())
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
 }
 
 /// One `@summary` found on a page.

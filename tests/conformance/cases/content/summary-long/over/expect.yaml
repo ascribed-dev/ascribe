@@ -1,0 +1,14 @@
+description: >-
+  A section's summary as long as the limit, 300 characters, or longer is
+  advice, at its `@summary` line, whichever binding gives it; one under the
+  limit isn't reported. Any section's summary is measured, with or without
+  a permalink.
+spec: ["4.12"]
+tags: [check, page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics:
+      - {slug: summary-long, line: 6, severity: advice}
+      - {slug: summary-long, line: 17, severity: advice}

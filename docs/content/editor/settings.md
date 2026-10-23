@@ -74,7 +74,7 @@ A content type, a dimension, a release target, a build, and a source are tables 
 
 ### Checks
 
-Under **Checks**, the tab lists every check whose level `[checks]` can set ([Setting a check's level](../checks/diagnostics.md#setting-a-checks-level)), the ones the file names first, then the rest in the diagnostics reference's order. Each shows what it reports, its level, and its own level, which it has when the file sets none. `page-size`, `image-large`, and `memo-long` show their `limit` too, with its default. A level and a limit are set and reset as any setting is, in the form the file writes the check: `page-size = "warning"` in `[checks]`, an inline table, or a `[checks.page-size]` table of its own.
+Under **Checks**, the tab lists every check whose level `[checks]` can set ([Setting a check's level](../checks/diagnostics.md#setting-a-checks-level)), the ones the file names first, then the rest in the diagnostics reference's order. Each shows what it reports, its level, and its own level, which it has when the file sets none. `page-size`, `image-large`, `memo-long`, and `summary-long` show their `limit` too, with its default. A level and a limit are set and reset as any setting is, in the form the file writes the check: `page-size = "warning"` in `[checks]`, an inline table, or a `[checks.page-size]` table of its own.
 
 ## Tasks
 

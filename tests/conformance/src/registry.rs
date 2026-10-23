@@ -132,6 +132,11 @@ pub struct Entry {
     /// without its full stop.
     #[serde(default)]
     pub when: Option<String>,
+    /// A shorter sentence than `when`, without its full stop, which the
+    /// diagnostics reference gives as the entry's summary in its place, for
+    /// an entry whose `when` is as long as `summary-long`'s limit or longer.
+    #[serde(default)]
+    pub summary: Option<String>,
     /// The group of the diagnostics reference a loader rule is listed in.
     #[serde(default)]
     pub group: Option<String>,

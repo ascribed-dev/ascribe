@@ -11,6 +11,7 @@
 //! | `include-id-missing`, `include-cycle`, `include-limit` | include expansion |
 //! | `variant-no-arm-survives`, `available-exceeds-scope` | build modes and the availability scope check |
 //! | `summary-in-variant` | the page's summaries in `@variant` arms, before build modes |
+//! | `summary-missing`, `summary-long` | the page's permalinked headings and its sections' summaries |
 //! | `link-id-removed`, `link-page-dropped` | link resolution, per build |
 //! | `heading-level-skipped` | the page's resolved headings |
 //! | `page-size` | the page's plain Markdown, per build |
@@ -50,6 +51,12 @@ mod bridge;
 mod collect;
 mod permalinks;
 mod size;
+
+/// The length at which `summary-long` reports a section's summary when the
+/// project sets no `limit`, in characters: what a product's tooltip shows.
+pub const SUMMARY_LIMIT: u64 = 300;
+
+pub use collect::summary_limit;
 
 pub use size::{
     DEFAULT_LIMIT as DEFAULT_SIZE_LIMIT, limit as size_limit, markdown_size, thousands,
