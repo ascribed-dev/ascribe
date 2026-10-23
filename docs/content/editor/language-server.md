@@ -8,6 +8,7 @@ Every feature of the [VS Code extension](index.md) that isn't drawn on the scree
 
 ## `ascribe lsp`
 @id {permalink=true}: cli-lsp
+@summary: Runs the language server, speaking the Language Server Protocol over standard input and output. An editor starts it; you don't run it yourself.
 
 Runs the language server, speaking the Language Server Protocol over standard input and output. An editor starts it; you don't run it yourself. It takes no options of its own, and refuses `--config` (exit code `2`): its project is the nearest `ascribe.toml` at or above the workspace folder the editor gives it, never one below, and `ascribe.toml`'s `[editor] build` says which build's page-level diagnostics to report. Its logs go to standard error, starting with the project it uses. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
 

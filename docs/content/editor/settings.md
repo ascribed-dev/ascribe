@@ -9,6 +9,7 @@ How the [VS Code extension](index.md) works in a workspace that holds more than 
 ## Workspaces with several projects
 @id {permalink=true}: workspaces-with-several-projects
 
+@summary
 Every `ascribe.toml` in the workspace is a project, with its own language server. A repository that keeps its code and its documentation together can hold several, such as `site/ascribe.toml` and `handbook/ascribe.toml`, and you can work on all of them in one window.
 
 Some folders hold an `ascribe.toml` that isn't a project to work on, and the editor leaves them out on its own:
@@ -103,6 +104,7 @@ To bind one to a key, or run it from your own task, name it in `.vscode/tasks.js
 
 ## Settings
 @id {permalink=true}: editor-settings
+@summary: The extension's settings: which `ascribe` binary it runs, when it starts each project's language server, and what it shows.
 
 @include: ../_generated/editor-settings.md
 

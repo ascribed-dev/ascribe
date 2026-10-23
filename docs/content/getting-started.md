@@ -49,6 +49,7 @@ After you install it, its walkthrough, **Get Started with Ascribe**, shows the p
 ## Create `ascribe.toml`
 @id {permalink=true}: create-ascribetoml
 
+@summary
 `ascribe.toml` is the content model: the project's schema. It marks the project root, and says what each kind of page must have in its frontmatter.
 
 Start the project with the command:
