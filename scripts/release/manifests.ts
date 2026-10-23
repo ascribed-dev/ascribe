@@ -204,6 +204,21 @@ export function withoutEmptyUnreleased(changelog: string): string {
 }
 
 /**
+ * The name a file has in a .vsix, from its `unzip -Z` listing, matched without
+ * regard to case: vsce stores the changelog and readme as
+ * `extension/changelog.md` and `extension/readme.md`, whatever the source
+ * file's case.
+ */
+export function vsixEntry(listing: string, path: string): string | undefined {
+  const wanted = path.toLowerCase();
+  for (const line of listing.split("\n")) {
+    const name = line.trimEnd().split(/\s+/).pop() ?? "";
+    if (name.toLowerCase() === wanted) return name;
+  }
+  return undefined;
+}
+
+/**
  * A canary's version: the version after `released` (the workspace's version,
  * the latest release), then `-next.<run>`. The next version is the one the
  * changelog's unreleased section names, or else a patch bump.
