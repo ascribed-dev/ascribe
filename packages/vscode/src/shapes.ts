@@ -1800,6 +1800,13 @@ export interface PagePermalink {
   /** The text of the heading it leads to; `null` for the page's own. */
   heading: string | null;
   /**
+   * The summary of the section it leads to in the editor's build, as
+   * `_ascribe/help.json` writes it: the section's `@summary`, or for the
+   * page's own, the page's description. `null` when it has none, which
+   * is where `summary-missing` reports a heading's.
+   */
+  summary: string | null;
+  /**
    * The page's `permalink` line, or the heading's `@id` line, in the
    * negotiated position encoding.
    */

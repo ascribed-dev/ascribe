@@ -1136,8 +1136,8 @@ describe("the This page view", () => {
       ],
       listing,
       permalinks: [
-        { name: "keys", heading: null, range: range(5) },
-        { name: "rotate-keys", heading: "Rotate keys", range: range(12) },
+        { name: "keys", heading: null, summary: "Create and rotate API keys.", range: range(5) },
+        { name: "rotate-keys", heading: "Rotate keys", summary: null, range: range(12) },
       ],
       template: { type: "how-to", left: 2 },
     };
@@ -1245,6 +1245,16 @@ describe("the This page view", () => {
       // whose `@snippet` the server lists no file for goes to its line.
       expect(health[2]?.opens).toEqual({ kind: "beside", uri: "file:///p/code/greet.ts" });
       expect(health[3]?.opens).toEqual({ kind: "place", uri, range: range(40) });
+    });
+
+    it("show a permalink's summary in its tooltip, or that its section has none", () => {
+      const about = thisPageChildren(nth(roots, 0)).flatMap((n) =>
+        n.kind === "row" && n.row.label === "Permalink" ? [n.row] : [],
+      );
+      expect(about.map((row) => row.tooltip)).toEqual([
+        "The page's permalink: an address that keeps leading here\nSummary: Create and rotate API keys.",
+        "A permalink to “Rotate keys”: an address that keeps leading here\nNo summary: give its section a `@summary` to show with its help",
+      ]);
     });
 
     it("list what the page includes under Connections", () => {
