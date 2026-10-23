@@ -42,6 +42,8 @@ mod navigation;
 mod reading;
 #[path = "all/references.rs"]
 mod references;
+#[path = "all/sections.rs"]
+mod sections;
 #[path = "all/snippets.rs"]
 mod snippets;
 #[path = "all/uses.rs"]
