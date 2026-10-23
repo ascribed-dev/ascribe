@@ -546,11 +546,14 @@ impl Core {
     /// didn't: what was cleared meanwhile is published again. What the
     /// content checks across the project found is forgotten, so the round
     /// publishes the files that keeps on: `ascribe.nav`, the permalinks
-    /// list, and the memos.
+    /// list, and the memos. So is what each file put on code files, which a
+    /// round that finished while the model didn't load may have kept
+    /// without publishing it.
     fn check_everything_again(&mut self) {
         let Some(loaded) = self.loaded.as_mut() else {
             return;
         };
+        self.shown.clear();
         let snapshot = loaded.inc.snapshot();
         loaded
             .dirty

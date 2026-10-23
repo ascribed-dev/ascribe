@@ -10,11 +10,11 @@ What the editor reports, and the fixes it offers for it.
 
 Every [diagnostic](../checks/diagnostics.md) appears as you type, including in unsaved files, for every file of the project, open or not: fix a heading's id, and the broken links to it in other files clear. Page-level diagnostics are for the [build](../glossary.md#build) named by `[editor] build` in `ascribe.toml`.
 
-While `ascribe.toml` doesn't load, its problems are the only ones shown: every other file's are cleared, since they were found with a model that no longer loads, and they come back once it loads again.
-
 When that build is [versioned](../versions/index.md), they're for every line of it, and a problem only some lines have says which, such as "(only in build `site@3.4`)".
 
 The [content checks](../checks/diagnostics/content-checks.md) about the whole project, such as a page nothing links to or a phrase nothing uses, need every page, so they run when you save, not as you type. Until you save a file you've changed, it doesn't show theirs. The image checks run only in `ascribe check`.
+
+While `ascribe.toml` doesn't load, its problems are the only ones shown: every other file's are cleared, since they were found with a model that no longer loads, and they come back once it loads again.
 
 ## The Problems panel
 
