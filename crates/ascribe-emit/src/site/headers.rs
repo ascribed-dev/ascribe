@@ -2,7 +2,9 @@
 //! the host ([`ascribe_resolve::pages::header_rules`]), as a list of rules,
 //! each a path and its headers (output-layout contract §1.4). A Markdown
 //! version has no head to carry its page's rules, so they're headers, which
-//! only the host can send.
+//! only the host can send. Each help entry's own address gets
+//! `Access-Control-Allow-Origin: *`, so a product on another origin can
+//! fetch it.
 
 use std::collections::BTreeMap;
 
@@ -26,24 +28,31 @@ struct Rule<'a> {
     headers: BTreeMap<&'static str, &'a str>,
 }
 
-/// The rules, as JSON, sorted by path. A build with no Markdown versions has
-/// an empty list, so a reader can tell "none" from an output without the
+/// The rules, as JSON, sorted by path: each Markdown version's, and each of
+/// `help`, the paths the help entries are served at. A build with neither
+/// has an empty list, so a reader can tell "none" from an output without the
 /// file.
-pub(super) fn list(model: &ContentModel, build: &ResolvedBuild) -> String {
+pub(super) fn list(model: &ContentModel, build: &ResolvedBuild, help: &[String]) -> String {
     let rules = header_rules(&records(model, &build.pages));
+    let mut headers: Vec<Rule<'_>> = rules
+        .iter()
+        .map(|rule| Rule {
+            path: &rule.path,
+            headers: rule
+                .headers
+                .iter()
+                .map(|(name, value)| (*name, value.as_str()))
+                .collect(),
+        })
+        .collect();
+    headers.extend(help.iter().map(|path| Rule {
+        path,
+        headers: BTreeMap::from([("Access-Control-Allow-Origin", "*")]),
+    }));
+    headers.sort_by(|a, b| a.path.cmp(b.path));
     let list = List {
         version: VERSION,
-        headers: rules
-            .iter()
-            .map(|rule| Rule {
-                path: &rule.path,
-                headers: rule
-                    .headers
-                    .iter()
-                    .map(|(name, value)| (*name, value.as_str()))
-                    .collect(),
-            })
-            .collect(),
+        headers,
     };
     // Serializing strings and maps of strings can't fail.
     let mut text = serde_json::to_string_pretty(&list).unwrap_or_default();

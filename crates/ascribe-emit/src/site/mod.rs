@@ -189,9 +189,12 @@ impl Emitter for SiteEmitter {
                 contents: Contents::Text(text),
             })
         };
+        let found = build.permalinks();
+        let help = help::entries(cx, build, &found);
+        let help_paths = help::entry_paths(cx, help.keys().copied());
         Ok(vec![
-            generated(HEADERS_PATH, headers::list(cx.model, build))?,
-            generated(HELP_PATH, help::file(cx, build))?,
+            generated(HEADERS_PATH, headers::list(cx.model, build, &help_paths))?,
+            generated(HELP_PATH, help::file(cx, help))?,
             generated(
                 NAV_PATH,
                 nav::list(cx.project(), &cx.project().navigation(), build, &|s| {

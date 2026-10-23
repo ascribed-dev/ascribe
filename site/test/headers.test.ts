@@ -1,6 +1,7 @@
 // The built site's `_headers`, which `[consumer] headers = "netlify"` in
 // ../docs/ascribe.toml has @ascribed/astro write: each docs page's Markdown
-// version has its rule, and no other path has one. No docs page is marked
+// version has its rule, each help entry's address has one letting any origin
+// read it, and no other path has one. No docs page is marked
 // unlisted, so a fixture, a `_headers` and the `pages.json` it was built for,
 // shows the rules hold for such a page too.
 import { readFile } from "node:fs/promises";
@@ -8,7 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vitest";
 import { distDir, outputDir, requireBuild } from "./built.ts";
-import { headerProblems, parseHeaders, readPages } from "./headers.ts";
+import { headerProblems, parseHeaders, readHelpHeaders, readPages } from "./headers.ts";
 
 const fixtureDir = fileURLToPath(new URL("fixtures/headers", import.meta.url));
 
@@ -32,6 +33,17 @@ describe("a _headers for pages with one that isn't listed (fixture)", () => {
     expect(headerProblems(await fixture(), await readPages(fixtureDir))).toEqual([]);
   });
 
+  test("passes with a help entry's rule, and fails without it", async () => {
+    const help = new Map([["/docs/go/guide.json", { "access-control-allow-origin": "*" }]]);
+    const rule = "/docs/go/guide.json\n  Access-Control-Allow-Origin: *\n";
+    const pages = await readPages(fixtureDir);
+    expect(headerProblems(`${await fixture()}${rule}`, pages, help)).toEqual([]);
+    expect(headerProblems(await fixture(), pages, help)).toEqual(["/docs/go/guide.json: no rule"]);
+    expect(headerProblems(`${await fixture()}${rule}`, pages)).toEqual([
+      "/docs/go/guide.json: a rule for a path that isn't a Markdown version or a help entry",
+    ]);
+  });
+
   test("fails for a rule or a header left out, a header that's wrong or extra, and a path that isn't a Markdown version", async () => {
     const wrong = [
       "/docs/guide.md",
@@ -52,16 +64,18 @@ describe("a _headers for pages with one that isn't listed (fixture)", () => {
       "/docs/guide.md: x-robots-tag, which its page doesn't give",
       "/docs/hidden.md: no x-robots-tag",
       "/docs/quoted.md: x-robots-tag is noindex, not nosnippet",
-      "/docs/guide/: a rule for a path that isn't a Markdown version",
+      "/docs/guide/: a rule for a path that isn't a Markdown version or a help entry",
     ]);
   });
 });
 
 describe("the built site", () => {
-  test("has a _headers rule for each docs page's Markdown version, and for nothing else", async () => {
+  test("has a _headers rule for each docs page's Markdown version and help entry, and for nothing else", async () => {
     requireBuild();
     const text = await readFile(path.join(distDir, "_headers"), "utf8");
-    expect(headerProblems(text, await readPages(outputDir))).toEqual([]);
+    expect(
+      headerProblems(text, await readPages(outputDir), await readHelpHeaders(outputDir)),
+    ).toEqual([]);
   });
 
   test("has the rules the docs' _ascribe/headers.json lists, exactly", async () => {
