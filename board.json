@@ -5520,7 +5520,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/868"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "An unknown key in ascribe.toml says which Ascribe read it, and that the project may need a newer one"
     },
     {
@@ -5703,8 +5703,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/893"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Docs: the content checks' diagnostics page is over page-size"
     },
     {
@@ -5751,6 +5754,9 @@
       "title": "Embedded help 2: decide the section summary, @summary"
     },
     {
+      "assignees": [
+        "KyleBlankRollins"
+      ],
       "content": {
         "body": "Phase 3 of [Embedded help](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/README.md). The plan is [phase-3-marked-summary.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/phase-3-marked-summary.md). One pull request, or two if the `when` sentences are large (below).\n\n**Blocked by #878 and #879.** The directive's bindings and rules are whatever #879's decision file settles; don't choose them here.\n\n**What to build:** `@summary`, general to every section, with both bindings (`@summary: text`, its own text not shown in the body; `@summary` alone, the next block, rendered where it is), through syntax, `fmt`, resolve, and the site, plain, and JSON emitters, with its diagnostics. `help.rs` takes the summary from the section's `@summary`, or leaves it absent: decision 10's first-paragraph rule is removed, and `help.json`'s keys don't change. The language server's completion and hover for it. The diagnostics generator writes `@summary: <when>` under each diagnostic's `@id`, and each of the 85 diagnostics without a `when` gets one in `diagnostics.toml`; if those sentences make the pull request too large to read, they go first, in a pull request of their own.\n\n**Done when:**\n- After `ascribe build --config docs`, every diagnostic's `help.json` summary is its `when`, and no entry's summary comes from a section without `@summary`.\n- Conformance cases for both bindings' parse and canonical form, a summary in a fragment, in a variant arm, two in a section, and each diagnostic; emit tests for each binding, a fragment, and none.\n- Site and plain outputs of every project are byte for byte the same where no `@summary` is written; the diagnostics reference's changes are its `@summary` lines and new `when` sentences, named with `--accept`.\n- Phase 1's measurements taken again on the docs' file, in the pull request.\n- Docs: `directives.md`, the embedded help page, SPEC §3, §4, and Appendix A, `site-render.md`, the JSON output's reference, `changes/language/section-summary.md`, the surface map.\n",
         "number": 880,
@@ -5764,8 +5770,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/895"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Embedded help 3: section summaries with @summary, and the diagnostics' when"
     },
     {
@@ -5859,9 +5868,46 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/886"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhC8-Tc",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/892"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Canary failed"
+    },
+    {
+      "content": {
+        "body": "Several benchmarks are slower than their baselines, recorded on 6 October, by more than the run-to-run noise, though all are still within the regression check's margin (3× plus 25 ms), so the weekly Corpora run passes. Found when [run 40017935402](https://github.com/ascribed-dev/ascribe/actions/runs/40017935402) recorded new baselines on `63e05bd7` (23 October), on the same runner type (AMD EPYC 7763, 4 logical cores). Only the 14 metrics that had no baseline were committed from it; these kept their 6 October values, so they stay measured against them. **Done when** below is what done looks like.\n\n| Metric | 6 October | 23 October | Change |\n|---|---|---|---|\n| `lsp/keystroke-page-3000` | 1.59 ms | 2.74 ms | 1.72× |\n| `lsp/keystroke-fragment-3000` | 7.99 ms | 12.65 ms | 1.58× |\n| `check/elastic-converted-json` | 4.48 s | 6.63 s | 1.48× |\n| `memory/build-synthetic-3000-first` | 265 MB | 392 MB | 1.48× |\n| `check/synthetic-3000-snippets` | 850 ms | 1.07 s | 1.26× |\n| `check/noisy-1000-json` | 221 ms | 270 ms | 1.22× |\n| `diff/synthetic-3000-snippets-unchanged` | 1.07 s | 1.29 s | 1.21× |\n| `check/synthetic-3000-json` | 654 ms | 787 ms | 1.20× |\n| `incremental/edit a fragment's text (30 pages include it)` | 0.16 ms | 0.19 ms | 1.19× |\n| `check/synthetic-3000` | 667 ms | 787 ms | 1.18× |\n\nThe other 23 shared metrics are within a few percent of their baselines (`drift`, `incremental` page edits, `lsp/completion-3000`), and none is faster.\n\n**What to find:** the commits behind each step. The weekly runs' `bench-results` artifacts, and running the benches at commits between 6 and 23 October on the runner (the workflow by hand from a branch), should narrow it. Likely candidates are the changes that added work to every check or every keystroke since then, such as the baseline (#789, #790), the section summaries' groundwork, and `[from]` (#813); confirm rather than assume.\n\n**Done when:** each slowdown above has its cause named here; each is either fixed, with the metric back near its baseline, or accepted, with the baseline recorded again for that metric and the reason in `tests/corpora/RESULTS.md`.\n",
+        "number": 894,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Benchmarks: keystrokes, the Elastic check, and first-build memory are slower than on 6 October",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/894"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDGyzA",
+      "labels": [
+        "performance"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Benchmarks: keystrokes, the Elastic check, and first-build memory are slower than on 6 October"
+    },
+    {
+      "content": {
+        "body": "With #895, each diagnostic in the reference has a `@summary` line, and the 84 loader rules gained `when` sentences. `checks/diagnostics/content-model.md` is now 54,217 characters in build `site`, over `page-size`'s 50,000, so `ascribe check --config docs` reports one ASC149 advice (CI passes, since it's advice).\n\nSplit it as #893 split the content checks: the generator (`tests/conformance/tests/docs.rs`, `RULE_GROUPS`) puts the rule groups after a chosen one on a second page under `checks/diagnostics/`, and the index, permalinks, nav, and links into the moved entries follow, with a changelog entry under `changes/docs/`.\n\n**Done when:** `ascribe check --deny-warnings --config docs` reports no page-size advice.",
+        "number": 896,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Split the content model's diagnostics page, which is over page-size",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/896"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDHXHA",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Split the content model's diagnostics page, which is over page-size"
     }
   ]
 }
