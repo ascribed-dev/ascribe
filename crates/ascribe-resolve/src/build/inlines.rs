@@ -90,7 +90,8 @@ fn push_text(inlines: &[Inline], out: &mut String) {
 
 /// The lists of inlines that are prose (SPEC §5.4) in a block of `kind`:
 /// paragraphs, table cells, and the text primary of a directive. Not headings
-/// or titles. Written once for [`prose_lists`] and [`prose_lists_mut`]; pass
+/// or titles, and not a `@summary`'s text, which the page doesn't show
+/// (SPEC §4.12). Written once for [`prose_lists`] and [`prose_lists_mut`]; pass
 /// `mut` for the second.
 macro_rules! prose_lists {
     ($kind:expr $(, $mut:ident)?) => {
@@ -101,6 +102,7 @@ macro_rules! prose_lists {
                 .flat_map(|r| (&$($mut)? r.cells).into_iter().map(|c| &$($mut)? c.inlines))
                 .collect(),
             BlockKind::Directive(line) => match &$($mut)? line.primary {
+                Some(PrimaryValue::Text(_)) if line.name == "summary" => Vec::new(),
                 Some(PrimaryValue::Text(t)) => vec![&$($mut)? t.inlines],
                 _ => Vec::new(),
             },
@@ -116,7 +118,8 @@ pub(crate) fn prose_lists(kind: &BlockKind) -> Vec<&Vec<Inline>> {
 }
 
 /// The lists of inlines that are prose (SPEC §5.4): paragraphs, table cells,
-/// and the text primary of a directive. Not headings or titles.
+/// and the text primary of a directive. Not headings or titles, and not a
+/// `@summary`'s text.
 pub(crate) fn prose_lists_mut(block: &mut ResolvedBlock) -> Vec<&mut Vec<Inline>> {
     match &mut block.kind {
         ResolvedKind::Leaf(b) => prose_lists!(&mut b.kind, mut),

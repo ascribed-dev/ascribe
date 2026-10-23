@@ -40,3 +40,7 @@ Raw HTML
 </div>
 
 ## Setext heading <ascribe-attributes id="setext-heading"></ascribe-attributes>
+
+## Summaries <ascribe-attributes id="summaries"></ascribe-attributes>
+
+A marked paragraph, anchored on its own lines.

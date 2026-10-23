@@ -48,7 +48,7 @@ fn a_heading_s_entry_is_its_section() {
     let files = [(
         "keys.md",
         "---\ntitle: Keys\n---\n\n## Rotate `keys`\n@id {permalink=true}: rotate-keys\n\n\
-         Rotate them **often**.\n\n### Why\n\nThey leak.\n\n## After\n\nDone.\n",
+         @summary\nRotate them **often**.\n\n### Why\n\nThey leak.\n\n## After\n\nDone.\n",
     )];
     assert_eq!(
         file(MODEL, &files, "site"),
@@ -69,7 +69,7 @@ fn a_heading_s_entry_is_its_section() {
 }
 
 #[test]
-fn a_page_s_entry_is_its_opening_with_its_description_as_the_summary() {
+fn a_page_s_entry_is_its_opening_with_its_description_or_its_summary() {
     let files = [
         (
             "keys.md",
@@ -84,15 +84,24 @@ fn a_page_s_entry_is_its_opening_with_its_description_as_the_summary() {
             "empty.md",
             "---\ntype: page\ntitle: Empty\npermalink: empty\ndescription: Nothing first.\n---\n\n## Start\n",
         ),
+        (
+            "marked.md",
+            "---\ntitle: Marked\npermalink: marked\n---\n\nThe first paragraph.\n\n@summary\nThe second.\n",
+        ),
     ];
     let keys = entry(&files, "keys");
     assert_eq!(keys["title"], "Keys");
     assert_eq!(keys["summary"], "Keys and how to rotate them.");
     assert_eq!(keys["text"], "A key signs requests.");
-    // Without a description, the opening's first paragraph.
+    // Without a description or a `@summary`, none: nothing is taken from
+    // the prose.
     let plain = entry(&files, "plain");
-    assert_eq!(plain["summary"], "The first paragraph.");
+    assert!(plain.get("summary").is_none(), "{plain}");
     assert_eq!(plain["text"], "The first paragraph.\n\nThe second.");
+    // Without a description, the opening's `@summary`.
+    let marked = entry(&files, "marked");
+    assert_eq!(marked["summary"], "The second.");
+    assert_eq!(marked["text"], "The first paragraph.\n\nThe second.");
     // An empty opening has an empty text and the summary alone.
     let empty = entry(&files, "empty");
     assert_eq!(empty["text"], "");
@@ -127,6 +136,7 @@ fn without_a_site_links_stay_routes_and_there_s_no_address() {
 
 #[test]
 fn an_include_its_phrases_and_its_image_are_resolved() {
+    // A summary in a fragment is the summary of the section it lands in.
     let files = [
         (
             "install.md",
@@ -135,7 +145,7 @@ fn an_include_its_phrases_and_its_image_are_resolved() {
         ),
         (
             "_prerequisites.md",
-            "You need {product} 3.\n\n![A checklist](checklist.png)\n",
+            "@summary\nYou need {product} 3.\n\n![A checklist](checklist.png)\n",
         ),
     ];
     let help = entry(&files, "prerequisites");
@@ -144,29 +154,40 @@ fn an_include_its_phrases_and_its_image_are_resolved() {
 }
 
 #[test]
-fn available_before_the_first_paragraph_is_passed_over_by_the_summary() {
+fn a_summary_s_own_text_isn_t_in_the_section_s_text() {
     let files = [(
         "sync.md",
-        "---\ntitle: Sync\n---\n\n## Streaming\n@id {permalink=true}: streaming\n@available: cloud\n\n\
-         It streams.\n\n## Bound\n@id {permalink=true}: bound\n\n@available: self-managed\nIt binds.\n",
+        "---\ntitle: Sync\n---\n\n## Streaming\n@id {permalink=true}: streaming\n\
+         @summary: It streams to [{product} Cloud](#bound), `fast`.\n@available: cloud\n\n\
+         It streams.\n\n## Bound\n@id {permalink=true}: bound\n\n@available: self-managed\n\
+         @summary\nIt binds.\n",
     )];
     let streaming = entry(&files, "streaming");
-    assert_eq!(streaming["summary"], "It streams.");
+    assert_eq!(
+        streaming["summary"],
+        "It streams to [Quill Cloud](https://docs.example.com/docs/sync/#bound), `fast`."
+    );
     assert_eq!(streaming["text"], "Available: cloud (GA)\n\nIt streams.");
+    // The paragraph a `@summary` marks is the summary, without the line
+    // an `@available` above it adds.
     let bound = entry(&files, "bound");
     assert_eq!(bound["summary"], "It binds.");
     assert_eq!(bound["text"], "Available: self-managed (GA)\n\nIt binds.");
 }
 
 #[test]
-fn a_section_with_no_paragraph_first_has_no_summary() {
+fn a_section_without_a_summary_has_none() {
     let files = [(
         "cli.md",
-        "---\ntitle: CLI\n---\n\n## Run\n@id {permalink=true}: run\n\n```sh\nquill\n```\n\nIt runs.\n",
+        "---\ntitle: CLI\n---\n\n## Run\n@id {permalink=true}: run\n\nIt runs.\n\n\
+         ### Options\n\n@summary\nA subsection's summary is its own.\n",
     )];
     let help = entry(&files, "run");
     assert!(help.get("summary").is_none(), "{help}");
-    assert_eq!(help["text"], "```sh\nquill\n```\n\nIt runs.");
+    assert_eq!(
+        help["text"],
+        "It runs.\n\n### Options\n\nA subsection's summary is its own."
+    );
 }
 
 #[test]
@@ -206,11 +227,12 @@ fn a_fragment_s_heading_is_the_entry_of_the_page_its_permalink_names() {
         ("b.md", "---\ntitle: B\n---\n\n@include: _rotate.md\n"),
         (
             "_rotate.md",
-            "## Rotate\n@id {permalink=true}: rotate\n\nRotate them.\n",
+            "## Rotate\n@id {permalink=true}: rotate\n@summary: Rotate them often.\n\nRotate them.\n",
         ),
     ];
     let help = entry(&files, "rotate");
     assert_eq!(help["source"], "a.md");
+    assert_eq!(help["summary"], "Rotate them often.");
     assert_eq!(help["text"], "Rotate them.");
 }
 

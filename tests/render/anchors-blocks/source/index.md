@@ -45,3 +45,9 @@ Raw HTML
 
 Setext heading
 --------------
+
+## Summaries
+@summary: A summary of its own, which writes nothing.
+
+@summary
+A marked paragraph, anchored on its own lines.

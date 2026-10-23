@@ -2,7 +2,8 @@
 //!
 //! Three sources feed it: the problems build resolution recorded on the page,
 //! the source index's link-id problems for the links the page publishes, and
-//! the duplicate ids and headings of its resolved headings.
+//! what's found on the resolved page itself: the duplicate ids and headings
+//! of its headings, and a section's second summary.
 //!
 //! Where a problem is reported (SPEC §8.1): at the source location that
 //! causes it; when that's inside included content, at the outermost include
@@ -43,6 +44,7 @@ pub(super) fn check_page(index: &Project, page: &ResolvedPage, links: &LinkProbl
     title_heading(index, page, &mut found);
     definitions(index, page, &mut found);
     link_ids(index, page, links, &mut found);
+    summaries(index, page, &mut found);
     let mut seen = Vec::new();
     found.retain(|f| {
         let key = identity(&f.issue);
@@ -130,6 +132,39 @@ pub(super) fn include_target(index: &Project, site: &IncludeSite) -> Option<Stri
             .as_ref()
             .map_or_else(|| include.written.clone(), ToString::to_string),
     )
+}
+
+/// `summary-repeated`: each summary after the first in its section, once
+/// includes and the build's modes are applied (SPEC §4.12).
+fn summaries(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
+    let mut firsts: Vec<(Option<&str>, Location)> = Vec::new();
+    for found in ascribe_resolve::find_summaries(&page.blocks) {
+        let directive = found.directive;
+        let ResolvedKind::Leaf(ascribe_syntax::Block {
+            kind: BlockKind::Directive(line),
+            ..
+        }) = &directive.kind
+        else {
+            continue;
+        };
+        let at = Location::new(directive.file, line.name_span);
+        let ids = found.heading.and_then(|h| h.heading.as_ref());
+        let anchor = ids.map(|ids| ids.page_id.as_str());
+        let Some(&(_, first)) = firsts.iter().find(|(a, _)| *a == anchor) else {
+            firsts.push((anchor, at));
+            continue;
+        };
+        let issue = Issue::new(diagnostics::SUMMARY_REPEATED, at)
+            .with_related(first, "the section's summary");
+        let issue = match ids {
+            Some(ids) => issue.with_arg("heading", ids.text.clone()),
+            None => issue.with_variant("opening"),
+        };
+        out.push(Found {
+            issue: at_include_site(index, issue, &directive.via),
+            cause: (directive.file, directive.span, directive.via.clone()),
+        });
+    }
 }
 
 /// `id-duplicate` and `heading-duplicate-without-id`, from the page's headings

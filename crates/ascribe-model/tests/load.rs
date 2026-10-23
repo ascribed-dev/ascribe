@@ -66,7 +66,8 @@ fn minimal_gets_every_default() {
             "snippet",
             "intended",
             "memo",
-            "term"
+            "term",
+            "summary"
         ]
     );
 }
@@ -226,7 +227,7 @@ fn widgets_become_directive_schemas() {
     let m = example("full.toml");
     assert!(!m.widgets.is_empty());
     let schemas = m.directive_schemas();
-    assert_eq!(schemas.len(), 11 + m.widgets.len());
+    assert_eq!(schemas.len(), 12 + m.widgets.len());
     for w in &m.widgets {
         let s = m.widget_schema(&w.schema.name).unwrap();
         assert!(matches!(s.origin, ascribe_core::Origin::Widget));

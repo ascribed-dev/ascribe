@@ -445,6 +445,10 @@ fn builtin_line(builtin: Builtin) -> String {
                           `{aliases=\"<a>|<b>\"}` for other forms: the heading is a glossary \
                           term, defined by the paragraph under it"
             .to_owned(),
+        Builtin::Summary => "`@summary: <text>` under a heading, or `@summary` on the line \
+                             above a paragraph: the section's summary, its own text, which \
+                             the page doesn't show, or the paragraph, which it does"
+            .to_owned(),
     }
 }
 

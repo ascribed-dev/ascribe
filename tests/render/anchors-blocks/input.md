@@ -59,3 +59,9 @@ Raw HTML
 
 <!--ascribe-anchor tag="h2" source="index.md:46-47"-->
 ## Setext heading <ascribe-attributes id="setext-heading"></ascribe-attributes>
+
+<!--ascribe-anchor tag="h2" source="index.md:49-49"-->
+## Summaries <ascribe-attributes id="summaries"></ascribe-attributes>
+
+<!--ascribe-anchor tag="p" source="index.md:53-53"-->
+A marked paragraph, anchored on its own lines.

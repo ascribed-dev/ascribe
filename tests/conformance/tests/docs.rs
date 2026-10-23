@@ -977,7 +977,7 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
             .filter(|e| is_model(e) && model_group(e) == *group)
         {
             page_of.insert(&entry.code, "content-model");
-            write_entry(&mut content_model, entry, None, pages);
+            write_entry(&mut content_model, entry, entry.when.as_deref(), pages);
         }
     }
 
@@ -1094,10 +1094,11 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
         .unwrap_or_default();
     let _ = write!(
         out,
-        "\n### {} `{}`\n@id {{permalink=true}}: {}\n\n{} · {} level · next step: {}{configurable}{acknowledged} · {section}\n\n",
+        "\n### {} `{}`\n@id {{permalink=true}}: {}\n{}\n{} · {} level · next step: {}{configurable}{acknowledged} · {section}\n\n",
         entry.code,
         entry.slug,
         entry.code,
+        summary(condition),
         severity(entry.severity),
         level(entry.level).to_lowercase(),
         next(entry),
@@ -1129,6 +1130,16 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
             "\n**Read more:** [{}](../{target}) in the {page}.\n",
             escape_braces(heading)
         );
+    }
+}
+
+/// The `@summary` line of an entry, and the blank line after it: when it's
+/// reported, so a product's help for the diagnostic says that (SPEC §4.12).
+/// Just the blank line for an entry with nothing to say.
+fn summary(condition: Option<&str>) -> String {
+    match condition {
+        Some(condition) => format!("@summary: {}.\n", escape_braces(&sentence(condition))),
+        None => String::new(),
     }
 }
 

@@ -1,0 +1,21 @@
+description: >-
+  `@summary` with no text binds the paragraph it touches, anywhere in its
+  section.
+spec: ["3.8", "4.12"]
+tags: [structure]
+
+outline:
+  - heading: 2
+  - directive: id
+    attributes: {permalink: "true"}
+    primary: cli-versions-release
+    binding: heading
+  - directive: summary
+    binding: following-block
+  - paragraph: Releases a line.
+  - paragraph: It rewrites each mark's `planned` for its target to the line's version.
+  - heading: 3
+  - paragraph: Some text.
+  - directive: summary
+    binding: following-block
+  - paragraph: A summary in the middle of a subsection.

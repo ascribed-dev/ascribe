@@ -3,6 +3,7 @@
 
 ### ASC149 `page-size`
 @id {permalink=true}: ASC149
+@summary: A page's Markdown, as a build writes it for agents to read, is as long as the limit or longer: 50,000 characters, or `[checks.page-size] limit`. A page over the limit in several builds is one problem, with its size in the build where it's longest.
 
 Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
@@ -16,6 +17,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC150 `page-description-missing`
 @id {permalink=true}: ASC150
+@summary: A page's content type marks a field `role = "description"`, and the page leaves the field out or empty. A required field, whose absence is `frontmatter-missing-field`, and a field with a default aren't looked at.
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -29,6 +31,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC151 `heading-level-skipped`
 @id {permalink=true}: ASC151
+@summary: A heading is more than one level below the heading before it, or is at level 1, which the page's title is. Headings from includes count at the levels they're written with, and after a skip the next heading is compared with the one that skipped, so a skipped section is reported once.
 
 Advice · page level · next step: fix · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
@@ -42,6 +45,7 @@ Advice · page level · next step: fix · configurable in `[checks]` · [SPEC §
 
 ### ASC152 `code-language-missing`
 @id {permalink=true}: ASC152
+@summary: A fenced code block has no language after its opening fence: nothing, or only attributes, such as `phrases=true`. An indented code block isn't looked at.
 
 Advice · file level · next step: choose · configurable in `[checks]` · [SPEC §1.4]({repo}/blob/main/SPEC.md#14-relationship-to-commonmark)
 
@@ -55,6 +59,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 
 ### ASC153 `review-overdue`
 @id {permalink=true}: ASC153
+@summary: A page's content type marks a field `role = "review-date"`, and the date the page gives it is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`.
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in the page's `intended` frontmatter · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -68,6 +73,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 ### ASC192 `title-heading-differs`
 @id {permalink=true}: ASC192
+@summary: A page writes its own level-1 heading, and neither it nor the page's title contains the other, ignoring case. A page without a level-1 heading, which most pages are, since the layout draws the title as one, isn't looked at.
 
 Advice · page level · next step: review · configurable in `[checks]` · acknowledged in the page's `intended` frontmatter · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -81,6 +87,7 @@ Advice · page level · next step: review · configurable in `[checks]` · ackno
 
 ### ASC195 `template-placeholder-left`
 @id {permalink=true}: ASC195
+@summary: A page of a content type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped, or a frontmatter field with the template's value. A memo the page keeps from the template, its instructions to the writer, isn't reported. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found.
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -94,6 +101,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC198 `description-link`
 @id {permalink=true}: ASC198
+@summary: A page's description, the field its type marks `role = "description"`, holds a Markdown link.
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
@@ -107,6 +115,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC220 `link-into-older-line`
 @id {permalink=true}: ASC220
+@summary: A link in the current line of a versioned build names a page the current line doesn't publish, and nothing takes its place there, so it leads to the page in an older line.
 
 Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
@@ -120,6 +129,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC221 `link-fragment-dropped`
 @id {permalink=true}: ASC221
+@summary: A link to a heading leads, in a line of a versioned build, to a page that takes its target's place or to its target in another line, and the page it lands on has no heading with that id.
 
 Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
@@ -133,6 +143,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC223 `html-comment`
 @id {permalink=true}: ASC223
+@summary: A page or a fragment has an HTML comment, as a block or inside a paragraph. A comment in a code block or a memo isn't one, and Vale's own comments, such as `<!-- vale off -->`, aren't reported.
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block, or under the heading for a heading · [SPEC §4.10]({repo}/blob/main/SPEC.md#410-memo)
 
@@ -146,6 +157,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 ### ASC224 `memo-empty`
 @id {permalink=true}: ASC224
+@summary: A container memo has nothing between its opening line and its `@end`, or only blank lines.
 
 Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §4.10]({repo}/blob/main/SPEC.md#410-memo)
 
@@ -159,6 +171,7 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 
 ### ASC229 `template-section-empty`
 @id {permalink=true}: ASC229
+@summary: A page of a content type that names a template has a section the template gives nothing under its heading but memos, with the same heading at the same level, and nothing in the page's section, its subsections included, but memos, directives bound to its heading such as `@id`, and the subsections' headings. A section the template gives any other content is `template-placeholder-left`'s, and a page of a type with no template isn't looked at.
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -172,6 +185,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC237 `nav-label-long`
 @id {permalink=true}: ASC237
+@summary: A page's `nav-label` is longer than its `title`, each counted in characters as a reader sees it.
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -185,6 +199,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC241 `glossary-definition-long`
 @id {permalink=true}: ASC241
+@summary: A term's definition, as a build derives it, is longer than the limit `description-too-long` measures a description against.
 
 Advice · page level · next step: write · configurable in `[checks]` · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
@@ -200,6 +215,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC154 `page-orphan`
 @id {permalink=true}: ASC154
+@summary: No other page the build publishes links to the page or includes it. Index pages (`index.md`), and a build's only page, aren't reported. The message says what reaches the page: only the sidebar, or, for a page that's `unlisted`, nothing but its address.
 
 Advice · page level · next step: review · configurable in `[checks]` · acknowledged in the page's `intended` frontmatter · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
@@ -213,6 +229,7 @@ Advice · page level · next step: review · configurable in `[checks]` · ackno
 
 ### ASC155 `fragment-unused`
 @id {permalink=true}: ASC155
+@summary: No file includes the fragment.
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in the page's `intended` frontmatter · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
@@ -226,6 +243,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 ### ASC156 `phrase-unused`
 @id {permalink=true}: ASC156
+@summary: No file writes the phrase, in its text or in a frontmatter field that takes phrases.
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
@@ -239,6 +257,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 ### ASC157 `feature-unused`
 @id {permalink=true}: ASC157
+@summary: No availability spec names the feature: no `@available`, table row's `available`, or page's `available`.
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -252,6 +271,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 ### ASC158 `glossary-term-unused`
 @id {permalink=true}: ASC158
+@summary: The term, and each of its aliases, appears in no other page's prose, and no link names its heading.
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block, or under the heading for a heading · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
@@ -265,6 +285,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 ### ASC159 `image-unused`
 @id {permalink=true}: ASC159
+@summary: An image file under the content root that no file shows or links to: no Markdown image or link, no `src`, `srcset`, `href`, or `poster` in raw HTML, and no frontmatter string names it.
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
@@ -278,6 +299,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 ### ASC160 `image-large`
 @id {permalink=true}: ASC160
+@summary: An image file under the content root is larger than the limit: 500 KB, or `[checks.image-large] limit`.
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
@@ -291,6 +313,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 ### ASC161 `title-duplicate`
 @id {permalink=true}: ASC161
+@summary: Two pages the build publishes have the same title, ignoring case.
 
 Advice · page level · next step: write · configurable in `[checks]` · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
@@ -304,6 +327,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC172 `availability-left-behind`
 @id {permalink=true}: ASC172
+@summary: A feature's availability names a version for every target, each target lists its lines in `[releases]`, and no version is later than its target's current line.
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -317,6 +341,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 ### ASC191 `description-duplicate`
 @id {permalink=true}: ASC191
+@summary: Two pages the build publishes have the same description, ignoring case.
 
 Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
@@ -330,6 +355,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC211 `available-line-undeclared`
 @id {permalink=true}: ASC211
+@summary: A version is in a line between two of its target's declared lines, and that line isn't declared.
 
 Advice · file level · next step: choose · configurable in `[checks]` · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -343,6 +369,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 
 ### ASC212 `available-same-in-every-line`
 @id {permalink=true}: ASC212
+@summary: Every version a mark names for its target is at or before the oldest live line and its last state counts as available, so every live line has the content, and no build filtered for the target at a version before the window publishes it: no output shows the versions, or a build that badges availability shows them and they're all before the oldest live line, so the badge says only that the content is older than every live line.
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -356,6 +383,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC213 `available-in-no-line`
 @id {permalink=true}: ASC213
+@summary: Every build that publishes a mark's content is versioned by its target, or filtered for it at a version in the window or after it, and the content is in no live or planned line of the target.
 
 Warning · file level · next step: write · configurable in `[checks]` · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -369,6 +397,7 @@ Warning · file level · next step: write · configurable in `[checks]` · [SPEC
 
 ### ASC214 `release-line-ended`
 @id {permalink=true}: ASC214
+@summary: A live line's date in `[releases.<target>.ends]` is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`.
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -382,6 +411,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC227 `memo-outdated`
 @id {permalink=true}: ASC227
+@summary: No block of what a memo file's `about` names holds its `quote`.
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.7]({repo}/blob/main/SPEC.md#77-memo-files)
 
@@ -395,6 +425,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC228 `memo-long`
 @id {permalink=true}: ASC228
+@summary: A memo file's body is longer than the limit: 2,000 characters, or `[checks.memo-long] limit`.
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.7]({repo}/blob/main/SPEC.md#77-memo-files)
 
@@ -408,6 +439,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC235 `nav-page-unplaced`
 @id {permalink=true}: ASC235
+@summary: `ascribe.nav` lists `pages` for a page's section and doesn't name the page. A section with no `pages` has the default order, and its pages aren't reported, nor is a section's own page, nor an `unlisted` page, which no sidebar shows.
 
 Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
 
@@ -421,6 +453,7 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 
 ### ASC236 `nav-section-unplaced`
 @id {permalink=true}: ASC236
+@summary: `ascribe.nav` lists one or more of a section's sibling sections and not the section, which is reported on its first page. A folder none of whose sections the file lists has the default order, and isn't reported, nor is a section below the content root whose own page beside its folder places it among its parent's pages, since a table wouldn't move it.
 
 Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
 
@@ -434,6 +467,7 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 
 ### ASC243 `baseline-entry-unmatched`
 @id {permalink=true}: ASC243
+@summary: `ascribe.baseline` has an entry that no problem of the project matches any more: the problem was fixed, or the text it was about changed. Reported at the entry's line, when `ascribe check` reads the baseline and checks the whole project for every build.
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -447,6 +481,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 ### ASC244 `frontmatter-field-repeated`
 @id {permalink=true}: ASC244
+@summary: A type's own `frontmatter` declares a field exactly as `[frontmatter]` does, key for key, so the type's copy changes nothing. Reported at the type's field.
 
 Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 

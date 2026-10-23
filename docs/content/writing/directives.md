@@ -343,6 +343,41 @@ A plan for turning a flag on for a growing share of users: by percentage, by seg
 
 To set up a glossary from the start, see [Set up a glossary](../content-model/glossary.md).
 
+## `@summary`
+@available: ascribe planned
+
+([SPEC §4.12]({repo}/blob/main/SPEC.md#412-summary))
+
+Gives a section a summary: a sentence or two that says what the section is about, for a reader who sees it apart from the page, as a product's [embedded help](../permalinks/in-your-product.md) does. Any section may have one, with a permalink or without.
+
+Give the summary its own text, which the page doesn't show, as a page's `description` isn't in its body:
+
+```markdown
+## ASC149 `page-size`
+@id {permalink=true}: ASC149
+@summary: A page's Markdown is as long as the limit or longer.
+```
+
+Or mark a paragraph the page already shows, which stays where it is, so nothing is written twice:
+
+```markdown
+## `ascribe versions release`
+@id {permalink=true}: cli-versions-release
+
+@summary
+Releases a line.
+
+It rewrites each mark's `planned` for its target to the line's version.
+```
+
+- **With text** (`@summary: text`), it goes at the top of its section, directly under the heading and its `@id`; anywhere else it's an error, `binding-not-section-top`. The text is inline content, as a note's: code spans, links, emphasis, and phrases. Use it when nothing on the page reads well alone, such as a lead-in that ends in a colon.
+- **With no text** (`@summary`), it marks the paragraph directly below it, anywhere in the section. It marks a paragraph only, `summary-not-paragraph`: to use a first sentence, make it a paragraph of its own.
+- **One per section,** `summary-repeated`. A subsection's summary is its own. A `@summary` with no text before a page's first heading is the summary of the page's opening.
+- **In a fragment,** a summary is the summary of the section it lands in, on each page that includes it.
+- **Not in a variant arm,** `summary-in-variant`, since a summary can't differ by arm: write one at the top of the section that holds for every arm.
+- **In the outputs,** the text form writes nothing in the site and plain outputs, and the paragraph of the other form is written as it would be without it. The JSON output gives the section's heading its `summary`. A summary's text isn't searched for [glossary terms](inline.md#glossary-terms).
+- **Nothing is guessed.** A section without `@summary` has no summary, whatever its first paragraph says.
+
 ## Project widgets
 
 ([SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets))

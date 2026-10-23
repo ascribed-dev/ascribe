@@ -1,0 +1,17 @@
+description: >-
+  A summary in a fragment is the summary of the section it lands in, on
+  each page that includes it: under a heading with no summary, it's that
+  section's, and under one with a summary, it's a second, reported at the
+  include site. A fragment's own section keeps its summary on every page.
+spec: ["4.2", "4.12", "8.2"]
+tags: [page-check, include]
+
+builds:
+  site:
+    diagnostics:
+      - slug: summary-repeated
+        file: index.md
+        line: 12
+        related:
+          - {file: _summary.md, line: 1}
+          - {file: index.md, line: 10, label: "the section's summary"}

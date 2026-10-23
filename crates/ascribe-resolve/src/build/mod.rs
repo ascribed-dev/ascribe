@@ -65,6 +65,7 @@ mod permalinks;
 mod phrases;
 mod router;
 mod section;
+mod summary;
 mod tree;
 
 use std::cell::{OnceCell, RefCell};
@@ -84,6 +85,7 @@ pub use permalinks::{DeclaredPermalink, Destination, Permalink, permalinks};
 pub(crate) use phrases::substitute_text;
 pub use router::DefaultRouter;
 pub use section::PageSection;
+pub use summary::{FoundSummary, SectionSummary, SummaryForm, find_summaries};
 pub use tree::{
     Annotation, Availability, DropReason, DroppedPage, FormattedField, GlossaryUse, HeadingIds,
     LinkTarget, NAV_LABEL, NavLabel, PagePermalink, Removal, Removed, ResolvedArm, ResolvedBlock,
@@ -421,6 +423,7 @@ impl<'p> BuildResolver<'p> {
             current_page: None,
             blocks,
             assets: Vec::new(),
+            summaries: Vec::new(),
             problems,
         })
     }
@@ -434,6 +437,8 @@ impl<'p> BuildResolver<'p> {
         links::resolve(self, &mut page);
         // Step 7: glossary.
         glossary::link_terms(self, &mut page);
+        // Each section's summary, its links and phrases resolved.
+        page.summaries = summary::section_summaries(&page.blocks);
         page.current_page = self.current_page(path);
         Some(page)
     }

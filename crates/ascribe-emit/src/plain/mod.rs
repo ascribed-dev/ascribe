@@ -335,9 +335,9 @@ pub(crate) struct Renderer<'a> {
 pub(crate) struct Rendered {
     /// Its blocks, images as their alt text.
     pub text: String,
-    /// Its first block of content when that's a paragraph, as `text` has it.
-    /// `@id` and `@available` before it are passed over, and the
-    /// availability line an `@available` adds isn't in it.
+    /// The section's summary (SPEC §4.12), as `text` would write it: its
+    /// `@summary`'s text or paragraph. For a page's opening, the page's
+    /// description, else the opening's `@summary`. `None` when it has none.
     pub summary: Option<String>,
 }
 
@@ -365,9 +365,15 @@ pub(crate) fn render_section(
     if let Some(ids) = section.heading.and_then(|h| h.heading.as_ref()) {
         r.level.set(ids.level.clamp(1, 6));
     }
-    let summary = r.summary(section.blocks);
     let text = r.blocks(section.blocks).join("\n\n");
-    // A page's own permalink: its description, else its opening's.
+    let anchor = section
+        .heading
+        .and_then(|h| h.heading.as_ref())
+        .map(|ids| ids.page_id.as_str());
+    let summary = page
+        .summary(anchor)
+        .map(|s| r.inlines(&s.block, s.inlines(), Style::default()));
+    // A page's own permalink: its description, else its opening's summary.
     let summary = match section.heading {
         Some(_) => summary,
         None => llms::description(cx.emit.model, page).or(summary),
@@ -429,27 +435,6 @@ impl Renderer<'_> {
         }
         out.extend(chunks);
         out
-    }
-
-    /// The first block of content in `blocks` when it's a paragraph: past
-    /// the directives that write nothing there (`@id`) and `@available`,
-    /// whose line isn't part of it.
-    fn summary(&self, blocks: &[ResolvedBlock]) -> Option<String> {
-        for block in blocks {
-            let ResolvedKind::Leaf(b) = &block.kind else {
-                return None;
-            };
-            match &b.kind {
-                BlockKind::Directive(line)
-                    if line.name == "available"
-                        || (!is_following(block) && self.directive(block, line).is_empty()) => {}
-                BlockKind::Paragraph(p) => {
-                    return Some(self.inlines(block, &p.inlines, Style::default()));
-                }
-                _ => return None,
-            }
-        }
-        None
     }
 
     fn block(&self, block: &ResolvedBlock, prev: Prev) -> Vec<String> {
@@ -558,7 +543,7 @@ impl Renderer<'_> {
     /// A directive line that stands alone (it wraps no following block).
     fn directive(&self, block: &ResolvedBlock, line: &DirectiveLine) -> Vec<String> {
         match line.name.as_str() {
-            "id" | "include" | "snippet" | "steps" | "details" => Vec::new(),
+            "id" | "include" | "snippet" | "steps" | "details" | "summary" => Vec::new(),
             "available" => self.annotation(block).into_iter().collect(),
             "note" => match &line.primary {
                 Some(PrimaryValue::Text(text)) => {

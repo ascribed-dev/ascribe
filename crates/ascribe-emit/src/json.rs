@@ -10,7 +10,7 @@ use ascribe_core::{AssetUse, FileId, Location, RelPath, Span};
 use ascribe_model::Segment;
 use ascribe_resolve::{
     Annotation, Availability, GlossaryUse, HeadingIds, IncludeSite, LinkTarget, RefKind,
-    ResolvedBlock, ResolvedKind, ResolvedLink, ResolvedPage, Scope, Substitution,
+    ResolvedBlock, ResolvedKind, ResolvedLink, ResolvedPage, Scope, SectionSummary, Substitution,
 };
 use ascribe_syntax::{BlockKind, DirectiveLine, Inline, InlineKind, PrimaryValue};
 use serde::Serialize;
@@ -64,7 +64,11 @@ impl Emitter for JsonEmitter {
     }
 
     fn render_page(&self, cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String, EmitError> {
-        let doc = Writer { cx }.page(page);
+        let doc = Writer {
+            cx,
+            summaries: &page.summaries,
+        }
+        .page(page);
         let text = serde_json::to_string_pretty(&doc).map_err(|e| EmitError::Render {
             page: page.path.to_string(),
             message: e.to_string(),
@@ -284,6 +288,9 @@ enum BlockBody {
         explicit: bool,
         text: Option<String>,
         inlines: Vec<InlineJson>,
+        /// The section's summary (SPEC §4.12), when it has one.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        summary: Option<SummaryJson>,
     },
     Paragraph {
         inlines: Vec<InlineJson>,
@@ -359,6 +366,15 @@ enum PrimaryJson {
     Text { inlines: Vec<InlineJson> },
     Identifier { text: String },
     Line { text: String },
+}
+
+/// A section's summary: its text, and the form that gives it, `text` for
+/// `@summary: text` and `paragraph` for `@summary` above a paragraph.
+#[derive(Serialize)]
+struct SummaryJson {
+    form: &'static str,
+    inlines: Vec<InlineJson>,
+    source: SourceJson,
 }
 
 #[derive(Serialize)]
@@ -537,6 +553,8 @@ fn formatted_value(segments: &[Segment]) -> serde_json::Value {
 
 struct Writer<'a, 'c> {
     cx: &'a PageContext<'c>,
+    /// The page's section summaries, for each heading's `summary`.
+    summaries: &'a [SectionSummary],
 }
 
 impl Writer<'_, '_> {
@@ -704,6 +722,21 @@ impl Writer<'_, '_> {
                     explicit: block.heading.as_ref().is_some_and(|i| i.explicit),
                     text: block.heading.as_ref().map(|i| i.text.clone()),
                     inlines: self.inlines(block, &h.inlines),
+                    summary: block.heading.as_ref().and_then(|ids| {
+                        let summary = self
+                            .summaries
+                            .iter()
+                            .find(|s| s.anchor.as_deref() == Some(ids.page_id.as_str()))?;
+                        Some(SummaryJson {
+                            form: summary.form.name(),
+                            inlines: self.inlines(&summary.block, summary.inlines()),
+                            source: self.source(
+                                summary.block.file,
+                                summary.block.span,
+                                &summary.block.via,
+                            ),
+                        })
+                    }),
                 },
                 BlockKind::Paragraph(p) => BlockBody::Paragraph {
                     inlines: self.inlines(block, &p.inlines),
