@@ -128,7 +128,8 @@ pub struct Entry {
     /// The SPEC §8.2 row, as `<construct> | <condition>`.
     #[serde(default)]
     pub row: Option<String>,
-    /// When a content check is reported, as a sentence without its full stop.
+    /// When a content check or a loader rule is reported, as a sentence
+    /// without its full stop.
     #[serde(default)]
     pub when: Option<String>,
     /// The group of the diagnostics reference a loader rule is listed in.

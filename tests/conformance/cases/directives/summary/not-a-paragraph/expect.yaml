@@ -1,0 +1,10 @@
+description: >-
+  `@summary` with no text marks a paragraph only: a list, a one-line note,
+  and a code block are each reported.
+spec: ["4.12", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: summary-not-paragraph, line: 7}
+  - {slug: summary-not-paragraph, line: 11}
+  - {slug: summary-not-paragraph, line: 14}

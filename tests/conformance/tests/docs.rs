@@ -150,6 +150,14 @@ fn the_diagnostics_reference_is_current() {
             "docs/content/{page} doesn't include _generated/{name}"
         );
     }
+    // Each diagnostic's section has a summary, for a product's help.
+    let missing: Vec<&str> = fragments
+        .iter()
+        .flat_map(|(_, text)| text.split("\n### ").skip(1))
+        .filter(|entry| !entry.contains("\n@summary: "))
+        .map(|entry| entry.lines().next().unwrap_or_default())
+        .collect();
+    assert!(missing.is_empty(), "no @summary: {missing:?}");
 }
 
 /// The pages of the diagnostics reference, in `docs/content/checks/diagnostics/`,
@@ -977,7 +985,13 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
             .filter(|e| is_model(e) && model_group(e) == *group)
         {
             page_of.insert(&entry.code, "content-model");
-            write_entry(&mut content_model, entry, None, pages);
+            // A model diagnostic with a row in the spec's table says when by
+            // the row's condition, as the source-file diagnostics do.
+            let condition = entry.when.as_deref().or_else(|| {
+                let row = entry.row.as_deref()?;
+                Some(row.split_once(" | ").map_or(row, |(_, c)| c))
+            });
+            write_entry(&mut content_model, entry, condition, pages);
         }
     }
 
@@ -1094,10 +1108,11 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
         .unwrap_or_default();
     let _ = write!(
         out,
-        "\n### {} `{}`\n@id {{permalink=true}}: {}\n\n{} · {} level · next step: {}{configurable}{acknowledged} · {section}\n\n",
+        "\n### {} `{}`\n@id {{permalink=true}}: {}\n{}\n{} · {} level · next step: {}{configurable}{acknowledged} · {section}\n\n",
         entry.code,
         entry.slug,
         entry.code,
+        summary(condition),
         severity(entry.severity),
         level(entry.level).to_lowercase(),
         next(entry),
@@ -1129,6 +1144,16 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
             "\n**Read more:** [{}](../{target}) in the {page}.\n",
             escape_braces(heading)
         );
+    }
+}
+
+/// The `@summary` line of an entry, and the blank line after it: when it's
+/// reported, so a product's help for the diagnostic says that (SPEC §4.12).
+/// Just the blank line for an entry with nothing to say.
+fn summary(condition: Option<&str>) -> String {
+    match condition {
+        Some(condition) => format!("@summary: {}.\n", escape_braces(&sentence(condition))),
+        None => String::new(),
     }
 }
 

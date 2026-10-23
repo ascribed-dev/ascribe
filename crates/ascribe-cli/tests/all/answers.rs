@@ -1251,7 +1251,7 @@ fn resolve_shows_a_permalinks_help() {
     );
     write(
         &dir.path().join("docs/keys.md"),
-        "---\ntitle: API keys\n---\n\n## Rotate keys\n@id {permalink=true}: rotate-keys\n\nRotate a key every 90 days.\n\nRun `quill keys rotate`.\n",
+        "---\ntitle: API keys\n---\n\n## Rotate keys\n@id {permalink=true}: rotate-keys\n\n@summary\nRotate a key every 90 days.\n\nRun `quill keys rotate`.\n",
     );
     let text = stdout(&run(
         dir.path(),

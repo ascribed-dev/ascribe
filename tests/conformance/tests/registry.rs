@@ -73,7 +73,7 @@ fn templates(e: &Entry) -> Vec<&String> {
 fn every_spec_row_has_exactly_one_entry() {
     let reg = registry();
     let rows = spec_rows();
-    assert_eq!(rows.len(), 107, "SPEC §8.2 changed; update the registry");
+    assert_eq!(rows.len(), 110, "SPEC §8.2 changed; update the registry");
     let mut by_row: BTreeMap<&str, Vec<&Entry>> = BTreeMap::new();
     for e in &reg.entries {
         if let Some(row) = &e.row {
@@ -116,14 +116,16 @@ fn loader_rules_are_file_level_and_grouped() {
     }
 }
 
-/// The reference says when a content check is reported; only a content
-/// check has `when`.
+/// The reference says when each diagnostic is reported: a SPEC §8.2 row by
+/// its condition, and a content check or a loader rule by its `when`, which
+/// every one of them has and nothing else does.
 #[test]
-fn only_content_checks_say_when() {
+fn checks_and_rules_say_when() {
     for e in &registry().entries {
-        assert!(
-            e.when.is_none() || e.area.is_some(),
-            "{}: only a content check has `when`",
+        assert_eq!(
+            e.when.is_some(),
+            e.row.is_none(),
+            "{}: a content check or a loader rule has `when`, and a SPEC §8.2 row doesn't",
             e.slug
         );
     }

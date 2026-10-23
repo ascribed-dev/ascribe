@@ -341,6 +341,8 @@ Following-block directives **stack**: several in a row all bind the block the la
 
 **A container that binds.** A container's content is what it holds, and a container has no binding, except where a directive's schema says its container binds as its line form does; `@memo` (§4.10) is the one built-in whose container does. What such a container is about is decided from its opening line, as its line form's is: at the top of a section, the section; anywhere else, the next block after its end line in the same container. Touching is measured from the end line: the block it's about starts on the line after it, and a blank line there is the warning a following-block directive gets. With nothing after its end line in its container, outside the top of a section, it's the error a following-block directive with no block gets, reported at the opening line. It stacks as following-block directives do, in either order: a following-block directive directly above it binds what it binds.
 
+**A summary.** `@summary` (§4.12) binds by whether it has a primary, as `@note` does, but its text is its section's, not a block of the page: with a primary, it binds the section, and so goes at the top of it, as a heading-bound directive does; without one, it binds the following block. It renders nothing of its own, so with a primary it isn't a block that a following-block directive can bind.
+
 Sections are found within one container: a heading-bound directive binds a heading in its own document, list item, blockquote, directive container, or arm, never one outside it. A container's first blocks have no heading above them, as at the start of a document.
 
 The two rules together: **at the top of a section, a directive describes the section; anywhere else, it describes the block it touches.**
@@ -381,6 +383,7 @@ Containers MAY nest, and `@end` always closes the innermost one. Processors SHOU
 | `@intended` | line | line (reason) | top of section, else following block | Acknowledge a check's problem as intended |
 | `@memo` | line, container (raw) | line (text), in line form | top of section, else following block, in either form | Keep a note for the people who maintain the page, never published |
 | `@term` | line | none | top of section | Make a glossary page's heading a term |
+| `@summary` | line | text, optional | top of section (with primary), else following block | Give a section a summary |
 
 ### 4.1 `@id`
 
@@ -774,6 +777,36 @@ A plan for turning a flag on for a growing share of users.
 
 - `@term` makes a term only on a page the glossary lists (§7.2), or in a fragment such a page includes. Elsewhere, it isn't a term, and it's an error (§8.2).
 - **Never in an output.** `@term` renders nothing: the heading and its section are published as they'd be without it.
+
+### 4.12 `@summary`
+
+Gives a section a **summary**: a sentence or two that says what the section is about, for a reader shown it apart from the page, such as a product's embedded help.
+
+```
+## ASC149 `page-size`
+@id {permalink=true}: ASC149
+@summary: A page's Markdown is as long as the limit or longer.
+```
+
+```
+## `ascribe versions release`
+@id {permalink=true}: cli-versions-release
+
+@summary
+Releases a line.
+
+It rewrites each mark's `planned` for its target to the line's version.
+```
+
+- **Forms:** line only.
+  1. **With a primary** (`@summary: text`), the primary is the summary, and the page's body doesn't show it, as a page's `description` isn't in its body. It binds its section (§3.8), so it goes at the top of the section, after the heading and its `@id`; anywhere else it's an error, as a heading-bound directive is (§8.2). For when nothing on the page reads well alone, as for a lead-in to a list.
+  2. **With no colon** (`@summary`), the summary is the following block, which renders where it is: a sentence the page already shows, so nothing is written twice. It goes anywhere in its section, directly above the block. The block MUST be a paragraph; to pick a first sentence, make it a paragraph of its own.
+- **Primary:** OPTIONAL text (§3.4): inline content, as a note's, with code spans, links, emphasis, and phrases. **Attributes:** none. **Title:** none.
+- **Its section** is the section of the nearest heading before it in the page after includes are expanded (§9.2), so a summary in a fragment is the summary of the section it lands in, on each page that includes it. A following-form summary before a page's first heading is the summary of the page's opening.
+- **One per section.** A second summary in a section is an error, at the second (page level, §8.2). A subsection's summary is its own.
+- **Not in a `@variant` arm.** A summary inside an arm, at any depth, is an error, since a summary can't differ by arm, and so is one an include brings into an arm. Either is reported on the page (§8.2), and is no section's summary in any build, including one that picks that arm.
+- **Optional.** Nothing requires a summary, and nothing guesses one from a section's prose.
+- **In the outputs.** The site and plain outputs write nothing for the primary form, and the following form's block as they would without the directive. The JSON output gives a heading its section's summary (§9.4).
 
 ---
 
@@ -1187,6 +1220,9 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Glossary | Two terms, or a term and an alias, with the same text, or two terms with the same id | Error |
 | Glossary | A term whose section doesn't start with a paragraph | Error |
 | Glossary | `@term` on a heading that no page the glossary lists shows | Error |
+| `@summary` | Following form whose block isn't a paragraph | Error |
+| `@summary` | A second summary in one section, including summaries from included content (page level) | Error |
+| `@summary` | Summary inside a `@variant` arm, including one an include brings into an arm (page level) | Error |
 | Project widget | Violates its declared schema | Error |
 | Links | Target file doesn't exist | Error |
 | Links | Target id doesn't exist in the target file (page level) | Error |
@@ -1344,7 +1380,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 
 **Navigation.** The site output holds the build's navigation (§7.8), a tree: the content root's section, each section with its folder, its label, its own page, its pages, and its nested sections, in order, and each page with its source path, its label, and its content type, joined to its record on the source path. A page's label is its `nav-label`, else its title, and a section's as §7.8 gives it, each as plain text, and in the output's formatted form where the title has one. A build with no pages has an empty root. The JSON output holds the same tree, its formatted labels in its own form.
 
-**JSON output.** The resolved tree, for custom consumers.
+**JSON output.** The resolved tree, for custom consumers. A heading carries its section's summary (§4.12): its text, and which form gives it.
 
 | Source | Site output | Plain-markdown output |
 |---|---|---|
@@ -1359,6 +1395,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 | Table row's `available`, `filter` | Unavailable rows removed; the rest annotated as in `badge` | Unavailable rows removed; the rest annotated as in `badge` |
 | Project widget | A custom element with the widget's name and attributes | The widget's plain fallback, or nothing |
 | `@snippet` | A fenced code block | A fenced code block |
+| `@summary` | Nothing for `@summary: text`; for `@summary`, the paragraph as it'd be without it | The same as the site output |
 | Phrases, includes, links, glossary | Resolved into ordinary markdown | Resolved; links made absolute |
 | A link out of a line (§5.2) | The link, followed directly by an attribute marker setting `data-ascribe-release-line` on its `<a>` to the line it leads to | The link, then a space and the line in parentheses, outside its text: `[Configure tracing](…) (3.5)` |
 
@@ -1487,7 +1524,8 @@ qchar           = %x20-21 / %x23-5B / %x5D-7E / UTF8-non-ascii
 primary         = identifier / text
 identifier      = 1*( VCHAR / UTF8-non-ascii )            ; no whitespace
 text            = 1*( %x20-7E / UTF8-non-ascii )          ; first line only; continues
-                                        ; onto following lines like a paragraph (§3.4)
+                                        ; onto following lines like a paragraph (§3.4),
+                                        ; as a note's or a summary's text (§4.5, §4.12)
 
 phrase          = "{" key "}"
 

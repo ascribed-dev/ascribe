@@ -563,3 +563,13 @@ fn a_planned_version_says_so_in_every_output() {
     let doc: serde_json::Value = serde_json::from_str(&out["index.json"]).expect("JSON");
     assert!(doc["availability"]["targets"][0].get("planned").is_none());
 }
+
+#[test]
+fn a_summary_writes_nothing_of_its_own() {
+    // `@summary: text` writes no element, and the paragraph `@summary` marks
+    // is written as it would be without it.
+    assert_eq!(
+        body("## Install\n@id: install\n@summary: Install it.\n\n@summary\nIt installs.\n"),
+        body("## Install\n@id: install\n\nIt installs.\n")
+    );
+}

@@ -36,6 +36,7 @@ fn available(builtin: Builtin) -> Option<&'static str> {
         | Builtin::Intended
         | Builtin::Memo
         | Builtin::Term => None,
+        Builtin::Summary => Some("ascribe planned"),
     }
 }
 

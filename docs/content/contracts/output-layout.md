@@ -249,7 +249,7 @@ The site output holds `_ascribe/help.json`: each permalink's section of the docs
     },
     "prerequisites": {
       "title": "Prerequisites",
-      "summary": "Before you install the agent, make sure you have:",
+      "summary": "The agent needs Node.js and a docs repository that Quill can read.",
       "text": "Before you install the agent, make sure you have:\n\n- …\n\nChecklist of prerequisites",
       "address": "https://docs.quill.dev/go/prerequisites/",
       "source": "install-agent.md"
@@ -265,7 +265,7 @@ The site output holds `_ascribe/help.json`: each permalink's section of the docs
 | `line` | For a line of a versioned build (content-model.md §16), the line, as `[releases.<target>] live` writes it. Absent for a build that isn't versioned, and for a versioned build with one live line, which writes what it would unversioned. |
 | `help` | One entry for each name the build answers to, keyed by name and sorted by name: each permalink the build publishes, and each alias of one (SPEC §7.6), under its own name with the entry of the permalink it ends at. A retired permalink has none. A name the build publishes twice (`permalink-duplicate`) has its first page's. |
 | `help.*.title` | The heading's text, or the page's title for a page's own permalink, as plain text: phrases substituted, and code spans as their text, without backticks. |
-| `help.*.summary` | The section's first block of content when it's a paragraph, as `text` writes it; an `@id` or `@available` before it is passed over, and the availability line an `@available` adds isn't in it. A page's own permalink has its description, or its opening's first paragraph when it has none. Absent when there's none. |
+| `help.*.summary` | The section's summary, its `@summary` (SPEC §4.12): its text, or the paragraph it marks, as `text` writes it. A page's own permalink has its description, or its opening's `@summary` when it has none. Absent when there's none: nothing is taken from a section that has no `@summary`. |
 | `help.*.text` | The section as the plain output writes it (SPEC §9.4): Markdown, with each image written as its alt text, since a product showing a bundled copy can't load an image from the docs' host. A heading's section runs from the block after the heading to the next heading at its level or above, or to the end of the container it's in (a variant arm, a note), whichever comes first; the heading itself is `title`. A page's own permalink has the page's blocks before its first heading, its opening, which may be empty. Links are absolute with `[consumer] site`, and routes from the host's root without it. Availability is written as the build has it: with badges, each mark in the section is an `Available:` line. |
 | `help.*.address` | The permalink's address: `[consumer] site`, the permalinks' path (§1.2's `path`), the name, and a final `/` when `trailing-slash` is `"always"`. Absent without `site`. |
 | `help.*.source` | The source path of the page the section is on, relative to the content root: §1.2's `source`. A heading in a fragment is cut from that page. |

@@ -3,6 +3,7 @@
 
 ### ASC163 `description-too-long`
 @id {permalink=true}: ASC163
+@summary: The project publishes `llms.txt` (`[consumer] agents = true`), and a page's description, or a content type's default for its description field, is longer than 300 characters as `llms.txt` writes it.
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
@@ -16,6 +17,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC164 `llms-section-large`
 @id {permalink=true}: ASC164
+@summary: The project publishes `llms.txt` (`[consumer] agents = true`), and one of a build's `llms.txt` files is longer than 50,000 characters even with the index split by folder. Reported at the page the file is about.
 
 Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
@@ -29,6 +31,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC184 `listing-disallowed`
 @id {permalink=true}: ASC184
+@summary: A page is `unlisted`, and what the project says in `[crawlers]` keeps a search crawler from fetching it: its own lines, for every crawler or in a group that names the crawler, or a disallowed purpose.
 
 Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -42,6 +45,7 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 
 ### ASC190 `crawlers-disallowed`
 @id {permalink=true}: ASC190
+@summary: `[crawlers]` disallows `search` or `on-request`, and the site's pages are listed unless they say otherwise.
 
 Advice · file level · next step: choose · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -57,6 +61,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 
 ### ASC165 `prose`
 @id {permalink=true}: ASC165
+@summary: The project has `[checks.vale]`, and Vale reports an alert about the prose of a page or a fragment, or of a phrase's text. Reported where the alert is in the source, or at the phrase.
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -70,6 +75,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC166 `prose-not-checked`
 @id {permalink=true}: ASC166
+@summary: The project has `[checks.vale]`, and Vale couldn't be run, failed, or didn't finish in time, or the tool checking the project doesn't start it, as the agents' tools don't. Reported once, at `[checks.vale]`.
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -85,6 +91,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 ### ASC168 `link-external-broken`
 @id {permalink=true}: ASC168
+@summary: `ascribe report links`: the link checker found that an external link answers with an error, doesn't answer in time, or can't be reached. An address that answers with a server error (`5xx`) is asked about again after a short wait, and reported only when it fails again. A host `[checks.links] ignore` names isn't checked.
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block, or under the heading for a heading · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
@@ -98,6 +105,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 ### ASC169 `link-external-moved`
 @id {permalink=true}: ASC169
+@summary: `ascribe report links`: an external link's address redirects permanently (`301` or `308`) to another one that answers. A site's root that redirects to another of its own pages, a landing page, hasn't moved.
 
 Advice · file level · next step: choose · configurable in `[checks]` · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
@@ -113,6 +121,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 
 ### ASC170 `delivery-hosting`
 @id {permalink=true}: ASC170
+@summary: `ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation.
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
@@ -126,6 +135,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 ### ASC171 `delivery-output`
 @id {permalink=true}: ASC171
+@summary: `ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`.
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
@@ -141,6 +151,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 ### ASC199 `example-stale`
 @id {permalink=true}: ASC199
+@summary: A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and the file has changed since the observation that lists it was made. For a source in another repository, the config, the observation, and the file are the copies `ascribe sources fetch` made. Reported once for each snippet of the file, whichever region it shows.
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
@@ -154,6 +165,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 ### ASC200 `example-unobserved`
 @id {permalink=true}: ASC200
+@summary: A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and no observation lists the file. For a source in another repository, the config and the observation are the copies `ascribe sources fetch` made. Reported once for each snippet of the file.
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
@@ -167,6 +179,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 ### ASC201 `examples-config-invalid`
 @id {permalink=true}: ASC201
+@summary: A source has an `ascribe.examples.toml`, or an observation beside it, that can't be read: in its folder, or, for a source in another repository, in its copies. Reported at the source in ascribe.toml, once for each problem in each file.
 
 Warning · file level · next step: outside · configurable in `[checks]` · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
 
@@ -180,6 +193,7 @@ Warning · file level · next step: outside · configurable in `[checks]` · [SP
 
 ### ASC202 `observation-file-missing`
 @id {permalink=true}: ASC202
+@summary: An observation beside the `ascribe.examples.toml` of a source in the same repository lists a file that isn't in the source's folder. Reported at the file's line in the observation, once for each file.
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
 

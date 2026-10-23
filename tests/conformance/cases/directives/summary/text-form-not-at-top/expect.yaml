@@ -1,0 +1,10 @@
+description: >-
+  `@summary: text` is about its section, so it goes at the top of one, as
+  `@id` does: not after the section's content, and not before the first
+  heading.
+spec: ["3.8", "4.12", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: binding-not-section-top, line: 5}
+  - {slug: binding-not-section-top, line: 11}

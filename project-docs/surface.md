@@ -77,6 +77,7 @@ For authors. Read from `crates/ascribe-core/src/schema.rs`.
 | `@intended` | SPEC §4.9 |
 | `@memo` | SPEC §4.10 |
 | `@term` | SPEC §4.11 |
+| `@summary` | SPEC §4.12 |
 
 ## `ascribe.toml`
 
@@ -109,7 +110,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-240 in all. By severity: 48 advice, 167 error, 25 warning. By level: 214 file, 26 page. By kind of next step: 54 choose, 18 fix, 8 outside, 12 review, 148 write.
+243 in all. By severity: 48 advice, 170 error, 25 warning. By level: 215 file, 28 page. By kind of next step: 54 choose, 18 fix, 8 outside, 12 review, 151 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -353,6 +354,9 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC246` | `model-from-file` | error | write | `{path}`, the file `[from]` takes from, doesn't exist |
 | `ASC247` | `model-from-take` | error | write | `{file}` has no `{key}` to take |
 | `ASC248` | `model-from-written` | error | write | `{key}` is taken from `{file}` and written here too; a key has one home |
+| `ASC249` | `summary-not-paragraph` | error | write | `@summary` with no text must be followed by a paragraph, but the next block is {found} |
+| `ASC250` | `summary-repeated` | error | write | the section `{heading}` already has a summary; a section has one |
+| `ASC251` | `summary-in-variant` | error | write | `@summary` is inside a `@variant` arm, and a summary can't differ by arm |
 
 ## The VS Code extension
 

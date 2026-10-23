@@ -10,6 +10,7 @@
 //! | `link-id-missing` | the source index, for the links the build publishes |
 //! | `include-id-missing`, `include-cycle`, `include-limit` | include expansion |
 //! | `variant-no-arm-survives`, `available-exceeds-scope` | build modes and the availability scope check |
+//! | `summary-in-variant` | the page's summaries in `@variant` arms, before build modes |
 //! | `link-id-removed`, `link-page-dropped` | link resolution, per build |
 //! | `heading-level-skipped` | the page's resolved headings |
 //! | `page-size` | the page's plain Markdown, per build |
