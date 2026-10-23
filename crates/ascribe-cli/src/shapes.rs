@@ -194,6 +194,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_query::Resolved>(),
     },
     Shape {
+        file: "resolve-permalink",
+        title: "ResolvePermalinkReport",
+        written_by: "`ascribe resolve go:<name> --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::ResolvedPermalink>(),
+    },
+    Shape {
         file: "refs",
         title: "RefsReport",
         written_by: "`ascribe refs --format json`",

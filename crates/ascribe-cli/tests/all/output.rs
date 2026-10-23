@@ -957,6 +957,19 @@ fn answers() {
             0,
         )),
     );
+    let go = [
+        "resolve",
+        "go:prerequisites",
+        "--build",
+        "site",
+        "--config",
+        quill,
+    ];
+    expect("resolve-permalink.txt", &stdout(&run(&root, &go, 0)));
+    expect(
+        "resolve-permalink.json",
+        &json(&run(&root, &[&go[..], &["--format", "json"]].concat(), 0)),
+    );
     expect(
         "agents-index.json",
         &json(&run(

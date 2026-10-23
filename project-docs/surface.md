@@ -807,6 +807,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/permalinks-verify.schema.json` | PermalinksVerifyReport | What `ascribe permalinks verify` answers. |
 | `schemas/refs.schema.json` | RefsReport | What `ascribe refs <TARGET>` answers. |
 | `schemas/report.schema.json` | ReportReport | What `ascribe report --format json` writes: one document, whatever the outcome. |
+| `schemas/resolve-permalink.schema.json` | ResolvePermalinkReport | What `ascribe resolve go:<name> --format json` answers: the name's entry as the build's `_ascribe/help.json` writes it, with the file's `version`, `build`, and `line`. |
 | `schemas/resolve.schema.json` | ResolveReport | What `ascribe resolve <PAGE> --format json` answers. |
 | `schemas/search.schema.json` | SearchReport | What `ascribe search <QUERY>` answers: what `--format json` writes. |
 | `schemas/sources-status.schema.json` | SourcesStatusReport | What `ascribe sources status --format json` writes: each source's pin and the state of its copies, read from the files alone. |

@@ -32,6 +32,13 @@ pub const MEMO_FILE_SENTENCE: &str = "`ascribe outline <page>` lists the memo fi
      page and each of its headings: read a memo before changing the block it's about, and \
      keep it.";
 
+/// What the rules say of permalinks, in a project that declares one: the
+/// command that shows a permalink's help, which `{config}` is replaced in
+/// with the project's `--config`.
+pub const PERMALINK_SENTENCE: &str = "A product's message that links to these docs by a \
+     permalink can read what the docs will show for it first: `ascribe resolve \
+     go:<name>{config}` prints the help a product shows, from the build's `help.json`.";
+
 /// A project's rules, as Markdown, for a file in the folder `dir` is relative
 /// to: `dir` is the project's folder (the one holding `ascribe.toml`) as seen
 /// from there, and empty when the file is beside `ascribe.toml`. `root` is
@@ -45,6 +52,9 @@ pub const MEMO_FILE_SENTENCE: &str = "`ascribe outline <page>` lists the memo fi
 /// in `memos/`, where to find the memos about a page, in
 /// [`MEMO_FILE_SENTENCE`], after it. Personal memos don't count: the rules
 /// are the same on every machine.
+///
+/// In a project that declares a permalink, the links section ends with
+/// [`PERMALINK_SENTENCE`].
 ///
 /// When the whole is longer than [`RULES_BUDGET`], the memo sentences are
 /// cut first; then the page types' lines, and the cut says where the full list
@@ -62,12 +72,17 @@ pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPa
 
     let types = type_entries(model, &ascribe_templates::summaries(model, fs));
     let phrases = phrases_section(model, &at);
+    let permalinks = if project.declared_permalinks().is_empty() {
+        String::new()
+    } else {
+        format!(" {}", PERMALINK_SENTENCE.replace("{config}", &at.config()))
+    };
     let tail = format!(
         "\n### Links\n\nLink to the source file, with a relative path such as \
          `../guides/install.md#configure`, not to the site's address. `ascribe outline \
          <page>` lists a page's headings with their ids, and `ascribe link <target> --from \
-         <page>` says whether a link works and what to write.\n\n### More\n\n`ascribe \
-         model{}` shows everything the content model allows. Every directive: {}\n",
+         <page>` says whether a link works and what to write.{permalinks}\n\n### More\n\n\
+         `ascribe model{}` shows everything the content model allows. Every directive: {}\n",
         at.path_arg(),
         directive_reference_url(),
     );

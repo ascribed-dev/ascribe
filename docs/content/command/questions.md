@@ -182,15 +182,27 @@ When the build doesn't publish the page, it writes nothing to standard output, s
 
 A line of a [versioned build](../versions/index.md), such as `--build site@3.4`, resolves the page as that line publishes it, its route and links under the line's folder.
 
+@available: ascribe planned
+`go:` and a permalink's name, in place of the page, shows the help a [product shows](../permalinks/in-your-product.md) for that permalink: its entry in the build's `_ascribe/help.json`, from the code that writes the file. The project is the current directory's, or `--config`'s. The text is the entry's title, its summary when the text doesn't start with it, its text, and "Read more" with its address, which needs [`[consumer] site`](../content-model/output.md#consumer):
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/resolve-permalink.txt
+
+A name the build doesn't publish exits with `1`, and standard error names the closest it does publish; a retired permalink exits with `1`, and standard error gives its reason. An alias shows its target's entry.
+
 | Code | Meaning |
 |---|---|
-| `0` | It wrote the page |
-| `1` | The build doesn't publish the page |
+| `0` | It wrote the page, or the permalink's help |
+| `1` | The build doesn't publish the page, or the permalink; or the permalink is retired |
 | `2` | It couldn't run: no `ascribe.toml`, one with errors, a path that isn't a page, more than one build and no `--build`, an unknown build, or a page that can't be written |
 
 With `--format json`, the document is as follows, and its [schema](../contracts/json-reports/questions.md#ascribe-resolve) has every field:
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/resolve.json
+
+@available: ascribe planned
+For `go:<name>`, the document is the entry as `help.json` writes it, with the file's `version`, `build`, and `line`, and the `name` asked for, after `schema_version` and `ascribe_version`. `version` is `help.json`'s format version, which a reader checks as it checks the file's. Its [schema](../contracts/json-reports/questions.md#ascribe-resolve-go) has every field:
+
+@snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/resolve-permalink.json
 
 ## `ascribe search`
 @id {permalink=true}: cli-search
