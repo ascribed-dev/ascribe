@@ -16,7 +16,7 @@ import { readFileSync } from "node:fs";
 import * as vscode from "vscode";
 import type { Drawn } from "../../../src/ui/webviewView.js";
 import type { SettingsReport } from "../../../src/webview/settingsProtocol.js";
-import { activated, uriOf, waitFor } from "./helpers.js";
+import { activated, sleep, uriOf, waitFor } from "./helpers.js";
 
 const SLASH = "consumer.trailing-slash";
 const BASE = "consumer.base-path";
@@ -36,6 +36,34 @@ function changedLines(before: string, after: string): string[] {
   const b = after.split("\n");
   assert.equal(b.length, a.length, "the edit changed how many lines the file has");
   return b.filter((line, i) => line !== a[i]);
+}
+
+/**
+ * Undo in `document`, `steps` times, each counted only once it changes the
+ * document. Undo goes to whatever has the focus, and the workbench can take
+ * it as the test runs (VS Code's agent host, starting late, does), so each
+ * step shows the file beside the tab, waits for its editor to be the active
+ * one, and tries again when the document didn't change.
+ */
+async function undoIn(document: vscode.TextDocument, steps = 1): Promise<void> {
+  for (let step = 0; step < steps; step++) {
+    const version = document.version;
+    await waitFor(`Undo ${step + 1} of ${steps} in ${document.uri.fsPath}`, async () => {
+      // An Undo that landed late counts, and isn't run again.
+      if (document.version !== version) return true;
+      await vscode.window.showTextDocument(document, {
+        viewColumn: vscode.ViewColumn.Two,
+        preserveFocus: false,
+      });
+      if (vscode.window.activeTextEditor?.document !== document) return false;
+      await vscode.commands.executeCommand("undo");
+      for (let waited = 0; waited < 1_000; waited += 50) {
+        if (document.version !== version) return true;
+        await sleep(50);
+      }
+      return false;
+    });
+  }
 }
 
 describe("Project Settings on examples/quill", () => {
@@ -120,9 +148,7 @@ describe("Project Settings on examples/quill", () => {
 
     // Undo in the file puts it back, and the tab follows.
     // Beside the tab, as the file is opened beside it: a hidden tab draws nothing.
-    // The file has the focus Undo goes to: the tab took its own before this test.
-    await vscode.window.showTextDocument(document, { viewColumn: vscode.ViewColumn.Two });
-    await vscode.commands.executeCommand("undo");
+    await undoIn(document);
     await settings.whenDrawn(
       "the trailing slash, always",
       (d) => shown(d, SLASH).value === "always",
@@ -148,9 +174,7 @@ describe("Project Settings on examples/quill", () => {
       (d) => shown(d, BASE).value === "/doc",
     );
     assert.equal(shown(drawn, BASE).value, "/doc");
-    await vscode.commands.executeCommand("undo");
-    await vscode.commands.executeCommand("undo");
-    await vscode.commands.executeCommand("undo");
+    await undoIn(editor.document, 3);
     await settings.whenDrawn("the base path, /", (d) => shown(d, BASE).value === "/");
     assert.equal(editor.document.getText(), onDisk);
   });
@@ -217,8 +241,7 @@ describe("Project Settings on examples/quill", () => {
       document.getText(),
       onDisk.replace('# Pages end in a slash.\ntrailing-slash = "always" # as Astro\'s\n', ""),
     );
-    await vscode.window.showTextDocument(document, { viewColumn: vscode.ViewColumn.Two });
-    await vscode.commands.executeCommand("undo");
+    await undoIn(document);
     await settings.whenDrawn("the trailing slash, set again", (d) => shown(d, SLASH).resettable);
     assert.equal(document.getText(), onDisk);
   });
@@ -240,8 +263,7 @@ describe("Project Settings on examples/quill", () => {
     );
     assert.ok(document, "ascribe.toml isn't open");
     assert.equal(document.getText(), `${onDisk}\n[checks.page-orphan]\nlevel = "off"\n`);
-    await vscode.window.showTextDocument(document, { viewColumn: vscode.ViewColumn.Two });
-    await vscode.commands.executeCommand("undo");
+    await undoIn(document);
     await settings.whenDrawn("page-orphan, its default", (d) => !shown(d, ORPHAN).resettable);
     assert.equal(document.getText(), onDisk);
   });
