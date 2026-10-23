@@ -343,6 +343,10 @@
       {
         "href": "/docs/permalinks/command/",
         "label": "ascribe permalinks"
+      },
+      {
+        "href": "/docs/permalinks/in-your-product/",
+        "label": "Show the docs in your product"
       }
     ]
   },
