@@ -5704,7 +5704,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: the content checks' diagnostics page is over page-size"
     },
     {
@@ -5800,8 +5800,11 @@
         "enhancement",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/890"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Embedded help 5: serve each line's help entries from @ascribed/astro"
     },
     {
@@ -5818,8 +5821,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/891"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Embedded help 6: give a section's help each arm of its switcher"
     },
     {
@@ -5840,7 +5846,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/889"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Embedded help 7: ascribe resolve go:<name> and ascribe_resolve show an entry"
     },
     {
