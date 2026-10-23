@@ -5792,7 +5792,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Embedded help 4: check missing and long summaries, show them in the editor, tell agents"
     },
     {
@@ -5906,7 +5906,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Split the content model's diagnostics page, which is over page-size"
     }
   ]
