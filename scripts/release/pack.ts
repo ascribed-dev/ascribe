@@ -37,6 +37,7 @@ import {
   root,
   skill,
   targets,
+  vsixEntry,
   withoutEmptyUnreleased,
   type PackageManifest,
   type Target,
@@ -235,7 +236,9 @@ function checkVsix(file: string, target: Target): void {
   if (!target.exe.endsWith(".exe") && !line.startsWith("-rwx")) {
     fail(`${where} ${entry} isn't executable: ${line}`);
   }
-  const changelog = unzip(["-p", file, "extension/CHANGELOG.md"]);
+  const changelogEntry = vsixEntry(listing, "extension/CHANGELOG.md");
+  if (!changelogEntry) fail(`${where} has no extension/CHANGELOG.md`);
+  const changelog = unzip(["-p", file, changelogEntry]);
   if (withoutEmptyUnreleased(changelog) !== changelog) {
     fail(`${where} CHANGELOG.md has an empty unreleased section`);
   }
