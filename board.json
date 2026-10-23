@@ -5722,16 +5722,19 @@
         "rust",
         "outputs changed"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/885"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Embedded help 1: write each permalink's section to _ascribe/help.json"
     },
     {
       "content": {
-        "body": "Phase 2 of [Embedded help](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/README.md). The plan is [phase-2-marker-decision.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/phase-2-marker-decision.md). A decision by the maintainer, then one pull request with the decision file; no code.\n\n**Blocked by #878**, whose pull request records the measurements this decision reads (how often the first paragraph is the right summary, too long, or missing, and whether any section wants two paragraphs).\n\n**The question for @KyleBlankRollins, once #878's measurements are in:** how does a section mark the paragraph a product shows as its summary?\n1. A container, `@summary:` … `@end` (recommended, or 3 if one block is always enough).\n2. An attribute on the heading, `@id {permalink=true, summary=2}`.\n3. A line form, `@summary`, wrapping the block after it as `@available` does.\n\nAlso to settle, with the plan's recommendation for each: a second marker in a section (error); a marker with no permalink (advice); a marker in a fragment; what it may hold (paragraphs); what the site output writes and review's source anchors (`site-render.md`); its JSON shape; a marker inside a variant arm (error until phase 6); and a leading `**When:**` label (the summary drops a leading bold run ending in a colon).\n\n**Done when:** a decision file in `project-docs/decisions/`, numbered by this issue, records the form and each rule above with why, and nothing else changes. #880 (phase 3) starts from it.",
+        "body": "Phase 2 of [Embedded help](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/README.md). The plan is [phase-2-marker-decision.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/phase-2-marker-decision.md), which has the measurements and the full reasoning. A decision by the maintainer, then one pull request with the decision file; no code.\n\n**What #885's measurements show:** no rule over the prose picks a good summary. Of the docs' 326 entries, the 240 diagnostics' first paragraph is their metadata line (155 have a **When** paragraph; 85 have none); 37 sections open with a paragraph over 300 characters whose first sentence would do; 7 open with a lead-in ending in \":\"; 2 have no paragraph first. A summary is something a writer, or an agent, decides.\n\n**Recommended, after discussing it with @KyleBlankRollins:** a section summary, `@summary`, for every section, with `@note`'s two bindings (SPEC §4: \"self (with primary), else following block\"):\n\n```markdown\n## `ascribe versions release`\n@id {permalink=true}: cli-versions-release\n\n@summary\nReleases a line.\n\nIt rewrites each mark's `planned` for its target to the line's version, …\n```\n\n```markdown\n## ASC149 `page-size`\n@id {permalink=true}: ASC149\n@summary: A page's Markdown, as a build writes it for agents to read, is as long as the limit or longer.\n```\n\n- **`@summary` alone** makes the next block the summary, rendered where it is: a writer picks a sentence the page already shows, so nothing is written twice.\n- **`@summary: text`** gives its own text, which the page's body doesn't show, as a page's `description` isn't in its body: for a lead-in or a diagnostic.\n- **General, not help's:** any section may have one. Embedded help is its first reader; the JSON output, link hovers, search, and link previews can read it later.\n- **Optional, and no guessing:** from phase 3, `help.json`'s `summary` is the section's `@summary` or absent; phase 1's first-paragraph rule goes.\n- **Not chosen:** a container (`@summary:` … `@end`), a heading attribute naming a paragraph (`summary=2`), and a `{render=true}` attribute, which would make one attribute change both where the text comes from and whether it shows.\n\n**Also settled, as recommended in the plan:** one summary per section (a second is an error); the line form at the top of its section, the following form before the block it marks; the following form marks a paragraph; the line form's text is inline content; a summary in a fragment is its landing section's; one inside a variant arm is an error until phase 6; the line form writes nothing in the site and plain bodies, the following form's block is written as it is with its own source anchors, and the JSON output carries the summary on the section's heading; the generator writes `@summary:` from each diagnostic's `when`, and the 85 without one get a `when`.\n\n**The one question left for @KyleBlankRollins:** the check for a section with a permalink and no summary. Summaries aren't tied to permalinks; only this check ties them, and only for embedded help. Recommended: **advice by default, configurable in `[checks]`**, so a project that only links to its permalinks isn't asked for summaries, and one that ships embedded help raises it to a warning.\n\n**Done when:** a decision file in `project-docs/decisions/`, numbered by this issue, records the form, each rule, the check's default, and why, and nothing else changes. #880 (phase 3) starts from it.\n",
         "number": 879,
         "repository": "ascribed-dev/ascribe",
-        "title": "Embedded help 2: decide how a section marks its summary",
+        "title": "Embedded help 2: decide the section summary, @summary",
         "type": "Issue",
         "url": "https://github.com/ascribed-dev/ascribe/issues/879"
       },
@@ -5742,14 +5745,14 @@
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
-      "title": "Embedded help 2: decide how a section marks its summary"
+      "title": "Embedded help 2: decide the section summary, @summary"
     },
     {
       "content": {
-        "body": "Phase 3 of [Embedded help](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/README.md). The plan is [phase-3-marked-summary.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/phase-3-marked-summary.md). One pull request.\n\n**Blocked by #878 and #879.** The directive's form and rules are whatever #879's decision file settles; don't choose them here.\n\n**What to build:** the marker #879 settles, through syntax, `fmt`, resolve, and the site, plain, and JSON emitters, with its diagnostics; `help.rs` takes the summary from the marker when there is one, else decision 10, with no change to `help.json`'s keys; the language server's completion and hover for it; and the diagnostics reference generator marks each diagnostic's **When** paragraph.\n\n**Done when:**\n- After `ascribe build --config docs`, `help.json`'s `ASC149` entry has the summary \"A page's Markdown, as a build writes it for agents to read, is as long as the limit or longer: …\", and every diagnostic's summary is its **When** sentence without the `When:` label.\n- Conformance cases for the directive's parse, canonical form, a marked summary, and each of its diagnostics; emit tests for a marker mid-section, in a fragment, and none.\n- Site and plain outputs of every project are byte for byte the same where no marker is written; the diagnostics reference's changes are named with `--accept`.\n- Phase 1's measurements taken again on the docs' file, in the pull request.\n- Docs: `directives.md`, the embedded help page, SPEC §4 and Appendix A, `site-render.md`, the JSON output's reference, `changes/language/summary-marker.md`, the surface map.",
+        "body": "Phase 3 of [Embedded help](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/README.md). The plan is [phase-3-marked-summary.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/phase-3-marked-summary.md). One pull request, or two if the `when` sentences are large (below).\n\n**Blocked by #878 and #879.** The directive's bindings and rules are whatever #879's decision file settles; don't choose them here.\n\n**What to build:** `@summary`, general to every section, with both bindings (`@summary: text`, its own text not shown in the body; `@summary` alone, the next block, rendered where it is), through syntax, `fmt`, resolve, and the site, plain, and JSON emitters, with its diagnostics. `help.rs` takes the summary from the section's `@summary`, or leaves it absent: decision 10's first-paragraph rule is removed, and `help.json`'s keys don't change. The language server's completion and hover for it. The diagnostics generator writes `@summary: <when>` under each diagnostic's `@id`, and each of the 85 diagnostics without a `when` gets one in `diagnostics.toml`; if those sentences make the pull request too large to read, they go first, in a pull request of their own.\n\n**Done when:**\n- After `ascribe build --config docs`, every diagnostic's `help.json` summary is its `when`, and no entry's summary comes from a section without `@summary`.\n- Conformance cases for both bindings' parse and canonical form, a summary in a fragment, in a variant arm, two in a section, and each diagnostic; emit tests for each binding, a fragment, and none.\n- Site and plain outputs of every project are byte for byte the same where no `@summary` is written; the diagnostics reference's changes are its `@summary` lines and new `when` sentences, named with `--accept`.\n- Phase 1's measurements taken again on the docs' file, in the pull request.\n- Docs: `directives.md`, the embedded help page, SPEC §3, §4, and Appendix A, `site-render.md`, the JSON output's reference, `changes/language/section-summary.md`, the surface map.\n",
         "number": 880,
         "repository": "ascribed-dev/ascribe",
-        "title": "Embedded help 3: mark a section's summary, and the diagnostics' When paragraphs",
+        "title": "Embedded help 3: section summaries with @summary, and the diagnostics' when",
         "type": "Issue",
         "url": "https://github.com/ascribed-dev/ascribe/issues/880"
       },
@@ -5760,14 +5763,14 @@
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
-      "title": "Embedded help 3: mark a section's summary, and the diagnostics' When paragraphs"
+      "title": "Embedded help 3: section summaries with @summary, and the diagnostics' when"
     },
     {
       "content": {
-        "body": "Phase 4 of [Embedded help](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/README.md). The plan is [phase-4-sized.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/phase-4-sized.md). One pull request.\n\n**Blocked by #880** (the marked summary), whose measurements say how many of the docs' summaries are long or missing.\n\n**What to build:** advice `help-summary`, configurable in `[checks]` with a `limit` of 300 characters measured as `description-too-long` measures, with one message for a summary at or over the limit and one for a permalink with none, reported once at a fragment's own `@id` line. The docs' own advice fixed or acknowledged. The summary function shared between `help.rs` and the language server, so the hover on a permalink's `@id` line and This page's Permalink row tooltip show what a product gets.\n\n**Done when:**\n- Conformance cases: over the limit, under it, a marked summary under it whose first paragraph is over, none, a fragment's, and the limit set.\n- `ascribe check --config docs` reports no `help-summary`.\n- The goal's hover on `@id {permalink=true}: connect` and the Permalink row's tooltip, in the language server's and the extension's tests.\n- Docs: the check's generated reference, the embedded help page on short summaries, `docs/content/editor/sidebar.md`; `changes/language/help-summary.md` and `changes/editor/permalink-summary.md`.",
+        "body": "Phase 4 of [Embedded help](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/README.md). The plan is [phase-4-sized.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/phase-4-sized.md). One pull request, or two if the docs' summaries are large (below).\n\n**Blocked by #880** (section summaries).\n\n**What to build:**\n- **Two checks,** advice by default and configurable in `[checks]` (the default is #879's to confirm): `summary-missing`, a section with a permalink and no `@summary` (a page's own permalink is covered by `page-description-missing`); and `summary-long`, any section's summary at or over a `limit` of 300 characters, measured as `description-too-long` measures. A fragment's is reported once, in the fragment's own file.\n- **The editor:** the hover on a section's heading and its `@id` line, and This page's Permalink row tooltip, show the section's summary, from the function `help.rs` uses.\n- **Agents:** the rules and the skill say to give a permalinked section a `@summary` and how to choose a binding; `--format prompt` lists the missing ones with the section's text.\n- **The docs' own:** every heading permalink outside the diagnostics given a `@summary` (59 at phase 1's count), written by an agent from the prompt and read by a person, in a pull request of its own if it's large.\n\n**Done when:**\n- Conformance cases: a permalink with no summary, with each binding, a page's own permalink, a fragment's, over the limit and under it, the limit set, and `summary-missing` raised to a warning.\n- `ascribe check --config docs` reports no `summary-missing` and no `summary-long`.\n- The hover and the Permalink row's tooltip, in the language server's and the extension's tests; the rules and prompt in the agents' tests.\n- Docs: the checks' generated reference, the embedded help page on requiring summaries, `docs/content/editor/sidebar.md`; `changes/language/summary-checks.md`, `changes/editor/section-summary.md`, `changes/agents/section-summary.md`.\n",
         "number": 881,
         "repository": "ascribed-dev/ascribe",
-        "title": "Embedded help 4: check a summary's length, and show it in the editor",
+        "title": "Embedded help 4: check missing and long summaries, show them in the editor, tell agents",
         "type": "Issue",
         "url": "https://github.com/ascribed-dev/ascribe/issues/881"
       },
@@ -5778,7 +5781,7 @@
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
-      "title": "Embedded help 4: check a summary's length, and show it in the editor"
+      "title": "Embedded help 4: check missing and long summaries, show them in the editor, tell agents"
     },
     {
       "content": {
@@ -5795,7 +5798,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Embedded help 5: serve each line's help entries from @ascribed/astro"
     },
     {
@@ -5813,7 +5816,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Embedded help 6: give a section's help each arm of its switcher"
     },
     {
@@ -5831,8 +5834,22 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Embedded help 7: ascribe resolve go:<name> and ascribe_resolve show an entry"
+    },
+    {
+      "content": {
+        "body": "The nightly canary failed, so `next` stays on the newest canary that passed.\n\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/39931594904) on `56575a687093af36780b9b162cd3fd1aa18dada2`. Failed jobs:\n\n- build / pack\n",
+        "number": 886,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Canary failed",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/886"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhC8-Tc",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Canary failed"
     }
   ]
 }
