@@ -40,8 +40,8 @@ use std::cell::{Cell, RefCell};
 use ascribe_core::{AssetUse, RelPath, Router};
 use ascribe_model::{ContentModel, PlainContent, Segment};
 use ascribe_resolve::{
-    AstroRouter, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedKind, ResolvedLink,
-    ResolvedPage, llms, pages,
+    AstroRouter, PageSection, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedKind,
+    ResolvedLink, ResolvedPage, llms, pages,
 };
 use ascribe_syntax::{Alignment, BlockKind, Bound, CodeBlock, DirectiveLine, PrimaryValue, Table};
 
@@ -256,6 +256,7 @@ fn render_page(cx: &PageContext<'_>, page: &ResolvedPage) -> String {
         model: cx.emit.model,
         arms: RefCell::new(Vec::new()),
         level: Cell::new(1),
+        alt_text: false,
     };
     let mut chunks = Vec::new();
     if let Some(segments) = page.formatted_title() {
@@ -325,6 +326,53 @@ pub(crate) struct Renderer<'a> {
     /// The level of the section being written: of the last heading, or of
     /// the variant arm's heading the block is in. The page's title is 1.
     level: Cell<u8>,
+    /// Whether an image is written as its alt text alone, for a reader that
+    /// can't load it from the docs' host.
+    pub(crate) alt_text: bool,
+}
+
+/// A part of a page as the plain output writes it, apart from its page.
+pub(crate) struct Rendered {
+    /// Its blocks, images as their alt text.
+    pub text: String,
+    /// Its first block of content when that's a paragraph, as `text` has it.
+    /// `@id` and `@available` before it are passed over, and the
+    /// availability line an `@available` adds isn't in it.
+    pub summary: Option<String>,
+}
+
+/// A permalink's section on `page` as the plain output writes it, with the
+/// renderer in the state the page's own output has it in at the section's
+/// start: at the heading's level, in the arms the heading is in. An image
+/// is written as its alt text.
+pub(crate) fn render_section(
+    cx: &PageContext<'_>,
+    page: &ResolvedPage,
+    section: &PageSection<'_>,
+) -> Rendered {
+    let r = Renderer {
+        page: cx,
+        model: cx.emit.model,
+        arms: RefCell::new(Vec::new()),
+        level: Cell::new(1),
+        alt_text: true,
+    };
+    for (group, arm) in &section.arms {
+        if let Some(label) = r.arm_label(group, &arm.opener) {
+            r.arms.borrow_mut().push(label);
+        }
+    }
+    if let Some(ids) = section.heading.and_then(|h| h.heading.as_ref()) {
+        r.level.set(ids.level.clamp(1, 6));
+    }
+    let summary = r.summary(section.blocks);
+    let text = r.blocks(section.blocks).join("\n\n");
+    // A page's own permalink: its description, else its opening's.
+    let summary = match section.heading {
+        Some(_) => summary,
+        None => llms::description(cx.emit.model, page).or(summary),
+    };
+    Rendered { text, summary }
 }
 
 impl Renderer<'_> {
@@ -381,6 +429,27 @@ impl Renderer<'_> {
         }
         out.extend(chunks);
         out
+    }
+
+    /// The first block of content in `blocks` when it's a paragraph: past
+    /// the directives that write nothing there (`@id`) and `@available`,
+    /// whose line isn't part of it.
+    fn summary(&self, blocks: &[ResolvedBlock]) -> Option<String> {
+        for block in blocks {
+            let ResolvedKind::Leaf(b) = &block.kind else {
+                return None;
+            };
+            match &b.kind {
+                BlockKind::Directive(line)
+                    if line.name == "available"
+                        || (!is_following(block) && self.directive(block, line).is_empty()) => {}
+                BlockKind::Paragraph(p) => {
+                    return Some(self.inlines(block, &p.inlines, Style::default()));
+                }
+                _ => return None,
+            }
+        }
+        None
     }
 
     fn block(&self, block: &ResolvedBlock, prev: Prev) -> Vec<String> {
