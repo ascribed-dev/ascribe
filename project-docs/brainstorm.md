@@ -64,6 +64,8 @@ A general WYSIWYG editor that serializes back to Markdown tends to produce sourc
 
 ## 3. OpenAPI
 
+Proposed in [OpenAPI](proposals/openapi.md), after the research in [OpenAPI documentation pain points](reports/OpenAPI%20documentation%20pain%20points.md): level 1 and a thin level 2, with reference pages left to the renderers.
+
 ### Levels
 
 1. **Checked links into the spec.** `[Get a user](../api/openapi.yaml#getUser)`, checked like heading links, with completion of operation ids and hover showing the operation. Cheap and immediately useful.
