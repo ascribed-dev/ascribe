@@ -5244,7 +5244,7 @@
     },
     {
       "content": {
-        "body": "The rest of piece 5 of [an `ascribe.toml` that says only what's the project's own](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/shorter-content-model.md#5-one-project-takes-tables-from-another): edits go to the file that holds the key. **Done when** below is what done looks like, and it's one pull request.\n\n**What to build:** every command and editor action that edits `ascribe.toml` in place writes to the file that holds the key it edits, taken or not, in place of #813's error. That's the language server's model edits (`edit/model.rs`, `refactor`, `rename.rs`, `settings.rs`'s `setSetting`), `versions release` and `retire` (`release.rs`, `retire.rs`, `retire_line.rs`), templates' `eject` and `status`, Vale's `eject`, and the glossary's.\n- **`ascribe versions release` in the docs** moves the lines for every project that takes them; RELEASING.md's second `versions release`, for `site/home`, goes.\n- An edit that would change a project other than the one it was run in says which files it changed.\n\n**Done when:** a test for each kind of edit on a taken key, writing the other file and leaving this one; `versions release` run once moves both projects; RELEASING.md updated; the editor's rename and Project Settings tests on a taken key; a changelog entry.\n\n**Needs:** #813.\n",
+        "body": "The rest of piece 5 of [an `ascribe.toml` that says only what's the project's own](https://github.com/ascribed-dev/ascribe/blob/bb56bfb3/project-docs/proposals/shorter-content-model.md#5-one-project-takes-tables-from-another): edits go to the file that holds the key. **Done when** below is what done looks like, and it's one pull request.\n\n**What to build:** every command and editor action that edits `ascribe.toml` in place writes to the file that holds the key it edits, taken or not, in place of #813's error. That's the language server's model edits (`edit/model.rs`, `refactor`, `rename.rs`, `settings.rs`'s `setSetting`), `versions release` and `retire` (`release.rs`, `retire.rs`, `retire_line.rs`), templates' `eject` and `status`, Vale's `eject`, and the glossary's.\n- **`ascribe versions release` in the docs** moves the lines for every project that takes them; RELEASING.md's second `versions release`, for `site/home`, goes.\n- An edit that would change a project other than the one it was run in says which files it changed.\n\n**Done when:** a test for each kind of edit on a taken key, writing the other file and leaving this one; `versions release` run once moves both projects; RELEASING.md updated; the editor's rename and Project Settings tests on a taken key; a changelog entry.\n\n**Needs:** #813.\n\n",
         "number": 814,
         "repository": "ascribed-dev/ascribe",
         "title": "[from]: edits go to the file that holds the key",
@@ -5260,7 +5260,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/843"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "[from]: edits go to the file that holds the key"
     },
     {
@@ -5356,6 +5356,483 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "The canary: npm is slow to show cli-linux-arm64, and next is left split"
+    },
+    {
+      "content": {
+        "body": "**Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** the extension treats every `ascribe.toml` in the workspace as a project, leaving out only `**/node_modules/**`, what `files.exclude` hides, and `ascribe.projects.exclude` (`projectExclude` in `packages/vscode/src/projects.ts`). In this repository, `cargo test` writes 17 projects into `target/tmp/` (`CARGO_TARGET_TMPDIR`), which git ignores; Switch Project listed every one, and each started a language server when a test run rewrote it. A repository fixed it in its own `.vscode/settings.json` (0cd308ce), but every project with a build folder or a dependency folder that holds an `ascribe.toml` hits the same thing first.\n\n**What to build:**\n\n1. **A folder git ignores isn't searched for projects.** In a workspace folder that's a git repository, an `ascribe.toml` that `git check-ignore` reports is left out, as one call with every candidate on standard input (`git check-ignore --stdin`), or through VS Code's Git extension where it's on. VS Code 1.138's stable `workspace.findFiles` doesn't read ignore files, so the extension asks git. Where git isn't there, or the folder isn't a repository, the defaults below still apply. A file that's open still finds its project, as a passed-over project's file does today.\n2. **Default patterns, for what's never a project anywhere,** whether or not git ignores it, before `files.exclude` and `ascribe.projects.exclude`:\n   - **Ascribe's own:** `.ascribe` (each project's outputs and caches).\n   - **Dependencies:** `node_modules` (as now), `bower_components`, `vendor`, `.venv`, `venv`, `__pypackages__`.\n   - **Build output and caches whose names are only ever that:** `target`, `dist`, `.output`, `.next`, `.nuxt`, `.svelte-kit`, `.astro`, `.turbo`, `.vercel`, `.netlify`, `.cache`, `coverage`, `.gradle`, `.vscode-test`, `.tox`, `.nox`.\n   - Not `build`, `out`, or `bin`: those names are also used for folders people write in, and git's ignore rules cover them where they're output.\n3. **A source's copies aren't projects.** A project's copies of another repository's files (SPEC §7.4, `sources/<name>/` in its folder) can hold that repository's own `ascribe.toml`; it's code the project shows, not a project to work on.\n4. **`ascribe.projects.exclude`'s description** names the defaults and the git rule, and it stays the way to leave out anything else.\n\n**Done when:** unit tests for the pattern with the defaults; an integration test with a workspace whose `target/` and a git-ignored folder each hold an `ascribe.toml`, neither listed nor started, while a project beside them is; a source's copy left out; the setting's description and `docs/content/editor/` (where projects are found, and Switch Project) say what's left out and how to bring a project back; `project-docs/surface.md` regenerated if the setting's text is in it; and a changelog entry.\n\n**Decided:** by the maintainer on 22 October 2026: default ignored folders, starting from `target/`.\n",
+        "number": 838,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The editor leaves folders git ignores, and common build and dependency folders, out of its projects",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/838"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCw4Wg",
+      "labels": [
+        "enhancement",
+        "javascript"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/842"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "The editor leaves folders git ignores, and common build and dependency folders, out of its projects"
+    },
+    {
+      "content": {
+        "body": "**Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** with `ascribe.startServers` at its default, `onDemand`, a project's language server starts \"the first time one of its files is opened, or changes on disk while the window is open\". The second half starts servers nobody asked for: a branch switch, a pull, a test run that rewrites fixtures, or an agent editing files can start a server for every project those changes touch, and a server once started runs until the window closes. In this repository a `cargo test` run could start 17 (see #838 for the folders that shouldn't be projects at all).\n\n**What to build:**\n- **Under `onDemand`, a change on disk starts no server.** A project's server starts when one of its files is opened in an editor, or when something asks for the project: Switch Project, the Project view, a command run on it, or Check Every Build. A server already running still follows changes on disk as it does now.\n- **What a project that hasn't started shows** stays as today: no problems in the Problems panel, and \"not checked yet\" in Switch Project.\n- **Stopping an idle server is out of scope here;** say in the pull request whether it's needed after this, with what a session in this repository runs before and after.\n\n**Done when:** an integration test writes a file of a project nobody opened and no server starts; opening one of its files starts it; a running project still follows a change on disk; the setting's `onDemand` description and `docs/content/editor/` say when a server starts; and a changelog entry.\n\n**Decided:** by the maintainer on 22 October 2026.\n",
+        "number": 839,
+        "repository": "ascribed-dev/ascribe",
+        "title": "onDemand starts a project's server when it's opened, not when its files change on disk",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/839"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCw4VI",
+      "labels": [
+        "enhancement",
+        "javascript"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/841"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "onDemand starts a project's server when it's opened, not when its files change on disk"
+    },
+    {
+      "content": {
+        "body": "From an investigation of the 80 problems VS Code showed for the repository on 22 October 2026, done with Ascribe's own tools. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** `ascribe check --config docs` on `main` reports 61 `available-same-in-every-line` (ASC212) advice, all on `ascribe 0.4.0` marks: 43 `@available:` lines, 2 inside list items, 7 `available:` frontmatter lines, and 9 `{available=\"ascribe 0.4.0\"}` table rows, across 36 files. Release 0.4.1 (#775) archived 0.4.0, so each badge (\"Available: Ascribe (GA, 0.4.0+)\") tells a reader of the live line nothing. #674 did the same clean-up after 0.4.0.\n\n**What to do:** delete the marks, as #674 did; don't apply the check's own fix, which writes `ascribe` and leaves a badge reading \"Available: Ascribe (GA)\". Six are in generated files, so their sources change and the files are re-blessed as each file's `@memo` says:\n- `_generated/content-model-glossary.md`: `crates/ascribe-model/settings.toml` (the key's `available`, line 466);\n- `_generated/directives-builtins.md`: `crates/ascribe-cli/src/docs/builtins.rs` (`Builtin::Memo | Builtin::Term => Some(\"ascribe 0.4.0\")`);\n- `_generated/editor-commands.md`: `packages/vscode/test/unit/docs.test.ts` (lines 97 to 99).\n\n**Done when:** `ascribe check --config docs` reports no ASC212; the generated files are re-blessed, not edited; and the site builds.\n",
+        "number": 844,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: remove the ascribe 0.4.0 marks the 0.4.1 release left saying nothing",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/844"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCyctw",
+      "labels": [
+        "documentation"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/870"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "Docs: remove the ascribe 0.4.0 marks the 0.4.1 release left saying nothing"
+    },
+    {
+      "content": {
+        "body": "From an investigation of the 80 problems VS Code showed for the repository on 22 October 2026, done with Ascribe's own tools. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** `docs/content/contracts/json-reports/questions.md` is 61,112 characters in build `site`, over `page-size`'s 50,000 (ASC149), and has been since before 0.4.1. The page is 936 bytes of its own and nine `@include`s of `_generated/json-*.md`; `json-model.md` alone is 24,832 characters and grows with every content model key.\n\n**What to do:** give `ascribe model`'s JSON a contracts page of its own, beside the others in `docs/content/contracts/json-reports/`, leaving `questions.md` about 36,000 characters. `ascribe refs content/contracts/json-reports/questions.md#ascribe-model` finds the two links to move, both in `content/command/questions.md`. Don't raise the limit.\n\n**Done when:** `ascribe check --config docs` reports no ASC149; every link to the model's JSON reaches the new page; the sidebar and `ascribe.nav` place it; and a decision file, since the page is under `docs/content/contracts/`.\n",
+        "number": 845,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: ascribe model's JSON on a contracts page of its own, under page-size",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/845"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCycwI",
+      "labels": [
+        "documentation"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/875"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "Docs: ascribe model's JSON on a contracts page of its own, under page-size"
+    },
+    {
+      "content": {
+        "body": "From an investigation of the 80 problems VS Code showed for the repository on 22 October 2026, done with Ascribe's own tools. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** `available-same-in-every-line` (ASC212) offers \"Write `ascribe`\" for `ascribe 0.4.0` in the docs, whose one release target is `ascribe`. Applied, the page renders \"Available: Ascribe (GA)\": a badge that says nothing in a project with one product, and that no check reports. The right fix there is to remove the mark (what #674 did by hand).\n\n**What to build:**\n- When the simpler spec the check would write is a release target with no version and no state other than the default, and that target is the only value of its dimension, the fix removes the mark: the `@available:` line, the frontmatter key, or the `{available=…}` attribute.\n- Otherwise the fix is as now.\n- Say in the pull request whether a bare mark of the only target that's already written should be reported, and by which check.\n\n**Done when:** conformance cases for a mark removed in each of its three places, and for a project with two targets keeping today's rewrite; the diagnostic's reference says when the fix removes the mark; and a changelog entry.\n",
+        "number": 846,
+        "repository": "ascribed-dev/ascribe",
+        "title": "available-same-in-every-line removes a mark whose simpler spec is the only target",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/846"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCyctg",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/867"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "available-same-in-every-line removes a mark whose simpler spec is the only target"
+    },
+    {
+      "content": {
+        "body": "From an investigation of the 80 problems VS Code showed for the repository on 22 October 2026, done with Ascribe's own tools. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** every release turns the previous release's marks into `available-same-in-every-line` advice: 61 `ascribe 0.4.0` marks after 0.4.1, and 20 `ascribe 0.4.1` marks waiting for 0.4.2. RELEASING.md's `--deny-warnings` check ignores advice, and no step removes them, so they're found later in the Problems panel. `ascribe versions release` moves the live line to `archived` when no build is versioned by the target, but leaves the line's marks; `versions retire` rewrites marks only for versioned builds, and \"to the simplest spec\".\n\n**What to build:** when `versions release` archives a line of a target no build is versioned by, it removes or rewrites the marks that then say nothing, as `available-same-in-every-line`'s fix would (with the fix #846 gives it), and lists what it changed. `--dry-run`, or the command's existing way to show before writing, lists them without writing.\n\n**Done when:** a CLI test releasing a line removes its marks and leaves the others; `ascribe check` after it reports no ASC212 for the archived line; RELEASING.md drops any step this replaces; `docs/content/versions/release.md` says it; and a changelog entry.\n\n**Needs:** #846.\n",
+        "number": 847,
+        "repository": "ascribed-dev/ascribe",
+        "title": "versions release removes the marks of the line it archives",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/847"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCyc3Q",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/877"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "versions release removes the marks of the line it archives"
+    },
+    {
+      "content": {
+        "body": "From an investigation of the 80 problems VS Code showed for the repository on 22 October 2026, done with Ascribe's own tools. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** six of the docs' ASC212 diagnostics are in generated files (`docs/content/_generated/`). Each file says what generates it, in an `@memo: Generated from … edit …, then run …` line, but the diagnostic doesn't: the editor's quick fix edits the generated file, and `ascribe check --format prompt` lists `content/_generated/editor-commands.md: 3 advice` with no warning, so an agent would edit the output, which the next bless overwrites.\n\n**What to build:** a diagnostic in a file whose `@memo` says it's generated carries related information pointing at the generator and the command, from that memo; `--format prompt` says to edit the source and re-run, not the file; and the editor offers no quick fix that edits the generated file.\n\n**Done when:** a conformance case with a generated file's diagnostic and its related note; the prompt's text in a CLI test; a language server test with no edit offered; and a changelog entry.\n",
+        "number": 848,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A diagnostic in a generated file points at its generator",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/848"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCyeSs",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/871"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "A diagnostic in a generated file points at its generator"
+    },
+    {
+      "content": {
+        "body": "From an investigation of the 80 problems VS Code showed for the repository on 22 October 2026, done with Ascribe's own tools. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** the Claude plugin's MCP server ran Homebrew's `ascribe` 0.4.0 on a repository whose models use keys added since. Every tool answered \"`ascribe.toml` has errors; `ascribe check` lists them\", with ten unknown-key errors and nothing to say the binary was older than the project. The version showed only in `ascribe_explain`'s JSON and in `ps`.\n\n**What to build:** when `ascribe.toml` fails with an unknown key, the error (CLI, language server, and MCP alike) names the binary's version and says the project may be written for a newer Ascribe: \"unknown key `from` in `[ascribe.toml]`; this is ascribe 0.4.0, and the project may need a newer one\". Where the key is one a later version of the registry knows is impossible to say, so the note is added to any unknown key at the top level or in a known table.\n\n**Done when:** a conformance case for the message; the MCP tools' reply carries it; and a changelog entry.\n",
+        "number": 849,
+        "repository": "ascribed-dev/ascribe",
+        "title": "An unknown key in ascribe.toml says which Ascribe read it, and that the project may need a newer one",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/849"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCyc9s",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/868"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "In review",
+      "title": "An unknown key in ascribe.toml says which Ascribe read it, and that the project may need a newer one"
+    },
+    {
+      "content": {
+        "body": "From an investigation of the 80 problems VS Code showed for the repository on 22 October 2026, done with Ascribe's own tools. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** the plugin's `.mcp.json`, `.lsp.json`, and hooks run `ascribe` from PATH, so a session in a project picks up whatever is installed globally (here Homebrew's 0.4.0), not the project's own `node_modules/.bin/ascribe`, which the VS Code extension prefers. The project's model then fails to load in every tool.\n\n**What to build:** the plugin runs the binary the extension would: an `ASCRIBE_PATH` environment variable when set, then the project's `node_modules/.bin/ascribe`, then `ascribe` on PATH. How (a small launcher the plugin ships, or a flag of the binary that re-executes the project's) is the implementor's; say which in the pull request. The plugin's README says the order.\n\n**Done when:** a test of the order; the plugin's README; and a changelog entry.\n",
+        "number": 850,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The Claude plugin runs the project's ascribe binary, as the extension does",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/850"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCye3w",
+      "labels": [
+        "enhancement"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/864"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "The Claude plugin runs the project's ascribe binary, as the extension does"
+    },
+    {
+      "content": {
+        "body": "From an investigation of the 80 problems VS Code showed for the repository on 22 October 2026, done with Ascribe's own tools. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** a development build reports `0.4.1` everywhere but `--version`: the language server's log line (`ascribe-lsp 0.4.1: using the project at …`), its LSP `serverInfo`, and the MCP server's `serverInfo.version`. `ascribe --version` says `0.4.1+dev (7ae1340440fc)`. Telling which binary produced a diagnostic took `ps` and `lsof`.\n\n**What to build:** the full version string `--version` prints, `+dev` and the commit included, in the language server's `serverInfo` and first log line, and the MCP server's `serverInfo.version`.\n\n**Done when:** tests read each; and a changelog entry.\n",
+        "number": 851,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The language server and MCP server report the full version, +dev and commit included",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/851"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCyc4o",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/863"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "The language server and MCP server report the full version, +dev and commit included"
+    },
+    {
+      "content": {
+        "body": "From an investigation of the 80 problems VS Code showed for the repository on 22 October 2026, done with Ascribe's own tools. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** when `ascribe.toml` stops loading, the language server publishes the model's errors on `ascribe.toml` and leaves every page's last diagnostics in place. Reproduced on a copy of `main`: an unknown key added and `workspace/didChangeWatchedFiles` sent; ASC061 appeared on `ascribe.toml`, and the 61 ASC212 on 36 pages stayed, never republished. The Problems panel then shows problems from a model that no longer loads.\n\n**What to build:** when the model fails to load, the server publishes an empty list for every file it had published diagnostics for, and publishes pages' diagnostics again once the model loads.\n\n**Done when:** a language server test of the break and the recovery; and a changelog entry.\n",
+        "number": 852,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The language server clears pages' diagnostics when the model stops loading",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/852"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCyc9A",
+      "labels": [
+        "bug",
+        "rust"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/865"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "The language server clears pages' diagnostics when the model stops loading"
+    },
+    {
+      "content": {
+        "body": "From an investigation of the 80 problems VS Code showed for the repository on 22 October 2026, done with Ascribe's own tools. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** the extension leaves servers and their diagnostics behind:\n- after `.claude/worktrees/` was emptied, the Problems panel still showed 16 problems from the 58 servers it had started for projects in agent worktrees;\n- \"Stopping server timed out\" left 9 `ascribe lsp` processes running in the extension host, and 7 from an earlier extension version were still running two days later with no parent;\n- a diagnostic says only `ascribe`, so with several projects open nothing tells which server published it.\n\n**What to build:**\n- When a server stops, or its project's folder or `ascribe.toml` goes, its diagnostics are cleared.\n- A server whose stop times out is killed, and the extension's servers don't outlive its host.\n- When the workspace has more than one project, a diagnostic's source names the project: `ascribe · docs`.\n\n**Done when:** integration tests for a removed project's diagnostics cleared, a stop that times out leaving no process, and the source with two projects; and a changelog entry. #838 is the related change to which folders are projects at all.\n",
+        "number": 853,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The extension clears a stopped server's diagnostics, kills a server that won't stop, and names the project",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/853"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCyc7U",
+      "labels": [
+        "bug",
+        "javascript"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/874"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "The extension clears a stopped server's diagnostics, kills a server that won't stop, and names the project"
+    },
+    {
+      "content": {
+        "body": "From an investigation of the 80 problems VS Code showed for the repository on 22 October 2026, done with Ascribe's own tools. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** `ascribe check docs --code ASC212 --format concise` stops at 50 and ends \"and 11 more: `ascribe check content/navigation/index.md --code ASC212 --format concise`\", which shows 1 problem, not 11: the next command names one file of the rest. There's no way to see all of them in this format; the investigation went to `--format json`.\n\n**What to build:** the next command shows the rest (all of them, or the next page), and `--limit <n>` sets how many concise prints, `--limit all` for none.\n\n**Done when:** a CLI test where the suggested command shows exactly the rest; `--limit`'s test; the command's reference; and a changelog entry.\n",
+        "number": 854,
+        "repository": "ascribed-dev/ascribe",
+        "title": "check --format concise: its next command shows the rest, and --limit",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/854"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCydOE",
+      "labels": [
+        "bug",
+        "rust"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/866"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "check --format concise: its next command shows the rest, and --limit"
+    },
+    {
+      "content": {
+        "body": "From an investigation of the 80 problems VS Code showed for the repository on 22 October 2026, done with Ascribe's own tools. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** finding every mark that names one release took grep: `ascribe refs dimension:release` lists 87 places, each only as `availability`, without the spec it's in, and no target names one version of a release target.\n\n**What to build:** a `refs` target for a release version, `release:<target>@<version>` (`release:ascribe@0.4.0`), listing each mark whose spec names a version in that line, with the spec as written; and the spec shown beside `availability` in every `refs` listing of a dimension or target. The same target in the MCP tool and the editor's references where they take `refs`' targets.\n\n**Done when:** CLI tests for the new target and the spec column; the command's reference and JSON; and a changelog entry and decision file, since `refs`' targets and JSON are a contract.\n",
+        "number": 855,
+        "repository": "ascribed-dev/ascribe",
+        "title": "refs: a target for one release version, and the spec beside each mark",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/855"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCyc9Q",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/869"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "refs: a target for one release version, and the spec beside each mark"
+    },
+    {
+      "content": {
+        "body": "From an investigation of the 80 problems VS Code showed for the repository on 22 October 2026, done with Ascribe's own tools. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** `page-size` (ASC149) says a page is 61,112 characters, not where they are: `questions.md` is nine includes, and finding the 24.8 KB one took `wc -c`. `ascribe outline` doesn't show sizes either.\n\n**What to build:** ASC149's diagnostic has related information for the largest parts of the page, its includes and its sections, each with its size, largest first, up to five.\n\n**Done when:** a conformance case with an included section named as the largest; and a changelog entry.\n",
+        "number": 856,
+        "repository": "ascribed-dev/ascribe",
+        "title": "page-size says which includes and sections make the page large",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/856"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCydDc",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/872"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "page-size says which includes and sections make the page large"
+    },
+    {
+      "content": {
+        "body": "From an investigation of the 80 problems VS Code showed for the repository on 22 October 2026, done with Ascribe's own tools. **Done when** below is what done looks like, and it's one pull request.\n\n**The problem:** `ascribe --help` lists `baseline    Build the documentation set's outputs` and ``build       Arguments of `ascribe build` ``. #803 inserted `Baseline` between `Build`'s doc comment and `Build` in `crates/ascribe-cli/src/cli.rs`, so `baseline` took `build`'s description, and `build` fell back to its `Args` struct's.\n\n**What to build:** `baseline` gets its own description and `build` its own back; a test that every command's description in `ascribe --help` is its own (none starts \"Arguments of\", and no two are the same).\n\n**Done when:** that test; and the generated command synopsis and `project-docs/surface.md` regenerated.\n",
+        "number": 857,
+        "repository": "ascribed-dev/ascribe",
+        "title": "ascribe --help: baseline has build's description, and build has none",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/857"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhCydBI",
+      "labels": [
+        "bug",
+        "rust"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/862"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "ascribe --help: baseline has build's description, and build has none"
+    },
+    {
+      "content": {
+        "body": "Found while doing #845 (PR #875). With the model's JSON moved off the questions page, `ascribe check --config docs` still reports one ASC149:\n\n`docs/content/checks/diagnostics/content-checks.md` is 50,673 characters in build `site`, over `page-size`'s 50,000. Almost all of it is `@include: ../../_generated/diagnostics-content-checks.md` (49,521 characters), so it grows with each content check, and the fix is at the generator: decision #394 says the diagnostics reference's source-file entries are split at `FIRST_ON_PAGES` in `tests/conformance/tests/docs.rs`.\n\n**Done when:** `ascribe check --config docs` reports no ASC149, without raising the limit, and every link into the moved entries reaches their new page.",
+        "number": 876,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: the content checks' diagnostics page is over page-size",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/876"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhC1r24",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: the content checks' diagnostics page is over page-size"
+    },
+    {
+      "content": {
+        "body": "Phase 1 of [Embedded help](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/README.md). The plan is [phase-1-thread.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/phase-1-thread.md); read it and the README's decisions 1 to 13 and \"Rules for every phase\" before starting. One pull request. **Needs nothing.**\n\n**What to build:** every build writes `_ascribe/help.json` beside `permalinks.json` (version 1: `version`, `build`, `line`, and `help` keyed by name, each with `title`, `summary`, `text`, `address`, `source`). The section comes from `ascribe-resolve` (decision 6); its `text` comes from the plain renderer's own block loop over that slice, with images as alt text (decision 11); the summary is the first paragraph (decision 10). Aliases and retired permalinks are resolved with code shared with `permalinks.json`. Quill's `prerequisites` and `connect` become permalinks, and `examples/quill/product/help.ts` reads the file and prints a permalink's title, summary, and \"Read more\". The docs page `docs/content/permalinks/in-your-product.md`, output-layout §1.7, its decision file, and `changes/language/embedded-help.md`.\n\n**Done when:**\n- The goal's commands (`ascribe build --config examples/quill`, then `node examples/quill/product/help.ts … prerequisites`, and an unknown name exiting `1`) run in a test.\n- The agreement test passes for every project under `examples/` and `tests/conformance/cases/`, and both ways for quill's `prerequisites` and `connect`.\n- `crates/ascribe-emit/tests/all/help.rs` covers the cases task 3 lists.\n- `node scripts/compare/outputs.ts --base main` changes only `help.json`, the manifests, and quill's `permalinks.json`, each named with `--accept`; every tested output the quill change touches is blessed and read, and the examples observed again.\n- The pull request records the docs' own file's measurements: how many permalinks have a summary, the median and longest, how many are over 300 characters, how many have none, and that each diagnostic's is its metadata line. Phases 2 to 4 read them.\n\n**Stop and report** if a section can't be rendered alone and agree with its page (decision 11): that changes the design before anything reads the file.",
+        "number": 878,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Embedded help 1: write each permalink's section to _ascribe/help.json",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/878"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhC5BAw",
+      "labels": [
+        "enhancement",
+        "rust",
+        "outputs changed"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Ready",
+      "title": "Embedded help 1: write each permalink's section to _ascribe/help.json"
+    },
+    {
+      "content": {
+        "body": "Phase 2 of [Embedded help](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/README.md). The plan is [phase-2-marker-decision.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/phase-2-marker-decision.md). A decision by the maintainer, then one pull request with the decision file; no code.\n\n**Blocked by #878**, whose pull request records the measurements this decision reads (how often the first paragraph is the right summary, too long, or missing, and whether any section wants two paragraphs).\n\n**The question for @KyleBlankRollins, once #878's measurements are in:** how does a section mark the paragraph a product shows as its summary?\n1. A container, `@summary:` … `@end` (recommended, or 3 if one block is always enough).\n2. An attribute on the heading, `@id {permalink=true, summary=2}`.\n3. A line form, `@summary`, wrapping the block after it as `@available` does.\n\nAlso to settle, with the plan's recommendation for each: a second marker in a section (error); a marker with no permalink (advice); a marker in a fragment; what it may hold (paragraphs); what the site output writes and review's source anchors (`site-render.md`); its JSON shape; a marker inside a variant arm (error until phase 6); and a leading `**When:**` label (the summary drops a leading bold run ending in a colon).\n\n**Done when:** a decision file in `project-docs/decisions/`, numbered by this issue, records the form and each rule above with why, and nothing else changes. #880 (phase 3) starts from it.",
+        "number": 879,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Embedded help 2: decide how a section marks its summary",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/879"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhC5BEo",
+      "labels": [
+        "documentation",
+        "question"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Embedded help 2: decide how a section marks its summary"
+    },
+    {
+      "content": {
+        "body": "Phase 3 of [Embedded help](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/README.md). The plan is [phase-3-marked-summary.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/phase-3-marked-summary.md). One pull request.\n\n**Blocked by #878 and #879.** The directive's form and rules are whatever #879's decision file settles; don't choose them here.\n\n**What to build:** the marker #879 settles, through syntax, `fmt`, resolve, and the site, plain, and JSON emitters, with its diagnostics; `help.rs` takes the summary from the marker when there is one, else decision 10, with no change to `help.json`'s keys; the language server's completion and hover for it; and the diagnostics reference generator marks each diagnostic's **When** paragraph.\n\n**Done when:**\n- After `ascribe build --config docs`, `help.json`'s `ASC149` entry has the summary \"A page's Markdown, as a build writes it for agents to read, is as long as the limit or longer: …\", and every diagnostic's summary is its **When** sentence without the `When:` label.\n- Conformance cases for the directive's parse, canonical form, a marked summary, and each of its diagnostics; emit tests for a marker mid-section, in a fragment, and none.\n- Site and plain outputs of every project are byte for byte the same where no marker is written; the diagnostics reference's changes are named with `--accept`.\n- Phase 1's measurements taken again on the docs' file, in the pull request.\n- Docs: `directives.md`, the embedded help page, SPEC §4 and Appendix A, `site-render.md`, the JSON output's reference, `changes/language/summary-marker.md`, the surface map.",
+        "number": 880,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Embedded help 3: mark a section's summary, and the diagnostics' When paragraphs",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/880"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhC5BKI",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Embedded help 3: mark a section's summary, and the diagnostics' When paragraphs"
+    },
+    {
+      "content": {
+        "body": "Phase 4 of [Embedded help](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/README.md). The plan is [phase-4-sized.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/phase-4-sized.md). One pull request.\n\n**Blocked by #880** (the marked summary), whose measurements say how many of the docs' summaries are long or missing.\n\n**What to build:** advice `help-summary`, configurable in `[checks]` with a `limit` of 300 characters measured as `description-too-long` measures, with one message for a summary at or over the limit and one for a permalink with none, reported once at a fragment's own `@id` line. The docs' own advice fixed or acknowledged. The summary function shared between `help.rs` and the language server, so the hover on a permalink's `@id` line and This page's Permalink row tooltip show what a product gets.\n\n**Done when:**\n- Conformance cases: over the limit, under it, a marked summary under it whose first paragraph is over, none, a fragment's, and the limit set.\n- `ascribe check --config docs` reports no `help-summary`.\n- The goal's hover on `@id {permalink=true}: connect` and the Permalink row's tooltip, in the language server's and the extension's tests.\n- Docs: the check's generated reference, the embedded help page on short summaries, `docs/content/editor/sidebar.md`; `changes/language/help-summary.md` and `changes/editor/permalink-summary.md`.",
+        "number": 881,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Embedded help 4: check a summary's length, and show it in the editor",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/881"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhC5BOE",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Embedded help 4: check a summary's length, and show it in the editor"
+    },
+    {
+      "content": {
+        "body": "Phase 5 of [Embedded help](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/README.md). The plan is [phase-5-fetched.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/phase-5-fetched.md). One pull request.\n\n**Blocked by #878** (the file it serves). Independent of phases 2 to 4.\n\n**What to build:** `@ascribed/astro` reads each live line's `help.json` and serves each entry as JSON, one entry with `version`, `build`, and `line`, at `<permalink-path><name>.json` for the current line and `<base-path><line>/go/<name>.json` for an older one. With `[consumer] headers`, `headers.json` gains a rule giving those addresses `Access-Control-Allow-Origin: *`. The quill product program gains a fetch of its own line's entry, falling back to the bundled copy.\n\n**Done when:**\n- In `packages/astro`'s tests, against a versioned build with live lines 3.4 and 3.5: `GET /docs/go/connect.json` returns 3.5's entry and `GET /docs/3.4/go/connect.json` returns 3.4's.\n- The CORS header in the headers' emit test and `site/test/headers.test.ts`'s pattern; output-layout §1.4's addition.\n- The build's outputs unchanged but for `headers.json`'s new rule, named with `--accept`.\n- The program still tested against the bundled file; the embedded help page on fetching, the line, and falling back; the integration's reference; a decision file for the addresses; `changes/astro/help-addresses.md`.",
+        "number": 882,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Embedded help 5: serve each line's help entries from @ascribed/astro",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/882"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhC5BRA",
+      "labels": [
+        "enhancement",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Embedded help 5: serve each line's help entries from @ascribed/astro"
+    },
+    {
+      "content": {
+        "body": "Phase 6 of [Embedded help](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/README.md). The plan is [phase-6-arms.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/phase-6-arms.md). One pull request.\n\n**Blocked by #878** (`help.rs` and the renderer entry this calls once per value). Independent of phases 2 to 5; if #880 lands first, a marker inside an arm follows #879's rule.\n\n**What to build:** `help.json`'s entry gains `choices` when its section has a switcher: keyed by dimension, then each value in declaration order, each the section's text with that value selected and other groups as they were. The summary isn't varied. `choices` is a key added to version 1 (decision 4).\n\n**Done when:**\n- Emit tests: one dimension, two, a labeled arm, and a section with none; the goal's entry for a `pm` switcher with `choices.pm.pnpm`.\n- The agreement test extended to each choice.\n- The quill program run with `--choose pm=pnpm` prints the pnpm arm, in its test.\n- §1.7's addition and a decision file; the embedded help page on choosing an arm; `changes/language/help-choices.md`.",
+        "number": 883,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Embedded help 6: give a section's help each arm of its switcher",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/883"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhC5BTw",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Embedded help 6: give a section's help each arm of its switcher"
+    },
+    {
+      "content": {
+        "body": "Phase 7 of [Embedded help](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/README.md). The plan is [phase-7-agents.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/embedded-help/phase-7-agents.md). One pull request.\n\n**Blocked by #878** (`help.rs`'s entry function). Independent of phases 2 to 6; after #880 its summaries are the marked ones with nothing to change here.\n\n**What to build:** `go:<name>` in `resolve`'s page argument names a permalink (decision 15). The text output is the title, the summary when there is one, the text, and \"Read more\" with the address; `--format json` is the entry as `help.json` writes it, with `version`, `build`, and `line`, from `help.rs`'s function. An unknown name exits `1` with the closest names; a retired one gives its reason. `ascribe_resolve` takes the same `go:<name>`. The rules `ascribe agents sync` writes say a product's message can read what the docs will show with `ascribe resolve go:<name>`.\n\n**Done when:**\n- `ascribe resolve go:prerequisites --build site --config examples/quill` prints the goal's output, in a CLI test, with its JSON, an unknown name, and a retired one; outputs in `crates/ascribe-cli/tests/output/`, observed again.\n- `ascribe_resolve` with `go:` in the MCP tests; the rules' sentence in the agents' tests.\n- `resolve`'s reference and JSON contract, the embedded help page, a decision file for `go:` and the JSON, `changes/command/resolve-permalink.md`, the surface map.",
+        "number": 884,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Embedded help 7: ascribe resolve go:<name> and ascribe_resolve show an entry",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/884"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhC5BWg",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Embedded help 7: ascribe resolve go:<name> and ascribe_resolve show an entry"
     }
   ]
 }
