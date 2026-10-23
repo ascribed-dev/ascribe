@@ -1247,9 +1247,25 @@ impl Core {
                     }
                 }
             }
+            // The checks across the project run again for a source reported,
+            // even one whose text is what it was: they read the files beside
+            // the model from disk too, which the agents' hook doesn't report
+            // but counts on the page it checks to bring in. For any other
+            // file, as a build's output or a cache, they run again only when
+            // the source index changed, since it and the memo files (below)
+            // are all else they read.
+            let source = changes.iter().any(|change| {
+                !matches!(
+                    change,
+                    Change::AssetCreated { .. } | Change::AssetDeleted { .. }
+                )
+            });
+            let before = self.loaded.as_ref().map(|loaded| loaded.inc.version());
             redrawn = self.apply(changes, &mirror);
             if let Some(loaded) = self.loaded.as_mut() {
-                loaded.across_dirty = true;
+                if source || before != Some(loaded.inc.version()) {
+                    loaded.across_dirty = true;
+                }
                 for path in written {
                     self.forced.insert(loaded.source_path(&path));
                     // Checked again even when its text is what it was.
@@ -1258,6 +1274,9 @@ impl Core {
             }
         }
         if memos {
+            if let Some(loaded) = self.loaded.as_mut() {
+                loaded.across_dirty = true;
+            }
             self.refresh_lenses();
         }
         if nav {

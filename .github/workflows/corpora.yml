@@ -6,7 +6,8 @@ name: Corpora and performance
 # baseline by the margin in tests/corpora/baselines/perf.json (3x plus 25 ms; see
 # tests/corpora/RESULTS.md for why) or over one of the spec's targets. The
 # page bench holds its own criterion: it fails when a cursor move costs This
-# page more than it cost Used by.
+# page more than it cost Used by. So does the keystroke bench: it fails when a
+# file no page reads costs more than a tenth of what a page written on disk does.
 on:
   schedule:
     - cron: "0 6 * * 1"
