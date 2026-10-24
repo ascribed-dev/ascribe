@@ -41,12 +41,11 @@ VS Code's own search, **Search: Find in Files**, reads the source as written: it
 
 - A glossary term, in prose: its definition for the editor's build. On the term's heading: the definition, and how many pages use the term.
 
-@available: ascribe planned
+@available: ascribe 0.4.3
 - A heading, or its `@id` line: its section's [summary](../writing/directives.md#summary) in the editor's build, as a product showing its help has it. A heading in a fragment has the summary of the section it lands in, on the first page that includes it.
 
 - A version in an availability spec, for a target with [release lines](../versions/lines.md): the line it falls in, and that line's status, such as "in line 3.4, live".
 
-@available: ascribe 0.4.2
 - A frontmatter key, in a page or in `ascribe.toml`: the field's type, and whether `[frontmatter]` declares it, the page's type, or neither, for the `title` every type has. On a field of `[frontmatter]`, the types that declare their own and replace it; on a type's own, whether it replaces a shared one, or is the same and [can be deleted](../content-model/index.md#41-page-types).
 
 - `replaces` in frontmatter: the page it replaces, and which page each line publishes. Go to Definition opens the replaced page.

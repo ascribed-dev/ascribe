@@ -1,1 +1,0 @@
-- **`ascribe check --format concise` takes `--limit`, and its `and N more:` command lists the rest.** The command after a cut list named the first file left out, so it often showed one problem of the rest; it's now the same check with `--limit all`, which lists every one. `--limit <n>` sets how many the list shows, 50 by default ([`ascribe check`](docs/content/checks/check.md)).

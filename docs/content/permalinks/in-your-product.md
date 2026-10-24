@@ -3,7 +3,7 @@ type: how-to
 title: Show the docs in your product
 description: Show a section of the docs inside your product, in a tooltip, a side panel, or beside an error, by the permalink the product already links to.
 permalink: help-in-a-product
-available: ascribe planned
+available: ascribe 0.4.3
 ---
 
 A product that links to the docs by [permalink](index.md) can show the section the permalink names where its user is: the first paragraph in a tooltip, the whole section in a side panel, or the answer beside an error message, with a link to read more. The text is the docs' own, for the product's release line, so nothing is copied into the product's strings to drift from them.
@@ -26,7 +26,7 @@ A heading's section runs to the next heading at its level or above, or to the en
 
 ## Write the summaries
 @id: writing-summaries
-@available: ascribe planned
+@available: ascribe 0.4.3
 
 A tooltip or a line beside an error has room for a sentence or two, so give each section a product shows a summary with [`@summary`](../writing/directives.md#summary). Write the summary's own text directly under the heading, which the page doesn't show:
 
@@ -84,7 +84,7 @@ node examples/quill/product/help.ts examples/quill/.ascribe/build/site/site/_asc
 
 A product renders `text` as Markdown its own way: it's CommonMark with no HTML.
 
-@available: ascribe planned
+@available: ascribe 0.4.3
 To see an entry without building the site, run [`ascribe resolve go:<name>`](../command/questions.md#cli-resolve), with the build: it prints what the file has for the name, from the code that writes the file, and `--format json` prints the entry as the file writes it. An agent writing your product's message can read what it will show the same way, with the `ascribe_resolve` tool or the command, which the rules [`ascribe agents sync`](../agents/index.md) writes tell it about.
 
 ```sh

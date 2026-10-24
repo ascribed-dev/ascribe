@@ -1,1 +1,0 @@
-- **Fixed:** `ascribe build` takes about a third less memory at its peak again. Since 0.4.1, it kept the index the checks had made of the project while it indexed the project again to write the outputs; it now lets the first go. On the 3,000-page benchmark project, the peak is back from 392 MB to 275 MB.

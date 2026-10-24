@@ -1,1 +1,0 @@
-- **Fixed:** A model that stops loading clears every page's problems until it loads again. The language server put `ascribe.toml`'s problems in the Problems panel and left every page's last problems there, found with the model that no longer loads; now they're cleared, and published again once `ascribe.toml` loads ([Problems and fixes](docs/content/editor/problems.md)).

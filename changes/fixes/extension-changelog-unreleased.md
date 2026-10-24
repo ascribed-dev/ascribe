@@ -1,1 +1,0 @@
-- **Fixed: the extension's Marketplace changelog no longer opens with an empty Unreleased section.** It read as if the release it describes weren't out yet. The extension's package now carries the changelog without an unreleased section that has nothing in it.
