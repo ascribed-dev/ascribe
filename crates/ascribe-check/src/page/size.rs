@@ -9,7 +9,7 @@ use std::path::Path;
 use ascribe_core::{FileId, Issue, Location, Span, diagnostics};
 use ascribe_emit::{EmitContext, PlainEmitter, emit_page};
 use ascribe_model::Build;
-use ascribe_resolve::{Project, ResolvedBlock, ResolvedPage};
+use ascribe_resolve::{Project, ResolvedPage};
 
 use super::collect::Found;
 
@@ -124,33 +124,26 @@ fn largest_parts(
         }
     }
     includes.retain(|(_, range)| !sections.iter().any(|(_, s)| s == range));
-    let empty = markdown_of(index, root, build, page, Vec::new()).unwrap_or(0);
+    // One copy of the page without its blocks, given each part's in turn:
+    // copying the whole page for each part cost a page of several hundred
+    // sections seconds (#894).
+    let mut part = ResolvedPage {
+        blocks: Vec::new(),
+        ..page.clone()
+    };
+    let empty = markdown_size(index, root, build, &part).unwrap_or(0);
     let mut parts: Vec<(Location, u64)> = sections
         .into_iter()
         .chain(includes)
         .filter_map(|(at, range)| {
-            let size = markdown_of(index, root, build, page, blocks[range].to_vec())?;
+            part.blocks = blocks[range].to_vec();
+            let size = markdown_size(index, root, build, &part)?;
             Some((at, size.saturating_sub(empty)))
         })
         .collect();
     parts.sort_by_key(|(_, size)| std::cmp::Reverse(*size));
     parts.truncate(MAX_PARTS);
     parts
-}
-
-/// The size of the page's Markdown in `build` with only `blocks`.
-fn markdown_of(
-    index: &Project,
-    root: &Path,
-    build: &Build,
-    page: &ResolvedPage,
-    blocks: Vec<ResolvedBlock>,
-) -> Option<u64> {
-    let part = ResolvedPage {
-        blocks,
-        ..page.clone()
-    };
-    markdown_size(index, root, build, &part)
 }
 
 /// The text of the first line at `at`, trimmed.
