@@ -9,6 +9,7 @@ How the [VS Code extension](index.md) works in a workspace that holds more than 
 ## Workspaces with several projects
 @id {permalink=true}: workspaces-with-several-projects
 
+@summary
 Every `ascribe.toml` in the workspace is a project, with its own language server. A repository that keeps its code and its documentation together can hold several, such as `site/ascribe.toml` and `handbook/ascribe.toml`, and you can work on all of them in one window.
 
 Some folders hold an `ascribe.toml` that isn't a project to work on, and the editor leaves them out on its own:
@@ -74,7 +75,7 @@ A content type, a dimension, a release target, a build, and a source are tables 
 
 ### Checks
 
-Under **Checks**, the tab lists every check whose level `[checks]` can set ([Setting a check's level](../checks/diagnostics.md#setting-a-checks-level)), the ones the file names first, then the rest in the diagnostics reference's order. Each shows what it reports, its level, and its own level, which it has when the file sets none. `page-size`, `image-large`, and `memo-long` show their `limit` too, with its default. A level and a limit are set and reset as any setting is, in the form the file writes the check: `page-size = "warning"` in `[checks]`, an inline table, or a `[checks.page-size]` table of its own.
+Under **Checks**, the tab lists every check whose level `[checks]` can set ([Setting a check's level](../checks/diagnostics.md#setting-a-checks-level)), the ones the file names first, then the rest in the diagnostics reference's order. Each shows what it reports, its level, and its own level, which it has when the file sets none. `page-size`, `image-large`, `memo-long`, and `summary-long` show their `limit` too, with its default. A level and a limit are set and reset as any setting is, in the form the file writes the check: `page-size = "warning"` in `[checks]`, an inline table, or a `[checks.page-size]` table of its own.
 
 ## Tasks
 
@@ -103,6 +104,7 @@ To bind one to a key, or run it from your own task, name it in `.vscode/tasks.js
 
 ## Settings
 @id {permalink=true}: editor-settings
+@summary: The extension's settings: which `ascribe` binary it runs, when it starts each project's language server, and what it shows.
 
 @include: ../_generated/editor-settings.md
 

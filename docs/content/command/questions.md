@@ -9,6 +9,7 @@ The commands that answer questions about a project, for writers and for agents, 
 ## `ascribe explain`
 @id {permalink=true}: cli-explain
 
+@summary
 Says what a diagnostic means: its severity, its messages, how to fix it, a link to its entry in [Diagnostics](../checks/diagnostics.md), and, for the diagnostics people meet most, a short page that has the problem and the same page without it. It needs no project.
 
 @include: ../_generated/cli-explain-options.md
@@ -28,6 +29,7 @@ With `--format json`, the document is as follows. Its [schema](../contracts/json
 
 ## `ascribe model`
 @id {permalink=true}: cli-model
+@summary: Shows the content model as `ascribe` reads it, with the defaults filled in: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, builds, and sources.
 
 Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. A source with an `ascribe.examples.toml` also says how many of its files are [tested examples](../examples/tested.md), and names each observation with what it was tested with and how many of its files are as it found them. For a source in another repository, that's read from its copies, and an observation's files are counted only where there's a copy. It's what an agent, or a new writer, reads before writing frontmatter, a directive's attributes, or a phrase.
 
@@ -53,6 +55,7 @@ The rest of `ascribe.toml` is there too, a section of settings for each of its t
 ## `ascribe outline`
 @id {permalink=true}: cli-outline
 
+@summary
 Shows a page's title and type, and the headings a link to it can name, with the ids links write after `#`: the page's own headings and those that come from the fragments it includes. They're the headings the editor offers after `page.md#`.
 
 @include: ../_generated/cli-outline-options.md
@@ -80,6 +83,7 @@ With `--format json`, the document is:
 ## `ascribe link`
 @id {permalink=true}: cli-link
 
+@summary
 Says whether a link works, written on a given page: whether its target exists, the page's title or the heading's text, and the destination to write there. It resolves the link as `ascribe check` and the editor do, so the three agree.
 
 @include: ../_generated/cli-link-options.md
@@ -108,6 +112,7 @@ With `--format json`, the document is:
 
 ## `ascribe refs`
 @id {permalink=true}: cli-refs
+@summary: Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model, each as `file:line:column`, with what kind of use it is.
 
 Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model, each as `file:line:column`, with what kind of use it is. It's the editor's **Find All References**, on the command line: it finds a phrase only where it's a phrase, and a heading in a fragment through every page that includes it, which a text search can't.
 
@@ -143,6 +148,7 @@ With `--format json`, the document is:
 
 ## `ascribe rename`
 @id {permalink=true}: cli-rename
+@summary: Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, including what a text search and replace misses.
 
 Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. A text search and replace finds a phrase in the pages, but misses what a rename knows about: frontmatter fields with `phrases = true`, code blocks with `phrases=true`, the code a `@snippet {phrases=true}` shows, and a link whose path changes when the page it's on moves.
 
@@ -169,6 +175,7 @@ A path is from the current folder, or from the content root, and the project is 
 
 ## `ascribe resolve`
 @id {permalink=true}: cli-resolve
+@summary: Writes a page as one build's readers see it, in the build's plain Markdown: its variants chosen, filtered blocks removed, and phrases and includes filled in. It writes nothing to disk.
 
 Resolves a page for one build and writes it as the build's plain Markdown output, as `ascribe build --emit plain` writes it: the page as a reader of that build sees it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. It writes nothing to disk.
 
@@ -206,6 +213,7 @@ For `go:<name>`, the document is the entry as `help.json` writes it, with the fi
 
 ## `ascribe search`
 @id {permalink=true}: cli-search
+@summary: Finds where the pages say something, as their readers read it, and names the line to edit for each place, including words a phrase, a fragment, or a snippet puts there.
 
 Finds where the pages say something, as their readers read it, and names the line to edit for each place. A text search reads the source, where a page says `Sign in to {cloud}`; `ascribe search` reads each page as every build publishes it, where it says "Sign in to Quill Cloud", and says which line wrote that, and through which phrase.
 

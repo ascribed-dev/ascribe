@@ -7,13 +7,14 @@ use ascribe_model::{CheckLevel, Checks};
 use crate::{Diagnostic, Severity};
 
 /// The `limit` a check takes when `[checks]` sets none, for each check that
-/// has one (`ascribe_model::checks::SETTINGS`): characters for `page-size`
-/// and `memo-long`, bytes for `image-large`.
+/// has one (`ascribe_model::checks::SETTINGS`): characters for `page-size`,
+/// `memo-long`, and `summary-long`, bytes for `image-large`.
 pub fn default_limit(slug: DiagnosticSlug) -> Option<u64> {
     match slug {
         diagnostics::PAGE_SIZE => Some(crate::page::DEFAULT_SIZE_LIMIT),
         diagnostics::IMAGE_LARGE => Some(crate::IMAGE_LIMIT),
         diagnostics::MEMO_LONG => Some(crate::memos::MEMO_LIMIT),
+        diagnostics::SUMMARY_LONG => Some(crate::page::SUMMARY_LIMIT),
         _ => None,
     }
 }

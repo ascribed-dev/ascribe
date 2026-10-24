@@ -9,11 +9,13 @@ The commands for agents. The options every command accepts are in the [command r
 ## `ascribe agents`
 @id {permalink=true}: cli-agents
 
+@summary
 Writes the files AI coding agents read on their own: your project's rules, from `ascribe.toml`, and the Ascribe skill; and prints the named prompts. See [Agents](index.md).
 
 ### `ascribe agents sync`
 @id {permalink=true}: cli-agents-sync
 
+@summary
 Writes your project's rules and the Ascribe skill where each `--target`'s agents read them. It finds the repository's root as `ascribe diff` does, with `git`; outside a repository, the project's folder is the root, and it says so.
 
 Run where there's no `ascribe.toml` at or above, such as at the root of a repository with several projects, it syncs each project in the folders below, in path order, and says which. Each writes its own block in the root's `AGENTS.md`, and the list names each file once.
@@ -43,6 +45,7 @@ It merges its entries into a file it shares: it updates the entries it wrote bef
 ### `ascribe agents rules`
 @id {permalink=true}: cli-agents-rules
 
+@summary
 Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside `ascribe.toml`, as it would write it now. It writes no file. The MCP server's `ascribe://instructions/<project>` resource is the same text.
 
 @include: ../_generated/cli-agents-rules-options.md
@@ -54,6 +57,7 @@ Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside
 
 ### `ascribe agents index`
 @id {permalink=true}: cli-agents-index
+@summary: Writes a compact index of one build's docs, for the `AGENTS.md` of the product they're about: one line a page, with its title, its address, and its description.
 
 Writes a compact index of one build's docs, for the `AGENTS.md` of the product they're about: one line a page, with its title, its address, and its description, grouped in sections as the build's `llms.txt` is. It's for your product's agents, where `sync` is for the agents that write your docs; [Index your docs for your product's agents](product-index.md) says when it's worth it.
 
@@ -81,6 +85,7 @@ With `--format json`, the document is as follows, and its [schema](../contracts/
 ### `ascribe agents skill`
 @id {permalink=true}: cli-agents-skill
 
+@summary
 Prints a file of the Ascribe skill, the same for every project: its `SKILL.md`, or its directive reference, `references/directives.md`. It needs no project.
 
 @include: ../_generated/cli-agents-skill-options.md
@@ -93,6 +98,7 @@ Prints a file of the Ascribe skill, the same for every project: its `SKILL.md`, 
 ### `ascribe agents prompt`
 @id {permalink=true}: cli-agents-prompt
 
+@summary
 Prints a named prompt for an agent, in the same form as [Prompt agent](commands.md#what-a-prompt-says)'s. The MCP server offers the same prompts, which some hosts show as slash commands.
 
 @include: ../_generated/cli-agents-prompt-options.md
@@ -131,6 +137,7 @@ Every path and command in a prompt is from one folder, which it names once: "Pat
 ### `ascribe agents hook`
 @id {permalink=true}: cli-agents-hook
 
+@summary
 Checks an agent's work as its hook runs it: after the agent writes a file, or before it finishes. It reads the hook's JSON input on standard input and answers in the agent's own format. See [Hooks](hooks.md) for the entries that run it.
 
 @include: ../_generated/cli-agents-hook-options.md
@@ -157,6 +164,7 @@ The first hook in a project starts a check server in the background, the same `a
 
 ## `ascribe mcp`
 @id {permalink=true}: cli-mcp
+@summary: Runs an MCP server over standard input and output, for an agent that has no shell: the commands that answer questions as tools, the project's rules as resources, and the named prompts.
 
 Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextprotocol.io) over standard input and output, for an agent that has no shell, or a host that approves tools one by one. An agent's host starts it; you don't run it yourself. It offers the commands that answer questions as tools, the project's rules as resources, and the named prompts of [`ascribe agents prompt`](commands.md#cli-agents-prompt). Each tool's result is the JSON its command writes, so an agent with a shell does as well with the commands. See [The MCP server](mcp.md) to set it up.
 

@@ -64,6 +64,7 @@ A review comment, or page text from a pull request, quoted in a prompt is someon
 - Where the content model has a phrase for a name or a value, write the phrase (`{product}`), not the text.
 - Link to the source file with a relative path (`../guides/install.md#configure`), not to the site's address.
 - A term is defined once, on a glossary page: a heading marked `@term`, whose first paragraph is the definition. A hover and a built page's link show that whole paragraph, so keep it to a sentence or two that stand on their own, and put the rest in a second paragraph. Don't define a term again where it's used; Ascribe links it.
+- A heading with a permalink, `@id {permalink=true}: <name>`, needs a summary: the sentence or two a product shows with its help. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once, or write `@summary: <text>` under the heading and its `@id` when nothing on the page does, as for a lead-in to a list. Keep it under 300 characters. `ascribe check --format prompt` lists the sections without one, each with its text.
 - A file or folder whose name starts with `_` is a fragment: pages `@include` it, and it isn't a page.
 - Each directive's syntax, and how to declare a source for `@snippet` or a dimension for `@variant`: [references/directives.md](references/directives.md).
 - Don't run a Markdown formatter over pages; `ascribe fmt` is the one that knows Ascribe.

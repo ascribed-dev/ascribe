@@ -117,7 +117,7 @@ About's other rows say where the page is, and whether it's published, listed, du
 | **Availability** | The page's own `available` | Nothing |
 | **Builds** | "Published by site, agents; left out by cloud": the builds that publish the page and the ones that leave it out, with why in its tooltip | **Switch Build**, to see the page as a build publishes it; **Dim What the Build Leaves Out** shows what that build leaves out of it |
 | **Listing** | "Listed (the default)" or "Unlisted, by `[listing.folders]`": what [`pages.json`](../content-model/checks.md#22-listing) says of the page, and the rule that sets it | The page's own `listing`, or the rule in `ascribe.toml` |
-| **Permalink** | A [permalink](../permalinks/index.md) the page or one of its headings declares, one row each | Its `permalink` or its `@id` line |
+| **Permalink** | A [permalink](../permalinks/index.md) the page or one of its headings declares, one row each. Its tooltip has the summary a product shows with its help, as [`help.json`](../permalinks/in-your-product.md#writing-summaries) writes it in the editor's build: the section's `@summary`, or the page's description for its own; or that the section has none, which [`summary-missing`](../checks/diagnostics/content-checks.md#ASC252) reports | Its `permalink` or its `@id` line |
 | **Template** | "2 placeholders left, how-to template": what its [type's template](../templates/index.md#whats-left-to-fill-in) still leaves to fill in | **Go to Next Placeholder** |
 
 **Health** has these rows:

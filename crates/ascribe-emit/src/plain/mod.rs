@@ -370,15 +370,43 @@ pub(crate) fn render_section(
         .heading
         .and_then(|h| h.heading.as_ref())
         .map(|ids| ids.page_id.as_str());
+    let summary = summary_with(&r, page, anchor);
+    Rendered { text, summary }
+}
+
+/// The summary of the section of `page` whose heading's page id is
+/// `anchor`, or of its opening for `None`, as `_ascribe/help.json` writes
+/// it (SPEC §4.12): its `@summary`'s text or paragraph, as the plain output
+/// writes inline content; for the opening, the page's description, else
+/// the opening's `@summary`. `None` when it has none. It's what the
+/// editor shows for a section, so the editor and the file can't disagree.
+pub fn section_summary(
+    cx: &EmitContext<'_>,
+    page: &ResolvedPage,
+    anchor: Option<&str>,
+) -> Option<String> {
+    let plain = PlainEmitter::new(cx.model);
+    let page_cx = PageContext::new(cx, plain.page_path(&page.path), &plain);
+    let r = Renderer {
+        page: &page_cx,
+        model: cx.model,
+        arms: RefCell::new(Vec::new()),
+        level: Cell::new(1),
+        alt_text: true,
+    };
+    summary_with(&r, page, anchor)
+}
+
+/// [`section_summary`], written by `r`.
+fn summary_with(r: &Renderer<'_>, page: &ResolvedPage, anchor: Option<&str>) -> Option<String> {
     let summary = page
         .summary(anchor)
         .map(|s| r.inlines(&s.block, s.inlines(), Style::default()));
     // A page's own permalink: its description, else its opening's summary.
-    let summary = match section.heading {
+    match anchor {
         Some(_) => summary,
-        None => llms::description(cx.emit.model, page).or(summary),
-    };
-    Rendered { text, summary }
+        None => llms::description(r.model, page).or(summary),
+    }
 }
 
 impl Renderer<'_> {

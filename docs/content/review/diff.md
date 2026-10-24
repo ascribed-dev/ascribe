@@ -8,6 +8,7 @@ The commands that compare a project with another revision of itself. The options
 
 ## `ascribe diff`
 @id {permalink=true}: cli-diff
+@summary: Shows what changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved.
 
 Shows what changed between a git revision and the working tree, as readers will see it: which pages of each [build](../glossary.md#build) changed, and which blocks on them were added, removed, changed, or moved. It compares **resolved pages**, not files, so a page whose own file didn't change but whose included fragment, [phrase](../glossary.md#phrase), or build settings did is listed, with what its change comes from. A change that doesn't reach the page (`ascribe fmt`, rewrapped lines) isn't.
 
@@ -124,6 +125,7 @@ How blocks are matched: blocks are compared by their content without positions, 
 
 ## `ascribe drift`
 @id {permalink=true}: cli-drift
+@summary: Lists the pages whose code examples changed while the words around them didn't, and the pages whose examples no longer resolve.
 
 Lists the pages whose code examples changed between a git revision and the working tree, and whether the words around them changed too, and the pages whose examples no longer resolve. A page covers the code it shows, and nothing else: every region it takes a [snippet](../writing/directives.md#snippet) from, and every whole file it takes as one, including its fragments' snippets. It's for CI, where it says which pages a reviewer should reread; see [Report the pages whose examples changed](../examples/drift.md).
 

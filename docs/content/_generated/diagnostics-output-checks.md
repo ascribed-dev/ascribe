@@ -91,7 +91,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 ### ASC168 `link-external-broken`
 @id {permalink=true}: ASC168
-@summary: `ascribe report links`: the link checker found that an external link answers with an error, doesn't answer in time, or can't be reached. An address that answers with a server error (`5xx`) is asked about again after a short wait, and reported only when it fails again. A host `[checks.links] ignore` names isn't checked.
+@summary: `ascribe report links`: the link checker found that an external link answers with an error, doesn't answer in time, or can't be reached.
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block, or under the heading for a heading · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
@@ -151,7 +151,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 ### ASC199 `example-stale`
 @id {permalink=true}: ASC199
-@summary: A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and the file has changed since the observation that lists it was made. For a source in another repository, the config, the observation, and the file are the copies `ascribe sources fetch` made. Reported once for each snippet of the file, whichever region it shows.
+@summary: A `@snippet` shows a tested example whose file has changed since the observation that lists it was made.
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 

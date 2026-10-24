@@ -20,6 +20,7 @@ import type {
   PageHealth,
   PageInclude,
   PageMemo,
+  PagePermalink,
   PagePlace,
   PageResult,
 } from "../shapes.js";
@@ -1102,10 +1103,7 @@ function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
     rows.push({
       label: "Permalink",
       value: permalink.name,
-      tooltip:
-        permalink.heading === null
-          ? "The page's permalink: an address that keeps leading here"
-          : `A permalink to “${permalink.heading}”: an address that keeps leading here`,
+      tooltip: permalinkTooltip(permalink),
       opens: at(permalink.range),
     });
   }
@@ -1120,6 +1118,21 @@ function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
     });
   }
   return rows;
+}
+
+/**
+ * A Permalink row's tooltip: where it leads, and the summary a product
+ * shows with its help, as `_ascribe/help.json` writes it, or that a
+ * heading's section has none, which `summary-missing` reports.
+ */
+function permalinkTooltip(permalink: PagePermalink): string {
+  const leads =
+    permalink.heading === null
+      ? "The page's permalink: an address that keeps leading here"
+      : `A permalink to “${permalink.heading}”: an address that keeps leading here`;
+  if (permalink.summary !== null) return `${leads}\nSummary: ${permalink.summary}`;
+  if (permalink.heading === null) return leads;
+  return `${leads}\nNo summary: give its section a \`@summary\` to show with its help`;
 }
 
 /** "since 3 October", after the state "overdue"; "due in 12 days", "due today". */

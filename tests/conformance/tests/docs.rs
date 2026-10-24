@@ -158,6 +158,23 @@ fn the_diagnostics_reference_is_current() {
         .map(|entry| entry.lines().next().unwrap_or_default())
         .collect();
     assert!(missing.is_empty(), "no @summary: {missing:?}");
+    // And one a product can show: under `summary-long`'s limit, counted
+    // without the code spans' backticks, which the plain text drops.
+    let long: Vec<&str> = fragments
+        .iter()
+        .flat_map(|(_, text)| text.split("\n### ").skip(1))
+        .filter(|entry| {
+            entry
+                .lines()
+                .find_map(|line| line.strip_prefix("@summary: "))
+                .is_some_and(|s| s.replace(['`', '\\'], "").chars().count() >= 300)
+        })
+        .map(|entry| entry.lines().next().unwrap_or_default())
+        .collect();
+    assert!(
+        long.is_empty(),
+        "a summary of 300 characters or more; give the entry a shorter `summary`: {long:?}"
+    );
 }
 
 /// The pages of the diagnostics reference, in `docs/content/checks/diagnostics/`,
@@ -1139,7 +1156,7 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
         entry.code,
         entry.slug,
         entry.code,
-        summary(condition),
+        summary(entry.summary.as_deref().or(condition)),
         severity(entry.severity),
         level(entry.level).to_lowercase(),
         next(entry),
@@ -1175,7 +1192,8 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
 }
 
 /// The `@summary` line of an entry, and the blank line after it: when it's
-/// reported, so a product's help for the diagnostic says that (SPEC §4.12).
+/// reported, so a product's help for the diagnostic says that (SPEC §4.12),
+/// or the entry's `summary`, for one whose `when` is too long for a summary.
 /// Just the blank line for an entry with nothing to say.
 fn summary(condition: Option<&str>) -> String {
     match condition {

@@ -81,6 +81,10 @@
 #                described. A SPEC §8.2 row has none: its row's condition says
 #                when it's reported. The diagnostics reference gives each entry
 #                its `when`, or its row's condition, as its summary.
+#   summary      For an entry whose `when`, or row's condition, is too long for
+#                a summary, 300 characters or more as `summary-long` counts
+#                them: a shorter sentence, without its full stop, which the
+#                diagnostics reference gives as its summary in its place.
 #   group        The group of the content model's diagnostics a loader rule is listed in,
 #                on docs/content/checks/diagnostics/content-model.md or, from
 #                consumer on, content-model-builds.md:
@@ -3192,6 +3196,7 @@ stage = "report"
 spec = "5.2"
 reference = "content-model/checks.md#checkslinks"
 when = "`ascribe report links`: the link checker found that an external link answers with an error, doesn't answer in time, or can't be reached. An address that answers with a server error (`5xx`) is asked about again after a short wait, and reported only when it fails again. A host `[checks.links] ignore` names isn't checked"
+summary = "`ascribe report links`: the link checker found that an external link answers with an error, doesn't answer in time, or can't be reached"
 message = "`{url}` answered {status}, so the link is broken for readers"
 messages.server = "`{url}` answered {status} when asked twice: the server failed, which may be temporary"
 messages.server-once = "`{url}` answered {status}: the server failed, which may be temporary"
@@ -3670,6 +3675,7 @@ reference = "content-model/index.md#41-page-types"
 configurable = true
 area = "pages"
 when = "A page of a content type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped, or a frontmatter field with the template's value. A memo the page keeps from the template, its instructions to the writer, isn't reported. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found"
+summary = "A page of a content type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value"
 message = "this page still has its template's placeholder `{placeholder}`; write what it asks for in its place"
 messages.field = "`{field}` is still the template's `{value}`; write this page's own"
 fix = "Write the page's own text where the template's placeholder is, the text in braces. The template's instructions are memos, which are never published: follow each, then delete it or keep it. A field the template fills in, such as `title`, gets the page's own value. The check finds only what was never touched: a placeholder with a word changed isn't reported, so read the page through before publishing it."
@@ -3792,6 +3798,7 @@ area = "examples"
 spec = "4.8"
 reference = "writing/directives.md#snippet"
 when = "A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and the file has changed since the observation that lists it was made. For a source in another repository, the config, the observation, and the file are the copies `ascribe sources fetch` made. Reported once for each snippet of the file, whichever region it shows"
+summary = "A `@snippet` shows a tested example whose file has changed since the observation that lists it was made"
 message = "`{path}` changed after its last test run, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` to test it again"
 messages.other-repository = "`{path}` changed after its last test run, so the page doesn't say what it was tested with; the fix is in source `{source}`'s repository: run `ascribe observe` there and commit, and it arrives with the next `ascribe sources update {source}`"
 fix = "Run `ascribe observe` in the folder named, where `ascribe.examples.toml` is, and commit the observation it writes. It runs the folder's test command, and writes the observation only when the command passes. An observation covers a whole file: an edit anywhere in it, even outside the region a page shows, needs a new test run. For a source in another repository, that's done in the code's repository, and `ascribe sources update` copies the new observation here; nothing in this repository runs the test."
@@ -3975,6 +3982,7 @@ area = "project"
 spec = "4.4"
 reference = "content-model/content.md#71-releasestarget"
 when = "every version a mark names for its target is at or before the oldest live line and its last state counts as available, so every live line has the content, and no build filtered for the target at a version before the window publishes it: no output shows the versions, or a build that badges availability shows them and they're all before the oldest live line, so the badge says only that the content is older than every live line"
+summary = "Every live line has the content a mark is on, since every version it names is at or before the oldest live line, and no output shows the versions"
 message = "`{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so no output shows them; write `{simpler}`"
 messages.badge = "`{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so its badge is shown and says nothing a reader of any live line needs; write `{simpler}`"
 messages.remove = "`{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so no output shows them, and `{target}` is the only value of its dimension, so the mark says nothing; remove it"
@@ -4209,6 +4217,7 @@ evidence = []
 spec = "7.7"
 reference = "writing/memo-files.md#write-a-memo-file"
 row = "Memo files | A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry other than a glossary term; or a `memos/` folder inside the content root"
+summary = "A memo file can't be read, its frontmatter isn't valid, or its `about` or `quote` isn't one a memo can have; or a `memos/` folder is inside the content root"
 message = "this memo file doesn't start with frontmatter, so it's about nothing; start it with `---`, a line `about:` naming what it's about, and `---`"
 messages.unreadable = "this memo file can't be read: {reason}"
 messages.yaml = "this memo file's frontmatter isn't valid YAML: {detail}"
@@ -4282,6 +4291,7 @@ reference = "content-model/index.md#41-page-types"
 configurable = true
 area = "pages"
 when = "A page of a content type that names a template has a section the template gives nothing under its heading but memos, with the same heading at the same level, and nothing in the page's section, its subsections included, but memos, directives bound to its heading such as `@id`, and the subsections' headings. A section the template gives any other content is `template-placeholder-left`'s, and a page of a type with no template isn't looked at"
+summary = "A page of a content type that names a template has a section the template gives only memos, and the page's section still has nothing but memos and headings"
 message = "the template's section `{heading}` is still empty; write it, or remove the heading if this page doesn't need it"
 fix = "Write the section's text under its heading. The template gives it only memos, its instructions to the writer, which are never published, so left as it is the section builds as a heading with nothing under it. Follow each memo, then delete it or keep it. If the page doesn't need the section, remove its heading and its memos."
 
@@ -4383,6 +4393,7 @@ reference = "navigation/index.md#the-file"
 configurable = true
 area = "project"
 when = "`ascribe.nav` lists one or more of a section's sibling sections and not the section, which is reported on its first page. A folder none of whose sections the file lists has the default order, and isn't reported, nor is a section below the content root whose own page beside its folder places it among its parent's pages, since a table wouldn't move it"
+summary = "`ascribe.nav` lists some of a section's sibling sections and not the section, which is reported on its first page"
 message = "ascribe.nav lists other sections in `{parent}` and not `{folder}`, so it comes after them, in path order"
 messages.root = "ascribe.nav lists other sections at the content root and not `{folder}`, so it comes after them, in path order"
 fix = "Add a `[[sections]]` table with the section's `folder` to `ascribe.nav`, where the section should come. The fix appends a table for each section that isn't listed, in the order they come in now, so the navigation is the same after it; move the tables to where you want them. A file that writes `sections = [...]` inline gets no fix: add each section to its list."
@@ -4702,3 +4713,58 @@ Install Quill with npm.
 Install Quill with pnpm.
 @end
 '''
+
+[[diagnostic]]
+code = "ASC252"
+slug = "summary-missing"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = ["section-text"]
+spec = "4.12"
+reference = "writing/directives.md#summary"
+configurable = true
+area = "pages"
+when = "A heading's `@id` marks it a permalink, and its section has no `@summary`, once includes are expanded. A page's own permalink has its description, which `page-description-missing` reports; a permalink in a fragment is reported once, in the fragment"
+message = "the permalink `{name}` has no summary, so a product showing its help has none; add a `@summary` to its section"
+fix = "Give the section a summary with `@summary`: a sentence or two a product shows in a tooltip or beside an error. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once and shown in both places, or write `@summary: <text>` directly under the heading and its `@id` when nothing on the page reads well alone. A project that ships embedded help can raise this check to a warning, so every permalink needs one: `[checks] summary-missing = \"warning\"`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Prerequisites
+@id {permalink=true}: prerequisites
+
+Before you install Quill, make sure you have:
+
+- Node.js 20 or later
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Prerequisites
+@id {permalink=true}: prerequisites
+@summary: Quill needs Node.js 20 or later.
+
+Before you install Quill, make sure you have:
+
+- Node.js 20 or later
+'''
+
+[[diagnostic]]
+code = "ASC253"
+slug = "summary-long"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = []
+spec = "4.12"
+reference = "writing/directives.md#summary"
+configurable = true
+area = "pages"
+when = "A section's summary, as plain text on one line, is as long as the limit or longer: 300 characters, or `[checks.summary-long] limit`. A summary in a fragment is reported once, in the fragment"
+message = "this summary is {length} characters, and a product shows one under {limit}; shorten it to a sentence or two"
+fix = "Shorten the summary to a sentence or two that say what the section is for. A product shows it in a tooltip or beside an error, where there's room for little more. Its length is counted as `description-too-long` counts a description's: as plain text on one line, with phrases replaced and formatting dropped. The limit is 300 characters; set another in `ascribe.toml`, such as `[checks.summary-long] limit = 200`."

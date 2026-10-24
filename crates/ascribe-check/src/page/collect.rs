@@ -3,12 +3,16 @@
 //! Three sources feed it: the problems build resolution recorded on the page,
 //! the source index's link-id problems for the links the page publishes, and
 //! what's found on the resolved page itself: the duplicate ids and headings
-//! of its headings, and a section's second summary.
+//! of its headings, a section's second summary, a permalink with no summary,
+//! and a summary too long.
 //!
 //! Where a problem is reported (SPEC §8.1): at the source location that
 //! causes it; when that's inside included content, at the outermost include
 //! site (`via[0]`), with the location in the fragment as related information;
-//! and once, at the later of the places that together cause it.
+//! and once, at the later of the places that together cause it. The summary
+//! checks are the exception: a permalink or a summary in a fragment is
+//! reported in the fragment, once, however many pages include it, so a
+//! reader isn't sent to a page that includes it.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -45,6 +49,8 @@ pub(super) fn check_page(index: &Project, page: &ResolvedPage, links: &LinkProbl
     definitions(index, page, &mut found);
     link_ids(index, page, links, &mut found);
     summaries(index, page, &mut found);
+    summaries_missing(index, page, &mut found);
+    summaries_long(index, page, &mut found);
     let mut seen = Vec::new();
     found.retain(|f| {
         let key = identity(&f.issue);
@@ -165,6 +171,103 @@ fn summaries(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
             cause: (directive.file, directive.span, directive.via.clone()),
         });
     }
+}
+
+/// `summary-missing`: a heading whose `@id` marks it a permalink, with no
+/// summary in its section once includes are expanded, at the `@id` line, in
+/// the file it's written in. A page's own permalink has its description,
+/// which `page-description-missing` reports.
+fn summaries_missing(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
+    if index.model().checks.is_off(diagnostics::SUMMARY_MISSING) {
+        return;
+    }
+    for (block, heading) in page.headings() {
+        let Some(at) = heading.explicit_at.filter(|_| heading.permalink) else {
+            continue;
+        };
+        if page.summary(Some(&heading.page_id)).is_some() {
+            continue;
+        }
+        let issue = Issue::new(diagnostics::SUMMARY_MISSING, at)
+            .with_arg("name", heading.page_id.clone())
+            .with_arg("section", section_text(index, block));
+        out.push(Found {
+            issue,
+            cause: (at.file, at.span, block.via.clone()),
+        });
+    }
+}
+
+/// The most characters of a section's text a prompt quotes.
+const MAX_SECTION: usize = 800;
+
+/// The text of a heading's section as written in its file, for a prompt
+/// that asks for its summary: at most [`MAX_SECTION`] characters.
+fn section_text(index: &Project, block: &ResolvedBlock) -> String {
+    let Some(file) = index.file_by_id(block.file) else {
+        return String::new();
+    };
+    let Some(text) = file
+        .heading_at(block.span)
+        .and_then(|h| file.source.get(h.section.range()))
+    else {
+        return String::new();
+    };
+    let text = text.trim_end();
+    let mut quoted: String = text.chars().take(MAX_SECTION).collect();
+    if quoted.len() < text.len() {
+        quoted.push('…');
+    }
+    quoted
+}
+
+/// `summary-long`: a section's summary as long as the limit or longer,
+/// measured as plain text on one line ([`ascribe_resolve::SectionSummary::text`]),
+/// at its `@summary` line, in the file it's written in.
+fn summaries_long(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
+    let checks = &index.model().checks;
+    if checks.is_off(diagnostics::SUMMARY_LONG) {
+        return;
+    }
+    let limit = summary_limit(checks);
+    for summary in &page.summaries {
+        let length = summary.text().chars().count() as u64;
+        if length < limit {
+            continue;
+        }
+        let Some(directive) = summary_line(page, summary) else {
+            continue;
+        };
+        let at = Location::new(directive.file, directive.span);
+        let issue = Issue::new(diagnostics::SUMMARY_LONG, at)
+            .with_arg("length", length.to_string())
+            .with_arg("limit", limit.to_string());
+        out.push(Found {
+            issue,
+            cause: (at.file, at.span, directive.via.clone()),
+        });
+    }
+}
+
+/// The length at which `summary-long` reports a summary: `[checks.summary-long]
+/// limit`, or [`super::SUMMARY_LIMIT`].
+pub fn summary_limit(checks: &ascribe_model::Checks) -> u64 {
+    checks
+        .limit(diagnostics::SUMMARY_LONG)
+        .unwrap_or(super::SUMMARY_LIMIT)
+}
+
+/// The `@summary` line that gives a section its summary.
+fn summary_line<'p>(
+    page: &'p ResolvedPage,
+    summary: &ascribe_resolve::SectionSummary,
+) -> Option<&'p ResolvedBlock> {
+    ascribe_resolve::find_summaries(&page.blocks)
+        .into_iter()
+        .find(|found| {
+            found.block.file == summary.block.file && found.block.span == summary.block.span
+        })
+        .map(|found| found.directive)
 }
 
 /// `id-duplicate` and `heading-duplicate-without-id`, from the page's headings

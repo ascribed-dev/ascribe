@@ -1,0 +1,11 @@
+description: >-
+  A project that ships embedded help raises `summary-missing` to a warning
+  in `[checks]`, so every permalink needs a summary.
+spec: ["4.12", "7.2"]
+tags: [check, page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics:
+      - {slug: summary-missing, line: 6, severity: warning}

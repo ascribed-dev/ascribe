@@ -153,12 +153,36 @@ fn about_says_whether_the_page_is_described_due_published_listed_and_unfinished(
     assert_eq!(
         about["permalinks"],
         json!([
-            { "name": "rotate-keys", "heading": null, "range": line(6, 0, 22) },
-            { "name": "rotate-now", "heading": "Rotate now", "range": line(12, 0, 32) },
+            // The page's own leads to its opening, whose summary is the
+            // page's description; the heading's section has none.
+            { "name": "rotate-keys", "heading": null, "summary": "{One sentence.}", "range": line(6, 0, 22) },
+            { "name": "rotate-now", "heading": "Rotate now", "summary": null, "range": line(12, 0, 32) },
         ])
     );
     // The template's description, and its placeholder in the body.
     assert_eq!(about["template"], json!({ "type": "guide", "left": 2 }));
+}
+
+#[test]
+fn a_permalinks_summary_is_the_one_help_json_writes() {
+    // The heading's summary comes from the fragment the section includes,
+    // and is written as the plain output writes it, its emphasis kept.
+    let f = project();
+    f.write(
+        "docs/keys.md",
+        "---\ntype: guide\ntitle: Keys\ndescription: Keys.\n---\n\n## Rotate now\n\
+         @id {permalink=true}: rotate-now\n\n@include: _summary.md\n\nDone.\n",
+    );
+    f.write(
+        "docs/_summary.md",
+        "@summary\nReplace a key *before* it expires.\n",
+    );
+    let mut client = started(&f.root());
+    let about = page(&mut client, &f.path("docs/keys.md"))["about"].clone();
+    assert_eq!(
+        about["permalinks"][0]["summary"], "Replace a key *before* it expires.",
+        "{about}"
+    );
 }
 
 #[test]
