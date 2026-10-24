@@ -255,6 +255,40 @@ fn a_file_prompt_lists_each_problem_in_a_line() {
 }
 
 #[test]
+fn a_file_prompt_quotes_the_section_of_each_permalink_without_a_summary() {
+    // So an agent can write each summary from the prompt alone.
+    let project = project(&[(
+        "install.md",
+        &page(
+            "## Prerequisites\n@id {permalink=true}: prerequisites\n\n\
+             Before you install, make sure you have:\n\n- Node.js 20\n\n\
+             ## Upgrade\n@id {permalink=true}: upgrade\n@summary: Upgrade in place.\n\n\
+             Run the installer again.",
+        ),
+    )]);
+    let reported = reported(&project, "docs/install.md");
+    let text = prompt::file(
+        &project,
+        &plain(),
+        id(&project, "install.md"),
+        &reported,
+        &shown_on(&project),
+    )
+    .expect("problems");
+    assert!(
+        text.contains(
+            "- 6: [ASC252] the permalink `prerequisites` has no summary, so a product showing \
+             its help has none; add a `@summary` to its section\n  The section's text:\n  \
+             ## Prerequisites\n  @id {permalink=true}: prerequisites\n\n  Before you install, \
+             make sure you have:\n\n  - Node.js 20\n"
+        ),
+        "{text}"
+    );
+    // The section with a summary isn't listed.
+    assert!(!text.contains("`upgrade`"), "{text}");
+}
+
+#[test]
 fn a_file_prompt_asks_to_fix_errors_and_lists_advice_after_them() {
     let project = project(&[(
         "install.md",

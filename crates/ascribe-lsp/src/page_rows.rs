@@ -135,6 +135,11 @@ pub struct PagePermalink {
     pub name: String,
     /// The text of the heading it leads to; `null` for the page's own.
     pub heading: Option<String>,
+    /// The summary of the section it leads to in the editor's build, as
+    /// `_ascribe/help.json` writes it: the section's `@summary`, or for the
+    /// page's own, the page's description. `null` when it has none, which
+    /// is where `summary-missing` reports a heading's.
+    pub summary: Option<String>,
     /// The page's `permalink` line, or the heading's `@id` line, in the
     /// negotiated position encoding.
     #[cfg_attr(feature = "json-schema", schemars(with = "crate::schema::LspRange"))]
@@ -462,14 +467,17 @@ fn permalinks(ctx: &Ctx, file: &FileIndex, range: &dyn Fn(Span) -> Range) -> Vec
         .declared_permalinks()
         .into_iter()
         .filter(|p| p.file == file.path)
-        .map(|p| PagePermalink {
-            heading: p
-                .id
-                .as_deref()
-                .and_then(|id| file.heading_by_id(id))
-                .map(|h| h.text.clone()),
-            name: p.name,
-            range: range(p.at.span),
+        .map(|p| {
+            let heading = p.id.as_deref().and_then(|id| file.heading_by_id(id));
+            PagePermalink {
+                heading: heading.map(|h| h.text.clone()),
+                summary: match heading {
+                    Some(h) => crate::summary::of_heading(ctx, h.span),
+                    None => crate::summary::of_page(ctx),
+                },
+                name: p.name,
+                range: range(p.at.span),
+            }
         })
         .collect()
 }

@@ -23,7 +23,7 @@ Each key is a check's name, as the [diagnostics reference](../checks/diagnostics
 
 @include: ../_generated/content-model-checks.md
 
-Only a check the [diagnostics reference](../checks/diagnostics.md#setting-a-checks-level) marks configurable can be named; that section lists them, with their settings. Three have one, `limit`: for `page-size`, a whole number of characters above 0, `50_000` unless set; for `image-large`, a size, as a number of bytes or a string such as `"1.5 MB"` (a kilobyte is 1,000 bytes), `"500 KB"` unless set; and for `memo-long`, a whole number of characters above 0, `2_000` unless set. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
+Only a check the [diagnostics reference](../checks/diagnostics.md#setting-a-checks-level) marks configurable can be named; that section lists them, with their settings. Four have one, `limit`: for `page-size`, a whole number of characters above 0, `50_000` unless set; for `image-large`, a size, as a number of bytes or a string such as `"1.5 MB"` (a kilobyte is 1,000 bytes), `"500 KB"` unless set; for `memo-long`, a whole number of characters above 0, `2_000` unless set; and for `summary-long`, a whole number of characters above 0, `300` unless set. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
 
 For example, a site whose sidebar lists every page doesn't need to hear about pages nothing links to, and a team that wants smaller images can lower the limit:
 
@@ -40,7 +40,7 @@ Advice is shown in the editor and by `ascribe check`, and never fails the check,
 
 In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) shows a page's size against `page-size`'s limit, measured the same way, whether or not the page is over it.
 
-**Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`), and so is a setting the check doesn't have. A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`). `page-size`'s and `memo-long`'s `limit` is a whole number above 0, and `image-large`'s a size (`model-wrong-type`).
+**Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`), and so is a setting the check doesn't have. A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`). `page-size`'s, `memo-long`'s, and `summary-long`'s `limit` is a whole number above 0, and `image-large`'s a size (`model-wrong-type`).
 
 ### `[[intended]]`: acknowledgements
 @id: intended-acknowledgements

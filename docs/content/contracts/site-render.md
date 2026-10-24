@@ -165,6 +165,7 @@ Each construct below has at least one fixture in [`tests/render/`]({repo}/tree/m
 
 ## 7. Source anchors
 @id {permalink=true}: 7-source-anchors
+@summary: With anchors on, every block of a rendered page carries the source file and lines it came from, so a reviewer's tools can point from the page back to the source.
 
 With anchors on (`ascribe build --emit site --anchors`, and always in the editor preview), every block of a rendered page carries the source file and lines it came from, so a reviewer's tools can point from the page back to the source. With anchors off, which is the default, the site output is byte for byte what it is without this section, and nothing here applies.
 

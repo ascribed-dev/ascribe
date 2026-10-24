@@ -583,7 +583,7 @@ TypeScript type is `SettingsResult` in `packages/vscode/src/shapes.ts`
   reference's order. `when` is the registry's, as a sentence, in pieces as a
   description is; `default` is the check's own level; `level` and `set` are
   the file's, from `<check> = "<level>"` or a table's `level`; and `limit`,
-  for `page-size`, `image-large` (a `size`), and `memo-long`, has its default
+  for `page-size`, `image-large` (a `size`), `memo-long`, and `summary-long`, has its default
   and the file's value.
 - The parts are the tables the file names in `[types]`, `[dimensions]`,
   `[releases]`, `[builds]`, and `[sources]`, in that order, the reference's,
@@ -1027,6 +1027,7 @@ text and labels come from `ascribe_emit::labels`, the code the emitter builds
 | `memos.rs` | Memo files: their CodeLens, This page's memos, `addMemo`, and completion and a link in a memo file |
 | `shown.rs` | "Shown in N pages", the CodeLens in a code file a `@snippet` shows, and the registration for the sources' files |
 | `folding.rs` | Folding ranges |
+| `summary.rs` | A section's summary, for hover and This page's permalinks |
 | `nav.rs` | What they share: the request's state (`Ctx`), what is under the cursor (`hit_at`), previews, relative paths |
 
 **Completion** is decided from the line up to the cursor (a file being typed
@@ -1052,7 +1053,10 @@ says so), a phrase (its value), an availability spec or feature key (SPEC
 §9.4's text), a directive or attribute key (its schema), and a frontmatter
 key a page's type declares, or a field's key in `ascribe.toml`'s
 `[frontmatter]` or a type's own `frontmatter` (which table declares it, and
-which types replace a shared one).
+which types replace a shared one), and a heading or its `@id` line (its
+section's summary in the editor's build, from `ascribe_emit::section_summary`,
+which `_ascribe/help.json` writes; `summary.rs`, which `ascribe/page`'s
+permalinks read too).
 
 **Folding ranges**: each closed container `@memo`, from its opening line to
 its `@end`, so it folds to its first line. A page's other folding (headings,

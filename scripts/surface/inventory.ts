@@ -143,7 +143,8 @@ function commands(): Section {
       const tail = group ? rest : [second, rest].filter(Boolean).join(" ");
       if (command.startsWith("--")) return [];
       const heading = new RegExp(
-        `^#{2,3} \`ascribe ${command}\`\\n(?:@.*\\n)*\\n([^\\n]+)`,
+        // A `@summary` above the first paragraph marks it as the section's summary.
+        `^#{2,3} \`ascribe ${command}\`\\n(?:@.*\\n)*\\n(?:@summary\\n)?([^\\n]+)`,
         "m",
       ).exec(reference);
       const formats = /--format ([a-z|]+)/.exec(tail)?.[1] ?? "";

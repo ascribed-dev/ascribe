@@ -6,7 +6,8 @@
 //! - [`problem`]: one diagnostic, with its line, its fix advice, the
 //!   evidence its registry entry names (such as the values the content model
 //!   allows, when it's about one), and its fixes;
-//! - [`file`]: a file's problems, one line each, at most [`MAX_LISTED`];
+//! - [`file`]: a file's problems, one line each, at most [`MAX_LISTED`], a
+//!   permalink with no summary with its section's text;
 //! - [`project`]: how many problems each file has, at most [`MAX_LISTED`]
 //!   files;
 //! - [`batch`]: the problems of one of `ascribe report`'s sections, at most
@@ -47,6 +48,12 @@ pub const MAX_SHOWN_ON: usize = 10;
 
 /// The most lines of a problem's text a prompt quotes.
 const MAX_QUOTED_LINES: usize = 5;
+
+/// The diagnostics a file's prompt gives their evidence under, as a
+/// problem's prompt does: a permalink with no summary, quoted with its
+/// section's text, so an agent can write each summary from the prompt.
+const QUOTED_IN_FILE: &[ascribe_core::DiagnosticSlug] =
+    &[ascribe_core::diagnostics::SUMMARY_MISSING];
 
 /// The most related places a problem's prompt names.
 const MAX_RELATED: usize = 5;
@@ -481,7 +488,20 @@ pub fn file(
                 context.shown(&path_of(project, d.location.file))
             )
         };
-        listed.push(format!("- {at}: [{}] {}", d.code, d.message));
+        let mut item = format!("- {at}: [{}] {}", d.code, d.message);
+        if QUOTED_IN_FILE.contains(&d.slug) {
+            for evidence in &d.evidence {
+                item.push_str(&format!("\n  {}:", evidence.label));
+                for line in evidence.text.lines() {
+                    item.push('\n');
+                    if !line.is_empty() {
+                        item.push_str("  ");
+                        item.push_str(line);
+                    }
+                }
+            }
+        }
+        listed.push(item);
     }
     if order.len() > MAX_LISTED {
         listed.push(format!("and {} more: `{rest}`", order.len() - MAX_LISTED));

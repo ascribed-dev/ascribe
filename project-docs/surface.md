@@ -110,7 +110,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-243 in all. By severity: 48 advice, 170 error, 25 warning. By level: 215 file, 28 page. By kind of next step: 54 choose, 18 fix, 8 outside, 12 review, 151 write.
+245 in all. By severity: 50 advice, 170 error, 25 warning. By level: 215 file, 30 page. By kind of next step: 54 choose, 18 fix, 8 outside, 12 review, 153 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -357,6 +357,8 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC249` | `summary-not-paragraph` | error | write | `@summary` with no text must be followed by a paragraph, but the next block is {found} |
 | `ASC250` | `summary-repeated` | error | write | the section `{heading}` already has a summary; a section has one |
 | `ASC251` | `summary-in-variant` | error | write | `@summary` is inside a `@variant` arm, and a summary can't differ by arm |
+| `ASC252` | `summary-missing` | advice | write | the permalink `{name}` has no summary, so a product showing its help has none; add a `@summary` to its section |
+| `ASC253` | `summary-long` | advice | write | this summary is {length} characters, and a product shows one under {limit}; shorten it to a sentence or two |
 
 ## The VS Code extension
 

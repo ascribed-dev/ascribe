@@ -330,7 +330,8 @@ fn an_orphan_and_an_unused_phrase_can_be_marked_as_intended() {
 
 #[test]
 fn a_list_of_permalinks_thats_behind_is_brought_up_to_date_by_a_quick_fix() {
-    let page = "---\ntitle: Keys\n---\n\n## Rotate keys\n@id {permalink=true}: rotate-keys\n";
+    let page = "---\ntitle: Keys\n---\n\n## Rotate keys\n@id {permalink=true}: rotate-keys\n\
+                @summary: Replace a key before it expires.\n";
     let header = "# Written by Ascribe. Don't edit it: run `ascribe permalinks sync`.\n";
     let f = Fixture::new(
         crate::support::MODEL,

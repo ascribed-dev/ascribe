@@ -51,6 +51,21 @@ Generate a new key in the dashboard, then …
 
 Nothing is guessed: a section without `@summary` has no `summary` in the file, whatever it opens with, and a product shows its title and "Read more" alone.
 
+`ascribe check` says where one is missing, and where one is too long, as advice:
+
+- [`summary-missing`](../checks/diagnostics/content-checks.md#ASC252): a heading's permalink with no `@summary`. A page's own permalink has its description, which [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) asks for.
+- [`summary-long`](../checks/diagnostics/content-checks.md#ASC253): a summary of 300 characters or more, counted as a description is. `limit` changes the number.
+
+To require a summary for every permalink, raise `summary-missing` to a warning in [`[checks]`](../content-model/checks.md):
+
+```toml
+[checks]
+summary-missing = "warning"
+
+[checks.summary-long]
+limit = 200
+```
+
 ## Read it in the product
 @id: reading-the-file
 
