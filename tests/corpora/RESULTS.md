@@ -83,31 +83,26 @@ release build, 4,546 pages, 32 MB.
 
 ## Baselines on the runner
 
-`baselines/perf.json` was recorded on 2026-10-06 by the Corpora workflow run by
+`baselines/perf.json` was recorded on 2026-10-24 by the Corpora workflow run by
 hand with **record** set, on GitHub's `ubuntu-latest` runner (AMD EPYC 7763, 4
-logical cores). Every metric was recorded again there, so the file holds one
-machine's numbers. It was recorded again the same day, on the same CPU, once
-the release profile was in (see [The release profile](#the-release-profile)),
-which made each command 5 to 12 percent faster, and again once `diff` and
-`drift` were made faster (optimization phase 7A, [below](#where-diff-and-drift-spend-their-time)).
-The metrics added since, `check-one/…`, `lsp/search-3000`, and
-`lsp/watched-unread-3000`, were recorded on 2026-10-23 on the same CPU
-([run 40017935402](https://github.com/ascribed-dev/ascribe/actions/runs/40017935402)),
-and only they were taken from that run: it measured some of the others
-slower than their baselines, which keep their earlier values until
-[#894](https://github.com/ascribed-dev/ascribe/issues/894) finds why.
+logical cores,
+[run 40068366057](https://github.com/ascribed-dev/ascribe/actions/runs/40068366057)).
+Every metric was recorded in that one run, so the file holds one machine's
+numbers. It replaces the recording of 2026-10-06, which the runner had come
+to measure up to 1.6 times slower; [Slower since 6 October](#slower-since-6-october)
+says why, what was fixed, and what was recorded again as it is.
 Medians:
 
 | | time |
 |---|---|
-| `ascribe check` | 667 ms |
-| `ascribe build --emit plain,json`, first; again | 1.8 s; 1.6 s |
-| `ascribe diff`, nothing changed | 843 ms |
-| `ascribe diff`, one page; a fragment 100 pages include; a phrase every page uses | 792 ms; 814 ms; 1.02 s |
-| `ascribe diff` with snippets, nothing changed; a region ten pages show | 1.07 s; 1.07 s |
-| `ascribe drift` with snippets, nothing changed; a region ten pages show | 485 ms; 535 ms |
-| `ascribe check --format json`, converted Elastic sample | 3.2 s |
-| language server: page keystroke, fragment keystroke, completion | 1.6 ms, 8.0 ms, 3.2 ms |
+| `ascribe check` | 769 ms |
+| `ascribe build --emit plain,json`, first; again | 2.0 s; 1.8 s |
+| `ascribe diff`, nothing changed | 885 ms |
+| `ascribe diff`, one page; a fragment 100 pages include; a phrase every page uses | 871 ms; 902 ms; 1.19 s |
+| `ascribe diff` with snippets, nothing changed; a region ten pages show | 1.21 s; 1.21 s |
+| `ascribe drift` with snippets, nothing changed; a region ten pages show | 505 ms; 564 ms |
+| `ascribe check --format json`, converted Elastic sample | 4.2 s |
+| language server: page keystroke, fragment keystroke, completion | 1.9 ms, 9.0 ms, 3.4 ms |
 
 `diff` took the same time whatever changed (1.28 to 1.32 s), which was
 `project-docs/optimization/inventory.md` finding 4; now only a change that
@@ -141,6 +136,58 @@ over its baseline x 3 + 25 (megabytes here). Memory varies far less than time
 between runs, so that catches only a large change, such as holding a third
 copy of the project; [decision 9](../../project-docs/optimization/README.md#proposed-decisions)
 asks for no tighter target until a change needs one.
+
+## Slower since 6 October
+
+The runner measured some metrics well over their 2026-10-06 baselines by
+2026-10-23 ([#894](https://github.com/ascribed-dev/ascribe/issues/894)).
+Each was bisected over the merges to `main` between, by wall time where a
+change was large and by instructions counted under callgrind where it was
+within the noise. Four causes were fixed; the rest is work the checks took on
+on purpose, and its metrics were recorded again with everything else.
+
+| metric | 6 Oct | 23 Oct | 24 Oct | |
+|---|---|---|---|---|
+| `memory/build-synthetic-3000-first` | 265 MB | 392 MB | 276 MB | fixed |
+| `check/elastic-converted-json` | 3.2 s | 6.6 s | 4.2 s | fixed, the rest accepted |
+| `lsp/keystroke-fragment-3000` | 8.0 ms | 12.7 ms | 9.0 ms | fixed |
+| `lsp/keystroke-page-3000` | 1.6 ms | 2.7 ms | 1.9 ms | half fixed, half accepted |
+| `check/synthetic-3000` | 667 ms | 787 ms | 769 ms | accepted |
+| `check/synthetic-3000-snippets` | 850 ms | | 1,063 ms | accepted |
+| `incremental/edit a fragment's text` | 0.16 ms | 0.19 ms | 0.18 ms | accepted |
+
+What was fixed:
+
+- **Build memory.** Since #723, `ascribe build` kept the index the checks
+  built of every source while it indexed the project again to write the
+  outputs: a third more at the peak. The build now lets the checks' index go
+  first.
+- **The Elastic check.** `page-size` (#872) names a long page's largest
+  sections and includes by rendering each alone, and copied the whole page to
+  do it, for each part. The converted Elastic sample has a page of several
+  hundred sections, which alone took 2.1 s. It now copies the page once.
+- **Fragment keystrokes.** Reading a build's glossary terms looked through
+  every file for terms defined off the page, and resolving each page read them
+  (0.4.0). Resolving needs only the terms; the scan is left to what lists the
+  glossary. That was 37 percent of what a fragment keystroke gained.
+- **Page keystrokes.** With no `ascribe.baseline`, the language server still
+  matched every file's problems against it after each round of checks (#804),
+  half of what a page keystroke gained. It now stops first.
+
+What was recorded again as it is:
+
+- **The content checks.** #221 added checks that render each page, `page-size`
+  among them, about 7 percent of a check's instructions on the synthetic
+  project; the checks across the project (#223) about 3 percent; the other
+  merges since, a percent or two each. A keystroke runs the same checks, so
+  they're the other half of the page keystroke's rise and most of the rest of
+  the fragment's. The Elastic sample, larger pages, is a third over its
+  6 October time for the same reason.
+- **The incremental fragment edit**, 2 percent more instructions, from reading
+  the `type:` of frontmatter and finding the snippets a page shows.
+- **Everything else** moved 5 to 15 percent with them or with the runner: the
+  same CPU measured each command's memory 4 to 6 percent higher than it did on
+  6 October, which nothing bisected here explains.
 
 ## The regression check
 
