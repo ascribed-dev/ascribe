@@ -13,6 +13,11 @@
     "examples/**",
     "site/demo/**"
   ],
+  // The copy of VS Code the extension's integration tests download: as plain
+  // text, its extensions' manifests aren't checked as if they were ours.
+  "files.associations": {
+    "**/packages/vscode/out/vscode-test/**": "plaintext"
+  },
   "[markdown]": {
     "editor.defaultFormatter": "Ascribe.ascribe-vscode"
   }
