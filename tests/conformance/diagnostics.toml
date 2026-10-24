@@ -85,9 +85,12 @@
 #                a summary, 300 characters or more as `summary-long` counts
 #                them: a shorter sentence, without its full stop, which the
 #                diagnostics reference gives as its summary in its place.
-#   group        The group of docs/content/checks/diagnostics/content-model.md a loader rule is listed in:
-#                file, project, sources, content-types, names, phrases, widgets, or
-#                consumer. Every loader rule has one.
+#   group        The group of the content model's diagnostics a loader rule is listed in,
+#                on docs/content/checks/diagnostics/content-model.md or, from
+#                consumer on, content-model-builds.md:
+#                file, project, sources, content-types, names, releases, phrases,
+#                widgets, consumer, permalinks, crawlers, listing, or checks.
+#                Every loader rule has one.
 #   fix          How to fix the problem, for docs/content/checks/diagnostics/, which is
 #                generated from this file. Every entry has one.
 #   example      A short wrong-and-right example, which `ascribe explain` shows:

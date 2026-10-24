@@ -1,0 +1,5 @@
+---
+section: The docs and the site
+---
+
+**The diagnostics reference's content model is two pages, split at `FIRST_ON_CONTENT_MODEL_BUILDS` in `tests/conformance/tests/docs.rs`.** `docs/content/checks/diagnostics/content-model.md` keeps the rule groups from the file through widgets; `docs/content/checks/diagnostics/content-model-builds.md` has the rest, from the consumer, builds, and the editor to `[checks]`, each group whole and in `RULE_GROUPS`' order. The generator writes each page its fragment, as it does the content checks at `FIRST_ON_OUTPUT_CHECKS` ([decision #876](876-content-checks-split.md)), the index links each entry to its page, and the links and permalinks into the moved entries follow. _Why:_ with a summary and a `when` for each loader rule, the content model's page was 54,217 characters in build `site`, over `page-size`'s 50,000; raising the limit would hide what it's for. _From:_ Kyle, 23 October 2026, in [issue #896](https://github.com/ascribed-dev/ascribe/issues/896).
