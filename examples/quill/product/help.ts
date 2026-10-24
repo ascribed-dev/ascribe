@@ -1,7 +1,11 @@
 // A product's help, from the docs' build: the title, summary, and address
 // of the permalink a product names, read from `_ascribe/help.json`.
 //
-//   node help.ts <help.json> <name> [<folder>]
+//   node help.ts <help.json> <name> [<folder>] [--choose <dimension>=<value>]
+//
+// With `--choose`, for a reader the product knows uses that value, such as
+// `pm=pnpm`, it also prints the section with that arm chosen, when the
+// section has a switcher on the dimension, and opens the address with it.
 //
 // With a folder, the address its line's entries are served under, such as
 // https://docs.quill.dev/3.4/go/, it fetches the entry from the docs first,
@@ -15,6 +19,7 @@ interface Entry {
   title: string;
   summary?: string;
   text: string;
+  choices?: Record<string, Record<string, string>>;
   address?: string;
   source: string;
 }
@@ -25,9 +30,12 @@ interface Help {
   help: Record<string, Entry>;
 }
 
-const [file, name, folder] = process.argv.slice(2);
-if (file === undefined || name === undefined) {
-  console.error("Usage: node help.ts <help.json> <name> [<folder>]");
+const args = process.argv.slice(2);
+const at = args.indexOf("--choose");
+const choose = at === -1 ? undefined : args.splice(at, 2)[1]?.split("=");
+const [file, name, folder] = args;
+if (file === undefined || name === undefined || (at !== -1 && choose?.length !== 2)) {
+  console.error("Usage: node help.ts <help.json> <name> [<folder>] [--choose <dimension>=<value>]");
   process.exit(2);
 }
 const bundled = JSON.parse(readFileSync(file, "utf8")) as Help;
@@ -62,7 +70,16 @@ console.log(entry.title);
 if (entry.summary !== undefined) {
   console.log(entry.summary);
 }
-if (entry.address !== undefined) {
-  console.log(`Read more: ${entry.address}`);
+let address = entry.address;
+if (choose !== undefined) {
+  const [dimension, value] = choose;
+  const chosen = entry.choices?.[dimension]?.[value];
+  if (chosen !== undefined) {
+    console.log(`\n${chosen}\n`);
+    address = address === undefined ? undefined : `${address}?${dimension}=${value}`;
+  }
+}
+if (address !== undefined) {
+  console.log(`Read more: ${address}`);
 }
 // :snippet-end:

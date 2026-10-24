@@ -21,6 +21,19 @@
       "description": "The build, without its line.",
       "type": "string"
     },
+    "choices": {
+      "additionalProperties": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
+      "description": "For a section with a switcher, its text with each arm chosen: keyed\nby dimension, then by value, both in the content model's order.\nAbsent when the section has no switcher on a dimension.",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
     "line": {
       "description": "The line, for a line of a versioned build that has more than one.",
       "type": [

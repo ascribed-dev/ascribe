@@ -18,6 +18,7 @@ One entry for each permalink the build publishes, and for each alias of one, key
 - **`title`:** the heading's text, or the page's title for a page's own permalink, as plain text.
 - **`summary`:** the section's [summary](#writing-summaries), when it has one; a page's own permalink has its description. Absent when there's none.
 - **`text`:** the whole section, as the plain output writes it: Markdown, with phrases and includes resolved, each variant arm under a heading of its own, availability as an `Available:` line, and each image as its alt text, since a product can't count on loading an image from the docs' site.
+- **`choices`:** for a section with a switcher, the section with each arm chosen, keyed by dimension and value, such as `choices.pm.pnpm` (see [Show your reader's arm](#choosing-an-arm)).
 - **`address`:** the permalink's address, which a "Read more" link opens.
 - **`source`:** the page the section is on.
 
@@ -89,6 +90,21 @@ To see an entry without building the site, run [`ascribe resolve go:<name>`](../
 ```sh
 ascribe resolve go:prerequisites --build site --config examples/quill
 ```
+
+## Show your reader's arm
+@id: choosing-an-arm
+
+A section with a [switcher](../writing/variants.md) has every arm in `text`, each under a heading of its own, as the plain output writes it. A product that knows its reader's choice, such as the package manager they installed it with, shows the section with that arm alone from `choices`: keyed by the switcher's dimension, then by each value its arms name, each the section as a build that selects that value writes it. Other groups in the section stay as they were, and a section with switchers on two dimensions has a key for each. The summary is the section's, the same for every choice. A product that doesn't know shows `text`.
+
+The program above, given `--choose pm=pnpm`, prints the `install-agent` section with its pnpm arm, and adds the choice to the address, which sets the reader's choice on the site:
+
+```sh
+node examples/quill/product/help.ts examples/quill/.ascribe/build/site/site/_ascribe/help.json install-agent --choose pm=pnpm
+```
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/help-product-pnpm.txt
+
+A section with no switcher, or one whose dimension the build already selects, has no `choices`, and the program prints what it prints without `--choose`.
 
 ## Bundle your own line's file
 @id: bundling-the-file

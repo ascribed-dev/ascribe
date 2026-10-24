@@ -1496,7 +1496,8 @@ fn templates() {
 /// The docs in a product (`docs/content/permalinks/in-your-product.md`):
 /// quill's build writes `_ascribe/help.json`, and its product's program,
 /// run with Node, prints a permalink's title, summary, and address from it,
-/// or exits 1 for a name the file doesn't have. Given its line's folder of
+/// or exits 1 for a name the file doesn't have. With `--choose pm=pnpm`, it
+/// prints the section with its pnpm arm chosen. Given its line's folder of
 /// entries, it fetches the entry there first, and uses the bundled file when
 /// the docs can't be reached, don't have the entry, or answer for another
 /// line.
@@ -1529,6 +1530,14 @@ fn help_in_a_product() {
         String::from_utf8_lossy(&found.stderr)
     );
     expect("help-product.txt", &stdout(&found));
+    let chosen = help(&["install-agent", "--choose", "pm=pnpm"]);
+    assert_eq!(
+        chosen.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&chosen.stderr)
+    );
+    expect("help-product-pnpm.txt", &stdout(&chosen));
     let missing = help(&["weave-config"]);
     assert_eq!(missing.status.code(), Some(1));
     assert_eq!(stdout(&missing), "No help for weave-config\n");

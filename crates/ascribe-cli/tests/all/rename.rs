@@ -220,6 +220,14 @@ fn a_memos_about_follows_its_heading_and_its_page_in_both_folders() {
     let dir = tempfile::tempdir().unwrap();
     let quill = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill");
     copy_dir(&quill, dir.path());
+    // The heading is a permalink in quill, which `rename` won't end; here
+    // it's an id alone, so the memos' part is what's tested.
+    let page = read(dir.path(), "docs/install-agent.md");
+    write(
+        dir.path(),
+        "docs/install-agent.md",
+        &page.replace("@id {permalink=true}: install-agent", "@id: install-agent"),
+    );
     // A personal memo, its `about` in quotes, which stay.
     let mine = "---\nabout: \"install-agent.md#install-agent\"\n---\n\nMine.\n";
     write(dir.path(), ".ascribe/memos/mine.md", mine);

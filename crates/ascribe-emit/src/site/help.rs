@@ -1,17 +1,20 @@
 //! `_ascribe/help.json`: each permalink's section of the docs, for a
 //! product to show where its user is, in a tooltip, a panel, or beside an
 //! error (output-layout contract §1.7): its title, its summary, its text as
-//! the plain output writes it, and its address. [`help`] is one name's
-//! entry, as the file writes it, for `ascribe resolve go:<name>`. Each entry
-//! is also an address of its own, `<folder><name>.json` ([`entry_paths`]),
-//! which the headers give to any origin.
+//! the plain output writes it, and its address. A section with a switcher
+//! also has its text with each of the switcher's arms chosen. [`help`] is
+//! one name's entry, as the file writes it, for `ascribe resolve go:<name>`.
+//! Each entry is also an address of its own, `<folder><name>.json`
+//! ([`entry_paths`]), which the headers give to any origin.
 
 use std::collections::BTreeMap;
 
 use ascribe_model::{ContentModel, TrailingSlash};
-use ascribe_resolve::{Permalink, ResolvedBuild};
+use ascribe_resolve::{PageSection, Permalink, ResolvedBlock, ResolvedBuild, ResolvedKind, select};
 use serde::Serialize;
+use serde::ser::{SerializeMap, Serializer};
 
+use super::arm_values;
 use super::permalinks::{Named, named};
 use crate::emitter::{EmitContext, Emitter, PageContext};
 use crate::plain::{PlainEmitter, render_section};
@@ -42,6 +45,15 @@ pub struct HelpEntry {
     /// The section as the plain output writes it, in Markdown, with each
     /// image as its alt text.
     pub text: String,
+    /// For a section with a switcher, its text with each arm chosen: keyed
+    /// by dimension, then by value, both in the content model's order.
+    /// Absent when the section has no switcher on a dimension.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(
+        feature = "json-schema",
+        schemars(with = "Option<BTreeMap<String, BTreeMap<String, String>>>")
+    )]
+    pub choices: Option<Choices>,
     /// The permalink's address; absent without `[consumer] site`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
@@ -196,6 +208,14 @@ fn entry(
     let (page, section) = build.section(permalink)?;
     let page_cx = PageContext::new(cx, plain.page_path(&page.path), plain);
     let rendered = render_section(&page_cx, page, &section);
+    let choices = choices(cx.model, &section, |blocks| {
+        let chosen = PageSection {
+            heading: section.heading,
+            blocks,
+            arms: section.arms.clone(),
+        };
+        render_section(&page_cx, page, &chosen).text
+    });
     let title = match section.heading.and_then(|h| h.heading.as_ref()) {
         Some(ids) => ids.text.clone(),
         None => page.title.clone().unwrap_or_default(),
@@ -204,9 +224,86 @@ fn entry(
         title,
         summary: rendered.summary,
         text: rendered.text,
+        choices,
         address: address(cx.model, name),
         source: permalink.page.to_string(),
     })
+}
+
+/// A section's text with each value of each dimension its switchers are on
+/// chosen, as a build that selects that value alone writes it: keyed by
+/// dimension, then by value, both in the content model's order, each
+/// `render`ed from the section's blocks with that value selected. A
+/// switcher's dimensions are those its arms name; a value is one an arm
+/// names, alone or in a set. A labeled group isn't along a dimension, so it
+/// adds none and stays as it is in each. `None` when the section has no
+/// switcher on a dimension.
+fn choices(
+    model: &ContentModel,
+    section: &PageSection<'_>,
+    render: impl Fn(&[ResolvedBlock]) -> String,
+) -> Option<Choices> {
+    let mut named: Vec<(String, String)> = Vec::new();
+    for block in section.blocks {
+        block.visit(&mut |b| {
+            let ResolvedKind::Group { name, arms, .. } = &b.kind else {
+                return;
+            };
+            if name != "variant" || arms.len() < 2 {
+                return;
+            }
+            for arm in arms {
+                for (dimension, values) in arm_values(model, &arm.opener) {
+                    for value in values {
+                        let pair = (dimension.clone(), value);
+                        if !named.contains(&pair) {
+                            named.push(pair);
+                        }
+                    }
+                }
+            }
+        });
+    }
+    let choices: Vec<_> = model
+        .dimensions
+        .iter()
+        .filter_map(|dimension| {
+            let values: Vec<_> = dimension
+                .values
+                .iter()
+                .filter(|v| {
+                    named
+                        .iter()
+                        .any(|(d, n)| *d == dimension.name && *n == v.value)
+                })
+                .map(|v| {
+                    let selection = [(dimension.name.clone(), vec![v.value.clone()])];
+                    let chosen = select(section.blocks, &selection, model);
+                    (v.value.clone(), render(&chosen))
+                })
+                .collect();
+            (!values.is_empty()).then(|| (dimension.name.clone(), Ordered(values)))
+        })
+        .collect();
+    (!choices.is_empty()).then_some(Ordered(choices))
+}
+
+/// A section's text with each arm chosen: each dimension, with each value's
+/// text.
+pub type Choices = Ordered<Ordered<String>>;
+
+/// A table written in the order of its entries.
+#[derive(Clone, Debug)]
+pub struct Ordered<T>(pub Vec<(String, T)>);
+
+impl<T: Serialize> Serialize for Ordered<T> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut map = serializer.serialize_map(Some(self.0.len()))?;
+        for (key, value) in &self.0 {
+            map.serialize_entry(key, value)?;
+        }
+        map.end()
+    }
 }
 
 /// A permalink's address: the site's origin, the permalink path, and the

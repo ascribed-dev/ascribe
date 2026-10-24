@@ -644,19 +644,29 @@ describe("the editor's actions", () => {
     });
 
     it("rewrites a memo's about when F2 renames its heading's @id", async () => {
-      // "@id: install-agent", under "## Install the agent".
+      // "@id {permalink=true}: install-agent", under "## Install the agent".
+      // F2 won't end a permalink, so here the heading has an id alone, until
+      // the page is reverted.
       const page = await open("install-agent.md", 19, 6);
-      const edit = await vscode.commands.executeCommand<vscode.WorkspaceEdit>(
-        "vscode.executeDocumentRenameProvider",
-        page.document.uri,
-        new vscode.Position(19, 6),
-        "install",
-      );
-      const memo = edit.get(uriOf("memos", "agent-first.md"));
-      assert.deepEqual(
-        memo.map((e) => e.newText),
-        ["install-agent.md#install"],
-      );
+      const unmarked = new vscode.WorkspaceEdit();
+      unmarked.replace(page.document.uri, page.document.lineAt(19).range, "@id: install-agent");
+      assert.ok(await vscode.workspace.applyEdit(unmarked));
+      try {
+        const edit = await vscode.commands.executeCommand<vscode.WorkspaceEdit>(
+          "vscode.executeDocumentRenameProvider",
+          page.document.uri,
+          new vscode.Position(19, 6),
+          "install",
+        );
+        const memo = edit.get(uriOf("memos", "agent-first.md"));
+        assert.deepEqual(
+          memo.map((e) => e.newText),
+          ["install-agent.md#install"],
+        );
+      } finally {
+        await vscode.window.showTextDocument(page.document);
+        await vscode.commands.executeCommand("workbench.action.files.revert");
+      }
     });
   });
 });
