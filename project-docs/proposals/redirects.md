@@ -1,152 +1,225 @@
 # Proposal: redirects
 
-A proposal, not a plan. It says what would be built and in what order, so the idea can be judged before anything is designed in detail. It picks up "Redirects" in section 6 of the [brainstorm](../brainstorm.md#redirects), and rests on the research in [Redirects for docs as code](../reports/Redirects%20for%20docs%20as%20code.md).
+A proposal, not a plan. It says what would be built and in what order, so the idea can be judged before anything is designed in detail. It picks up "Redirects" in section 6 of the [brainstorm](../brainstorm.md#redirects), and rests on the research in [Redirects for docs as code](../reports/Redirects%20for%20docs%20as%20code.md). Three adversarial reviews, a spike that measured the comparison, and a tabletop of 25 scenarios shaped this version.
 
 ## The goal
 
-No address the docs have published stops working without someone deciding it should. When a page moves, its old address forwards to the new one, and the author didn't write the redirect: the move did. When a page goes, the check asks what should happen to its address. Ascribe writes the result for the host, in its format, so a reader following an old link, a search engine, and an AI assistant citing a URL it learned a year ago all land on the content.
+No address the docs have published stops working without someone deciding it should. When a page moves, its old address forwards to the new one, and the author didn't write the redirect: the move did. When a page goes, the check asks what should happen to its address. Ascribe writes the result for the host, so a reader following an old link and a search engine land on the content; so does an AI assistant that follows redirects, though no vendor documents how its crawlers treat them.
 
-Ascribe still hosts nothing. It records the facts, checks them, and writes them out.
+Ascribe still hosts nothing. It records the decisions, checks them, and writes them out.
 
 ## What exists
 
-- **Permalinks** (`go/<name>/`) are named addresses a product links to, independent of paths, with aliases and retired permalinks (SPEC §7.5, §7.6). `ascribe.permalinks`, a committed list the tool writes, is the baseline `check` compares against: `permalink-removed` warns when one goes. `@ascribed/astro` serves each as a page with a 0-second refresh, which also reads a dimension from the address (`?pm=pnpm`) and sets the reader's tab.
-- **`ascribe rename`, and the editor's rename,** move a page or a folder and update every link, `ascribe.nav`, `ascribe.toml`, and memo files. The Explorer's rename and move go through the language server's `workspace/willRenameFiles`, which returns one edit. The Pages view asks before a drag that moves a page to another section, "since the page's address changes". None of these records the old address.
+- **Permalinks** (`go/<name>/`) are named addresses a product links to, independent of paths, with aliases and retired permalinks (SPEC §7.5, §7.6). `ascribe.permalinks`, an opt-in list the tool writes, is what `check` compares names with: `permalink-removed` warns when one goes. `@ascribed/astro` serves each as a page with a 0-second refresh, `noindex`, and a canonical link, which also reads a dimension from the address (`?pm=pnpm`) and sets the reader's tab.
+- **Moving a page:** `ascribe rename` moves a page or a fragment; the editor also moves folders. The Explorer's rename and move, and the Pages view's drag and **Rename or Move…**, go through the language server's `workspace/willRenameFiles`, which returns one edit updating links, `ascribe.nav`, `ascribe.toml`, and memo files; F2 on an `@id` goes through the server's rename. None of these records the old address. A rename that changes only case is refused on a case-insensitive file system ([#899](https://github.com/ascribed-dev/ascribe/issues/899)).
+- **A route is the source path and the routing settings,** nothing else: "source files never contain routes" (SPEC §5.2). So the addresses a build publishes follow from its sources and `ascribe.toml`, at any revision.
+- **`ascribe diff` and review already read a base revision,** by default the repository's default branch, through `FileSystem` over git.
 - **`replaces`** in a page's frontmatter says which page a later line's page takes the place of; links between lines and canonical addresses follow it.
-- **`ascribe versions retire`** works out where each address of a retired line should go, and lists them as `from` and `to`, leaving the host to the user.
-- **The site output's `_ascribe/headers.json`** (output-layout contract §1.4) is written for the host, and `@ascribed/astro` turns it into Netlify's `_headers` with `[consumer] headers = "netlify"`. The contract already says a later version may add "a list of redirects beside `headers`".
-- **The page records** (`_ascribe/pages.json`) give each page's address.
-
-What's missing is the record of what was published before, which is where the brainstorm stopped.
+- **`ascribe versions retire`** works out where each page of a retired line should go: the same page in the current line, the page that replaced it there, or its page in the archive, which is usually on another host. Decision #502k leaves writing them to the host.
+- **A build can't set its own site or base path:** `ContentModel::for_build` changes only a line's folder. So a project's builds all claim the same addresses, as `examples/quill`'s `site`, `cloud`, and `self-managed-3.3` do.
+- **The site output's `_ascribe/headers.json`** (output-layout §1.4) is written for the host. `@ascribed/astro` turns it into Netlify's `_headers` with `[consumer] headers = "netlify"` when Astro's `base` is `/`, merging every project's rules into one file, as this repository's `site/` does for its three projects; under another Astro base there's no host root, and it writes nothing and says so. A site's own `_headers` fails the build until Ascribe's lines are in it.
+- **Decision #457b** records that the docs site has no `_redirects` file.
 
 ## What the research found
 
 From [the report](../reports/Redirects%20for%20docs%20as%20code.md):
 
-- **The teams that get this right make moving a page and writing its redirect one action,** with one tool owning the map: MDN's file says "DO NOT EDIT THIS FILE MANUALLY", and its `content move` writes it, flattening chains. Elastic's `mv` updates links and writes no redirect; its separate diff check let deleted pages ship as 404s twice.
-- **A diff misses lost addresses; a baseline of published addresses doesn't.** A slug change, a navigation change, or a restructure loses an address without deleting a file.
-- **A permanent server redirect (301), straight to the final address, kept indefinitely,** is the only method every client follows: browsers, Googlebot (10 hops, but it wants 1), and AI crawlers, which don't run JavaScript and send users to 404s 2.87 times as often as Google. The Web Documentation Delivery Spec asks for same-host 301 or 302.
-- **A removed page isn't redirected to the home page:** Google treats that as a soft 404, and the delivery spec scores soft 404s worse than real ones.
+- **The teams that get this right make moving a page and writing its redirect one action,** with one tool owning the map. MDN's file says "DO NOT EDIT THIS FILE MANUALLY", and its `content move` writes it, flattening chains. Elastic's `mv` updates links and writes no redirect, and its separate check let deleted pages ship as 404s twice.
+- **Comparing the addresses a build produces against a baseline catches what a diff of files misses.** The baseline can be "the main branch's build or a committed list of published URLs"; no surveyed team keeps a committed list of every address.
+- **A permanent server redirect (301), straight to the final address, kept indefinitely,** is what every client follows: browsers, and Googlebot, which follows 10 hops but wants 1. AI assistants send users to 404s 2.87 times as often as Google, partly from pages moved without redirects and partly from URLs they make up, which no redirect fixes. The Web Documentation Delivery Spec asks for same-host 301 or 302.
+- **A removed page isn't redirected to an unrelated page in bulk:** Google says that "might be treated as a soft 404", and the delivery spec scores soft 404s worse than real ones.
 - **Hosts agree only on exact path pairs with an explicit 301.** Default codes, rule limits (50 on S3, 1,000 on GitLab, which drops the rest silently, 2,048 on Vercel), and whether a file at the old path beats the rule all differ.
 - **A fragment never reaches the server,** so a renamed heading or a split page needs a map in the browser. No tool derives one from a heading's rename.
 
+## What the spike measured
+
+On `examples/quill` (four builds and lines, 51 addresses), the docs (554), and the 3,000-page corpus with an `@id` on every page, Markdown versions, and two lines (18,000):
+
+- **Exact:** base and head at the same revision gave byte-identical address sets, every run, read through git or from disk.
+- **Cheap:** listing the base's addresses through the library, with no output written, takes 0.07 to 0.42 s and about 250 MB at its peak on 3,000 pages; the comparison itself, 6.5 ms. The check already resolves every build, so the head's set is nearly free. Beside `check`, on a thread as `diff` does, it adds about no wall time.
+- **Small:** the 18,000 addresses are under 4 MB in memory, and change only when the base commit does, so the language server can keep them, keyed by the base commit and Ascribe's version, made in the background.
+- **Matched by build name,** a release behaves: `site` stays `site` and 3.5 becomes `site@3.5` at its own folder. Matched by line, every live address of 3.5 would look moved.
+- **One rename is 13 addresses** in quill, a page and its ids in four builds, all from one source: a warning per address would be noise.
+- **Not covered by the first draft:** the `go/` permalinks (the docs publish 333), which a `base-path` change moves with nothing reported; `llms.txt`'s section files; and the base being read with today's binary, so a release of Ascribe that changes routing isn't seen.
+
 ## Settled
 
-Answered by the maintainer on 23 October 2026: the first three after a side-by-side example of each option, the rest on the proposal's open questions.
+Answered by the maintainer on 23 October 2026.
 
-1. **Moves are recorded in one file the tool writes,** not on the page that moved. A folder move is one entry, a move never touches the moved page's frontmatter, and the file is where the check's warnings point. `replaces` keeps the meaning it has: a page rewritten under a new name in a later line.
-2. **Every page's address, and every heading's explicit `@id`, is a published address.** A heading's generated slug isn't: it changes with its text, and a writer who wants it kept gives it an `@id`.
-3. **A lost address is a warning,** so `ascribe check --deny-warnings` stops it in CI: it's a link someone else wrote, breaking.
-4. **One file, `ascribe.addresses`,** holds the baseline and the redirects together, so every address fact has one home and one command group. _Why:_ the baseline only grows, at the end of a section when pages are added, so it adds little to a move's diff.
-5. **`[consumer] host` names the host,** for headers and redirects both, in place of `[consumer] headers`. `host = "netlify"` writes Netlify's `_headers` and `_redirects`. _Why:_ one setting for what one host needs; before 1.0 the old key can go.
-6. **Permalinks become server redirects,** as the last step: `go/<name>/` answers 302 from the host, since its target may move and a cached 301 can't be taken back, and the page it leads to reads a dimension from the address (`?pm=pnpm`) and sets the reader's tab. _Why:_ a redirect the host sends is faster than a forwarding page, and needs no script to reach every client.
+1. **Moves are recorded in one file the tool writes,** not on the page that moved. A folder move is one entry, a move never touches the moved page's frontmatter, and the file is where the decisions are. `replaces` keeps the meaning it has.
+2. **Every page's address, and every heading's explicit `@id`, is an address the check keeps.** A heading's generated slug isn't: it changes with its text, and a writer who wants it kept gives it an `@id`. That's a cost a writer doesn't see until a reader does: a heading renamed without an `@id` loses its anchor with nothing reported. The docs say plainly that an `@id` is the price of a stable anchor, and the editor's **Add a stable @id for this heading** says its address is then kept.
+3. **A lost address is a warning,** so `ascribe check --deny-warnings` stops it in CI.
+4. **Losses are found by comparing with the base revision's build, not a committed list.** The check reads the base, as review does, and compares every build's addresses with the working tree's. _Why:_ a route is the source and the settings, so the base knows every address it published, in every build and line, which one address per source couldn't hold; nothing churns on every new page; and adopting it records nothing. The spike measured it exact and cheap.
+5. **Opt-in:** a project turns it on with `ascribe.addresses`, as `ascribe.permalinks` is; without the file, nothing below applies, so a project's next restructure doesn't fail its CI by surprise. `ascribe addresses init` makes the file, empty, and the editor offers the same; a move in a project without it records nothing, as today.
+6. **Host rules are written by the compiler,** for every site generator, from `[consumer] host`, in place of `[consumer] headers` (superseding the search and answers plan's [decisions 9 and 35](https://github.com/ascribed-dev/ascribe/blob/5b22286f/project-docs/search-and-answers/README.md#decisions)). `@ascribed/astro` places the files and merges every project's, and gives Astro's own `redirects` setting the pairs where Astro's adapter writes them for the host.
+7. **Permalinks keep their forwarding pages for now.** A 302 from the host could put `go/` addresses in search results, where today's page has `noindex` and a canonical; and whether a host passes `?pm=pnpm` through a redirect differs. Revisited once page redirects have shipped. A `go/` page and the stub an old address gets under an Astro base are the same kind of page, so the integration has one component for both.
+8. **Every redirect the build writes comes from an entry in `ascribe.addresses`; none is derived at build time.** The build reads only the sources and that file, so a redirect still exists after the change that caused it has merged and the base has moved on. What the first draft derived from the old state, a settings change, a retired line, a folder's pages, is recorded by the command or the check's fix that sees it; what the sources still say, as an availability mark does, the build reads from them, and a retirement that rewrites the mark records it in `[lines.*]`. The comparison only finds what's lost. _Why:_ the tabletop's base-path, retire, and folder scenarios all ended in silent 404s once the base no longer had the old state.
+9. **A build can set its own host, site, and base path,** as its own step, before a redirect is checked against another build's live addresses. Until then, every check of an address is within one build. _Why:_ builds deployed to different hosts can't be told apart today.
+10. **The compared addresses include the `go/` permalinks and `llms.txt`'s files,** beside pages, their Markdown versions, and explicit `@id`s, so a `base-path` change that moves 333 permalinks is seen. Linked files (images, downloads) are left out, and the docs say so.
+11. **Turning `[consumer] agents` off forwards each Markdown version to its page,** recorded by the check's fix as any settings change is.
 
 ## The design
 
-### One file of address facts: `ascribe.addresses`
+### The decisions: `ascribe.addresses`
 
-Beside `ascribe.toml`, committed, written by Ascribe's commands and the editor, never by hand, as `ascribe.permalinks` is:
+Beside `ascribe.toml`, committed, written by the commands, the editor, and the check's fixes, with each table sorted, one entry per line, so two branches' entries conflict as text rather than merge into a broken file:
 
 ```toml
-# Written by Ascribe. Don't edit it: move pages with `ascribe rename` or the
-# editor, and run `ascribe addresses sync`.
+# Where addresses the docs published went. Written by `ascribe rename`, the
+# editor, `ascribe addresses`, and `ascribe check --fix`; edit only
+# [retired]'s reasons.
 version = 1
 
-# Every address the docs have published, by the source that published it.
-[published]
-"guides/install.md" = "/docs/guides/install/"
-"guides/install.md#install-npm" = "/docs/guides/install/#install-npm"
-"security/keys.md" = "/docs/security/keys/"
-
-# An address no source publishes now, and where its content is.
+# An address no build publishes now, and where its content is: keyed by the
+# source that published it, or, from before the project used Ascribe, by the
+# address itself.
 [moved]
+"_fragments/install.md#install-with-npm" = "_fragments/install.md#install-npm"
+"/docs/intro.html" = "getting-started.md"
 "guides/keys.md" = "security/keys.md"
 "guides/rotate.md" = "security/keys.md#rotate-keys"
-"guides/install.md#install-with-npm" = "guides/install.md#install-npm"
 "tutorials/" = "learn/"
 
-# An address no source publishes now, removed on purpose, and why.
+# Settings the docs were published under before, so every address under them
+# still forwards: each is recorded when the check sees it change.
+[former]
+base-path = ["/docs/"]
+permalink-path = ["/docs/go/"]
+agents = [true]
+
+# A retired release line: each address it published, and where it goes now.
+[lines."self-managed 3.4"]
+"/docs/3.4/install/" = "install.md"
+"/docs/3.4/configure-legacy/" = "configure.md"
+"/docs/3.4/upgrade/" = "https://archive.quill.dev/3.4/upgrade.html"
+
+# An address removed on purpose, and why.
 [retired]
 "reference/legacy-sync.md" = "The sync agent was removed in 4.0"
 ```
 
-- **`[published]`** is the baseline: what the docs have promised. A new page is added by `ascribe addresses sync`, and `check` gives advice until it is, as `permalinks-list-behind` does. Nothing is ever dropped from it by a build.
-- **`[moved]`** is keyed and valued by source paths, so the tool can check them and an author never translates between a file and a URL; the address each forwards from is the one `[published]` recorded. An entry can name a page, a heading (`#id`), or a folder (`tutorials/`), which stands for every page that was under it.
-- **`[retired]`** gives a reason, as `[permalinks.retired]` does.
-- **Flat on every write:** a move of a page something already forwards to rewrites that entry to the final page, so no chain is ever written. A page created at an address in `[moved]` takes it over, and the entry goes, with a note.
-- **Only published addresses get entries.** A page made and moved twice on one branch was never published, so nothing is recorded: the rule that keeps drafts quiet.
-- **A routing change needs no decision.** When `base-path`, `trailing-slash`, or a build's versions change every address but keep every source, `sync` sees each source at a new address and records nothing in `[moved]`: the redirect from each old address is derived from `[published]` and the page's address now.
+- **`[moved]`:** a key is a source path, a heading's id where it's written (a fragment's `@id` once, however many pages include it, as the permalinks list keys it), a folder, or, starting with `/`, an address from before the project used Ascribe. A value is a source, a heading on one, or a folder. A folder entry is expanded through later moves: if `learn/x.md` moved on to `guides/x.md`, `/tutorials/x/` follows it there. A page entry beats a folder entry it falls under.
+- **`[former]`:** each routing setting the docs were published under. The build writes every address each source would have had under each former setting, forwarding to its address now, so a second change composes with the first. A renamed build is recorded the same way.
+- **`[lines.*]`:** written by `versions retire`, address to address, for the line's pages, their Markdown versions, and their explicit ids, since the line can't be built from the sources once it's retired. An address there whose page an availability mark had taken out of the current line forwards to that page in the archive.
+- **`[retired]`:** a reason, written by a person and checked for placeholders, as `[permalinks.retired]`'s are.
+
+### What the check compares
+
+`address-lost` (warning) runs in `ascribe check`, including the MCP `ascribe_check` over a whole project, and in the editor's Check Every Build; never in the language server's diagnostics as you type, nor the agents' hook. A check of one path says it left it out. When the server keeps the base's addresses (the spike says it can), the editor's lost count is current between checks.
+
+It reads the base and lists, for every build, matched by name: each page's address, its Markdown version's, each explicit `@id`, each `go/` permalink's address, and each `llms.txt`. An address the base published and the working tree doesn't is lost unless:
+
+- **an entry accounts for it:** `[moved]` (through a folder and later moves), `[former]`, `[lines.*]`, or `[retired]`;
+- **an availability mark took it out of this build** while it's live in another, or in an older line: the mark is the decision, written in the page. Its address answers with a page saying in which release it went and linking to where it's still published.
+
+The check reports **one warning per source**, a page, a file's `#id`, or a folder, listing its addresses and builds, not one per address. Its fixes:
+
+- **Forward to…:** for a page, a pick of pages that offers first the one most like it, by headings and text; for an `#id`, a pick of headings, the same id on another page first.
+- **Retire with a reason…**
+- **Record the settings change:** when the same sources publish at addresses the settings moved, one fix writes `[former]`.
+- **Record git's renames:** `ascribe addresses move --from-git` records every loss git sees as a rename, folding a whole folder into one entry, for an agent that moved files with `git mv`.
+
+**The base.** On a pull request, the branch it targets (`--base origin/$GITHUB_BASE_REF`); on a push to any branch, the commit before the push (`--base ${{ github.event.before }} --base-exact`), never `HEAD` itself; locally, the default branch, as `ascribe diff` chooses it. The CI how-to says so, with `fetch-depth: 0`, in the "History" sentence `diff` and `drift` have. When the base can't be read, the rest of `check` runs as always, and the base being unreadable is itself a warning, so `--deny-warnings` stops CI rather than passing silently. A base with no Ascribe project, as a migration's first pull request has, compared nothing, and the check says so.
+
+**Accepted:** `address-lost` depends on the repository's history and on which branch is the default, so two machines whose `main` differs can disagree, as for `diff`. The base is read with today's binary, so a release of Ascribe that changes how routes are made isn't seen by the comparison: the changelog names any such change, and a project records it with the settings fix.
+
+### The file's other checks
+
+- **A value that isn't a page,** in every build that published the key: an error. A fragment, a path outside the content root, or a page another build doesn't publish would send a reader to nothing. A move whose destination isn't a page records nothing, and is left to `address-lost`.
+- **A key that's live again:** the same source back, as after restoring a deleted page or a merge, is advice, with a fix that removes the entry; a different source at that address, a case or slug collision, is an error. The same for `[retired]`. Taking back an address that has forwarded with 301 is a warning: browsers kept the redirect, so a new path is better.
+- **An entry the base's `ascribe.addresses` doesn't have, whose key the base never published,** as the editor's record of a move on a branch leaves: advice, with a fix that removes it. An entry already in the base's file is never pruned.
+- **A key twice,** as a merge can leave: an error naming both values, with "keep one, and forward the other's address".
+- **A chain or a cycle:** advice with a fix that flattens it; the build always writes flat pairs. Retiring or forwarding a page that entries lead to rewrites them in the same edit.
+- **An `#id` entry from a page that's gone whose id collides with a live id on its target:** an error, since a fragment can't be told apart in the browser; the fix is a permalink for it.
+- **`ascribe.addresses` deleted** while the base has it: an error naming how many redirects it drops, so turning the feature off is deliberate.
+- **Forwarding many addresses to one index or the home page:** advice, as a soft 404.
 
 ### Moving a page records the move
 
-Every way a page moves goes through one function in the language server, which returns one edit:
+When `ascribe.addresses` exists, every move the tool sees writes `[moved]` in the same edit. The editor can't read the base for each move, so it records every one, and the check prunes what the base never published.
 
 | How it moves | The edit |
 |---|---|
-| `ascribe rename keys.md security/keys.md` | The move, the links, and `[moved]`'s entry |
-| Renaming or moving a file or a folder in the Explorer (`workspace/willRenameFiles`) | The same, in one undoable edit: **Undo** takes back the move and its redirect together |
-| Dragging a page to another section in Pages | The same; its question says the old address will forward to the new one |
-| F2 on a heading's `@id` | The new id, the links, and `[moved]`'s `#id` entry |
-| A move back to where it was | The entry goes: the address has its page again |
+| `ascribe rename keys.md security/keys.md` | The move, the links, and the entry |
+| The Explorer's rename or move, Pages' drag and **Rename or Move…** (`workspace/willRenameFiles`) | The same, in one undoable edit; an undo after saving relies on VS Code's undo group, and a partial undo is caught by the live-again rule |
+| F2 on a heading's `@id` (the server's rename) | The new id, the links, and the `#id` entry. A permalink's id can't be renamed, as now |
+| A move back to where it was | The entry goes, since a source is at its key again |
 
-A move the editor doesn't see, `git mv`, the terminal, or an agent writing files, is caught by the check.
-
-### The check
-
-- **`address-lost`** (warning): an address in `[published]` that no source publishes, and that `[moved]` and `[retired]` don't account for. It's reported at its line in `ascribe.addresses`, with quick fixes: **Forward to…**, a pick of pages that offers git's rename detection and a matching title first, and **Retire with a reason…**. In the terminal, `ascribe addresses move <old> <new>` and `ascribe addresses retire <old> --reason "…"`.
-- **`addresses-behind`** (advice): a published address the file doesn't list yet; `sync` adds it.
-- **A `[moved]` entry whose page doesn't exist,** or whose `#id` the page doesn't have: an error, since the redirect would lead nowhere.
-- **A file not flat,** with a chain or a cycle, as a hand edit could leave it: an error, which `sync` fixes.
-- **A host's rule limit:** advice when the redirects a build writes pass the host's limit, or 90% of it, naming the host's number.
+`ascribe.addresses` is read through `FileSystem`, and a file that can't be read or edited doesn't stop the move's other edits. A move the tool doesn't see is caught by `address-lost`.
 
 ### What a build writes
 
-The site output gains `_ascribe/redirects.json`, beside `headers.json` (output-layout contract §1.4's "list of redirects"):
+The site output gains `_ascribe/redirects.json` (a new output-layout section, beside §1.4's headers), from the sources and `ascribe.addresses` alone:
 
-- **`redirects`:** exact pairs, `{ "from", "to", "status" }`, every folder entry expanded into its pages, every chain already flat, every address on the same host. `status` is 301; the build's own addresses decide each `from`, in the published case and slash form, and both slash forms where a host doesn't normalize.
-- **`anchors`:** for each page, its old `#id`s and where each goes, on the page or on another, for a script that runs before the page scrolls. An anchor not listed passes through.
-- **`gone`:** each retired address and its reason, for a page that says what was here and why, served with 404 where the host lets a rule set it.
+- **`redirects`:** flat exact pairs, `{ "from", "to", "status" }`, status 301, with folder entries expanded through later moves, `[former]` composed, pages' Markdown versions with their pages, same host but for `[lines.*]`'s archive, in the published case and slash form; a pair whose `from` equals its `to` after the host's normalization, as a case-only rename leaves, is dropped.
+- **`anchors`:** for each page, its old `#id`s and where each goes, for a script that runs before the page scrolls; an anchor not listed passes through.
+- **`gone`:** each retired address and its reason, for a page that says what was here and why.
 
-`@ascribed/astro`, with `[consumer] host` (Settled 5), writes each host's format from it: Netlify's, Cloudflare's, and GitLab's `_redirects` with the code always written, Vercel's and Firebase's JSON, nginx's `map`, Apache's `RedirectMatch`, and stub pages, a 0-second refresh with a canonical and a link, only for a host with no rules, and never at a path a rule covers. The anchors' script ships with the elements.
+The compiler writes the host's file from it, with `[consumer] host` (Settled 6): Netlify's, Cloudflare's, and GitLab's `_redirects`, Apache's `.htaccess`, and nginx's `map` for an operator to include; a host that reads config from the project's root (Vercel's `vercel.json`, Firebase's `firebase.json`) gets a file of rules to merge, and a check that the root file has them. `@ascribed/astro` merges every project's into one file for the site, as it merges headers, checks each pair's `from` against every project's routes, and counts the merged rules, the site's own `_redirects` included, against the host's limit: an error above it, a warning at 90%. A site's own `_redirects` is merged, not refused: Ascribe's exact rules first, since the first match wins.
+
+**The `gone` page** is the better 404: Netlify, Apache, nginx, and Azure can serve it with a 404 from a rule (Apache, nginx, and Azure a 410); Cloudflare's and GitLab's `_redirects` and Vercel can't set a status on a page, so there it's a page with `noindex`, which the delivery spec scores as a soft 404, and the docs say so.
+
+**Under an Astro base that isn't `/`,** a site deployed in a folder of another, there's no host root: whether to write the host's file or stubs is decided by where the site is deployed, not by Ascribe's `base-path`. There the old addresses get stub pages, routes the integration adds, one per old address, with the `go/` pages' component (Settled 7): a 0-second refresh with `noindex`, a canonical, and a link, carrying the anchors' map and the address's fragment. Without scripts a stub's refresh drops the fragment, and the docs say so.
+
+The anchors' script is a contract change to the elements (`CONTRACT.md` §0 says only `<ascribe-tabs>` runs JavaScript), and how a page gets its anchors (the site markup or `@ascribed/astro`'s head) is decided when it's built.
 
 ### Versions
 
-A `[moved]` entry applies in every live line that published the old path, so one entry covers them all, where HashiCorp writes three per move. `versions retire` writes its addresses into `[moved]`, each to the same page in the current line, or the page that replaced it there (`replaces`), or its page in the archive, instead of only listing them.
+- **A release** is matched by build name: `site` stays `site`, and the old current line becomes `site@3.5` at its folder, so nothing is lost. A page the new line removes and another `replaces` forwards to the page that replaced it; one removed without a replacement gets the availability page, linking to the line that has it.
+- **A retirement** writes `[lines.*]` when `versions retire` runs: each address the line published, its pages, Markdown versions, and ids, to the same page in the current line, the page that replaced it, or its page in the archive, which is the one cross-host redirect Ascribe writes, since the archive is the line's own home. This supersedes #502k's "the host's to write".
+- **A `[moved]` entry applies in every live line** that published the old path, so one entry covers them all, where HashiCorp writes three per move.
 
-### Permalinks
+### Agents
 
-A permalink is a named promise to a product; a page's address is a promise to the web. Both become redirects in `redirects.json` (Settled 6): a permalink's `go/<name>/` with 302, since its target may move and a cached 301 can't be taken back, and a moved page's old address with 301. A permalink's dimension (`?pm=pnpm`) then reaches the page it leads to, which sets the reader's tab, in place of the forwarding page's script.
+An agent's move is the common case the tool doesn't see: the surface audit's sessions moved files with `git mv` and `sed`. The rules `ascribe agents sync` writes, and the skill, say to move a page with `ascribe rename`; to record a reorganization made with `git mv` with `ascribe addresses move --from-git`; and to forward or retire a page deleted on purpose. The MCP server gains `addresses move` and `retire` as tools, and its `ascribe_check` over a project reports `address-lost`, so an agent sees a loss before CI does.
 
 ### Where authors see it
 
 - **This page's About:** "Also answers at", the old addresses that lead to the page.
-- **The Project view's Health:** addresses lost, which opens the warnings.
+- **The Project view's Health:** addresses lost.
 - **Review's report:** the redirects a branch adds and removes.
-- **`ascribe addresses list`:** every address, and what answers it.
+- **`ascribe addresses list`:** every redirect the build writes, and the entry it comes from.
 
 ## What it would look like
 
-A writer moves `guides/keys.md` to `security/keys.md` in the Explorer. The links update, as they do today, and `ascribe.addresses` gains `"guides/keys.md" = "security/keys.md"`, unsaved, in the same edit. The pull request shows both. The build writes `/docs/guides/keys/ 301 /docs/security/keys/` into `redirects.json`, and the site's `_redirects` has it. A reader's bookmark to `/docs/guides/keys/#rotate-keys` lands on `/docs/security/keys/#rotate-keys`.
+A writer moves `guides/keys.md` to `security/keys.md` in the Explorer. The links update, as they do today, and `ascribe.addresses` gains `"guides/keys.md" = "security/keys.md"`, unsaved, in the same edit. The pull request shows both. CI's `ascribe check` reads `main`, finds the page's addresses in every build accounted for, and passes. The build writes the redirects, and the site's `_redirects` has them. A reader's bookmark to `/docs/guides/keys/#rotate-keys` lands on `/docs/security/keys/#rotate-keys`.
 
-An agent deletes `guides/rotate.md` after folding it into `security/keys.md`. `ascribe check` warns that `/docs/guides/rotate/` is lost, and the agent's prompt says to forward it or retire it. It runs `ascribe addresses move guides/rotate.md security/keys.md#rotate-keys`.
+A team changes `base-path` from `/docs/` to `/handbook/`. `ascribe check` reports one warning: every address moved by a settings change. Its fix writes `base-path = ["/docs/"]` under `[former]`, and the build forwards every old `/docs/` address, permalinks included, to its `/handbook/` address, now and after the next three restructures.
 
 ## What this leaves out
 
-- **Redirects to another host.** The delivery spec warns on them; a project that moves its docs to another domain does that at the host.
+- **Redirects to another host,** but the archive's. A project that moves its docs to another domain does that at the host.
 - **An expiry.** Redirects are kept for good; an entry can be removed on purpose, and `address-lost` then asks again.
-- **Patterns in the file beyond a folder.** A splat or a regular expression is a host's feature, and every host does them differently.
-- **Query strings in a `from`.** Matching on them isn't portable.
-- **Page identity, and an object store for pages.** A store in the editor can't hold redirects: they change what a build writes and what `check` reports, so they're records, committed and shared, by the cache proposal's rule (a cache changes nothing but time; a history, only what a report can say). What such a store would really give is identity: a page that's the same page wherever its file goes, as GitBook's pages are, which is how it redirects on every move. In the repository, that would be a stable id in each page's frontmatter (`id: 7f3a9c`), written when the page is made, with `[published]` keyed by it. Every move would then be followed with nothing recorded, `git mv` and an agent's writes included; a page's every address would sit under its id, its history; and `address-lost` would fire only for a deletion or a merge. It costs an opaque key in every page's frontmatter, against Markdown staying readable source; a duplicate-id error and a fix for a page copied to start another, which Microsoft Learn's `ms.assetid` and Docusaurus's `id` both live with; and decisions still for splits and merges, since an id follows a whole page. It's left out because the moves it would catch are the minority the four recorded paths miss, and those get a warning whose quick fix offers the page git's rename detection found. If those warnings become a burden, keying `[published]` by an optional id is an addition to the file, not a rewrite.
+- **Patterns beyond a folder,** and **query strings in a `from`:** neither is portable. `ascribe addresses import` reports each rule it can't represent, a splat, a rewrite, a condition, and leaves it in the site's own file.
+- **Linked files' addresses** (Settled 10).
+- **A committed list of every published address.** One address per source couldn't hold a project's builds, lines, and Markdown versions, and every new page and `@id` would have changed it, on branches that never deployed. The base revision has every address it published, and the decisions keep the rest.
+- **Permalinks as host redirects** (Settled 7), until page redirects have shipped.
+- **Page identity, and an object store for pages.** A store in the editor can't hold redirects: they change what a build writes and what `check` reports, so they're records, committed and shared, by the cache proposal's rule (a cache changes nothing but time; a history, only what a report can say). What such a store would really give is identity: a page that's the same page wherever its file goes, as GitBook's pages are, which is how it redirects on every move. In the repository, that would be a stable id in each page's frontmatter (`id: 7f3a9c`), written when the page is made. Every move would then be followed with nothing recorded, `git mv` and an agent's writes included; a page's every address would follow its id, its history; and `address-lost` would fire only for a deletion or a merge. It costs an opaque key in every page's frontmatter, against Markdown staying readable source; a duplicate-id error and a fix for a page copied to start another, which Microsoft Learn's `ms.assetid` and Docusaurus's `id` both live with; and decisions still for splits and merges, since an id follows a whole page. It's left out because the moves it would catch are the minority the recorded paths miss, and those get a warning whose fix offers the most similar page, or `--from-git`. If those warnings become a burden, an id is an addition, not a rewrite.
+
+## What it changes that's a contract
+
+Each with a decision recorded in the step that changes it:
+
+- **SPEC:** a section for `ascribe.addresses`, beside §7.5's permalinks list, and the diagnostics' `spec`; §9.5, if permalinks are revisited.
+- **The output layout:** a section for `_ascribe/redirects.json`, and the host files in the site output.
+- **The content model:** `[consumer] host` in place of `headers` (§15), and a build's own host, site, and base path (Settled 9).
+- **The elements:** the anchors' script (`CONTRACT.md` §0).
+- **The commands' JSON and the MCP tools:** `ascribe addresses` and its two tools, `check`'s new diagnostics, `versions retire`'s output, and review's report (`diff.schema.json`).
+- **The language server's shapes:** This page and the Project view.
+- **Decisions:** #502k superseded; #457b amended; the search and answers plan's decisions 9 and 35 superseded by `[consumer] host`.
 
 ## What to build first
 
-The thread: in `examples/quill`, `ascribe rename` moves a page, `ascribe.addresses` records it, the build writes `redirects.json`, and `@ascribed/astro` writes Netlify's `_redirects`, so the old address answers 301 to the new one. It crosses the file, the language server's move, the build, the contract, and the integration, and its seam is the baseline: whether `[published]` and the build's addresses agree on every page, in every build, with every routing setting. After it, by risk:
+**The thread:** in `examples/astro-site`, built with Astro's base at `/` in its test, `ascribe addresses init`, then `ascribe rename` moves a page; CI's comparison with the base passes; a deleted page fails it with one `address-lost` warning; the build writes `redirects.json`; and the compiler writes Netlify's `_redirects`, which the integration places at the site's root, so the old address answers 301. The comparison runs across `examples/quill`'s builds and lines too, with no host. A unit test gives a host a rule limit and enough redirects to pass 90% of it. Its seam is the build reading only the sources and `ascribe.addresses`: the thread's test merges the move, moves the base on, and checks the redirect is still written.
 
-1. **The thread,** with `[published]`, `sync`, and `[moved]` for a page.
-2. **`address-lost`,** its quick fixes, and `ascribe addresses move` and `retire`, with `gone` and its page.
-3. **The editor's moves:** the Explorer, Pages, and F2 on `@id`, through the one edit; This page's row and the Project view's count.
-4. **Folders and routing changes.**
-5. **Anchors,** and their script.
-6. **Versions,** with `versions retire` writing `[moved]`.
-7. **The other hosts,** stubs, and the rule limits, with `[consumer] host` replacing `headers`. (The thread writes Netlify's `_redirects` under the new key from the start, so no step ships the old one with redirects.)
-8. **Permalinks as redirects,** with the dimension read by the page.
+After it, by risk:
+
+1. **The thread,** with `init`.
+2. **The decisions:** `address-lost`'s fixes, `addresses move`, `retire`, and `--from-git`, the live-again, duplicate-key, and deleted-file rules, `gone` and its page, and the agents' rules and tools.
+3. **Settings:** `[former]`, permalinks' and `llms.txt`'s addresses in the comparison, and `agents` turned off.
+4. **The editor's moves:** the Explorer, Pages, and F2 on `@id`, in one edit; the server's kept base; This page's row and the Project view's count.
+5. **Versions:** releases by build name, `[lines.*]` from `versions retire`, availability, and #502k.
+6. **Folders,** with `ascribe rename` moving one, and their expansion through later moves.
+7. **Anchors,** the elements' script, and stubs under an Astro base. Until then, a lost `#id` is advice, since its decision reaches no reader.
+8. **A build's own host,** site, and base path (Settled 9), and checks across builds.
+9. **The other hosts:** merging with a site's own file, root-config hosts, the limits, and `addresses import`.
