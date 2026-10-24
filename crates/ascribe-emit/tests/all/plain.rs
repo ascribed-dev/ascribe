@@ -467,3 +467,13 @@ fn a_rows_availability_ends_its_first_cell() {
         "| Key | Meaning |\n| --- | --- |\n| `a` | All. |\n| `b` (Available: Self-managed (preview, 3.4+)) | New. |\n"
     );
 }
+
+#[test]
+fn a_summary_writes_nothing_of_its_own() {
+    // `@summary: text` writes nothing, and the paragraph `@summary` marks is
+    // written as it would be without it.
+    assert_eq!(
+        body("## Install\n@id: install\n@summary: Install it.\n\n@summary\nIt installs.\n"),
+        body("## Install\n@id: install\n\nIt installs.\n")
+    );
+}

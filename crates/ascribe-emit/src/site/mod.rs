@@ -46,6 +46,7 @@ mod profile;
 
 pub(crate) use anchor::starts_anchor;
 pub(crate) use blocks::{arm_values, sync_dimension};
+pub use help::{Help, HelpEntry, help, help_header};
 pub use profile::{ASTRO_VERSION, AstroProfile};
 
 use ascribe_core::{AssetPlacement, AssetUse, ConsumerProfile, RelPath, names};

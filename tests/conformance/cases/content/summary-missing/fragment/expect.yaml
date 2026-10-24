@@ -1,0 +1,13 @@
+description: >-
+  A permalink in a fragment with no summary is reported once, at its `@id`
+  line in the fragment, not at the include of each page that has it. A
+  summary a fragment brings into a section is that section's, so the
+  section isn't reported.
+spec: ["4.2", "4.12"]
+tags: [check, page-check, include]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics:
+      - {slug: summary-missing, file: _setup.md, line: 2}

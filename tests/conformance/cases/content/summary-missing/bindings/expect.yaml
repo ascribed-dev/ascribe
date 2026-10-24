@@ -1,0 +1,11 @@
+description: >-
+  A permalink whose section has a summary isn't reported, whichever binding
+  gives it: `@summary: text` under the heading, or `@summary` above a
+  paragraph of the section.
+spec: ["4.1", "4.12"]
+tags: [check, page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics: []

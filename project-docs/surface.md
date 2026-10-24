@@ -77,6 +77,7 @@ For authors. Read from `crates/ascribe-core/src/schema.rs`.
 | `@intended` | SPEC §4.9 |
 | `@memo` | SPEC §4.10 |
 | `@term` | SPEC §4.11 |
+| `@summary` | SPEC §4.12 |
 
 ## `ascribe.toml`
 
@@ -109,7 +110,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-240 in all. By severity: 48 advice, 167 error, 25 warning. By level: 214 file, 26 page. By kind of next step: 54 choose, 18 fix, 8 outside, 12 review, 148 write.
+245 in all. By severity: 50 advice, 170 error, 25 warning. By level: 215 file, 30 page. By kind of next step: 54 choose, 18 fix, 8 outside, 12 review, 153 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -353,6 +354,11 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC246` | `model-from-file` | error | write | `{path}`, the file `[from]` takes from, doesn't exist |
 | `ASC247` | `model-from-take` | error | write | `{file}` has no `{key}` to take |
 | `ASC248` | `model-from-written` | error | write | `{key}` is taken from `{file}` and written here too; a key has one home |
+| `ASC249` | `summary-not-paragraph` | error | write | `@summary` with no text must be followed by a paragraph, but the next block is {found} |
+| `ASC250` | `summary-repeated` | error | write | the section `{heading}` already has a summary; a section has one |
+| `ASC251` | `summary-in-variant` | error | write | `@summary` is inside a `@variant` arm, and a summary can't differ by arm |
+| `ASC252` | `summary-missing` | advice | write | the permalink `{name}` has no summary, so a product showing its help has none; add a `@summary` to its section |
+| `ASC253` | `summary-long` | advice | write | this summary is {length} characters, and a product shows one under {limit}; shorten it to a sentence or two |
 
 ## The VS Code extension
 
@@ -807,6 +813,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/permalinks-verify.schema.json` | PermalinksVerifyReport | What `ascribe permalinks verify` answers. |
 | `schemas/refs.schema.json` | RefsReport | What `ascribe refs <TARGET>` answers. |
 | `schemas/report.schema.json` | ReportReport | What `ascribe report --format json` writes: one document, whatever the outcome. |
+| `schemas/resolve-permalink.schema.json` | ResolvePermalinkReport | What `ascribe resolve go:<name> --format json` answers: the name's entry as the build's `_ascribe/help.json` writes it, with the file's `version`, `build`, and `line`. |
 | `schemas/resolve.schema.json` | ResolveReport | What `ascribe resolve <PAGE> --format json` answers. |
 | `schemas/search.schema.json` | SearchReport | What `ascribe search <QUERY>` answers: what `--format json` writes. |
 | `schemas/sources-status.schema.json` | SourcesStatusReport | What `ascribe sources status --format json` writes: each source's pin and the state of its copies, read from the files alone. |
@@ -852,6 +859,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `checks/diagnostics/content-checks.md` | Diagnostics: content checks | reference |
 | `checks/diagnostics/content-model.md` | Diagnostics: the content model | reference |
 | `checks/diagnostics/directives.md` | Diagnostics: directives | reference |
+| `checks/diagnostics/output-checks.md` | Diagnostics: content checks of outputs and the site | reference |
 | `checks/diagnostics/pages.md` | Diagnostics: links, pages, and sources | reference |
 | `checks/external-links.md` | Check external links | how-to |
 | `checks/report-command.md` | `ascribe report` | reference |

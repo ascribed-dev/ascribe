@@ -290,7 +290,7 @@ fn is_heading(block: &ExpandedBlock) -> bool {
 /// Whether a block comes before a section's own content without being any
 /// of it: a directive that binds the heading (`@id`, `@term`), or one that
 /// annotates the block below it without changing what that block is
-/// (`@available`, `@intended`, `@memo`).
+/// (`@available`, `@intended`, `@memo`, `@summary`).
 fn annotates(block: &ExpandedBlock) -> bool {
     let line = match &block.kind {
         ExpandedKind::Leaf(Block {
@@ -303,7 +303,10 @@ fn annotates(block: &ExpandedBlock) -> bool {
     match line.binding {
         Some(Bound::Heading) => true,
         Some(Bound::FollowingBlock) => {
-            matches!(line.name.as_str(), "available" | "intended" | "memo")
+            matches!(
+                line.name.as_str(),
+                "available" | "intended" | "memo" | "summary"
+            )
         }
         _ => false,
     }

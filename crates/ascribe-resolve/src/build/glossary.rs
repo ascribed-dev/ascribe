@@ -17,7 +17,7 @@
 //!   **longest** match wins (`API key` over `API`).
 //! - Matching applies to **prose** only: paragraphs, table cells, and a
 //!   directive's text primary, never headings, titles, link text, alt text,
-//!   code, or raw HTML.
+//!   code, raw HTML, or a `@summary`'s own text, which the page doesn't show.
 //! - `match = "first"` links the first occurrence of each term on the page
 //!   (the resolved page, after includes and build modes); `"every"` links all.
 //!   A term with `match = "marked"` is never linked here: authors link the

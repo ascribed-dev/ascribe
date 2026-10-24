@@ -41,6 +41,9 @@ VS Code's own search, **Search: Find in Files**, reads the source as written: it
 
 - A glossary term, in prose: its definition for the editor's build. On the term's heading: the definition, and how many pages use the term.
 
+@available: ascribe planned
+- A heading, or its `@id` line: its section's [summary](../writing/directives.md#summary) in the editor's build, as a product showing its help has it. A heading in a fragment has the summary of the section it lands in, on the first page that includes it.
+
 - A version in an availability spec, for a target with [release lines](../versions/lines.md): the line it falls in, and that line's status, such as "in line 3.4, live".
 
 @available: ascribe 0.4.2

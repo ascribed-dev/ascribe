@@ -1,0 +1,8 @@
+description: >-
+  `@summary` in its two forms, canonically: one space after the colon of
+  its text, which keeps its line breaks, and no blank line between the
+  following form and its paragraph. Like a heading-bound directive, the
+  text form keeps its blank lines.
+spec: ["4.12", "8.3"]
+tags: [format]
+formatted: formatted.md

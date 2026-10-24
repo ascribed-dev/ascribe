@@ -50,6 +50,7 @@ mod search;
 mod server;
 mod settings;
 mod shown;
+mod summary;
 mod targets;
 mod tokens;
 mod uri;

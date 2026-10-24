@@ -1,0 +1,11 @@
+description: >-
+  A summary in a fragment that two pages include is reported once, at its
+  `@summary` line in the fragment, not at each page's include.
+spec: ["4.2", "4.12"]
+tags: [check, page-check, include]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics:
+      - {slug: summary-long, file: _setup.md, line: 2}

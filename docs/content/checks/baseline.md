@@ -45,10 +45,12 @@ An agent working on a page isn't sent after the project's backlog. The [hooks](.
 ## `ascribe baseline`
 @id {permalink=true}: cli-baseline
 
+@summary
 Keeps the project's baseline, `ascribe.baseline` beside `ascribe.toml`. The JSON each writes with `--format json` is in [its schema](../contracts/json-reports.md#ascribe-baseline-write). Both run the whole check first, as `ascribe check` with no options does, without the baseline.
 
 ### `ascribe baseline write`
 @id {permalink=true}: cli-baseline-write
+@summary: Adds every advice `ascribe check` reports to `ascribe.baseline`, and makes the file when there's none, so a problem is held back until it's fixed and pruned. Warnings and errors are never added.
 
 Adds every advice `ascribe check` reports to `ascribe.baseline`, and makes the file when there's none. The entries it had stay, so a problem is held back until it's fixed and pruned. Warnings and errors are never added: it says how many it skipped, and how to put one off. It writes the whole file in its own form, sorted, so running it twice gives the same file, byte for byte, and two people adding to it rarely change the same line.
 
@@ -68,6 +70,7 @@ skipped 1 warning, since a baseline holds advice only; to put one off, lower its
 ### `ascribe baseline prune`
 @id {permalink=true}: cli-baseline-prune
 
+@summary
 Removes the entries of `ascribe.baseline` that match nothing the project has any more: the problems that were fixed, and those whose text changed, which `ascribe check` reports as new. It never adds one. Without a baseline, there's nothing to prune, and it writes nothing.
 
 @include: ../_generated/cli-baseline-prune-options.md

@@ -8,5 +8,5 @@ tags: [page-check]
 builds:
   site:
     diagnostics:
-      - {slug: permalink-duplicate, file: a.md, line: 9}
+      - {slug: permalink-duplicate, file: a.md, line: 10}
       - {slug: permalink-duplicate, file: b.md, line: 3}

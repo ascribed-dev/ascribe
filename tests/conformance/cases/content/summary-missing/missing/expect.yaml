@@ -1,0 +1,13 @@
+description: >-
+  A heading whose `@id` marks it a permalink and whose section has no
+  `@summary` is advice, at the `@id` line. A heading with an `@id` that
+  isn't a permalink isn't looked at, and nor is the page's own permalink,
+  which has the page's description.
+spec: ["4.1", "4.12"]
+tags: [check, page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics:
+      - {slug: summary-missing, line: 9, severity: advice}

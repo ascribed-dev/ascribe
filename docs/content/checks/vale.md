@@ -99,10 +99,12 @@ When turning rules off isn't enough, say to add a style package, run [`ascribe v
 ## `ascribe vale`
 @id {permalink=true}: cli-vale
 
+@summary
 Sets up Vale for a project. Vale itself is run by `ascribe check --vale` and the editor.
 
 ### `ascribe vale eject`
 @id {permalink=true}: cli-vale-eject
+@summary: Writes the preset `[checks.vale]` names out as the project's own Vale configuration, `.vale.ini` and a `.vale/` styles folder, and points `[checks.vale]` at it.
 
 Writes the preset `[checks.vale]` names out as the project's own Vale configuration: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. Then it changes `[checks.vale]` in `ascribe.toml` to `config = ".vale.ini"`, in place of `preset` and `off`, keeping its other keys and comments.
 
@@ -116,4 +118,4 @@ It takes no options but the ones every command accepts ([command reference](../c
 ## See also
 
 - [`[checks.vale]`](../content-model/checks.md#checksvale): every key.
-- [Prose, through Vale](diagnostics/content-checks.md#prose-through-vale): the two diagnostics.
+- [Prose, through Vale](diagnostics/output-checks.md#prose-through-vale): the two diagnostics.

@@ -137,7 +137,7 @@ pub struct CheckEntry {
     /// The server's problems on the lines that set its level.
     pub problems: Vec<SettingProblem>,
     /// Its `limit`, for a check that takes one: `page-size`, `image-large`,
-    /// and `memo-long`.
+    /// `memo-long`, and `summary-long`.
     pub limit: Option<CheckLimit>,
 }
 

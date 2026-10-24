@@ -10,6 +10,7 @@ import {
   root,
   targets,
   unreleasedSection,
+  vsixEntry,
   withoutEmptyUnreleased,
 } from "./manifests.ts";
 
@@ -181,5 +182,28 @@ describe("the platforms", () => {
     };
     expect(matrix("build")).toEqual(targets.map(({ target, exe }) => `${target} ${exe}`));
     expect(matrix("smoke")).toEqual(names);
+  });
+});
+
+describe("vsixEntry", () => {
+  // vsce's own names for the changelog and readme are lowercase.
+  const listing = [
+    "Archive:  ascribe-vscode-darwin-arm64-0.4.3-next.30.vsix",
+    "Zip file size: 1234 bytes, number of entries: 4",
+    "-rw-r--r--  2.0 unx      512 b- defN 26-Oct-23 20:00 extension/package.json",
+    "-rw-r--r--  2.0 unx     4096 b- defN 26-Oct-23 20:00 extension/changelog.md",
+    "-rw-r--r--  2.0 unx     2048 b- defN 26-Oct-23 20:00 extension/readme.md",
+    "-rwxr-xr-x  2.0 unx  9999999 b- defN 26-Oct-23 20:00 extension/bin/darwin-arm64/ascribe",
+    "4 files, 10006655 bytes uncompressed, 3000000 bytes compressed:  70.0%",
+  ].join("\n");
+
+  it("finds the changelog under vsce's lowercase name", () => {
+    expect(vsixEntry(listing, "extension/CHANGELOG.md")).toBe("extension/changelog.md");
+    expect(vsixEntry(listing, "extension/package.json")).toBe("extension/package.json");
+  });
+
+  it("finds nothing for a file the package doesn't have", () => {
+    expect(vsixEntry(listing, "extension/LICENSE")).toBeUndefined();
+    expect(vsixEntry(listing, "changelog.md")).toBeUndefined();
   });
 });

@@ -100,10 +100,11 @@ mod uses;
 pub use astro::AstroRouter;
 pub use build::{
     Annotation, Availability, BuildResolver, DeclaredPermalink, DefaultRouter, Destination,
-    DropReason, DroppedPage, FormattedField, GlossaryUse, HeadingIds, InLine, LinkTarget,
-    NAV_LABEL, NavLabel, PagePermalink, PageSection, Permalink, Removal, Removed, ResolvedArm,
-    ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage,
-    ResolvedRow, Scope, Substitution, glossary_targets, in_release_line, permalinks, select,
+    DropReason, DroppedPage, FormattedField, FoundSummary, GlossaryUse, HeadingIds, InLine,
+    LinkTarget, NAV_LABEL, NavLabel, PagePermalink, PageSection, Permalink, Removal, Removed,
+    ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind, ResolvedLink,
+    ResolvedPage, ResolvedRow, Scope, SectionSummary, Substitution, SummaryForm, find_summaries,
+    glossary_targets, in_release_line, permalinks, select,
 };
 pub use closest::{Closest, closest_fixes, closest_targets, link_href};
 pub use expand::{

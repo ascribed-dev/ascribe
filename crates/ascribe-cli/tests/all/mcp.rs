@@ -457,6 +457,60 @@ fn every_tool_returns_its_commands_json_and_changes_nothing() {
     }
 }
 
+/// `ascribe_resolve` with `go:<name>` returns what `ascribe resolve
+/// go:<name> --format json` writes, and the command's message for a name the
+/// build doesn't publish.
+#[test]
+fn resolve_shows_a_permalinks_help() {
+    let repo = repository();
+    let root = repo.path();
+    write(
+        &root.join("site/docs/rotate.md"),
+        "---\ntype: page\ntitle: Rotating keys\n---\n\n## Rotate keys\n@id {permalink=true}: rotate-keys\n\nRotate them.\n",
+    );
+    let mut server = Server::start(root);
+    let (text, structured) = server.call_ok(
+        "ascribe_resolve",
+        json!({ "page": "go:rotate-keys", "build": "cloud", "project": "site" }),
+    );
+    let expected = stdout(
+        root,
+        &[
+            "resolve",
+            "go:rotate-keys",
+            "--build",
+            "cloud",
+            "--config",
+            "site",
+            "--format",
+            "json",
+        ],
+    );
+    assert_eq!(text, expected);
+    assert_eq!(
+        structured,
+        serde_json::from_str::<Value>(&expected).unwrap()
+    );
+    assert_eq!(structured["title"], "Rotate keys", "{structured}");
+    assert_eq!(structured["text"], "Rotate them.", "{structured}");
+
+    let message = server.call_error(
+        "ascribe_resolve",
+        json!({ "page": "go:rotate-key", "build": "cloud", "project": "site" }),
+    );
+    assert!(
+        message.starts_with(
+            "build `cloud` publishes no permalink `rotate-key`; did you mean `rotate-keys`?"
+        ),
+        "{message}"
+    );
+    let message = server.call_error(
+        "ascribe_resolve",
+        json!({ "page": "site/docs/keys.md", "build": "cloud", "project": "site" }),
+    );
+    assert!(message.contains("`project` goes with"), "{message}");
+}
+
 #[test]
 fn unsaved_text_is_checked_as_the_file_it_names() {
     let repo = repository();

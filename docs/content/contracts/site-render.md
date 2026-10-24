@@ -165,6 +165,7 @@ Each construct below has at least one fixture in [`tests/render/`]({repo}/tree/m
 
 ## 7. Source anchors
 @id {permalink=true}: 7-source-anchors
+@summary: With anchors on, every block of a rendered page carries the source file and lines it came from, so a reviewer's tools can point from the page back to the source.
 
 With anchors on (`ascribe build --emit site --anchors`, and always in the editor preview), every block of a rendered page carries the source file and lines it came from, so a reviewer's tools can point from the page back to the source. With anchors off, which is the default, the site output is byte for byte what it is without this section, and nothing here applies.
 
@@ -188,6 +189,7 @@ To parse one, split at the last `:`; the path can't contain an unencoded `:`. Th
 Every block a reviewer could point at: headings, paragraphs, code blocks, lists and each list item, tables, block quotes, a paragraph holding only an image, thematic breaks, raw HTML blocks that start with an element, and each element the emitter writes (`ascribe-note`, `ascribe-steps`, `ascribe-tabs` and each `ascribe-tab`, `details`, `ascribe-availability`, project widgets, and `ascribe-group` and each element in it). Blocks inside containers have their own.
 
 - An element that wraps the block after it (a line-form `@note`, `@steps`, `@details`, or widget) spans the directive and that block. A line-form directive whose text is its content (`@note: Text.`) gives that text's paragraph its own line too.
+- `@summary` writes no element: the paragraph a `@summary` marks has its own anchor, its own lines, not the directive's, and `@summary: Text.` writes nothing, so it has none.
 - A paragraph in a tight list has no element (CommonMark renders its text straight into the `<li>`), so it has no anchor: its item's anchor says where it is.
 - The pointer for agents at the top of a page (`ascribe-for-agents`, element contract §8) has no anchor, nor does its paragraph: no source wrote it.
 - A raw HTML block that doesn't start with an open tag (one that starts with a comment, a closing tag, or text) has no anchor.

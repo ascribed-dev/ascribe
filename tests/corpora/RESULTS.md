@@ -90,6 +90,12 @@ machine's numbers. It was recorded again the same day, on the same CPU, once
 the release profile was in (see [The release profile](#the-release-profile)),
 which made each command 5 to 12 percent faster, and again once `diff` and
 `drift` were made faster (optimization phase 7A, [below](#where-diff-and-drift-spend-their-time)).
+The metrics added since, `check-one/…`, `lsp/search-3000`, and
+`lsp/watched-unread-3000`, were recorded on 2026-10-23 on the same CPU
+([run 40017935402](https://github.com/ascribed-dev/ascribe/actions/runs/40017935402)),
+and only they were taken from that run: it measured some of the others
+slower than their baselines, which keep their earlier values until
+[#894](https://github.com/ascribed-dev/ascribe/issues/894) finds why.
 Medians:
 
 | | time |

@@ -758,6 +758,24 @@ pub const MODEL_FROM_TAKE: DiagnosticSlug = DiagnosticSlug("model-from-take");
 /// `ASC248`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_FROM_WRITTEN: DiagnosticSlug = DiagnosticSlug("model-from-written");
 
+/// `ASC249`, error, file level: SPEC §8.2, "`@summary` | Following form whose
+/// block isn't a paragraph".
+pub const SUMMARY_NOT_PARAGRAPH: DiagnosticSlug = DiagnosticSlug("summary-not-paragraph");
+
+/// `ASC250`, error, page level: SPEC §8.2, "`@summary` | A second summary in
+/// one section, including summaries from included content (page level)".
+pub const SUMMARY_REPEATED: DiagnosticSlug = DiagnosticSlug("summary-repeated");
+
+/// `ASC251`, error, file level: SPEC §8.2, "`@summary` | Summary inside a
+/// `@variant` arm".
+pub const SUMMARY_IN_VARIANT: DiagnosticSlug = DiagnosticSlug("summary-in-variant");
+
+/// `ASC252`, advice, page level: a content check (area `pages`).
+pub const SUMMARY_MISSING: DiagnosticSlug = DiagnosticSlug("summary-missing");
+
+/// `ASC253`, advice, page level: a content check (area `pages`).
+pub const SUMMARY_LONG: DiagnosticSlug = DiagnosticSlug("summary-long");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -1000,6 +1018,11 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_FROM_FILE,
     MODEL_FROM_TAKE,
     MODEL_FROM_WRITTEN,
+    SUMMARY_NOT_PARAGRAPH,
+    SUMMARY_REPEATED,
+    SUMMARY_IN_VARIANT,
+    SUMMARY_MISSING,
+    SUMMARY_LONG,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1055,6 +1078,8 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     GLOSSARY_DEFINITION_LONG,
     BASELINE_ENTRY_UNMATCHED,
     FRONTMATTER_FIELD_REPEATED,
+    SUMMARY_MISSING,
+    SUMMARY_LONG,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

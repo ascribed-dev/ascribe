@@ -150,21 +150,51 @@ fn the_diagnostics_reference_is_current() {
             "docs/content/{page} doesn't include _generated/{name}"
         );
     }
+    // Each diagnostic's section has a summary, for a product's help.
+    let missing: Vec<&str> = fragments
+        .iter()
+        .flat_map(|(_, text)| text.split("\n### ").skip(1))
+        .filter(|entry| !entry.contains("\n@summary: "))
+        .map(|entry| entry.lines().next().unwrap_or_default())
+        .collect();
+    assert!(missing.is_empty(), "no @summary: {missing:?}");
+    // And one a product can show: under `summary-long`'s limit, counted
+    // without the code spans' backticks, which the plain text drops.
+    let long: Vec<&str> = fragments
+        .iter()
+        .flat_map(|(_, text)| text.split("\n### ").skip(1))
+        .filter(|entry| {
+            entry
+                .lines()
+                .find_map(|line| line.strip_prefix("@summary: "))
+                .is_some_and(|s| s.replace(['`', '\\'], "").chars().count() >= 300)
+        })
+        .map(|entry| entry.lines().next().unwrap_or_default())
+        .collect();
+    assert!(
+        long.is_empty(),
+        "a summary of 300 characters or more; give the entry a shorter `summary`: {long:?}"
+    );
 }
 
 /// The pages of the diagnostics reference, in `docs/content/checks/diagnostics/`,
 /// each with the fragment it lists the diagnostics of. The reference's own page has
 /// the index.
-const DIAGNOSTICS_PAGES: [(&str, &str); 4] = [
+const DIAGNOSTICS_PAGES: [(&str, &str); 5] = [
     ("directives", "diagnostics-directives.md"),
     ("pages", "diagnostics-pages.md"),
     ("content-model", "diagnostics-content-model.md"),
     ("content-checks", "diagnostics-content-checks.md"),
+    ("output-checks", "diagnostics-output-checks.md"),
 ];
 
 /// The first construct of the source-file diagnostics listed on the `pages`
 /// page; those before it are on the `directives` page.
 const FIRST_ON_PAGES: &str = "Links";
+
+/// The first area of the content checks listed on the `output-checks` page;
+/// those before it are on the `content-checks` page.
+const FIRST_ON_OUTPUT_CHECKS: &str = "outputs";
 
 /// Each phrase in `docs/ascribe.toml` whose value is also in another file
 /// has the value that file has. The `version` phrase is `[releases.ascribe]`'s
@@ -927,7 +957,8 @@ const HEADER: &str = "@memo: Generated from tests/conformance/diagnostics.toml b
 
 /// The fragments, by file name: an index of every diagnostic, the
 /// source-file diagnostics in two (directives, and links, pages, and
-/// sources), the content model's, and the content checks. The index links to each entry on the page
+/// sources), the content model's, and the content checks in two (pages and
+/// the project, and outputs, prose, links, the site, and examples). The index links to each entry on the page
 /// that includes its fragment (SPEC §4.2).
 fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)> {
     let active: Vec<&Entry> = registry.entries.iter().collect();
@@ -971,16 +1002,34 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
             .filter(|e| is_model(e) && model_group(e) == *group)
         {
             page_of.insert(&entry.code, "content-model");
-            write_entry(&mut content_model, entry, None, pages);
+            // A model diagnostic with a row in the spec's table says when by
+            // the row's condition, as the source-file diagnostics do.
+            let condition = entry.when.as_deref().or_else(|| {
+                let row = entry.row.as_deref()?;
+                Some(row.split_once(" | ").map_or(row, |(_, c)| c))
+            });
+            write_entry(&mut content_model, entry, condition, pages);
         }
     }
 
+    let split = AREAS
+        .iter()
+        .position(|(area, _)| *area == FIRST_ON_OUTPUT_CHECKS)
+        .unwrap_or_else(|| {
+            panic!("no area {FIRST_ON_OUTPUT_CHECKS}: change FIRST_ON_OUTPUT_CHECKS")
+        });
     let mut content_checks = String::new();
-    for (area, title) in AREAS {
-        let _ = write!(content_checks, "\n## {title}\n");
+    let mut output_checks = String::new();
+    for (i, (area, title)) in AREAS.iter().enumerate() {
+        let (out, page) = if i < split {
+            (&mut content_checks, "content-checks")
+        } else {
+            (&mut output_checks, "output-checks")
+        };
+        let _ = write!(out, "\n## {title}\n");
         for entry in active.iter().filter(|e| e.area.as_deref() == Some(*area)) {
-            page_of.insert(&entry.code, "content-checks");
-            write_entry(&mut content_checks, entry, entry.when.as_deref(), pages);
+            page_of.insert(&entry.code, page);
+            write_entry(out, entry, entry.when.as_deref(), pages);
         }
     }
     let unlisted: Vec<&str> = active
@@ -1005,6 +1054,10 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         (
             "diagnostics-content-checks.md".to_owned(),
             with_memo(&content_checks),
+        ),
+        (
+            "diagnostics-output-checks.md".to_owned(),
+            with_memo(&output_checks),
         ),
     ]
 }
@@ -1072,10 +1125,11 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
         .unwrap_or_default();
     let _ = write!(
         out,
-        "\n### {} `{}`\n@id {{permalink=true}}: {}\n\n{} · {} level · next step: {}{configurable}{acknowledged} · {section}\n\n",
+        "\n### {} `{}`\n@id {{permalink=true}}: {}\n{}\n{} · {} level · next step: {}{configurable}{acknowledged} · {section}\n\n",
         entry.code,
         entry.slug,
         entry.code,
+        summary(entry.summary.as_deref().or(condition)),
         severity(entry.severity),
         level(entry.level).to_lowercase(),
         next(entry),
@@ -1107,6 +1161,17 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
             "\n**Read more:** [{}](../{target}) in the {page}.\n",
             escape_braces(heading)
         );
+    }
+}
+
+/// The `@summary` line of an entry, and the blank line after it: when it's
+/// reported, so a product's help for the diagnostic says that (SPEC §4.12),
+/// or the entry's `summary`, for one whose `when` is too long for a summary.
+/// Just the blank line for an entry with nothing to say.
+fn summary(condition: Option<&str>) -> String {
+    match condition {
+        Some(condition) => format!("@summary: {}.\n", escape_braces(&sentence(condition))),
+        None => String::new(),
     }
 }
 

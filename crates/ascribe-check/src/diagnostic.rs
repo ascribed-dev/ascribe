@@ -254,6 +254,8 @@ pub const EVIDENCE: &[(&str, &str, &str)] = &[
     ("page-sections", "sections", "Its sections, largest first"),
     // A page's title and its first paragraph.
     ("page-opening", "opening", "How the page begins"),
+    // A heading's section as written, for a prompt that asks for its summary.
+    ("section-text", "section", "The section's text"),
     // The first lines of a code block.
     ("code-lines", "lines", "The block begins"),
     // The rule of a tool Ascribe runs, such as Vale, that found the problem.

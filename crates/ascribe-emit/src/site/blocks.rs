@@ -372,7 +372,7 @@ impl Renderer<'_> {
     fn directive(&self, block: &ResolvedBlock, line: &DirectiveLine) -> Vec<Chunk> {
         let anchor = self.anchor(block);
         match line.name.as_str() {
-            "id" | "include" | "snippet" | "steps" | "details" => Vec::new(),
+            "id" | "include" | "snippet" | "steps" | "details" | "summary" => Vec::new(),
             "available" => self
                 .availability(block)
                 .map(|text| self.element(anchor, text))

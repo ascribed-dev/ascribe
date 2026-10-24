@@ -385,6 +385,31 @@ describe("This page's webview", () => {
     ).resolves.toBe("keys.md");
   });
 
+  it("shows a permalink's summary on its row's hover", async () => {
+    const view = await open();
+    const tooltip =
+      "A permalink to “Rotate keys”: an address that keeps leading here\nSummary: Replace a key before it expires.";
+    await draw(view, 4, {
+      ...sections(),
+      sections: [
+        item("about", "section", "About", {
+          icon: "info",
+          open: true,
+          children: [
+            item("about/0", "row", "Permalink", {
+              description: "rotate-keys",
+              tooltip,
+              acts: true,
+            }),
+          ],
+        }),
+      ],
+    });
+    await expect(
+      view.page.locator(".row .label", { hasText: "Permalink" }).getAttribute("title"),
+    ).resolves.toBe(tooltip);
+  });
+
   it("draws an address on the published site as a link, whose choice asks the extension to open it", async () => {
     const view = await open();
     const tooltip =

@@ -1,0 +1,22 @@
+description: >-
+  A section has one summary: a second is an error, at the second, in each
+  build. A subsection's summary is its own, not a second of its parent's,
+  and the page's opening, before its first heading, counts as a section.
+spec: ["4.12", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - slug: summary-repeated
+        file: index.md
+        line: 8
+        related: [{file: index.md, line: 5, label: "the section's summary"}]
+      - slug: summary-repeated
+        file: index.md
+        line: 14
+        related: [{file: index.md, line: 12, label: "the section's summary"}]
+  cloud-pdf:
+    diagnostics:
+      - {slug: summary-repeated, file: index.md, line: 8}
+      - {slug: summary-repeated, file: index.md, line: 14}

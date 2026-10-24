@@ -16,13 +16,56 @@ Every build writes the sections to `_ascribe/help.json` in its site output, besi
 One entry for each permalink the build publishes, and for each alias of one, keyed by name:
 
 - **`title`:** the heading's text, or the page's title for a page's own permalink, as plain text.
-- **`summary`:** the section's first paragraph, when the section opens with one; a page's own permalink has its description. Absent when the section opens with something else, such as a code block or a group of variants.
+- **`summary`:** the section's [summary](#writing-summaries), when it has one; a page's own permalink has its description. Absent when there's none.
 - **`text`:** the whole section, as the plain output writes it: Markdown, with phrases and includes resolved, each variant arm under a heading of its own, availability as an `Available:` line, and each image as its alt text, since a product can't count on loading an image from the docs' site.
 - **`choices`:** for a section with a switcher, the section with each arm chosen, keyed by dimension and value, such as `choices.pm.pnpm` (see [Show your reader's arm](#choosing-an-arm)).
 - **`address`:** the permalink's address, which a "Read more" link opens.
 - **`source`:** the page the section is on.
 
 A heading's section runs to the next heading at its level or above, or to the end of the note or variant arm the heading is in. A page's own permalink has the page's opening, before its first heading. A retired permalink has no entry. The [output-layout contract](../contracts/output-layout.md#17-the-help-file) has the format.
+
+## Write the summaries
+@id: writing-summaries
+@available: ascribe planned
+
+A tooltip or a line beside an error has room for a sentence or two, so give each section a product shows a summary with [`@summary`](../writing/directives.md#summary). Write the summary's own text directly under the heading, which the page doesn't show:
+
+```markdown
+## Prerequisites
+@id {permalink=true}: prerequisites
+@summary: The agent needs Node.js and a docs repository that {product} can read.
+
+Before you install the agent, make sure you have:
+```
+
+Or, when the section's first sentence reads well alone, make it a paragraph of its own and mark it, so it's written once and shown in both places:
+
+```markdown
+## Rotate a key
+@id {permalink=true}: rotate-key
+
+@summary
+Replace a key before it expires, without stopping the agent.
+
+Generate a new key in the dashboard, then …
+```
+
+Nothing is guessed: a section without `@summary` has no `summary` in the file, whatever it opens with, and a product shows its title and "Read more" alone.
+
+`ascribe check` says where one is missing, and where one is too long, as advice:
+
+- [`summary-missing`](../checks/diagnostics/content-checks.md#ASC252): a heading's permalink with no `@summary`. A page's own permalink has its description, which [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) asks for.
+- [`summary-long`](../checks/diagnostics/content-checks.md#ASC253): a summary of 300 characters or more, counted as a description is. `limit` changes the number.
+
+To require a summary for every permalink, raise `summary-missing` to a warning in [`[checks]`](../content-model/checks.md):
+
+```toml
+[checks]
+summary-missing = "warning"
+
+[checks.summary-long]
+limit = 200
+```
 
 ## Read it in the product
 @id: reading-the-file
@@ -40,6 +83,13 @@ node examples/quill/product/help.ts examples/quill/.ascribe/build/site/site/_asc
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/help-product.txt
 
 A product renders `text` as Markdown its own way: it's CommonMark with no HTML.
+
+@available: ascribe planned
+To see an entry without building the site, run [`ascribe resolve go:<name>`](../command/questions.md#cli-resolve), with the build: it prints what the file has for the name, from the code that writes the file, and `--format json` prints the entry as the file writes it. An agent writing your product's message can read what it will show the same way, with the `ascribe_resolve` tool or the command, which the rules [`ascribe agents sync`](../agents/index.md) writes tell it about.
+
+```sh
+ascribe resolve go:prerequisites --build site --config examples/quill
+```
 
 ## Show your reader's arm
 @id: choosing-an-arm

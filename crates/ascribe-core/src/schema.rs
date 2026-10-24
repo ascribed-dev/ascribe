@@ -74,11 +74,13 @@ pub enum Builtin {
     Memo,
     /// `@term` (§4.11).
     Term,
+    /// `@summary` (§4.12).
+    Summary,
 }
 
 impl Builtin {
     /// Every built-in directive, in SPEC §4 order.
-    pub const ALL: [Builtin; 11] = [
+    pub const ALL: [Builtin; 12] = [
         Builtin::Id,
         Builtin::Include,
         Builtin::Variant,
@@ -90,6 +92,7 @@ impl Builtin {
         Builtin::Intended,
         Builtin::Memo,
         Builtin::Term,
+        Builtin::Summary,
     ];
 
     /// The keyword, without `@`.
@@ -106,6 +109,7 @@ impl Builtin {
             Builtin::Intended => "intended",
             Builtin::Memo => "memo",
             Builtin::Term => "term",
+            Builtin::Summary => "summary",
         }
     }
 
@@ -263,6 +267,16 @@ impl Builtin {
                 ..base
             },
             Builtin::Term => term_schema(base),
+            Builtin::Summary => DirectiveSchema {
+                // SPEC §4.12: with its text, the section's summary, at the
+                // top of the section; with none, the paragraph below it.
+                primary: Primary::Text { required: false },
+                binding: Some(Binding::Block),
+                description: Some(
+                    "Give a section a summary: this text, or the paragraph below it.".into(),
+                ),
+                ..base
+            },
         }
     }
 }
@@ -504,7 +518,7 @@ mod tests {
     /// SPEC §4's table, row by row: name, forms, primary, binding.
     #[test]
     fn builtins_match_the_spec_table() {
-        let table: [(&str, Forms, Primary, Option<Binding>); 11] = [
+        let table: [(&str, Forms, Primary, Option<Binding>); 12] = [
             (
                 "id",
                 Forms::LINE,
@@ -551,6 +565,12 @@ mod tests {
                 Some(Binding::HeadingOrBlock),
             ),
             ("term", Forms::LINE, Primary::None, Some(Binding::Heading)),
+            (
+                "summary",
+                Forms::LINE,
+                Primary::Text { required: false },
+                Some(Binding::Block),
+            ),
         ];
         let schemas = builtin_schemas();
         assert_eq!(schemas.len(), table.len());

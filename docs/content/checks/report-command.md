@@ -8,6 +8,7 @@ The command that reports what state a project is in. The options every command a
 
 ## `ascribe report`
 @id {permalink=true}: cli-report
+@summary: Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`, each problem with its kind of next step.
 
 Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. Every problem in it carries its kind of next step, as in the editor. It's for a scheduled job, or for a look at the whole project; [Reading the report](report.md) says how to act on each section.
 
