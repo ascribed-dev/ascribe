@@ -7,6 +7,8 @@ declare module "virtual:ascribe/site" {
   export const astroRoot: string;
   /** The route of the site's root: Astro's `base`, ending as the site's routes do. */
   export const home: string;
+  /** Astro's `base`, as the site's config has it. */
+  export const base: string;
   /** Each entry's site output root, by its name. Empty with one project and no name. */
   export const collections: Record<string, string>;
   /** Each entry's site output root and its project's root route, in the entries' order. */

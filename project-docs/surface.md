@@ -857,6 +857,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `checks/ci.md` | Checks in CI | how-to |
 | `checks/diagnostics.md` | Diagnostics | reference |
 | `checks/diagnostics/content-checks.md` | Diagnostics: content checks | reference |
+| `checks/diagnostics/content-model-builds.md` | Diagnostics: the content model's builds and site | reference |
 | `checks/diagnostics/content-model.md` | Diagnostics: the content model | reference |
 | `checks/diagnostics/directives.md` | Diagnostics: directives | reference |
 | `checks/diagnostics/output-checks.md` | Diagnostics: content checks of outputs and the site | reference |

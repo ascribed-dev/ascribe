@@ -1,7 +1,9 @@
 // The response headers a host sends with each docs page's Markdown version,
 // and the rules a built site's `_headers` is held to: each page with a
 // Markdown version has its rule, a canonical `Link` to the page and
-// `X-Robots-Tag` when the page isn't `listed`, and no other path has one.
+// `X-Robots-Tag` when the page isn't `listed`; each help entry's address,
+// `<permalink path><name>.json`, lets any origin read it; and no other path
+// has one.
 // Read from a folder, so test/headers.test.ts runs it on dist/ and on a
 // fixture.
 import { readFile } from "node:fs/promises";
@@ -57,15 +59,19 @@ export function expectedHeaders(
 }
 
 /**
- * What's wrong with a `_headers` file for the pages in a `pages.json`: each
- * page's Markdown version without its rule, or with a header that isn't
- * the page's, and each path with a rule that isn't a page's Markdown
- * version. Empty when the file is right.
+ * What's wrong with a `_headers` file for the pages in a `pages.json`, and
+ * the help entries' rules in `help`: each page's Markdown version or help
+ * entry without its rule, or with a header that isn't its own, and each path
+ * with a rule that's neither. Empty when the file is right.
  */
-export function headerProblems(text: string, pages: Record<string, PageRecord>): string[] {
+export function headerProblems(
+  text: string,
+  pages: Record<string, PageRecord>,
+  help = new Map<string, Record<string, string>>(),
+): string[] {
   const problems: string[] = [];
   const given = parseHeaders(text);
-  const expected = expectedHeaders(pages);
+  const expected = new Map([...expectedHeaders(pages), ...help]);
   for (const [file, headers] of expected) {
     const has = given.get(file);
     if (has === undefined) {
@@ -82,9 +88,25 @@ export function headerProblems(text: string, pages: Record<string, PageRecord>):
   }
   for (const file of given.keys()) {
     if (!expected.has(file))
-      problems.push(`${file}: a rule for a path that isn't a Markdown version`);
+      problems.push(`${file}: a rule for a path that isn't a Markdown version or a help entry`);
   }
   return problems;
+}
+
+/**
+ * The headers each help entry's address needs, by its path, in the site
+ * output at `dir`: `Access-Control-Allow-Origin: *` at `<path><name>.json`,
+ * the permalinks' path from `_ascribe/permalinks.json` and each name in
+ * `_ascribe/help.json`.
+ */
+export async function readHelpHeaders(dir: string): Promise<Map<string, Record<string, string>>> {
+  const read = async (file: string): Promise<unknown> =>
+    JSON.parse(await readFile(path.join(dir, "_ascribe", file), "utf8"));
+  const { path: at } = (await read("permalinks.json")) as { path: string };
+  const { help } = (await read("help.json")) as { help: Record<string, unknown> };
+  return new Map(
+    Object.keys(help).map((name) => [`${at}${name}.json`, { "access-control-allow-origin": "*" }]),
+  );
 }
 
 /** `_ascribe/pages.json`'s records, by route, in the site output at `dir`. */

@@ -4,7 +4,7 @@ title: "`ascribe.toml` format contract: validation rules"
 description: "Every rule a content model loader enforces, and the map of SPEC §7.2 to the contract."
 ---
 
-Part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. Each rule's fix, for someone writing `ascribe.toml`, is in the [diagnostics reference](../../checks/diagnostics/content-model.md).
+Part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. Each rule's fix, for someone writing `ascribe.toml`, is in the diagnostics reference: [from the file to widgets](../../checks/diagnostics/content-model.md), and [from the consumer to `[checks]`](../../checks/diagnostics/content-model-builds.md).
 
 ## 24. Validation rules
 

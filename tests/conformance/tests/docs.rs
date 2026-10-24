@@ -180,10 +180,14 @@ fn the_diagnostics_reference_is_current() {
 /// The pages of the diagnostics reference, in `docs/content/checks/diagnostics/`,
 /// each with the fragment it lists the diagnostics of. The reference's own page has
 /// the index.
-const DIAGNOSTICS_PAGES: [(&str, &str); 5] = [
+const DIAGNOSTICS_PAGES: [(&str, &str); 6] = [
     ("directives", "diagnostics-directives.md"),
     ("pages", "diagnostics-pages.md"),
     ("content-model", "diagnostics-content-model.md"),
+    (
+        "content-model-builds",
+        "diagnostics-content-model-builds.md",
+    ),
     ("content-checks", "diagnostics-content-checks.md"),
     ("output-checks", "diagnostics-output-checks.md"),
 ];
@@ -191,6 +195,10 @@ const DIAGNOSTICS_PAGES: [(&str, &str); 5] = [
 /// The first construct of the source-file diagnostics listed on the `pages`
 /// page; those before it are on the `directives` page.
 const FIRST_ON_PAGES: &str = "Links";
+
+/// The first rule group of the content model listed on the
+/// `content-model-builds` page; those before it are on the `content-model` page.
+const FIRST_ON_CONTENT_MODEL_BUILDS: &str = "consumer";
 
 /// The first area of the content checks listed on the `output-checks` page;
 /// those before it are on the `content-checks` page.
@@ -957,7 +965,8 @@ const HEADER: &str = "@memo: Generated from tests/conformance/diagnostics.toml b
 
 /// The fragments, by file name: an index of every diagnostic, the
 /// source-file diagnostics in two (directives, and links, pages, and
-/// sources), the content model's, and the content checks in two (pages and
+/// sources), the content model's in two (the file through its widgets, and
+/// the consumer, builds, and the site's settings), and the content checks in two (pages and
 /// the project, and outputs, prose, links, the site, and examples). The index links to each entry on the page
 /// that includes its fragment (SPEC §4.2).
 fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)> {
@@ -994,21 +1003,35 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         }
     }
 
+    let split = RULE_GROUPS
+        .iter()
+        .position(|(group, _)| *group == FIRST_ON_CONTENT_MODEL_BUILDS)
+        .unwrap_or_else(|| {
+            panic!(
+                "no rule group {FIRST_ON_CONTENT_MODEL_BUILDS}: change FIRST_ON_CONTENT_MODEL_BUILDS"
+            )
+        });
     let mut content_model = String::new();
-    for (group, title) in RULE_GROUPS {
-        let _ = write!(content_model, "\n## {title}\n");
+    let mut content_model_builds = String::new();
+    for (i, (group, title)) in RULE_GROUPS.iter().enumerate() {
+        let (out, page) = if i < split {
+            (&mut content_model, "content-model")
+        } else {
+            (&mut content_model_builds, "content-model-builds")
+        };
+        let _ = write!(out, "\n## {title}\n");
         for entry in active
             .iter()
             .filter(|e| is_model(e) && model_group(e) == *group)
         {
-            page_of.insert(&entry.code, "content-model");
+            page_of.insert(&entry.code, page);
             // A model diagnostic with a row in the spec's table says when by
             // the row's condition, as the source-file diagnostics do.
             let condition = entry.when.as_deref().or_else(|| {
                 let row = entry.row.as_deref()?;
                 Some(row.split_once(" | ").map_or(row, |(_, c)| c))
             });
-            write_entry(&mut content_model, entry, condition, pages);
+            write_entry(out, entry, condition, pages);
         }
     }
 
@@ -1050,6 +1073,10 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         (
             "diagnostics-content-model.md".to_owned(),
             with_memo(&content_model),
+        ),
+        (
+            "diagnostics-content-model-builds.md".to_owned(),
+            with_memo(&content_model_builds),
         ),
         (
             "diagnostics-content-checks.md".to_owned(),

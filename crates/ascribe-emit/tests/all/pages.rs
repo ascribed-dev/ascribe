@@ -48,8 +48,12 @@ fn records(project: &Project) -> Value {
 }
 
 fn headers(project: &Project) -> Value {
+    build_headers(project, "site")
+}
+
+fn build_headers(project: &Project, build: &str) -> Value {
     let emitter = SiteEmitter::new(project.model());
-    let text = emit_build(Path::new("/nowhere"), project, "site", &emitter)
+    let text = emit_build(Path::new("/nowhere"), project, build, &emitter)
         .remove(HEADERS_PATH)
         .expect("the site output has the headers");
     serde_json::from_str(&text).expect("the headers are JSON")
@@ -492,6 +496,52 @@ fn without_markdown_versions_the_headers_are_an_empty_list() {
         )],
     );
     assert_eq!(headers(&project), json!({ "version": 1, "headers": [] }));
+}
+
+#[test]
+fn the_headers_let_any_origin_read_each_help_entry() {
+    let model = "spec = \"0.1\"\n\
+        [releases.self-managed]\nlive = [\"3.4\", \"3.5\"]\n\
+        [builds.site]\nversions = \"self-managed\"\n\
+        [permalinks.aliases]\nlink = \"connect\"\n\
+        [consumer]\nbase-path = \"/docs/\"\n";
+    let project = memory_project(
+        model,
+        &[(
+            "a.md",
+            "---\ntitle: A\nlisting: unlisted\n---\n\n## Connect\n@id {permalink=true}: connect\n\nConnect it.\n",
+        )],
+    );
+    let any = json!({ "Access-Control-Allow-Origin": "*" });
+    // The current line's at the permalinks' path; an older line's under its own base path.
+    for (build, folder) in [("site", "/docs/go/"), ("site@3.4", "/docs/3.4/go/")] {
+        assert_eq!(
+            build_headers(&project, build),
+            json!({
+                "version": 1,
+                "headers": [
+                    { "path": format!("{folder}connect.json"), "headers": any },
+                    { "path": format!("{folder}link.json"), "headers": any },
+                ],
+            }),
+            "{build}"
+        );
+    }
+}
+
+#[test]
+fn the_headers_find_the_help_entries_under_the_permalink_path() {
+    let project = memory_project(
+        "spec = \"0.1\"\n[consumer]\nbase-path = \"/docs/\"\npermalink-path = \"/go\"\n",
+        &[(
+            "a.md",
+            "---\ntitle: A\nlisting: unlisted\npermalink: a\n---\n",
+        )],
+    );
+    assert_eq!(
+        headers(&project)["headers"],
+        json!([{ "path": "/go/a.json", "headers": { "Access-Control-Allow-Origin": "*" } }])
+    );
 }
 
 #[test]

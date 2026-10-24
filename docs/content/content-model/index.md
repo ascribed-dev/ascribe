@@ -13,7 +13,7 @@ A file containing only `spec = "0.1"` is valid; every section has a default ([§
 - [`examples/quill/ascribe.toml`]({repo}/blob/main/examples/quill/ascribe.toml): a small, complete project.
 - [`examples/content-models/full.toml`]({repo}/blob/main/examples/content-models/full.toml): every section and key.
 
-Every problem the loader reports is in the [diagnostics reference](../checks/diagnostics/content-model.md), with its fix. References to "SPEC" are to the [Ascribe specification]({repo}/blob/main/SPEC.md). The rules a loader enforces, stated for someone writing one, are in the [`ascribe.toml` format contract](../contracts/content-model.md), with the same section numbers and key tables.
+Every problem the loader reports is in the diagnostics reference, on [Diagnostics: the content model](../checks/diagnostics/content-model.md) and [Diagnostics: the content model's builds and site](../checks/diagnostics/content-model-builds.md), with its fix. References to "SPEC" are to the [Ascribe specification]({repo}/blob/main/SPEC.md). The rules a loader enforces, stated for someone writing one, are in the [`ascribe.toml` format contract](../contracts/content-model.md), with the same section numbers and key tables.
 
 In VS Code, [Project Settings](../editor/settings.md#project-settings) shows a project's settings beside its `ascribe.toml`, each with its value, its default, and its line, and changes a value the file sets in place.
 
