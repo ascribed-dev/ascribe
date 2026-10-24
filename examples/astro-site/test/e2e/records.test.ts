@@ -166,23 +166,45 @@ const ROBOTS_RULE: Record<string, string | null> = {
   unlisted: "noindex",
 };
 
+/** Each help entry's own address, `<permalink path><name>.json`, in the build `records` reads. */
+async function helpAddresses(root: string, project = "."): Promise<string[]> {
+  const read = async (file: string): Promise<unknown> =>
+    JSON.parse(
+      await readFile(
+        path.join(root, project, ".ascribe", "build", "site", "site", "_ascribe", file),
+        "utf8",
+      ),
+    );
+  const { path: at } = (await read("permalinks.json")) as { path: string };
+  const { help } = (await read("help.json")) as { help: Record<string, unknown> };
+  return Object.keys(help).map((name) => `${at}${name}.json`);
+}
+
 /**
  * Checks `_headers` against the records: each page's Markdown version has
- * its page as canonical, and the rule its head has when it isn't listed, and
- * no other path has a rule.
+ * its page as canonical, and the rule its head has when it isn't listed;
+ * each help entry's address, in `help`, lets any origin read it; and no
+ * other path has a rule.
  */
-function checkHeaders(headers: string, pages: Records["pages"]): void {
-  const want = Object.values(pages)
+function checkHeaders(headers: string, pages: Records["pages"], help: string[]): void {
+  const markdown = Object.values(pages)
     .filter((record) => record.markdown !== undefined)
-    .sort((a, b) => ((a.markdown ?? "") < (b.markdown ?? "") ? -1 : 1))
-    .map((record) => {
+    .map((record): [string, string] => {
       const robots = ROBOTS_RULE[record.listing];
-      return (
-        `${record.markdown ?? ""}\n  Link: <${record.canonical ?? ""}>; rel="canonical"\n` +
-        (robots === null || robots === undefined ? "" : `  X-Robots-Tag: ${robots}\n`)
-      );
+      return [
+        record.markdown ?? "",
+        `  Link: <${record.canonical ?? ""}>; rel="canonical"\n` +
+          (robots === null || robots === undefined ? "" : `  X-Robots-Tag: ${robots}\n`),
+      ];
     });
-  expect(want.length).toBeGreaterThan(0);
+  const want = [
+    ...markdown,
+    ...help.map((address): [string, string] => [address, "  Access-Control-Allow-Origin: *\n"]),
+  ]
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([at, lines]) => `${at}\n${lines}`);
+  expect(markdown.length).toBeGreaterThan(0);
+  expect(help.length).toBeGreaterThan(0);
   expect(headers).toBe(want.join(""));
   expect(headers).toContain(`${UNLISTED}.md\n`);
 }
@@ -223,6 +245,7 @@ describe("a site at the host's root", () => {
     checkHeaders(
       await readFile(path.join(root, "dist", "_headers"), "utf8"),
       (await records(root)).pages,
+      await helpAddresses(root),
     );
     const server = await servePreview(root);
     try {

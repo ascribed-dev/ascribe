@@ -2,7 +2,9 @@
 //! product to show where its user is, in a tooltip, a panel, or beside an
 //! error (output-layout contract §1.7): its title, its summary, its text as
 //! the plain output writes it, and its address. [`help`] is one name's
-//! entry, as the file writes it, for `ascribe resolve go:<name>`.
+//! entry, as the file writes it, for `ascribe resolve go:<name>`. Each entry
+//! is also an address of its own, `<folder><name>.json` ([`entry_paths`]),
+//! which the headers give to any origin.
 
 use std::collections::BTreeMap;
 
@@ -122,16 +124,18 @@ pub fn help(cx: &EmitContext<'_>, build: &ResolvedBuild, name: &str) -> Help {
     Help::Missing { names }
 }
 
-/// The file, as JSON, with an entry for each name the build answers to
-/// ([`named`]): a permalink's own, and an alias's, which is the entry of the
-/// permalink it ends at under its own name. A retired permalink has none. A
-/// build with no permalinks has an empty table.
-pub(super) fn file(cx: &EmitContext<'_>, build: &ResolvedBuild) -> String {
+/// The entries, by name, for each name the build answers to ([`named`]):
+/// a permalink's own, and an alias's, which is the entry of the permalink it
+/// ends at under its own name. A retired permalink has none.
+pub(super) fn entries<'a>(
+    cx: &EmitContext<'a>,
+    build: &ResolvedBuild,
+    found: &'a [Permalink],
+) -> BTreeMap<&'a str, HelpEntry> {
     let model = cx.model;
     let plain = PlainEmitter::new(model);
-    let found = build.permalinks();
     let mut help = BTreeMap::new();
-    for (name, named) in named(model, build, &found) {
+    for (name, named) in named(model, build, found) {
         let permalink = match named {
             Named::Declared(permalink) => permalink,
             Named::Alias { target, .. } => target,
@@ -141,6 +145,12 @@ pub(super) fn file(cx: &EmitContext<'_>, build: &ResolvedBuild) -> String {
             help.insert(name, entry);
         }
     }
+    help
+}
+
+/// The file, as JSON, with `help`'s entries. A build with no permalinks has
+/// an empty table.
+pub(super) fn file(cx: &EmitContext<'_>, help: BTreeMap<&str, HelpEntry>) -> String {
     let (version, build, line) = help_header(cx);
     let file = File {
         version,
@@ -152,6 +162,26 @@ pub(super) fn file(cx: &EmitContext<'_>, build: &ResolvedBuild) -> String {
     let mut text = serde_json::to_string_pretty(&file).unwrap_or_default();
     text.push('\n');
     text
+}
+
+/// The path, from the host's root, each of `names`' entries is served at on
+/// its own: `<folder><name>.json`. The folder is the permalinks' path for
+/// the current line and a build that isn't versioned, and `go/` under an
+/// older line's base path, `/docs/3.4/go/`, since the permalinks' addresses
+/// are the current line's.
+pub(super) fn entry_paths<'a>(
+    cx: &EmitContext<'_>,
+    names: impl IntoIterator<Item = &'a str>,
+) -> Vec<String> {
+    let consumer = &cx.model.consumer;
+    let folder = match cx.build.line_folder() {
+        Some(_) => format!("{}/go/", consumer.base_path.trim_end_matches('/')),
+        None => consumer.permalink_path(),
+    };
+    names
+        .into_iter()
+        .map(|name| format!("{folder}{name}.json"))
+        .collect()
 }
 
 /// The entry of `permalink` under `name`: its section rendered as the plain

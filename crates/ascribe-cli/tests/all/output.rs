@@ -1496,7 +1496,10 @@ fn templates() {
 /// The docs in a product (`docs/content/permalinks/in-your-product.md`):
 /// quill's build writes `_ascribe/help.json`, and its product's program,
 /// run with Node, prints a permalink's title, summary, and address from it,
-/// or exits 1 for a name the file doesn't have.
+/// or exits 1 for a name the file doesn't have. Given its line's folder of
+/// entries, it fetches the entry there first, and uses the bundled file when
+/// the docs can't be reached, don't have the entry, or answer for another
+/// line.
 #[test]
 fn help_in_a_product() {
     let dir = tempfile::tempdir().unwrap();
@@ -1508,18 +1511,17 @@ fn help_in_a_product() {
         &quill,
     );
     run(root, &["build", "--config", "examples/quill"], 0);
-    let help = |name: &str| {
+    let file = "examples/quill/.ascribe/build/site/site/_ascribe/help.json";
+    let help = |args: &[&str]| {
         Command::new("node")
             .current_dir(root)
-            .args([
-                "examples/quill/product/help.ts",
-                "examples/quill/.ascribe/build/site/site/_ascribe/help.json",
-                name,
-            ])
+            .arg("examples/quill/product/help.ts")
+            .arg(file)
+            .args(args)
             .output()
             .expect("run node, which the repository's engines name")
     };
-    let found = help("prerequisites");
+    let found = help(&["prerequisites"]);
     assert_eq!(
         found.status.code(),
         Some(0),
@@ -1527,7 +1529,72 @@ fn help_in_a_product() {
         String::from_utf8_lossy(&found.stderr)
     );
     expect("help-product.txt", &stdout(&found));
-    let missing = help("weave-config");
+    let missing = help(&["weave-config"]);
     assert_eq!(missing.status.code(), Some(1));
     assert_eq!(stdout(&missing), "No help for weave-config\n");
+
+    // The entry as the docs serve it now: the bundled one, retitled.
+    let bundled: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(root.join(file)).unwrap()).unwrap();
+    let mut entry = serde_json::json!({
+        "version": 1,
+        "build": bundled["build"],
+        "line": bundled["line"],
+        "help": { "prerequisites": bundled["help"]["prerequisites"] },
+    });
+    entry["help"]["prerequisites"]["title"] = "Before you start".into();
+    let answer = |status: &str, body: &serde_json::Value| {
+        let (folder, server) = serve_once(status, &body.to_string());
+        let out = help(&["prerequisites", &folder]);
+        server.join().unwrap();
+        out
+    };
+    let fetched = answer("200 OK", &entry);
+    assert_eq!(fetched.status.code(), Some(0));
+    assert!(
+        stdout(&fetched).starts_with("Before you start\n"),
+        "{}",
+        stdout(&fetched)
+    );
+    let mut other_line = entry.clone();
+    other_line["line"] = "3.4".into();
+    assert_eq!(
+        stdout(&answer("200 OK", &other_line)),
+        stdout(&found),
+        "another line's entry"
+    );
+    assert_eq!(
+        stdout(&answer("404 Not Found", &serde_json::json!({}))),
+        stdout(&found),
+        "a line the docs no longer publish"
+    );
+    // Nothing listens on port 9 here, the discard port, so the fetch fails.
+    assert_eq!(
+        stdout(&help(&["prerequisites", "http://127.0.0.1:9/go/"])),
+        stdout(&found),
+        "the docs unreachable"
+    );
+}
+
+/// A server on a free local port that answers one request with `status` and
+/// `body` as JSON: the folder to fetch from, and its thread.
+fn serve_once(status: &str, body: &str) -> (String, std::thread::JoinHandle<()>) {
+    use std::io::{BufRead, BufReader, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let folder = format!("http://{}/go/", listener.local_addr().unwrap());
+    let response = format!(
+        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    );
+    let server = std::thread::spawn(move || {
+        let (stream, _) = listener.accept().unwrap();
+        let mut reader = BufReader::new(stream);
+        // The request's head, up to its blank line; a GET has no body.
+        let mut line = String::new();
+        while reader.read_line(&mut line).unwrap() > 2 {
+            line.clear();
+        }
+        reader.get_mut().write_all(response.as_bytes()).unwrap();
+    });
+    (folder, server)
 }

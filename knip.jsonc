@@ -31,9 +31,11 @@
       "entry": ["src/index.ts"],
     },
     "packages/astro": {
-      // `src/cli.ts` is the package's command (`bin`).
+      // `src/cli.ts` is the package's command (`bin`), and `src/help-route.ts` a route the
+      // integration adds by its path.
       "entry": [
         "src/index.ts",
+        "src/help-route.ts",
         "src/rehype.ts",
         "src/satteri.ts",
         "src/content.ts",
