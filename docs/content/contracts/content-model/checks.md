@@ -14,7 +14,7 @@ Each key of `[checks]` other than `vale` and `links` is a check's slug, as the [
 
 A check's own settings are listed with the check in the [diagnostics reference](../../checks/diagnostics/content-checks.md). `page-size` and `image-large` take `limit`, and so does `memo-long` from ascribe 0.4.0.
 
-@available: ascribe planned
+@available: ascribe 0.4.3
 `summary-long` takes `limit` too.
 
 A level applies wherever the diagnostic is reported: by `ascribe check`, by `ascribe build`, and in the editor. `"off"` MUST NOT be reported, and advice MUST NOT fail `ascribe check`, with `--deny-warnings` or without.

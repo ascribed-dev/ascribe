@@ -153,7 +153,6 @@ Only a page type's top-level `string` fields can set it, its own or `[frontmatte
 
 A check that needs a page's description or the date it's due for review, or a report that counts pages by owner, reads the field with that role.
 
-@available: ascribe 0.4.2
 A field named for a role has it, when its type is one the role takes:
 
 ```toml

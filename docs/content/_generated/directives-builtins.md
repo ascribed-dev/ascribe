@@ -12,4 +12,4 @@
 | [`@intended`](../writing/directives.md#intended) | line | a reason | Acknowledge a check's problem in the next block, or at the section's heading |
 | [`@memo`](../writing/directives.md#memo) | line, container | text | Text for whoever edits the page next, never published |
 | [`@term`](../writing/directives.md#term) | line | none | Make a glossary page's heading a term |
-| [`@summary`](../writing/directives.md#summary) {available="ascribe planned"} | line | text, optional | Give a section a summary: this text, or the paragraph below it |
+| [`@summary`](../writing/directives.md#summary) {available="ascribe 0.4.3"} | line | text, optional | Give a section a summary: this text, or the paragraph below it |

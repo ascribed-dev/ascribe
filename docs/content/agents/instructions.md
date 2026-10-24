@@ -22,7 +22,7 @@ Beside each file it writes, `sync` says which agents read it, and when an agent 
 
 When a page has a [`@memo`](../writing/directives.md#memo), `AGENTS.md` also tells the agent to read a block's memo before changing the block, and to keep the two together. When the project has a [memo file](../writing/memo-files.md) in `memos/`, a sentence after it says that `ascribe outline <page>` lists the memos about a page and its headings, and to read a memo before changing the block it's about. A [personal memo](../writing/memo-files.md#personal-memos) doesn't count, so the rules are the same on every machine. When the rules run over their 4,000 characters, those sentences are cut first, before the page types.
 
-@available: ascribe planned
+@available: ascribe 0.4.3
 When a page declares a [permalink](../permalinks/index.md), `AGENTS.md` also says, with how to link, that a product's message linking to the docs by a permalink can read what the docs will show for it with `ascribe resolve go:<name>`, which prints the help [a product shows](../permalinks/in-your-product.md). When a heading declares one, it says to give the heading's section a [`@summary`](../writing/directives.md#summary), the sentence a product shows with its help, and how to choose between `@summary` above a paragraph and `@summary: <text>`; `ascribe check --format prompt` quotes the text of each section without one, so the agent can write it.
 
 What a type is for is its `purpose` in `ascribe.toml`, or, for a type [`ascribe templates eject`](../templates/index.md) added, The Good Docs Project's summary of it, from `templates.lock` (the [content model reference](../content-model/index.md#41-page-types)).
