@@ -30,6 +30,11 @@ With `--list`:
 
 @include: ../../_generated/json-resolve.md
 
+## `ascribe resolve go:<name>`
+@id: ascribe-resolve-go
+
+@include: ../../_generated/json-resolve-permalink.md
+
 ## `ascribe search`
 
 @include: ../../_generated/json-search.md

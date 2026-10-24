@@ -207,6 +207,25 @@ fn a_memo_is_offered_with_both_its_forms() {
 }
 
 #[test]
+fn a_summary_is_offered_under_a_heading_and_above_a_paragraph() {
+    let f = quill();
+    let page = f.path("docs/quickstart.md");
+    let mut client = Client::start(&f.root());
+    for text in ["## T\n@su$0\n", "## T\n\nText.\n\n@su$0\nA paragraph.\n"] {
+        let list = complete(&mut client, &page, text);
+        let summary = item(&list, "summary");
+        assert_eq!(new_text(&summary), "summary");
+        assert_eq!(
+            summary["detail"],
+            "Give a section a summary: this text, or the paragraph below it."
+        );
+        let docs = summary["documentation"]["value"].as_str().unwrap();
+        assert!(docs.contains("Forms: line  \n"), "{docs}");
+        assert!(docs.contains("Primary: text"), "{docs}");
+    }
+}
+
+#[test]
 fn attribute_keys_and_values_come_from_the_schema() {
     let f = quill();
     let page = f.path("docs/quickstart.md");
@@ -808,6 +827,78 @@ fn hovering_a_memo_says_it_is_never_published() {
         "{value}"
     );
     assert!(value.contains("Primary: the memo's text"), "{value}");
+}
+
+#[test]
+fn hovering_a_summary_describes_it() {
+    let f = quill();
+    let page = f.path("docs/install-agent.md");
+    let id = "@id {permalink=true}: prerequisites\n";
+    let text = read(&f, "docs/install-agent.md").replacen(
+        id,
+        &format!("{id}@summary: What you need first.\n"),
+        1,
+    );
+    f.write("docs/install-agent.md", &text);
+    let mut client = Client::start(&f.root());
+    let value = hover_text(&mut client, &page, at(&text, "@summary:", 2));
+    assert!(
+        value.starts_with("**@summary**, a built-in directive"),
+        "{value}"
+    );
+    assert!(
+        value.contains("Give a section a summary: this text, or the paragraph below it."),
+        "{value}"
+    );
+    assert!(value.contains("Primary: text"), "{value}");
+}
+
+#[test]
+fn hovering_a_heading_or_its_id_shows_the_sections_summary() {
+    let f = quill();
+    let page = f.path("docs/install-agent.md");
+    let id = "@id {permalink=true}: prerequisites\n";
+    let text = read(&f, "docs/install-agent.md").replacen(
+        id,
+        &format!("{id}@summary: What you need before {{product}} runs.\n"),
+        1,
+    );
+    f.write("docs/install-agent.md", &text);
+    let mut client = Client::start(&f.root());
+    // On the heading, the summary as help.json writes it, its phrase
+    // replaced.
+    let value = hover_text(&mut client, &page, at(&text, "## Prerequisites", 4));
+    assert_eq!(value, "**Summary:** What you need before Quill runs.");
+    // On the `@id` line's name, the summary, then what `@id` is.
+    let value = hover_text(&mut client, &page, at(&text, id, 2));
+    assert!(
+        value.starts_with("**Summary:** What you need before Quill runs.\n\n---\n\n**@id**"),
+        "{value}"
+    );
+    // On its primary, the summary.
+    let value = hover_text(&mut client, &page, at(&text, id, 25));
+    assert_eq!(value, "**Summary:** What you need before Quill runs.");
+    // A heading whose section has none has no hover.
+    assert!(hover(&mut client, &page, at(&text, "## Connect to", 4)).is_none());
+}
+
+#[test]
+fn hovering_a_heading_in_a_fragment_shows_its_summary_on_the_page_that_includes_it() {
+    let f = quill();
+    f.write(
+        "docs/_fragments/rotate.md",
+        "## Rotate a key\n@id: rotate-a-key\n@summary: Replace a key before it expires.\n\nGenerate one.\n",
+    );
+    let keys = read(&f, "docs/keys.md");
+    f.write(
+        "docs/keys.md",
+        &format!("{keys}\n@include: _fragments/rotate.md\n"),
+    );
+    let fragment = f.path("docs/_fragments/rotate.md");
+    let text = read(&f, "docs/_fragments/rotate.md");
+    let mut client = Client::start(&f.root());
+    let value = hover_text(&mut client, &fragment, at(&text, "## Rotate", 4));
+    assert_eq!(value, "**Summary:** Replace a key before it expires.");
 }
 
 // -- Folding ----------------------------------------------------------------------

@@ -99,6 +99,11 @@
         "nested": true
       },
       {
+        "href": "/docs/checks/diagnostics/output-checks/",
+        "label": "Diagnostics: content checks of outputs and the site",
+        "nested": true
+      },
+      {
         "href": "/docs/checks/diagnostics/directives/",
         "label": "Diagnostics: directives",
         "nested": true

@@ -8,6 +8,7 @@ The commands that write the page templates into a project and say what's changed
 
 ## `ascribe templates`
 @id {permalink=true}: cli-templates
+@summary: Writes the page templates Ascribe carries into a project, as its own files, and declares a content type for each.
 
 Writes the page templates Ascribe carries into a project, as the project's own files, and declares a content type for each, which takes them as its [template and guide](../content-model/index.md#41-page-types) from `templates/templates.lock`. The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, converted into Ascribe pages, as [Where the templates come from](index.md#where-the-templates-come-from) says.
 
@@ -16,6 +17,7 @@ The set has six templates, which `ascribe templates list` names. A page is start
 ### `ascribe templates list`
 @id {permalink=true}: cli-templates-list
 
+@summary
 Shows each template the set has, in a line, with what it's for, and which release of theirs the set was converted from. It reads only what the binary carries, so it works anywhere, in a project or not. It takes no options, and exits with `0`.
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/templates-list.txt
@@ -23,6 +25,7 @@ Shows each template the set has, in a line, with what it's for, and which releas
 ### `ascribe templates eject`
 @id {permalink=true}: cli-templates-eject
 
+@summary
 Writes each template named, with its guide and Ascribe's notes on its type, into the project, and adds its type to `ascribe.toml`. With no name, it takes every template of the set.
 
 ```sh
@@ -86,6 +89,7 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 
 ### `ascribe templates status`
 @id {permalink=true}: cli-templates-status
+@summary: Says what's changed in the templates since the project took them: in the set this `ascribe` carries, and in the project's copies, and which templates the project doesn't have.
 
 Says what's changed in the templates since the project took them: for each one, whether the set this `ascribe` carries has changed it since the copy, and whether the project has changed its copy; then each template of the set the project doesn't have. It compares the project's files and `templates.lock` with the set the binary carries, and reads nothing else: no network, so what it says is as of this `ascribe`, and its first line names the release of theirs the set is from. It changes no file: a team that wants a change copies it by hand.
 

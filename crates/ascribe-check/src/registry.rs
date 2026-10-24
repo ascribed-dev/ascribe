@@ -103,8 +103,8 @@ pub struct Entry {
     /// needs the network or a built site: never `ascribe check` or the
     /// editor.
     pub report_only: bool,
-    /// For a content check, what it reports, in Markdown: the registry's
-    /// `when`, which every configurable check has.
+    /// For a content check or a loader rule, when it's reported, in
+    /// Markdown: the registry's `when`, which every configurable check has.
     pub when: Option<String>,
     /// For a content check, the area the diagnostics reference lists it
     /// under: one of [`AREAS`].

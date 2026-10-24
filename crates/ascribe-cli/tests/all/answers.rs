@@ -1241,6 +1241,74 @@ fn resolve_needs_a_build_and_a_page() {
 }
 
 #[test]
+fn resolve_shows_a_permalinks_help() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        &dir.path().join("ascribe.toml"),
+        &format!(
+            "{MODEL}\n[consumer]\nsite = \"https://docs.quill.dev\"\n\n[permalinks.retired]\nlegacy-sync = {{ to = \"keys.md\", reason = \"The sync agent was removed in 4.0\" }}\n\n[permalinks.aliases]\nkey-rotation = \"rotate-keys\"\n"
+        ),
+    );
+    write(
+        &dir.path().join("docs/keys.md"),
+        "---\ntitle: API keys\n---\n\n## Rotate keys\n@id {permalink=true}: rotate-keys\n\n@summary\nRotate a key every 90 days.\n\nRun `quill keys rotate`.\n",
+    );
+    let text = stdout(&run(
+        dir.path(),
+        &["resolve", "go:rotate-keys", "--build", "cloud"],
+        0,
+    ));
+    assert_eq!(
+        text,
+        "Rotate keys\nRotate a key every 90 days.\n\nRun `quill keys rotate`.\n\nRead more: https://docs.quill.dev/go/rotate-keys/\n"
+    );
+    let value = json(
+        dir.path(),
+        &["resolve", "go:key-rotation", "--build", "cloud"],
+        0,
+    );
+    assert_eq!(value["version"], 1, "{value}");
+    assert_eq!(value["build"], "cloud", "{value}");
+    assert!(value.get("line").is_none(), "{value}");
+    assert_eq!(value["name"], "key-rotation", "{value}");
+    assert_eq!(value["title"], "Rotate keys", "{value}");
+    assert_eq!(value["summary"], "Rotate a key every 90 days.", "{value}");
+    assert_eq!(
+        value["address"], "https://docs.quill.dev/go/key-rotation/",
+        "an alias has its target's entry, at its own address: {value}"
+    );
+    assert_eq!(value["source"], "keys.md", "{value}");
+
+    let unknown = run(
+        dir.path(),
+        &[
+            "resolve",
+            "go:rotate-key",
+            "--build",
+            "cloud",
+            "--format",
+            "json",
+        ],
+        1,
+    );
+    assert!(stdout(&unknown).is_empty(), "{}", stdout(&unknown));
+    assert_eq!(
+        stderr(&unknown),
+        "error: build `cloud` publishes no permalink `rotate-key`; did you mean `rotate-keys`?\n"
+    );
+    let retired = run(
+        dir.path(),
+        &["resolve", "go:legacy-sync", "--build", "cloud"],
+        1,
+    );
+    assert!(stdout(&retired).is_empty(), "{}", stdout(&retired));
+    assert_eq!(
+        stderr(&retired),
+        "error: permalink `legacy-sync` is retired: The sync agent was removed in 4.0; its address leads to `keys.md`\n"
+    );
+}
+
+#[test]
 fn search_finds_words_through_phrases_in_the_builds_that_publish_them() {
     let dir = project();
     let out = run(

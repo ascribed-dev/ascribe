@@ -128,9 +128,15 @@ pub struct Entry {
     /// The SPEC §8.2 row, as `<construct> | <condition>`.
     #[serde(default)]
     pub row: Option<String>,
-    /// When a content check is reported, as a sentence without its full stop.
+    /// When a content check or a loader rule is reported, as a sentence
+    /// without its full stop.
     #[serde(default)]
     pub when: Option<String>,
+    /// A shorter sentence than `when`, without its full stop, which the
+    /// diagnostics reference gives as the entry's summary in its place, for
+    /// an entry whose `when` is as long as `summary-long`'s limit or longer.
+    #[serde(default)]
+    pub summary: Option<String>,
     /// The group of the diagnostics reference a loader rule is listed in.
     #[serde(default)]
     pub group: Option<String>,

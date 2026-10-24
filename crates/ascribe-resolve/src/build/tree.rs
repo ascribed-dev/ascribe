@@ -31,6 +31,8 @@ use crate::index::RefKind;
 use crate::project::PageAsset;
 use crate::snippet::Snippet;
 
+use super::summary::SectionSummary;
+
 /// A page resolved for one build.
 #[derive(Clone, Debug)]
 pub struct ResolvedPage {
@@ -80,6 +82,9 @@ pub struct ResolvedPage {
     /// The assets the surviving content references, in document order, each
     /// with where it's written.
     pub assets: Vec<PageAsset>,
+    /// Each section's summary (SPEC §4.12), in document order: the page's
+    /// opening's first, when it has one. [`ResolvedPage::summary`] finds one.
+    pub summaries: Vec<SectionSummary>,
     /// Problems found while resolving, for the page-level checks to report:
     /// what expansion
     /// found (`include-cycle`, `include-id-missing`), then per build
@@ -282,6 +287,19 @@ impl ResolvedBlock {
             ResolvedKind::Group { arms, .. } => {
                 arms.iter().flat_map(|a| &a.children).for_each(f);
             }
+        }
+    }
+
+    /// Calls `f` on each list of blocks directly inside this one: a block
+    /// quote's or a container's, each list item's, and each arm's.
+    pub(crate) fn for_each_child_list<'a>(&'a self, f: &mut impl FnMut(&'a [ResolvedBlock])) {
+        match &self.kind {
+            ResolvedKind::Leaf(_) => {}
+            ResolvedKind::BlockQuote { children } | ResolvedKind::Container { children, .. } => {
+                f(children);
+            }
+            ResolvedKind::List { items, .. } => items.iter().for_each(|i| f(&i.children)),
+            ResolvedKind::Group { arms, .. } => arms.iter().for_each(|a| f(&a.children)),
         }
     }
 

@@ -75,9 +75,16 @@
 #                is its default level, and its `spec` is the SPEC section of
 #                the construct it checks. The diagnostics reference lists it
 #                under "Content checks", in its area's section.
-#   when         For a quality check: when it's reported, as a sentence
-#                without its full stop. Every configurable entry has one: it's
-#                the check's description, wherever a check is described.
+#   when         For a quality check or a loader rule: when it's reported,
+#                as a sentence without its full stop. Every one has it. A
+#                quality check's is its description, wherever a check is
+#                described. A SPEC §8.2 row has none: its row's condition says
+#                when it's reported. The diagnostics reference gives each entry
+#                its `when`, or its row's condition, as its summary.
+#   summary      For an entry whose `when`, or row's condition, is too long for
+#                a summary, 300 characters or more as `summary-long` counts
+#                them: a shorter sentence, without its full stop, which the
+#                diagnostics reference gives as its summary in its place.
 #   group        The group of docs/content/checks/diagnostics/content-model.md a loader rule is listed in:
 #                file, project, sources, content-types, names, phrases, widgets, or
 #                consumer. Every loader rule has one.
@@ -1578,6 +1585,7 @@ evidence = []
 spec = "7.1"
 reference = "content-model/index.md#11-the-file"
 group = "file"
+when = "`ascribe.toml` isn't valid TOML"
 message = "ascribe.toml isn't valid TOML: {detail}"
 fix = "Fix the TOML syntax at the place the message names."
 
@@ -1591,6 +1599,7 @@ evidence = []
 spec = "7.1"
 reference = "content-model/index.md#11-the-file"
 group = "file"
+when = "A table of `ascribe.toml` has a key this version of Ascribe doesn't know"
 message = "unknown key `{key}` in `[{table}]`; this is ascribe {version}, and the project may need a newer one"
 messages.suggestion = "unknown key `{key}` in `[{table}]`; did you mean `{suggestion}`? This is ascribe {version}, and the project may need a newer one"
 messages.type-key = "`{key}` isn't a key of `[{table}]`: a page says what type it is in its frontmatter, with `type: {type}`"
@@ -1608,6 +1617,7 @@ evidence = []
 spec = "7.1"
 reference = "content-model/index.md#11-the-file"
 group = "file"
+when = "A table of `ascribe.toml` is missing a key it requires"
 message = "`[{table}]` is missing the required key `{key}`"
 fix = "Add the key."
 
@@ -1621,6 +1631,7 @@ evidence = []
 spec = "7.1"
 reference = "content-model/index.md#11-the-file"
 group = "file"
+when = "A key's value is of the wrong type, such as a number where a string is required"
 message = "`{key}` must be {expected}, but it's {found}"
 messages.quote = "`{key}` must be a string, but it's a number; quote it: {key} = \"{value}\""
 fix = "Give the key a value of the expected type. Strings are always quoted in TOML."
@@ -1635,6 +1646,7 @@ evidence = ["allowed-values"]
 spec = "7.1"
 reference = "content-model/index.md#11-the-file"
 group = "file"
+when = "A key's value isn't one of the values the key allows"
 message = "`{key}` can't be \"{value}\"; use one of: {values}"
 fix = "Use one of the values the message lists."
 
@@ -1648,6 +1660,7 @@ evidence = []
 spec = "11"
 reference = "content-model/index.md#2-top-level-spec"
 group = "file"
+when = "`spec` names a specification version this version of Ascribe doesn't implement"
 message = "ascribe.toml targets spec version \"{spec}\", but this processor implements {supported}"
 fix = "Set `spec = \"0.1\"`, the specification version this release implements, or update Ascribe."
 
@@ -1661,6 +1674,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/index.md#12-names"
 group = "file"
+when = "A name the content model declares, such as a dimension, a value, or a content type, breaks the rules for that kind of name"
 message = "`{name}` isn't a valid {role} name: {rule}"
 fix = "Rename it following the rule the message gives."
 
@@ -1674,6 +1688,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/index.md#11-the-file"
 group = "file"
+when = "A key that holds text is empty"
 message = "`{key}` can't be empty"
 fix = "Give the key a value, or remove it."
 
@@ -1687,6 +1702,7 @@ evidence = []
 spec = "2.2"
 reference = "content-model/index.md#13-paths-and-patterns"
 group = "project"
+when = "A path in `ascribe.toml` is absolute, where it must be relative to `ascribe.toml`"
 message = "`{key}` must be a path relative to ascribe.toml, not an absolute path"
 fix = "Write the path relative to the directory of `ascribe.toml`."
 
@@ -1700,6 +1716,7 @@ evidence = []
 spec = "2.2"
 reference = "content-model/index.md#3-project"
 group = "project"
+when = "The content root doesn't exist, or isn't a directory"
 message = "content root `{path}` doesn't exist"
 messages.not-directory = "content root `{path}` isn't a directory"
 fix = "Create the directory, or correct `[project] content-root`."
@@ -1714,6 +1731,7 @@ evidence = []
 spec = "9.4"
 reference = "content-model/index.md#3-project"
 group = "project"
+when = "The output directory and the content root are the same, or one is inside the other"
 message = "output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source"
 messages.content-inside-output = "content root `{content}` is inside output directory `{output}`; builds could delete source files as stale output"
 messages.same = "output directory and content root are both `{path}`"
@@ -1729,6 +1747,7 @@ evidence = []
 spec = "2.1"
 reference = "content-model/index.md#41-page-types"
 group = "content-types"
+when = "A content type, or the fragments' frontmatter, declares a field the specification or an output reserves"
 message = "`{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[{table}]`"
 messages.fragment = "`{field}` is reserved by the Ascribe spec, and fragments can't use it"
 messages.fragment-accepted = "`{field}` is reserved by the Ascribe spec and every fragment accepts it; remove it from `[fragments.frontmatter]`"
@@ -1748,6 +1767,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/index.md#51-short-form"
 group = "content-types"
+when = "A field's or an attribute's type isn't one Ascribe knows, or isn't written correctly"
 message = "\"{type}\" isn't a valid {kind} type: {detail}"
 fix = "Fix the type. The types are `string`, `number`, `boolean`, `date`, `enum(a, b)`, `list(T)`, and, for attributes, `set(T)`; a `?` at the end makes one optional."
 
@@ -1761,6 +1781,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/index.md#52-table-form"
 group = "content-types"
+when = "An `object` field has no `fields`, or a field that isn't an object has them"
 message = "field `{field}` is an object, so it needs `fields`"
 messages.not-object = "`fields` is only allowed on object fields, and `{field}` is \"{type}\""
 fix = "Give an `object` field its `fields`, or remove `fields` from a field that isn't an object."
@@ -1775,6 +1796,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/index.md#51-short-form"
 group = "content-types"
+when = "An enumeration is empty, lists a value twice, gives its values in both places, or gives none"
 message = "`{field}` has an empty enumeration"
 messages.duplicate = "\"{value}\" appears twice in the enumeration for `{field}`"
 messages.both = "`{field}`: list enumeration values in enum(…) or in `values`, not both"
@@ -1791,6 +1813,7 @@ evidence = []
 spec = "3.3"
 reference = "content-model/index.md#51-short-form"
 group = "content-types"
+when = "A value of a set-valued attribute has a space or a reserved character"
 message = "\"{value}\" can't be in a value set: members can't contain spaces or any of , | {{ }} = \""
 fix = "Remove spaces and the characters `,` `|` `{` `}` `=` `\"` from the value, or make the attribute a single value instead of a set."
 
@@ -1804,6 +1827,7 @@ evidence = ["allowed-values"]
 spec = "7.2"
 reference = "content-model/index.md#52-table-form"
 group = "content-types"
+when = "A field's default isn't of the field's type, or isn't one of its values"
 message = "default for `{field}` must be {type}, but it's {found}"
 messages.not-a-value = "default \"{value}\" for `{field}` isn't one of: {values}"
 fix = "Give a default of the field's type."
@@ -1818,6 +1842,7 @@ evidence = []
 spec = "5.1"
 reference = "content-model/content.md#phrases"
 group = "content-types"
+when = "`phrases = true` is on a field that isn't a `string` or a `list(string)`"
 message = "phrases = true only works on string and list(string) fields, and `{field}` is \"{type}\""
 fix = "Remove `phrases = true`, or make the field a `string` or `list(string)`."
 
@@ -1831,6 +1856,7 @@ evidence = []
 spec = "2.2"
 reference = "content-model/index.md#13-paths-and-patterns"
 group = "content-types"
+when = "A pattern isn't valid, starts with `/`, or has a `..` segment"
 message = "\"{pattern}\" isn't a valid pattern: {detail}"
 messages.leading-slash = "pattern \"{pattern}\" is already relative to the content root; remove the leading /"
 messages.parent = "pattern \"{pattern}\" can't contain .."
@@ -1860,6 +1886,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/index.md#12-names"
 group = "names"
+when = "Two names the content model declares differ only in case"
 message = "`{a}` and `{b}` differ only in case; names are case-sensitive, so they're easy to confuse"
 fix = "Rename one of them, so they differ by more than case."
 
@@ -1873,6 +1900,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/content.md#dimensions"
 group = "names"
+when = "A dimension has no values"
 message = "dimension `{dimension}` has no values"
 fix = "Add the dimension's values, or remove the dimension."
 
@@ -1886,6 +1914,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/content.md#dimensions"
 group = "names"
+when = "A dimension lists a value twice"
 message = "`{value}` appears twice in dimensions.{dimension}.values"
 fix = "Remove the repeated value."
 
@@ -1901,6 +1930,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/content.md#dimensions"
 group = "names"
+when = "A value is in more than one dimension"
 message = "`{value}` is a value of both `{a}` and `{b}`; a value can belong to only one dimension"
 fix = "Rename the value in one of the dimensions."
 
@@ -1914,6 +1944,7 @@ evidence = ["allowed-values"]
 spec = "7.2"
 reference = "content-model/content.md#dimensions"
 group = "names"
+when = "A dimension's `labels` gives a label for a value the dimension doesn't have"
 message = "dimensions.{dimension}.labels has a label for `{value}`, which isn't one of its values: {values}"
 fix = "Correct the label's key, or add the value to the dimension's `values`."
 
@@ -1927,6 +1958,7 @@ evidence = ["allowed-values"]
 spec = "7.2"
 reference = "content-model/content.md#dimensions"
 group = "names"
+when = "A dimension's `versionless` lists a value the dimension doesn't have"
 message = "dimensions.{dimension}.versionless lists `{value}`, which isn't one of its values: {values}"
 fix = "Correct the entry, or add the value to the dimension's `values`."
 
@@ -1940,6 +1972,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/content.md#8-lifecyclestate"
 group = "names"
+when = "A lifecycle state the project adds doesn't say whether it counts as available"
 message = "new lifecycle state `{state}` must set available = true or available = false"
 fix = "Add `available = true` or `available = false` to the state."
 
@@ -1953,6 +1986,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/content.md#8-lifecyclestate"
 group = "names"
+when = "`[lifecycle.ga]` doesn't count as available"
 message = "`ga` must count as available: content with no lifecycle state is ga"
 fix = "Remove `available = false` from `[lifecycle.ga]`."
 
@@ -1966,6 +2000,7 @@ evidence = []
 spec = "4.5"
 reference = "content-model/content.md#10-notestype"
 group = "names"
+when = "A note type the project adds has no `label`"
 message = "new note type `{type}` needs a label, such as label = \"{Type}\""
 fix = "Give the note type a `label`."
 
@@ -1979,6 +2014,7 @@ evidence = []
 spec = "4.4"
 reference = "content-model/content.md#9-featureskey"
 group = "names"
+when = "A feature's `available` isn't a valid availability spec"
 message = "feature `{key}`: \"{spec}\" isn't a valid availability spec: {detail}"
 fix = "Fix the feature's `available` spec. Its syntax is in the [directive reference](writing/directives.md#availability-specs)."
 
@@ -1992,6 +2028,7 @@ evidence = []
 spec = "4.4"
 reference = "content-model/content.md#9-featureskey"
 group = "names"
+when = "A feature's `available` names a target or a state the content model doesn't declare"
 message = "feature `{key}`: `{name}` isn't a declared dimension value or dimension name"
 messages.state = "feature `{key}`: `{name}` isn't a declared lifecycle state"
 fix = "Use a declared dimension value, dimension, or lifecycle state, or declare the name."
@@ -2006,6 +2043,7 @@ evidence = []
 spec = "4.4"
 reference = "content-model/content.md#9-featureskey"
 group = "names"
+when = "A feature's `available` gives a version to a versionless target or a dimension name"
 message = "feature `{key}`: `{target}` is versionless, so it takes a state but no version"
 messages.dimension = "feature `{key}`: `{target}` is a dimension name, so it takes a state but no version; name one of its values, such as `{example}`, to give a version"
 fix = "Remove the version. A versionless target, or a dimension name, takes a state but no version."
@@ -2020,6 +2058,7 @@ evidence = []
 spec = "4.4"
 reference = "content-model/content.md#9-featureskey"
 group = "names"
+when = "A feature's history for a target isn't in chronological order"
 message = "feature `{key}`: the history for `{target}` must be in chronological order, but {later} comes before {earlier}"
 fix = "List the target's states oldest first."
 
@@ -2033,6 +2072,7 @@ evidence = []
 spec = "4.4"
 reference = "content-model/content.md#9-featureskey"
 group = "names"
+when = "A feature's `available` names another feature"
 message = "feature `{key}`: available must be an availability spec, not another feature (`{other}`)"
 fix = "Write the feature's availability out in full. One feature can't refer to another."
 
@@ -2046,6 +2086,7 @@ evidence = []
 spec = "5.1"
 reference = "content-model/content.md#phrases"
 group = "phrases"
+when = "A phrase's value isn't a string, or a table naming a target's line"
 message = "phrase `{key}` must be a quoted string, but it's {found}; write {key} = \"{value}\""
 fix = "Quote the value. A phrase whose value is a target's current release line is a table with one key, `line`: `release = { line = \"self-managed\" }`."
 
@@ -2059,6 +2100,7 @@ evidence = []
 spec = "6"
 reference = "content-model/content.md#14-widgetsname"
 group = "widgets"
+when = "A widget's name is reserved by Ascribe's element library or by HTML"
 message = "widget name `{name}` is reserved: names starting with ascribe- belong to Ascribe's element library"
 messages.html = "widget name `{name}` is reserved by HTML and can't be a custom element"
 fix = "Rename the widget, for example with your project's name as its prefix: `quill-aside`."
@@ -2073,6 +2115,7 @@ evidence = []
 spec = "6"
 reference = "content-model/content.md#14-widgetsname"
 group = "widgets"
+when = "A widget's `forms` isn't one of the lists it allows"
 message = "forms must be [\"line\"], [\"container\"], or [\"line\", \"container\"]"
 fix = "Set `forms` to `[\"line\"]`, `[\"container\"]`, or `[\"line\", \"container\"]`."
 
@@ -2086,6 +2129,7 @@ evidence = []
 spec = "6"
 reference = "content-model/content.md#14-widgetsname"
 group = "widgets"
+when = "A widget with a line form has no `binding`, or a container-only widget has one"
 message = "widget `{name}` has a line form, so it needs a binding: \"self\", \"heading\", \"block\", or \"heading-or-block\""
 messages.container-only = "widget `{name}` is container-only, and a container holds its own content; remove binding"
 fix = "Give a widget with a line form a `binding`. Remove `binding` from a container-only widget."
@@ -2100,6 +2144,7 @@ evidence = []
 spec = "6"
 reference = "content-model/content.md#14-widgetsname"
 group = "widgets"
+when = "A widget with a container form requires a primary, or a container-only widget takes one"
 message = "widget `{name}` has a container form, whose opener has no primary, so its primary can't be required; use \"{kind}?\""
 messages.container-only = "widget `{name}` is container-only, so it can't take a primary"
 fix = "Make the primary optional (`\"text?\"`), or remove the widget's container form. A container-only widget takes no primary."
@@ -2114,6 +2159,7 @@ evidence = []
 spec = "6"
 reference = "content-model/content.md#14-widgetsname"
 group = "widgets"
+when = "A groupable widget has a line form"
 message = "widget `{name}` is groupable, so it must be container-only: forms = [\"container\"]"
 fix = "Set `forms = [\"container\"]`, or remove `groupable`."
 
@@ -2127,6 +2173,7 @@ evidence = []
 spec = "6"
 reference = "content-model/content.md#14-widgetsname"
 group = "widgets"
+when = "A widget that doesn't wrap content sets `plain-content`"
 message = "widget `{name}` doesn't wrap content, so plain-content has no effect; remove it"
 fix = "Remove `plain-content`."
 
@@ -2140,6 +2187,7 @@ evidence = ["allowed-values"]
 spec = "9.5"
 reference = "content-model/output.md#consumer"
 group = "consumer"
+when = "A `[consumer]` key has a value the consumer profile doesn't support"
 message = "the {profile} profile doesn't support {key} = {value}; use {values}"
 fix = "Use one of the values the message lists."
 
@@ -2153,6 +2201,7 @@ evidence = []
 spec = "9.5"
 reference = "content-model/output.md#consumer"
 group = "consumer"
+when = "`[consumer] site` isn't an origin alone, such as `https://docs.example.com`"
 message = "site must be an origin such as \"https://docs.example.com\"; put any path in base-path"
 fix = "Set `site` to the origin alone, such as `\"https://docs.example.com\"`, and put any path in `base-path`."
 
@@ -2166,6 +2215,7 @@ evidence = []
 spec = "9.5"
 reference = "content-model/output.md#consumer"
 group = "consumer"
+when = "`[consumer] base-path` doesn't start with `/`"
 message = "base-path must start with \"/\", such as \"/docs/\""
 fix = "Start `base-path` with `/`: `\"/docs/\"`."
 
@@ -2179,6 +2229,7 @@ evidence = []
 spec = "9.3"
 reference = "content-model/output.md#16-buildsname"
 group = "consumer"
+when = "Two builds' names differ only in case"
 message = "builds `{a}` and `{b}` differ only in case, so they'd share an output directory on some file systems"
 fix = "Rename one of the builds."
 
@@ -2192,6 +2243,7 @@ evidence = []
 spec = "9.3"
 reference = "content-model/output.md#16-buildsname"
 group = "consumer"
+when = "A build's `variants` isn't `\"switch\"` or a selection that names a dimension"
 message = "variants must be \"switch\" or a selection such as {{ deployment = \"cloud\" }}"
 messages.empty = "build `{build}` selects nothing; write variants = \"switch\""
 fix = "Set `variants` to `\"switch\"`, or to a selection that names at least one dimension."
@@ -2206,6 +2258,7 @@ evidence = []
 spec = "9.3"
 reference = "content-model/output.md#16-buildsname"
 group = "consumer"
+when = "A build's selection names a dimension the content model doesn't declare"
 message = "build `{build}` selects dimension `{dimension}`, which isn't declared"
 fix = "Correct the dimension's name, or declare the dimension in `[dimensions]`."
 
@@ -2219,6 +2272,7 @@ evidence = ["allowed-values"]
 spec = "9.3"
 reference = "content-model/output.md#16-buildsname"
 group = "consumer"
+when = "A build's selection names a value its dimension doesn't have"
 message = "build `{build}`: `{value}` isn't a value of `{dimension}`; values: {values}"
 fix = "Use one of the values the message lists."
 
@@ -2232,6 +2286,7 @@ evidence = []
 spec = "9.3"
 reference = "content-model/output.md#16-buildsname"
 group = "consumer"
+when = "A build's `availability` isn't `\"badge\"` or a filter"
 message = "availability must be \"badge\" or {{ filter = \"<target> <version>\" }}"
 fix = "Set `availability` to `\"badge\"`, or to `{ filter = \"<target> <version>\" }`."
 
@@ -2245,6 +2300,7 @@ evidence = ["allowed-values"]
 spec = "9.3"
 reference = "content-model/output.md#16-buildsname"
 group = "consumer"
+when = "A build's filter names something other than a declared dimension value"
 message = "build `{build}` filters for `{target}`, which isn't a declared dimension value"
 messages.dimension = "build `{build}` filters for `{target}`, which is a dimension; filter for one of its values: {values}"
 fix = "Filter for a declared dimension value, not a dimension name."
@@ -2259,6 +2315,7 @@ evidence = []
 spec = "9.3"
 reference = "content-model/output.md#16-buildsname"
 group = "consumer"
+when = "A build's filter gives a versioned target no version, a versionless one a version, or a version that isn't valid"
 message = "build `{build}` filters for `{target}`, which is versioned, so it needs a version, such as \"{target} 3.3\""
 messages.versionless = "build `{build}`: `{target}` is versionless, so the filter can't name a version"
 messages.invalid = "build `{build}`: \"{version}\" isn't a valid version"
@@ -2274,6 +2331,7 @@ evidence = []
 spec = "9.3"
 reference = "content-model/output.md#16-buildsname"
 group = "consumer"
+when = "A build filters for a target its own selection of variants leaves out"
 message = "build `{build}` filters for `{target}`, but its selection keeps only {dimension} = {values}, so pages marked for `{target}` are dropped"
 fix = "Make the build's `variants` selection keep the target it filters for, or filter for a target it keeps."
 
@@ -2287,6 +2345,7 @@ evidence = []
 spec = "10"
 reference = "content-model/output.md#17-editor"
 group = "consumer"
+when = "`[editor] build` names a build the content model doesn't declare"
 message = "editor.build is `{build}`, which isn't a declared build; builds: {builds}"
 fix = "Set `[editor] build` to one of the builds the message lists."
 
@@ -2300,6 +2359,7 @@ evidence = []
 spec = "10"
 reference = "content-model/output.md#17-editor"
 group = "consumer"
+when = "The content model declares several builds, none named `site`, and `[editor] build` doesn't name one"
 message = "there are several builds and none is named site; set [editor] build to the one the editor should check"
 fix = "Set `[editor] build` to the build the editor should check, or name one of the builds `site`."
 
@@ -2313,6 +2373,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/content.md#13-images"
 group = "content-types"
+when = "An image's or a widget's attribute has a name that HTML or the site output already uses on its element"
 message = "`{key}` can't be an image attribute: HTML already uses it on the <img> element"
 messages.widget = "`{key}` can't be an attribute of widget `{name}`: the site output already uses it on the widget's element"
 fix = "Rename the attribute."
@@ -2551,6 +2612,7 @@ evidence = []
 spec = "7.3"
 reference = "content-model/output.md#18-sourcesname"
 group = "sources"
+when = "A source's `path` doesn't exist, or isn't a folder"
 message = "the folder of source `{source}`, `{path}`, doesn't exist"
 messages.not-directory = "the folder of source `{source}`, `{path}`, isn't a directory"
 fix = "Fix `path`, which is relative to the folder ascribe.toml is in, or create the folder."
@@ -2565,6 +2627,7 @@ evidence = []
 spec = "7.3"
 reference = "content-model/output.md#18-sourcesname"
 group = "sources"
+when = "A source's folder is outside the project's repository, or, with no repository, outside the folder that was opened"
 message = "the folder of source `{source}`, `{path}`, is outside the git repository the project is in"
 messages.opened = "the folder of source `{source}`, `{path}`, is outside the folder that was opened, and with no git repository around the project, a source isn't read from outside it; open the folder that contains it"
 fix = "Give the source a `path` inside the project's repository, or, for code in another repository, give it `git` instead. With no repository, the editor and `ascribe mcp` read a source only inside the folder they were opened on: open the folder that contains the source."
@@ -2579,6 +2642,7 @@ evidence = []
 spec = "7.4"
 reference = "content-model/output.md#a-source-in-another-repository"
 group = "sources"
+when = "A source has both `path` and `git`, or neither, a `branch` without `git`, a URL or a branch `git` can't take, or copies that would go inside the content root"
 message = "source `{source}` has both `path` and `git`: a source is a folder in this repository or another repository, not both"
 messages.neither = "source `{source}` needs `path`, a folder in this repository, or `git`, another repository's URL"
 messages.branch = "source `{source}` has `branch` but no `git`: a branch is only for a source in another repository"
@@ -2665,6 +2729,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/index.md#53-code-in-a-field"
 group = "content-types"
+when = "`inline` is on a field that isn't a page type's top-level string field, or isn't `\"code\"`"
 message = "inline = \"code\" only works on string fields, and `{field}` is \"{type}\""
 messages.value = "inline must be \"code\", not \"{value}\""
 messages.nested = "inline = \"code\" only works on a page type's top-level fields, its own or `[frontmatter]`'s, and `{field}` is in {place}"
@@ -2680,6 +2745,7 @@ evidence = []
 spec = "8.2"
 reference = "content-model/checks.md#19-checks"
 group = "checks"
+when = "`[checks]` sets the level of a check about whether the project is valid"
 message = "`{check}` can't be set in [checks]: it reports whether the project is valid, which a project can't lower or turn off"
 fix = "Remove the check from `[checks]`. Only checks about the content's quality, which the [diagnostics reference](checks/diagnostics.md) marks as configurable, can be set there; a diagnostic about whether the project is valid is always reported at its own severity."
 
@@ -2739,6 +2805,7 @@ evidence = []
 spec = "4.9"
 reference = "content-model/checks.md#intended-acknowledgements"
 group = "checks"
+when = "An acknowledgement in `[[intended]]` names something that isn't a check, a check that isn't a review check, or one whose problems are acknowledged in the pages"
 message = "`{check}` isn't a check"
 messages.suggestion = "`{check}` isn't a check; did you mean `{suggestion}`?"
 messages.not-review = "`{check}` can't be acknowledged: only a check whose next step is review reports something that may be intended, so fix the problem instead"
@@ -2755,6 +2822,7 @@ evidence = []
 spec = "4.9"
 reference = "content-model/checks.md#intended-acknowledgements"
 group = "checks"
+when = "An acknowledgement in `[[intended]]` doesn't name exactly one thing the content model declares, or its reason is still a placeholder"
 message = "an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, or `image`"
 messages.several = "an acknowledgement in [[intended]] is about one thing, and this one names {keys}"
 messages.unknown = "there's no {kind} `{name}` in this content model"
@@ -2771,6 +2839,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/index.md#54-field-roles"
 group = "content-types"
+when = "A field's `role` isn't one Ascribe knows, is on a field of the wrong type or below a page type's top level, or is on two fields of one type"
 message = "role = \"{role}\" only works on a {expected} field, and `{field}` is \"{type}\""
 messages.value = "role must be \"description\", \"review-date\", or \"owner\", not \"{value}\""
 messages.nested = "role only works on a page type's top-level fields, its own or `[frontmatter]`'s, and `{field}` is in {place}"
@@ -2997,6 +3066,7 @@ evidence = []
 spec = "9.5"
 reference = "content-model/output.md#consumer"
 group = "consumer"
+when = "`[consumer] agents = true` without `[consumer] site`"
 message = "agents = true needs `site`: every link in llms.txt and the Markdown pages is an absolute URL"
 fix = "Set `site` in `[consumer]` to the published site's origin, such as `\"https://docs.example.com\"`, or remove `agents`."
 
@@ -3102,6 +3172,7 @@ evidence = []
 spec = "8.2"
 reference = "content-model/checks.md#checksvale"
 group = "checks"
+when = "`[checks.vale]` has both `preset` and `config`, or neither, or turns off a rule with `config` or one its preset doesn't have"
 message = "`[checks.vale]` has both `preset` and `config`; pick one: Ascribe's preset, or the project's own `.vale.ini`"
 messages.neither = "`[checks.vale]` needs `preset`, one of Ascribe's presets, or `config`, the path of the project's own `.vale.ini`"
 messages.off = "`[checks.vale] off` turns off a preset's rules, so it goes with `preset`; with `config`, turn a rule off in the project's `.vale.ini`"
@@ -3122,6 +3193,7 @@ stage = "report"
 spec = "5.2"
 reference = "content-model/checks.md#checkslinks"
 when = "`ascribe report links`: the link checker found that an external link answers with an error, doesn't answer in time, or can't be reached. An address that answers with a server error (`5xx`) is asked about again after a short wait, and reported only when it fails again. A host `[checks.links] ignore` names isn't checked"
+summary = "`ascribe report links`: the link checker found that an external link answers with an error, doesn't answer in time, or can't be reached"
 message = "`{url}` answered {status}, so the link is broken for readers"
 messages.server = "`{url}` answered {status} when asked twice: the server failed, which may be temporary"
 messages.server-once = "`{url}` answered {status}: the server failed, which may be temporary"
@@ -3221,6 +3293,7 @@ evidence = []
 spec = "9.5"
 reference = "content-model/output.md#consumer"
 group = "consumer"
+when = "`[consumer] permalink-path` doesn't start with `/`"
 message = "permalink-path must start with \"/\", such as \"/go/\""
 fix = "Start `permalink-path` with `/`: `\"/go/\"`. It's a path from the site's root, not from `base-path`."
 
@@ -3278,6 +3351,7 @@ evidence = []
 spec = "7.6"
 reference = "content-model/checks.md#20-permalinks"
 group = "permalinks"
+when = "A name in `[permalinks]` is both retired and an alias, an alias leads back to itself, or a retired permalink's reason is still a placeholder"
 message = "`{name}` is both retired and an alias; a name is one thing"
 messages.loop = "the alias `{name}` leads back to itself, through aliases alone, and never to a permalink"
 messages.placeholder = "\"{reason}\" is a placeholder, not a reason: write why `{name}` was retired"
@@ -3349,6 +3423,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/checks.md#21-crawlers"
 group = "crawlers"
+when = "A string in `[crawlers] lines` has a line break"
 message = "`{key}` has a line break; each string in `lines` is one line of robots.txt"
 fix = "Split the string into one string per line: `lines = [\"User-agent: *\", \"Disallow: /drafts/\"]`."
 
@@ -3398,6 +3473,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/checks.md#22-listing"
 group = "listing"
+when = "A folder in `[listing.folders]` doesn't exist, isn't a folder, or isn't written as a folder's path"
 message = "`{folder}` in `[listing.folders]` doesn't exist under the content root"
 messages.not-directory = "`{folder}` in `[listing.folders]` isn't a folder"
 messages.shape = "`{folder}` in `[listing.folders]` isn't a folder's path; write it from the content root, with `/` between its parts and at its end, such as `internal/`"
@@ -3413,6 +3489,7 @@ evidence = ["allowed-values"]
 spec = "7.2"
 reference = "content-model/checks.md#22-listing"
 group = "listing"
+when = "`[listing.types]` names something that isn't a content type"
 message = "`{type}` in `[listing.types]` isn't a content type; use one of: {values}"
 fix = "Name a content type the project declares in `[types]`, or `page` when it declares none."
 
@@ -3426,6 +3503,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/checks.md#22-listing"
 group = "listing"
+when = "A rule of `[listing]` is looser than a wider rule it's under"
 message = "`{rule}` is looser than `{wider}` on line {line}, which it's under; a narrower rule can only restrict"
 messages.default = "`{rule}` is looser than the site's `{wider}` on line {line}; with that default, no folder or type can be listed more openly"
 fix = "Remove the narrower rule, or make it as strict as the one it's under, or stricter: `listed`, then `unquoted`, then `unlisted`. To list some pages more openly than the rest, loosen the wider rule, and restrict the others with rules of their own."
@@ -3473,6 +3551,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/checks.md#21-crawlers"
 group = "crawlers"
+when = "`[crawlers]` names one crawler in two groups"
 message = "`{key}` names `{token}`, which a group on line {line} names already; a crawler obeys only one group, so write everything for it in one"
 messages.purpose = "`{key}` names `{token}`, a `{purpose}` crawler, and `{purpose} = \"disallow\"` writes the group for it; a crawler obeys only one group"
 fix = "Name each crawler in one group. Move the lines for it into the first group that names it and remove the second `User-agent` line. For a crawler a disallowed purpose covers, the purpose's group already says `Disallow: /`: remove the group from `lines`, or allow the purpose and write the crawler's group whole in `lines`."
@@ -3556,6 +3635,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/index.md#41-page-types"
 group = "content-types"
+when = "A content type's `template` or `guide` doesn't exist, or is inside the content root or the output directory, or outside the project's folder"
 message = "`{path}`, the {key} of content type `{type}`, doesn't exist"
 messages.case = "`{path}`, the {key} of content type `{type}`, doesn't exist; `{actual}` differs from it only in case"
 messages.inside-content = "`{path}`, the {key} of content type `{type}`, is inside the content root `{content}`, where it would be read as a page"
@@ -3574,6 +3654,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/index.md#41-page-types"
 group = "content-types"
+when = "A content type's template can't be read, or isn't a page Ascribe can read"
 message = "can't read `{path}`, the template of content type `{type}`: {reason}"
 messages.parse = "`{path}`, the template of content type `{type}`, isn't a page Ascribe can read: on its line {line}, {detail}"
 messages.lock = "`{lock}` gives content type `{type}` the {key} `{path}`, and {reason}"
@@ -3591,6 +3672,7 @@ reference = "content-model/index.md#41-page-types"
 configurable = true
 area = "pages"
 when = "A page of a content type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped, or a frontmatter field with the template's value. A memo the page keeps from the template, its instructions to the writer, isn't reported. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found"
+summary = "A page of a content type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value"
 message = "this page still has its template's placeholder `{placeholder}`; write what it asks for in its place"
 messages.field = "`{field}` is still the template's `{value}`; write this page's own"
 fix = "Write the page's own text where the template's placeholder is, the text in braces. The template's instructions are memos, which are never published: follow each, then delete it or keep it. A field the template fills in, such as `title`, gets the page's own value. The check finds only what was never touched: a placeholder with a word changed isn't reported, so read the page through before publishing it."
@@ -3713,6 +3795,7 @@ area = "examples"
 spec = "4.8"
 reference = "writing/directives.md#snippet"
 when = "A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and the file has changed since the observation that lists it was made. For a source in another repository, the config, the observation, and the file are the copies `ascribe sources fetch` made. Reported once for each snippet of the file, whichever region it shows"
+summary = "A `@snippet` shows a tested example whose file has changed since the observation that lists it was made"
 message = "`{path}` changed after its last test run, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` to test it again"
 messages.other-repository = "`{path}` changed after its last test run, so the page doesn't say what it was tested with; the fix is in source `{source}`'s repository: run `ascribe observe` there and commit, and it arrives with the next `ascribe sources update {source}`"
 fix = "Run `ascribe observe` in the folder named, where `ascribe.examples.toml` is, and commit the observation it writes. It runs the folder's test command, and writes the observation only when the command passes. An observation covers a whole file: an edit anywhere in it, even outside the region a page shows, needs a new test run. For a source in another repository, that's done in the code's repository, and `ascribe sources update` copies the new observation here; nothing in this repository runs the test."
@@ -3773,6 +3856,7 @@ evidence = ["allowed-values"]
 spec = "7.2"
 reference = "content-model/content.md#71-releasestarget"
 group = "releases"
+when = "A `[releases]` table names a target that's versionless, a dimension, or a name `[dimensions.release]` takes, or labels a target its dimension labels"
 message = "`[releases.{target}]`: `{target}` is in no declared dimension, so it would be a value of the implicit dimension `release`, but `[dimensions.release]` takes that name; add `{target}` to a dimension's `values`, or rename `[dimensions.release]`"
 messages.versionless = "`[releases.{target}]`: `{target}` is versionless, so it has no releases"
 messages.dimension = "`[releases.{target}]`: `{target}` is a dimension; name one of its versioned values: {values}"
@@ -3789,6 +3873,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/content.md#71-releasestarget"
 group = "releases"
+when = "A target's lines in `[releases]` aren't valid versions, are listed twice, or have different numbers of parts"
 message = "`[releases.{target}]` mixes lines of different lengths, `{a}` and `{b}`; write every line of a target with the same number of parts"
 messages.duplicate = "`[releases.{target}]` lists the line `{line}` twice"
 messages.invalid = "`[releases.{target}]`: \"{line}\" isn't a valid version, such as \"3.4\""
@@ -3804,6 +3889,7 @@ evidence = []
 spec = "9.3"
 reference = "content-model/output.md#16-buildsname"
 group = "consumer"
+when = "A versioned build's target has no live line, or the build is filtered too"
 message = "build `{build}` is versioned by `{target}`, which has no live line; list its lines in `[releases.{target}]`, such as `live = [\"3.4\"]`"
 messages.filter = "build `{build}` is versioned by `{target}` and filtered too; a filtered build is already one version of one target, so a versioned build's availability is `badge`"
 fix = "Give the target its lines in `[releases.<target>]`, with `live`, or remove `versions` from the build. A build is either versioned, with one output for each live line, or filtered for one version; not both."
@@ -3818,6 +3904,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/content.md#71-releasestarget"
 group = "releases"
+when = "A target's planned line isn't newer than every live line, an archived line isn't older than every live one, or a line is in two lists"
 message = "`[releases.{target}]`: the planned line `{line}` isn't newer than every live line, and the newest is `{live}`"
 messages.archived = "`[releases.{target}]`: the archived line `{line}` isn't older than every live line, and the oldest is `{live}`"
 messages.twice = "`[releases.{target}]` lists `{line}` in both `{a}` and `{b}`; a line is in one list"
@@ -3833,6 +3920,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/content.md#71-releasestarget"
 group = "releases"
+when = "`[releases.<target>.ends]` gives an end date to a line that isn't live"
 message = "`[releases.{target}.ends]`: `{line}` isn't a live line; the live lines are {live}"
 messages.none = "`[releases.{target}.ends]`: `{line}` isn't a live line, and `{target}` has none"
 fix = "Give an end date to a line in `live` only. A line whose support has ended and that has left the window goes in `archived`, with its date as `ended`."
@@ -3847,6 +3935,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/content.md#71-releasestarget"
 group = "releases"
+when = "`ascribe.toml` has `[versions] current`, which is no longer a key"
 message = "`[versions] current` is no longer a key; a target's current release is the newest line in `[releases.<target>] live`"
 fix = "Remove `current` from `[versions]`, and list the release in `[releases.<target>]`, as `live = [\"3.4\"]`, for the target it's a release of. Each target has its own current line, and a check that compared with `current`, `availability-left-behind`, compares each target's versions with that target's current line."
 
@@ -3890,6 +3979,7 @@ area = "project"
 spec = "4.4"
 reference = "content-model/content.md#71-releasestarget"
 when = "every version a mark names for its target is at or before the oldest live line and its last state counts as available, so every live line has the content, and no build filtered for the target at a version before the window publishes it: no output shows the versions, or a build that badges availability shows them and they're all before the oldest live line, so the badge says only that the content is older than every live line"
+summary = "Every live line has the content a mark is on, since every version it names is at or before the oldest live line, and no output shows the versions"
 message = "`{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so no output shows them; write `{simpler}`"
 messages.badge = "`{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so its badge is shown and says nothing a reader of any live line needs; write `{simpler}`"
 messages.remove = "`{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so no output shows them, and `{target}` is the only value of its dimension, so the mark says nothing; remove it"
@@ -3936,6 +4026,7 @@ evidence = []
 spec = "5.1"
 reference = "content-model/content.md#phrases"
 group = "phrases"
+when = "A phrase is the line of a target that has no live line"
 message = "phrase `{key}` is the line of `{target}`, which has no live line in `[releases]`"
 fix = "Name a target whose lines `[releases.<target>]` lists, with at least one in `live`, or list the target's lines there. The phrase is the target's current line: the newest live one."
 
@@ -4123,6 +4214,7 @@ evidence = []
 spec = "7.7"
 reference = "writing/memo-files.md#write-a-memo-file"
 row = "Memo files | A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry other than a glossary term; or a `memos/` folder inside the content root"
+summary = "A memo file can't be read, its frontmatter isn't valid, or its `about` or `quote` isn't one a memo can have; or a `memos/` folder is inside the content root"
 message = "this memo file doesn't start with frontmatter, so it's about nothing; start it with `---`, a line `about:` naming what it's about, and `---`"
 messages.unreadable = "this memo file can't be read: {reason}"
 messages.yaml = "this memo file's frontmatter isn't valid YAML: {detail}"
@@ -4196,6 +4288,7 @@ reference = "content-model/index.md#41-page-types"
 configurable = true
 area = "pages"
 when = "A page of a content type that names a template has a section the template gives nothing under its heading but memos, with the same heading at the same level, and nothing in the page's section, its subsections included, but memos, directives bound to its heading such as `@id`, and the subsections' headings. A section the template gives any other content is `template-placeholder-left`'s, and a page of a type with no template isn't looked at"
+summary = "A page of a content type that names a template has a section the template gives only memos, and the page's section still has nothing but memos and headings"
 message = "the template's section `{heading}` is still empty; write it, or remove the heading if this page doesn't need it"
 fix = "Write the section's text under its heading. The template gives it only memos, its instructions to the writer, which are never published, so left as it is the section builds as a heading with nothing under it. Follow each memo, then delete it or keep it. If the page doesn't need the section, remove its heading and its memos."
 
@@ -4297,6 +4390,7 @@ reference = "navigation/index.md#the-file"
 configurable = true
 area = "project"
 when = "`ascribe.nav` lists one or more of a section's sibling sections and not the section, which is reported on its first page. A folder none of whose sections the file lists has the default order, and isn't reported, nor is a section below the content root whose own page beside its folder places it among its parent's pages, since a table wouldn't move it"
+summary = "`ascribe.nav` lists some of a section's sibling sections and not the section, which is reported on its first page"
 message = "ascribe.nav lists other sections in `{parent}` and not `{folder}`, so it comes after them, in path order"
 messages.root = "ascribe.nav lists other sections at the content root and not `{folder}`, so it comes after them, in path order"
 fix = "Add a `[[sections]]` table with the section's `folder` to `ascribe.nav`, where the section should come. The fix appends a table for each section that isn't listed, in the order they come in now, so the navigation is the same after it; move the tables to where you want them. A file that writes `sections = [...]` inline gets no fix: add each section to its list."
@@ -4326,6 +4420,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/content.md#12-glossary"
 group = "phrases"
+when = "A path in `[glossary] pages` doesn't exist, or is a fragment"
 message = "`{path}` in `[glossary] pages` doesn't exist"
 messages.fragment = "`{path}` in `[glossary] pages` is a fragment; list the page that includes it"
 messages.case = "`{path}` in `[glossary] pages` doesn't exist; `{actual}` differs from it only in case"
@@ -4467,6 +4562,7 @@ evidence = []
 spec = "7.9"
 reference = "content-model/index.md#21-taking-from-another-project"
 group = "file"
+when = "The file `[from]` takes from doesn't exist, can't be read, or is outside the project's repository or the folder that was opened"
 message = "`{path}`, the file `[from]` takes from, doesn't exist"
 messages.unreadable = "`{path}`, the file `[from]` takes from, can't be read: {detail}"
 messages.outside-repository = "`{path}`, the file `[from]` takes from, is outside the git repository the project is in"
@@ -4483,6 +4579,7 @@ evidence = []
 spec = "7.9"
 reference = "content-model/index.md#21-taking-from-another-project"
 group = "file"
+when = "`take` names a key the other file doesn't have, one of this project's own, one taken twice, or something that isn't a dotted path of keys"
 message = "`{file}` has no `{key}` to take"
 messages.own = "`{key}` is this project's own and can't be taken; write it here"
 messages.twice = "`{key}` is taken twice: `{other}` is taken from `{file}` already"
@@ -4499,5 +4596,172 @@ evidence = []
 spec = "7.9"
 reference = "content-model/index.md#21-taking-from-another-project"
 group = "file"
+when = "A key is taken with `[from]` and written in `ascribe.toml` too"
 message = "`{key}` is taken from `{file}` and written here too; a key has one home"
 fix = "Delete the key here, to use the other file's, or remove it from `take`, to keep this one. A table that's taken can't have a key of its own here: take the keys it shares instead, one by one."
+
+[[diagnostic]]
+code = "ASC249"
+slug = "summary-not-paragraph"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "4.12"
+reference = "writing/directives.md#summary"
+row = "`@summary` | Following form whose block isn't a paragraph"
+message = "`@summary` with no text must be followed by a paragraph, but the next block is {found}"
+fix = "Put the paragraph that summarizes the section directly below `@summary`. When nothing on the page reads well alone, as for a lead-in to a list, give the summary its own text instead: `@summary: <text>`, directly under the heading."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Requirements
+
+@summary
+- Linux or macOS
+- 2 GB of memory
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Requirements
+@summary: Quill runs on Linux or macOS with 2 GB of memory.
+
+- Linux or macOS
+- 2 GB of memory
+'''
+
+[[diagnostic]]
+code = "ASC250"
+slug = "summary-repeated"
+severity = "error"
+level = "page"
+next = "write"
+evidence = []
+spec = "4.12"
+reference = "writing/directives.md#summary"
+row = "`@summary` | A second summary in one section, including summaries from included content (page level)"
+message = "the section `{heading}` already has a summary; a section has one"
+messages.opening = "the page's opening, before its first heading, already has a summary; a section has one"
+fix = "Remove one of the summaries. A summary in an included file is the summary of the section it lands in, so a page that includes one under a heading with its own has two: keep the one that reads well alone."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Install
+@summary: Install Quill with your package manager.
+
+@summary
+Quill installs in a minute.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Install
+@summary: Install Quill with your package manager.
+
+Quill installs in a minute.
+'''
+
+[[diagnostic]]
+code = "ASC251"
+slug = "summary-in-variant"
+severity = "error"
+level = "page"
+next = "write"
+evidence = []
+spec = "4.12"
+reference = "writing/directives.md#summary"
+row = "`@summary` | Summary inside a `@variant` arm, including one an include brings into an arm (page level)"
+message = "`@summary` is inside a `@variant` arm, and a summary can't differ by arm"
+fix = "Move the summary out of the group, to the top of its section, with text that holds for every arm."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Install
+
+@variant {pm=npm}:
+@summary
+Install Quill with npm.
+@variant {pm=pnpm}:
+Install Quill with pnpm.
+@end
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Install
+@summary: Install Quill with your package manager.
+
+@variant {pm=npm}:
+Install Quill with npm.
+@variant {pm=pnpm}:
+Install Quill with pnpm.
+@end
+'''
+
+[[diagnostic]]
+code = "ASC252"
+slug = "summary-missing"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = ["section-text"]
+spec = "4.12"
+reference = "writing/directives.md#summary"
+configurable = true
+area = "pages"
+when = "A heading's `@id` marks it a permalink, and its section has no `@summary`, once includes are expanded. A page's own permalink has its description, which `page-description-missing` reports; a permalink in a fragment is reported once, in the fragment"
+message = "the permalink `{name}` has no summary, so a product showing its help has none; add a `@summary` to its section"
+fix = "Give the section a summary with `@summary`: a sentence or two a product shows in a tooltip or beside an error. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once and shown in both places, or write `@summary: <text>` directly under the heading and its `@id` when nothing on the page reads well alone. A project that ships embedded help can raise this check to a warning, so every permalink needs one: `[checks] summary-missing = \"warning\"`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Prerequisites
+@id {permalink=true}: prerequisites
+
+Before you install Quill, make sure you have:
+
+- Node.js 20 or later
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Prerequisites
+@id {permalink=true}: prerequisites
+@summary: Quill needs Node.js 20 or later.
+
+Before you install Quill, make sure you have:
+
+- Node.js 20 or later
+'''
+
+[[diagnostic]]
+code = "ASC253"
+slug = "summary-long"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = []
+spec = "4.12"
+reference = "writing/directives.md#summary"
+configurable = true
+area = "pages"
+when = "A section's summary, as plain text on one line, is as long as the limit or longer: 300 characters, or `[checks.summary-long] limit`. A summary in a fragment is reported once, in the fragment"
+message = "this summary is {length} characters, and a product shows one under {limit}; shorten it to a sentence or two"
+fix = "Shorten the summary to a sentence or two that say what the section is for. A product shows it in a tooltip or beside an error, where there's room for little more. Its length is counted as `description-too-long` counts a description's: as plain text on one line, with phrases replaced and formatting dropped. The limit is 300 characters; set another in `ascribe.toml`, such as `[checks.summary-long] limit = 200`."

@@ -1,0 +1,9 @@
+description: >-
+  `@summary` with no text is a following-block directive: a blank line
+  before its paragraph is a warning, and a heading after it is an error.
+spec: ["3.8", "4.12", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: binding-blank-line, line: 7}
+  - {slug: binding-heading, line: 11}

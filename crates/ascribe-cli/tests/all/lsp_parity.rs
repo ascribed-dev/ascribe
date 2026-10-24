@@ -92,11 +92,40 @@ fn builds_of(root: &Path) -> Vec<String> {
         .collect()
 }
 
-/// What `ascribe check --build <name> --format json` reports.
+/// The builds the editor checks with `build` as its build: the build, and
+/// for a versioned build each of its other lines too, as the editor checks
+/// every line of it.
+fn editor_lines(root: &Path, build: &str) -> Vec<String> {
+    let model = ascribe_model::load(root.join("ascribe.toml")).expect("the model loads");
+    let Some(chosen) = model.builds.iter().find(|b| b.name == build) else {
+        return vec![build.to_owned()];
+    };
+    let mut out = vec![build.to_owned()];
+    if chosen.line.is_some() {
+        out.extend(
+            model
+                .builds
+                .iter()
+                .filter(|b| b.line.is_some() && b.declared_name() == chosen.declared_name())
+                .filter(|b| b.name != build)
+                .map(|b| b.name.clone()),
+        );
+    }
+    out
+}
+
+/// What `ascribe check --format json` reports with `--build` for each of
+/// the builds the editor checks with `build` ([`editor_lines`]).
 fn cli_entries(root: &Path, build: &str) -> Vec<Entry> {
+    let mut args = vec!["check".to_owned()];
+    for line in editor_lines(root, build) {
+        args.push("--build".to_owned());
+        args.push(line);
+    }
+    args.extend(["--format".to_owned(), "json".to_owned()]);
     let output = Command::new(env!("CARGO_BIN_EXE_ascribe"))
         .current_dir(root)
-        .args(["check", "--build", build, "--format", "json"])
+        .args(&args)
         .env("NO_COLOR", "1")
         .output()
         .expect("run ascribe check");

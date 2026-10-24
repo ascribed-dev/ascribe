@@ -129,7 +129,16 @@ impl Pass<'_> {
             Some(SchemaBinding::Heading) if top => Class::Heading,
             Some(SchemaBinding::Heading) => Class::Misplaced,
             // With a primary, its own content; otherwise the block below.
+            // SPEC §4.12: a summary's text is its section's, so it goes at
+            // the top of the section, as a heading-bound directive does.
             Some(SchemaBinding::Block) => match line.primary {
+                Some(PrimaryValue::Text(_)) if is_builtin(schema, Builtin::Summary) => {
+                    if top {
+                        Class::Heading
+                    } else {
+                        Class::Misplaced
+                    }
+                }
                 Some(PrimaryValue::Text(_)) => Class::Own,
                 _ => Class::Block,
             },
@@ -167,9 +176,10 @@ impl Pass<'_> {
             Some(BlockKind::Directive(l))
                 if classes.get(j) == Some(&Class::Own)
                     && (matches!(l.primary, Some(PrimaryValue::Text(_)))
-                        || self.options.schema(&l.name).is_some_and(|s| {
-                            s.origin == Origin::Builtin(Builtin::Snippet)
-                        }))
+                        || self
+                            .options
+                            .schema(&l.name)
+                            .is_some_and(|s| is_builtin(s, Builtin::Snippet)))
         );
         match target {
             None => {
@@ -207,11 +217,8 @@ impl Pass<'_> {
             .with_arg("name", line.name.clone());
             self.report(issue);
         }
-        let is_steps = self
-            .options
-            .schema(&line.name)
-            .is_some_and(|s| s.origin == Origin::Builtin(Builtin::Steps));
-        if is_steps
+        let schema = self.options.schema(&line.name);
+        if schema.is_some_and(|s| is_builtin(s, Builtin::Steps))
             && let Some(kind) = target
             && !matches!(kind, BlockKind::List(list) if list.ordered)
         {
@@ -219,8 +226,22 @@ impl Pass<'_> {
                 .with_arg("found", describe(kind));
             self.report(issue);
         }
+        // SPEC §4.12: a summary is shown as a sentence or two.
+        if schema.is_some_and(|s| is_builtin(s, Builtin::Summary))
+            && let Some(kind) = target
+            && !matches!(kind, BlockKind::Paragraph(_))
+        {
+            let issue = Issue::new(diagnostics::SUMMARY_NOT_PARAGRAPH, at)
+                .with_arg("found", describe(kind));
+            self.report(issue);
+        }
         Bound::FollowingBlock
     }
+}
+
+/// Whether `schema` is the built-in `builtin`'s.
+fn is_builtin(schema: &ascribe_core::DirectiveSchema, builtin: Builtin) -> bool {
+    schema.origin == Origin::Builtin(builtin)
 }
 
 /// A block, as a message names it.

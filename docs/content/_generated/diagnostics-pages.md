@@ -3,6 +3,7 @@
 
 ### ASC036 `link-target-missing`
 @id {permalink=true}: ASC036
+@summary: Target file doesn't exist.
 
 Error · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
@@ -16,6 +17,7 @@ Error · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.m
 
 ### ASC037 `link-id-missing`
 @id {permalink=true}: ASC037
+@summary: Target id doesn't exist in the target file.
 
 Error · page level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
@@ -29,6 +31,7 @@ Error · page level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.m
 
 ### ASC038 `link-to-fragment`
 @id {permalink=true}: ASC038
+@summary: Target is a fragment.
 
 Error · file level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
@@ -42,6 +45,7 @@ Error · file level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.m
 
 ### ASC040 `link-id-removed`
 @id {permalink=true}: ASC040
+@summary: Target id is removed by a build.
 
 Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
@@ -55,6 +59,7 @@ Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 
 ### ASC041 `link-route`
 @id {permalink=true}: ASC041
+@summary: Destination is a route rather than a file path.
 
 Warning · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
@@ -68,6 +73,7 @@ Warning · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC
 
 ### ASC121 `link-page-dropped`
 @id {permalink=true}: ASC121
+@summary: Target page isn't published by a build.
 
 Error · page level · next step: write · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
@@ -83,6 +89,7 @@ Error · page level · next step: write · [SPEC §5.2]({repo}/blob/main/SPEC.md
 
 ### ASC042 `image-source-missing`
 @id {permalink=true}: ASC042
+@summary: Local source doesn't exist.
 
 Error · file level · next step: choose · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
@@ -96,6 +103,7 @@ Error · file level · next step: choose · [SPEC §5.3]({repo}/blob/main/SPEC.m
 
 ### ASC043 `image-alt-missing`
 @id {permalink=true}: ASC043
+@summary: Missing alt text.
 
 Warning · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
@@ -109,6 +117,7 @@ Warning · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.
 
 ### ASC059 `image-attribute-missing`
 @id {permalink=true}: ASC059
+@summary: Required image attribute missing.
 
 Error · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
@@ -124,6 +133,7 @@ Error · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.md
 
 ### ASC044 `phrase-undeclared`
 @id {permalink=true}: ASC044
+@summary: `{key}` in prose whose key isn't declared.
 
 Warning · file level · next step: choose · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
@@ -137,6 +147,7 @@ Warning · file level · next step: choose · [SPEC §5.1]({repo}/blob/main/SPEC
 
 ### ASC126 `phrase-double-braces`
 @id {permalink=true}: ASC126
+@summary: A declared `{key}` directly between two more braces (`{{key}}`), usually a substitution left over from another tool.
 
 Warning · file level · next step: fix · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
@@ -152,6 +163,7 @@ Warning · file level · next step: fix · [SPEC §5.1]({repo}/blob/main/SPEC.md
 
 ### ASC045 `heading-phrase-without-id`
 @id {permalink=true}: ASC045
+@summary: No `@id`, and the heading contains a phrase.
 
 Warning · file level · next step: fix · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
 
@@ -165,6 +177,7 @@ Warning · file level · next step: fix · [SPEC §5.5]({repo}/blob/main/SPEC.md
 
 ### ASC046 `heading-duplicate-without-id`
 @id {permalink=true}: ASC046
+@summary: No `@id`, and the heading's slug is the same as another heading's on the page, so its id is numbered.
 
 Warning · page level · next step: fix · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
 
@@ -178,6 +191,7 @@ Warning · page level · next step: fix · [SPEC §5.5]({repo}/blob/main/SPEC.md
 
 ### ASC124 `heading-empty-slug`
 @id {permalink=true}: ASC124
+@summary: No `@id`, and the heading's slug is empty (its text is only punctuation or emoji).
 
 Warning · file level · next step: write · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
 
@@ -193,6 +207,7 @@ Warning · file level · next step: write · [SPEC §5.5]({repo}/blob/main/SPEC.
 
 ### ASC047 `frontmatter-unknown-key`
 @id {permalink=true}: ASC047
+@summary: Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment.
 
 Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -206,6 +221,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 ### ASC048 `frontmatter-missing-field`
 @id {permalink=true}: ASC048
+@summary: Required field missing.
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -219,6 +235,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 ### ASC049 `frontmatter-type-mismatch`
 @id {permalink=true}: ASC049
+@summary: Value doesn't match the field's declared type.
 
 Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -232,6 +249,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 ### ASC050 `frontmatter-reserved-in-fragment`
 @id {permalink=true}: ASC050
+@summary: Reserved key (`available`, `variant`, `permalink`, `listing`, `replaces`, `type`, `nav-label`) on a fragment.
 
 Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
@@ -245,6 +263,7 @@ Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md
 
 ### ASC122 `frontmatter-syntax`
 @id {permalink=true}: ASC122
+@summary: Frontmatter that isn't valid YAML.
 
 Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -258,6 +277,7 @@ Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md
 
 ### ASC188 `listing-loosened`
 @id {permalink=true}: ASC188
+@summary: `listing` looser than a rule of the content model the page is under.
 
 Error · file level · next step: fix · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -271,6 +291,7 @@ Error · file level · next step: fix · [SPEC §2.1]({repo}/blob/main/SPEC.md#2
 
 ### ASC196 `content-type-missing`
 @id {permalink=true}: ASC196
+@summary: Page names no content type, in a project that declares types.
 
 Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -284,6 +305,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 ### ASC197 `content-type-unknown`
 @id {permalink=true}: ASC197
+@summary: Page's `type` names no declared content type.
 
 Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -297,6 +319,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 ### ASC216 `replaces-not-a-page`
 @id {permalink=true}: ASC216
+@summary: `replaces` that doesn't name a page.
 
 Error · file level · next step: choose · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -310,6 +333,7 @@ Error · file level · next step: choose · [SPEC §2.1]({repo}/blob/main/SPEC.m
 
 ### ASC217 `replaces-cycle`
 @id {permalink=true}: ASC217
+@summary: A page that `replaces` itself, or a chain of `replaces` that comes back to where it started.
 
 Error · page level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -323,6 +347,7 @@ Error · page level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md
 
 ### ASC218 `replaces-overlap`
 @id {permalink=true}: ASC218
+@summary: A page and the page it `replaces`, both published by one line of a versioned build.
 
 Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
@@ -336,6 +361,7 @@ Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 
 ### ASC219 `replaces-same-page`
 @id {permalink=true}: ASC219
+@summary: Two pages that `replaces` the same page, both published by one line of a versioned build.
 
 Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
@@ -349,6 +375,7 @@ Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 
 ### ASC222 `listing-loosened-in-line`
 @id {permalink=true}: ASC222
+@summary: `listing` looser than `[listing] older-lines`, on a page an older line of a versioned build publishes.
 
 Error · page level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -364,6 +391,7 @@ Error · page level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md
 
 ### ASC052 `list-ended-by-directive`
 @id {permalink=true}: ASC052
+@summary: Unindented directive line ends a list.
 
 Warning · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
 
@@ -377,6 +405,7 @@ Warning · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.
 
 ### ASC053 `directive-indented-code`
 @id {permalink=true}: ASC053
+@summary: Directive line over-indented into an indented code block.
 
 Warning · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
 
@@ -390,6 +419,7 @@ Warning · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.
 
 ### ASC054 `steps-numbering-continued`
 @id {permalink=true}: ASC054
+@summary: An ordered list continues the numbering of a list bound by `@steps` right after it ends (usually an unindented directive split the list).
 
 Warning · file level · next step: write · [SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps)
 
@@ -405,6 +435,7 @@ Warning · file level · next step: write · [SPEC §4.6]({repo}/blob/main/SPEC.
 
 ### ASC123 `source-unreadable`
 @id {permalink=true}: ASC123
+@summary: Source file that can't be read, or isn't valid UTF-8.
 
 Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -420,6 +451,7 @@ Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md
 
 ### ASC127 `snippet-address`
 @id {permalink=true}: ASC127
+@summary: Address that isn't `<source>:<path>`, optionally with `#<region>`.
 
 Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
@@ -433,6 +465,7 @@ Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md
 
 ### ASC128 `snippet-source-unknown`
 @id {permalink=true}: ASC128
+@summary: Source the content model doesn't declare.
 
 Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
@@ -446,6 +479,7 @@ Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.m
 
 ### ASC129 `snippet-file-missing`
 @id {permalink=true}: ASC129
+@summary: File doesn't exist, or its source doesn't include it.
 
 Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
@@ -459,6 +493,7 @@ Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.m
 
 ### ASC130 `snippet-file-not-text`
 @id {permalink=true}: ASC130
+@summary: File isn't text.
 
 Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
@@ -472,6 +507,7 @@ Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md
 
 ### ASC131 `snippet-region-missing`
 @id {permalink=true}: ASC131
+@summary: Region doesn't exist in the file.
 
 Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
@@ -485,6 +521,7 @@ Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.m
 
 ### ASC132 `snippet-tags`
 @id {permalink=true}: ASC132
+@summary: The file's tags are unbalanced, name a region twice, or use a reserved tag.
 
 Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
@@ -500,6 +537,7 @@ Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md
 
 ### ASC136 `lock-invalid`
 @id {permalink=true}: ASC136
+@summary: `ascribe.lock` isn't valid TOML, or doesn't have the shape §7.4 gives it.
 
 Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
@@ -513,6 +551,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 ### ASC137 `lock-source-unknown`
 @id {permalink=true}: ASC137
+@summary: `ascribe.lock` pins a source the content model doesn't declare with `git`, or pins it with another `git`.
 
 Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
@@ -526,6 +565,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 ### ASC138 `source-copy-changed`
 @id {permalink=true}: ASC138
+@summary: A file `ascribe.lock` lists is missing from the source's folder, or its hash differs.
 
 Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
@@ -539,6 +579,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 ### ASC139 `source-copy-unlocked`
 @id {permalink=true}: ASC139
+@summary: A file in a source's copies folder that `ascribe.lock` doesn't list.
 
 Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
@@ -552,6 +593,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 ### ASC140 `source-copy-unused`
 @id {permalink=true}: ASC140
+@summary: A copy that no snippet uses.
 
 Warning · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
@@ -567,6 +609,7 @@ Warning · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.
 
 ### ASC143 `intended-check`
 @id {permalink=true}: ASC143
+@summary: Names no check, a check that doesn't exist, a check that isn't a review check, or a check reported somewhere else.
 
 Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
 
@@ -580,6 +623,7 @@ Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.m
 
 ### ASC144 `intended-entry`
 @id {permalink=true}: ASC144
+@summary: An `intended` frontmatter entry that isn't a mapping with a `check` and a reason, or an acknowledgement whose reason is still a processor's placeholder.
 
 Error · file level · next step: write · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
 
@@ -601,6 +645,7 @@ The editor's quick fix writes a placeholder reason for you to replace: until you
 
 ### ASC145 `intended-unused`
 @id {permalink=true}: ASC145
+@summary: An acknowledgement that matches no problem in any build.
 
 Advice · page level · next step: fix · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
 
@@ -616,6 +661,7 @@ Advice · page level · next step: fix · [SPEC §4.9]({repo}/blob/main/SPEC.md#
 
 ### ASC175 `permalinks-list-invalid`
 @id {permalink=true}: ASC175
+@summary: `ascribe.permalinks` isn't valid TOML, or doesn't have the shape §7.5 gives it.
 
 Error · file level · next step: write · [SPEC §7.5]({repo}/blob/main/SPEC.md#75-the-permalinks-list)
 
@@ -629,6 +675,7 @@ Error · file level · next step: write · [SPEC §7.5]({repo}/blob/main/SPEC.md
 
 ### ASC176 `permalinks-list-behind`
 @id {permalink=true}: ASC176
+@summary: A permalink the content declares, an alias, or a retired permalink that `ascribe.permalinks` doesn't list as it is.
 
 Warning · file level · next step: fix · [SPEC §7.5]({repo}/blob/main/SPEC.md#75-the-permalinks-list)
 
@@ -642,6 +689,7 @@ Warning · file level · next step: fix · [SPEC §7.5]({repo}/blob/main/SPEC.md
 
 ### ASC177 `permalink-removed`
 @id {permalink=true}: ASC177
+@summary: A name `ascribe.permalinks` lists that the project no longer has: not declared, an alias, or retired.
 
 Warning · file level · next step: write · [SPEC §7.5]({repo}/blob/main/SPEC.md#75-the-permalinks-list)
 
@@ -657,6 +705,7 @@ Warning · file level · next step: write · [SPEC §7.5]({repo}/blob/main/SPEC.
 
 ### ASC179 `permalink-alias-target-missing`
 @id {permalink=true}: ASC179
+@summary: An alias that doesn't lead to a permalink the content declares.
 
 Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md#76-retired-permalinks-and-aliases)
 
@@ -670,6 +719,7 @@ Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md
 
 ### ASC180 `permalink-name-conflict`
 @id {permalink=true}: ASC180
+@summary: A name `ascribe.toml` retires or aliases that the content declares too.
 
 Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md#76-retired-permalinks-and-aliases)
 
@@ -683,6 +733,7 @@ Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md
 
 ### ASC181 `permalink-retired-target-missing`
 @id {permalink=true}: ASC181
+@summary: A retired permalink's `to` that doesn't lead to a page, or to a heading on it.
 
 Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md#76-retired-permalinks-and-aliases)
 
@@ -698,6 +749,7 @@ Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md
 
 ### ASC225 `memo-invalid`
 @id {permalink=true}: ASC225
+@summary: A memo file can't be read, its frontmatter isn't valid, or its `about` or `quote` isn't one a memo can have; or a `memos/` folder is inside the content root.
 
 Error · file level · next step: write · [SPEC §7.7]({repo}/blob/main/SPEC.md#77-memo-files)
 
@@ -711,6 +763,7 @@ Error · file level · next step: write · [SPEC §7.7]({repo}/blob/main/SPEC.md
 
 ### ASC226 `memo-detached`
 @id {permalink=true}: ASC226
+@summary: A memo file's `about` that names nothing in the project.
 
 Warning · file level · next step: choose · [SPEC §7.7]({repo}/blob/main/SPEC.md#77-memo-files)
 
@@ -726,6 +779,7 @@ Warning · file level · next step: choose · [SPEC §7.7]({repo}/blob/main/SPEC
 
 ### ASC230 `nav-invalid`
 @id {permalink=true}: ASC230
+@summary: `ascribe.nav` isn't valid TOML, or doesn't have the shape §7.8 gives it.
 
 Error · file level · next step: write · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
 
@@ -739,6 +793,7 @@ Error · file level · next step: write · [SPEC §7.8]({repo}/blob/main/SPEC.md
 
 ### ASC231 `nav-page-unknown`
 @id {permalink=true}: ASC231
+@summary: A `pages` entry in `ascribe.nav` that isn't a page in its section's folder, or that names the section's own `index.md`.
 
 Error · file level · next step: choose · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
 
@@ -752,6 +807,7 @@ Error · file level · next step: choose · [SPEC §7.8]({repo}/blob/main/SPEC.m
 
 ### ASC232 `nav-folder-unknown`
 @id {permalink=true}: ASC232
+@summary: A `folder` in `ascribe.nav` that isn't a section.
 
 Error · file level · next step: choose · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
 
@@ -765,6 +821,7 @@ Error · file level · next step: choose · [SPEC §7.8]({repo}/blob/main/SPEC.m
 
 ### ASC233 `nav-duplicate`
 @id {permalink=true}: ASC233
+@summary: A folder `ascribe.nav` lists twice, or a page a section's `pages` names twice.
 
 Error · file level · next step: fix · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
 
@@ -778,6 +835,7 @@ Error · file level · next step: fix · [SPEC §7.8]({repo}/blob/main/SPEC.md#7
 
 ### ASC234 `section-page-both`
 @id {permalink=true}: ASC234
+@summary: A folder with an `index.md` and a page beside it with the folder's name.
 
 Error · file level · next step: choose · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
 
@@ -793,6 +851,7 @@ Error · file level · next step: choose · [SPEC §7.8]({repo}/blob/main/SPEC.m
 
 ### ASC239 `glossary-term-duplicate`
 @id {permalink=true}: ASC239
+@summary: Two terms, or a term and an alias, with the same text, or two terms with the same id.
 
 Error · file level · next step: write · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
@@ -806,6 +865,7 @@ Error · file level · next step: write · [SPEC §5.4]({repo}/blob/main/SPEC.md
 
 ### ASC240 `glossary-definition-missing`
 @id {permalink=true}: ASC240
+@summary: A term whose section doesn't start with a paragraph.
 
 Error · file level · next step: write · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
@@ -819,6 +879,7 @@ Error · file level · next step: write · [SPEC §5.4]({repo}/blob/main/SPEC.md
 
 ### ASC242 `term-off-glossary-page`
 @id {permalink=true}: ASC242
+@summary: `@term` on a heading that no page the glossary lists shows.
 
 Error · file level · next step: choose · [SPEC §4.11]({repo}/blob/main/SPEC.md#411-term)
 
@@ -829,3 +890,47 @@ Error · file level · next step: choose · [SPEC §4.11]({repo}/blob/main/SPEC.
 **Fix:** List the page in `[glossary] pages` in ascribe.toml, or move the term to a glossary page, or remove `@term`. Listing the page links its terms on every other page, so the fix that adds it is offered in the editor and never applied by `ascribe check --fix`. A fragment is listed through a page that includes it.
 
 **Read more:** [`[glossary]`](../content-model/content.md#12-glossary) in the `ascribe.toml` reference.
+
+## `@summary`
+
+### ASC249 `summary-not-paragraph`
+@id {permalink=true}: ASC249
+@summary: Following form whose block isn't a paragraph.
+
+Error · file level · next step: write · [SPEC §4.12]({repo}/blob/main/SPEC.md#412-summary)
+
+**When:** Following form whose block isn't a paragraph.
+
+**Message:** `@summary` with no text must be followed by a paragraph, but the next block is \{found}
+
+**Fix:** Put the paragraph that summarizes the section directly below `@summary`. When nothing on the page reads well alone, as for a lead-in to a list, give the summary its own text instead: `@summary: <text>`, directly under the heading.
+
+**Read more:** [`@summary`](../writing/directives.md#summary) in the directive reference.
+
+### ASC250 `summary-repeated`
+@id {permalink=true}: ASC250
+@summary: A second summary in one section, including summaries from included content.
+
+Error · page level · next step: write · [SPEC §4.12]({repo}/blob/main/SPEC.md#412-summary)
+
+**When:** A second summary in one section, including summaries from included content.
+
+**Message:** the section `{heading}` already has a summary; a section has one
+
+**Fix:** Remove one of the summaries. A summary in an included file is the summary of the section it lands in, so a page that includes one under a heading with its own has two: keep the one that reads well alone.
+
+**Read more:** [`@summary`](../writing/directives.md#summary) in the directive reference.
+
+### ASC251 `summary-in-variant`
+@id {permalink=true}: ASC251
+@summary: Summary inside a `@variant` arm, including one an include brings into an arm.
+
+Error · page level · next step: write · [SPEC §4.12]({repo}/blob/main/SPEC.md#412-summary)
+
+**When:** Summary inside a `@variant` arm, including one an include brings into an arm.
+
+**Message:** `@summary` is inside a `@variant` arm, and a summary can't differ by arm
+
+**Fix:** Move the summary out of the group, to the top of its section, with text that holds for every arm.
+
+**Read more:** [`@summary`](../writing/directives.md#summary) in the directive reference.

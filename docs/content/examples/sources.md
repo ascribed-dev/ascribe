@@ -8,6 +8,7 @@ The commands that look after the code a project's pages show: the copies it keep
 
 ## `ascribe sources`
 @id {permalink=true}: cli-sources
+@summary: Copies code from sources in other repositories into the project, and moves their pins. They're the only commands that reach another repository, with `git`'s own credentials.
 
 Copies code from [sources in other repositories](../content-model/output.md#a-source-in-another-repository) into the project, and moves their pins. `check` and `build` read only the copies, so `ascribe sources fetch` and `ascribe sources update` are the only commands that reach another repository. They run `git`, with `git`'s own credentials: whatever lets `git fetch <url>` work in your shell lets them fetch. They never prompt, so a missing credential fails at once.
 
@@ -17,6 +18,7 @@ What's fetched is someone else's repository, so it's only ever read as text: `gi
 
 ### `ascribe sources fetch`
 @id {permalink=true}: cli-sources-fetch
+@summary: Makes the copies match `ascribe.lock`: at each source's pin, it copies the files snippets name and removes the ones no snippet names. It never moves a pin.
 
 Makes the copies match `ascribe.lock`: at each source's pin, it copies the files snippets name that have no copy or a wrong one, and removes the copies no snippet names. It's what you run after writing a new `@snippet` from a source in another repository, or after cloning if the copies were left out. It never moves a pin; a source with no pin yet is pinned to the head of its branch.
 
@@ -36,6 +38,7 @@ It lists each copy it wrote or removed. The first time a source's files are copi
 
 ### `ascribe sources update`
 @id {permalink=true}: cli-sources-update
+@summary: Moves each source's pin to the head of its branch, or to `--to`, copies the files snippets use again, rewrites `ascribe.lock`, and says what changed.
 
 Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20, or that the pin moved back), the copies that changed, the [tested examples](tested.md#when-the-code-is-in-another-repository) whose status changed, and the pages whose examples changed, grouped as [`ascribe drift`](../review/diff.md#cli-drift) groups them. With nothing to move, it changes no file and says so.
 
@@ -61,6 +64,7 @@ The pages are found as `ascribe drift` finds them, comparing the working tree, w
 
 ### `ascribe sources status`
 @id {permalink=true}: cli-sources-status
+@summary: Shows each source in another repository, with its branch, its pin, and each copy's state. It reads only the project's files: no `git`, no network.
 
 Shows each source in another repository: its repository and branch, its pin, and each copy's state (current, changed here, missing, not in the lock, unused, not copied yet, or not in the repository at the pin). A tested examples' config or observation is current when it's the file the lock pins, though no snippet uses it. It reads only the project's files: no `git`, no network. After the first `fetch`:
 
@@ -82,6 +86,7 @@ With `--format json`, it writes the same in the document its [schema](../contrac
 
 ## `ascribe observe`
 @id {permalink=true}: cli-observe
+@summary: Runs the test of a folder of tested examples, and when it passes, writes down what it passed with, in `examples.observations/`.
 
 Runs the test of a folder of [tested examples](tested.md), and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. It's run in the code's folder, the one that holds `ascribe.examples.toml`, not the docs project's: it doesn't look in parent folders for a config, and doesn't read `ascribe.toml` or `--config`. For code in another repository, that's the code's repository: it refuses to run in a source's copies, which it knows from the `ascribe.lock` above them. So `ascribe` has to be installed where the code is: with npm, or on the path where there's no Node ([Install](../install.md)).
 

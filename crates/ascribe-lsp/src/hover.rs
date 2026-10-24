@@ -1,8 +1,9 @@
 //! Hover (SPEC §10): what a link or include points at, a phrase's value, a
 //! glossary term's definition (on its heading, with how many pages use it),
 //! the availability a spec resolves to, the rule of `[listing]` a page is
-//! under, what a directive is, and which table of `ascribe.toml` declares a
-//! frontmatter field, on its key in a page or in `ascribe.toml`.
+//! under, what a directive is, which table of `ascribe.toml` declares a
+//! frontmatter field, on its key in a page or in `ascribe.toml`, and a
+//! section's summary, on its heading and its `@id` line.
 
 use ascribe_core::availability::{AvailabilitySpec, Detail, Version, parse_availability};
 use ascribe_core::schema::{
@@ -14,7 +15,7 @@ use ascribe_emit::labels::{availability_display, availability_display_of_text};
 use ascribe_model::{
     ContentModel, ContentType, Field, FieldSource, LineStatus, Placement, TypeFile,
 };
-use ascribe_resolve::{DefaultRouter, Resolution, Snapshot, Usable};
+use ascribe_resolve::{DefaultRouter, FileIndex, Heading, Resolution, Snapshot, Usable};
 use lsp_types::{Hover, HoverContents, MarkupContent, MarkupKind, Position, Range};
 
 use crate::model_file::ModelFile;
@@ -80,6 +81,30 @@ fn term_definition(ctx: &Ctx, id: &str) -> String {
         .unwrap_or_else(|| "The editor's build doesn't link this glossary term.".to_owned())
 }
 
+/// On a heading, or on its `@id` line, the section's summary in the
+/// editor's build (SPEC §4.12), as `_ascribe/help.json` writes it.
+fn summary_hover(ctx: &Ctx, offset: usize) -> Option<Hover> {
+    let file = ctx.file()?;
+    let (heading, span) = section_at(file, offset)?;
+    let summary = crate::summary::of_heading(ctx, heading.span)?;
+    markdown_hover(ctx, span, crate::summary::markdown(&summary))
+}
+
+/// The heading `offset` is on, or whose `@id` line it's on, and the span
+/// it's on: the heading's first line, or the `@id` line.
+fn section_at(file: &FileIndex, offset: usize) -> Option<(&Heading, Span)> {
+    let within = |span: Span| span.start() <= offset && offset <= span.end();
+    file.headings.iter().find_map(|heading| {
+        if let Some(id) = heading.explicit_id.as_ref().filter(|id| within(id.span)) {
+            return Some((heading, id.span));
+        }
+        let text = file.source.get(heading.span.range())?;
+        let first = text.find(['\n', '\r']).unwrap_or(text.len());
+        let line = Span::new(heading.span.start(), heading.span.start() + first);
+        within(line).then_some((heading, line))
+    })
+}
+
 fn markdown_hover(ctx: &Ctx, span: Span, value: String) -> Option<Hover> {
     let range = Lines::new(ctx).range(&ctx.path, span)?;
     Some(Hover {
@@ -135,7 +160,9 @@ fn hover_at(ctx: &Ctx, position: Position) -> Option<Hover> {
         return markdown_hover(ctx, span, text);
     }
     let Some(hit) = hit_at(file, offset) else {
-        return term_hover(ctx, offset).or_else(|| term_heading_hover(ctx, offset));
+        return term_hover(ctx, offset)
+            .or_else(|| term_heading_hover(ctx, offset))
+            .or_else(|| summary_hover(ctx, offset));
     };
     let (span, text) = match hit {
         Hit::Phrase(use_) => {
@@ -197,7 +224,21 @@ fn hover_at(ctx: &Ctx, position: Position) -> Option<Hover> {
                     attribute.key_span,
                     describe_attribute(&ctx.model, &schema, &attribute.key)?,
                 ),
-                None => (d.name_span, describe_directive(&schema)),
+                None => {
+                    let text = describe_directive(&schema);
+                    // On a heading's `@id`, its section's summary first.
+                    let summary = (d.name == "id")
+                        .then(|| section_at(file, offset))
+                        .flatten()
+                        .and_then(|(heading, _)| crate::summary::of_heading(ctx, heading.span));
+                    let text = match summary {
+                        Some(summary) => {
+                            format!("{}\n\n---\n\n{text}", crate::summary::markdown(&summary))
+                        }
+                        None => text,
+                    };
+                    (d.name_span, text)
+                }
             }
         }
     };

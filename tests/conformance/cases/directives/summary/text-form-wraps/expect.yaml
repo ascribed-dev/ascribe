@@ -1,0 +1,17 @@
+description: >-
+  A summary's text is a text primary: inline content that continues onto
+  the next lines as a paragraph does, until a directive line. Another
+  heading-bound directive after it is still at the top of the section.
+spec: ["3.4", "4.12"]
+tags: [structure]
+
+outline:
+  - heading: 2
+    text: Install
+  - directive: summary
+    primary: Install Quill with [your package manager](install.md), in *a minute*.
+    binding: heading
+  - directive: available
+    primary: cloud
+    binding: heading
+  - paragraph: Run the installer.

@@ -115,7 +115,7 @@ A snippet's `tested` is present only when its source's `ascribe.examples.toml` m
 
 | `type` | Fields |
 |---|---|
-| `heading` | `level`, `id`, `sourceId`, `explicit`, `text`, `inlines` |
+| `heading` | `level`, `id`, `sourceId`, `explicit`, `text`, `inlines`, and `summary` when its section has one |
 | `paragraph` | `inlines` |
 | `code` | `fenced`, `info`, `literal` |
 | `blockQuote` | `children` |
@@ -128,6 +128,8 @@ A snippet's `tested` is present only when its source's `ascribe.examples.toml` m
 | `group` | `name`, `arms`: each `{label, attributes, title, span, children}` |
 
 An `@available` that survived the build is a `directive` with an `annotation`: `text` (the spec as shown; for a feature key, the spec it stands for), `display` (with the content model's labels), and `feature`. `attributes` is a list of `{key, values}` (a set has several values, a bare key none). A `title` and a text `primary` are inline lists. A `primary` is `{kind: "text", inlines}`, `{kind: "identifier", text}`, or `{kind: "line", text}`.
+
+A heading's `summary` is its section's (SPEC §4.12): `form`, `text` for `@summary: text` and `paragraph` for `@summary` above a paragraph; `inlines`, the summary's text; and `source`, the `@summary` line for the text form and the paragraph for the other. The `@summary` line is a `directive` block too, where it's written, and the paragraph a `paragraph`.
 
 A group keeps its surviving arms only: a group a selection reduced to one arm isn't a group in the tree, but that arm's blocks, and one with none is gone. An arm's `label` is its title as plain text, or the display labels of the values it names.
 

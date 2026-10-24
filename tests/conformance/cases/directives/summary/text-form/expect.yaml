@@ -1,0 +1,17 @@
+description: >-
+  `@summary: text` goes at the top of its section, after the heading and its
+  `@id`, and binds the section, as a heading-bound directive does.
+spec: ["3.8", "4.12"]
+tags: [structure]
+
+outline:
+  - heading: 2
+    text: ASC149 `page-size`
+  - directive: id
+    attributes: {permalink: "true"}
+    primary: ASC149
+    binding: heading
+  - directive: summary
+    primary: A page's Markdown is as long as the limit or longer.
+    binding: heading
+  - paragraph: Error · page level.

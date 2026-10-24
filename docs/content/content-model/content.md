@@ -8,6 +8,7 @@ Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#cont
 
 ## 6. `[dimensions.<name>]`
 @id {permalink=true}: dimensions
+@summary: A dimension is an axis content varies along, such as a platform or a deployment, and whose values are availability targets.
 
 @include: ../_fragments/content-model/dimensions.md
 
@@ -80,6 +81,7 @@ A mark does nothing only where no output shows it: when every build that publish
 
 ## 11. `[phrases]`
 @id {permalink=true}: phrases
+@summary: The phrases registry: each key a page writes in braces, and the text it stands for, or a target's line.
 
 @include: ../_fragments/content-model/phrases.md
 

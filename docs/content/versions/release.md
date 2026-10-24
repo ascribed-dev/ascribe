@@ -8,11 +8,13 @@ The commands for a project's [release lines](lines.md): what they are, what diff
 
 ## `ascribe versions`
 @id {permalink=true}: cli-versions
+@summary: Lists a project's release lines, says what differs between two, releases one, archives one, and retires one.
 
 Lists a project's release lines, says what differs between two, releases one, archives one, and retires one. Each reads the lines from `ascribe.toml`'s [`[releases]`](../content-model/content.md#71-releasestarget), and a line is named as a mark names it: the target, then the version, `"self-managed 3.4"`.
 
 ### `ascribe versions list`
 @id {permalink=true}: cli-versions-list
+@summary: Shows each target's release lines, newest first: whether each is current, live, planned, or archived, with its output, base path, and last day of support.
 
 Shows each target's lines, newest first: whether each is current, live, planned, or archived, the output and base path of each live line on each build versioned by the target, with how many pages it publishes, the last day of support from `ends`, and an archived line's address and the day it ended. It reads the project and builds nothing. In `examples/quill`:
 
@@ -29,6 +31,7 @@ With `--format json`, it writes the same in the document its [schema](../contrac
 
 ### `ascribe versions changes`
 @id {permalink=true}: cli-versions-changes
+@summary: Says what differs between two lines of a target, from the marks alone, with nothing built: the pages, sections, blocks, and table rows added, removed, or changed.
 
 Says what differs between two lines of a target, from the marks alone, with nothing built: the pages, sections, blocks, and table rows that are in the second line and not the first (added), in the first and not the second (removed), and in both with a different state, such as deprecated in one (changed). Each is listed with its file and line, the page, the heading it's under, and its first line. A page whose own mark adds it is one entry, not an entry for each part of it. A page added in place of one removed, which `replaces` links it with either way, is one entry too: it's listed as added, and names the page it's in place of, which isn't listed as removed. `ascribe versions changes "self-managed 3.4" 3.5` in `examples/quill`:
 
@@ -56,6 +59,7 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 
 ### `ascribe versions release`
 @id {permalink=true}: cli-versions-release
+@summary: Releases a line: rewrites each `planned` mark for its target to the line's version, makes the line live, and archives the old current line.
 
 Releases a line: rewrites each mark's [`planned`](../writing/directives.md#availability-specs) for its target to the line's version, makes the line live, and archives the old current line where no build is versioned by the target. [When a line ships](index.md#release-day) has each step. It edits `ascribe.toml` in place, keeping its comments and order, and each mark where it's written. A feature's spec names its versions, so `planned` in one is left as it is. In a copy of `examples/quill` that plans 3.6, with a section marked `@available: self-managed planned`, `ascribe versions release "self-managed 3.6" --next 3.7 --dry-run` says what it would do, `--next` adding 3.7 to `planned` so that `planned` names it from then on. Its site is versioned, so 3.5 stays live, with an output of its own, `site@3.5`:
 
@@ -89,6 +93,7 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 
 ### `ascribe versions archive`
 @id {permalink=true}: cli-versions-archive
+@summary: Renders a line into a folder of HTML that needs nothing else, with a sidebar, a search box, and a contents page, working from a disk with no server.
 
 Renders a line, live or planned, into a folder of HTML that needs nothing else: every page of the line with a statement of what it is, a sidebar with a search box, a contents page, and a print stylesheet, marked so crawlers leave it alone, working from a disk with no server. [Archive and retire a line](archive.md#archive-a-line) says what's in it, and the [archive contract](../contracts/archive.md) its layout. In a copy of `examples/quill`, `ascribe versions archive "self-managed 3.4" --to archive/3.4 --current https://docs.quill.dev/` writes the archive and says what to add to `ascribe.toml` once it's hosted:
 
@@ -112,6 +117,7 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 
 ### `ascribe versions retire`
 @id {permalink=true}: cli-versions-retire
+@summary: Takes the oldest live line out of the window once its archive is hosted, rewrites the marks for its target, and says where each of its addresses should go.
 
 Takes the oldest live line out of the window once its archive is hosted: moves it from `live` to `archived` with its address and the day it ended, rewrites each mark for its target to the simplest spec that means the same in every line still live or planned, lists what no line has any more, and says where each of the line's addresses should go. [Archive and retire a line](archive.md#retire-a-line) has each step. It edits `ascribe.toml` in place, keeping its comments and order, and each mark where it's written. In `examples/quill`, `ascribe versions retire "self-managed 3.4" --url https://archive.quill.dev/3.4/ --dry-run --show-unused` says what it would do:
 

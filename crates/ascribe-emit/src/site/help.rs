@@ -1,9 +1,10 @@
 //! `_ascribe/help.json`: each permalink's section of the docs, for a
 //! product to show where its user is, in a tooltip, a panel, or beside an
 //! error (output-layout contract §1.7): its title, its summary, its text as
-//! the plain output writes it, and its address. Each entry is also an
-//! address of its own, `<folder><name>.json` ([`entry_paths`]), which the
-//! headers give to any origin.
+//! the plain output writes it, and its address. [`help`] is one name's
+//! entry, as the file writes it, for `ascribe resolve go:<name>`. Each entry
+//! is also an address of its own, `<folder><name>.json` ([`entry_paths`]),
+//! which the headers give to any origin.
 
 use std::collections::BTreeMap;
 
@@ -25,19 +26,102 @@ struct File<'a> {
     /// The line, for a line of a versioned build.
     #[serde(skip_serializing_if = "Option::is_none")]
     line: Option<&'a str>,
-    help: BTreeMap<&'a str, Entry>,
+    help: BTreeMap<&'a str, HelpEntry>,
 }
 
-#[derive(Serialize)]
-pub(super) struct Entry {
-    title: String,
+/// A permalink's entry in `_ascribe/help.json`: its section of the docs.
+#[derive(Clone, Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct HelpEntry {
+    /// The heading's text, or the page's title for a page's permalink, as
+    /// plain text.
+    pub title: String,
+    /// The section's summary; absent when it has none.
     #[serde(skip_serializing_if = "Option::is_none")]
-    summary: Option<String>,
-    text: String,
-    /// The permalink's address, with `[consumer] site`.
+    pub summary: Option<String>,
+    /// The section as the plain output writes it, in Markdown, with each
+    /// image as its alt text.
+    pub text: String,
+    /// The permalink's address; absent without `[consumer] site`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    address: Option<String>,
-    source: String,
+    pub address: Option<String>,
+    /// The page the permalink is recorded on, as a path from the content
+    /// root.
+    pub source: String,
+}
+
+/// What a build's `help.json` has under a name.
+#[derive(Clone, Debug)]
+pub enum Help {
+    /// The name's entry.
+    Entry(HelpEntry),
+    /// A retired permalink, which has no entry.
+    Retired {
+        /// Why it was retired, as `ascribe.toml` writes it.
+        reason: String,
+        /// Where its address leads now, as `ascribe.toml` writes it.
+        to: Option<String>,
+    },
+    /// No name the build answers to.
+    Missing {
+        /// The names the file has an entry for, in order.
+        names: Vec<String>,
+    },
+}
+
+/// The file's header for the build: the format's version, the build's name,
+/// and its line, for a line of a versioned build that has more than one.
+pub fn help_header<'a>(cx: &EmitContext<'a>) -> (u32, &'a str, Option<&'a str>) {
+    let declared = cx.build;
+    // A versioned build with one live line writes what it would unversioned.
+    let line = declared
+        .line
+        .as_ref()
+        .filter(|line| !(line.current && line.oldest.text == line.line.text));
+    (
+        VERSION,
+        declared
+            .line
+            .as_ref()
+            .map_or(declared.name.as_str(), |line| line.build.as_str()),
+        line.map(|line| line.line.text.as_str()),
+    )
+}
+
+/// What the build's `help.json` has under `name`: the entry the file
+/// writes, the reason a retired permalink was retired, or the names it has.
+pub fn help(cx: &EmitContext<'_>, build: &ResolvedBuild, name: &str) -> Help {
+    let model = cx.model;
+    let plain = PlainEmitter::new(model);
+    let found = build.permalinks();
+    let named = named(model, build, &found);
+    let permalink = match named.get(name) {
+        Some(
+            Named::Declared(permalink)
+            | Named::Alias {
+                target: permalink, ..
+            },
+        ) => Some(*permalink),
+        Some(Named::Retired { reason, .. } | Named::Removed { reason }) => {
+            return Help::Retired {
+                reason: (*reason).to_owned(),
+                to: model
+                    .permalinks
+                    .retired(name)
+                    .and_then(|retired| retired.to.clone()),
+            };
+        }
+        None => None,
+    };
+    if let Some(entry) = permalink.and_then(|p| entry(cx, &plain, build, p, name)) {
+        return Help::Entry(entry);
+    }
+    let names = named
+        .into_iter()
+        .filter(|(_, named)| matches!(named, Named::Declared(_) | Named::Alias { .. }))
+        .map(|(name, _)| name.to_owned())
+        .collect();
+    Help::Missing { names }
 }
 
 /// The entries, by name, for each name the build answers to ([`named`]):
@@ -47,7 +131,7 @@ pub(super) fn entries<'a>(
     cx: &EmitContext<'a>,
     build: &ResolvedBuild,
     found: &'a [Permalink],
-) -> BTreeMap<&'a str, Entry> {
+) -> BTreeMap<&'a str, HelpEntry> {
     let model = cx.model;
     let plain = PlainEmitter::new(model);
     let mut help = BTreeMap::new();
@@ -66,20 +150,12 @@ pub(super) fn entries<'a>(
 
 /// The file, as JSON, with `help`'s entries. A build with no permalinks has
 /// an empty table.
-pub(super) fn file(cx: &EmitContext<'_>, help: BTreeMap<&str, Entry>) -> String {
-    let declared = &cx.build;
-    // A versioned build with one live line writes what it would unversioned.
-    let line = declared
-        .line
-        .as_ref()
-        .filter(|line| !(line.current && line.oldest.text == line.line.text));
+pub(super) fn file(cx: &EmitContext<'_>, help: BTreeMap<&str, HelpEntry>) -> String {
+    let (version, build, line) = help_header(cx);
     let file = File {
-        version: VERSION,
-        build: declared
-            .line
-            .as_ref()
-            .map_or(declared.name.as_str(), |line| line.build.as_str()),
-        line: line.map(|line| line.line.text.as_str()),
+        version,
+        build,
+        line,
         help,
     };
     // Serializing strings and maps of strings can't fail.
@@ -116,7 +192,7 @@ fn entry(
     build: &ResolvedBuild,
     permalink: &Permalink,
     name: &str,
-) -> Option<Entry> {
+) -> Option<HelpEntry> {
     let (page, section) = build.section(permalink)?;
     let page_cx = PageContext::new(cx, plain.page_path(&page.path), plain);
     let rendered = render_section(&page_cx, page, &section);
@@ -124,7 +200,7 @@ fn entry(
         Some(ids) => ids.text.clone(),
         None => page.title.clone().unwrap_or_default(),
     };
-    Some(Entry {
+    Some(HelpEntry {
         title,
         summary: rendered.summary,
         text: rendered.text,

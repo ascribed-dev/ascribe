@@ -1,0 +1,21 @@
+description: >-
+  A summary an include brings into a `@variant` arm is an error, reported
+  at the include, and isn't the section's summary, so it isn't a second
+  one either. A summary written inside an arm in a fragment is reported at
+  the include of the fragment.
+spec: ["4.2", "4.12", "8.2"]
+tags: [page-check, include]
+
+builds:
+  site:
+    diagnostics:
+      - slug: summary-in-variant
+        file: index.md
+        line: 9
+        related:
+          - {file: _summary.md, line: 1}
+      - slug: summary-in-variant
+        file: index.md
+        line: 16
+        related:
+          - {file: _arms.md, line: 2}

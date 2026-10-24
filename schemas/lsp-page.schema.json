@@ -548,11 +548,19 @@
         "range": {
           "$ref": "#/$defs/LspRange",
           "description": "The page's `permalink` line, or the heading's `@id` line, in the\nnegotiated position encoding."
+        },
+        "summary": {
+          "description": "The summary of the section it leads to in the editor's build, as\n`_ascribe/help.json` writes it: the section's `@summary`, or for the\npage's own, the page's description. `null` when it has none, which\nis where `summary-missing` reports a heading's.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
         "name",
         "heading",
+        "summary",
         "range"
       ],
       "type": "object"

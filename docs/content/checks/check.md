@@ -9,6 +9,7 @@ The commands that check, build, and format a project. The options every command 
 ## `ascribe check`
 @id {permalink=true}: cli-check
 
+@summary
 Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. The editor and `ascribe build` run the same checks, so they report the same diagnostics.
 
 @include: ../_generated/cli-check-options.md
@@ -108,6 +109,7 @@ Advice the project's [baseline](baseline.md), `ascribe.baseline`, holds back isn
 ## `ascribe build`
 @id {permalink=true}: cli-build
 
+@summary
 Checks the project, then writes each build's outputs. The checks run first, exactly as `ascribe check` runs them, and print what it prints. **If any check finds an error, nothing is written, for any build.**
 
 @include: ../_generated/cli-build-options.md
@@ -141,6 +143,7 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 
 ## `ascribe fmt`
 @id {permalink=true}: cli-fmt
+@summary: Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines. It never changes how a page renders.
 
 Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. It changes nothing else, never how a page renders, and leaves alone a construct that has an error. See [Canonical form](../writing/syntax.md#canonical-form).
 

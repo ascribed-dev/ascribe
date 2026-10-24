@@ -8,6 +8,7 @@ Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#cont
 
 ## 15. `[consumer]`
 @id {permalink=true}: consumer
+@summary: The consumer profile: how the site output fits a specific consumer, such as Astro, with its site address, base path, trailing slash, and slugger.
 
 @include: ../_fragments/content-model/consumer.md
 

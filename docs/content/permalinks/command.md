@@ -8,6 +8,7 @@ The commands that keep a project's list of permalinks, check names against it, a
 
 ## `ascribe permalinks`
 @id {permalink=true}: cli-permalinks
+@summary: Keeps the project's list of permalinks, `ascribe.permalinks`, checks names against it, and retires permalinks.
 
 Keeps the project's list of [permalinks](../writing/directives.md#permalinks), `ascribe.permalinks` beside `ascribe.toml`, checks names against it, and retires permalinks. The list names each permalink the content declares and where, and each alias and retired permalink in `ascribe.toml`'s [`[permalinks]`](../content-model/checks.md#20-permalinks), and is committed with the docs: with it, `ascribe check` reports a permalink that goes away (`permalink-removed`) and one the list doesn't have yet (`permalinks-list-behind`), and a product's CI can check the names it links to with `verify`. A project without the list isn't told about either. Its format is in the [permalinks list contract](../contracts/permalinks-list.md).
 
@@ -15,6 +16,7 @@ The examples below are one project's: a page, `guides/weave.md`, with the permal
 
 ### `ascribe permalinks sync`
 @id {permalink=true}: cli-permalinks-sync
+@summary: Brings `ascribe.permalinks` up to date with the project, and makes it when there's none. It never drops a name the project no longer has.
 
 Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each alias and retired permalink as `ascribe.toml` has it. It never drops a name the project no longer has: that stays in the list, and `ascribe check` reports it until it's back or retired, so running `sync` can't hide a removal. With `--check`, it writes nothing, and says what it would change, so CI can fail on a list that wasn't committed with the change; `ascribe check` reports the same thing as `permalinks-list-behind`.
 
@@ -47,6 +49,7 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 
 ### `ascribe permalinks list`
 @id {permalink=true}: cli-permalinks-list
+@summary: Shows every permalink the content declares, where it's declared, and each alias and retired permalink, and which ones `ascribe.permalinks` doesn't have yet. It changes nothing.
 
 Shows every permalink the content declares, with the file and line it's declared on, and each alias and retired permalink in `ascribe.toml`, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that the project no longer has. It changes nothing. Once the sections have changed, before the list is synced:
 
@@ -63,6 +66,7 @@ With `--format json`, it writes the same in the document its [schema](../contrac
 
 ### `ascribe permalinks verify`
 @id {permalink=true}: cli-permalinks-verify
+@summary: Checks that each name is a permalink or an alias in a list, and names each one that isn't, or was retired. It reads only the list, so a product's CI can run it.
 
 Checks that each name is a permalink or an alias in a list, and names each one that isn't, and each one that was retired, with the reason the docs give. It reads only the list, not the docs, so a product's repository can run it against a copy of the docs' list: [Check the links in the product's CI](index.md#checking-a-products-links) shows the step.
 
@@ -92,6 +96,7 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 
 ### `ascribe permalinks retire`
 @id {permalink=true}: cli-permalinks-retire
+@summary: Retires permalinks on purpose, with a reason, in `ascribe.toml`'s `[permalinks.retired]`. A retired permalink's address shows the reason, or leads to `--to`.
 
 Retires permalinks on purpose, with a reason: it writes an entry for each in `ascribe.toml`'s [`[permalinks.retired]`](../content-model/checks.md#20-permalinks), in place, keeping the file's comments and order, and, when the project has `ascribe.permalinks`, records there each one the content no longer declares. A retired permalink's address shows the reason, or leads to `--to`; `ascribe check` no longer reports it as removed; and `verify` tells a product it was retired, with the reason.
 

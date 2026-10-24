@@ -26,6 +26,7 @@ pub const SETTINGS: &[(DiagnosticSlug, &[&str])] = &[
     (diagnostics::PAGE_SIZE, &["limit"]),
     (diagnostics::IMAGE_LARGE, &["limit"]),
     (diagnostics::MEMO_LONG, &["limit"]),
+    (diagnostics::SUMMARY_LONG, &["limit"]),
 ];
 
 impl Loader<'_> {

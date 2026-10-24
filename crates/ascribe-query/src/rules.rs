@@ -32,6 +32,21 @@ pub const MEMO_FILE_SENTENCE: &str = "`ascribe outline <page>` lists the memo fi
      page and each of its headings: read a memo before changing the block it's about, and \
      keep it.";
 
+/// What the rules say of permalinks, in a project that declares one: the
+/// command that shows a permalink's help, which `{config}` is replaced in
+/// with the project's `--config`.
+pub const PERMALINK_SENTENCE: &str = "A product's message that links to these docs by a \
+     permalink can read what the docs will show for it first: `ascribe resolve \
+     go:<name>{config}` prints the help a product shows, from the build's `help.json`.";
+
+/// What the rules say of summaries, in a project with a heading's
+/// permalink: that it gets a `@summary`, the text a product shows with its
+/// help, and how to choose between the two bindings (SPEC §4.12).
+pub const SUMMARY_SENTENCE: &str = "Give a heading with a permalink a summary, a sentence or \
+     two a product shows with its help: `@summary` on the line above a paragraph of the \
+     section that reads well alone, or `@summary: <text>` under the heading and its `@id` \
+     when none does, as for a lead-in to a list. Keep it under 300 characters.";
+
 /// A project's rules, as Markdown, for a file in the folder `dir` is relative
 /// to: `dir` is the project's folder (the one holding `ascribe.toml`) as seen
 /// from there, and empty when the file is beside `ascribe.toml`. `root` is
@@ -45,6 +60,10 @@ pub const MEMO_FILE_SENTENCE: &str = "`ascribe outline <page>` lists the memo fi
 /// in `memos/`, where to find the memos about a page, in
 /// [`MEMO_FILE_SENTENCE`], after it. Personal memos don't count: the rules
 /// are the same on every machine.
+///
+/// In a project that declares a permalink, the links section ends with
+/// [`PERMALINK_SENTENCE`], and in one that declares a heading's, with
+/// [`SUMMARY_SENTENCE`] after it.
 ///
 /// When the whole is longer than [`RULES_BUDGET`], the memo sentences are
 /// cut first; then the page types' lines, and the cut says where the full list
@@ -62,12 +81,22 @@ pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPa
 
     let types = type_entries(model, &ascribe_templates::summaries(model, fs));
     let phrases = phrases_section(model, &at);
+    let declared = project.declared_permalinks();
+    let mut permalinks = if declared.is_empty() {
+        String::new()
+    } else {
+        format!(" {}", PERMALINK_SENTENCE.replace("{config}", &at.config()))
+    };
+    if declared.iter().any(|p| p.id.is_some()) {
+        permalinks.push(' ');
+        permalinks.push_str(SUMMARY_SENTENCE);
+    }
     let tail = format!(
         "\n### Links\n\nLink to the source file, with a relative path such as \
          `../guides/install.md#configure`, not to the site's address. `ascribe outline \
          <page>` lists a page's headings with their ids, and `ascribe link <target> --from \
-         <page>` says whether a link works and what to write.\n\n### More\n\n`ascribe \
-         model{}` shows everything the content model allows. Every directive: {}\n",
+         <page>` says whether a link works and what to write.{permalinks}\n\n### More\n\n\
+         `ascribe model{}` shows everything the content model allows. Every directive: {}\n",
         at.path_arg(),
         directive_reference_url(),
     );
@@ -429,6 +458,10 @@ fn builtin_line(builtin: Builtin) -> String {
         Builtin::Term => "`@term` on the line under a heading of a glossary page, with \
                           `{aliases=\"<a>|<b>\"}` for other forms: the heading is a glossary \
                           term, defined by the paragraph under it"
+            .to_owned(),
+        Builtin::Summary => "`@summary: <text>` under a heading, or `@summary` on the line \
+                             above a paragraph: the section's summary, its own text, which \
+                             the page doesn't show, or the paragraph, which it does"
             .to_owned(),
     }
 }

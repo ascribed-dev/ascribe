@@ -199,6 +199,18 @@ fn quill_with_every_target() {
     let repo = repository("quill");
     sync(repo.path(), ".", EVERY_TARGET);
     expect_written("quill", repo.path());
+    // Quill declares permalinks, so its rules say how to read one's help.
+    let rules = read(&repo.path().join("AGENTS.md"));
+    assert!(
+        rules.contains("`ascribe resolve go:<name>` prints the help a product shows"),
+        "{rules}"
+    );
+    // Its headings have permalinks, so the rules say to give each a summary,
+    // and how to choose its binding.
+    assert!(
+        rules.contains(ascribe_query::rules::SUMMARY_SENTENCE),
+        "{rules}"
+    );
 }
 
 #[test]
@@ -209,6 +221,12 @@ fn monorepo_with_every_target() {
     }
     expect_written("monorepo", repo.path());
 
+    // None of them declares a permalink, so no rules mention one's help.
+    for project in ["docs", "handbook", "handbook/pages/security"] {
+        let rules = read(&repo.path().join(project).join("AGENTS.md"));
+        assert!(!rules.contains("ascribe resolve go:"), "{project}: {rules}");
+        assert!(!rules.contains("@summary"), "{project}: {rules}");
+    }
     // Each project's block names its own frontmatter, not another's.
     let security = read(&repo.path().join("handbook/pages/security/AGENTS.md"));
     let handbook = read(&repo.path().join("handbook/AGENTS.md"));

@@ -121,8 +121,8 @@ A directive in line form applies to something, according to its **binding**:
 | Binding | Applies to | Directives |
 |---|---|---|
 | Self | Its own primary, or nothing | `@include`, `@snippet`; `@note` with a primary |
-| Heading | The heading above it, and that heading's section | `@id`, `@term` |
-| Following block | The next block in the same container | `@steps`; `@details` and `@note` without a colon |
+| Heading | The heading above it, and that heading's section | `@id`, `@term`; `@summary` with a primary |
+| Following block | The next block in the same container | `@steps`; `@details`, `@note`, and `@summary` without a colon |
 | Heading or block | At the top of a section, the section; anywhere else, the next block | `@available`, `@intended`, `@memo` |
 
 **Heading-bound directives** go at the top of their section, directly under the heading, before any other content. Several may stack:

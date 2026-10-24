@@ -3,6 +3,7 @@
 
 ### ASC001 `attribute-unknown-key`
 @id {permalink=true}: ASC001
+@summary: Unknown key for the directive, image, or table row.
 
 Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
@@ -16,6 +17,7 @@ Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.m
 
 ### ASC002 `attribute-type-mismatch`
 @id {permalink=true}: ASC002
+@summary: Value doesn't match the key's declared type.
 
 Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
@@ -29,6 +31,7 @@ Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.m
 
 ### ASC003 `attribute-bare-key`
 @id {permalink=true}: ASC003
+@summary: Bare key without a value.
 
 Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
@@ -42,6 +45,7 @@ Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md
 
 ### ASC004 `attribute-unquoted-reserved`
 @id {permalink=true}: ASC004
+@summary: Unquoted value containing a reserved character.
 
 Error · file level · next step: fix · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
@@ -55,6 +59,7 @@ Error · file level · next step: fix · [SPEC §3.3]({repo}/blob/main/SPEC.md#3
 
 ### ASC055 `attribute-syntax`
 @id {permalink=true}: ASC055
+@summary: Attribute block that doesn't parse (such as an unclosed quote or brace, or `=` with no value).
 
 Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
@@ -68,6 +73,7 @@ Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md
 
 ### ASC056 `attribute-duplicate-key`
 @id {permalink=true}: ASC056
+@summary: The same key given more than once.
 
 Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
@@ -83,6 +89,7 @@ Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md
 
 ### ASC005 `directive-unknown`
 @id {permalink=true}: ASC005
+@summary: Directive-shaped line (`@word` followed by `{`, `:`, or end of line) with an unknown name.
 
 Warning · file level · next step: choose · [SPEC §3.2]({repo}/blob/main/SPEC.md#32-recognition)
 
@@ -96,6 +103,7 @@ Warning · file level · next step: choose · [SPEC §3.2]({repo}/blob/main/SPEC
 
 ### ASC006 `directive-primary`
 @id {permalink=true}: ASC006
+@summary: Primary given to a directive that takes none, or a required primary missing.
 
 Error · file level · next step: write · [SPEC §3.4]({repo}/blob/main/SPEC.md#34-the-primary)
 
@@ -109,6 +117,7 @@ Error · file level · next step: write · [SPEC §3.4]({repo}/blob/main/SPEC.md
 
 ### ASC120 `directive-extra-text`
 @id {permalink=true}: ASC120
+@summary: Text on a directive line that fits no part of it: after the name or attributes, after `@end`, or after an identifier primary.
 
 Error · file level · next step: fix · [SPEC §3.1]({repo}/blob/main/SPEC.md#31-syntax)
 
@@ -124,6 +133,7 @@ Error · file level · next step: fix · [SPEC §3.1]({repo}/blob/main/SPEC.md#3
 
 ### ASC007 `container-unclosed`
 @id {permalink=true}: ASC007
+@summary: Container not closed before its enclosing block ends.
 
 Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
@@ -137,6 +147,7 @@ Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md
 
 ### ASC008 `container-colon-unexpected`
 @id {permalink=true}: ASC008
+@summary: Trailing `:` on a directive with no container form.
 
 Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
@@ -150,6 +161,7 @@ Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#3
 
 ### ASC009 `container-colon-missing`
 @id {permalink=true}: ASC009
+@summary: Container-only directive without a trailing `:`.
 
 Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
@@ -163,6 +175,7 @@ Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#3
 
 ### ASC010 `container-open-at-arm`
 @id {permalink=true}: ASC010
+@summary: Container still open when the next arm of its group begins (reported at that arm's opener).
 
 Error · file level · next step: write · [SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups)
 
@@ -176,6 +189,7 @@ Error · file level · next step: write · [SPEC §3.6]({repo}/blob/main/SPEC.md
 
 ### ASC011 `end-unmatched`
 @id {permalink=true}: ASC011
+@summary: End line with no open container.
 
 Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
@@ -189,6 +203,7 @@ Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md
 
 ### ASC012 `end-indent-mismatch`
 @id {permalink=true}: ASC012
+@summary: End line indented differently from its opener.
 
 Error · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
 
@@ -202,6 +217,7 @@ Error · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.md
 
 ### ASC013 `container-nesting-deep`
 @id {permalink=true}: ASC013
+@summary: Nesting deeper than two levels.
 
 Warning · file level · next step: write · [SPEC §3.10]({repo}/blob/main/SPEC.md#310-nesting)
 
@@ -217,6 +233,7 @@ Warning · file level · next step: write · [SPEC §3.10]({repo}/blob/main/SPEC
 
 ### ASC014 `binding-no-block`
 @id {permalink=true}: ASC014
+@summary: Following-block directive with no following block in its container.
 
 Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
@@ -230,6 +247,7 @@ Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md
 
 ### ASC015 `binding-heading`
 @id {permalink=true}: ASC015
+@summary: Following-block directive bound to a heading.
 
 Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
@@ -243,6 +261,7 @@ Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md
 
 ### ASC016 `binding-blank-line`
 @id {permalink=true}: ASC016
+@summary: Blank line between a following-block directive and its block.
 
 Warning · file level · next step: fix · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
@@ -256,6 +275,7 @@ Warning · file level · next step: fix · [SPEC §3.8]({repo}/blob/main/SPEC.md
 
 ### ASC017 `binding-not-section-top`
 @id {permalink=true}: ASC017
+@summary: Heading-bound directive that isn't at the top of its section.
 
 Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
@@ -271,6 +291,7 @@ Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md
 
 ### ASC018 `title-not-accepted`
 @id {permalink=true}: ASC018
+@summary: Title given to a directive that doesn't accept one.
 
 Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
 
@@ -284,6 +305,7 @@ Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.
 
 ### ASC019 `title-dot-space`
 @id {permalink=true}: ASC019
+@summary: A `. ` line (dot and space) directly above a directive that accepts a title.
 
 Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
 
@@ -299,6 +321,7 @@ Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.
 
 ### ASC020 `id-duplicate`
 @id {permalink=true}: ASC020
+@summary: Duplicate id on a page, including ids from included content.
 
 Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
@@ -312,6 +335,7 @@ Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md
 
 ### ASC058 `id-invalid`
 @id {permalink=true}: ASC058
+@summary: Id, or a page's `permalink`, containing characters other than letters, digits, hyphens, underscores, and periods.
 
 Error · file level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
@@ -325,6 +349,7 @@ Error · file level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md
 
 ### ASC173 `permalink-duplicate`
 @id {permalink=true}: ASC173
+@summary: Permalink published by one build in more than one place, names compared ignoring case: on two pages, or as a page's own and a heading's.
 
 Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
@@ -340,6 +365,7 @@ Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md
 
 ### ASC021 `include-target-missing`
 @id {permalink=true}: ASC021
+@summary: Target file doesn't exist.
 
 Error · file level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
@@ -353,6 +379,7 @@ Error · file level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.m
 
 ### ASC022 `include-id-missing`
 @id {permalink=true}: ASC022
+@summary: Target id doesn't exist in the target file.
 
 Error · page level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
@@ -366,6 +393,7 @@ Error · page level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.m
 
 ### ASC023 `include-cycle`
 @id {permalink=true}: ASC023
+@summary: Include cycle.
 
 Error · page level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
@@ -379,6 +407,7 @@ Error · page level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md
 
 ### ASC125 `include-heading-without-id`
 @id {permalink=true}: ASC125
+@summary: `{heading=false}` without an `#id`, which has no effect.
 
 Warning · file level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
@@ -392,6 +421,7 @@ Warning · file level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.
 
 ### ASC182 `include-limit`
 @id {permalink=true}: ASC182
+@summary: A page's includes expand it past the processor's limit.
 
 Error · page level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
@@ -407,6 +437,7 @@ Error · page level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md
 
 ### ASC024 `variant-no-arm-survives`
 @id {permalink=true}: ASC024
+@summary: No arm of a group survives a build's selection.
 
 Warning · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
@@ -420,6 +451,7 @@ Warning · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.
 
 ### ASC025 `variant-unknown`
 @id {permalink=true}: ASC025
+@summary: Unknown dimension or value.
 
 Error · file level · next step: choose · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
@@ -433,6 +465,7 @@ Error · file level · next step: choose · [SPEC §4.3]({repo}/blob/main/SPEC.m
 
 ### ASC026 `variant-mixed-arms`
 @id {permalink=true}: ASC026
+@summary: Group mixes labeled and dimensional arms.
 
 Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
@@ -446,6 +479,7 @@ Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md
 
 ### ASC027 `variant-arm-kind`
 @id {permalink=true}: ASC027
+@summary: Arm has both a title and attributes, or neither.
 
 Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
@@ -459,6 +493,7 @@ Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md
 
 ### ASC028 `variant-no-shared-dimension`
 @id {permalink=true}: ASC028
+@summary: Dimensional arms share no dimension key.
 
 Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
@@ -474,6 +509,7 @@ Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md
 
 ### ASC029 `available-unknown`
 @id {permalink=true}: ASC029
+@summary: Unknown target or state.
 
 Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -487,6 +523,7 @@ Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.m
 
 ### ASC030 `available-history-order`
 @id {permalink=true}: ASC030
+@summary: History out of chronological order.
 
 Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -500,6 +537,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 ### ASC031 `available-versionless`
 @id {permalink=true}: ASC031
+@summary: Versions given for a versionless target.
 
 Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -513,6 +551,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 ### ASC032 `available-exceeds-scope`
 @id {permalink=true}: ASC032
+@summary: Spec exceeds its enclosing scope.
 
 Error · page level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -526,6 +565,7 @@ Error · page level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 ### ASC057 `available-syntax`
 @id {permalink=true}: ASC057
+@summary: Spec that doesn't parse, in a directive or in `available` frontmatter.
 
 Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -539,6 +579,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 ### ASC210 `available-version-ahead`
 @id {permalink=true}: ASC210
+@summary: Version newer than every release line its target declares.
 
 Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -552,6 +593,7 @@ Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.m
 
 ### ASC245 `available-planned-line`
 @id {permalink=true}: ASC245
+@summary: `planned` for a target with no planned line, or more than one.
 
 Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -567,6 +609,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 ### ASC033 `steps-not-ordered-list`
 @id {permalink=true}: ASC033
+@summary: Bound block isn't an ordered list.
 
 Error · file level · next step: write · [SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps)
 
@@ -582,6 +625,7 @@ Error · file level · next step: write · [SPEC §4.6]({repo}/blob/main/SPEC.md
 
 ### ASC034 `details-title-missing`
 @id {permalink=true}: ASC034
+@summary: Missing title.
 
 Error · file level · next step: write · [SPEC §4.7]({repo}/blob/main/SPEC.md#47-details)
 
@@ -597,6 +641,7 @@ Error · file level · next step: write · [SPEC §4.7]({repo}/blob/main/SPEC.md
 
 ### ASC035 `widget-schema`
 @id {permalink=true}: ASC035
+@summary: Violates its declared schema.
 
 Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 

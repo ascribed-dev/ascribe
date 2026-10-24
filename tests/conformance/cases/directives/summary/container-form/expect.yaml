@@ -1,0 +1,7 @@
+description: >-
+  `@summary` has no container form: a trailing colon is an error.
+spec: ["3.5", "4.12", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: container-colon-unexpected, line: 7}

@@ -322,12 +322,25 @@ pub const TOOLS: &[Spec] = &[
         command: "ascribe resolve",
         description: "Read a page as one build's readers see it, as plain Markdown: \
             directives, phrases, includes, and availability resolved. Example: {\"page\": \
-            \"docs/keys.md\", \"build\": \"cloud\"} returns `text` starting `# API keys`.",
+            \"docs/keys.md\", \"build\": \"cloud\"} returns `text` starting `# API keys`. \
+            With `go:` and a permalink's name, read what a product that links to the docs by \
+            that permalink shows: {\"page\": \"go:rotate-keys\"} returns its `title`, \
+            `summary`, `text`, and `address`.",
         input: || {
             json!({
                 "type": "object",
                 "properties": {
-                    "page": page(),
+                    "page": {
+                        "type": "string",
+                        "description": "The page: a path from the server's working directory, \
+                            or from the content root. Or `go:` and a permalink's name, for the \
+                            help a product shows for it.",
+                    },
+                    "project": {
+                        "type": "string",
+                        "description": "With `go:<name>`, a file or folder in the project. By \
+                            default, the server's working directory.",
+                    },
                     "build": {
                         "type": "string",
                         "description": "The build whose readers to show it as; needed when \
@@ -342,7 +355,14 @@ pub const TOOLS: &[Spec] = &[
                 "additionalProperties": false,
             })
         },
-        output: || schema(include_str!("../../../../schemas/resolve.schema.json")),
+        output: || {
+            either(
+                schema(include_str!("../../../../schemas/resolve.schema.json")),
+                schema(include_str!(
+                    "../../../../schemas/resolve-permalink.schema.json"
+                )),
+            )
+        },
         call: call_resolve,
     },
     Spec {
@@ -502,6 +522,33 @@ fn with_concise(mut schema: Value) -> Value {
                 "additionalProperties": false,
             },
         ],
+        "$defs": defs,
+    });
+    if let Some(dialect) = dialect {
+        root["$schema"] = dialect;
+    }
+    root
+}
+
+/// One schema or the other: the schema of a tool whose result is one of two
+/// commands' JSON. The definitions move to the root, where the references
+/// in each find them.
+fn either(first: Value, second: Value) -> Value {
+    let mut defs = Map::new();
+    let mut dialect = None;
+    let mut parts = Vec::new();
+    for mut schema in [first, second] {
+        if let Some(fields) = schema.as_object_mut() {
+            if let Some(Value::Object(own)) = fields.remove("$defs") {
+                defs.extend(own);
+            }
+            dialect = fields.remove("$schema").or(dialect);
+        }
+        parts.push(schema);
+    }
+    let mut root = json!({
+        "type": "object",
+        "anyOf": parts,
         "$defs": defs,
     });
     if let Some(dialect) = dialect {
@@ -815,7 +862,20 @@ fn call_resolve(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String
         frontmatter: a.boolean("frontmatter")?,
         format: Format::Json,
     };
-    json_result(&resolve::answer(&server.cache, &global(), &args).map_err(|s| s.message())?)
+    let project = a.path("project")?;
+    if project.is_some() && resolve::permalink_name(&args.page).is_none() {
+        return Err("`project` goes with a `page` of `go:<name>`: a page finds its project".into());
+    }
+    let global = global_at(project.as_deref())?;
+    let answer = resolve::answer(&server.cache, &global, &args).map_err(|s| s.message())?;
+    match &answer {
+        resolve::Answer::Page(resolved) => json_result(resolved),
+        resolve::Answer::Help {
+            help: ascribe_query::PermalinkHelp::Found(help),
+            ..
+        } => json_result(help),
+        resolve::Answer::Help { .. } => Err(answer.no_help().unwrap_or_default()),
+    }
 }
 
 fn call_format(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
