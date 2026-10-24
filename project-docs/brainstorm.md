@@ -4,16 +4,15 @@ Ideas for Ascribe that nobody has built, planned, or started. This is exploratio
 
 Written on 2 October 2026, after 0.1.1, and cut back on 11 October 2026 to what's still open. Most of what it held then has been built, and the rest of it has a plan or a proposal of its own, so it's gone from here:
 
-- **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, external links, and what's new since the last run), [a baseline](../docs/content/checks/baseline.md) of existing advice, [permalinks](../docs/content/permalinks/index.md), [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), [versions](../docs/content/versions/index.md), [navigation](../docs/content/navigation/index.md), [the glossary as pages](../docs/content/content-model/glossary.md), a content model that says only what's the project's own ([shared frontmatter, defaults, and `[from]`](../docs/content/content-model/index.md)), the editor's [sidebar](../docs/content/editor/sidebar.md), with This page and the Project view, and Project Settings, [search](../docs/content/command/questions.md#ascribe-search), and what a search engine and a crawler are told, in [Publishing](../docs/content/publishing/index.md).
+- **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, external links, and what's new since the last run), [a baseline](../docs/content/checks/baseline.md) of existing advice, [permalinks](../docs/content/permalinks/index.md), [embedded help](../docs/content/permalinks/in-your-product.md) with section summaries, [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), [versions](../docs/content/versions/index.md), [navigation](../docs/content/navigation/index.md), [the glossary as pages](../docs/content/content-model/glossary.md), a content model that says only what's the project's own ([shared frontmatter, defaults, and `[from]`](../docs/content/content-model/index.md)), the editor's [sidebar](../docs/content/editor/sidebar.md), with This page and the Project view, and Project Settings, [search](../docs/content/command/questions.md#ascribe-search), and what a search engine and a crawler are told, in [Publishing](../docs/content/publishing/index.md).
 - **Proposed.** [Redirects](proposals/redirects.md).
-- **Planned.** [Embedded help](embedded-help/README.md), from its [proposal](proposals/embedded-help.md).
 - **Waiting.** [The rest of the cache](https://github.com/ascribed-dev/ascribe/blob/bb56bfb3/project-docs/proposals/cache.md) is built, apart from Vale's results, which wait for a project that needs them (section 15).
 
 The sections keep the numbers they had, since other documents name them, so the numbers have gaps.
 
 Three groups of ideas:
 
-- [Product features](#product-features): what's left of snippets and Vale, editable previews, OpenAPI, redirects, and other things a docs system does, embedded help, what the landing page showed about widgets, what's left of the editor's views, a page in any output from the command line, and passages written twice.
+- [Product features](#product-features): what's left of snippets and Vale, editable previews, OpenAPI, redirects, and other things a docs system does, what the landing page showed about widgets, what's left of the editor's views, a page in any output from the command line, and passages written twice.
 - [Beyond the pages](#beyond-the-pages): the cache, whose one piece left waits for a project that needs it.
 - [Paid features](#paid-features): what could be charged for, if Ascribe ever goes that way. A list to keep, not a plan.
 
@@ -117,42 +116,6 @@ A translation's status for each page, from a hash of the source: a translation i
 ### A PDF
 
 A PDF or print output of a build. The versions plan gives an archive a print stylesheet and one document with every page, so a browser can make a PDF of a frozen version. Nothing does it for a live site.
-
-## 17. Embedded help
-
-Added 2026-10-09. Proposed in [embedded help](proposals/embedded-help.md). It builds on permalinks, which are built since ([Permalinks](../docs/content/permalinks/index.md)).
-
-### The idea
-
-A permalink lets a product link to a section of its docs by a name that doesn't change. Embedded help goes one step further: the product shows the section's text itself, in a tooltip, a side panel, or beside an error, without sending anyone to a browser.
-
-Help-authoring tools have had this for years. MadCap Flare calls it micro content: short answers written once and shown in the product, in search results, and in the docs.
-
-### How it fits Ascribe
-
-Most of the parts exist:
-
-- **A stable name for the content:** a permalink.
-- **The content, resolved and structured:** the JSON output has every page as blocks, and the plain output has it as Markdown, per build, with phrases, variants, and availability already applied.
-- **The right version of it:** a build filters for a target and version, so a product at 3.4 can be given the 3.4 text.
-
-What's missing is the join: an output keyed by permalink, holding each named section's text in a form a product can show. A product would bundle that file at build time, or fetch it from the docs site.
-
-### What Ascribe adds that a help-authoring tool can't
-
-- **It's the same source as the docs,** so the tooltip and the page can't disagree.
-- **It's checked.** A product asking for an id that doesn't exist fails `ascribe permalinks verify` in its own CI.
-- **It's per version and per variant** without a second copy.
-
-### Hard parts and questions
-
-- **Size.** A section written for a docs page is usually too long for a tooltip. Either authors mark a short form (the section's first paragraph, or a summary of its own), or the product truncates, which reads badly. Does this need a construct in the language, or is "the first paragraph" enough?
-- **Format.** A product can't render Ascribe's custom elements. The plain Markdown output is the safe form, and loses notes' styling and tabs.
-- **Bundled or fetched?** Bundled text is as old as the product's build, and works offline. Fetched text is current, and needs the docs site to be reachable and to allow the request. Ascribe hosts nothing, so fetching means a static file on the docs' own host.
-- **Links inside the text** point at docs pages. In a product they'd need to be absolute, as the plain output's already are when `[consumer] site` is set.
-- **Who is it for?** A product team has to build the part that shows the text. Ascribe can supply the file and a small example of reading it, and no more.
-
----
 
 ## 18. Widgets for a page's layout
 
@@ -298,7 +261,6 @@ No plan or proposal is in progress here, apart from the cache's Vale results, wh
 1. **Redirects** (section 6), once something records what was published. The versions plan's `retire` gives it a first input.
 2. **OpenAPI links and embeds** (section 3, levels 1 and 2).
 3. **Structural editing in the preview** (section 2, layers 1 and 2).
-4. **Embedded help** (section 17), which needs only an output keyed by permalink.
 
 # Open questions
 
