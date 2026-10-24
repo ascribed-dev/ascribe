@@ -1298,7 +1298,14 @@ describe("with the real language server on examples/quill", () => {
   it("reports nothing for the pages of the example that are correct", async () => {
     await diagnosticsOf(broken, (all) => all.length > 0);
     for (const page of ["quickstart.md", "install-agent.md", "keys.md"]) {
-      assert.deepEqual(vscode.languages.getDiagnostics(uriOf("docs", page)), [], page);
+      // Quill's permalinks have no summaries, which `summary-missing` reports
+      // as advice: the one thing the example asks of its writer.
+      const problems = vscode.languages
+        .getDiagnostics(uriOf("docs", page))
+        .filter(
+          (diagnostic) => typeof diagnostic.code !== "object" || diagnostic.code.value !== "ASC252",
+        );
+      assert.deepEqual(problems, [], page);
     }
   });
 
