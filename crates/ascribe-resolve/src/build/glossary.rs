@@ -55,7 +55,7 @@ pub(crate) struct BuildTerm {
 /// The terms a build links, with their URLs and definitions.
 pub(crate) fn build_terms(resolver: &BuildResolver<'_>) -> Vec<BuildTerm> {
     let mut out = Vec::new();
-    for term in resolver.project().glossary().terms {
+    for term in resolver.project().glossary_terms() {
         let Some(page) = term.pages.iter().find(|p| resolver.is_published(p)) else {
             continue;
         };

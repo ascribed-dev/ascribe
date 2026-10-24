@@ -147,6 +147,20 @@ impl Project {
     /// The project's glossary terms (SPEC §5.4), read from the pages
     /// `[glossary] pages` lists. Empty when the project has no glossary.
     pub fn glossary(&self) -> Glossary {
+        self.read_glossary(true)
+    }
+
+    /// The glossary's terms alone, without looking through every file for
+    /// the `@term`s no glossary page shows ([`Glossary::off_page`]): what a
+    /// build links, which resolving each page asks for, and what an edit
+    /// compares (#894).
+    pub fn glossary_terms(&self) -> Vec<Term> {
+        self.read_glossary(false).terms
+    }
+
+    /// The glossary, with the `@term`s off its pages when `with_off_page`
+    /// is set.
+    fn read_glossary(&self, with_off_page: bool) -> Glossary {
         let settings = &self.model().glossary;
         let mut terms: Vec<Term> = Vec::new();
         let mut duplicates = Vec::new();
@@ -205,18 +219,20 @@ impl Project {
             }
         }
         let mut off_page = Vec::new();
-        for index in self.files() {
-            for heading in &index.headings {
-                let Some(mark) = &heading.term else {
-                    continue;
-                };
-                if !shown.contains(&(index.file, heading.span)) {
-                    off_page.push(OffPage {
-                        file: index.file,
-                        path: index.path.clone(),
-                        mark: mark.span,
-                        page: index.kind == FileKind::Page,
-                    });
+        if with_off_page {
+            for index in self.files() {
+                for heading in &index.headings {
+                    let Some(mark) = &heading.term else {
+                        continue;
+                    };
+                    if !shown.contains(&(index.file, heading.span)) {
+                        off_page.push(OffPage {
+                            file: index.file,
+                            path: index.path.clone(),
+                            mark: mark.span,
+                            page: index.kind == FileKind::Page,
+                        });
+                    }
                 }
             }
         }

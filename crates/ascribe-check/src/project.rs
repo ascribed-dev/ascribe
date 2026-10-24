@@ -1013,6 +1013,13 @@ impl Project {
         self.link_index.get_or_init(|| Arc::new(self.held_index()))
     }
 
+    /// Lets go of the source index the checks built and kept, for a caller
+    /// that goes on to index the files its own way, as `ascribe build` does:
+    /// holding both at once is a third more peak memory (#894).
+    pub fn release_link_index(&mut self) {
+        self.link_index = OnceLock::new();
+    }
+
     /// The day the checks run on, if the caller gave one.
     pub fn today(&self) -> Option<Date> {
         self.today

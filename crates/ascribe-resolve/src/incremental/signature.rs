@@ -66,7 +66,7 @@ pub(crate) fn structure_signature(index: &FileIndex) -> u64 {
 /// structure alone is compared by this.
 pub(crate) fn glossary_signature(project: &Project) -> u64 {
     let mut h = DefaultHasher::new();
-    for term in project.glossary().terms {
+    for term in project.glossary_terms() {
         term.id.hash(&mut h);
         term.term.hash(&mut h);
         term.aliases.hash(&mut h);

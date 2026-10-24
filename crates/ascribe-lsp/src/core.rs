@@ -762,6 +762,13 @@ impl Core {
         if !loaded.dirty.is_empty() || loaded.across_dirty {
             return;
         }
+        let path = loaded.root.join(ascribe_check::baseline::BASELINE_FILE);
+        // Without the file there's nothing to publish on it: matching every
+        // file's findings for it cost each keystroke on 3,000 pages about a
+        // millisecond (#894).
+        if loaded.baseline.text.is_none() && !self.published.contains_key(&path) {
+            return;
+        }
         // A file that's gone matches nothing.
         let snapshot = loaded.inc.snapshot();
         loaded
@@ -780,7 +787,6 @@ impl Core {
             crate::baseline::every_build(&loaded.model),
             self.encoding,
         );
-        let path = loaded.root.join(ascribe_check::baseline::BASELINE_FILE);
         if found.is_empty() && !self.published.contains_key(&path) {
             return;
         }
