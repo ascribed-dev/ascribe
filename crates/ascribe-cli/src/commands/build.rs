@@ -94,7 +94,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 
 fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let color = use_color(global, stdout_is_terminal());
-    let project = match load_project(global) {
+    let mut project = match load_project(global) {
         Ok(project) => project,
         Err(failure) => return report_failure(failure, args, color, out, err),
     };
@@ -153,6 +153,11 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
         return exit::PROBLEMS;
     }
 
+    // The outputs are written from an index of their own, so the one the
+    // checks kept goes first.
+    let builds: Vec<Build> = builds.into_iter().cloned().collect();
+    project.release_link_index();
+    let builds: Vec<&Build> = builds.iter().collect();
     match write_outputs(&project, &builds, &args.emit, args.anchors, err) {
         Ok(()) => exit::OK,
         Err(e) => exit::fail(err, &e),
