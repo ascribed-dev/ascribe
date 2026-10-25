@@ -281,3 +281,22 @@ fn agents_turned_off_forwards_each_markdown_version_to_its_page() {
     // Without the record, nothing forwards.
     assert!(pairs(&model, "").is_empty());
 }
+
+/// Without `agents`, then or now, a former base path forwards the pages
+/// and the permalink, and no Markdown version or `llms.txt`, which were
+/// never published.
+#[test]
+fn a_former_base_path_without_agents_forwards_only_what_was_published() {
+    let model = MODEL
+        .replace("/docs/", "/handbook/")
+        .replace("agents = true\n", "agents = false\n");
+    let b = "former.base-path";
+    assert_eq!(
+        pairs(&model, "[former]\nbase-path = [\"/docs/\"]\n"),
+        [
+            pair("/docs", "/handbook", b),
+            pair("/docs/go/setup", "/handbook/go/setup", b),
+            pair("/docs/guides/setup", "/handbook/guides/setup", b),
+        ]
+    );
+}

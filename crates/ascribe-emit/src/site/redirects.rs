@@ -299,7 +299,7 @@ fn former_pairs(now: &Now<'_>, routers: &[AstroRouter], had_agents: bool, pairs:
     }
     // The `llms.txt` files under each former base path, to today's; with
     // `agents` off, each to the page at the base path.
-    if routers.len() > 1 || !agents && had_agents {
+    if had_agents && (routers.len() > 1 || !agents) {
         let home = RelPath::parse("index.md")
             .map(|p| router.route(&p))
             .unwrap_or_else(|_| router.base().to_owned());
