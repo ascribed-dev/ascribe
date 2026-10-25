@@ -5953,7 +5953,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/911"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Canary failed"
     },
     {
@@ -6036,8 +6036,11 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/926"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Redirects 2: fix every lost address, record git's renames, serve retired addresses, and tell agents"
     },
     {
@@ -6112,8 +6115,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/925"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "ascribe_resolve takes emit, and the agents' rules say when to ask for the site form"
     },
     {
@@ -6131,8 +6137,11 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/927"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "OpenAPI 1: check a link to an operation, and open it in Redoc"
     },
     {
@@ -6150,7 +6159,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "OpenAPI 2: link an operation with no id by its method and path"
     },
     {
@@ -6187,7 +6196,7 @@
         "question"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "OpenAPI 4: decide how a JSON example names its operation, from a validator spike"
     },
     {
