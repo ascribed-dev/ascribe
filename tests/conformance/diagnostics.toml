@@ -5146,3 +5146,16 @@ message = "the schema of {body} has a pattern the validator can't read, `{patter
 messages.elsewhere = "the schema of {body} refers to `{reference}`, in another file, so the example isn't checked; declare the spec's bundled file, with every schema in it"
 messages.unusable = "the schema of {body} can't be read as JSON Schema, so the example isn't checked: {reason}"
 fix = "A pattern is read as a Rust regular expression, which has no lookaround or backreferences: write one it can read, or leave it, and the rest of the schema is still checked. A spec split across files is declared by its bundled file, the one its renderer is given."
+
+[[diagnostic]]
+code = "ASC281"
+slug = "operation-link-not-operation"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "4.13"
+reference = "writing/directives.md#operation"
+row = "Links | An `@operation`'s link isn't to an operation of a declared API"
+message = "`{link}` isn't a link to an operation; `@operation` takes a declared API's spec, `#`, and an operation's `operationId`"
+fix = "Link to an operation of an API `[apis]` declares: the spec's path from this page, `#`, and the operation's `operationId`, or, for one with no id, its method in lowercase and its path, `../api/openapi.yaml#delete/users/{id}`. To link to a page or a file, write a link in the text instead."

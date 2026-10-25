@@ -329,6 +329,19 @@ enum BlockBody {
         binding: Option<&'static str>,
         annotation: Option<AnnotationJson>,
     },
+    /// An `@operation` that names an operation the spec has (SPEC §4.13).
+    #[serde(rename_all = "camelCase")]
+    Operation {
+        api: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        operation_id: Option<String>,
+        method: String,
+        path: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        summary: Option<String>,
+        deprecated: bool,
+        address: String,
+    },
     Container {
         name: String,
         attributes: Vec<AttrJson>,
@@ -793,6 +806,17 @@ impl Writer<'_, '_> {
                         })
                         .collect(),
                 },
+                BlockKind::Directive(_) if let Some(o) = block.operation.as_deref() => {
+                    BlockBody::Operation {
+                        api: o.api.clone(),
+                        operation_id: o.operation_id.clone(),
+                        method: o.method.clone(),
+                        path: o.path.clone(),
+                        summary: o.summary.clone(),
+                        deprecated: o.deprecated,
+                        address: o.address.clone(),
+                    }
+                }
                 BlockKind::Directive(line) => self.directive(block, line),
                 // Never leaves, and end lines and titles aren't blocks of the
                 // resolved tree; they are written out as an empty paragraph

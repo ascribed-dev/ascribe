@@ -11,17 +11,22 @@
 //! assets the
 //! surviving content references.
 
-use ascribe_core::{Issue, Location, RelPath, Span, diagnostics};
+use std::sync::Arc;
+
+use ascribe_core::{Builtin, Issue, Location, RelPath, Span, diagnostics};
 use ascribe_model::{Build, Segment};
-use ascribe_syntax::{Inline, InlineKind};
+use ascribe_syntax::{BlockKind, DirectiveLine, Inline, InlineKind, PrimaryValue};
 
 use super::BuildResolver;
 use super::inlines::{find_mut, own_lists_mut, own_ranges};
 use super::lines::Landing;
-use super::tree::{LinkTarget, ResolvedBlock, ResolvedLink, ResolvedPage};
+use super::tree::{
+    EmbeddedOperation, LinkTarget, ResolvedBlock, ResolvedKind, ResolvedLink, ResolvedPage,
+};
 use crate::expand::PageProblem;
 use crate::index::{FileIndex, RefKind, Reference, Target};
 use crate::project::{PageAsset, Resolution};
+use crate::references::{operation_target, reference_target};
 
 /// Resolves every link and image of a page, and collects its assets.
 pub(crate) fn resolve(resolver: &BuildResolver<'_>, page: &mut ResolvedPage) {
@@ -59,6 +64,13 @@ impl<'p> Links<'_, 'p> {
         let Some(index) = project.file_by_id(block.file) else {
             return;
         };
+        if let ResolvedKind::Leaf(leaf) = &block.kind
+            && let BlockKind::Directive(line) = &leaf.kind
+            && line.name == Builtin::Operation.name()
+        {
+            block.operation = self.embedded(index, line).map(Arc::new);
+            return;
+        }
         let ranges = own_ranges(block);
         if ranges.is_empty() {
             return;
@@ -132,6 +144,43 @@ impl<'p> Links<'_, 'p> {
             _ => LinkTarget::Unresolved,
         };
         (target, None)
+    }
+
+    /// What an `@operation` puts in the page (SPEC §4.13): the operation its
+    /// link names, as a link to it is resolved. `None` when the link names
+    /// no operation the spec has, which the file's problems say.
+    fn embedded(&self, index: &FileIndex, line: &DirectiveLine) -> Option<EmbeddedOperation> {
+        let Some(PrimaryValue::Identifier(primary)) = &line.primary else {
+            return None;
+        };
+        let project = self.resolver.project();
+        let model = project.model();
+        let target = reference_target(RefKind::Link, &primary.text, &[], &index.path, model);
+        let Some(Resolution::Operation { api, id }) =
+            operation_target(&target, model, project.layout())
+        else {
+            return None;
+        };
+        let LinkTarget::Operation {
+            operation_id,
+            method,
+            path,
+            address,
+            ..
+        } = self.resolver.operation_link(&api, &id)
+        else {
+            return None;
+        };
+        let operation = project.apis().spec(&api)?.named(&id)?.operation();
+        Some(EmbeddedOperation {
+            api,
+            operation_id,
+            method,
+            path,
+            summary: operation.summary.clone(),
+            deprecated: operation.deprecated,
+            address,
+        })
     }
 
     fn page_link(

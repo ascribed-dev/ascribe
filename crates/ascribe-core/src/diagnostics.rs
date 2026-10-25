@@ -877,6 +877,11 @@ pub const EXAMPLE_BODY_MISSING: DiagnosticSlug = DiagnosticSlug("example-body-mi
 /// whose schema can't all be checked".
 pub const EXAMPLE_SCHEMA_UNSUPPORTED: DiagnosticSlug = DiagnosticSlug("example-schema-unsupported");
 
+/// `ASC281`, error, file level: SPEC §8.2, "Links | An `@operation`'s link
+/// isn't to an operation of a declared API".
+pub const OPERATION_LINK_NOT_OPERATION: DiagnosticSlug =
+    DiagnosticSlug("operation-link-not-operation");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -1151,6 +1156,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     EXAMPLE_NOT_JSON,
     EXAMPLE_BODY_MISSING,
     EXAMPLE_SCHEMA_UNSUPPORTED,
+    OPERATION_LINK_NOT_OPERATION,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

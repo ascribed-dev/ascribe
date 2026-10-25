@@ -384,6 +384,7 @@ Containers MAY nest, and `@end` always closes the innermost one. Processors SHOU
 | `@memo` | line, container (raw) | line (text), in line form | top of section, else following block, in either form | Keep a note for the people who maintain the page, never published |
 | `@term` | line | none | top of section | Make a glossary page's heading a term |
 | `@summary` | line | text, optional | top of section (with primary), else following block | Give a section a summary |
+| `@operation` | line | identifier (link to an operation) | self | Show an operation of a declared API, linked to its reference |
 
 ### 4.1 `@id`
 
@@ -807,6 +808,20 @@ It rewrites each mark's `planned` for its target to the line's version.
 - **Not in a `@variant` arm.** A summary inside an arm, at any depth, is an error, since a summary can't differ by arm, and so is one an include brings into an arm. Either is reported on the page (§8.2), and is no section's summary in any build, including one that picks that arm.
 - **Optional.** Nothing requires a summary, and nothing guesses one from a section's prose.
 - **In the outputs.** The site and plain outputs write nothing for the primary form, and the following form's block as they would without the directive. The JSON output gives a heading its section's summary (§9.4).
+
+### 4.13 `@operation`
+
+Puts an operation of a declared API (§7.11) in the page: its method, its path, its summary, and whether it's deprecated, linked to the operation's address in the published reference.
+
+```
+@operation: ../api/openapi.yaml#getUser
+```
+
+- **Form:** line. **Binding:** self. **Primary:** REQUIRED identifier: a link to an operation, written as a link's destination names one (§5.2): the spec of an API the content model declares, relative to the file it's written in, or to the content root when it begins with `/`, then `#` and the operation's `operationId`, or its method in lowercase and its path. **Attributes:** none. **Title:** none.
+- **It's checked as a link to the operation is** (§5.2): the spec MUST have the operation; one named by its method and path when it has an id is advice to name it by the id; and one with no id needs a reference that has an address for it. A primary that isn't a link to an operation of a declared API, such as a page, another file, the spec with no `#`, or a URL, is an error (§8.2).
+- **Only what names the operation.** It shows the operation's method, path, summary, and deprecation, never its parameters, request, or responses: a page that wants them links to the reference.
+- **It's a block,** so a following-block directive directly above it, such as `@available`, binds it (§3.8).
+- **In the outputs** (§9.4): the site output writes an `<ascribe-operation>` element (§9.7), the plain output a line of text linked to the operation's address, `GET /users/{id}: Get a user`, with `(deprecated)` after it when the spec marks the operation deprecated, and the JSON output a block of type `operation`. For an `@operation` that names no operation the spec has, the site and plain outputs write nothing, and the JSON output keeps the directive.
 
 ---
 
@@ -1318,6 +1333,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Links | Target is an operation with no id, by its method and path, and the API's reference is a template | Error |
 | Links | Target is an operation that has an id, by its method and path | Advice |
 | Links | Target is an operation the spec marks deprecated | Advice |
+| Links | An `@operation`'s link isn't to an operation of a declared API | Error |
 | Examples | A marked example that disagrees with its body's schema | Error |
 | Examples | A marked example that isn't JSON, or isn't a `json` block | Error |
 | Examples | A marked example whose operation has no body it names | Error |
@@ -1472,7 +1488,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 
 **Navigation.** The site output holds the build's navigation (§7.8), a tree: the content root's section, each section with its folder, its label, its own page, its pages, and its nested sections, in order, and each page with its source path, its label, and its content type, joined to its record on the source path. A page's label is its `nav-label`, else its title, and a section's as §7.8 gives it, each as plain text, and in the output's formatted form where the title has one. A build with no pages has an empty root. The JSON output holds the same tree, its formatted labels in its own form.
 
-**JSON output.** The resolved tree, for custom consumers. A heading carries its section's summary (§4.12): its text, and which form gives it.
+**JSON output.** The resolved tree, for custom consumers. A heading carries its section's summary (§4.12): its text, and which form gives it. An `@operation` that names an operation is a block of type `operation`, with its API, its `operationId` when it has one, its method, path, summary when it has one, whether it's deprecated, and its address (§4.13).
 
 | Source | Site output | Plain-markdown output |
 |---|---|---|
@@ -1488,6 +1504,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 | Project widget | A custom element with the widget's name and attributes | The widget's plain fallback, or nothing |
 | `@snippet` | A fenced code block | A fenced code block |
 | `@summary` | Nothing for `@summary: text`; for `@summary`, the paragraph as it'd be without it | The same as the site output |
+| `@operation` | An `<ascribe-operation>` element with the operation's API, method, path, id, and deprecation, holding a link to its address whose text is its method in capitals, its path, and `: ` and its summary when it has one, then ` (deprecated)` when it's deprecated | A paragraph of the same text, its link absolute |
 | Phrases, includes, links, glossary | Resolved into ordinary markdown | Resolved; links made absolute |
 | A link out of a line (§5.2) | The link, followed directly by an attribute marker setting `data-ascribe-release-line` on its `<a>` to the line it leads to | The link, then a space and the line in parentheses, outside its text: `[Configure tracing](…) (3.5)` |
 

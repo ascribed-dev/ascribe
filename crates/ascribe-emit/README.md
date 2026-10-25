@@ -124,10 +124,13 @@ A snippet's `tested` is present only when its source's `ascribe.examples.toml` m
 | `thematicBreak` | |
 | `table` | `alignments`: each column's `none`, `left`, `center`, or `right`; `rows`: each `{header, cells}`, a cell being `{inlines}` |
 | `directive` | A line-form directive that survived: `name`, `attributes`, `title`, `primary`, `binding` (`own`, `heading`, `followingBlock`, `unbound`), `annotation` |
+| `operation` | An `@operation` that names an operation the spec has (SPEC §4.13): `api`, `operationId` when it has one, `method`, `path`, `summary` when it has one, `deprecated`, and `address`, the operation's in the published reference. Its `source` is the `@operation` line |
 | `container` | `name`, `attributes`, `title`, `children` |
 | `group` | `name`, `arms`: each `{label, attributes, title, span, children}` |
 
 An `@available` that survived the build is a `directive` with an `annotation`: `text` (the spec as shown; for a feature key, the spec it stands for), `display` (with the content model's labels), and `feature`. `attributes` is a list of `{key, values}` (a set has several values, a bare key none). A `title` and a text `primary` are inline lists. A `primary` is `{kind: "text", inlines}`, `{kind: "identifier", text}`, or `{kind: "line", text}`.
+
+An `@operation` whose link names no operation the spec has, which `ascribe check` reports, stays a `directive` block, with its link as its `identifier` primary.
 
 A heading's `summary` is its section's (SPEC §4.12): `form`, `text` for `@summary: text` and `paragraph` for `@summary` above a paragraph; `inlines`, the summary's text; and `source`, the `@summary` line for the text form and the paragraph for the other. The `@summary` line is a `directive` block too, where it's written, and the paragraph a `paragraph`.
 

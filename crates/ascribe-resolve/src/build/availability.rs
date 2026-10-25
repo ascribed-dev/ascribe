@@ -693,6 +693,7 @@ impl Annotator<'_> {
             heading: None,
             annotation: self.annotation(block),
             snippet: block.snippet.clone(),
+            operation: None,
             rows,
             substitutions: Vec::new(),
             links: Vec::new(),

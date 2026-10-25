@@ -344,6 +344,9 @@ impl Ctx<'_> {
                 self.check_availability_text(&p.text, p.span.start(), p.span, true, removal);
             }
             ("snippet", Some(PrimaryValue::Identifier(_))) => self.check_snippet(d),
+            ("operation", Some(PrimaryValue::Identifier(p))) => {
+                self.check_operation(&p.text, p.span)
+            }
             ("intended", _) => self.check_intended_directive(d),
             _ => {}
         }

@@ -269,7 +269,4 @@
 | [ASC274](../checks/diagnostics/pages.md#ASC274) | `link-operation-form-unsupported` | Error | File | write |
 | [ASC275](../checks/diagnostics/pages.md#ASC275) | `link-operation-by-path` | Advice | File | fix |
 | [ASC276](../checks/diagnostics/pages.md#ASC276) | `link-operation-deprecated` | Advice | File | write |
-| [ASC277](../checks/diagnostics/project-files.md#ASC277) | `example-schema-mismatch` | Error | File | write |
-| [ASC278](../checks/diagnostics/project-files.md#ASC278) | `example-not-json` | Error | File | write |
-| [ASC279](../checks/diagnostics/project-files.md#ASC279) | `example-body-missing` | Error | File | write |
-| [ASC280](../checks/diagnostics/project-files.md#ASC280) | `example-schema-unsupported` | Advice | File | outside |
+| [ASC281](../checks/diagnostics/pages.md#ASC281) | `operation-link-not-operation` | Error | File | write |

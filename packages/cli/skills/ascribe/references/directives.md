@@ -14,6 +14,7 @@ A directive is a line that starts with `@`. Each built-in one, with its syntax:
 - `@memo: <text>` under a heading or above a block, or `@memo:` … `@end` around several lines: a note for whoever maintains the page, never published
 - `@term` on the line under a heading of a glossary page, with `{aliases="<a>|<b>"}` for other forms: the heading is a glossary term, defined by the paragraph under it
 - `@summary: <text>` under a heading, or `@summary` on the line above a paragraph: the section's summary, its own text, which the page doesn't show, or the paragraph, which it does
+- `@operation: <spec>#<operationId>`, a link to an operation of an API `[apis]` declares: its method, path, and summary, linked to its reference
 
 A title line, `.<Title>`, goes on the line above a directive that takes one. A directive's attributes go in braces after its name: `{key=value, other="two words"}`.
 
