@@ -1,7 +1,7 @@
 ---
 type: reference
 title: "`ascribe.toml` format contract: checks, permalinks, and listing"
-description: "The normative contract for the content model's checks, permalinks, crawlers, listing, and defaults."
+description: "The normative contract for the content model's checks, permalinks, crawlers, listing, APIs, and defaults."
 ---
 
 Part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. What these keys are for, with examples, is in the reference's [checks, permalinks, and listing](../../content-model/checks.md).
@@ -19,7 +19,7 @@ A check's own settings are listed with the check in the [diagnostics reference](
 
 A level applies wherever the diagnostic is reported: by `ascribe check`, by `ascribe build`, and in the editor. `"off"` MUST NOT be reported, and advice MUST NOT fail `ascribe check`, with `--deny-warnings` or without.
 
-**Rules** (§24.9): a key MUST be a check's slug, or `vale` or `links`, and an unknown one is reported with a did-you-mean suggestion (`model-unknown-key`). The check MUST be one the diagnostics registry marks configurable (`model-check-not-configurable`), and a level one of the four (`model-invalid-value`). A value MUST be a string or a table, and a table MUST have only `level` and the check's settings (`model-unknown-key`). `page-size`'s, `memo-long`'s, and `summary-long`'s `limit` MUST be an integer above 0, and `image-large`'s an integer number of bytes or a string of a number and `B`, `KB`, or `MB`, with or without a space between, where a kilobyte is 1,000 bytes and a megabyte 1,000,000 (`model-wrong-type`).
+**Rules** (§25.9): a key MUST be a check's slug, or `vale` or `links`, and an unknown one is reported with a did-you-mean suggestion (`model-unknown-key`). The check MUST be one the diagnostics registry marks configurable (`model-check-not-configurable`), and a level one of the four (`model-invalid-value`). A value MUST be a string or a table, and a table MUST have only `level` and the check's settings (`model-unknown-key`). `page-size`'s, `memo-long`'s, and `summary-long`'s `limit` MUST be an integer above 0, and `image-large`'s an integer number of bytes or a string of a number and `B`, `KB`, or `MB`, with or without a space between, where a kilobyte is 1,000 bytes and a megabyte 1,000,000 (`model-wrong-type`).
 
 ### 19.1 `[[intended]]`
 
@@ -29,7 +29,7 @@ Each `[[intended]]` table acknowledges one review check's problem with one conte
 
 An acknowledgement that covers nothing when every build is checked is advice (`intended-unused`), at its `[[intended]]` header, with a fix that removes the table. A glossary term is acknowledged with `@intended` in its section, and `term` here is `model-unknown-key`.
 
-**Rules** (§24.9): `check` MUST name a check that exists, with a did-you-mean suggestion when it doesn't, whose registry entry has `next = "review"` and `place = "entry"` (`model-intended-check`). The table MUST name exactly one declared phrase, feature, or image (`model-intended-entry`). `check` and `reason` MUST be present (`model-missing-key`), `reason` MUST NOT be empty (`model-empty-text`), and the table MUST have no other key (`model-unknown-key`).
+**Rules** (§25.9): `check` MUST name a check that exists, with a did-you-mean suggestion when it doesn't, whose registry entry has `next = "review"` and `place = "entry"` (`model-intended-check`). The table MUST name exactly one declared phrase, feature, or image (`model-intended-entry`). `check` and `reason` MUST be present (`model-missing-key`), `reason` MUST NOT be empty (`model-empty-text`), and the table MUST have no other key (`model-unknown-key`).
 
 ### 19.2 `[checks.vale]`
 
@@ -43,7 +43,7 @@ Ascribe MUST write nothing for Vale outside `.ascribe/vale/` in the project root
 
 Each alert is a `prose` diagnostic (`ASC165`) on the source file, with the rule as its JSON `rule`, and at the phrase when it's inside a phrase's text. A Vale that can't be run, fails, runs out of time, or isn't started by its caller is one `prose-not-checked` advice (`ASC166`) at `[checks.vale]`, and never fails the check. It's reported only where the project asked for its prose checked everywhere: `ascribe check` with `--vale`, or anything that checks with `in-check = true`. The language server, which runs Vale whenever there's `[checks.vale]`, MUST NOT report it without `in-check`. The MCP server never starts Vale. Both diagnostics are configurable in `[checks]`, whose level applies after `max-level` caps Vale's.
 
-**Rules** (§24.9): `[checks.vale]` MUST have exactly one of `preset` and `config`, and `off` MUST appear only with `preset` and name only its rules (`model-checks-vale`). `preset` and `max-level` MUST take one of their values (`model-invalid-value`), and the table no other key (`model-unknown-key`).
+**Rules** (§25.9): `[checks.vale]` MUST have exactly one of `preset` and `config`, and `off` MUST appear only with `preset` and name only its rules (`model-checks-vale`). `preset` and `max-level` MUST take one of their values (`model-invalid-value`), and the table no other key (`model-unknown-key`).
 
 ### 19.3 `[checks.links]`
 
@@ -59,7 +59,7 @@ How `ascribe report links` checks external links: with lychee, which the project
 
 `ascribe check`, `build`, `diff`, `drift`, `fmt`, the language server, and the agents' hook MUST NOT read or write the cache or the history.
 
-**Rules** (§24.9): each `ignore` entry MUST be a host name, or `*.` and one (`model-wrong-type`); `command` MUST be a string, and `reuse-days` and `confirm-days` integers of 0 or more (`model-wrong-type`); the table MUST have no other key (`model-unknown-key`).
+**Rules** (§25.9): each `ignore` entry MUST be a host name, or `*.` and one (`model-wrong-type`); `command` MUST be a string, and `reuse-days` and `confirm-days` integers of 0 or more (`model-wrong-type`); the table MUST have no other key (`model-unknown-key`).
 
 ---
 
@@ -71,7 +71,7 @@ How `ascribe report links` checks external links: with lychee, which the project
 
 A key of `[permalinks.aliases]` is an alias's name, and its value the name it leads to, which MUST be a heading's or a page's permalink or another alias. `ascribe permalinks retire` and the editor's quick fix on `permalink-removed` MUST write `[permalinks.retired]` in place, and the quick fix's reason is the placeholder `why this permalink was retired`.
 
-**Rules** (§24.10): `[permalinks]` and a retired permalink's table MUST have no keys but those above (`model-unknown-key`). A name MUST have the characters of an `@id` (`model-invalid-name`). A retired permalink MUST have a `reason` (`model-missing-key`), not empty (`model-empty-text`) and not the placeholder (`model-permalinks`). A name MUST NOT be both retired and an alias, and an alias MUST NOT lead back to itself (`model-permalinks`). What needs the content is checked with the project, not by the loader: SPEC §8.2's `permalink-name-conflict`, `permalink-alias-target-missing`, and `permalink-retired-target-missing`.
+**Rules** (§25.10): `[permalinks]` and a retired permalink's table MUST have no keys but those above (`model-unknown-key`). A name MUST have the characters of an `@id` (`model-invalid-name`). A retired permalink MUST have a `reason` (`model-missing-key`), not empty (`model-empty-text`) and not the placeholder (`model-permalinks`). A name MUST NOT be both retired and an alias, and an alias MUST NOT lead back to itself (`model-permalinks`). What needs the content is checked with the project, not by the loader: SPEC §8.2's `permalink-name-conflict`, `permalink-alias-target-missing`, and `permalink-retired-target-missing`.
 
 ---
 
@@ -79,7 +79,7 @@ A key of `[permalinks.aliases]` is an alias's name, and its value the name it le
 
 @include: ../../_fragments/content-model/crawlers.md
 
-**Rules** (§24.11): each of `lines` MUST be a string (`model-wrong-type`) of one line (`model-crawlers-line`), not empty (`model-empty-text`). `training`, `search`, and `on-request` MUST each be `"allow"` or `"disallow"` (`model-invalid-value`). A crawler a `User-agent` line of `lines` names, compared without case, MUST NOT be one a disallowed purpose names, nor one an earlier group of `lines` names (`model-crawlers-named-twice`), where consecutive `User-agent` lines open one group and `*` is never counted. The table MUST have no other key (`model-unknown-key`). A line is otherwise not validated: one that isn't a `User-agent`, `Allow`, or `Disallow` line MUST be written as it is, and `ascribe check` reads only the lines it can.
+**Rules** (§25.11): each of `lines` MUST be a string (`model-wrong-type`) of one line (`model-crawlers-line`), not empty (`model-empty-text`). `training`, `search`, and `on-request` MUST each be `"allow"` or `"disallow"` (`model-invalid-value`). A crawler a `User-agent` line of `lines` names, compared without case, MUST NOT be one a disallowed purpose names, nor one an earlier group of `lines` names (`model-crawlers-named-twice`), where consecutive `User-agent` lines open one group and `*` is never counted. The table MUST have no other key (`model-unknown-key`). A line is otherwise not validated: one that isn't a `User-agent`, `Allow`, or `Disallow` line MUST be written as it is, and `ascribe check` reads only the lines it can.
 
 The crawlers of each purpose are data Ascribe ships, each with its operator, the operator's page about it, and the day it was read; a release MAY add to them. A disallowed purpose's group MUST name every one Ascribe knows of it.
 
@@ -89,12 +89,21 @@ The crawlers of each purpose are data Ascribe ships, each with its operator, the
 
 @include: ../../_fragments/content-model/listing.md
 
-**Rules** (§24.12): each value MUST be one of `listed`, `unquoted`, and `unlisted` (`model-invalid-value`). A key of `[listing.folders]` MUST be a path from the content root ending in `/`, without `.` or `..` parts or a pattern's characters, of a folder that exists by its exact name (`model-listing-folder`, a filesystem rule), and a key of `[listing.types]` a content type the model declares, or `page` when it declares none (`model-listing-type`). A rule MUST NOT be looser than a folder's it's under, or than `default` (`model-listing-looser`), and the table MUST have no other key (`model-unknown-key`). A page looser than a rule it's under is checked with the project, not by the loader: SPEC §8.2's `listing-loosened`.
+**Rules** (§25.12): each value MUST be one of `listed`, `unquoted`, and `unlisted` (`model-invalid-value`). A key of `[listing.folders]` MUST be a path from the content root ending in `/`, without `.` or `..` parts or a pattern's characters, of a folder that exists by its exact name (`model-listing-folder`, a filesystem rule), and a key of `[listing.types]` a content type the model declares, or `page` when it declares none (`model-listing-type`). A rule MUST NOT be looser than a folder's it's under, or than `default` (`model-listing-looser`), and the table MUST have no other key (`model-unknown-key`). A page looser than a rule it's under is checked with the project, not by the loader: SPEC §8.2's `listing-loosened`.
 
 `older-lines` is held to `default` by `model-listing-looser`, as a folder's and a type's rules are. A page looser than `older-lines`, which only an older line's pages are under, is SPEC §8.2's `listing-loosened-in-line`.
 
 ---
 
-## 23. Defaults: what an absent section means
+## 23. `[apis.<name>]`
+@available: ascribe planned
+
+@include: ../../_fragments/content-model/apis.md
+
+**Rules** (§25.13): `spec` MUST be relative (`model-path-absolute`) and, when the project is in a git repository, inside it (`model-api-outside-repository`); with no repository, the language server and `ascribe mcp` MUST read a spec only inside what the user opened, and report one outside it as `model-api-outside-repository` with the variant `opened`, as a source's folder is (§18). `reference` MUST be a table with exactly `renderer` and `at`, `renderer` one of the choices (`model-missing-key`, `model-unknown-key`, `model-invalid-value`), or a string with `{operationId}` and no placeholder but `{operationId}` and `{tag}` (`model-api-reference`). What needs the spec's file is checked with the project, not by the loader: SPEC §8.2's `api-spec-unreadable`, `api-spec-empty`, `link-operation-missing`, and `link-spec-outside-project`. A compiler MUST percent-encode each value a template's placeholder takes, keeping only RFC 3986's unreserved characters, and MUST join an address that isn't absolute to the site's `[consumer] base-path`, without a line's folder.
+
+---
+
+## 24. Defaults: what an absent section means
 
 @include: ../../_fragments/content-model/defaults.md

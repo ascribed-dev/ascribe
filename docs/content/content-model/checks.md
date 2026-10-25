@@ -159,12 +159,23 @@ In an older line of a versioned build, a page isn't looser than `older-lines` ei
 
 ---
 
-## 23. Defaults: what an absent section means
+## 23. `[apis.<name>]`
+@available: ascribe planned
+
+@include: ../_fragments/content-model/apis.md
+
+How to publish a reference and link to it is in [Link to your API reference](../openapi/index.md).
+
+**Rules.** `spec` is a path from the project root, relative (`model-path-absolute`), inside the git repository the project is in, when it's in one (`model-api-outside-repository`). A file that isn't there, that can't be read, or that isn't YAML or JSON is an error at `spec` (`api-spec-unreadable`), and one with no operations is advice (`api-spec-empty`). `reference` is a table with `renderer` and `at`, or a template with `{operationId}` and no placeholder but `{operationId}` and `{tag}` (`model-api-reference`). A link to an operation the spec doesn't have is an error at the link, with the closest ids as its fixes (`link-operation-missing`). No other key is allowed (`model-unknown-key`).
+
+---
+
+## 24. Defaults: what an absent section means
 
 @include: ../_fragments/content-model/defaults.md
 
 ---
 
-## 24. Validation
+## 25. Validation
 
-A content model with errors is reported, and nothing else is checked, since every other check depends on it. Its warnings are reported with the rest of the diagnostics. Every rule the loader enforces is listed in the diagnostics reference, on [Diagnostics: the content model](../checks/diagnostics/content-model.md) and [Diagnostics: the content model's builds and site](../checks/diagnostics/content-model-builds.md), with its code and how to fix it. The [contract's §24](../contracts/content-model/validation.md#24-validation-rules) states each rule for someone writing a loader.
+A content model with errors is reported, and nothing else is checked, since every other check depends on it. Its warnings are reported with the rest of the diagnostics. Every rule the loader enforces is listed in the diagnostics reference, on [Diagnostics: the content model](../checks/diagnostics/content-model.md) and [Diagnostics: the content model's builds and site](../checks/diagnostics/content-model-builds.md), with its code and how to fix it. The [contract's §25](../contracts/content-model/validation.md#25-validation-rules) states each rule for someone writing a loader.

@@ -85,6 +85,34 @@ Error · page level · next step: write · [SPEC §5.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
+### ASC263 `link-operation-missing`
+@id {permalink=true}: ASC263
+@summary: Target is an operation the declared spec doesn't have.
+
+Error · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
+
+**When:** Target is an operation the declared spec doesn't have.
+
+**Message:** `{path}` has no operation `{id}`
+
+**Fix:** Fix the `#` part, the operation's `operationId` as the spec writes it, or link to the operation that took its place. A spec generated from code can change an id when the code changes: setting ids in the code keeps them, and the links to them.
+
+**Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
+
+### ASC264 `link-spec-outside-project`
+@id {permalink=true}: ASC264
+@summary: Target is a declared spec outside the project's folder, with no operation.
+
+Error · file level · next step: write · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
+
+**When:** Target is a declared spec outside the project's folder, with no operation.
+
+**Message:** `{path}` is the spec of API `{api}`, outside the project's folder, which no output can copy; link to one of its operations, or to the published reference
+
+**Fix:** Add `#` and an operation's `operationId` to link to that operation in the published reference, or link to the reference's page itself. A spec outside the project's folder is read for its operations, and never copied into the outputs.
+
+**Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
+
 ## Images
 
 ### ASC042 `image-source-missing`
@@ -934,61 +962,3 @@ Error · page level · next step: write · [SPEC §4.12]({repo}/blob/main/SPEC.m
 **Fix:** Move the summary out of the group, to the top of its section, with text that holds for every arm.
 
 **Read more:** [`@summary`](../writing/directives.md#summary) in the directive reference.
-
-## Addresses file
-
-### ASC254 `addresses-file-invalid`
-@id {permalink=true}: ASC254
-@summary: `ascribe.addresses` isn't valid TOML, or doesn't have the shape §7.10 gives it.
-
-Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
-
-**When:** `ascribe.addresses` isn't valid TOML, or doesn't have the shape §7.10 gives it.
-
-**Message:** ascribe.addresses can't be read: \{detail}
-
-**Fix:** ascribe.addresses is written by `ascribe rename`, the editor's moves, and `ascribe addresses`. Undo the change made to it by hand, other than to a retired address's reason, or, for a file from a newer version of Ascribe, update Ascribe. Don't delete the file to quiet this: it's what keeps the addresses the docs have published working, and the build writes no redirects without it.
-
-**Read more:** [`ascribe.addresses`](../publishing/redirects.md#ascribeaddresses) in the guide to keeping addresses.
-
-### ASC255 `address-lost`
-@id {permalink=true}: ASC255
-@summary: A page's address, or its Markdown version's, that the base published and nothing accounts for.
-
-Warning · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
-
-**When:** A page's address, or its Markdown version's, that the base published and nothing accounts for.
-
-**Message:** \{source} was published at \{addresses}, and nothing publishes them now\{builds}
-
-**Fix:** Decide what a reader who follows an old link should get. When the content is somewhere else now, forward it: `ascribe addresses move <old> <new>` records where it went, and the build writes the redirect. When it's gone on purpose, retire it: `ascribe addresses retire <old> --reason "…"`. When it was deleted by mistake, restore the file. Moving a page with `ascribe rename`, or in the editor, records the move for you. The base is the default branch, or `--base`; see [Keep the addresses you've published](../publishing/redirects.md).
-
-**Read more:** [What the check reports](../publishing/redirects.md#what-the-check-reports) in the guide to keeping addresses.
-
-### ASC256 `anchor-lost`
-@id {permalink=true}: ASC256
-@summary: A heading's explicit id that the base published on a page still published, and nothing accounts for.
-
-Advice · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
-
-**When:** A heading's explicit id that the base published on a page still published, and nothing accounts for.
-
-**Message:** the id `{id}` in \{path} was published at \{addresses}, and the page doesn't have it now\{builds}
-
-**Fix:** Put the `@id` back on the heading that covers it now, so links to it keep working, or record where it went: `ascribe addresses move <file>#<old> <file>#<new>`, or `ascribe addresses retire <file>#<old> --reason "…"`. A link's fragment never reaches the host, so no redirect can follow it yet; the entry is kept for when one can.
-
-**Read more:** [What the check reports](../publishing/redirects.md#what-the-check-reports) in the guide to keeping addresses.
-
-### ASC258 `addresses-build-gone`
-@id {permalink=true}: ASC258
-@summary: A build the base has and the working tree doesn't.
-
-Advice · file level · next step: outside · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
-
-**When:** A build the base has and the working tree doesn't.
-
-**Message:** the base has the build `{build}`, and ascribe.toml doesn't now, so its \{count} addresses aren't compared
-
-**Fix:** Nothing to do when the build was retired on purpose, as an older line is when it leaves the window: its addresses aren't compared, since builds are matched by name. When the build was renamed, its addresses are compared under its new name once the base has it.
-
-**Read more:** [What the check reports](../publishing/redirects.md#what-the-check-reports) in the guide to keeping addresses.

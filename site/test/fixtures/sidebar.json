@@ -114,6 +114,11 @@
         "nested": true
       },
       {
+        "href": "/docs/checks/diagnostics/project-files/",
+        "label": "Diagnostics: the addresses file and API specs",
+        "nested": true
+      },
+      {
         "href": "/docs/checks/diagnostics/content-model/",
         "label": "Diagnostics: the content model",
         "nested": true
@@ -298,6 +303,15 @@
       {
         "href": "/docs/examples/sources/",
         "label": "ascribe sources and observe"
+      }
+    ]
+  },
+  {
+    "label": "OpenAPI",
+    "pages": [
+      {
+        "href": "/docs/openapi/",
+        "label": "Link to your API reference"
       }
     ]
   },

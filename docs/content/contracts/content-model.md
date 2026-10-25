@@ -34,9 +34,10 @@ Every file in [`examples/content-models/`]({repo}/tree/main/examples/content-mod
 20. [`[permalinks]`](content-model/checks.md#20-permalinks)
 21. [`[crawlers]`](content-model/checks.md#21-crawlers)
 22. [`[listing]`](content-model/checks.md#22-listing)
-23. [Defaults: what an absent section means](content-model/checks.md#23-defaults-what-an-absent-section-means)
-24. [Validation rules](content-model/validation.md#24-validation-rules)
-25. [Map of SPEC §7.2 to this file](content-model/validation.md#25-map-of-spec-72-to-this-file)
+23. [`[apis.<name>]`](content-model/checks.md#23-apisname)
+24. [Defaults: what an absent section means](content-model/checks.md#24-defaults-what-an-absent-section-means)
+25. [Validation rules](content-model/validation.md#25-validation-rules)
+26. [Map of SPEC §7.2 to this file](content-model/validation.md#26-map-of-spec-72-to-this-file)
 
 ---
 
@@ -66,7 +67,7 @@ Every file in [`examples/content-models/`]({repo}/tree/main/examples/content-mod
 
 @include: ../_generated/content-model-project.md
 
-**Rules** (§24.2): `content-root` and `output-dir` MUST be relative (`model-path-absolute`). The content root MUST exist and be a directory (`model-content-root-missing`); the output directory need not exist. The output directory MUST NOT be inside the content root, the content root MUST NOT be inside the output directory, and the two MUST differ (`model-output-overlaps-content`), each compared after its `.` and `..` segments are normalized and, when both exist, its symbolic links resolved.
+**Rules** (§25.2): `content-root` and `output-dir` MUST be relative (`model-path-absolute`). The content root MUST exist and be a directory (`model-content-root-missing`); the output directory need not exist. The output directory MUST NOT be inside the content root, the content root MUST NOT be inside the output directory, and the two MUST differ (`model-output-overlaps-content`), each compared after its `.` and `..` segments are normalized and, when both exist, its symbolic links resolved.
 
 @include: ../_fragments/content-model/project-defaults.md
 
@@ -94,7 +95,7 @@ Every file in [`examples/content-models/`]({repo}/tree/main/examples/content-mod
 
 @include: ../_generated/content-model-fields.md
 
-**Rules** (§24.3): `fields` MUST be given exactly when the type is `object` or `list(object)`, optional or not (`model-type-fields`). `values` MUST appear only with bare `enum`, with at least one value and no two alike (`model-enum-values`), and a `set(enum)` attribute's values MUST be tokens (`model-set-token`). A `default` MUST have the declared type, and an enumeration's MUST be one of its values (`model-default-type`). `phrases = true` MUST be set only on `string` and `list(string)` fields, optional or not, including fields in objects (`model-phrases-field-type`). `inline` and `role` MUST be set only on a page type's top-level fields, its own or `[frontmatter]`'s, not in an object or the fragment schema (`model-inline-field`, `model-field-role`).
+**Rules** (§25.3): `fields` MUST be given exactly when the type is `object` or `list(object)`, optional or not (`model-type-fields`). `values` MUST appear only with bare `enum`, with at least one value and no two alike (`model-enum-values`), and a `set(enum)` attribute's values MUST be tokens (`model-set-token`). A `default` MUST have the declared type, and an enumeration's MUST be one of its values (`model-default-type`). `phrases = true` MUST be set only on `string` and `list(string)` fields, optional or not, including fields in objects (`model-phrases-field-type`). `inline` and `role` MUST be set only on a page type's top-level fields, its own or `[frontmatter]`'s, not in an object or the fragment schema (`model-inline-field`, `model-field-role`).
 
 @include: ../_fragments/content-model/field-types-nesting.md
 
@@ -119,7 +120,7 @@ Each output carries two forms of the value. The **plain text** is the value with
 
 A field the page leaves out gets its default's formatted form, so `formatted.<field>` is there whenever the field has a value.
 
-**Rules** (§24.3): `inline` MUST be `"code"`, on a page type's top-level `string` or `string?` field, its own or `[frontmatter]`'s (`model-inline-field`).
+**Rules** (§25.3): `inline` MUST be `"code"`, on a page type's top-level `string` or `string?` field, its own or `[frontmatter]`'s (`model-inline-field`).
 
 ---
 
@@ -135,4 +136,4 @@ A page type's top-level field MAY have a `role`, which says what the field is fo
 
 A type without a field with the role has none of that check's diagnostics. A role changes no output: not the generated schemas, the JSON, or the pages.
 
-**Rules** (§24.3): the role is one of the three, on a field of its type, in a page type's top-level fields, its own or `[frontmatter]`'s, and at most one field of a table has each role (`model-field-role`). A second field with a role keeps its type, and loses the role. A type's own field given a role with `role` has it, and a `[frontmatter]` field given the same role loses it, for that type. A role no field is given with `role` is the field's of the role's name, when its type is one the role takes; otherwise no field has it.
+**Rules** (§25.3): the role is one of the three, on a field of its type, in a page type's top-level fields, its own or `[frontmatter]`'s, and at most one field of a table has each role (`model-field-role`). A second field with a role keeps its type, and loses the role. A type's own field given a role with `role` has it, and a `[frontmatter]` field given the same role loses it, for that type. A role no field is given with `role` is the field's of the role's name, when its type is one the role takes; otherwise no field has it.
