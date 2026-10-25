@@ -42,6 +42,9 @@ pub struct Operation {
     pub tag: Option<String>,
     /// Whether the spec marks it `deprecated`.
     pub deprecated: bool,
+    /// The line of its method's key in the spec, counted from 0, when a
+    /// look at the text finds it: where go to definition opens the spec.
+    pub line: Option<usize>,
 }
 
 /// What a spec holds, as far as it was read.
@@ -214,7 +217,97 @@ pub fn read_spec(text: &str, json: bool) -> Result<Spec, String> {
     } else {
         serde_yaml_ng::from_str(text).map_err(|e| e.to_string())?
     };
-    Ok(spec_of(&value))
+    let mut spec = spec_of(&value);
+    let lines = operation_lines(text);
+    for operation in &mut spec.operations {
+        operation.line = lines
+            .get(&(operation.path.clone(), operation.method.clone()))
+            .copied();
+    }
+    Ok(spec)
+}
+
+/// The line of each operation's method key, by its path and method, from
+/// the text: the parsers keep no positions, so the lines are found as a
+/// person reading the file finds them. Under the `paths` key, a key one
+/// level in is a path, and a key one level into a path that's a method, or
+/// one level into its `additionalOperations`, is an operation. That holds
+/// for YAML's block style and for JSON written one member to a line, which
+/// is how specs are written; an operation in a flow mapping, or on a line
+/// with its path, has no line, and the spec opens at its top.
+fn operation_lines(text: &str) -> BTreeMap<(String, String), usize> {
+    let mut lines = BTreeMap::new();
+    let mut paths: Option<usize> = None;
+    let mut path_indent: Option<usize> = None;
+    let mut path: Option<&str> = None;
+    let mut method_indent: Option<usize> = None;
+    // Inside a path's `additionalOperations`: its indent, and its keys'.
+    let mut additional: Option<(usize, Option<usize>)> = None;
+    for (number, line) in text.lines().enumerate() {
+        let Some((indent, key)) = line_key(line) else {
+            continue;
+        };
+        let Some(top) = paths else {
+            if key == "paths" {
+                paths = Some(indent);
+            }
+            continue;
+        };
+        if indent <= top {
+            break;
+        }
+        let at_path = *path_indent.get_or_insert(indent);
+        if indent <= at_path {
+            path = (indent == at_path).then_some(key);
+            method_indent = None;
+            additional = None;
+            continue;
+        }
+        let Some(current) = path else { continue };
+        let at_method = *method_indent.get_or_insert(indent);
+        if indent == at_method {
+            additional = (key == "additionalOperations").then_some((indent, None));
+            if METHODS.contains(&key) {
+                lines
+                    .entry((current.to_owned(), key.to_owned()))
+                    .or_insert(number);
+            }
+        } else if let Some((at, inner)) = &mut additional
+            && indent > *at
+            && *inner.get_or_insert(indent) == indent
+        {
+            lines
+                .entry((current.to_owned(), key.to_lowercase()))
+                .or_insert(number);
+        }
+    }
+    lines
+}
+
+/// The key a line starts, unquoted, and the line's indent: `/users/{id}` of
+/// `  /users/{id}:` and of `    "/users/{id}": {`. `None` for a line that
+/// starts no key: a comment, an item of a list, a value going on.
+fn line_key(line: &str) -> Option<(usize, &str)> {
+    let trimmed = line.trim_start();
+    let indent = line.len() - trimmed.len();
+    let quote = trimmed.chars().next()?;
+    if quote == '"' || quote == '\'' {
+        let end = trimmed[1..].find(quote)? + 1;
+        let rest = trimmed[end + 1..].trim_start();
+        return rest.starts_with(':').then(|| (indent, &trimmed[1..end]));
+    }
+    if quote == '#' || quote == '-' {
+        return None;
+    }
+    // A colon followed by a space or the line's end, since a path can hold
+    // one: `/v1/{name}:cancel`.
+    let end = trimmed.match_indices(':').map(|(i, _)| i).find(|&i| {
+        trimmed[i + 1..]
+            .chars()
+            .next()
+            .is_none_or(|c| c == ' ' || c == '\t')
+    })?;
+    Some((indent, trimmed[..end].trim_end()))
 }
 
 /// What a parsed document holds: its `paths`, when it's a mapping that has
@@ -278,16 +371,22 @@ fn spec_of(document: &Value) -> Spec {
                     .get("deprecated")
                     .and_then(Value::as_bool)
                     .unwrap_or(false),
+                line: None,
             });
         }
     }
     spec
 }
 
-/// Each declared API's spec, as read when the project was loaded.
+/// Each declared API's spec, as read when the project was loaded, or last
+/// read again, and the method and path of each `operationId` an earlier
+/// reading had.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ApiSpecs {
     specs: BTreeMap<String, Result<Spec, Unreadable>>,
+    /// By API, then by `operationId`: the method and path the id had when
+    /// last seen, in an earlier reading of the spec or a base revision's.
+    earlier: BTreeMap<String, BTreeMap<String, (String, String)>>,
 }
 
 impl ApiSpecs {
@@ -298,7 +397,88 @@ impl ApiSpecs {
             .iter()
             .map(|api| (api.name.clone(), read_api(api, fs)))
             .collect();
-        ApiSpecs { specs }
+        ApiSpecs {
+            specs,
+            earlier: BTreeMap::new(),
+        }
+    }
+
+    /// Reads every spec again, keeping where each id of this reading was,
+    /// and of the readings it kept, so a link to an id the spec has lost
+    /// since can be fixed ([`ApiSpecs::renamed`]).
+    pub fn read_again(&self, model: &ContentModel, fs: &dyn FileSystem) -> ApiSpecs {
+        let mut next = ApiSpecs::read(model, fs);
+        next.earlier = self.earlier.clone();
+        next.keep(self, true);
+        next
+    }
+
+    /// Keeps where each id of another reading's specs was, a base
+    /// revision's, without replacing what an earlier reading of these says.
+    pub fn remember(&mut self, other: &ApiSpecs) {
+        self.keep(other, false);
+    }
+
+    fn keep(&mut self, other: &ApiSpecs, newer: bool) {
+        for (api, spec) in &other.specs {
+            let Ok(spec) = spec else { continue };
+            let known = self.earlier.entry(api.clone()).or_default();
+            for operation in &spec.operations {
+                let Some(id) = &operation.operation_id else {
+                    continue;
+                };
+                let at = (operation.method.clone(), operation.path.clone());
+                if newer {
+                    known.insert(id.clone(), at);
+                } else {
+                    known.entry(id.clone()).or_insert(at);
+                }
+            }
+        }
+    }
+
+    /// The operation an id the spec of API `api` no longer has was renamed
+    /// to: the one operation at the method and path the id had when last
+    /// seen, whose own id is new there. `None` when the spec has the id,
+    /// nothing says where it was, or no operation, or more than one, is
+    /// there now.
+    pub fn renamed(&self, api: &str, id: &str) -> Option<&Operation> {
+        let spec = self.spec(api)?;
+        if spec.operation(id).is_some() {
+            return None;
+        }
+        let known = self.earlier.get(api)?;
+        let (method, path) = known.get(id)?;
+        let mut there = spec
+            .operations
+            .iter()
+            .filter(|o| &o.method == method && &o.path == path);
+        let only = there.next()?;
+        if there.next().is_some() {
+            return None;
+        }
+        let new_id = only.operation_id.as_deref()?;
+        // An id that was somewhere else moved here; it wasn't renamed.
+        known
+            .get(new_id)
+            .is_none_or(|at| at == &(method.clone(), path.clone()))
+            .then_some(only)
+    }
+
+    /// The APIs whose specs differ between this reading and `other`.
+    pub fn changed(&self, other: &ApiSpecs) -> Vec<String> {
+        let names: std::collections::BTreeSet<&String> =
+            self.specs.keys().chain(other.specs.keys()).collect();
+        names
+            .into_iter()
+            .filter(|name| self.specs.get(*name) != other.specs.get(*name))
+            .cloned()
+            .collect()
+    }
+
+    /// The names of the APIs read.
+    pub fn names(&self) -> impl Iterator<Item = &str> {
+        self.specs.keys().map(String::as_str)
     }
 
     /// The spec of the API named `name`, when it was read.
@@ -370,12 +550,15 @@ fn read_api(api: &Api, fs: &dyn FileSystem) -> Result<Spec, Unreadable> {
 /// The problem with a link to an operation, when `resolution` is one:
 ///
 /// - `link-operation-missing`, when the spec has no operation the fragment
-///   names, with the closest as its fixes;
+///   names, with the closest as its fixes, the first safe when it's the
+///   operation the id was renamed to ([`ApiSpecs::renamed`]);
 /// - `link-operation-form-unsupported`, when it names an operation with no id
 ///   by its method and path, and the reference is a template, which has no
 ///   address for it;
 /// - `link-operation-by-path`, when it names an operation that has an id by
-///   its method and path, with a fix that writes the id.
+///   its method and path, with a fix that writes the id;
+/// - `link-operation-deprecated`, when it names an operation the spec marks
+///   `deprecated`.
 ///
 /// Nothing when the spec couldn't be read: `api-spec-unreadable` says why.
 ///
@@ -396,8 +579,15 @@ pub fn operation_issue(
     let declared = project.model().api(api)?;
     let path = declared.spec.clone();
     let here = Location::new(at.file, destination.unwrap_or(at.span));
+    let deprecated = |operation: &Operation| {
+        operation.deprecated.then(|| {
+            Issue::new(diagnostics::LINK_OPERATION_DEPRECATED, here)
+                .with_arg("path", path.clone())
+                .with_arg("operation", id.clone())
+        })
+    };
     match spec.named(id) {
-        Some(Named::Id(_)) => None,
+        Some(Named::Id(operation)) => deprecated(operation),
         Some(Named::MethodAndPath(operation)) => match &operation.operation_id {
             Some(operation_id) => {
                 let mut issue = Issue::new(diagnostics::LINK_OPERATION_BY_PATH, here)
@@ -417,22 +607,34 @@ pub fn operation_issue(
                 }
                 Some(issue)
             }
-            None => matches!(declared.reference, ApiReference::Template(_)).then(|| {
+            None if matches!(declared.reference, ApiReference::Template(_)) => Some(
                 Issue::new(diagnostics::LINK_OPERATION_FORM_UNSUPPORTED, here)
                     .with_arg("api", api.clone())
-                    .with_arg("operation", id.clone())
-            }),
+                    .with_arg("operation", id.clone()),
+            ),
+            None => deprecated(operation),
         },
         None => {
+            let renamed = project.apis().renamed(api, id);
             let mut issue = Issue::new(diagnostics::LINK_OPERATION_MISSING, here)
-                .with_arg("path", path)
+                .with_arg("path", path.clone())
                 .with_arg("id", id.clone());
-            if let Some(closest) = closest_ids(spec, id).first() {
-                issue = issue
-                    .with_variant("closest")
-                    .with_arg("closest", closest.clone());
+            let by_path = !matches!(declared.reference, ApiReference::Template(_));
+            if let Some(closest) = closest_operations(project.apis(), api, id, by_path)
+                .into_iter()
+                .next()
+            {
+                issue = issue.with_variant("closest").with_arg("closest", closest);
             }
             issue.fixes = closest_fixes(project, from, target, resolution, at.file, destination);
+            // The operation now at the method and path the id had is the one
+            // it was renamed to, when it's the only one there: the
+            // closest target, and safe to write.
+            if renamed.is_some()
+                && let Some(fix) = issue.fixes.first_mut()
+            {
+                fix.applicability = Applicability::Safe;
+            }
             Some(issue)
         }
     }
@@ -442,16 +644,43 @@ pub fn operation_issue(
 const CLOSEST: usize = 5;
 
 /// The names of the spec's operations closest to `fragment`, best first: an
-/// operation's id, or its method and path when it has none. The spec exists,
-/// so its operations are the likely targets, however far.
-pub fn closest_ids(spec: &Spec, fragment: &str) -> Vec<String> {
+/// operation's id, or its method and path when it has none and `by_path`,
+/// as [`closest_ids`] has them, with the operation an id was renamed to
+/// ([`ApiSpecs::renamed`]) first.
+pub fn closest_operations(
+    specs: &ApiSpecs,
+    api: &str,
+    fragment: &str,
+    by_path: bool,
+) -> Vec<String> {
+    let Some(spec) = specs.spec(api) else {
+        return Vec::new();
+    };
+    let mut out = closest_ids(spec, fragment, by_path);
+    if let Some(id) = specs
+        .renamed(api, fragment)
+        .and_then(|o| o.operation_id.clone())
+    {
+        out.retain(|c| *c != id);
+        out.insert(0, id);
+        out.truncate(CLOSEST);
+    }
+    out
+}
+
+/// The names of the spec's operations closest to `fragment`, best first: an
+/// operation's id, or its method and path when it has none and `by_path`.
+/// `by_path` is false under a template, which has no address for an
+/// operation with no id, so linking to one by its method and path is
+/// `link-operation-form-unsupported`. The spec exists, so its operations are
+/// the likely targets, however far.
+pub fn closest_ids(spec: &Spec, fragment: &str, by_path: bool) -> Vec<String> {
     let mut scored: Vec<(usize, String)> = spec
         .operations
         .iter()
-        .map(|o| {
-            o.operation_id
-                .clone()
-                .unwrap_or_else(|| o.method_and_path())
+        .filter_map(|o| match &o.operation_id {
+            Some(id) => Some(id.clone()),
+            None => by_path.then(|| o.method_and_path()),
         })
         .map(|candidate| (edit_distance(fragment, &candidate), candidate))
         .collect();

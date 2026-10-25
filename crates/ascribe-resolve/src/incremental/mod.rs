@@ -166,7 +166,8 @@ pub enum Change {
     /// A file that isn't a source appeared (an image, a download), or its
     /// contents changed, at a path relative to the **project root**, as
     /// [`FileSystem::probe`] takes it. The `@snippet`s that read it read it
-    /// again, from the project's [`FileSystem`].
+    /// again, from the project's [`FileSystem`], and a declared spec is read
+    /// again, wherever it is.
     AssetCreated {
         /// The path.
         path: RelPath,
@@ -184,6 +185,11 @@ pub enum Change {
     /// `ascribe.nav` changed: this is what it says now, `None` when it's gone
     /// or doesn't read ([`Project::nav_file`]).
     Nav(Option<Arc<NavFile>>),
+    /// A base revision's specs, as the project there read them: where each
+    /// `operationId` was there is kept, so a link to one renamed since is
+    /// fixed to the operation now in its place
+    /// ([`crate::openapi::ApiSpecs::remember`]).
+    BaseApis(Arc<crate::openapi::ApiSpecs>),
 }
 
 /// Why a batch of changes wasn't applied. Nothing changed.
@@ -732,6 +738,7 @@ impl IncrementalProject {
         let mut unreadable_state: BTreeMap<RelPath, Option<String>> = BTreeMap::new();
         let mut new_model: Option<Arc<ContentModel>> = None;
         let mut new_nav: Option<Option<Arc<NavFile>>> = None;
+        let mut base_apis: Option<Arc<crate::openapi::ApiSpecs>> = None;
         for change in changes {
             match change {
                 Change::Unreadable { path, reason } => {
@@ -797,6 +804,7 @@ impl IncrementalProject {
                     new_model = Some(model);
                 }
                 Change::Nav(nav) => new_nav = Some(nav),
+                Change::BaseApis(apis) => base_apis = Some(apis),
             }
         }
         let new_nav = new_nav.filter(|nav| nav.as_deref() != self.project.nav_file());
@@ -843,6 +851,15 @@ impl IncrementalProject {
         // reported, whether or not it was there before: its contents may
         // have changed.
         let reported: Vec<&RelPath> = file_state.keys().collect();
+        // A declared spec reported, whether or not it was there before: its
+        // operations may have changed, and with them the problems of the
+        // links to them.
+        let specs_reported = {
+            let model = new_model.as_deref().unwrap_or(&self.project.model);
+            reported
+                .iter()
+                .any(|path| model.apis.iter().any(|api| api.spec == path.as_str()))
+        };
         let showing: BTreeSet<RelPath> = showing(&self.project, &reported)
             .into_iter()
             .filter(|p| !gone.contains(p))
@@ -901,6 +918,8 @@ impl IncrementalProject {
             && impact.is_none()
             && !unreadable_changed
             && new_nav.is_none()
+            && !specs_reported
+            && base_apis.is_none()
         {
             return Ok(Affected {
                 version: self.version,
@@ -1045,8 +1064,25 @@ impl IncrementalProject {
         if let Some(nav) = new_nav {
             project.set_nav(nav);
         }
+        // The specs are read again with the model, and when one is reported,
+        // keeping where each id was, for a link to one that was renamed.
+        let mut changed_apis = if new_model.is_some() || specs_reported {
+            let apis = project.apis().read_again(&model, &self.fs);
+            let changed = apis.changed(project.apis());
+            project.set_apis(apis);
+            changed
+        } else {
+            Vec::new()
+        };
+        if let Some(base) = base_apis {
+            let mut apis = project.apis().clone();
+            apis.remember(&base);
+            if apis != *project.apis() {
+                changed_apis.extend(base.names().map(str::to_owned));
+                project.set_apis(apis);
+            }
+        }
         if let Some((model, fingerprints)) = new_model {
-            project.set_apis(crate::openapi::ApiSpecs::read(&model, &self.fs));
             project.set_model(model);
             self.fingerprints = fingerprints;
             if impact.is_some_and(|m| m >= ModelImpact::Index) {
@@ -1078,6 +1114,20 @@ impl IncrementalProject {
             project.put_resolutions(path, resolutions);
             project.attach_file(path);
         }
+        // The files that link to an operation of a spec that changed.
+        let spec_linkers: BTreeSet<RelPath> = if changed_apis.is_empty() {
+            BTreeSet::new()
+        } else {
+            project
+                .files()
+                .filter(|file| {
+                    project.resolution_list(&file.path).iter().any(|r| {
+                        matches!(r, crate::Resolution::Operation { api, .. } if changed_apis.contains(api))
+                    })
+                })
+                .map(|file| file.path.clone())
+                .collect()
+        };
         let code = crate::snippet::CodeFiles::new();
         for path in showing.iter().filter(|p| !resolve_set.contains(*p)) {
             if let Some(index) = project.file(path).cloned() {
@@ -1106,6 +1156,7 @@ impl IncrementalProject {
             && impact.is_none()
             && res_changed.is_empty()
             && showing.is_empty()
+            && spec_linkers.is_empty()
             && !unreadable_changed
             && !nav_changed
         {
@@ -1155,7 +1206,7 @@ impl IncrementalProject {
                     }
                 }
             }
-            for path in res_changed.iter().chain(&showing) {
+            for path in res_changed.iter().chain(&showing).chain(&spec_linkers) {
                 widen(path, &mut recheck, &mut re_resolve);
             }
             // The files that write an `@include` of a path that appeared or

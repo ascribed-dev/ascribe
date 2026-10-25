@@ -178,7 +178,9 @@ pub const TOOLS: &[Spec] = &[
         description: "Ask whether a link target exists as seen from a page, and what to write \
             for it. Example: {\"target\": \"keys.md#rotate\", \"from\": \"docs/quickstart.md\"} \
             returns `exists: false`, the `problem`, and `closest` with `{\"title\": \"Rotate \
-            keys\", \"href\": \"keys.md#rotate-keys\"}`.",
+            keys\", \"href\": \"keys.md#rotate-keys\"}`. A link to an operation of a \
+            declared API, `../api/openapi.yaml#getUser`, returns `kind: operation` and the \
+            `operation`: its method, path, summary, deprecation, and address.",
         input: || {
             json!({
                 "type": "object",
@@ -186,7 +188,8 @@ pub const TOOLS: &[Spec] = &[
                     "target": {
                         "type": "string",
                         "description": "The link's destination as the page writes it: \
-                            `keys.md`, `keys.md#rotate-keys`, `#install`.",
+                            `keys.md`, `keys.md#rotate-keys`, `#install`, \
+                            `../api/openapi.yaml#getUser`.",
                     },
                     "from": {
                         "type": "string",

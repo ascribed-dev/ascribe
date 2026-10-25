@@ -174,7 +174,7 @@ Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextpr
 | `ascribe_explain` | `ascribe explain` |
 | `ascribe_model` | `ascribe model` |
 | `ascribe_outline` | `ascribe outline` |
-| `ascribe_link` | `ascribe link` |
+| `ascribe_link` | `ascribe link`, which answers a link to an API's operation with the operation |
 | `ascribe_refs` | `ascribe refs`, with `response_format` as for `ascribe_check` |
 | `ascribe_search` | `ascribe search`, with `response_format` as for `ascribe_check`, and `project` to find the project when no `paths` are given |
 | `ascribe_resolve` | `ascribe resolve`, and its `go:<name>` with `project` to find the project. `emit` is its `--emit`, `plain` (the default) or `site`, to read the page [as the site output gives it](../command/site-output.md), and isn't for `go:<name>` |

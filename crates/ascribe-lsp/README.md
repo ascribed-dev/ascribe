@@ -1090,6 +1090,7 @@ each context offers, from the content model and the index:
 | `{` in prose, a title, a heading, a text primary, or a `phrases=true` fence | Declared phrase keys, each showing its value |
 | `@include:` | Source files, relative to the file (or from the content root after a `/`); after `#`, the ids of the file named |
 | A link destination, `](…`, or a reference definition | Pages and headings by **title**: inserts the relative path and the source id, shows the path as the detail |
+| A link destination after a declared spec's `#` (`[apis.<name>]`) | The spec's operations, matched on the id, the method and path, and the summary: inserts the id, or the method and path for one with none, shows `GET /users/{id}` as the detail and the summary beside it, and marks a deprecated one |
 
 Nothing is offered inside inline code or a code fence. A search is cut at 100
 items and marked incomplete, so the client asks again as the author types.
@@ -1103,7 +1104,8 @@ key a page's type declares, or a field's key in `ascribe.toml`'s
 which types replace a shared one), and a heading or its `@id` line (its
 section's summary in the editor's build, from `ascribe_emit::section_summary`,
 which `_ascribe/help.json` writes; `summary.rs`, which `ascribe/page`'s
-permalinks read too).
+permalinks read too). A link to an operation shows its method and path, its
+summary, whether it's deprecated, its id, API, and first tag.
 
 **Folding ranges**: each closed container `@memo`, from its opening line to
 its `@end`, so it folds to its first line. A page's other folding (headings,
@@ -1112,7 +1114,17 @@ a container; VS Code merges the ranges of every provider.
 
 **Go to definition**: links and includes to the file or heading;
 `@id`'s primary to its heading; phrases and feature keys to their entries in
-`ascribe.toml`.
+`ascribe.toml`; a link to an operation to its method's line in the spec, which
+`ascribe_resolve::openapi` finds in the text.
+
+**Specs.** The server watches each spec `[apis]` declares by its folder and
+name, as it watches `[from]`'s files, so one outside the folders the client
+watches is reported too, and the file watcher's report of one is
+`Change::AssetCreated`, which reads the specs again and checks the links to
+their operations. Each reading keeps where each `operationId` was, and setting
+a review's base adds the base's specs (`Change::BaseApis`), so a link to an
+id the spec lost gets the one operation now at its method and path as a safe
+fix (`ApiSpecs::renamed`).
 
 **Find all references** lists every place that uses what's under the cursor,
 from `ascribe_resolve::Project::uses`, the search the inventory counts with:

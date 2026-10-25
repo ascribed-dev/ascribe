@@ -1,0 +1,7 @@
+../../../api/openapi.yaml#getLooms doesn't work from content/Guides/Teams/Share a loom.md: `../../../api/openapi.yaml` has no operation `getLooms`.
+Closest:
+  [Get a loom](../../../api/openapi.yaml#getLoom)
+  [List looms](../../../api/openapi.yaml#listLooms)
+  [Get the café's menu](../../../api/openapi.yaml#getMenu)
+  [List invoices](../../../api/openapi.yaml#listInvoices)
+  [Delete a loom](../../../api/openapi.yaml#delete/looms/{id})

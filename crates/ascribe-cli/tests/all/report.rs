@@ -1164,7 +1164,7 @@ fn check_and_the_inventory_say_which_operations_no_page_links_to() {
     let text = format!("{}{}", stdout(&out), stderr(&out));
     assert!(
         text.contains(
-            "[ASC276] Advice: no page links to `deleteInvoice` (DELETE /invoices/{id}) in api/openapi.yaml"
+            "[ASC282] Advice: no page links to `deleteInvoice` (DELETE /invoices/{id}) in api/openapi.yaml"
         ),
         "{text}"
     );

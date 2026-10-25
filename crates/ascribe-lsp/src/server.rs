@@ -1209,7 +1209,14 @@ fn set_base_request(shared: &Shared, request: &Request) -> Result<serde_json::Va
                         ),
                     };
                 }
+                // A link to an operation renamed since the base is fixed
+                // from where its id was there.
+                if let Some(project) = &base.project {
+                    core.remember_base_apis(project.apis());
+                }
                 core.review = Some(base);
+                drop(core);
+                shared.wake.notify_all();
                 SetBaseResult {
                     base: Some(info),
                     problem: None,

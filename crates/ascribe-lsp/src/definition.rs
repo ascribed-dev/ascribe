@@ -1,7 +1,8 @@
 //! Go to definition (SPEC §10): links and includes go to their target file or
 //! heading, `@id`s to the heading they name, a glossary term in prose to its
-//! heading, phrases and feature keys to their entry in `ascribe.toml`, and a
-//! `@snippet`'s address to its region's start tag in the code file.
+//! heading, phrases and feature keys to their entry in `ascribe.toml`, a
+//! `@snippet`'s address to its region's start tag in the code file, and a
+//! link to an operation to the operation in its API's spec.
 
 use ascribe_core::{LineIndex, RelPath, Span};
 use ascribe_model::RELEASE_DIMENSION;
@@ -94,8 +95,30 @@ pub(crate) fn resolution_location(
         }
         Resolution::Source { target, id, .. } => source_location(ctx, lines, target, id.as_deref()),
         Resolution::Asset { path, .. } => lines.location(path, None),
+        Resolution::Operation { api, id } => operation_location(ctx, api, id),
         _ => None,
     }
+}
+
+/// The spec of a declared API, at the line of the operation a link names:
+/// at its top when the spec doesn't have it, or its line isn't known.
+fn operation_location(ctx: &Ctx, api: &str, id: &str) -> Option<Location> {
+    let declared = ctx.model.api(api)?;
+    let path = ascribe_core::path::normalize(&ctx.config.parent()?.join(&declared.spec));
+    let line = ctx
+        .snapshot
+        .project()
+        .apis()
+        .spec(api)
+        .and_then(|spec| spec.named(id))
+        .and_then(|named| named.operation().line)
+        .and_then(|line| u32::try_from(line).ok())
+        .unwrap_or(0);
+    let start = Position { line, character: 0 };
+    Some(Location {
+        uri: crate::uri::path_to_uri(&path)?,
+        range: lsp_types::Range { start, end: start },
+    })
 }
 
 /// A source file, or the heading in it with this source id (the file when the

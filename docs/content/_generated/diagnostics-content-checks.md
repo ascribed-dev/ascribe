@@ -535,8 +535,8 @@ Warning · file level · next step: outside · configurable in `[checks]` · [SP
 
 **Read more:** [The base](../publishing/redirects.md#the-base) in the guide to keeping addresses.
 
-### ASC276 `api-operation-unreferenced`
-@id {permalink=true}: ASC276
+### ASC282 `api-operation-unreferenced`
+@id {permalink=true}: ASC282
 @summary: An operation of a declared spec, not marked `deprecated`, that no link names, by its id or by its method and path.
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)

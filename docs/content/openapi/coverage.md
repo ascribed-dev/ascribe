@@ -14,7 +14,7 @@ An operation is linked when a link in any page or fragment names it, by its `ope
 Each operation no link names is advice, `api-operation-unreferenced`, at the API's `spec` in `ascribe.toml`:
 
 ```text
-ascribe.toml:7: [ASC276] no page links to `deleteInvoice` (DELETE /invoices/{id}) in api/openapi.yaml
+ascribe.toml:7: [ASC282] no page links to `deleteInvoice` (DELETE /invoices/{id}) in api/openapi.yaml
 ```
 
 An operation the spec marks `deprecated: true` isn't reported, since it's on its way out. An operation with no id is named by its method and path.

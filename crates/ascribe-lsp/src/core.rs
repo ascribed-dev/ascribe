@@ -172,6 +172,10 @@ pub(crate) struct Core {
     /// The files `ascribe.toml`'s `[from]` takes from, absolute: watched as
     /// it is, whether or not the model loads (SPEC §7.9).
     from_files: Vec<PathBuf>,
+    /// The specs the loaded model's `[apis]` declare, absolute: watched
+    /// wherever they are, since a spec may be outside the folders the
+    /// client watches (SPEC §9.4).
+    spec_files: Vec<PathBuf>,
     pub shutdown: bool,
     pub can_watch: bool,
     /// Whether the client registers lenses dynamically, so the server asks
@@ -232,6 +236,7 @@ impl Core {
             loaded: None,
             model_problem: None,
             from_files: Vec::new(),
+            spec_files: Vec::new(),
             shutdown: false,
             can_watch: false,
             lens_registration: false,
@@ -332,10 +337,43 @@ impl Core {
     /// when they change, and none once there are none. `registered` says
     /// whether some were asked for before, which are dropped first.
     fn register_from_watchers(&mut self, registered: bool) {
+        let files = self.from_files.clone();
+        self.register_file_watchers("ascribe-from-files", &files, registered);
+    }
+
+    /// Asks the client to watch the declared specs, as
+    /// [`Core::register_from_watchers`] does `[from]`'s files.
+    fn register_spec_watchers(&mut self, registered: bool) {
+        let files = self.spec_files.clone();
+        self.register_file_watchers("ascribe-spec-files", &files, registered);
+    }
+
+    /// The specs the model declares, absolute, and watched once they differ
+    /// from those watched before.
+    fn watch_specs(&mut self, model: &ContentModel) {
+        let Some(root) = self.config.as_deref().and_then(Path::parent) else {
+            return;
+        };
+        let spec_files: Vec<PathBuf> = model
+            .apis
+            .iter()
+            .map(|api| normalize(&root.join(&api.spec)))
+            .collect();
+        if spec_files != self.spec_files {
+            let registered = !self.spec_files.is_empty();
+            self.spec_files = spec_files;
+            self.register_spec_watchers(registered);
+        }
+    }
+
+    /// Asks the client to watch `files`, each by its folder and name, under
+    /// the registration `id`; none once there are none. `registered` says
+    /// whether some were asked for before, which are dropped first.
+    fn register_file_watchers(&mut self, id: &str, files: &[PathBuf], registered: bool) {
         if !self.can_watch {
             return;
         }
-        const ID: &str = "ascribe-from-files";
+        let id = id.to_owned();
         if registered {
             self.next_id += 1;
             self.send(Request::new(
@@ -343,14 +381,13 @@ impl Core {
                 "client/unregisterCapability".to_owned(),
                 lsp_types::UnregistrationParams {
                     unregisterations: vec![lsp_types::Unregistration {
-                        id: ID.to_owned(),
+                        id: id.clone(),
                         method: "workspace/didChangeWatchedFiles".to_owned(),
                     }],
                 },
             ));
         }
-        let watchers: Vec<FileSystemWatcher> = self
-            .from_files
+        let watchers: Vec<FileSystemWatcher> = files
             .iter()
             .filter_map(|file| {
                 let folder = crate::uri::path_to_uri(file.parent()?)?;
@@ -374,7 +411,7 @@ impl Core {
             "client/registerCapability".to_owned(),
             RegistrationParams {
                 registrations: vec![Registration {
-                    id: ID.to_owned(),
+                    id,
                     method: "workspace/didChangeWatchedFiles".to_owned(),
                     register_options: serde_json::to_value(options).ok(),
                 }],
@@ -505,7 +542,9 @@ impl Core {
                     .loaded
                     .as_ref()
                     .and_then(|l| l.model.checks.vale.clone());
-                self.adopt_model(Arc::new(model), text);
+                let model = Arc::new(model);
+                self.watch_specs(&model);
+                self.adopt_model(model, text);
                 if recovered {
                     self.check_everything_again();
                 }
@@ -1193,7 +1232,9 @@ impl Core {
             if let Some(loaded) = self.loaded.as_ref() {
                 if crate::shown::used_by_a_source(&loaded.root, &loaded.model, &path) {
                     refresh = true;
-                } else if !relative_path(&loaded.root, &path).is_some_and(|p| p.is_inside()) {
+                } else if !self.spec_files.contains(&path)
+                    && !relative_path(&loaded.root, &path).is_some_and(|p| p.is_inside())
+                {
                     // Outside the project, only a source's files matter: a
                     // build's output in a source's folder isn't walked.
                     continue;
@@ -1535,6 +1576,12 @@ impl Core {
 
     /// Applies a batch to the project, queues what it affects, and returns
     /// the pages whose resolved form it may change ([`Affected::re_resolve`]).
+    /// Keeps where each `operationId` was in a base revision's specs, so a
+    /// link to one renamed since is offered the operation in its place.
+    pub(crate) fn remember_base_apis(&mut self, apis: &ascribe_resolve::openapi::ApiSpecs) {
+        self.apply(vec![Change::BaseApis(Arc::new(apis.clone()))], &[]);
+    }
+
     fn apply(&mut self, changes: Vec<Change>, mirror: &[(RelPath, bool)]) -> BTreeSet<RelPath> {
         let Some(loaded) = self.loaded.as_mut() else {
             return BTreeSet::new();

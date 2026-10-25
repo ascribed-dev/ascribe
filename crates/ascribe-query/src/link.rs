@@ -5,8 +5,9 @@
 //! completion writes ([`link_path`], [`encode_destination`]).
 
 use ascribe_core::RelPath;
+use ascribe_resolve::openapi::Operation;
 use ascribe_resolve::{
-    Closest, DefaultRouter, FileSystem, Missing, Project, RefKind, Resolution, Target,
+    Closest, DefaultRouter, FileSystem, LinkTarget, Missing, Project, RefKind, Resolution, Target,
     closest_targets, encode_destination, link_href, link_path, reference_target, resolve_reference,
 };
 use serde::Serialize;
@@ -51,6 +52,36 @@ pub struct LinkAnswer {
     /// versioned.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub lines: Vec<LinkLine>,
+    /// The operation a link to a declared API's spec names, when the spec
+    /// has it; absent for any other target.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub operation: Option<LinkOperation>,
+}
+
+/// An operation of a declared API's spec (`[apis.<name>]`), as a link to it
+/// names it.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct LinkOperation {
+    /// The API's name.
+    pub api: String,
+    /// Its `operationId`; `null` for an operation with none, which a link
+    /// names by its method and path.
+    pub operation_id: Option<String>,
+    /// Its method, in lowercase.
+    pub method: String,
+    /// Its path, as the spec writes it.
+    pub path: String,
+    /// Its `summary`, when it has one.
+    pub summary: Option<String>,
+    /// Its first tag, when it has one.
+    pub tag: Option<String>,
+    /// Whether the spec marks it `deprecated`.
+    pub deprecated: bool,
+    /// Its address in the published reference, as the editor's build writes
+    /// the link; `null` when the reference has none for it: an operation
+    /// with no id, under a template.
+    pub address: Option<String>,
 }
 
 /// Where a link goes in one line of a versioned build (SPEC §5.2).
@@ -86,6 +117,9 @@ pub enum LinkKind {
     File,
     /// A URL with a scheme.
     External,
+    /// An operation of a declared API's spec: a link to the spec with a
+    /// fragment.
+    Operation,
     /// Nothing: no file has that path.
     Missing,
 }
@@ -149,12 +183,17 @@ pub fn link(
         problem: None,
         closest: Vec::new(),
         lines: Vec::new(),
+        operation: None,
     };
     let written = match &parsed {
         Target::Local(local) => local.written.clone(),
         Target::External => String::new(),
     };
     let closest = closest_targets(project, from, &parsed, &resolution);
+    let api = match &resolution {
+        Resolution::Operation { api, .. } => Some(api.clone()),
+        _ => None,
+    };
     match resolution {
         Resolution::External => {
             answer.exists = true;
@@ -206,25 +245,9 @@ pub fn link(
             answer.href = Some(written);
             answer.path = Some(path.to_string());
         }
-        // An operation's own answer waits for its decision; until then it's
-        // the spec, a file, as a link to it with a fragment always was, and
-        // the operation is checked.
+        // The spec's path and the fragment, as for a file, and the operation.
         Resolution::Operation { api, id } => {
-            answer.kind = LinkKind::File;
-            answer.path = match &parsed {
-                Target::Local(local) => local.path.as_ref().map(ToString::to_string),
-                Target::External => None,
-            };
-            answer.id = Some(id.clone());
-            let spec = project.apis().spec(&api);
-            if spec.is_some_and(|s| s.named(&id).is_some()) {
-                answer.exists = true;
-                answer.href = Some(format!("{written}#{}", encode_destination(&id)));
-            } else if spec.is_some() {
-                answer.problem = Some(format!("`{written}` has no operation `{id}`"));
-            } else {
-                answer.problem = Some(format!("the spec of API `{api}` can't be read"));
-            }
+            operation_answer(project, &mut answer, &parsed, &api, &id)
         }
         Resolution::SpecOutside { api } => {
             answer.kind = LinkKind::File;
@@ -262,6 +285,9 @@ pub fn link(
     answer
         .closest
         .extend(closest.into_iter().map(|c| suggested(project, c)));
+    if let Some(api) = &api {
+        title_operations(project, api, &mut answer.closest);
+    }
     if answer.exists
         && matches!(answer.kind, LinkKind::Page | LinkKind::Heading)
         && let Some(path) = answer.path.as_deref().and_then(|p| RelPath::parse(p).ok())
@@ -269,6 +295,79 @@ pub fn link(
         answer.lines = lines(project, &path);
     }
     Ok(answer)
+}
+
+/// The answer for a link to an operation: the spec's path and the fragment,
+/// as for a file, and the operation, when the spec has it.
+fn operation_answer(
+    project: &Project,
+    answer: &mut LinkAnswer,
+    parsed: &Target,
+    api: &str,
+    id: &str,
+) {
+    let written = match parsed {
+        Target::Local(local) => local.written.as_str(),
+        Target::External => "",
+    };
+    answer.kind = LinkKind::Operation;
+    answer.path = match parsed {
+        Target::Local(local) => local.path.as_ref().map(ToString::to_string),
+        Target::External => None,
+    };
+    answer.id = Some(id.to_owned());
+    let spec = project.apis().spec(api);
+    if let Some(operation) = spec.and_then(|s| s.named(id)).map(|n| n.operation()) {
+        answer.exists = true;
+        answer.href = Some(format!("{written}#{}", encode_destination(id)));
+        answer.operation = Some(operation_of(project, api, id, operation));
+    } else if spec.is_some() {
+        answer.problem = Some(format!("`{written}` has no operation `{id}`"));
+    } else {
+        answer.problem = Some(format!("the spec of API `{api}` can't be read"));
+    }
+}
+
+/// Each closest operation's title: its summary, as its reference titles it.
+fn title_operations(project: &Project, api: &str, closest: &mut [LinkSuggestion]) {
+    let Some(spec) = project.apis().spec(api) else {
+        return;
+    };
+    for suggestion in closest {
+        suggestion.title = suggestion
+            .id
+            .as_deref()
+            .and_then(|id| spec.named(id))
+            .and_then(|named| named.operation().summary.clone());
+    }
+}
+
+/// What an answer says about the operation a link names: its address, as
+/// the editor's build writes the link.
+fn operation_of(
+    project: &Project,
+    api: &str,
+    fragment: &str,
+    operation: &Operation,
+) -> LinkOperation {
+    let router = DefaultRouter::from_consumer(&project.model().consumer);
+    let address = match project
+        .resolver(project.model().editor_default_build(), &router)
+        .operation_link(api, fragment)
+    {
+        LinkTarget::Operation { address, .. } => Some(address),
+        _ => None,
+    };
+    LinkOperation {
+        api: api.to_owned(),
+        operation_id: operation.operation_id.clone(),
+        method: operation.method.clone(),
+        path: operation.path.clone(),
+        summary: operation.summary.clone(),
+        tag: operation.tag.clone(),
+        deprecated: operation.deprecated,
+        address,
+    }
 }
 
 /// Where a link to `target` goes in each line of each versioned build.

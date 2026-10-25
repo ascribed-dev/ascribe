@@ -320,6 +320,10 @@
       {
         "href": "/docs/openapi/no-id/",
         "label": "Link to an operation with no id"
+      },
+      {
+        "href": "/docs/openapi/editor/",
+        "label": "Link to operations in the editor"
       }
     ]
   },
