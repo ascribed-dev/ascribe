@@ -23,7 +23,7 @@ A fragment that's an operation's id names that operation, even when it's another
 
 Redoc 3 has an address for an operation with no id, by its path: `/api/#paths/~1users~1%7Bid%7D/delete`, under `[consumer] base-path`, the path as a JSON pointer, with `~1` for each `/`. Ascribe writes that address. Redoc 2 addresses the same operation under a slug of its tag, and Ascribe can't tell which Redoc your site runs, so nothing reports a link that Redoc 2 won't open: publish the reference with Redoc 3.
 
-A template has no placeholder for an operation with no id, so with a template for `reference`, a link by method and path to one is an error, `link-operation-form-unsupported`.
+A template has no placeholder for an operation with no id, so with a template for `reference`, a link by method and path to one is an error, `link-operation-form-unsupported`. The closest operations a missing one is offered are then the ones with ids alone.
 
 ## Set ids instead
 

@@ -5,7 +5,7 @@
 use std::collections::BTreeSet;
 
 use ascribe_core::{Applicability, FileId, Fix, RelPath, Span, TextEdit};
-use ascribe_model::{edit_distance, edit_distance_within};
+use ascribe_model::{ApiReference, edit_distance, edit_distance_within};
 
 use crate::index::{FileKind, Target};
 use crate::links::{encode_destination, link_path};
@@ -74,8 +74,12 @@ pub fn closest_targets(
             if spec.named(id).is_some() {
                 return Vec::new();
             }
+            let by_path = project
+                .model()
+                .api(api)
+                .is_some_and(|a| !matches!(a.reference, ApiReference::Template(_)));
             let path = local.path.clone().unwrap_or_default();
-            crate::openapi::closest_ids(spec, id)
+            crate::openapi::closest_ids(spec, id, by_path)
                 .into_iter()
                 .map(|closest| Closest {
                     path: path.clone(),
