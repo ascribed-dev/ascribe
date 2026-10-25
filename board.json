@@ -6073,6 +6073,42 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "Redirects 4: show lost addresses between checks, and a page's old addresses in This page"
+    },
+    {
+      "content": {
+        "body": "Phase 1 of [A page in the site output](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/resolve-emit/README.md). The plan is [phase-1-command.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/resolve-emit/phase-1-command.md); read it and the README's decisions 1 to 4 and \"Rules for every phase\" before starting. One pull request. **Needs nothing.**\n\n**What to build:** `ascribe_query::resolve` takes an `Emit` (`Plain`, `Site`); the site form calls `emit_page` with the build's `SiteEmitter`, as the preview does, without anchors, and drops the frontmatter block unless `--frontmatter`. `Resolved` gains `emit`, `\"plain\"` or `\"site\"`. `ascribe resolve --emit <plain|site>`, an `Option` defaulting to `plain`; a list, or `--emit` with `go:<name>`, is a usage error, exit `2`. The schema and its generated page, a decision file, the reference page's site form and its section on reading the site output, quill's Connect section as the tested example in `ascribe.examples.toml`, and `changes/command/resolve-emit.md`.\n\n**Done when:**\n- The goal's commands run in output tests, with their exit codes.\n- Output tests cover tabs, the site output's frontmatter keys under `--frontmatter`, a glossary link's `title`, an include, a line of a versioned build with its links under the line's base path, and a page the build doesn't publish.\n- The site form of a page equals `emit_page`'s output for it, in a test.\n- `node scripts/compare/outputs.ts --base main` shows no change.\n",
+        "number": 913,
+        "repository": "ascribed-dev/ascribe",
+        "title": "ascribe resolve --emit site: write a page as the site output does",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/913"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDTT24",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "ascribe resolve --emit site: write a page as the site output does"
+    },
+    {
+      "content": {
+        "body": "Phase 2 of [A page in the site output](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/resolve-emit/README.md). The plan is [phase-2-agents.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/resolve-emit/phase-2-agents.md); read it and the README's decisions and \"Rules for every phase\" before starting. One pull request. **Needs #913.**\n\n**What to build:** `ascribe_resolve` gains `emit` (`plain`, the default, or `site`), described as the command's option, with `go:<name>` and `emit` returned as the command's usage error; its description gains a site example. The skill's `ascribe resolve` line and the rules `ascribe agents sync` writes say to ask for `--emit site` to see what a reader of the site gets, linking the reference page's section on reading the site output. A decision file (decision 56), the surface map regenerated, `docs/content/agents/commands.md`, and `changes/agents/resolve-emit.md`.\n\n**Done when:**\n- The goal's call returns the site output's Markdown and `\"emit\": \"site\"`, in `crates/ascribe-cli/tests/all/mcp.rs`.\n- `ascribe agents sync`'s written rules mention `emit: \"site\"`, in their test.\n",
+        "number": 914,
+        "repository": "ascribed-dev/ascribe",
+        "title": "ascribe_resolve takes emit, and the agents' rules say when to ask for the site form",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/914"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDTT3Y",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "ascribe_resolve takes emit, and the agents' rules say when to ask for the site form"
     }
   ]
 }
