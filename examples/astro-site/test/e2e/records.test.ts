@@ -245,6 +245,8 @@ describe("a site at the host's root", () => {
     "User-agent: *\nDisallow: /docs/drafts/\n\nSitemap: https://docs.example.com/sitemap.xml\n";
   const SITEMAP = [
     "https://docs.example.com/",
+    // The API's reference, an Astro page of the site's own.
+    "https://docs.example.com/api",
     "https://docs.example.com/docs",
     `https://docs.example.com${UNQUOTED}`,
     `https://docs.example.com${NESTED}`,
@@ -368,6 +370,8 @@ describe("two projects", () => {
   }
   const SITEMAP = [
     "https://docs.example.com/",
+    // The API's reference, an Astro page of the site's own.
+    "https://docs.example.com/api",
     "https://docs.example.com/docs",
     `https://docs.example.com${UNQUOTED}`,
     `https://docs.example.com${NESTED}`,
@@ -474,6 +478,7 @@ describe("what a site leaves out", () => {
     try {
       expect(locations(await text(server.origin, "/docs/sitemap.xml"))).toEqual([
         "https://docs.example.com/docs",
+        "https://docs.example.com/docs/api",
         `https://docs.example.com${UNQUOTED}`,
     `https://docs.example.com${NESTED}`,
       ]);

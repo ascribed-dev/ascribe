@@ -14,11 +14,11 @@ A *problem* is what Ascribe found in your project, at one place. A *diagnostic* 
 - A diagnostic about `ascribe.toml` (a name that starts with `model-`) stops everything else when it's an error: every other check depends on the content model.
 - In the messages below, `{name}` stands for a value filled in from your source.
 
-The diagnostics are on seven pages, by what they're about:
+The diagnostics are on six pages, by what they're about:
 
 - [Directives](diagnostics/directives.md): attributes, directives and their containers, binding, titles, ids, includes, variants, availability, steps, details, and widgets.
 - [Links, pages, and sources](diagnostics/pages.md): links, images, phrases, headings, frontmatter, lists, files, snippets, source copies, acknowledgements, permalinks, memo files, navigation, and the glossary.
-- [The addresses file](diagnostics/addresses.md): `ascribe.addresses`, the addresses a base published that are lost, and the entries that no longer do what they say.
+- [The addresses file and API specs](diagnostics/project-files.md): `ascribe.addresses`, the addresses a base published, and the specs `[apis]` declares.
 - [The content model](diagnostics/content-model.md): `ascribe.toml`: the file, `[project]`, `[sources]`, content types, names, `[releases]`, phrases, and widgets.
 - [The content model's builds and site](diagnostics/content-model-builds.md): the rest of `ascribe.toml`: the consumer, builds, the editor, `[permalinks]`, `[crawlers]`, `[listing]`, and `[checks]`.
 - [Content checks](diagnostics/content-checks.md): the content's quality, which a project can set the level of: the checks of pages and of the project as a whole.

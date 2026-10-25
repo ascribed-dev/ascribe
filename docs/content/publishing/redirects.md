@@ -63,9 +63,9 @@ Moving a page back to where an entry says it was removes the entry. A page moved
 
 With the file, `ascribe check` lists every address the base published, in each build, and every address the working tree publishes, and reports what the base had that nothing accounts for. An address is accounted for when the working tree still publishes it, when an entry of `[moved]` leads it to a page a build publishes, when `[retired]` has it, or when an availability mark takes its page out of one build while another build publishes it.
 
-- **[`address-lost`](../checks/diagnostics/addresses.md#ASC255)**, a warning: a page's address, or its Markdown version's, once for each page, listing its addresses and, when it isn't every build, the builds. Forward it with `ascribe addresses move`, or retire it with `ascribe addresses retire`.
-- **[`anchor-lost`](../checks/diagnostics/addresses.md#ASC256)**, advice: a heading's explicit `@id` the base published on a page still published, which the page doesn't have now. A link to it lands at the top of the page, so it's advice for now. A generated id isn't kept: it changes with the heading's text.
-- **[`addresses-build-gone`](../checks/diagnostics/addresses.md#ASC258)**, advice: a build the base has and `ascribe.toml` doesn't, whose addresses aren't compared.
+- **[`address-lost`](../checks/diagnostics/project-files.md#ASC255)**, a warning: a page's address, or its Markdown version's, once for each page, listing its addresses and, when it isn't every build, the builds. Forward it with `ascribe addresses move`, or retire it with `ascribe addresses retire`.
+- **[`anchor-lost`](../checks/diagnostics/project-files.md#ASC256)**, advice: a heading's explicit `@id` the base published on a page still published, which the page doesn't have now. A link to it lands at the top of the page, so it's advice for now. A generated id isn't kept: it changes with the heading's text.
+- **[`addresses-build-gone`](../checks/diagnostics/project-files.md#ASC258)**, advice: a build the base has and `ascribe.toml` doesn't, whose addresses aren't compared.
 
 ```console
 $ git rm content/guides/teams/share-a-loom.md && ascribe check --base main --deny-warnings
@@ -103,15 +103,15 @@ With the base read, `ascribe check` also checks that each entry of `ascribe.addr
 
 | Diagnostic | Level | When |
 |---|---|---|
-| [`addresses-entry-not-a-page`](../checks/diagnostics/addresses.md#ASC259) | Error | A `[moved]` value isn't a page, or a heading on one, or a build that published the key doesn't publish it |
-| [`addresses-entry-live`](../checks/diagnostics/addresses.md#ASC260) | Advice | The key's source is back, as after a page is restored; the fix removes the entry |
-| [`addresses-entry-taken`](../checks/diagnostics/addresses.md#ASC261) | Error | Another page publishes an address the key had, so an old link lands on it |
-| [`addresses-entry-unpublished`](../checks/diagnostics/addresses.md#ASC262) | Advice | The base never published the key, and its file doesn't have the entry, as moving a page made on the same branch leaves; the fix removes it |
-| [`addresses-key-twice`](../checks/diagnostics/addresses.md#ASC263) | Error | A key is in the file twice, as a merge can leave; the file isn't used until one goes |
-| [`addresses-chain`](../checks/diagnostics/addresses.md#ASC264) | Advice | A `[moved]` value is another entry's key; the build writes where the chain ends, and the fix forwards it there |
-| [`addresses-anchor-collision`](../checks/diagnostics/addresses.md#ASC265) | Error | An id from a page that's gone is live on the page its page's addresses lead to, so a link to it lands there |
-| [`addresses-file-deleted`](../checks/diagnostics/addresses.md#ASC266) | Error | `ascribe.addresses` is gone, and the base has it; read only when `--base` names the base, as CI does |
-| [`addresses-soft-404`](../checks/diagnostics/addresses.md#ASC267) | Advice | Three addresses or more are forwarded to one index page or the home page |
+| [`addresses-entry-not-a-page`](../checks/diagnostics/project-files.md#ASC265) | Error | A `[moved]` value isn't a page, or a heading on one, or a build that published the key doesn't publish it |
+| [`addresses-entry-live`](../checks/diagnostics/project-files.md#ASC266) | Advice | The key's source is back, as after a page is restored; the fix removes the entry |
+| [`addresses-entry-taken`](../checks/diagnostics/project-files.md#ASC267) | Error | Another page publishes an address the key had, so an old link lands on it |
+| [`addresses-entry-unpublished`](../checks/diagnostics/project-files.md#ASC268) | Advice | The base never published the key, and its file doesn't have the entry, as moving a page made on the same branch leaves; the fix removes it |
+| [`addresses-key-twice`](../checks/diagnostics/project-files.md#ASC269) | Error | A key is in the file twice, as a merge can leave; the file isn't used until one goes |
+| [`addresses-chain`](../checks/diagnostics/project-files.md#ASC270) | Advice | A `[moved]` value is another entry's key; the build writes where the chain ends, and the fix forwards it there |
+| [`addresses-anchor-collision`](../checks/diagnostics/project-files.md#ASC271) | Error | An id from a page that's gone is live on the page its page's addresses lead to, so a link to it lands there |
+| [`addresses-file-deleted`](../checks/diagnostics/project-files.md#ASC272) | Error | `ascribe.addresses` is gone, and the base has it; read only when `--base` names the base, as CI does |
+| [`addresses-soft-404`](../checks/diagnostics/project-files.md#ASC273) | Advice | Three addresses or more are forwarded to one index page or the home page |
 
 Retiring a page that entries lead to retires them with it, for the same reason, and moving a page takes the entries that lead to its headings with it.
 

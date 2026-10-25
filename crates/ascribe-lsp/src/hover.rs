@@ -278,6 +278,10 @@ fn describe_resolution(ctx: &Ctx, resolution: &Resolution, destination: &str) ->
             }
         }
         Resolution::AssetMissing(_) => format!("**Not found:** `{destination}`"),
+        Resolution::Operation { api, id } => format!("Operation `{id}` of API `{api}`"),
+        Resolution::SpecOutside { api } => format!(
+            "The spec of API `{api}`, outside the project's folder: link to one of its operations"
+        ),
         Resolution::Route {
             suggestion,
             page_exists,

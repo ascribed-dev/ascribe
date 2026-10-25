@@ -1,0 +1,8 @@
+# The spec the cases in apis/ declare outside their project's folder.
+openapi: 3.1.0
+info: { title: Users, version: "1" }
+paths:
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [Users]

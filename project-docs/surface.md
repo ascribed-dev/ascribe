@@ -6,7 +6,7 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/publishing/redirects.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/publishing/redirects.md`, `docs/content/publishing/redirects.md`, `docs/content/publishing/redirects.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
@@ -109,12 +109,13 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 | `[permalinks]` | Names for something outside the docs to link to that no heading or page declares: a permalink that was ended on purpose, and another name for one. | §20 |
 | `[crawlers]` | What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. | §21 |
 | `[listing]` | How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type. | §22 |
+| `[apis.<name>]` | OpenAPI specs that pages link into, by name: each one's file, and where its reference is published. | §23 |
 
 ## Diagnostics
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-259 in all. By severity: 56 advice, 176 error, 27 warning. By level: 229 file, 30 page. By kind of next step: 56 choose, 21 fix, 10 outside, 12 review, 160 write.
+265 in all. By severity: 57 advice, 181 error, 27 warning. By level: 235 file, 30 page. By kind of next step: 57 choose, 21 fix, 11 outside, 12 review, 164 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -368,15 +369,21 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC256` | `anchor-lost` | advice | write | the id `{id}` in {path} was published at {addresses}, and the page doesn't have it now{builds} |
 | `ASC257` | `addresses-base-unreadable` | warning | outside | the addresses weren't compared with the base: {reason} |
 | `ASC258` | `addresses-build-gone` | advice | outside | the base has the build `{build}`, and ascribe.toml doesn't now, so its {count} addresses aren't compared |
-| `ASC259` | `addresses-entry-not-a-page` | error | choose | `{key}` is forwarded to `{value}`, which isn't a page of the project, so no build writes its redirect |
-| `ASC260` | `addresses-entry-live` | advice | fix | `{key}` is a source of the project again, so its entry in [{table}] does nothing; remove it |
-| `ASC261` | `addresses-entry-taken` | error | write | {address}, an address of `{key}`, is published by {source} now, so a reader who follows an old link to `{key}` lands on another page |
-| `ASC262` | `addresses-entry-unpublished` | advice | fix | the base never published `{key}`, so its entry in [{table}] keeps no address; remove it |
-| `ASC263` | `addresses-key-twice` | error | choose | `{key}` is in ascribe.addresses twice: {first}, and {second} |
-| `ASC264` | `addresses-chain` | advice | fix | `{key}` is forwarded to `{value}`, which is forwarded to `{next}` |
-| `ASC265` | `addresses-anchor-collision` | error | write | `{key}` is forwarded to `{value}`, and a link to `#{id}` follows its page's redirect to {page}, which has its own heading with the id `{id}`, so the link lands there |
-| `ASC266` | `addresses-file-deleted` | error | write | ascribe.addresses was deleted, and the base has it, with {count}: the build no longer writes their redirects, and the check no longer compares the addresses |
-| `ASC267` | `addresses-soft-404` | advice | write | {count} addresses are forwarded to {value}, {what}, so a reader who followed a link to one of them lands on a page without what they were looking for |
+| `ASC259` | `model-api-outside-repository` | error | write | the spec of API `{api}`, `{path}`, is outside the git repository the project is in |
+| `ASC260` | `model-api-reference` | error | write | the reference of API `{api}` has no `{{operationId}}`, so every operation's address would be the same |
+| `ASC261` | `api-spec-unreadable` | error | write | the spec of API `{api}`, `{path}`, can't be read: {reason} |
+| `ASC262` | `api-spec-empty` | advice | outside | the spec of API `{api}`, `{path}`, has no operations, so no link can name one |
+| `ASC263` | `link-operation-missing` | error | choose | `{path}` has no operation `{id}` |
+| `ASC264` | `link-spec-outside-project` | error | write | `{path}` is the spec of API `{api}`, outside the project's folder, which no output can copy; link to one of its operations, or to the published reference |
+| `ASC265` | `addresses-entry-not-a-page` | error | choose | `{key}` is forwarded to `{value}`, which isn't a page of the project, so no build writes its redirect |
+| `ASC266` | `addresses-entry-live` | advice | fix | `{key}` is a source of the project again, so its entry in [{table}] does nothing; remove it |
+| `ASC267` | `addresses-entry-taken` | error | write | {address}, an address of `{key}`, is published by {source} now, so a reader who follows an old link to `{key}` lands on another page |
+| `ASC268` | `addresses-entry-unpublished` | advice | fix | the base never published `{key}`, so its entry in [{table}] keeps no address; remove it |
+| `ASC269` | `addresses-key-twice` | error | choose | `{key}` is in ascribe.addresses twice: {first}, and {second} |
+| `ASC270` | `addresses-chain` | advice | fix | `{key}` is forwarded to `{value}`, which is forwarded to `{next}` |
+| `ASC271` | `addresses-anchor-collision` | error | write | `{key}` is forwarded to `{value}`, and a link to `#{id}` follows its page's redirect to {page}, which has its own heading with the id `{id}`, so the link lands there |
+| `ASC272` | `addresses-file-deleted` | error | write | ascribe.addresses was deleted, and the base has it, with {count}: the build no longer writes their redirects, and the check no longer compares the addresses |
+| `ASC273` | `addresses-soft-404` | advice | write | {count} addresses are forwarded to {value}, {what}, so a reader who followed a link to one of them lands on a page without what they were looking for |
 
 ## The VS Code extension
 
@@ -881,13 +888,15 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `checks/check.md` | `ascribe check`, `build`, and `fmt` | reference |
 | `checks/ci.md` | Checks in CI | how-to |
 | `checks/diagnostics.md` | Diagnostics | reference |
-| `checks/diagnostics/addresses.md` | Diagnostics: the addresses file | reference |
+| `checks/diagnostics.md` | Diagnostics | reference |
+| `checks/diagnostics.md` | Diagnostics | reference |
 | `checks/diagnostics/content-checks.md` | Diagnostics: content checks | reference |
 | `checks/diagnostics/content-model-builds.md` | Diagnostics: the content model's builds and site | reference |
 | `checks/diagnostics/content-model.md` | Diagnostics: the content model | reference |
 | `checks/diagnostics/directives.md` | Diagnostics: directives | reference |
 | `checks/diagnostics/output-checks.md` | Diagnostics: content checks of outputs and the site | reference |
 | `checks/diagnostics/pages.md` | Diagnostics: links, pages, and sources | reference |
+| `checks/diagnostics/project-files.md` | Diagnostics: the addresses file and API specs | reference |
 | `checks/external-links.md` | Check external links | how-to |
 | `checks/report-command.md` | `ascribe report` | reference |
 | `checks/report.md` | The project report | how-to |
@@ -945,10 +954,13 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `navigation/index.md` | Navigation | reference |
 | `navigation/order.md` | Put your pages in order | how-to |
 | `navigation/site-list.md` | Move a site's own list to the navigation | how-to |
+| `openapi/index.md` | Link to your API reference | how-to |
 | `permalinks/command.md` | `ascribe permalinks` | reference |
 | `permalinks/in-your-product.md` | Show the docs in your product | how-to |
 | `permalinks/index.md` | Permalinks | how-to |
 | `publishing/index.md` | Publishing | concept |
+| `publishing/redirects.md` | Keep the addresses you've published | how-to |
+| `publishing/redirects.md` | Keep the addresses you've published | how-to |
 | `publishing/redirects.md` | Keep the addresses you've published | how-to |
 | `publishing/site.md` | The head, sitemap, `robots.txt`, and headers | reference |
 | `review/ci-report.md` | Attach the review report to every pull request | how-to |

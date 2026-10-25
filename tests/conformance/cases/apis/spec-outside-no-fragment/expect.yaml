@@ -1,0 +1,8 @@
+description: >-
+  A link with no fragment to a declared spec outside the project's folder is
+  an error: no output has a place to copy the file to.
+spec: ["5.2", "9.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: link-spec-outside-project, file: index.md, line: 5}

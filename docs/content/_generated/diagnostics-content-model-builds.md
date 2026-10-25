@@ -315,6 +315,36 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [`[listing]`](../content-model/checks.md#22-listing) in the `ascribe.toml` reference.
 
+## `[apis]`
+
+### ASC259 `model-api-outside-repository`
+@id {permalink=true}: ASC259
+@summary: An API's spec is outside the project's repository, or, with no repository, outside the folder that was opened.
+
+Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+
+**When:** An API's spec is outside the project's repository, or, with no repository, outside the folder that was opened.
+
+**Message:** the spec of API `{api}`, `{path}`, is outside the git repository the project is in
+
+**Fix:** Give the API a `spec` inside the project's repository: a spec in another repository isn't read, so commit a copy of it, or the file your pipeline bundles. With no repository, the editor and `ascribe mcp` read a spec only inside the folder they were opened on: open the folder that contains it.
+
+**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+
+### ASC260 `model-api-reference`
+@id {permalink=true}: ASC260
+@summary: An API's `reference` is a template with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`.
+
+Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+
+**When:** An API's `reference` is a template with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`.
+
+**Message:** the reference of API `{api}` has no `{operationId}`, so every operation's address would be the same
+
+**Fix:** Write the template as your renderer addresses an operation, with `{operationId}` where the operation's id goes and `{tag}` for its first tag, such as `"/api/#/operations/{operationId}"` for Stoplight Elements. For Redoc, write `{ renderer = "redoc", at = "/api/" }` instead.
+
+**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+
 ## `[checks]`
 
 ### ASC142 `model-check-not-configurable`

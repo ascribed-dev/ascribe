@@ -85,6 +85,34 @@ Error · page level · next step: write · [SPEC §5.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
+### ASC263 `link-operation-missing`
+@id {permalink=true}: ASC263
+@summary: Target is an operation the declared spec doesn't have.
+
+Error · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
+
+**When:** Target is an operation the declared spec doesn't have.
+
+**Message:** `{path}` has no operation `{id}`
+
+**Fix:** Fix the `#` part, the operation's `operationId` as the spec writes it, or link to the operation that took its place. A spec generated from code can change an id when the code changes: setting ids in the code keeps them, and the links to them.
+
+**Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
+
+### ASC264 `link-spec-outside-project`
+@id {permalink=true}: ASC264
+@summary: Target is a declared spec outside the project's folder, with no operation.
+
+Error · file level · next step: write · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
+
+**When:** Target is a declared spec outside the project's folder, with no operation.
+
+**Message:** `{path}` is the spec of API `{api}`, outside the project's folder, which no output can copy; link to one of its operations, or to the published reference
+
+**Fix:** Add `#` and an operation's `operationId` to link to that operation in the published reference, or link to the reference's page itself. A spec outside the project's folder is read for its operations, and never copied into the outputs.
+
+**Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
+
 ## Images
 
 ### ASC042 `image-source-missing`

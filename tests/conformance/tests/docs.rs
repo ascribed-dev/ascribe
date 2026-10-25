@@ -183,7 +183,7 @@ fn the_diagnostics_reference_is_current() {
 const DIAGNOSTICS_PAGES: [(&str, &str); 7] = [
     ("directives", "diagnostics-directives.md"),
     ("pages", "diagnostics-pages.md"),
-    ("addresses", "diagnostics-addresses.md"),
+    ("project-files", "diagnostics-project-files.md"),
     ("content-model", "diagnostics-content-model.md"),
     (
         "content-model-builds",
@@ -198,9 +198,9 @@ const DIAGNOSTICS_PAGES: [(&str, &str); 7] = [
 const FIRST_ON_PAGES: &str = "Links";
 
 /// The first construct of the source-file diagnostics listed on the
-/// `addresses` page; those before it, from [`FIRST_ON_PAGES`], are on the
-/// `pages` page.
-const FIRST_ON_ADDRESSES: &str = "Addresses file";
+/// `project-files` page; those from `FIRST_ON_PAGES` to it are on the `pages`
+/// page.
+const FIRST_ON_PROJECT_FILES: &str = "Addresses file";
 
 /// The first rule group of the content model listed on the
 /// `content-model-builds` page; those before it are on the `content-model` page.
@@ -718,6 +718,20 @@ const SETTINGS_TABLES: &[SettingsTable] = &[
         releases: false,
     },
     SettingsTable {
+        name: "content-model-apis.md",
+        page: "_fragments/content-model/apis.md",
+        table: "apis.<name>",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
+        name: "content-model-apis-reference.md",
+        page: "_fragments/content-model/apis.md",
+        table: "apis.<name>.reference",
+        keys: &[],
+        releases: false,
+    },
+    SettingsTable {
         name: "content-model-permalinks-retired.md",
         page: "content-model/checks.md",
         table: "permalinks.retired.<name>",
@@ -959,6 +973,7 @@ const RULE_GROUPS: &[(&str, &str)] = &[
     ("permalinks", "`[permalinks]`"),
     ("crawlers", "`[crawlers]`"),
     ("listing", "`[listing]`"),
+    ("apis", "`[apis]`"),
     ("checks", "`[checks]`"),
 ];
 
@@ -971,7 +986,7 @@ const HEADER: &str = "@memo: Generated from tests/conformance/diagnostics.toml b
 
 /// The fragments, by file name: an index of every diagnostic, the
 /// source-file diagnostics in three (directives; links, pages, and sources;
-/// and the addresses file), the content model's in two (the file through its widgets, and
+/// and the addresses file and API specs), the content model's in two (the file through its widgets, and
 /// the consumer, builds, and the site's settings), and the content checks in two (pages and
 /// the project, and outputs, prose, links, the site, and examples). The index links to each entry on the page
 /// that includes its fragment (SPEC §4.2).
@@ -993,21 +1008,23 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         .iter()
         .position(|(construct, _)| *construct == FIRST_ON_PAGES)
         .unwrap_or_else(|| panic!("no construct {FIRST_ON_PAGES}: change FIRST_ON_PAGES"));
-    let addresses_split = constructs
+    let files_split = constructs
         .iter()
-        .position(|(construct, _)| *construct == FIRST_ON_ADDRESSES)
-        .unwrap_or_else(|| panic!("no construct {FIRST_ON_ADDRESSES}: change FIRST_ON_ADDRESSES"));
+        .position(|(construct, _)| *construct == FIRST_ON_PROJECT_FILES)
+        .unwrap_or_else(|| {
+            panic!("no construct {FIRST_ON_PROJECT_FILES}: change FIRST_ON_PROJECT_FILES")
+        });
     let mut directives = String::new();
     let mut source_pages = String::new();
-    let mut addresses = String::new();
+    let mut project_files = String::new();
     let mut page_of: BTreeMap<&str, &str> = BTreeMap::new();
     for (i, (construct, entries)) in constructs.into_iter().enumerate() {
         let (out, page) = if i < split {
             (&mut directives, "directives")
-        } else if i < addresses_split {
+        } else if i < files_split {
             (&mut source_pages, "pages")
         } else {
-            (&mut addresses, "addresses")
+            (&mut project_files, "project-files")
         };
         let _ = write!(out, "\n## {construct}\n");
         for (entry, condition) in entries {
@@ -1083,7 +1100,10 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
             with_memo(&directives),
         ),
         ("diagnostics-pages.md".to_owned(), with_memo(&source_pages)),
-        ("diagnostics-addresses.md".to_owned(), with_memo(&addresses)),
+        (
+            "diagnostics-project-files.md".to_owned(),
+            with_memo(&project_files),
+        ),
         (
             "diagnostics-content-model.md".to_owned(),
             with_memo(&content_model),

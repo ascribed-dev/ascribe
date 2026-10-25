@@ -73,7 +73,7 @@ async function copyVariant(variant: Variant): Promise<string> {
   const target = path.join(scratch, `parity-${variant.name}`);
   await rm(target, { recursive: true, force: true });
   await mkdir(target, { recursive: true });
-  for (const entry of ["astro.config.mjs", "ascribe.toml", "content", "src"]) {
+  for (const entry of ["astro.config.mjs", "ascribe.toml", "api", "content", "src"]) {
     await cp(path.join(siteDir, entry), path.join(target, entry), { recursive: true });
   }
   const edit = (file: string, change: (text: string) => string): void =>

@@ -39,7 +39,8 @@ fn repo() -> TempDir {
     dir
 }
 
-/// The example's model, with Netlify as its host, and its content.
+/// The example's model, with Netlify as its host, its content, and its
+/// API's spec.
 fn write_project(root: &Path) {
     let model = fs::read_to_string(example().join("ascribe.toml")).expect("the model");
     fs::write(
@@ -48,6 +49,7 @@ fn write_project(root: &Path) {
     )
     .expect("write the model");
     copy(&example().join("content"), &root.join("content"));
+    copy(&example().join("api"), &root.join("api"));
 }
 
 fn git(dir: &Path, args: &[&str]) -> String {

@@ -856,6 +856,7 @@ See [](keys.md#rotate-keys).
 - **Links between lines.** In a line of a versioned build (§9.3), a link to a page the line doesn't publish resolves, in order, to: the page that replaces it, or that it replaces, in this line, following a chain of `replaces` (§2.1) to the page this line publishes; then the page in the nearest line that publishes it, the closest newer line first, then the closest older, as a **link out** of the line. It's an error in that line only when no live line publishes the page. A link's `#id` is kept when the page it lands on has a heading with that id there, and is otherwise dropped, with advice. A link out keeps its text; empty text is the title the page has in the line it leads to. Outputs say which line a link out leads to (§9.4).
 - **Empty link text** is replaced by the target's title: the heading text when an id is given, and the page title otherwise. A page's title is its frontmatter `title`, which every content type requires (§7.2). When the content model reads code spans in `title`, the link text keeps them.
 - **External URLs** (with a scheme such as `https:`) are passed through unchanged.
+- **Operations.** A link to the spec of an API the content model declares (§7.11), with a fragment, is a link to one of its operations: the fragment, percent-decoded, is the operation's `operationId`, which the spec MUST have. `[Get a user](../api/openapi.yaml#getUser)` names `getUser`. The compiled link is the operation's address in the API's published reference. A link to the spec with no fragment is a link to the file, an asset (§9.4), when the spec is inside the project's folder; when it's outside, no output has a place for the file, and the link is an error. A link to any other file of the kind, such as a YAML file no API declares, is an asset.
 - **Routes.** At compile time, paths are rewritten into the consumer's URLs using the consumer profile (§9.5). Source files never contain routes. A destination that looks like a published route rather than a file path produces a warning offering conversion. A local destination looks like a route when it names no existing file and its last segment has no file extension or it ends in `/` (`/guides/install/`, `../guides/install`); it then gets that warning instead of a missing-file error.
 
 ### 5.3 Images
@@ -954,6 +955,7 @@ A content model declares the following.
 | Consumer profile | Routing, slugging, heading ids, HTML passthrough, images | §9.5 |
 | Builds | Named builds and their modes | §9.3 |
 | Sources | Named sets of files outside the content that pages may take code from: each one's folder or repository, and which of its files are readable | §4.8, §7.3, §7.4 |
+| APIs | Named OpenAPI specs that pages link into: each one's file, and where its reference is published | §5.2, §7.11 |
 | Acknowledgements | Problems of review checks about a phrase, feature, glossary term, or image that are intended, each with a reason | §4.9 |
 | Crawlers | What each kind of crawler may do, by purpose (gathering training data, building an AI search index, fetching at a person's request), and the project's own `robots.txt` lines, with paths from the project's base path. A crawler is named in one group; processors reject a content model that names one twice when loading it | §9.4 |
 | Listing | How pages are listed (§2.1): the site's default, and a value for the pages under a folder, by its path from the content root, or of a content type. A folder's value MUST NOT be looser than that of a folder it's under, and neither a folder's nor a type's looser than the default; processors reject a content model that does when loading it | §2.1 |
@@ -1160,6 +1162,21 @@ base-path = ["/docs/"]
 - A `[moved]` value that is another entry's key is a **chain**: the entry leads where the chain ends, and a chain that comes back to its start leads nowhere. A processor checks each entry against the base and the project now: a value that isn't a page a build publishes, a key whose source is back, an address the key had that another source publishes, an entry the base's file doesn't have whose key the base never published, a key twice in a table or in both, a chain, an id the key had that is live on the page it leads to, many entries leading to one index page, and the file deleted while the base has it.
 - A build's redirects come from the file alone, never the base: for each `[moved]` entry, each address its key had, as the build's routing makes it now, leads to where its value, or its chain, ends, permanently, unless the build publishes that address or it's the same address once case and a final `/` are ignored. Each `[retired]` key's addresses are gone, with the reason; a processor that builds a site serves a page at each that says why, with a 404.
 
+### 7.11 APIs
+
+A project MAY declare the OpenAPI specs its pages link into (§5.2), each by name, with its file and where its reference is published:
+
+```toml
+[apis.public]
+spec = "api/openapi.yaml"
+reference = { renderer = "redoc", at = "/api/" }
+```
+
+- An API's name follows the attribute key rule (ABNF rule `key`).
+- `spec` is one file, YAML or JSON (JSON when its name ends in `.json`), relative to the project's folder. It MAY be outside the folder, and when the project is in a version-control repository, it MUST be inside that same repository, as a source's `path` is (§7.3). It MUST exist and be readable as YAML or JSON. It's read as a file outside the content root, never as a source.
+- A processor reads, of the spec, each operation in `paths`: its method, its path, and its `operationId`, `summary`, first tag, and `deprecated`, the same way in Swagger 2.0 and in OpenAPI 3.0 to 3.2. It doesn't validate the spec, apply overlays, or follow a `$ref` into another file: a spec split across files is declared by its bundled file, the one its renderer is given.
+- `reference` says where an operation's address is. `{ renderer = "redoc", at = "<address>" }` names Redoc's page: an operation's address is `<address>#operation/<operationId>`. Any other value is a template of the address, whose placeholders are `{operationId}`, which it MUST have, and `{tag}`, the operation's first tag, each as the spec writes it and percent-encoded. An address that isn't absolute (with a scheme, or starting with `//`) is relative to the consumer profile's base path (§9.5).
+
 ---
 
 ## 8. Validation
@@ -1252,6 +1269,8 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Addresses file | An `#id` entry from a page that's gone whose id is live on the page its page's addresses lead to | Error |
 | Addresses file | `ascribe.addresses` deleted while the base has it | Error |
 | Addresses file | Many addresses forwarded to one index page or the home page | Advice |
+| APIs | A declared spec that doesn't exist, can't be read, or isn't YAML or JSON | Error |
+| APIs | A declared spec with no operations | Advice |
 | Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares | Error |
 | Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too | Error |
 | Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it | Error |
@@ -1275,6 +1294,8 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Links | Target id is removed by a build (page level, per build) | Error |
 | Links | Target page isn't published by a build (page level, per build) | Error |
 | Links | Destination is a route rather than a file path | Warning |
+| Links | Target is an operation the declared spec doesn't have | Error |
+| Links | Target is a declared spec outside the project's folder, with no operation | Error |
 | Images | Local source doesn't exist | Error |
 | Images | Missing alt text | Warning |
 | Images | Required image attribute missing | Error |
@@ -1450,7 +1471,7 @@ In the site output, emitters MUST place a blank line after each opening tag and 
 
 **Assets.** Every output is self-contained: it works without access to the source files. Local files a page references (image sources, and link targets that aren't pages) are copied into the output, and references to them are rewritten to point at the copies. A reference resolves from the file it's written in, so an image referenced inside an included fragment is the one beside the fragment (§4.2). The consumer profile decides where copies go and how references to them are written (§9.5), so that a consumer's own image processing still applies.
 
-A reference MUST resolve to a file inside the project root (the directory containing `ascribe.toml`) or the content root, and not inside the output directory; any other reference is treated as a file that doesn't exist (§8.2). File names MUST match exactly, including case, on every platform, so a project checks the same everywhere. References inside raw HTML aren't assets: they pass through unchanged, and the files they name aren't copied.
+A reference MUST resolve to a file inside the project root (the directory containing `ascribe.toml`) or the content root, and not inside the output directory; any other reference is treated as a file that doesn't exist (§8.2). The one exception is a link to an operation of a declared API (§5.2), whose spec MAY be outside the project's folder (§7.11): it names the operation, not the file, which isn't copied. File names MUST match exactly, including case, on every platform, so a project checks the same everywhere. References inside raw HTML aren't assets: they pass through unchanged, and the files they name aren't copied.
 
 ### 9.5 Consumer profile
 

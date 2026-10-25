@@ -136,6 +136,16 @@ pub(crate) fn check_files_with(
     if let Some(Err(problems)) = project.addresses() {
         sources.extend(problems.iter().map(Diagnostic::from_issue));
     }
+    // The specs are read with the source index, so they're asked of it only
+    // when the content model declares one.
+    if !project.model().apis.is_empty() {
+        let apis = project.link_index().apis();
+        sources.extend(
+            apis.problems(project.model(), FileId::new(0))
+                .iter()
+                .map(Diagnostic::from_issue),
+        );
+    }
     sources.extend(across.remove(&FileId::new(0)).unwrap_or_default());
     out.splice(model..model, sources);
     // The image files' come last, in path order.

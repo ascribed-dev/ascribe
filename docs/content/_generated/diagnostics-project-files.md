@@ -57,8 +57,8 @@ Advice · file level · next step: outside · [SPEC §7.10]({repo}/blob/main/SPE
 
 **Read more:** [What the check reports](../publishing/redirects.md#what-the-check-reports) in the guide to keeping addresses.
 
-### ASC259 `addresses-entry-not-a-page`
-@id {permalink=true}: ASC259
+### ASC265 `addresses-entry-not-a-page`
+@id {permalink=true}: ASC265
 @summary: A `[moved]` value that isn't a page, or a heading on one, in every build that published its key.
 
 Error · file level · next step: choose · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
@@ -71,8 +71,8 @@ Error · file level · next step: choose · [SPEC §7.10]({repo}/blob/main/SPEC.
 
 **Read more:** [The file's checks](../publishing/redirects.md#the-files-checks) in the guide to keeping addresses.
 
-### ASC260 `addresses-entry-live`
-@id {permalink=true}: ASC260
+### ASC266 `addresses-entry-live`
+@id {permalink=true}: ASC266
 @summary: A key of `[moved]` or `[retired]` whose source is back.
 
 Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
@@ -85,8 +85,8 @@ Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md
 
 **Read more:** [The file's checks](../publishing/redirects.md#the-files-checks) in the guide to keeping addresses.
 
-### ASC261 `addresses-entry-taken`
-@id {permalink=true}: ASC261
+### ASC267 `addresses-entry-taken`
+@id {permalink=true}: ASC267
 @summary: A key of `[moved]` or `[retired]` whose address another source publishes now.
 
 Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
@@ -99,8 +99,8 @@ Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.m
 
 **Read more:** [The file's checks](../publishing/redirects.md#the-files-checks) in the guide to keeping addresses.
 
-### ASC262 `addresses-entry-unpublished`
-@id {permalink=true}: ASC262
+### ASC268 `addresses-entry-unpublished`
+@id {permalink=true}: ASC268
 @summary: An entry the base's `ascribe.addresses` doesn't have, whose key the base never published.
 
 Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
@@ -113,8 +113,8 @@ Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md
 
 **Read more:** [The file's checks](../publishing/redirects.md#the-files-checks) in the guide to keeping addresses.
 
-### ASC263 `addresses-key-twice`
-@id {permalink=true}: ASC263
+### ASC269 `addresses-key-twice`
+@id {permalink=true}: ASC269
 @summary: A key written twice in a table, or in both `[moved]` and `[retired]`.
 
 Error · file level · next step: choose · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
@@ -127,8 +127,8 @@ Error · file level · next step: choose · [SPEC §7.10]({repo}/blob/main/SPEC.
 
 **Read more:** [The file's checks](../publishing/redirects.md#the-files-checks) in the guide to keeping addresses.
 
-### ASC264 `addresses-chain`
-@id {permalink=true}: ASC264
+### ASC270 `addresses-chain`
+@id {permalink=true}: ASC270
 @summary: A `[moved]` value that's another entry's key.
 
 Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
@@ -141,8 +141,8 @@ Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md
 
 **Read more:** [The file's checks](../publishing/redirects.md#the-files-checks) in the guide to keeping addresses.
 
-### ASC265 `addresses-anchor-collision`
-@id {permalink=true}: ASC265
+### ASC271 `addresses-anchor-collision`
+@id {permalink=true}: ASC271
 @summary: An `#id` entry from a page that's gone whose id is live on the page its page's addresses lead to.
 
 Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
@@ -155,8 +155,8 @@ Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.m
 
 **Read more:** [The file's checks](../publishing/redirects.md#the-files-checks) in the guide to keeping addresses.
 
-### ASC266 `addresses-file-deleted`
-@id {permalink=true}: ASC266
+### ASC272 `addresses-file-deleted`
+@id {permalink=true}: ASC272
 @summary: `ascribe.addresses` deleted while the base has it.
 
 Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
@@ -169,8 +169,8 @@ Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.m
 
 **Read more:** [The file's checks](../publishing/redirects.md#the-files-checks) in the guide to keeping addresses.
 
-### ASC267 `addresses-soft-404`
-@id {permalink=true}: ASC267
+### ASC273 `addresses-soft-404`
+@id {permalink=true}: ASC273
 @summary: Many addresses forwarded to one index page or the home page.
 
 Advice · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
@@ -182,3 +182,33 @@ Advice · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.
 **Fix:** Forward each to the page that has what it had, with `ascribe addresses move <old> <new>`, or retire the ones nothing replaces, with `ascribe addresses retire <old> --reason "…"`. A redirect to an index or the home page is a not-found page that answers 200, which search engines treat as one.
 
 **Read more:** [The file's checks](../publishing/redirects.md#the-files-checks) in the guide to keeping addresses.
+
+## APIs
+
+### ASC261 `api-spec-unreadable`
+@id {permalink=true}: ASC261
+@summary: A declared spec that doesn't exist, can't be read, or isn't YAML or JSON.
+
+Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+
+**When:** A declared spec that doesn't exist, can't be read, or isn't YAML or JSON.
+
+**Message:** the spec of API `{api}`, `{path}`, can't be read: \{reason}
+
+**Fix:** Fix `spec`, which is relative to the folder ascribe.toml is in, or fix the file. A spec generated from code has to be on disk when Ascribe runs, as it does for the renderer: generate it first. Ascribe reads one file, in YAML or JSON, as the renderer is given it: for a spec split across files, point `spec` at the bundled one.
+
+**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+
+### ASC262 `api-spec-empty`
+@id {permalink=true}: ASC262
+@summary: A declared spec with no operations.
+
+Advice · file level · next step: outside · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+
+**When:** A declared spec with no operations.
+
+**Message:** the spec of API `{api}`, `{path}`, has no operations, so no link can name one
+
+**Fix:** Check that `spec` names the spec you mean, and that it has a `paths` object with operations in it. A path item that's a `$ref` isn't followed: point `spec` at the bundled spec your renderer is given.
+
+**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.

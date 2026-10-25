@@ -797,32 +797,54 @@ pub const ADDRESSES_BASE_UNREADABLE: DiagnosticSlug = DiagnosticSlug("addresses-
 /// has and the working tree doesn't".
 pub const ADDRESSES_BUILD_GONE: DiagnosticSlug = DiagnosticSlug("addresses-build-gone");
 
-/// `ASC259`, error, file level: SPEC §8.2, "Addresses file | A `[moved]` value that isn't a page, or a heading on one, in every build that published its key".
+/// `ASC259`, error, file level: a content model loader rule.
+pub const MODEL_API_OUTSIDE_REPOSITORY: DiagnosticSlug =
+    DiagnosticSlug("model-api-outside-repository");
+
+/// `ASC260`, error, file level: a content model loader rule.
+pub const MODEL_API_REFERENCE: DiagnosticSlug = DiagnosticSlug("model-api-reference");
+
+/// `ASC261`, error, file level: SPEC §8.2, "APIs | A declared spec that
+/// doesn't exist, can't be read, or isn't YAML or JSON".
+pub const API_SPEC_UNREADABLE: DiagnosticSlug = DiagnosticSlug("api-spec-unreadable");
+
+/// `ASC262`, advice, file level: SPEC §8.2, "APIs | A declared spec with no
+/// operations".
+pub const API_SPEC_EMPTY: DiagnosticSlug = DiagnosticSlug("api-spec-empty");
+
+/// `ASC263`, error, file level: SPEC §8.2, "Links | Target is an operation
+/// the declared spec doesn't have".
+pub const LINK_OPERATION_MISSING: DiagnosticSlug = DiagnosticSlug("link-operation-missing");
+
+/// `ASC264`, error, file level: SPEC §8.2, "Links | Target is a declared spec
+/// outside the project's folder, with no operation".
+pub const LINK_SPEC_OUTSIDE_PROJECT: DiagnosticSlug = DiagnosticSlug("link-spec-outside-project");
+/// `ASC265`, error, file level: SPEC §8.2, "Addresses file | A `[moved]` value that isn't a page, or a heading on one, in every build that published its key".
 pub const ADDRESSES_ENTRY_NOT_A_PAGE: DiagnosticSlug = DiagnosticSlug("addresses-entry-not-a-page");
 
-/// `ASC260`, advice, file level: SPEC §8.2, "Addresses file | A key of `[moved]` or `[retired]` whose source is back".
+/// `ASC266`, advice, file level: SPEC §8.2, "Addresses file | A key of `[moved]` or `[retired]` whose source is back".
 pub const ADDRESSES_ENTRY_LIVE: DiagnosticSlug = DiagnosticSlug("addresses-entry-live");
 
-/// `ASC261`, error, file level: SPEC §8.2, "Addresses file | A key of `[moved]` or `[retired]` whose address another source publishes now".
+/// `ASC267`, error, file level: SPEC §8.2, "Addresses file | A key of `[moved]` or `[retired]` whose address another source publishes now".
 pub const ADDRESSES_ENTRY_TAKEN: DiagnosticSlug = DiagnosticSlug("addresses-entry-taken");
 
-/// `ASC262`, advice, file level: SPEC §8.2, "Addresses file | An entry the base's `ascribe.addresses` doesn't have, whose key the base never published".
+/// `ASC268`, advice, file level: SPEC §8.2, "Addresses file | An entry the base's `ascribe.addresses` doesn't have, whose key the base never published".
 pub const ADDRESSES_ENTRY_UNPUBLISHED: DiagnosticSlug =
     DiagnosticSlug("addresses-entry-unpublished");
 
-/// `ASC263`, error, file level: SPEC §8.2, "Addresses file | A key written twice in a table, or in both `[moved]` and `[retired]`".
+/// `ASC269`, error, file level: SPEC §8.2, "Addresses file | A key written twice in a table, or in both `[moved]` and `[retired]`".
 pub const ADDRESSES_KEY_TWICE: DiagnosticSlug = DiagnosticSlug("addresses-key-twice");
 
-/// `ASC264`, advice, file level: SPEC §8.2, "Addresses file | A `[moved]` value that's another entry's key".
+/// `ASC270`, advice, file level: SPEC §8.2, "Addresses file | A `[moved]` value that's another entry's key".
 pub const ADDRESSES_CHAIN: DiagnosticSlug = DiagnosticSlug("addresses-chain");
 
-/// `ASC265`, error, file level: SPEC §8.2, "Addresses file | An `#id` entry from a page that's gone whose id is live on the page its page's addresses lead to".
+/// `ASC271`, error, file level: SPEC §8.2, "Addresses file | An `#id` entry from a page that's gone whose id is live on the page its page's addresses lead to".
 pub const ADDRESSES_ANCHOR_COLLISION: DiagnosticSlug = DiagnosticSlug("addresses-anchor-collision");
 
-/// `ASC266`, error, file level: SPEC §8.2, "Addresses file | `ascribe.addresses` deleted while the base has it".
+/// `ASC272`, error, file level: SPEC §8.2, "Addresses file | `ascribe.addresses` deleted while the base has it".
 pub const ADDRESSES_FILE_DELETED: DiagnosticSlug = DiagnosticSlug("addresses-file-deleted");
 
-/// `ASC267`, advice, file level: SPEC §8.2, "Addresses file | Many addresses forwarded to one index page or the home page".
+/// `ASC273`, advice, file level: SPEC §8.2, "Addresses file | Many addresses forwarded to one index page or the home page".
 pub const ADDRESSES_SOFT_404: DiagnosticSlug = DiagnosticSlug("addresses-soft-404");
 
 /// Every slug, in registry order.
@@ -1077,6 +1099,12 @@ pub const ALL: &[DiagnosticSlug] = &[
     ANCHOR_LOST,
     ADDRESSES_BASE_UNREADABLE,
     ADDRESSES_BUILD_GONE,
+    MODEL_API_OUTSIDE_REPOSITORY,
+    MODEL_API_REFERENCE,
+    API_SPEC_UNREADABLE,
+    API_SPEC_EMPTY,
+    LINK_OPERATION_MISSING,
+    LINK_SPEC_OUTSIDE_PROJECT,
     ADDRESSES_ENTRY_NOT_A_PAGE,
     ADDRESSES_ENTRY_LIVE,
     ADDRESSES_ENTRY_TAKEN,
