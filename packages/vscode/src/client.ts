@@ -36,7 +36,7 @@ import { parseVersion } from "./version.js";
 export type { ServerState } from "./serverState.js";
 
 /** The notification that says what the server's comparison of the addresses found (`addresses.rs`). */
-export const ADDRESSES = "ascribe/addresses";
+const ADDRESSES = "ascribe/addresses";
 
 const OPEN_SETTINGS = "Open Settings";
 const SHOW_OUTPUT = "Show Output";
