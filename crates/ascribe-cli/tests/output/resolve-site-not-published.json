@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "page": "configure-legacy.md",
+  "build": "cloud",
+  "emit": "site",
+  "not_published": "build `cloud` doesn't publish `configure-legacy.md`: its available frontmatter makes it unavailable for the build's target and version",
+  "route": null,
+  "text": ""
+}
