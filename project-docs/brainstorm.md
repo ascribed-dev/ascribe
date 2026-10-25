@@ -5,7 +5,7 @@ Ideas for Ascribe that nobody has built, planned, or started. This is exploratio
 Written on 2 October 2026, after 0.1.1, and cut back on 11 October 2026 to what's still open. Most of what it held then has been built, and the rest of it has a plan or a proposal of its own, so it's gone from here:
 
 - **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, external links, and what's new since the last run), [a baseline](../docs/content/checks/baseline.md) of existing advice, [permalinks](../docs/content/permalinks/index.md), [embedded help](../docs/content/permalinks/in-your-product.md) with section summaries, [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), [versions](../docs/content/versions/index.md), [navigation](../docs/content/navigation/index.md), [the glossary as pages](../docs/content/content-model/glossary.md), a content model that says only what's the project's own ([shared frontmatter, defaults, and `[from]`](../docs/content/content-model/index.md)), the editor's [sidebar](../docs/content/editor/sidebar.md), with This page and the Project view, and Project Settings, [search](../docs/content/command/questions.md#ascribe-search), and what a search engine and a crawler are told, in [Publishing](../docs/content/publishing/index.md).
-- **Planned.** [Redirects](redirects/README.md), from its [proposal](proposals/redirects.md). **Proposed:** [its later steps](proposals/redirects-later.md).
+- **Planned.** [Redirects](redirects/README.md), from its [proposal](proposals/redirects.md). **Proposed:** [its later steps](proposals/redirects-later.md), and [a page in the site output, from the command line](proposals/resolve-emit.md) (section 22), now [planned](resolve-emit/README.md).
 - **Waiting.** [The rest of the cache](https://github.com/ascribed-dev/ascribe/blob/bb56bfb3/project-docs/proposals/cache.md) is built, apart from Vale's results, which wait for a project that needs them (section 15).
 
 The sections keep the numbers they had, since other documents name them, so the numbers have gaps.
@@ -97,7 +97,7 @@ Review dates, the inventory, external link checking, the checks for unused and o
 
 ### Redirects
 
-Proposed in [redirects](proposals/redirects.md), from the research in [Redirects for docs as code](reports/Redirects%20for%20docs%20as%20code.md).
+Planned in [redirects](redirects/README.md), from the research in [Redirects for docs as code](reports/Redirects%20for%20docs%20as%20code.md).
 
 Renaming or moving a page updates the links to it, and a permalink gives a product an address that doesn't move. Neither helps a bookmark or a link from another site to a page's old address. Ascribe could record a redirect from the old published address and emit it with the site. The Web Documentation Delivery Spec asks for same-host redirects when content moves.
 
@@ -165,7 +165,7 @@ Added 2026-10-18, from what the [editor's views plan](https://github.com/ascribe
 
 ## 22. A page in any output, from the command line
 
-Added 2026-10-20. Not planned.
+Added 2026-10-20. Proposed in [a page in the site output, from the command line](proposals/resolve-emit.md), which settles this section's questions: the site output first, no HTML, and an `emit` field in the JSON.
 
 `ascribe resolve`, `ascribe render` until [#665](https://github.com/ascribed-dev/ascribe/issues/665) renamed it, writes one page as a build's plain output writes it: SPEC §9's resolution, then the plain emitter. The rename leaves room for what the old name promised: a page in the other outputs, without building the project.
 
