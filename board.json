@@ -6187,7 +6187,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "OpenAPI 3: operations in the editor, and ascribe_link for agents"
     },
     {
@@ -6226,7 +6226,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "OpenAPI 5: check a marked JSON example against its operation's schema"
     },
     {
@@ -6244,7 +6244,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "OpenAPI 6: report operations no page links to"
     },
     {
@@ -6263,7 +6263,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "OpenAPI 7: put an operation in a page with @operation"
     },
     {
@@ -6294,7 +6294,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Don't suggest a method and path under a template, where taking it gives ASC274"
     }
   ]
