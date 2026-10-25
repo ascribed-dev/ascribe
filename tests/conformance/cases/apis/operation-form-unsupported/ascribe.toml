@@ -6,3 +6,6 @@ content-root = "files"
 [apis.public]
 spec = "api/openapi.yaml"
 reference = "/api/#/operations/{operationId}"
+
+[checks]
+api-operation-unreferenced = "off"

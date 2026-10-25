@@ -116,7 +116,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-269 in all. By severity: 59 advice, 183 error, 27 warning. By level: 239 file, 30 page. By kind of next step: 57 choose, 22 fix, 11 outside, 12 review, 167 write.
+270 in all. By severity: 60 advice, 183 error, 27 warning. By level: 240 file, 30 page. By kind of next step: 57 choose, 22 fix, 11 outside, 12 review, 168 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -389,6 +389,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC275` | `link-operation-by-path` | advice | fix | `#{operation}` names the operation `{id}` of `{path}` by its method and path; link to it by its id, `#{id}` |
 | `ASC276` | `link-operation-deprecated` | advice | write | `#{operation}` names an operation `{path}` marks deprecated |
 | `ASC281` | `operation-link-not-operation` | error | write | `{link}` isn't a link to an operation; `@operation` takes a declared API's spec, `#`, and an operation's `operationId` |
+| `ASC282` | `api-operation-unreferenced` | advice | write | no page links to `{operation}` ({method} {route}) in {path} |
 
 ## The VS Code extension
 
@@ -959,6 +960,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `navigation/index.md` | Navigation | reference |
 | `navigation/order.md` | Put your pages in order | how-to |
 | `navigation/site-list.md` | Move a site's own list to the navigation | how-to |
+| `openapi/coverage.md` | Find the operations no guide links to | how-to |
 | `openapi/editor.md` | Link to operations in the editor | how-to |
 | `openapi/index.md` | Link to your API reference | how-to |
 | `openapi/no-id.md` | Link to an operation with no id | how-to |

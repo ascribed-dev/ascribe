@@ -326,6 +326,23 @@ impl Writer<'_> {
                 e.unobserved,
             ))?;
         }
+        if let Some(apis) = i.apis.as_ref().filter(|a| !a.is_empty()) {
+            let counts = apis
+                .iter()
+                .map(|a| {
+                    format!(
+                        "{}: {} {}, {} linked, {} with a checked example",
+                        self.code(&a.api),
+                        a.operations,
+                        plural(a.operations, "operation", "operations"),
+                        a.linked,
+                        a.examples,
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("; ");
+            self.line(&format!("APIs: {counts}."))?;
+        }
         for (label, list) in [
             ("Overdue reviews", &i.overdue),
             ("Pages nothing links to", &i.orphans),

@@ -5097,3 +5097,19 @@ reference = "writing/directives.md#operation"
 row = "Links | An `@operation`'s link isn't to an operation of a declared API"
 message = "`{link}` isn't a link to an operation; `@operation` takes a declared API's spec, `#`, and an operation's `operationId`"
 fix = "Link to an operation of an API `[apis]` declares: the spec's path from this page, `#`, and the operation's `operationId`, or, for one with no id, its method in lowercase and its path, `../api/openapi.yaml#delete/users/{id}`. To link to a page or a file, write a link in the text instead."
+
+[[diagnostic]]
+code = "ASC282"
+slug = "api-operation-unreferenced"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+configurable = true
+area = "project"
+spec = "7.11"
+reference = "content-model/checks.md#23-apisname"
+when = "An operation of a declared spec, not marked `deprecated`, that no link names, by its id or by its method and path"
+message = "no page links to `{operation}` ({method} {route}) in {path}"
+messages.no-id = "no page links to {method} {route} in {path}, which has no `operationId`"
+fix = "Link to the operation from the guide that covers it, by its `operationId`, `openapi.yaml#getUser`, or by its method and path when it has none, `openapi.yaml#delete/users/{id}`. An operation a guide doesn't need to cover can be marked `deprecated` in the spec when it's on its way out, which leaves it out; for an API whose reference is enough on its own, turn the check off in [`[checks]`](content-model/checks.md#19-checks)."

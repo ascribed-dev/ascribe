@@ -866,6 +866,9 @@ pub const LINK_OPERATION_DEPRECATED: DiagnosticSlug = DiagnosticSlug("link-opera
 pub const OPERATION_LINK_NOT_OPERATION: DiagnosticSlug =
     DiagnosticSlug("operation-link-not-operation");
 
+/// `ASC282`, advice, file level: a content check (area `project`).
+pub const API_OPERATION_UNREFERENCED: DiagnosticSlug = DiagnosticSlug("api-operation-unreferenced");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -1137,6 +1140,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     LINK_OPERATION_BY_PATH,
     LINK_OPERATION_DEPRECATED,
     OPERATION_LINK_NOT_OPERATION,
+    API_OPERATION_UNREFERENCED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1195,6 +1199,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     SUMMARY_MISSING,
     SUMMARY_LONG,
     ADDRESSES_BASE_UNREADABLE,
+    API_OPERATION_UNREFERENCED,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

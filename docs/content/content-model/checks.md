@@ -166,7 +166,7 @@ In an older line of a versioned build, a page isn't looser than `older-lines` ei
 
 How to publish a reference and link to it is in [Link to your API reference](../openapi/index.md).
 
-**Rules.** `spec` is a path from the project root, relative (`model-path-absolute`), inside the git repository the project is in, when it's in one (`model-api-outside-repository`). A file that isn't there, that can't be read, or that isn't YAML or JSON is an error at `spec` (`api-spec-unreadable`), and one with no operations is advice (`api-spec-empty`). `reference` is a table with `renderer` and `at`, or a template with `{operationId}` and no placeholder but `{operationId}` and `{tag}` (`model-api-reference`). A link to an operation the spec doesn't have is an error at the link, with the closest ids as its fixes (`link-operation-missing`). No other key is allowed (`model-unknown-key`).
+**Rules.** `spec` is a path from the project root, relative (`model-path-absolute`), inside the git repository the project is in, when it's in one (`model-api-outside-repository`). A file that isn't there, that can't be read, or that isn't YAML or JSON is an error at `spec` (`api-spec-unreadable`), and one with no operations is advice (`api-spec-empty`). `reference` is a table with `renderer` and `at`, or a template with `{operationId}` and no placeholder but `{operationId}` and `{tag}` (`model-api-reference`). A link to an operation the spec doesn't have is an error at the link, with the closest ids as its fixes (`link-operation-missing`). An operation no link names, unless the spec marks it `deprecated`, is advice at `spec` (`api-operation-unreferenced`): see [Find the operations no guide links to](../openapi/coverage.md). No other key is allowed (`model-unknown-key`).
 
 ---
 

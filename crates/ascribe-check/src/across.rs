@@ -17,7 +17,9 @@
 //!   measures a description field's `default`, once, where `ascribe.toml`
 //!   writes it, since every page that leaves the field to it shares it;
 //!   and `frontmatter-field-repeated` compares each type's own fields with
-//!   `[frontmatter]`'s.
+//!   `[frontmatter]`'s; `api-operation-unreferenced` counts the links that
+//!   name each operation of a declared spec
+//!   (`ascribe_resolve::Project::api_coverage`).
 //! - **Per build**, from the build's resolved pages, so they're page level:
 //!   `page-orphan`, a page no other page the build publishes links to or
 //!   includes, which only the sidebar reaches, or nothing for one that's
@@ -76,6 +78,7 @@ const FILE_LEVEL: &[DiagnosticSlug] = &[
     diagnostics::CRAWLERS_DISALLOWED,
     diagnostics::DESCRIPTION_TOO_LONG,
     diagnostics::FRONTMATTER_FIELD_REPEATED,
+    diagnostics::API_OPERATION_UNREFERENCED,
 ];
 
 /// The checks of this module the editor doesn't report: an image isn't a
@@ -221,6 +224,10 @@ pub(crate) fn for_every_build(
         repeated_fields(project, &mut issues);
     }
 
+    if on(diagnostics::API_OPERATION_UNREFERENCED) {
+        unreferenced_operations(project, index, &mut issues);
+    }
+
     if on(diagnostics::IMAGE_UNUSED) || on(diagnostics::IMAGE_LARGE) {
         self::images(project, index, &on, &mut issues);
     }
@@ -284,6 +291,40 @@ fn line_ended(model: &ContentModel, today: Date, issues: &mut Vec<Issue>) {
                 .with_arg("line", end.line.text.clone())
                 .with_arg("date", end.date.to_string()),
             );
+        }
+    }
+}
+
+/// `api-operation-unreferenced`: each operation of a declared spec that no
+/// link names, by its id or by its method and path, at the API's `spec` in
+/// `ascribe.toml`, in the spec's order. A `deprecated` one is left out, since
+/// it's on its way out.
+fn unreferenced_operations(
+    project: &Project,
+    index: &ascribe_resolve::Project,
+    issues: &mut Vec<Issue>,
+) {
+    let model = project.model();
+    for coverage in index.api_coverage() {
+        let (Some(api), Some(spec)) = (model.api(&coverage.api), index.apis().spec(&coverage.api))
+        else {
+            continue;
+        };
+        let at = Location::new(FileId::new(0), api.spec_span);
+        for (operation, links) in spec.operations.iter().zip(&coverage.links) {
+            if *links > 0 || operation.deprecated {
+                continue;
+            }
+            let issue = Issue::new(diagnostics::API_OPERATION_UNREFERENCED, at)
+                .with_arg("method", operation.method.to_uppercase())
+                .with_arg("route", operation.path.clone())
+                .with_arg("path", api.spec.clone());
+            issues.push(match &operation.operation_id {
+                Some(id) => issue.with_arg("operation", id.clone()),
+                None => issue
+                    .with_variant("no-id")
+                    .with_arg("operation", operation.method_and_path()),
+            });
         }
     }
 }

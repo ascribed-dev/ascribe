@@ -17,7 +17,7 @@ Reports what state a project is in, section by section: what's too slow, needs t
 | Section | What it reports | Needs |
 |---|---|---|
 | `problems` | What `ascribe check` finds, counted by check, by file, and by kind of next step; and every problem acknowledged as intended, with its reason | Nothing |
-| `inventory` | The pages by content type and by owner; the overdue reviews, the pages nothing links to, and the entries nothing uses | Nothing |
+| `inventory` | The pages by content type and by owner; how many of each API's operations a link names; the overdue reviews, the pages nothing links to, and the entries nothing uses | Nothing |
 | `builds` | For each build, the pages and the content it leaves out that another build keeps, and why | Nothing |
 | `pages` | Every page's record, by build and sorted by address: its title, description, canonical address, and listing, and where the listing comes from | Nothing |
 | `links` | The external links that fail, time out, or moved permanently, each at its place in the source | [lychee](https://lychee.cli.rs), installed, and the network |
