@@ -112,6 +112,13 @@ describe("the addresses of examples/astro-site between checks", () => {
       /"Guides\/My Setup\.md" = "Guides\/Setup\.md"/,
     );
 
+    // The commands wrote the file outside the editor: the next move edits it
+    // once the server, and VS Code's file watcher with it, has seen it.
+    await waitFor("the addresses compared", () => {
+      const compared = api.ui.everyBuild.addresses(workspace());
+      return compared.kind === "made" && compared.lost === 0;
+    });
+
     // Another move isn't offered again: the file records it.
     api.ui.keepAddresses.answerNext(undefined);
     await move("Reference/Options.md", "Reference/Settings.md");
@@ -119,12 +126,14 @@ describe("the addresses of examples/astro-site between checks", () => {
   });
 
   it("reports nothing lost once the moves are recorded, and Health says so", async () => {
+    // The second move, made once the file existed, is the server's edit to
+    // it, unsaved.
+    const document = documentOf(addresses);
+    assert.ok(document?.isDirty, "ascribe.addresses isn't edited");
+    assert.match(document.getText(), /"Reference\/Options\.md" = "Reference\/Settings\.md"/);
+    assert.ok(await document.save(), "ascribe.addresses wasn't saved");
     await vscode.workspace.saveAll(false);
-    // The second move, made once the file existed, is the server's edit to it.
-    assert.match(
-      readFileSync(addresses.fsPath, "utf8"),
-      /"Reference\/Options\.md" = "Reference\/Settings\.md"/,
-    );
+    assert.equal(readFileSync(addresses.fsPath, "utf8"), document.getText());
     assert.deepEqual(await problemsThere("no problems", (p) => p.length === 0), []);
     const health = await waitFor("Health's count", async () => {
       const said = await againstTheBase();
