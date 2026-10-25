@@ -58,7 +58,7 @@ describe("the sidebar", () => {
     );
     await buildSite(root);
     expect(await sidebarOf(root)).toEqual([...START, ...REFERENCE, ...GUIDES]);
-    expect(await pagerOf(root, "reference/options/index.html")).toEqual([
+    expect(await pagerOf(root, "reference/options.html")).toEqual([
       "prev /docs Previous: Loom documentation",
       "next /docs/guides/my-setup Next: Set up Loom",
     ]);
@@ -78,7 +78,7 @@ describe("the sidebar", () => {
       ...REFERENCE,
     ]);
     expect(await pagerOf(root, "index.html")).toEqual(["next /docs/guides/my-setup Next: Setup"]);
-    const html = await readFile(path.join(root, "dist", "guides", "my-setup", "index.html"), "utf8");
+    const html = await readFile(path.join(root, "dist", "guides", "my-setup.html"), "utf8");
     expect(html).toContain("<h1>Set up Loom</h1>");
   });
 });

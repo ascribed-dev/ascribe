@@ -2,6 +2,7 @@
 // build on Ascribe errors and on routing that disagrees with ascribe.toml, it
 // serves `_ascribe/files/` in the dev server, and its markdown plugin works
 // under Astro's other processor too.
+import { existsSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -48,6 +49,18 @@ describe("the integration", () => {
     expect(String(failure)).toContain('trailing-slash is "never"');
   });
 
+  it("fails the Astro build when Astro's build.format would serve each page behind a redirect", async () => {
+    const root = await copySite("build-format");
+    await edit(path.join(root, "astro.config.mjs"), (text) =>
+      text.replace("integrations:", 'build: { format: "preserve" },\n  integrations:'),
+    );
+    const failure = await buildSite(root).then(
+      () => undefined,
+      (error: unknown) => error,
+    );
+    expect(String(failure)).toContain('Astro\'s `build.format` is "preserve"');
+  });
+
   it("builds a project with no [builds] table (the implicit `site` build), and reports an unknown build", async () => {
     const root = await copySite("implicit");
     await edit(path.join(root, "ascribe.toml"), (text) =>
@@ -92,6 +105,8 @@ describe("the integration", () => {
       await page.goto(`${server.origin}/`);
       await page.getByRole("link", { name: "setting up Loom" }).click();
       await page.waitForURL(`${server.origin}/guides/my-setup/`);
+      // Each page is a folder's `index.html`, which a host serves at the route with its `/`.
+      expect(existsSync(path.join(root, "dist", "guides", "my-setup", "index.html"))).toBe(true);
       await page.getByRole("link", { name: "documentation home" }).click();
       await page.waitForURL(`${server.origin}/`);
       expect(await page.locator("main > h1").textContent()).toBe("Loom documentation");

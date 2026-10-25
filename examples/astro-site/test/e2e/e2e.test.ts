@@ -3,7 +3,7 @@
 // built `ascribe` binary (`cargo build -p ascribe-cli`, or ASCRIBE_BIN) and
 // `pnpm --filter @ascribed/astro build` and `pnpm --filter @ascribed/elements build`.
 import { execFileSync } from "node:child_process";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { resolveBinary } from "@ascribed/cli/binary";
 import type { Browser, BrowserContext, Page } from "playwright-core";
@@ -46,6 +46,19 @@ describe("the built site", () => {
       const page = await open(route);
       await expect(page.locator("main > h1").textContent()).resolves.toBe(title);
       await page.close();
+    }
+  });
+
+  it("writes each page as the file a static host serves at its address, without a trailing slash", async () => {
+    // A host serves `x/index.html` at `x/`, so `x` would answer with a redirect.
+    const dist = path.join(siteDir, "dist");
+    for (const file of ["index.html", "guides/my-setup.html", "reference/options.html"]) {
+      expect(existsSync(path.join(dist, file)), file).toBe(true);
+    }
+    expect(existsSync(path.join(dist, "guides", "my-setup", "index.html"))).toBe(false);
+    // What agents read and the linked files are beside the pages, at their own addresses.
+    for (const file of ["llms.txt", "guides/my-setup.md", "_ascribe/files/downloads/loom.yaml"]) {
+      expect(existsSync(path.join(dist, file)), file).toBe(true);
     }
   });
 
