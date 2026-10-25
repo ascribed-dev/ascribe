@@ -173,13 +173,22 @@ impl AddressFile {
 
     /// Records that `old` moved to `new`: `[moved]`'s entry for `old`, in
     /// place of any `[retired]` one. Each entry that led to `old` leads to
-    /// `new` instead, so every pair stays flat; and an entry keyed by `new`,
-    /// whose source is back at its key, goes.
+    /// `new` instead, and one that led to a heading of the page `old`, to
+    /// that heading of `new`, so every pair stays flat; and an entry keyed by
+    /// `new`, whose source is back at its key, goes.
     pub fn record_move(&mut self, old: &str, new: &str) {
         self.retired.remove(old);
+        let page = !old.contains('#');
         for entry in self.moved.values_mut() {
             if entry.value == old {
                 entry.value = new.to_owned();
+            } else if let Some(id) = entry
+                .value
+                .strip_prefix(old)
+                .and_then(|rest| rest.strip_prefix('#'))
+                .filter(|_| page)
+            {
+                entry.value = format!("{new}#{id}");
             }
         }
         self.moved.insert(old.to_owned(), Entry::new(new));
@@ -571,6 +580,20 @@ mod tests {
             .map(|(k, e)| (k.as_str(), e.value.as_str()))
             .collect();
         assert_eq!(moved, [("b.md", "a.md"), ("c.md", "a.md")]);
+    }
+
+    #[test]
+    fn a_page_move_keeps_an_entry_to_one_of_its_headings() {
+        let mut file = AddressFile::default();
+        file.record_move("merged.md", "a.md#setup");
+        file.record_move("x.md", "a.mdx");
+        file.record_move("a.md", "b.md");
+        assert_eq!(file.moved["merged.md"].value, "b.md#setup");
+        // Only the page's own headings: a path that starts the same isn't it.
+        assert_eq!(file.moved["x.md"].value, "a.mdx");
+        // A heading's move changes only an entry to that heading.
+        file.record_move("b.md#setup", "b.md#install");
+        assert_eq!(file.moved["merged.md"].value, "b.md#install");
     }
 
     #[test]
