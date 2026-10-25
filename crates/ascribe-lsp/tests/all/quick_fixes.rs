@@ -1562,3 +1562,42 @@ fn a_generated_page_names_its_memo_and_offers_no_edit() {
     }
     assert!(fix_all(&mut client, &path).is_none());
 }
+
+#[test]
+fn moving_a_page_records_the_move_in_the_addresses_file_when_there_is_one() {
+    let rename = |f: &Fixture| {
+        let mut client = Client::start(&f.root());
+        client.settle();
+        let result = client
+            .request(
+                "workspace/willRenameFiles",
+                json!({
+                    "files": [{
+                        "oldUri": uri(&f.path("docs/keys.md")).as_str(),
+                        "newUri": uri(&f.path("docs/api-keys.md")).as_str()
+                    }]
+                }),
+            )
+            .response_result
+            .expect("will rename");
+        apply_workspace_edit(f, &result)
+    };
+    let f = quill();
+    write(
+        &f,
+        "ascribe.addresses",
+        "version = 1\n\n[moved]\n\n[retired]\n",
+    );
+    let changed = rename(&f);
+    assert!(changed.contains(&f.path("ascribe.addresses")));
+    assert!(
+        read(&f, "ascribe.addresses").contains("[moved]\n\"keys.md\" = \"api-keys.md\"\n"),
+        "{}",
+        read(&f, "ascribe.addresses")
+    );
+    // Without the file, a move records nothing.
+    let f = quill();
+    let changed = rename(&f);
+    assert!(!changed.contains(&f.path("ascribe.addresses")));
+    assert!(!f.path("ascribe.addresses").exists());
+}

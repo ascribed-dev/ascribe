@@ -935,13 +935,13 @@ mod tests {
             )
             .expect("replaces"),
             // A key of the same table that isn't taken is this file's.
-            file.add_entry(&["consumer"], "headers", Value::from("netlify"))
+            file.add_entry(&["consumer"], "host", Value::from("netlify"))
                 .expect("adds"),
         ];
         let finished = file.finish(edits).expect("checks");
         assert_eq!(
             finished.text,
-            "spec = \"0.1\"\n\n[from.\"../docs/ascribe.toml\"]\ntake = [\"releases\", \"consumer.site\", \"phrases.version\"]\n\n[consumer]\nbase-path = \"/\"\nheaders = \"netlify\"\n"
+            "spec = \"0.1\"\n\n[from.\"../docs/ascribe.toml\"]\ntake = [\"releases\", \"consumer.site\", \"phrases.version\"]\n\n[consumer]\nbase-path = \"/\"\nhost = \"netlify\"\n"
         );
         assert_eq!(finished.taken.len(), 1);
         assert_eq!(finished.taken[0].before, docs.text);
@@ -997,7 +997,7 @@ mod tests {
         assert!(file.add_table(&["releases", "other"], &[], &[]).is_err());
         // A key of the same table that isn't taken is this file's.
         assert!(
-            file.add_entry(&["consumer"], "headers", Value::from("netlify"))
+            file.add_entry(&["consumer"], "host", Value::from("netlify"))
                 .is_ok()
         );
     }

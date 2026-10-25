@@ -117,6 +117,27 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_query::RetireAnswer>(),
     },
     Shape {
+        file: "addresses-init",
+        title: "AddressesInitReport",
+        written_by: "`ascribe addresses init --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::addresses::InitJson>(),
+    },
+    Shape {
+        file: "addresses-record",
+        title: "AddressesRecordReport",
+        written_by: "`ascribe addresses move --format json` and `ascribe addresses retire --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::addresses::RecordJson>(),
+    },
+    Shape {
+        file: "addresses-list",
+        title: "AddressesListReport",
+        written_by: "`ascribe addresses list --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::addresses::ListJson>(),
+    },
+    Shape {
         file: "templates-eject",
         title: "TemplatesEjectReport",
         written_by: "`ascribe templates eject --format json`",
