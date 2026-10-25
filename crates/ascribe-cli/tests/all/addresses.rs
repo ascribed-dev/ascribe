@@ -456,3 +456,79 @@ fn deleting_the_file_the_base_has_is_an_error() {
     let out = ascribe(dir.path(), &["check", "--base", "HEAD"]);
     assert_eq!(code(&out), 0, "{}", both(&out));
 }
+
+/// The project with `ascribe.addresses`, committed on `main`, and a branch
+/// `handbook` where `base-path` is `/handbook/` and that's committed.
+fn rebased() -> TempDir {
+    let dir = repo();
+    let out = ascribe(dir.path(), &["addresses", "init"]);
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    commit(dir.path(), "Keep the addresses we publish");
+    git(dir.path(), &["switch", "-q", "-c", "handbook"]);
+    let model = fs::read_to_string(dir.path().join("ascribe.toml")).expect("the model");
+    fs::write(
+        dir.path().join("ascribe.toml"),
+        model.replace("base-path = \"/docs/\"", "base-path = \"/handbook/\""),
+    )
+    .expect("write the model");
+    commit(dir.path(), "Publish the docs as the handbook");
+    dir
+}
+
+/// Phase 3's goal: the base path changed is one warning, its fix records
+/// it, and the build forwards every address under the old base path, each
+/// page, Markdown version, permalink, and `llms.txt`; and still does once
+/// the base has moved past the change.
+#[test]
+fn a_base_path_changed_is_recorded_and_every_address_under_it_forwarded() {
+    let dir = rebased();
+    let out = ascribe(dir.path(), &["check", "--base", "main"]);
+    let text = both(&out);
+    assert!(
+        text.contains(
+            "Warning: base-path changed from \"/docs/\" to \"/handbook/\", so 14 addresses moved, 5 of them permalinks"
+        ) && text.contains("Help: Record the settings change: `ascribe check --fix`"),
+        "{text}"
+    );
+    assert_eq!(text.matches("address-lost").count(), 1, "{text}");
+
+    let out = ascribe(dir.path(), &["check", "--fix"]);
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    let addresses = fs::read_to_string(dir.path().join("ascribe.addresses")).expect("the file");
+    assert!(
+        addresses.contains("[former]\nbase-path = [\"/docs/\"]\n"),
+        "{addresses}"
+    );
+    let out = ascribe(dir.path(), &["check", "--base", "main", "--deny-warnings"]);
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    commit(dir.path(), "Record the base path");
+
+    let forwarded = |dir: &Path| {
+        let out = ascribe(dir, &["build"]);
+        assert_eq!(code(&out), 0, "{}", both(&out));
+        let host = site_file(dir, "_ascribe/host/_redirects");
+        for line in [
+            "/docs /handbook 301\n",
+            "/docs/guides/my-setup /handbook/guides/my-setup 301\n",
+            "/docs/guides/my-setup.md /handbook/guides/my-setup.md 301\n",
+            "/docs/go/options /handbook/go/options 301\n",
+            "/docs/go/legacy-sync /handbook/go/legacy-sync 301\n",
+            "/docs/llms.txt /handbook/llms.txt 301\n",
+        ] {
+            assert!(host.contains(line), "{line} in {host}");
+        }
+        host
+    };
+    let before = forwarded(dir.path());
+
+    // Merged, with the base moved past it: nothing to report, and the same
+    // redirects, from the file alone.
+    git(dir.path(), &["switch", "-q", "main"]);
+    git(dir.path(), &["merge", "-q", "--ff-only", "handbook"]);
+    fs::write(dir.path().join("README.md"), "Later work.\n").expect("write a file");
+    commit(dir.path(), "Later");
+    git(dir.path(), &["switch", "-q", "-c", "later"]);
+    let out = ascribe(dir.path(), &["check", "--base", "main", "--deny-warnings"]);
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    assert_eq!(forwarded(dir.path()), before);
+}

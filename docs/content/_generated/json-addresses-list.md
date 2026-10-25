@@ -36,7 +36,7 @@
       "description": "An address that leads somewhere else now.",
       "properties": {
         "entry": {
-          "description": "The `ascribe.addresses` key the pair comes from.",
+          "description": "The `ascribe.addresses` key the pair comes from; or, for a pair a\n`[former]` setting makes, `former.` and the setting:\n`former.base-path`, `former.permalink-path`, or `former.agents`.",
           "type": "string"
         },
         "from": {

@@ -4795,7 +4795,8 @@ reference = "publishing/redirects.md#what-the-check-reports"
 row = "Addresses file | A page's address, or its Markdown version's, that the base published and nothing accounts for"
 message = "{source} was published at {addresses}, and nothing publishes them now{builds}"
 messages.one = "{source} was published at {addresses}, and nothing publishes it now{builds}"
-fix = "Decide what a reader who follows an old link should get. When the content is somewhere else now, forward it: `ascribe addresses move <old> <new>` records where it went, and the build writes the redirect. When it's gone on purpose, retire it: `ascribe addresses retire <old> --reason \"…\"`. When it was deleted by mistake, restore the file. Moving a page with `ascribe rename`, or in the editor, records the move for you. The base is the default branch, or `--base`; see [Keep the addresses you've published](publishing/redirects.md)."
+messages.settings = "{changes}, so {moved}{builds}"
+fix = "Decide what a reader who follows an old link should get. When the content is somewhere else now, forward it: `ascribe addresses move <old> <new>` records where it went, and the build writes the redirect. When it's gone on purpose, retire it: `ascribe addresses retire <old> --reason \"…\"`. When it was deleted by mistake, restore the file. Moving a page with `ascribe rename`, or in the editor, records the move for you. When a routing setting moved them, as `base-path`, `permalink-path`, `agents`, or a build's name, `ascribe check --fix` records the old value in `[former]`, and the build forwards every address it moved. The base is the default branch, or `--base`; see [Keep the addresses you've published](publishing/redirects.md)."
 
 [[diagnostic]]
 code = "ASC256"

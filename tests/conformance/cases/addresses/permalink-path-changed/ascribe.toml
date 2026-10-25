@@ -1,0 +1,9 @@
+spec = "0.1"
+
+[consumer]
+profile = "astro"
+site = "https://docs.quill.dev"
+base-path = "/docs/"
+permalink-path = "/go/"
+
+[builds.site]

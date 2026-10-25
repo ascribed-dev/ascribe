@@ -595,8 +595,12 @@ fn compared_addresses(loaded: &Loaded, builds: &[String], base: BaseRead) -> Vec
     // `--build` compares those builds only; a build only the base has is
     // compared, as gone, when every build is checked.
     let every = loaded.project.model().builds.len() == builds.len();
+    // A build `[former]` renames is compared with the build it's now.
     published.builds.retain(|b| {
-        builds.contains(&b.build) || (every && loaded.project.model().build(&b.build).is_none())
+        let renamed = file.former.builds.get(&b.build);
+        builds.contains(&b.build)
+            || renamed.is_some_and(|new| builds.contains(new))
+            || (every && loaded.project.model().build(&b.build).is_none())
     });
     let mut out = ascribe_check::addresses::compare(&here, &published);
     out.extend(ascribe_check::addresses::entries(&here, Some(&published)));

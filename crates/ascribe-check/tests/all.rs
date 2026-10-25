@@ -9,6 +9,8 @@
 mod across;
 #[path = "all/addresses.rs"]
 mod addresses;
+#[path = "all/addresses_settings.rs"]
+mod addresses_settings;
 #[path = "all/checks.rs"]
 mod checks;
 #[path = "all/commands.rs"]

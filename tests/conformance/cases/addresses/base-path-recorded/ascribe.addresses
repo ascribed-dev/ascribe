@@ -1,0 +1,8 @@
+version = 1
+
+[moved]
+
+[former]
+base-path = ["/docs/"]
+
+[retired]
