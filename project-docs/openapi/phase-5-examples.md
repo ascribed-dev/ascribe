@@ -22,7 +22,7 @@ The exact names and text are phase 4's.
 
 ## Context
 
-- Phase 4's decision file; the proposal's phase 3 paragraph.
+- Phase 4's decision, [decision #920](../decisions/920-example-marker.md); the proposal's phase 3 paragraph.
 - The info string's attributes, as `title` and `tested` are parsed (SPEC §3 and the parser in `ascribe-syntax`).
 - Phase 1's reader, which gains request bodies, responses, and components.
 
