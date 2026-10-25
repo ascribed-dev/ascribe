@@ -57,7 +57,7 @@ webhooks:
     post: { operationId: ping }
 "#;
 
-const OPENAPI_3_2: &str = r#"
+const OPENAPI_3_2: &str = r##"
 openapi: 3.2.0
 info: { title: Search, version: "1" }
 paths:
@@ -69,7 +69,9 @@ paths:
         operationId: purgeSearch
   /shared:
     $ref: "./shared.yaml"
-"#;
+  /find:
+    $ref: "#/paths/~1search"
+"##;
 
 fn op(method: &str, path: &str, id: Option<&str>) -> (String, String, Option<String>) {
     (method.into(), path.into(), id.map(str::to_owned))
@@ -134,6 +136,7 @@ fn openapi_3_2_reads_query_and_other_methods_and_says_what_it_skipped() {
             op("purge", "/search", Some("purgeSearch")),
         ]
     );
+    // `/shared` is in another file; `/find` is `/search` again.
     assert_eq!(spec.unread.len(), 1, "{:?}", spec.unread);
 }
 

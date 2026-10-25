@@ -49,7 +49,7 @@ pub struct Spec {
     /// Its operations, in the order the spec writes them.
     pub operations: Vec<Operation>,
     /// The parts of `paths` that weren't read, each with why: a path item
-    /// that's a `$ref`, or one that isn't a mapping.
+    /// that's a `$ref` to another file, or one that isn't a mapping.
     pub unread: Vec<String>,
 }
 
@@ -107,9 +107,16 @@ fn spec_of(document: &Value) -> Spec {
             spec.unread.push(format!("`{path}` isn't a mapping"));
             continue;
         };
-        if item.contains_key("$ref") {
-            spec.unread
-                .push(format!("`{path}` is a `$ref`, which isn't followed"));
+        if let Some(reference) = item.get("$ref") {
+            // A pointer to another path item of `paths` is an alias of its
+            // operations, which are read where they are.
+            if !reference
+                .as_str()
+                .is_some_and(|r| r.starts_with("#/paths/"))
+            {
+                spec.unread
+                    .push(format!("`{path}` is a `$ref`, which isn't followed"));
+            }
             continue;
         }
         let operations = METHODS
