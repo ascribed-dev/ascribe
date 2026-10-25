@@ -14,6 +14,8 @@ mod incremental_support;
 mod links;
 mod support;
 
+#[path = "all/addresses.rs"]
+mod addresses;
 #[path = "all/build_content.rs"]
 mod build_content;
 #[path = "all/build_modes.rs"]

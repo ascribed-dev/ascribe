@@ -2,7 +2,7 @@
 //! the edges between files, and the problems found on the way.
 
 use ascribe_core::{FileId, Issue, Location, RelPath, Slugger, Span, diagnostics};
-use ascribe_model::{ContentModel, NAV_FILE, NavFile};
+use ascribe_model::{ADDRESSES_FILE, AddressFile, ContentModel, NAV_FILE, NavFile};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::{Arc, Mutex};
 
@@ -206,6 +206,14 @@ fn read_nav(fs: &dyn FileSystem) -> Option<Arc<NavFile>> {
     NavFile::parse(&text, FileId::new(0)).ok().map(Arc::new)
 }
 
+/// `ascribe.addresses` beside `ascribe.toml`, when it's there and reads.
+fn read_addresses(fs: &dyn FileSystem) -> Option<Arc<AddressFile>> {
+    let path = RelPath::parse(ADDRESSES_FILE).ok()?;
+    let bytes = fs.read_file(&path).ok()?;
+    let text = String::from_utf8(bytes).ok()?;
+    AddressFile::parse(&text, FileId::new(0)).ok().map(Arc::new)
+}
+
 fn insert_sorted<T>(list: &mut Vec<T>, item: T, key: impl Fn(&T) -> (RelPath, Span)) {
     let at = key(&item);
     let position = list.partition_point(|e| key(e) <= at);
@@ -270,6 +278,9 @@ pub struct Project {
     own_folder: Option<RelPath>,
     /// `ascribe.nav`, when the project has one that reads (SPEC §7.8).
     nav: Option<Arc<NavFile>>,
+    /// `ascribe.addresses`, when the project has one that reads (SPEC
+    /// §7.10), as it was when the project was loaded.
+    addresses: Option<Arc<AddressFile>>,
     /// Expansions worked out so far, by page. `None` records a path that
     /// isn't a file. Filled on demand; the incremental update drops the
     /// entries a change can affect (`crate::incremental`).
@@ -290,6 +301,7 @@ impl Clone for Project {
             nested: self.nested.clone(),
             own_folder: self.own_folder.clone(),
             nav: self.nav.clone(),
+            addresses: self.addresses.clone(),
             expansions: Mutex::new(self.expansion_cache().clone()),
         }
     }
@@ -373,6 +385,7 @@ impl Project {
             nested: folders.nested,
             own_folder: folders.own,
             nav: read_nav(fs),
+            addresses: read_addresses(fs),
             expansions: Mutex::new(HashMap::new()),
         };
         project.resolutions = project
@@ -406,6 +419,14 @@ impl Project {
     /// doesn't is `nav-invalid`, and the project has the default order.
     pub fn nav_file(&self) -> Option<&NavFile> {
         self.nav.as_deref()
+    }
+
+    /// `ascribe.addresses`, when the project has one and it reads; a file
+    /// that doesn't is `addresses-file-invalid`, and the project records no
+    /// addresses. As it was when the project was loaded: an incremental
+    /// update doesn't read it again.
+    pub fn addresses_file(&self) -> Option<&AddressFile> {
+        self.addresses.as_deref()
     }
 
     /// The project's navigation (SPEC §7.8): `ascribe.nav`'s order over the

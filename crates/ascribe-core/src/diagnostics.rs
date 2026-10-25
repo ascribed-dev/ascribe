@@ -776,6 +776,27 @@ pub const SUMMARY_MISSING: DiagnosticSlug = DiagnosticSlug("summary-missing");
 /// `ASC253`, advice, page level: a content check (area `pages`).
 pub const SUMMARY_LONG: DiagnosticSlug = DiagnosticSlug("summary-long");
 
+/// `ASC254`, error, file level: SPEC §8.2, "Addresses file | `ascribe.addresses`
+/// isn't valid TOML, or doesn't have the shape §7.10 gives it".
+pub const ADDRESSES_FILE_INVALID: DiagnosticSlug = DiagnosticSlug("addresses-file-invalid");
+
+/// `ASC255`, warning, file level: SPEC §8.2, "Addresses file | A page's
+/// address, or its Markdown version's, that the base published and nothing
+/// accounts for".
+pub const ADDRESS_LOST: DiagnosticSlug = DiagnosticSlug("address-lost");
+
+/// `ASC256`, advice, file level: SPEC §8.2, "Addresses file | A heading's
+/// explicit id that the base published on a page that's still published, and
+/// nothing accounts for".
+pub const ANCHOR_LOST: DiagnosticSlug = DiagnosticSlug("anchor-lost");
+
+/// `ASC257`, warning, file level: a content check (area `project`).
+pub const ADDRESSES_BASE_UNREADABLE: DiagnosticSlug = DiagnosticSlug("addresses-base-unreadable");
+
+/// `ASC258`, advice, file level: SPEC §8.2, "Addresses file | A build the base
+/// has and the working tree doesn't".
+pub const ADDRESSES_BUILD_GONE: DiagnosticSlug = DiagnosticSlug("addresses-build-gone");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -1023,6 +1044,11 @@ pub const ALL: &[DiagnosticSlug] = &[
     SUMMARY_IN_VARIANT,
     SUMMARY_MISSING,
     SUMMARY_LONG,
+    ADDRESSES_FILE_INVALID,
+    ADDRESS_LOST,
+    ANCHOR_LOST,
+    ADDRESSES_BASE_UNREADABLE,
+    ADDRESSES_BUILD_GONE,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1080,6 +1106,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     FRONTMATTER_FIELD_REPEATED,
     SUMMARY_MISSING,
     SUMMARY_LONG,
+    ADDRESSES_BASE_UNREADABLE,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries
