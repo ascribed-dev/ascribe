@@ -6279,6 +6279,23 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "Docs report: links and the published site"
+    },
+    {
+      "content": {
+        "body": "This came from the review of #928 ([the review's nit](https://github.com/ascribed-dev/ascribe/pull/928#pullrequestreview-5644137274)). It's a follow-up to #918.\n\nWhen a link points to an operation that doesn't exist, `closest_ids` (`crates/ascribe-resolve/src/openapi.rs`) suggests the closest operations. For an operation with no id, it suggests the method and path, such as `delete/looms/{id}`, and it does this even when the API's reference is a template. A template has no address for an operation with no id, so taking that suggestion turns `link-operation-missing` into `link-operation-form-unsupported` (ASC274), which is an error.\n\n**What to build:** when the reference is a template, leave out the method-and-path suggestions for operations with no id. Suggestions by id stay the same. Under Redoc nothing changes, because the method-and-path form works there.\n\n**Done when:**\n- A test shows that a missing operation under a template is offered only ids as its closest, and is never offered a method and path.\n- A test shows that under Redoc the same link is still offered the method and path.",
+        "number": 934,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Don't suggest a method and path under a template, where taking it gives ASC274",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/934"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDaq-k",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Don't suggest a method and path under a template, where taking it gives ASC274"
     }
   ]
 }
