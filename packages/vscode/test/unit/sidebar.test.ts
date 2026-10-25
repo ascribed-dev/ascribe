@@ -793,6 +793,7 @@ describe("the This page view", () => {
     builds: [],
     listing: null,
     permalinks: [],
+    alsoAnswersAt: [],
     template: null,
   };
   const about: PageAbout = {
@@ -1361,6 +1362,50 @@ describe("the This page view", () => {
     });
   });
 
+  it("lists the old addresses that lead to the page after its own, each naming its entry", () => {
+    const roots = thisPageRoots({
+      about: {
+        path: "security/keys.md",
+        fragment: false,
+        title: "Keys",
+        formattedTitle: null,
+        type: "page",
+        address: "/docs/security/keys/",
+        markdownAddress: null,
+        site: null,
+        description: null,
+        review: null,
+        availability: null,
+        builds: [],
+        listing: null,
+        permalinks: [],
+        alsoAnswersAt: [
+          { address: "/docs/guides/keys/", entry: "guides/keys.md" },
+          { address: "/docs/keys/", entry: "keys.md" },
+        ],
+        template: null,
+      },
+      heading: null,
+      linkedFrom: [],
+      includedBy: [],
+      memos: [],
+      health,
+      includes: [],
+    });
+    const about = roots[0];
+    expect(about?.kind).toBe("about");
+    const rows = about?.kind === "about" ? about.rows : [];
+    expect(rows.map((row) => [row.label, row.value])).toEqual([
+      ["Title", "Keys"],
+      ["Type", "page"],
+      ["Address", "/docs/security/keys/"],
+      ["Markdown", "not published"],
+      ["Also answers at", "/docs/guides/keys/"],
+      ["Also answers at", "/docs/keys/"],
+    ]);
+    expect(rows[4]?.tooltip).toContain("guides/keys.md");
+  });
+
   it("has nothing to show for a file that isn't a page", () => {
     expect(
       thisPageRoots({
@@ -1393,6 +1438,7 @@ describe("This page's items, as its webview draws them", () => {
       builds: [{ name: "site", leftOut: null }],
       listing: null,
       permalinks: [],
+      alsoAnswersAt: [],
       template: null,
     },
     heading: null,
@@ -1480,6 +1526,7 @@ describe("This page's head, its notices, and its badge", () => {
     builds: [],
     listing: null,
     permalinks: [],
+    alsoAnswersAt: [],
     template: null,
   };
 

@@ -185,9 +185,9 @@ export interface ProjectCheck {
  * aren't current, the action that brings them current.
  */
 export interface ProjectHealthGroup {
-  /** `everyBuild`, `asYouType`, or `lastSave`. */
+  /** `everyBuild`, `addresses`, `asYouType`, or `lastSave`. */
   key: string;
-  /** "Every build", "As you type", or "At the last save". */
+  /** "Every build", "Against the base", "As you type", or "At the last save". */
   label: string;
   /**
    * `current`: its counts are as the project is now. `outOfDate`: from a run

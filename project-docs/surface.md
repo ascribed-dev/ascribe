@@ -822,6 +822,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/fmt.schema.json` | FmtReport | What `ascribe fmt --format json` writes: one document. |
 | `schemas/init.schema.json` | InitReport | What `ascribe init` did. |
 | `schemas/link.schema.json` | LinkReport | What `ascribe link <TARGET> --from <PAGE>` answers. |
+| `schemas/lsp-addresses.schema.json` | AddressesParams | The parameters of `ascribe/addresses`: what the last comparison found. |
 | `schemas/lsp-agent-prompt.schema.json` | AgentPromptResult | The answer to `ascribe/agentPrompt`, or `null` when there's nothing to prompt about: the file has no problem, the diagnostic is no longer reported, review is off, or the page or fragment didn't change. |
 | `schemas/lsp-base-file.schema.json` | BaseFileResult | The answer to `ascribe/review/baseFile`. |
 | `schemas/lsp-build-view.schema.json` | BuildViewResult | The answer to `ascribe/buildView`. |

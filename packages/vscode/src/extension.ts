@@ -14,6 +14,7 @@ import { SyncedSkillKey, type SkillApi } from "./agents/skill.js";
 import { BuildLens, type BuildLensApi } from "./ui/buildLens.js";
 import { AgentFilesChecks, type AgentFilesApi } from "./ui/agentFiles.js";
 import { EveryBuildChecks, type EveryBuildApi } from "./ui/checkEveryBuild.js";
+import { KeepAddresses, type KeepAddressesApi } from "./ui/keepAddresses.js";
 import { ChosenBuilds } from "./ui/chosenBuild.js";
 import { projectKeys, STATE_NAMES } from "./ui/describe.js";
 import { BuildLenses } from "./ui/lens.js";
@@ -92,8 +93,10 @@ export interface AscribeApi {
     thisPage: ThisPageApi;
     /** The Pages and Content model views. */
     sidebar: SidebarApi;
-    /** Check Every Build's problems. */
+    /** Check Every Build's problems, and the server's about the addresses between checks. */
     everyBuild: EveryBuildApi;
+    /** Keep the addresses you've published, offered after a move. */
+    keepAddresses: KeepAddressesApi;
     /** The agent files' checks, which the Project view counts. */
     agentFiles: AgentFilesApi;
     /** Project Settings. */
@@ -154,6 +157,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     (context.extension.packageJSON as { version: string }).version,
   );
   checks.register();
+  const keepAddresses = new KeepAddresses(projects, context.workspaceState);
+  keepAddresses.register();
   const builds = new ProjectBuilds(projects, chosen, lenses, checks);
   builds.register();
   const statusBar = new StatusBar(projects, builds, chosen, lenses);
@@ -245,6 +250,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     chosen,
     lenses,
     checks,
+    keepAddresses,
     agentFiles,
     builds,
     statusBar,
@@ -364,6 +370,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       thisPage: sidebar.thisPageApi,
       sidebar: sidebar.api,
       everyBuild: checks.api,
+      keepAddresses: keepAddresses.api,
       agentFiles: agentFiles.api,
       projectSettings: settings.api,
       whenBuildsKnown: () => builds.whenSettled(),

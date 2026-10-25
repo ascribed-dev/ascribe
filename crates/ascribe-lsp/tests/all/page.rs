@@ -118,6 +118,7 @@ fn a_page_outside_any_heading_says_what_it_is_and_what_links_to_it() {
                 "range": null,
             },
             "permalinks": [],
+            "alsoAnswersAt": [],
             "template": null,
         })
     );
@@ -186,6 +187,7 @@ fn a_fragment_has_no_address_and_its_headings_are_linked_through_its_includers()
             "builds": [],
             "listing": null,
             "permalinks": [],
+            "alsoAnswersAt": [],
             "template": null,
         })
     );

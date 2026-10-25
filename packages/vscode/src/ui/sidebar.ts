@@ -969,6 +969,13 @@ export function thisPageRoots(
           ),
     );
   }
+  for (const old of about.alsoAnswersAt) {
+    rows.push({
+      label: "Also answers at",
+      value: old.address,
+      tooltip: `An old address, which the build redirects here: ascribe.addresses' entry for ${old.entry}`,
+    });
+  }
   rows.push(...aboutRows(about, context.uri));
   const links = byFile(page.linkedFrom);
   const includes = byFile(page.includedBy);

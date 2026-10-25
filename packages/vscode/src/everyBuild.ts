@@ -174,3 +174,35 @@ export function checkedText(
 function count(n: number, noun: string): string {
   return n === 0 ? "" : `${n} ${noun}${n === 1 ? "" : "s"}`;
 }
+
+/**
+ * A diagnostic as the language server writes it, in the protocol's shape:
+ * what `ascribe/addresses` sends, each with the data a published diagnostic
+ * carries.
+ */
+export interface ServerDiagnostic {
+  range: EditorRange;
+  /** 1 for an error, 2 a warning, 3 information, 4 a hint. */
+  severity?: number;
+  code?: string | number;
+  codeDescription?: { href: string };
+  message: string;
+  relatedInformation?: { location: { uri: string; range: EditorRange }; message: string }[];
+  data?: {
+    slug?: string;
+    fixes?: {
+      title: string;
+      applicability: string;
+      edits: { range: EditorRange; newText: string }[];
+    }[];
+  };
+}
+
+/** The fixes the server gives a diagnostic of `ascribe/addresses`, which edit its own file. */
+export function serverFixes(diagnostic: ServerDiagnostic): QuickFix[] {
+  return (diagnostic.data?.fixes ?? []).map((fix) => ({
+    title: fix.title,
+    safe: fix.applicability === "safe",
+    edits: fix.edits.map((edit) => ({ range: edit.range, newText: edit.newText })),
+  }));
+}

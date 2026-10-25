@@ -29,7 +29,7 @@ import type {
   ProjectHealthGroup,
 } from "../webview/viewProtocol.js";
 import type { AgentFilesResult } from "./agentFiles.js";
-import type { EveryBuildResult } from "./checkEveryBuild.js";
+import type { AddressesResult, EveryBuildResult } from "./checkEveryBuild.js";
 import { choices, lineDescription, type ListedBuild } from "./chosenBuild.js";
 import { STATE_NAMES } from "./describe.js";
 
@@ -43,6 +43,8 @@ export const PROJECT_KEYS = {
   reviews: "reviews",
   /** A permalinks list that's behind: the Problems panel, at it. */
   permalinks: "permalinks",
+  /** Pages whose published addresses are lost, against the base: the Problems panel, at `ascribe.addresses`. */
+  addresses: "addresses",
   /** Pages nothing links to or includes: Pages, with Orphans Only. */
   orphans: "orphans",
   /** Content model entries nothing uses: Content model, with Unused Only. */
@@ -106,6 +108,8 @@ export interface ProjectFacts {
   version: string | undefined;
   /** Its check of every build. */
   everyBuild: EveryBuildResult;
+  /** What its server last found comparing its addresses with the base's. */
+  addresses: AddressesResult;
   /** What its server's inventory counts, while it has one. */
   inventory: InventoryCounts | undefined;
   /** Its check of its agent files. */
@@ -434,6 +438,7 @@ const COUNTS = {
   examples: { key: PROJECT_KEYS.examples, label: "Tested examples" },
   reviews: { key: PROJECT_KEYS.reviews, label: "Reviews overdue" },
   permalinks: { key: PROJECT_KEYS.permalinks, label: "Permalinks behind" },
+  addresses: { key: PROJECT_KEYS.addresses, label: "Addresses lost" },
   orphans: { key: PROJECT_KEYS.orphans, label: "Pages nothing links to" },
   unused: { key: PROJECT_KEYS.unused, label: "Unused model entries" },
   agentFiles: { key: PROJECT_KEYS.agentFiles, label: "Agent files out of date" },
@@ -441,9 +446,19 @@ const COUNTS = {
 
 const CHECK: ProjectCheck = { key: CHECK_EVERY_BUILD.key, label: CHECK_EVERY_BUILD.label };
 
-/** Health's groups: every build's counts, those as you type, and the agent files'. */
+/**
+ * Health's groups: every build's counts, the addresses lost against the
+ * base for a project that keeps them, those as you type, and the agent
+ * files'.
+ */
 function healthGroups(facts: ProjectFacts): ProjectHealthGroup[] {
-  return [everyBuildGroup(facts), asYouTypeGroup(facts), lastSaveGroup(facts)];
+  const addresses = addressesGroup(facts);
+  return [
+    everyBuildGroup(facts),
+    ...(addresses ? [addresses] : []),
+    asYouTypeGroup(facts),
+    lastSaveGroup(facts),
+  ];
 }
 
 /** A count, current, of `value`: `0`, dimmed, for none, which opens nothing. */
@@ -575,6 +590,56 @@ function checkedWhen(at: number, { time, day, now }: ProjectFacts): string {
   // In the hour after a day of 23, when the clocks went forward, this gives the day before: it names it.
   const yesterday = day(now - 24 * 60 * 60 * 1000);
   return on === yesterday ? `yesterday at ${time(at)}` : `on ${on} at ${time(at)}`;
+}
+
+/**
+ * The pages whose published addresses are lost, from the language
+ * server's comparison with the base, which runs again after each save and
+ * change on disk, so it's current between checks of every build: the
+ * head says which base, and when. `undefined` for a project without
+ * `ascribe.addresses`, which compares nothing.
+ */
+export function addressesGroup({
+  addresses,
+  state,
+  time,
+}: ProjectFacts): ProjectHealthGroup | undefined {
+  const head = { key: "addresses", label: "Against the base" };
+  const bases = [COUNTS.addresses];
+  switch (addresses.kind) {
+    case "off":
+      return undefined;
+    case "unknown":
+      return state === "running" || state === "starting"
+        ? notCurrent(head, bases, "running", "comparing…", null)
+        : notCurrent(
+            head,
+            bases,
+            "unknown",
+            `compared while the language server runs: it's ${STATE_NAMES[state]}`,
+            null,
+          );
+    case "made": {
+      const at = time(addresses.at);
+      if (addresses.lost === null || addresses.base === null) {
+        return notCurrent(
+          head,
+          bases,
+          "outOfDate",
+          `not compared at ${at}: the Problems panel says why`,
+          null,
+        );
+      }
+      const n = addresses.lost;
+      return {
+        ...head,
+        state: "current",
+        note: `${addresses.base.requested} at ${at}`,
+        action: null,
+        counts: [counted(COUNTS.addresses, n, count(n, "page"))],
+      };
+    }
+  }
 }
 
 /**

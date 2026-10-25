@@ -4,6 +4,7 @@ import type { InventoryResult } from "../../src/shapes.js";
 import type { AgentFilesResult } from "../../src/ui/agentFiles.js";
 import type { EveryBuildResult } from "../../src/ui/checkEveryBuild.js";
 import {
+  addressesGroup,
   asYouTypeGroup,
   everyBuildGroup,
   inventoryCounts,
@@ -30,6 +31,7 @@ const facts = (everyBuild: EveryBuildResult, more: Partial<ProjectFacts> = {}): 
   state: "running",
   version: "0.4.0",
   everyBuild,
+  addresses: { kind: "off" },
   inventory: { orphans: 0, unused: 0 },
   agentFiles: { kind: "made", at: 7000, stale: [], error: null, current: true },
   now: 6000,
@@ -466,6 +468,76 @@ describe("asYouTypeGroup", () => {
       state: "unknown",
       note: "counted while the language server runs: it's failed",
       action: null,
+    });
+  });
+});
+
+describe("addressesGroup", () => {
+  const base = { requested: "main", commit: "abc", merge_base: "abc" };
+
+  it("isn't shown for a project without ascribe.addresses, which compares nothing", () => {
+    expect(addressesGroup(facts(made(true)))).toBeUndefined();
+    const groups = projectAnswer(facts(made(true))).health.map((group) => group.key);
+    expect(groups).toEqual(["everyBuild", "asYouType", "lastSave"]);
+  });
+
+  it("counts the pages lost against the base, current between checks, after Every build", () => {
+    const answer = projectAnswer(
+      facts(made(true), { addresses: { kind: "made", at: 5000, lost: 1, base } }),
+    );
+    expect(answer.health.map((group) => group.key)).toEqual([
+      "everyBuild",
+      "addresses",
+      "asYouType",
+      "lastSave",
+    ]);
+    const group = answer.health[1];
+    expect(group).toMatchObject({
+      label: "Against the base",
+      state: "current",
+      note: "main at 5s",
+      action: null,
+    });
+    expect(group?.counts).toEqual([
+      expect.objectContaining({
+        key: PROJECT_KEYS.addresses,
+        label: "Addresses lost",
+        value: "1 page",
+        state: "current",
+        opens: true,
+      }),
+    ]);
+    // Even when the check of every build is out of date: a page deleted since.
+    const out = projectAnswer(
+      facts(made(false), { addresses: { kind: "made", at: 5000, lost: 2, base } }),
+    );
+    expect(out.health[1]?.counts[0]).toMatchObject({ state: "current", value: "2 pages" });
+    const none = addressesGroup(
+      facts(made(true), { addresses: { kind: "made", at: 5000, lost: 0, base } }),
+    );
+    expect(none?.counts[0]).toMatchObject({ state: "none", value: "0", opens: false });
+  });
+
+  it("shows a dash while the server compares, while it isn't running, and when the base can't be read", () => {
+    expect(addressesGroup(facts(made(true), { addresses: { kind: "unknown" } }))).toMatchObject({
+      state: "running",
+      note: "comparing…",
+      counts: [{ value: "—" }],
+    });
+    expect(
+      addressesGroup(facts(made(true), { addresses: { kind: "unknown" }, state: "stopped" })),
+    ).toMatchObject({
+      state: "unknown",
+      note: "compared while the language server runs: it's not started",
+    });
+    expect(
+      addressesGroup(
+        facts(made(true), { addresses: { kind: "made", at: 5000, lost: null, base: null } }),
+      ),
+    ).toMatchObject({
+      state: "outOfDate",
+      note: "not compared at 5s: the Problems panel says why",
+      counts: [{ value: "—" }],
     });
   });
 });
