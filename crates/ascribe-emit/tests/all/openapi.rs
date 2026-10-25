@@ -118,3 +118,25 @@ fn openapi_the_json_output_gives_an_operation_target() {
     );
     assert_eq!(links[1]["target"]["operationId"], "activity/list invoices");
 }
+
+#[test]
+fn openapi_an_older_line_links_to_the_site_s_reference() {
+    let model = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n\
+        [dimensions.deployment]\nvalues = [\"cloud\", \"self-managed\"]\nversionless = [\"cloud\"]\n\n\
+        [releases.self-managed]\nlive = [\"3.4\", \"3.5\"]\n\n\
+        [consumer]\nbase-path = \"/docs/\"\n\n\
+        [builds.site]\nversions = \"self-managed\"\n\n\
+        [apis.public]\nspec = \"api/openapi.yaml\"\nreference = { renderer = \"redoc\", at = \"/api/\" }\n";
+    let project = memory_project_with_files(
+        model,
+        &[("guide.md", &page(LINKS))],
+        &[("api/openapi.yaml", SPEC)],
+    );
+    for build in ["site", "site@3.4"] {
+        let out = site(&project, build, "guide.md");
+        assert!(
+            out.contains("[Get a user](/docs/api/#operation/getUser)"),
+            "{build}: {out}"
+        );
+    }
+}

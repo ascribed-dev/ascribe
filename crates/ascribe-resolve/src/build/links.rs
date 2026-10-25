@@ -146,12 +146,14 @@ impl<'p> Links<'_, 'p> {
             return LinkTarget::Unresolved;
         };
         let address = declared.reference.address(id, operation.tag.as_deref());
+        // The reference is the site's, not a line's: an older line's link
+        // goes to the same address.
         let address = if is_absolute_address(&address) {
             address
         } else {
             format!(
                 "{}/{}",
-                model.consumer.base_path.trim_end_matches('/'),
+                self.resolver.site_base().trim_end_matches('/'),
                 address.trim_start_matches('/')
             )
         };
