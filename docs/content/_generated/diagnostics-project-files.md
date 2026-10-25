@@ -215,8 +215,8 @@ Advice · file level · next step: outside · [SPEC §7.11]({repo}/blob/main/SPE
 
 ## Examples
 
-### ASC276 `example-schema-mismatch`
-@id {permalink=true}: ASC276
+### ASC277 `example-schema-mismatch`
+@id {permalink=true}: ASC277
 @summary: A marked example that disagrees with its body's schema.
 
 Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
@@ -229,8 +229,8 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 
 **Read more:** [What's checked](../openapi/examples.md#whats-checked) in the guide to checked examples.
 
-### ASC277 `example-not-json`
-@id {permalink=true}: ASC277
+### ASC278 `example-not-json`
+@id {permalink=true}: ASC278
 @summary: A marked example that isn't JSON, or isn't a `json` block.
 
 Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
@@ -243,8 +243,8 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 
 **Read more:** [Mark an example](../openapi/examples.md#mark-an-example) in the guide to checked examples.
 
-### ASC278 `example-body-missing`
-@id {permalink=true}: ASC278
+### ASC279 `example-body-missing`
+@id {permalink=true}: ASC279
 @summary: A marked example whose operation has no body it names.
 
 Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
@@ -257,8 +257,8 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 
 **Read more:** [Mark an example](../openapi/examples.md#mark-an-example) in the guide to checked examples.
 
-### ASC279 `example-schema-unsupported`
-@id {permalink=true}: ASC279
+### ASC280 `example-schema-unsupported`
+@id {permalink=true}: ASC280
 @summary: A marked example whose schema can't all be checked.
 
 Advice · file level · next step: outside · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
