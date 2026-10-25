@@ -37,6 +37,7 @@ fn available(builtin: Builtin) -> Option<&'static str> {
         | Builtin::Memo
         | Builtin::Term => None,
         Builtin::Summary => Some("ascribe 0.4.3"),
+        Builtin::Operation => Some("ascribe planned"),
     }
 }
 
@@ -50,6 +51,7 @@ fn primary(builtin: Builtin, schema: &DirectiveSchema) -> String {
             Builtin::Id => "an id",
             Builtin::Include => "a path",
             Builtin::Snippet => "an address",
+            Builtin::Operation => "a link to an operation",
             Builtin::Intended => "a reason",
             Builtin::Memo => "text",
             _ => panic!(

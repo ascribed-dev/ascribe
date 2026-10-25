@@ -1,0 +1,14 @@
+description: >-
+  An `@operation` whose link isn't to an operation of a declared API is an
+  error at its primary: a page, the spec with no `#`, a URL, or a YAML file
+  no API declares. A link to a file that doesn't exist is the link's own
+  error.
+spec: ["4.13", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: operation-link-not-operation, file: index.md, line: 5, column: 13}
+  - {slug: operation-link-not-operation, file: index.md, line: 7, column: 13}
+  - {slug: operation-link-not-operation, file: index.md, line: 9, column: 13}
+  - {slug: operation-link-not-operation, file: index.md, line: 11, column: 13}
+  - {slug: link-target-missing, file: index.md, line: 13, column: 13}

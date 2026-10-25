@@ -76,11 +76,13 @@ pub enum Builtin {
     Term,
     /// `@summary` (§4.12).
     Summary,
+    /// `@operation` (§4.13).
+    Operation,
 }
 
 impl Builtin {
     /// Every built-in directive, in SPEC §4 order.
-    pub const ALL: [Builtin; 12] = [
+    pub const ALL: [Builtin; 13] = [
         Builtin::Id,
         Builtin::Include,
         Builtin::Variant,
@@ -93,6 +95,7 @@ impl Builtin {
         Builtin::Memo,
         Builtin::Term,
         Builtin::Summary,
+        Builtin::Operation,
     ];
 
     /// The keyword, without `@`.
@@ -110,6 +113,7 @@ impl Builtin {
             Builtin::Memo => "memo",
             Builtin::Term => "term",
             Builtin::Summary => "summary",
+            Builtin::Operation => "operation",
         }
     }
 
@@ -277,7 +281,23 @@ impl Builtin {
                 ),
                 ..base
             },
+            Builtin::Operation => operation_schema(base),
         }
+    }
+}
+
+/// `@operation`'s schema (SPEC §4.13), apart from what every built-in
+/// shares: a link to an operation of a declared API.
+fn operation_schema(base: DirectiveSchema) -> DirectiveSchema {
+    DirectiveSchema {
+        primary: Primary::Identifier { required: true },
+        binding: Some(Binding::SelfBound),
+        description: Some(
+            "Put an operation of a declared API in the page: its method, path, \
+             and summary, linked to its reference."
+                .into(),
+        ),
+        ..base
     }
 }
 
@@ -518,7 +538,7 @@ mod tests {
     /// SPEC §4's table, row by row: name, forms, primary, binding.
     #[test]
     fn builtins_match_the_spec_table() {
-        let table: [(&str, Forms, Primary, Option<Binding>); 12] = [
+        let table: [(&str, Forms, Primary, Option<Binding>); 13] = [
             (
                 "id",
                 Forms::LINE,
@@ -570,6 +590,12 @@ mod tests {
                 Forms::LINE,
                 Primary::Text { required: false },
                 Some(Binding::Block),
+            ),
+            (
+                "operation",
+                Forms::LINE,
+                Primary::Identifier { required: true },
+                Some(Binding::SelfBound),
             ),
         ];
         let schemas = builtin_schemas();

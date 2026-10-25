@@ -65,6 +65,12 @@ names! {
     /// was tested with; its lead-in, "Tested with", is the stylesheet's
     /// (packages/elements/CONTRACT.md §9).
     CLASS_CODE_TESTED = "ascribe-code-tested";
+    /// `<ascribe-operation>`: an operation of a declared API, from `@operation`
+    /// (packages/elements/CONTRACT.md §11).
+    ELEMENT_OPERATION = "ascribe-operation";
+    /// On the `(deprecated)` after a deprecated operation's link in
+    /// `<ascribe-operation>` (packages/elements/CONTRACT.md §11).
+    CLASS_OPERATION_DEPRECATED = "ascribe-operation-deprecated";
     /// `<ascribe-group>`: a project widget's group (packages/elements/CONTRACT.md §6).
     ELEMENT_GROUP = "ascribe-group";
     /// `<ascribe-for-agents>`: the visually hidden pointer to `llms.txt` at the top

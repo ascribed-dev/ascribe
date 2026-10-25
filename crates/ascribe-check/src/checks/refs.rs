@@ -102,6 +102,56 @@ impl Ctx<'_> {
         self.report(issue);
     }
 
+    /// An `@operation`'s link (SPEC §4.13), checked as a link is (SPEC
+    /// §5.2), which must name an operation of a declared API: a link to a
+    /// declared spec with a fragment.
+    pub(super) fn check_operation(&mut self, primary: &str, span: Span) {
+        let path = &self.file.path;
+        let target = reference_target(RefKind::Link, primary, &[], path, self.model);
+        let resolution = resolve_reference(
+            RefKind::Link,
+            &target,
+            path,
+            self.model,
+            self.project,
+            self.project.file_system(),
+            self.project.layout(),
+        );
+        let at = Location::new(self.id, span);
+        if let Some(mut issue) =
+            reference_issue(RefKind::Link, &target, primary, &resolution, at, Some(span))
+        {
+            if issue.slug == diagnostics::LINK_TARGET_MISSING {
+                issue.fixes = closest_fixes(
+                    self.project.link_index(),
+                    path,
+                    &target,
+                    &resolution,
+                    self.id,
+                    Some(span),
+                );
+            }
+            self.report(issue);
+            return;
+        }
+        if matches!(resolution, Resolution::Operation { .. }) {
+            if let Some(issue) = operation_issue(
+                self.project.link_index(),
+                path,
+                &target,
+                &resolution,
+                at,
+                Some(span),
+            ) {
+                self.report(issue);
+            }
+            return;
+        }
+        let issue = Issue::new(diagnostics::OPERATION_LINK_NOT_OPERATION, at)
+            .with_arg("link", primary.to_owned());
+        self.report(issue);
+    }
+
     /// A link's destination (SPEC §5.2): a file that exists, a page and not
     /// a fragment, and not a route.
     pub(super) fn check_link(&mut self, span: Span, link: &Link) {

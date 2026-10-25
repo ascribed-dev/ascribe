@@ -14,6 +14,7 @@ The site output (SPEC §9.4) is markdown plus custom elements. This contract is 
 | The pointer to `llms.txt`, with `[consumer] agents = true` | [`<ascribe-for-agents>`](#8-ascribe-for-agents) | CSS only |
 | A tested example's `@snippet` | [A caption line on its code block](#9-a-tested-code-block), with the class `ascribe-code-tested` | CSS only |
 | A link out of a line of a versioned build | [An ordinary link](#10-a-link-out-of-a-line), marked with `data-ascribe-release-line` | Optional CSS |
+| `@operation` | [`<ascribe-operation>`](#11-ascribe-operation) | CSS only |
 
 A change to this contract changes the site emitter (`crates/ascribe-emit`), the element library, and the site-render fixtures (`tests/render/`) together.
 
@@ -293,3 +294,25 @@ There's no element for a link out of a line either. In a line of a versioned bui
 ```
 
 **Rendering:** the link, followed by its line in parentheses, " (3.5)", generated content from the library's stylesheet (`a[data-ascribe-release-line]::after`), as "Available:" is, so a site restyles, rewords, or hides it by selecting on the attribute. With no CSS, it's a plain link.
+
+## 11. `<ascribe-operation>`
+
+An operation of a declared API (SPEC §4.13, §7.11), from an `@operation` whose link names an operation the spec has ([decision #923b](../../project-docs/decisions/923b-operation-element.md)). An `@operation` that names none is a problem `ascribe check` reports, and the emitter writes nothing for it.
+
+| Attribute | Required | Meaning |
+|---|---|---|
+| `api` | yes | The API's name, as `[apis.<name>]` declares it. |
+| `method` | yes | The operation's method, in lowercase: `get`. |
+| `path` | yes | The operation's path, as the spec writes it: `/users/{id}`. |
+| `operation-id` | when it has one | The operation's `operationId`. Left out for an operation with no id. |
+| `deprecated` | when it's deprecated | Present, with no value, when the spec marks the operation `deprecated`, as `planned` is on `<ascribe-availability-target>`. Left out otherwise. |
+
+**Children:** no markdown. One line: a link, `<a href="…">`, to the operation's address in the published reference, the address a link to the operation has (SPEC §5.2), whose text is the operation's method in capitals and its path, then `: ` and its summary when it has one, its line breaks as spaces; then, for a deprecated operation, a space and `<span class="ascribe-operation-deprecated">(deprecated)</span>`. So the element's text is the plain output's line. It's one HTML block (§0): its opening tag alone on the first line, the line, and its closing tag.
+
+```html
+<ascribe-operation api="public" method="get" path="/users/{id}" operation-id="getUser" deprecated="">
+<a href="/api/#operation/getUser">GET /users/{id}: Get a user</a> <span class="ascribe-operation-deprecated">(deprecated)</span>
+</ascribe-operation>
+```
+
+**Rendering, with or without JavaScript:** a block holding the line, a deprecated operation's link struck through and its "(deprecated)" in the deprecated state's color. A site styles the method or the path by selecting on the attributes (`ascribe-operation[method="delete"]`). With no CSS, it's the link and its words: the deprecation is in the text, never only in the styling.

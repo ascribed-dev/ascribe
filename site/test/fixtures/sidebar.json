@@ -324,6 +324,10 @@
       {
         "href": "/docs/openapi/editor/",
         "label": "Link to operations in the editor"
+      },
+      {
+        "href": "/docs/openapi/operation/",
+        "label": "Show an operation in a page"
       }
     ]
   },

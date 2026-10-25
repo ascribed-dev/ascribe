@@ -172,6 +172,9 @@ pub struct ResolvedBlock {
     pub annotation: Option<Annotation>,
     /// For a code block a `@snippet` became, the snippet (SPEC §4.8).
     pub snippet: Option<Arc<Snippet>>,
+    /// For an `@operation` whose link names an operation the spec has, the
+    /// operation (SPEC §4.13).
+    pub operation: Option<Arc<EmbeddedOperation>>,
     /// For a table, its body rows that have an availability of their own
     /// (SPEC §4.4), in source order. A filter build has removed the rows that
     /// aren't available from the table itself.
@@ -414,6 +417,27 @@ pub enum LinkTarget {
     /// names an id the page doesn't have, or is removed or dropped by the
     /// build. The reason is a problem, in the file's problems or the page's.
     Unresolved,
+}
+
+/// The operation an `@operation` puts in the page (SPEC §4.13), as its
+/// spec has it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EmbeddedOperation {
+    /// The API's name.
+    pub api: String,
+    /// The operation's `operationId`, when it has one.
+    pub operation_id: Option<String>,
+    /// The operation's method, in lowercase.
+    pub method: String,
+    /// The operation's path, as the spec writes it.
+    pub path: String,
+    /// The operation's `summary`, when it has one.
+    pub summary: Option<String>,
+    /// Whether the spec marks it `deprecated`.
+    pub deprecated: bool,
+    /// The operation's address, as a link to it has it
+    /// ([`LinkTarget::Operation`]).
+    pub address: String,
 }
 
 /// A glossary term linked in prose (SPEC §5.4).

@@ -5085,6 +5085,18 @@ row = "Links | Target is an operation the spec marks deprecated"
 message = "`#{operation}` names an operation `{path}` marks deprecated"
 fix = "Link to the operation that replaces it, if the spec names one, or say in the text that it's deprecated. A deprecated operation still works, and its reference marks it; a guide that teaches it sends readers to something going away."
 
+[[diagnostic]]
+code = "ASC281"
+slug = "operation-link-not-operation"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "4.13"
+reference = "writing/directives.md#operation"
+row = "Links | An `@operation`'s link isn't to an operation of a declared API"
+message = "`{link}` isn't a link to an operation; `@operation` takes a declared API's spec, `#`, and an operation's `operationId`"
+fix = "Link to an operation of an API `[apis]` declares: the spec's path from this page, `#`, and the operation's `operationId`, or, for one with no id, its method in lowercase and its path, `../api/openapi.yaml#delete/users/{id}`. To link to a page or a file, write a link in the text instead."
 
 [[diagnostic]]
 code = "ASC282"

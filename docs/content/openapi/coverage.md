@@ -9,7 +9,7 @@ A spec grows faster than the guides that explain it. `ascribe check` says which 
 
 ## What counts
 
-An operation is linked when a link in any page or fragment names it, by its `operationId` or [by its method and path](no-id.md), as [Link to your API reference](index.md) describes. Only links count: a word in prose that matches an id, such as `` `getUser` ``, isn't a link to it, and a link to an operation the spec doesn't have covers no other. A link counts for every build, whichever builds publish its page.
+An operation is linked when a link in any page or fragment names it, by its `operationId` or [by its method and path](no-id.md), as [Link to your API reference](index.md) describes, in the text or as an `@operation`'s link. Only links count: a word in prose that matches an id, such as `` `getUser` ``, isn't a link to it, and a link to an operation the spec doesn't have covers no other. A link counts for every build, whichever builds publish its page.
 
 Each operation no link names is advice, `api-operation-unreferenced`, at the API's `spec` in `ascribe.toml`:
 

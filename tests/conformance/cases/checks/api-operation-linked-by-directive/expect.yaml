@@ -1,0 +1,7 @@
+description: >-
+  An operation an `@operation` names is linked, and isn't reported: its link
+  counts as a link in the text does.
+spec: ["4.13", "7.11"]
+tags: [check]
+
+diagnostics: []

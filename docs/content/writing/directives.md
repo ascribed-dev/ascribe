@@ -377,6 +377,25 @@ It rewrites each mark's `planned` for its target to the line's version.
 - **In the outputs,** the text form writes nothing in the site and plain outputs, and the paragraph of the other form is written as it would be without it. The JSON output gives the section's heading its `summary`. A summary's text isn't searched for [glossary terms](inline.md#glossary-terms).
 - **Nothing is guessed.** A section without `@summary` has no summary, whatever its first paragraph says.
 
+## `@operation`
+@available: ascribe planned
+
+([SPEC §4.13]({repo}/blob/main/SPEC.md#413-operation))
+
+Puts an operation of an API that `ascribe.toml` declares in `[apis]` in the page: its method, its path, and its summary, as one line linked to the operation in the published reference.
+
+```markdown
+@operation: ../api/openapi.yaml#getUser
+```
+
+- **The primary** is a link to an operation, as a link's destination names one: the spec's path from the page (or from the content root, starting with `/`), `#`, and the operation's `operationId`, or, for an operation with no id, its method in lowercase and its path, `#delete/users/{id}` ([links to operations](inline.md#links)).
+- It's checked as that link is: an operation the spec doesn't have is `link-operation-missing`, and one named by its method and path that has an id is advice, `link-operation-by-path`. Anything that isn't a link to an operation of a declared API, a page, another file, the spec with no `#`, or a URL, is an error, `operation-link-not-operation`.
+- **What it shows:** `GET /users/{id}: Get a user`, with `(deprecated)` after it when the spec marks the operation deprecated. Never the operation's parameters, request, or responses.
+- It's a block, so a `@note`, `@available`, or widget directly above it applies to it.
+- **In the outputs,** the site output writes an `<ascribe-operation>` element holding the link, the plain output the line, and the JSON output a block of type `operation`.
+
+[Show an operation in a page](../openapi/operation.md) has the rest.
+
 ## Project widgets
 
 ([SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets))

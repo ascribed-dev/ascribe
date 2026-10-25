@@ -268,6 +268,25 @@ pub fn resolve_reference(
     Resolution::AssetMissing(missing)
 }
 
+/// The operation a target names, when it's a link to a declared spec with
+/// a fragment (SPEC §5.2): what [`resolve_reference`] resolves it to, found
+/// from the declaration alone. An `@operation`'s link is only ever one
+/// (SPEC §4.13), so a build asks this, not the file system.
+pub fn operation_target(
+    target: &Target,
+    model: &ContentModel,
+    layout: &Layout,
+) -> Option<Resolution> {
+    let Target::Local(local) = target else {
+        return None;
+    };
+    let api = declared_spec(model, layout, local.path.as_ref()?)?;
+    Some(Resolution::Operation {
+        api: api.name.clone(),
+        id: local.fragment.clone()?,
+    })
+}
+
 /// The API whose spec is the file at this content path, by its path from
 /// the project root as `[apis.<name>] spec` writes it, normalized.
 pub fn declared_spec<'m>(

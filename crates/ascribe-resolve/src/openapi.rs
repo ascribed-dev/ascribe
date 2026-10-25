@@ -11,15 +11,20 @@
 
 use std::collections::BTreeMap;
 
-use ascribe_core::{Applicability, Fix, Issue, Location, RelPath, Span, TextEdit, diagnostics};
+use ascribe_core::{
+    Applicability, Builtin, Fix, Issue, Location, RelPath, Span, TextEdit, diagnostics,
+};
 use ascribe_model::{Api, ApiReference, ContentModel, edit_distance};
+use ascribe_syntax::{Block, BlockKind, PrimaryValue};
 use serde_yaml_ng::Value;
 
 use crate::closest::closest_fixes;
 use crate::fs::{FileSystem, Probe};
-use crate::index::Target;
+use crate::index::walk::walk_blocks;
+use crate::index::{FileIndex, RefKind, Target};
 use crate::links::encode_destination;
 use crate::project::{Project, Resolution};
+use crate::references::{operation_target, reference_target};
 
 /// The methods a path item's operations are under, in the order the spec
 /// lists them. `query` is OpenAPI 3.2's; Swagger 2.0 has no `trace`.
@@ -129,8 +134,9 @@ pub struct Coverage {
     /// The API's name.
     pub api: String,
     /// How many links name each of its spec's operations, in the spec's
-    /// order: by id, or by method and path. A link in any file counts, so
-    /// the count holds for every build.
+    /// order: by id, or by method and path, in the text or as an
+    /// `@operation`'s. A link in any file counts, so the count holds for
+    /// every build.
     pub links: Vec<usize>,
     /// How many of its operations a checked example claims as its request
     /// or response.
@@ -171,8 +177,13 @@ impl Project {
             return Vec::new();
         }
         for file in self.files() {
-            for resolution in self.resolutions(&file.path) {
-                let Resolution::Operation { api, id } = resolution else {
+            let operations = self
+                .resolutions(&file.path)
+                .iter()
+                .cloned()
+                .chain(embedded_operations(self, file));
+            for resolution in operations {
+                let Resolution::Operation { api, id } = &resolution else {
                     continue;
                 };
                 let Some((coverage, spec)) = out.iter_mut().find(|(c, _)| &c.api == api) else {
@@ -194,6 +205,28 @@ impl Project {
         }
         out.into_iter().map(|(coverage, _)| coverage).collect()
     }
+}
+
+/// What the links of a file's `@operation` lines name (SPEC §4.13), which
+/// aren't among its references: each is resolved from the declaration
+/// alone, as the build resolves it.
+fn embedded_operations(project: &Project, file: &FileIndex) -> Vec<Resolution> {
+    let model = project.model();
+    let mut out = Vec::new();
+    walk_blocks(&file.document.blocks, &mut |block: &Block| {
+        let BlockKind::Directive(line) = &block.kind else {
+            return;
+        };
+        if line.name != Builtin::Operation.name() {
+            return;
+        }
+        let Some(PrimaryValue::Identifier(primary)) = &line.primary else {
+            return;
+        };
+        let target = reference_target(RefKind::Link, &primary.text, &[], &file.path, model);
+        out.extend(operation_target(&target, model, project.layout()));
+    });
+    out
 }
 
 /// Why a spec can't be read.
