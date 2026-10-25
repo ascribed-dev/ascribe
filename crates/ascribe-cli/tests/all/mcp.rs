@@ -511,6 +511,70 @@ fn resolve_shows_a_permalinks_help() {
     assert!(message.contains("`project` goes with"), "{message}");
 }
 
+/// `ascribe_resolve` with `emit` returns what `ascribe resolve --emit`
+/// writes: `site` the site output's Markdown, with its elements, and
+/// `plain` the default. With `go:<name>`, `emit` is the command's usage
+/// error.
+#[test]
+fn resolve_takes_emit() {
+    let repo = repository();
+    let root = repo.path();
+    let mut server = Server::start(root);
+    let page = "site/docs/install.md";
+    let (text, structured) = server.call_ok(
+        "ascribe_resolve",
+        json!({ "page": page, "build": "cloud", "emit": "site" }),
+    );
+    let expected = stdout(
+        root,
+        &[
+            "resolve", page, "--build", "cloud", "--emit", "site", "--format", "json",
+        ],
+    );
+    assert_eq!(text, expected);
+    assert_eq!(
+        structured,
+        serde_json::from_str::<Value>(&expected).unwrap()
+    );
+    assert_eq!(structured["emit"], "site", "{structured}");
+    let site = structured["text"].as_str().unwrap();
+    assert_eq!(
+        site,
+        stdout(
+            root,
+            &["resolve", page, "--build", "cloud", "--emit", "site"]
+        ),
+    );
+    assert!(site.contains("<ascribe-note"), "{site}");
+
+    // Left out, and `plain`, are the plain form.
+    let (_, default) = server.call_ok("ascribe_resolve", json!({ "page": page, "build": "cloud" }));
+    let (_, plain) = server.call_ok(
+        "ascribe_resolve",
+        json!({ "page": page, "build": "cloud", "emit": "plain" }),
+    );
+    assert_eq!(default, plain);
+    assert_eq!(default["emit"], "plain", "{default}");
+    assert!(
+        !default["text"].as_str().unwrap().contains("<ascribe-"),
+        "{default}"
+    );
+
+    let message = server.call_error(
+        "ascribe_resolve",
+        json!({ "page": "go:rotate-keys", "build": "cloud", "project": "site", "emit": "plain" }),
+    );
+    assert!(
+        message.starts_with("a permalink's help has one form, help.json's; leave out --emit"),
+        "{message}"
+    );
+    let message = server.call_error(
+        "ascribe_resolve",
+        json!({ "page": page, "build": "cloud", "emit": "html" }),
+    );
+    assert!(message.contains("`plain` or `site`"), "{message}");
+}
+
 #[test]
 fn unsaved_text_is_checked_as_the_file_it_names() {
     let repo = repository();

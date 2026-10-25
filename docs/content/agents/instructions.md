@@ -28,6 +28,9 @@ When a page declares a [permalink](../permalinks/index.md), `AGENTS.md` also say
 @available: ascribe planned
 When the project has an [`ascribe.addresses`](../publishing/redirects.md), `AGENTS.md` also has a section on moving pages: move or rename a page with `ascribe rename`, which records the move; after moving pages with `git mv`, record the moves git sees with `ascribe addresses move --from-git`; and forward or retire a page deleted on purpose, with `ascribe addresses move <old> <page>` or `ascribe addresses retire <old> --reason "<why>"`, since `ascribe check` reports `address-lost` for one that's gone with neither.
 
+@available: ascribe planned
+`AGENTS.md` also says how to see what a reader of the site gets, not only a reader of the Markdown: `ascribe resolve <page> --build <name> --emit site`, or `ascribe_resolve` with `emit: "site"`, writes the page [as the site output gives it](../command/site-output.md), and links to [reading the site output](../command/site-output.md#reading-site-output). The skill's line for `ascribe resolve` says the same.
+
 What a type is for is its `purpose` in `ascribe.toml`, or, for a type [`ascribe templates eject`](../templates/index.md) added, The Good Docs Project's summary of it, from `templates.lock` (the [content model reference](../content-model/index.md#41-page-types)).
 
 Here's what it writes for the Quill example:

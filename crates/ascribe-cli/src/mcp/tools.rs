@@ -320,9 +320,12 @@ pub const TOOLS: &[Spec] = &[
         name: "ascribe_resolve",
         title: "Resolve a page",
         command: "ascribe resolve",
-        description: "Read a page as one build's readers see it, as plain Markdown: \
+        description: "Read a page as one build's readers see it, by default as plain Markdown: \
             directives, phrases, includes, and availability resolved. Example: {\"page\": \
             \"docs/keys.md\", \"build\": \"cloud\"} returns `text` starting `# API keys`. \
+            With `emit` of `site`, read it as the site output gives it to a site, with \
+            Ascribe's elements, to see what a reader of the site gets: {\"page\": \
+            \"docs/keys.md\", \"emit\": \"site\"} shows what a switcher or a badge becomes. \
             With `go:` and a permalink's name, read what a product that links to the docs by \
             that permalink shows: {\"page\": \"go:rotate-keys\"} returns its `title`, \
             `summary`, `text`, and `address`.",
@@ -345,6 +348,13 @@ pub const TOOLS: &[Spec] = &[
                         "type": "string",
                         "description": "The build whose readers to show it as; needed when \
                             the project has more than one.",
+                    },
+                    "emit": {
+                        "type": "string",
+                        "enum": ["plain", "site"],
+                        "description": "Which output to write the page as: `plain` (the \
+                            default), or `site`, as the site output writes it. Not for \
+                            `go:<name>`, whose help has one form.",
                     },
                     "frontmatter": {
                         "type": "boolean",
@@ -971,7 +981,12 @@ fn call_resolve(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String
     let args = resolve::Args {
         page: a.path("page")?.unwrap_or_default(),
         build: a.string("build")?,
-        emit: None,
+        emit: match a.string("emit")?.as_deref() {
+            None => None,
+            Some("plain") => Some(resolve::Emit::Plain),
+            Some("site") => Some(resolve::Emit::Site),
+            Some(_) => return Err(a.wrong("emit", "`plain` or `site`")),
+        },
         frontmatter: a.boolean("frontmatter")?,
         format: Format::Json,
     };

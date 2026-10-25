@@ -46,4 +46,6 @@ Link to the source file, with a relative path such as `../guides/install.md#conf
 
 ### More
 
+To see what a reader of the site gets, not only a reader of the Markdown, run `ascribe resolve <page> --build <name> --emit site`, or call `ascribe_resolve` with `emit: "site"`: the page as the site output gives it to the site, with Ascribe's elements. How to read them: https://ascribed-dev.com/go/reading-site-output/
+
 `ascribe model docs` shows everything the content model allows. Every directive: https://ascribed-dev.com/go/directives/
