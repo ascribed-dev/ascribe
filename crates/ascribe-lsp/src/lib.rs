@@ -6,6 +6,7 @@
 //! the editor's build, as the author types. See the README for the design, the
 //! semantic token legend, and how stale results are kept from the editor.
 
+mod addresses;
 mod agent_prompt;
 mod baseline;
 mod build_view;
@@ -60,6 +61,7 @@ use std::sync::atomic::AtomicBool;
 
 use lsp_server::Connection;
 
+pub use addresses::{AddressesParams, NOTIFICATION as ADDRESSES_NOTIFICATION, PageOldAddress};
 pub use agent_prompt::{
     AgentPromptParams, AgentPromptResult, METHOD as AGENT_PROMPT_METHOD, PromptKind,
 };
@@ -139,6 +141,9 @@ pub type PublishHook = Arc<dyn Fn(&PublishInfo) + Send + Sync>;
 /// A hook called with a request's method.
 pub type RequestHook = Arc<dyn Fn(&str) + Send + Sync>;
 
+/// A hook called with the commit of a base whose addresses were listed.
+pub type BaseListedHook = Arc<dyn Fn(&str) + Send + Sync>;
+
 /// What gives the day the checks run on, asked at each round: the server
 /// doesn't read the clock itself.
 pub type Clock = Arc<dyn Fn() -> Option<ascribe_core::Date> + Send + Sync>;
@@ -163,6 +168,9 @@ pub struct Options {
     /// What checks the prose on open and on save, for a project with
     /// `[checks.vale]`: Vale itself when `None`, or a test's stand-in.
     pub linter: Option<Arc<dyn ascribe_check::prose::Linter>>,
+    /// Called with the commit each time the server lists a base's
+    /// addresses (`addresses.rs`), so a test can count the listings.
+    pub base_listed: Option<BaseListedHook>,
     /// The version the server gives in its `serverInfo` and first log line:
     /// what `ascribe --version` prints, such as `0.4.1+dev (7ae1340440fc)`.
     /// The crate's version when `None`.

@@ -1,0 +1,8 @@
+description: >-
+  A `[moved]` value that's another entry's key is advice: the build writes
+  each address to where the chain ends, and the fix forwards it there.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: addresses-chain, file: ascribe.addresses, line: 5}

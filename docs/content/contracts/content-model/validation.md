@@ -6,7 +6,7 @@ description: "Every rule a content model loader enforces, and the map of SPEC §
 
 Part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. Each rule's fix, for someone writing `ascribe.toml`, is in the diagnostics reference: [from the file to widgets](../../checks/diagnostics/content-model.md), and [from the consumer to `[checks]`](../../checks/diagnostics/content-model-builds.md).
 
-## 24. Validation rules
+## 25. Validation rules
 
 A loader MUST enforce every rule below when it loads `ascribe.toml`, and report each violation at the span of the offending key or value. Every rule is an error unless marked **warning**. A model with errors doesn't load, and no document is checked against it; warnings don't stop loading.
 
@@ -15,7 +15,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 - Rules about documents, such as a page matching no content type or an unknown frontmatter key, aren't loader rules.
 - **Filesystem rules** (`model-content-root-missing`, `model-source-path-missing`, `model-source-outside-repository`, and `model-listing-folder` for a folder that isn't there) need the project directory. A loader given only the file's text, such as an unsaved editor buffer or a unit test, skips them; `ascribe check` and the language server always run them.
 
-### 24.1 File and structure
+### 25.1 File and structure
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -28,7 +28,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-invalid-name` | Every name follows its grammar (§1.2). | `` `{name}` isn't a valid {role} name: {rule} ``, for example `` `Deployment` isn't a valid dimension name: use a lowercase letter, then lowercase letters, digits, or hyphens `` |
 | `model-empty-text` | Every `label`, `name`, `term`, `definition`, and `description` is non-empty. | `` `{key}` can't be empty `` |
 
-### 24.2 Project
+### 25.2 Project
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -36,7 +36,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-content-root-missing` | The content root exists and is a directory. | `` content root `{path}` doesn't exist ``<br>`` content root `{path}` isn't a directory `` |
 | `model-output-overlaps-content` | The output directory isn't inside the content root, the content root isn't inside the output directory, and they differ (derived from the spec). | `` output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source ``<br>`` content root `{content}` is inside output directory `{output}`; builds could delete source files as stale output ``<br>`` output directory and content root are both `{path}` `` |
 
-### 24.3 Content types, fragments, and fields
+### 25.3 Content types, fragments, and fields
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -54,7 +54,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-field-role` | `role` is `"description"`, on a `string` field, `"review-date"`, on a `date` field, or `"owner"`, on a `string` or `enum` field; only on a page type's top-level fields, its own or `[frontmatter]`'s; and a table has at most one field with each role (§5.4). | `` role = "{role}" only works on a {expected} field, and `{field}` is "{type}" ``<br>`` role must be "description", "review-date", or "owner", not "{value}" ``<br>`` role only works on a page type's top-level fields, its own or `[frontmatter]`'s, and `{field}` is in {place} ``<br>`` `{other}` already has role = "{role}"; a content type has one field with each role `` |
 | `model-attribute-reserved` | No image or widget attribute key is one HTML already gives a meaning on that element (SPEC §7.2): `src`, `alt`, or `title` on images; `heading` or `primary` on widgets; and on both, HTML's global attributes (such as `id`, `class`, `style`, and `title`), any key starting with `aria-`, and HTML's event-handler attributes (such as `onclick`, `onload`, and `onerror`). The lists are explicit, in `ascribe_core::reserved`, so keys that merely begin with `on`, such as `online` or `only-if`, are allowed. | `` `{key}` can't be an image attribute: HTML already uses it on the <img> element ``<br>`` `{key}` can't be an attribute of widget `{name}`: the site output already uses it on the widget's element `` |
 
-### 24.4 Dimensions, names, lifecycle, notes, and features
+### 25.4 Dimensions, names, lifecycle, notes, and features
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -74,7 +74,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-availability-history-order` | A history in a feature's spec is in chronological order under the version scheme. | `` feature `{key}`: the history for `{target}` must be in chronological order, but {later} comes before {earlier} `` |
 | `model-feature-nested` | A feature's `available` isn't itself a feature key. | `` feature `{key}`: available must be an availability spec, not another feature (`{other}`) `` |
 
-### 24.5 Versions, phrases, glossary, and images
+### 25.5 Versions, phrases, glossary, and images
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -86,9 +86,9 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-releases-ends` | Every line in `[releases.<target>.ends]` is a live line. | `` `[releases.{target}.ends]`: `{line}` isn't a live line; the live lines are {live} ``<br>`` `[releases.{target}.ends]`: `{line}` isn't a live line, and `{target}` has none `` |
 | `model-glossary-page` | Each path in `[glossary] pages` is a page under the content root, not a fragment, with its name's case as on disk. Whether it's there is checked with the project's files, as a type's `template` is. | `` `{path}` in `[glossary] pages` doesn't exist ``<br>`` `{path}` in `[glossary] pages` is a fragment; list the page that includes it `` |
 
-`[versions] scheme` is covered by `model-invalid-value`, and `[versions] current`, which isn't a key, by `model-versions-current`. A `[glossary] terms` table is `model-unknown-key`. Terms are read from pages, so their rules are checks of the project: two terms with the same text or the same id are `glossary-term-duplicate`, a term with no definition `glossary-definition-missing`, and `@term` on a page `pages` doesn't list `term-off-glossary-page`. Image attribute types are covered by the rules in §24.3.
+`[versions] scheme` is covered by `model-invalid-value`, and `[versions] current`, which isn't a key, by `model-versions-current`. A `[glossary] terms` table is `model-unknown-key`. Terms are read from pages, so their rules are checks of the project: two terms with the same text or the same id are `glossary-term-duplicate`, a term with no definition `glossary-definition-missing`, and `@term` on a page `pages` doesn't list `term-off-glossary-page`. Image attribute types are covered by the rules in §25.3.
 
-### 24.6 Widgets
+### 25.6 Widgets
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -99,9 +99,9 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-widget-groupable-form` | A groupable widget is container-only. | `` widget `{name}` is groupable, so it must be container-only: forms = ["container"] `` |
 | `model-widget-plain-content` | `plain-content` is set only on widgets that wrap content: container form, or binding `block` or `heading-or-block`. | `` widget `{name}` doesn't wrap content, so plain-content has no effect; remove it `` |
 
-`primary`, `title`, and `binding` values are covered by `model-invalid-value`; attribute types by §24.3.
+`primary`, `title`, and `binding` values are covered by `model-invalid-value`; attribute types by §25.3.
 
-### 24.7 Consumer, builds, and editor
+### 25.7 Consumer, builds, and editor
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -122,7 +122,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-editor-build-unknown` | `editor.build` names a declared build. | `` editor.build is `{build}`, which isn't a declared build; builds: {builds} `` |
 | `model-editor-build-required` | When there are several builds and none is named `site`, `editor.build` is set. | `` there are several builds and none is named site; set [editor] build to the one the editor should check `` |
 
-### 24.8 Sources
+### 25.8 Sources
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -130,7 +130,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-source-outside-repository` | A source's folder is inside the git repository the project is in, when it's in one; with none, in the language server and `ascribe mcp`, inside what the user opened (variant `opened`). | `` the folder of source `{source}`, `{path}`, is outside the git repository the project is in `` |
 | `model-source-remote` | A source has `path` or `git`, not both; `branch` only with `git`; a URL `git` can be given; a branch name `git` accepts; and, with `git`, copies outside the content root. | `` source `{source}` has both `path` and `git`: a source is a folder in this repository or another repository, not both ``<br>`` source `{source}` needs `path`, a folder in this repository, or `git`, another repository's URL ``<br>`` source `{source}` has `branch` but no `git`: a branch is only for a source in another repository ``<br>`` `{url}` isn't a URL Ascribe can give `git`: use `https://`, `http://`, `ssh://`, `git://`, `file://`, or `user@host:path` ``<br>`` `{branch}` isn't a branch name `git` accepts ``<br>`` the copies of source `{source}` go in `sources/{source}/`, which is inside the content root `{content}`, where they'd be read as pages; give the content root a folder of its own `` |
 
-### 24.9 Checks
+### 25.9 Checks
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -139,20 +139,20 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-intended-entry` | `[[intended]]` names exactly one declared phrase, feature, or image. | `` an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, or `image` `` |
 | `model-checks-vale` | `[checks.vale]` has exactly one of `preset` and `config`, and `off` goes with `preset` and names its rules. | `` `[checks.vale]` has both `preset` and `config`; pick one: Ascribe's preset, or the project's own `.vale.ini` `` |
 
-### 24.10 Permalinks
+### 25.10 Permalinks
 
 | Slug | Rule | Message |
 |---|---|---|
 | `model-permalinks` | A name in `[permalinks]` is retired or an alias, not both; an alias leads, through aliases, to a name that isn't one; a retired permalink's reason isn't the quick fix's placeholder. | `` `{name}` is both retired and an alias; a name is one thing `` |
 
-### 24.11 Crawlers
+### 25.11 Crawlers
 
 | Slug | Rule | Message |
 |---|---|---|
 | `model-crawlers-line` | Each of `[crawlers] lines` is one line, with no line break. | `` `{key}` has a line break; each string in `lines` is one line of robots.txt `` |
 | `model-crawlers-named-twice` | A crawler is named in one group: not by a disallowed purpose and a group of `lines`, nor by two groups of `lines`. | `` `{key}` names `{token}`, which a group on line {line} names already; a crawler obeys only one group, so write everything for it in one `` |
 
-### 24.12 Listing
+### 25.12 Listing
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -162,9 +162,16 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 
 `model-listing-looser` holds `older-lines` to `default` too.
 
+### 25.13 APIs
+
+| Slug | Rule | Message |
+|---|---|---|
+| `model-api-outside-repository` | An API's `spec` is inside the git repository the project is in, or, with no repository, inside the folder that was opened. | `` the spec of API `{api}`, `{path}`, is outside the git repository the project is in ``<br>`` the spec of API `{api}`, `{path}`, is outside the folder that was opened, and with no git repository around the project, a spec isn't read from outside it; open the folder that contains it `` |
+| `model-api-reference` | A template has `{operationId}`, and no placeholder but `{operationId}` and `{tag}`. | `` the reference of API `{api}` has no `{operationId}`, so every operation's address would be the same ``<br>`` `{placeholder}` isn't a placeholder of the reference of API `{api}`; a template's are `{operationId}` and `{tag}` `` |
+
 ---
 
-## 25. Map of SPEC §7.2 to this file
+## 26. Map of SPEC §7.2 to this file
 
 Every declaration SPEC §7.2 lists, and every setting SPEC §9.3 and §9.5 need, maps to one section:
 
@@ -187,11 +194,12 @@ Every declaration SPEC §7.2 lists, and every setting SPEC §9.3 and §9.5 need,
 | Image attributes (§5.3) | `[images.attributes]` | [§13](content.md#13-images) |
 | Consumer profile (§9.5) | `[consumer]` | [§15](output.md#15-consumer) |
 | Builds (§9.3) | `[builds.<name>]` | [§16](output.md#16-buildsname) |
-| Name roles (§7.2, last paragraph) | Validation rule `model-name-multiple-roles` | [§24](#24-validation-rules) |
+| Name roles (§7.2, last paragraph) | Validation rule `model-name-multiple-roles` | [§25](#25-validation-rules) |
 | The editor's default build | `[editor]` | [§17](output.md#17-editor) |
 | Sources: the folders outside the content a snippet may read (§4.8, §7.3) | `[sources.<name>]` | [§18](output.md#18-sourcesname) |
 | Acknowledgements of a content model entry's or an image's problems (§4.9) | `[[intended]]` | [§19.1](checks.md#191-intended) |
 | Retired permalinks and aliases (§7.6) | `[permalinks]` | [§20](checks.md#20-permalinks) |
 | The project's own `robots.txt` lines (§7.2, §9.4) | `[crawlers]` | [§21](checks.md#21-crawlers) |
 | How the site's, a folder's, or a type's pages are listed (§2.1, §7.2) | `[listing]` | [§22](checks.md#22-listing) |
+| The OpenAPI specs pages link into (§7.11) | `[apis.<name>]` | [§23](checks.md#23-apisname) |
 

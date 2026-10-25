@@ -1,0 +1,8 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[apis.public]
+spec = "../_shared/openapi.yaml"
+reference = { renderer = "redoc", at = "/api/" }

@@ -13,6 +13,7 @@ use crate::incremental::FileIds;
 use crate::index::{FileIndex, FileKind, Heading, Include, RefKind, Reference, index_file};
 use crate::layout::Layout;
 use crate::navigation::Navigation;
+use crate::openapi::{ApiSpecs, operation_issue};
 use crate::references::{SourceSet, include_issue, reference_issue, resolve_reference};
 use crate::slug::{default_slugger, slugger_by_name};
 use crate::snippet::{CodeFiles, Snippet, resolve_snippet};
@@ -58,6 +59,22 @@ pub enum Resolution {
         /// Whether that page is a source file of the project, so the
         /// suggestion can be offered as a fix.
         page_exists: bool,
+    },
+    /// A link to an operation of a declared API (`[apis.<name>]`): a link
+    /// to its spec with a fragment, the operation's `operationId`. The spec
+    /// may be outside the project's folder (SPEC §9.4). Whether the spec has
+    /// the operation is [`crate::openapi::ApiSpecs`]'s to say.
+    Operation {
+        /// The API's name.
+        api: String,
+        /// The fragment, percent-decoded: the `operationId` it names.
+        id: String,
+    },
+    /// A link with no fragment to a declared spec outside the project's
+    /// folder, which no output has a place to copy to.
+    SpecOutside {
+        /// The API's name.
+        api: String,
     },
 }
 
@@ -281,6 +298,8 @@ pub struct Project {
     /// `ascribe.addresses`, when the project has one that reads (SPEC
     /// §7.10), as it was when the project was loaded.
     addresses: Option<Arc<AddressFile>>,
+    /// Each declared API's spec (`[apis.<name>]`), read with the project.
+    apis: Arc<ApiSpecs>,
     /// Expansions worked out so far, by page. `None` records a path that
     /// isn't a file. Filled on demand; the incremental update drops the
     /// entries a change can affect (`crate::incremental`).
@@ -302,6 +321,7 @@ impl Clone for Project {
             own_folder: self.own_folder.clone(),
             nav: self.nav.clone(),
             addresses: self.addresses.clone(),
+            apis: self.apis.clone(),
             expansions: Mutex::new(self.expansion_cache().clone()),
         }
     }
@@ -373,6 +393,7 @@ impl Project {
         folders: Folders,
         fs: &dyn FileSystem,
     ) -> Project {
+        let apis = Arc::new(ApiSpecs::read(&model, fs));
         let mut project = Project {
             model,
             layout,
@@ -386,6 +407,7 @@ impl Project {
             own_folder: folders.own,
             nav: read_nav(fs),
             addresses: read_addresses(fs),
+            apis,
             expansions: Mutex::new(HashMap::new()),
         };
         project.resolutions = project
@@ -427,6 +449,12 @@ impl Project {
     /// update doesn't read it again.
     pub fn addresses_file(&self) -> Option<&AddressFile> {
         self.addresses.as_deref()
+    }
+
+    /// Each declared API's spec (`[apis.<name>]`), as read when the project
+    /// was loaded or its content model last changed.
+    pub fn apis(&self) -> &ApiSpecs {
+        &self.apis
     }
 
     /// The project's navigation (SPEC §7.8): `ascribe.nav`'s order over the
@@ -773,6 +801,10 @@ impl Project {
         self.model = model;
     }
 
+    pub(crate) fn set_apis(&mut self, apis: ApiSpecs) {
+        self.apis = Arc::new(apis);
+    }
+
     pub(crate) fn set_nav(&mut self, nav: Option<Arc<NavFile>>) {
         self.nav = nav;
     }
@@ -896,6 +928,14 @@ impl Project {
             reference.destination_span,
         )
         .into_iter()
+        .chain(operation_issue(
+            self,
+            &index.path,
+            &reference.target,
+            resolution,
+            at,
+            reference.destination_span,
+        ))
         .collect();
         // A link's `#id` names a heading of its target page, or, for a `#id`
         // alone in a fragment, of the fragment itself (SPEC §5.2, resolved

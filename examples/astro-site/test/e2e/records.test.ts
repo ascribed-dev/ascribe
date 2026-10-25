@@ -2,14 +2,23 @@
 // page's head from `Head.astro`, the site's one sitemap and `robots.txt`, and
 // the headers of each page's Markdown version (`_ascribe/headers.json`), in
 // `_headers` and from `astro dev`, and the moves `ascribe.addresses` records, in
-// `_redirects`. Each test works on a copy of the site under
+// `_redirects`, with a page for each address it retires, served there with a
+// 404. Each test works on a copy of the site under
 // `.e2e-tmp/`, with rules of `[listing]` at every level: a folder whose page
 // isn't listed, and one whose page isn't quoted.
 import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { buildSite, copySite, edit, serveDev, servePreview, siteDir } from "./harness.js";
+import {
+  buildSite,
+  copySite,
+  edit,
+  serveDev,
+  serveLikeNetlify,
+  servePreview,
+  siteDir,
+} from "./harness.js";
 import { homeInFront, ONE_ENTRY, twoProjects, write } from "./sites.js";
 
 afterAll(async () => {
@@ -225,8 +234,9 @@ describe("a site at the host's root", () => {
       "src/pages/v1.2.astro": '<html lang="en"><head><title>1.2</title></head><body>1.2</body></html>\n',
       "src/pages/hidden.astro":
         '<html lang="en"><head><meta name="robots" content="noindex" /></head><body>Hidden</body></html>\n',
-      // A page that was published at another address before.
-      "ascribe.addresses": 'version = 1\n\n[moved]\n"Guides/Old Setup.md" = "Guides/My Setup.md"\n',
+      // A page that was published at another address before, and one removed on purpose.
+      "ascribe.addresses":
+        'version = 1\n\n[moved]\n"Guides/Old Setup.md" = "Guides/My Setup.md"\n\n[retired]\n"Guides/Beta.md" = "The beta ended."\n',
     });
     return root;
   }
@@ -235,6 +245,8 @@ describe("a site at the host's root", () => {
     "User-agent: *\nDisallow: /docs/drafts/\n\nSitemap: https://docs.example.com/sitemap.xml\n";
   const SITEMAP = [
     "https://docs.example.com/",
+    // The API's reference, an Astro page of the site's own.
+    "https://docs.example.com/api",
     "https://docs.example.com/docs",
     `https://docs.example.com${UNQUOTED}`,
     `https://docs.example.com${NESTED}`,
@@ -250,10 +262,28 @@ describe("a site at the host's root", () => {
       (await records(root)).pages,
       await helpAddresses(root),
     );
-    // The recorded move, at the host's root, for the page and its Markdown version.
+    // The recorded move, at the host's root, for the page and its Markdown version; then the
+    // retired page's addresses, each serving the page that says so with a 404.
     expect(await readFile(path.join(root, "dist", "_redirects"), "utf8")).toBe(
-      `/docs/guides/old-setup ${UNQUOTED} 301\n/docs/guides/old-setup.md ${UNQUOTED}.md 301\n`,
+      `/docs/guides/old-setup ${UNQUOTED} 301\n/docs/guides/old-setup.md ${UNQUOTED}.md 301\n` +
+        "/docs/guides/beta /docs/_ascribe/gone/guides/beta 404\n" +
+        "/docs/guides/beta.md /docs/_ascribe/gone/guides/beta 404\n",
     );
+    const host = await serveLikeNetlify(root);
+    try {
+      for (const address of ["/docs/guides/beta", "/docs/guides/beta.md"]) {
+        const response = await fetch(`${host.origin}${address}`, { redirect: "manual" });
+        expect(response.status, address).toBe(404);
+        const page = await response.text();
+        expect(page).toContain("The beta ended.");
+        expect(page).toContain('<a href="/docs"');
+        expect(head(page).robots).toBe("noindex");
+      }
+      const moved = await fetch(`${host.origin}/docs/guides/old-setup`, { redirect: "manual" });
+      expect([moved.status, moved.headers.get("location")]).toEqual([301, UNQUOTED]);
+    } finally {
+      await host.stop();
+    }
     const server = await servePreview(root);
     try {
       const sitemap = locations(await text(server.origin, "/sitemap.xml"));
@@ -340,6 +370,8 @@ describe("two projects", () => {
   }
   const SITEMAP = [
     "https://docs.example.com/",
+    // The API's reference, an Astro page of the site's own.
+    "https://docs.example.com/api",
     "https://docs.example.com/docs",
     `https://docs.example.com${UNQUOTED}`,
     `https://docs.example.com${NESTED}`,
@@ -446,6 +478,7 @@ describe("what a site leaves out", () => {
     try {
       expect(locations(await text(server.origin, "/docs/sitemap.xml"))).toEqual([
         "https://docs.example.com/docs",
+        "https://docs.example.com/docs/api",
         `https://docs.example.com${UNQUOTED}`,
     `https://docs.example.com${NESTED}`,
       ]);

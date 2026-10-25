@@ -16,6 +16,8 @@ mod support;
 
 #[path = "all/across.rs"]
 mod across;
+#[path = "all/addresses.rs"]
+mod addresses;
 #[path = "all/agent_prompt.rs"]
 mod agent_prompt;
 #[path = "all/baseline.rs"]

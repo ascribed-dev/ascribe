@@ -1,0 +1,7 @@
+version = 1
+
+[moved]
+"old.md" = "new.md"
+"old.md#rotate" = "rotation.md#rotate-keys"
+
+[retired]

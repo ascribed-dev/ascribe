@@ -1,6 +1,8 @@
 //! The addresses each build publishes (SPEC §7.10): each page's route, its
 //! Markdown version's with `agents`, and each explicit `@id`'s
-//! `route#id`, with the source `ascribe.addresses` records it by.
+//! `route#id`, with the source `ascribe.addresses` records it by; each
+//! permalink's address, and each `llms.txt` file's; and the settings they
+//! were made with.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
@@ -9,7 +11,9 @@ use crate::build_support::{path, project_with};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use ascribe_resolve::addresses::{AddressKind, BuildAddresses, build_addresses, every_build};
+use ascribe_resolve::addresses::{
+    AddressKind, BuildAddresses, Settings, build_addresses, every_build, rebase,
+};
 use ascribe_resolve::{DiskFs, Layout, Project};
 
 const MODEL: &str = r#"
@@ -71,6 +75,11 @@ fn a_page_has_its_route_its_markdown_and_its_explicit_ids() {
                 "/docs/guides/setup#install".to_owned(),
                 AddressKind::Anchor,
                 "guides/setup.md#install".to_owned()
+            ),
+            (
+                "/docs/llms.txt".to_owned(),
+                AddressKind::Llms,
+                "llms.txt".to_owned()
             ),
         ]
     );
@@ -160,4 +169,87 @@ fn every_build_of_quill_is_listed_by_name() {
         pages(&builds[2]),
         ["/install-agent/", "/keys/", "/quickstart/"]
     );
+}
+
+#[test]
+fn each_name_a_build_answers_to_has_an_address_under_the_permalinks_path() {
+    let model = format!(
+        "{MODEL}\n[permalinks.retired]\nold-name = {{ reason = \"Gone.\" }}\n\n[permalinks.aliases]\nsetting-up = \"setup\"\n"
+    );
+    let project = project_with(
+        &model,
+        &[(
+            "guides/setup.md",
+            "---\ntype: page\ntitle: Page\npermalink: setup\n---\n\nText.\n",
+        )],
+    );
+    let permalinks: Vec<(String, String, String)> = site(&project)
+        .addresses
+        .into_iter()
+        .filter(|a| a.kind == AddressKind::Permalink)
+        .map(|a| (a.address, a.source, a.page.to_string()))
+        .collect();
+    assert_eq!(
+        permalinks,
+        [
+            (
+                "/docs/go/old-name".to_owned(),
+                "old-name".to_owned(),
+                "index.md".to_owned()
+            ),
+            (
+                "/docs/go/setting-up".to_owned(),
+                "setting-up".to_owned(),
+                "guides/setup.md".to_owned()
+            ),
+            (
+                "/docs/go/setup".to_owned(),
+                "setup".to_owned(),
+                "guides/setup.md".to_owned()
+            ),
+        ]
+    );
+}
+
+#[test]
+fn a_build_s_settings_are_the_model_s_and_its_line_s_base() {
+    let project = project_with(MODEL, &[("index.md", PAGE)]);
+    assert_eq!(
+        site(&project).settings,
+        Settings {
+            base_path: "/docs/".to_owned(),
+            base: "/docs/".to_owned(),
+            permalink_path: None,
+            permalinks: "/docs/go/".to_owned(),
+            agents: true,
+            trailing_slash: false,
+        }
+    );
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill");
+    let model = ascribe_model::load(root.join("ascribe.toml")).expect("the Quill model loads");
+    let layout = Layout::from_model(&model);
+    let fs = DiskFs::new(&root, &layout);
+    let quill = Project::load(Arc::new(model), layout, &fs);
+    let line = every_build(&quill)
+        .into_iter()
+        .find(|b| b.build == "site@3.4")
+        .expect("the line");
+    assert_eq!(
+        line.settings.base,
+        format!("{}3.4/", line.settings.base_path)
+    );
+}
+
+#[test]
+fn an_address_is_rebased_from_one_path_to_another() {
+    assert_eq!(
+        rebase("/docs/guides/setup", "/docs/", "/handbook/").as_deref(),
+        Some("/handbook/guides/setup")
+    );
+    assert_eq!(
+        rebase("/docs", "/docs/", "/handbook/").as_deref(),
+        Some("/handbook")
+    );
+    assert_eq!(rebase("/docs", "/docs/", "/").as_deref(), Some("/"));
+    assert_eq!(rebase("/other/a", "/docs/", "/handbook/"), None);
 }

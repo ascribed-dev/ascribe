@@ -153,6 +153,7 @@ fn link_inline(
         Some(LinkTarget::Asset { path, fragment }) => {
             asset_destination(r, path, fragment.as_deref(), AssetUse::Link)
         }
+        Some(LinkTarget::Operation { address, .. }) => markdown_destination(address),
         // A link the build couldn't resolve is an error the checks report; if
         // one gets here anyway, its text stays and the link goes.
         Some(LinkTarget::Unresolved) => {
@@ -221,7 +222,9 @@ fn image_inline(
             AssetUse::Image,
         )),
         Some(LinkTarget::External) | None => Some(markdown_destination(&image.destination)),
-        Some(LinkTarget::Page { .. } | LinkTarget::Unresolved) => None,
+        Some(LinkTarget::Page { .. } | LinkTarget::Operation { .. } | LinkTarget::Unresolved) => {
+            None
+        }
     };
     let Some(destination) = destination else {
         st.out.push_str(&alt);

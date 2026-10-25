@@ -23,6 +23,8 @@ mod formatted;
 mod help;
 #[path = "all/lines.rs"]
 mod lines;
+#[path = "all/openapi.rs"]
+mod openapi;
 #[path = "all/pages.rs"]
 mod pages;
 #[path = "all/permalinks.rs"]

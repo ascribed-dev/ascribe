@@ -38,6 +38,7 @@
 //! returned issues include the warnings found before the failure.
 
 pub mod addresses;
+mod apis;
 mod checks;
 mod crawlers;
 pub mod examples;

@@ -1,0 +1,8 @@
+description: >-
+  A link to a YAML file no API declares is an asset, as before: its fragment
+  isn't checked, and outside the project's folder it isn't there.
+spec: ["5.2", "9.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: link-target-missing, file: index.md, line: 6}

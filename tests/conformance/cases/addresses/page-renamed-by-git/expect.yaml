@@ -1,0 +1,8 @@
+description: >-
+  A page git sees renamed, with nothing recorded, is lost as any other
+  page is; its fix records git's renames.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: address-lost, file: ascribe.addresses, line: 1}

@@ -1049,3 +1049,46 @@ type = "string"
 choices = ["listed", "unquoted", "unlisted"]
 default = "listed"
 description = '''The listing of every page of a live line of a versioned build other than its current line: `site@3.4`'s, and not `site`'s. It governs search engines and agents together.'''
+
+# ---- 23. `[apis.<name>]` ------------------------------------------------------
+
+[[setting]]
+table = ""
+key = "apis"
+kind = "table"
+type = "table of tables"
+available = "ascribe planned"
+description = '''OpenAPI specs that pages link into, by name: each one's file, and where its reference is published.'''
+
+[[setting]]
+table = "apis.<name>"
+key = "spec"
+kind = "text"
+type = "string (path)"
+required = true
+description = '''The spec's file, YAML or JSON, relative to the project root. It may be outside the project's folder, inside the git repository the project is in, when it's in one.'''
+
+[[setting]]
+table = "apis.<name>"
+key = "reference"
+kind = "table"
+type = "table or string"
+required = true
+description = '''Where the published reference is: `{ renderer = "redoc", at = "/api/" }` for Redoc's page, or a template of an operation's address, with `{operationId}` and `{tag}`, for another renderer.'''
+
+[[setting]]
+table = "apis.<name>.reference"
+key = "renderer"
+kind = "choice"
+type = "string"
+choices = ["redoc"]
+required = true
+description = '''The renderer that publishes the reference: `"redoc"`.'''
+
+[[setting]]
+table = "apis.<name>.reference"
+key = "at"
+kind = "text"
+type = "string"
+required = true
+description = '''The address of Redoc's page, relative to `[consumer] base-path`, or absolute when the reference is published elsewhere.'''

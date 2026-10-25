@@ -62,6 +62,10 @@ folder = "examples/"
 pages = ["snippets.md", "docs-repository.md", "drift.md", "tested.md", "sources.md"]
 
 [[sections]]
+folder = "openapi/"
+label = "OpenAPI"
+
+[[sections]]
 folder = "publishing/"
 pages = ["site.md", "redirects.md"]
 
@@ -118,4 +122,4 @@ pages = ["content.md", "output.md", "checks.md", "validation.md"]
 
 [[sections]]
 folder = "contracts/json-reports/"
-pages = ["diff.md", "report.md", "sources.md", "templates.md", "model.md", "questions.md", "versions.md"]
+pages = ["diff.md", "report.md", "sources.md", "addresses.md", "templates.md", "model.md", "questions.md", "versions.md"]

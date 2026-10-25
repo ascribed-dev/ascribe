@@ -1,0 +1,8 @@
+description: >-
+  `ascribe.addresses` deleted while the base has it is an error, at
+  `ascribe.toml`, naming how many entries it drops.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: addresses-file-deleted, file: ascribe.toml, line: 1}

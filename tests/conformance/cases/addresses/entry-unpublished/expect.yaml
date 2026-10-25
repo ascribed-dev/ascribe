@@ -1,0 +1,9 @@
+description: >-
+  An entry the base's file doesn't have, for a page the base never
+  published, as moving a page made on the same branch leaves, keeps no
+  address: advice at the entry, whose fix removes it.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: addresses-entry-unpublished, file: ascribe.addresses, line: 4}

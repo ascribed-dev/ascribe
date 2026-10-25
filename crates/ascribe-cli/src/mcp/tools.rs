@@ -12,7 +12,7 @@ use serde_json::{Map, Value, json};
 use super::Server;
 use crate::answer::{self, Format};
 use crate::cli::Global;
-use crate::commands::{check, diff, fmt, link, model, outline, refs, resolve, search};
+use crate::commands::{addresses, check, diff, fmt, link, model, outline, refs, resolve, search};
 
 /// A tool.
 pub struct Spec {
@@ -440,6 +440,113 @@ pub const TOOLS: &[Spec] = &[
         },
         output: || schema(include_str!("../../../../schemas/diff.schema.json")),
         call: call_changes,
+    },
+    Spec {
+        name: "ascribe_addresses_move",
+        title: "Record a move",
+        command: "ascribe addresses move",
+        description: "Get the edit to `ascribe.addresses` that records where a page, or a \
+            heading's id, moved, after you moved it without `ascribe rename`, as with `git \
+            mv`, so the build forwards its old addresses; `ascribe_check` reports a page \
+            moved with nothing recorded as `address-lost`. It writes nothing, so apply the \
+            edits yourself. Example: {\"from_git\": true} returns `moves` such as \
+            `{\"key\": \"guides/setup.md\", \"value\": \"start/setup.md\"}`, every move git \
+            sees, and `edits`; {\"old\": \"guides/keys.md\", \"new\": \
+            \"security/keys.md\"} records one.",
+        input: || {
+            json!({
+                "type": "object",
+                "properties": {
+                    "old": {
+                        "type": "string",
+                        "description": "Where it was: a page's path, from the server's \
+                            working directory or from the content root; a file's path, `#`, \
+                            and a heading's id; or an address starting with `/`.",
+                    },
+                    "new": {
+                        "type": "string",
+                        "description": "Where it is now: a page's path, and optionally `#` \
+                            and a heading's id.",
+                    },
+                    "from_git": {
+                        "type": "boolean",
+                        "description": "Instead of `old` and `new`, every move git sees \
+                            between the base and the working tree whose old path is gone.",
+                    },
+                    "base": {
+                        "type": "string",
+                        "description": "With `from_git`: the git revision the moves are seen \
+                            from. By default, the repository's default branch, from its merge \
+                            base with HEAD.",
+                    },
+                    "base_exact": {
+                        "type": "boolean",
+                        "description": "With `from_git`: from the revision itself, not the \
+                            merge base.",
+                    },
+                    "project": {
+                        "type": "string",
+                        "description": "A file or folder in the project. By default, the \
+                            server's working directory.",
+                    },
+                },
+                "additionalProperties": false,
+            })
+        },
+        output: || {
+            either(
+                schema(include_str!(
+                    "../../../../schemas/addresses-record.schema.json"
+                )),
+                schema(include_str!(
+                    "../../../../schemas/addresses-from-git.schema.json"
+                )),
+            )
+        },
+        call: call_addresses_move,
+    },
+    Spec {
+        name: "ascribe_addresses_retire",
+        title: "Record a retired page",
+        command: "ascribe addresses retire",
+        description: "Get the edit to `ascribe.addresses` that records that a page, or a \
+            heading's id, was removed on purpose, and why, so `ascribe_check` stops \
+            reporting it as `address-lost`. Use it only for content that's gone with no \
+            page to forward a reader to; otherwise record a move. It writes nothing, so \
+            apply the edits yourself. Example: {\"old\": \"reference/legacy-sync.md\", \
+            \"reason\": \"The sync agent was removed in 4.0\"} returns `key`, `value`, and \
+            `edits`.",
+        input: || {
+            json!({
+                "type": "object",
+                "properties": {
+                    "old": {
+                        "type": "string",
+                        "description": "What was removed: a page's path, from the server's \
+                            working directory or from the content root; a file's path, `#`, \
+                            and a heading's id; or an address starting with `/`.",
+                    },
+                    "reason": {
+                        "type": "string",
+                        "description": "Why it was removed: a sentence for whoever reads \
+                            the file later.",
+                    },
+                    "project": {
+                        "type": "string",
+                        "description": "A file or folder in the project. By default, the \
+                            server's working directory.",
+                    },
+                },
+                "required": ["old", "reason"],
+                "additionalProperties": false,
+            })
+        },
+        output: || {
+            schema(include_str!(
+                "../../../../schemas/addresses-record.schema.json"
+            ))
+        },
+        call: call_addresses_retire,
     },
 ];
 
@@ -924,4 +1031,38 @@ fn call_changes(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String
     };
     let (_, diff) = diff::answer(&server.cache, &global, &args)?;
     json_result(&diff.report)
+}
+
+fn call_addresses_move(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
+    let global = global_at(a.path("project")?.as_deref())?;
+    let project = crate::context::load_project(&global).map_err(|f| f.to_string())?;
+    let from_git = a.boolean("from_git")?;
+    let (old, new) = (a.string("old")?, a.string("new")?);
+    if from_git == (old.is_some() || new.is_some()) || old.is_some() != new.is_some() {
+        return Err("give `old` and `new`, or `from_git`".into());
+    }
+    let args = addresses::MoveArgs {
+        old,
+        new,
+        from_git,
+        base: a.string("base")?,
+        base_exact: a.boolean("base_exact")?,
+        format: Format::Json,
+    };
+    match addresses::answer_move(&project, &args, false).map_err(|e| e.to_string())? {
+        addresses::Moved::One(json) => json_result(&json),
+        addresses::Moved::FromGit(json) => json_result(&json),
+    }
+}
+
+fn call_addresses_retire(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
+    let global = global_at(a.path("project")?.as_deref())?;
+    let project = crate::context::load_project(&global).map_err(|f| f.to_string())?;
+    let args = addresses::RetireArgs {
+        old: a.string("old")?.unwrap_or_default(),
+        reason: a.string("reason")?.unwrap_or_default(),
+        format: Format::Json,
+    };
+    let json = addresses::answer_retire(&project, &args, false).map_err(|e| e.to_string())?;
+    json_result(&json)
 }

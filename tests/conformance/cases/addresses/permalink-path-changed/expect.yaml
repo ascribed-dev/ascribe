@@ -1,0 +1,8 @@
+description: >-
+  The permalinks under another `permalink-path` are one warning for the
+  setting.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: address-lost, file: ascribe.addresses, line: 1}

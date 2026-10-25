@@ -49,6 +49,8 @@ mod navigation;
 mod network;
 #[path = "all/observe.rs"]
 mod observe;
+#[path = "all/openapi.rs"]
+mod openapi;
 #[path = "all/output.rs"]
 mod output;
 #[path = "all/page_parity.rs"]

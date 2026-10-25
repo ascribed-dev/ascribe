@@ -19,6 +19,18 @@ use crate::model::{Section, entries, fit, type_entries};
 /// The most characters [`rules`] takes.
 pub const RULES_BUDGET: usize = 4_000;
 
+/// What the rules of a project with `ascribe.addresses` say about moving a
+/// page, in a section of their own after the links': `{config}` is where
+/// `--config` goes.
+pub const MOVING_SENTENCES: &str = "This project keeps the addresses it has published in \
+     `ascribe.addresses`, so a reader's old link still leads somewhere. Move or rename a page \
+     with `ascribe rename <page> <new>`, which records the move. After moving pages with `git \
+     mv`, run `ascribe addresses move{config} --from-git` to record the moves git sees. For a \
+     page you delete on purpose, forward its address to the page that covers it now, with \
+     `ascribe addresses move{config} <old> <page>`, or retire it, with `ascribe addresses \
+     retire{config} <old> --reason \"<why>\"`. `ascribe check` reports `address-lost` for a \
+     page that's gone without either.";
+
 /// The most characters the phrases take within the rules.
 pub const MODEL_BUDGET: usize = 2_000;
 
@@ -101,11 +113,19 @@ pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPa
         permalinks.push(' ');
         permalinks.push_str(SUMMARY_SENTENCE);
     }
+    let moving = if project.addresses_file().is_some() {
+        format!(
+            "\n### Moving pages\n\n{}\n",
+            MOVING_SENTENCES.replace("{config}", &at.config())
+        )
+    } else {
+        String::new()
+    };
     let tail = format!(
         "\n### Links\n\nLink to the source file, with a relative path such as \
          `../guides/install.md#configure`, not to the site's address. `ascribe outline \
          <page>` lists a page's headings with their ids, and `ascribe link <target> --from \
-         <page>` says whether a link works and what to write.{permalinks}\n\n### More\n\n\
+         <page>` says whether a link works and what to write.{permalinks}\n{moving}\n### More\n\n\
          {SITE_FORM_SENTENCE}\n\n`ascribe model{}` shows everything the content model allows. Every directive: {}\n",
         at.path_arg(),
         directive_reference_url(),
@@ -615,6 +635,26 @@ mod tests {
             "{rules}"
         );
         assert!(!rules.contains("\n- step by step"), "{rules}");
+    }
+
+    #[test]
+    fn a_project_with_an_addresses_file_is_told_how_to_move_pages() {
+        let model = "spec = \"0.1\"\n";
+        let page = "---\ntitle: Keys\n---\n\nRotate the key.\n";
+        let rules = rules_of(
+            model,
+            &[
+                ("docs/keys.md", page),
+                ("ascribe.addresses", "version = 1\n"),
+            ],
+        );
+        assert!(rules.contains("\n### Moving pages\n"), "{rules}");
+        assert!(
+            rules.contains("`ascribe addresses move --from-git`"),
+            "{rules}"
+        );
+        let rules = rules_of(model, &[("docs/keys.md", page)]);
+        assert!(!rules.contains("Moving pages"), "{rules}");
     }
 
     #[test]

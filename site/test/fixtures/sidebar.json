@@ -114,6 +114,11 @@
         "nested": true
       },
       {
+        "href": "/docs/checks/diagnostics/project-files/",
+        "label": "Diagnostics: the addresses file and API specs",
+        "nested": true
+      },
+      {
         "href": "/docs/checks/diagnostics/content-model/",
         "label": "Diagnostics: the content model",
         "nested": true
@@ -298,6 +303,15 @@
       {
         "href": "/docs/examples/sources/",
         "label": "ascribe sources and observe"
+      }
+    ]
+  },
+  {
+    "label": "OpenAPI",
+    "pages": [
+      {
+        "href": "/docs/openapi/",
+        "label": "Link to your API reference"
       }
     ]
   },
@@ -499,7 +513,12 @@
       },
       {
         "href": "/docs/contracts/json-reports/sources/",
-        "label": "JSON reports: ascribe init, ascribe sources, ascribe observe, ascribe permalinks, and ascribe addresses",
+        "label": "JSON reports: ascribe init, ascribe sources, ascribe observe, and ascribe permalinks",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/json-reports/addresses/",
+        "label": "JSON reports: ascribe addresses",
         "nested": true
       },
       {

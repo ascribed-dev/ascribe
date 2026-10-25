@@ -64,6 +64,8 @@ Use the commands when you have a shell. Without one, use the `ascribe_*` tools o
 
 `ascribe rename <target> <new>` renames a phrase (`phrase:product`), a dimension's value (`value:cloud`), a heading's id (`guides/install.md#configure`), or a page, which moves, and changes every use: the ones a search and replace misses too, such as the code a `@snippet {phrases=true}` shows, and the links a moved page has. Use it instead of editing each use.
 
+In a project with an `ascribe.addresses`, which keeps the addresses the docs have published, a page's old address must still lead somewhere. `ascribe rename` records a page's move there. After moving pages with `git mv`, run `ascribe addresses move --from-git` to record the moves git sees. For a page deleted on purpose, forward its address to the page that covers it now, with `ascribe addresses move <old> <page>`, or retire it, with `ascribe addresses retire <old> --reason "<why>"`. `ascribe check` reports `address-lost` for a page that's gone without either, with these as its fixes. Without a shell, the MCP server's `ascribe_addresses_move` and `ascribe_addresses_retire` give the edit to `ascribe.addresses` to apply.
+
 ## Checking in CI
 
 A CI job runs two commands: `ascribe check --deny-warnings`, which fails on an error or a warning in any build, and `ascribe fmt --check`, which fails on a page `ascribe fmt` would change. Run them where `ascribe.toml` is, or give each `--config <folder>`.
