@@ -697,6 +697,11 @@ export class SidebarViews implements vscode.Disposable {
       this.projects.onDidChangeState((server) => {
         if (server === this.server) this.follow(true);
       }),
+      // About's "Also answers at" is the server's comparison of the
+      // addresses, which says when it's run again.
+      this.projects.onDidChangeAddresses((server) => {
+        if (server === this.server) this.soon("thisPage");
+      }),
       this.projects.onDidChangeProjects(() => this.follow(true)),
       // The links of the views' welcome while their project's server has failed.
       vscode.commands.registerCommand(SHOW_OUTPUT, () => this.server?.showOutput()),

@@ -95,6 +95,20 @@ Each is one edit to the text the editor has, so a page you've changed and not sa
 
 The files are left unsaved on purpose. On a large project an edit can change hundreds of files, and each is opened with its changes unsaved, so you can read them before you save them: **File: Save All** saves them. **Undo** takes the edit back: VS Code asks whether to undo it in every file it changed or only in the one you're in. If a file changes while the question is up, nothing is applied; choose the action again.
 
+### Addresses lost
+@available: ascribe planned
+
+In a project that [keeps its addresses](../publishing/redirects.md), Health has a group after **Every build**, **Against the base**, with one count:
+
+```text
+  Against the base · main at 3:30 PM
+    Addresses lost            1 page
+```
+
+**Addresses lost** counts the pages whose addresses the base published and nothing accounts for now, [`address-lost`](../checks/diagnostics/project-files.md#ASC255), and opens the Problems panel at `ascribe.addresses`. The language server compares the addresses with the base's on its own, between checks: when the project loads, after a save, after a change on disk such as a page deleted in the Explorer or a `git checkout`, and as you edit `ascribe.addresses`, so a move's entry counts before you save it. It doesn't compare as you type in a page. The head says which base it compared with and when; while the server is starting, or when the base can't be read, the count is a dash and the head says why, with the reason in the Problems panel. A project without `ascribe.addresses` has no group.
+
+The group's problems are in the Problems panel at `ascribe.addresses`, as **Check Every Build** puts them, with their quick fixes. **Check Every Build** replaces them with its own when it runs, so the same problem is never listed twice, and the server's next comparison replaces the check's.
+
 ## This page
 
 **This page** says what's known about the active page, in four sections, and five while review is on, with **Review** after About ([Review in the preview](review.md#the-review-view)). About's **Markdown** row is the Markdown version's address, or "not published" when the project publishes no Markdown versions ([`[consumer] agents`](../content-model/output.md#consumer), on by default with a `site`), and a fragment's address is only where it's included. With the cursor under a heading, Connections narrows to that heading's links and the includes of its section, whichever page they reach it through; Includes stays the page's. **Memos** lists the [memo files](actions.md#memo-files) about the heading, or about the page outside any heading, including those about a block in it, marked personal or outdated when it is. Each item opens the link, the include, or the memo; an include opens in the editor group beside the page's, with the focus left in the view, and This page stays on the page. Unsaved edits count.
@@ -131,6 +145,11 @@ About's other rows say where the page is, and whether it's published, listed, du
 A fragment has no builds, listing, or size of its own: it's published only where it's included.
 
 This page updates as you move between pages and headings, while it's open.
+
+### Old addresses
+@available: ascribe planned
+
+In a project that [keeps its addresses](../publishing/redirects.md), About has an **Also answers at** row after **Markdown** for each old address an entry of `ascribe.addresses` leads to the page, the redirects the build writes to it, such as `/docs/guides/my-setup` on a page moved from `guides/my-setup.md`. Its tooltip names the entry. A row goes when the entry does, and an entry you've added and not saved counts.
 
 ## Pages
 

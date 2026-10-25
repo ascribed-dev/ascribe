@@ -18,6 +18,8 @@ Wrote ascribe.addresses. Moves are recorded from now on.
 
 A project without the file records nothing, and the check compares nothing, so turning it on is the decision to keep the addresses.
 
+The editor offers it too. After you move a page of a project without the file, in the Explorer or in Pages, VS Code asks once for the project whether to **Keep the addresses you've published**. Choose it, and the extension runs `ascribe addresses init`, then `ascribe addresses move` for each page that moved, so the move that prompted it is recorded. Dismissed, it isn't asked again for the project.
+
 ## `ascribe.addresses`
 
 The file says where each address the docs published went. Ascribe writes it, each table sorted, one entry per line; you edit only a retired entry's reason:
@@ -73,7 +75,14 @@ $ git rm content/guides/teams/share-a-loom.md && ascribe check --base main --den
 [ASC255] Warning: guides/teams/share-a-loom.md was published at /docs/guides/teams/share-a-loom and /docs/guides/teams/share-a-loom.md, and nothing publishes them now
 ```
 
-Each is reported at `ascribe.addresses`. The comparison runs when `ascribe check` checks the whole project, not for a page or a file named, and not in the editor as you type: the editor's [Check Every Build](../editor/problems.md#the-problems-panel) runs the command, and shows what it reports with its fixes.
+Each is reported at `ascribe.addresses`. The comparison runs when `ascribe check` checks the whole project, not for a page or a file named. In the editor, see [below](#in-the-editor).
+
+## In the editor
+@available: ascribe planned
+
+The language server compares the addresses with the base's between checks, not as you type in a page: when the project loads, after a save, after a change on disk, as a page deleted in the Explorer or a `git checkout` is, and as you edit `ascribe.addresses`. Delete a page, and within seconds its lost addresses are in the Problems panel at `ascribe.addresses`, as [Check Every Build](../editor/problems.md#the-problems-panel) would put them, with their quick fixes, and the Project view's Health counts them under [Against the base](../editor/sidebar.md#addresses-lost). Check Every Build replaces them with its own when it runs. The server keeps the base's addresses for each base commit and version of Ascribe, so a comparison after the first doesn't read the base again.
+
+Moving a page in the editor puts its entry in the same edit as the links it updates, unsaved in `ascribe.addresses` until you save: an entry you haven't saved counts, and **Undo** before you save takes back the move and its entry together. A page moved back after its entry is saved, as `git mv` would, leaves the entry, which [`addresses-entry-live`](../checks/diagnostics/project-files.md#ASC266) reports. On a page that old addresses lead to, This page's About lists each under [Also answers at](../editor/sidebar.md#old-addresses).
 
 ## Fix a lost address
 @available: ascribe planned

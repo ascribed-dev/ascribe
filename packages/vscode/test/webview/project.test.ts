@@ -141,6 +141,7 @@ const facts = (
   state: "running",
   version: "0.4.0",
   everyBuild,
+  addresses: { kind: "off" },
   inventory: { orphans: 0, unused: 0 },
   agentFiles: { kind: "made", at: 0, stale: [], error: null, current: true },
   now: 0,

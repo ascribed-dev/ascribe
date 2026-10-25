@@ -123,6 +123,7 @@ if (process.argv.includes("--tests")) {
       run: "test/integration/run.ts",
       "suite/index": "test/integration/suite/index.ts",
       "suite/actions.it": "test/integration/suite/actions.it.ts",
+      "suite/addresses.it": "test/integration/suite/addresses.it.ts",
       "suite/activation.it": "test/integration/suite/activation.it.ts",
       "suite/glossary.it": "test/integration/suite/glossary.it.ts",
       "suite/ignored.it": "test/integration/suite/ignored.it.ts",
