@@ -36,8 +36,9 @@ pub struct Closest {
 /// - A heading the page lacks: the page's headings, closest id first.
 /// - A fragment: the pages that include it.
 /// - A file that isn't a page, named with the wrong case: the file.
-/// - An operation the spec lacks: the spec's operations, closest first, by
-///   id, or by method and path for one with no id.
+/// - An operation the spec lacks: the one it was renamed to, then the spec's
+///   operations, closest first, by id, or by method and path for one with
+///   no id.
 pub fn closest_targets(
     project: &Project,
     from: &RelPath,
@@ -79,7 +80,7 @@ pub fn closest_targets(
                 .api(api)
                 .is_some_and(|a| !matches!(a.reference, ApiReference::Template(_)));
             let path = local.path.clone().unwrap_or_default();
-            crate::openapi::closest_ids(spec, id, by_path)
+            crate::openapi::closest_operations(project.apis(), api, id, by_path)
                 .into_iter()
                 .map(|closest| Closest {
                     path: path.clone(),

@@ -25,6 +25,7 @@ It's checked as the link would be:
 
 - An operation the spec doesn't have is an error, `link-operation-missing`, with the closest operations as its fixes.
 - An operation named by its method and path when it has an id is advice, `link-operation-by-path`, and its fix writes the id.
+- An operation the spec marks `deprecated` is advice, `link-operation-deprecated`, as a link to it is: a guide is usually better showing the call that replaces it.
 - A link that isn't to an operation, such as a page, the spec with no `#`, or a URL, is an error, `operation-link-not-operation`. To link to a page, write a link in the text.
 
 ## What it shows

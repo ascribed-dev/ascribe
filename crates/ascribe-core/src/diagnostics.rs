@@ -857,7 +857,11 @@ pub const LINK_OPERATION_FORM_UNSUPPORTED: DiagnosticSlug =
 /// that has an id, by its method and path".
 pub const LINK_OPERATION_BY_PATH: DiagnosticSlug = DiagnosticSlug("link-operation-by-path");
 
-/// `ASC276`, error, file level: SPEC §8.2, "Links | An `@operation`'s link
+/// `ASC276`, advice, file level: SPEC §8.2, "Links | Target is an operation
+/// the spec marks deprecated".
+pub const LINK_OPERATION_DEPRECATED: DiagnosticSlug = DiagnosticSlug("link-operation-deprecated");
+
+/// `ASC281`, error, file level: SPEC §8.2, "Links | An `@operation`'s link
 /// isn't to an operation of a declared API".
 pub const OPERATION_LINK_NOT_OPERATION: DiagnosticSlug =
     DiagnosticSlug("operation-link-not-operation");
@@ -1131,6 +1135,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     ADDRESSES_SOFT_404,
     LINK_OPERATION_FORM_UNSUPPORTED,
     LINK_OPERATION_BY_PATH,
+    LINK_OPERATION_DEPRECATED,
     OPERATION_LINK_NOT_OPERATION,
 ];
 

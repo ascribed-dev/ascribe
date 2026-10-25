@@ -14,7 +14,7 @@
 use std::sync::Arc;
 
 use ascribe_core::{Builtin, Issue, Location, RelPath, Span, diagnostics};
-use ascribe_model::{Build, Segment, is_absolute_address};
+use ascribe_model::{Build, Segment};
 use ascribe_syntax::{BlockKind, DirectiveLine, Inline, InlineKind, PrimaryValue};
 
 use super::BuildResolver;
@@ -25,7 +25,6 @@ use super::tree::{
 };
 use crate::expand::PageProblem;
 use crate::index::{FileIndex, RefKind, Reference, Target};
-use crate::openapi::Operation;
 use crate::project::{PageAsset, Resolution};
 use crate::references::{operation_target, reference_target};
 
@@ -139,29 +138,11 @@ impl<'p> Links<'_, 'p> {
             } => {
                 return self.page_link(index, reference, block, target, id.as_deref(), *fragment);
             }
-            Resolution::Operation { api, id } => self.operation(api, id),
+            Resolution::Operation { api, id } => self.resolver.operation_link(api, id),
             // The file-level problem is the source index's.
             _ => LinkTarget::Unresolved,
         };
         (target, None)
-    }
-
-    /// A link to an operation: its address in the API's reference, when the
-    /// spec has it, by its id when it has one, however the link names it.
-    /// When the spec doesn't have it, or can't be read, or the reference has
-    /// no address for an operation with no id, the file-level problem is the
-    /// source index's.
-    fn operation(&self, api: &str, fragment: &str) -> LinkTarget {
-        let Some((operation, address)) = self.operation_and_address(api, fragment) else {
-            return LinkTarget::Unresolved;
-        };
-        LinkTarget::Operation {
-            api: api.to_owned(),
-            operation_id: operation.operation_id.clone(),
-            method: operation.method.clone(),
-            path: operation.path.clone(),
-            address,
-        }
     }
 
     /// What an `@operation` puts in the page (SPEC §4.13): the operation its
@@ -179,43 +160,26 @@ impl<'p> Links<'_, 'p> {
         else {
             return None;
         };
-        let (operation, address) = self.operation_and_address(&api, &id)?;
+        let LinkTarget::Operation {
+            operation_id,
+            method,
+            path,
+            address,
+            ..
+        } = self.resolver.operation_link(&api, &id)
+        else {
+            return None;
+        };
+        let operation = project.apis().spec(&api)?.named(&id)?.operation();
         Some(EmbeddedOperation {
             api,
-            operation_id: operation.operation_id.clone(),
-            method: operation.method.clone(),
-            path: operation.path.clone(),
+            operation_id,
+            method,
+            path,
             summary: operation.summary.clone(),
             deprecated: operation.deprecated,
             address,
         })
-    }
-
-    /// The operation `fragment` names in the API's spec, and its address:
-    /// by its id when it has one, however it's named.
-    fn operation_and_address(&self, api: &str, fragment: &str) -> Option<(&'p Operation, String)> {
-        let project = self.resolver.project();
-        let model = project.model();
-        let declared = model.api(api)?;
-        let operation = project.apis().spec(api)?.named(fragment)?.operation();
-        let address = match &operation.operation_id {
-            Some(id) => declared.reference.address(id, operation.tag.as_deref()),
-            None => declared
-                .reference
-                .path_address(&operation.method, &operation.path)?,
-        };
-        // The reference is the site's, not a line's: an older line's link
-        // goes to the same address.
-        let address = if is_absolute_address(&address) {
-            address
-        } else {
-            format!(
-                "{}/{}",
-                self.resolver.site_base().trim_end_matches('/'),
-                address.trim_start_matches('/')
-            )
-        };
-        Some((operation, address))
     }
 
     fn page_link(

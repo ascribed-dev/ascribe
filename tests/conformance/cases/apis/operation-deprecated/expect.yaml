@@ -1,0 +1,9 @@
+description: >-
+  A link to an operation the spec marks deprecated is advice, by its id or by
+  its method and path; a link to one that isn't says nothing.
+spec: ["5.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: link-operation-deprecated, file: index.md, line: 5}
+  - {slug: link-operation-deprecated, file: index.md, line: 7}

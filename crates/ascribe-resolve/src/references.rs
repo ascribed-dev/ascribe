@@ -268,8 +268,6 @@ pub fn resolve_reference(
     Resolution::AssetMissing(missing)
 }
 
-/// The API whose spec is the file at this content path, by its path from
-/// the project root as `[apis.<name>] spec` writes it, normalized.
 /// The operation a target names, when it's a link to a declared spec with
 /// a fragment (SPEC §5.2): what [`resolve_reference`] resolves it to, found
 /// from the declaration alone. An `@operation`'s link is only ever one
@@ -289,7 +287,9 @@ pub fn operation_target(
     })
 }
 
-fn declared_spec<'m>(
+/// The API whose spec is the file at this content path, by its path from
+/// the project root as `[apis.<name>] spec` writes it, normalized.
+pub fn declared_spec<'m>(
     model: &'m ContentModel,
     layout: &Layout,
     path: &RelPath,

@@ -5074,6 +5074,19 @@ fix = "Link to the operation by its `operationId`, which every renderer addresse
 
 [[diagnostic]]
 code = "ASC276"
+slug = "link-operation-deprecated"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+spec = "5.2"
+reference = "writing/inline.md#links"
+row = "Links | Target is an operation the spec marks deprecated"
+message = "`#{operation}` names an operation `{path}` marks deprecated"
+fix = "Link to the operation that replaces it, if the spec names one, or say in the text that it's deprecated. A deprecated operation still works, and its reference marks it; a guide that teaches it sends readers to something going away."
+
+[[diagnostic]]
+code = "ASC281"
 slug = "operation-link-not-operation"
 severity = "error"
 level = "file"

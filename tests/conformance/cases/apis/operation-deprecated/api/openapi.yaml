@@ -1,0 +1,15 @@
+openapi: 3.1.0
+info: { title: Quill, version: "1" }
+paths:
+  /users/{id}:
+    get:
+      operationId: getUser
+      summary: Get a user
+      deprecated: true
+    delete:
+      summary: Delete a user
+      deprecated: true
+  /users:
+    get:
+      operationId: listUsers
+      summary: List users

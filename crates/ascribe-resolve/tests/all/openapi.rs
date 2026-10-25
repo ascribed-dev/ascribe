@@ -481,3 +481,185 @@ fn openapi_a_missing_operation_under_a_template_suggests_only_ids() {
         ]
     );
 }
+
+/// The line, from 0, of the first line of `text` that starts with `line`,
+/// after the line that starts with `after`.
+fn line_of(text: &str, after: &str, line: &str) -> usize {
+    let lines: Vec<&str> = text.lines().collect();
+    let from = lines
+        .iter()
+        .position(|l| l.starts_with(after))
+        .expect("the line before");
+    from + lines[from..]
+        .iter()
+        .position(|l| l.starts_with(line))
+        .expect("the line")
+}
+
+#[test]
+fn openapi_each_operation_has_the_line_of_its_method_in_yaml_and_json() {
+    let spec = read_spec(SWAGGER_2, false).expect("reads");
+    let line = |id: &str| spec.operation(id).and_then(|o| o.line);
+    assert_eq!(
+        line("getUsers"),
+        Some(line_of(SWAGGER_2, "  /users:", "    get:"))
+    );
+    assert_eq!(
+        line("createUser"),
+        Some(line_of(SWAGGER_2, "  /users:", "    post:"))
+    );
+    assert_eq!(
+        line("getUser"),
+        Some(line_of(SWAGGER_2, "  /users/{id}:", "    get:"))
+    );
+    let no_id = spec.named("delete/users/{id}").expect("the operation");
+    assert_eq!(
+        no_id.operation().line,
+        Some(line_of(SWAGGER_2, "  /users/{id}:", "    delete:"))
+    );
+
+    let json = read_spec(OPENAPI_3_0, true).expect("reads");
+    assert_eq!(
+        json.operation("activity/list invoices")
+            .and_then(|o| o.line),
+        Some(line_of(OPENAPI_3_0, "    \"/invoices\"", "      \"get\""))
+    );
+
+    // OpenAPI 3.2's other methods, under `additionalOperations`.
+    let other = read_spec(OPENAPI_3_2, false).expect("reads");
+    assert_eq!(
+        other.operation("purgeSearch").and_then(|o| o.line),
+        Some(line_of(
+            OPENAPI_3_2,
+            "    additionalOperations:",
+            "      PURGE:"
+        ))
+    );
+    // A path that holds a colon, quoted keys, and a description in a block
+    // whose lines look like keys.
+    let text = "paths:\n  '/v1/{name}:cancel':\n    description: |\n      get: not an operation\n    \"post\":\n      operationId: cancel\n";
+    let spec = read_spec(text, false).expect("reads");
+    assert_eq!(spec.operation("cancel").and_then(|o| o.line), Some(4));
+}
+
+#[test]
+fn openapi_a_link_to_a_deprecated_operation_is_advice() {
+    let project = project(
+        MODEL,
+        &[
+            ("api/openapi.yaml", SWAGGER_2),
+            (
+                "content/guide.md",
+                &page("[Get](../api/openapi.yaml#getUser) [List](../api/openapi.yaml#getUsers)"),
+            ),
+        ],
+    );
+    let problems = project.problems(&RelPath::parse("guide.md").expect("a path"));
+    assert_eq!(problems.len(), 1, "{problems:?}");
+    assert_eq!(problems[0].slug.as_str(), "link-operation-deprecated");
+    assert_eq!(problems[0].arg("operation"), Some("getUser"));
+}
+
+/// A project on disk whose guide links to `getUser`, loaded incrementally,
+/// and the folder it's in.
+fn on_disk(spec: &str) -> (tempfile::TempDir, ascribe_resolve::IncrementalProject) {
+    let dir = tempfile::tempdir().expect("a folder");
+    let root = dir.path();
+    std::fs::create_dir_all(root.join("api")).expect("api");
+    std::fs::create_dir_all(root.join("content")).expect("content");
+    std::fs::write(root.join("api/openapi.yaml"), spec).expect("spec");
+    std::fs::write(
+        root.join("content/guide.md"),
+        page("[Get](../api/openapi.yaml#getUser)"),
+    )
+    .expect("page");
+    let model = ascribe_model::load_str(MODEL, FileId::new(0)).expect("the model");
+    let layout = Layout::from_model(&model);
+    let fs = DiskFs::new(root, &layout);
+    let inc = ascribe_resolve::IncrementalProject::load(Arc::new(model), layout, fs);
+    (dir, inc)
+}
+
+const RENAMED: &str = "openapi: 3.1.0\ninfo: { title: Users, version: \"1\" }\npaths:\n  /users/{id}:\n    get:\n      operationId: fetchUser\n    delete:\n      operationId: deleteUser\n";
+
+#[test]
+fn openapi_a_spec_changed_on_disk_is_read_again_and_a_renamed_id_is_fixed_safely() {
+    let before = "openapi: 3.1.0\ninfo: { title: Users, version: \"1\" }\npaths:\n  /users/{id}:\n    get:\n      operationId: getUser\n    delete:\n      operationId: deleteUser\n";
+    let (dir, mut inc) = on_disk(before);
+    let guide = RelPath::parse("guide.md").expect("a path");
+    assert!(inc.snapshot().problems(&guide).is_empty());
+
+    std::fs::write(dir.path().join("api/openapi.yaml"), RENAMED).expect("the spec, renamed");
+    let affected = inc
+        .apply([ascribe_resolve::Change::AssetCreated {
+            path: RelPath::parse("api/openapi.yaml").expect("a path"),
+        }])
+        .expect("applies");
+    assert!(affected.recheck.contains(&guide), "{affected:?}");
+    let problems = inc.snapshot().problems(&guide);
+    assert_eq!(problems.len(), 1, "{problems:?}");
+    let issue = &problems[0];
+    assert_eq!(issue.slug.as_str(), "link-operation-missing");
+    assert_eq!(issue.arg("closest"), Some("fetchUser"));
+    assert_eq!(
+        issue.fixes[0].edits[0].new_text,
+        "../api/openapi.yaml#fetchUser"
+    );
+    assert_eq!(issue.fixes[0].applicability, Applicability::Safe);
+    assert!(
+        issue.fixes[1..]
+            .iter()
+            .all(|f| f.applicability == Applicability::Unsafe)
+    );
+}
+
+#[test]
+fn openapi_a_renamed_id_is_fixed_from_a_base_revision_s_spec() {
+    let (_dir, mut inc) = on_disk(RENAMED);
+    let guide = RelPath::parse("guide.md").expect("a path");
+    let unsure = inc.snapshot().problems(&guide);
+    assert_eq!(unsure[0].fixes[0].applicability, Applicability::Unsafe);
+
+    let base = project(
+        MODEL,
+        &[
+            ("api/openapi.yaml", SWAGGER_2),
+            ("content/guide.md", &page("")),
+        ],
+    );
+    inc.apply([ascribe_resolve::Change::BaseApis(Arc::new(
+        base.apis().clone(),
+    ))])
+    .expect("applies");
+    let problems = inc.snapshot().problems(&guide);
+    assert_eq!(problems[0].arg("closest"), Some("fetchUser"));
+    assert_eq!(problems[0].fixes[0].applicability, Applicability::Safe);
+}
+
+#[test]
+fn openapi_a_renamed_id_is_only_safe_with_one_operation_in_its_place() {
+    let model = ascribe_model::load_str(MODEL, FileId::new(0)).expect("the model");
+    let layout = Layout::from_model(&model);
+    let read = |spec: &str| {
+        let fs = MemoryFs::new(&layout).with_file("api/openapi.yaml", spec);
+        ascribe_resolve::openapi::ApiSpecs::read(&model, &fs)
+    };
+    let mut apis = read("paths:\n  /users:\n    get:\n      operationId: listUsers\n");
+    apis.remember(&read(
+        "paths:\n  /users:\n    get:\n      operationId: getUsers\n  /people:\n    get:\n      operationId: listUsers\n",
+    ));
+    // `getUsers` was at `get /users`, where `listUsers` is now; but
+    // `listUsers` was at `get /people`, so it moved, and wasn't renamed.
+    assert_eq!(apis.renamed("public", "getUsers"), None);
+    let mut apis = read("paths:\n  /users:\n    get:\n      operationId: listUsers\n");
+    apis.remember(&read(
+        "paths:\n  /users:\n    get:\n      operationId: getUsers\n",
+    ));
+    assert_eq!(
+        apis.renamed("public", "getUsers")
+            .and_then(|o| o.operation_id.as_deref()),
+        Some("listUsers")
+    );
+    assert_eq!(apis.renamed("public", "listUsers"), None);
+    assert_eq!(apis.renamed("public", "nothing"), None);
+}
