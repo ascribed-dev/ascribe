@@ -4,19 +4,22 @@
 //! old address is made from its path by the build's routing today, so the
 //! redirect is written as long as the entry is there, whatever the base.
 //!
-//! - **`redirects`:** for each `[moved]` entry whose value is a page the
+//! - **`redirects`:** for each `[moved]` entry that leads to a page the
 //!   build publishes, the key's address and its Markdown version's, each to
-//!   the value's, 301, flat and exact. A key that's an address from the
+//!   the page's, 301, flat and exact: an entry whose value is another
+//!   entry's key leads where that one does. A key that's an address from the
 //!   host's root is its own `from`. A pair whose `from` and `to` agree once
 //!   case and a final `/` are ignored is left out: the host finds the page
 //!   anyway. So is one whose `from` the build publishes, since a page there
 //!   is live. An id's entry writes nothing: a fragment never reaches the
 //!   host.
 //! - **`gone`:** each `[retired]` key's address, and its Markdown
-//!   version's, with the reason.
+//!   version's, with the reason, and where the page saying so is served:
+//!   under [`GONE_PREFIX`], at the key's page's address, for both.
 //!
 //! With `[consumer] host = "netlify"`, the emitter also writes Netlify's
-//! files in `_ascribe/host/`: `_redirects` from the pairs, and `_headers`
+//! files in `_ascribe/host/`: `_redirects` from the pairs, and a rule for
+//! each retired address serving its page there with a 404; and `_headers`
 //! from the build's header rules.
 
 use std::collections::HashSet;
@@ -32,6 +35,10 @@ const VERSION: u32 = 1;
 
 /// The status every pair is written with: a permanent redirect.
 const MOVED_PERMANENTLY: u16 = 301;
+
+/// Where a retired address's page is served, from the host's root: this,
+/// then the address.
+pub const GONE_PREFIX: &str = "/_ascribe/gone";
 
 /// Where the addresses a build used to publish lead now, and which were
 /// retired: `_ascribe/redirects.json`.
@@ -73,6 +80,9 @@ pub struct Gone {
     pub reason: String,
     /// The `ascribe.addresses` key it comes from.
     pub entry: String,
+    /// Where the page saying so is, from the host's root: [`GONE_PREFIX`]
+    /// and the key's address, its page's for a Markdown version.
+    pub page: String,
 }
 
 /// The redirects and retired addresses `file` gives `build`, a build of a
@@ -124,7 +134,11 @@ pub fn redirects(
         }
     };
     for (key, entry) in &file.moved {
-        let Some((path, id)) = split_place(&entry.value) else {
+        // Where the entry leads in the end, so each pair is one step.
+        let Some(target) = file.follow(&entry.value) else {
+            continue;
+        };
+        let Some((path, id)) = split_place(&target) else {
             continue;
         };
         let Some(page) = RelPath::parse(path)
@@ -157,7 +171,12 @@ pub fn redirects(
         }
     }
     for (key, entry) in &file.retired {
-        for (path, _) in addresses_of(key) {
+        let addresses = addresses_of(key);
+        let Some((page, _)) = addresses.iter().find(|(_, markdown)| !markdown) else {
+            continue;
+        };
+        let page = format!("{GONE_PREFIX}{page}");
+        for (path, _) in addresses {
             if is_live(&path) || out.gone.iter().any(|g| g.path == path) {
                 continue;
             }
@@ -165,6 +184,7 @@ pub fn redirects(
                 path,
                 reason: entry.value.clone(),
                 entry: key.clone(),
+                page: page.clone(),
             });
         }
     }
@@ -199,11 +219,19 @@ pub(super) fn json(redirects: &Redirects) -> String {
 }
 
 /// Netlify's `_redirects`: each pair on a line, `from`, `to`, and the
-/// status.
+/// status; then each retired address, its page, and 404, which serves the
+/// page there with that status.
 pub(super) fn netlify(redirects: &Redirects) -> String {
-    redirects
+    let pairs = redirects
         .redirects
         .iter()
-        .map(|r| format!("{} {} {}\n", r.from, r.to, r.status))
-        .collect()
+        .map(|r| format!("{} {} {}\n", r.from, r.to, r.status));
+    let gone = redirects
+        .gone
+        .iter()
+        .map(|g| format!("{} {} {NOT_FOUND}\n", g.path, g.page));
+    pairs.chain(gone).collect()
 }
+
+/// The status a retired address's page is served with.
+const NOT_FOUND: u16 = 404;

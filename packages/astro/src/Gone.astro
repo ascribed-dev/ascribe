@@ -1,0 +1,36 @@
+---
+// A retired address's page: it says what was here was removed, gives the
+// reason as its authors wrote it, as text, and links to the docs' home: the
+// root of the project whose `_ascribe/redirects.json` lists it. The
+// integration adds it as a route at `/_ascribe/gone/[...address]`, one page
+// for each retired address, and the host's `_redirects` serves it at the
+// address with a 404. It isn't indexed.
+import { permalinks } from "virtual:ascribe/site";
+import { gonePaths, type GonePage } from "@ascribed/astro/redirects";
+
+export function getStaticPaths() {
+  return gonePaths(permalinks);
+}
+
+const { reason, home } = Astro.props as GonePage;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Removed from these docs</title>
+    <meta name="robots" content="noindex" />
+  </head>
+  <body>
+    <main>
+      <h1>Removed from these docs</h1>
+      <p>The page that was here was removed from these docs.</p>
+      <p data-reason>{reason}</p>
+      <p>
+        <a href={home}>Go to the docs' home page</a>
+      </p>
+    </main>
+  </body>
+</html>

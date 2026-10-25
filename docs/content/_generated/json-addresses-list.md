@@ -11,6 +11,10 @@
           "description": "The `ascribe.addresses` key it comes from.",
           "type": "string"
         },
+        "page": {
+          "description": "Where the page saying so is, from the host's root: `GONE_PREFIX`\nand the key's address, its page's for a Markdown version.",
+          "type": "string"
+        },
         "path": {
           "description": "The address, from the host's root.",
           "type": "string"
@@ -23,7 +27,8 @@
       "required": [
         "path",
         "reason",
-        "entry"
+        "entry",
+        "page"
       ],
       "type": "object"
     },

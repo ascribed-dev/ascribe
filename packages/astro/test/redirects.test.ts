@@ -3,6 +3,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  gonePaths,
+  goneRoutes,
   mergeRedirects,
   netlifyRedirects,
   readHostRedirects,
@@ -29,6 +31,10 @@ describe("readHostRedirects", () => {
     expect(readHostRedirects(siteRoot(netlifyRedirects([moved, markdown])))).toEqual([
       moved,
       markdown,
+    ]);
+    // A retired address's rule keeps its 404.
+    expect(readHostRedirects(siteRoot("/docs/beta /_ascribe/gone/docs/beta 404\n"))).toEqual([
+      { from: "/docs/beta", to: "/_ascribe/gone/docs/beta", status: 404 },
     ]);
     expect(readHostRedirects(mkdtempSync(path.join(tmpdir(), "ascribe-redirects-")))).toEqual([]);
   });
@@ -82,5 +88,58 @@ describe("redirectsOutcome", () => {
     });
     expect(outcome.kind).toBe("fail");
     expect(outcome.kind === "fail" && outcome.text).toContain("/docs/guides/my-setup ");
+  });
+});
+
+/** A site output whose `_ascribe/redirects.json` lists `gone`. */
+function withGone(gone: { path: string; reason: string; entry: string; page: string }[]): string {
+  const root = mkdtempSync(path.join(tmpdir(), "ascribe-redirects-"));
+  mkdirSync(path.join(root, "_ascribe"), { recursive: true });
+  writeFileSync(
+    path.join(root, "_ascribe", "redirects.json"),
+    JSON.stringify({ version: 1, build: "site", redirects: [], gone }),
+  );
+  return root;
+}
+
+describe("gonePaths", () => {
+  const beta = {
+    path: "/docs/beta",
+    reason: "The beta ended.",
+    entry: "beta.md",
+    page: "/_ascribe/gone/docs/beta",
+  };
+
+  it("gives one page for each retired address's page, with the reason and its project's root", () => {
+    const first = withGone([beta, { ...beta, path: "/docs/beta.md" }]);
+    const second = withGone([
+      { ...beta, reason: "Another reason." },
+      { path: "/old/", reason: "Gone.", entry: "/old/", page: "/_ascribe/gone/old/" },
+    ]);
+    expect(
+      gonePaths([
+        { siteRoot: first, home: "/docs" },
+        { siteRoot: second, home: "/" },
+      ]),
+    ).toEqual([
+      { params: { address: "docs/beta" }, props: { reason: "The beta ended.", home: "/docs" } },
+      { params: { address: "old" }, props: { reason: "Gone.", home: "/" } },
+    ]);
+    // Their routes, which the sitemap leaves out.
+    expect(goneRoutes([first, second], "/")).toEqual([
+      "/_ascribe/gone/docs/beta",
+      "/_ascribe/gone/old",
+    ]);
+  });
+
+  it("gives none without the list, and refuses a version it doesn't know", () => {
+    const none = mkdtempSync(path.join(tmpdir(), "ascribe-redirects-"));
+    expect(gonePaths([{ siteRoot: none, home: "/" }])).toEqual([]);
+    const later = withGone([]);
+    writeFileSync(
+      path.join(later, "_ascribe", "redirects.json"),
+      JSON.stringify({ version: 2, gone: [] }),
+    );
+    expect(() => gonePaths([{ siteRoot: later, home: "/" }])).toThrow(/version 2/);
   });
 });

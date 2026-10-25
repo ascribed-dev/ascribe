@@ -3,6 +3,7 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { createServer as createHttpServer } from "node:http";
 import { createServer } from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -48,6 +49,62 @@ export async function servePreview(
   const port = await freePort();
   const server = await preview({ root, logLevel: "warn", server: { host: "127.0.0.1", port } });
   return { origin: `http://127.0.0.1:${server.port}`, stop: () => server.stop() };
+}
+
+/**
+ * Serves a built site's `dist/` as Netlify does as much as these tests need:
+ * each rule of its `_redirects` matches its address exactly, with or without
+ * a final `/`; a 301 or 302 answers with `Location`, and any other status
+ * serves the rule's target there with that status. Otherwise a file, or a
+ * folder's `index.html`, or a 404. Returns its origin and a function that
+ * stops it.
+ */
+export async function serveLikeNetlify(
+  root: string = siteDir,
+): Promise<{ origin: string; stop(): Promise<void> }> {
+  const dist = path.join(root, "dist");
+  const rules = (await readFile(path.join(dist, "_redirects"), "utf8"))
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line !== "" && !line.startsWith("#"))
+    .map((line) => {
+      const [from = "", to = "", status = "301"] = line.split(/\s+/);
+      return { from: from.replace(/\/$/, ""), to, status: Number.parseInt(status, 10) };
+    });
+  const file = async (address: string): Promise<Buffer | undefined> => {
+    const at = path.join(dist, decodeURIComponent(address));
+    for (const candidate of [at, path.join(at, "index.html"), `${at}.html`]) {
+      try {
+        return await readFile(candidate);
+      } catch {
+        // The next candidate.
+      }
+    }
+    return undefined;
+  };
+  const server = createHttpServer((request, response) => {
+    void (async () => {
+      const address = new URL(request.url ?? "/", "http://localhost").pathname;
+      const rule = rules.find((r) => r.from === address.replace(/\/$/, ""));
+      if (rule !== undefined && (rule.status === 301 || rule.status === 302)) {
+        response.writeHead(rule.status, { Location: rule.to }).end();
+        return;
+      }
+      const body = await file(rule?.to ?? address);
+      if (body === undefined) {
+        response.writeHead(404).end("Not found");
+        return;
+      }
+      const html = (rule?.to ?? address).endsWith(".md") ? "text/markdown" : "text/html";
+      response.writeHead(rule?.status ?? 200, { "Content-Type": html }).end(body);
+    })();
+  });
+  const port = await freePort();
+  await new Promise<void>((resolve) => server.listen(port, "127.0.0.1", resolve));
+  return {
+    origin: `http://127.0.0.1:${String(port)}`,
+    stop: () => new Promise((resolve) => server.close(() => resolve())),
+  };
 }
 
 /**

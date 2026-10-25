@@ -105,3 +105,76 @@ export function redirectsOutcome(sources: {
     text: `${text}\n# The site's own, from public/_redirects: after Ascribe's, since the first rule that matches is used.\n${own}`,
   };
 }
+
+/** The route of a retired address's page, under Astro's `base`: one page for each, at its address. */
+export const GONE_PATTERN = "/_ascribe/gone/[...address]";
+
+/** Where a retired address's page is, from the host's root: this, then the address. */
+const GONE_PREFIX = "/_ascribe/gone/";
+
+/** The format version of `_ascribe/redirects.json` this reads. */
+const REDIRECTS_VERSION = 1;
+
+/** A retired address, as a build's `_ascribe/redirects.json` lists it (output-layout contract §1.8). */
+export interface Gone {
+  /** The address, from the host's root. */
+  path: string;
+  /** Why it was retired, as its authors wrote it. */
+  reason: string;
+  /** The `ascribe.addresses` key it comes from. */
+  entry: string;
+  /** Where its page is, from the host's root. */
+  page: string;
+}
+
+/** What a retired address's page says: why, and where the docs' home is. */
+export interface GonePage {
+  reason: string;
+  home: string;
+}
+
+/** The retired addresses a build's site output lists: none when it has no `_ascribe/redirects.json`. */
+export function readGone(siteRoot: string): Gone[] {
+  const file = path.join(siteRoot, "_ascribe", "redirects.json");
+  let text: string;
+  try {
+    text = readFileSync(file, "utf8");
+  } catch {
+    return [];
+  }
+  const list = JSON.parse(text) as { version: number; gone?: Gone[] };
+  if (list.version !== REDIRECTS_VERSION) {
+    throw new Error(
+      `@ascribed/astro: ${file} is version ${String(list.version)} of the redirects list, and this version of the integration reads version ${String(REDIRECTS_VERSION)}. Update @ascribed/astro and @ascribed/cli together.`,
+    );
+  }
+  return list.gone ?? [];
+}
+
+/**
+ * `getStaticPaths` for the route: one page for each retired address's page
+ * the site outputs list, with the reason and the route of its project's root.
+ * A page two projects both list keeps the first's.
+ */
+export function gonePaths(
+  sources: readonly { siteRoot: string; home: string }[],
+): { params: { address: string }; props: GonePage }[] {
+  const pages = new Map<string, GonePage>();
+  for (const { siteRoot, home } of sources) {
+    for (const gone of readGone(siteRoot)) {
+      if (!gone.page.startsWith(GONE_PREFIX)) continue;
+      const address = gone.page.slice(GONE_PREFIX.length).replace(/\/+$/, "");
+      if (address === "" || pages.has(address)) continue;
+      pages.set(address, { reason: gone.reason, home });
+    }
+  }
+  return [...pages].map(([address, props]) => ({ params: { address }, props }));
+}
+
+/** The routes of the retired addresses' pages the site outputs at `siteRoots` list, under `base`. */
+export function goneRoutes(siteRoots: readonly string[], base: string): string[] {
+  const root = normalizeBase(base);
+  return gonePaths(siteRoots.map((siteRoot) => ({ siteRoot, home: root }))).map(
+    ({ params }) => `${root}${GONE_PREFIX.slice(1)}${params.address}`,
+  );
+}
