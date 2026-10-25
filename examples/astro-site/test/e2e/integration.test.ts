@@ -1,8 +1,8 @@
-import { existsSync } from "node:fs";
 // The integration's contract with Astro, beyond the happy path: it fails the
 // build on Ascribe errors and on routing that disagrees with ascribe.toml, it
 // serves `_ascribe/files/` in the dev server, and its markdown plugin works
 // under Astro's other processor too.
+import { existsSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
