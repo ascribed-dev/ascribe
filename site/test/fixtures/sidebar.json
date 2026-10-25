@@ -316,6 +316,10 @@
       {
         "href": "/docs/openapi/no-id/",
         "label": "Link to an operation with no id"
+      },
+      {
+        "href": "/docs/openapi/operation/",
+        "label": "Show an operation in a page"
       }
     ]
   },
