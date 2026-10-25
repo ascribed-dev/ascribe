@@ -5791,8 +5791,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/898"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Embedded help 4: check missing and long summaries, show them in the editor, tell agents"
     },
     {
@@ -5813,7 +5816,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/890"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Embedded help 5: serve each line's help entries from @ascribed/astro"
     },
     {
@@ -5834,7 +5837,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/891"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Embedded help 6: give a section's help each arm of its switcher"
     },
     {
@@ -5877,7 +5880,7 @@
     },
     {
       "content": {
-        "body": "Several benchmarks are slower than their baselines, recorded on 6 October, by more than the run-to-run noise, though all are still within the regression check's margin (3× plus 25 ms), so the weekly Corpora run passes. Found when [run 40017935402](https://github.com/ascribed-dev/ascribe/actions/runs/40017935402) recorded new baselines on `63e05bd7` (23 October), on the same runner type (AMD EPYC 7763, 4 logical cores). Only the 14 metrics that had no baseline were committed from it; these kept their 6 October values, so they stay measured against them. **Done when** below is what done looks like.\n\n| Metric | 6 October | 23 October | Change |\n|---|---|---|---|\n| `lsp/keystroke-page-3000` | 1.59 ms | 2.74 ms | 1.72× |\n| `lsp/keystroke-fragment-3000` | 7.99 ms | 12.65 ms | 1.58× |\n| `check/elastic-converted-json` | 4.48 s | 6.63 s | 1.48× |\n| `memory/build-synthetic-3000-first` | 265 MB | 392 MB | 1.48× |\n| `check/synthetic-3000-snippets` | 850 ms | 1.07 s | 1.26× |\n| `check/noisy-1000-json` | 221 ms | 270 ms | 1.22× |\n| `diff/synthetic-3000-snippets-unchanged` | 1.07 s | 1.29 s | 1.21× |\n| `check/synthetic-3000-json` | 654 ms | 787 ms | 1.20× |\n| `incremental/edit a fragment's text (30 pages include it)` | 0.16 ms | 0.19 ms | 1.19× |\n| `check/synthetic-3000` | 667 ms | 787 ms | 1.18× |\n\nThe other 23 shared metrics are within a few percent of their baselines (`drift`, `incremental` page edits, `lsp/completion-3000`), and none is faster.\n\n**What to find:** the commits behind each step. The weekly runs' `bench-results` artifacts, and running the benches at commits between 6 and 23 October on the runner (the workflow by hand from a branch), should narrow it. Likely candidates are the changes that added work to every check or every keystroke since then, such as the baseline (#789, #790), the section summaries' groundwork, and `[from]` (#813); confirm rather than assume.\n\n**Done when:** each slowdown above has its cause named here; each is either fixed, with the metric back near its baseline, or accepted, with the baseline recorded again for that metric and the reason in `tests/corpora/RESULTS.md`.\n",
+        "body": "Several benchmarks are slower than their baselines, recorded on 6 October, by more than the run-to-run noise, though all are still within the regression check's margin (3× plus 25 ms), so the weekly Corpora run passes. Found when [run 40017935402](https://github.com/ascribed-dev/ascribe/actions/runs/40017935402) recorded new baselines on `63e05bd7` (23 October), on the same runner type (AMD EPYC 7763, 4 logical cores). Only the 14 metrics that had no baseline were committed from it; these kept their 6 October values, so they stay measured against them. **Done when** below is what done looks like.\n\n| Metric | 6 October | 23 October | Change |\n|---|---|---|---|\n| `lsp/keystroke-page-3000` | 1.59 ms | 2.74 ms | 1.72× |\n| `lsp/keystroke-fragment-3000` | 7.99 ms | 12.65 ms | 1.58× |\n| `check/elastic-converted-json` | 4.48 s | 6.63 s | 1.48× |\n| `memory/build-synthetic-3000-first` | 265 MB | 392 MB | 1.48× |\n| `check/synthetic-3000-snippets` | 850 ms | 1.07 s | 1.26× |\n| `check/noisy-1000-json` | 221 ms | 270 ms | 1.22× |\n| `diff/synthetic-3000-snippets-unchanged` | 1.07 s | 1.29 s | 1.21× |\n| `check/synthetic-3000-json` | 654 ms | 787 ms | 1.20× |\n| `incremental/edit a fragment's text (30 pages include it)` | 0.16 ms | 0.19 ms | 1.19× |\n| `check/synthetic-3000` | 667 ms | 787 ms | 1.18× |\n\nThe other 23 shared metrics are within a few percent of their baselines (`drift`, `incremental` page edits, `lsp/completion-3000`), and none is faster.\n\n**What to find:** the commits behind each step. The weekly runs' `bench-results` artifacts, and running the benches at commits between 6 and 23 October on the runner (the workflow by hand from a branch), should narrow it. Likely candidates are the changes that added work to every check or every keystroke since then, such as the baseline (#789, #790), the section summaries' groundwork, and `[from]` (#813); confirm rather than assume.\n\n**Scope (agreed in triage):** one pull request. It bisects the slowdowns, names each cause in a comment here, and either fixes the small ones or re-records the baseline for that metric with the reason in `tests/corpora/RESULTS.md`. Any fix too large for that pull request gets its own new issue, linked here, and its metric is recorded as waiting on that issue rather than re-baselined.\n\n**Done when:** each slowdown above has its cause named here; each is either fixed, with the metric back near its baseline, or accepted, with the baseline recorded again for that metric and the reason in `tests/corpora/RESULTS.md`, or split into its own linked issue.\n",
         "number": 894,
         "repository": "ascribed-dev/ascribe",
         "title": "Benchmarks: keystrokes, the Elastic check, and first-build memory are slower than on 6 October",
@@ -5888,8 +5891,11 @@
       "labels": [
         "performance"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/900"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Benchmarks: keystrokes, the Elastic check, and first-build memory are slower than on 6 October"
     },
     {
@@ -5905,9 +5911,156 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/897"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Split the content model's diagnostics page, which is over page-size"
+    },
+    {
+      "content": {
+        "body": "`ascribe rename` refuses a rename that changes only a page's case on a case-insensitive file system, as macOS's APFS and Windows' NTFS are by default.\n\n**Steps:** in a copy of `examples/quill` on macOS, `ascribe rename docs/keys.md docs/Keys.md`.\n\n**What happens:** it refuses, saying \"`Keys.md` is there already\": the check for an existing destination finds the source itself, since the file system matches names without case.\n\n**Expected:** the page is renamed to `Keys.md`, and the links that name it change, as for any rename. `git mv docs/keys.md docs/Keys.md` does it. The language server's move (`crates/ascribe-lsp/src/rename.rs`, `file_move`) and the CLI's (`crates/ascribe-cli/src/commands/rename.rs`) likely share the check; the editor's Explorer rename should be tried too.\n\nFound by the redirects proposal's spike (`project-docs/proposals/redirects.md`), whose moves table relies on a case-only rename working. **Done when:** a case-only rename of a page and of a fragment works on a case-insensitive file system, with a test that runs where the CI matrix has one (Windows on pull requests that touch paths, macOS after the merge), and a move onto a different file whose name differs only in case is still refused; a changelog entry in `changes/fixes/`.\n",
+        "number": 899,
+        "repository": "ascribed-dev/ascribe",
+        "title": "ascribe rename refuses a case-only rename on macOS",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/899"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDJlLI",
+      "labels": [
+        "bug",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "ascribe rename refuses a case-only rename on macOS"
+    },
+    {
+      "content": {
+        "body": "The nightly canary failed, so `next` stays on the newest canary that passed.\n\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/40079935613) on `7d8a40f5a2e35589457df8fbc9613b986985aadb`. Failed jobs:\n\n- cargo test (windows-2025)\n- cargo test (ubuntu-24.04)\n",
+        "number": 901,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Canary failed",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/901"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDLZCw",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Canary failed"
+    },
+    {
+      "content": {
+        "body": "With `[consumer] trailing-slash = \"never\"`, `@ascribed/astro` gives Astro `trailingSlash: \"never\"` but leaves `build.format` at Astro's default, `directory`, so each page is written as `x/index.html`. A static host serves that file at `/x/`, not `/x`, so the address Ascribe publishes for every page answers with a 301.\n\n**Steps:** build `examples/astro-site` (`pnpm build`), whose `ascribe.toml` sets `trailing-slash = \"never\"` and `base-path = \"/docs/\"`, put `dist/` under `docs/`, and deploy it to Netlify.\n\n**What happens:**\n\n- `dist/guides/my-setup/index.html`'s canonical link and `sitemap.xml` say `https://docs.example.com/docs/guides/my-setup`.\n- Netlify answers `/docs/guides/my-setup` with `301 → /docs/guides/my-setup/`, and serves the page only there. A link, the sitemap, and the canonical all point at a redirect, and search engines see the canonical disagree with the served address.\n- Netlify's `pretty_urls = false` (`[build.processing.html]` in `netlify.toml`) changes nothing. A page written as `x.html` is served at `/x` with a 200, and `/x/` redirects to `/x`.\n\n**Expected:** a page's published address is served with a 200. For `trailing-slash = \"never\"`, the integration sets Astro's `build.format` to `\"file\"`, so pages are written as `x.html`; a site that sets `build.format` itself to something that disagrees fails the build, as `site`, `base`, and `trailingSlash` do. `always` stays `directory`. The integration's `updateConfig` call is in `packages/astro/src/index.ts`; the copied plain output (`x.md` beside `x.html`) and `_ascribe/files/` need checking under the new layout, and the home page under a base path (`/docs` rather than `/docs/`).\n\nFound by the redirects proposal's host test on Netlify (`project-docs/proposals/redirects.md`, \"What a real host showed\"): a redirect to such a page costs two hops. Ascribe's own docs and site use `always`, so they aren't affected; any project on `never` is, on Netlify and on any host that serves `x/index.html` at `x/`.\n",
+        "number": 903,
+        "repository": "ascribed-dev/ascribe",
+        "title": "With trailing-slash \"never\", Astro sites serve each page behind a 301",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/903"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDSxYk",
+      "labels": [
+        "bug",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "With trailing-slash \"never\", Astro sites serve each page behind a 301"
+    },
+    {
+      "content": {
+        "body": "Phase 0 of [Redirects](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/redirects/README.md). The plan is [phase-0-formats.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/redirects/phase-0-formats.md); read it and the README's decisions. A decision by the maintainer; no code. **Needs nothing.**\n\n**What to decide:** the shapes phase 1 ships, each a contract that can't change once shipped:\n\n- `ascribe.addresses`' grammar: `version`, `[moved]`, `[former]` (`base-path`, `permalink-path`, `agents`, `builds`; not `trailing-slash`, since the host test showed a rule matches either slash form), and `[retired]`.\n- `_ascribe/redirects.json`: `version`, `build`, `redirects` (`from`, `to`, `status`, `entry`), and `gone` (`path`, `reason`, `entry`).\n- `[consumer] host = \"netlify\"` in place of `headers`, which becomes an error; the compiler writing `_ascribe/host/_redirects` and `_headers`; `@ascribed/astro` merging them at the site's root, a site's own `_redirects` after Ascribe's rules.\n- The 14 diagnostics' names and levels, including `anchor-lost` as advice beside `address-lost`.\n- The commands: `ascribe addresses init`, `move`, `retire`, `list`; `ascribe check --base` and `--base-exact`; MCP tools that return the edit and write nothing.\n\nThe phase file gives a recommendation for each.\n\n**Done when:** a decision file in `project-docs/decisions/`, numbered by this issue, records each shape as settled, and why. Phase 1 starts from it.\n",
+        "number": 904,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Redirects 0: decide ascribe.addresses, redirects.json, [consumer] host, the diagnostics, and the commands",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/904"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDS3PY",
+      "labels": [
+        "documentation",
+        "question"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Redirects 0: decide ascribe.addresses, redirects.json, [consumer] host, the diagnostics, and the commands"
+    },
+    {
+      "content": {
+        "body": "Phase 1 of [Redirects](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/redirects/README.md). The plan is [phase-1-thread.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/redirects/phase-1-thread.md); read it and the README's decisions 1 to 11 and \"Rules for every phase\" before starting. One pull request. **Needs #904's decision, and #903.**\n\n**What to build:** the thread, in `examples/astro-site`. A build's addresses listed in `ascribe-resolve` (pages, Markdown versions, explicit ids); `ascribe.addresses` read and written in `ascribe-model`; the comparison in `ascribe-check`, with the base's addresses passed in, since the check can't read git (decision 2); `ascribe check --base`/`--base-exact` reading the base through `ascribe-diff`; `address-lost`, `anchor-lost`, `addresses-base-unreadable`, `addresses-build-gone`, and `addresses-file-invalid`. A move recorded in `refactor::will_rename`, so `ascribe rename` and the editor's moves both record it. `ascribe addresses init`, `move`, `retire`, and `list`. `_ascribe/redirects.json`, `[consumer] host` with Netlify's `_ascribe/host/` files, and `@ascribed/astro` placing and merging them. The contracts, their decision files, the docs page `docs/content/publishing/redirects.md`, the CI how-to's base, and `changes/language/redirects.md`.\n\n**Done when:**\n- The goal's commands run in a test.\n- The seam's test passes: the move merged, the base moved past it, the redirect still written and the check still passing.\n- The three bases' tests pass: a shallow clone with no merge base, a `--base-exact` revision that isn't there, and a base with no project.\n- `examples/quill`'s builds and lines compare with nothing lost.\n- `examples/astro-site`'s end-to-end test finds the pair in the site's `_redirects`.\n- `node scripts/compare/outputs.ts --base main` changes only the new files, the manifests, and `_headers` moving, each named with `--accept`.\n\n**Stop and report** if the build or the check needs the old state once the base has moved past a change (the proposal's Settled 8): that sends the design back to the proposal.\n",
+        "number": 905,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Redirects 1: record moves, report a lost address against the base, and write Netlify's redirects",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/905"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDS3P8",
+      "labels": [
+        "enhancement",
+        "rust",
+        "javascript",
+        "outputs changed"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Redirects 1: record moves, report a lost address against the base, and write Netlify's redirects"
+    },
+    {
+      "content": {
+        "body": "Phase 2 of [Redirects](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/redirects/README.md). The plan is [phase-2-decisions.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/redirects/phase-2-decisions.md); read it and the README's decisions and \"Rules for every phase\" before starting. One pull request. **Needs #905.**\n\n**What to build:** `address-lost`'s fixes (forward to the most similar page or heading, retire with a reason, record git's rename), in `ascribe check --fix` and the editor; `ascribe addresses move --from-git`; a heading id's rename recorded through `Renaming::Id`; the file's other checks, phase 0's rows for phase 2; the `gone` page, served at a retired address with a 404; the agents' rules and skill, and the MCP tools `ascribe_addresses_move` and `ascribe_addresses_retire`, which return the edit. The docs and `changes/` entries the phase file names.\n\n**Done when:**\n- The goal's commands run in a test.\n- Every phase 2 diagnostic has a conformance case.\n- `examples/astro-site`'s end-to-end test gets a retired address's page with a 404.\n- An agent's session in a test moves a page with `git mv`, runs `ascribe_check`, applies `ascribe_addresses_move`'s edit, and passes.\n",
+        "number": 906,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Redirects 2: fix every lost address, record git's renames, serve retired addresses, and tell agents",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/906"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDS3QI",
+      "labels": [
+        "enhancement",
+        "rust",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Redirects 2: fix every lost address, record git's renames, serve retired addresses, and tell agents"
+    },
+    {
+      "content": {
+        "body": "Phase 3 of [Redirects](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/redirects/README.md). The plan is [phase-3-settings.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/redirects/phase-3-settings.md); read it and the README's decisions and \"Rules for every phase\" before starting. One pull request. **Needs #906.**\n\n**What to build:** `go/` permalinks and `llms.txt` in the comparison; a settings change (`base-path`, `permalink-path`, `agents`, a renamed build) reported once, as `address-lost`'s settings message, with a safe fix writing `[former]`; the build forwarding every address under each former value, composed and flat; `agents` turned off forwarding each Markdown version to its page. SPEC's `[former]`, its decision file, the docs, and `changes/language/redirects-settings.md`.\n\n**Done when:**\n- The goal's commands run in a test on `examples/astro-site`, with the base moved past the change and the redirects still written.\n- A second change composes with the first, in an emit test.\n",
+        "number": 907,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Redirects 3: record a settings change and forward every address it moved",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/907"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDS3RU",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Redirects 3: record a settings change and forward every address it moved"
+    },
+    {
+      "content": {
+        "body": "Phase 4 of [Redirects](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/redirects/README.md). The plan is [phase-4-editor.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/redirects/phase-4-editor.md); read it and the README's decisions and \"Rules for every phase\" before starting. One pull request. **Needs #906.**\n\n**What to build:** the language server keeping the base's addresses, keyed by the base commit and Ascribe's version, and reporting `address-lost` between checks with Check Every Build's problems, never as a page's diagnostics as you type (decision 8); This page's \"Also answers at\"; the Project view's Health count; **Keep the addresses you've published** offered once after a move in a project without the file; the editor's moves and undo tested. `docs/content/editor/sidebar.md`, the redirects page's editor section, and `changes/editor/redirects.md`.\n\n**Done when:**\n- The goal's walk-through runs in the extension's integration test.\n- The server lists the base's addresses once per base commit, in its test.\n",
+        "number": 908,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Redirects 4: show lost addresses between checks, and a page's old addresses in This page",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/908"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDS3R8",
+      "labels": [
+        "enhancement",
+        "rust",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Redirects 4: show lost addresses between checks, and a page's old addresses in This page"
     }
   ]
 }
