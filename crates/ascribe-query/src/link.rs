@@ -217,7 +217,7 @@ pub fn link(
             };
             answer.id = Some(id.clone());
             let spec = project.apis().spec(&api);
-            if spec.is_some_and(|s| s.operation(&id).is_some()) {
+            if spec.is_some_and(|s| s.named(&id).is_some()) {
                 answer.exists = true;
                 answer.href = Some(format!("{written}#{}", encode_destination(&id)));
             } else if spec.is_some() {

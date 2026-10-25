@@ -95,7 +95,7 @@ Error · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.m
 
 **Message:** `{path}` has no operation `{id}`
 
-**Fix:** Fix the `#` part, the operation's `operationId` as the spec writes it, or link to the operation that took its place. A spec generated from code can change an id when the code changes: setting ids in the code keeps them, and the links to them.
+**Fix:** Fix the `#` part: the operation's `operationId` as the spec writes it, or, for an operation with no id, its method in lowercase and its path, `delete/users/{id}`. Or link to the operation that took its place. A spec generated from code can change an id when the code changes: setting ids in the code keeps them, and the links to them.
 
 **Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
@@ -110,6 +110,34 @@ Error · file level · next step: write · [SPEC §9.4]({repo}/blob/main/SPEC.md
 **Message:** `{path}` is the spec of API `{api}`, outside the project's folder, which no output can copy; link to one of its operations, or to the published reference
 
 **Fix:** Add `#` and an operation's `operationId` to link to that operation in the published reference, or link to the reference's page itself. A spec outside the project's folder is read for its operations, and never copied into the outputs.
+
+**Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
+
+### ASC265 `link-operation-form-unsupported`
+@id {permalink=true}: ASC265
+@summary: Target is an operation with no id, by its method and path, and the API's reference is a template.
+
+Error · file level · next step: write · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
+
+**When:** Target is an operation with no id, by its method and path, and the API's reference is a template.
+
+**Message:** `#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is a template, which has no address for it; a link by method and path needs `renderer = "redoc"`
+
+**Fix:** Give the operation an `operationId` in the spec, or in the code it's generated from, and link to it by its id: every renderer addresses an operation by its id. Or publish the reference with Redoc 3, `{ renderer = "redoc", at = "/api/" }`, which has an address for an operation with no id.
+
+**Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
+
+### ASC266 `link-operation-by-path`
+@id {permalink=true}: ASC266
+@summary: Target is an operation that has an id, by its method and path.
+
+Advice · file level · next step: fix · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
+
+**When:** Target is an operation that has an id, by its method and path.
+
+**Message:** `#{operation}` names the operation `{id}` of `{path}` by its method and path; link to it by its id, `#{id}`
+
+**Fix:** Link to the operation by its `operationId`, which every renderer addresses it by and which stays the operation's when its path changes. The fix writes it.
 
 **Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 

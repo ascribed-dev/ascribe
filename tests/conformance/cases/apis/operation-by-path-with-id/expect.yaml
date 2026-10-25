@@ -1,0 +1,8 @@
+description: >-
+  A link by method and path to an operation that has an id is advice, at the
+  destination: link to it by its id.
+spec: ["5.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: link-operation-by-path, file: index.md, line: 5}

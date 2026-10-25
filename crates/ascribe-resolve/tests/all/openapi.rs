@@ -7,8 +7,8 @@
 
 use std::sync::Arc;
 
-use ascribe_core::{FileId, RelPath};
-use ascribe_resolve::openapi::{Operation, Unreadable, read_spec};
+use ascribe_core::{Applicability, FileId, RelPath};
+use ascribe_resolve::openapi::{Named, Operation, Unreadable, read_spec};
 use ascribe_resolve::{DiskFs, Layout, MemoryFs, Project, Resolution};
 
 const SWAGGER_2: &str = r#"
@@ -319,4 +319,129 @@ fn openapi_a_spec_that_cant_be_read_is_a_problem_of_the_content_model() {
         case.apis().unreadable("public"),
         Some(Unreadable::Case(_))
     ));
+}
+
+const BY_PATH: &str = r#"
+openapi: 3.1.0
+info: { title: Users, version: "1" }
+paths:
+  /users:
+    get:
+      summary: List users
+  /users/{id}:
+    get:
+      operationId: getUser
+    delete:
+      summary: Delete a user
+  /files/~home:
+    get:
+      summary: The home folder
+  /orgs:
+    get:
+      operationId: get/users
+"#;
+
+#[test]
+fn openapi_a_fragment_names_an_operation_by_its_method_and_path_and_an_id_wins() {
+    let spec = read_spec(BY_PATH, false).expect("reads");
+    let named = |fragment: &str| {
+        spec.named(fragment).map(|n| match n {
+            Named::Id(o) => format!("id {} {}", o.method, o.path),
+            Named::MethodAndPath(o) => format!("path {} {}", o.method, o.path),
+        })
+    };
+    let at = |text: &str| Some(text.to_owned());
+    assert_eq!(named("get/users"), at("id get /orgs"));
+    assert_eq!(named("delete/users/{id}"), at("path delete /users/{id}"));
+    assert_eq!(named("get/users/{id}"), at("path get /users/{id}"));
+    assert_eq!(named("get/files/~home"), at("path get /files/~home"));
+    assert_eq!(named("getUser"), at("id get /users/{id}"));
+    // The method is in lowercase, and the path is as the spec writes it.
+    assert_eq!(named("DELETE/users/{id}"), None);
+    assert_eq!(named("delete/users/{userId}"), None);
+    assert_eq!(named("delete/users/{id}/"), None);
+    assert_eq!(named("post/users"), None);
+}
+
+#[test]
+fn openapi_a_link_by_method_and_path_is_to_an_operation_and_one_with_an_id_is_advice() {
+    let project = project(
+        MODEL,
+        &[
+            ("api/openapi.yaml", BY_PATH),
+            (
+                "content/guide.md",
+                &page(
+                    "[Delete](../api/openapi.yaml#delete/users/{id}) [Get](../api/openapi.yaml#get/users/{id}) [Home](../api/openapi.yaml#get/files/~home)",
+                ),
+            ),
+        ],
+    );
+    assert_eq!(
+        resolutions(&project)[0],
+        Resolution::Operation {
+            api: "public".into(),
+            id: "delete/users/{id}".into()
+        }
+    );
+    let problems = project.problems(&RelPath::parse("guide.md").expect("a path"));
+    assert_eq!(problems.len(), 1, "{problems:?}");
+    let issue = &problems[0];
+    assert_eq!(issue.slug.as_str(), "link-operation-by-path");
+    assert_eq!(issue.arg("id"), Some("getUser"));
+    assert_eq!(issue.fixes.len(), 1);
+    assert_eq!(issue.fixes[0].applicability, Applicability::Safe);
+    assert_eq!(
+        issue.fixes[0].edits[0].new_text,
+        "../api/openapi.yaml#getUser"
+    );
+}
+
+#[test]
+fn openapi_a_link_by_method_and_path_under_a_template_is_unsupported() {
+    let model = MODEL.replace(
+        "{ renderer = \"redoc\", at = \"/api/\" }",
+        "\"/api/#/operations/{operationId}\"",
+    );
+    let project = project(
+        &model,
+        &[
+            ("api/openapi.yaml", BY_PATH),
+            (
+                "content/guide.md",
+                &page(
+                    "[Delete](../api/openapi.yaml#delete/users/{id}) [Get](../api/openapi.yaml#get/users/{id})",
+                ),
+            ),
+        ],
+    );
+    let problems = project.problems(&RelPath::parse("guide.md").expect("a path"));
+    let slugs: Vec<&str> = problems.iter().map(|p| p.slug.as_str()).collect();
+    assert_eq!(
+        slugs,
+        ["link-operation-form-unsupported", "link-operation-by-path"]
+    );
+    assert_eq!(problems[0].arg("operation"), Some("delete/users/{id}"));
+}
+
+#[test]
+fn openapi_a_missing_operation_suggests_one_with_no_id_by_its_method_and_path() {
+    let project = project(
+        MODEL,
+        &[
+            ("api/openapi.yaml", BY_PATH),
+            (
+                "content/guide.md",
+                &page("[Delete](../api/openapi.yaml#delete/user/{id})"),
+            ),
+        ],
+    );
+    let problems = project.problems(&RelPath::parse("guide.md").expect("a path"));
+    assert_eq!(problems.len(), 1, "{problems:?}");
+    assert_eq!(problems[0].slug.as_str(), "link-operation-missing");
+    assert_eq!(problems[0].arg("closest"), Some("delete/users/{id}"));
+    assert_eq!(
+        problems[0].fixes[0].edits[0].new_text,
+        "../api/openapi.yaml#delete/users/{id}"
+    );
 }

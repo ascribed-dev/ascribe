@@ -115,7 +115,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-256 in all. By severity: 53 advice, 176 error, 27 warning. By level: 226 file, 30 page. By kind of next step: 55 choose, 18 fix, 11 outside, 12 review, 160 write.
+258 in all. By severity: 54 advice, 177 error, 27 warning. By level: 228 file, 30 page. By kind of next step: 55 choose, 19 fix, 11 outside, 12 review, 161 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -375,6 +375,8 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC262` | `api-spec-empty` | advice | outside | the spec of API `{api}`, `{path}`, has no operations, so no link can name one |
 | `ASC263` | `link-operation-missing` | error | choose | `{path}` has no operation `{id}` |
 | `ASC264` | `link-spec-outside-project` | error | write | `{path}` is the spec of API `{api}`, outside the project's folder, which no output can copy; link to one of its operations, or to the published reference |
+| `ASC265` | `link-operation-form-unsupported` | error | write | `#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is a template, which has no address for it; a link by method and path needs `renderer = "redoc"` |
+| `ASC266` | `link-operation-by-path` | advice | fix | `#{operation}` names the operation `{id}` of `{path}` by its method and path; link to it by its id, `#{id}` |
 
 ## The VS Code extension
 

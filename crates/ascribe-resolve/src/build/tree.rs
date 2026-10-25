@@ -400,8 +400,12 @@ pub enum LinkTarget {
     Operation {
         /// The API's name.
         api: String,
-        /// The operation's `operationId`.
-        operation_id: String,
+        /// The operation's `operationId`, when it has one.
+        operation_id: Option<String>,
+        /// The operation's method, in lowercase.
+        method: String,
+        /// The operation's path, as the spec writes it.
+        path: String,
         /// The operation's address: the renderer's, joined to `[consumer]
         /// base-path` unless it's absolute.
         address: String,

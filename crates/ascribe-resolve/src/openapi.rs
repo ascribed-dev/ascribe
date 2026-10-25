@@ -11,13 +11,14 @@
 
 use std::collections::BTreeMap;
 
-use ascribe_core::{Issue, Location, RelPath, Span, diagnostics};
-use ascribe_model::{Api, ContentModel, edit_distance};
+use ascribe_core::{Applicability, Fix, Issue, Location, RelPath, Span, TextEdit, diagnostics};
+use ascribe_model::{Api, ApiReference, ContentModel, edit_distance};
 use serde_yaml_ng::Value;
 
 use crate::closest::closest_fixes;
 use crate::fs::{FileSystem, Probe};
 use crate::index::Target;
+use crate::links::encode_destination;
 use crate::project::{Project, Resolution};
 
 /// The methods a path item's operations are under, in the order the spec
@@ -53,6 +54,32 @@ pub struct Spec {
     pub unread: Vec<String>,
 }
 
+impl Operation {
+    /// Its method and path as a link's fragment names them: `get/users/{id}`.
+    pub fn method_and_path(&self) -> String {
+        format!("{}{}", self.method, self.path)
+    }
+}
+
+/// How a link's fragment names an operation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Named<'s> {
+    /// By its `operationId`.
+    Id(&'s Operation),
+    /// By its method and path, `get/users/{id}`, when no operation has the
+    /// fragment as its id.
+    MethodAndPath(&'s Operation),
+}
+
+impl<'s> Named<'s> {
+    /// The operation, however it's named.
+    pub fn operation(self) -> &'s Operation {
+        match self {
+            Named::Id(operation) | Named::MethodAndPath(operation) => operation,
+        }
+    }
+}
+
 impl Spec {
     /// The operation with this `operationId`: the first, when the spec gives
     /// two the same id.
@@ -62,12 +89,35 @@ impl Spec {
             .find(|o| o.operation_id.as_deref() == Some(id))
     }
 
+    /// The operation a link's fragment, percent-decoded, names: the one with
+    /// it as its `operationId`, since an id is what a writer chose, and
+    /// otherwise the one with its method and path, `get/users/{id}`.
+    pub fn named(&self, fragment: &str) -> Option<Named<'_>> {
+        if let Some(operation) = self.operation(fragment) {
+            return Some(Named::Id(operation));
+        }
+        let (method, path) = method_and_path(fragment)?;
+        self.operations
+            .iter()
+            .find(|o| o.method == method && o.path == path)
+            .map(Named::MethodAndPath)
+    }
+
     /// Every `operationId`, in the spec's order.
     pub fn ids(&self) -> impl Iterator<Item = &str> {
         self.operations
             .iter()
             .filter_map(|o| o.operation_id.as_deref())
     }
+}
+
+/// The method and the path a fragment is made of, when it's a method in
+/// lowercase, then the path from its first `/`: `get` and `/users/{id}` of
+/// `get/users/{id}`.
+pub fn method_and_path(fragment: &str) -> Option<(&str, &str)> {
+    let (method, _) = fragment.split_once('/')?;
+    (!method.is_empty() && method.bytes().all(|b| b.is_ascii_lowercase()))
+        .then(|| fragment.split_at(method.len()))
 }
 
 /// Why a spec can't be read.
@@ -244,9 +294,17 @@ fn read_api(api: &Api, fs: &dyn FileSystem) -> Result<Spec, Unreadable> {
     read_spec(&text, json).map_err(Unreadable::Syntax)
 }
 
-/// `link-operation-missing`, when `resolution` is a link to an operation its
-/// API's spec doesn't have, with the closest ids as its fixes. Nothing when
-/// the spec couldn't be read: `api-spec-unreadable` says why.
+/// The problem with a link to an operation, when `resolution` is one:
+///
+/// - `link-operation-missing`, when the spec has no operation the fragment
+///   names, with the closest as its fixes;
+/// - `link-operation-form-unsupported`, when it names an operation with no id
+///   by its method and path, and the reference is a template, which has no
+///   address for it;
+/// - `link-operation-by-path`, when it names an operation that has an id by
+///   its method and path, with a fix that writes the id.
+///
+/// Nothing when the spec couldn't be read: `api-spec-unreadable` says why.
 ///
 /// `at` is the whole link, and `destination` the destination as written
 /// when it's known, where the issue is reported and its fixes write.
@@ -262,32 +320,67 @@ pub fn operation_issue(
         return None;
     };
     let spec = project.apis().spec(api)?;
-    if spec.operation(id).is_some() {
-        return None;
-    }
-    let path = project.model().api(api).map(|a| a.spec.clone())?;
+    let declared = project.model().api(api)?;
+    let path = declared.spec.clone();
     let here = Location::new(at.file, destination.unwrap_or(at.span));
-    let mut issue = Issue::new(diagnostics::LINK_OPERATION_MISSING, here)
-        .with_arg("path", path)
-        .with_arg("id", id.clone());
-    if let Some(closest) = closest_ids(spec, id).first() {
-        issue = issue
-            .with_variant("closest")
-            .with_arg("closest", (*closest).to_owned());
+    match spec.named(id) {
+        Some(Named::Id(_)) => None,
+        Some(Named::MethodAndPath(operation)) => match &operation.operation_id {
+            Some(operation_id) => {
+                let mut issue = Issue::new(diagnostics::LINK_OPERATION_BY_PATH, here)
+                    .with_arg("path", path)
+                    .with_arg("operation", id.clone())
+                    .with_arg("id", operation_id.clone());
+                if let (Some(span), Target::Local(local)) = (destination, target) {
+                    let href = format!("{}#{}", local.written, encode_destination(operation_id));
+                    issue.fixes = vec![Fix {
+                        title: format!("Link to `{href}`"),
+                        file: at.file,
+                        edits: vec![TextEdit::replace(span, href)],
+                        // The same operation, by the name its reference
+                        // addresses it with in every renderer.
+                        applicability: Applicability::Safe,
+                    }];
+                }
+                Some(issue)
+            }
+            None => matches!(declared.reference, ApiReference::Template(_)).then(|| {
+                Issue::new(diagnostics::LINK_OPERATION_FORM_UNSUPPORTED, here)
+                    .with_arg("api", api.clone())
+                    .with_arg("operation", id.clone())
+            }),
+        },
+        None => {
+            let mut issue = Issue::new(diagnostics::LINK_OPERATION_MISSING, here)
+                .with_arg("path", path)
+                .with_arg("id", id.clone());
+            if let Some(closest) = closest_ids(spec, id).first() {
+                issue = issue
+                    .with_variant("closest")
+                    .with_arg("closest", closest.clone());
+            }
+            issue.fixes = closest_fixes(project, from, target, resolution, at.file, destination);
+            Some(issue)
+        }
     }
-    issue.fixes = closest_fixes(project, from, target, resolution, at.file, destination);
-    Some(issue)
 }
 
-/// How many ids are suggested for a link to a missing operation.
+/// How many operations are suggested for a link to a missing one.
 const CLOSEST: usize = 5;
 
-/// The spec's ids closest to `id`, best first: the spec exists, so its
-/// operations are the likely targets, however far.
-pub fn closest_ids<'s>(spec: &'s Spec, id: &str) -> Vec<&'s str> {
-    let mut scored: Vec<(usize, &str)> = spec
-        .ids()
-        .map(|candidate| (edit_distance(id, candidate), candidate))
+/// The names of the spec's operations closest to `fragment`, best first: an
+/// operation's id, or its method and path when it has none. The spec exists,
+/// so its operations are the likely targets, however far.
+pub fn closest_ids(spec: &Spec, fragment: &str) -> Vec<String> {
+    let mut scored: Vec<(usize, String)> = spec
+        .operations
+        .iter()
+        .map(|o| {
+            o.operation_id
+                .clone()
+                .unwrap_or_else(|| o.method_and_path())
+        })
+        .map(|candidate| (edit_distance(fragment, &candidate), candidate))
         .collect();
     scored.sort();
     scored.dedup();

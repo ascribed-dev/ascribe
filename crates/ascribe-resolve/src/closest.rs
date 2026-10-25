@@ -36,7 +36,8 @@ pub struct Closest {
 /// - A heading the page lacks: the page's headings, closest id first.
 /// - A fragment: the pages that include it.
 /// - A file that isn't a page, named with the wrong case: the file.
-/// - An operation the spec lacks: the spec's operations, closest id first.
+/// - An operation the spec lacks: the spec's operations, closest first, by
+///   id, or by method and path for one with no id.
 pub fn closest_targets(
     project: &Project,
     from: &RelPath,
@@ -70,7 +71,7 @@ pub fn closest_targets(
             let (Some(spec), Target::Local(local)) = (project.apis().spec(api), target) else {
                 return Vec::new();
             };
-            if spec.operation(id).is_some() {
+            if spec.named(id).is_some() {
                 return Vec::new();
             }
             let path = local.path.clone().unwrap_or_default();
@@ -78,8 +79,8 @@ pub fn closest_targets(
                 .into_iter()
                 .map(|closest| Closest {
                     path: path.clone(),
-                    id: Some(closest.to_owned()),
-                    href: format!("{written}#{}", encode_destination(closest)),
+                    href: format!("{written}#{}", encode_destination(&closest)),
+                    id: Some(closest),
                 })
                 .collect()
         }

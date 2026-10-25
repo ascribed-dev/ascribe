@@ -61,13 +61,15 @@ pub enum Resolution {
         page_exists: bool,
     },
     /// A link to an operation of a declared API (`[apis.<name>]`): a link
-    /// to its spec with a fragment, the operation's `operationId`. The spec
-    /// may be outside the project's folder (SPEC §9.4). Whether the spec has
-    /// the operation is [`crate::openapi::ApiSpecs`]'s to say.
+    /// to its spec with a fragment, the operation's `operationId`, or its
+    /// method and path, `get/users/{id}`. The spec may be outside the
+    /// project's folder (SPEC §9.4). Whether the spec has the operation is
+    /// [`crate::openapi::ApiSpecs`]'s to say ([`crate::openapi::Spec::named`]).
     Operation {
         /// The API's name.
         api: String,
-        /// The fragment, percent-decoded: the `operationId` it names.
+        /// The fragment, percent-decoded: the `operationId` it names, or the
+        /// method and path.
         id: String,
     },
     /// A link with no fragment to a declared spec outside the project's

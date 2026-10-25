@@ -257,3 +257,5 @@
 | [ASC262](../checks/diagnostics/project-files.md#ASC262) | `api-spec-empty` | Advice | File | outside |
 | [ASC263](../checks/diagnostics/pages.md#ASC263) | `link-operation-missing` | Error | File | choose |
 | [ASC264](../checks/diagnostics/pages.md#ASC264) | `link-spec-outside-project` | Error | File | write |
+| [ASC265](../checks/diagnostics/pages.md#ASC265) | `link-operation-form-unsupported` | Error | File | write |
+| [ASC266](../checks/diagnostics/pages.md#ASC266) | `link-operation-by-path` | Advice | File | fix |

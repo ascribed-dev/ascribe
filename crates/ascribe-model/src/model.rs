@@ -714,7 +714,8 @@ pub struct Api {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ApiReference {
     /// Redoc's page at `at` (`{ renderer = "redoc", at = "…" }`): an
-    /// operation's address is `<at>#operation/<operationId>`.
+    /// operation's address is `<at>#operation/<operationId>`, and one with
+    /// no id's `<at>#paths/<pointer>/<method>`, Redoc 3's.
     Redoc {
         /// The page's address, relative to `[consumer] base-path`, or
         /// absolute.
@@ -741,6 +742,24 @@ impl ApiReference {
             ApiReference::Template(template) => template
                 .replace("{operationId}", &encode_component(operation_id))
                 .replace("{tag}", &encode_component(tag.unwrap_or_default())),
+        }
+    }
+
+    /// The address of an operation with no id, by its method and path, before
+    /// it's joined to the base path: Redoc 3's, `<at>#paths/<pointer>/<method>`,
+    /// the path as a JSON pointer (`~1` for `/`, `~0` for `~`), percent-encoded.
+    /// None for a template, which has no placeholder for it.
+    pub fn path_address(&self, method: &str, path: &str) -> Option<String> {
+        match self {
+            ApiReference::Redoc { at } => {
+                let pointer = path.replace('~', "~0").replace('/', "~1");
+                Some(format!(
+                    "{at}#paths/{}/{}",
+                    encode_component(&pointer),
+                    encode_component(method)
+                ))
+            }
+            ApiReference::Template(_) => None,
         }
     }
 }

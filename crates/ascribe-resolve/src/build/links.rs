@@ -134,18 +134,30 @@ impl<'p> Links<'_, 'p> {
     }
 
     /// A link to an operation: its address in the API's reference, when the
-    /// spec has it. When it doesn't, or the spec can't be read, the file-level
-    /// problem is the source index's.
-    fn operation(&self, api: &str, id: &str) -> LinkTarget {
+    /// spec has it, by its id when it has one, however the link names it.
+    /// When the spec doesn't have it, or can't be read, or the reference has
+    /// no address for an operation with no id, the file-level problem is the
+    /// source index's.
+    fn operation(&self, api: &str, fragment: &str) -> LinkTarget {
         let project = self.resolver.project();
         let model = project.model();
-        let (Some(declared), Some(operation)) = (
+        let (Some(declared), Some(named)) = (
             model.api(api),
-            project.apis().spec(api).and_then(|s| s.operation(id)),
+            project.apis().spec(api).and_then(|s| s.named(fragment)),
         ) else {
             return LinkTarget::Unresolved;
         };
-        let address = declared.reference.address(id, operation.tag.as_deref());
+        let operation = named.operation();
+        let address = match &operation.operation_id {
+            Some(id) => declared.reference.address(id, operation.tag.as_deref()),
+            None => match declared
+                .reference
+                .path_address(&operation.method, &operation.path)
+            {
+                Some(address) => address,
+                None => return LinkTarget::Unresolved,
+            },
+        };
         // The reference is the site's, not a line's: an older line's link
         // goes to the same address.
         let address = if is_absolute_address(&address) {
@@ -159,7 +171,9 @@ impl<'p> Links<'_, 'p> {
         };
         LinkTarget::Operation {
             api: api.to_owned(),
-            operation_id: id.to_owned(),
+            operation_id: operation.operation_id.clone(),
+            method: operation.method.clone(),
+            path: operation.path.clone(),
             address,
         }
     }

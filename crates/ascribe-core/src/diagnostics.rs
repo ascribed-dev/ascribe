@@ -820,6 +820,16 @@ pub const LINK_OPERATION_MISSING: DiagnosticSlug = DiagnosticSlug("link-operatio
 /// outside the project's folder, with no operation".
 pub const LINK_SPEC_OUTSIDE_PROJECT: DiagnosticSlug = DiagnosticSlug("link-spec-outside-project");
 
+/// `ASC265`, error, file level: SPEC §8.2, "Links | Target is an operation
+/// with no id, by its method and path, and the API's reference is a
+/// template".
+pub const LINK_OPERATION_FORM_UNSUPPORTED: DiagnosticSlug =
+    DiagnosticSlug("link-operation-form-unsupported");
+
+/// `ASC266`, advice, file level: SPEC §8.2, "Links | Target is an operation
+/// that has an id, by its method and path".
+pub const LINK_OPERATION_BY_PATH: DiagnosticSlug = DiagnosticSlug("link-operation-by-path");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -1078,6 +1088,8 @@ pub const ALL: &[DiagnosticSlug] = &[
     API_SPEC_EMPTY,
     LINK_OPERATION_MISSING,
     LINK_SPEC_OUTSIDE_PROJECT,
+    LINK_OPERATION_FORM_UNSUPPORTED,
+    LINK_OPERATION_BY_PATH,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

@@ -68,4 +68,4 @@ A renderer whose address is a slug of the id, such as starlight-openapi's or Doc
 
 ## Give each operation an id
 
-A link names an operation by its `operationId`, so an operation with none can't be linked to. Some generators write none by default (.NET's own and Swashbuckle), and some write ids that can change meaning between builds: springdoc gives a second method of the same name `findAll_1`, which one depending on scan order. Set each operation's `operationId` in the code it's generated from, so the id a guide links to stays the operation's.
+A link names an operation by its `operationId`. An operation with none can be linked to by its method and path, `#delete/users/{id}`, with Redoc 3 only: see [Link to an operation with no id](no-id.md). Some generators write none by default (.NET's own and Swashbuckle), and some write ids that can change meaning between builds: springdoc gives a second method of the same name `findAll_1`, which one depending on scan order. Set each operation's `operationId` in the code it's generated from, so the id a guide links to stays the operation's.

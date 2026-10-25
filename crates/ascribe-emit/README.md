@@ -146,7 +146,7 @@ A `target` has a `type`:
 | `external` | |
 | `page` | `page` (its source path), `id` (a page id, or null), `url`, `textFilled` (the link had no text and took the page's title), and, for a link out of a line of a versioned build, `line` (the line it leads to) |
 | `asset` | `source`, `path` (the copy), `reference` (as written on this page), `url`, `fragment` |
-| `operation` | `api` (its `[apis.<name>]`), `operationId`, and `address`, the operation's in the published reference |
+| `operation` | `api` (its `[apis.<name>]`), `operationId`, or `method` and `path` for an operation with no id, and `address`, the operation's in the published reference |
 | `unresolved` | The build couldn't resolve it; the checks report why |
 
 ### Example
