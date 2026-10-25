@@ -454,9 +454,9 @@ fn file_move(
     if old == new {
         return Err(refused("The new name is the same."));
     }
-    // Outside FileSystem: whether the place a file moves to is taken, by
-    // anything at all, as the editor's move asks.
-    if new.exists() {
+    // As the editor's move asks: a name that differs only in case is the
+    // file's own on a case-insensitive file system.
+    if refactor::taken(&old, &new) {
         return Err(RenameError::Refused(format!("`{to}` is there already.")));
     }
     // Nothing Ascribe writes goes through a link a repository commits
