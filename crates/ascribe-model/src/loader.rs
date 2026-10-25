@@ -147,6 +147,11 @@ struct RoleName {
     builtin: bool,
 }
 
+/// Keys a table had and doesn't now, each with its table and the variant of
+/// `model-unknown-key` that says what replaced it: before 1.0, an old key
+/// isn't kept as an alias.
+const REPLACED: &[(&str, &str, &str)] = &[("consumer", "headers", "consumer-headers")];
+
 impl<'s> Loader<'s> {
     // ---- helpers ---------------------------------------------------------
 
@@ -301,7 +306,12 @@ impl<'s> Loader<'s> {
                 continue;
             }
             let mut issue = self.unknown_key(span, key, path);
-            if let Some(s) = suggest(key, allowed.iter().copied()) {
+            if let Some((_, _, variant)) = REPLACED
+                .iter()
+                .find(|(table, old, _)| *table == path && *old == key)
+            {
+                issue = issue.with_variant(variant);
+            } else if let Some(s) = suggest(key, allowed.iter().copied()) {
                 issue = issue.with_variant("suggestion").with_arg("suggestion", s);
             }
             self.push(issue);

@@ -1,0 +1,9 @@
+spec = "0.1"
+
+[types.guide.frontmatter]
+title = "string"
+
+[consumer]
+site = "https://docs.example.com"
+agents = true
+host = "apache"

@@ -654,7 +654,7 @@ impl Loader<'_> {
             html: settings::default_switch(CONSUMER, "html"),
             agents: false,
             permalink_path: None,
-            headers: None,
+            host: None,
         };
         let Some(v) = v else { return c };
         let Some(t) = self.as_table("consumer", v) else {
@@ -749,15 +749,12 @@ impl Loader<'_> {
                 c.agents = value;
             }
         }
-        if let Some(h) = t.get("headers")
-            && let Some(text) = self.choice(
-                "consumer.headers",
-                h,
-                &settings::choices(CONSUMER, "headers"),
-            )
+        if let Some(h) = t.get("host")
+            && let Some(text) =
+                self.choice("consumer.host", h, &settings::choices(CONSUMER, "host"))
             && text == "netlify"
         {
-            c.headers = Some(HeadersFormat::Netlify);
+            c.host = Some(Host::Netlify);
         }
         c
     }

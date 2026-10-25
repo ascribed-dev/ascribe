@@ -148,9 +148,10 @@ site = "https://ascribed-dev.com"
 base-path = "/docs/"
 trailing-slash = "always"
 # Each Markdown version's response headers, `X-Robots-Tag` for a page that
-# isn't listed and a canonical `Link` to its page, written into the built
-# site's `_headers`, which Netlify reads. site/test/headers.test.ts checks them.
-headers = "netlify"
+# isn't listed and a canonical `Link` to its page, and the redirects
+# ascribe.addresses records, written into the built site's `_headers` and
+# `_redirects`, which Netlify reads. site/test/headers.test.ts checks them.
+host = "netlify"
 # Where each permalink's address is: /go/cli-check/ forwards to the section
 # `ascribe check --help` links to. Set from the site's root, so the addresses
 # the binary prints don't move when base-path does; crates/ascribe-cli checks

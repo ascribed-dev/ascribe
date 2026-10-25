@@ -566,7 +566,7 @@ mod tests {
             taken(&["consumer", "site"]),
             Some(("consumer.site".to_owned(), docs.clone()))
         );
-        assert_eq!(taken(&["consumer", "headers"]), None);
+        assert_eq!(taken(&["consumer", "host"]), None);
         assert_eq!(taken(&["consumer"]), None);
         assert_eq!(
             taken_inside(text, &["consumer"]).map(|t| t.name),

@@ -1,8 +1,9 @@
 description: >-
-  `[consumer] headers` names a host's format for response headers, and
-  `netlify` is the only one: any other value is an error at the value.
+  `[consumer] headers` isn't a key any more: `host` names the host, and
+  writes its headers and its redirects. Any value of `headers` is an error
+  at the key, which says to write `host`.
 spec: ["9.5"]
 tags: [model]
 
 diagnostics:
-  - {slug: model-invalid-value, file: ascribe.toml, line: 9}
+  - {slug: model-unknown-key, file: ascribe.toml, line: 9}

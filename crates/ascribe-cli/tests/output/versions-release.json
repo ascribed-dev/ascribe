@@ -103,6 +103,7 @@
         "_ascribe/nav.json",
         "_ascribe/pages.json",
         "_ascribe/permalinks.json",
+        "_ascribe/redirects.json",
         "_ascribe/schema.ts",
         "_fragments/prerequisites.png",
         "configure.md",

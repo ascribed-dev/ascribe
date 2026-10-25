@@ -10,9 +10,9 @@ mod links;
 use ascribe_core::availability::parse_availability;
 use ascribe_core::{Attributes, Binding, FileId, Forms, Primary, TitleRule};
 use ascribe_model::{
-    AvailabilityMode, AvailabilityProblem, ContentModel, GlossaryMatch, HeadersFormat, Listing,
-    ListingFrom, ListingLevel, Placement, SourceBound, TrailingSlash, TypeMatch, VariantMode, load,
-    load_str, load_str_bounded, load_str_in,
+    AvailabilityMode, AvailabilityProblem, ContentModel, GlossaryMatch, Host, Listing, ListingFrom,
+    ListingLevel, Placement, SourceBound, TrailingSlash, TypeMatch, VariantMode, load, load_str,
+    load_str_bounded, load_str_in,
 };
 
 fn examples() -> PathBuf {
@@ -93,21 +93,26 @@ fn permalinks_are_under_the_base_path_unless_a_path_is_set() {
 }
 
 #[test]
-fn headers_name_the_hosts_format_and_nothing_else() {
+fn host_names_the_host_and_headers_is_replaced_by_it() {
     let load = |consumer: &str| {
         load_str(
             &format!("spec = \"0.1\"\n[consumer]\n{consumer}"),
             FileId::new(0),
         )
     };
-    assert_eq!(load("").unwrap().consumer.headers, None);
+    assert_eq!(load("").unwrap().consumer.host, None);
     assert_eq!(
-        load("headers = \"netlify\"\n").unwrap().consumer.headers,
-        Some(HeadersFormat::Netlify)
+        load("host = \"netlify\"\n").unwrap().consumer.host,
+        Some(Host::Netlify)
     );
-    let issues = load("headers = \"apache\"\n").unwrap_err();
+    let issues = load("host = \"apache\"\n").unwrap_err();
     assert_eq!(issues.len(), 1, "{issues:#?}");
     assert_eq!(issues[0].slug.as_str(), "model-invalid-value");
+    // The key it replaced is an error that names it.
+    let issues = load("headers = \"netlify\"\n").unwrap_err();
+    assert_eq!(issues.len(), 1, "{issues:#?}");
+    assert_eq!(issues[0].slug.as_str(), "model-unknown-key");
+    assert_eq!(issues[0].variant, Some("consumer-headers"));
 }
 
 #[test]
