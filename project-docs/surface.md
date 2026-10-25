@@ -869,6 +869,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `command/index.md` | Command reference | reference |
 | `command/project-files.md` | Files Ascribe writes | reference |
 | `command/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, `resolve`, and `search` | reference |
+| `command/site-output.md` | A page in the site output | reference |
 | `content-model/checks.md` | `ascribe.toml`: checks, permalinks, and listing | reference |
 | `content-model/content.md` | `ascribe.toml`: dimensions, phrases, and widgets | reference |
 | `content-model/glossary.md` | Set up a glossary | how-to |
