@@ -1,0 +1,14 @@
+---
+type: page
+title: Upgrade the agent
+description: What each release of self-managed Quill changes, and what to do when you upgrade.
+available:
+- target: self-managed
+  dimension: deployment
+  states:
+  - ga
+  text: self-managed (GA)
+source: upgrade.md
+---
+
+Each release of self-managed Quill adds to the agent. 3.5 adds [webhooks](/webhooks/)<ascribe-attributes data-ascribe-release-line="3.5"></ascribe-attributes>, and reads its settings from a new place: see [Set the API key](/3.4/configure-legacy/#set-the-api-key).

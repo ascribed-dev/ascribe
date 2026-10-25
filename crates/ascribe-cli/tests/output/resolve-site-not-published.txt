@@ -1,0 +1,1 @@
+error: build `cloud` doesn't publish `configure-legacy.md`: its available frontmatter makes it unavailable for the build's target and version

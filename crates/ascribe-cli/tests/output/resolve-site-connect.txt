@@ -1,0 +1,27 @@
+## Connect to Quill <ascribe-attributes id="connect"></ascribe-attributes>
+
+<ascribe-tabs sync="deployment">
+
+<ascribe-tab value="cloud" label="Quill Cloud">
+
+Sign in to Quill Cloud and copy an API key from **Settings → Keys**, then add it to `quill.yaml`:
+
+```yaml
+cloud:
+  api_key: ${QUILL_KEY}
+```
+
+</ascribe-tab>
+
+<ascribe-tab value="self-managed" label="self-managed">
+
+Point the agent at your server. Self-managed servers must run Quill Server 3.3 or later.
+
+```yaml
+server:
+  url: https://quill.internal.example.com
+```
+
+</ascribe-tab>
+
+</ascribe-tabs>

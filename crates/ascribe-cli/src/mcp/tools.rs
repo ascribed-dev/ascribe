@@ -859,6 +859,7 @@ fn call_resolve(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String
     let args = resolve::Args {
         page: a.path("page")?.unwrap_or_default(),
         build: a.string("build")?,
+        emit: None,
         frontmatter: a.boolean("frontmatter")?,
         format: Format::Json,
     };

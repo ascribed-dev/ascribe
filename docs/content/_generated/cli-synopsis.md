@@ -28,7 +28,7 @@ ascribe permalinks retire [NAME]... --reason <TEXT> [--to <PAGE>] [--page <PAGE>
 ascribe refs              TARGET [--limit <N>] [--format text|json]
 ascribe rename            TARGET NEW
 ascribe report            [SECTION]... [--format text|markdown|json|prompt] [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice|warning|error]
-ascribe resolve           PAGE [--build <NAME>] [--frontmatter] [--format text|json]
+ascribe resolve           PAGE [--build <NAME>] [--emit plain|site] [--frontmatter] [--format text|json]
 ascribe search            QUERY [PATHS]... [--type <NAME>] [--case] [--word] [--summary] [--build <NAME>]... [--limit <N>] [--format text|json]
 ascribe sources fetch     [NAME]...
 ascribe sources update    [NAME]... [--to <REV>] [--format text|json|markdown]

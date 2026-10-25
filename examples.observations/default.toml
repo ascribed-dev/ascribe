@@ -1,6 +1,6 @@
 # Written by `ascribe observe`. Don't edit it by hand.
 version = 1
-ascribe = "0.4.2"
+ascribe = "0.4.3"
 command = "cargo test --locked -p ascribe-cli --test all -- output:: agents:: && cargo test --locked -p ascribe-model --test load"
 
 [environment]
@@ -77,9 +77,19 @@ rust = "rustc 1.98.1 (48a229cea 2026-09-01)"
 "crates/ascribe-cli/tests/output/refs.json" = "sha256-lf:0c6fa24b4f9532be852b8e92a452e4cca01b2a83083491623e94e9052f62b0ec"
 "crates/ascribe-cli/tests/output/refs.txt" = "sha256-lf:8c75a0bc0aa29600909ece8ba22dd44c0960df36b6fd305946b5aee096777b9b"
 "crates/ascribe-cli/tests/output/rename.txt" = "sha256-lf:a8acd91eeb21e10bc4b137d2eb5a9f25667fbde272c3d9d5406883fd23b4719d"
+"crates/ascribe-cli/tests/output/resolve-emit-list.txt" = "sha256-lf:e4afe23a106d4aaa7af57f1148d97cf2aa735b37e3c4df3b94069c894eeb53b4"
+"crates/ascribe-cli/tests/output/resolve-emit-permalink.txt" = "sha256-lf:33a0b86c7e9c6606844c05c80ea05cbdf81756c5d38a26bc37e71d4c300e0775"
 "crates/ascribe-cli/tests/output/resolve-permalink.json" = "sha256-lf:74275477eec486a9fe1a2659cc32f729f70fbfd2ac214e4fff34f08118234a7d"
 "crates/ascribe-cli/tests/output/resolve-permalink.txt" = "sha256-lf:46e4c5735d3f461e35c5a4b22c4520b42e98ba3d827e17ae0601e32a117869ba"
-"crates/ascribe-cli/tests/output/resolve.json" = "sha256-lf:07df56f19de6ea0ac43be0f2a741516dabf547ed09a79dfa153458650e370e74"
+"crates/ascribe-cli/tests/output/resolve-site-connect.txt" = "sha256-lf:4178ed71208a945750503d81afe4fdd36b3bea5e04b2b91f0893fbdef0eb7ad1"
+"crates/ascribe-cli/tests/output/resolve-site-frontmatter.txt" = "sha256-lf:b39754abc942c16816f5ec436d595947f3fcd5777c51f56d74b3f1c0d4093100"
+"crates/ascribe-cli/tests/output/resolve-site-glossary.txt" = "sha256-lf:3214296187ff6e6a1ac7b61b89f47ca854d436aa3343b06827eed947628c926c"
+"crates/ascribe-cli/tests/output/resolve-site-line.txt" = "sha256-lf:49a5e4f49184e9e66a488b8fc07f6214baea9d6867f8a2fd91f6d29a147990d7"
+"crates/ascribe-cli/tests/output/resolve-site-not-published.json" = "sha256-lf:c738cb51d4c08a26b2f45bbe2be94a9c3807820ddb8c867109494dad193be589"
+"crates/ascribe-cli/tests/output/resolve-site-not-published.txt" = "sha256-lf:fcd3e2b6d3007f71fef5fab2a050aeca80aa435b60920ce8779fc61dbb196b36"
+"crates/ascribe-cli/tests/output/resolve-site.json" = "sha256-lf:59e6907fefd916d371e9381c4a98bbf0b994980576ef594e6e29cc0a93de66ba"
+"crates/ascribe-cli/tests/output/resolve-site.txt" = "sha256-lf:9a57b0dfb21fcf72ca7623c6dede95d82e9594f8f0813589d1a87644701c9e38"
+"crates/ascribe-cli/tests/output/resolve.json" = "sha256-lf:a4e98c7f8a1ee778f3825fe3ca91560a4f8aa7f565dbb3b14a856e4568ad7439"
 "crates/ascribe-cli/tests/output/resolve.txt" = "sha256-lf:3de3f74d5f5e171e16fc66e8cc57e175422f88eabf0da7749b2a09b5324b4885"
 "crates/ascribe-cli/tests/output/search-fragment.txt" = "sha256-lf:9ec8e2a722281569dfb957ca6283042396f6cc6d788a1f7142104f73f2a6e574"
 "crates/ascribe-cli/tests/output/search-none.txt" = "sha256-lf:71490b75a2e7261186ee83b21860382d4983081cbd26105351a006685ea51b61"

@@ -982,6 +982,141 @@ fn answers() {
     );
 }
 
+/// `ascribe resolve --emit site`, run from the repository's root: a page as
+/// the site output writes it, with its frontmatter, for a line of a versioned
+/// build, with glossary links, and a page the build doesn't publish; and the
+/// two usage errors.
+#[test]
+fn resolve_site() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let quill = "examples/quill";
+    let install = "examples/quill/docs/install-agent.md";
+    let site = ["--build", "site", "--emit", "site"];
+
+    // Tabs, notes, steps, an include, and a badge.
+    let page = stdout(&run(&root, &[&["resolve", install][..], &site].concat(), 0));
+    expect("resolve-site.txt", &page);
+    // The reference page's example: the Connect section, whose tabs the
+    // plain form writes as sections.
+    let connect = page.find("## Connect to Quill").expect("a Connect section");
+    let end = page[connect..].find("\n## ").expect("a section after it");
+    expect("resolve-site-connect.txt", &page[connect..connect + end]);
+    expect(
+        "resolve-site.json",
+        &json(&run(
+            &root,
+            &[&["resolve", install][..], &site, &["--format", "json"]].concat(),
+            0,
+        )),
+    );
+    // The site output's frontmatter: `type`, and the title's `formatted`
+    // form.
+    expect(
+        "resolve-site-frontmatter.txt",
+        &stdout(&run(
+            &root,
+            &[
+                "resolve",
+                "examples/astro-site/content/Reference/Options.md",
+                "--emit",
+                "site",
+                "--frontmatter",
+            ],
+            0,
+        )),
+    );
+    // A line of a versioned build: `available` as targets, and the links
+    // under the line's base path.
+    expect(
+        "resolve-site-line.txt",
+        &stdout(&run(
+            &root,
+            &[
+                "resolve",
+                "examples/quill/docs/upgrade.md",
+                "--build",
+                "site@3.4",
+                "--emit",
+                "site",
+                "--frontmatter",
+            ],
+            0,
+        )),
+    );
+    // A glossary link, with the term's definition as its title: the
+    // paragraph it's in.
+    let rollouts = stdout(&run(
+        &root,
+        &[
+            "resolve",
+            "examples/monorepo/docs/content/guides/rollouts.md",
+            "--build",
+            "site",
+            "--emit",
+            "site",
+        ],
+        0,
+    ));
+    let term = rollouts
+        .split("\n\n")
+        .find(|p| p.contains("data-ascribe-term="))
+        .expect("a glossary link");
+    expect("resolve-site-glossary.txt", term);
+    // A page the build doesn't publish: no text, and the reason.
+    let legacy = [
+        "resolve",
+        "examples/quill/docs/configure-legacy.md",
+        "--build",
+        "cloud",
+        "--emit",
+        "site",
+    ];
+    let dropped = run(&root, &legacy, 1);
+    assert!(stdout(&dropped).is_empty());
+    expect(
+        "resolve-site-not-published.txt",
+        &String::from_utf8_lossy(&dropped.stderr),
+    );
+    expect(
+        "resolve-site-not-published.json",
+        &json(&run(
+            &root,
+            &[&legacy[..], &["--format", "json"]].concat(),
+            1,
+        )),
+    );
+    // One output, not a list; and none for a permalink's help.
+    expect(
+        "resolve-emit-list.txt",
+        &String::from_utf8_lossy(
+            &run(
+                &root,
+                &[
+                    "resolve",
+                    install,
+                    "--build",
+                    "site",
+                    "--emit",
+                    "site,plain",
+                ],
+                2,
+            )
+            .stderr,
+        ),
+    );
+    expect(
+        "resolve-emit-permalink.txt",
+        &String::from_utf8_lossy(
+            &run(
+                &root,
+                &["resolve", "go:connect", "--config", quill, "--emit", "site"],
+                2,
+            )
+            .stderr,
+        ),
+    );
+}
+
 /// `ascribe search` on `examples/quill`, run from the repository's root:
 /// the command reference's examples.
 #[test]
