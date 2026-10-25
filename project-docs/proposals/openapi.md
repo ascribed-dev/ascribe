@@ -21,12 +21,54 @@ So the brainstorm's level 1 is the core of this proposal, level 2 is built in a 
 
 - **Links to files that aren't pages** (SPEC §5.2, the [assets contract](../../docs/content/contracts/assets.md)). A link to `api/openapi.yaml` is an asset: checked for existence with exact case, copied into every output, and rewritten. Its fragment is kept and never checked, so `[Get a user](../api/openapi.yaml#getUser)` passes today and opens the raw YAML.
 - **One resolver for every link.** `resolve_reference` (`crates/ascribe-resolve/src/references.rs`) serves check, the build, the language server, and `ascribe link`, and returns a `Resolution`. A new kind of target is a new variant there, and every surface picks it up.
-- **The boundary.** A link's target may be inside the content root or the project root (`Layout::is_allowed`). With `ascribe.toml` at the repository's root, `api/openapi.yaml` is in reach; with `ascribe.toml` inside `docs/`, it isn't.
+- **The boundary.** A link's target may be inside the content root or the project root (`Layout::is_allowed`, SPEC §9.4's asset rule). With `ascribe.toml` at the repository's root, `api/openapi.yaml` is in reach; with `ascribe.toml` inside `docs/`, it isn't. The one reach outside is `[sources]`: a folder `ascribe.toml` names, in the same git repository, whose code pages may read, read through `FileSystem` and from git at a base revision as the pages are.
 - **The editor's link features.** Completion after `#` offers a page's headings (`crates/ascribe-lsp/src/complete.rs`); hover previews the target (`hover.rs`); go to definition can already land inside a file that isn't Markdown, as a snippet's region does (`examples.rs`).
 - **Reports of unused things.** `fragment-unused`, `image-unused`, and the others are advice in `crates/ascribe-check/src/across.rs`, counted by `Project::uses`, and listed by `ascribe report inventory`.
 - **YAML and JSON parsers** (`serde_yaml_ng`, `serde_json`) are workspace dependencies. Nothing validates against a JSON Schema: `jsonschema` isn't a dependency.
 
 Nothing in the code reads OpenAPI.
+
+## Settled
+
+Answered by the maintainer on 24 October 2026.
+
+1. **`spec` may name a file outside the project's folder,** in the same git repository, as `[sources]` may name a folder of code. A layout with `docs/ascribe.toml` and `api/openapi.yaml` is the common one, and a copy of the spec inside `docs/` would drift from the spec the API publishes, which is what the checks are for. A link reaches a spec outside the folder by its relative path, `../../api/openapi.yaml#getUser`, as the one exception to SPEC §9.4's rule that a reference resolves inside the project or content root, and only with a fragment: a link to it with no fragment is an error saying to link the published reference instead, since a file from outside the project has no place in the outputs to be copied to. A spec in another repository is still left out.
+
+## What the spikes found
+
+Two spikes on 24 October 2026, before any code: the thread's seam, a renderer's address for an operation, and the corpus phase 1 was to measure.
+
+### Renderers' addresses
+
+One small spec, with tags `Users`, `Billing & Invoices`, and `Café`, an operation with two tags, one with no tag, one with no `operationId`, and an id with a dot (`Health.Check_v2`), rendered by each renderer at its current version and at the version of a year before. Each address was read from the rendered page and then loaded fresh, to see whether it lands on the operation.
+
+| Renderer | An operation's address | As a template | Across the year |
+|---|---|---|---|
+| Redoc 2.5 and 3.0 | 3.0's own is `#/users/getuser`, 2.5's `#tag/Users/operation/getUser`; both accept `#operation/getUser` and land | `#operation/{operationId}` | Stable through that form; 3.0 also accepts 2.5's |
+| Swagger UI 5.29 and 5.34 | `#/Users/getUser`: the first tag as written, percent-encoded, matched with case | `#/{tag}/{operationId}` | Stable |
+| Stoplight Elements 9.0 | `#/operations/getUser` | `#/operations/{operationId}` | Stable |
+| starlight-openapi 0.21 and 0.27 | `/api/operations/getuser/`, a page: the id slugged by github-slugger (`healthcheck_v2`) | Needs that slug of the id | Stable |
+| Docusaurus OpenAPI docs 4.5 and 5.2 | A page named by lodash's `kebabCase` of the id (`get-user`, `health-check-v-2`) | Needs that slug, a different one | Stable |
+| Scalar 1.38 and 1.76 | `#tag/users/GET/users/{id}`: a slug of the tag, the method, and the path; no form by `operationId`, and none without the tag | No: the tag's slug and the method's case are Scalar's | **Broke:** 1.38 wrote `#tag/users/get/…` and `billing--invoices`, 1.76 writes `GET` and `billing-invoices`, and 1.76 sends 1.38's addresses to the introduction |
+
+So a template of the id as written serves three of six, two more need a slug of the id by their own rule, and Scalar can't be served by a template, or by anything that doesn't track its releases. An operation with no `operationId` gets a different made-up address in each: Redoc's JSON pointer under the tag, Swagger UI's `delete_users__id_`, Elements' `#/paths/users-id/delete`, starlight-openapi's `usersid` (with no method, so two operations on one path collide), and Docusaurus's slug of the summary.
+
+### The corpus
+
+A seeded sample of 300 APIs from APIs.guru (298 downloaded), and specs generated with each generator's defaults from the same small API (a users resource with five operations and a nested list, and a health check):
+
+- **Generated specs:** FastAPI writes every id, mechanically (`get_user_users__user_id__get`). NestJS writes every id as `UsersController_findOne`. springdoc writes the method's name (`findOne`), and a second method of the same name becomes `findAll_1`, which one depending on scan order, so an id can change meaning between builds. **.NET writes none**: neither .NET 9's own generator nor Swashbuckle 10 gives an operation an `operationId` by default.
+- **Published specs:** 83% of specs have an id on every operation, 10% on none, 6% on some. Leaving out Microsoft Graph, which is 22,361 of the 30,739 operations, 8.3% of operations have no id. No spec used an id twice, which APIs.guru's curation may account for.
+- **What an id holds:** `/` in 1,998 ids across 13 specs (GitHub's `activity/list-org-events-for-authenticated-user`), and spaces in 38, so a link's fragment is percent-decoded before it's matched.
+- **Reading it:** every spec parsed; none has a path item that's a `$ref`. Parsing the largest is fast enough for `check` and for the editor's re-read: GitHub's 3 MB spec in 12 ms as JSON and 72 ms as YAML, Graph's 57 MB YAML in 1.4 s. Reading only `paths` saves little in YAML, where the parser is the cost.
+
+APIs.guru is a directory of public APIs, cleaned and converted to JSON, so it under-counts what internal, generated specs look like; the generated specs are what the defaults write, and teams often change them.
+
+### What they change
+
+- **The address can't be one template.** The proposal's fallback, named profiles, is what the evidence asks for: open question 2.
+- **An operation with no id is common enough to need a link form,** since .NET's defaults write none: open question 1.
+- **An id that changes meaning,** as springdoc's suffix does, is the one case `link-operation-missing` can't catch. The docs say to set ids explicitly, and a later check could compare a link's method and path with the base's.
 
 ## The design
 
@@ -53,7 +95,7 @@ This is what keeps Ascribe out of the version lag the research found. A reader t
 
 Ascribe reads the spec as readers see it: the file the team's pipeline publishes, after bundling and overlays. It doesn't apply overlays or follow `$ref`s into other files. A team whose spec is split across files, or patched by an overlay, points `spec` at the bundled result their renderer is given. A spec generated from code has to be on disk when Ascribe runs, as it does for the renderer.
 
-The spec is read through `FileSystem::read_file`, and must be inside the project root.
+The spec is read through `FileSystem::read_file`, inside the project's folder or outside it in the same git repository (Settled 1), and from git at a base revision for `ascribe diff` and review, as a source's code is. The editor watches it where it is.
 
 ### A link to an operation
 
@@ -61,7 +103,7 @@ The spec is read through `FileSystem::read_file`, and must be inside the project
 To fetch one user, call [Get a user](../api/openapi.yaml#getUser).
 ```
 
-A link to a declared spec with a fragment is a link to an operation: the fragment is the `operationId`. A link to the spec without a fragment is an asset, as today, for "download the spec". A link to an undeclared YAML file is an asset, as today.
+A link to a declared spec with a fragment is a link to an operation: the fragment is the `operationId`. A link to the spec without a fragment is an asset, as today, for "download the spec", when the spec is inside the project's folder; outside it, that link is an error (Settled 1). A link to an undeclared YAML file is an asset, as today.
 
 - **Checked.** An `operationId` the spec doesn't have is an error, `link-operation-missing`, with the closest ids suggested, at the level `link-id-missing` has. A spec that can't be read or parsed is an error on its declaration.
 - **Written as the renderer's address.** The site output writes the `reference` template filled in for the operation; the plain output writes it absolute when `[consumer] site` is set or the template is absolute; the JSON output gives the link's target as an operation: the API's name, the `operationId`, and the address. That JSON is a contract, and its shape is settled in phase 1.
@@ -79,8 +121,8 @@ The `operationId` is the address because it's readable, survives a path being re
 
 - **The use case:** a writer links a guide to `getUser`; `ascribe check` fails when the spec is regenerated without it; and in the built site, the link opens `getUser` in the reference a renderer publishes beside the guides.
 - **The layers:** the content model (`[apis]`), resolve (reading the spec, a new `Resolution` variant), check (the diagnostics), emit (the address in the site, plain, and JSON outputs), the CLI, the contracts, and the docs. The language server shows the diagnostic without new work, since it runs the same check.
-- **The seam it tests:** the renderer's address. Ascribe has never written a link into a URL space it doesn't own. A renderer's address for an operation is made from some of the tag, the `operationId`, the method, and the path, each slugged its own way. If phase 1 finds that a common renderer's addresses can't be written as a template (a tag slugged by rules a template can't express, or an address that isn't stable across the renderer's releases), the design changes to named profiles, one per renderer, as the `Router` is one per consumer.
-- **Measured on real specs.** Phase 1 runs the reader over a corpus: a sample of APIs.guru, and specs generated by FastAPI, springdoc, Swashbuckle, and NestJS. It records which specs it can't read, how many operations have no `operationId`, and how many ids are mechanical. That's the first open question's input.
+- **The seam it tests:** the renderer's address. Ascribe has never written a link into a URL space it doesn't own. A renderer's address for an operation is made from some of the tag, the `operationId`, the method, and the path, each slugged its own way. The spikes found both: tags and ids slugged by rules a template can't express, and an address that changed within a year (Scalar), so the design takes named profiles, one per renderer, as the `Router` is one per consumer, once open question 2 is settled. Phase 1 still tests each profile against its renderer's built output.
+- **Measured on real specs.** The spikes measured the corpus and the renderers before phase 1 (above). Phase 1 runs its own reader over the same sample, and records which specs it can't read.
 - **Left out, and where it comes back:** completion, hover, go to definition, and the fix for a moved operation (phase 2); `ascribe link` and the MCP server (phase 2); examples checked against schemas (phase 3); the report of operations no page mentions (phase 4); the embed (phase 5).
 
 ## The phases
@@ -93,7 +135,7 @@ The `operationId` is the address because it's readable, survives a path being re
 | 4. Coverage | See which operations no page mentions, in the check and in the inventory | check, report, contracts |
 | 5. The thin embed | Put an operation's method, path, summary, and deprecation in a page, with a link to its reference page | language, emit, both renderers, elements |
 
-**Phase 1** builds the thread. `examples/quill` gains a small spec and a renderer's reference beside its pages, and a page that links to two operations. Conformance cases hold a link to an operation, a missing one, a link to the spec with no fragment, and an undeclared YAML file. The content-model reference gains `[apis]`, SPEC §5.2 gains the new kind of target, and the docs gain a page, "Link to your API reference". *Done when:* `ascribe check` in `examples/quill` reports `link-operation-missing` after `getUser` is removed from the spec; `ascribe build` writes the link as the renderer's address, and following it in the built site opens that operation; and the corpus's results are recorded in the pull request.
+**Phase 1** builds the thread. `examples/quill` gains a small spec and a renderer's reference beside its pages, and a page that links to two operations. Conformance cases hold a link to an operation, a missing one, a link to the spec with no fragment, and an undeclared YAML file. The content-model reference gains `[apis]`, SPEC §5.2 gains the new kind of target and §9.4 the exception for a spec outside the project's folder, which a conformance case holds, and the docs gain a page, "Link to your API reference". *Done when:* `ascribe check` in `examples/quill` reports `link-operation-missing` after `getUser` is removed from the spec; `ascribe build` writes the link as the renderer's address, and following it in the built site opens that operation; and the corpus's results are recorded in the pull request.
 
 **Phase 2** brings the links into the editor and to agents. Completion after `openapi.yaml#` lists the spec's operations, matched on id, method, path, or summary. Hover shows the method, the path, the summary, and whether the operation is deprecated. Go to definition opens the spec at the operation. The spec is re-read when it changes on disk. When an `operationId` disappears and an operation with the same method and path has a new one, which is what a regenerated spec does, the diagnostic offers that id as a safe fix. A link to a deprecated operation is advice, `link-operation-deprecated`. `ascribe link` and `ascribe_link` answer with the operation, so an agent writing a guide can check a link before writing it.
 
@@ -115,5 +157,6 @@ The `operationId` is the address because it's readable, survives a path being re
 
 ## Open questions
 
-1. **What does a link name when an operation has no `operationId`?** Either such an operation can't be linked, and `link-operation-missing` says why, or a second fragment form names it by method and path, such as `#get/users/{id}`. Recommended: decide after phase 1's corpus. If missing ids are rare, the first; if not, the second, since a link a writer can't write is worse than a second form.
-2. **How does a JSON block say which operation it belongs to** (phase 3)? An attribute in the info string, as `title` and `tested` are (```` ```json request="openapi.yaml#createUser" ````, with `response="…#createUser 201"`), or a directive around the block. Recommended: the info string, since it keeps the block a plain fenced block that every Markdown viewer still shows; whichever, it's a language change with its own decision before phase 3.
+1. **What does a link name when an operation has no `operationId`?** Either such an operation can't be linked, and `link-operation-missing` says why, or a second fragment form names it by method and path, such as `#get/users/{id}`. The corpus answers it: .NET's generators write no ids by default, and 10% of published specs have none. Recommended: the second form, mapped to each renderer's address by its profile (question 2); with a template, a link in that form is an error, since no template makes the renderers' addresses for it.
+2. **How is a renderer's address made?** A template serves Redoc, Swagger UI, and Elements; starlight-openapi and Docusaurus each need their own slug of the id; Scalar needs a slug of its tag, the method's case, and a profile that follows its releases, since it changed its addresses within the year. Recommended: named profiles for the renderers, `reference = { renderer = "redoc", at = "/api/" }`, each written from the renderer's code and held by a test that builds the renderer at a pinned version and loads every address, as the spike did; and a template, for any other renderer, with the id as written only. Scalar's profile names the versions it was tested with, and the docs say its addresses change with its releases.
+3. **How does a JSON block say which operation it belongs to** (phase 3)? An attribute in the info string, as `title` and `tested` are (```` ```json request="openapi.yaml#createUser" ````, with `response="…#createUser 201"`), or a directive around the block. Recommended: the info string, since it keeps the block a plain fenced block that every Markdown viewer still shows; whichever, it's a language change with its own decision before phase 3.
