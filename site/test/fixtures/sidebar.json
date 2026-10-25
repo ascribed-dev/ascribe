@@ -513,7 +513,12 @@
       },
       {
         "href": "/docs/contracts/json-reports/sources/",
-        "label": "JSON reports: ascribe init, ascribe sources, ascribe observe, ascribe permalinks, and ascribe addresses",
+        "label": "JSON reports: ascribe init, ascribe sources, ascribe observe, and ascribe permalinks",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/json-reports/addresses/",
+        "label": "JSON reports: ascribe addresses",
         "nested": true
       },
       {
