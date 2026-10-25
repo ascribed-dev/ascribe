@@ -1,6 +1,6 @@
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
-import { checkedText, editorPosition, panelProblems } from "../../src/everyBuild.js";
+import { checkedText, editorPosition, panelProblems, quickFixes } from "../../src/everyBuild.js";
 import type { CheckReport, Entry, Range } from "../../src/shapes.js";
 
 const root = path.resolve("/work/docs");
@@ -152,5 +152,45 @@ describe("what the check says when it's done", () => {
     expect(checkedText(report([], { error: "ascribe.toml doesn't parse" }), "docs", 0, 0)).toBe(
       "Ascribe couldn't check docs: ascribe.toml doesn't parse",
     );
+  });
+});
+
+describe("quickFixes", () => {
+  it("gives a problem's fixes that edit the file, placed in its text", () => {
+    const text = 'version = 1\n\n[moved]\n"a.md" = "b.md"\n\n[retired]\n';
+    const lost: Entry = {
+      ...entry("ASC255", "ascribe.addresses", at(1, 1), []),
+      slug: "address-lost",
+      fixes: [
+        {
+          title: "Forward it to the page most like it, c.md",
+          file: "ascribe.addresses",
+          edits: [
+            {
+              range: {
+                start: { line: 5, column: 1, offset: 0 },
+                end: { line: 5, column: 1, offset: 0 },
+              },
+              new_text: '"z.md" = "c.md"\n',
+            },
+          ],
+          applicability: "unsafe",
+        },
+        { title: "Elsewhere", file: "content/a.md", edits: [], applicability: "safe" },
+      ],
+    };
+    const fixes = quickFixes(lost, root, path.join(root, "ascribe.addresses"), text);
+    expect(fixes).toEqual([
+      {
+        title: "Forward it to the page most like it, c.md",
+        safe: false,
+        edits: [
+          {
+            range: { start: { line: 4, character: 0 }, end: { line: 4, character: 0 } },
+            newText: '"z.md" = "c.md"\n',
+          },
+        ],
+      },
+    ]);
   });
 });

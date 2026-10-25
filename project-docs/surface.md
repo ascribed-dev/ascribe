@@ -11,7 +11,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
 | `ascribe addresses init` | Makes `ascribe.addresses`, with its header, its `version`, and empty tables. |  | `text`, `json` |
-| `ascribe addresses move` | Records that a page, or a heading's id, moved, after a move made without Ascribe, as with `git mv`. | `OLD NEW` | `text`, `json` |
+| `ascribe addresses move` | Records that a page, or a heading's id, moved, after a move made without Ascribe, as with `git mv`. | `[OLD] [NEW] [--from-git] [--base <REV>] [--base-exact]` | `text`, `json` |
 | `ascribe addresses retire` | Records that a page, or a heading's id, was removed on purpose, with the reason, which is for whoever reads the file later. | `OLD --reason <TEXT>` | `text`, `json` |
 | `ascribe addresses list` | Shows the redirects and retired addresses each build writes, as its `_ascribe/redirects.json` has them, and the entry of `ascribe.addresses` each comes from. | `[--build <NAME>]` | `text`, `json` |
 | `ascribe agents sync` | Writes your project's rules and the Ascribe skill where each `--target`'s agents read them. | `[--check] [--target agents-md\|skills\|claude\|claude-rules\|copilot\|codex]... [--with-hook] [--cloud] [--agent]` |  |
@@ -115,7 +115,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-256 in all. By severity: 53 advice, 176 error, 27 warning. By level: 226 file, 30 page. By kind of next step: 55 choose, 18 fix, 11 outside, 12 review, 160 write.
+265 in all. By severity: 57 advice, 181 error, 27 warning. By level: 235 file, 30 page. By kind of next step: 57 choose, 21 fix, 11 outside, 12 review, 164 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -375,6 +375,15 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC262` | `api-spec-empty` | advice | outside | the spec of API `{api}`, `{path}`, has no operations, so no link can name one |
 | `ASC263` | `link-operation-missing` | error | choose | `{path}` has no operation `{id}` |
 | `ASC264` | `link-spec-outside-project` | error | write | `{path}` is the spec of API `{api}`, outside the project's folder, which no output can copy; link to one of its operations, or to the published reference |
+| `ASC265` | `addresses-entry-not-a-page` | error | choose | `{key}` is forwarded to `{value}`, which isn't a page of the project, so no build writes its redirect |
+| `ASC266` | `addresses-entry-live` | advice | fix | `{key}` is a source of the project again, so its entry in [{table}] does nothing; remove it |
+| `ASC267` | `addresses-entry-taken` | error | write | {address}, an address of `{key}`, is published by {source} now, so a reader who follows an old link to `{key}` lands on another page |
+| `ASC268` | `addresses-entry-unpublished` | advice | fix | the base never published `{key}`, so its entry in [{table}] keeps no address; remove it |
+| `ASC269` | `addresses-key-twice` | error | choose | `{key}` is in ascribe.addresses twice: {first}, and {second} |
+| `ASC270` | `addresses-chain` | advice | fix | `{key}` is forwarded to `{value}`, which is forwarded to `{next}` |
+| `ASC271` | `addresses-anchor-collision` | error | write | `{key}` is forwarded to `{value}`, and a link to `#{id}` follows its page's redirect to {page}, which has its own heading with the id `{id}`, so the link lands there |
+| `ASC272` | `addresses-file-deleted` | error | write | ascribe.addresses was deleted, and the base has it, with {count}: the build no longer writes their redirects, and the check no longer compares the addresses |
+| `ASC273` | `addresses-soft-404` | advice | write | {count} addresses are forwarded to {value}, {what}, so a reader who followed a link to one of them lands on a page without what they were looking for |
 
 ## The VS Code extension
 
@@ -612,6 +621,8 @@ Tools:
 | `ascribe_resolve` | Resolve a page | `ascribe resolve` |
 | `ascribe_format` | Format pages | `ascribe fmt` |
 | `ascribe_changes` | List changed pages | `ascribe diff` |
+| `ascribe_addresses_move` | Record a move | `ascribe addresses move` |
+| `ascribe_addresses_retire` | Record a retired page | `ascribe addresses retire` |
 
 Resources:
 
@@ -703,6 +714,7 @@ What a site imports:
 | `@ascribed/astro/VersionBanner.astro` | An import |
 | `@ascribed/astro/content` | An import |
 | `@ascribed/astro/permalinks` | An import |
+| `@ascribed/astro/redirects` | An import |
 | `ascribe-astro` | A program, from @ascribed/astro |
 
 ## `@ascribed/elements`, `@ascribed/review`, and `@ascribed/cli`
@@ -794,6 +806,7 @@ The JSON the commands and the language server write, each with a schema:
 
 | Schema | Shape | What it is |
 |---|---|---|
+| `schemas/addresses-from-git.schema.json` | AddressesFromGitReport | What `ascribe addresses move --from-git --format json` writes. |
 | `schemas/addresses-init.schema.json` | AddressesInitReport | What `ascribe addresses init --format json` writes. |
 | `schemas/addresses-list.schema.json` | AddressesListReport | What `ascribe addresses list --format json` writes. |
 | `schemas/addresses-record.schema.json` | AddressesRecordReport | What `ascribe addresses move` and `retire` write with `--format json`. |
@@ -903,11 +916,12 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `contracts/content-model/output.md` | `ascribe.toml` format contract: consumer, builds, and sources | reference |
 | `contracts/content-model/validation.md` | `ascribe.toml` format contract: validation rules | reference |
 | `contracts/json-reports.md` | JSON report contract | reference |
+| `contracts/json-reports/addresses.md` | JSON reports: `ascribe addresses` | reference |
 | `contracts/json-reports/diff.md` | JSON reports: `ascribe diff` and `ascribe drift` | reference |
 | `contracts/json-reports/model.md` | JSON reports: `ascribe model` | reference |
 | `contracts/json-reports/questions.md` | JSON reports: the commands that answer questions | reference |
 | `contracts/json-reports/report.md` | JSON reports: `ascribe report` | reference |
-| `contracts/json-reports/sources.md` | JSON reports: `ascribe init`, `ascribe sources`, `ascribe observe`, `ascribe permalinks`, and `ascribe addresses` | reference |
+| `contracts/json-reports/sources.md` | JSON reports: `ascribe init`, `ascribe sources`, `ascribe observe`, and `ascribe permalinks` | reference |
 | `contracts/json-reports/templates.md` | JSON reports: `ascribe templates` | reference |
 | `contracts/json-reports/versions.md` | JSON reports: `ascribe versions` | reference |
 | `contracts/navigation.md` | The navigation contract | reference |

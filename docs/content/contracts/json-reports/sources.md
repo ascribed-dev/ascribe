@@ -1,7 +1,7 @@
 ---
 type: reference
-title: "JSON reports: `ascribe init`, `ascribe sources`, `ascribe observe`, `ascribe permalinks`, and `ascribe addresses`"
-description: "The JSON Schemas of what ascribe init, ascribe sources, ascribe observe, ascribe permalinks, and ascribe addresses write with --format json."
+title: "JSON reports: `ascribe init`, `ascribe sources`, `ascribe observe`, and `ascribe permalinks`"
+description: "The JSON Schemas of what ascribe init, ascribe sources, ascribe observe, and ascribe permalinks write with --format json."
 ---
 
 Part of the [JSON report contract](../json-reports.md), whose rules every document here follows.
@@ -37,18 +37,3 @@ Part of the [JSON report contract](../json-reports.md), whose rules every docume
 ## `ascribe permalinks retire`
 
 @include: ../../_generated/json-permalinks-retire.md
-
-## `ascribe addresses init`
-@available: ascribe planned
-
-@include: ../../_generated/json-addresses-init.md
-
-## `ascribe addresses move` and `retire`
-@available: ascribe planned
-
-@include: ../../_generated/json-addresses-record.md
-
-## `ascribe addresses list`
-@available: ascribe planned
-
-@include: ../../_generated/json-addresses-list.md

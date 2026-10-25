@@ -77,8 +77,8 @@ fn each_move_is_a_pair_for_the_page_and_its_markdown_version() {
                 { "from": "/docs/start", "to": "/docs", "status": 301, "entry": "/docs/start" },
             ],
             "gone": [
-                { "path": "/docs/guides/beta", "reason": "The beta ended.", "entry": "guides/beta.md" },
-                { "path": "/docs/guides/beta.md", "reason": "The beta ended.", "entry": "guides/beta.md" },
+                { "path": "/docs/guides/beta", "reason": "The beta ended.", "entry": "guides/beta.md", "page": "/docs/_ascribe/gone/guides/beta" },
+                { "path": "/docs/guides/beta.md", "reason": "The beta ended.", "entry": "guides/beta.md", "page": "/docs/_ascribe/gone/guides/beta" },
             ],
         })
     );
@@ -107,12 +107,55 @@ fn with_netlify_as_the_host_its_files_are_written_beside() {
              /docs/guides/my-setup.md /docs/guides/setup.md 301\n\
              /docs/guides/old /docs/guides/setup#install 301\n\
              /docs/guides/old.md /docs/guides/setup.md 301\n\
-             /docs/start /docs 301\n"
+             /docs/start /docs 301\n\
+             /docs/guides/beta /docs/_ascribe/gone/guides/beta 404\n\
+             /docs/guides/beta.md /docs/_ascribe/gone/guides/beta 404\n"
         )
     );
     let headers = output.get(HOST_HEADERS_PATH).expect("the host's headers");
     assert!(
         headers.starts_with("/docs/guides/setup.md\n  Link: <https://docs.example.com/docs/guides/setup>; rel=\"canonical\"\n"),
         "{headers}"
+    );
+}
+
+/// A retired address's page is under the build's base path, where a site
+/// generator serves it: at the root with no base path, and an address from
+/// the host's root outside the base path keeps its whole path there.
+#[test]
+fn a_retired_address_s_page_is_under_the_base_path() {
+    let entries = "version = 1\n\n[retired]\n\"guides/beta.md\" = \"The beta ended.\"\n\
+        \"/old/intro\" = \"Gone.\"\n\"index.md\" = \"Moved away.\"\n";
+    let pages = |model: &str| -> Vec<(String, String)> {
+        redirects(&project(model, Some(entries)))["gone"]
+            .as_array()
+            .expect("gone")
+            .iter()
+            .map(|g| {
+                (
+                    g["path"].as_str().expect("a path").to_owned(),
+                    g["page"].as_str().expect("a page").to_owned(),
+                )
+            })
+            .collect()
+    };
+    // `index.md` is published, so it isn't gone: only the others are.
+    let pair = |a: &str, b: &str| (a.to_owned(), b.to_owned());
+    assert_eq!(
+        pages(MODEL),
+        [
+            pair("/docs/guides/beta", "/docs/_ascribe/gone/guides/beta"),
+            pair("/docs/guides/beta.md", "/docs/_ascribe/gone/guides/beta"),
+            pair("/old/intro", "/docs/_ascribe/gone/old/intro"),
+        ]
+    );
+    let at_root = MODEL.replace("base-path = \"/docs/\"\n", "");
+    assert_eq!(
+        pages(&at_root),
+        [
+            pair("/guides/beta", "/_ascribe/gone/guides/beta"),
+            pair("/guides/beta.md", "/_ascribe/gone/guides/beta"),
+            pair("/old/intro", "/_ascribe/gone/old/intro"),
+        ]
     );
 }

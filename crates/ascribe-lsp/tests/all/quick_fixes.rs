@@ -1139,6 +1139,15 @@ fn every_fix_diagnostic_has_a_quick_fix() {
                 "nav-duplicate" | "nav-page-unplaced" | "nav-section-unplaced"
             )
         })
+        // Theirs edit `ascribe.addresses`, which only `ascribe check` reads:
+        // `ascribe-check`'s `addresses.rs` applies them, and the extension
+        // offers them in the file.
+        .filter(|e| {
+            !matches!(
+                e.slug.as_str(),
+                "addresses-entry-live" | "addresses-entry-unpublished" | "addresses-chain"
+            )
+        })
         .map(|e| e.slug.as_str())
         .collect();
     let sampled: Vec<&str> = samples.iter().map(|(slug, _, _)| *slug).collect();
@@ -1600,4 +1609,37 @@ fn moving_a_page_records_the_move_in_the_addresses_file_when_there_is_one() {
     let changed = rename(&f);
     assert!(!changed.contains(&f.path("ascribe.addresses")));
     assert!(!f.path("ascribe.addresses").exists());
+}
+
+#[test]
+fn renaming_a_page_s_id_records_it_in_the_addresses_file_when_there_is_one() {
+    let f = quill();
+    write(
+        &f,
+        "ascribe.addresses",
+        "version = 1\n\n[moved]\n\n[retired]\n",
+    );
+    let page = f.path("docs/keys.md");
+    let mut client = Client::start(&f.root());
+    client.open(&page, 1, &read(&f, "docs/keys.md"));
+    client.settle();
+    let result = client
+        .request(
+            "textDocument/rename",
+            json!({
+                "textDocument": { "uri": uri(&page).as_str() },
+                "position": { "line": 12, "character": 6 },
+                "newName": "rotate-a-key",
+            }),
+        )
+        .response_result
+        .expect("an edit");
+    let changed = apply_workspace_edit(&f, &result);
+    assert!(changed.contains(&f.path("ascribe.addresses")), "{result}");
+    assert!(
+        read(&f, "ascribe.addresses")
+            .contains("[moved]\n\"keys.md#rotate-keys\" = \"keys.md#rotate-a-key\"\n"),
+        "{}",
+        read(&f, "ascribe.addresses")
+    );
 }

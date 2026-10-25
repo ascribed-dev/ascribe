@@ -30,6 +30,7 @@
     "src/Elements.astro",
     "src/Availability.astro",
     "src/Permalink.astro",
+    "src/Gone.astro",
     "src/MissingPermalink.astro",
     "src/Head.astro",
     "src/Versions.astro",
@@ -61,6 +62,10 @@
     "./permalinks": {
       "types": "./dist/permalinks.d.ts",
       "default": "./dist/permalinks.js"
+    },
+    "./redirects": {
+      "types": "./dist/redirects.d.ts",
+      "default": "./dist/redirects.js"
     }
   },
   "engines": {

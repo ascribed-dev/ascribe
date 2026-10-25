@@ -285,6 +285,47 @@ fn add_addresses_edit(
     }
 }
 
+/// Adds to `result` the edit to `ascribe.addresses` that records an `@id`
+/// renamed from `old` to `new` on the requested page (SPEC §7.10), when the
+/// project has the file and it reads: `<page>#<old>` is `[moved]` to
+/// `<page>#<new>`, as a page's move is recorded. An id in a fragment is
+/// published on each page that includes it, none of them its own, so its
+/// rename records nothing, as a fragment's move doesn't.
+#[allow(clippy::mutable_key_type)]
+fn add_id_record(ctx: &Ctx, old: &str, new: &str, result: &mut WorkspaceEdit) {
+    let edit = || -> Option<(Uri, TextEdit)> {
+        let page = ctx.file()?;
+        if page.kind != ascribe_resolve::FileKind::Page {
+            return None;
+        }
+        let root = ctx.config.parent()?;
+        let path = RelPath::parse(ascribe_model::ADDRESSES_FILE).ok()?;
+        let bytes = ascribe_resolve::FileSystem::read_file(&*ctx.fs, &path).ok()?;
+        let text = String::from_utf8(bytes).ok()?;
+        let mut file =
+            ascribe_model::AddressFile::parse(&text, ascribe_core::FileId::new(0)).ok()?;
+        file.record_move(
+            &format!("{}#{old}", ctx.path),
+            &format!("{}#{new}", ctx.path),
+        );
+        let edit = file.edit_from(&text)?;
+        let uri = crate::uri::path_to_uri(&root.join(ascribe_model::ADDRESSES_FILE))?;
+        Some((
+            uri,
+            TextEdit {
+                range: ctx.encoding.range(&LineIndex::new(&text), edit.span),
+                new_text: edit.new_text,
+            },
+        ))
+    };
+    if let Some((uri, edit)) = edit() {
+        result
+            .changes
+            .get_or_insert_with(HashMap::new)
+            .insert(uri, vec![edit]);
+    }
+}
+
 /// `text`, an `ascribe.addresses`, with each page of the project that
 /// `mappings` moves recorded, written as Ascribe writes the file; `None`
 /// when it doesn't read, or nothing changes.
@@ -489,11 +530,13 @@ pub(crate) fn rename(ctx: &Ctx, params: RenameParams) -> Option<WorkspaceEdit> {
             &mut phrase_edits,
         )?;
         let memo_edits = crate::memos::id_edits(ctx, file, old, &params.new_name);
-        return workspace_edit_with_config(
+        let mut result = workspace_edit_with_config(
             ctx,
             with_memo_edits(workspace_edit(ctx, edits), memo_edits),
             phrase_edits,
-        );
+        )?;
+        add_id_record(ctx, old, &params.new_name, &mut result);
+        return Some(result);
     }
     if let Some(value) = values::in_page(file, offset) {
         return values::rename(ctx, &value, &params.new_name);

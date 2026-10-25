@@ -12,7 +12,7 @@
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
-use ascribe_core::{FileId, Issue, Location, Span, diagnostics};
+use ascribe_core::{FileId, Issue, Location, Span, TextEdit, diagnostics};
 
 use toml::de::{DeTable, DeValue};
 
@@ -64,6 +64,16 @@ impl Entry {
             span: Span::empty(0),
         }
     }
+}
+
+/// One step from an entry's value to where another entry leads it
+/// ([`AddressFile::step`]).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Step {
+    /// To another place.
+    Moved(String),
+    /// To a retired entry, with its reason.
+    Retired(String),
 }
 
 /// `[former]`: each routing setting the docs were published under before,
@@ -175,11 +185,22 @@ impl AddressFile {
     /// place of any `[retired]` one. Each entry that led to `old` leads to
     /// `new` instead, so every pair stays flat; and an entry keyed by `new`,
     /// whose source is back at its key, goes.
+    ///
+    /// When `old` is a page, an entry that leads to one of its headings,
+    /// `old#id`, leads to `new#id`: the heading moved with its page.
     pub fn record_move(&mut self, old: &str, new: &str) {
         self.retired.remove(old);
+        let page = !old.contains('#') && !new.contains('#');
         for entry in self.moved.values_mut() {
             if entry.value == old {
                 entry.value = new.to_owned();
+            } else if let Some(id) = entry
+                .value
+                .strip_prefix(old)
+                .and_then(|rest| rest.strip_prefix('#'))
+                .filter(|_| page)
+            {
+                entry.value = format!("{new}#{id}");
             }
         }
         self.moved.insert(old.to_owned(), Entry::new(new));
@@ -189,10 +210,86 @@ impl AddressFile {
     }
 
     /// Records that `old` was retired, for `reason`, in place of any
-    /// `[moved]` entry for it.
+    /// `[moved]` entry for it. Each entry that led to `old`, or to one of
+    /// its headings, is retired with it, for the same reason: what it led
+    /// to is gone.
     pub fn record_retired(&mut self, old: &str, reason: &str) {
         self.moved.remove(old);
+        let leading: Vec<String> = self
+            .moved
+            .iter()
+            .filter(|(_, entry)| {
+                entry.value == old
+                    || (!old.contains('#')
+                        && entry
+                            .value
+                            .strip_prefix(old)
+                            .is_some_and(|rest| rest.starts_with('#')))
+            })
+            .map(|(key, _)| key.clone())
+            .collect();
+        for key in leading {
+            self.moved.remove(&key);
+            self.retired.insert(key, Entry::new(reason));
+        }
         self.retired.insert(old.to_owned(), Entry::new(reason));
+    }
+
+    /// Where `value`, a `[moved]` value, leads in the end: itself, or, when
+    /// it's another entry's key, or a heading on a page that is, where that
+    /// entry leads, and so on. `None` when the entries lead back to where
+    /// they started, or to a retired entry. The build writes each address
+    /// to where its entry leads in the end, so every pair it writes is one
+    /// step.
+    pub fn follow(&self, value: &str) -> Option<String> {
+        let mut seen: Vec<String> = Vec::new();
+        let mut current = value.to_owned();
+        loop {
+            if seen.contains(&current) {
+                return None;
+            }
+            match self.step(&current) {
+                Some(Step::Moved(next)) => {
+                    seen.push(std::mem::replace(&mut current, next));
+                }
+                Some(Step::Retired(_)) => return None,
+                None => return Some(current),
+            }
+        }
+    }
+
+    /// Where an entry's value leads next, when it's another entry's key, or
+    /// a heading on a page whose entry leads to a page.
+    pub fn step(&self, value: &str) -> Option<Step> {
+        if let Some(entry) = self.moved.get(value) {
+            return Some(Step::Moved(entry.value.clone()));
+        }
+        if let Some(entry) = self.retired.get(value) {
+            return Some(Step::Retired(entry.value.clone()));
+        }
+        let (path, id) = value.split_once('#')?;
+        match self.moved.get(path) {
+            Some(entry) if !entry.value.contains('#') => {
+                Some(Step::Moved(format!("{}#{id}", entry.value)))
+            }
+            _ => None,
+        }
+    }
+
+    /// Removes the entry for `key`, from whichever table has it.
+    pub fn remove(&mut self, key: &str) {
+        self.moved.remove(key);
+        self.retired.remove(key);
+    }
+
+    /// The one edit that turns `text`, the file as it is, into the file as
+    /// Ascribe writes this: the lines that differ, replaced. `None` when
+    /// they're the same. Each edit an entry makes is of its own lines, so
+    /// edits that record different entries don't overlap unless their
+    /// lines are next to each other.
+    pub fn edit_from(&self, text: &str) -> Option<TextEdit> {
+        let after = self.to_toml();
+        (after != text).then(|| line_edit(text, &after))
     }
 
     /// The file as Ascribe writes it: the header, `version`, and each table
@@ -245,6 +342,23 @@ impl AddressFile {
     }
 }
 
+/// The edit that turns `before` into `after`: the lines between the lines
+/// they start with and end with in common, replaced.
+fn line_edit(before: &str, after: &str) -> TextEdit {
+    let a: Vec<&str> = before.split_inclusive('\n').collect();
+    let b: Vec<&str> = after.split_inclusive('\n').collect();
+    let prefix = a.iter().zip(&b).take_while(|(x, y)| x == y).count();
+    let suffix = a[prefix..]
+        .iter()
+        .rev()
+        .zip(b[prefix..].iter().rev())
+        .take_while(|(x, y)| x == y)
+        .count();
+    let start: usize = a[..prefix].iter().map(|l| l.len()).sum();
+    let end = before.len() - a[a.len() - suffix..].iter().map(|l| l.len()).sum::<usize>();
+    TextEdit::replace(start..end, b[prefix..b.len() - suffix].concat())
+}
+
 /// A TOML basic string.
 fn quoted(text: &str) -> String {
     let mut out = String::with_capacity(text.len() + 2);
@@ -281,6 +395,11 @@ impl Reader {
 
     fn file(&mut self, text: &str) -> AddressFile {
         let mut out = AddressFile::default();
+        // A key written twice in one table, as a merge can leave, isn't
+        // TOML; it's said as itself, with both values.
+        if self.twice_in_a_table(text) {
+            return out;
+        }
         let parsed = match DeTable::parse(text) {
             Ok(parsed) => parsed,
             Err(e) => {
@@ -349,7 +468,83 @@ impl Reader {
         if let Some(value) = root.get("former") {
             out.former = self.former(value);
         }
+        for (key, retired) in &out.retired {
+            if let Some(moved) = out.moved.get(key) {
+                let later = if retired.span.start() > moved.span.start() {
+                    retired.span
+                } else {
+                    moved.span
+                };
+                self.twice(
+                    later,
+                    key,
+                    &format!("moved to `{}`", moved.value),
+                    &format!("retired: “{}”", retired.value),
+                );
+            }
+        }
         out
+    }
+
+    /// `addresses-key-twice` at `span`, for `key` with both its values.
+    fn twice(&mut self, span: Span, key: &str, first: &str, second: &str) {
+        self.issues.push(
+            Issue::new(
+                diagnostics::ADDRESSES_KEY_TWICE,
+                Location::new(self.file, span),
+            )
+            .with_arg("key", key.to_owned())
+            .with_arg("first", first.to_owned())
+            .with_arg("second", second.to_owned()),
+        );
+    }
+
+    /// Reports each key of `[moved]` or `[retired]` written a second time in
+    /// its table, as a line `"<key>" = "<value>"`: whether there was one.
+    fn twice_in_a_table(&mut self, text: &str) -> bool {
+        let mut table = "";
+        let mut seen: BTreeMap<(String, String), String> = BTreeMap::new();
+        let mut found = false;
+        let mut at = 0;
+        for line in text.split_inclusive('\n') {
+            let start = at;
+            at += line.len();
+            let trimmed = line.trim();
+            if let Some(name) = trimmed.strip_prefix('[') {
+                table = name.split(']').next().unwrap_or_default().trim();
+                continue;
+            }
+            if !matches!(table, "moved" | "retired") {
+                continue;
+            }
+            let Some((key, value)) = key_line(trimmed) else {
+                continue;
+            };
+            let offset = start + (line.len() - line.trim_start().len());
+            let key_len = trimmed
+                .find(" =")
+                .or_else(|| trimmed.find('='))
+                .unwrap_or(0);
+            let span = Span::new(offset, offset + key_len);
+            let said = |value: &str| {
+                if table == "moved" {
+                    format!("moved to `{value}`")
+                } else {
+                    format!("retired: “{value}”")
+                }
+            };
+            match seen.get(&(table.to_owned(), key.clone())) {
+                Some(first) => {
+                    let first = said(first);
+                    self.twice(span, &key, &first, &said(&value));
+                    found = true;
+                }
+                None => {
+                    seen.insert((table.to_owned(), key), value);
+                }
+            }
+        }
+        found
     }
 
     /// The entries of the table `key`, each a key the file can hold with a
@@ -493,6 +688,39 @@ impl Reader {
     }
 }
 
+/// A line `"<key>" = "<value>"`, or with a bare key, as its key and value:
+/// the strings as written, unescaped as far as `\"` and `\\`.
+fn key_line(line: &str) -> Option<(String, String)> {
+    let (key, rest) = if let Some(quoted) = line.strip_prefix('"') {
+        let (key, rest) = basic_string(quoted)?;
+        (key, rest.trim_start().strip_prefix('=')?)
+    } else {
+        let (key, rest) = line.split_once('=')?;
+        (key.trim().to_owned(), rest)
+    };
+    let rest = rest.trim_start();
+    let value = match rest.strip_prefix('"') {
+        Some(quoted) => basic_string(quoted)?.0,
+        None => rest.trim().to_owned(),
+    };
+    (!key.is_empty()).then_some((key, value))
+}
+
+/// The string at the start of `text`, after its opening `"`, and what
+/// follows its closing one.
+fn basic_string(text: &str) -> Option<(String, &str)> {
+    let mut out = String::new();
+    let mut chars = text.char_indices();
+    while let Some((i, c)) = chars.next() {
+        match c {
+            '"' => return Some((out, &text[i + 1..])),
+            '\\' => out.push(chars.next()?.1),
+            c => out.push(c),
+        }
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -571,6 +799,64 @@ mod tests {
             .map(|(k, e)| (k.as_str(), e.value.as_str()))
             .collect();
         assert_eq!(moved, [("b.md", "a.md"), ("c.md", "a.md")]);
+    }
+
+    #[test]
+    fn a_page_s_move_takes_the_entries_to_its_headings_with_it() {
+        let mut file = AddressFile::default();
+        file.record_move("old.md#install", "keys.md#install");
+        file.record_move("keys.md", "security/keys.md");
+        assert_eq!(
+            file.moved["old.md#install"].value,
+            "security/keys.md#install"
+        );
+    }
+
+    #[test]
+    fn retiring_a_page_retires_the_entries_that_lead_to_it() {
+        let mut file = AddressFile::default();
+        file.record_move("a.md", "b.md");
+        file.record_move("c.md#x", "b.md#y");
+        file.record_move("d.md", "e.md");
+        file.record_retired("b.md", "Gone");
+        let retired: Vec<&str> = file.retired.keys().map(String::as_str).collect();
+        assert_eq!(retired, ["a.md", "b.md", "c.md#x"]);
+        assert_eq!(file.moved.len(), 1);
+    }
+
+    #[test]
+    fn the_edit_is_the_lines_that_change() {
+        let mut file = AddressFile::default();
+        file.record_move("a.md", "b.md");
+        let text = file.to_toml();
+        file.record_move("c.md", "d.md");
+        let edit = file.edit_from(&text).expect("an edit");
+        assert_eq!(edit.new_text, "\"c.md\" = \"d.md\"\n");
+        assert_eq!(
+            ascribe_core::apply_edits(&text, &[edit]).expect("applies"),
+            file.to_toml()
+        );
+        assert!(file.edit_from(&file.to_toml()).is_none());
+    }
+
+    #[test]
+    fn a_key_twice_names_both_values() {
+        let found = AddressFile::parse(
+            "version = 1\n[moved]\n\"a.md\" = \"b.md\"\n\"a.md\" = \"c.md\"\n",
+            FileId::new(0),
+        )
+        .expect_err("twice");
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].slug, diagnostics::ADDRESSES_KEY_TWICE);
+        assert_eq!(found[0].arg("first"), Some("moved to `b.md`"));
+        assert_eq!(found[0].arg("second"), Some("moved to `c.md`"));
+        let both = AddressFile::parse(
+            "version = 1\n[moved]\n\"a.md\" = \"b.md\"\n[retired]\n\"a.md\" = \"Gone\"\n",
+            FileId::new(0),
+        )
+        .expect_err("in both");
+        assert_eq!(both[0].slug, diagnostics::ADDRESSES_KEY_TWICE);
+        assert_eq!(both[0].arg("second"), Some("retired: “Gone”"));
     }
 
     #[test]

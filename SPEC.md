@@ -1158,7 +1158,9 @@ base-path = ["/docs/"]
 - An **address** a build publishes is a page's route, its Markdown version's when the build publishes one, and each heading's explicit id as the page's route, `#`, and the id. A generated id isn't one: it changes with the heading's text.
 - Processors compare the addresses a **base** published, the documentation as a revision of its repository had it, with the addresses the project publishes now, build by build, matching builds by name. An address the base published and no build of that name publishes now is **lost** unless an entry accounts for it: `[moved]` has its source, or the address itself, and the value is a page a build publishes now; `[retired]` has its source, or the address; or an availability mark takes its page out of that build while another build publishes it. An id is compared only while its page is at the same address: what happened to the page decides it. Each source lost is reported once.
 - A processor that moves a source on request records the move in `[moved]`, when the file exists, in the same change as the links it updates; moving a source back to an entry's key removes the entry. It writes the file whole, each table sorted, one entry per line, keeping the header comment.
-- A build's redirects come from the file alone, never the base: for each `[moved]` entry, each address its key had, as the build's routing makes it now, leads to where its value is, permanently, unless the build publishes that address or it's the same address once case and a final `/` are ignored. Each `[retired]` key's addresses are gone, with the reason.
+- A processor that moves a page records, with it, each entry whose value is on that page, as leading to the same place on the new one; one that retires a page retires each entry leading to it, with the same reason. A heading id's rename on a page is recorded as a move of that id.
+- A `[moved]` value that is another entry's key is a **chain**: the entry leads where the chain ends, and a chain that comes back to its start leads nowhere. A processor checks each entry against the base and the project now: a value that isn't a page a build publishes, a key whose source is back, an address the key had that another source publishes, an entry the base's file doesn't have whose key the base never published, a key twice in a table or in both, a chain, an id the key had that is live on the page it leads to, many entries leading to one index page, and the file deleted while the base has it.
+- A build's redirects come from the file alone, never the base: for each `[moved]` entry, each address its key had, as the build's routing makes it now, leads to where its value, or its chain, ends, permanently, unless the build publishes that address or it's the same address once case and a final `/` are ignored. Each `[retired]` key's addresses are gone, with the reason; a processor that builds a site serves a page at each that says why, with a 404.
 
 ### 7.11 APIs
 
@@ -1258,6 +1260,15 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Addresses file | A page's address, or its Markdown version's, that the base published and nothing accounts for | Warning |
 | Addresses file | A heading's explicit id that the base published on a page still published, and nothing accounts for | Advice |
 | Addresses file | A build the base has and the working tree doesn't | Advice |
+| Addresses file | A `[moved]` value that isn't a page, or a heading on one, in every build that published its key | Error |
+| Addresses file | A key of `[moved]` or `[retired]` whose source is back | Advice |
+| Addresses file | A key of `[moved]` or `[retired]` whose address another source publishes now | Error |
+| Addresses file | An entry the base's `ascribe.addresses` doesn't have, whose key the base never published | Advice |
+| Addresses file | A key written twice in a table, or in both `[moved]` and `[retired]` | Error |
+| Addresses file | A `[moved]` value that's another entry's key | Advice |
+| Addresses file | An `#id` entry from a page that's gone whose id is live on the page its page's addresses lead to | Error |
+| Addresses file | `ascribe.addresses` deleted while the base has it | Error |
+| Addresses file | Many addresses forwarded to one index page or the home page | Advice |
 | APIs | A declared spec that doesn't exist, can't be read, or isn't YAML or JSON | Error |
 | APIs | A declared spec with no operations | Advice |
 | Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares | Error |

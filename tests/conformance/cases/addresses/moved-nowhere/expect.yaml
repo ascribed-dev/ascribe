@@ -1,8 +1,9 @@
 description: >-
   A `[moved]` entry leading to a page no build publishes accounts for
-  nothing: the page is lost.
+  nothing: the page is lost, and the entry is an error.
 spec: ["7.10", "8.2"]
 tags: [addresses]
 
 diagnostics:
   - {slug: address-lost, file: ascribe.addresses, line: 1}
+  - {slug: addresses-entry-not-a-page, file: ascribe.addresses, line: 4}

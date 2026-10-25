@@ -72,7 +72,50 @@ $ git rm content/guides/teams/share-a-loom.md && ascribe check --base main --den
 [ASC255] Warning: guides/teams/share-a-loom.md was published at /docs/guides/teams/share-a-loom and /docs/guides/teams/share-a-loom.md, and nothing publishes them now
 ```
 
-Each is reported at `ascribe.addresses`. The comparison runs when `ascribe check` checks the whole project, not for a page or a file named, and not in the editor.
+Each is reported at `ascribe.addresses`. The comparison runs when `ascribe check` checks the whole project, not for a page or a file named, and not in the editor as you type: the editor's [Check Every Build](../editor/problems.md#the-problems-panel) runs the command, and shows what it reports with its fixes.
+
+## Fix a lost address
+@available: ascribe planned
+
+Each lost address has a fix, an edit to `ascribe.addresses`, offered by the check, by `ascribe check --fix` where it's safe, and as quick fixes on the problem in the editor:
+
+- **Record git's renames,** when git sees the page renamed, as `git mv` leaves it: the move is recorded as `ascribe addresses move --from-git` records it. It's safe, since git's rename is the decision, so `ascribe check --fix` applies it.
+- **Forward it to…** the page most like it, by its headings and words as the base had them, and the next two most like it: `ascribe addresses move <old> <new>`. For a heading's id, the same id on another page. It's a choice, so it's never applied for you.
+- **Retire it, and write why:** the entry, with a placeholder for its reason, which is reported until you replace it.
+
+```console
+$ git mv content/guides/setup.md content/start/setup.md && git rm -q content/reference/options.md
+$ ascribe check --base main
+[ASC255] Warning: guides/setup.md was published at /docs/guides/setup and /docs/guides/setup.md, and nothing publishes them now
+   │ Help: git sees it renamed to start/setup.md: record git's renames, as `ascribe addresses move --from-git` does
+[ASC255] Warning: reference/options.md was published at /docs/reference/options and /docs/reference/options.md, and nothing publishes them now
+   │ Help: Forward it to the page most like it, guides/configure.md: `ascribe addresses move reference/options.md guides/configure.md`
+$ ascribe addresses move --from-git
+Recorded 1 move git sees: guides/setup.md → start/setup.md.
+```
+
+`--format json` lists every fix of each problem, with its edits.
+
+## The file's checks
+@available: ascribe planned
+
+With the base read, `ascribe check` also checks that each entry of `ascribe.addresses` still does what it says. Each is reported at its entry:
+
+| Diagnostic | Level | When |
+|---|---|---|
+| [`addresses-entry-not-a-page`](../checks/diagnostics/project-files.md#ASC265) | Error | A `[moved]` value isn't a page, or a heading on one, or a build that published the key doesn't publish it |
+| [`addresses-entry-live`](../checks/diagnostics/project-files.md#ASC266) | Advice | The key's source is back, as after a page is restored; the fix removes the entry |
+| [`addresses-entry-taken`](../checks/diagnostics/project-files.md#ASC267) | Error | Another page publishes an address the key had, so an old link lands on it |
+| [`addresses-entry-unpublished`](../checks/diagnostics/project-files.md#ASC268) | Advice | The base never published the key, and its file doesn't have the entry, as moving a page made on the same branch leaves; the fix removes it |
+| [`addresses-key-twice`](../checks/diagnostics/project-files.md#ASC269) | Error | A key is in the file twice, as a merge can leave; the file isn't used until one goes |
+| [`addresses-chain`](../checks/diagnostics/project-files.md#ASC270) | Advice | A `[moved]` value is another entry's key; the build writes where the chain ends, and the fix forwards it there |
+| [`addresses-anchor-collision`](../checks/diagnostics/project-files.md#ASC271) | Error | An id from a page that's gone is live on the page its page's addresses lead to, so a link to it lands there |
+| [`addresses-file-deleted`](../checks/diagnostics/project-files.md#ASC272) | Error | `ascribe.addresses` is gone, and the base has it; read only when `--base` names the base, as CI does |
+| [`addresses-soft-404`](../checks/diagnostics/project-files.md#ASC273) | Advice | Three addresses or more are forwarded to one index page or the home page |
+
+Retiring a page that entries lead to retires them with it, for the same reason, and moving a page takes the entries that lead to its headings with it.
+
+To stop keeping the addresses on purpose, delete the file in a pull request of its own, whose check compares with its own head, `ascribe check --base HEAD`.
 
 ## The base
 
@@ -100,11 +143,22 @@ site:
 
 **On another host,** read `_ascribe/redirects.json` after the build and give each pair to the host's own configuration.
 
+## A retired address's page
+@available: ascribe planned
+
+A reader who follows a link to a retired address gets a page that says what was there was removed, and why, with a link to the docs' home, answering 404, so search engines drop it. `@ascribed/astro` adds one for each address in `redirects.json`'s `gone`, marked `noindex`, in `_ascribe/gone/` under the build's base path, at the address from there, and the build's Netlify `_redirects` serves it at the old address:
+
+```text
+/docs/reference/legacy-sync /docs/_ascribe/gone/reference/legacy-sync 404
+```
+
+Another site generator reads `gone` from `_ascribe/redirects.json` and makes its own page for each.
+
 ## `ascribe addresses`
 @id {permalink=true}: cli-addresses
 @summary: Keeps the project's record of where the addresses it published went, `ascribe.addresses`: makes it, records a move or a retired address, and lists the redirects each build writes.
 
-Keeps `ascribe.addresses`. Each takes `--format json`, and writes the document its [schema](../contracts/json-reports/sources.md#ascribe-addresses-init) describes. Each exits with `0` when it's done, and `2` when it couldn't run: the project doesn't load, or the file can't be read or written.
+Keeps `ascribe.addresses`. Each takes `--format json`, and writes the document its [schema](../contracts/json-reports/addresses.md#ascribe-addresses-init) describes. Each exits with `0` when it's done, and `2` when it couldn't run: the project doesn't load, or the file can't be read or written.
 
 ### `ascribe addresses init`
 @id {permalink=true}: cli-addresses-init
@@ -123,6 +177,13 @@ Records that a page, or a heading's id, moved, after a move made without Ascribe
 ```console
 $ ascribe addresses move guides/keys.md security/keys.md
 Recorded in ascribe.addresses: guides/keys.md moved to security/keys.md.
+```
+
+**`--from-git`** records every move git sees between the base and the working tree whose old path is gone, one entry for each page, so a reorganization made with `git mv` is recorded at once. The base is chosen as `ascribe check` chooses it, with `--base` and `--base-exact`. Git sees a file that's renamed and added, as `git mv` leaves it, and only when the old and new files are mostly the same: a page rewritten as it moved is forwarded with `ascribe addresses move <old> <new>`.
+
+```console
+$ ascribe addresses move --from-git
+Recorded 1 move git sees: guides/setup.md → start/setup.md.
 ```
 
 @include: ../_generated/cli-addresses-move-options.md
