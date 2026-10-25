@@ -1,0 +1,38 @@
+openapi: 3.1.0
+info: { title: Users, version: "1" }
+paths:
+  /users:
+    post:
+      operationId: makeUser
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/User" }
+      responses:
+        201: { description: Made }
+  /users/{id}:
+    get:
+      responses:
+        2XX:
+          description: The user
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [name, joined]
+                properties:
+                  name: { type: string }
+                  email: { type: [string, "null"], format: email }
+                  joined: { type: string, format: date-time }
+                  tags: { type: array, items: { type: string }, uniqueItems: true }
+            text/plain:
+              schema: { type: string }
+components:
+  schemas:
+    Id: { type: string }
+    User:
+      type: object
+      required: [id, name]
+      properties:
+        id: { $ref: "#/components/schemas/Id", readOnly: true }
+        name: { type: string }

@@ -1,0 +1,31 @@
+openapi: 3.1.0
+info: { title: Users, version: "1" }
+paths:
+  /users:
+    post:
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewUser" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+components:
+  schemas:
+    NewUser:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+    User:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id: { type: string, readOnly: true }
+        name: { type: string }
+        joined: { type: string, format: date-time }

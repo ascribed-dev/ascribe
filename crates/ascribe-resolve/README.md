@@ -23,6 +23,8 @@ It's the largest of our crates, and the one the others reach the file system thr
 | `src/astro.rs` | `AstroRouter` | The `astro` profile's routes: the URL Astro gives each page, and the path and URL of its Markdown version (`markdown_path`, `markdown_url`). |
 | `src/pages.rs` | `records`, `PageRecords`, `PageRecord`, `header_rules`, `HeaderRule`, `robots_lines`, `host_line`, `disallowing` | A build's page records: each page's route, source, plain title and description, canonical address, `listing` and where it comes from, and Markdown address, and the project's `[crawlers] lines` from the host's root. The site emitter writes them as `_ascribe/pages.json`, and the headers each Markdown version needs, `header_rules`, as `_ascribe/headers.json`; `llms.txt` is built from them, and `listing-disallowed` reads the lines as RFC 9309 says. |
 | `src/llms.rs` | `llms_files`, `LlmsFile`, `description`, `DELIVERY_SPEC` | `llms.txt` for `[consumer] agents = true`: the index of a build's offered pages, from their records, split by folder past 50,000 characters, which the plain emitter writes and `ascribe check` measures, so what's reported is what's published. |
+| `src/openapi/` | `ApiSpecs`, `Spec`, `Operation`, `operation_issue`, `schemas::Body`, `examples::problems` | The specs `[apis]` declares, read loosely: each operation of `paths`, and its request and response bodies by media type (`schemas.rs`), with their schemas translated to JSON Schema; and the check of a code block marked as an example of one (`examples.rs`), whose marker the index reads (`src/index/examples.rs`). |
+| `src/json_schema/` | `check`, `Checked`, `Disagreement`, `Dialect` | The JSON Schema validator behind one seam: a document and a JSON text in, each disagreement at its byte range out. It's the only module that imports `boon`, and imports nothing else of Ascribe's, so the validator can change or move into a process of its own alone (decision #920). |
 
 ```rust,ignore
 let layout = Layout::from_model(&model);
@@ -42,7 +44,7 @@ let resolved = project.resolve_build(&build, &router);
 
 ## Dependencies
 
-It uses `ascribe-core`, `ascribe-syntax`, and `ascribe-model`, and no other crate of ours: `ascribe-check`, `ascribe-emit`, `ascribe-diff`, `ascribe-sources`, `ascribe-lsp`, and `ascribe-cli` all build on it. Outside the workspace it uses only `serde_yaml_ng`, for frontmatter.
+It uses `ascribe-core`, `ascribe-syntax`, and `ascribe-model`, and no other crate of ours: `ascribe-check`, `ascribe-emit`, `ascribe-diff`, `ascribe-sources`, `ascribe-lsp`, and `ascribe-cli` all build on it. Outside the workspace it uses `serde_yaml_ng`, for frontmatter and specs, `serde_json`, and `boon`, the JSON Schema validator, which only `src/json_schema/` imports.
 
 ## Tests
 

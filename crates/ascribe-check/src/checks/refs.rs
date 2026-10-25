@@ -272,6 +272,21 @@ impl Ctx<'_> {
         }
     }
 
+    /// The code blocks marked as examples of an operation's request or
+    /// response: their links, checked as links are, and their code against
+    /// the bodies' schemas. The source index holds this file's text too, so
+    /// only its file ids need to become this project's.
+    pub(super) fn check_marked_examples(&mut self) {
+        let index = self.project.link_index();
+        for mut issue in index.example_problems(&self.file.path) {
+            issue.location.file = self.id;
+            for fix in &mut issue.fixes {
+                fix.file = self.id;
+            }
+            self.report(issue);
+        }
+    }
+
     fn source_str(&self, span: Span) -> &str {
         self.source().get(span.range()).unwrap_or_default()
     }

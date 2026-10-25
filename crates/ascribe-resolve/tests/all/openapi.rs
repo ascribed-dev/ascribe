@@ -663,3 +663,300 @@ fn openapi_a_renamed_id_is_only_safe_with_one_operation_in_its_place() {
     assert_eq!(apis.renamed("public", "listUsers"), None);
     assert_eq!(apis.renamed("public", "nothing"), None);
 }
+
+// -- Bodies, their schemas, and checking an example ---------------------------
+
+use ascribe_resolve::json_schema::{Checked, Dialect, check};
+use ascribe_resolve::openapi::schemas::{Body, Direction, dialect, translated};
+
+const BODIES_2_0: &str = r##"
+swagger: "2.0"
+info: { title: Users, version: "1" }
+produces: [application/json, text/plain]
+paths:
+  /users/{id}:
+    parameters:
+      - $ref: "#/parameters/User"
+    put:
+      operationId: replaceUser
+      consumes: [application/json, application/merge-patch+json]
+      responses:
+        200: { description: OK, schema: { $ref: "#/definitions/User" } }
+        204: { description: Nothing }
+parameters:
+  User: { in: body, name: user, schema: { $ref: "#/definitions/User" } }
+definitions:
+  User:
+    type: object
+    required: [id, name, file]
+    properties:
+      id: { type: string, readOnly: true }
+      name: { type: string, x-nullable: true }
+      file: { type: file }
+"##;
+
+const BODIES_3_0: &str = r##"
+openapi: 3.0.3
+info: { title: Users, version: "1" }
+paths:
+  /users:
+    post:
+      operationId: createUser
+      requestBody: { $ref: "#/components/requestBodies/New" }
+      responses:
+        "201": { $ref: "#/components/responses/Created" }
+        default: { $ref: "other.yaml#/Error" }
+components:
+  requestBodies:
+    New: { content: { application/json: { schema: { $ref: "#/components/schemas/User Record" } } } }
+  responses:
+    Created:
+      description: Created
+      content: { application/json: { schema: { $ref: "#/components/schemas/User Record" } } }
+  schemas:
+    User Record:
+      type: object
+      required: [name, password]
+      properties:
+        name: { type: string, enum: [Ada, Grace], nullable: true }
+        password: { $ref: "#/components/schemas/Secret" }
+        team: { nullable: true, allOf: [{ $ref: "#/components/schemas/Team" }] }
+        manager: { $ref: "#/components/schemas/User Record", description: ignored }
+    Secret: { type: string, writeOnly: true, format: password }
+    Team: { type: object }
+"##;
+
+fn bodies(spec: &str, id: &str) -> Vec<Body> {
+    read_spec(spec, false)
+        .expect("reads")
+        .operation(id)
+        .expect("the operation")
+        .bodies
+        .clone()
+}
+
+fn body(status: Option<&str>, media_type: Option<&str>, schema: Option<&str>) -> Body {
+    Body {
+        status: status.map(str::to_owned),
+        media_type: media_type.map(str::to_owned),
+        schema: schema.map(str::to_owned),
+    }
+}
+
+#[test]
+fn openapi_swagger_2_bodies_are_the_body_parameter_and_each_response_schema_by_media_type() {
+    let user = "/parameters/User/schema";
+    let ok = "/paths/~1users~1{id}/put/responses/200/schema";
+    assert_eq!(
+        bodies(BODIES_2_0, "replaceUser"),
+        [
+            body(None, Some("application/json"), Some(user)),
+            body(None, Some("application/merge-patch+json"), Some(user)),
+            // Only the JSON media types of `produces`.
+            body(Some("200"), Some("application/json"), Some(ok)),
+        ]
+    );
+    let spec = read_spec(BODIES_2_0, false).expect("reads");
+    let replace = spec.operation("replaceUser").expect("the operation");
+    assert_eq!(replace.responses, ["200", "204"]);
+    assert_eq!(dialect(&spec.document), Dialect::Draft4);
+}
+
+#[test]
+fn openapi_3_bodies_follow_refs_to_request_bodies_and_responses() {
+    assert_eq!(
+        bodies(BODIES_3_0, "createUser"),
+        [
+            body(
+                None,
+                Some("application/json"),
+                Some("/components/requestBodies/New/content/application~1json/schema")
+            ),
+            body(
+                Some("201"),
+                Some("application/json"),
+                Some("/components/responses/Created/content/application~1json/schema")
+            ),
+            // A response in another file: its media types aren't read.
+            body(Some("default"), None, Some("/paths/~1users/post")),
+        ]
+    );
+    let spec = read_spec(OPENAPI_3_1, false).expect("reads");
+    assert_eq!(dialect(&spec.document), Dialect::Draft2020);
+    let health = spec.operation("Health.Check_v2").expect("the operation");
+    assert_eq!(
+        health.bodies,
+        [body(
+            Some("200"),
+            Some("application/json"),
+            Some("/paths/~1health/get/responses/200/content/application~1json/schema")
+        )]
+    );
+}
+
+#[test]
+fn openapi_swagger_2_and_3_0_schemas_are_translated_to_draft_4() {
+    let spec = read_spec(BODIES_2_0, false).expect("reads");
+    let request = translated(&spec.document, Dialect::Draft4, Direction::Request);
+    let user = &request["definitions"]["User"];
+    assert_eq!(
+        user["properties"]["name"]["type"],
+        serde_json::json!(["string", "null"])
+    );
+    assert_eq!(user["properties"]["file"], serde_json::json!({}));
+    // `id` is the server's to write.
+    assert_eq!(user["required"], serde_json::json!(["name", "file"]));
+    let response = translated(&spec.document, Dialect::Draft4, Direction::Response);
+    assert_eq!(
+        response["definitions"]["User"]["required"],
+        serde_json::json!(["id", "name", "file"])
+    );
+
+    let spec = read_spec(BODIES_3_0, false).expect("reads");
+    let response = translated(&spec.document, Dialect::Draft4, Direction::Response);
+    let user = &response["components"]["schemas"]["User Record"];
+    assert_eq!(
+        user["properties"]["name"],
+        serde_json::json!({ "type": ["string", "null"], "enum": ["Ada", "Grace", null] })
+    );
+    assert_eq!(
+        user["properties"]["team"],
+        serde_json::json!({ "anyOf": [
+            { "allOf": [{ "$ref": "#/components/schemas/Team" }] },
+            { "type": "null" },
+        ] })
+    );
+    // A `$ref`'s siblings are dropped, and its fragment encoded.
+    assert_eq!(
+        user["properties"]["manager"],
+        serde_json::json!({ "$ref": "#/components/schemas/User%20Record" })
+    );
+    // `password` is written, never returned, through its `$ref`.
+    assert_eq!(user["required"], serde_json::json!(["name"]));
+}
+
+#[test]
+fn openapi_an_example_is_checked_against_its_schema_with_each_disagreement_at_its_place() {
+    let spec = read_spec(BODIES_3_0, false).expect("reads");
+    let document = translated(&spec.document, Dialect::Draft4, Direction::Request);
+    let schema = "/components/requestBodies/New/content/application~1json/schema";
+    let text = "{\n  \"name\": \"Linus\",\n  \"team\": 7\n}";
+    let Checked::Done {
+        disagreements,
+        patterns_left_out,
+    } = check(&document, Dialect::Draft4, schema, text)
+    else {
+        panic!("checked");
+    };
+    assert!(patterns_left_out.is_empty());
+    let found: Vec<(&str, &str, &str)> = disagreements
+        .iter()
+        .map(|d| (&text[d.at.clone()], d.found.as_str(), d.expected.as_str()))
+        .collect();
+    assert_eq!(
+        found,
+        [
+            // A missing property, at its object's brace.
+            (
+                "{",
+                "the example has no `password`",
+                "`password` is required"
+            ),
+            (
+                "\"Linus\"",
+                "`name` is `\"Linus\"`",
+                "it's one of `\"Ada\"`, `\"Grace\"` or `null`"
+            ),
+            // `team` is nullable, so it's either.
+            ("7", "`team` is a number", "it's an object or null"),
+        ]
+    );
+
+    let agrees = r#"{ "name": null, "password": "x", "team": null, "manager": { "name": "Ada", "password": "y" } }"#;
+    assert_eq!(
+        check(&document, Dialect::Draft4, schema, agrees),
+        Checked::Done {
+            disagreements: Vec::new(),
+            patterns_left_out: Vec::new()
+        }
+    );
+}
+
+#[test]
+fn openapi_an_example_that_isnt_json_or_a_schema_in_another_file_isnt_checked() {
+    let spec = read_spec(BODIES_3_0, false).expect("reads");
+    let document = translated(&spec.document, Dialect::Draft4, Direction::Response);
+    let text = "{\n  \"name\": \"Ada\",\n}";
+    let Checked::NotJson { at, reason } =
+        check(&document, Dialect::Draft4, "/components/schemas/Team", text)
+    else {
+        panic!("not JSON");
+    };
+    assert_eq!((&text[at..], reason.as_str()), ("}", "trailing comma"));
+    assert_eq!(
+        check(
+            &document,
+            Dialect::Draft4,
+            "/paths/~1users/post/responses/default",
+            "{}"
+        ),
+        Checked::Elsewhere {
+            reference: "other.yaml#/Error".to_owned()
+        }
+    );
+}
+
+#[test]
+fn openapi_a_pattern_the_validator_cant_read_is_left_out_and_the_rest_checked() {
+    for (version, dialect) in [("3.0.3", Dialect::Draft4), ("3.1.0", Dialect::Draft2020)] {
+        let spec = format!(
+            "openapi: {version}\ninfo: {{ title: T, version: \"1\" }}\npaths: {{}}\ncomponents:\n  schemas:\n    Handle:\n      type: object\n      properties:\n        handle: {{ type: string, pattern: \"^(?<!_)[a-z]+$\" }}\n        age: {{ type: integer }}\n"
+        );
+        let spec = read_spec(&spec, false).expect("reads");
+        let Checked::Done {
+            disagreements,
+            patterns_left_out,
+        } = check(
+            &spec.document,
+            dialect,
+            "/components/schemas/Handle",
+            r#"{"handle": "_x", "age": "1"}"#,
+        )
+        else {
+            panic!("checked");
+        };
+        assert_eq!(patterns_left_out, ["^(?<!_)[a-z]+$"], "{version}");
+        assert_eq!(disagreements.len(), 1, "{version}: {disagreements:?}");
+    }
+}
+
+const SIBLING_READ_ONLY: &str = r##"
+openapi: 3.1.0
+info: { title: Users, version: "1" }
+paths: {}
+components:
+  schemas:
+    Id: { type: string }
+    User:
+      type: object
+      required: [id, name]
+      properties:
+        id: { $ref: "#/components/schemas/Id", readOnly: true }
+        name: { type: string }
+"##;
+
+#[test]
+fn openapi_a_read_only_beside_a_ref_counts_only_in_2020_12() {
+    let spec = read_spec(SIBLING_READ_ONLY, false).expect("reads");
+    let request = translated(&spec.document, Dialect::Draft2020, Direction::Request);
+    assert_eq!(
+        request["components"]["schemas"]["User"]["required"],
+        serde_json::json!(["name"])
+    );
+    // Draft 4 ignores a `$ref`'s siblings, so `id` stays required.
+    let request = translated(&spec.document, Dialect::Draft4, Direction::Request);
+    assert_eq!(
+        request["components"]["schemas"]["User"]["required"],
+        serde_json::json!(["id", "name"])
+    );
+}

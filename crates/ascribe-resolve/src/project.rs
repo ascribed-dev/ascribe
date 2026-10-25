@@ -689,7 +689,7 @@ impl Project {
             };
             for range in block.own_ranges() {
                 for (at, reference) in index.references.iter().enumerate() {
-                    if !range.contains_span(reference.span) {
+                    if reference.example || !range.contains_span(reference.span) {
                         continue;
                     }
                     let resolution = self.resolutions.get(&index.path).and_then(|r| r.get(at));
@@ -728,9 +728,34 @@ impl Project {
                 out.push(issue);
             }
         }
-        for (reference, resolution) in index.references.iter().zip(self.resolutions(path)) {
+        let resolutions = self.resolutions(path);
+        for (reference, resolution) in index.references.iter().zip(resolutions) {
             out.extend(self.reference_problem(index, reference, resolution));
         }
+        out.extend(crate::openapi::examples::problems(self, index, resolutions));
+        out.sort_by_key(|i| (i.location.span, i.slug));
+        out
+    }
+
+    /// The problems with one file's code blocks marked as examples of an
+    /// operation's request or response: their links', and their checks
+    /// against the bodies' schemas ([`crate::openapi::examples`]), in source
+    /// order. [`Project::problems`] has them too.
+    pub fn example_problems(&self, path: &RelPath) -> Vec<Issue> {
+        let Some(index) = self.files.get(path) else {
+            return Vec::new();
+        };
+        if index.examples.is_empty() {
+            return Vec::new();
+        }
+        let resolutions = self.resolutions(path);
+        let mut out = Vec::new();
+        for (reference, resolution) in index.references.iter().zip(resolutions) {
+            if reference.example {
+                out.extend(self.reference_problem(index, reference, resolution));
+            }
+        }
+        out.extend(crate::openapi::examples::problems(self, index, resolutions));
         out.sort_by_key(|i| (i.location.span, i.slug));
         out
     }

@@ -212,3 +212,61 @@ Advice · file level · next step: outside · [SPEC §7.11]({repo}/blob/main/SPE
 **Fix:** Check that `spec` names the spec you mean, and that it has a `paths` object with operations in it. A path item that's a `$ref` isn't followed: point `spec` at the bundled spec your renderer is given.
 
 **Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+
+## Examples
+
+### ASC277 `example-schema-mismatch`
+@id {permalink=true}: ASC277
+@summary: A marked example that disagrees with its body's schema.
+
+Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+
+**When:** A marked example that disagrees with its body's schema.
+
+**Message:** \{found}; \{body} says \{expected}
+
+**Fix:** Change the example to agree with the schema, or, when the API changed and the example is right, change the spec, or the code it's generated from. Each disagreement is reported at its place: the value, a property the schema doesn't allow, or the opening brace of an object missing a required property.
+
+**Read more:** [What's checked](../openapi/examples.md#whats-checked) in the guide to checked examples.
+
+### ASC278 `example-not-json`
+@id {permalink=true}: ASC278
+@summary: A marked example that isn't JSON, or isn't a `json` block.
+
+Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+
+**When:** A marked example that isn't JSON, or isn't a `json` block.
+
+**Message:** the example of \{body} isn't JSON: \{reason}
+
+**Fix:** Fix the JSON where reading it stopped: a trailing comma, a comment, a key without quotes, and text after the value are all errors in JSON. An example in another language, YAML or JSON with comments, isn't checked: take its marker off.
+
+**Read more:** [Mark an example](../openapi/examples.md#mark-an-example) in the guide to checked examples.
+
+### ASC279 `example-body-missing`
+@id {permalink=true}: ASC279
+@summary: A marked example whose operation has no body it names.
+
+Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+
+**When:** A marked example whose operation has no body it names.
+
+**Message:** `{operation}` has no request body in `{path}`
+
+**Fix:** Name a body the operation has: for a request, an operation that takes one; for a response, its status as the spec writes it (`201`, `2XX`, `default`). When the body has more than one JSON media type, write the one meant after the status, or after the link for a request: `response="openapi.yaml#getUser 200 application/problem+json"`.
+
+**Read more:** [Mark an example](../openapi/examples.md#mark-an-example) in the guide to checked examples.
+
+### ASC280 `example-schema-unsupported`
+@id {permalink=true}: ASC280
+@summary: A marked example whose schema can't all be checked.
+
+Advice · file level · next step: outside · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+
+**When:** A marked example whose schema can't all be checked.
+
+**Message:** the schema of \{body} has a pattern the validator can't read, `{pattern}`, so it's left out, and the rest of the schema is checked
+
+**Fix:** A pattern is read as a Rust regular expression, which has no lookaround or backreferences: write one it can read, or leave it, and the rest of the schema is still checked. A spec split across files is declared by its bundled file, the one its renderer is given.
+
+**Read more:** [What isn't checked](../openapi/examples.md#what-isnt-checked) in the guide to checked examples.

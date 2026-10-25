@@ -1,0 +1,19 @@
+openapi: 3.0.3
+info: { title: Users, version: "1" }
+paths:
+  /users/{id}:
+    get:
+      operationId: getUser
+      responses:
+        "200":
+          description: The user
+          content:
+            application/json: { schema: { type: object } }
+            application/problem+json: { schema: { type: object } }
+            text/plain: { schema: { type: string } }
+        "204":
+          description: Nothing
+        "404":
+          description: Not found
+          content:
+            text/html: { schema: { type: string } }

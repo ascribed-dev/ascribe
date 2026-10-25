@@ -1191,3 +1191,19 @@ fn check_and_the_inventory_say_which_operations_no_page_links_to() {
     let report = json(&ascribe(plain.path(), &["report", "--format", "json"]));
     assert!(report["inventory"].get("apis").is_none(), "{report}");
 }
+
+#[test]
+fn the_inventory_counts_the_operations_a_marked_example_claims() {
+    let dir = api_project();
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Invoices\n---\n\nFetch one with [Get an invoice](../api/openapi.yaml#getInvoice).\n\n```json response=\"../api/openapi.yaml#getInvoice 200\"\n{}\n```\n\n```json response=\"../api/openapi.yaml#getInvoice 404\"\n{}\n```\n",
+    );
+    let report = json(&ascribe(
+        dir.path(),
+        &["report", "inventory", "--format", "json"],
+    ));
+    // Two markers, one operation.
+    assert_eq!(report["inventory"]["apis"][0]["examples"], 1, "{report}");
+}

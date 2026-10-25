@@ -1,15 +1,20 @@
 //! The OpenAPI specs a project declares (`[apis.<name>]`), read loosely: each
 //! operation's method, path, `operationId`, `summary`, first tag, and
 //! `deprecated`, from `paths`, the same way in Swagger 2.0 and OpenAPI 3.0
-//! to 3.2, since `paths` hasn't changed shape across them. Everything else
-//! is ignored, and nothing is validated: a spec a strict reader rejects has
-//! operations as good as any.
+//! to 3.2, since `paths` hasn't changed shape across them, and its request
+//! and response bodies ([`schemas`]), which a marked JSON example is checked
+//! against ([`examples`]). Everything else is ignored, and nothing is
+//! validated: a spec a strict reader rejects has operations as good as any.
 //!
 //! Each spec is read once per project load, through [`FileSystem`], from the
 //! project root: `read_file` reaches a spec outside the project's folder,
 //! which the content model has already held to the project's repository.
 
-use std::collections::BTreeMap;
+pub mod examples;
+pub mod schemas;
+
+use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
 
 use ascribe_core::{
     Applicability, Builtin, Fix, Issue, Location, RelPath, Span, TextEdit, diagnostics,
@@ -22,6 +27,7 @@ use crate::closest::closest_fixes;
 use crate::fs::{FileSystem, Probe};
 use crate::index::walk::walk_blocks;
 use crate::index::{FileIndex, RefKind, Target};
+use crate::json_schema::token;
 use crate::links::encode_destination;
 use crate::project::{Project, Resolution};
 use crate::references::{operation_target, reference_target};
@@ -50,6 +56,11 @@ pub struct Operation {
     /// The line of its method's key in the spec, counted from 0, when a
     /// look at the text finds it: where go to definition opens the spec.
     pub line: Option<usize>,
+    /// The statuses of its responses, as the spec writes them, with a body
+    /// or not.
+    pub responses: Vec<String>,
+    /// Its request body and responses, by media type.
+    pub bodies: Vec<schemas::Body>,
 }
 
 /// What a spec holds, as far as it was read.
@@ -60,6 +71,8 @@ pub struct Spec {
     /// The parts of `paths` that weren't read, each with why: a path item
     /// that's a `$ref` to another file, or one that isn't a mapping.
     pub unread: Vec<String>,
+    /// The whole spec as JSON, where its bodies' schemas are.
+    pub document: Arc<serde_json::Value>,
 }
 
 impl Operation {
@@ -176,6 +189,8 @@ impl Project {
         if out.is_empty() {
             return Vec::new();
         }
+        // The operations a marked example claims, by API and position.
+        let mut claimed: BTreeSet<(String, usize)> = BTreeSet::new();
         for file in self.files() {
             let operations = self
                 .resolutions(&file.path)
@@ -186,25 +201,44 @@ impl Project {
                 let Resolution::Operation { api, id } = &resolution else {
                     continue;
                 };
-                let Some((coverage, spec)) = out.iter_mut().find(|(c, _)| &c.api == api) else {
-                    continue;
-                };
-                let Some(named) = spec.named(id) else {
-                    continue;
-                };
-                let operation = named.operation();
-                if let Some(at) = spec
-                    .operations
-                    .iter()
-                    .position(|o| std::ptr::eq(o, operation))
-                    && let Some(count) = coverage.links.get_mut(at)
+                if let Some(((coverage, _), at)) = position(&mut out, api, id) {
+                    coverage.links[at] += 1;
+                }
+            }
+            let resolutions = self.resolutions(&file.path);
+            for marker in &file.examples {
+                if let Some(Resolution::Operation { api, id }) = resolutions.get(marker.reference)
+                    && let Some((_, at)) = position(&mut out, api, id)
                 {
-                    *count += 1;
+                    claimed.insert((api.clone(), at));
                 }
             }
         }
+        for (coverage, _) in &mut out {
+            coverage.examples = claimed
+                .iter()
+                .filter(|(api, _)| *api == coverage.api)
+                .count();
+        }
         out.into_iter().map(|(coverage, _)| coverage).collect()
     }
+}
+
+/// The coverage of `api` and the position in its spec of the operation `id`
+/// names.
+fn position<'c, 's>(
+    out: &'c mut [(Coverage, &'s Spec)],
+    api: &str,
+    id: &str,
+) -> Option<(&'c mut (Coverage, &'s Spec), usize)> {
+    let entry = out.iter_mut().find(|(c, _)| c.api == api)?;
+    let operation = entry.1.named(id)?.operation();
+    let at = entry
+        .1
+        .operations
+        .iter()
+        .position(|o| std::ptr::eq(o, operation))?;
+    Some((entry, at))
 }
 
 /// What the links of a file's `@operation` lines name (SPEC §4.13), which
@@ -346,8 +380,10 @@ fn line_key(line: &str) -> Option<(usize, &str)> {
 /// What a parsed document holds: its `paths`, when it's a mapping that has
 /// them.
 fn spec_of(document: &Value) -> Spec {
+    let json = schemas::json_of(document);
     let mut spec = Spec::default();
     let Some(Value::Mapping(paths)) = document.get("paths") else {
+        spec.document = Arc::new(json);
         return spec;
     };
     for (path, item) in paths {
@@ -368,18 +404,26 @@ fn spec_of(document: &Value) -> Spec {
             }
             continue;
         }
+        let item_pointer = format!("/paths/{}", token(path));
         let operations = METHODS
             .iter()
-            .filter_map(|m| item.get(*m).map(|o| ((*m).to_owned(), o)))
+            .filter_map(|m| {
+                let pointer = format!("{item_pointer}/{m}");
+                item.get(*m).map(|o| ((*m).to_owned(), o, pointer))
+            })
             // OpenAPI 3.2's other methods, by their names as written.
             .chain(
                 item.get("additionalOperations")
                     .and_then(Value::as_mapping)
                     .into_iter()
                     .flatten()
-                    .filter_map(|(m, o)| Some((m.as_str()?.to_lowercase(), o))),
+                    .filter_map(|(m, o)| {
+                        let m = m.as_str()?;
+                        let pointer = format!("{item_pointer}/additionalOperations/{}", token(m));
+                        Some((m.to_lowercase(), o, pointer))
+                    }),
             );
-        for (method, operation) in operations {
+        for (method, operation, pointer) in operations {
             let Value::Mapping(operation) = operation else {
                 continue;
             };
@@ -405,9 +449,12 @@ fn spec_of(document: &Value) -> Spec {
                     .and_then(Value::as_bool)
                     .unwrap_or(false),
                 line: None,
+                responses: schemas::statuses(&json, &pointer),
+                bodies: schemas::bodies(&json, &item_pointer, &pointer),
             });
         }
     }
+    spec.document = Arc::new(json);
     spec
 }
 

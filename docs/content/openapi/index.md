@@ -19,7 +19,7 @@ reference = { renderer = "redoc", at = "/api/" }
 
 `spec` is a path from the project root, to a YAML or JSON file of Swagger 2.0 or OpenAPI 3.0 to 3.2. A spec generated from code often lives beside the docs rather than in them, so it may be outside the project's folder, `../services/api/openapi.yaml`, as long as it's in the same git repository. A spec that isn't there, or isn't YAML or JSON, is an error at `spec` (`api-spec-unreadable`).
 
-Ascribe reads each operation's `operationId`, method, path, summary, first tag, and whether it's `deprecated` from `paths`, and nothing else: it doesn't validate the spec, so one that a strict validator rejects still works.
+Ascribe reads each operation's `operationId`, method, path, summary, first tag, and whether it's `deprecated` from `paths`, and its request and response schemas, which a [marked JSON example](examples.md) is checked against, and nothing else: it doesn't validate the spec, so one that a strict validator rejects still works.
 
 ## Link to an operation
 
