@@ -138,6 +138,16 @@ fn cases() -> Vec<Case> {
         ),
         // 22.8 Sources
         case(
+            "model-api-reference",
+            None,
+            "spec = \"0.1\"\n[apis.public]\nspec = \"api/openapi.yaml\"\nreference = \"/api/#/{tag}\" #!\n",
+        ),
+        case(
+            "model-api-reference",
+            Some("placeholder"),
+            "spec = \"0.1\"\n[apis.public]\nspec = \"api/openapi.yaml\"\nreference = \"/api/#/{operation}\" #!\n",
+        ),
+        case(
             "model-source-remote",
             None,
             "spec = \"0.1\"\n[sources.code]\npath = \"code\"\ngit = \"https://example.com/x.git\" #!\n",
@@ -946,6 +956,7 @@ fn every_registered_rule_is_covered() {
             "model-content-root-missing",
             "model-source-path-missing",
             "model-source-outside-repository",
+            "model-api-outside-repository",
             // Checked with the files `[from]` takes from: tests/from.rs.
             "model-from-file",
             "model-from-written",

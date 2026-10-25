@@ -55,6 +55,19 @@ fn host(table: &str, key: &str) -> Host {
         "widgets.<name>" => ("", "[widgets.x-y]", &[("forms", "[\"container\"]")]),
         "builds.<name>" => ("", "[builds.site]", &[]),
         "sources.<name>" => ("", "[sources.code]", &[("path", "\".\"")]),
+        "apis.<name>" => (
+            "",
+            "[apis.public]",
+            &[
+                ("spec", "\"api.yaml\""),
+                ("reference", "\"/api/#/operations/{operationId}\""),
+            ],
+        ),
+        "apis.<name>.reference" => (
+            "[apis.public]\nspec = \"api.yaml\"\n",
+            "[apis.public.reference]",
+            &[("renderer", "\"redoc\""), ("at", "\"/api/\"")],
+        ),
         "checks.<check>" => ("", "[checks.page-size]", &[]),
         "from.<path>" => (
             "",
