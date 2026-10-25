@@ -50,6 +50,8 @@ mod nav_file;
 mod navigation;
 #[path = "all/new_page.rs"]
 mod new_page;
+#[path = "all/openapi.rs"]
+mod openapi;
 #[path = "all/page.rs"]
 mod page;
 #[path = "all/page_rows.rs"]

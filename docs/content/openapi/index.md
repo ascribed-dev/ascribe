@@ -5,7 +5,7 @@ description: "Declare your OpenAPI spec in ascribe.toml, link a guide to an oper
 available: ascribe planned
 ---
 
-A guide that says "call `getUser`" should link to `getUser` in the API reference, and the link should break the build when the spec loses it. Declare the spec in `ascribe.toml`, and a link to it with an `operationId` as its fragment is a link to that operation: `ascribe check` checks the spec has it, the editor completes it, and the build writes the operation's address in your published reference.
+A guide that says "call `getUser`" should link to `getUser` in the API reference, and the link should break the build when the spec loses it. Declare the spec in `ascribe.toml`, and a link to it with an `operationId` as its fragment is a link to that operation: `ascribe check` checks the spec has it, the editor completes it after `#` and shows it on hover ([in the editor](editor.md)), and the build writes the operation's address in your published reference.
 
 ## Declare the spec
 
@@ -19,7 +19,7 @@ reference = { renderer = "redoc", at = "/api/" }
 
 `spec` is a path from the project root, to a YAML or JSON file of Swagger 2.0 or OpenAPI 3.0 to 3.2. A spec generated from code often lives beside the docs rather than in them, so it may be outside the project's folder, `../services/api/openapi.yaml`, as long as it's in the same git repository. A spec that isn't there, or isn't YAML or JSON, is an error at `spec` (`api-spec-unreadable`).
 
-Ascribe reads each operation's `operationId`, method, path, summary, and first tag from `paths`, and its request and response schemas, which a [marked JSON example](examples.md) is checked against, and nothing else: it doesn't validate the spec, so one that a strict validator rejects still works.
+Ascribe reads each operation's `operationId`, method, path, summary, first tag, and whether it's `deprecated` from `paths`, and its request and response schemas, which a [marked JSON example](examples.md) is checked against, and nothing else: it doesn't validate the spec, so one that a strict validator rejects still works.
 
 ## Link to an operation
 
@@ -31,7 +31,7 @@ Fetch the user with [Get a user](../../api/openapi.yaml#getUser).
 
 The path is relative to the page, as any link's is. An id with `/` or a space is written percent-encoded, `#activity%2Flist%20events`, and matched decoded.
 
-- **It's checked.** An id the spec doesn't have is an error at the link, `link-operation-missing`, with the closest ids the spec has as its fixes.
+- **It's checked.** An id the spec doesn't have is an error at the link, `link-operation-missing`, with the closest ids the spec has as its fixes. A link to an operation the spec marks deprecated is advice, `link-operation-deprecated`.
 - **It's written as the reference's address.** For Redoc, `getUser`'s is `/api/#operation/getUser`, under `[consumer] base-path`: `/docs/api/#operation/getUser` with a base path of `/docs/`. The plain output writes it absolute when `[consumer] site` is set, and the JSON output gives the link an `operation` target with the address.
 - **A link to the spec with no fragment** is a link to the file, as to any file. When the spec is outside the project's folder, that's an error (`link-spec-outside-project`): only a link to one of its operations is allowed.
 

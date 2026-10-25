@@ -96,7 +96,7 @@ When the target doesn't work, it says why and lists the closest targets that do:
 
 For a page or a heading, `Write:` gives the link with its title and with empty text, `[](../keys.md#rotate-keys)`, which shows the same title: either does, and the empty one is the smaller edit to a link that has no text.
 
-A URL with a scheme isn't checked: it exists as far as `link` knows. A file that isn't a page, such as an image, exists when the project has it.
+A URL with a scheme isn't checked: it exists as far as `link` knows. A file that isn't a page, such as an image, exists when the project has it. A link to an API's operation exists when the spec has it, and the answer says which: see [Link to operations in the editor](../openapi/editor.md#for-agents).
 
 | Code | Meaning |
 |---|---|
@@ -108,7 +108,7 @@ With `--format json`, the document is:
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/link.json
 
-`from` is the page as `--from` gave it, from the folder the command was run in, the way `ascribe check` names a file, whether it was given that way or from the content root, and `target` is the target as given. `exists` says whether the link works. `path` is the file the target names, from the content root, `id` the heading's id, and `title` the page's title or the heading's text. `kind` is `page`, `heading`, `fragment`, `file`, `external`, or `missing`. `href` is null when the target doesn't work, and `problem` says why; `closest` lists other targets, best first, each with `href`, `path`, `id`, and `title`. With a versioned build, `lines` says where a link to a page goes in each line. Every field is in [the schema](../contracts/json-reports/questions.md#ascribe-link).
+`from` is the page as `--from` gave it, from the folder the command was run in, the way `ascribe check` names a file, whether it was given that way or from the content root, and `target` is the target as given. `exists` says whether the link works. `path` is the file the target names, from the content root, `id` the heading's id, and `title` the page's title or the heading's text. `kind` is `page`, `heading`, `fragment`, `file`, `operation`, `external`, or `missing`. `href` is null when the target doesn't work, and `problem` says why; `closest` lists other targets, best first, each with `href`, `path`, `id`, and `title`. With a versioned build, `lines` says where a link to a page goes in each line. For an operation, `operation` has its `api`, `operation_id`, `method`, `path`, `summary`, `tag`, `deprecated`, and `address`. Every field is in [the schema](../contracts/json-reports/questions.md#ascribe-link).
 
 ## `ascribe refs`
 @id {permalink=true}: cli-refs
