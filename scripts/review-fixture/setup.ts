@@ -70,7 +70,11 @@ if (repository !== undefined) checkRepository(repository);
 mkdirSync(checkout, { recursive: true });
 git("init", "-q", "-b", "main");
 cpSync(join(root, "examples", "monorepo", "docs"), docs, { recursive: true });
-cpSync(join(root, "examples", "astro-site", "src"), join(docs, "src"), { recursive: true });
+// Without Loom's API reference, whose spec the Lantern docs don't have.
+cpSync(join(root, "examples", "astro-site", "src"), join(docs, "src"), {
+  recursive: true,
+  filter: (source) => !source.endsWith(join("pages", "api.astro")),
+});
 write(
   "README.md",
   [
