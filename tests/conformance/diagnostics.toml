@@ -4910,7 +4910,7 @@ reference = "writing/inline.md#links"
 row = "Links | Target is an operation the declared spec doesn't have"
 message = "`{path}` has no operation `{id}`"
 messages.closest = "`{path}` has no operation `{id}`; the closest is `{closest}`"
-fix = "Fix the `#` part, the operation's `operationId` as the spec writes it, or link to the operation that took its place. A spec generated from code can change an id when the code changes: setting ids in the code keeps them, and the links to them."
+fix = "Fix the `#` part: the operation's `operationId` as the spec writes it, or, for an operation with no id, its method in lowercase and its path, `delete/users/{id}`. Or link to the operation that took its place. A spec generated from code can change an id when the code changes: setting ids in the code keeps them, and the links to them."
 
 [[diagnostic]]
 code = "ASC264"
@@ -5045,3 +5045,29 @@ reference = "publishing/redirects.md#the-files-checks"
 row = "Addresses file | Many addresses forwarded to one index page or the home page"
 message = "{count} addresses are forwarded to {value}, {what}, so a reader who followed a link to one of them lands on a page without what they were looking for"
 fix = "Forward each to the page that has what it had, with `ascribe addresses move <old> <new>`, or retire the ones nothing replaces, with `ascribe addresses retire <old> --reason \"…\"`. A redirect to an index or the home page is a not-found page that answers 200, which search engines treat as one."
+
+[[diagnostic]]
+code = "ASC274"
+slug = "link-operation-form-unsupported"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "5.2"
+reference = "writing/inline.md#links"
+row = "Links | Target is an operation with no id, by its method and path, and the API's reference is a template"
+message = "`#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is a template, which has no address for it; a link by method and path needs `renderer = \"redoc\"`"
+fix = "Give the operation an `operationId` in the spec, or in the code it's generated from, and link to it by its id: every renderer addresses an operation by its id. Or publish the reference with Redoc 3, `{ renderer = \"redoc\", at = \"/api/\" }`, which has an address for an operation with no id."
+
+[[diagnostic]]
+code = "ASC275"
+slug = "link-operation-by-path"
+severity = "advice"
+level = "file"
+next = "fix"
+evidence = []
+spec = "5.2"
+reference = "writing/inline.md#links"
+row = "Links | Target is an operation that has an id, by its method and path"
+message = "`#{operation}` names the operation `{id}` of `{path}` by its method and path; link to it by its id, `#{id}`"
+fix = "Link to the operation by its `operationId`, which every renderer addresses it by and which stays the operation's when its path changes. The fix writes it."

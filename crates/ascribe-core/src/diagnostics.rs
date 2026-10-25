@@ -847,6 +847,16 @@ pub const ADDRESSES_FILE_DELETED: DiagnosticSlug = DiagnosticSlug("addresses-fil
 /// `ASC273`, advice, file level: SPEC §8.2, "Addresses file | Many addresses forwarded to one index page or the home page".
 pub const ADDRESSES_SOFT_404: DiagnosticSlug = DiagnosticSlug("addresses-soft-404");
 
+/// `ASC274`, error, file level: SPEC §8.2, "Links | Target is an operation
+/// with no id, by its method and path, and the API's reference is a
+/// template".
+pub const LINK_OPERATION_FORM_UNSUPPORTED: DiagnosticSlug =
+    DiagnosticSlug("link-operation-form-unsupported");
+
+/// `ASC275`, advice, file level: SPEC §8.2, "Links | Target is an operation
+/// that has an id, by its method and path".
+pub const LINK_OPERATION_BY_PATH: DiagnosticSlug = DiagnosticSlug("link-operation-by-path");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -1114,6 +1124,8 @@ pub const ALL: &[DiagnosticSlug] = &[
     ADDRESSES_ANCHOR_COLLISION,
     ADDRESSES_FILE_DELETED,
     ADDRESSES_SOFT_404,
+    LINK_OPERATION_FORM_UNSUPPORTED,
+    LINK_OPERATION_BY_PATH,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

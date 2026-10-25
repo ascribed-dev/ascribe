@@ -434,7 +434,13 @@ enum TargetJson {
     #[serde(rename_all = "camelCase")]
     Operation {
         api: String,
-        operation_id: String,
+        // An operation's id, or, when it has none, its method and path.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        operation_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        method: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        path: Option<String>,
         address: String,
     },
     Unresolved,
@@ -984,12 +990,19 @@ impl Writer<'_, '_> {
             LinkTarget::Operation {
                 api,
                 operation_id,
+                method,
+                path,
                 address,
-            } => TargetJson::Operation {
-                api: api.clone(),
-                operation_id: operation_id.clone(),
-                address: address.clone(),
-            },
+            } => {
+                let by_path = operation_id.is_none();
+                TargetJson::Operation {
+                    api: api.clone(),
+                    operation_id: operation_id.clone(),
+                    method: by_path.then(|| method.clone()),
+                    path: by_path.then(|| path.clone()),
+                    address: address.clone(),
+                }
+            }
             LinkTarget::Unresolved => TargetJson::Unresolved,
         }
     }

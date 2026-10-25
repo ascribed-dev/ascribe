@@ -1,0 +1,18 @@
+openapi: 3.1.0
+info: { title: Quill, version: "1" }
+paths:
+  /users/{id}:
+    get:
+      operationId: getUser
+      summary: Get a user
+    delete:
+      summary: Delete a user
+  /files/~home:
+    get:
+      summary: The home folder
+  /orgs:
+    get:
+      operationId: get/users
+  /users:
+    get:
+      summary: List users

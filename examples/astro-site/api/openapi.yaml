@@ -1,7 +1,8 @@
 # Loom's API: the spec the guides link into, which Redoc publishes at
 # /docs/api. Its tags and ids are the awkward ones a link has to survive: tags
 # with a space, an ampersand, and an accent, an operation with two tags, one
-# with none, one with no operationId, and an id with a dot.
+# with none, one with no operationId, an id with a dot, and one with a slash
+# and a space.
 openapi: 3.1.0
 info:
   title: Loom API
@@ -35,6 +36,13 @@ paths:
       tags: [Billing & Invoices]
       responses:
         "200": { description: The invoices. }
+  /activity:
+    get:
+      operationId: activity/list events
+      summary: List activity
+      tags: [Activity]
+      responses:
+        "200": { description: The events. }
   /menu:
     get:
       operationId: getMenu

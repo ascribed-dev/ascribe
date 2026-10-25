@@ -1,8 +1,10 @@
 // A guide's links to operations of Loom's API (`[apis.loom]`): each lands on
 // its operation in the built site's reference. Redoc's, at /docs/api, is
 // addressed `#operation/<operationId>`, which Redoc 3 rewrites to its own
-// address and scrolls to, for an operation under a tag with a space too; a
-// template's, here Stoplight Elements' hash router, is addressed
+// address and scrolls to, for an operation under a tag with a space too and
+// an id with a slash and a space; an operation with no id is addressed by its
+// path, `#paths/<pointer>/<method>`, which only Redoc 3 has. A template's,
+// here Stoplight Elements' hash router, is addressed
 // `#/operations/<operationId>`.
 import { rm, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -63,7 +65,7 @@ describe("a link to an operation", () => {
     await server?.stop();
   });
 
-  it("lands on the operation in Redoc, under a tag with a space too", async () => {
+  it("lands on the operation in Redoc, by an awkward id or by its method and path", async () => {
     if (server === undefined) throw new Error("the preview server didn't start");
     const { origin } = server;
     const browser = await launchChromium();
@@ -73,12 +75,14 @@ describe("a link to an operation", () => {
       page.on("request", (request) => {
         if (request.url().includes("otel.")) traced.push(request.url());
       });
-      for (const [name, id, own] of [
-        ["Get a loom", "getLoom", "#/looms/getloom"],
-        ["List invoices", "listInvoices", "#/billing-and-invoices/listinvoices"],
+      for (const [name, address, own] of [
+        ["Get a loom", "#operation/getLoom", "#/looms/getloom"],
+        ["List invoices", "#operation/listInvoices", "#/billing-and-invoices/listinvoices"],
+        ["List activity", "#operation/activity%2Flist%20events", "#/activity/activity/list%20events"],
+        ["Delete a loom", "#paths/~1looms~1%7Bid%7D/delete", "#/looms/paths/~1looms~1{id}/delete"],
       ] as const) {
         const landed = await follow(page, origin, name);
-        expect(landed.href).toBe(`${BASE}/api#operation/${id}`);
+        expect(landed.href).toBe(`${BASE}/api${address}`);
         expect(landed.url).toBe(`${origin}${BASE}/api${own}`);
         expect(landed.top).toBeGreaterThan(-2);
         expect(landed.top).toBeLessThan(80);
@@ -99,6 +103,11 @@ describe("a link to an operation through a template", () => {
         'reference = { renderer = "redoc", at = "/api" }',
         'reference = "/elements#/operations/{operationId}"',
       ),
+    );
+    // A template has no address for an operation with no id, so a link to one
+    // by its method and path is an error under it.
+    await edit(path.join(root, "content", "Guides", "Teams", "Share a loom.md"), (text) =>
+      text.replace(/ When the team is done with it, .*\n/, "\n"),
     );
     await writeFile(
       path.join(root, "src", "pages", "elements.astro"),

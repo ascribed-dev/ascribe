@@ -3,8 +3,10 @@
 // package, drawing the spec the guides link into. Ascribe writes a link to an
 // operation as `/docs/api#operation/<operationId>` (ascribe.toml's
 // `[apis.loom]`), which Redoc 3 takes for its own address of the operation
-// (`#/looms/getloom`) and scrolls to when the page opens. Redoc 3 sends usage
-// traces to Redocly unless `disable-telemetry` is "true".
+// (`#/looms/getloom`) and scrolls to when the page opens; an operation with no
+// id, by its path, as `/docs/api#paths/~1looms~1%7Bid%7D/delete`, an address
+// only Redoc 3 has. Redoc 3 sends usage traces to Redocly unless
+// `disable-telemetry` is "true".
 import redoc from "redoc/bundles/redoc.standalone.js?url";
 // A file of its own, for a reader without JavaScript, rather than inlined.
 import spec from "../../api/openapi.yaml?url&no-inline";
