@@ -380,7 +380,8 @@ pub fn operation_issue(
             let mut issue = Issue::new(diagnostics::LINK_OPERATION_MISSING, here)
                 .with_arg("path", path)
                 .with_arg("id", id.clone());
-            if let Some(closest) = closest_ids(spec, id).first() {
+            let by_path = !matches!(declared.reference, ApiReference::Template(_));
+            if let Some(closest) = closest_ids(spec, id, by_path).first() {
                 issue = issue
                     .with_variant("closest")
                     .with_arg("closest", closest.clone());
@@ -395,16 +396,18 @@ pub fn operation_issue(
 const CLOSEST: usize = 5;
 
 /// The names of the spec's operations closest to `fragment`, best first: an
-/// operation's id, or its method and path when it has none. The spec exists,
-/// so its operations are the likely targets, however far.
-pub fn closest_ids(spec: &Spec, fragment: &str) -> Vec<String> {
+/// operation's id, or its method and path when it has none and `by_path`.
+/// `by_path` is false under a template, which has no address for an
+/// operation with no id, so linking to one by its method and path is
+/// `link-operation-form-unsupported`. The spec exists, so its operations are
+/// the likely targets, however far.
+pub fn closest_ids(spec: &Spec, fragment: &str, by_path: bool) -> Vec<String> {
     let mut scored: Vec<(usize, String)> = spec
         .operations
         .iter()
-        .map(|o| {
-            o.operation_id
-                .clone()
-                .unwrap_or_else(|| o.method_and_path())
+        .filter_map(|o| match &o.operation_id {
+            Some(id) => Some(id.clone()),
+            None => by_path.then(|| o.method_and_path()),
         })
         .map(|candidate| (edit_distance(fragment, &candidate), candidate))
         .collect();

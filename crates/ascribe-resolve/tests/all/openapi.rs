@@ -446,6 +446,42 @@ fn openapi_a_missing_operation_suggests_one_with_no_id_by_its_method_and_path() 
     );
 }
 
+#[test]
+fn openapi_a_missing_operation_under_a_template_suggests_only_ids() {
+    let model = MODEL.replace(
+        "{ renderer = \"redoc\", at = \"/api/\" }",
+        "\"/api/#/operations/{operationId}\"",
+    );
+    let project = project(
+        &model,
+        &[
+            ("api/openapi.yaml", BY_PATH),
+            (
+                "content/guide.md",
+                &page("[Delete](../api/openapi.yaml#delete/user/{id})"),
+            ),
+        ],
+    );
+    let problems = project.problems(&RelPath::parse("guide.md").expect("a path"));
+    assert_eq!(problems.len(), 1, "{problems:?}");
+    assert_eq!(problems[0].slug.as_str(), "link-operation-missing");
+    // A template has no address for an operation with no id, so the closest
+    // are the ids alone.
+    assert_eq!(problems[0].arg("closest"), Some("get/users"));
+    let hrefs: Vec<&str> = problems[0]
+        .fixes
+        .iter()
+        .map(|f| f.edits[0].new_text.as_str())
+        .collect();
+    assert_eq!(
+        hrefs,
+        [
+            "../api/openapi.yaml#get/users",
+            "../api/openapi.yaml#getUser"
+        ]
+    );
+}
+
 // -- Bodies, their schemas, and checking an example ---------------------------
 
 use ascribe_resolve::json_schema::{Checked, Dialect, check};
