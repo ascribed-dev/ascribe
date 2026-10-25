@@ -199,6 +199,27 @@ struct InventoryJson {
     /// order. Absent when no source has one.
     #[serde(skip_serializing_if = "Option::is_none")]
     examples: Option<Vec<ExamplesCount>>,
+    /// How many of each declared API's operations the pages cover, for each
+    /// API whose spec could be read, in the content model's order. Absent
+    /// when the project declares no API.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    apis: Option<Vec<ApiCount>>,
+}
+
+/// How many of one API's operations the pages cover.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct ApiCount {
+    /// The API's name, its key in `[apis]`.
+    api: String,
+    /// How many operations its spec has.
+    operations: usize,
+    /// How many of them a link names, by `operationId` or by method and
+    /// path.
+    linked: usize,
+    /// How many of them a checked example claims as its request or
+    /// response.
+    examples: usize,
 }
 
 /// How many snippets of one source show a tested example, by status.
@@ -592,6 +613,16 @@ pub(crate) fn of(report: &Report, files: &FileTable, about: &About<'_>) -> Repor
                         current: e.current,
                         stale: e.stale,
                         unobserved: e.unobserved,
+                    })
+                    .collect()
+            }),
+            apis: i.apis.as_ref().map(|list| {
+                list.iter()
+                    .map(|a| ApiCount {
+                        api: a.api.clone(),
+                        operations: a.operations,
+                        linked: a.linked,
+                        examples: a.examples,
                     })
                     .collect()
             }),

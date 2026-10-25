@@ -534,3 +534,17 @@ Warning · file level · next step: outside · configurable in `[checks]` · [SP
 **Fix:** Give the check a base it can read. In CI, fetch the history (`fetch-depth: 0` on actions/checkout), and pass the branch a pull request targets, `--base origin/$GITHUB_BASE_REF`, or, on a push, the commit before it, `--base ${{ github.event.before }} --base-exact`. A base with no project, as a migration's first pull request has, published nothing, so there's nothing to compare: it's reported, as advice, so a check that compared nothing never passes silently. See [The base](../publishing/redirects.md#the-base).
 
 **Read more:** [The base](../publishing/redirects.md#the-base) in the guide to keeping addresses.
+
+### ASC276 `api-operation-unreferenced`
+@id {permalink=true}: ASC276
+@summary: An operation of a declared spec, not marked `deprecated`, that no link names, by its id or by its method and path.
+
+Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+
+**When:** An operation of a declared spec, not marked `deprecated`, that no link names, by its id or by its method and path.
+
+**Message:** no page links to `{operation}` (\{method} \{route}) in \{path}
+
+**Fix:** Link to the operation from the guide that covers it, by its `operationId`, `openapi.yaml#getUser`, or by its method and path when it has none, `openapi.yaml#delete/users/{id}`. An operation a guide doesn't need to cover can be marked `deprecated` in the spec when it's on its way out, which leaves it out; for an API whose reference is enough on its own, turn the check off in [`[checks]`](../content-model/checks.md#19-checks).
+
+**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.

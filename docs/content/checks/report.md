@@ -67,6 +67,12 @@ For each source with an `ascribe.examples.toml`, it counts the snippets that sho
   Examples from code: 4 snippets, 2 current, 1 stale, 1 unobserved.
 ```
 
+For each API in `[apis]`, it counts the spec's operations, how many of them a link names, and how many a checked example claims; [Find the operations no guide links to](../openapi/coverage.md) says what counts.
+
+```text
+  APIs: public: 24 operations, 19 linked, 6 with a checked example.
+```
+
 ## Builds
 
 For each build, the pages it doesn't publish and the content it takes out of the pages it does (a variant arm, a section marked available elsewhere), when another build keeps them, with why. It's what to read before a release of one build: whether what its readers won't see is what you meant to leave out. A project with one build has nothing to compare.

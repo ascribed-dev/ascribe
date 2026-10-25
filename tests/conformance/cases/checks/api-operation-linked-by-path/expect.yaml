@@ -1,0 +1,9 @@
+description: >-
+  An operation a link names by its method and path is linked: one with no id,
+  and one with an id, which the link names the same operation of, and so
+  covers, with advice to name it by its id.
+spec: ["5.2", "7.11"]
+tags: [check]
+
+diagnostics:
+  - {slug: link-operation-by-path, file: index.md, line: 7}

@@ -857,6 +857,9 @@ pub const LINK_OPERATION_FORM_UNSUPPORTED: DiagnosticSlug =
 /// that has an id, by its method and path".
 pub const LINK_OPERATION_BY_PATH: DiagnosticSlug = DiagnosticSlug("link-operation-by-path");
 
+/// `ASC276`, advice, file level: a content check (area `project`).
+pub const API_OPERATION_UNREFERENCED: DiagnosticSlug = DiagnosticSlug("api-operation-unreferenced");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -1126,6 +1129,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     ADDRESSES_SOFT_404,
     LINK_OPERATION_FORM_UNSUPPORTED,
     LINK_OPERATION_BY_PATH,
+    API_OPERATION_UNREFERENCED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1184,6 +1188,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     SUMMARY_MISSING,
     SUMMARY_LONG,
     ADDRESSES_BASE_UNREADABLE,
+    API_OPERATION_UNREFERENCED,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

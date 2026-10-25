@@ -4,8 +4,9 @@
 //!
 //! - **problems**: what `ascribe check` reports, and the problems
 //!   acknowledged as intended;
-//! - **inventory**: the pages by type and by owner, and the overdue reviews,
-//!   orphan pages, and unused entries the checks find, as lists;
+//! - **inventory**: the pages by type and by owner, how many of each
+//!   declared API's operations a link names, and the overdue reviews, orphan
+//!   pages, and unused entries the checks find, as lists;
 //! - **builds**: the pages and the content each build leaves out that
 //!   another keeps;
 //! - **pages**: each build's page records ([`ascribe_resolve::pages`]),
@@ -207,6 +208,23 @@ pub struct Inventory {
     /// repository with an `ascribe.examples.toml`, in the content model's
     /// order; `None` when no source has one.
     pub examples: Option<Vec<SourceExamples>>,
+    /// How much of each declared API whose spec was read the pages cover, in
+    /// the content model's order; `None` when the project declares none.
+    pub apis: Option<Vec<ApiOperations>>,
+}
+
+/// How many of one API's operations the pages cover.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ApiOperations {
+    /// The API's name.
+    pub api: String,
+    /// How many operations its spec has.
+    pub operations: usize,
+    /// How many of them a link names, by id or by method and path.
+    pub linked: usize,
+    /// How many of them a checked example claims as its request or
+    /// response.
+    pub examples: usize,
 }
 
 /// How many snippets of one source show a tested example, by status.
@@ -581,7 +599,27 @@ fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
         orphans: listed(&[diagnostics::PAGE_ORPHAN]),
         unused: listed(UNUSED),
         examples: examples(project, &index),
+        apis: apis(&index),
     }
+}
+
+/// How many of each declared API's operations the links name: `None` when
+/// the project declares no API.
+fn apis(index: &ascribe_resolve::Project) -> Option<Vec<ApiOperations>> {
+    if index.model().apis.is_empty() {
+        return None;
+    }
+    let counts = index
+        .api_coverage()
+        .into_iter()
+        .map(|c| ApiOperations {
+            operations: c.operations(),
+            linked: c.linked(),
+            examples: c.examples,
+            api: c.api,
+        })
+        .collect();
+    Some(counts)
 }
 
 /// The tested examples each source's snippets show, counted once for each

@@ -268,3 +268,4 @@
 | [ASC273](../checks/diagnostics/project-files.md#ASC273) | `addresses-soft-404` | Advice | File | write |
 | [ASC274](../checks/diagnostics/pages.md#ASC274) | `link-operation-form-unsupported` | Error | File | write |
 | [ASC275](../checks/diagnostics/pages.md#ASC275) | `link-operation-by-path` | Advice | File | fix |
+| [ASC276](../checks/diagnostics/content-checks.md#ASC276) | `api-operation-unreferenced` | Advice | File | write |

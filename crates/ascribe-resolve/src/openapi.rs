@@ -120,6 +120,79 @@ pub fn method_and_path(fragment: &str) -> Option<(&str, &str)> {
         .then(|| fragment.split_at(method.len()))
 }
 
+/// How much of one API a project's pages cover.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Coverage {
+    /// The API's name.
+    pub api: String,
+    /// How many links name each of its spec's operations, in the spec's
+    /// order: by id, or by method and path. A link in any file counts, so
+    /// the count holds for every build.
+    pub links: Vec<usize>,
+    /// How many of its operations a checked example claims as its request
+    /// or response.
+    pub examples: usize,
+}
+
+impl Coverage {
+    /// How many operations the spec has.
+    pub fn operations(&self) -> usize {
+        self.links.len()
+    }
+
+    /// How many of them a link names.
+    pub fn linked(&self) -> usize {
+        self.links.iter().filter(|n| **n > 0).count()
+    }
+}
+
+impl Project {
+    /// How much of each declared API whose spec was read the project's
+    /// links cover, in the content model's order.
+    pub fn api_coverage(&self) -> Vec<Coverage> {
+        let mut out: Vec<(Coverage, &Spec)> = self
+            .model()
+            .apis
+            .iter()
+            .filter_map(|api| {
+                let spec = self.apis().spec(&api.name)?;
+                let coverage = Coverage {
+                    api: api.name.clone(),
+                    links: vec![0; spec.operations.len()],
+                    examples: 0,
+                };
+                Some((coverage, spec))
+            })
+            .collect();
+        if out.is_empty() {
+            return Vec::new();
+        }
+        for file in self.files() {
+            for resolution in self.resolutions(&file.path) {
+                let Resolution::Operation { api, id } = resolution else {
+                    continue;
+                };
+                let Some((coverage, spec)) = out.iter_mut().find(|(c, _)| &c.api == api) else {
+                    continue;
+                };
+                let Some(named) = spec.named(id) else {
+                    continue;
+                };
+                let operation = named.operation();
+                if let Some(at) = spec
+                    .operations
+                    .iter()
+                    .position(|o| std::ptr::eq(o, operation))
+                    && let Some(count) = coverage.links.get_mut(at)
+                {
+                    *count += 1;
+                }
+            }
+        }
+        out.into_iter().map(|(coverage, _)| coverage).collect()
+    }
+}
+
 /// Why a spec can't be read.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Unreadable {
