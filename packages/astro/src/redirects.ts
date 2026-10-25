@@ -116,7 +116,7 @@ const GONE_PREFIX = "/_ascribe/gone/";
 const REDIRECTS_VERSION = 1;
 
 /** A retired address, as a build's `_ascribe/redirects.json` lists it (output-layout contract §1.8). */
-export interface Gone {
+interface Gone {
   /** The address, from the host's root. */
   path: string;
   /** Why it was retired, as its authors wrote it. */
@@ -134,7 +134,7 @@ export interface GonePage {
 }
 
 /** The retired addresses a build's site output lists: none when it has no `_ascribe/redirects.json`. */
-export function readGone(siteRoot: string): Gone[] {
+function readGone(siteRoot: string): Gone[] {
   const file = path.join(siteRoot, "_ascribe", "redirects.json");
   let text: string;
   try {
