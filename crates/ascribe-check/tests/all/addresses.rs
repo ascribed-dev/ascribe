@@ -195,8 +195,11 @@ fn a_page_one_build_drops_by_a_mark_while_another_publishes_it_is_the_marks_deci
 
 #[test]
 fn a_page_lost_in_only_some_builds_names_them() {
+    let now = project(&[("index.md", PAGE)]);
+    let builds = every_build(&now);
     let base = BuildAddresses {
         build: "self-managed".to_owned(),
+        settings: builds[1].settings.clone(),
         addresses: vec![Address {
             address: "/docs/old".to_owned(),
             kind: AddressKind::Page,
@@ -204,12 +207,11 @@ fn a_page_lost_in_only_some_builds_names_them() {
             page: RelPath::parse("old.md").expect("a path"),
         }],
     };
-    let now = project(&[("index.md", PAGE)]);
-    let builds = every_build(&now);
     let mut cloud = builds[0].clone();
     cloud.addresses.push(base.addresses[0].clone());
     let cloud_base = BuildAddresses {
         build: "cloud".to_owned(),
+        settings: builds[0].settings.clone(),
         addresses: base.addresses.clone(),
     };
     let found = compared("", &now, &[cloud_base, base], &[cloud, builds[1].clone()]);
@@ -271,6 +273,7 @@ fn a_build_only_the_base_has_is_advice() {
     let mut base = every_build(&now);
     base.push(BuildAddresses {
         build: "beta".to_owned(),
+        settings: base[0].settings.clone(),
         addresses: base[0].addresses.clone(),
     });
     let found = compared("", &now, &base, &every_build(&now));
@@ -279,7 +282,7 @@ fn a_build_only_the_base_has_is_advice() {
         [(
             diagnostics::ADDRESSES_BUILD_GONE.as_str(),
             Severity::Advice,
-            "the base has the build `beta`, and ascribe.toml doesn't now, so its 2 addresses aren't compared"
+            "the base has the build `beta`, and ascribe.toml doesn't now, so its 3 addresses aren't compared"
         )]
     );
 }

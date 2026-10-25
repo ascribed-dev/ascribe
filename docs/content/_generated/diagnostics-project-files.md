@@ -25,7 +25,7 @@ Warning · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC
 
 **Message:** \{source} was published at \{addresses}, and nothing publishes them now\{builds}
 
-**Fix:** Decide what a reader who follows an old link should get. When the content is somewhere else now, forward it: `ascribe addresses move <old> <new>` records where it went, and the build writes the redirect. When it's gone on purpose, retire it: `ascribe addresses retire <old> --reason "…"`. When it was deleted by mistake, restore the file. Moving a page with `ascribe rename`, or in the editor, records the move for you. The base is the default branch, or `--base`; see [Keep the addresses you've published](../publishing/redirects.md).
+**Fix:** Decide what a reader who follows an old link should get. When the content is somewhere else now, forward it: `ascribe addresses move <old> <new>` records where it went, and the build writes the redirect. When it's gone on purpose, retire it: `ascribe addresses retire <old> --reason "…"`. When it was deleted by mistake, restore the file. Moving a page with `ascribe rename`, or in the editor, records the move for you. When a routing setting moved them, as `base-path`, `permalink-path`, `agents`, or a build's name, `ascribe check --fix` records the old value in `[former]`, and the build forwards every address it moved. The base is the default branch, or `--base`; see [Keep the addresses you've published](../publishing/redirects.md).
 
 **Read more:** [What the check reports](../publishing/redirects.md#what-the-check-reports) in the guide to keeping addresses.
 

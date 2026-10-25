@@ -1,0 +1,9 @@
+description: >-
+  A build of another name that publishes the base build's pages is that
+  build renamed: one warning for the setting, whose fix records it in
+  `[former] builds`, not a build that's gone.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: address-lost, file: ascribe.addresses, line: 1}

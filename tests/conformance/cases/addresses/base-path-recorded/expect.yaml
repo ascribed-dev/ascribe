@@ -1,0 +1,7 @@
+description: >-
+  A `base-path` change `[former]` records accounts for every address it
+  moved: nothing is reported.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics: []
