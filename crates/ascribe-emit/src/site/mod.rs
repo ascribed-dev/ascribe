@@ -46,6 +46,7 @@ mod profile;
 
 pub(crate) use anchor::starts_anchor;
 pub(crate) use blocks::{arm_values, sync_dimension};
+pub use frontmatter::split_frontmatter;
 pub use help::{Help, HelpEntry, help, help_header};
 pub use profile::{ASTRO_VERSION, AstroProfile};
 

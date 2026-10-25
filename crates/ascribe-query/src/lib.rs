@@ -11,8 +11,8 @@
 //!   link to write;
 //! - [`refs`]: where a page, a heading, an image, or a content model entry
 //!   is used;
-//! - [`resolve`]: a page as a reader of one build sees it, as plain Markdown,
-//!   and a permalink's help, as a product shows it;
+//! - [`resolve`]: a page as a reader of one build sees it, as its plain or
+//!   site output writes it, and a permalink's help, as a product shows it;
 //! - [`rules`]: a project's rules, for the instruction files an agent reads;
 //! - [`search`]: where a project's pages say something, as readers read
 //!   them, each place the line to edit;
@@ -56,7 +56,7 @@ pub use outline::{Outline, OutlineHeading, OutlineMemo, OutlineMemoState, outlin
 pub use permalinks::{PermalinksAnswer, Retire, RetireAnswer, SyncAnswer, VerifyAnswer};
 pub use refs::{Asked, Place, Refs, TargetKind, image_refs, refs, release_refs, release_target};
 pub use report::{Report, report};
-pub use resolve::{PermalinkHelp, Resolved, ResolvedPermalink, resolve};
+pub use resolve::{Emit, PermalinkHelp, Resolved, ResolvedPermalink, resolve};
 pub use rules::{pointer, rules};
 pub use search::{
     PageCount, Readings, Search, SearchPage, SearchPlace, SearchThrough, Searched, SourcePlace,

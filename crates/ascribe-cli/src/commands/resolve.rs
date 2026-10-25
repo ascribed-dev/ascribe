@@ -131,6 +131,7 @@ pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<A
         project.root(),
         &path,
         build,
+        ascribe_query::Emit::Plain,
         args.frontmatter,
     )?))
 }

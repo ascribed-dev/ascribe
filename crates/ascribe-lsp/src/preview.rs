@@ -30,6 +30,7 @@ use ascribe_diff::{BaseInfo, PageDiff, PageStatus, Side};
 use ascribe_emit::assets::encode_path;
 use ascribe_emit::{
     EmitContext, FormattedPiece, SiteEmitter, emit_page, formatted_title, render_site_html,
+    split_frontmatter,
 };
 use ascribe_model::{AvailabilityMode, Build, ContentModel, VariantMode};
 use ascribe_resolve::{AstroRouter, DropReason, FileKind, LinkTarget, ResolvedBlock, Snapshot};
@@ -703,25 +704,6 @@ fn within(base: &Path, path: &Path) -> bool {
     relative_path(base, path).is_some_and(|rel| rel.is_inside())
 }
 
-/// Splits the site output's frontmatter (`---`, YAML, `---`, a blank line)
-/// from the markdown after it.
-fn split_frontmatter(text: &str) -> (&str, &str) {
-    let Some(rest) = text.strip_prefix("---\n") else {
-        return ("", text);
-    };
-    // The YAML serializer indents every continuation line, so a line that is
-    // exactly `---` closes the block.
-    let close = if rest.starts_with("---\n") {
-        Some(0)
-    } else {
-        rest.find("\n---\n").map(|i| i + 1)
-    };
-    match close {
-        Some(at) => (&rest[..at], rest[at + 4..].trim_start_matches('\n')),
-        None => ("", text),
-    }
-}
-
 /// A build in the content model's terms.
 fn describe(build: &Build) -> String {
     let variants = match &build.variants {
@@ -744,19 +726,4 @@ fn describe(build: &Build) -> String {
 
 fn path_text(path: &Path) -> String {
     path.to_string_lossy().into_owned()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::split_frontmatter;
-
-    #[test]
-    fn frontmatter_is_split_from_the_body() {
-        assert_eq!(
-            split_frontmatter("---\ntitle: A\n---\n\n# Body\n"),
-            ("title: A\n", "# Body\n")
-        );
-        assert_eq!(split_frontmatter("# Body\n"), ("", "# Body\n"));
-        assert_eq!(split_frontmatter("---\n---\n\ntext\n"), ("", "text\n"));
-    }
 }

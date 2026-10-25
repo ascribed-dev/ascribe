@@ -3,6 +3,23 @@
 
 ```json
 {
+  "$defs": {
+    "Emit": {
+      "description": "Which output a page is written as, by the name `ascribe build --emit`\ngives it.",
+      "oneOf": [
+        {
+          "const": "plain",
+          "description": "The plain output: fully resolved CommonMark with no HTML.",
+          "type": "string"
+        },
+        {
+          "const": "site",
+          "description": "The site output: Markdown with Ascribe's elements, as a site's\nintegration receives it.",
+          "type": "string"
+        }
+      ]
+    }
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe resolve <PAGE> --format json` answers.",
   "properties": {
@@ -13,6 +30,10 @@
     "build": {
       "description": "The build.",
       "type": "string"
+    },
+    "emit": {
+      "$ref": "#/$defs/Emit",
+      "description": "Which output `text` is written as: `plain`, the build's plain\noutput, or `site`, its site output."
     },
     "not_published": {
       "description": "Why the build doesn't publish the page, when it doesn't; `text` is\nempty then.",
@@ -38,7 +59,7 @@
       "type": "integer"
     },
     "text": {
-      "description": "The page as plain Markdown, as the build's `plain` output writes it:\nwith its frontmatter first when asked for.",
+      "description": "The page as the output `emit` names writes it: with its frontmatter\nfirst when asked for.",
       "type": "string"
     }
   },
@@ -47,6 +68,7 @@
     "ascribe_version",
     "page",
     "build",
+    "emit",
     "not_published",
     "route",
     "text"

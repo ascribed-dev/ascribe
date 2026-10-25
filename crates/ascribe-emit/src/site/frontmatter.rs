@@ -103,6 +103,26 @@ pub(crate) fn render(cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String
     Ok(format!("---\n{yaml}---\n\n"))
 }
 
+/// Splits the site output's frontmatter (`---`, YAML, `---`, a blank line)
+/// from the markdown after it: the YAML, and the page's body. Text that
+/// doesn't start with a block is all body.
+pub fn split_frontmatter(text: &str) -> (&str, &str) {
+    let Some(rest) = text.strip_prefix("---\n") else {
+        return ("", text);
+    };
+    // The YAML serializer indents every continuation line, so a line that is
+    // exactly `---` closes the block.
+    let close = if rest.starts_with("---\n") {
+        Some(0)
+    } else {
+        rest.find("\n---\n").map(|i| i + 1)
+    };
+    match close {
+        Some(at) => (&rest[..at], rest[at + 4..].trim_start_matches('\n')),
+        None => ("", text),
+    }
+}
+
 /// A formatted value as HTML: its text escaped, and each code span a
 /// `<code>`.
 pub(crate) fn html(segments: &[Segment]) -> String {
@@ -130,4 +150,19 @@ fn target_value(view: &super::blocks::TargetView) -> Value {
     }
     map.insert("text".into(), Value::String(view.text.clone()));
     Value::Mapping(map)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::split_frontmatter;
+
+    #[test]
+    fn frontmatter_is_split_from_the_body() {
+        assert_eq!(
+            split_frontmatter("---\ntitle: A\n---\n\n# Body\n"),
+            ("title: A\n", "# Body\n")
+        );
+        assert_eq!(split_frontmatter("# Body\n"), ("", "# Body\n"));
+        assert_eq!(split_frontmatter("---\n---\n\ntext\n"), ("", "text\n"));
+    }
 }
