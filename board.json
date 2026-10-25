@@ -6040,7 +6040,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/926"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Redirects 2: fix every lost address, record git's renames, serve retired addresses, and tell agents"
     },
     {
@@ -6058,7 +6058,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Redirects 3: record a settings change and forward every address it moved"
     },
     {
@@ -6077,7 +6077,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Redirects 4: show lost addresses between checks, and a page's old addresses in This page"
     },
     {
@@ -6159,7 +6159,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "OpenAPI 2: link an operation with no id by its method and path"
     },
     {
@@ -6196,7 +6196,7 @@
         "question"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "OpenAPI 4: decide how a JSON example names its operation, from a validator spike"
     },
     {
