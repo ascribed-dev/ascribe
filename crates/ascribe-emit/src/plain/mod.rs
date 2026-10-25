@@ -40,15 +40,17 @@ use std::cell::{Cell, RefCell};
 use ascribe_core::{AssetUse, RelPath, Router};
 use ascribe_model::{ContentModel, PlainContent, Segment};
 use ascribe_resolve::{
-    AstroRouter, PageSection, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedKind,
-    ResolvedLink, ResolvedPage, llms, pages,
+    AstroRouter, EmbeddedOperation, PageSection, ResolvedArm, ResolvedBlock, ResolvedBuild,
+    ResolvedKind, ResolvedLink, ResolvedPage, llms, pages,
 };
 use ascribe_syntax::{Alignment, BlockKind, Bound, CodeBlock, DirectiveLine, PrimaryValue, Table};
 
-use crate::assets::{Placement, mirrored_path};
+use crate::assets::{Placement, markdown_destination, mirrored_path};
 use crate::emitter::{EmitContext, Emitter, PageContext, mirrored_placement};
 use crate::error::EmitError;
-use crate::labels::{availability_display, availability_display_of_text, dimensional_label};
+use crate::labels::{
+    availability_display, availability_display_of_text, dimensional_label, operation_text,
+};
 use crate::site::{FILES_DIR, arm_values, route_collisions, sync_dimension};
 use crate::store::{Contents, EmittedFile, FileKind};
 use inline::{Style, escape};
@@ -573,6 +575,12 @@ impl Renderer<'_> {
         match line.name.as_str() {
             "id" | "include" | "snippet" | "steps" | "details" | "summary" => Vec::new(),
             "available" => self.annotation(block).into_iter().collect(),
+            "operation" => block
+                .operation
+                .as_deref()
+                .map(|operation| self.operation(operation))
+                .into_iter()
+                .collect(),
             "note" => match &line.primary {
                 Some(PrimaryValue::Text(text)) => {
                     let content = self.inlines(block, &text.inlines, Style::default());
@@ -584,6 +592,21 @@ impl Renderer<'_> {
                 Some(widget) => self.fallback(widget),
                 None => Vec::new(),
             },
+        }
+    }
+
+    /// An `@operation`'s line (SPEC §4.13): `GET /users/{id}: Get a user`,
+    /// linked to the operation's address, then `(deprecated)` when it is.
+    fn operation(&self, operation: &EmbeddedOperation) -> String {
+        let link = format!(
+            "[{}]({})",
+            escape(&operation_text(operation), false),
+            markdown_destination(&self.page.emit.absolute_url(&operation.address))
+        );
+        if operation.deprecated {
+            format!("{link} (deprecated)")
+        } else {
+            link
         }
     }
 

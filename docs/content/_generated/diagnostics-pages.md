@@ -141,6 +141,20 @@ Advice · file level · next step: fix · [SPEC §5.2]({repo}/blob/main/SPEC.md#
 
 **Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
+### ASC276 `operation-link-not-operation`
+@id {permalink=true}: ASC276
+@summary: An `@operation`'s link isn't to an operation of a declared API.
+
+Error · file level · next step: write · [SPEC §4.13]({repo}/blob/main/SPEC.md#413-operation)
+
+**When:** An `@operation`'s link isn't to an operation of a declared API.
+
+**Message:** `{link}` isn't a link to an operation; `@operation` takes a declared API's spec, `#`, and an operation's `operationId`
+
+**Fix:** Link to an operation of an API `[apis]` declares: the spec's path from this page, `#`, and the operation's `operationId`, or, for one with no id, its method in lowercase and its path, `../api/openapi.yaml#delete/users/{id}`. To link to a page or a file, write a link in the text instead.
+
+**Read more:** [`@operation`](../writing/directives.md#operation) in the directive reference.
+
 ## Images
 
 ### ASC042 `image-source-missing`

@@ -162,6 +162,7 @@ Each construct below has at least one fixture in [`tests/render/`]({repo}/tree/m
 | `availability-row` | §5 | A table row's availability ends its first cell, its targets between the hidden `(Available: ` and `)` (element contract §4) |
 | `availability-planned` | §5 | A planned target keeps its empty `planned` attribute, in a block's availability and a row's (element contract §4) |
 | `code-tested` | §5.1 | A code block with a tested line alone, and with a title and a tested line, each in a figure with its caption |
+| `operation` | §5 | An operation from `@operation` (element contract §11) is an HTML block holding its link, with an id and a summary, and deprecated with neither |
 
 ## 7. Source anchors
 @id {permalink=true}: 7-source-anchors

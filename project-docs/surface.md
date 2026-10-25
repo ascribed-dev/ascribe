@@ -82,6 +82,7 @@ For authors. Read from `crates/ascribe-core/src/schema.rs`.
 | `@memo` | SPEC §4.10 |
 | `@term` | SPEC §4.11 |
 | `@summary` | SPEC §4.12 |
+| `@operation` | SPEC §4.13 |
 
 ## `ascribe.toml`
 
@@ -115,7 +116,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-267 in all. By severity: 58 advice, 182 error, 27 warning. By level: 237 file, 30 page. By kind of next step: 57 choose, 22 fix, 11 outside, 12 review, 165 write.
+268 in all. By severity: 58 advice, 183 error, 27 warning. By level: 238 file, 30 page. By kind of next step: 57 choose, 22 fix, 11 outside, 12 review, 166 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -386,6 +387,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC273` | `addresses-soft-404` | advice | write | {count} addresses are forwarded to {value}, {what}, so a reader who followed a link to one of them lands on a page without what they were looking for |
 | `ASC274` | `link-operation-form-unsupported` | error | write | `#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is a template, which has no address for it; a link by method and path needs `renderer = "redoc"` |
 | `ASC275` | `link-operation-by-path` | advice | fix | `#{operation}` names the operation `{id}` of `{path}` by its method and path; link to it by its id, `#{id}` |
+| `ASC276` | `operation-link-not-operation` | error | write | `{link}` isn't a link to an operation; `@operation` takes a declared API's spec, `#`, and an operation's `operationId` |
 
 ## The VS Code extension
 
@@ -733,6 +735,7 @@ Elements the site output writes:
 | `<ascribe-tab>` |
 | `<ascribe-availability>` |
 | `<ascribe-availability-target>` |
+| `<ascribe-operation>` |
 | `<ascribe-group>` |
 | `<ascribe-for-agents>` |
 | `<ascribe-attributes>` |

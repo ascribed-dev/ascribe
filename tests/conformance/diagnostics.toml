@@ -5071,3 +5071,16 @@ reference = "writing/inline.md#links"
 row = "Links | Target is an operation that has an id, by its method and path"
 message = "`#{operation}` names the operation `{id}` of `{path}` by its method and path; link to it by its id, `#{id}`"
 fix = "Link to the operation by its `operationId`, which every renderer addresses it by and which stays the operation's when its path changes. The fix writes it."
+
+[[diagnostic]]
+code = "ASC276"
+slug = "operation-link-not-operation"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "4.13"
+reference = "writing/directives.md#operation"
+row = "Links | An `@operation`'s link isn't to an operation of a declared API"
+message = "`{link}` isn't a link to an operation; `@operation` takes a declared API's spec, `#`, and an operation's `operationId`"
+fix = "Link to an operation of an API `[apis]` declares: the spec's path from this page, `#`, and the operation's `operationId`, or, for one with no id, its method in lowercase and its path, `../api/openapi.yaml#delete/users/{id}`. To link to a page or a file, write a link in the text instead."

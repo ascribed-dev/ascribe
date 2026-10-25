@@ -1,0 +1,9 @@
+description: >-
+  `@operation`'s primary is a link to an operation of a declared API, in
+  either form a link names one: its `operationId`, or its method and path.
+  It's checked as the link is, and it's a block, so a `@memo` directly
+  above it binds it.
+spec: ["4.13", "5.2", "3.8"]
+tags: [check]
+
+diagnostics: []

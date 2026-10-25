@@ -88,10 +88,10 @@ pub use router::DefaultRouter;
 pub use section::PageSection;
 pub use summary::{FoundSummary, SectionSummary, SummaryForm, find_summaries};
 pub use tree::{
-    Annotation, Availability, DropReason, DroppedPage, FormattedField, GlossaryUse, HeadingIds,
-    LinkTarget, NAV_LABEL, NavLabel, PagePermalink, Removal, Removed, ResolvedArm, ResolvedBlock,
-    ResolvedBuild, ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage, ResolvedRow, Scope,
-    Substitution,
+    Annotation, Availability, DropReason, DroppedPage, EmbeddedOperation, FormattedField,
+    GlossaryUse, HeadingIds, LinkTarget, NAV_LABEL, NavLabel, PagePermalink, Removal, Removed,
+    ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind, ResolvedLink,
+    ResolvedPage, ResolvedRow, Scope, Substitution,
 };
 
 use crate::index::FileKind;

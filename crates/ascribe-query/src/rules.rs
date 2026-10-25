@@ -432,6 +432,10 @@ fn directive_lines(model: &ContentModel, used: &std::collections::BTreeSet<Strin
                     "sources {}",
                     code(model.sources.iter().map(|s| s.name.as_str()).collect())
                 )),
+                Builtin::Operation if !model.apis.is_empty() => Some(format!(
+                    "APIs {}",
+                    code(model.apis.iter().map(|a| a.name.as_str()).collect())
+                )),
                 _ => None,
             };
             match declared {
@@ -492,6 +496,10 @@ fn builtin_line(builtin: Builtin) -> String {
         Builtin::Summary => "`@summary: <text>` under a heading, or `@summary` on the line \
                              above a paragraph: the section's summary, its own text, which \
                              the page doesn't show, or the paragraph, which it does"
+            .to_owned(),
+        Builtin::Operation => "`@operation: <spec>#<operationId>`, a link to an operation of an \
+                               API `[apis]` declares: its method, path, and summary, linked to \
+                               its reference"
             .to_owned(),
     }
 }
