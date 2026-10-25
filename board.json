@@ -6014,8 +6014,11 @@
         "javascript",
         "outputs changed"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/915"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Redirects 1: record moves, report a lost address against the base, and write Netlify's redirects"
     },
     {
@@ -6034,7 +6037,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Redirects 2: fix every lost address, record git's renames, serve retired addresses, and tell agents"
     },
     {
@@ -6088,8 +6091,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/916"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "ascribe resolve --emit site: write a page as the site output does"
     },
     {
