@@ -5932,8 +5932,11 @@
         "bug",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/912"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "ascribe rename refuses a case-only rename on macOS"
     },
     {
@@ -5946,8 +5949,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/901"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDLZCw",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/911"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Canary failed"
     },
     {
@@ -5964,8 +5970,11 @@
         "bug",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/910"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "With trailing-slash \"never\", Astro sites serve each page behind a 301"
     },
     {
@@ -5982,8 +5991,11 @@
         "documentation",
         "question"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/909"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Redirects 0: decide ascribe.addresses, redirects.json, [consumer] host, the diagnostics, and the commands"
     },
     {
@@ -6003,7 +6015,7 @@
         "outputs changed"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Redirects 1: record moves, report a lost address against the base, and write Netlify's redirects"
     },
     {
