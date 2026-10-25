@@ -959,6 +959,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `navigation/index.md` | Navigation | reference |
 | `navigation/order.md` | Put your pages in order | how-to |
 | `navigation/site-list.md` | Move a site's own list to the navigation | how-to |
+| `openapi/examples.md` | Check a JSON example against its schema | how-to |
 | `openapi/index.md` | Link to your API reference | how-to |
 | `openapi/no-id.md` | Link to an operation with no id | how-to |
 | `permalinks/command.md` | `ascribe permalinks` | reference |
