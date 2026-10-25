@@ -264,8 +264,8 @@ describe("a site at the host's root", () => {
     // retired page's addresses, each serving the page that says so with a 404.
     expect(await readFile(path.join(root, "dist", "_redirects"), "utf8")).toBe(
       `/docs/guides/old-setup ${UNQUOTED} 301\n/docs/guides/old-setup.md ${UNQUOTED}.md 301\n` +
-        "/docs/guides/beta /_ascribe/gone/docs/guides/beta 404\n" +
-        "/docs/guides/beta.md /_ascribe/gone/docs/guides/beta 404\n",
+        "/docs/guides/beta /docs/_ascribe/gone/guides/beta 404\n" +
+        "/docs/guides/beta.md /docs/_ascribe/gone/guides/beta 404\n",
     );
     const host = await serveLikeNetlify(root);
     try {

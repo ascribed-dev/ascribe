@@ -295,7 +295,7 @@ The site output holds `_ascribe/redirects.json`: where the addresses the build u
     { "from": "/docs/guides/keys.md", "to": "/docs/security/keys.md", "status": 301, "entry": "guides/keys.md" }
   ],
   "gone": [
-    { "path": "/docs/reference/legacy-sync/", "reason": "The sync agent was removed in 4.0", "entry": "reference/legacy-sync.md", "page": "/_ascribe/gone/docs/reference/legacy-sync/" }
+    { "path": "/docs/reference/legacy-sync/", "reason": "The sync agent was removed in 4.0", "entry": "reference/legacy-sync.md", "page": "/docs/_ascribe/gone/reference/legacy-sync/" }
   ]
 }
 ```
@@ -313,7 +313,7 @@ The site output holds `_ascribe/redirects.json`: where the addresses the build u
 | `gone[].path` | The address, from the host's root. |
 | `gone[].reason` | Why it was retired: the entry's value. |
 | `gone[].entry` | The `ascribe.addresses` key it comes from. |
-| `gone[].page` | Where the page saying the address was retired is served, from the host's root: `/_ascribe/gone` and the key's address, the same for a page's address and its Markdown version's. `@ascribed/astro` builds one page at each, with the reason, a link to the docs' home, and `noindex`; another site generator reads `gone` and writes its own. |
+| `gone[].page` | Where the page saying the address was retired is served, from the host's root: the build's base path, `_ascribe/gone/`, and the key's address from the base path (from the host's root for an address outside it), the same for a page's address and its Markdown version's. It's under the base path because that's where a site generator serves the build. `@ascribed/astro` builds one page at each, with the reason, a link to the docs' home, and `noindex`; another site generator reads `gone` and writes its own. |
 
 A later version adds keys and changes none of these.
 
@@ -330,7 +330,7 @@ With `host = "netlify"`:
 ```text
 /docs/guides/keys/ /docs/security/keys/ 301
 /docs/guides/keys.md /docs/security/keys.md 301
-/docs/reference/legacy-sync/ /_ascribe/gone/docs/reference/legacy-sync/ 404
+/docs/reference/legacy-sync/ /docs/_ascribe/gone/reference/legacy-sync/ 404
 ```
 
 ## 2. What Ascribe owns

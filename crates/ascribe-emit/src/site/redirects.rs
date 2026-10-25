@@ -15,7 +15,8 @@
 //!   host.
 //! - **`gone`:** each `[retired]` key's address, and its Markdown
 //!   version's, with the reason, and where the page saying so is served:
-//!   under [`GONE_PREFIX`], at the key's page's address, for both.
+//!   in [`GONE_FOLDER`] under the build's base path, at the key's page's
+//!   address from there, for both.
 //!
 //! With `[consumer] host = "netlify"`, the emitter also writes Netlify's
 //! files in `_ascribe/host/`: `_redirects` from the pairs, and a rule for
@@ -36,9 +37,10 @@ const VERSION: u32 = 1;
 /// The status every pair is written with: a permanent redirect.
 const MOVED_PERMANENTLY: u16 = 301;
 
-/// Where a retired address's page is served, from the host's root: this,
-/// then the address.
-pub const GONE_PREFIX: &str = "/_ascribe/gone";
+/// Where a retired address's page is served: this folder under the build's
+/// base path, where a site generator serves it, then the address from the
+/// base path.
+pub const GONE_FOLDER: &str = "_ascribe/gone/";
 
 /// Where the addresses a build used to publish lead now, and which were
 /// retired: `_ascribe/redirects.json`.
@@ -80,8 +82,9 @@ pub struct Gone {
     pub reason: String,
     /// The `ascribe.addresses` key it comes from.
     pub entry: String,
-    /// Where the page saying so is, from the host's root: [`GONE_PREFIX`]
-    /// and the key's address, its page's for a Markdown version.
+    /// Where the page saying so is, from the host's root: the base path,
+    /// [`GONE_FOLDER`], and the key's address from the base path, its page's
+    /// for a Markdown version.
     pub page: String,
 }
 
@@ -175,7 +178,7 @@ pub fn redirects(
         let Some((page, _)) = addresses.iter().find(|(_, markdown)| !markdown) else {
             continue;
         };
-        let page = format!("{GONE_PREFIX}{page}");
+        let page = gone_page(router.base(), page);
         for (path, _) in addresses {
             if is_live(&path) || out.gone.iter().any(|g| g.path == path) {
                 continue;
@@ -200,6 +203,19 @@ pub fn of_build(index: &ascribe_resolve::Project, build: &ascribe_model::Build) 
     let router = AstroRouter::from_consumer(&index.model().consumer);
     let resolved = index.resolve_build(build, &router);
     redirects(index.model(), &resolved, index.addresses_file())
+}
+
+/// Where the page saying `address` was retired is, under `base`, the
+/// build's base path, which starts and ends with `/`: `base`, [`GONE_FOLDER`],
+/// and the address from `base`, or from the host's root for one outside it;
+/// `index` for the base path itself.
+fn gone_page(base: &str, address: &str) -> String {
+    let rest = address
+        .strip_prefix(base)
+        .or_else(|| format!("{address}/").strip_prefix(base).map(|_| ""))
+        .unwrap_or_else(|| address.trim_start_matches('/'));
+    let rest = if rest.is_empty() { "index" } else { rest };
+    format!("{base}{GONE_FOLDER}{rest}")
 }
 
 /// An address as a host matches it: without its fragment, in lower case,

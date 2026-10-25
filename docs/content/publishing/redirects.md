@@ -146,10 +146,10 @@ site:
 ## A retired address's page
 @available: ascribe planned
 
-A reader who follows a link to a retired address gets a page that says what was there was removed, and why, with a link to the docs' home, answering 404, so search engines drop it. `@ascribed/astro` adds one for each address in `redirects.json`'s `gone`, marked `noindex`, at `/_ascribe/gone/` and the address, and the build's Netlify `_redirects` serves it at the old address:
+A reader who follows a link to a retired address gets a page that says what was there was removed, and why, with a link to the docs' home, answering 404, so search engines drop it. `@ascribed/astro` adds one for each address in `redirects.json`'s `gone`, marked `noindex`, in `_ascribe/gone/` under the build's base path, at the address from there, and the build's Netlify `_redirects` serves it at the old address:
 
 ```text
-/docs/reference/legacy-sync /_ascribe/gone/docs/reference/legacy-sync 404
+/docs/reference/legacy-sync /docs/_ascribe/gone/reference/legacy-sync 404
 ```
 
 Another site generator reads `gone` from `_ascribe/redirects.json` and makes its own page for each.

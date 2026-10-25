@@ -106,11 +106,8 @@ export function redirectsOutcome(sources: {
   };
 }
 
-/** The route of a retired address's page, under Astro's `base`: one page for each, at its address. */
-export const GONE_PATTERN = "/_ascribe/gone/[...address]";
-
-/** Where a retired address's page is, from the host's root: this, then the address. */
-const GONE_PREFIX = "/_ascribe/gone/";
+/** The folder a retired address's page is in, under its build's base path. */
+const GONE_FOLDER = "/_ascribe/gone/";
 
 /** The format version of `_ascribe/redirects.json` this reads. */
 const REDIRECTS_VERSION = 1;
@@ -123,7 +120,7 @@ interface Gone {
   reason: string;
   /** The `ascribe.addresses` key it comes from. */
   entry: string;
-  /** Where its page is, from the host's root. */
+  /** Where its page is, from the host's root: the base path, `_ascribe/gone/`, and the address from there. */
   page: string;
 }
 
@@ -152,29 +149,70 @@ function readGone(siteRoot: string): Gone[] {
 }
 
 /**
- * `getStaticPaths` for the route: one page for each retired address's page
- * the site outputs list, with the reason and the route of its project's root.
- * A page two projects both list keeps the first's.
+ * Each retired address's page the site outputs list, by its route from the
+ * host's root, with its folder (its build's base path and `_ascribe/gone/`),
+ * its address from there, and what it says. A page two projects both list
+ * keeps the first's.
+ */
+function gonePages(
+  sources: readonly { siteRoot: string; home: string }[],
+): Map<string, { folder: string; address: string; props: GonePage }> {
+  const pages = new Map<string, { folder: string; address: string; props: GonePage }>();
+  for (const { siteRoot, home } of sources) {
+    for (const gone of readGone(siteRoot)) {
+      const at = gone.page.indexOf(GONE_FOLDER);
+      if (at < 0) continue;
+      const folder = gone.page.slice(0, at + GONE_FOLDER.length);
+      const address = gone.page.slice(folder.length).replace(/\/+$/, "");
+      if (address === "") continue;
+      const route = `${folder}${address}`;
+      if (!pages.has(route))
+        pages.set(route, { folder, address, props: { reason: gone.reason, home } });
+    }
+  }
+  return pages;
+}
+
+/**
+ * The route pattern for the pages in `folder`, as Astro takes it: under
+ * `base`, which Astro adds. Throws when the folder isn't under `base`, since
+ * an Astro site serves nothing outside it.
+ */
+function gonePattern(folder: string, base: string): string {
+  const root = normalizeBase(base);
+  if (!folder.startsWith(root)) {
+    throw new Error(
+      `@ascribed/astro: retired addresses' pages are published at "${folder}", which isn't under Astro's \`base\`, "${base}", and an Astro site serves nothing outside it. Set [consumer] base-path in ascribe.toml to a path under "${root}".`,
+    );
+  }
+  return `/${folder.slice(root.length)}[...address]`;
+}
+
+/**
+ * The route patterns the retired addresses' pages need, one for each
+ * folder that has any, under `base`.
+ */
+export function gonePatterns(siteRoots: readonly string[], base: string): string[] {
+  const pages = gonePages(siteRoots.map((siteRoot) => ({ siteRoot, home: "/" })));
+  return [...new Set([...pages.values()].map(({ folder }) => gonePattern(folder, base)))];
+}
+
+/**
+ * `getStaticPaths` for the route at `routePattern`, one of `gonePatterns`:
+ * one page for each retired address's page in its folder, with the reason
+ * and the route of its project's root.
  */
 export function gonePaths(
   sources: readonly { siteRoot: string; home: string }[],
+  base: string,
+  routePattern: string,
 ): { params: { address: string }; props: GonePage }[] {
-  const pages = new Map<string, GonePage>();
-  for (const { siteRoot, home } of sources) {
-    for (const gone of readGone(siteRoot)) {
-      if (!gone.page.startsWith(GONE_PREFIX)) continue;
-      const address = gone.page.slice(GONE_PREFIX.length).replace(/\/+$/, "");
-      if (address === "" || pages.has(address)) continue;
-      pages.set(address, { reason: gone.reason, home });
-    }
-  }
-  return [...pages].map(([address, props]) => ({ params: { address }, props }));
+  return [...gonePages(sources).values()]
+    .filter(({ folder }) => gonePattern(folder, base) === routePattern)
+    .map(({ address, props }) => ({ params: { address }, props }));
 }
 
-/** The routes of the retired addresses' pages the site outputs at `siteRoots` list, under `base`. */
-export function goneRoutes(siteRoots: readonly string[], base: string): string[] {
-  const root = normalizeBase(base);
-  return gonePaths(siteRoots.map((siteRoot) => ({ siteRoot, home: root }))).map(
-    ({ params }) => `${root}${GONE_PREFIX.slice(1)}${params.address}`,
-  );
+/** The routes of the retired addresses' pages the site outputs at `siteRoots` list, from the host's root. */
+export function goneRoutes(siteRoots: readonly string[]): string[] {
+  return [...gonePages(siteRoots.map((siteRoot) => ({ siteRoot, home: "/" }))).keys()];
 }

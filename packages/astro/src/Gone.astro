@@ -2,15 +2,16 @@
 // A retired address's page: it says what was here was removed, gives the
 // reason as its authors wrote it, as text, and links to the docs' home: the
 // root of the project whose `_ascribe/redirects.json` lists it. The
-// integration adds it as a route at `/_ascribe/gone/[...address]`, one page
-// for each retired address, and the host's `_redirects` serves it at the
-// address with a 404. It isn't indexed.
-import { permalinks } from "virtual:ascribe/site";
+// integration adds it as a route at `<base path>_ascribe/gone/[...address]`
+// for each build's base path, one page for each retired address there, and
+// the host's `_redirects` serves it at the address with a 404. Which folder
+// this is comes from the route's pattern. It isn't indexed.
+import type { GetStaticPaths } from "astro";
+import { base, permalinks } from "virtual:ascribe/site";
 import { gonePaths, type GonePage } from "@ascribed/astro/redirects";
 
-export function getStaticPaths() {
-  return gonePaths(permalinks);
-}
+export const getStaticPaths = (({ routePattern }) =>
+  gonePaths(permalinks, base, routePattern)) satisfies GetStaticPaths;
 
 const { reason, home } = Astro.props as GonePage;
 ---

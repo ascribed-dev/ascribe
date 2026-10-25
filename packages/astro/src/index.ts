@@ -59,7 +59,7 @@ import {
 import { WARN as HEAD_WARN } from "./head-check.js";
 import { headersFor, headersOutcome, mergeRules, readHostHeaders } from "./headers.js";
 import {
-  GONE_PATTERN,
+  gonePatterns,
   goneRoutes,
   mergeRedirects,
   readHostRedirects,
@@ -253,10 +253,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
       sitePages,
       excluded: [
         ...forwardingRoutes(entries.map((entry) => readPermalinks(entry.siteRoot))),
-        ...goneRoutes(
-          entries.map((entry) => entry.siteRoot),
-          base,
-        ),
+        ...goneRoutes(entries.map((entry) => entry.siteRoot)),
         `${root}404`,
         `${root}500`,
         ...(options.sitemap?.exclude ?? []),
@@ -478,15 +475,13 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
             });
           }
           // Each retired address's page, which the host's `_redirects` serves at the address with
-          // a 404.
-          if (
-            goneRoutes(
-              entries.map((entry) => entry.siteRoot),
-              astro.base,
-            ).length > 0
-          ) {
+          // a 404. One route for each folder: each build's base path's.
+          for (const pattern of gonePatterns(
+            entries.map((entry) => entry.siteRoot),
+            astro.base,
+          )) {
             injectRoute({
-              pattern: GONE_PATTERN,
+              pattern,
               entrypoint: new URL("../src/Gone.astro", import.meta.url),
               prerender: true,
             });

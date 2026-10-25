@@ -190,8 +190,8 @@ fn a_recorded_move_passes_and_a_deleted_page_is_reported() {
     assert_eq!(
         site_file(dir.path(), "_ascribe/host/_redirects"),
         format!(
-            "{PAIRS}/docs/guides/teams/share-a-loom /_ascribe/gone/docs/guides/teams/share-a-loom 404\n\
-             /docs/guides/teams/share-a-loom.md /_ascribe/gone/docs/guides/teams/share-a-loom 404\n"
+            "{PAIRS}/docs/guides/teams/share-a-loom /docs/_ascribe/gone/guides/teams/share-a-loom 404\n\
+             /docs/guides/teams/share-a-loom.md /docs/_ascribe/gone/guides/teams/share-a-loom 404\n"
         )
     );
     let redirects = site_file(dir.path(), "_ascribe/redirects.json");

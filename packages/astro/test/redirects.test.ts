@@ -4,6 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   gonePaths,
+  gonePatterns,
   goneRoutes,
   mergeRedirects,
   netlifyRedirects,
@@ -107,7 +108,7 @@ describe("gonePaths", () => {
     path: "/docs/beta",
     reason: "The beta ended.",
     entry: "beta.md",
-    page: "/_ascribe/gone/docs/beta",
+    page: "/docs/_ascribe/gone/beta",
   };
 
   it("gives one page for each retired address's page, with the reason and its project's root", () => {
@@ -116,30 +117,46 @@ describe("gonePaths", () => {
       { ...beta, reason: "Another reason." },
       { path: "/old/", reason: "Gone.", entry: "/old/", page: "/_ascribe/gone/old/" },
     ]);
-    expect(
-      gonePaths([
-        { siteRoot: first, home: "/docs" },
-        { siteRoot: second, home: "/" },
-      ]),
-    ).toEqual([
-      { params: { address: "docs/beta" }, props: { reason: "The beta ended.", home: "/docs" } },
+    const sources = [
+      { siteRoot: first, home: "/docs" },
+      { siteRoot: second, home: "/" },
+    ];
+    // A route for each build's base path, under Astro's `base`.
+    expect(gonePatterns([first, second], "/")).toEqual([
+      "/docs/_ascribe/gone/[...address]",
+      "/_ascribe/gone/[...address]",
+    ]);
+    expect(gonePaths(sources, "/", "/docs/_ascribe/gone/[...address]")).toEqual([
+      { params: { address: "beta" }, props: { reason: "The beta ended.", home: "/docs" } },
+    ]);
+    expect(gonePaths(sources, "/", "/_ascribe/gone/[...address]")).toEqual([
       { params: { address: "old" }, props: { reason: "Gone.", home: "/" } },
     ]);
-    // Their routes, which the sitemap leaves out.
-    expect(goneRoutes([first, second], "/")).toEqual([
-      "/_ascribe/gone/docs/beta",
-      "/_ascribe/gone/old",
+    // Their routes from the host's root, which the sitemap leaves out.
+    expect(goneRoutes([first, second])).toEqual(["/docs/_ascribe/gone/beta", "/_ascribe/gone/old"]);
+  });
+
+  it("puts the route under Astro's base, which is the base path", () => {
+    const docs = withGone([beta]);
+    expect(gonePatterns([docs], "/docs")).toEqual(["/_ascribe/gone/[...address]"]);
+    expect(
+      gonePaths([{ siteRoot: docs, home: "/docs" }], "/docs", "/_ascribe/gone/[...address]"),
+    ).toEqual([
+      { params: { address: "beta" }, props: { reason: "The beta ended.", home: "/docs" } },
     ]);
+    expect(goneRoutes([docs])).toEqual(["/docs/_ascribe/gone/beta"]);
+    // A folder outside Astro's base can't be served.
+    expect(() => gonePatterns([docs], "/other")).toThrow(/isn't under Astro's `base`/);
   });
 
   it("gives none without the list, and refuses a version it doesn't know", () => {
     const none = mkdtempSync(path.join(tmpdir(), "ascribe-redirects-"));
-    expect(gonePaths([{ siteRoot: none, home: "/" }])).toEqual([]);
+    expect(gonePatterns([none], "/")).toEqual([]);
     const later = withGone([]);
     writeFileSync(
       path.join(later, "_ascribe", "redirects.json"),
       JSON.stringify({ version: 2, gone: [] }),
     );
-    expect(() => gonePaths([{ siteRoot: later, home: "/" }])).toThrow(/version 2/);
+    expect(() => gonePatterns([later], "/")).toThrow(/version 2/);
   });
 });

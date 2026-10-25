@@ -107,6 +107,11 @@ pub fn renames(
 /// the base had none that reads, or can't be read. For a project that has
 /// no file now, to say what deleting it dropped; it reads the one file, not
 /// the project.
+///
+/// A base that can't be read, as in a shallow checkout, says nothing: the
+/// project has opted out of keeping its addresses, so there's no
+/// `addresses-base-unreadable` to report, as there is for a project with
+/// the file.
 pub fn base_file_entries(root: &Path, requested: Option<&str>, exact: bool) -> Option<usize> {
     let repo = Repository::discover(root).ok()?;
     let base = repo.base(requested, exact).ok()?;

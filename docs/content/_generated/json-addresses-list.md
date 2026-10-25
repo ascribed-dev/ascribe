@@ -12,7 +12,7 @@
           "type": "string"
         },
         "page": {
-          "description": "Where the page saying so is, from the host's root: `GONE_PREFIX`\nand the key's address, its page's for a Markdown version.",
+          "description": "Where the page saying so is, from the host's root: the base path,\n`GONE_FOLDER`, and the key's address from the base path, its page's\nfor a Markdown version.",
           "type": "string"
         },
         "path": {
