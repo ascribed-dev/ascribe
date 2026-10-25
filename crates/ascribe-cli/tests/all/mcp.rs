@@ -701,6 +701,8 @@ fn both_revisions_list_the_same_tools_in_the_same_order() {
             "ascribe_resolve",
             "ascribe_format",
             "ascribe_changes",
+            "ascribe_addresses_move",
+            "ascribe_addresses_retire",
         ]
     );
     for tool in tools["tools"].as_array().unwrap() {
@@ -1214,7 +1216,7 @@ fn every_tool_resource_and_prompt_names_a_command_that_exists() {
         "resourceTemplates",
     );
     collect(server.result("prompts/list", json!({})), "prompts");
-    assert_eq!(descriptions.len(), 10 + 3 + 2 + 3);
+    assert_eq!(descriptions.len(), 12 + 3 + 2 + 3);
     for description in descriptions {
         let words = named_command(&description);
         assert_eq!(words[0], "ascribe", "{description}");
@@ -1262,6 +1264,8 @@ fn call_in_project(tool: &str) -> Value {
         "ascribe_resolve" => json!({ "page": "docs/install.md", "build": "cloud" }),
         "ascribe_format" => json!({ "paths": ["docs"] }),
         "ascribe_changes" => json!({ "base": "HEAD" }),
+        "ascribe_addresses_move" => json!({ "old": "keys.md", "new": "api-keys.md" }),
+        "ascribe_addresses_retire" => json!({ "old": "keys.md", "reason": "Removed." }),
         other => panic!("{other} is a new tool: give it a call here"),
     }
 }
@@ -1451,4 +1455,102 @@ fn an_unknown_key_says_which_ascribe_read_it() {
         String::from_utf8_lossy(&out.stderr)
     );
     assert!(text.contains(&note), "{text}");
+}
+
+/// The byte offset of `pos`, a report's line and column, from 1, in
+/// characters, in `text`.
+fn offset(text: &str, pos: &Value) -> usize {
+    let (line, column) = (
+        pos["line"].as_u64().unwrap() as usize,
+        pos["column"].as_u64().unwrap() as usize,
+    );
+    let start: usize = text
+        .split_inclusive('\n')
+        .take(line - 1)
+        .map(str::len)
+        .sum();
+    start
+        + text[start..]
+            .chars()
+            .take(column - 1)
+            .map(char::len_utf8)
+            .sum::<usize>()
+}
+
+/// `text` with `edits`, a report's, applied: each replaces its range of the
+/// text as it was.
+fn applied(text: &str, edits: &Value) -> String {
+    let mut edits: Vec<(usize, usize, &str)> = edits
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| {
+            (
+                offset(text, &e["range"]["start"]),
+                offset(text, &e["range"]["end"]),
+                e["new_text"].as_str().unwrap(),
+            )
+        })
+        .collect();
+    edits.sort_by_key(|e| std::cmp::Reverse(e.0));
+    let mut out = text.to_owned();
+    for (start, end, new_text) in edits {
+        out.replace_range(start..end, new_text);
+    }
+    out
+}
+
+/// An agent's session: it moves a page with `git mv`, the check finds the
+/// page's addresses lost, `ascribe_addresses_move` with `from_git` gives the
+/// edit that records the move, and once the agent applies it the check
+/// passes. The tool writes nothing itself.
+#[test]
+fn an_agent_records_a_move_git_sees_with_the_tool_s_edit() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write_project(root);
+    git(root, &["init", "-q"]);
+    let out = ascribe(root, &["addresses", "init"]);
+    assert!(out.status.success(), "{out:?}");
+    git(root, &["add", "-A"]);
+    git(root, &["commit", "-q", "-m", "Start"]);
+    git(root, &["mv", "docs/keys.md", "docs/api-keys.md"]);
+    write(
+        &root.join("docs/install.md"),
+        &INSTALL.replace("(keys.md#rotat)", "(api-keys.md#rotate-keys)"),
+    );
+
+    let mut server = Server::start(root);
+    let (_, report) = server.call_ok("ascribe_check", json!({ "response_format": "detailed" }));
+    let codes: Vec<&str> = report["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|d| d["slug"].as_str().unwrap())
+        .collect();
+    assert!(codes.contains(&"address-lost"), "{report}");
+
+    let file = root.join("ascribe.addresses");
+    let before = fs::read_to_string(&file).unwrap();
+    let (_, moved) = server.call_ok("ascribe_addresses_move", json!({ "from_git": true }));
+    assert_eq!(
+        moved["moves"],
+        json!([{ "key": "keys.md", "value": "api-keys.md" }])
+    );
+    assert_eq!(moved["changed"], true, "{moved}");
+    assert_eq!(moved["written"], false, "{moved}");
+    assert_eq!(fs::read_to_string(&file).unwrap(), before, "the tool wrote");
+    let after = applied(&before, &moved["edits"]);
+    assert!(after.contains("\"keys.md\" = \"api-keys.md\""), "{after}");
+    fs::write(&file, after).unwrap();
+
+    let (_, report) = server.call_ok("ascribe_check", json!({ "response_format": "detailed" }));
+    assert!(
+        report["diagnostics"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|d| d["severity"] != "error"),
+        "{report}"
+    );
 }

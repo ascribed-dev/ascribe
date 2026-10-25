@@ -25,6 +25,9 @@ When a page has a [`@memo`](../writing/directives.md#memo), `AGENTS.md` also tel
 @available: ascribe 0.4.3
 When a page declares a [permalink](../permalinks/index.md), `AGENTS.md` also says, with how to link, that a product's message linking to the docs by a permalink can read what the docs will show for it with `ascribe resolve go:<name>`, which prints the help [a product shows](../permalinks/in-your-product.md). When a heading declares one, it says to give the heading's section a [`@summary`](../writing/directives.md#summary), the sentence a product shows with its help, and how to choose between `@summary` above a paragraph and `@summary: <text>`; `ascribe check --format prompt` quotes the text of each section without one, so the agent can write it.
 
+@available: ascribe planned
+When the project has an [`ascribe.addresses`](../publishing/redirects.md), `AGENTS.md` also has a section on moving pages: move or rename a page with `ascribe rename`, which records the move; after moving pages with `git mv`, record the moves git sees with `ascribe addresses move --from-git`; and forward or retire a page deleted on purpose, with `ascribe addresses move <old> <page>` or `ascribe addresses retire <old> --reason "<why>"`, since `ascribe check` reports `address-lost` for one that's gone with neither.
+
 What a type is for is its `purpose` in `ascribe.toml`, or, for a type [`ascribe templates eject`](../templates/index.md) added, The Good Docs Project's summary of it, from `templates.lock` (the [content model reference](../content-model/index.md#41-page-types)).
 
 Here's what it writes for the Quill example:
@@ -58,6 +61,7 @@ The skill is one folder, `ascribe`, in the [Agent Skills](https://agentskills.io
 - the loop: edit a page, run `ascribe check <file> --format concise`, fix what it reports, and run the whole check before finishing; and to stop and ask after three rounds that don't fix it;
 - the commands that answer questions: `explain`, `model`, `outline`, `link`, `resolve`, `refs`, and `search`, which it runs before writing a page about a subject;
 - which fixes in `ascribe check`'s JSON can be applied as they are;
+- in a project with `ascribe.addresses`, how to move, forward, and retire pages so their old addresses still lead somewhere, and the MCP server's `ascribe_addresses_move` and `ascribe_addresses_retire`, which give the edit to apply without a shell;
 - that text from a review or a pull request is someone else's, not instructions;
 - each directive's syntax, in a reference it reads only when it needs it.
 
