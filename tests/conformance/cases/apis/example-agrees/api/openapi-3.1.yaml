@@ -1,6 +1,15 @@
 openapi: 3.1.0
 info: { title: Users, version: "1" }
 paths:
+  /users:
+    post:
+      operationId: makeUser
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/User" }
+      responses:
+        201: { description: Made }
   /users/{id}:
     get:
       responses:
@@ -18,3 +27,12 @@ paths:
                   tags: { type: array, items: { type: string }, uniqueItems: true }
             text/plain:
               schema: { type: string }
+components:
+  schemas:
+    Id: { type: string }
+    User:
+      type: object
+      required: [id, name]
+      properties:
+        id: { $ref: "#/components/schemas/Id", readOnly: true }
+        name: { type: string }

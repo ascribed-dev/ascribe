@@ -929,3 +929,34 @@ fn openapi_a_pattern_the_validator_cant_read_is_left_out_and_the_rest_checked() 
         assert_eq!(disagreements.len(), 1, "{version}: {disagreements:?}");
     }
 }
+
+const SIBLING_READ_ONLY: &str = r##"
+openapi: 3.1.0
+info: { title: Users, version: "1" }
+paths: {}
+components:
+  schemas:
+    Id: { type: string }
+    User:
+      type: object
+      required: [id, name]
+      properties:
+        id: { $ref: "#/components/schemas/Id", readOnly: true }
+        name: { type: string }
+"##;
+
+#[test]
+fn openapi_a_read_only_beside_a_ref_counts_only_in_2020_12() {
+    let spec = read_spec(SIBLING_READ_ONLY, false).expect("reads");
+    let request = translated(&spec.document, Dialect::Draft2020, Direction::Request);
+    assert_eq!(
+        request["components"]["schemas"]["User"]["required"],
+        serde_json::json!(["name"])
+    );
+    // Draft 4 ignores a `$ref`'s siblings, so `id` stays required.
+    let request = translated(&spec.document, Dialect::Draft4, Direction::Request);
+    assert_eq!(
+        request["components"]["schemas"]["User"]["required"],
+        serde_json::json!(["id", "name"])
+    );
+}

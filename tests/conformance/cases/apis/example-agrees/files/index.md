@@ -36,6 +36,13 @@ media type among others:
 }
 ```
 
+OpenAPI 3.1, where a `$ref`'s siblings are keywords, so `id`, read-only
+beside its `$ref`, isn't sent:
+
+```json request="../api/openapi-3.1.yaml#makeUser"
+{ "name": "Ada" }
+```
+
 A block with no marker isn't checked:
 
 ```json

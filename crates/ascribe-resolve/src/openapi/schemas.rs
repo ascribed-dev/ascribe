@@ -274,7 +274,7 @@ pub fn translated(document: &Value, dialect: Dialect, direction: Direction) -> V
     };
     let mut unrequired = Vec::new();
     walk(document, "", false, &mut |pointer, schema| {
-        if let Some(names) = not_required(document, schema, hidden) {
+        if let Some(names) = not_required(document, dialect, schema, hidden) {
             unrequired.push((pointer.to_owned(), names));
         }
     });
@@ -294,35 +294,41 @@ pub fn translated(document: &Value, dialect: Dialect, direction: Direction) -> V
 }
 
 /// The names `schema` requires whose property is marked `hidden`, following
-/// the property's `$ref`s into the same file.
+/// the property's `$ref`s into the same file. In 2020-12 a `$ref`'s siblings
+/// are keywords, so a `hidden` beside it counts; in draft 4 they're ignored.
 fn not_required(
     document: &Value,
+    dialect: Dialect,
     schema: &Map<String, Value>,
     hidden: &str,
 ) -> Option<BTreeSet<String>> {
     let required = schema.get("required")?.as_array()?;
     let properties = schema.get("properties")?.as_object()?;
+    let is_hidden = |p: &Value| p.get(hidden).and_then(Value::as_bool) == Some(true);
     let names: BTreeSet<String> = required
         .iter()
         .filter_map(Value::as_str)
         .filter(|name| {
             let mut property = properties.get(*name);
             let mut hops = 0;
-            while let Some(reference) = property
-                .and_then(|p| p.get("$ref"))
-                .and_then(Value::as_str)
-                .and_then(|r| r.strip_prefix('#'))
-            {
+            while let Some(p) = property {
+                let reference = p
+                    .get("$ref")
+                    .and_then(Value::as_str)
+                    .and_then(|r| r.strip_prefix('#'));
+                let Some(reference) = reference else {
+                    return is_hidden(p);
+                };
+                if dialect == Dialect::Draft2020 && is_hidden(p) {
+                    return true;
+                }
                 hops += 1;
                 if hops > 16 {
-                    break;
+                    return false;
                 }
                 property = document.pointer(&decode(reference));
             }
-            property
-                .and_then(|p| p.get(hidden))
-                .and_then(Value::as_bool)
-                == Some(true)
+            false
         })
         .map(str::to_owned)
         .collect();
