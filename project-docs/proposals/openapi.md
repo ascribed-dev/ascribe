@@ -6,7 +6,7 @@ A proposal, not a plan. It says what would be built and in what order, so the id
 
 A writer links from a guide to an operation in the project's OpenAPI spec, and the link is checked like a link to a heading: completed in the editor, shown on hover, and an error when the spec no longer has the operation. A JSON example in a page that claims to be an operation's request or response is checked against that operation's schema. A report says which operations no page mentions.
 
-Ascribe reads the spec and checks the pages against it. It doesn't draw the API reference. A renderer the team already uses (Scalar, Redoc, starlight-openapi, or a hosted portal) publishes the reference pages, and Ascribe's links land on them.
+Ascribe reads the spec and checks the pages against it. It doesn't draw the API reference. Redoc publishes the reference pages, and Ascribe's links land on them; a team using another renderer whose addresses are the `operationId` as written gets its links through a template (Settled 2).
 
 ## Why checks and not a renderer
 
@@ -33,6 +33,8 @@ Nothing in the code reads OpenAPI.
 Answered by the maintainer on 24 October 2026.
 
 1. **`spec` may name a file outside the project's folder,** in the same git repository, as `[sources]` may name a folder of code. A layout with `docs/ascribe.toml` and `api/openapi.yaml` is the common one, and a copy of the spec inside `docs/` would drift from the spec the API publishes, which is what the checks are for. A link reaches a spec outside the folder by its relative path, `../../api/openapi.yaml#getUser`, as the one exception to SPEC §9.4's rule that a reference resolves inside the project or content root, and only with a fragment: a link to it with no fragment is an error saying to link the published reference instead, since a file from outside the project has no place in the outputs to be copied to. A spec in another repository is still left out.
+2. **Redoc is the one renderer supported by name,** and a template covers others. Redoc addresses an operation by its `operationId`, and its addresses survived a major version: 3.0 accepts 2.5's `#operation/{operationId}`. It's the most deployed static reference, MIT-licensed, and embeds in any site, an Astro page included. `reference = { renderer = "redoc", at = "/api/" }` names it, and a test builds Redoc at a pinned version and loads every address Ascribe writes for it. Any other renderer gets `reference` as a template of the id as written, which works for Swagger UI and Stoplight Elements today; the docs list those two as known to work, and promise nothing for them. Scalar is left out until teams ask: its addresses changed within a year and have no form by id, so supporting it means following its releases, and a second profile can be added then without changing this design. starlight-openapi and the Docusaurus plugin are left out: each belongs to its own documentation framework, and a project publishing through `@ascribed/astro` isn't a Starlight or Docusaurus site.
+3. **An operation with no `operationId` is linked by its method and path,** `#get/users/{id}`, the method in lowercase and the path as the spec writes it, since .NET's generators write no ids by default and 10% of published specs have none. Redoc 3 has an address for it with no tag, `#paths/~1users~1{id}/delete`, so the Redoc profile writes that; Redoc 2 needs its own slug of the tag there, so for Redoc 2, and with a template, a link in this form is an error saying which renderer supports it. A link by method and path to an operation that has an id is advice, with a fix that writes the id.
 
 ## What the spikes found
 
@@ -66,8 +68,8 @@ APIs.guru is a directory of public APIs, cleaned and converted to JSON, so it un
 
 ### What they change
 
-- **The address can't be one template.** The proposal's fallback, named profiles, is what the evidence asks for: open question 2.
-- **An operation with no id is common enough to need a link form,** since .NET's defaults write none: open question 1.
+- **The address can't be one template** for every renderer, so Ascribe supports one by name, Redoc, and keeps a template for the renderers it fits (Settled 2).
+- **An operation with no id is common enough to need a link form,** since .NET's defaults write none (Settled 3).
 - **An id that changes meaning,** as springdoc's suffix does, is the one case `link-operation-missing` can't catch. The docs say to set ids explicitly, and a later check could compare a link's method and path with the base's.
 
 ## The design
@@ -77,13 +79,13 @@ APIs.guru is a directory of public APIs, cleaned and converted to JSON, so it un
 ```toml
 [apis.public]
 spec = "api/openapi.yaml"
-reference = "/api/#tag/{tag}/operation/{operationId}"
+reference = { renderer = "redoc", at = "/api/" }
 ```
 
 | Key | Meaning |
 |---|---|
-| `spec` | The spec's file, from the project root. One file, in YAML or JSON. |
-| `reference` | The address of an operation's page in the published reference, as a template. Relative to `[consumer] base-path`, or absolute when the reference is published elsewhere. Its placeholders are the operation's `{operationId}`, `{tag}` (its first), `{method}`, and `{path}`. |
+| `spec` | The spec's file, from the project root or outside it in the same git repository (Settled 1). One file, in YAML or JSON. |
+| `reference` | Where the published reference is. `{ renderer = "redoc", at = "<address>" }` for Redoc's page at that address, relative to `[consumer] base-path`, or absolute when the reference is published elsewhere. Or, for another renderer, a template of an operation's address, such as `"/api/#/operations/{operationId}"` for Stoplight Elements, whose placeholders are the operation's `{operationId}` and `{tag}` (its first), each as the spec writes it, percent-encoded. |
 
 The section is `[apis]`, not `[openapi]`, so an AsyncAPI spec can be declared beside it later, with a `format` key added then.
 
@@ -106,22 +108,22 @@ To fetch one user, call [Get a user](../api/openapi.yaml#getUser).
 A link to a declared spec with a fragment is a link to an operation: the fragment is the `operationId`. A link to the spec without a fragment is an asset, as today, for "download the spec", when the spec is inside the project's folder; outside it, that link is an error (Settled 1). A link to an undeclared YAML file is an asset, as today.
 
 - **Checked.** An `operationId` the spec doesn't have is an error, `link-operation-missing`, with the closest ids suggested, at the level `link-id-missing` has. A spec that can't be read or parsed is an error on its declaration.
-- **Written as the renderer's address.** The site output writes the `reference` template filled in for the operation; the plain output writes it absolute when `[consumer] site` is set or the template is absolute; the JSON output gives the link's target as an operation: the API's name, the `operationId`, and the address. That JSON is a contract, and its shape is settled in phase 1.
+- **Written as the renderer's address.** The site output writes the operation's address in the reference: Redoc's `<at>#operation/<operationId>`, or the template filled in; the plain output writes it absolute when `[consumer] site` is set or the address is absolute; the JSON output gives the link's target as an operation: the API's name, the `operationId`, and the address. That JSON is a contract, and its shape is settled in phase 1.
 - **Unambiguous.** A link names its spec by path, so two specs with the same `operationId` never collide, where Mintlify takes the first match in alphabetical order.
 
-The `operationId` is the address because it's readable, survives a path being renamed, and is what the renderers key their own pages by. Its weakness is that generated ids are mechanical (`createItemItemsPost`) and sometimes missing. Phase 1 measures how often they're missing, and the first open question asks what a link names when there's no id.
+The `operationId` is the address because it's readable, survives a path being renamed, and is what the renderers key their own pages by. Its weaknesses are that generated ids are mechanical (`get_user_users__user_id__get`), sometimes missing, which Settled 3 answers, and, from springdoc's suffixes, able to change meaning between builds, which the docs answer by telling teams to set ids explicitly.
 
 ### Why these choices
 
 - **A path and a fragment, not a new scheme.** A link to the spec is already a link to a file, relative like any other, completed and checked by the resolver every surface uses. A scheme such as Fern's `api:GET/users` would be a second link syntax, and an agent or a writer would have to learn which one to use.
-- **A template, not knowledge of each renderer.** Ascribe doesn't know which renderer a team uses, and renderers change their addresses between releases. A template is one string the team owns. The risk is that a renderer's addresses can't be written as a template, which is what phase 1 tests.
+- **One renderer by name, and a template for the rest.** Knowing a renderer means following its releases, which is affordable for one whose addresses have held still, and a template is one string a team owns for a renderer whose addresses are the id as written. Supporting every renderer would mean a profile per renderer, each tracking its releases, for the one part of this feature that depends on the renderer at all: checks, completion, examples, and coverage work from the spec alone.
 - **No overlays, no multi-file specs.** Both are the pipeline's job, and the research found their tooling still settling. Reading the bundled file gives the same answer and keeps Ascribe's reader small.
 
 ## The thread
 
 - **The use case:** a writer links a guide to `getUser`; `ascribe check` fails when the spec is regenerated without it; and in the built site, the link opens `getUser` in the reference a renderer publishes beside the guides.
 - **The layers:** the content model (`[apis]`), resolve (reading the spec, a new `Resolution` variant), check (the diagnostics), emit (the address in the site, plain, and JSON outputs), the CLI, the contracts, and the docs. The language server shows the diagnostic without new work, since it runs the same check.
-- **The seam it tests:** the renderer's address. Ascribe has never written a link into a URL space it doesn't own. A renderer's address for an operation is made from some of the tag, the `operationId`, the method, and the path, each slugged its own way. The spikes found both: tags and ids slugged by rules a template can't express, and an address that changed within a year (Scalar), so the design takes named profiles, one per renderer, as the `Router` is one per consumer, once open question 2 is settled. Phase 1 still tests each profile against its renderer's built output.
+- **The seam it tests:** the renderer's address. Ascribe has never written a link into a URL space it doesn't own. A renderer's address for an operation is made from some of the tag, the `operationId`, the method, and the path, each slugged its own way. The spikes found both: tags and ids slugged by rules a template can't express, and an address that changed within a year (Scalar). So Ascribe knows one renderer, Redoc (Settled 2), and phase 1 tests its addresses against Redoc's built output at a pinned version.
 - **Measured on real specs.** The spikes measured the corpus and the renderers before phase 1 (above). Phase 1 runs its own reader over the same sample, and records which specs it can't read.
 - **Left out, and where it comes back:** completion, hover, go to definition, and the fix for a moved operation (phase 2); `ascribe link` and the MCP server (phase 2); examples checked against schemas (phase 3); the report of operations no page mentions (phase 4); the embed (phase 5).
 
@@ -135,11 +137,11 @@ The `operationId` is the address because it's readable, survives a path being re
 | 4. Coverage | See which operations no page mentions, in the check and in the inventory | check, report, contracts |
 | 5. The thin embed | Put an operation's method, path, summary, and deprecation in a page, with a link to its reference page | language, emit, both renderers, elements |
 
-**Phase 1** builds the thread. `examples/quill` gains a small spec and a renderer's reference beside its pages, and a page that links to two operations. Conformance cases hold a link to an operation, a missing one, a link to the spec with no fragment, and an undeclared YAML file. The content-model reference gains `[apis]`, SPEC §5.2 gains the new kind of target and §9.4 the exception for a spec outside the project's folder, which a conformance case holds, and the docs gain a page, "Link to your API reference". *Done when:* `ascribe check` in `examples/quill` reports `link-operation-missing` after `getUser` is removed from the spec; `ascribe build` writes the link as the renderer's address, and following it in the built site opens that operation; and the corpus's results are recorded in the pull request.
+**Phase 1** builds the thread. `examples/quill` gains a small spec, with an operation that has no `operationId`, Redoc's reference beside its pages, and a page that links to two operations and to the one with no id. Conformance cases hold a link to an operation, a missing one, a link by method and path, one by method and path under a template, a link to the spec with no fragment, and an undeclared YAML file. The content-model reference gains `[apis]`, SPEC §5.2 gains the new kind of target and §9.4 the exception for a spec outside the project's folder, which a conformance case holds, and the docs gain a page, "Link to your API reference". *Done when:* `ascribe check` in `examples/quill` reports `link-operation-missing` after `getUser` is removed from the spec; `ascribe build` writes each link as Redoc's address, and following each in the built site, with Redoc at its pinned version, opens that operation; and the reader's results over the spikes' sample are recorded in the pull request.
 
 **Phase 2** brings the links into the editor and to agents. Completion after `openapi.yaml#` lists the spec's operations, matched on id, method, path, or summary. Hover shows the method, the path, the summary, and whether the operation is deprecated. Go to definition opens the spec at the operation. The spec is re-read when it changes on disk. When an `operationId` disappears and an operation with the same method and path has a new one, which is what a regenerated spec does, the diagnostic offers that id as a safe fix. A link to a deprecated operation is advice, `link-operation-deprecated`. `ascribe link` and `ascribe_link` answer with the operation, so an agent writing a guide can check a link before writing it.
 
-**Phase 3** checks examples. A JSON code block marked as an operation's request or response body (the second open question) is validated against that body's schema, and each disagreement is reported at its place in the block. 3.1's schemas are JSON Schema; 3.0's and 2.0's are translated first, `nullable` among the rest. It needs a JSON Schema validator, a new dependency, and the components a schema references, still within the one file. It's before coverage because it carries the most design risk left: a new syntax, a new dependency, and the translation.
+**Phase 3** checks examples. A JSON code block marked as an operation's request or response body (the open question) is validated against that body's schema, and each disagreement is reported at its place in the block. 3.1's schemas are JSON Schema; 3.0's and 2.0's are translated first, `nullable` among the rest. It needs a JSON Schema validator, a new dependency, and the components a schema references, still within the one file. It's before coverage because it carries the most design risk left: a new syntax, a new dependency, and the translation.
 
 **Phase 4** reports operations no page links to, as advice, `api-operation-unreferenced`, in area `project`, beside `fragment-unused`. The inventory gains a count per API: operations, operations linked, and operations with a checked example. Only links count: a page that mentions `getUser` in prose isn't counted, since that can't be told reliably from a word that happens to match.
 
@@ -153,10 +155,9 @@ The `operationId` is the address because it's readable, survives a path being re
 - **A spec per release line.** A versioned build reads the same spec for every line. Lines whose APIs differ need the spec as of each line, which waits for the versions work to say how a line reads another file's history.
 - **Availability from the spec.** The brainstorm's `x-ascribe-available` would map onto availability specs (`parse_availability`). Each renderer already reads its own extension for the same fact, and a fifth would make the team mark it again.
 - **Drift between the spec and the running API.** Contract testing (Schemathesis, Prism) proves that. Ascribe proves the pages agree with the spec.
+- **Other renderers by name** (Settled 2): Scalar until teams ask, and starlight-openapi and the Docusaurus plugin, which belong to other frameworks. A template serves a renderer whose addresses are the id as written.
 - **AsyncAPI and GraphQL.** The `[apis]` section and the link form leave room for them; neither is built here.
 
 ## Open questions
 
-1. **What does a link name when an operation has no `operationId`?** Either such an operation can't be linked, and `link-operation-missing` says why, or a second fragment form names it by method and path, such as `#get/users/{id}`. The corpus answers it: .NET's generators write no ids by default, and 10% of published specs have none. Recommended: the second form, mapped to each renderer's address by its profile (question 2); with a template, a link in that form is an error, since no template makes the renderers' addresses for it.
-2. **How is a renderer's address made?** A template serves Redoc, Swagger UI, and Elements; starlight-openapi and Docusaurus each need their own slug of the id; Scalar needs a slug of its tag, the method's case, and a profile that follows its releases, since it changed its addresses within the year. Recommended: named profiles for the renderers, `reference = { renderer = "redoc", at = "/api/" }`, each written from the renderer's code and held by a test that builds the renderer at a pinned version and loads every address, as the spike did; and a template, for any other renderer, with the id as written only. Scalar's profile names the versions it was tested with, and the docs say its addresses change with its releases.
-3. **How does a JSON block say which operation it belongs to** (phase 3)? An attribute in the info string, as `title` and `tested` are (```` ```json request="openapi.yaml#createUser" ````, with `response="…#createUser 201"`), or a directive around the block. Recommended: the info string, since it keeps the block a plain fenced block that every Markdown viewer still shows; whichever, it's a language change with its own decision before phase 3.
+1. **How does a JSON block say which operation it belongs to** (phase 3)? An attribute in the info string, as `title` and `tested` are (```` ```json request="openapi.yaml#createUser" ````, with `response="…#createUser 201"`), or a directive around the block. Recommended: the info string, since it keeps the block a plain fenced block that every Markdown viewer still shows; whichever, it's a language change with its own decision before phase 3.
