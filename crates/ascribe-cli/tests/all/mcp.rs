@@ -1618,3 +1618,53 @@ fn an_agent_records_a_move_git_sees_with_the_tool_s_edit() {
         "{report}"
     );
 }
+
+/// Copies the files under `from` into `to`.
+fn copy_tree(from: &Path, to: &Path) {
+    for entry in fs::read_dir(from).unwrap() {
+        let entry = entry.unwrap();
+        let target = to.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            fs::create_dir_all(&target).unwrap();
+            copy_tree(&entry.path(), &target);
+        } else {
+            fs::copy(entry.path(), target).unwrap();
+        }
+    }
+}
+
+#[test]
+fn link_answers_with_the_operation_a_link_to_a_spec_names() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/astro-site");
+    fs::copy(example.join("ascribe.toml"), root.join("ascribe.toml")).unwrap();
+    for folder in ["api", "content"] {
+        fs::create_dir_all(root.join(folder)).unwrap();
+        copy_tree(&example.join(folder), &root.join(folder));
+    }
+    let guide = "content/Guides/Teams/Share a loom.md";
+    let mut server = Server::start(root);
+    let target = "../../../api/openapi.yaml#delete/looms/{id}";
+    let (_, answer) = server.call_ok("ascribe_link", json!({ "target": target, "from": guide }));
+    assert_eq!(answer["kind"], "operation");
+    assert_eq!(
+        answer["operation"],
+        json!({
+            "api": "loom",
+            "operation_id": null,
+            "method": "delete",
+            "path": "/looms/{id}",
+            "summary": "Delete a loom",
+            "tag": "Looms",
+            "deprecated": false,
+            "address": "/docs/api#paths/~1looms~1%7Bid%7D/delete",
+        })
+    );
+    let command: Value = serde_json::from_str(&stdout(
+        root,
+        &["link", target, "--from", guide, "--format", "json"],
+    ))
+    .unwrap();
+    assert_eq!(answer, command);
+}
