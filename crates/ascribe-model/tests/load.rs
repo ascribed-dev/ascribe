@@ -614,6 +614,84 @@ fn a_source_folder_must_exist_be_a_directory_and_be_in_the_repository() {
 }
 
 #[test]
+fn an_apis_spec_may_be_outside_the_folder_and_must_be_in_the_repository() {
+    let outer = scratch("apis");
+    let dir = outer.join("repo");
+    std::fs::create_dir_all(dir.join(".git")).unwrap();
+    std::fs::create_dir_all(dir.join("docs/content")).unwrap();
+    let model = |spec: &str| {
+        format!(
+            "spec = \"0.1\"\n[project]\ncontent-root = \"content\"\n[apis.public]\nspec = \"{spec}\"\nreference = {{ renderer = \"redoc\", at = \"/api/\" }}\n"
+        )
+    };
+    let docs = dir.join("docs");
+    // Outside the project's folder, in its repository: normalized from the
+    // project root.
+    let loaded = load_str_in(&model("../api/./openapi.yaml"), FileId::new(0), &docs).unwrap();
+    let api = loaded.api("public").unwrap();
+    assert_eq!(api.spec, "../api/openapi.yaml");
+    assert_eq!(
+        api.reference,
+        ascribe_model::ApiReference::Redoc { at: "/api/".into() }
+    );
+    // Outside the repository.
+    let issues = load_str_in(&model("../../api.yaml"), FileId::new(0), &docs).unwrap_err();
+    assert_eq!(issues[0].slug.as_str(), "model-api-outside-repository");
+    // An absolute path.
+    let issues = load_str(&model("/api.yaml"), FileId::new(0)).unwrap_err();
+    assert_eq!(issues[0].slug.as_str(), "model-path-absolute");
+    let _ = std::fs::remove_dir_all(&outer);
+}
+
+#[test]
+fn an_apis_reference_is_redoc_or_a_template() {
+    let model = |reference: &str| {
+        format!("spec = \"0.1\"\n[apis.public]\nspec = \"api.yaml\"\nreference = {reference}\n")
+    };
+    let loaded = load_str(
+        &model("\"/api/#/operations/{operationId}\""),
+        FileId::new(0),
+    )
+    .unwrap();
+    let reference = &loaded.api("public").unwrap().reference;
+    assert_eq!(
+        reference.address("users/list all", Some("Café")),
+        "/api/#/operations/users%2Flist%20all"
+    );
+    let swagger = ascribe_model::ApiReference::Template("#/{tag}/{operationId}".into());
+    assert_eq!(
+        swagger.address("getUser", Some("Billing & Invoices")),
+        "#/Billing%20%26%20Invoices/getUser"
+    );
+    let redoc = ascribe_model::ApiReference::Redoc { at: "/api/".into() };
+    assert_eq!(
+        redoc.address("Health.Check_v2", None),
+        "/api/#operation/Health.Check_v2"
+    );
+    for (reference, slug) in [
+        (
+            "{ renderer = \"scalar\", at = \"/api/\" }",
+            "model-invalid-value",
+        ),
+        ("{ renderer = \"redoc\" }", "model-missing-key"),
+        (
+            "{ renderer = \"redoc\", at = \"/api/\", theme = 1 }",
+            "model-unknown-key",
+        ),
+        ("3", "model-wrong-type"),
+    ] {
+        let issues = load_str(&model(reference), FileId::new(0)).unwrap_err();
+        assert_eq!(issues[0].slug.as_str(), slug, "{reference}");
+    }
+    assert!(ascribe_model::is_absolute_address(
+        "https://api.example.com/#x"
+    ));
+    assert!(ascribe_model::is_absolute_address("//api.example.com/"));
+    assert!(!ascribe_model::is_absolute_address("/api/#operation/a:b"));
+    assert!(!ascribe_model::is_absolute_address("#/operations/x"));
+}
+
+#[test]
 fn a_change_matters_to_a_source_where_it_reads_or_keeps_its_examples() {
     let text = "spec = \"0.1\"\n[sources.code]\ngit = \"https://github.com/acme/code.git\"\ninclude = [\"crates/cli/tests/output/**\", \"examples/**\"]\nignore = [\"**/node_modules/**\"]\n";
     let model = load_str(text, FileId::new(0)).unwrap();

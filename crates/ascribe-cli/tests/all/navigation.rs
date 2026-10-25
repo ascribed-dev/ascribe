@@ -44,12 +44,13 @@ fn copy_dir(from: &Path, to: &Path) {
     }
 }
 
-/// `examples/astro-site`'s model and content, without the site.
+/// `examples/astro-site`'s model, content, and API spec, without the site.
 fn astro_site() -> TempDir {
     let dir = tempfile::tempdir().expect("a temporary directory");
     let source = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/astro-site");
     fs::copy(source.join("ascribe.toml"), dir.path().join("ascribe.toml")).expect("the model");
     copy_dir(&source.join("content"), &dir.path().join("content"));
+    copy_dir(&source.join("api"), &dir.path().join("api"));
     dir
 }
 

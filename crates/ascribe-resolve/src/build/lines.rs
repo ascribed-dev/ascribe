@@ -141,13 +141,11 @@ impl<'p> BuildResolver<'p> {
         made
     }
 
-    /// The link to a page in another line: its link in this line, with this
-    /// line's folder after the base path swapped for that line's (`3.4/`,
-    /// or none for the current line).
-    pub(crate) fn line_link(&self, line: &Build, page: &RelPath, id: Option<&str>) -> String {
-        let own = self.router.link(page, id);
+    /// This line's base path and the site's, each with a leading and a
+    /// trailing `/`: an older line's model has its folder in the base path,
+    /// and a model that wasn't made for the line has the site's.
+    fn bases(&self) -> (String, String) {
         let own_folder = self.build.line_folder().unwrap_or_default();
-        let to_folder = line.line_folder().unwrap_or_default();
         let mut base = self.project.model().consumer.base_path.clone();
         if !base.starts_with('/') {
             base.insert(0, '/');
@@ -155,12 +153,26 @@ impl<'p> BuildResolver<'p> {
         if !base.ends_with('/') {
             base.push('/');
         }
-        // An older line's model has its folder in the base path; a model
-        // that wasn't made for the line has the site's.
         let root = match base.strip_suffix(own_folder.as_str()) {
             Some(root) if !own_folder.is_empty() && root.ends_with('/') => root.to_owned(),
             _ => base.clone(),
         };
+        (base, root)
+    }
+
+    /// The site's base path, with no line's folder in it: where the pages
+    /// that aren't a line's, such as an API's reference, are.
+    pub(crate) fn site_base(&self) -> String {
+        self.bases().1
+    }
+
+    /// The link to a page in another line: its link in this line, with this
+    /// line's folder after the base path swapped for that line's (`3.4/`,
+    /// or none for the current line).
+    pub(crate) fn line_link(&self, line: &Build, page: &RelPath, id: Option<&str>) -> String {
+        let own = self.router.link(page, id);
+        let to_folder = line.line_folder().unwrap_or_default();
+        let (base, root) = self.bases();
         let rest = own
             .strip_prefix(base.as_str())
             .or_else(|| (own == base.trim_end_matches('/')).then_some(""))

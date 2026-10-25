@@ -212,6 +212,25 @@ pub fn resolve_reference(
     if kind == RefKind::Image && local.written.is_empty() {
         return Resolution::AssetMissing(Missing::Absent);
     }
+    // A link to a declared spec is to one of its operations, or, without a
+    // fragment, to the file, an asset, which only a spec inside the
+    // project's folder can be. A spec is the one file a link may reach
+    // outside it (SPEC §9.4).
+    if kind == RefKind::Link
+        && let Some(api) = declared_spec(model, layout, path)
+    {
+        if let Some(id) = &local.fragment {
+            return Resolution::Operation {
+                api: api.name.clone(),
+                id: id.clone(),
+            };
+        }
+        if !layout.is_allowed(path) {
+            return Resolution::SpecOutside {
+                api: api.name.clone(),
+            };
+        }
+    }
     if local.source {
         return if sources.contains(path) {
             Resolution::Source {
@@ -247,6 +266,23 @@ pub fn resolve_reference(
         return route(model, local, path, written_in, sources);
     }
     Resolution::AssetMissing(missing)
+}
+
+/// The API whose spec is the file at this content path, by its path from
+/// the project root as `[apis.<name>] spec` writes it, normalized.
+fn declared_spec<'m>(
+    model: &'m ContentModel,
+    layout: &Layout,
+    path: &RelPath,
+) -> Option<&'m ascribe_model::Api> {
+    if model.apis.is_empty() {
+        return None;
+    }
+    let in_project = layout.project_path(path);
+    model
+        .apis
+        .iter()
+        .find(|api| api.spec == in_project.as_str())
 }
 
 /// The page a route-like link most likely names, and the file-path link to
@@ -373,7 +409,14 @@ pub fn reference_issue(
         RefKind::Image => diagnostics::IMAGE_SOURCE_MISSING,
     };
     match resolution {
-        Resolution::External | Resolution::Asset { .. } => None,
+        // Whether the spec has the operation is the source index's to say
+        // (`crate::openapi::operation_issue`).
+        Resolution::External | Resolution::Asset { .. } | Resolution::Operation { .. } => None,
+        Resolution::SpecOutside { api } => Some(
+            Issue::new(diagnostics::LINK_SPEC_OUTSIDE_PROJECT, here)
+                .with_arg("path", written)
+                .with_arg("api", api.clone()),
+        ),
         Resolution::SourceMissing { actual } => {
             let issue = Issue::new(missing_slug, here).with_arg("path", written);
             Some(match actual {

@@ -431,6 +431,12 @@ enum TargetJson {
         url: Option<String>,
         fragment: Option<String>,
     },
+    #[serde(rename_all = "camelCase")]
+    Operation {
+        api: String,
+        operation_id: String,
+        address: String,
+    },
     Unresolved,
 }
 
@@ -975,6 +981,15 @@ impl Writer<'_, '_> {
                     fragment: fragment.clone(),
                 }
             }
+            LinkTarget::Operation {
+                api,
+                operation_id,
+                address,
+            } => TargetJson::Operation {
+                api: api.clone(),
+                operation_id: operation_id.clone(),
+                address: address.clone(),
+            },
             LinkTarget::Unresolved => TargetJson::Unresolved,
         }
     }

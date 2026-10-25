@@ -12,7 +12,7 @@
 //! surviving content references.
 
 use ascribe_core::{Issue, Location, RelPath, Span, diagnostics};
-use ascribe_model::{Build, Segment};
+use ascribe_model::{Build, Segment, is_absolute_address};
 use ascribe_syntax::{Inline, InlineKind};
 
 use super::BuildResolver;
@@ -126,10 +126,42 @@ impl<'p> Links<'_, 'p> {
             } => {
                 return self.page_link(index, reference, block, target, id.as_deref(), *fragment);
             }
+            Resolution::Operation { api, id } => self.operation(api, id),
             // The file-level problem is the source index's.
             _ => LinkTarget::Unresolved,
         };
         (target, None)
+    }
+
+    /// A link to an operation: its address in the API's reference, when the
+    /// spec has it. When it doesn't, or the spec can't be read, the file-level
+    /// problem is the source index's.
+    fn operation(&self, api: &str, id: &str) -> LinkTarget {
+        let project = self.resolver.project();
+        let model = project.model();
+        let (Some(declared), Some(operation)) = (
+            model.api(api),
+            project.apis().spec(api).and_then(|s| s.operation(id)),
+        ) else {
+            return LinkTarget::Unresolved;
+        };
+        let address = declared.reference.address(id, operation.tag.as_deref());
+        // The reference is the site's, not a line's: an older line's link
+        // goes to the same address.
+        let address = if is_absolute_address(&address) {
+            address
+        } else {
+            format!(
+                "{}/{}",
+                self.resolver.site_base().trim_end_matches('/'),
+                address.trim_start_matches('/')
+            )
+        };
+        LinkTarget::Operation {
+            api: api.to_owned(),
+            operation_id: id.to_owned(),
+            address,
+        }
     }
 
     fn page_link(

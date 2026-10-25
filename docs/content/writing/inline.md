@@ -40,6 +40,7 @@ See [](keys.md#rotate-keys).
 - External URLs (`https://…`) pass through unchanged.
 - A destination that looks like a published URL (`/guides/install/`) instead of a file gets a warning, and the editor offers to convert it.
 - In each build, a link's target page must be published. To link from shared content to a page a build drops, put the link in a `@variant` arm the same build removes.
+- A link to an OpenAPI spec the content model declares, with an `operationId` as its fragment, `[Get a user](../api/openapi.yaml#getUser)`, is a link to that operation: the spec must have it, and each output writes the operation's address in the published reference. See [Link to your API reference](../openapi/index.md).
 
 ### Links between lines
 

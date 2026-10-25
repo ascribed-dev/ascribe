@@ -206,6 +206,32 @@ pub fn link(
             answer.href = Some(written);
             answer.path = Some(path.to_string());
         }
+        // An operation's own answer waits for its decision; until then it's
+        // the spec, a file, as a link to it with a fragment always was, and
+        // the operation is checked.
+        Resolution::Operation { api, id } => {
+            answer.kind = LinkKind::File;
+            answer.path = match &parsed {
+                Target::Local(local) => local.path.as_ref().map(ToString::to_string),
+                Target::External => None,
+            };
+            answer.id = Some(id.clone());
+            let spec = project.apis().spec(&api);
+            if spec.is_some_and(|s| s.operation(&id).is_some()) {
+                answer.exists = true;
+                answer.href = Some(format!("{written}#{}", encode_destination(&id)));
+            } else if spec.is_some() {
+                answer.problem = Some(format!("`{written}` has no operation `{id}`"));
+            } else {
+                answer.problem = Some(format!("the spec of API `{api}` can't be read"));
+            }
+        }
+        Resolution::SpecOutside { api } => {
+            answer.kind = LinkKind::File;
+            answer.problem = Some(format!(
+                "`{written}` is the spec of API `{api}`, outside the project's folder; link to one of its operations with `#` and its `operationId`"
+            ));
+        }
         Resolution::SourceMissing { .. } => {
             answer.problem = Some(format!("`{written}` doesn't exist"));
         }

@@ -1,0 +1,9 @@
+description: >-
+  A link to an operation the spec doesn't have is an error, at the
+  destination, naming the closest id. Ids match exactly, with case.
+spec: ["5.2", "7.11", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: link-operation-missing, file: index.md, line: 5}
+  - {slug: link-operation-missing, file: index.md, line: 6}

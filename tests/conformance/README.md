@@ -53,6 +53,7 @@ The cases were written from SPEC.md, not from any implementation. They're groupe
 | `frontmatter/`, `model/` | Frontmatter, content types, fragments, name roles (§2, §7.2) |
 | `sources/` | Sources in another repository: their copies and `ascribe.lock` (§7.4) |
 | `permalinks/` | The permalinks list, `ascribe.permalinks`, against the permalinks the content declares (§7.5) |
+| `apis/` | The APIs a content model declares (§7.11): links to their operations, a spec outside the project's folder in `apis/_shared/`, and a spec that can't be read (§5.2, §9.4) |
 | `addresses/` | `ascribe.addresses` (§7.10): the file's shape, and the addresses a base published against the working tree's, the base in the case's `base/` |
 | `checks/` | The content checks across a project: orphans, unused fragments, model entries, and images, large images, and duplicate titles, and the baseline that holds some back (`checks/baseline/`). They aren't SPEC rules, so the shared model turns them off and these cases have models of their own |
 | `format/` | Canonical form (§8.3): each rule, what the formatter leaves alone, and constructs with errors |

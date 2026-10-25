@@ -109,12 +109,13 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 | `[permalinks]` | Names for something outside the docs to link to that no heading or page declares: a permalink that was ended on purpose, and another name for one. | §20 |
 | `[crawlers]` | What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. | §21 |
 | `[listing]` | How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type. | §22 |
+| `[apis.<name>]` | OpenAPI specs that pages link into, by name: each one's file, and where its reference is published. | §23 |
 
 ## Diagnostics
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-250 in all. By severity: 52 advice, 171 error, 27 warning. By level: 220 file, 30 page. By kind of next step: 54 choose, 18 fix, 10 outside, 12 review, 156 write.
+256 in all. By severity: 53 advice, 176 error, 27 warning. By level: 226 file, 30 page. By kind of next step: 55 choose, 18 fix, 11 outside, 12 review, 160 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -368,6 +369,12 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC256` | `anchor-lost` | advice | write | the id `{id}` in {path} was published at {addresses}, and the page doesn't have it now{builds} |
 | `ASC257` | `addresses-base-unreadable` | warning | outside | the addresses weren't compared with the base: {reason} |
 | `ASC258` | `addresses-build-gone` | advice | outside | the base has the build `{build}`, and ascribe.toml doesn't now, so its {count} addresses aren't compared |
+| `ASC259` | `model-api-outside-repository` | error | write | the spec of API `{api}`, `{path}`, is outside the git repository the project is in |
+| `ASC260` | `model-api-reference` | error | write | the reference of API `{api}` has no `{{operationId}}`, so every operation's address would be the same |
+| `ASC261` | `api-spec-unreadable` | error | write | the spec of API `{api}`, `{path}`, can't be read: {reason} |
+| `ASC262` | `api-spec-empty` | advice | outside | the spec of API `{api}`, `{path}`, has no operations, so no link can name one |
+| `ASC263` | `link-operation-missing` | error | choose | `{path}` has no operation `{id}` |
+| `ASC264` | `link-spec-outside-project` | error | write | `{path}` is the spec of API `{api}`, outside the project's folder, which no output can copy; link to one of its operations, or to the published reference |
 
 ## The VS Code extension
 
@@ -874,6 +881,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `checks/diagnostics/directives.md` | Diagnostics: directives | reference |
 | `checks/diagnostics/output-checks.md` | Diagnostics: content checks of outputs and the site | reference |
 | `checks/diagnostics/pages.md` | Diagnostics: links, pages, and sources | reference |
+| `checks/diagnostics/project-files.md` | Diagnostics: the addresses file and API specs | reference |
 | `checks/external-links.md` | Check external links | how-to |
 | `checks/report-command.md` | `ascribe report` | reference |
 | `checks/report.md` | The project report | how-to |
@@ -930,6 +938,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `navigation/index.md` | Navigation | reference |
 | `navigation/order.md` | Put your pages in order | how-to |
 | `navigation/site-list.md` | Move a site's own list to the navigation | how-to |
+| `openapi/index.md` | Link to your API reference | how-to |
 | `permalinks/command.md` | `ascribe permalinks` | reference |
 | `permalinks/in-your-product.md` | Show the docs in your product | how-to |
 | `permalinks/index.md` | Permalinks | how-to |

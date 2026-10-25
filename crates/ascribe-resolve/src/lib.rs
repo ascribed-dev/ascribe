@@ -89,6 +89,7 @@ pub mod llms;
 pub mod memos;
 mod named;
 pub mod navigation;
+pub mod openapi;
 pub mod pages;
 mod project;
 pub mod reading;

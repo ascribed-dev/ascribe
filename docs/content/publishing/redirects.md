@@ -63,9 +63,9 @@ Moving a page back to where an entry says it was removes the entry. A page moved
 
 With the file, `ascribe check` lists every address the base published, in each build, and every address the working tree publishes, and reports what the base had that nothing accounts for. An address is accounted for when the working tree still publishes it, when an entry of `[moved]` leads it to a page a build publishes, when `[retired]` has it, or when an availability mark takes its page out of one build while another build publishes it.
 
-- **[`address-lost`](../checks/diagnostics/pages.md#ASC255)**, a warning: a page's address, or its Markdown version's, once for each page, listing its addresses and, when it isn't every build, the builds. Forward it with `ascribe addresses move`, or retire it with `ascribe addresses retire`.
-- **[`anchor-lost`](../checks/diagnostics/pages.md#ASC256)**, advice: a heading's explicit `@id` the base published on a page still published, which the page doesn't have now. A link to it lands at the top of the page, so it's advice for now. A generated id isn't kept: it changes with the heading's text.
-- **[`addresses-build-gone`](../checks/diagnostics/pages.md#ASC258)**, advice: a build the base has and `ascribe.toml` doesn't, whose addresses aren't compared.
+- **[`address-lost`](../checks/diagnostics/project-files.md#ASC255)**, a warning: a page's address, or its Markdown version's, once for each page, listing its addresses and, when it isn't every build, the builds. Forward it with `ascribe addresses move`, or retire it with `ascribe addresses retire`.
+- **[`anchor-lost`](../checks/diagnostics/project-files.md#ASC256)**, advice: a heading's explicit `@id` the base published on a page still published, which the page doesn't have now. A link to it lands at the top of the page, so it's advice for now. A generated id isn't kept: it changes with the heading's text.
+- **[`addresses-build-gone`](../checks/diagnostics/project-files.md#ASC258)**, advice: a build the base has and `ascribe.toml` doesn't, whose addresses aren't compared.
 
 ```console
 $ git rm content/guides/teams/share-a-loom.md && ascribe check --base main --deny-warnings

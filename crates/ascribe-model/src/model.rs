@@ -66,6 +66,8 @@ pub struct ContentModel {
     pub builds: Vec<Build>,
     /// `[sources.<name>]`, in declaration order.
     pub sources: Vec<Source>,
+    /// `[apis.<name>]`, in declaration order.
+    pub apis: Vec<Api>,
     /// The build the editor checks by default (`[editor] build`).
     pub editor_build: String,
     /// `[checks]`: the level the project sets for each check it names.
@@ -689,6 +691,85 @@ pub struct Source {
     pub git: Option<Remote>,
     /// The `[sources.<name>]` key in `ascribe.toml`.
     pub span: Span,
+}
+
+/// An API (`[apis.<name>]`): an OpenAPI spec whose operations pages link
+/// to, and where its reference is published.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Api {
+    /// The API's name.
+    pub name: String,
+    /// The spec's file, relative to the project root, normalized: it starts
+    /// with `..` when it's outside the project's folder.
+    pub spec: String,
+    /// Where an operation's address in the published reference is.
+    pub reference: ApiReference,
+    /// The `[apis.<name>]` key in `ascribe.toml`.
+    pub span: Span,
+    /// The value of `spec`, where a spec that can't be read is reported.
+    pub spec_span: Span,
+}
+
+/// Where an API's reference is published (`[apis.<name>] reference`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ApiReference {
+    /// Redoc's page at `at` (`{ renderer = "redoc", at = "…" }`): an
+    /// operation's address is `<at>#operation/<operationId>`.
+    Redoc {
+        /// The page's address, relative to `[consumer] base-path`, or
+        /// absolute.
+        at: String,
+    },
+    /// A template of an operation's address, with the placeholders
+    /// [`API_PLACEHOLDERS`] names.
+    Template(String),
+}
+
+/// The placeholders a reference's template may hold: an operation's
+/// `operationId` and its first tag, each as the spec writes it.
+pub const API_PLACEHOLDERS: [&str; 2] = ["operationId", "tag"];
+
+impl ApiReference {
+    /// An operation's address, before it's joined to the base path: Redoc's,
+    /// or the template filled in, with the id and the tag percent-encoded. An
+    /// operation with no tag fills `{tag}` with nothing.
+    pub fn address(&self, operation_id: &str, tag: Option<&str>) -> String {
+        match self {
+            ApiReference::Redoc { at } => {
+                format!("{at}#operation/{}", encode_component(operation_id))
+            }
+            ApiReference::Template(template) => template
+                .replace("{operationId}", &encode_component(operation_id))
+                .replace("{tag}", &encode_component(tag.unwrap_or_default())),
+        }
+    }
+}
+
+/// Whether an address is absolute: it has a scheme, or starts with `//`. Any
+/// other is relative to `[consumer] base-path`.
+pub fn is_absolute_address(address: &str) -> bool {
+    address.starts_with("//")
+        || address.split_once(':').is_some_and(|(scheme, _)| {
+            scheme.len() > 1
+                && scheme.starts_with(|c: char| c.is_ascii_alphabetic())
+                && scheme
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || "+-.".contains(c))
+        })
+}
+
+/// `text` percent-encoded as a part of a URL: every byte but an ASCII letter,
+/// a digit, `-`, `.`, `_`, and `~` (RFC 3986's unreserved characters).
+pub fn encode_component(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    for byte in text.bytes() {
+        if byte.is_ascii_alphanumeric() || b"-._~".contains(&byte) {
+            out.push(char::from(byte));
+        } else {
+            out.push_str(&format!("%{byte:02X}"));
+        }
+    }
+    out
 }
 
 /// A table or a key `[from]` takes from another project's `ascribe.toml`
@@ -1764,6 +1845,11 @@ impl ContentModel {
     /// A source by name.
     pub fn source(&self, name: &str) -> Option<&Source> {
         self.sources.iter().find(|s| s.name == name)
+    }
+
+    /// An API by name.
+    pub fn api(&self, name: &str) -> Option<&Api> {
+        self.apis.iter().find(|a| a.name == name)
     }
 
     /// A build by name.

@@ -24,6 +24,7 @@
     "design/**/*.ts",
     "surface/**/*.ts",
     "templates/**/*.ts",
-    "crawlers/**/*.ts"
+    "crawlers/**/*.ts",
+    "openapi-corpus/**/*.ts"
   ]
 }

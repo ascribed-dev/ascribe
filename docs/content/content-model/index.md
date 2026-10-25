@@ -7,7 +7,7 @@ permalink: content-model
 
 `ascribe.toml` is a project's content model: its schema (SPEC §7). It sits at the project root and declares the content types and their frontmatter, the dimensions content varies along, phrases, the glossary, project widgets, how the site output fits Astro, and the builds. The editor, `ascribe check`, and `ascribe build` all read it, so they can't disagree about what's valid.
 
-A file containing only `spec = "0.1"` is valid; every section has a default ([§23](checks.md#23-defaults-what-an-absent-section-means)). Example files:
+A file containing only `spec = "0.1"` is valid; every section has a default ([§24](checks.md#24-defaults-what-an-absent-section-means)). Example files:
 
 - [`examples/content-models/minimal.toml`]({repo}/blob/main/examples/content-models/minimal.toml): the smallest valid model.
 - [`examples/quill/ascribe.toml`]({repo}/blob/main/examples/quill/ascribe.toml): a small, complete project.
@@ -41,8 +41,9 @@ In VS Code, [Project Settings](../editor/settings.md#project-settings) shows a p
 20. [`[permalinks]`](checks.md#20-permalinks)
 21. [`[crawlers]`](checks.md#21-crawlers)
 22. [`[listing]`](checks.md#22-listing)
-23. [Defaults: what an absent section means](checks.md#23-defaults-what-an-absent-section-means)
-24. [Validation](checks.md#24-validation)
+23. [`[apis.<name>]`](checks.md#23-apisname)
+24. [Defaults: what an absent section means](checks.md#24-defaults-what-an-absent-section-means)
+25. [Validation](checks.md#25-validation)
 
 ---
 

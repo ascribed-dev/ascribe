@@ -237,6 +237,7 @@ impl Fingerprints {
             consumer,
             builds,
             sources,
+            apis,
             editor_build,
             checks,
             intended,
@@ -277,11 +278,18 @@ impl Fingerprints {
             .map(|f| (&f.key, &f.name, &f.available_text, &f.available))
             .collect();
         let glossary_pages: Vec<_> = glossary.pages.iter().map(|p| &p.path).collect();
+        // Which links are to an operation: where an API is declared is read
+        // only by the diagnostics of `ascribe.toml`.
+        let api_specs: Vec<_> = apis
+            .iter()
+            .map(|a| (&a.name, &a.spec, &a.reference))
+            .collect();
         let declared: Vec<_> = phrases
             .iter()
             .map(|p| p.span)
             .chain(features.iter().map(|f| f.span))
             .chain(glossary.pages.iter().map(|p| p.span))
+            .chain(apis.iter().flat_map(|a| [a.span, a.spec_span]))
             .chain(releases.iter().flat_map(|r| {
                 r.lines()
                     .into_iter()
@@ -335,7 +343,7 @@ impl Fingerprints {
                     intended,
                     permalinks,
                     crawlers,
-                    listing
+                    (listing, api_specs)
                 ),
             )
         ));

@@ -412,6 +412,7 @@ impl<'s> Loader<'s> {
         self.versions(root.get("versions"));
         self.project_paths(&project, root.get("project"));
         let sources = self.sources(root.get("sources"), &project.value.content_root);
+        let apis = self.apis(root.get("apis"));
         let checks = self.checks(root.get("checks"));
         let intended = self.intended(root.get("intended"), &phrases, &features);
         let permalinks = self.permalinks(root.get("permalinks"));
@@ -438,6 +439,7 @@ impl<'s> Loader<'s> {
             consumer,
             builds,
             sources,
+            apis,
             editor_build,
             checks,
             intended,

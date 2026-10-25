@@ -1,0 +1,50 @@
+# Loom's API: the spec the guides link into, which Redoc publishes at
+# /docs/api. Its tags and ids are the awkward ones a link has to survive: tags
+# with a space, an ampersand, and an accent, an operation with two tags, one
+# with none, one with no operationId, and an id with a dot.
+openapi: 3.1.0
+info:
+  title: Loom API
+  version: "3.4"
+paths:
+  /looms:
+    get:
+      operationId: listLooms
+      summary: List looms
+      tags: [Looms]
+      responses:
+        "200": { description: The looms. }
+  /looms/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getLoom
+      summary: Get a loom
+      tags: [Looms, Teams]
+      responses:
+        "200": { description: The loom. }
+    delete:
+      summary: Delete a loom
+      tags: [Looms]
+      responses:
+        "204": { description: Deleted. }
+  /invoices:
+    get:
+      operationId: listInvoices
+      summary: List invoices
+      tags: [Billing & Invoices]
+      responses:
+        "200": { description: The invoices. }
+  /menu:
+    get:
+      operationId: getMenu
+      summary: Get the café's menu
+      tags: [Café]
+      responses:
+        "200": { description: The menu. }
+  /health:
+    get:
+      operationId: Health.Check_v2
+      summary: Check the service
+      responses:
+        "200": { description: Healthy. }
