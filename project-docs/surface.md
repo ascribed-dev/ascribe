@@ -6,7 +6,7 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/publishing/redirects.md`, `docs/content/publishing/redirects.md`, `docs/content/publishing/redirects.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/publishing/redirects.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
@@ -888,8 +888,6 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `checks/check.md` | `ascribe check`, `build`, and `fmt` | reference |
 | `checks/ci.md` | Checks in CI | how-to |
 | `checks/diagnostics.md` | Diagnostics | reference |
-| `checks/diagnostics.md` | Diagnostics | reference |
-| `checks/diagnostics.md` | Diagnostics | reference |
 | `checks/diagnostics/content-checks.md` | Diagnostics: content checks | reference |
 | `checks/diagnostics/content-model-builds.md` | Diagnostics: the content model's builds and site | reference |
 | `checks/diagnostics/content-model.md` | Diagnostics: the content model | reference |
@@ -959,8 +957,6 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `permalinks/in-your-product.md` | Show the docs in your product | how-to |
 | `permalinks/index.md` | Permalinks | how-to |
 | `publishing/index.md` | Publishing | concept |
-| `publishing/redirects.md` | Keep the addresses you've published | how-to |
-| `publishing/redirects.md` | Keep the addresses you've published | how-to |
 | `publishing/redirects.md` | Keep the addresses you've published | how-to |
 | `publishing/site.md` | The head, sitemap, `robots.txt`, and headers | reference |
 | `review/ci-report.md` | Attach the review report to every pull request | how-to |
