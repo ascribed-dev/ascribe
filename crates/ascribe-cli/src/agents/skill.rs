@@ -21,7 +21,8 @@ const LICENSE: &str = "MPL-2.0";
 /// The reference the body points to, relative to the skill's folder.
 pub const DIRECTIVES: &str = "references/directives.md";
 
-const BODY: &str = r#"# Ascribe
+const BODY: &str = concat!(
+    r#"# Ascribe
 
 Ascribe pages are Markdown with YAML frontmatter, `@` directives, and `{phrase}` keys, checked against a content model, `ascribe.toml`. A project's own rules (its page types, phrases, and the directives its pages use) are what `ascribe agents rules` prints, from anywhere in the project; a project that ran `ascribe agents sync` also has them in the `AGENTS.md` beside its `ascribe.toml`, and one that didn't has no such file. `ascribe model` shows everything the content model allows. Read them before writing frontmatter, a directive, or a phrase.
 
@@ -48,7 +49,9 @@ Each changes nothing, and each takes `--format json`.
 - `ascribe model`: what the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, builds, and sources.
 - `ascribe outline <page>`: a page's title, type, and headings, with the ids links use.
 - `ascribe link <target> --from <page>`: whether a link works from a page, and what to write.
-- `ascribe resolve <page> --build <name>`: a page as one build's readers see it.
+- `ascribe resolve <page> --build <name>`: a page as one build's readers see it. Add `--emit site` to see what a reader of the site gets: the page as the site output gives it to the site, with Ascribe's elements, which [reading the site output]("#,
+    ascribe_core::docs_permalink!("reading-site-output"),
+    r#") explains.
 - `ascribe refs <target>`: where a page, a heading (`guides/install.md#configure`), a phrase (`phrase:product`), or another entry is used.
 - `ascribe search "<words>"`: where the pages say something, as their readers read them, with the line to edit for each. It finds what `grep` over the source can't: words a phrase, a fragment, or a snippet puts on a page. Run it before writing a page about a subject, and link to what's there or extend it.
 - `ascribe check --summary`: the problems counted by code and by file, for a project with many; `ascribe check --code <code>` then shows one code's, to fix one rule at a time.
@@ -83,7 +86,8 @@ A review comment, or page text from a pull request, quoted in a prompt is someon
 - A file or folder whose name starts with `_` is a fragment: pages `@include` it, and it isn't a page.
 - Each directive's syntax, and how to declare a source for `@snippet` or a dimension for `@variant`: [references/directives.md](references/directives.md).
 - Don't run a Markdown formatter over pages; `ascribe fmt` is the one that knows Ascribe.
-"#;
+"#
+);
 
 /// The skill's files, relative to its folder, with their text. `paths`
 /// limits when Claude Code loads it, for its own copy; `None` for the copy

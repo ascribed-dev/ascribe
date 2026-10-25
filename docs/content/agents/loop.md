@@ -34,7 +34,7 @@ Other commands answer what an agent would otherwise guess at. Each changes nothi
 | [`ascribe model`](../command/questions.md#cli-model) | What the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, builds, and sources |
 | [`ascribe outline <page>`](../command/questions.md#cli-outline) | A page's title and type, and the headings a link can name, with their ids |
 | [`ascribe link <target> --from <page>`](../command/questions.md#cli-link) | Whether a link works from a page, and what to write when it doesn't |
-| [`ascribe resolve <page> --build <name>`](../command/questions.md#cli-resolve) | The page as one build's readers see it, as plain Markdown |
+| [`ascribe resolve <page> --build <name>`](../command/questions.md#cli-resolve) | The page as one build's readers see it, as plain Markdown, or with `--emit site` [as the site output gives it](../command/site-output.md) |
 | [`ascribe resolve go:<name> --build <build>`](../command/questions.md#cli-resolve) | What a product shows for a permalink: its section's title, summary, and text, and its address |
 | [`ascribe refs <target>`](../command/questions.md#cli-refs) | Every place that uses a page, a heading, a phrase, or another entry of the content model, such as the links to fix after renaming a heading |
 | [`ascribe search "<words>"`](../command/questions.md#cli-search) | Where the pages already say something, as their readers read it, with the line to edit: run before writing a page about a subject. It finds the words a phrase, a fragment, or a snippet puts on a page, which `grep` over the source can't |

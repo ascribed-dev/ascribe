@@ -25,6 +25,9 @@ When a page has a [`@memo`](../writing/directives.md#memo), `AGENTS.md` also tel
 @available: ascribe 0.4.3
 When a page declares a [permalink](../permalinks/index.md), `AGENTS.md` also says, with how to link, that a product's message linking to the docs by a permalink can read what the docs will show for it with `ascribe resolve go:<name>`, which prints the help [a product shows](../permalinks/in-your-product.md). When a heading declares one, it says to give the heading's section a [`@summary`](../writing/directives.md#summary), the sentence a product shows with its help, and how to choose between `@summary` above a paragraph and `@summary: <text>`; `ascribe check --format prompt` quotes the text of each section without one, so the agent can write it.
 
+@available: ascribe planned
+`AGENTS.md` also says how to see what a reader of the site gets, not only a reader of the Markdown: `ascribe resolve <page> --build <name> --emit site`, or `ascribe_resolve` with `emit: "site"`, writes the page [as the site output gives it](../command/site-output.md), and links to [reading the site output](../command/site-output.md#reading-site-output). The skill's line for `ascribe resolve` says the same.
+
 What a type is for is its `purpose` in `ascribe.toml`, or, for a type [`ascribe templates eject`](../templates/index.md) added, The Good Docs Project's summary of it, from `templates.lock` (the [content model reference](../content-model/index.md#41-page-types)).
 
 Here's what it writes for the Quill example:

@@ -47,6 +47,16 @@ pub const SUMMARY_SENTENCE: &str = "Give a heading with a permalink a summary, a
      section that reads well alone, or `@summary: <text>` under the heading and its `@id` \
      when none does, as for a lead-in to a list. Keep it under 300 characters.";
 
+/// What the rules say of the site form: how to see a page as a reader of the
+/// site gets it, and where the elements it holds are explained.
+pub const SITE_FORM_SENTENCE: &str = concat!(
+    "To see what a reader of the site gets, not only a reader of the Markdown, run `ascribe \
+     resolve <page> --build <name> --emit site`, or call `ascribe_resolve` with `emit: \
+     \"site\"`: the page as the site output gives it to the site, with Ascribe's elements. \
+     How to read them: ",
+    ascribe_core::docs_permalink!("reading-site-output"),
+);
+
 /// A project's rules, as Markdown, for a file in the folder `dir` is relative
 /// to: `dir` is the project's folder (the one holding `ascribe.toml`) as seen
 /// from there, and empty when the file is beside `ascribe.toml`. `root` is
@@ -96,7 +106,7 @@ pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPa
          `../guides/install.md#configure`, not to the site's address. `ascribe outline \
          <page>` lists a page's headings with their ids, and `ascribe link <target> --from \
          <page>` says whether a link works and what to write.{permalinks}\n\n### More\n\n\
-         `ascribe model{}` shows everything the content model allows. Every directive: {}\n",
+         {SITE_FORM_SENTENCE}\n\n`ascribe model{}` shows everything the content model allows. Every directive: {}\n",
         at.path_arg(),
         directive_reference_url(),
     );
