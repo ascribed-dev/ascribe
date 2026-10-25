@@ -311,6 +311,10 @@
       {
         "href": "/docs/publishing/site/",
         "label": "The head, sitemap, robots.txt, and headers"
+      },
+      {
+        "href": "/docs/publishing/redirects/",
+        "label": "Keep the addresses you've published"
       }
     ]
   },

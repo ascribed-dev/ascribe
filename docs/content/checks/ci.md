@@ -16,6 +16,24 @@ It installs the latest release. To run the version your `package.json` pins inst
 
 [`ascribe check`, `build`, and `fmt`](check.md) has each command's options and exit codes.
 
+## Keep the addresses you've published
+@available: ascribe planned
+
+A project with [`ascribe.addresses`](../publishing/redirects.md) has `ascribe check` compare the addresses the docs publish with the base's, and the base needs the history: give `actions/checkout` `fetch-depth: 0`, and name the base. On a pull request, it's the branch the pull request targets; on a push, it's the commit before the push, compared as it is:
+
+```yaml
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      # ...
+      - if: github.event_name == 'pull_request'
+        run: ascribe check --deny-warnings --base origin/$GITHUB_BASE_REF
+      - if: github.event_name == 'push'
+        run: ascribe check --deny-warnings --base ${{ github.event.before }} --base-exact
+```
+
+Without the history, or with a base that isn't there, as after a force-push, the rest of the check runs and [`addresses-base-unreadable`](../publishing/redirects.md#the-base) says the addresses weren't compared, a warning `--deny-warnings` fails on.
+
 ## See also
 
 - [The project report](report.md): the whole project's state, every day in CI.

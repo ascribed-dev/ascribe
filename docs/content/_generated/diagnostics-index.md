@@ -246,3 +246,8 @@
 | [ASC251](../checks/diagnostics/pages.md#ASC251) | `summary-in-variant` | Error | Page | write |
 | [ASC252](../checks/diagnostics/content-checks.md#ASC252) | `summary-missing` | Advice | Page | write |
 | [ASC253](../checks/diagnostics/content-checks.md#ASC253) | `summary-long` | Advice | Page | write |
+| [ASC254](../checks/diagnostics/pages.md#ASC254) | `addresses-file-invalid` | Error | File | write |
+| [ASC255](../checks/diagnostics/pages.md#ASC255) | `address-lost` | Warning | File | write |
+| [ASC256](../checks/diagnostics/pages.md#ASC256) | `anchor-lost` | Advice | File | write |
+| [ASC257](../checks/diagnostics/content-checks.md#ASC257) | `addresses-base-unreadable` | Warning | File | outside |
+| [ASC258](../checks/diagnostics/pages.md#ASC258) | `addresses-build-gone` | Advice | File | outside |

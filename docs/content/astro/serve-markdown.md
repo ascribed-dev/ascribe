@@ -21,9 +21,9 @@ curl -I https://docs.example.com/docs/guides/setup.md
 
 A Markdown version has no head, so the rule its page's head gives a crawler is a response header: `X-Robots-Tag` for a page that's `unlisted` or `unquoted`, and a canonical `Link` to its page. Each build lists them in `_ascribe/headers.json` ([response headers](../publishing/site.md#response-headers)).
 
-**On Netlify,** set `headers = "netlify"` in `[consumer]`, and `astro build` writes them into the built site's `_headers`.
+**On Netlify,** set `host = "netlify"` in `[consumer]`, and `astro build` writes them into the built site's `_headers`.
 
-**On Cloudflare Pages,** which reads a `_headers` file in the same form as Netlify's, set `headers = "netlify"` too. Cloudflare takes at most 100 rules, and there's one for each Markdown version, so a larger site gives the rules to a Worker instead.
+**On Cloudflare Pages,** which reads a `_headers` file in the same form as Netlify's, set `host = "netlify"` too. Cloudflare takes at most 100 rules, and there's one for each Markdown version, so a larger site gives the rules to a Worker instead.
 
 **On nginx,** write a `map` for each header after the build, from a Markdown version's path to the header's value, for the `http` block to include:
 
@@ -78,5 +78,5 @@ A rule that challenges unfamiliar clients blocks agents too; let them read `llms
 ## See also
 
 - [Response headers](../publishing/site.md#response-headers): what `astro dev` sends, and how the build treats a site's own `_headers`.
-- [`[consumer] headers`](../content-model/output.md#consumer): the host whose format the headers are written in.
+- [`[consumer] host`](../content-model/output.md#consumer): the host whose files the build writes.
 - `ascribe report agents`, which checks a published site against the spec: [the report](../checks/report.md).

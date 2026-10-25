@@ -115,14 +115,7 @@ $ curl -sI http://localhost:4321/docs/internal/runbook.md | grep -i x-robots-tag
 x-robots-tag: noindex
 ```
 
-**On Netlify,** set `headers = "netlify"` in `[consumer]`, and `astro build` writes the rules into `_headers` at the root of the built site, which Netlify reads:
-
-```toml
-[consumer]
-site = "https://docs.example.com"
-base-path = "/docs/"
-headers = "netlify"
-```
+**On Netlify,** set `host = "netlify"` in `[consumer]`, and `astro build` writes the rules into `_headers` at the root of the built site, which Netlify reads ([the host's files](#the-hosts-files)):
 
 ```text
 /docs/internal/runbook.md
@@ -130,9 +123,29 @@ headers = "netlify"
   X-Robots-Tag: noindex
 ```
 
-Each rule is for one exact path, never a pattern, so a rule for a page can't reach its neighbor. With several projects, the file holds the rules of each project that sets `headers`.
-
-- **A site with its own `_headers`** in `public/` keeps it, and the integration never rewrites it. The build checks that it has Ascribe's lines, and fails when it doesn't, with the lines to add as its message. A line counts when it's under the same path, with the same value; the case of a header's name doesn't matter.
-- **A site whose Astro `base` isn't `/`** has no root to write `_headers` to, so the build prints the lines instead.
+Each rule is for one exact path, never a pattern, so a rule for a page can't reach its neighbor.
 
 **On another host,** read the list after the build and give each path its headers in the host's own configuration: [Serve the Markdown versions](../astro/serve-markdown.md) says how for nginx and Cloudflare Pages.
+
+## The host's files
+
+`[consumer] host` names the host the site is deployed to. With it, each build writes that host's own files in its site output, in `_ascribe/host/` ([output-layout contract](../contracts/output-layout.md#19-the-hosts-files)), and `@ascribed/astro` places them at the root of the built site, where the host reads them. `"netlify"` is the one host Ascribe writes for, and Cloudflare Pages reads the same files:
+
+```toml
+[consumer]
+site = "https://docs.example.com"
+base-path = "/docs/"
+host = "netlify"
+```
+
+- **`_headers`:** the [response headers](#response-headers) each Markdown version and help entry needs.
+- **`_redirects`:** a `301` from each address [`ascribe.addresses`](redirects.md) records a move from to where it leads now, so a reader with an old link lands on the page.
+
+With several projects, each file holds the lines of each project that sets `host`, the first entry's first when two give one path.
+
+- **A site with its own `_headers`** in `public/` keeps it, and the integration never rewrites it. The build checks that it has Ascribe's lines, and fails when it doesn't, with the lines to add as its message. A line counts when it's under the same path, with the same value; the case of a header's name doesn't matter.
+- **A site with its own `_redirects`** in `public/` keeps it too: the built `_redirects` has Ascribe's lines first and the site's after them, since Netlify uses the first rule that matches, so a page's recorded move wins over a pattern of the site's.
+- **A redirect from an address a page of the site is at** fails the build, naming the line, since it would hide the page or never be used.
+- **A site whose Astro `base` isn't `/`** has no root to write the files to, so the build prints the lines instead, for the host's own configuration.
+
+Without `host`, nothing is written for a host, and the redirects and headers are in `_ascribe/redirects.json` and `_ascribe/headers.json`, for a deploy step to read.

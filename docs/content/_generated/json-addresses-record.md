@@ -1,0 +1,51 @@
+@memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/addresses-record.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
+[`schemas/addresses-record.schema.json`]({repo}/blob/main/schemas/addresses-record.schema.json):
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "What `ascribe addresses move` and `retire` write with `--format json`.",
+  "properties": {
+    "ascribe_version": {
+      "description": "The version of Ascribe that wrote it.",
+      "type": "string"
+    },
+    "changed": {
+      "description": "Whether the file changed: an entry already the same changes nothing.",
+      "type": "boolean"
+    },
+    "file": {
+      "description": "The file, from the project's folder: `ascribe.addresses`.",
+      "type": "string"
+    },
+    "key": {
+      "description": "The entry's key: a page's path from the content root, a file's path\nwith `#` and an id, or an address starting with `/`.",
+      "type": "string"
+    },
+    "schema_version": {
+      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "table": {
+      "description": "The table the entry is in: `moved` or `retired`.",
+      "type": "string"
+    },
+    "value": {
+      "description": "The entry's value: where it moved, or why it was retired.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "ascribe_version",
+    "file",
+    "table",
+    "key",
+    "value",
+    "changed"
+  ],
+  "title": "AddressesRecordReport",
+  "type": "object"
+}
+```
