@@ -873,8 +873,6 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `agents/hooks.md` | Check an agent's edits with hooks | how-to |
 | `agents/index.md` | Agents | how-to |
 | `agents/instructions.md` | Write the agent files | how-to |
-| `agents/instructions.md` | Write the agent files | how-to |
-| `agents/instructions.md` | Write the agent files | how-to |
 | `agents/loop.md` | Work with an agent | how-to |
 | `agents/mcp.md` | Set up the MCP server | how-to |
 | `agents/measuring.md` | What to measure | concept |
