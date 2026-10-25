@@ -60,6 +60,7 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     server: ProjectServer;
     pages: string[];
   }>();
+  private readonly addressesChanged = new vscode.EventEmitter<ProjectServer>();
   private readonly disposables: vscode.Disposable[] = [];
 
   constructor(private readonly context: vscode.ExtensionContext) {}
@@ -86,6 +87,11 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   /** Fires with a server and the URIs of its pages that read differently because files changed on disk. */
   get onDidChangePages(): vscode.Event<{ server: ProjectServer; pages: string[] }> {
     return this.pagesChanged.event;
+  }
+
+  /** Fires with a server each time it says what it found comparing the addresses (`ProjectServer.addresses`). */
+  get onDidChangeAddresses(): vscode.Event<ProjectServer> {
+    return this.addressesChanged.event;
   }
 
   /** Fires with a server each time its state changes. */
@@ -269,6 +275,7 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     this.started.dispose();
     this.stateChanged.dispose();
     this.pagesChanged.dispose();
+    this.addressesChanged.dispose();
   }
 
   private async refreshNow(): Promise<void> {
@@ -304,6 +311,7 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
         created.onDidStart(() => this.started.fire(created));
         created.onDidChangeState(() => this.stateChanged.fire(created));
         created.onDidChangePages((pages) => this.pagesChanged.fire({ server: created, pages }));
+        created.onDidChangeAddresses(() => this.addressesChanged.fire(created));
         server = created;
         changed = true;
       }

@@ -4795,7 +4795,8 @@ reference = "publishing/redirects.md#what-the-check-reports"
 row = "Addresses file | A page's address, or its Markdown version's, that the base published and nothing accounts for"
 message = "{source} was published at {addresses}, and nothing publishes them now{builds}"
 messages.one = "{source} was published at {addresses}, and nothing publishes it now{builds}"
-fix = "Decide what a reader who follows an old link should get. When the content is somewhere else now, forward it: `ascribe addresses move <old> <new>` records where it went, and the build writes the redirect. When it's gone on purpose, retire it: `ascribe addresses retire <old> --reason \"…\"`. When it was deleted by mistake, restore the file. Moving a page with `ascribe rename`, or in the editor, records the move for you. The base is the default branch, or `--base`; see [Keep the addresses you've published](publishing/redirects.md)."
+messages.settings = "{changes}, so {moved}{builds}"
+fix = "Decide what a reader who follows an old link should get. When the content is somewhere else now, forward it: `ascribe addresses move <old> <new>` records where it went, and the build writes the redirect. When it's gone on purpose, retire it: `ascribe addresses retire <old> --reason \"…\"`. When it was deleted by mistake, restore the file. Moving a page with `ascribe rename`, or in the editor, records the move for you. When a routing setting moved them, as `base-path`, `permalink-path`, `agents`, or a build's name, `ascribe check --fix` records the old value in `[former]`, and the build forwards every address it moved. The base is the default branch, or `--base`; see [Keep the addresses you've published](publishing/redirects.md)."
 
 [[diagnostic]]
 code = "ASC256"
@@ -4926,6 +4927,127 @@ fix = "Add `#` and an operation's `operationId` to link to that operation in the
 
 [[diagnostic]]
 code = "ASC265"
+slug = "addresses-entry-not-a-page"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "7.10"
+reference = "publishing/redirects.md#the-files-checks"
+row = "Addresses file | A `[moved]` value that isn't a page, or a heading on one, in every build that published its key"
+message = "`{key}` is forwarded to `{value}`, which isn't a page of the project, so no build writes its redirect"
+messages.no-heading = "`{key}` is forwarded to `{value}`, and {page} has no heading with the id `{id}`"
+messages.builds = "`{key}` is forwarded to `{value}`, which {builds}, so no redirect is written there for a reader of its old address"
+fix = "Forward it to a page every build that published it publishes: `ascribe addresses move <old> <new>` replaces the entry. When nothing replaces it, retire it instead: `ascribe addresses retire <old> --reason \"…\"`. A fragment, a path outside the content root, or a page a build leaves out would send a reader to nothing."
+
+[[diagnostic]]
+code = "ASC266"
+slug = "addresses-entry-live"
+severity = "advice"
+level = "file"
+next = "fix"
+evidence = []
+spec = "7.10"
+reference = "publishing/redirects.md#the-files-checks"
+row = "Addresses file | A key of `[moved]` or `[retired]` whose source is back"
+message = "`{key}` is a source of the project again, so its entry in [{table}] does nothing; remove it"
+fix = "Remove the entry: the page, or the heading's `@id`, is back where its addresses lead, as after restoring a deleted page or a merge. The quick fix and `ascribe check --fix` remove it. When the source came back by mistake, move it away again."
+
+[[diagnostic]]
+code = "ASC267"
+slug = "addresses-entry-taken"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.10"
+reference = "publishing/redirects.md#the-files-checks"
+row = "Addresses file | A key of `[moved]` or `[retired]` whose address another source publishes now"
+message = "{address}, an address of `{key}`, is published by {source} now, so a reader who follows an old link to `{key}` lands on another page"
+fix = "Give the page that took the address another path, so old links keep leading where `ascribe.addresses` says, or, when that page is what a reader of the old address wants, remove the entry. A case or slug collision, such as `Setup.md` and `setup.md`, takes an address the same way."
+
+[[diagnostic]]
+code = "ASC268"
+slug = "addresses-entry-unpublished"
+severity = "advice"
+level = "file"
+next = "fix"
+evidence = []
+spec = "7.10"
+reference = "publishing/redirects.md#the-files-checks"
+row = "Addresses file | An entry the base's `ascribe.addresses` doesn't have, whose key the base never published"
+message = "the base never published `{key}`, so its entry in [{table}] keeps no address; remove it"
+fix = "Remove the entry: it records a move or a removal of something that was never published, as moving a page made on the same branch leaves. The quick fix and `ascribe check --fix` remove it. An entry the base's file has already is never reported."
+
+[[diagnostic]]
+code = "ASC269"
+slug = "addresses-key-twice"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "7.10"
+reference = "publishing/redirects.md#the-files-checks"
+row = "Addresses file | A key written twice in a table, or in both `[moved]` and `[retired]`"
+message = "`{key}` is in ascribe.addresses twice: {first}, and {second}"
+fix = "Keep one entry, and remove the other, as a merge of two branches can leave both. When both places are right for part of what the page had, keep the one most readers want, and forward the other's content's new home with `ascribe addresses move`. Until it's fixed, the file isn't used, and the build writes no redirects."
+
+[[diagnostic]]
+code = "ASC270"
+slug = "addresses-chain"
+severity = "advice"
+level = "file"
+next = "fix"
+evidence = []
+spec = "7.10"
+reference = "publishing/redirects.md#the-files-checks"
+row = "Addresses file | A `[moved]` value that's another entry's key"
+message = "`{key}` is forwarded to `{value}`, which is forwarded to `{next}`"
+messages.retired = "`{key}` is forwarded to `{value}`, which is retired"
+messages.cycle = "`{key}` is forwarded to `{value}`, and the entries from there lead back to `{key}`"
+fix = "Forward it to where the chain ends, so each entry is one step: the quick fix and `ascribe check --fix` rewrite it, retiring it with the same reason when the chain ends at a retired entry. The build writes one redirect for each address either way. A cycle has no end: forward one of its entries to a page that's published."
+
+[[diagnostic]]
+code = "ASC271"
+slug = "addresses-anchor-collision"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.10"
+reference = "publishing/redirects.md#the-files-checks"
+row = "Addresses file | An `#id` entry from a page that's gone whose id is live on the page its page's addresses lead to"
+message = "`{key}` is forwarded to `{value}`, and a link to `#{id}` follows its page's redirect to {page}, which has its own heading with the id `{id}`, so the link lands there"
+fix = "A link's fragment stays the same through a redirect, and a browser can't tell the old heading's id from the live one. Rename one of the two ids with `ascribe rename <file>#<id> <new>`, which records the move, so each id names one heading, or make the live heading the one the old id leads to."
+
+[[diagnostic]]
+code = "ASC272"
+slug = "addresses-file-deleted"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.10"
+reference = "publishing/redirects.md#the-files-checks"
+row = "Addresses file | `ascribe.addresses` deleted while the base has it"
+message = "ascribe.addresses was deleted, and the base has it, with {count}: the build no longer writes their redirects, and the check no longer compares the addresses"
+fix = "Restore the file, as `git checkout <base> -- ascribe.addresses` does. To stop keeping the addresses on purpose, delete it in a pull request of its own, whose check compares with its own head (`ascribe check --base HEAD`), so the decision is in the history."
+
+[[diagnostic]]
+code = "ASC273"
+slug = "addresses-soft-404"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.10"
+reference = "publishing/redirects.md#the-files-checks"
+row = "Addresses file | Many addresses forwarded to one index page or the home page"
+message = "{count} addresses are forwarded to {value}, {what}, so a reader who followed a link to one of them lands on a page without what they were looking for"
+fix = "Forward each to the page that has what it had, with `ascribe addresses move <old> <new>`, or retire the ones nothing replaces, with `ascribe addresses retire <old> --reason \"…\"`. A redirect to an index or the home page is a not-found page that answers 200, which search engines treat as one."
+
+[[diagnostic]]
+code = "ASC274"
 slug = "link-operation-form-unsupported"
 severity = "error"
 level = "file"
@@ -4938,7 +5060,7 @@ message = "`#{operation}` names an operation with no id by its method and path, 
 fix = "Give the operation an `operationId` in the spec, or in the code it's generated from, and link to it by its id: every renderer addresses an operation by its id. Or publish the reference with Redoc 3, `{ renderer = \"redoc\", at = \"/api/\" }`, which has an address for an operation with no id."
 
 [[diagnostic]]
-code = "ASC266"
+code = "ASC275"
 slug = "link-operation-by-path"
 severity = "advice"
 level = "file"

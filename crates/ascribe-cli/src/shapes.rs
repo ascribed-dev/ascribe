@@ -126,9 +126,16 @@ const SHAPES: &[Shape] = &[
     Shape {
         file: "addresses-record",
         title: "AddressesRecordReport",
-        written_by: "`ascribe addresses move --format json` and `ascribe addresses retire --format json`",
+        written_by: "`ascribe addresses move --format json` and `ascribe addresses retire --format json`, and the MCP server's `ascribe_addresses_move` and `ascribe_addresses_retire`",
         command: true,
         schema: |g| g.root_schema_for::<crate::commands::addresses::RecordJson>(),
+    },
+    Shape {
+        file: "addresses-from-git",
+        title: "AddressesFromGitReport",
+        written_by: "`ascribe addresses move --from-git --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::addresses::FromGitJson>(),
     },
     Shape {
         file: "addresses-list",
@@ -389,6 +396,13 @@ const SHAPES: &[Shape] = &[
         command: false,
         schema: |g| g.root_schema_for::<ascribe_lsp::AgentPromptResult>(),
     },
+    Shape {
+        file: "lsp-addresses",
+        title: "AddressesParams",
+        written_by: "the language server, sending `ascribe/addresses`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::AddressesParams>(),
+    },
 ];
 
 /// The packages that read Ascribe's JSON, and the shapes each reads.
@@ -413,6 +427,7 @@ const PACKAGES: &[(&str, &[&str])] = &[
             "lsp-build-view",
             "lsp-search",
             "lsp-agent-prompt",
+            "lsp-addresses",
             "model",
         ],
     ),

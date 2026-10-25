@@ -1,0 +1,7 @@
+description: >-
+  An entry the base's file has already is never pruned, even when the base
+  never published its key.
+spec: ["7.10"]
+tags: [addresses]
+
+diagnostics: []

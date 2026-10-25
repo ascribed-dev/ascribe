@@ -222,6 +222,7 @@ export class ProjectView implements vscode.Disposable {
       state: server.state,
       version: binary && formatVersion(binary.version),
       everyBuild: this.checks.resultOf(project.folder),
+      addresses: this.checks.addressesOf(project.folder),
       inventory: inventory && inventoryCounts(inventory),
       agentFiles: this.agentFiles.resultOf(project.folder),
       now: Date.now(),
@@ -317,6 +318,12 @@ export class ProjectView implements vscode.Disposable {
             selection: new vscode.Range(start.line, start.character, end.line, end.character),
           });
         }
+        return;
+      }
+      case PROJECT_KEYS.addresses: {
+        await vscode.commands.executeCommand("workbench.actions.view.problems");
+        const uri = server.addresses?.uri;
+        if (uri) await vscode.window.showTextDocument(vscode.Uri.parse(uri));
         return;
       }
       case PROJECT_KEYS.orphans:

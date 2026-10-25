@@ -58,7 +58,13 @@ import {
 } from "./files.js";
 import { WARN as HEAD_WARN } from "./head-check.js";
 import { headersFor, headersOutcome, mergeRules, readHostHeaders } from "./headers.js";
-import { mergeRedirects, readHostRedirects, redirectsOutcome } from "./redirects.js";
+import {
+  gonePatterns,
+  goneRoutes,
+  mergeRedirects,
+  readHostRedirects,
+  redirectsOutcome,
+} from "./redirects.js";
 import { helpPatterns } from "./help.js";
 import { forwardingRoutes, hasPermalinks, permalinkPattern, readPermalinks } from "./permalinks.js";
 import {
@@ -247,6 +253,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
       sitePages,
       excluded: [
         ...forwardingRoutes(entries.map((entry) => readPermalinks(entry.siteRoot))),
+        ...goneRoutes(entries.map((entry) => entry.siteRoot)),
         `${root}404`,
         `${root}500`,
         ...(options.sitemap?.exclude ?? []),
@@ -464,6 +471,18 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
             injectRoute({
               pattern: permalinkPattern(served.path, astro.base),
               entrypoint: new URL("../src/Permalink.astro", import.meta.url),
+              prerender: true,
+            });
+          }
+          // Each retired address's page, which the host's `_redirects` serves at the address with
+          // a 404. One route for each folder: each build's base path's.
+          for (const pattern of gonePatterns(
+            entries.map((entry) => entry.siteRoot),
+            astro.base,
+          )) {
+            injectRoute({
+              pattern,
+              entrypoint: new URL("../src/Gone.astro", import.meta.url),
               prerender: true,
             });
           }

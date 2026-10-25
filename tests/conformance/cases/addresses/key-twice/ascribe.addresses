@@ -1,0 +1,7 @@
+version = 1
+
+[moved]
+"keys.md" = "api-keys.md"
+"keys.md" = "security/keys.md"
+
+[retired]

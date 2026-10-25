@@ -257,5 +257,14 @@
 | [ASC262](../checks/diagnostics/project-files.md#ASC262) | `api-spec-empty` | Advice | File | outside |
 | [ASC263](../checks/diagnostics/pages.md#ASC263) | `link-operation-missing` | Error | File | choose |
 | [ASC264](../checks/diagnostics/pages.md#ASC264) | `link-spec-outside-project` | Error | File | write |
-| [ASC265](../checks/diagnostics/pages.md#ASC265) | `link-operation-form-unsupported` | Error | File | write |
-| [ASC266](../checks/diagnostics/pages.md#ASC266) | `link-operation-by-path` | Advice | File | fix |
+| [ASC265](../checks/diagnostics/project-files.md#ASC265) | `addresses-entry-not-a-page` | Error | File | choose |
+| [ASC266](../checks/diagnostics/project-files.md#ASC266) | `addresses-entry-live` | Advice | File | fix |
+| [ASC267](../checks/diagnostics/project-files.md#ASC267) | `addresses-entry-taken` | Error | File | write |
+| [ASC268](../checks/diagnostics/project-files.md#ASC268) | `addresses-entry-unpublished` | Advice | File | fix |
+| [ASC269](../checks/diagnostics/project-files.md#ASC269) | `addresses-key-twice` | Error | File | choose |
+| [ASC270](../checks/diagnostics/project-files.md#ASC270) | `addresses-chain` | Advice | File | fix |
+| [ASC271](../checks/diagnostics/project-files.md#ASC271) | `addresses-anchor-collision` | Error | File | write |
+| [ASC272](../checks/diagnostics/project-files.md#ASC272) | `addresses-file-deleted` | Error | File | write |
+| [ASC273](../checks/diagnostics/project-files.md#ASC273) | `addresses-soft-404` | Advice | File | write |
+| [ASC274](../checks/diagnostics/pages.md#ASC274) | `link-operation-form-unsupported` | Error | File | write |
+| [ASC275](../checks/diagnostics/pages.md#ASC275) | `link-operation-by-path` | Advice | File | fix |

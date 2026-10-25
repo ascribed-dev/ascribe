@@ -1,0 +1,9 @@
+description: >-
+  A key written twice in a table, as a merge of two branches can leave, is
+  an error at the second, naming both values; until it's fixed, the file
+  isn't used.
+spec: ["7.10", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: addresses-key-twice, file: ascribe.addresses, line: 5}

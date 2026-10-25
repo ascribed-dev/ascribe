@@ -1,0 +1,8 @@
+version = 1
+
+[moved]
+"a.md" = "index.md"
+"b.md" = "index.md"
+"c.md" = "index.md"
+
+[retired]

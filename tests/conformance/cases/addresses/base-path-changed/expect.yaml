@@ -1,0 +1,9 @@
+description: >-
+  The same pages under another `base-path` are one warning for the
+  setting, not one for each page; its fix records the old value in
+  `[former]`.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: address-lost, file: ascribe.addresses, line: 1}

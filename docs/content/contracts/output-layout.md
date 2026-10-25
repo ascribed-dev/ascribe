@@ -295,7 +295,7 @@ The site output holds `_ascribe/redirects.json`: where the addresses the build u
     { "from": "/docs/guides/keys.md", "to": "/docs/security/keys.md", "status": 301, "entry": "guides/keys.md" }
   ],
   "gone": [
-    { "path": "/docs/reference/legacy-sync/", "reason": "The sync agent was removed in 4.0", "entry": "reference/legacy-sync.md" }
+    { "path": "/docs/reference/legacy-sync/", "reason": "The sync agent was removed in 4.0", "entry": "reference/legacy-sync.md", "page": "/docs/_ascribe/gone/reference/legacy-sync/" }
   ]
 }
 ```
@@ -304,15 +304,16 @@ The site output holds `_ascribe/redirects.json`: where the addresses the build u
 |---|---|
 | `version` | The file's format version: `1`. A reader rejects versions it doesn't know. |
 | `build` | The build's name, as §1.7's `build` is. |
-| `redirects` | One pair for each address a `[moved]` entry's key had, sorted by `from`. For a key that's a page, its route and, when the build publishes Markdown versions, its Markdown version's, each leading to the value's own; for a key that's an address from the host's root, that address, leading to the value's route. An entry whose value isn't a page the build publishes writes nothing, and neither does a key that's a heading's id: a fragment never reaches the host. |
+| `redirects` | One pair for each address a `[moved]` entry's key had, sorted by `from`. For a key that's a page, its route and, when the build publishes Markdown versions, its Markdown version's, each leading to the value's own; for a key that's an address from the host's root, that address, leading to the value's route. An entry whose value isn't a page the build publishes writes nothing, and neither does a key that's a heading's id: a fragment never reaches the host. A key that's a page has its addresses under each former `base-path` too. Then a pair for each address a `[former]` value moved (SPEC §7.10): under a former `base-path`, each page's, its Markdown version's, and each `llms.txt` file's, and each permalink's while `permalink-path` is its default; under a former `permalink-path`, each permalink's; with `agents = [true]` and `agents` off, each Markdown version's, leading to its page, and each `llms.txt` file's, leading to the page at the base path. Each leads to the address now, so a second change composes with the first. |
 | `redirects[].from` | The old address, from the host's root, in the published case and slash form. A pair whose `from` the build publishes is left out, since a page is there, and so is one whose `from` and `to` agree once case and a final `/` are ignored: the host finds the page anyway. Each `from` is in one pair, so the pairs are flat. |
 | `redirects[].to` | Where it leads now, from the host's root: the value's route, with `#` and the id when the value names a heading, or its Markdown version's. |
 | `redirects[].status` | The HTTP status: `301`. It's in the format so a later version can write another. |
-| `redirects[].entry` | The `ascribe.addresses` key the pair comes from. |
+| `redirects[].entry` | The `ascribe.addresses` key the pair comes from; for a pair a `[former]` value makes, `former.base-path`, `former.permalink-path`, or `former.agents`. |
 | `gone` | Each address of each `[retired]` key, as `redirects` finds a key's addresses, sorted by `path`, leaving out one the build publishes. |
 | `gone[].path` | The address, from the host's root. |
 | `gone[].reason` | Why it was retired: the entry's value. |
 | `gone[].entry` | The `ascribe.addresses` key it comes from. |
+| `gone[].page` | Where the page saying the address was retired is served, from the host's root: the build's base path, `_ascribe/gone/`, and the key's address from the base path (from the host's root for an address outside it), the same for a page's address and its Markdown version's. It's under the base path because that's where a site generator serves the build. `@ascribed/astro` builds one page at each, with the reason, a link to the docs' home, and `noindex`; another site generator reads `gone` and writes its own. |
 
 A later version adds keys and changes none of these.
 
@@ -323,12 +324,13 @@ With `[consumer] host` (content-model.md §15), the site output holds the host's
 
 With `host = "netlify"`:
 
-- `_ascribe/host/_redirects` has a line for each pair of §1.8, in its order: `from`, `to`, and `status`, separated by a space. Netlify uses the first rule that matches, and matches a rule with or without a final `/`.
+- `_ascribe/host/_redirects` has a line for each pair of §1.8, in its order: `from`, `to`, and `status`, separated by a space. Then a line for each `gone` address, in its order: `path`, `page`, and `404`, which serves the page at the address with that status. Netlify uses the first rule that matches, and matches a rule with or without a final `/`.
 - `_ascribe/host/_headers` has each rule of §1.4, in its order: the path on a line of its own, then each header indented by two spaces, as `Name: value`.
 
 ```text
 /docs/guides/keys/ /docs/security/keys/ 301
 /docs/guides/keys.md /docs/security/keys.md 301
+/docs/reference/legacy-sync/ /docs/_ascribe/gone/reference/legacy-sync/ 404
 ```
 
 ## 2. What Ascribe owns

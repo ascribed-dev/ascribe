@@ -1,0 +1,8 @@
+spec = "0.1"
+
+[consumer]
+profile = "astro"
+site = "https://docs.quill.dev"
+base-path = "/handbook/"
+
+[builds.site]

@@ -1,0 +1,9 @@
+description: >-
+  `agents` turned off stops publishing each Markdown version and
+  `llms.txt`: one warning for the setting, whose fix records `agents =
+  [true]` in `[former]`.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: address-lost, file: ascribe.addresses, line: 1}

@@ -11,6 +11,10 @@
           "description": "The `ascribe.addresses` key it comes from.",
           "type": "string"
         },
+        "page": {
+          "description": "Where the page saying so is, from the host's root: the base path,\n`GONE_FOLDER`, and the key's address from the base path, its page's\nfor a Markdown version.",
+          "type": "string"
+        },
         "path": {
           "description": "The address, from the host's root.",
           "type": "string"
@@ -23,7 +27,8 @@
       "required": [
         "path",
         "reason",
-        "entry"
+        "entry",
+        "page"
       ],
       "type": "object"
     },
@@ -31,7 +36,7 @@
       "description": "An address that leads somewhere else now.",
       "properties": {
         "entry": {
-          "description": "The `ascribe.addresses` key the pair comes from.",
+          "description": "The `ascribe.addresses` key the pair comes from; or, for a pair a\n`[former]` setting makes, `former.` and the setting:\n`former.base-path`, `former.permalink-path`, or `former.agents`.",
           "type": "string"
         },
         "from": {

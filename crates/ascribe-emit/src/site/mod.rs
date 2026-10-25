@@ -209,7 +209,13 @@ impl Emitter for SiteEmitter {
         let found = build.permalinks();
         let help = help::entries(cx, build, &found);
         let help_paths = help::entry_paths(cx, help.keys().copied());
-        let redirects = redirects::redirects(cx.model, build, cx.project().addresses_file());
+        let redirects = redirects::redirects(
+            cx.model,
+            cx.project(),
+            cx.build,
+            build,
+            cx.project().addresses_file(),
+        );
         let mut files = vec![
             generated(HEADERS_PATH, headers::list(cx.model, build, &help_paths))?,
             generated(HELP_PATH, help::file(cx, help))?,

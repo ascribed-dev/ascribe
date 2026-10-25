@@ -1,0 +1,6 @@
+version = 1
+
+[moved]
+"draft.md" = "guide.md"
+
+[retired]

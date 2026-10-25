@@ -1,0 +1,9 @@
+description: >-
+  A `[moved]` value whose page has no heading with its id leads nowhere a
+  reader can be sent: an error at the entry. The page's addresses still
+  lead to the page.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: addresses-entry-not-a-page, file: ascribe.addresses, line: 4}

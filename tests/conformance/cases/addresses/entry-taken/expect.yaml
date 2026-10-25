@@ -1,0 +1,8 @@
+description: >-
+  An address a retired page had that another page publishes now sends a
+  reader of an old link to the other page: an error at the entry.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: addresses-entry-taken, file: ascribe.addresses, line: 6}

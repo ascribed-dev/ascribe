@@ -819,14 +819,41 @@ pub const LINK_OPERATION_MISSING: DiagnosticSlug = DiagnosticSlug("link-operatio
 /// `ASC264`, error, file level: SPEC §8.2, "Links | Target is a declared spec
 /// outside the project's folder, with no operation".
 pub const LINK_SPEC_OUTSIDE_PROJECT: DiagnosticSlug = DiagnosticSlug("link-spec-outside-project");
+/// `ASC265`, error, file level: SPEC §8.2, "Addresses file | A `[moved]` value that isn't a page, or a heading on one, in every build that published its key".
+pub const ADDRESSES_ENTRY_NOT_A_PAGE: DiagnosticSlug = DiagnosticSlug("addresses-entry-not-a-page");
 
-/// `ASC265`, error, file level: SPEC §8.2, "Links | Target is an operation
+/// `ASC266`, advice, file level: SPEC §8.2, "Addresses file | A key of `[moved]` or `[retired]` whose source is back".
+pub const ADDRESSES_ENTRY_LIVE: DiagnosticSlug = DiagnosticSlug("addresses-entry-live");
+
+/// `ASC267`, error, file level: SPEC §8.2, "Addresses file | A key of `[moved]` or `[retired]` whose address another source publishes now".
+pub const ADDRESSES_ENTRY_TAKEN: DiagnosticSlug = DiagnosticSlug("addresses-entry-taken");
+
+/// `ASC268`, advice, file level: SPEC §8.2, "Addresses file | An entry the base's `ascribe.addresses` doesn't have, whose key the base never published".
+pub const ADDRESSES_ENTRY_UNPUBLISHED: DiagnosticSlug =
+    DiagnosticSlug("addresses-entry-unpublished");
+
+/// `ASC269`, error, file level: SPEC §8.2, "Addresses file | A key written twice in a table, or in both `[moved]` and `[retired]`".
+pub const ADDRESSES_KEY_TWICE: DiagnosticSlug = DiagnosticSlug("addresses-key-twice");
+
+/// `ASC270`, advice, file level: SPEC §8.2, "Addresses file | A `[moved]` value that's another entry's key".
+pub const ADDRESSES_CHAIN: DiagnosticSlug = DiagnosticSlug("addresses-chain");
+
+/// `ASC271`, error, file level: SPEC §8.2, "Addresses file | An `#id` entry from a page that's gone whose id is live on the page its page's addresses lead to".
+pub const ADDRESSES_ANCHOR_COLLISION: DiagnosticSlug = DiagnosticSlug("addresses-anchor-collision");
+
+/// `ASC272`, error, file level: SPEC §8.2, "Addresses file | `ascribe.addresses` deleted while the base has it".
+pub const ADDRESSES_FILE_DELETED: DiagnosticSlug = DiagnosticSlug("addresses-file-deleted");
+
+/// `ASC273`, advice, file level: SPEC §8.2, "Addresses file | Many addresses forwarded to one index page or the home page".
+pub const ADDRESSES_SOFT_404: DiagnosticSlug = DiagnosticSlug("addresses-soft-404");
+
+/// `ASC274`, error, file level: SPEC §8.2, "Links | Target is an operation
 /// with no id, by its method and path, and the API's reference is a
 /// template".
 pub const LINK_OPERATION_FORM_UNSUPPORTED: DiagnosticSlug =
     DiagnosticSlug("link-operation-form-unsupported");
 
-/// `ASC266`, advice, file level: SPEC §8.2, "Links | Target is an operation
+/// `ASC275`, advice, file level: SPEC §8.2, "Links | Target is an operation
 /// that has an id, by its method and path".
 pub const LINK_OPERATION_BY_PATH: DiagnosticSlug = DiagnosticSlug("link-operation-by-path");
 
@@ -1088,6 +1115,15 @@ pub const ALL: &[DiagnosticSlug] = &[
     API_SPEC_EMPTY,
     LINK_OPERATION_MISSING,
     LINK_SPEC_OUTSIDE_PROJECT,
+    ADDRESSES_ENTRY_NOT_A_PAGE,
+    ADDRESSES_ENTRY_LIVE,
+    ADDRESSES_ENTRY_TAKEN,
+    ADDRESSES_ENTRY_UNPUBLISHED,
+    ADDRESSES_KEY_TWICE,
+    ADDRESSES_CHAIN,
+    ADDRESSES_ANCHOR_COLLISION,
+    ADDRESSES_FILE_DELETED,
+    ADDRESSES_SOFT_404,
     LINK_OPERATION_FORM_UNSUPPORTED,
     LINK_OPERATION_BY_PATH,
 ];

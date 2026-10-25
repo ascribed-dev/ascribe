@@ -3,6 +3,9 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  gonePaths,
+  gonePatterns,
+  goneRoutes,
   mergeRedirects,
   netlifyRedirects,
   readHostRedirects,
@@ -29,6 +32,10 @@ describe("readHostRedirects", () => {
     expect(readHostRedirects(siteRoot(netlifyRedirects([moved, markdown])))).toEqual([
       moved,
       markdown,
+    ]);
+    // A retired address's rule keeps its 404.
+    expect(readHostRedirects(siteRoot("/docs/beta /_ascribe/gone/docs/beta 404\n"))).toEqual([
+      { from: "/docs/beta", to: "/_ascribe/gone/docs/beta", status: 404 },
     ]);
     expect(readHostRedirects(mkdtempSync(path.join(tmpdir(), "ascribe-redirects-")))).toEqual([]);
   });
@@ -82,5 +89,74 @@ describe("redirectsOutcome", () => {
     });
     expect(outcome.kind).toBe("fail");
     expect(outcome.kind === "fail" && outcome.text).toContain("/docs/guides/my-setup ");
+  });
+});
+
+/** A site output whose `_ascribe/redirects.json` lists `gone`. */
+function withGone(gone: { path: string; reason: string; entry: string; page: string }[]): string {
+  const root = mkdtempSync(path.join(tmpdir(), "ascribe-redirects-"));
+  mkdirSync(path.join(root, "_ascribe"), { recursive: true });
+  writeFileSync(
+    path.join(root, "_ascribe", "redirects.json"),
+    JSON.stringify({ version: 1, build: "site", redirects: [], gone }),
+  );
+  return root;
+}
+
+describe("gonePaths", () => {
+  const beta = {
+    path: "/docs/beta",
+    reason: "The beta ended.",
+    entry: "beta.md",
+    page: "/docs/_ascribe/gone/beta",
+  };
+
+  it("gives one page for each retired address's page, with the reason and its project's root", () => {
+    const first = withGone([beta, { ...beta, path: "/docs/beta.md" }]);
+    const second = withGone([
+      { ...beta, reason: "Another reason." },
+      { path: "/old/", reason: "Gone.", entry: "/old/", page: "/_ascribe/gone/old/" },
+    ]);
+    const sources = [
+      { siteRoot: first, home: "/docs" },
+      { siteRoot: second, home: "/" },
+    ];
+    // A route for each build's base path, under Astro's `base`.
+    expect(gonePatterns([first, second], "/")).toEqual([
+      "/docs/_ascribe/gone/[...address]",
+      "/_ascribe/gone/[...address]",
+    ]);
+    expect(gonePaths(sources, "/", "/docs/_ascribe/gone/[...address]")).toEqual([
+      { params: { address: "beta" }, props: { reason: "The beta ended.", home: "/docs" } },
+    ]);
+    expect(gonePaths(sources, "/", "/_ascribe/gone/[...address]")).toEqual([
+      { params: { address: "old" }, props: { reason: "Gone.", home: "/" } },
+    ]);
+    // Their routes from the host's root, which the sitemap leaves out.
+    expect(goneRoutes([first, second])).toEqual(["/docs/_ascribe/gone/beta", "/_ascribe/gone/old"]);
+  });
+
+  it("puts the route under Astro's base, which is the base path", () => {
+    const docs = withGone([beta]);
+    expect(gonePatterns([docs], "/docs")).toEqual(["/_ascribe/gone/[...address]"]);
+    expect(
+      gonePaths([{ siteRoot: docs, home: "/docs" }], "/docs", "/_ascribe/gone/[...address]"),
+    ).toEqual([
+      { params: { address: "beta" }, props: { reason: "The beta ended.", home: "/docs" } },
+    ]);
+    expect(goneRoutes([docs])).toEqual(["/docs/_ascribe/gone/beta"]);
+    // A folder outside Astro's base can't be served.
+    expect(() => gonePatterns([docs], "/other")).toThrow(/isn't under Astro's `base`/);
+  });
+
+  it("gives none without the list, and refuses a version it doesn't know", () => {
+    const none = mkdtempSync(path.join(tmpdir(), "ascribe-redirects-"));
+    expect(gonePatterns([none], "/")).toEqual([]);
+    const later = withGone([]);
+    writeFileSync(
+      path.join(later, "_ascribe", "redirects.json"),
+      JSON.stringify({ version: 2, gone: [] }),
+    );
+    expect(() => gonePatterns([later], "/")).toThrow(/version 2/);
   });
 });

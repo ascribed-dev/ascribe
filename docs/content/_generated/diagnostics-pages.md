@@ -113,8 +113,8 @@ Error · file level · next step: write · [SPEC §9.4]({repo}/blob/main/SPEC.md
 
 **Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
-### ASC265 `link-operation-form-unsupported`
-@id {permalink=true}: ASC265
+### ASC274 `link-operation-form-unsupported`
+@id {permalink=true}: ASC274
 @summary: Target is an operation with no id, by its method and path, and the API's reference is a template.
 
 Error · file level · next step: write · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
@@ -127,8 +127,8 @@ Error · file level · next step: write · [SPEC §5.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
-### ASC266 `link-operation-by-path`
-@id {permalink=true}: ASC266
+### ASC275 `link-operation-by-path`
+@id {permalink=true}: ASC275
 @summary: Target is an operation that has an id, by its method and path.
 
 Advice · file level · next step: fix · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)

@@ -188,7 +188,14 @@ fn a_recorded_move_passes_and_a_deleted_page_is_reported() {
 
     let out = ascribe(dir.path(), &["build"]);
     assert_eq!(code(&out), 0, "{}", both(&out));
-    assert_eq!(site_file(dir.path(), "_ascribe/host/_redirects"), PAIRS);
+    // Then the retired page's addresses, each serving its page with a 404.
+    assert_eq!(
+        site_file(dir.path(), "_ascribe/host/_redirects"),
+        format!(
+            "{PAIRS}/docs/guides/teams/share-a-loom /docs/_ascribe/gone/guides/teams/share-a-loom 404\n\
+             /docs/guides/teams/share-a-loom.md /docs/_ascribe/gone/guides/teams/share-a-loom 404\n"
+        )
+    );
     let redirects = site_file(dir.path(), "_ascribe/redirects.json");
     assert!(
         redirects.contains("\"from\": \"/docs/guides/my-setup\""),
@@ -291,4 +298,237 @@ fn a_base_with_no_project_published_nothing_to_keep() {
             && text.contains(") has no Ascribe project here, so it published nothing to keep"),
         "{text}"
     );
+}
+
+/// The project with `ascribe.addresses` on `main`, and a branch where a
+/// page is moved with `git mv` and another deleted, as phase 2's goal has
+/// it.
+fn reorganized() -> TempDir {
+    let dir = repo();
+    let out = ascribe(dir.path(), &["addresses", "init"]);
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    commit(dir.path(), "Keep the addresses we publish");
+    git(dir.path(), &["switch", "-q", "-c", "reorganize"]);
+    fs::create_dir_all(dir.path().join("content/Start")).expect("a folder");
+    git(
+        dir.path(),
+        &[
+            "mv",
+            "content/Guides/My Setup.md",
+            "content/Start/My Setup.md",
+        ],
+    );
+    git(dir.path(), &["rm", "-q", "content/Reference/Options.md"]);
+    dir
+}
+
+#[test]
+fn a_move_git_sees_is_recorded_from_git_and_a_deleted_page_is_offered_its_fixes() {
+    let dir = reorganized();
+    let out = ascribe(dir.path(), &["check", "--base", "main", "--format", "json"]);
+    let report: serde_json::Value = serde_json::from_slice(&out.stdout).expect("the report");
+    let lost: Vec<&serde_json::Value> = report["diagnostics"]
+        .as_array()
+        .expect("diagnostics")
+        .iter()
+        .filter(|d| d["slug"] == "address-lost")
+        .collect();
+    assert_eq!(lost.len(), 2, "{}", both(&out));
+    let titles = |d: &serde_json::Value| -> Vec<String> {
+        d["fixes"]
+            .as_array()
+            .expect("fixes")
+            .iter()
+            .map(|f| f["title"].as_str().expect("a title").to_owned())
+            .collect()
+    };
+    // The moved page: git's renames, which are safe.
+    assert_eq!(
+        titles(lost[0])[0],
+        "git sees it renamed to Start/My Setup.md: record git's renames, as `ascribe addresses move --from-git` does"
+    );
+    assert_eq!(lost[0]["fixes"][0]["applicability"], "safe");
+    // The deleted page: forwarded to the page most like it, or retired.
+    let deleted = titles(lost[1]);
+    assert!(
+        deleted[0].starts_with("Forward it to the page most like it, "),
+        "{deleted:?}"
+    );
+    assert!(
+        deleted
+            .last()
+            .expect("a fix")
+            .starts_with("Retire it, and write why"),
+        "{deleted:?}"
+    );
+
+    let out = ascribe(
+        dir.path(),
+        &["addresses", "move", "--from-git", "--base", "main"],
+    );
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    assert_eq!(
+        stdout(&out),
+        "Recorded 1 move git sees: Guides/My Setup.md → Start/My Setup.md.\n"
+    );
+    let out = ascribe(dir.path(), &["check", "--base", "main"]);
+    let text = both(&out);
+    assert!(!text.contains("Guides/My Setup.md was published"), "{text}");
+    assert!(
+        text.contains("Reference/Options.md was published"),
+        "{text}"
+    );
+    // Recorded once: again, there's nothing to record.
+    let out = ascribe(
+        dir.path(),
+        &["addresses", "move", "--from-git", "--base", "main"],
+    );
+    assert!(
+        stdout(&out)
+            .starts_with("git sees no move of a page whose addresses are lost, against `main`"),
+        "{}",
+        both(&out)
+    );
+}
+
+/// A page renamed and edited a little is a rename git sees; a copy isn't a
+/// move, since the page it was copied from is still there.
+#[test]
+fn from_git_records_a_rename_with_an_edit_and_not_a_copy() {
+    let dir = reorganized();
+    let moved = dir.path().join("content/Start/My Setup.md");
+    let text = fs::read_to_string(&moved).expect("the moved page");
+    fs::write(&moved, format!("{text}\nOne more line.\n")).expect("edit the page");
+    fs::copy(
+        dir.path().join("content/index.md"),
+        dir.path().join("content/Start/index.md"),
+    )
+    .expect("copy a page");
+    git(dir.path(), &["add", "-A"]);
+    let out = ascribe(
+        dir.path(),
+        &[
+            "addresses",
+            "move",
+            "--from-git",
+            "--base",
+            "main",
+            "--format",
+            "json",
+        ],
+    );
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    let report: serde_json::Value = serde_json::from_slice(&out.stdout).expect("the report");
+    assert_eq!(
+        report["moves"],
+        serde_json::json!([{ "key": "Guides/My Setup.md", "value": "Start/My Setup.md" }]),
+        "{report}"
+    );
+    assert_eq!(report["written"], true, "{report}");
+}
+
+#[test]
+fn check_fix_records_git_s_renames() {
+    let dir = reorganized();
+    let out = ascribe(dir.path(), &["check", "--base", "main", "--fix"]);
+    let text = both(&out);
+    assert!(!text.contains("Guides/My Setup.md was published"), "{text}");
+    let addresses = fs::read_to_string(dir.path().join("ascribe.addresses")).expect("the file");
+    assert!(
+        addresses.contains("\"Guides/My Setup.md\" = \"Start/My Setup.md\""),
+        "{addresses}"
+    );
+}
+
+#[test]
+fn deleting_the_file_the_base_has_is_an_error() {
+    let dir = renamed();
+    fs::remove_file(dir.path().join("ascribe.addresses")).expect("remove it");
+    commit(dir.path(), "Stop keeping the addresses");
+    let out = ascribe(dir.path(), &["check", "--base", "main"]);
+    assert_ne!(code(&out), 0, "{}", both(&out));
+    assert!(
+        both(&out).contains("ascribe.addresses was deleted, and the base has it, with 0 entries"),
+        "{}",
+        both(&out)
+    );
+    // Compared with its own head, the deletion is the decision.
+    let out = ascribe(dir.path(), &["check", "--base", "HEAD"]);
+    assert_eq!(code(&out), 0, "{}", both(&out));
+}
+
+/// The project with `ascribe.addresses`, committed on `main`, and a branch
+/// `handbook` where `base-path` is `/handbook/` and that's committed.
+fn rebased() -> TempDir {
+    let dir = repo();
+    let out = ascribe(dir.path(), &["addresses", "init"]);
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    commit(dir.path(), "Keep the addresses we publish");
+    git(dir.path(), &["switch", "-q", "-c", "handbook"]);
+    let model = fs::read_to_string(dir.path().join("ascribe.toml")).expect("the model");
+    fs::write(
+        dir.path().join("ascribe.toml"),
+        model.replace("base-path = \"/docs/\"", "base-path = \"/handbook/\""),
+    )
+    .expect("write the model");
+    commit(dir.path(), "Publish the docs as the handbook");
+    dir
+}
+
+/// Phase 3's goal: the base path changed is one warning, its fix records
+/// it, and the build forwards every address under the old base path, each
+/// page, Markdown version, permalink, and `llms.txt`; and still does once
+/// the base has moved past the change.
+#[test]
+fn a_base_path_changed_is_recorded_and_every_address_under_it_forwarded() {
+    let dir = rebased();
+    let out = ascribe(dir.path(), &["check", "--base", "main"]);
+    let text = both(&out);
+    assert!(
+        text.contains(
+            "Warning: base-path changed from \"/docs/\" to \"/handbook/\", so 14 addresses moved, 5 of them permalinks"
+        ) && text.contains("Help: Record the settings change: `ascribe check --fix`"),
+        "{text}"
+    );
+    assert_eq!(text.matches("address-lost").count(), 1, "{text}");
+
+    let out = ascribe(dir.path(), &["check", "--fix"]);
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    let addresses = fs::read_to_string(dir.path().join("ascribe.addresses")).expect("the file");
+    assert!(
+        addresses.contains("[former]\nbase-path = [\"/docs/\"]\n"),
+        "{addresses}"
+    );
+    let out = ascribe(dir.path(), &["check", "--base", "main", "--deny-warnings"]);
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    commit(dir.path(), "Record the base path");
+
+    let forwarded = |dir: &Path| {
+        let out = ascribe(dir, &["build"]);
+        assert_eq!(code(&out), 0, "{}", both(&out));
+        let host = site_file(dir, "_ascribe/host/_redirects");
+        for line in [
+            "/docs /handbook 301\n",
+            "/docs/guides/my-setup /handbook/guides/my-setup 301\n",
+            "/docs/guides/my-setup.md /handbook/guides/my-setup.md 301\n",
+            "/docs/go/options /handbook/go/options 301\n",
+            "/docs/go/legacy-sync /handbook/go/legacy-sync 301\n",
+            "/docs/llms.txt /handbook/llms.txt 301\n",
+        ] {
+            assert!(host.contains(line), "{line} in {host}");
+        }
+        host
+    };
+    let before = forwarded(dir.path());
+
+    // Merged, with the base moved past it: nothing to report, and the same
+    // redirects, from the file alone.
+    git(dir.path(), &["switch", "-q", "main"]);
+    git(dir.path(), &["merge", "-q", "--ff-only", "handbook"]);
+    fs::write(dir.path().join("README.md"), "Later work.\n").expect("write a file");
+    commit(dir.path(), "Later");
+    git(dir.path(), &["switch", "-q", "-c", "later"]);
+    let out = ascribe(dir.path(), &["check", "--base", "main", "--deny-warnings"]);
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    assert_eq!(forwarded(dir.path()), before);
 }

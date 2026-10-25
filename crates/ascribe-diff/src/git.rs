@@ -57,6 +57,17 @@ impl Base {
     pub fn compared(&self) -> &str {
         self.merge_base.as_deref().unwrap_or(&self.commit)
     }
+
+    /// The base as a message names it: the revision asked for, and its
+    /// commit when that's something else.
+    pub fn named(&self) -> String {
+        let short = &self.commit[..self.commit.len().min(12)];
+        if self.requested.starts_with(short) {
+            format!("`{}`", self.requested)
+        } else {
+            format!("`{}` ({short})", self.requested)
+        }
+    }
 }
 
 impl Repository {

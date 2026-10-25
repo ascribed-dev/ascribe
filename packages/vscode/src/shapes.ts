@@ -18,6 +18,7 @@
 // - BuildViewResult (the language server, answering `ascribe/buildView`)
 // - SearchResult (the language server, answering `ascribe/search`)
 // - AgentPromptResult (the language server, answering `ascribe/agentPrompt`)
+// - AddressesParams (the language server, sending `ascribe/addresses`)
 // - ModelReport (`ascribe model --format json`)
 
 /** A problem acknowledged as intended. */
@@ -38,6 +39,36 @@ export interface AcknowledgedEntry {
   reason: string;
   /** Where the acknowledgement is written. */
   at: Place;
+}
+
+/**
+ * The parameters of `ascribe/addresses`: what the last comparison found.
+ * Sent once the project loads and after each change that compares again,
+ * when it, or a page's old addresses (This page's "Also answers at"),
+ * differ from what was sent last.
+ */
+export interface AddressesParams {
+  /**
+   * `ascribe.addresses`' `file:` URI; `null` when the project has no
+   * file, and nothing is compared.
+   */
+  uri: string | null;
+  /**
+   * The base compared with; `null` when there's no file, it doesn't
+   * read, or the base couldn't be read.
+   */
+  base: BaseInfo | null;
+  /**
+   * How many `address-lost` warnings there are: one for each page whose
+   * addresses are lost.
+   */
+  lost: number;
+  /**
+   * The problems, all at `ascribe.addresses`, as `ascribe check`
+   * reports them: the protocol's diagnostics, each with the data a
+   * published diagnostic has, its fixes among it.
+   */
+  diagnostics: unknown[];
 }
 
 /**
@@ -1604,6 +1635,14 @@ export interface PageAbout {
   /** The permalinks the file declares, in document order. */
   permalinks: PagePermalink[];
   /**
+   * The old addresses that lead to it, each once, in address order: each
+   * `from` of a redirect a build writes to it in `redirects.json`, with
+   * its entry, as the server last compared the addresses, at the last
+   * save or change on disk. Empty for a fragment, and for a project
+   * without `ascribe.addresses`.
+   */
+  alsoAnswersAt: PageOldAddress[];
+  /**
    * What its type's template still leaves to fill in; `null` when its
    * type has no template or nothing of it is left.
    */
@@ -1791,6 +1830,17 @@ export interface PageMemo {
    * encoding.
    */
   body: LspRange;
+}
+
+/** An old address that leads to a page: This page's "Also answers at". */
+export interface PageOldAddress {
+  /** The address, from the host's root, as `redirects.json`'s `from`. */
+  address: string;
+  /**
+   * The `ascribe.addresses` key it comes from, as `redirects.json`'s
+   * `entry`.
+   */
+  entry: string;
 }
 
 /** A permalink declared in the file (SPEC §7.5). */

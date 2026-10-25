@@ -87,6 +87,8 @@ struct Shared {
     settled: Condvar,
     /// Wakes the thread that runs Vale (`prose.rs`).
     prose_wake: Condvar,
+    /// Wakes the thread that compares the addresses (`addresses.rs`).
+    addresses_wake: Condvar,
     options: Options,
     idle: Arc<AtomicBool>,
     /// Whether the client can be asked to show a document
@@ -234,6 +236,9 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         .as_ref()
         .is_some_and(|w| w.show_message.is_some());
     core.clock = options.today.clone();
+    // An editor's server compares the addresses between checks; the
+    // agents' hook runs `Core` without `serve`, and never does.
+    core.addresses.enabled = true;
     let idle = options.idle.clone().unwrap_or_default();
     let show_document = params
         .capabilities
@@ -246,6 +251,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         wake: Condvar::new(),
         settled: Condvar::new(),
         prose_wake: Condvar::new(),
+        addresses_wake: Condvar::new(),
         options,
         idle,
         show_document,
@@ -257,6 +263,10 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
     let prose_worker = {
         let shared = shared.clone();
         thread::spawn(move || prose_worker(&shared))
+    };
+    let addresses_worker = {
+        let shared = shared.clone();
+        thread::spawn(move || addresses_worker(&shared))
     };
     {
         let mut core = shared.lock();
@@ -270,6 +280,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
     }
     shared.wake.notify_all();
     shared.prose_wake.notify_all();
+    shared.addresses_wake.notify_all();
 
     let mut shutdown_requested = false;
     let exit = loop {
@@ -316,6 +327,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                 handle_notification(&shared, notification);
                 shared.wake.notify_all();
                 shared.prose_wake.notify_all();
+                shared.addresses_wake.notify_all();
             }
             Message::Response(response) => {
                 // The answer about running a program in the project.
@@ -327,7 +339,10 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
     shared.lock().shutdown = true;
     shared.wake.notify_all();
     shared.prose_wake.notify_all();
+    shared.addresses_wake.notify_all();
     let _ = worker.join();
+    // A comparison under way ends with the `git` it runs.
+    let _ = addresses_worker.join();
     // A check running now ends within its time limit.
     let _ = prose_worker.join();
     Ok(exit)
@@ -627,19 +642,21 @@ where
 }
 
 /// `ascribe/page`, as [`answer`] answers it, with the uses the server keeps
-/// for the page.
+/// for the page, and the old addresses the comparison of the addresses
+/// last found.
 fn page_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
     let params: crate::page::PageParams = serde_json::from_value(request.params.clone())
         .map_err(|e| invalid(&request.id, e.to_string()))?;
-    let (target, cache) = {
+    let (target, cache, redirects) = {
         let core = shared.lock();
         (
             core.nav_target(&params.text_document.uri),
             core.page_uses.clone(),
+            core.addresses.redirects.clone(),
         )
     };
     let result = target
-        .map(|ctx| crate::page::page(&ctx, &cache, params.position))
+        .map(|ctx| crate::page::page(&ctx, &cache, &redirects, params.position))
         .unwrap_or_default();
     to_json(request, result)
 }
@@ -1331,6 +1348,71 @@ fn prose_worker(shared: &Shared) {
         guarded("publishing the prose's diagnostics", || {
             core.finish_prose(&job, results);
         });
+    }
+}
+
+/// The thread that compares the addresses with the base's: waits for a
+/// change, then for a moment with none ([`crate::addresses::SETTLE`]),
+/// compares without the lock, and tells the client what it found when that
+/// differs from what it said last (`addresses.rs`).
+fn addresses_worker(shared: &Shared) {
+    use crate::addresses::{Job, NOTIFICATION, SETTLE, compare};
+    let listed = |commit: &str| {
+        if let Some(hook) = &shared.options.base_listed {
+            hook(commit);
+        }
+    };
+    loop {
+        let job = {
+            let mut core = shared.lock();
+            loop {
+                if core.shutdown {
+                    return;
+                }
+                if core.addresses.dirty {
+                    let quiet = core
+                        .addresses
+                        .changed_at
+                        .map_or(Duration::ZERO, |at| SETTLE.saturating_sub(at.elapsed()));
+                    if quiet.is_zero() {
+                        core.addresses.dirty = false;
+                        if let Some(job) = Job::of(&core) {
+                            core.addresses.running = true;
+                            break job;
+                        }
+                        continue;
+                    }
+                    core = shared
+                        .addresses_wake
+                        .wait_timeout(core, quiet)
+                        .unwrap_or_else(PoisonError::into_inner)
+                        .0;
+                    continue;
+                }
+                shared.idle.store(!core.busy(), Ordering::SeqCst);
+                shared.settled.notify_all();
+                core = shared
+                    .addresses_wake
+                    .wait(core)
+                    .unwrap_or_else(PoisonError::into_inner);
+            }
+        };
+        let outcome = catch_unwind(AssertUnwindSafe(|| compare(&job, &listed)));
+        let mut core = shared.lock();
+        core.addresses.running = false;
+        match outcome {
+            // Sent only for the project still served.
+            Ok(outcome) if core.project_root().as_deref() == Some(outcome.root.as_path()) => {
+                if let Some(params) = core.addresses.finish(outcome) {
+                    core.send(Notification::new(NOTIFICATION.to_owned(), params));
+                }
+            }
+            Ok(_) => {}
+            Err(panic) => crate::log::line(format_args!(
+                "panic comparing the addresses: {}",
+                panic_message(&*panic)
+            )),
+        }
     }
 }
 

@@ -1,0 +1,9 @@
+description: >-
+  An id from a page that's gone, forwarded to another heading, while the
+  page its page's addresses lead to has a heading with the same id: a link
+  to it lands on that heading instead, so it's an error at the entry.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: addresses-anchor-collision, file: ascribe.addresses, line: 5}
