@@ -104,6 +104,11 @@ impl Loaded {
             .is_some_and(|p| p.as_str() == ascribe_check::baseline::BASELINE_FILE)
     }
 
+    /// Whether `abs` is `ascribe.addresses`.
+    pub(crate) fn is_addresses(&self, abs: &Path) -> bool {
+        relative_path(&self.root, abs).is_some_and(|p| p.as_str() == ascribe_model::ADDRESSES_FILE)
+    }
+
     /// `ascribe.nav`'s path from the project root, when `abs` is it.
     pub(crate) fn nav_file(&self, abs: &Path) -> Option<RelPath> {
         relative_path(&self.root, abs).filter(|p| p.as_str() == ascribe_model::NAV_FILE)
@@ -186,6 +191,8 @@ pub(crate) struct Core {
     pub(crate) review: Option<Arc<crate::review::ReviewBase>>,
     /// What Vale found, and what's queued for it (`prose.rs`).
     pub(crate) prose: crate::prose::State,
+    /// The addresses compared with the base's (`addresses.rs`).
+    pub(crate) addresses: crate::addresses::State,
     epoch: u64,
     published: HashMap<PathBuf, Published>,
     /// The diagnostics last published for a file, without Vale's or what
@@ -235,6 +242,7 @@ impl Core {
             page_uses: Default::default(),
             review: None,
             prose: crate::prose::State::default(),
+            addresses: crate::addresses::State::default(),
             epoch: 0,
             published: HashMap::new(),
             checked: HashMap::new(),
@@ -503,6 +511,7 @@ impl Core {
                 }
                 self.prose_settings_changed(vale.as_ref());
                 self.register_lenses();
+                self.addresses.changed();
             }
         }
         self.publish_model_diagnostics();
@@ -605,12 +614,13 @@ impl Core {
             BufferFs::new(disk.clone(), buffers),
         );
         let fs = Arc::new(LayerFs::new(disk));
-        // The open memo files, `ascribe.nav`, and `ascribe.baseline`, as
-        // the editor has them.
+        // The open memo files, `ascribe.nav`, `ascribe.addresses`, and
+        // `ascribe.baseline`, as the editor has them.
         for (path, doc) in &self.docs {
             if let Some(project) = relative_path(&root, path)
                 && (ascribe_resolve::is_memo_path(&project, &layout)
                     || project.as_str() == ascribe_model::NAV_FILE
+                    || project.as_str() == ascribe_model::ADDRESSES_FILE
                     || project.as_str() == ascribe_check::baseline::BASELINE_FILE)
             {
                 fs.set_buffer(&project, Some(doc.text.clone()));
@@ -618,6 +628,13 @@ impl Core {
         }
         let baseline = Arc::new(crate::baseline::Now::of(&fs));
         let snapshot = inc.snapshot();
+        if self
+            .loaded
+            .as_ref()
+            .is_none_or(|loaded| loaded.root != root)
+        {
+            self.addresses.forget();
+        }
         let mut dirty: BTreeSet<RelPath> = snapshot.files().map(|f| f.path.clone()).collect();
         dirty.extend(snapshot.unreadable().iter().map(|u| u.path.clone()));
         self.epoch += 1;
@@ -1058,6 +1075,15 @@ impl Core {
             self.refresh_nav();
             return;
         }
+        if let Some(loaded) = self.loaded.as_ref()
+            && loaded.is_addresses(&path)
+        {
+            if let Ok(project) = RelPath::parse(ascribe_model::ADDRESSES_FILE) {
+                loaded.fs.set_buffer(&project, None);
+            }
+            self.addresses.changed();
+            return;
+        }
         if self.set_baseline_buffer(&path, None) {
             return;
         }
@@ -1077,6 +1103,7 @@ impl Core {
             // What its `@snippet`s show is counted in the code files' lenses.
             self.refresh_lenses();
         }
+        self.addresses.changed();
         self.queue_prose(&path);
     }
 
@@ -1115,6 +1142,15 @@ impl Core {
             self.set_baseline_buffer(path, Some(text));
             return;
         }
+        // Nor is `ascribe.addresses`: the addresses are compared with its
+        // buffer, so a move's unsaved entry counts.
+        if loaded.is_addresses(path) {
+            if let Ok(project) = RelPath::parse(ascribe_model::ADDRESSES_FILE) {
+                loaded.fs.set_buffer(&project, Some(text));
+            }
+            self.addresses.changed();
+            return;
+        }
         if let Some(Kind::Source(content, project)) = loaded.classify(path) {
             self.apply(
                 vec![Change::Edited {
@@ -1133,6 +1169,9 @@ impl Core {
     pub(crate) fn did_change_watched(&mut self, events: Vec<FileEvent>) {
         // This page's rows read files the snapshot doesn't hold.
         self.page_uses.forget();
+        // Whatever changed on disk, the addresses are compared again: a
+        // page moved or deleted, `ascribe.addresses` written, a pull.
+        self.addresses.changed();
         let mut sync_model = false;
         let mut memos = false;
         let mut changes: Vec<Change> = Vec::new();
@@ -1817,7 +1856,7 @@ impl Core {
     /// Whether anything is queued or running: a round of diagnostics, or a
     /// check of the prose.
     pub(crate) fn busy(&self) -> bool {
-        self.has_work() || self.computing || self.prose.has_work()
+        self.has_work() || self.computing || self.prose.has_work() || self.addresses.has_work()
     }
 
     /// Whether files are waiting to have their diagnostics computed: none

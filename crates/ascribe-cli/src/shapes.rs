@@ -396,6 +396,13 @@ const SHAPES: &[Shape] = &[
         command: false,
         schema: |g| g.root_schema_for::<ascribe_lsp::AgentPromptResult>(),
     },
+    Shape {
+        file: "lsp-addresses",
+        title: "AddressesParams",
+        written_by: "the language server, sending `ascribe/addresses`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::AddressesParams>(),
+    },
 ];
 
 /// The packages that read Ascribe's JSON, and the shapes each reads.
@@ -420,6 +427,7 @@ const PACKAGES: &[(&str, &[&str])] = &[
             "lsp-build-view",
             "lsp-search",
             "lsp-agent-prompt",
+            "lsp-addresses",
             "model",
         ],
     ),

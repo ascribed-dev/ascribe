@@ -116,6 +116,13 @@
             "null"
           ]
         },
+        "alsoAnswersAt": {
+          "description": "The old addresses that lead to it, each once, in address order: each\n`from` of a redirect a build writes to it in `redirects.json`, with\nits entry, as the server last compared the addresses, at the last\nsave or change on disk. Empty for a fragment, and for a project\nwithout `ascribe.addresses`.",
+          "items": {
+            "$ref": "#/$defs/PageOldAddress"
+          },
+          "type": "array"
+        },
         "availability": {
           "description": "Its own `available`, as shown; `null` when it has none.",
           "type": [
@@ -243,6 +250,7 @@
         "builds",
         "listing",
         "permalinks",
+        "alsoAnswersAt",
         "template"
       ],
       "type": "object"
@@ -528,6 +536,24 @@
         "state",
         "personal",
         "body"
+      ],
+      "type": "object"
+    },
+    "PageOldAddress": {
+      "description": "An old address that leads to a page: This page's \"Also answers at\".",
+      "properties": {
+        "address": {
+          "description": "The address, from the host's root, as `redirects.json`'s `from`.",
+          "type": "string"
+        },
+        "entry": {
+          "description": "The `ascribe.addresses` key it comes from, as `redirects.json`'s\n`entry`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "address",
+        "entry"
       ],
       "type": "object"
     },

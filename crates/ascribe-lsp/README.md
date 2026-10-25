@@ -14,7 +14,8 @@ rename, formatting, and folding ranges; and the custom requests `ascribe/preview
 `ascribe/review/setBase`, `ascribe/review/changes`, `ascribe/review/baseFile`,
 `ascribe/context`, `ascribe/targets`, `ascribe/edit`, `ascribe/buildView`,
 `ascribe/inventory`, `ascribe/page`, `ascribe/projectEdit`, `ascribe/search`, and
-`ascribe/settings`.
+`ascribe/settings`, and the notifications `ascribe/preview/changed` and
+`ascribe/addresses`.
 
 ## The project
 
@@ -628,7 +629,8 @@ Its TypeScript type is `PageResult` in `packages/vscode/src/shapes.ts`
 ```jsonc
 {
   "about": { "path": "keys.md", "fragment": false, "title": "API keys", "type": "page",
-             "address": "/keys/", "markdownAddress": null },
+             "address": "/keys/", "markdownAddress": null,
+             "alsoAnswersAt": [{ "address": "/guides/keys/", "entry": "guides/keys.md" }] },
   "heading": { "id": "rotate-keys", "text": "Rotate keys", "range": { "start": …, "end": … } },
   "linkedFrom": [{ "uri": "file:///…/docs/install-agent.md", "path": "install-agent.md",
                    "range": { "start": …, "end": … }, "text": "See [](keys.md#rotate-keys)." }],
@@ -647,6 +649,12 @@ Its TypeScript type is `PageResult` in `packages/vscode/src/shapes.ts`
 - `address` is the page's route, from the host's root, as the site output's
   links write it, and `markdownAddress` its Markdown version's, when the
   project publishes one (`[consumer] agents = true`). A fragment has neither.
+- `alsoAnswersAt` is each old address an entry of `ascribe.addresses` leads
+  to the page, with the entry's key, as the build's `redirects.json` writes
+  them, in address order; empty for a fragment, or without the file. It's
+  what the last comparison of the addresses worked out
+  ([`ascribe/addresses`](#lost-addresses-between-checks-ascribeaddresses)), so
+  an unsaved entry counts.
 - `memos` are the memo files about the heading, or the file when there's no
   heading, or a block in it ([Memo files](#memo-files)): committed, then
   personal, each in path order, with `state` `placed` or `outdated`; a
@@ -661,6 +669,45 @@ texts, and kept for the file until the snapshot changes (`PageCache` in
 `src/page.rs`), so a cursor move on the same file only picks the heading's
 share. It answers from the current snapshot, so it includes unsaved edits.
 See [Performance](#performance) for its cost.
+
+## Lost addresses between checks: `ascribe/addresses`
+
+A notification the server sends when the project keeps its addresses
+(SPEC §7.10): what comparing them with the base's found, as `ascribe check`
+would report it, so an editor shows a lost address between checks. The
+server compares once the project loads, then after a save, a change on disk
+(`workspace/didChangeWatchedFiles`), or an edit to `ascribe.addresses`'
+buffer, 250 ms after the last of them, on a thread of its own, never as a
+page is typed: each comparison resolves every build. It sends again only when
+what it found changed.
+
+```jsonc
+{
+  "uri": "file:///…/ascribe.addresses",
+  "base": { "requested": "main", "commit": "4f2c…", "merge_base": "4f2c…" },
+  "lost": 1,
+  "diagnostics": [{ "range": …, "severity": 2, "code": "ASC255",
+                    "message": "guides/keys.md was published at /docs/guides/keys…",
+                    "data": { "slug": "address-lost", "fixes": […] } }]
+}
+```
+
+Its TypeScript type is `AddressesParams` in `packages/vscode/src/shapes.ts`
+(`schemas/lsp-addresses.schema.json`).
+
+- `uri` is `ascribe.addresses`, or `null` when the project has none, and then
+  nothing is compared: `base` is `null`, `lost` 0, and `diagnostics` empty.
+- `base` is the revision compared with, as `ascribe check` chooses it, or
+  `null` when it couldn't be read, which a diagnostic says.
+- `lost` counts `address-lost`, once for each page.
+- `diagnostics` are all at `ascribe.addresses`, with the levels of
+  `[checks]` and the baseline applied, each with its fixes in `data` as a
+  published diagnostic has them. The file's own problems as you edit it are
+  among them, and not published as the file's diagnostics.
+
+The base's addresses are listed once for each base commit and version of
+Ascribe, and kept (`src/addresses.rs`); a new commit, as after a pull, lists
+them again. The agents' hook runs no comparison.
 
 ## One edit for the whole project: `ascribe/projectEdit`
 

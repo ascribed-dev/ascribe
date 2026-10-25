@@ -28,17 +28,7 @@ impl BaseAddresses {
     /// The base as a message names it: the revision asked for, and its
     /// commit when that's something else.
     pub fn named(&self) -> String {
-        named(&self.base)
-    }
-}
-
-/// `base` as a message names it.
-fn named(base: &Base) -> String {
-    let short = &base.commit[..base.commit.len().min(12)];
-    if base.requested.starts_with(short) {
-        format!("`{}`", base.requested)
-    } else {
-        format!("`{}` ({short})", base.requested)
+        self.base.named()
     }
 }
 
