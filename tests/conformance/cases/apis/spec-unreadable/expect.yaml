@@ -1,0 +1,8 @@
+description: >-
+  A declared spec that doesn't exist is an error at its `spec`, and a link to
+  one of its operations isn't checked as well.
+spec: ["7.11", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: api-spec-unreadable, file: ascribe.toml, line: 7}

@@ -1,0 +1,7 @@
+description: >-
+  A link to a declared spec inside the project's folder with no fragment is a
+  link to the file, an asset, as a link to any file is.
+spec: ["5.2", "9.4"]
+tags: [check]
+
+diagnostics: []

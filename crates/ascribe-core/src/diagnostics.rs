@@ -797,6 +797,29 @@ pub const ADDRESSES_BASE_UNREADABLE: DiagnosticSlug = DiagnosticSlug("addresses-
 /// has and the working tree doesn't".
 pub const ADDRESSES_BUILD_GONE: DiagnosticSlug = DiagnosticSlug("addresses-build-gone");
 
+/// `ASC259`, error, file level: a content model loader rule.
+pub const MODEL_API_OUTSIDE_REPOSITORY: DiagnosticSlug =
+    DiagnosticSlug("model-api-outside-repository");
+
+/// `ASC260`, error, file level: a content model loader rule.
+pub const MODEL_API_REFERENCE: DiagnosticSlug = DiagnosticSlug("model-api-reference");
+
+/// `ASC261`, error, file level: SPEC §8.2, "APIs | A declared spec that
+/// doesn't exist, can't be read, or isn't YAML or JSON".
+pub const API_SPEC_UNREADABLE: DiagnosticSlug = DiagnosticSlug("api-spec-unreadable");
+
+/// `ASC262`, advice, file level: SPEC §8.2, "APIs | A declared spec with no
+/// operations".
+pub const API_SPEC_EMPTY: DiagnosticSlug = DiagnosticSlug("api-spec-empty");
+
+/// `ASC263`, error, file level: SPEC §8.2, "Links | Target is an operation
+/// the declared spec doesn't have".
+pub const LINK_OPERATION_MISSING: DiagnosticSlug = DiagnosticSlug("link-operation-missing");
+
+/// `ASC264`, error, file level: SPEC §8.2, "Links | Target is a declared spec
+/// outside the project's folder, with no operation".
+pub const LINK_SPEC_OUTSIDE_PROJECT: DiagnosticSlug = DiagnosticSlug("link-spec-outside-project");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -1049,6 +1072,12 @@ pub const ALL: &[DiagnosticSlug] = &[
     ANCHOR_LOST,
     ADDRESSES_BASE_UNREADABLE,
     ADDRESSES_BUILD_GONE,
+    MODEL_API_OUTSIDE_REPOSITORY,
+    MODEL_API_REFERENCE,
+    API_SPEC_UNREADABLE,
+    API_SPEC_EMPTY,
+    LINK_OPERATION_MISSING,
+    LINK_SPEC_OUTSIDE_PROJECT,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

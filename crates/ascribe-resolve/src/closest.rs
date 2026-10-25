@@ -36,6 +36,7 @@ pub struct Closest {
 /// - A heading the page lacks: the page's headings, closest id first.
 /// - A fragment: the pages that include it.
 /// - A file that isn't a page, named with the wrong case: the file.
+/// - An operation the spec lacks: the spec's operations, closest id first.
 pub fn closest_targets(
     project: &Project,
     from: &RelPath,
@@ -64,6 +65,23 @@ pub fn closest_targets(
         } if project.page_heading(path, id).is_none() => closest_headings(project, from, path, id),
         Resolution::SourceMissing { actual } => {
             closest_pages(project, from, written, fragment, actual.as_ref())
+        }
+        Resolution::Operation { api, id } => {
+            let (Some(spec), Target::Local(local)) = (project.apis().spec(api), target) else {
+                return Vec::new();
+            };
+            if spec.operation(id).is_some() {
+                return Vec::new();
+            }
+            let path = local.path.clone().unwrap_or_default();
+            crate::openapi::closest_ids(spec, id)
+                .into_iter()
+                .map(|closest| Closest {
+                    path: path.clone(),
+                    id: Some(closest.to_owned()),
+                    href: format!("{written}#{}", encode_destination(closest)),
+                })
+                .collect()
         }
         Resolution::AssetMissing(Missing::Case(actual)) => vec![Closest {
             path: actual.clone(),

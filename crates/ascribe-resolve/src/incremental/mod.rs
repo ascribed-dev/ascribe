@@ -1046,6 +1046,7 @@ impl IncrementalProject {
             project.set_nav(nav);
         }
         if let Some((model, fingerprints)) = new_model {
+            project.set_apis(crate::openapi::ApiSpecs::read(&model, &self.fs));
             project.set_model(model);
             self.fingerprints = fingerprints;
             if impact.is_some_and(|m| m >= ModelImpact::Index) {

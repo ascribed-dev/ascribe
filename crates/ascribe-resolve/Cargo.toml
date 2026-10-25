@@ -13,10 +13,10 @@ serde_yaml_ng.workspace = true
 ascribe-core.workspace = true
 ascribe-model.workspace = true
 ascribe-syntax.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
-serde_json.workspace = true
 tempfile = "3"
 ascribe-synthetic.workspace = true
 

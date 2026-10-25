@@ -1,0 +1,6 @@
+description: A declared spec that isn't YAML is an error at its `spec`.
+spec: ["7.11", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: api-spec-unreadable, file: ascribe.toml, line: 7}

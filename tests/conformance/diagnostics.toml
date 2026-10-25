@@ -4838,3 +4838,88 @@ reference = "publishing/redirects.md#what-the-check-reports"
 row = "Addresses file | A build the base has and the working tree doesn't"
 message = "the base has the build `{build}`, and ascribe.toml doesn't now, so its {count} addresses aren't compared"
 fix = "Nothing to do when the build was retired on purpose, as an older line is when it leaves the window: its addresses aren't compared, since builds are matched by name. When the build was renamed, its addresses are compared under its new name once the base has it."
+
+[[diagnostic]]
+code = "ASC259"
+slug = "model-api-outside-repository"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.11"
+reference = "content-model/checks.md#23-apisname"
+group = "apis"
+when = "An API's spec is outside the project's repository, or, with no repository, outside the folder that was opened"
+message = "the spec of API `{api}`, `{path}`, is outside the git repository the project is in"
+messages.opened = "the spec of API `{api}`, `{path}`, is outside the folder that was opened, and with no git repository around the project, a spec isn't read from outside it; open the folder that contains it"
+fix = "Give the API a `spec` inside the project's repository: a spec in another repository isn't read, so commit a copy of it, or the file your pipeline bundles. With no repository, the editor and `ascribe mcp` read a spec only inside the folder they were opened on: open the folder that contains it."
+
+[[diagnostic]]
+code = "ASC260"
+slug = "model-api-reference"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.11"
+reference = "content-model/checks.md#23-apisname"
+group = "apis"
+when = "An API's `reference` is a template with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`"
+message = "the reference of API `{api}` has no `{{operationId}}`, so every operation's address would be the same"
+messages.placeholder = "`{placeholder}` isn't a placeholder of the reference of API `{api}`; a template's are `{{operationId}}` and `{{tag}}`"
+fix = "Write the template as your renderer addresses an operation, with `{operationId}` where the operation's id goes and `{tag}` for its first tag, such as `\"/api/#/operations/{operationId}\"` for Stoplight Elements. For Redoc, write `{ renderer = \"redoc\", at = \"/api/\" }` instead."
+
+[[diagnostic]]
+code = "ASC261"
+slug = "api-spec-unreadable"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.11"
+reference = "content-model/checks.md#23-apisname"
+row = "APIs | A declared spec that doesn't exist, can't be read, or isn't YAML or JSON"
+message = "the spec of API `{api}`, `{path}`, can't be read: {reason}"
+messages.missing = "the spec of API `{api}`, `{path}`, doesn't exist"
+messages.case = "the spec of API `{api}`, `{path}`, doesn't exist; a file named `{actual}` does, and names are case-sensitive"
+fix = "Fix `spec`, which is relative to the folder ascribe.toml is in, or fix the file. A spec generated from code has to be on disk when Ascribe runs, as it does for the renderer: generate it first. Ascribe reads one file, in YAML or JSON, as the renderer is given it: for a spec split across files, point `spec` at the bundled one."
+
+[[diagnostic]]
+code = "ASC262"
+slug = "api-spec-empty"
+severity = "advice"
+level = "file"
+next = "outside"
+evidence = []
+spec = "7.11"
+reference = "content-model/checks.md#23-apisname"
+row = "APIs | A declared spec with no operations"
+message = "the spec of API `{api}`, `{path}`, has no operations, so no link can name one"
+fix = "Check that `spec` names the spec you mean, and that it has a `paths` object with operations in it. A path item that's a `$ref` isn't followed: point `spec` at the bundled spec your renderer is given."
+
+[[diagnostic]]
+code = "ASC263"
+slug = "link-operation-missing"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "5.2"
+reference = "writing/inline.md#links"
+row = "Links | Target is an operation the declared spec doesn't have"
+message = "`{path}` has no operation `{id}`"
+messages.closest = "`{path}` has no operation `{id}`; the closest is `{closest}`"
+fix = "Fix the `#` part, the operation's `operationId` as the spec writes it, or link to the operation that took its place. A spec generated from code can change an id when the code changes: setting ids in the code keeps them, and the links to them."
+
+[[diagnostic]]
+code = "ASC264"
+slug = "link-spec-outside-project"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "9.4"
+reference = "writing/inline.md#links"
+row = "Links | Target is a declared spec outside the project's folder, with no operation"
+message = "`{path}` is the spec of API `{api}`, outside the project's folder, which no output can copy; link to one of its operations, or to the published reference"
+fix = "Add `#` and an operation's `operationId` to link to that operation in the published reference, or link to the reference's page itself. A spec outside the project's folder is read for its operations, and never copied into the outputs."

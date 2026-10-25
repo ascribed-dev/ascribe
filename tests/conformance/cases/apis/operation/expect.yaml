@@ -1,0 +1,8 @@
+description: >-
+  A link to a declared spec with a fragment is a link to an operation: the
+  fragment, percent-decoded, is its `operationId`, which may hold `/` and
+  spaces.
+spec: ["5.2", "7.11"]
+tags: [check]
+
+diagnostics: []

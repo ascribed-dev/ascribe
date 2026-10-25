@@ -395,6 +395,17 @@ pub enum LinkTarget {
         /// The part after `#`, kept after the rewritten reference.
         fragment: Option<String>,
     },
+    /// An operation of a declared API (`[apis.<name>]`), in its published
+    /// reference.
+    Operation {
+        /// The API's name.
+        api: String,
+        /// The operation's `operationId`.
+        operation_id: String,
+        /// The operation's address: the renderer's, joined to `[consumer]
+        /// base-path` unless it's absolute.
+        address: String,
+    },
     /// The link can't be resolved: its target is missing, is a fragment,
     /// names an id the page doesn't have, or is removed or dropped by the
     /// build. The reason is a problem, in the file's problems or the page's.

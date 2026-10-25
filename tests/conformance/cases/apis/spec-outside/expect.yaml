@@ -1,0 +1,9 @@
+description: >-
+  A declared spec may be outside the project's folder, in its repository,
+  and a link to one of its operations reaches it there: the one link that
+  may leave the project's folder. `_shared/openapi.yaml` sits beside the case
+  directory.
+spec: ["5.2", "7.11", "9.4"]
+tags: [check]
+
+diagnostics: []
