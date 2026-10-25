@@ -881,6 +881,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `checks/diagnostics/directives.md` | Diagnostics: directives | reference |
 | `checks/diagnostics/output-checks.md` | Diagnostics: content checks of outputs and the site | reference |
 | `checks/diagnostics/pages.md` | Diagnostics: links, pages, and sources | reference |
+| `checks/diagnostics/project-files.md` | Diagnostics: the addresses file and API specs | reference |
 | `checks/external-links.md` | Check external links | how-to |
 | `checks/report-command.md` | `ascribe report` | reference |
 | `checks/report.md` | The project report | how-to |
@@ -936,6 +937,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `navigation/index.md` | Navigation | reference |
 | `navigation/order.md` | Put your pages in order | how-to |
 | `navigation/site-list.md` | Move a site's own list to the navigation | how-to |
+| `openapi/index.md` | Link to your API reference | how-to |
 | `permalinks/command.md` | `ascribe permalinks` | reference |
 | `permalinks/in-your-product.md` | Show the docs in your product | how-to |
 | `permalinks/index.md` | Permalinks | how-to |

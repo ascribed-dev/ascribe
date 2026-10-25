@@ -65,6 +65,8 @@
     "examples/astro-site": {
       // The docs' scenes of the site and the report, which scripts/docs-site/screenshots.ts runs.
       "entry": ["scripts/screenshot.ts"],
+      // test/e2e/openapi.test.ts writes a page that imports Stoplight Elements into a copy of the site.
+      "ignoreDependencies": ["@stoplight/elements"],
     },
     "packages/vscode": {
       // The site's editor picture, which scripts/docs-site/screenshots.ts runs.

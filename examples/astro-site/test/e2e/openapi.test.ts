@@ -52,19 +52,20 @@ async function follow(
 }
 
 describe("a link to an operation", () => {
-  let origin: string;
-  let stop: () => Promise<void>;
+  let server: Awaited<ReturnType<typeof servePreview>> | undefined;
 
   beforeAll(async () => {
     await buildSite();
-    ({ origin, stop } = await servePreview());
+    server = await servePreview();
   });
 
   afterAll(async () => {
-    await stop();
+    await server?.stop();
   });
 
   it("lands on the operation in Redoc, under a tag with a space too", async () => {
+    if (server === undefined) throw new Error("the preview server didn't start");
+    const { origin } = server;
     const browser = await launchChromium();
     try {
       const page = await browser.newPage();
@@ -122,7 +123,8 @@ import spec from "../../api/openapi.yaml?url";
 `,
     );
     await buildSite(root);
-    const { origin, stop } = await servePreview(root);
+    const server = await servePreview(root);
+    const { origin } = server;
     const browser = await launchChromium();
     try {
       const page = await browser.newPage();
@@ -135,7 +137,7 @@ import spec from "../../api/openapi.yaml?url";
       expect(await page.locator("h1").count()).toBe(1);
     } finally {
       await browser.close();
-      await stop();
+      await server.stop();
     }
   });
 });
