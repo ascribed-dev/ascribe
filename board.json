@@ -6057,8 +6057,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/930"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Redirects 3: record a settings change and forward every address it moved"
     },
     {
@@ -6076,8 +6079,11 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/932"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Redirects 4: show lost addresses between checks, and a page's old addresses in This page"
     },
     {
@@ -6119,7 +6125,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/925"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "ascribe_resolve takes emit, and the agents' rules say when to ask for the site form"
     },
     {
@@ -6158,8 +6164,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/928"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "OpenAPI 2: link an operation with no id by its method and path"
     },
     {
@@ -6195,8 +6204,11 @@
         "documentation",
         "question"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/929"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "OpenAPI 4: decide how a JSON example names its operation, from a validator spike"
     },
     {
@@ -6253,6 +6265,20 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "OpenAPI 7: put an operation in a page with @operation"
+    },
+    {
+      "content": {
+        "body": "## Ascribe report\n\n0 errors, 0 warnings, 1 advice.\n\n### External links\n\nChecked 35 addresses: asked about 2, and reused 33 answers, the oldest from 22 October.\n\nNone is broken or moved.\n\n### Agents\n\nThe delivery spec's checks on `https://ascribed-dev.com/docs/`: 24 pass, 3 warn, 1 skip.\n\n28 checks: 24 passing, 3 failing, 1 of them failing since 24 October; 1 that failed on 24 October no longer fails: `llms-txt-links-resolve`.\n\nTo change:\n\n- [ASC171] the site passes the delivery spec's `llms-txt-links-resolve` check with a warning, which what Ascribe writes should pass without one: 49/50 same-origin sampled links resolve (98%); 1 broken; 1 failed to fetch. Report it at https://github.com/ascribed-dev/ascribe/issues\n\nAlso failing, about the pages: `page-size-html`, `embedded-data-serialization`. `ascribe check` reports what to change in them.\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/40187078172)\n",
+        "number": 933,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs report: links and the published site",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/933"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDWask",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs report: links and the published site"
     }
   ]
 }
