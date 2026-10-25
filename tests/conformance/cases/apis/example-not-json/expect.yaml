@@ -1,0 +1,12 @@
+description: >-
+  A marked block whose code isn't JSON is an error where reading it stopped,
+  and a marked block that isn't a `json` block is an error at its marker.
+  The marker is read beside the info string's other attributes, in a block
+  inside a list too.
+spec: ["7.11", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: example-not-json, file: index.md, line: 10, column: 1}
+  - {slug: example-not-json, file: index.md, line: 15, column: 9}
+  - {slug: example-not-json, file: index.md, line: 24, column: 21}

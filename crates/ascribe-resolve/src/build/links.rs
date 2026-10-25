@@ -66,7 +66,8 @@ impl<'p> Links<'_, 'p> {
         let resolutions = project.resolutions(&index.path);
         let mut links = Vec::new();
         for (at, reference) in index.references.iter().enumerate() {
-            if !ranges.iter().any(|r| r.contains_span(reference.span)) {
+            // An example's marker links nothing in the built page.
+            if reference.example || !ranges.iter().any(|r| r.contains_span(reference.span)) {
                 continue;
             }
             let Some(resolution) = resolutions.get(at) else {

@@ -115,7 +115,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-267 in all. By severity: 58 advice, 182 error, 27 warning. By level: 237 file, 30 page. By kind of next step: 57 choose, 22 fix, 11 outside, 12 review, 165 write.
+271 in all. By severity: 59 advice, 185 error, 27 warning. By level: 241 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 168 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -386,6 +386,10 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC273` | `addresses-soft-404` | advice | write | {count} addresses are forwarded to {value}, {what}, so a reader who followed a link to one of them lands on a page without what they were looking for |
 | `ASC274` | `link-operation-form-unsupported` | error | write | `#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is a template, which has no address for it; a link by method and path needs `renderer = "redoc"` |
 | `ASC275` | `link-operation-by-path` | advice | fix | `#{operation}` names the operation `{id}` of `{path}` by its method and path; link to it by its id, `#{id}` |
+| `ASC276` | `example-schema-mismatch` | error | write | {found}; {body} says {expected} |
+| `ASC277` | `example-not-json` | error | write | the example of {body} isn't JSON: {reason} |
+| `ASC278` | `example-body-missing` | error | write | `{operation}` has no request body in `{path}` |
+| `ASC279` | `example-schema-unsupported` | advice | outside | the schema of {body} has a pattern the validator can't read, `{pattern}`, so it's left out, and the rest of the schema is checked |
 
 ## The VS Code extension
 

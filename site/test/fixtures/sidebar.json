@@ -314,6 +314,10 @@
         "label": "Link to your API reference"
       },
       {
+        "href": "/docs/openapi/examples/",
+        "label": "Check a JSON example against its schema"
+      },
+      {
         "href": "/docs/openapi/no-id/",
         "label": "Link to an operation with no id"
       }

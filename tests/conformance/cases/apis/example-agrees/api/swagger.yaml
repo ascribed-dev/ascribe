@@ -1,0 +1,25 @@
+swagger: "2.0"
+info: { title: Users, version: "1" }
+consumes: [application/json]
+produces: [application/json, application/vnd.users+json]
+paths:
+  /users:
+    post:
+      operationId: createUser
+      parameters:
+        - in: body
+          name: user
+          schema: { $ref: "#/definitions/User" }
+      responses:
+        201:
+          description: Created
+          schema: { $ref: "#/definitions/User" }
+definitions:
+  User:
+    type: object
+    required: [id, name]
+    properties:
+      id: { type: string, readOnly: true }
+      name: { type: string }
+      nickname: { type: string, x-nullable: true }
+      age: { type: integer, format: int32, minimum: 0 }

@@ -83,6 +83,7 @@ pub mod fs;
 mod glossary;
 pub mod incremental;
 mod index;
+pub mod json_schema;
 mod layout;
 mod links;
 pub mod llms;
@@ -123,9 +124,9 @@ pub use incremental::{
     Snapshot, Stats, Version,
 };
 pub use index::{
-    AvailabilityMarker, ExplicitId, FileIndex, FileKind, Heading, Include, Local, Mention,
-    MentionKind, PhrasePlace, PhraseUse, RefKind, Reference, Target, TermMark, heading_text,
-    index_file,
+    AvailabilityMarker, ExampleMarker, ExampleOf, ExplicitId, FileIndex, FileKind, Heading,
+    Include, Local, Mention, MentionKind, PhrasePlace, PhraseUse, RefKind, Reference, Target,
+    TermMark, heading_text, index_file,
 };
 pub use layout::Layout;
 pub use links::{encode_destination, link_path, named_headings};

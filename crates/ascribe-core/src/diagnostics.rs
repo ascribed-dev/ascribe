@@ -857,6 +857,22 @@ pub const LINK_OPERATION_FORM_UNSUPPORTED: DiagnosticSlug =
 /// that has an id, by its method and path".
 pub const LINK_OPERATION_BY_PATH: DiagnosticSlug = DiagnosticSlug("link-operation-by-path");
 
+/// `ASC276`, error, file level: SPEC §8.2, "Examples | A marked example
+/// that disagrees with its body's schema".
+pub const EXAMPLE_SCHEMA_MISMATCH: DiagnosticSlug = DiagnosticSlug("example-schema-mismatch");
+
+/// `ASC277`, error, file level: SPEC §8.2, "Examples | A marked example
+/// that isn't JSON, or isn't a `json` block".
+pub const EXAMPLE_NOT_JSON: DiagnosticSlug = DiagnosticSlug("example-not-json");
+
+/// `ASC278`, error, file level: SPEC §8.2, "Examples | A marked example
+/// whose operation has no body it names".
+pub const EXAMPLE_BODY_MISSING: DiagnosticSlug = DiagnosticSlug("example-body-missing");
+
+/// `ASC279`, advice, file level: SPEC §8.2, "Examples | A marked example
+/// whose schema can't all be checked".
+pub const EXAMPLE_SCHEMA_UNSUPPORTED: DiagnosticSlug = DiagnosticSlug("example-schema-unsupported");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -1126,6 +1142,10 @@ pub const ALL: &[DiagnosticSlug] = &[
     ADDRESSES_SOFT_404,
     LINK_OPERATION_FORM_UNSUPPORTED,
     LINK_OPERATION_BY_PATH,
+    EXAMPLE_SCHEMA_MISMATCH,
+    EXAMPLE_NOT_JSON,
+    EXAMPLE_BODY_MISSING,
+    EXAMPLE_SCHEMA_UNSUPPORTED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

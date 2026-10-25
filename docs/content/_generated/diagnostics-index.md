@@ -268,3 +268,7 @@
 | [ASC273](../checks/diagnostics/project-files.md#ASC273) | `addresses-soft-404` | Advice | File | write |
 | [ASC274](../checks/diagnostics/pages.md#ASC274) | `link-operation-form-unsupported` | Error | File | write |
 | [ASC275](../checks/diagnostics/pages.md#ASC275) | `link-operation-by-path` | Advice | File | fix |
+| [ASC276](../checks/diagnostics/project-files.md#ASC276) | `example-schema-mismatch` | Error | File | write |
+| [ASC277](../checks/diagnostics/project-files.md#ASC277) | `example-not-json` | Error | File | write |
+| [ASC278](../checks/diagnostics/project-files.md#ASC278) | `example-body-missing` | Error | File | write |
+| [ASC279](../checks/diagnostics/project-files.md#ASC279) | `example-schema-unsupported` | Advice | File | outside |

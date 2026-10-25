@@ -1,0 +1,40 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "Users", "version": "1" },
+  "paths": {
+    "/users/{id}": {
+      "put": {
+        "operationId": "replaceUser",
+        "requestBody": { "$ref": "#/components/requestBodies/User" },
+        "responses": {
+          "200": { "$ref": "#/components/responses/User" },
+          "204": { "description": "Nothing" }
+        }
+      }
+    }
+  },
+  "components": {
+    "requestBodies": {
+      "User": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User Record" } } } }
+    },
+    "responses": {
+      "User": {
+        "description": "The user",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User Record" } } }
+      }
+    },
+    "schemas": {
+      "User Record": {
+        "type": "object",
+        "required": ["name", "password"],
+        "properties": {
+          "name": { "type": "string" },
+          "password": { "type": "string", "format": "password", "writeOnly": true },
+          "manager": { "$ref": "#/components/schemas/User Record", "description": "Ignored beside a $ref" },
+          "team": { "nullable": true, "allOf": [{ "type": "object" }] },
+          "role": { "type": "string", "enum": ["admin", "member"], "nullable": true }
+        }
+      }
+    }
+  }
+}

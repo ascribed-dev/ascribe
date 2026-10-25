@@ -1,0 +1,12 @@
+description: >-
+  A marked example that agrees with its body's schema passes, in Swagger 2.0,
+  OpenAPI 3.0, and OpenAPI 3.1. 2.0's and 3.0's schemas are read as draft 4,
+  with `nullable` and `x-nullable` allowing `null` and a `$ref`'s siblings
+  ignored; a `readOnly` property isn't required of a request, nor a
+  `writeOnly` one of a response; OpenAPI's own formats aren't asserted; and
+  references to bodies, responses, and schemas whose names hold spaces are
+  followed.
+spec: ["7.11"]
+tags: [check]
+
+diagnostics: []

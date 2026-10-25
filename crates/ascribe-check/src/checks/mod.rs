@@ -61,6 +61,10 @@ struct Ctx<'a> {
     /// Each mark in the file that says something, with where it applies:
     /// the whole file for the page's `available` key.
     mark_scopes: Vec<(Span, Span)>,
+    /// Whether a code block's info string looks marked as an example of an
+    /// operation's body, so the file's examples are checked once its blocks
+    /// are walked.
+    marked_examples: bool,
     issues: Vec<Issue>,
 }
 
@@ -115,11 +119,15 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
         first_paragraph: content::first_paragraph(&file.text, &doc.blocks),
         page_type: None,
         mark_scopes: Vec::new(),
+        marked_examples: false,
         issues: doc.issues.clone(),
     };
     cx.check_frontmatter(doc.frontmatter.as_ref());
     cx.collect_mark_scopes(&doc.blocks);
     cx.blocks(&doc.blocks);
+    if cx.marked_examples {
+        cx.check_marked_examples();
+    }
     cx.check_template_body(&doc.blocks);
     cx.parser_fixes();
     // A stable sort keeps the parser's issues before a check's at one place.
@@ -212,7 +220,11 @@ impl Ctx<'_> {
                         self.blocks(&arm.children);
                     }
                 }
-                BlockKind::CodeBlock(code) => self.check_code_language(block, code),
+                BlockKind::CodeBlock(code) => {
+                    self.check_code_language(block, code);
+                    self.marked_examples |=
+                        code.info.contains("request=\"") || code.info.contains("response=\"");
+                }
                 BlockKind::HtmlBlock(html) => self.check_html_block(blocks, i, html),
                 BlockKind::ThematicBreak | BlockKind::End(_) | BlockKind::Title(_) => {}
             }

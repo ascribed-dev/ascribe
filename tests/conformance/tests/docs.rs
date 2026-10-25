@@ -1239,7 +1239,7 @@ fn summary(condition: Option<&str>) -> String {
 /// The reference pages a diagnostic's entry can send its reader on to, and
 /// what the entry calls each: a page, from the content root, and its parts,
 /// as `content-model/checks.md`.
-const REFERENCES: [(&str, &str); 8] = [
+const REFERENCES: [(&str, &str); 9] = [
     ("writing/directives.md", "directive reference"),
     ("writing/syntax.md", "directive syntax reference"),
     ("writing/frontmatter.md", "frontmatter reference"),
@@ -1248,6 +1248,7 @@ const REFERENCES: [(&str, &str); 8] = [
     ("content-model/index.md", "`ascribe.toml` reference"),
     ("navigation/index.md", "navigation reference"),
     ("publishing/redirects.md", "guide to keeping addresses"),
+    ("openapi/examples.md", "guide to checked examples"),
 ];
 
 /// The files of the reference pages, relative to `docs/content/`, each with

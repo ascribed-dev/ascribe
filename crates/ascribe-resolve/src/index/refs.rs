@@ -44,6 +44,10 @@ pub struct Reference {
     pub text_empty: bool,
     /// What the destination names.
     pub target: Target,
+    /// Whether it's the link of a code block's `request` or `response`
+    /// marker ([`super::ExampleMarker`]): it's resolved and checked as a link
+    /// is, and a build writes nothing for it.
+    pub example: bool,
 }
 
 /// What a destination names.
@@ -145,6 +149,7 @@ pub(crate) fn collect_references(
             form,
             text_empty,
             target: target_of(kind, destination, phrases, written_in, model),
+            example: false,
         });
     });
 }

@@ -14,6 +14,9 @@ ascribe-core.workspace = true
 ascribe-model.workspace = true
 ascribe-syntax.workspace = true
 serde_json.workspace = true
+# The JSON Schema validator behind `json_schema`, the one seam that imports it
+# (decision #920).
+boon = "0.6"
 
 [dev-dependencies]
 proptest.workspace = true

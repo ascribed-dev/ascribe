@@ -18,6 +18,7 @@
 //!   phrases included, and every **`@available`** directive;
 //! - every **`@snippet`**, with its address read (SPEC §4.8).
 
+mod examples;
 mod frontmatter;
 mod headings;
 mod mentions;
@@ -36,6 +37,7 @@ use ascribe_syntax::{
 
 use crate::snippet::SnippetUse;
 
+pub use examples::{ExampleMarker, ExampleOf};
 pub(crate) use frontmatter::key_line as frontmatter_key;
 pub use headings::{ExplicitId, Heading, TermMark, plain_text as heading_text};
 pub use mentions::{Mention, MentionKind};
@@ -85,6 +87,9 @@ pub struct FileIndex {
     pub availability: Vec<AvailabilityMarker>,
     /// Every `@snippet` directive, in document order.
     pub snippets: Vec<SnippetUse>,
+    /// Every code block marked as an example of an operation's request or
+    /// response, in document order. Each one's link is in `references`.
+    pub examples: Vec<ExampleMarker>,
 }
 
 impl FileIndex {
@@ -303,6 +308,7 @@ pub(crate) fn index_parsed(
     let mut phrases = Vec::new();
     let mut availability = Vec::new();
     let mut snippets = Vec::new();
+    let mut examples = Vec::new();
 
     let mut visit = |block: &Block| {
         for inlines in walk::own_inlines(block) {
@@ -321,6 +327,15 @@ pub(crate) fn index_parsed(
                 for phrase in code.phrases.iter().flatten() {
                     phrases.push(phrase_use(phrase, PhrasePlace::Code, model));
                 }
+                examples::collect(
+                    code,
+                    block.span,
+                    text,
+                    path,
+                    model,
+                    &mut references,
+                    &mut examples,
+                );
             }
             BlockKind::Directive(line) if line.name == "include" => {
                 includes.push(include_of(line, path));
@@ -375,6 +390,7 @@ pub(crate) fn index_parsed(
         phrases,
         availability,
         snippets,
+        examples,
     }
 }
 

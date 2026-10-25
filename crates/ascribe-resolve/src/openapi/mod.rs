@@ -1,15 +1,20 @@
 //! The OpenAPI specs a project declares (`[apis.<name>]`), read loosely: each
 //! operation's method, path, `operationId`, `summary`, first tag, and
 //! `deprecated`, from `paths`, the same way in Swagger 2.0 and OpenAPI 3.0
-//! to 3.2, since `paths` hasn't changed shape across them. Everything else
-//! is ignored, and nothing is validated: a spec a strict reader rejects has
-//! operations as good as any.
+//! to 3.2, since `paths` hasn't changed shape across them, and its request
+//! and response bodies ([`schemas`]), which a marked JSON example is checked
+//! against ([`examples`]). Everything else is ignored, and nothing is
+//! validated: a spec a strict reader rejects has operations as good as any.
 //!
 //! Each spec is read once per project load, through [`FileSystem`], from the
 //! project root: `read_file` reaches a spec outside the project's folder,
 //! which the content model has already held to the project's repository.
 
+pub mod examples;
+pub mod schemas;
+
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
 use ascribe_core::{Applicability, Fix, Issue, Location, RelPath, Span, TextEdit, diagnostics};
 use ascribe_model::{Api, ApiReference, ContentModel, edit_distance};
@@ -18,6 +23,7 @@ use serde_yaml_ng::Value;
 use crate::closest::closest_fixes;
 use crate::fs::{FileSystem, Probe};
 use crate::index::Target;
+use crate::json_schema::token;
 use crate::links::encode_destination;
 use crate::project::{Project, Resolution};
 
@@ -42,6 +48,11 @@ pub struct Operation {
     pub tag: Option<String>,
     /// Whether the spec marks it `deprecated`.
     pub deprecated: bool,
+    /// The statuses of its responses, as the spec writes them, with a body
+    /// or not.
+    pub responses: Vec<String>,
+    /// Its request body and responses, by media type.
+    pub bodies: Vec<schemas::Body>,
 }
 
 /// What a spec holds, as far as it was read.
@@ -52,6 +63,8 @@ pub struct Spec {
     /// The parts of `paths` that weren't read, each with why: a path item
     /// that's a `$ref` to another file, or one that isn't a mapping.
     pub unread: Vec<String>,
+    /// The whole spec as JSON, where its bodies' schemas are.
+    pub document: Arc<serde_json::Value>,
 }
 
 impl Operation {
@@ -147,8 +160,10 @@ pub fn read_spec(text: &str, json: bool) -> Result<Spec, String> {
 /// What a parsed document holds: its `paths`, when it's a mapping that has
 /// them.
 fn spec_of(document: &Value) -> Spec {
+    let json = schemas::json_of(document);
     let mut spec = Spec::default();
     let Some(Value::Mapping(paths)) = document.get("paths") else {
+        spec.document = Arc::new(json);
         return spec;
     };
     for (path, item) in paths {
@@ -169,18 +184,26 @@ fn spec_of(document: &Value) -> Spec {
             }
             continue;
         }
+        let item_pointer = format!("/paths/{}", token(path));
         let operations = METHODS
             .iter()
-            .filter_map(|m| item.get(*m).map(|o| ((*m).to_owned(), o)))
+            .filter_map(|m| {
+                let pointer = format!("{item_pointer}/{m}");
+                item.get(*m).map(|o| ((*m).to_owned(), o, pointer))
+            })
             // OpenAPI 3.2's other methods, by their names as written.
             .chain(
                 item.get("additionalOperations")
                     .and_then(Value::as_mapping)
                     .into_iter()
                     .flatten()
-                    .filter_map(|(m, o)| Some((m.as_str()?.to_lowercase(), o))),
+                    .filter_map(|(m, o)| {
+                        let m = m.as_str()?;
+                        let pointer = format!("{item_pointer}/additionalOperations/{}", token(m));
+                        Some((m.to_lowercase(), o, pointer))
+                    }),
             );
-        for (method, operation) in operations {
+        for (method, operation, pointer) in operations {
             let Value::Mapping(operation) = operation else {
                 continue;
             };
@@ -205,9 +228,12 @@ fn spec_of(document: &Value) -> Spec {
                     .get("deprecated")
                     .and_then(Value::as_bool)
                     .unwrap_or(false),
+                responses: schemas::statuses(&json, &pointer),
+                bodies: schemas::bodies(&json, &item_pointer, &pointer),
             });
         }
     }
+    spec.document = Arc::new(json);
     spec
 }
 

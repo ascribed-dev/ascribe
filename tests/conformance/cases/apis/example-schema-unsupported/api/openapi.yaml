@@ -1,0 +1,21 @@
+openapi: 3.1.0
+info: { title: Users, version: "1" }
+paths:
+  /users:
+    post:
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                handle: { type: string, pattern: "^(?<!_)[a-z]+$" }
+                age: { type: integer }
+  /teams:
+    post:
+      operationId: createTeam
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "teams.yaml#/Team" }
