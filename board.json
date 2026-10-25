@@ -6037,7 +6037,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Redirects 2: fix every lost address, record git's renames, serve retired addresses, and tell agents"
     },
     {
@@ -6095,7 +6095,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/916"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "ascribe resolve --emit site: write a page as the site output does"
     },
     {
@@ -6115,6 +6115,135 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "ascribe_resolve takes emit, and the agents' rules say when to ask for the site form"
+    },
+    {
+      "content": {
+        "body": "Phase 1 of [OpenAPI](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/openapi/README.md). The plan is [phase-1-thread.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/openapi/phase-1-thread.md); read it and the README's decisions and \"Rules for every phase\" before starting. One pull request. **Needs nothing.**\n\n**What to build:** `[apis.<name>]` with `spec` (a spec outside the project's folder allowed in the same git repository) and `reference` (`{ renderer = \"redoc\", at = \"…\" }` or a template of `{operationId}` and `{tag}`); a loose reader of each operation's method, path, `operationId`, `summary`, tag, and `deprecated` across Swagger 2.0 and OpenAPI 3.0 to 3.2; an operation link as a new `Resolution` and `LinkTarget`, with the fragment percent-decoded; `link-operation-missing`, `link-spec-outside-project`, and `api-spec-unreadable`; SPEC §9.4's exception for a link reaching a declared spec; the address in the site and plain outputs and an `operation` target in the JSON output. In `examples/astro-site`: `api/openapi.yaml`, Redoc 3 on an Astro page from a pinned `devDependency`, and a guide linking two operations. The contracts and decisions, the new docs section `docs/content/openapi/`, and `changes/language/openapi-links.md`.\n\n**Done when:**\n- The goal's commands run in a test.\n- The end-to-end tests land on each linked operation in Redoc, and on the template's in Stoplight Elements.\n- The conformance cases the phase file lists pass, including ids with `/` and spaces and a spec outside the folder.\n- The reader's run over the spikes' sample is recorded in the pull request.\n- `node scripts/compare/outputs.ts --base main` changes nothing outside `examples/astro-site` and the new cases.\n\n**Stop and report** if Redoc's address doesn't land from the built site as it did in the spike: the profile changes before anything is built on it.\n",
+        "number": 917,
+        "repository": "ascribed-dev/ascribe",
+        "title": "OpenAPI 1: check a link to an operation, and open it in Redoc",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/917"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDTpSs",
+      "labels": [
+        "enhancement",
+        "rust",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "OpenAPI 1: check a link to an operation, and open it in Redoc"
+    },
+    {
+      "content": {
+        "body": "Phase 2 of [OpenAPI](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/openapi/README.md). The plan is [phase-2-no-id.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/openapi/phase-2-no-id.md); read it and the README's decisions and \"Rules for every phase\" before starting. One pull request. **Needs #917.**\n\n**What to build:** a fragment of a lowercase method, `/`, and the path as the spec writes it links an operation with no id; an id that also matches wins. The Redoc profile writes Redoc 3's `<at>#paths/<pointer>/<method>`; the docs say this form needs Redoc 3 (the README's decision 2). Under a template it's `link-operation-form-unsupported`, an error; to an operation that has an id it's `link-operation-by-path`, advice with a safe fix writing the id. SPEC §5.2's second form, its decision, the docs, and `changes/language/openapi-no-id.md`.\n\n**Done when:**\n- The goal's link passes in a conformance case and an emit test.\n- The end-to-end test lands on the operation with no id in Redoc 3.\n",
+        "number": 918,
+        "repository": "ascribed-dev/ascribe",
+        "title": "OpenAPI 2: link an operation with no id by its method and path",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/918"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDTpTQ",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "OpenAPI 2: link an operation with no id by its method and path"
+    },
+    {
+      "content": {
+        "body": "Phase 3 of [OpenAPI](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/openapi/README.md). The plan is [phase-3-editor.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/openapi/phase-3-editor.md); read it and the README's decisions and \"Rules for every phase\" before starting. One pull request. **Needs #918.**\n\n**What to build:** completion after `<spec>#` of operations matched on id, method, path, or summary; hover with method, path, summary, tag, and deprecation; go to definition into the spec at the operation; the spec re-read when it changes, including outside the folder; a safe fix for a link whose operation was renamed, when exactly one operation matches its method and path; `link-operation-deprecated`, advice; `ascribe link` and `ascribe_link` answering with the operation, with a decision for the tool (decision 56). The docs and the `changes/` entries the phase file names.\n\n**Done when:**\n- Completion, hover, definition, and the fix pass in the language server's tests.\n- `ascribe link` and `ascribe_link` answer with the operation, in their tests.\n",
+        "number": 919,
+        "repository": "ascribed-dev/ascribe",
+        "title": "OpenAPI 3: operations in the editor, and ascribe_link for agents",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/919"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDTpTo",
+      "labels": [
+        "enhancement",
+        "rust",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "OpenAPI 3: operations in the editor, and ascribe_link for agents"
+    },
+    {
+      "content": {
+        "body": "Phase 4 of [OpenAPI](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/openapi/README.md). The plan is [phase-4-example-decision.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/openapi/phase-4-example-decision.md); read it and the README's decisions and \"Rules for every phase\" before starting. A spike, then a decision by the maintainer; no shipped code. **Needs #917.**\n\n**What to do:** in a scratch crate outside the workspace, measure the `jsonschema` crate (release binary size and clean build time against `main`, licence, every release target), a way to put a validator's instance path at a line and column in the block (`serde_json` keeps no positions), translating 3.0 and 2.0 schemas into JSON Schema on the corpus, and resolving `$ref`s into the same file's components. Then settle the marker: the recommendation is an info-string attribute whose value is an operation link (```` ```json request=\"../api/openapi.yaml#createUser\" ````, `response=\"…#createUser 201\"`), and the diagnostics' names and levels.\n\n**Done when:** a decision file in `project-docs/decisions/`, numbered by this issue, records the marker, what's checked, the dependency, and the spike's numbers. The pull request changes only `project-docs/`.\n",
+        "number": 920,
+        "repository": "ascribed-dev/ascribe",
+        "title": "OpenAPI 4: decide how a JSON example names its operation, from a validator spike",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/920"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDTpUQ",
+      "labels": [
+        "documentation",
+        "question"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "OpenAPI 4: decide how a JSON example names its operation, from a validator spike"
+    },
+    {
+      "content": {
+        "body": "Phase 5 of [OpenAPI](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/openapi/README.md). The plan is [phase-5-examples.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/openapi/phase-5-examples.md); read it and the README's decisions and \"Rules for every phase\" before starting. One pull request. **Needs #920's decision, and #918.**\n\n**What to build:** the marker as #920 settled it, parsed with the info string's attributes and resolved as a link; the reader's request bodies, responses, and same-file components, with 3.0 and 2.0 schemas translated; each marked block validated with positions, every disagreement reported at its place (or at the block, if #920 found positions can't be had). SPEC's change, the diagnostics and their decisions, the docs, and `changes/language/openapi-examples.md`.\n\n**Done when:**\n- The goal's check passes in a conformance case, with the disagreement at its place.\n- An example that agrees passes, in 2.0, 3.0, and 3.1 specs.\n",
+        "number": 921,
+        "repository": "ascribed-dev/ascribe",
+        "title": "OpenAPI 5: check a marked JSON example against its operation's schema",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/921"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDTpU8",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "OpenAPI 5: check a marked JSON example against its operation's schema"
+    },
+    {
+      "content": {
+        "body": "Phase 6 of [OpenAPI](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/openapi/README.md). The plan is [phase-6-coverage.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/openapi/phase-6-coverage.md); read it and the README's decisions and \"Rules for every phase\" before starting. One pull request. **Needs #918.**\n\n**What to build:** `api-operation-unreferenced`, advice in area `project`, one per operation no page links to by id or by method and path (deprecated operations left out; checked examples count once phase 5 is built); the inventory's per-API counts of operations, operations linked, and operations with a checked example. Decisions, the docs, and `changes/language/openapi-coverage.md`.\n\n**Done when:** the goal's commands run in tests, with conformance cases for linked by id, by method and path, unlinked, and deprecated.\n",
+        "number": 922,
+        "repository": "ascribed-dev/ascribe",
+        "title": "OpenAPI 6: report operations no page links to",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/922"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDTpVI",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "OpenAPI 6: report operations no page links to"
+    },
+    {
+      "content": {
+        "body": "Phase 7 of [OpenAPI](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/openapi/README.md). The plan is [phase-7-embed.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/openapi/phase-7-embed.md); read it and the README's decisions and \"Rules for every phase\" before starting. One pull request. **Needs #918.**\n\n**What to build:** `@operation: <operation link>`, a line directive checked as a link is; an `<ascribe-operation>` element with the method, path, summary, and deprecation, linked to the operation's address, added to the elements' contract and passed by both renderers through `tests/render/`; the plain output's line and the JSON output's block. No schema, no parameters. SPEC, the contract, their decisions, the docs, and `changes/language/openapi-embed.md`.\n\n**Done when:** the goal's directive passes in a conformance case, and its element's fixtures pass in both renderers.\n",
+        "number": 923,
+        "repository": "ascribed-dev/ascribe",
+        "title": "OpenAPI 7: put an operation in a page with @operation",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/923"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDTpV4",
+      "labels": [
+        "enhancement",
+        "rust",
+        "javascript"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "OpenAPI 7: put an operation in a page with @operation"
     }
   ]
 }
