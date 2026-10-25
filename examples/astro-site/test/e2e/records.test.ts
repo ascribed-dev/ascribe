@@ -1,7 +1,8 @@
 // The page records, `_ascribe/pages.json`, as the site serves them: each
 // page's head from `Head.astro`, the site's one sitemap and `robots.txt`, and
 // the headers of each page's Markdown version (`_ascribe/headers.json`), in
-// `_headers` and from `astro dev`. Each test works on a copy of the site under
+// `_headers` and from `astro dev`, and the moves `ascribe.addresses` records, in
+// `_redirects`. Each test works on a copy of the site under
 // `.e2e-tmp/`, with rules of `[listing]` at every level: a folder whose page
 // isn't listed, and one whose page isn't quoted.
 import { existsSync } from "node:fs";
@@ -41,14 +42,14 @@ const NESTED = "/docs/guides/teams/share-a-loom";
 /**
  * Lists the docs' pages by a rule at every level of `[listing]`, with no
  * change to a page: the reference isn't listed, and the guides aren't quoted.
- * Gives the docs a line for every crawler too, and their headers in Netlify's
- * format.
+ * Gives the docs a line for every crawler too, and their host's files in
+ * Netlify's format.
  */
 async function withUnlisted(root: string): Promise<string> {
   await edit(
     path.join(root, "ascribe.toml"),
     (text) =>
-      `${text.replace("agents = true\n", 'agents = true\nheaders = "netlify"\n')}\n[crawlers]\nlines = ["Disallow: /drafts/"]\n` +
+      `${text.replace("agents = true\n", 'agents = true\nhost = "netlify"\n')}\n[crawlers]\nlines = ["Disallow: /drafts/"]\n` +
       `\n[listing]\ndefault = "listed"\n` +
       `\n[listing.folders]\n"Reference/" = "unlisted"\n"Guides/" = "unquoted"\n` +
       `\n[listing.types]\npage = "listed"\n`,
@@ -224,6 +225,8 @@ describe("a site at the host's root", () => {
       "src/pages/v1.2.astro": '<html lang="en"><head><title>1.2</title></head><body>1.2</body></html>\n',
       "src/pages/hidden.astro":
         '<html lang="en"><head><meta name="robots" content="noindex" /></head><body>Hidden</body></html>\n',
+      // A page that was published at another address before.
+      "ascribe.addresses": 'version = 1\n\n[moved]\n"Guides/Old Setup.md" = "Guides/My Setup.md"\n',
     });
     return root;
   }
@@ -246,6 +249,10 @@ describe("a site at the host's root", () => {
       await readFile(path.join(root, "dist", "_headers"), "utf8"),
       (await records(root)).pages,
       await helpAddresses(root),
+    );
+    // The recorded move, at the host's root, for the page and its Markdown version.
+    expect(await readFile(path.join(root, "dist", "_redirects"), "utf8")).toBe(
+      `/docs/guides/old-setup ${UNQUOTED} 301\n/docs/guides/old-setup.md ${UNQUOTED}.md 301\n`,
     );
     const server = await servePreview(root);
     try {

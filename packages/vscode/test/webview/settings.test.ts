@@ -369,9 +369,9 @@ describe("Project Settings' webview", () => {
       settings: [
         setting({ id: "consumer.trailing-slash" }),
         setting({
-          id: "consumer.headers",
-          name: "Headers",
-          key: "[consumer] headers",
+          id: "consumer.host",
+          name: "Host",
+          key: "[consumer] host",
           choices: ["netlify"],
           value: null,
           defaultText: "",
@@ -384,7 +384,7 @@ describe("Project Settings' webview", () => {
     });
     expect(await tab.page.getByRole("button", { name: /^Reset/ }).count()).toBe(1);
     // A choice with no value shows none, rather than its first.
-    expect(await tab.page.getByRole("combobox", { name: "Headers" }).inputValue()).toBe("");
+    expect(await tab.page.getByRole("combobox", { name: "Host" }).inputValue()).toBe("");
     const from = tab.posted.length;
     await tab.page.getByRole("button", { name: "Reset Trailing slash to default" }).click();
     expect(await tab.next("reset", from)).toEqual({

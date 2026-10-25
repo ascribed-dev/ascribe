@@ -26,8 +26,8 @@ export interface ProjectInfo {
     trailingSlash: "always" | "never";
     /** Whether builds publish what agents read: `llms.txt` and each page's Markdown, in the plain output. */
     agents: boolean;
-    /** The host whose format the site's response headers are written in: `"netlify"`, or none. */
-    headers: "netlify" | undefined;
+    /** The host the site is deployed to, whose files the compiler writes: `"netlify"`, or none. */
+    host: "netlify" | undefined;
   };
   /** The names of `[builds]`'s tables, in order: empty when there are none, and the one build is `site`. */
   builds: string[];
@@ -89,7 +89,7 @@ export function readProject(dir: string, binary?: BinaryOption): ProjectInfo {
       trailingSlash,
       // `true` with a site unless it says otherwise, as the binary reads it.
       agents: typeof consumer["agents"] === "boolean" ? consumer["agents"] : site !== undefined,
-      headers: consumer["headers"] === "netlify" ? "netlify" : undefined,
+      host: consumer["host"] === "netlify" ? "netlify" : undefined,
     },
     builds,
     siteRoot: (build) => path.resolve(dir, outputDir, build, "site"),
