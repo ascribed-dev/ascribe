@@ -1131,6 +1131,9 @@ fn every_fix_diagnostic_has_a_quick_fix() {
         // It's reported in `ascribe.toml`, not a page:
         // `a_repeated_field_is_deleted_from_ascribe_toml` applies its fix.
         .filter(|e| e.slug.as_str() != "frontmatter-field-repeated")
+        // It needs a spec, a file of its own:
+        // `a_link_by_method_and_path_is_fixed_to_the_id` applies its fix.
+        .filter(|e| e.slug.as_str() != "link-operation-by-path")
         // Theirs edit `ascribe.nav`, from the file or from a page:
         // `nav_file.rs` applies them and sees the problem go.
         .filter(|e| {
@@ -1178,6 +1181,47 @@ fn every_fix_diagnostic_has_a_quick_fix() {
             action["title"]
         );
     }
+}
+
+#[test]
+fn a_link_by_method_and_path_is_fixed_to_the_id() {
+    let f = quill();
+    write(
+        &f,
+        "ascribe.toml",
+        &format!(
+            "{}\n[apis.public]\nspec = \"api/openapi.yaml\"\nreference = {{ renderer = \"redoc\", at = \"/api/\" }}\n",
+            read(&f, "ascribe.toml")
+        ),
+    );
+    std::fs::create_dir_all(f.path("api")).expect("api");
+    write(
+        &f,
+        "api/openapi.yaml",
+        "openapi: 3.1.0\ninfo: { title: Keys, version: \"1\" }\npaths:\n  /keys/{id}:\n    get:\n      operationId: getKey\n",
+    );
+    let path = f.path("docs/keys.md");
+    let text = format!(
+        "{}\nFetch it with [Get a key](../api/openapi.yaml#get/keys/{{id}}).\n",
+        read(&f, "docs/keys.md")
+    );
+    write(&f, "docs/keys.md", &text);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let diag = diagnostic(&client, &path, "link-operation-by-path");
+    let action = actions(&mut client, &path, diag)
+        .into_iter()
+        .find(|action| action.get("edit").is_some())
+        .expect("a quick fix");
+    let changed = apply_workspace_edit(&f, &action["edit"]);
+    notify_changed(&mut client, &changed);
+    assert!(read(&f, "docs/keys.md").contains("[Get a key](../api/openapi.yaml#getKey)"));
+    assert!(
+        !client
+            .diagnostics(&path)
+            .iter()
+            .any(|d| support::slug(d) == "link-operation-by-path")
+    );
 }
 
 /// The page `body` gives, after its HTML comment's **Rewrite as a memo**,
