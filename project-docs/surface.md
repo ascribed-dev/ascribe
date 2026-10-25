@@ -115,7 +115,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-267 in all. By severity: 58 advice, 182 error, 27 warning. By level: 237 file, 30 page. By kind of next step: 57 choose, 22 fix, 11 outside, 12 review, 165 write.
+268 in all. By severity: 59 advice, 182 error, 27 warning. By level: 238 file, 30 page. By kind of next step: 57 choose, 22 fix, 11 outside, 12 review, 166 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -386,6 +386,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC273` | `addresses-soft-404` | advice | write | {count} addresses are forwarded to {value}, {what}, so a reader who followed a link to one of them lands on a page without what they were looking for |
 | `ASC274` | `link-operation-form-unsupported` | error | write | `#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is a template, which has no address for it; a link by method and path needs `renderer = "redoc"` |
 | `ASC275` | `link-operation-by-path` | advice | fix | `#{operation}` names the operation `{id}` of `{path}` by its method and path; link to it by its id, `#{id}` |
+| `ASC276` | `link-operation-deprecated` | advice | write | `#{operation}` names an operation `{path}` marks deprecated |
 
 ## The VS Code extension
 
@@ -955,6 +956,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `navigation/index.md` | Navigation | reference |
 | `navigation/order.md` | Put your pages in order | how-to |
 | `navigation/site-list.md` | Move a site's own list to the navigation | how-to |
+| `openapi/editor.md` | Link to operations in the editor | how-to |
 | `openapi/index.md` | Link to your API reference | how-to |
 | `openapi/no-id.md` | Link to an operation with no id | how-to |
 | `permalinks/command.md` | `ascribe permalinks` | reference |

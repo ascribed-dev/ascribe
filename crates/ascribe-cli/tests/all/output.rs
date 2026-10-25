@@ -818,6 +818,60 @@ fn sources_update() {
     expect("sources-update.json", &shown(json(&out)));
 }
 
+/// `ascribe link` on a link to an operation of `examples/astro-site`'s
+/// API, from its guide: the operation it names, and one it doesn't have.
+#[test]
+fn link_operation() {
+    let dir = tempfile::tempdir().unwrap();
+    let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/astro-site");
+    fs::copy(
+        example.join("ascribe.toml"),
+        dir.path().join("ascribe.toml"),
+    )
+    .unwrap();
+    for folder in ["api", "content"] {
+        fs::create_dir_all(dir.path().join(folder)).unwrap();
+        copy_tree(&example.join(folder), &dir.path().join(folder));
+    }
+    let guide = "content/Guides/Teams/Share a loom.md";
+    expect(
+        "link-operation.txt",
+        &stdout(&run(
+            dir.path(),
+            &["link", "../../../api/openapi.yaml#getLoom", "--from", guide],
+            0,
+        )),
+    );
+    expect(
+        "link-operation.json",
+        &json(&run(
+            dir.path(),
+            &[
+                "link",
+                "../../../api/openapi.yaml#getLoom",
+                "--from",
+                guide,
+                "--format",
+                "json",
+            ],
+            0,
+        )),
+    );
+    expect(
+        "link-operation-missing.txt",
+        &stdout(&run(
+            dir.path(),
+            &[
+                "link",
+                "../../../api/openapi.yaml#getLooms",
+                "--from",
+                guide,
+            ],
+            1,
+        )),
+    );
+}
+
 /// `ascribe rename` on a copy of `examples/quill`, run from its root: the
 /// command reference's example.
 #[test]

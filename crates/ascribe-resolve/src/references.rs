@@ -270,7 +270,7 @@ pub fn resolve_reference(
 
 /// The API whose spec is the file at this content path, by its path from
 /// the project root as `[apis.<name>] spec` writes it, normalized.
-fn declared_spec<'m>(
+pub fn declared_spec<'m>(
     model: &'m ContentModel,
     layout: &Layout,
     path: &RelPath,

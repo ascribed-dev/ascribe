@@ -141,6 +141,20 @@ Advice · file level · next step: fix · [SPEC §5.2]({repo}/blob/main/SPEC.md#
 
 **Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
+### ASC276 `link-operation-deprecated`
+@id {permalink=true}: ASC276
+@summary: Target is an operation the spec marks deprecated.
+
+Advice · file level · next step: write · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
+
+**When:** Target is an operation the spec marks deprecated.
+
+**Message:** `#{operation}` names an operation `{path}` marks deprecated
+
+**Fix:** Link to the operation that replaces it, if the spec names one, or say in the text that it's deprecated. A deprecated operation still works, and its reference marks it; a guide that teaches it sends readers to something going away.
+
+**Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
+
 ## Images
 
 ### ASC042 `image-source-missing`

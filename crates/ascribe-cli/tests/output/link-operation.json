@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "from": "content/Guides/Teams/Share a loom.md",
+  "target": "../../../api/openapi.yaml#getLoom",
+  "exists": true,
+  "kind": "operation",
+  "path": "../api/openapi.yaml",
+  "id": "getLoom",
+  "title": null,
+  "href": "../../../api/openapi.yaml#getLoom",
+  "problem": null,
+  "closest": [],
+  "operation": {
+    "api": "loom",
+    "operation_id": "getLoom",
+    "method": "get",
+    "path": "/looms/{id}",
+    "summary": "Get a loom",
+    "tag": "Looms",
+    "deprecated": false,
+    "address": "/docs/api#operation/getLoom"
+  }
+}
