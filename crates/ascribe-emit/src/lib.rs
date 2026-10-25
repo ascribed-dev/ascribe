@@ -67,7 +67,7 @@ pub use json::{
 };
 pub use plain::{PlainEmitter, section_summary};
 pub use render::render_site_html;
-pub use site::{AstroProfile, Help, HelpEntry, SiteEmitter, help, help_header};
+pub use site::{AstroProfile, Help, HelpEntry, SiteEmitter, help, help_header, split_frontmatter};
 pub use store::{Contents, EmittedFile, FileKind, OutputDir, OutputOptions, Replaced, StoreError};
 pub use versions::{VERSIONS_PATH, VERSIONS_VERSION, line_base, versions_json};
 pub use write::{Output, WriteEvent, WriteOptions, Written, outputs_in_memory, write_outputs};

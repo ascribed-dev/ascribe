@@ -427,6 +427,10 @@
         "label": "ascribe explain, model, outline, link, refs, rename, resolve, and search"
       },
       {
+        "href": "/docs/command/site-output/",
+        "label": "A page in the site output"
+      },
+      {
         "href": "/docs/command/project-files/",
         "label": "Files Ascribe writes"
       }

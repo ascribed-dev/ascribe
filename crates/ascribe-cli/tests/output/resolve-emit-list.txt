@@ -1,0 +1,6 @@
+error: invalid value 'site,plain' for '--emit <OUTPUT>'
+  [possible values: plain, site]
+
+  tip: a similar value exists: 'site'
+
+For more information, try '--help'.

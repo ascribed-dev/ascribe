@@ -169,6 +169,8 @@ pub enum Stop {
     Load(Failure),
     /// The question can't be answered as asked.
     Query(QueryError),
+    /// The arguments don't go together.
+    Usage(&'static str),
 }
 
 impl From<Failure> for Stop {
@@ -189,6 +191,7 @@ impl Stop {
         match self {
             Stop::Load(failure) => failure_message(failure),
             Stop::Query(error) => error.to_string(),
+            Stop::Usage(message) => (*message).to_owned(),
         }
     }
 
