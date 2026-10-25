@@ -5933,7 +5933,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "ascribe rename refuses a case-only rename on macOS"
     },
     {
@@ -5947,7 +5947,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDLZCw",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Canary failed"
     },
     {
@@ -5965,7 +5965,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "With trailing-slash \"never\", Astro sites serve each page behind a 301"
     },
     {
