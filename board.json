@@ -6089,7 +6089,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "ascribe resolve --emit site: write a page as the site output does"
     },
     {
