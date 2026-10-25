@@ -318,6 +318,10 @@
         "label": "Check a JSON example against its schema"
       },
       {
+        "href": "/docs/openapi/coverage/",
+        "label": "Find the operations no guide links to"
+      },
+      {
         "href": "/docs/openapi/no-id/",
         "label": "Link to an operation with no id"
       },

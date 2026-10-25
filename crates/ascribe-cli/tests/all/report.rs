@@ -1132,3 +1132,78 @@ fn agents_says_nothing_since_when_nothing_fails_then_or_now() {
         "{text}"
     );
 }
+
+/// A project declaring an API whose spec has three operations: `getInvoice`,
+/// which its page links to, `deleteInvoice`, which it doesn't, and a
+/// deprecated one.
+fn api_project() -> TempDir {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    write(
+        dir.path(),
+        "ascribe.toml",
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[apis.public]\nspec = \"api/openapi.yaml\"\nreference = { renderer = \"redoc\", at = \"/api/\" }\n",
+    );
+    write(
+        dir.path(),
+        "api/openapi.yaml",
+        "openapi: 3.1.0\ninfo: { title: Invoices, version: \"1\" }\npaths:\n  /invoices/{id}:\n    get:\n      operationId: getInvoice\n    delete:\n      operationId: deleteInvoice\n  /invoices:\n    get:\n      operationId: listInvoices\n      deprecated: true\n",
+    );
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Invoices\n---\n\nFetch one with [Get an invoice](../api/openapi.yaml#getInvoice).\n",
+    );
+    dir
+}
+
+#[test]
+fn check_and_the_inventory_say_which_operations_no_page_links_to() {
+    let dir = api_project();
+    let out = ascribe(dir.path(), &["check"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let text = format!("{}{}", stdout(&out), stderr(&out));
+    assert!(
+        text.contains(
+            "[ASC282] Advice: no page links to `deleteInvoice` (DELETE /invoices/{id}) in api/openapi.yaml"
+        ),
+        "{text}"
+    );
+    assert!(!text.contains("listInvoices"), "{text}");
+
+    let text = stdout(&ascribe(dir.path(), &["report", "inventory"]));
+    assert!(
+        text.contains("APIs: public: 3 operations, 1 linked, 0 with a checked example."),
+        "{text}"
+    );
+    let report = json(&ascribe(
+        dir.path(),
+        &["report", "inventory", "--format", "json"],
+    ));
+    assert_eq!(
+        report["inventory"]["apis"],
+        serde_json::json!([
+            { "api": "public", "operations": 3, "linked": 1, "examples": 0 }
+        ])
+    );
+
+    // A project without an API has no such key.
+    let plain = project(MODEL);
+    let report = json(&ascribe(plain.path(), &["report", "--format", "json"]));
+    assert!(report["inventory"].get("apis").is_none(), "{report}");
+}
+
+#[test]
+fn the_inventory_counts_the_operations_a_marked_example_claims() {
+    let dir = api_project();
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Invoices\n---\n\nFetch one with [Get an invoice](../api/openapi.yaml#getInvoice).\n\n```json response=\"../api/openapi.yaml#getInvoice 200\"\n{}\n```\n\n```json response=\"../api/openapi.yaml#getInvoice 404\"\n{}\n```\n",
+    );
+    let report = json(&ascribe(
+        dir.path(),
+        &["report", "inventory", "--format", "json"],
+    ));
+    // Two markers, one operation.
+    assert_eq!(report["inventory"]["apis"][0]["examples"], 1, "{report}");
+}

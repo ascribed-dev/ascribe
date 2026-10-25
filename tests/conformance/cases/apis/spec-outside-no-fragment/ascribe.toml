@@ -6,3 +6,6 @@ content-root = "files"
 [apis.public]
 spec = "../_shared/openapi.yaml"
 reference = { renderer = "redoc", at = "/api/" }
+
+[checks]
+api-operation-unreferenced = "off"

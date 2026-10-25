@@ -1,0 +1,12 @@
+description: >-
+  Each operation of a declared spec that no link names is advice, at the
+  API's `spec` in ascribe.toml: one with an id, and one with none, named by
+  its method and path. A word in prose that matches an id isn't a link, and a
+  link to a missing operation covers no other.
+spec: ["5.2", "7.11"]
+tags: [check]
+
+diagnostics:
+  - {slug: api-operation-unreferenced, file: ascribe.toml, line: 7}
+  - {slug: api-operation-unreferenced, file: ascribe.toml, line: 7}
+  - {slug: link-operation-missing, file: index.md, line: 9}

@@ -127,6 +127,37 @@
       ],
       "type": "object"
     },
+    "ApiCount": {
+      "description": "How many of one API's operations the pages cover.",
+      "properties": {
+        "api": {
+          "description": "The API's name, its key in `[apis]`.",
+          "type": "string"
+        },
+        "examples": {
+          "description": "How many of them a checked example claims as its request or\nresponse.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "linked": {
+          "description": "How many of them a link names, by `operationId` or by method and\npath.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "operations": {
+          "description": "How many operations its spec has.",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "api",
+        "operations",
+        "linked",
+        "examples"
+      ],
+      "type": "object"
+    },
     "BuildJson": {
       "description": "What one build leaves out that another build keeps.",
       "properties": {
@@ -696,6 +727,16 @@
     "InventoryJson": {
       "description": "`inventory`: what the project holds.",
       "properties": {
+        "apis": {
+          "description": "How many of each declared API's operations the pages cover, for each\nAPI whose spec could be read, in the content model's order. Absent\nwhen the project declares no API.",
+          "items": {
+            "$ref": "#/$defs/ApiCount"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "by_owner": {
           "description": "How many pages each owner has, most first: the value of the\nfrontmatter field the page's type marks `role = \"owner\"`.",
           "items": {
