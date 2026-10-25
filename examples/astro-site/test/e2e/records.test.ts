@@ -416,7 +416,7 @@ describe("what a site leaves out", () => {
       "User-agent: *\nDisallow: /docs/drafts/\n",
     );
     const html = await readFile(
-      path.join(root, "dist", "docs", "reference", "options", "index.html"),
+      path.join(root, "dist", "docs", "reference", "options.html"),
       "utf8",
     );
     const { breadcrumbs: _, ...tags } = head(html);

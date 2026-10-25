@@ -65,6 +65,7 @@ import {
   homeRoute,
   normalizeBase,
   readProject,
+  supplyBuildFormat,
   supplyRouting,
   type AstroRouting,
 } from "./project.js";
@@ -313,6 +314,9 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
               : "ascribe.toml and astro.config disagree",
           );
         }
+        // Each page's file must be served at the route Ascribe publishes for it, not behind a redirect.
+        const format = supplyBuildFormat(astro.trailingSlash, config.build.format);
+        fail(format.problems, "ascribe.toml and astro.config disagree");
         fail(basePathClashes(entries), "two projects share a base path");
 
         if (typeof options.review === "string" && !entries.some((e) => e.name === options.review)) {
@@ -482,6 +486,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         // Dev serving of `_ascribe/files/`, and of the plain output for agents; the build copies them in `astro:build:done`.
         updateConfig({
           ...supplied,
+          ...(format.supplied === undefined ? {} : { build: { format: format.supplied } }),
           ...(options.codeTitles === false
             ? {}
             : { markdown: { shikiConfig: { transformers: [codeTitles] } } }),

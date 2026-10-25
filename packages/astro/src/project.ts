@@ -209,6 +209,34 @@ export function supplyRouting(
   return { routing: { ...astro, ...supplied }, supplied };
 }
 
+/** Astro's `build.format`: how a page's route becomes the file a static host serves it from. */
+type BuildFormat = "file" | "directory" | "preserve";
+
+/**
+ * Astro's `build.format` for routes that end as `trailingSlash` says, and
+ * the format to supply for `updateConfig`. A static host serves `x/index.html`
+ * at `x/` and `x.html` at `x`, so `"never"` needs `"file"` and `"always"`
+ * needs `"directory"`; any other format serves each page behind a redirect.
+ * Astro can't tell an integration a format left out from its default,
+ * `"directory"`, so that one is replaced for `"never"`; any other that
+ * disagrees is a problem, as a sentence.
+ */
+export function supplyBuildFormat(
+  trailingSlash: "always" | "never" | "ignore",
+  format: BuildFormat,
+): { supplied: BuildFormat | undefined; problems: string[] } {
+  if (trailingSlash === "ignore") return { supplied: undefined, problems: [] };
+  const wanted = trailingSlash === "never" ? "file" : "directory";
+  if (format === wanted) return { supplied: undefined, problems: [] };
+  if (format === "directory") return { supplied: wanted, problems: [] };
+  return {
+    supplied: undefined,
+    problems: [
+      `[consumer] trailing-slash is "${trailingSlash}", but Astro's \`build.format\` is "${format}", which a static host serves behind a redirect. Use "${wanted}", or leave it out.`,
+    ],
+  };
+}
+
 /**
  * The ways `ascribe.toml`'s `[consumer]` disagrees with Astro's configuration,
  * as sentences. Ascribe writes every link with its own settings, so a site

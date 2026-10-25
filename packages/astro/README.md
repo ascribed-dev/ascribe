@@ -21,7 +21,7 @@ export default defineConfig({
 });
 ```
 
-Astro's `site`, `base`, and `trailingSlash` come from `ascribe.toml`'s `[consumer]` when the Astro config leaves them out. With `projects`, `site` and `trailingSlash` come from the first entry whose project sets them, and `base` stays the site's. Set in the Astro config, each must agree with `[consumer]`, or the build fails.
+Astro's `site`, `base`, and `trailingSlash` come from `ascribe.toml`'s `[consumer]` when the Astro config leaves them out. With `projects`, `site` and `trailingSlash` come from the first entry whose project sets them, and `base` stays the site's. Set in the Astro config, each must agree with `[consumer]`, or the build fails. With `trailing-slash = "never"`, Astro's `build.format` becomes `"file"`, so each page is `x.html`, which a static host serves at `x`; a `build.format` that disagrees with `trailing-slash` fails the build.
 
 ```ts
 // src/content.config.ts

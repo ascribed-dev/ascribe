@@ -7,6 +7,7 @@ import {
   homeRoute,
   normalizeBase,
   readProject,
+  supplyBuildFormat,
   supplyRouting,
 } from "../src/project.js";
 
@@ -215,6 +216,34 @@ describe("supplyRouting", () => {
     expect(supplyRouting([bare, docs], unset, false).supplied.site).toBe("https://a.example");
     // The profile's default, which Ascribe writes its links with.
     expect(supplyRouting([bare], unset, true).supplied).toEqual({ trailingSlash: "always" });
+  });
+});
+
+describe("supplyBuildFormat", () => {
+  it("writes each page as `x.html` for routes without a trailing slash", () => {
+    // Astro's default, which can't be told from a format left out.
+    expect(supplyBuildFormat("never", "directory")).toEqual({ supplied: "file", problems: [] });
+    expect(supplyBuildFormat("never", "file")).toEqual({ supplied: undefined, problems: [] });
+  });
+
+  it("keeps `x/index.html` for routes with one", () => {
+    expect(supplyBuildFormat("always", "directory")).toEqual({ supplied: undefined, problems: [] });
+  });
+
+  it("names a format a static host would serve each page behind a redirect from", () => {
+    const never = supplyBuildFormat("never", "preserve");
+    expect(never.supplied).toBeUndefined();
+    expect(never.problems).toEqual([
+      expect.stringMatching(/trailing-slash is "never".*`build.format` is "preserve".*Use "file"/),
+    ]);
+    expect(supplyBuildFormat("always", "file").problems).toEqual([
+      expect.stringMatching(/trailing-slash is "always".*"file".*Use "directory"/),
+    ]);
+    expect(supplyBuildFormat("always", "preserve").problems).toHaveLength(1);
+  });
+
+  it("leaves the format alone when no project says how routes end", () => {
+    expect(supplyBuildFormat("ignore", "preserve")).toEqual({ supplied: undefined, problems: [] });
   });
 });
 
