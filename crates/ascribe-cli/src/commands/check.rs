@@ -117,6 +117,9 @@ pub struct Args {
     /// that can't be read is `addresses-base-unreadable`, and the rest of the
     /// check is the same. Only when the check covers the whole project:
     /// with paths, `--stdin`, or `--editor-build`, the base isn't read.
+    ///
+    /// A project without `ascribe.addresses` reads the base's only when
+    /// this names the base: `addresses-file-deleted` when it has one.
     #[arg(long, value_name = "REV")]
     pub base: Option<String>,
 
@@ -429,18 +432,32 @@ pub fn run_check(
         ))
     } else {
         // The base is read beside the check, as `ascribe diff` reads it.
+        // Without the file, only whether the base had one is read, to say
+        // what deleting it dropped, and only when `--base` names the base,
+        // as CI does, so a check of a project without the file never starts
+        // `git` on its own.
         let compared = args.addresses == Addresses::Compared
             && scope.is_none()
             && !args.stdin
-            && matches!(project.addresses(), Some(Ok(_)));
+            && match project.addresses() {
+                Some(Ok(_)) => true,
+                Some(Err(_)) => false,
+                None => args.base.is_some(),
+            };
         let (found, base) = std::thread::scope(|threads| {
             let base = compared.then(|| {
-                threads.spawn(|| {
-                    ascribe_diff::base_addresses(
+                threads.spawn(|| match project.addresses() {
+                    Some(_) => BaseRead::Addresses(Box::new(ascribe_diff::base_addresses(
+                        project.root(),
+                        &project.layout().content_root,
+                        args.base.as_deref(),
+                        args.base_exact,
+                    ))),
+                    None => BaseRead::FileEntries(ascribe_diff::base_file_entries(
                         project.root(),
                         args.base.as_deref(),
                         args.base_exact,
-                    )
+                    )),
                 })
             });
             let found = loaded.diagnosed(&args.build, |project| {
@@ -520,33 +537,34 @@ fn codes(given: &[String]) -> Result<Vec<String>, Failure> {
     Ok(codes)
 }
 
+/// What was read of the base for the addresses.
+enum BaseRead {
+    /// What the base published, for a project with `ascribe.addresses`.
+    Addresses(Box<Result<ascribe_diff::BaseAddresses, ascribe_diff::DiffError>>),
+    /// How many entries the base's file had, for a project without one.
+    FileEntries(Option<usize>),
+}
+
 /// The addresses the base published that the project has lost, compared
-/// in `builds`, the builds checked; or, when the base couldn't be read, why.
-fn compared_addresses(
-    loaded: &Loaded,
-    builds: &[String],
-    base: Result<ascribe_diff::BaseAddresses, ascribe_diff::DiffError>,
-) -> Vec<Diagnostic> {
-    let Some(Ok(file)) = loaded.project.addresses() else {
+/// in `builds`, the builds checked, and the problems with
+/// `ascribe.addresses`' entries; or, when the base couldn't be read, why,
+/// and the problems found without it. For a project without the file, that
+/// the base had one.
+fn compared_addresses(loaded: &Loaded, builds: &[String], base: BaseRead) -> Vec<Diagnostic> {
+    let base = match base {
+        BaseRead::Addresses(base) => *base,
+        BaseRead::FileEntries(entries) => {
+            return entries
+                .map(ascribe_check::addresses::file_deleted)
+                .into_iter()
+                .collect();
+        }
+    };
+    let (Some(Ok(file)), Some(text)) =
+        (loaded.project.addresses(), loaded.project.addresses_text())
+    else {
         return Vec::new();
     };
-    let base = match base {
-        Ok(base) => base,
-        Err(e) => return vec![ascribe_check::addresses::base_unreadable(&e.to_string())],
-    };
-    let Some(before) = &base.builds else {
-        return vec![ascribe_check::addresses::base_has_no_project(&base.named())];
-    };
-    // `--build` compares those builds only; a build only the base has is
-    // compared, as gone, when every build is checked.
-    let every = loaded.project.model().builds.len() == builds.len();
-    let before: Vec<_> = before
-        .iter()
-        .filter(|b| {
-            builds.contains(&b.build) || (every && loaded.project.model().build(&b.build).is_none())
-        })
-        .cloned()
-        .collect();
     let index = loaded.index();
     let now: Vec<_> = index
         .model()
@@ -555,7 +573,34 @@ fn compared_addresses(
         .filter(|b| builds.contains(&b.name))
         .map(|b| ascribe_resolve::addresses::build_addresses(index, b))
         .collect();
-    ascribe_check::addresses::compare(file, index, &before, &now)
+    let here = ascribe_check::addresses::Here {
+        file,
+        text,
+        index,
+        builds: &now,
+    };
+    let base = match base {
+        Ok(base) => base,
+        Err(e) => {
+            let mut out = vec![ascribe_check::addresses::base_unreadable(&e.to_string())];
+            out.extend(ascribe_check::addresses::entries(&here, None));
+            return out;
+        }
+    };
+    let Some(mut published) = base.published.clone() else {
+        let mut out = vec![ascribe_check::addresses::base_has_no_project(&base.named())];
+        out.extend(ascribe_check::addresses::entries(&here, None));
+        return out;
+    };
+    // `--build` compares those builds only; a build only the base has is
+    // compared, as gone, when every build is checked.
+    let every = loaded.project.model().builds.len() == builds.len();
+    published.builds.retain(|b| {
+        builds.contains(&b.build) || (every && loaded.project.model().build(&b.build).is_none())
+    });
+    let mut out = ascribe_check::addresses::compare(&here, &published);
+    out.extend(ascribe_check::addresses::entries(&here, Some(&published)));
+    out
 }
 
 /// `diagnostics` with Vale's, when `--vale` or `[checks.vale] in-check` asks

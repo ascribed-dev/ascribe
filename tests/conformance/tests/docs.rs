@@ -180,9 +180,10 @@ fn the_diagnostics_reference_is_current() {
 /// The pages of the diagnostics reference, in `docs/content/checks/diagnostics/`,
 /// each with the fragment it lists the diagnostics of. The reference's own page has
 /// the index.
-const DIAGNOSTICS_PAGES: [(&str, &str); 6] = [
+const DIAGNOSTICS_PAGES: [(&str, &str); 7] = [
     ("directives", "diagnostics-directives.md"),
     ("pages", "diagnostics-pages.md"),
+    ("addresses", "diagnostics-addresses.md"),
     ("content-model", "diagnostics-content-model.md"),
     (
         "content-model-builds",
@@ -195,6 +196,11 @@ const DIAGNOSTICS_PAGES: [(&str, &str); 6] = [
 /// The first construct of the source-file diagnostics listed on the `pages`
 /// page; those before it are on the `directives` page.
 const FIRST_ON_PAGES: &str = "Links";
+
+/// The first construct of the source-file diagnostics listed on the
+/// `addresses` page; those before it, from [`FIRST_ON_PAGES`], are on the
+/// `pages` page.
+const FIRST_ON_ADDRESSES: &str = "Addresses file";
 
 /// The first rule group of the content model listed on the
 /// `content-model-builds` page; those before it are on the `content-model` page.
@@ -964,8 +970,8 @@ const HEADER: &str = "@memo: Generated from tests/conformance/diagnostics.toml b
      `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.\n";
 
 /// The fragments, by file name: an index of every diagnostic, the
-/// source-file diagnostics in two (directives, and links, pages, and
-/// sources), the content model's in two (the file through its widgets, and
+/// source-file diagnostics in three (directives; links, pages, and sources;
+/// and the addresses file), the content model's in two (the file through its widgets, and
 /// the consumer, builds, and the site's settings), and the content checks in two (pages and
 /// the project, and outputs, prose, links, the site, and examples). The index links to each entry on the page
 /// that includes its fragment (SPEC §4.2).
@@ -987,14 +993,21 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         .iter()
         .position(|(construct, _)| *construct == FIRST_ON_PAGES)
         .unwrap_or_else(|| panic!("no construct {FIRST_ON_PAGES}: change FIRST_ON_PAGES"));
+    let addresses_split = constructs
+        .iter()
+        .position(|(construct, _)| *construct == FIRST_ON_ADDRESSES)
+        .unwrap_or_else(|| panic!("no construct {FIRST_ON_ADDRESSES}: change FIRST_ON_ADDRESSES"));
     let mut directives = String::new();
     let mut source_pages = String::new();
+    let mut addresses = String::new();
     let mut page_of: BTreeMap<&str, &str> = BTreeMap::new();
     for (i, (construct, entries)) in constructs.into_iter().enumerate() {
         let (out, page) = if i < split {
             (&mut directives, "directives")
-        } else {
+        } else if i < addresses_split {
             (&mut source_pages, "pages")
+        } else {
+            (&mut addresses, "addresses")
         };
         let _ = write!(out, "\n## {construct}\n");
         for (entry, condition) in entries {
@@ -1070,6 +1083,7 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
             with_memo(&directives),
         ),
         ("diagnostics-pages.md".to_owned(), with_memo(&source_pages)),
+        ("diagnostics-addresses.md".to_owned(), with_memo(&addresses)),
         (
             "diagnostics-content-model.md".to_owned(),
             with_memo(&content_model),

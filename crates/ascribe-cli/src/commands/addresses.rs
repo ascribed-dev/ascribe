@@ -20,6 +20,7 @@ use crate::answer::{self, Format};
 use crate::cli::Global;
 use crate::context::load_project;
 use crate::exit;
+use crate::report::json::Edit;
 
 /// The version of the commands' JSON. It changes only when a field is
 /// removed or changes meaning.
@@ -70,13 +71,31 @@ pub struct MoveArgs {
     /// content root; a file's path, `#`, and a heading's id; or an address
     /// from the host's root, starting with `/`, from before the project used
     /// Ascribe.
-    #[arg(value_name = "OLD")]
-    pub old: String,
+    #[arg(value_name = "OLD", required_unless_present = "from_git")]
+    pub old: Option<String>,
 
     /// Where it is now: a page's path, from the current folder or from the
     /// content root, and optionally `#` and a heading's id.
-    #[arg(value_name = "NEW")]
-    pub new: String,
+    #[arg(value_name = "NEW", required_unless_present = "from_git")]
+    pub new: Option<String>,
+
+    /// Record every move git sees between the base and the working tree
+    /// whose old path is gone, one entry for each page, as after a
+    /// reorganization made with `git mv`. Git sees a file renamed and added,
+    /// and only when the old and new files are mostly the same.
+    #[arg(long, conflicts_with_all = ["old", "new"])]
+    pub from_git: bool,
+
+    /// With `--from-git`, the revision git's renames are seen from:
+    /// anything git accepts. By default, the repository's default branch,
+    /// from its merge base with `HEAD`, as `ascribe check` chooses it.
+    #[arg(long, value_name = "REV", requires = "from_git")]
+    pub base: Option<String>,
+
+    /// With `--from-git`, see the renames from the base revision itself
+    /// instead of its merge base with `HEAD`.
+    #[arg(long, requires = "from_git")]
+    pub base_exact: bool,
 
     /// How to show what was recorded.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
@@ -154,6 +173,9 @@ pub enum AddressesError {
     /// `ascribe.addresses` can't be written.
     #[error("can't write {ADDRESSES_FILE}: {0}")]
     Unwritable(String),
+    /// The renames git sees can't be read.
+    #[error("can't read the moves git sees: {0}")]
+    Git(String),
 }
 
 impl Coded for AddressesError {
@@ -168,6 +190,7 @@ impl Coded for AddressesError {
             AddressesError::NoReason => "retire_reason_missing",
             AddressesError::UnknownBuild(e) => e.code(),
             AddressesError::Unwritable(_) => "addresses_file_unwritable",
+            AddressesError::Git(_) => "addresses_git_unreadable",
         }
     }
 }
@@ -189,7 +212,7 @@ pub(crate) struct InitJson {
 }
 
 /// What `ascribe addresses move` and `retire` write with `--format json`.
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
 pub(crate) struct RecordJson {
     /// The version of this schema. It changes only when a field is removed
@@ -208,6 +231,49 @@ pub(crate) struct RecordJson {
     value: String,
     /// Whether the file changed: an entry already the same changes nothing.
     changed: bool,
+    /// Whether the change was written: the MCP server's tools write
+    /// nothing, and give the edits to apply.
+    written: bool,
+    /// The edits that make the change, each replacing the text of its
+    /// range in the file as it was; none when nothing changed.
+    edits: Vec<Edit>,
+}
+
+/// What `ascribe addresses move --from-git --format json` writes.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct FromGitJson {
+    /// The version of this schema. It changes only when a field is removed
+    /// or changes meaning.
+    schema_version: u32,
+    /// The version of Ascribe that wrote it.
+    ascribe_version: &'static str,
+    /// The file, from the project's folder: `ascribe.addresses`.
+    file: &'static str,
+    /// The base git's renames are seen from: the revision asked for, or the
+    /// default branch, and its commit when that's something else.
+    base: String,
+    /// Each move recorded, in path order: the page's old path, from the
+    /// content root, and its new one.
+    moves: Vec<MoveJson>,
+    /// Whether the file changed.
+    changed: bool,
+    /// Whether the change was written: the MCP server's tools write
+    /// nothing, and give the edits to apply.
+    written: bool,
+    /// The edits that make the change, each replacing the text of its
+    /// range in the file as it was; none when nothing changed.
+    edits: Vec<Edit>,
+}
+
+/// A move `--from-git` records.
+#[derive(Debug, Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct MoveJson {
+    /// The entry's key: where the page was.
+    key: String,
+    /// The entry's value: where it is now.
+    value: String,
 }
 
 /// What `ascribe addresses list --format json` writes.
@@ -276,45 +342,159 @@ fn run_init(global: &Global, args: &InitArgs, out: &mut dyn Write, err: &mut dyn
     answer::written(result, err).unwrap_or(exit::OK)
 }
 
-/// Exit codes: 0 when the move is recorded; 2 when the project doesn't
-/// load, it has no file, or what's given can't be recorded.
+/// Exit codes: 0 when the move is recorded, or with `--from-git` when
+/// there's none to record; 2 when the project doesn't load, it has no file,
+/// what's given can't be recorded, or git's renames can't be read.
 fn run_move(global: &Global, args: &MoveArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
         Ok(project) => project,
         Err(failure) => return answer::report_failure(err, &failure),
     };
-    let recorded = (|| {
-        let file = existing(&project)?;
-        let old = old_key(&project, &args.old)?;
-        let new = new_place(&project, &args.new)?;
-        let mut changed = file.clone();
-        changed.record_move(&old, &new);
-        Ok::<_, AddressesError>((file, changed, old, new))
-    })();
-    let (before, after, old, new) = match recorded {
-        Ok(recorded) => recorded,
+    let answer = match answer_move(&project, args, true) {
+        Ok(answer) => answer,
         Err(e) => return answer::fail(err, &e),
     };
-    let changed = before.to_toml() != after.to_toml();
-    if changed && let Err(e) = write_file(project.root(), &after.to_toml()) {
-        return answer::fail(err, &e);
-    }
-    let result = match args.format {
-        Format::Json => answer::write_json(
+    let result = match (args.format, answer) {
+        (Format::Json, Moved::One(json)) => answer::write_json(out, &json),
+        (Format::Json, Moved::FromGit(json)) => answer::write_json(out, &json),
+        (Format::Text, Moved::One(json)) => writeln!(
             out,
-            &RecordJson {
-                schema_version: SCHEMA_VERSION,
-                ascribe_version: env!("CARGO_PKG_VERSION"),
-                file: ADDRESSES_FILE,
-                table: "moved",
-                key: old,
-                value: new,
-                changed,
-            },
+            "Recorded in {ADDRESSES_FILE}: {} moved to {}.",
+            json.key, json.value
         ),
-        Format::Text => writeln!(out, "Recorded in {ADDRESSES_FILE}: {old} moved to {new}."),
+        (Format::Text, Moved::FromGit(json)) => write_from_git(out, &json),
     };
     answer::written(result, err).unwrap_or(exit::OK)
+}
+
+fn write_from_git(out: &mut dyn Write, json: &FromGitJson) -> io::Result<()> {
+    if json.moves.is_empty() {
+        return writeln!(
+            out,
+            "git sees no move of a page whose addresses are lost, against {}.",
+            json.base
+        );
+    }
+    let moves: Vec<String> = json
+        .moves
+        .iter()
+        .map(|m| format!("{} → {}", m.key, m.value))
+        .collect();
+    writeln!(
+        out,
+        "Recorded {} git sees: {}.",
+        if moves.len() == 1 {
+            "1 move".to_owned()
+        } else {
+            format!("{} moves", moves.len())
+        },
+        moves.join(", ")
+    )
+}
+
+/// What `ascribe addresses move` recorded.
+pub(crate) enum Moved {
+    /// One move, given.
+    One(RecordJson),
+    /// The moves git sees.
+    FromGit(FromGitJson),
+}
+
+/// Records the move `args` gives in `project`'s `ascribe.addresses`, and
+/// writes the file when `write` asks and it changed: what the command
+/// says, with the edits. The MCP server's tool writes nothing.
+///
+/// # Errors
+///
+/// The project has no file, it can't be read or written, what's given
+/// can't be recorded, or git's renames can't be read.
+pub(crate) fn answer_move(
+    project: &Project,
+    args: &MoveArgs,
+    write: bool,
+) -> Result<Moved, AddressesError> {
+    let file = existing(project)?;
+    let text = project.addresses_text().unwrap_or_default();
+    if args.from_git {
+        let (base, renames) = git_renames(project, args)?;
+        let moves = ascribe_check::addresses::git_moves(&file, &project.index(), &renames);
+        let mut after = file.clone();
+        for (old, new) in &moves {
+            after.record_move(old, new);
+        }
+        let (changed, edits) = change(project, text, &after, write)?;
+        return Ok(Moved::FromGit(FromGitJson {
+            schema_version: SCHEMA_VERSION,
+            ascribe_version: env!("CARGO_PKG_VERSION"),
+            file: ADDRESSES_FILE,
+            base,
+            moves: moves
+                .into_iter()
+                .map(|(key, value)| MoveJson { key, value })
+                .collect(),
+            changed,
+            written: write && changed,
+            edits,
+        }));
+    }
+    let (Some(old), Some(new)) = (&args.old, &args.new) else {
+        return Err(AddressesError::NotAKey(String::new()));
+    };
+    let old = old_key(project, old)?;
+    let new = new_place(project, new)?;
+    let mut after = file.clone();
+    after.record_move(&old, &new);
+    let (changed, edits) = change(project, text, &after, write)?;
+    Ok(Moved::One(RecordJson {
+        schema_version: SCHEMA_VERSION,
+        ascribe_version: env!("CARGO_PKG_VERSION"),
+        file: ADDRESSES_FILE,
+        table: "moved",
+        key: old,
+        value: new,
+        changed,
+        written: write && changed,
+        edits,
+    }))
+}
+
+/// The base, as a message names it, and the renames git sees from it.
+fn git_renames(
+    project: &Project,
+    args: &MoveArgs,
+) -> Result<(String, std::collections::BTreeMap<String, String>), AddressesError> {
+    let git = |e: ascribe_diff::DiffError| AddressesError::Git(e.to_string());
+    let repo = ascribe_diff::Repository::discover(project.root()).map_err(git)?;
+    let base = repo
+        .base(args.base.as_deref(), args.base_exact)
+        .map_err(git)?;
+    let renames = ascribe_diff::renames(&repo, base.compared(), &project.layout().content_root)
+        .map_err(git)?;
+    let short = &base.commit[..base.commit.len().min(12)];
+    let named = if base.requested.starts_with(short) {
+        format!("`{}`", base.requested)
+    } else {
+        format!("`{}` ({short})", base.requested)
+    };
+    Ok((named, renames))
+}
+
+/// Whether `after` changes `text`, the file as it is, and the edits that
+/// make the change; writing it when `write` asks and it changed.
+fn change(
+    project: &Project,
+    text: &str,
+    after: &AddressFile,
+    write: bool,
+) -> Result<(bool, Vec<Edit>), AddressesError> {
+    let Some(edit) = after.edit_from(text) else {
+        return Ok((false, Vec::new()));
+    };
+    if write {
+        write_file(project.root(), &after.to_toml())?;
+    }
+    let index = ascribe_core::LineIndex::new(text);
+    Ok((true, vec![Edit::in_text(&index, &edit)]))
 }
 
 /// Exit codes: 0 when the retirement is recorded; 2 when the project
@@ -325,41 +505,55 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         Ok(project) => project,
         Err(failure) => return answer::report_failure(err, &failure),
     };
-    let reason = args.reason.trim();
-    let recorded = (|| {
-        if reason.is_empty() || reason == RETIRED_PLACEHOLDER {
-            return Err(AddressesError::NoReason);
-        }
-        let file = existing(&project)?;
-        let old = old_key(&project, &args.old)?;
-        let mut changed = file.clone();
-        changed.record_retired(&old, reason);
-        Ok((file, changed, old))
-    })();
-    let (before, after, old) = match recorded {
-        Ok(recorded) => recorded,
+    let json = match answer_retire(&project, args, true) {
+        Ok(json) => json,
         Err(e) => return answer::fail(err, &e),
     };
-    let changed = before.to_toml() != after.to_toml();
-    if changed && let Err(e) = write_file(project.root(), &after.to_toml()) {
-        return answer::fail(err, &e);
-    }
     let result = match args.format {
-        Format::Json => answer::write_json(
+        Format::Json => answer::write_json(out, &json),
+        Format::Text => writeln!(
             out,
-            &RecordJson {
-                schema_version: SCHEMA_VERSION,
-                ascribe_version: env!("CARGO_PKG_VERSION"),
-                file: ADDRESSES_FILE,
-                table: "retired",
-                key: old,
-                value: reason.to_owned(),
-                changed,
-            },
+            "Recorded in {ADDRESSES_FILE}: {} was retired.",
+            json.key
         ),
-        Format::Text => writeln!(out, "Recorded in {ADDRESSES_FILE}: {old} was retired."),
     };
     answer::written(result, err).unwrap_or(exit::OK)
+}
+
+/// Records the retirement `args` gives in `project`'s `ascribe.addresses`,
+/// and writes the file when `write` asks and it changed: what the command
+/// says, with the edits.
+///
+/// # Errors
+///
+/// The reason is empty, the project has no file, it can't be read or
+/// written, or what's given can't be recorded.
+pub(crate) fn answer_retire(
+    project: &Project,
+    args: &RetireArgs,
+    write: bool,
+) -> Result<RecordJson, AddressesError> {
+    let reason = args.reason.trim();
+    if reason.is_empty() || reason == RETIRED_PLACEHOLDER {
+        return Err(AddressesError::NoReason);
+    }
+    let file = existing(project)?;
+    let text = project.addresses_text().unwrap_or_default();
+    let old = old_key(project, &args.old)?;
+    let mut after = file.clone();
+    after.record_retired(&old, reason);
+    let (changed, edits) = change(project, text, &after, write)?;
+    Ok(RecordJson {
+        schema_version: SCHEMA_VERSION,
+        ascribe_version: env!("CARGO_PKG_VERSION"),
+        file: ADDRESSES_FILE,
+        table: "retired",
+        key: old,
+        value: reason.to_owned(),
+        changed,
+        written: write && changed,
+        edits,
+    })
 }
 
 /// Exit codes: 0 whatever the builds write; 2 when the project doesn't load,

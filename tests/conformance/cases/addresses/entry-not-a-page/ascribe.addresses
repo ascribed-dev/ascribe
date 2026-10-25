@@ -1,0 +1,6 @@
+version = 1
+
+[moved]
+"keys.md" = "index.md#keys"
+
+[retired]

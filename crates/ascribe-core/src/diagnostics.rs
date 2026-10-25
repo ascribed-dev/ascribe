@@ -797,6 +797,34 @@ pub const ADDRESSES_BASE_UNREADABLE: DiagnosticSlug = DiagnosticSlug("addresses-
 /// has and the working tree doesn't".
 pub const ADDRESSES_BUILD_GONE: DiagnosticSlug = DiagnosticSlug("addresses-build-gone");
 
+/// `ASC259`, error, file level: SPEC §8.2, "Addresses file | A `[moved]` value that isn't a page, or a heading on one, in every build that published its key".
+pub const ADDRESSES_ENTRY_NOT_A_PAGE: DiagnosticSlug = DiagnosticSlug("addresses-entry-not-a-page");
+
+/// `ASC260`, advice, file level: SPEC §8.2, "Addresses file | A key of `[moved]` or `[retired]` whose source is back".
+pub const ADDRESSES_ENTRY_LIVE: DiagnosticSlug = DiagnosticSlug("addresses-entry-live");
+
+/// `ASC261`, error, file level: SPEC §8.2, "Addresses file | A key of `[moved]` or `[retired]` whose address another source publishes now".
+pub const ADDRESSES_ENTRY_TAKEN: DiagnosticSlug = DiagnosticSlug("addresses-entry-taken");
+
+/// `ASC262`, advice, file level: SPEC §8.2, "Addresses file | An entry the base's `ascribe.addresses` doesn't have, whose key the base never published".
+pub const ADDRESSES_ENTRY_UNPUBLISHED: DiagnosticSlug =
+    DiagnosticSlug("addresses-entry-unpublished");
+
+/// `ASC263`, error, file level: SPEC §8.2, "Addresses file | A key written twice in a table, or in both `[moved]` and `[retired]`".
+pub const ADDRESSES_KEY_TWICE: DiagnosticSlug = DiagnosticSlug("addresses-key-twice");
+
+/// `ASC264`, advice, file level: SPEC §8.2, "Addresses file | A `[moved]` value that's another entry's key".
+pub const ADDRESSES_CHAIN: DiagnosticSlug = DiagnosticSlug("addresses-chain");
+
+/// `ASC265`, error, file level: SPEC §8.2, "Addresses file | An `#id` entry from a page that's gone whose id is live on the page its page's addresses lead to".
+pub const ADDRESSES_ANCHOR_COLLISION: DiagnosticSlug = DiagnosticSlug("addresses-anchor-collision");
+
+/// `ASC266`, error, file level: SPEC §8.2, "Addresses file | `ascribe.addresses` deleted while the base has it".
+pub const ADDRESSES_FILE_DELETED: DiagnosticSlug = DiagnosticSlug("addresses-file-deleted");
+
+/// `ASC267`, advice, file level: SPEC §8.2, "Addresses file | Many addresses forwarded to one index page or the home page".
+pub const ADDRESSES_SOFT_404: DiagnosticSlug = DiagnosticSlug("addresses-soft-404");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -1049,6 +1077,15 @@ pub const ALL: &[DiagnosticSlug] = &[
     ANCHOR_LOST,
     ADDRESSES_BASE_UNREADABLE,
     ADDRESSES_BUILD_GONE,
+    ADDRESSES_ENTRY_NOT_A_PAGE,
+    ADDRESSES_ENTRY_LIVE,
+    ADDRESSES_ENTRY_TAKEN,
+    ADDRESSES_ENTRY_UNPUBLISHED,
+    ADDRESSES_KEY_TWICE,
+    ADDRESSES_CHAIN,
+    ADDRESSES_ANCHOR_COLLISION,
+    ADDRESSES_FILE_DELETED,
+    ADDRESSES_SOFT_404,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

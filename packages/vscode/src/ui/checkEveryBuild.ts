@@ -10,6 +10,7 @@ import {
   checkedText,
   countedIn,
   panelProblems,
+  quickFixes,
   type Counted,
   type EditorRange,
   type Found,
@@ -201,7 +202,52 @@ export class EveryBuildChecks implements vscode.Disposable {
         }
       }),
       vscode.commands.registerCommand(CHECK_EVERY_BUILD_COMMAND, () => this.queue()),
+      // `ascribe.addresses` isn't a file the language server serves, so the
+      // fixes of what the check reports there are offered from the check.
+      vscode.languages.registerCodeActionsProvider(
+        { scheme: "file", pattern: "**/ascribe.addresses" },
+        { provideCodeActions: (document, _range, context) => this.fixesIn(document, context) },
+        { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] },
+      ),
     );
+  }
+
+  /** The quick fixes of the problems a check added that `context` is about, in `document`. */
+  private fixesIn(
+    document: vscode.TextDocument,
+    context: vscode.CodeActionContext,
+  ): vscode.CodeAction[] {
+    const file = comparable(document.uri.fsPath);
+    const actions: vscode.CodeAction[] = [];
+    for (const checked of this.checked.values()) {
+      for (const problem of checked.problems ?? []) {
+        if (comparable(problem.file) !== file) continue;
+        const shown = context.diagnostics.find(
+          (d) =>
+            codeOf(d) === problem.entry.code &&
+            d.message === problem.entry.message &&
+            d.range.start.line === problem.range.start.line &&
+            d.range.start.character === problem.range.start.character,
+        );
+        if (!shown) continue;
+        const fixes = quickFixes(
+          problem.entry,
+          checked.project.folder,
+          document.uri.fsPath,
+          document.getText(),
+        );
+        for (const fix of fixes) {
+          const action = new vscode.CodeAction(fix.title, vscode.CodeActionKind.QuickFix);
+          action.diagnostics = [shown];
+          action.isPreferred = fix.safe;
+          action.edit = new vscode.WorkspaceEdit();
+          for (const edit of fix.edits)
+            action.edit.replace(document.uri, toRange(edit.range), edit.newText);
+          actions.push(action);
+        }
+      }
+    }
+    return actions;
   }
 
   /**

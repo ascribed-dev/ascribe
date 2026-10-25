@@ -76,6 +76,32 @@ export function panelProblems(
   return problems;
 }
 
+/** A problem's fix, as a quick fix makes it in the file it edits. */
+export interface QuickFix {
+  title: string;
+  /** Whether it's marked safe: applying it leaves nothing to decide. */
+  safe: boolean;
+  edits: { range: EditorRange; newText: string }[];
+}
+
+/**
+ * The fixes of `entry`, a problem of the project in `root`, that edit
+ * `file`, an absolute path, whose text is `text`, as the check read it: a
+ * check's problems in a file go when it changes.
+ */
+export function quickFixes(entry: Entry, root: string, file: string, text: string): QuickFix[] {
+  return entry.fixes
+    .filter((fix) => path.resolve(root, fix.file) === path.resolve(file))
+    .map((fix) => ({
+      title: fix.title,
+      safe: fix.applicability === "safe",
+      edits: fix.edits.map((edit) => ({
+        range: editorRange(text, edit.range),
+        newText: edit.new_text,
+      })),
+    }));
+}
+
 /**
  * The problems the Project view counts on their own, by their diagnostics'
  * names: tested examples changed since they were tested or never tested,

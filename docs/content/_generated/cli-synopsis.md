@@ -1,7 +1,7 @@
 @memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
 ```text
 ascribe addresses init    [--format text|json]
-ascribe addresses move    OLD NEW [--format text|json]
+ascribe addresses move    [OLD] [NEW] [--from-git] [--base <REV>] [--base-exact] [--format text|json]
 ascribe addresses retire  OLD --reason <TEXT> [--format text|json]
 ascribe addresses list    [--build <NAME>] [--format text|json]
 ascribe agents sync       [--check] [--target agents-md|skills|claude|claude-rules|copilot|codex]... [--with-hook] [--cloud] [--agent]

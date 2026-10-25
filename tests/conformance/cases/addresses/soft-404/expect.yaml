@@ -1,0 +1,9 @@
+description: >-
+  Three addresses or more forwarded to one index page are advice, at the
+  first: a reader who followed a link to one lands on a page without what
+  they wanted.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: addresses-soft-404, file: ascribe.addresses, line: 4}
