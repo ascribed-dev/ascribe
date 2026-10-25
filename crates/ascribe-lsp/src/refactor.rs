@@ -47,6 +47,38 @@ pub(crate) fn file_operation_capability() -> FileOperationRegistrationOptions {
     }
 }
 
+/// Whether something other than `old` is at `new`, where `old` moves to.
+/// On a case-insensitive file system, as macOS's and Windows' are by
+/// default, a name that differs from `old`'s only in case finds `old`
+/// itself, which doesn't take it (issue 899). That's told by the folder's
+/// listing, which has each name as it's written: `old`'s is there, and no
+/// entry is named exactly as `new` is.
+pub(crate) fn taken(old: &Path, new: &Path) -> bool {
+    // Outside FileSystem: whether the place a file or folder moves to is
+    // taken, by anything at all, for any path the editor or the command
+    // names.
+    if old == new || !new.exists() {
+        return false;
+    }
+    let (Some(folder), Some(old_name), Some(new_name)) =
+        (new.parent(), old.file_name(), new.file_name())
+    else {
+        return true;
+    };
+    let case_only = old.parent() == Some(folder)
+        && old_name.to_string_lossy().to_lowercase() == new_name.to_string_lossy().to_lowercase();
+    if !case_only {
+        return true;
+    }
+    // Outside FileSystem: the names as they're written, to tell `old` from
+    // another entry whose name differs from it only in case.
+    let Ok(entries) = std::fs::read_dir(folder) else {
+        return true;
+    };
+    let names: Vec<_> = entries.flatten().map(|e| e.file_name()).collect();
+    names.iter().any(|n| n == new_name) || !names.iter().any(|n| n == old_name)
+}
+
 // `Uri` hashes by its text; the map is built once and never mutated through
 // a key.
 #[allow(clippy::mutable_key_type)]
@@ -58,11 +90,9 @@ pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<Worksp
         let new_uri = Uri::from_str(&file.new_uri).ok()?;
         let old_abs = normalize(&crate::uri::uri_to_path(&old_uri)?);
         let new_abs = normalize(&crate::uri::uri_to_path(&new_uri)?);
-        // Outside FileSystem: whether a rename's target is taken, for any path
-        // the editor names.
         if relative_path(root, &old_abs).is_none()
             || relative_path(root, &new_abs).is_none()
-            || (new_abs.exists() && new_abs != old_abs)
+            || taken(&old_abs, &new_abs)
         {
             return Some(WorkspaceEdit::default());
         }

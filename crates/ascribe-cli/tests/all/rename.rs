@@ -359,3 +359,83 @@ fn a_phrases_memo_follows_its_key() {
     let check = ascribe(dir.path(), &["check"]);
     assert_eq!(code_of(&check), 0, "{}", stdout(&check));
 }
+
+/// The names in `folder` as they're written.
+fn names(folder: &Path) -> Vec<String> {
+    let mut names: Vec<_> = fs::read_dir(folder)
+        .unwrap()
+        .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+        .collect();
+    names.sort();
+    names
+}
+
+/// Whether the file system `dir` is on matches names without case, as
+/// macOS's and Windows' do by default.
+fn case_insensitive(dir: &Path) -> bool {
+    write(dir, "Probe.txt", "");
+    let insensitive = dir.join("PROBE.txt").exists();
+    fs::remove_file(dir.join("Probe.txt")).unwrap();
+    insensitive
+}
+
+#[test]
+fn a_page_and_a_fragment_are_renamed_by_their_case_alone() {
+    let dir = project();
+    let note = "A note.\n";
+    write(dir.path(), "docs/_fragments/note.md", note);
+    write(
+        dir.path(),
+        "docs/install.md",
+        &format!("{INSTALL}\n@include: _fragments/note.md\n"),
+    );
+
+    let output = ascribe(dir.path(), &["rename", "docs/keys.md", "docs/Keys.md"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    assert_eq!(
+        stdout(&output),
+        "changed docs/install.md (1 place)\nmoved docs/keys.md to docs/Keys.md\n"
+    );
+    let output = ascribe(
+        dir.path(),
+        &[
+            "rename",
+            "docs/_fragments/note.md",
+            "docs/_fragments/Note.md",
+        ],
+    );
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+
+    let docs = dir.path().join("docs");
+    assert_eq!(names(&docs), ["Keys.md", "_fragments", "install.md"]);
+    assert_eq!(names(&docs.join("_fragments")), ["Note.md"]);
+    assert_eq!(
+        read(dir.path(), "docs/install.md"),
+        format!("{INSTALL}\n@include: _fragments/Note.md\n").replace("(keys.md#", "(Keys.md#")
+    );
+    let check = ascribe(dir.path(), &["check"]);
+    assert_eq!(code_of(&check), 0, "{}", stdout(&check));
+}
+
+#[test]
+fn a_page_isnt_moved_onto_another_whose_name_differs_only_in_case() {
+    let dir = project();
+    // Where names are matched without case, `Keys.md` is `keys.md`: another
+    // page can be moved there no more than onto `keys.md`. Where they're
+    // matched with it, `Keys.md` can be another page.
+    let (from, to) = if case_insensitive(dir.path()) {
+        ("docs/install.md", "docs/Keys.md")
+    } else {
+        write(dir.path(), "docs/Keys.md", KEYS);
+        ("docs/keys.md", "docs/Keys.md")
+    };
+    let output = ascribe(dir.path(), &["rename", from, to]);
+    assert_eq!(code_of(&output), 2, "{}", stdout(&output));
+    assert!(
+        stderr(&output).contains("is there already"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(read(dir.path(), "docs/keys.md"), KEYS);
+    assert_eq!(read(dir.path(), "docs/install.md"), INSTALL);
+}

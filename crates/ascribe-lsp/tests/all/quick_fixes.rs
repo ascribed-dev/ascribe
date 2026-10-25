@@ -948,6 +948,34 @@ fn file_move_refuses_conflicting_or_outside_targets() {
 }
 
 #[test]
+fn file_move_by_case_alone_changes_the_links_to_it() {
+    // On a case-insensitive file system, as macOS's and Windows' are by
+    // default, `Keys.md` is there already: it's `keys.md` itself.
+    let f = quill();
+    let old = f.path("docs/keys.md");
+    let new = f.path("docs/Keys.md");
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let result = client
+        .request(
+            "workspace/willRenameFiles",
+            json!({
+                "files": [{
+                    "oldUri": uri(&old).as_str(),
+                    "newUri": uri(&new).as_str()
+                }]
+            }),
+        )
+        .response_result
+        .expect("will rename");
+    let changed = apply_workspace_edit(&f, &result);
+    assert!(!changed.is_empty(), "no edits: {result:#?}");
+    let linking = read(&f, "docs/install-agent.md");
+    assert!(linking.contains("Keys.md"), "{linking}");
+    assert!(!linking.contains("(keys.md"), "{linking}");
+}
+
+#[test]
 fn renaming_an_explicit_id_updates_links_and_includes() {
     let f = quill();
     let target = f.path("docs/keys.md");
