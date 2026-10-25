@@ -1,0 +1,9 @@
+description: >-
+  `[consumer] headers` isn't a key any more: `host` names the host, and
+  writes its headers and its redirects. Any value of `headers` is an error
+  at the key, which says to write `host`.
+spec: ["9.5"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-unknown-key, file: ascribe.toml, line: 9}

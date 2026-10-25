@@ -1,4 +1,4 @@
-// The built site's `_headers`, which `[consumer] headers = "netlify"` in
+// The built site's `_headers`, which `[consumer] host = "netlify"` in
 // ../docs/ascribe.toml has @ascribed/astro write: each docs page's Markdown
 // version has its rule, each help entry's address has one letting any origin
 // read it, and no other path has one. No docs page is marked

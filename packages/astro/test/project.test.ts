@@ -56,7 +56,7 @@ agents = false
       basePath: "/",
       trailingSlash: "never",
       agents: false,
-      headers: undefined,
+      host: undefined,
     });
     // Its builds are its own: `[from]` doesn't take them.
     expect(info.builds).toEqual([]);
@@ -84,7 +84,7 @@ site = "https://docs.example.com"
 base-path = "/docs"
 trailing-slash = "never"
 agents = true
-headers = "netlify"
+host = "netlify"
 `);
     const info = readProject(dir);
     expect(info.consumer).toEqual({
@@ -92,7 +92,7 @@ headers = "netlify"
       basePath: "/docs/",
       trailingSlash: "never",
       agents: true,
-      headers: "netlify",
+      host: "netlify",
     });
     expect(info.siteRoot("site")).toBe(path.join(dir, "out", "site", "site"));
     expect(info.plainRoot("site")).toBe(path.join(dir, "out", "site", "plain"));
@@ -119,7 +119,7 @@ headers = "netlify"
       basePath: "/",
       trailingSlash: "always",
       agents: false,
-      headers: undefined,
+      host: undefined,
     });
     expect(info.siteRoot("site")).toBe(path.join(info.dir, ".ascribe", "build", "site", "site"));
   });

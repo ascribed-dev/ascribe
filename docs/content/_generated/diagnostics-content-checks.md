@@ -520,3 +520,17 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 **Fix:** Delete the type's field, and the type has the one in `[frontmatter]`, which is the same. The fix deletes its line, with the comment lines directly above it, when it's written as `key = value` under the table's header; one written another way is deleted by hand. A type's field that differs from the shared one in any key replaces it whole, for that type, and isn't reported: keep it when the type needs it to differ.
 
 **Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
+
+### ASC257 `addresses-base-unreadable`
+@id {permalink=true}: ASC257
+@summary: The project has `ascribe.addresses`, and `ascribe check` can't read the base it compares the addresses with: there's no git repository, or the base isn't there, as in a shallow clone. A base with no project published nothing, so that's advice, not a warning. Reported once, at `ascribe.addresses`.
+
+Warning · file level · next step: outside · configurable in `[checks]` · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+
+**When:** The project has `ascribe.addresses`, and `ascribe check` can't read the base it compares the addresses with: there's no git repository, or the base isn't there, as in a shallow clone. A base with no project published nothing, so that's advice, not a warning. Reported once, at `ascribe.addresses`.
+
+**Message:** the addresses weren't compared with the base: \{reason}
+
+**Fix:** Give the check a base it can read. In CI, fetch the history (`fetch-depth: 0` on actions/checkout), and pass the branch a pull request targets, `--base origin/$GITHUB_BASE_REF`, or, on a push, the commit before it, `--base ${{ github.event.before }} --base-exact`. A base with no project, as a migration's first pull request has, published nothing, so there's nothing to compare: it's reported, as advice, so a check that compared nothing never passes silently. See [The base](../publishing/redirects.md#the-base).
+
+**Read more:** [The base](../publishing/redirects.md#the-base) in the guide to keeping addresses.

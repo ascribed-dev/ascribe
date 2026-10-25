@@ -47,6 +47,7 @@ impl FileTable {
             ascribe_check::LOCK_FILE_ID,
             ascribe_check::PERMALINKS_FILE_ID,
             ascribe_check::NAV_FILE_ID,
+            ascribe_check::ADDRESSES_FILE_ID,
             ascribe_check::BASELINE_FILE_ID,
         ];
         ids.extend(project.sources().iter().map(|s| s.id));

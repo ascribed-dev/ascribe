@@ -74,6 +74,7 @@
 //! assert_eq!(page.blocks.len(), 2); // the heading and the paragraph
 //! ```
 
+pub mod addresses;
 mod astro;
 pub mod build;
 mod closest;

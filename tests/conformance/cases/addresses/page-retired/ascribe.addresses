@@ -1,0 +1,6 @@
+version = 1
+
+[moved]
+
+[retired]
+"keys.md" = "Keys are managed in the dashboard now."

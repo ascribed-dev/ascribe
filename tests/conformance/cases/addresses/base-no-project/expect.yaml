@@ -1,0 +1,9 @@
+description: >-
+  A base with no project published nothing to keep, so nothing is compared,
+  and that's said once, at the file, as advice: a check that compared
+  nothing doesn't pass silently.
+spec: ["7.10"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: addresses-base-unreadable, file: ascribe.addresses, line: 1, severity: advice}

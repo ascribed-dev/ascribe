@@ -105,6 +105,11 @@ pub enum Color {
 /// The subcommands.
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Keep the record of where the addresses the docs published went,
+    /// ascribe.addresses: record a move or a retired address, and list the
+    /// redirects each build writes.
+    #[command(after_help = docs_link!("cli-addresses"))]
+    Addresses(commands::addresses::Args),
     /// Write the files agents read on their own: the project's rules, and
     /// the Ascribe skill.
     #[command(after_help = docs_link!("cli-agents"))]
@@ -217,6 +222,7 @@ impl Command {
     fn run(self, global: &Global) -> ExitCode {
         match self {
             Command::Agents(args) => commands::agents::run(global, args),
+            Command::Addresses(args) => commands::addresses::run(global, args),
             Command::Baseline(args) => commands::baseline::run(global, args),
             Command::Build(args) => commands::build::run(global, args),
             Command::Check(args) => commands::check::run(global, args),

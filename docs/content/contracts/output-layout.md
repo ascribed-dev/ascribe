@@ -148,7 +148,7 @@ In an older line of a versioned build (§1.5), a page's `canonical` is the route
 
 ### 1.4 The headers
 
-The site output holds `_ascribe/headers.json`: the response headers the build's files need from the host, as rules, each a path and the headers it gets. A Markdown version (content-model contract §15) has no head to carry what its page's head says, and a help entry's own address (§1.7) is read by a product on another origin, so the host sends them, and the host is the site's: `@ascribed/astro` writes the rules into Netlify's `_headers` with `[consumer] headers = "netlify"`, and a site built another way reads the list. It's `generated` in the manifest, and written for every build, with an empty list when the build publishes no Markdown versions, so a consumer can tell "no rules" from an Ascribe that doesn't write the file.
+The site output holds `_ascribe/headers.json`: the response headers the build's files need from the host, as rules, each a path and the headers it gets. A Markdown version (content-model contract §15) has no head to carry what its page's head says, and a help entry's own address (§1.7) is read by a product on another origin, so the host sends them, and the host is the site's: with `[consumer] host = "netlify"`, the build writes them in Netlify's format too (§1.9), which `@ascribed/astro` places at the site's root, and a site built another way reads the list. It's `generated` in the manifest, and written for every build, with an empty list when the build publishes no Markdown versions, so a consumer can tell "no rules" from an Ascribe that doesn't write the file.
 
 ```json
 {
@@ -176,7 +176,7 @@ The site output holds `_ascribe/headers.json`: the response headers the build's 
 | `headers[].path` | The path the rule is for, from the host's root, matched exactly and never as a pattern: the page record's `markdown` (§1.3), or a help entry's address (§1.7). |
 | `headers[].headers` | Each header's value, keyed by its name, sorted by name. For a Markdown version, `Link` is `<canonical>; rel="canonical"`, the page's own address from its record, so a search engine lists the page and not its Markdown version. `X-Robots-Tag` is the rule the page's head gives a crawler: `noindex` for a page that's `unlisted`, `nosnippet` for one that's `unquoted`, and absent for one that's `listed`. For a help entry's address, `Access-Control-Allow-Origin` is `*`, since the text is already public and a product on any origin may read it. |
 
-Whatever answers a request for a page's Markdown sends the same headers, whether it serves the file or answers the page's own address asked for with `Accept: text/markdown`. A later version may add keys to the file, such as a list of redirects beside `headers`, or more headers to a rule; it doesn't change these.
+Whatever answers a request for a page's Markdown sends the same headers, whether it serves the file or answers the page's own address asked for with `Accept: text/markdown`. A later version may add keys to the file, or more headers to a rule; it doesn't change these. The redirects are in a file of their own (§1.8).
 
 ### 1.5 The versions file
 
@@ -280,6 +280,56 @@ The site output holds `_ascribe/help.json`: each permalink's section of the docs
 An entry's `text` and each of its `choices` are rendered from the page's resolved blocks by the plain output's own renderer, so each reads as the section does in the page's plain output, with that value selected for a choice. A later version adds keys and changes none of these: a formatted title, as `pages.json` has, would be a key beside `title`.
 
 A site serves each entry at an address of its own, for a product to fetch its line's: `<path><name>.json`, where `path` is the permalinks list's (§1.2), for the current line and a build that isn't versioned, and `<base>go/<name>.json`, where `base` is the line's (§1.5), for an older line. The answer is this file with `help` holding that one entry: `{"version": 1, "build": "site", "line": "3.4", "help": {"connect": {…}}}`. The headers list (§1.4) gives each address `Access-Control-Allow-Origin: *`.
+
+### 1.8 The redirects
+@available: ascribe planned
+
+The site output holds `_ascribe/redirects.json`: where the addresses the build used to publish lead now, and which were retired, from the project's `ascribe.addresses` (SPEC §7.10) alone. The base revision isn't read: a source's old address is made from its path by the build's routing today, so a pair is written as long as its entry is there. It's `generated` in the manifest, and written for every build, with empty lists when the project has no `ascribe.addresses`, so a consumer can tell "no redirects" from an Ascribe that doesn't write the file.
+
+```json
+{
+  "version": 1,
+  "build": "site",
+  "redirects": [
+    { "from": "/docs/guides/keys/", "to": "/docs/security/keys/", "status": 301, "entry": "guides/keys.md" },
+    { "from": "/docs/guides/keys.md", "to": "/docs/security/keys.md", "status": 301, "entry": "guides/keys.md" }
+  ],
+  "gone": [
+    { "path": "/docs/reference/legacy-sync/", "reason": "The sync agent was removed in 4.0", "entry": "reference/legacy-sync.md" }
+  ]
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `version` | The file's format version: `1`. A reader rejects versions it doesn't know. |
+| `build` | The build's name, as §1.7's `build` is. |
+| `redirects` | One pair for each address a `[moved]` entry's key had, sorted by `from`. For a key that's a page, its route and, when the build publishes Markdown versions, its Markdown version's, each leading to the value's own; for a key that's an address from the host's root, that address, leading to the value's route. An entry whose value isn't a page the build publishes writes nothing, and neither does a key that's a heading's id: a fragment never reaches the host. |
+| `redirects[].from` | The old address, from the host's root, in the published case and slash form. A pair whose `from` the build publishes is left out, since a page is there, and so is one whose `from` and `to` agree once case and a final `/` are ignored: the host finds the page anyway. Each `from` is in one pair, so the pairs are flat. |
+| `redirects[].to` | Where it leads now, from the host's root: the value's route, with `#` and the id when the value names a heading, or its Markdown version's. |
+| `redirects[].status` | The HTTP status: `301`. It's in the format so a later version can write another. |
+| `redirects[].entry` | The `ascribe.addresses` key the pair comes from. |
+| `gone` | Each address of each `[retired]` key, as `redirects` finds a key's addresses, sorted by `path`, leaving out one the build publishes. |
+| `gone[].path` | The address, from the host's root. |
+| `gone[].reason` | Why it was retired: the entry's value. |
+| `gone[].entry` | The `ascribe.addresses` key it comes from. |
+
+A later version adds keys and changes none of these.
+
+### 1.9 The host's files
+@available: ascribe planned
+
+With `[consumer] host` (content-model.md §15), the site output holds the host's own files in `_ascribe/host/`, each `generated` in the manifest, for whatever deploys the site to copy to the root of what's deployed. `@ascribed/astro` reads them, merges every project's, and writes them at the built site's root. Without `host`, the folder isn't written.
+
+With `host = "netlify"`:
+
+- `_ascribe/host/_redirects` has a line for each pair of §1.8, in its order: `from`, `to`, and `status`, separated by a space. Netlify uses the first rule that matches, and matches a rule with or without a final `/`.
+- `_ascribe/host/_headers` has each rule of §1.4, in its order: the path on a line of its own, then each header indented by two spaces, as `Name: value`.
+
+```text
+/docs/guides/keys/ /docs/security/keys/ 301
+/docs/guides/keys.md /docs/security/keys.md 301
+```
 
 ## 2. What Ascribe owns
 

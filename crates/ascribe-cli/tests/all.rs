@@ -13,6 +13,8 @@
 #[path = "../../../tests/support/links.rs"]
 mod links;
 
+#[path = "all/addresses.rs"]
+mod addresses;
 #[path = "all/agents.rs"]
 mod agents;
 #[path = "all/answers.rs"]

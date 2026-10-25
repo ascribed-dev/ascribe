@@ -63,6 +63,7 @@ pages = ["snippets.md", "docs-repository.md", "drift.md", "tested.md", "sources.
 
 [[sections]]
 folder = "publishing/"
+pages = ["site.md", "redirects.md"]
 
 [[sections]]
 folder = "astro/"

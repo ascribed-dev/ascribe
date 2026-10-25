@@ -258,7 +258,15 @@ fn write(renamed: &Renamed) -> Result<(), RenameCommandError> {
 
 /// What the rename changed, a line for each file, as the command writes it.
 fn write_text(out: &mut dyn Write, renamed: &Renamed) -> io::Result<()> {
+    // `ascribe.addresses` is said last: the move it records.
+    let is_addresses =
+        |path: &Path| path.file_name() == Some(std::ffi::OsStr::new(ascribe_model::ADDRESSES_FILE));
+    let mut recorded = false;
     for file in &renamed.files {
+        if is_addresses(&file.path) {
+            recorded = true;
+            continue;
+        }
         let places = if file.edits == 1 { "place" } else { "places" };
         writeln!(
             out,
@@ -273,6 +281,13 @@ fn write_text(out: &mut dyn Write, renamed: &Renamed) -> io::Result<()> {
             "moved {} to {}",
             answer::path_from_here(from),
             answer::path_from_here(to)
+        )?;
+    }
+    if recorded {
+        writeln!(
+            out,
+            "recorded the move in {}",
+            ascribe_model::ADDRESSES_FILE
         )?;
     }
     Ok(())

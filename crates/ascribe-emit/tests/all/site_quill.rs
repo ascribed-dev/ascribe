@@ -47,6 +47,7 @@ fn each_build_lists_its_pages_assets_and_schema() {
             "_ascribe/nav.json",
             "_ascribe/pages.json",
             "_ascribe/permalinks.json",
+            "_ascribe/redirects.json",
             "_ascribe/schema.ts",
             "_fragments/prerequisites.png",
             "install-agent.md",

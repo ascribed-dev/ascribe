@@ -232,8 +232,73 @@ pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<Worksp
     for (uri, edit) in model_edits {
         changes.entry(uri).or_default().push(edit);
     }
-    add_nav_edit(ctx, root, &mappings, &mut result);
+    add_project_file_edits(ctx, root, &mappings, &mut result);
     Some(result)
+}
+
+/// Adds to `result` the edits the move makes to the project's own files:
+/// `ascribe.nav`, and `ascribe.addresses`.
+fn add_project_file_edits(
+    ctx: &Ctx,
+    root: &Path,
+    mappings: &[(RelPath, RelPath)],
+    result: &mut WorkspaceEdit,
+) {
+    add_nav_edit(ctx, root, mappings, result);
+    add_addresses_edit(ctx, root, mappings, result);
+}
+
+/// Adds to `result` the edit to `ascribe.addresses` that records where each
+/// page that moves went (SPEC §7.10), when the project has the file and it
+/// reads: a page whose address changes is `[moved]` from its old path to
+/// its new one, and a page moved back to an entry's key takes the entry
+/// away. A fragment has no address of its own, so its move records nothing.
+/// A file that can't be read or edited leaves the move's other edits as
+/// they are.
+#[allow(clippy::mutable_key_type)]
+fn add_addresses_edit(
+    ctx: &Ctx,
+    root: &Path,
+    mappings: &[(RelPath, RelPath)],
+    result: &mut WorkspaceEdit,
+) {
+    let edit = || -> Option<(Uri, TextEdit)> {
+        let path = RelPath::parse(ascribe_model::ADDRESSES_FILE).ok()?;
+        let bytes = ascribe_resolve::FileSystem::read_file(&*ctx.fs, &path).ok()?;
+        let text = String::from_utf8(bytes).ok()?;
+        let after = recorded_moves(&text, ctx, mappings)?;
+        let edit = crate::edit::navigation::text_edit(&text, &after);
+        let uri = crate::uri::path_to_uri(&root.join(ascribe_model::ADDRESSES_FILE))?;
+        Some((
+            uri,
+            TextEdit {
+                range: ctx.encoding.range(&LineIndex::new(&text), edit.span),
+                new_text: edit.new_text,
+            },
+        ))
+    };
+    if let Some((uri, edit)) = edit() {
+        result
+            .changes
+            .get_or_insert_with(HashMap::new)
+            .insert(uri, vec![edit]);
+    }
+}
+
+/// `text`, an `ascribe.addresses`, with each page of the project that
+/// `mappings` moves recorded, written as Ascribe writes the file; `None`
+/// when it doesn't read, or nothing changes.
+fn recorded_moves(text: &str, ctx: &Ctx, mappings: &[(RelPath, RelPath)]) -> Option<String> {
+    let mut file = ascribe_model::AddressFile::parse(text, ascribe_core::FileId::new(0)).ok()?;
+    let before = file.to_toml();
+    for page in ctx.snapshot.pages() {
+        let moved = remap(&page.path, mappings);
+        if moved != page.path {
+            file.record_move(page.path.as_str(), moved.as_str());
+        }
+    }
+    let after = file.to_toml();
+    (after != before).then_some(after)
 }
 
 /// Adds to `result` the edit to `ascribe.nav` that keeps what it names

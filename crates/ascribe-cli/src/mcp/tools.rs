@@ -717,6 +717,11 @@ fn call_check(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> 
         },
         limit: None,
         deny_warnings: false,
+        base: None,
+        base_exact: false,
+        // Over the whole project, the addresses are compared with the
+        // default branch, as `ascribe check` compares them.
+        addresses: check::Addresses::Compared,
         fix: false,
         vale: false,
         // What `ascribe.baseline` holds back, the project's backlog, isn't

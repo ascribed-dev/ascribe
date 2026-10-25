@@ -28,9 +28,11 @@
 //! `_ascribe/permalinks.json`, the build's permalinks (output-layout
 //! contract §1.2), `_ascribe/pages.json`, its page records (§1.3),
 //! `_ascribe/headers.json`, the response headers its files need (§1.4),
-//! `_ascribe/nav.json`, its share of the project's navigation (§1.6), and
+//! `_ascribe/nav.json`, its share of the project's navigation (§1.6),
 //! `_ascribe/help.json`, each permalink's section for a product to show
-//! (§1.7).
+//! (§1.7), and `_ascribe/redirects.json`, where the addresses
+//! `ascribe.addresses` records lead now (§1.8). With `[consumer] host`, it
+//! writes the host's files too, in `_ascribe/host/` (§1.9).
 
 mod anchor;
 pub(crate) mod blocks;
@@ -43,6 +45,7 @@ pub(crate) mod nav;
 mod pages;
 mod permalinks;
 mod profile;
+pub mod redirects;
 
 pub(crate) use anchor::starts_anchor;
 pub(crate) use blocks::{arm_values, sync_dimension};
@@ -50,7 +53,7 @@ pub use help::{Help, HelpEntry, help, help_header};
 pub use profile::{ASTRO_VERSION, AstroProfile};
 
 use ascribe_core::{AssetPlacement, AssetUse, ConsumerProfile, RelPath, names};
-use ascribe_model::ContentModel;
+use ascribe_model::{ContentModel, Host};
 use ascribe_resolve::{AstroRouter, ResolvedBuild, ResolvedPage};
 
 use crate::assets::{Placement, mirrored_path, relative_reference};
@@ -77,6 +80,18 @@ pub const NAV_PATH: &str = "_ascribe/nav.json";
 /// The path of the response headers the build's files need, in the emitter
 /// root.
 pub const HEADERS_PATH: &str = "_ascribe/headers.json";
+
+/// The path of where the addresses the build used to publish lead now, in
+/// the emitter root.
+pub const REDIRECTS_PATH: &str = "_ascribe/redirects.json";
+
+/// The path of the host's redirects, with `[consumer] host`, in the emitter
+/// root.
+pub const HOST_REDIRECTS_PATH: &str = "_ascribe/host/_redirects";
+
+/// The path of the host's response headers, with `[consumer] host`, in the
+/// emitter root.
+pub const HOST_HEADERS_PATH: &str = "_ascribe/host/_headers";
 
 /// The directory in the emitter root that holds link targets, which the
 /// consumer serves as static files.
@@ -193,7 +208,8 @@ impl Emitter for SiteEmitter {
         let found = build.permalinks();
         let help = help::entries(cx, build, &found);
         let help_paths = help::entry_paths(cx, help.keys().copied());
-        Ok(vec![
+        let redirects = redirects::redirects(cx.model, build, cx.project().addresses_file());
+        let mut files = vec![
             generated(HEADERS_PATH, headers::list(cx.model, build, &help_paths))?,
             generated(HELP_PATH, help::file(cx, help))?,
             generated(
@@ -204,8 +220,23 @@ impl Emitter for SiteEmitter {
             )?,
             generated(PAGES_PATH, pages::list(cx.model, build))?,
             generated(PERMALINKS_PATH, permalinks::list(cx.model, build))?,
+            generated(REDIRECTS_PATH, redirects::json(&redirects))?,
             generated(SCHEMA_PATH, crate::zod::generate(cx.model))?,
-        ])
+        ];
+        match cx.model.consumer.host {
+            None => {}
+            Some(Host::Netlify) => {
+                files.push(generated(
+                    HOST_HEADERS_PATH,
+                    headers::netlify(cx.model, build, &help_paths),
+                )?);
+                files.push(generated(
+                    HOST_REDIRECTS_PATH,
+                    redirects::netlify(&redirects),
+                )?);
+            }
+        }
+        Ok(files)
     }
 }
 

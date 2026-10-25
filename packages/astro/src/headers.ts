@@ -1,10 +1,11 @@
 // The response headers a build's files need from the host:
 // `_ascribe/headers.json` in its site output (output-layout contract §1.4).
 // A Markdown version has no head, so its page's rules are headers, which only
-// the host sends. With `[consumer] headers = "netlify"`, `astro build` writes
-// them into the site's `_headers`, Netlify's format; `astro dev` sends them
-// with each Markdown version whatever the setting, so a site can be tried
-// with no host.
+// the host sends. With `[consumer] host = "netlify"`, the compiler writes them
+// in Netlify's format too, at `_ascribe/host/_headers` (§1.9), and `astro
+// build` merges every project's into the site's `_headers`; `astro dev` sends
+// them with each Markdown version whatever the setting, so a site can be
+// tried with no host.
 //
 // A site's own `public/_headers` is never rewritten: the build checks it has
 // the lines, and fails with the lines to add when it doesn't.
@@ -49,6 +50,35 @@ export function readHeaders(siteRoot: string): HeaderRule[] | undefined {
     );
   }
   return list.headers;
+}
+
+/**
+ * The rules in the host's `_headers` the compiler wrote in a build's site
+ * output, `_ascribe/host/_headers`, in its order: `undefined` when it has
+ * none, as without `[consumer] host`.
+ */
+export function readHostHeaders(siteRoot: string): HeaderRule[] | undefined {
+  let text: string;
+  try {
+    text = readFileSync(path.join(siteRoot, "_ascribe", "host", "_headers"), "utf8");
+  } catch {
+    return undefined;
+  }
+  const rules: HeaderRule[] = [];
+  let current: HeaderRule | undefined;
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (trimmed === "" || trimmed.startsWith("#")) continue;
+    if (!/^\s/.test(line)) {
+      current = { path: trimmed, headers: {} };
+      rules.push(current);
+      continue;
+    }
+    const colon = trimmed.indexOf(":");
+    if (current === undefined || colon === -1) continue;
+    current.headers[trimmed.slice(0, colon).trim()] = trimmed.slice(colon + 1).trim();
+  }
+  return rules;
 }
 
 /** A build's rules by path, as last read, and when its file was written. */
@@ -158,7 +188,7 @@ export type HeadersOutcome =
 
 /** What the build does about `_headers`, given every project's rules and the site. */
 export function headersOutcome(sources: {
-  /** The rules of every project that sets `[consumer] headers = "netlify"`. */
+  /** The rules of every project that sets `[consumer] host = "netlify"`. */
   rules: readonly HeaderRule[];
   /** Astro's `base`. */
   base: string;

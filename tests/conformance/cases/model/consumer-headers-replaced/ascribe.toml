@@ -6,4 +6,4 @@ title = "string"
 [consumer]
 site = "https://docs.example.com"
 agents = true
-headers = "apache"
+headers = "netlify"

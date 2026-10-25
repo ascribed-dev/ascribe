@@ -181,6 +181,11 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         format: check::Format::Concise,
         limit: None,
         deny_warnings: false,
+        base: None,
+        base_exact: false,
+        // The hook never reads the base: a lost address is the whole
+        // project's check's, in CI, the MCP tool, and Check Every Build.
+        addresses: check::Addresses::NotCompared,
         fix: false,
         vale: false,
         // What `ascribe.baseline` holds back, the project's backlog, isn't

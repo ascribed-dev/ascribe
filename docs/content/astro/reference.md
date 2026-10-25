@@ -30,7 +30,8 @@ Everything `@ascribed/astro` takes and does, once a site is set up: its options,
 - **Publishes the outputs for agents**, on by default with a `[consumer] site`: `llms.txt` and each page's Markdown, in `astro dev` and in the built site ([Publish for AI agents](agents.md)).
 - **Gives each permalink an address** that forwards to its page or heading, in `astro dev` and in the built site ([permalinks](reference.md#permalinks)), and serves each line's [help entry](reference.md#help-entries) for it as JSON.
 - **Writes the site's sitemap and `robots.txt`** from every project's page records, and gives a layout each page's head ([the head, sitemap, and `robots.txt`](../publishing/site.md)), in `astro dev` and in the built site.
-- **Sends each Markdown version's response headers** in `astro dev`, and with `[consumer] headers = "netlify"` writes them into the built site's `_headers`, or fails the build when the site's own `public/_headers` lacks them ([response headers](../publishing/site.md#response-headers)).
+- **Sends each Markdown version's response headers** in `astro dev`, and with `[consumer] host = "netlify"` writes them into the built site's `_headers`, or fails the build when the site's own `public/_headers` lacks them ([response headers](../publishing/site.md#response-headers)).
+- **Writes the redirects** with `[consumer] host = "netlify"`: each project's `_redirects`, from the moves [`ascribe.addresses`](../publishing/redirects.md) records, merged into the built site's, ahead of the site's own `public/_redirects`, and fails the build when a redirect's address is a page the site publishes ([the host's files](../publishing/site.md#the-hosts-files)).
 - **Serves every line of a versioned build** from one collection, builds every line in `astro build` and `astro dev`, and serves each line's linked files at its base path ([versions](reference.md#versions)). Each entry's data has `line`, the line it's from, and `current`; the generated schema doesn't type them. A permalink forwards to the current line, and each line's outputs for agents are published at its base path, with its headers.
 - **Shows code block titles** and tested lines, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](reference.md#code-block-titles)).
 - **Copies the generated schema** into `.astro/integrations/_ascribed_astro/schema.ts` after each build, for a project outside the Astro root ([the collection](index.md#the-collection)).
@@ -118,7 +119,7 @@ Each build writes each permalink's section to `_ascribe/help.json` ([output-layo
 - **The current line's** at the permalink's address with `.json` in place of its end: `/docs/go/connect.json`, beside `/docs/go/connect/`.
 - **An older line's** at `go/` under the line's base path: `/docs/3.4/go/connect.json`. A permalink's own address always forwards to the current line, so the line is in the path.
 
-Each answers with the file narrowed to that one entry: `version`, `build`, and `line` as the line's file has them, and `help` with the entry under its name, so a product reads a fetched entry and its bundled file the same way. A line that has left the window has no address, and an alias has its own. `astro dev` answers with `Access-Control-Allow-Origin: *`, and with `[consumer] headers = "netlify"` the build's `_headers` gives each address the same, since the build's [headers list](../publishing/site.md#response-headers) has a rule for each.
+Each answers with the file narrowed to that one entry: `version`, `build`, and `line` as the line's file has them, and `help` with the entry under its name, so a product reads a fetched entry and its bundled file the same way. A line that has left the window has no address, and an alias has its own. `astro dev` answers with `Access-Control-Allow-Origin: *`, and with `[consumer] host = "netlify"` the build's `_headers` gives each address the same, since the build's [headers list](../publishing/site.md#response-headers) has a rule for each.
 
 Another generator serves the same: for each name in a line's `help.json`, the file with that entry alone, at `<path><name>.json` for the current line, where `path` is `_ascribe/permalinks.json`'s, and at `<base>go/<name>.json` for an older line, where `base` is the line's in `_ascribe/versions.json`.
 
@@ -147,7 +148,7 @@ On an address under the permalinks' path, it says the link came from a product t
 
 ## Search engines and crawlers
 
-From every project's page records, `_ascribe/pages.json`, the integration writes what a search engine reads: each page's head, through `Head.astro`; the site's `sitemap.xml` and `robots.txt`; and each Markdown version's response headers, which `astro dev` sends and `headers = "netlify"` writes into `_headers`. [The head, sitemap, `robots.txt`, and headers](../publishing/site.md) says what each holds, and [Publishing](../publishing/index.md) what a project tells search engines and agents.
+From every project's page records, `_ascribe/pages.json`, the integration writes what a search engine reads: each page's head, through `Head.astro`; the site's `sitemap.xml` and `robots.txt`; and each Markdown version's response headers, which `astro dev` sends and `host = "netlify"` writes into `_headers`. [The head, sitemap, `robots.txt`, and headers](../publishing/site.md) says what each holds, and [Publishing](../publishing/index.md) what a project tells search engines and agents.
 
 ## The sidebar
 @id: sidebar

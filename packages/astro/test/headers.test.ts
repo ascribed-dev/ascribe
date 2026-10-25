@@ -9,6 +9,7 @@ import {
   missingRules,
   netlifyHeaders,
   readHeaders,
+  readHostHeaders,
   type HeaderRule,
 } from "../src/headers.js";
 
@@ -39,6 +40,19 @@ describe("readHeaders", () => {
 
   it("refuses a version it doesn't know", () => {
     expect(() => readHeaders(siteRoot({ version: 2, headers: [] }))).toThrow(/version 2/);
+  });
+});
+
+describe("readHostHeaders", () => {
+  it("reads back the host's file a build writes, and nothing when there's none", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "ascribe-headers-"));
+    expect(readHostHeaders(root)).toBeUndefined();
+    mkdirSync(path.join(root, "_ascribe", "host"), { recursive: true });
+    writeFileSync(
+      path.join(root, "_ascribe", "host", "_headers"),
+      netlifyHeaders(mergeRules([[listed, unlisted]])),
+    );
+    expect(readHostHeaders(root)).toEqual([listed, unlisted]);
   });
 });
 

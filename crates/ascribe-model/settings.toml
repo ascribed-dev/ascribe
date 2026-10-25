@@ -660,11 +660,11 @@ description = '''**Permalinks.** Where each [permalink](../writing/directives.md
 
 [[setting]]
 table = "consumer"
-key = "headers"
+key = "host"
 kind = "choice"
 type = "string"
 choices = ["netlify"]
-description = '''**Response headers.** The host whose format a build's response headers are written in, so that the Markdown version of a page that isn't listed isn't indexed either. Supported: `"netlify"`, the `_headers` file Netlify reads. `@ascribed/astro` writes it into the built site ([response headers](../publishing/site.md#response-headers)). Without it, nothing is written for a host, and the headers are in `_ascribe/headers.json` for a deploy step to read. See below.'''
+description = '''**The host.** The host the site is deployed to, whose files the compiler writes into each build's site output, in `_ascribe/host/`: the redirects `ascribe.addresses` records, and the response headers a page's Markdown version needs, so that one that isn't listed isn't indexed either. Supported: `"netlify"`, the `_redirects` and `_headers` files Netlify reads. `@ascribed/astro` places them at the root of the built site ([the host's files](../publishing/site.md#the-hosts-files)); a site built another way copies them there. Without it, nothing is written for a host, and the redirects and headers are in `_ascribe/redirects.json` and `_ascribe/headers.json` for a deploy step to read. See below.'''
 
 # ---- 16. `[builds.<name>]` ----------------------------------------------------
 

@@ -1,0 +1,8 @@
+description: >-
+  A build the base has and the working tree doesn't is advice: its
+  addresses aren't compared, since there's no build to compare them with.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: addresses-build-gone, file: ascribe.addresses, line: 1}

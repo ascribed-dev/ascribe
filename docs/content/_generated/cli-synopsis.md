@@ -1,5 +1,9 @@
 @memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
 ```text
+ascribe addresses init    [--format text|json]
+ascribe addresses move    OLD NEW [--format text|json]
+ascribe addresses retire  OLD --reason <TEXT> [--format text|json]
+ascribe addresses list    [--build <NAME>] [--format text|json]
 ascribe agents sync       [--check] [--target agents-md|skills|claude|claude-rules|copilot|codex]... [--with-hook] [--cloud] [--agent]
 ascribe agents rules      [PATH]
 ascribe agents index      [--build <NAME>] [--into <FILE>] [--pages <DIR>] [--format text|json]
@@ -9,7 +13,7 @@ ascribe agents hook       HARNESS [--event edit|stop]
 ascribe baseline write    [--format text|json]
 ascribe baseline prune    [--format text|json]
 ascribe build             [--build <NAME>]... [--emit site,plain,json] [--format text|json] [--anchors]
-ascribe check             [PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--format text|concise|json|prompt] [--limit <N>] [--deny-warnings] [--fix] [--vale] [--no-baseline]
+ascribe check             [PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--format text|concise|json|prompt] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]
 ascribe diff              [PAGE] [--base <REV>] [--base-exact] [--build <NAME>]... [--format text|json|html|prompt] [--exit-code] [--pages-only]
 ascribe drift             [--base <REV>] [--build <NAME>]... [--format text|json|markdown] [--exit-code]
 ascribe explain           [CODE] [--list] [--format text|json]

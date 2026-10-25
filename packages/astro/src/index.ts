@@ -57,7 +57,8 @@ import {
   inOrder,
 } from "./files.js";
 import { WARN as HEAD_WARN } from "./head-check.js";
-import { headersFor, headersOutcome, mergeRules, readHeaders } from "./headers.js";
+import { headersFor, headersOutcome, mergeRules, readHostHeaders } from "./headers.js";
+import { mergeRedirects, readHostRedirects, redirectsOutcome } from "./redirects.js";
 import { helpPatterns } from "./help.js";
 import { forwardingRoutes, hasPermalinks, permalinkPattern, readPermalinks } from "./permalinks.js";
 import {
@@ -196,8 +197,8 @@ function fail(problems: string[], what: string): void {
  * Runs `ascribe build` for each project, checks the site's routing, adds the markdown plugin, adds a
  * page for each permalink's address and an answer for each line's help entries, and serves published files, and, with `[consumer] agents = true`,
  * `llms.txt` and each page's Markdown, each at its project's base path; and writes the site's one
- * sitemap and `robots.txt` from every project's page records, and, with `[consumer] headers =
- * "netlify"`, its `_headers` from their headers lists.
+ * sitemap and `robots.txt` from every project's page records, and, with `[consumer] host =
+ * "netlify"`, its `_headers` and `_redirects` from the host's files each build writes.
  */
 export default function ascribe(options: AscribeOptions): AstroIntegration {
   /** With `projects`; otherwise the one entry has no name a collection gives. */
@@ -689,18 +690,17 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           await writeFile(path.join(out, "robots.txt"), files.robots);
           logger.info("wrote /robots.txt");
         }
-        // The host's headers, from the projects that name its format.
+        // The host's files, from the projects that name it: each build's,
+        // and each of its older lines'.
+        const hostRoots = entries
+          .filter((entry) => entry.project.consumer.host === "netlify")
+          .flatMap((entry) => [
+            entry.siteRoot,
+            ...olderLines(entry.siteRoot).map((line) => line.siteRoot),
+          ]);
         const ownHeaders = path.join(publicDir, "_headers");
         const headers = headersOutcome({
-          rules: mergeRules(
-            entries
-              .filter((entry) => entry.project.consumer.headers === "netlify")
-              .flatMap((entry) =>
-                [entry.siteRoot, ...olderLines(entry.siteRoot).map((line) => line.siteRoot)].map(
-                  (siteRoot) => readHeaders(siteRoot) ?? [],
-                ),
-              ),
-          ),
+          rules: mergeRules(hostRoots.map((siteRoot) => readHostHeaders(siteRoot) ?? [])),
           base,
           own: existsSync(ownHeaders) ? readFileSync(ownHeaders, "utf8") : undefined,
         });
@@ -709,6 +709,19 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         if (headers.kind === "write") {
           await writeFile(path.join(out, "_headers"), headers.text);
           logger.info("wrote /_headers");
+        }
+        const ownRedirects = path.join(publicDir, "_redirects");
+        const redirects = redirectsOutcome({
+          redirects: mergeRedirects(hostRoots.map(readHostRedirects)),
+          base,
+          published: (route) => builtKeys.has(routeKey(route)),
+          own: existsSync(ownRedirects) ? readFileSync(ownRedirects, "utf8") : undefined,
+        });
+        if (redirects.kind === "fail") throw new Error(`@ascribed/astro: ${redirects.text}`);
+        if (redirects.kind === "note") logger.info(redirects.text);
+        if (redirects.kind === "write") {
+          await writeFile(path.join(out, "_redirects"), redirects.text);
+          logger.info("wrote /_redirects");
         }
         // Entries of one project publish at one base path: the first entry's copies go last, so they win.
         for (const entry of [...entries].reverse()) {

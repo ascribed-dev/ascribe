@@ -1,0 +1,8 @@
+description: >-
+  An entry of `[moved]` whose value isn't a string is reported at the
+  entry: the file doesn't have the shape §7.10 gives it.
+spec: ["7.10", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: addresses-file-invalid, file: ascribe.addresses, line: 4}

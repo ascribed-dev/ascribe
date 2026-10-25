@@ -37,6 +37,7 @@
 //! loading; they are in [`ContentModel::warnings`]. When loading fails, the
 //! returned issues include the warnings found before the failure.
 
+pub mod addresses;
 mod checks;
 mod crawlers;
 pub mod examples;
@@ -62,6 +63,7 @@ pub mod vale;
 
 use std::path::{Path, PathBuf};
 
+pub use addresses::{ADDRESSES_FILE, ADDRESSES_HEADER, ADDRESSES_VERSION, AddressFile, Former};
 pub use ascribe_core::Issue;
 pub use crawlers::{
     KNOWN_CRAWLERS_FILE, KnownCrawler, crawler_tokens, known_crawlers, parse_known, user_agent,

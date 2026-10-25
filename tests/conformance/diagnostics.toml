@@ -1608,7 +1608,8 @@ messages.suggestion = "unknown key `{key}` in `[{table}]`; did you mean `{sugges
 messages.type-key = "`{key}` isn't a key of `[{table}]`: a page says what type it is in its frontmatter, with `type: {type}`"
 messages.glossary-terms = "`{key}` isn't a key of `[{table}]`: a term is a heading marked `@term` on a page that `[glossary] pages` lists"
 messages.intended-term = "`{key}` isn't a key of `[[{table}]]`: a glossary term is acknowledged with `@intended` at the top of its section, under its heading"
-fix = "Fix the key's spelling, or remove it. A key added in a later version of Ascribe is unknown to an older one: when the project was written for a newer Ascribe, install it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`. `[[intended]]` has no `term`: acknowledge a term's problem with `@intended` under its heading."
+messages.consumer-headers = "`headers` isn't a key of `[consumer]` any more: write `host = \"netlify\"`, which writes Netlify's `_headers` and `_redirects` into each build's site output"
+fix = "Fix the key's spelling, or remove it. A key added in a later version of Ascribe is unknown to an older one: when the project was written for a newer Ascribe, install it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`. `[[intended]]` has no `term`: acknowledge a term's problem with `@intended` under its heading. `[consumer]` has no `headers`: write `host = \"netlify\"`, which writes Netlify's `_headers` as `headers` did, and `_redirects` beside it."
 
 [[diagnostic]]
 code = "ASC062"
@@ -4768,3 +4769,72 @@ area = "pages"
 when = "A section's summary, as plain text on one line, is as long as the limit or longer: 300 characters, or `[checks.summary-long] limit`. A summary in a fragment is reported once, in the fragment"
 message = "this summary is {length} characters, and a product shows one under {limit}; shorten it to a sentence or two"
 fix = "Shorten the summary to a sentence or two that say what the section is for. A product shows it in a tooltip or beside an error, where there's room for little more. Its length is counted as `description-too-long` counts a description's: as plain text on one line, with phrases replaced and formatting dropped. The limit is 300 characters; set another in `ascribe.toml`, such as `[checks.summary-long] limit = 200`."
+
+[[diagnostic]]
+code = "ASC254"
+slug = "addresses-file-invalid"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.10"
+reference = "publishing/redirects.md#ascribeaddresses"
+row = "Addresses file | `ascribe.addresses` isn't valid TOML, or doesn't have the shape §7.10 gives it"
+message = "ascribe.addresses can't be read: {detail}"
+fix = "ascribe.addresses is written by `ascribe rename`, the editor's moves, and `ascribe addresses`. Undo the change made to it by hand, other than to a retired address's reason, or, for a file from a newer version of Ascribe, update Ascribe. Don't delete the file to quiet this: it's what keeps the addresses the docs have published working, and the build writes no redirects without it."
+
+[[diagnostic]]
+code = "ASC255"
+slug = "address-lost"
+severity = "warning"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.10"
+reference = "publishing/redirects.md#what-the-check-reports"
+row = "Addresses file | A page's address, or its Markdown version's, that the base published and nothing accounts for"
+message = "{source} was published at {addresses}, and nothing publishes them now{builds}"
+messages.one = "{source} was published at {addresses}, and nothing publishes it now{builds}"
+fix = "Decide what a reader who follows an old link should get. When the content is somewhere else now, forward it: `ascribe addresses move <old> <new>` records where it went, and the build writes the redirect. When it's gone on purpose, retire it: `ascribe addresses retire <old> --reason \"…\"`. When it was deleted by mistake, restore the file. Moving a page with `ascribe rename`, or in the editor, records the move for you. The base is the default branch, or `--base`; see [Keep the addresses you've published](publishing/redirects.md)."
+
+[[diagnostic]]
+code = "ASC256"
+slug = "anchor-lost"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.10"
+reference = "publishing/redirects.md#what-the-check-reports"
+row = "Addresses file | A heading's explicit id that the base published on a page still published, and nothing accounts for"
+message = "the id `{id}` in {path} was published at {addresses}, and the page doesn't have it now{builds}"
+fix = "Put the `@id` back on the heading that covers it now, so links to it keep working, or record where it went: `ascribe addresses move <file>#<old> <file>#<new>`, or `ascribe addresses retire <file>#<old> --reason \"…\"`. A link's fragment never reaches the host, so no redirect can follow it yet; the entry is kept for when one can."
+
+[[diagnostic]]
+code = "ASC257"
+slug = "addresses-base-unreadable"
+severity = "warning"
+level = "file"
+next = "outside"
+evidence = []
+configurable = true
+area = "project"
+spec = "7.10"
+reference = "publishing/redirects.md#the-base"
+when = "The project has `ascribe.addresses`, and `ascribe check` can't read the base it compares the addresses with: there's no git repository, or the base isn't there, as in a shallow clone. A base with no project published nothing, so that's advice, not a warning. Reported once, at `ascribe.addresses`"
+message = "the addresses weren't compared with the base: {reason}"
+messages.no-project = "the addresses weren't compared with the base: {base} has no Ascribe project here, so it published nothing to keep"
+fix = "Give the check a base it can read. In CI, fetch the history (`fetch-depth: 0` on actions/checkout), and pass the branch a pull request targets, `--base origin/$GITHUB_BASE_REF`, or, on a push, the commit before it, `--base ${{ github.event.before }} --base-exact`. A base with no project, as a migration's first pull request has, published nothing, so there's nothing to compare: it's reported, as advice, so a check that compared nothing never passes silently. See [The base](publishing/redirects.md#the-base)."
+
+[[diagnostic]]
+code = "ASC258"
+slug = "addresses-build-gone"
+severity = "advice"
+level = "file"
+next = "outside"
+evidence = []
+spec = "7.10"
+reference = "publishing/redirects.md#what-the-check-reports"
+row = "Addresses file | A build the base has and the working tree doesn't"
+message = "the base has the build `{build}`, and ascribe.toml doesn't now, so its {count} addresses aren't compared"
+fix = "Nothing to do when the build was retired on purpose, as an older line is when it leaves the window: its addresses aren't compared, since builds are matched by name. When the build was renamed, its addresses are compared under its new name once the base has it."

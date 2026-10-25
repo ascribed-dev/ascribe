@@ -1,0 +1,9 @@
+description: >-
+  An explicit id the base published, on a page still published, that the
+  page doesn't have now is advice: a link to the id lands at the top of
+  the page.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: anchor-lost, file: ascribe.addresses, line: 1}

@@ -1,5 +1,5 @@
 description: >-
-  `[consumer] headers` names a host's format for response headers, and
+  `[consumer] host` names the host whose files a build writes, and
   `netlify` is the only one: any other value is an error at the value.
 spec: ["9.5"]
 tags: [model]

@@ -33,6 +33,8 @@ mod plain;
 mod quill;
 #[path = "all/reading.rs"]
 mod reading;
+#[path = "all/redirects.rs"]
+mod redirects;
 #[path = "all/render_fixtures.rs"]
 mod render_fixtures;
 #[path = "all/site.rs"]

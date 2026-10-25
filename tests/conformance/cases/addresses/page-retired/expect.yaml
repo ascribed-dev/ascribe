@@ -1,0 +1,7 @@
+description: >-
+  A `[retired]` entry for the page accounts for its addresses: it was
+  removed on purpose.
+spec: ["7.10"]
+tags: [addresses]
+
+diagnostics: []

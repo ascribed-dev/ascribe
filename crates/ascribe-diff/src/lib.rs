@@ -41,6 +41,7 @@
 //! }
 //! ```
 
+mod addresses;
 mod align;
 mod command;
 mod compare;
@@ -54,6 +55,7 @@ mod words;
 
 use serde::Serialize;
 
+pub use addresses::{BaseAddresses, base_addresses};
 pub use command::{DiffOptions, DriftOptions, ProjectDiff, diff_project, drift_project};
 pub use compare::{
     BuildDiff, Change, ChangeKind, Counts, PageDiff, PageStatus, Side, Words, compare_builds,

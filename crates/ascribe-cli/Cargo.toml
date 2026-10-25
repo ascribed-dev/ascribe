@@ -40,6 +40,7 @@ thiserror.workspace = true
 # TypeScript generated from them (src/shapes.rs).
 schemars.workspace = true
 ascribe-diff = { workspace = true, features = ["json-schema"] }
+ascribe-emit = { workspace = true, features = ["json-schema"] }
 ascribe-lsp = { workspace = true, features = ["json-schema"] }
 ascribe-query = { workspace = true, features = ["json-schema"] }
 ascribe-sources = { workspace = true, features = ["json-schema"] }

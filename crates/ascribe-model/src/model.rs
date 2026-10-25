@@ -1307,24 +1307,26 @@ pub struct Consumer {
     /// `permalink-path`: a path from the site's root, starting with `/`.
     /// [`Consumer::permalink_path`] gives the path with its default.
     pub permalink_path: Option<String>,
-    /// The host whose format the site's response headers are written in
-    /// (`headers`), by the site generator's integration from
-    /// `_ascribe/headers.json`. `None`: nothing is written for a host.
-    pub headers: Option<HeadersFormat>,
+    /// The host the site is deployed to (`host`), whose files the compiler
+    /// writes into each build's site output, at `_ascribe/host/`: its
+    /// redirects and its response headers. `None`: nothing is written for a
+    /// host.
+    pub host: Option<Host>,
 }
 
-/// A host's format for response headers, `[consumer] headers`.
+/// A host the site is deployed to, `[consumer] host`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum HeadersFormat {
-    /// A `_headers` file at the root of what's deployed, as Netlify reads it.
+pub enum Host {
+    /// Netlify, which reads `_redirects` and `_headers` at the root of
+    /// what's deployed.
     Netlify,
 }
 
-impl HeadersFormat {
+impl Host {
     /// The value as `ascribe.toml` writes it.
     pub fn name(self) -> &'static str {
         match self {
-            HeadersFormat::Netlify => "netlify",
+            Host::Netlify => "netlify",
         }
     }
 }

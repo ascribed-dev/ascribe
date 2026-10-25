@@ -9,8 +9,8 @@ use std::sync::{Arc, OnceLock};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{Date, FileId, Issue, LineIndex, RelPath, Span};
 use ascribe_model::{
-    ContentModel, LOCK_FILE, Lock, LockedSource, NAV_FILE, NavFile, PERMALINKS_FILE, PermalinkList,
-    SourceBound,
+    ADDRESSES_FILE, AddressFile, ContentModel, LOCK_FILE, Lock, LockedSource, NAV_FILE, NavFile,
+    PERMALINKS_FILE, PermalinkList, SourceBound,
 };
 use ascribe_resolve::{
     CodeFile, CodeFiles, Committed, DiskFs, FileSystem, Layout, MemoFile, MemoStore, Personal,
@@ -34,6 +34,10 @@ pub const PERMALINKS_FILE_ID: FileId = FileId::new(0x7FFF_FFFE);
 /// The id of `ascribe.nav` (SPEC §7.8), for locations in it: just before
 /// the permalinks list's.
 pub const NAV_FILE_ID: FileId = FileId::new(0x7FFF_FFFD);
+
+/// The id of `ascribe.addresses` (SPEC §7.10), for locations in it: just
+/// before the baseline's.
+pub const ADDRESSES_FILE_ID: FileId = FileId::new(0x7FFF_FFFB);
 
 /// The id of the first image file under the content root, for locations
 /// in image files: the image checks list them in path order, and number them
@@ -252,6 +256,10 @@ pub struct Project {
     nav_text: Option<String>,
     /// `ascribe.nav` read, or its problems, when there's one.
     nav: Option<Result<NavFile, Vec<Issue>>>,
+    /// The text of `ascribe.addresses`, when there is one.
+    addresses_text: Option<String>,
+    /// `ascribe.addresses` read, or its problems, when there's one.
+    addresses: Option<Result<AddressFile, Vec<Issue>>>,
     /// The text of `ascribe.baseline`, when there is one.
     baseline_text: Option<String>,
     /// `ascribe.baseline` read, or the line that doesn't parse, when
@@ -578,6 +586,13 @@ impl Project {
         let nav = nav_text
             .as_deref()
             .map(|text| NavFile::parse(text, NAV_FILE_ID));
+        let addresses_text = RelPath::parse(ADDRESSES_FILE)
+            .ok()
+            .and_then(|path| fs.read_file(&path).ok())
+            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
+        let addresses = addresses_text
+            .as_deref()
+            .map(|text| AddressFile::parse(text, ADDRESSES_FILE_ID));
         let baseline_text = RelPath::parse(BASELINE_FILE)
             .ok()
             .and_then(|path| fs.read_file(&path).ok())
@@ -599,6 +614,8 @@ impl Project {
             permalinks,
             nav_text,
             nav,
+            addresses_text,
+            addresses,
             baseline_text,
             baseline,
             images: OnceLock::new(),
@@ -731,6 +748,16 @@ impl Project {
         self.nav.as_ref()
     }
 
+    /// The text of `ascribe.addresses`, when the project has one.
+    pub fn addresses_text(&self) -> Option<&str> {
+        self.addresses_text.as_deref()
+    }
+
+    /// `ascribe.addresses` read, or its problems, when the project has one.
+    pub fn addresses(&self) -> Option<&Result<AddressFile, Vec<Issue>>> {
+        self.addresses.as_ref()
+    }
+
     /// The text of `ascribe.baseline`, when the project has one.
     pub fn baseline_text(&self) -> Option<&str> {
         self.baseline_text.as_deref()
@@ -771,6 +798,14 @@ impl Project {
 
     /// What a file id names.
     pub fn file(&self, id: FileId) -> Option<FileEntry<'_>> {
+        if id == ADDRESSES_FILE_ID {
+            return self.addresses_text.as_deref().map(|text| FileEntry {
+                id,
+                display_path: ADDRESSES_FILE.to_owned(),
+                text,
+                content_path: None,
+            });
+        }
         if let Some(i) = id.index().checked_sub(MEMO_FILE_IDS)
             && id.index() < IMAGE_FILE_IDS
         {
