@@ -139,12 +139,12 @@
 
   /* A page that says which it is. */
   :root[data-ascribe-scheme="light"]
-    :is(ascribe-note, ascribe-steps, ascribe-tabs, ascribe-availability) {
+    :is(ascribe-note, ascribe-steps, ascribe-tabs, ascribe-availability, ascribe-operation) {
     color-scheme: light;
   }
 
   :root[data-ascribe-scheme="dark"]
-    :is(ascribe-note, ascribe-steps, ascribe-tabs, ascribe-availability) {
+    :is(ascribe-note, ascribe-steps, ascribe-tabs, ascribe-availability, ascribe-operation) {
     color-scheme: dark;
   }
 }
@@ -399,6 +399,26 @@ ascribe-availability-target[planned] {
   --_background: var(--ascribe-state-background);
   outline: 1px dashed currentColor;
   outline-offset: -1px;
+}
+
+/* <ascribe-operation> ----------------------------------------------------- */
+
+/* An operation of a declared API: a line linking to it in the reference. A
+   deprecated one's link is struck through, and its "(deprecated)" is in the
+   text, so it doesn't depend on color or on this stylesheet. */
+ascribe-operation {
+  display: block;
+  margin-block: var(--ascribe-space-small);
+  font-family: var(--ascribe-font-family);
+}
+
+ascribe-operation[deprecated] > a {
+  text-decoration-line: line-through;
+}
+
+.ascribe-operation-deprecated {
+  color: var(--ascribe-state-deprecated-color);
+  font-size: var(--ascribe-font-size-small);
 }
 
 /* <ascribe-group> --------------------------------------------------------- */

@@ -269,3 +269,4 @@
 | [ASC274](../checks/diagnostics/pages.md#ASC274) | `link-operation-form-unsupported` | Error | File | write |
 | [ASC275](../checks/diagnostics/pages.md#ASC275) | `link-operation-by-path` | Advice | File | fix |
 | [ASC276](../checks/diagnostics/pages.md#ASC276) | `link-operation-deprecated` | Advice | File | write |
+| [ASC281](../checks/diagnostics/pages.md#ASC281) | `operation-link-not-operation` | Error | File | write |

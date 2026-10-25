@@ -861,6 +861,11 @@ pub const LINK_OPERATION_BY_PATH: DiagnosticSlug = DiagnosticSlug("link-operatio
 /// the spec marks deprecated".
 pub const LINK_OPERATION_DEPRECATED: DiagnosticSlug = DiagnosticSlug("link-operation-deprecated");
 
+/// `ASC281`, error, file level: SPEC §8.2, "Links | An `@operation`'s link
+/// isn't to an operation of a declared API".
+pub const OPERATION_LINK_NOT_OPERATION: DiagnosticSlug =
+    DiagnosticSlug("operation-link-not-operation");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -1131,6 +1136,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     LINK_OPERATION_FORM_UNSUPPORTED,
     LINK_OPERATION_BY_PATH,
     LINK_OPERATION_DEPRECATED,
+    OPERATION_LINK_NOT_OPERATION,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

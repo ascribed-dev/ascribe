@@ -226,3 +226,20 @@ pub fn attribute_values(
         })
         .unwrap_or_default()
 }
+
+/// What an operation's link says, in every output (SPEC §4.13): its method
+/// in capitals and its path, then `: ` and its summary when it has one, on
+/// one line: a summary's line breaks are spaces.
+pub(crate) fn operation_text(operation: &ascribe_resolve::EmbeddedOperation) -> String {
+    let head = format!("{} {}", operation.method.to_uppercase(), operation.path);
+    let summary = operation
+        .summary
+        .as_deref()
+        .map(|s| s.split_whitespace().collect::<Vec<_>>().join(" "))
+        .unwrap_or_default();
+    if summary.is_empty() {
+        head
+    } else {
+        format!("{head}: {summary}")
+    }
+}

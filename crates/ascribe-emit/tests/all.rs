@@ -25,6 +25,8 @@ mod help;
 mod lines;
 #[path = "all/openapi.rs"]
 mod openapi;
+#[path = "all/operation.rs"]
+mod operation;
 #[path = "all/pages.rs"]
 mod pages;
 #[path = "all/permalinks.rs"]

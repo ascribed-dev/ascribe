@@ -15,7 +15,7 @@ use ascribe_core::availability::{Detail, Entry, parse_availability};
 use ascribe_core::names;
 use ascribe_core::{Attributes, DefaultValue};
 use ascribe_model::ContentModel;
-use ascribe_resolve::{ResolvedArm, ResolvedBlock, ResolvedKind};
+use ascribe_resolve::{EmbeddedOperation, ResolvedArm, ResolvedBlock, ResolvedKind};
 use ascribe_syntax::{
     Alignment, BlockKind, Bound, DirectiveLine, Inline, Link, PrimaryValue, Table,
 };
@@ -24,7 +24,7 @@ use super::anchor::{Anchor, html_tag};
 use super::element::{Attrs, close, empty_block, marker, open, wrap};
 use super::inline::{Mode, render, value_text};
 use crate::emitter::PageContext;
-use crate::labels::{availability_target_text, is_planned, plain_text};
+use crate::labels::{availability_target_text, is_planned, operation_text, plain_text};
 use crate::plain::{Prev, escape_closing_hash, fenced, list, quote, starts_nested};
 
 pub(crate) struct Renderer<'a> {
@@ -378,6 +378,12 @@ impl Renderer<'_> {
                 .map(|text| self.element(anchor, text))
                 .into_iter()
                 .collect(),
+            "operation" => block
+                .operation
+                .as_deref()
+                .map(|operation| self.element(anchor, operation_element(operation)))
+                .into_iter()
+                .collect(),
             "note" => match &line.primary {
                 Some(PrimaryValue::Text(text)) => {
                     let content = self.inlines(block, &text.inlines, Mode::default());
@@ -654,6 +660,43 @@ impl Renderer<'_> {
         let attrs = Attrs::new().with_opt("sync", sync);
         wrap(names::ELEMENT_TABS, &attrs, &tabs)
     }
+}
+
+/// `<ascribe-operation>` (contract §11), as one HTML block: its attributes,
+/// and a link to the operation's address whose text is the plain output's
+/// line, `GET /users/{id}: Get a user`, then `(deprecated)` when it is.
+pub(crate) fn operation_element(operation: &EmbeddedOperation) -> String {
+    let attrs = Attrs::new()
+        .with("api", operation.api.as_str())
+        .with("method", operation.method.as_str())
+        .with("path", operation.path.as_str())
+        .with_opt("operation-id", operation.operation_id.clone());
+    let attrs = if operation.deprecated {
+        attrs.with("deprecated", "")
+    } else {
+        attrs
+    };
+    let mut line = format!(
+        "{}{}{}",
+        open("a", &Attrs::new().with("href", operation.address.as_str())),
+        super::element::escape(&operation_text(operation)),
+        close("a")
+    );
+    if operation.deprecated {
+        line.push_str(&format!(
+            " {}(deprecated){}",
+            open(
+                "span",
+                &Attrs::new().with("class", names::CLASS_OPERATION_DEPRECATED)
+            ),
+            close("span")
+        ));
+    }
+    format!(
+        "{}\n{line}\n{}",
+        open(names::ELEMENT_OPERATION, &attrs),
+        close(names::ELEMENT_OPERATION)
+    )
 }
 
 /// `<ascribe-availability>` with one `<ascribe-availability-target>` per
