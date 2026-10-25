@@ -141,10 +141,14 @@ async function previewOf(variant: Variant, contentPath: string): Promise<Preview
     ?.request("ascribe/preview", { textDocument: { uri }, build: variant.build })) as PreviewResult;
 }
 
-/** The built HTML of a route, if Astro built one: `/docs/guides/my-setup` is `dist/guides/my-setup/index.html`. */
+/**
+ * The built HTML of a route, if Astro built one. The site's routes have no trailing slash, so
+ * Astro writes each page as a file: `/docs/guides/my-setup` is `dist/guides/my-setup.html`, and the
+ * home page `dist/index.html`.
+ */
 function builtHtml(root: string, route: string): string | undefined {
   const rel = route.slice(BASE.length).replace(/^\/|\/$/g, "");
-  const file = path.join(root, "dist", rel, "index.html");
+  const file = path.join(root, "dist", rel === "" ? "index.html" : `${rel}.html`);
   return existsSync(file) ? readFileSync(file, "utf8") : undefined;
 }
 
