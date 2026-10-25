@@ -6,14 +6,14 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/publishing/redirects.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
-| `ascribe addresses init` |  |  | `text`, `json` |
-| `ascribe addresses move` |  | `OLD NEW` | `text`, `json` |
-| `ascribe addresses retire` |  | `OLD --reason <TEXT>` | `text`, `json` |
-| `ascribe addresses list` |  | `[--build <NAME>]` | `text`, `json` |
+| `ascribe addresses init` | Makes `ascribe.addresses`, with its header, its `version`, and empty tables. |  | `text`, `json` |
+| `ascribe addresses move` | Records that a page, or a heading's id, moved, after a move made without Ascribe, as with `git mv`. | `OLD NEW` | `text`, `json` |
+| `ascribe addresses retire` | Records that a page, or a heading's id, was removed on purpose, with the reason, which is for whoever reads the file later. | `OLD --reason <TEXT>` | `text`, `json` |
+| `ascribe addresses list` | Shows the redirects and retired addresses each build writes, as its `_ascribe/redirects.json` has them, and the entry of `ascribe.addresses` each comes from. | `[--build <NAME>]` | `text`, `json` |
 | `ascribe agents sync` | Writes your project's rules and the Ascribe skill where each `--target`'s agents read them. | `[--check] [--target agents-md\|skills\|claude\|claude-rules\|copilot\|codex]... [--with-hook] [--cloud] [--agent]` |  |
 | `ascribe agents rules` | Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside `ascribe.toml`, as it would write it now. | `[PATH]` |  |
 | `ascribe agents index` | Writes a compact index of one build's docs, for the `AGENTS.md` of the product they're about: one line a page, with its title, its address, and its description, grouped in sections as the build's `llms.txt` is. | `[--build <NAME>] [--into <FILE>] [--pages <DIR>]` | `text`, `json` |
@@ -787,6 +787,9 @@ The JSON the commands and the language server write, each with a schema:
 
 | Schema | Shape | What it is |
 |---|---|---|
+| `schemas/addresses-init.schema.json` | AddressesInitReport | What `ascribe addresses init --format json` writes. |
+| `schemas/addresses-list.schema.json` | AddressesListReport | What `ascribe addresses list --format json` writes. |
+| `schemas/addresses-record.schema.json` | AddressesRecordReport | What `ascribe addresses move` and `retire` write with `--format json`. |
 | `schemas/agents-index.schema.json` | AgentsIndexReport | What `ascribe agents index --format json` answers. |
 | `schemas/baseline-prune.schema.json` | BaselinePruneReport | What `ascribe baseline prune --format json` writes. |
 | `schemas/baseline-write.schema.json` | BaselineWriteReport | What `ascribe baseline write --format json` writes. |
@@ -930,6 +933,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `permalinks/in-your-product.md` | Show the docs in your product | how-to |
 | `permalinks/index.md` | Permalinks | how-to |
 | `publishing/index.md` | Publishing | concept |
+| `publishing/redirects.md` | Keep the addresses you've published | how-to |
 | `publishing/site.md` | The head, sitemap, `robots.txt`, and headers | reference |
 | `review/ci-report.md` | Attach the review report to every pull request | how-to |
 | `review/diff.md` | `ascribe diff` and `drift` | reference |
