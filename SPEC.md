@@ -1128,6 +1128,36 @@ take = ["releases", "dimensions.pm", "consumer.site"]
 - A processor that edits a content model in place edits a key where it's written: an edit of a taken key, or of a key inside a taken table, is made in the file it's taken from, at the same path, and a key `take` names that's renamed is renamed in `take` too. A rename of a name the other file declares, such as a phrase or a dimension's value, is also made where that file's project uses it, in its pages, so that project isn't left using the old name. An edit that changes the other file MUST say which file it changed. An edit it can't make in the other file, such as one of a table written partly in each, or one that would write a path the other file would read from its own folder, it MUST refuse, naming the file.
 - An authoring environment SHOULD watch the other file as it watches `ascribe.toml`, and SHOULD say, at a name in `take`, where the taken key is written.
 
+### 7.10 The addresses file
+
+A project MAY commit a record of where the addresses its documentation published went, `ascribe.addresses`, beside `ascribe.toml`, so that no address stops working without someone deciding it should. Without the file, nothing below applies.
+
+```toml
+# Where addresses the docs published went. Written by `ascribe rename`, the
+# editor, `ascribe addresses`, and `ascribe check --fix`; edit only
+# [retired]'s reasons.
+version = 1
+
+[moved]
+"/docs/intro.html" = "getting-started.md"
+"guides/install.md#install-with-npm" = "guides/install.md#install-npm"
+"guides/keys.md" = "security/keys.md"
+
+[former]
+base-path = ["/docs/"]
+
+[retired]
+"reference/legacy-sync.md" = "The sync agent was removed in 4.0"
+```
+
+- `version` is `1`; a version a processor doesn't know is an error naming a newer one. The tables are `[moved]`, `[former]`, and `[retired]`, each optional; a table or key the file doesn't define is an error.
+- A **key** of `[moved]` or `[retired]` is a source: a page's content path, standing for every address the page was published at; a file's content path, `#`, and a heading's id, with the file the `@id` is written in, so a fragment's id is one key however many pages include it; or an address from the host's root, starting with `/`, published before the project used a processor. A `[moved]` value is a page's content path, and optionally `#` and a heading's id. A `[retired]` value is the reason, the author's text, which MUST NOT be empty or the placeholder a processor writes.
+- `[former]` lists the routing settings the documentation was published under before, each oldest first: `base-path`, `permalink-path`, and `agents`, each a list of values, and `builds`, a table from a build's old name to its new one.
+- An **address** a build publishes is a page's route, its Markdown version's when the build publishes one, and each heading's explicit id as the page's route, `#`, and the id. A generated id isn't one: it changes with the heading's text.
+- Processors compare the addresses a **base** published, the documentation as a revision of its repository had it, with the addresses the project publishes now, build by build, matching builds by name. An address the base published and no build of that name publishes now is **lost** unless an entry accounts for it: `[moved]` has its source, or the address itself, and the value is a page a build publishes now; `[retired]` has its source, or the address; or an availability mark takes its page out of that build while another build publishes it. An id is compared only while its page is at the same address: what happened to the page decides it. Each source lost is reported once.
+- A processor that moves a source on request records the move in `[moved]`, when the file exists, in the same change as the links it updates; moving a source back to an entry's key removes the entry. It writes the file whole, each table sorted, one entry per line, keeping the header comment.
+- A build's redirects come from the file alone, never the base: for each `[moved]` entry, each address its key had, as the build's routing makes it now, leads to where its value is, permanently, unless the build publishes that address or it's the same address once case and a final `/` are ignored. Each `[retired]` key's addresses are gone, with the reason.
+
 ---
 
 ## 8. Validation
@@ -1207,6 +1237,10 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Permalinks list | `ascribe.permalinks` isn't valid TOML, or doesn't have the shape §7.5 gives it | Error |
 | Permalinks list | A permalink the content declares, an alias, or a retired permalink that `ascribe.permalinks` doesn't list as it is | Warning |
 | Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, an alias, or retired | Warning |
+| Addresses file | `ascribe.addresses` isn't valid TOML, or doesn't have the shape §7.10 gives it | Error |
+| Addresses file | A page's address, or its Markdown version's, that the base published and nothing accounts for | Warning |
+| Addresses file | A heading's explicit id that the base published on a page still published, and nothing accounts for | Advice |
+| Addresses file | A build the base has and the working tree doesn't | Advice |
 | Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares | Error |
 | Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too | Error |
 | Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it | Error |

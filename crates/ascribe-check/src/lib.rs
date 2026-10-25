@@ -34,6 +34,7 @@
 //! ([`Diagnostic::builds`]).
 
 mod across;
+pub mod addresses;
 pub mod baseline;
 mod builds;
 mod checks;
@@ -80,8 +81,9 @@ pub use page::{
     PageChecker, PageIndex, check_all_builds, check_builds, check_pages, check_project,
 };
 pub use project::{
-    FileEntry, IMAGE_FILE_IDS, LOCK_FILE_ID, LoadError, LocateError, MEMO_FILE_IDS, MODEL_FILE,
-    ModelFile, NAV_FILE_ID, PERMALINKS_FILE_ID, Project, ReadFailure, SourceFile,
+    ADDRESSES_FILE_ID, FileEntry, IMAGE_FILE_IDS, LOCK_FILE_ID, LoadError, LocateError,
+    MEMO_FILE_IDS, MODEL_FILE, ModelFile, NAV_FILE_ID, PERMALINKS_FILE_ID, Project, ReadFailure,
+    SourceFile,
 };
 pub use registry::{Entry, Example, Level, Next, Registry};
 pub use scope::{Reported, Scope, ScopeError, locate_for};
@@ -131,6 +133,9 @@ pub(crate) fn check_files_with(
     sources.extend(check_examples(project));
     sources.extend(across.remove(&PERMALINKS_FILE_ID).unwrap_or_default());
     sources.extend(across.remove(&NAV_FILE_ID).unwrap_or_default());
+    if let Some(Err(problems)) = project.addresses() {
+        sources.extend(problems.iter().map(Diagnostic::from_issue));
+    }
     sources.extend(across.remove(&FileId::new(0)).unwrap_or_default());
     out.splice(model..model, sources);
     // The image files' come last, in path order.

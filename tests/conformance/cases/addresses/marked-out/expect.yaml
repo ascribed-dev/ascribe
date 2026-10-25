@@ -1,0 +1,7 @@
+description: >-
+  A page a mark takes out of some builds while another build publishes it
+  isn't lost in those builds: the mark is the decision.
+spec: ["7.10"]
+tags: [addresses]
+
+diagnostics: []

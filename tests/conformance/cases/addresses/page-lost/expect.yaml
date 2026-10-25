@@ -1,0 +1,9 @@
+description: >-
+  A page the base published that the working tree doesn't, with nothing in
+  `ascribe.addresses` about it, is lost: reported once, at the file, for
+  its address and its Markdown version's in every build.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: address-lost, file: ascribe.addresses, line: 1}

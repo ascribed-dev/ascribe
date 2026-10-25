@@ -1,0 +1,6 @@
+version = 1
+
+[moved]
+"old-keys.md" = 3
+
+[retired]

@@ -7,6 +7,8 @@
 
 #[path = "all/across.rs"]
 mod across;
+#[path = "all/addresses.rs"]
+mod addresses;
 #[path = "all/checks.rs"]
 mod checks;
 #[path = "all/commands.rs"]

@@ -4,6 +4,7 @@
 //! registered below; the skip entries for the tags it handles come out of
 //! `SKIPS.toml`.
 
+mod addresses;
 mod baseline;
 mod check;
 mod format;
@@ -27,6 +28,7 @@ pub fn register(registry: &mut Registry) {
     registry.register(format::FormatAdapter);
     registry.register(check::CheckAdapter);
     registry.register(baseline::BaselineAdapter);
+    registry.register(addresses::AddressesAdapter);
     registry.register(model::ModelAdapter);
     registry.register(include::IncludeAdapter);
     registry.register(resolve::ResolveAdapter);

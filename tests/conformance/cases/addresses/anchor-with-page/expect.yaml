@@ -1,0 +1,7 @@
+description: >-
+  An id on a page that moved goes with the page: the page's entry decides
+  it, and the id isn't reported apart.
+spec: ["7.10"]
+tags: [addresses]
+
+diagnostics: []

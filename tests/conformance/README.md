@@ -53,6 +53,7 @@ The cases were written from SPEC.md, not from any implementation. They're groupe
 | `frontmatter/`, `model/` | Frontmatter, content types, fragments, name roles (§2, §7.2) |
 | `sources/` | Sources in another repository: their copies and `ascribe.lock` (§7.4) |
 | `permalinks/` | The permalinks list, `ascribe.permalinks`, against the permalinks the content declares (§7.5) |
+| `addresses/` | `ascribe.addresses` (§7.10): the file's shape, and the addresses a base published against the working tree's, the base in the case's `base/` |
 | `checks/` | The content checks across a project: orphans, unused fragments, model entries, and images, large images, and duplicate titles, and the baseline that holds some back (`checks/baseline/`). They aren't SPEC rules, so the shared model turns them off and these cases have models of their own |
 | `format/` | Canonical form (§8.3): each rule, what the formatter leaves alone, and constructs with errors |
 | `builds/selection/`, `builds/filter/`, `builds/lines/`, `builds/assets/`, `builds/pages/` | Resolution and build modes, availability filtering, the lines of a versioned build, assets, which files are pages (§9.2–§9.4) |
@@ -68,6 +69,7 @@ Conventions the cases follow:
 - **A case checks one kind of thing.** Recognition and structure are separate from diagnostics (`parser` and `structure` cases carry an outline; `check` cases carry diagnostics), so a case runs when its own adapter exists. A case carries several tags only when it needs several adapters.
 - **Page-level diagnostics need the `page-check` tag**, and top-level (file-level) diagnostics need `check`.
 - **Vale's alerts need the `prose` tag.** Its adapter runs a stand-in for Vale that flags a word written twice in a row outside code spans, so the cases show what reaches Vale and where an alert lands, not Vale's rules.
+- **The addresses a base published need the `addresses` tag.** A case has an `ascribe.addresses` beside `files/`, and the base's content in `base/files/`, and expects in its top-level `diagnostics` what comparing the two adds to `ascribe check`. A base the check can't read is tested with the command.
 - **The baseline needs the `baseline` tag.** A case has an `ascribe.baseline` beside its `ascribe.toml`, and expects in its top-level `diagnostics` what `ascribe check` reports of the whole project with it, so it uses file-level checks only. A baseline that can't be read stops the check, so the command's tests hold that.
 
 ## Resolved outlines
@@ -145,6 +147,7 @@ Tags route a case to adapters and let a runner select cases. **Area tags** name 
 | `page-check` | Page-level diagnostics (§8.1, §8.2) | 14 |
 | `prose` | Vale's alerts on the prose, with a stand-in for Vale (`[checks.vale]`) | content checks, phase 5 |
 | `baseline` | What `ascribe.baseline` holds back of the whole project's file-level diagnostics, and its entries that match nothing | #789 |
+| `addresses` | The addresses a base published that the working tree doesn't and `ascribe.addresses` doesn't account for (§7.10) | #905 |
 | `output` | Plain, site, and JSON output (§9.4) | 18, 20 |
 | `format` | Canonical form (§8.3) | 23 |
 

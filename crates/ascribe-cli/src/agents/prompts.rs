@@ -394,6 +394,9 @@ fn fix(projects: &dyn Projects, arguments: &Arguments) -> Result<String, String>
         format: check::Format::Prompt,
         limit: None,
         deny_warnings: false,
+        base: None,
+        base_exact: false,
+        addresses: check::Addresses::NotCompared,
         fix: false,
         vale: false,
         // What `ascribe.baseline` holds back isn't the agent's to fix now

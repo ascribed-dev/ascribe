@@ -1,0 +1,7 @@
+description: >-
+  A `[moved]` entry for the page, leading to a page a build publishes now,
+  accounts for its addresses.
+spec: ["7.10"]
+tags: [addresses]
+
+diagnostics: []

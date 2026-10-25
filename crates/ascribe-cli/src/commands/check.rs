@@ -105,6 +105,32 @@ pub struct Args {
     #[arg(long)]
     pub deny_warnings: bool,
 
+    /// The revision whose addresses the check compares the project's with,
+    /// when it has `ascribe.addresses`: anything git accepts (a branch, a
+    /// tag, a commit).
+    ///
+    /// An address the base published that no build publishes now, and that
+    /// no entry of `ascribe.addresses` accounts for, is `address-lost`. By
+    /// default, the repository's default branch, the first of `origin/HEAD`,
+    /// `origin/main`, `origin/master`, `main`, and `master` that exists,
+    /// from its merge base with `HEAD`, as `ascribe diff` chooses it. A base
+    /// that can't be read is `addresses-base-unreadable`, and the rest of the
+    /// check is the same. Only when the check covers the whole project:
+    /// with paths, `--stdin`, or `--editor-build`, the base isn't read.
+    #[arg(long, value_name = "REV")]
+    pub base: Option<String>,
+
+    /// Compare the addresses with the base revision itself instead of its
+    /// merge base with `HEAD`: in CI on a push, the commit before it.
+    #[arg(long)]
+    pub base_exact: bool,
+
+    /// Whether the addresses are compared with the base when the check
+    /// covers the whole project: by `ascribe check` and the MCP server's
+    /// tool, and never by the agents' hook (decision #905).
+    #[arg(skip)]
+    pub addresses: Addresses,
+
     /// Apply the fixes marked safe, then report what's left.
     ///
     /// A fix is safe when applying it can't change what the page says and
@@ -146,6 +172,17 @@ pub struct Args {
     /// (decision 76).
     #[arg(skip)]
     pub vale_runs: ValeRuns,
+}
+
+/// Whether a check compares the project's addresses with the base's.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Addresses {
+    /// When the project has `ascribe.addresses` and the check covers the
+    /// whole project: `ascribe check`, and the MCP server's `ascribe_check`.
+    #[default]
+    Compared,
+    /// Never: the agents' hook and prompts, and `ascribe baseline`.
+    NotCompared,
 }
 
 /// Which Vale a check may start.
@@ -391,11 +428,39 @@ pub fn run_check(
             files.as_deref(),
         ))
     } else {
-        loaded
-            .diagnosed(&args.build, |project| {
+        // The base is read beside the check, as `ascribe diff` reads it.
+        let compared = args.addresses == Addresses::Compared
+            && scope.is_none()
+            && !args.stdin
+            && matches!(project.addresses(), Some(Ok(_)));
+        let (found, base) = std::thread::scope(|threads| {
+            let base = compared.then(|| {
+                threads.spawn(|| {
+                    ascribe_diff::base_addresses(
+                        project.root(),
+                        args.base.as_deref(),
+                        args.base_exact,
+                    )
+                })
+            });
+            let found = loaded.diagnosed(&args.build, |project| {
                 diagnose(project, &args.build).map(names)
-            })
-            .map_err(Stopped::Build)?
+            });
+            let base = base.map(|thread| {
+                thread
+                    .join()
+                    .unwrap_or_else(|panic| std::panic::resume_unwind(panic))
+            });
+            (found, base)
+        });
+        let mut found = found.map_err(Stopped::Build)?;
+        if let Some(base) = base {
+            let more = compared_addresses(&loaded, &found.builds, base);
+            found
+                .diagnostics
+                .extend(ascribe_check::apply_levels(&project.model().checks, more));
+        }
+        found
     };
     let (diagnostics, about_vale) = with_prose(project, scope.as_ref(), args, diagnostics)?;
     let (diagnostics, mut held) = with_baseline(project, scope.as_ref(), args, diagnostics, {
@@ -453,6 +518,44 @@ fn codes(given: &[String]) -> Result<Vec<String>, Failure> {
         }
     }
     Ok(codes)
+}
+
+/// The addresses the base published that the project has lost, compared
+/// in `builds`, the builds checked; or, when the base couldn't be read, why.
+fn compared_addresses(
+    loaded: &Loaded,
+    builds: &[String],
+    base: Result<ascribe_diff::BaseAddresses, ascribe_diff::DiffError>,
+) -> Vec<Diagnostic> {
+    let Some(Ok(file)) = loaded.project.addresses() else {
+        return Vec::new();
+    };
+    let base = match base {
+        Ok(base) => base,
+        Err(e) => return vec![ascribe_check::addresses::base_unreadable(&e.to_string())],
+    };
+    let Some(before) = &base.builds else {
+        return vec![ascribe_check::addresses::base_has_no_project(&base.named())];
+    };
+    // `--build` compares those builds only; a build only the base has is
+    // compared, as gone, when every build is checked.
+    let every = loaded.project.model().builds.len() == builds.len();
+    let before: Vec<_> = before
+        .iter()
+        .filter(|b| {
+            builds.contains(&b.build) || (every && loaded.project.model().build(&b.build).is_none())
+        })
+        .cloned()
+        .collect();
+    let index = loaded.index();
+    let now: Vec<_> = index
+        .model()
+        .builds
+        .iter()
+        .filter(|b| builds.contains(&b.name))
+        .map(|b| ascribe_resolve::addresses::build_addresses(index, b))
+        .collect();
+    ascribe_check::addresses::compare(file, index, &before, &now)
 }
 
 /// `diagnostics` with Vale's, when `--vale` or `[checks.vale] in-check` asks
