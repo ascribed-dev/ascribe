@@ -6132,7 +6132,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "OpenAPI 1: check a link to an operation, and open it in Redoc"
     },
     {
