@@ -1,0 +1,1 @@
+A [rollout](/reference/glossary/#rollout "A plan for turning a flag on for a growing share of users: by percentage, by segment, or on a schedule.")<ascribe-attributes data-ascribe-term="rollout"></ascribe-attributes> turns a flag on for more users over time, so a problem reaches a few users instead of all of them.

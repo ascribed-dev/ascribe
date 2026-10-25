@@ -1,17 +1,35 @@
 //! A page as a reader of one build sees it: the page resolved for the build,
-//! then written as the build's plain output writes it ([`emit_page`] with the
-//! [`PlainEmitter`]), without writing anything. And a permalink's help, as
-//! the build's `_ascribe/help.json` has it ([`permalink`]).
+//! then written as one of the build's outputs writes it ([`emit_page`] with
+//! the [`PlainEmitter`] or the [`SiteEmitter`]), without writing anything.
+//! And a permalink's help, as the build's `_ascribe/help.json` has it
+//! ([`permalink`]).
 
 use std::path::Path;
 
 use ascribe_core::RelPath;
-use ascribe_emit::{EmitContext, Help, HelpEntry, PlainEmitter, emit_page, help, help_header};
+use ascribe_emit::{
+    EmitContext, Help, HelpEntry, PlainEmitter, SiteEmitter, emit_page, help, help_header,
+    split_frontmatter,
+};
 use ascribe_model::{Build, edit_distance};
 use ascribe_resolve::{AstroRouter, FileKind, Project};
 use serde::Serialize;
 
 use crate::{ASCRIBE_VERSION, QueryError, SCHEMA_VERSION};
+
+/// Which output a page is written as, by the name `ascribe build --emit`
+/// gives it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "lowercase")]
+pub enum Emit {
+    /// The plain output: fully resolved CommonMark with no HTML.
+    #[default]
+    Plain,
+    /// The site output: Markdown with Ascribe's elements, as a site's
+    /// integration receives it.
+    Site,
+}
 
 /// What `ascribe resolve <PAGE> --format json` answers.
 #[derive(Debug, Serialize)]
@@ -26,19 +44,25 @@ pub struct Resolved {
     pub page: String,
     /// The build.
     pub build: String,
+    /// Which output `text` is written as: `plain`, the build's plain
+    /// output, or `site`, its site output.
+    pub emit: Emit,
     /// Why the build doesn't publish the page, when it doesn't; `text` is
     /// empty then.
     pub not_published: Option<String>,
     /// The page's route in the build's site.
     pub route: Option<String>,
-    /// The page as plain Markdown, as the build's `plain` output writes it:
-    /// with its frontmatter first when asked for.
+    /// The page as the output `emit` names writes it: with its frontmatter
+    /// first when asked for.
     pub text: String,
 }
 
-/// The page at content path `path`, resolved for `build` and written as its
-/// plain output writes it; with `frontmatter`, its resolved frontmatter first, between `---`
-/// lines. `project_root` is the directory of `ascribe.toml`.
+/// The page at content path `path`, resolved for `build` and written as the
+/// output `emit` names writes it; with `frontmatter`, its frontmatter first,
+/// between `---` lines: the resolved frontmatter for the plain form, the site
+/// output's own for the site form. The site form has no source anchors, and
+/// its assets are named where a build would put them, not copied.
+/// `project_root` is the directory of `ascribe.toml`.
 ///
 /// # Errors
 ///
@@ -48,6 +72,7 @@ pub fn resolve(
     project_root: &Path,
     path: &RelPath,
     build: &Build,
+    emit: Emit,
     frontmatter: bool,
 ) -> Result<Resolved, QueryError> {
     let file = project.file(path).ok_or_else(|| QueryError::NotASource {
@@ -63,6 +88,7 @@ pub fn resolve(
         ascribe_version: ASCRIBE_VERSION,
         page: path.to_string(),
         build: build.name.clone(),
+        emit,
         not_published: None,
         route: None,
         text: String::new(),
@@ -85,20 +111,34 @@ pub fn resolve(
         });
     };
     let cx = EmitContext::new(project, project_root, build);
-    let emitter = PlainEmitter::new(project.model());
-    let emitted = emit_page(&emitter, &cx, &page)?;
-    if frontmatter && let Some(value) = page.frontmatter.as_ref().filter(|v| !v.is_null()) {
-        // A value parsed from YAML always writes back as YAML; were it not
-        // to, the page is still worth showing without its frontmatter.
-        let yaml = serde_yaml_ng::to_string(value).unwrap_or_default();
-        answer.text.push_str("---\n");
-        answer.text.push_str(&yaml);
-        if !yaml.ends_with('\n') {
-            answer.text.push('\n');
+    match emit {
+        Emit::Plain => {
+            let emitted = emit_page(&PlainEmitter::new(project.model()), &cx, &page)?;
+            if frontmatter && let Some(value) = page.frontmatter.as_ref().filter(|v| !v.is_null()) {
+                // A value parsed from YAML always writes back as YAML; were it
+                // not to, the page is still worth showing without its
+                // frontmatter.
+                let yaml = serde_yaml_ng::to_string(value).unwrap_or_default();
+                answer.text.push_str("---\n");
+                answer.text.push_str(&yaml);
+                if !yaml.ends_with('\n') {
+                    answer.text.push('\n');
+                }
+                answer.text.push_str("---\n\n");
+            }
+            answer.text.push_str(&emitted.text);
         }
-        answer.text.push_str("---\n\n");
+        Emit::Site => {
+            // The site output's file, as `ascribe build --emit site` writes
+            // it: its frontmatter block, then the body.
+            let emitted = emit_page(&SiteEmitter::new(project.model()), &cx, &page)?;
+            answer.text = if frontmatter {
+                emitted.text
+            } else {
+                split_frontmatter(&emitted.text).1.to_owned()
+            };
+        }
     }
-    answer.text.push_str(&emitted.text);
     answer.route = Some(page.route.clone());
     Ok(answer)
 }
@@ -200,4 +240,51 @@ fn closest(names: &[String], given: &str) -> Vec<String> {
         .take(3)
         .map(|(_, name)| name.clone())
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
+    use super::*;
+
+    /// The site form of every page of Quill, for each of its builds and
+    /// lines, is the file `emit_page` writes for it with the build's
+    /// `SiteEmitter`: whole with its frontmatter, and its body without.
+    #[test]
+    fn the_site_form_is_the_site_outputs_file() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill");
+        let loaded = ascribe_check::Project::load(&root.join("ascribe.toml")).expect("Quill loads");
+        let index = loaded.index();
+        let mut compared = 0;
+        for build in &loaded.model().builds {
+            let project = index.for_build(build);
+            let project = project.as_ref();
+            let router = AstroRouter::from_consumer(&project.model().consumer);
+            let cx = EmitContext::new(project, &root, build);
+            let emitter = SiteEmitter::new(project.model());
+            let paths: Vec<RelPath> = index.pages().map(|file| file.path.clone()).collect();
+            for path in paths {
+                let whole = resolve(&index, &root, &path, build, Emit::Site, true).unwrap();
+                let body = resolve(&index, &root, &path, build, Emit::Site, false).unwrap();
+                assert_eq!(whole.emit, Emit::Site);
+                if whole.not_published.is_some() {
+                    assert!(whole.text.is_empty() && body.text.is_empty());
+                    continue;
+                }
+                let page = project.resolve_page(&path, build, &router).unwrap();
+                let file = emit_page(&emitter, &cx, &page).unwrap().text;
+                assert_eq!(whole.text, file, "{path} in {}", build.name);
+                assert_eq!(
+                    body.text,
+                    split_frontmatter(&file).1,
+                    "{path} in {}",
+                    build.name
+                );
+                assert!(!body.text.starts_with("---\n"), "{path} in {}", build.name);
+                compared += 1;
+            }
+        }
+        assert!(compared > 10, "only {compared} pages compared");
+    }
 }

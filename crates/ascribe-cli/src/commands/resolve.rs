@@ -1,12 +1,12 @@
 //! `ascribe resolve`: a page resolved for one build and written as the
-//! build's plain Markdown output, to standard output; or, for `go:<name>`,
+//! build's plain or site output writes it, to standard output; or, for `go:<name>`,
 //! the permalink's help, as the build's `_ascribe/help.json` has it.
 
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use clap::Args as ClapArgs;
+use clap::{Args as ClapArgs, ValueEnum};
 
 use ascribe_query::{PermalinkHelp, Resolved, ResolvedPermalink};
 
@@ -30,14 +30,40 @@ pub struct Args {
     #[arg(long, value_name = "NAME")]
     pub build: Option<String>,
 
-    /// Write the page's frontmatter first, between `---` lines. Nothing
-    /// for `go:<name>`, which has no frontmatter.
+    /// Which output to write the page as, one of `plain` (the default) or
+    /// `site`, as `ascribe build --emit` names them. One output, not a list.
+    ///
+    /// Not for `go:<name>`, whose help has one form.
+    #[arg(long, value_enum, value_name = "OUTPUT")]
+    pub emit: Option<Emit>,
+
+    /// Write the page's frontmatter first, between `---` lines: under
+    /// `--emit site`, the site output's. Nothing for `go:<name>`, which has
+    /// no frontmatter.
     #[arg(long)]
     pub frontmatter: bool,
 
     /// How to show the answer.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
+}
+
+/// An output a page can be written as.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
+pub enum Emit {
+    /// Fully resolved CommonMark with no HTML.
+    Plain,
+    /// Markdown plus web components, for an Astro site.
+    Site,
+}
+
+impl Emit {
+    fn query(self) -> ascribe_query::Emit {
+        match self {
+            Emit::Plain => ascribe_query::Emit::Plain,
+            Emit::Site => ascribe_query::Emit::Site,
+        }
+    }
 }
 
 /// What the command answers.
@@ -88,8 +114,8 @@ impl Answer {
 /// Runs the command. Exit codes: 0 with the page or the help, 1 when the
 /// build doesn't publish the page or the permalink, or the permalink is
 /// retired (the reason goes to standard error), 2 when it couldn't run: no
-/// project, a path that isn't a page, or no build named where one is
-/// needed.
+/// project, a path that isn't a page, no build named where one is needed,
+/// or `--emit` with `go:<name>`.
 pub fn run(global: &Global, args: Args) -> ExitCode {
     let stdout = io::stdout();
     let mut out = io::BufWriter::new(stdout.lock());
@@ -110,10 +136,15 @@ pub fn permalink_name(page: &std::path::Path) -> Option<&str> {
 ///
 /// # Errors
 ///
-/// No project, a path that isn't one of its pages, or no build named where
-/// one is needed.
+/// No project, a path that isn't one of its pages, no build named where
+/// one is needed, or an output asked for a permalink's help.
 pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<Answer, Stop> {
     let name = permalink_name(&args.page);
+    if name.is_some() && args.emit.is_some() {
+        return Err(Stop::Usage(
+            "a permalink's help has one form, help.json's; leave out --emit",
+        ));
+    }
     // A permalink's project is the current directory's, or `--config`'s.
     let loaded = answer::load(projects, global, name.is_none().then_some(&*args.page))?;
     let project = &loaded.project;
@@ -131,6 +162,7 @@ pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<A
         project.root(),
         &path,
         build,
+        args.emit.map_or_else(Default::default, Emit::query),
         args.frontmatter,
     )?))
 }

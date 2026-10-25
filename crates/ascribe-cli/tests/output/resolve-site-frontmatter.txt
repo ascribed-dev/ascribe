@@ -1,0 +1,26 @@
+---
+type: page
+title: loom.yaml options
+description: Every Loom option.
+permalink: options
+formatted:
+  title: <code>loom.yaml</code> options
+source: Reference/Options.md
+---
+
+<ascribe-for-agents>
+
+For AI agents: the documentation index is at [llms.txt](/docs/llms.txt), and this page is available as [Markdown](/docs/reference/options.md).
+
+</ascribe-for-agents>
+
+## Weave options <ascribe-attributes id="weave-options"></ascribe-attributes>
+
+To use them, follow [the weave configuration section](/docs/guides/my-setup#weave-config) of the setup guide.
+
+![The weave diagram](./weave.png)<ascribe-attributes width="120"></ascribe-attributes>
+
+```yaml title="loom.yaml"
+weave:
+  threads: 4
+```

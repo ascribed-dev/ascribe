@@ -1,0 +1,1 @@
+error: a permalink's help has one form, help.json's; leave out --emit

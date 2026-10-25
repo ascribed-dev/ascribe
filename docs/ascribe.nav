@@ -98,6 +98,7 @@ folder = "templates/"
 [[sections]]
 folder = "command/"
 label = "The command"
+pages = ["questions.md", "site-output.md", "project-files.md"]
 
 # Contracts keep an order of their own.
 [[sections]]
