@@ -960,6 +960,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `navigation/site-list.md` | Move a site's own list to the navigation | how-to |
 | `openapi/index.md` | Link to your API reference | how-to |
 | `openapi/no-id.md` | Link to an operation with no id | how-to |
+| `openapi/operation.md` | Show an operation in a page | how-to |
 | `permalinks/command.md` | `ascribe permalinks` | reference |
 | `permalinks/in-your-product.md` | Show the docs in your product | how-to |
 | `permalinks/index.md` | Permalinks | how-to |
