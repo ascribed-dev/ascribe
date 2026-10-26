@@ -1,1 +1,1 @@
-- **The Project view's Health shows only the counts that need doing.** Counts above zero and counts that aren't current are shown; a group's counts of none are behind one line, **Nothing else to do**, and a group with nothing to do is its head alone, with **Nothing to do** at its end. See [the Project view](docs/content/editor/sidebar.md).
+- **The Project view's Health shows only the counts that need doing.** Counts of none are behind a **Nothing else to do** line, and a group with nothing to do is its head alone. See [the Project view](docs/content/editor/sidebar.md).
