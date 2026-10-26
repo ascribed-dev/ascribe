@@ -117,8 +117,9 @@ impl Named {
     }
 
     /// A file and an optional heading, from a content path, as `about`
-    /// writes one: segments parted by `/`, after an optional `./`, none
-    /// empty, `.`, or `..`, and percent-decoded as a link destination is,
+    /// writes one: segments parted by `/`, after an optional `./`, each
+    /// percent-decoded as a link destination is and then none empty, `.`,
+    /// `..`, or holding a `/`,
     /// then an optional `#` and an id. The first `#` ends the path, so a
     /// `#` in a file's name is written `%23`.
     fn about_path(given: &str) -> Result<Named, BadTarget> {
@@ -144,18 +145,23 @@ impl Named {
                 "give a page's or a fragment's content path, or an entry such as `phrase:product`",
             ));
         }
-        if path
-            .split('/')
-            .any(|seg| seg.is_empty() || seg == "." || seg == "..")
-        {
-            return Err(bad(
-                "a content path has no empty, `.`, or `..` segments, and doesn't start with `/`",
-            ));
+        // Each segment is decoded and then checked, so `%2E%2E` is `..` and
+        // `%2F` can't make two segments of one.
+        let mut segments = Vec::new();
+        for segment in path.split('/') {
+            let decoded = percent_decode(segment);
+            if decoded.is_empty() || decoded == "." || decoded == ".." || decoded.contains('/') {
+                return Err(bad(
+                    "a content path has no empty, `.`, or `..` segments, decoded or not, \
+                     doesn't start with `/`, and writes no `/` as `%2F`",
+                ));
+            }
+            if decoded.chars().any(|c| c.is_ascii_control()) {
+                return Err(bad("a content path has no tabs or line breaks"));
+            }
+            segments.push(decoded);
         }
-        if path.chars().any(|c| c.is_ascii_control()) {
-            return Err(bad("a content path has no tabs or line breaks"));
-        }
-        let path = RelPath::parse(&percent_decode(path)).map_err(|_| {
+        let path = RelPath::parse(&segments.join("/")).map_err(|_| {
             bad("it isn't a path in the project, or an entry such as `phrase:product`")
         })?;
         Ok(Named::Path {
@@ -199,7 +205,14 @@ impl Named {
                 format!("{prefix}:{name}")
             }
             Named::Path { path, id } => {
-                let mut out = path.as_str().replace('%', "%25").replace('#', "%23");
+                let mut out = String::new();
+                for c in path.as_str().chars() {
+                    if c == '%' || c == '#' {
+                        out.push_str(&format!("%{:02X}", u32::from(c)));
+                    } else {
+                        out.push(c);
+                    }
+                }
                 if Named::entry(&out).is_some() {
                     out.insert_str(0, "./");
                 }

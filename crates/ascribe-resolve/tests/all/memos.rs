@@ -204,6 +204,12 @@ fn about_is_read_by_the_about_target_rule() {
         "/guide.md",
         ".",
         "a\tb.md",
+        "%2E%2E/guide.md",
+        "a/%2e/guide.md",
+        "a%2F%2Fguide.md",
+        "a/%2F/guide.md",
+        "a%09b.md",
+        "%00.md",
     ] {
         assert!(Named::parse(about).is_err(), "{about}");
     }

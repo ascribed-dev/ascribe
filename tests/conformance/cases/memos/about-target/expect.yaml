@@ -4,14 +4,15 @@ description: >-
   ends the path. A leading `./` makes a value that starts like an entry a
   path. A name may be written in braces. Prefixes and names are compared as
   written, so `Phrase:product` is a path and `phrase:Product` names no
-  phrase. An empty id, a name with a space, and a `..` segment don't match
-  the rule.
+  phrase. An empty id, a name with a space, and a `..` segment, written or
+  percent-encoded, don't match the rule.
 spec: ["7.7", "8.2"]
 tags: [check]
 
 diagnostics:
   - {slug: memo-invalid, file: memos/dot-dot.md, line: 2}
   - {slug: memo-invalid, file: memos/empty-id.md, line: 2}
+  - {slug: memo-invalid, file: memos/encoded-dot-dot.md, line: 2}
   - {slug: memo-detached, file: memos/entry-as-path.md, line: 2}
   - {slug: memo-detached, file: memos/hash-as-written.md, line: 2}
   - {slug: memo-invalid, file: memos/name-space.md, line: 2}
