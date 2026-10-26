@@ -33,7 +33,7 @@ use std::sync::{Arc, Mutex, PoisonError};
 use ascribe_core::RelPath;
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_diff::html::PageTitle;
-use ascribe_diff::{Base, BaseInfo, DiffError, PageDiff, Repository, Revision, Side};
+use ascribe_diff::{Base, BaseInfo, DiffError, PageDiff, Renames, Repository, Revision, Side};
 use ascribe_emit::formatted_title;
 use ascribe_model::ContentModel;
 use ascribe_resolve::{AstroRouter, Project, Snapshot, Version};
@@ -143,6 +143,10 @@ pub(crate) struct ReviewBase {
     pub project: Option<Project>,
     /// The content model's text there.
     pub model_text: String,
+    /// The pages git saw renamed since the base when it was read. A move
+    /// the editor makes is recorded in `ascribe.addresses`, which the
+    /// comparison reads from the snapshot, so it's seen at once.
+    pub renames: Renames,
     /// The pages as they were, rendered, with their titles, by build and
     /// path; `None` for a page the build didn't have.
     pages: Mutex<HashMap<(String, RelPath), Option<PageAsItWas>>>,
@@ -211,10 +215,17 @@ pub(crate) fn read_base(repo: &Repository, base: &Base) -> Result<ReviewBase, Ba
         Some(revision) => (Some(revision.project()), revision.model_text),
         None => (None, String::new()),
     };
+    // Renames that can't be listed leave a moved page as removed and added,
+    // as it was before moves were paired: review still works.
+    let renames = project
+        .as_ref()
+        .and_then(|p| ascribe_diff::renames(repo, base.compared(), &p.layout().content_root).ok())
+        .unwrap_or_default();
     Ok(ReviewBase {
         info: info_of(base),
         project,
         model_text,
+        renames,
         pages: Mutex::default(),
         changes: Mutex::default(),
     })
@@ -395,7 +406,8 @@ pub(crate) fn changes(target: Option<&ChangesTarget>, build_name: Option<&str>) 
         project: target.snapshot.project(),
         model_text: &target.model_text,
     };
-    let diffs = ascribe_diff::compare_builds(review.side(), now, &[build.name.as_str()]);
+    let diffs =
+        ascribe_diff::compare_builds(review.side(), now, &[build.name.as_str()], &review.renames);
     let router = AstroRouter::from_consumer(&model.consumer);
     let base_router = review
         .project
