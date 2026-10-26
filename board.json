@@ -6531,8 +6531,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/953"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDeg5Q",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1113"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "In progress",
       "title": "One meaning per word: grow the docs' glossary and rename the overloaded terms"
     },
     {
@@ -6694,7 +6697,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1058"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "MCP: add ascribe_rename, and name the tools after their commands"
     },
     {
@@ -7032,7 +7035,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1068"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "ascribe preview: see the docs as a site without VS Code or Astro"
     },
     {
@@ -7658,7 +7661,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1108"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Permalinks: forward with a 301 where the host takes redirects, and answer an agent asking for Markdown"
     },
     {
@@ -7743,8 +7746,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1112"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Benchmarks: a quick run on pull requests, so a slowdown is caught before it merges"
     },
     {
@@ -7949,8 +7955,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1114"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Agent-facing wording: small things that mislead an agent in check, the rules, and the new-page prompt"
     },
     {
@@ -7983,8 +7992,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1116"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Site output: put a tab's label in the text, and a code block's language in its class, for readers that convert HTML"
     },
     {
@@ -8059,8 +8071,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1110"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Let `versions retire \"self-managed 3.4\"` run on quill without --force: cloud's availability lines change"
     },
     {
@@ -8108,7 +8123,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1098"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Editor: `setBase` doesn't mark the server busy, so the renamed-operation test is flaky"
     },
     {
@@ -8124,8 +8139,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1111"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In progress",
       "title": "Load a project once, phase 1: read each source once and index once in every command"
     },
     {
@@ -8195,6 +8213,23 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "Load a project once, phase 5: keep the language server's project as a Workspace, with the open buffers over it"
+    },
+    {
+      "content": {
+        "body": "The keystroke bench fails its own criterion on `main`: a file that no page reads must cost less than a tenth of a page written on disk, but it now costs 250 ms (`a file no page reads cost 250.186032ms, a page written on disk 29.384014ms`, at `crates/ascribe-lsp/benches/keystroke.rs:432`). The weekly Corpora run is red too.\n\n`Core::did_change_watched` calls `addresses.changed()` for every event, so any file written on disk, a build's output included, queues a comparison of the addresses and keeps the server busy for `addresses::SETTLE` (250 ms) before it goes idle. Found in https://github.com/ascribed-dev/ascribe/pull/1112#issuecomment-6425848966.\n\n**Done looks like:** the addresses are marked changed only for events that can change them (a source page, a side file such as `ascribe.addresses`, the model or a `[from]` file, an API spec, git's refs). A file no page reads leaves them alone, and the keystroke bench passes. The busy marking from #1096 / #1098 stays as it is.\n\nTouches: `crates/ascribe-lsp/src/core.rs`, `crates/ascribe-lsp/src/addresses.rs`.",
+        "number": 1115,
+        "repository": "ascribed-dev/ascribe",
+        "title": "LSP: a file no page reads keeps the server busy for the addresses' settle time",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1115"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDs8_I",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1117"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "In progress",
+      "title": "LSP: a file no page reads keeps the server busy for the addresses' settle time"
     }
   ]
 }
