@@ -7,5 +7,5 @@ spec: ["3.3.1", "7.11"]
 tags: [check]
 
 diagnostics:
-  - {slug: example-schema-mismatch, file: index.md, line: 8, column: 11}
-  - {slug: example-schema-mismatch, file: index.md, line: 14, column: 11}
+  - {slug: api-example-schema-mismatch, file: index.md, line: 8, column: 11}
+  - {slug: api-example-schema-mismatch, file: index.md, line: 14, column: 11}

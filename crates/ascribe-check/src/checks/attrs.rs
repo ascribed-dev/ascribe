@@ -236,8 +236,26 @@ impl Ctx<'_> {
                 diagnostics::VARIANT_UNKNOWN,
                 Location::new(self.id, key_span),
             )
-            .with_arg("dimension", name.to_owned())
-            .with_arg("dimensions", quoted_list(&names));
+            .with_arg("dimension", name.to_owned());
+            // With none declared, the message gives the table to add, with
+            // the values the pages give the dimension.
+            let issue = if names.is_empty() {
+                let mut used: Vec<String> = self.project.variant_values(name).to_vec();
+                for (value, _) in values {
+                    if !used.contains(value) {
+                        used.push(value.clone());
+                    }
+                }
+                if used.is_empty() {
+                    used.push("<value>".to_owned());
+                }
+                let listed: Vec<String> = used.iter().map(|v| format!("\"{v}\"")).collect();
+                issue
+                    .with_variant("none")
+                    .with_arg("values", listed.join(", "))
+            } else {
+                issue.with_arg("dimensions", quoted_list(&names))
+            };
             self.report(issue);
             return;
         };

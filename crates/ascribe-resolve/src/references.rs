@@ -21,13 +21,14 @@
 use ascribe_core::{
     Applicability, Fix, Issue, Location, RelPath, Span, TextEdit, diagnostics, percent_decode,
 };
-use ascribe_model::ContentModel;
+use ascribe_model::{ContentModel, edit_distance, edit_distance_within};
 use ascribe_syntax::{Inline, LinkDefinition, LinkForm, Phrase};
 
 use crate::astro::AstroRouter;
 use crate::fs::{FileSystem, Probe};
 use crate::index::{Local, RefKind, Target};
 use crate::layout::Layout;
+use crate::links::{encode_destination, link_path};
 use crate::project::{Missing, Resolution};
 
 /// The source files a reference can name.
@@ -115,6 +116,79 @@ pub fn include_issue(
             .with_arg("actual", actual.to_string()),
         None => issue,
     })
+}
+
+/// The fixes an include of a missing file is offered: one for each of its
+/// [`closest_includes`], which rewrites the path written at the start of
+/// the primary `at` in `from`, the including file, keeping any `#id`.
+/// Only `ascribe check` offers them: they depend on every source file, so
+/// the source index, which rechecks a file when what it names changes,
+/// doesn't keep them.
+pub fn include_fixes(
+    written: &str,
+    target: &RelPath,
+    from: &RelPath,
+    sources: &dyn SourceSet,
+    at: Location,
+) -> Vec<Fix> {
+    if at.span.len() < written.len() {
+        return Vec::new();
+    }
+    let span = Span::new(at.span.start(), at.span.start() + written.len());
+    closest_includes(sources, from, target, written)
+        .into_iter()
+        .map(|path| {
+            let href = encode_destination(&link_path(&path, from));
+            Fix {
+                title: format!("Include `{href}`"),
+                file: at.file,
+                edits: vec![TextEdit::replace(span, href)],
+                // A guess at the file meant, which only the author can
+                // confirm.
+                applicability: Applicability::Unsafe,
+            }
+        })
+        .collect()
+}
+
+/// How many files are suggested for one include.
+const CLOSEST_INCLUDES: usize = 5;
+
+/// The source files an include of the missing `target`, written as `written`
+/// in `from`, most likely meant, best first: one whose path differs only in
+/// case, then those with the same file name wherever they are, then those
+/// whose name or path is within a few edits of it.
+pub fn closest_includes(
+    sources: &dyn SourceSet,
+    from: &RelPath,
+    target: &RelPath,
+    written: &str,
+) -> Vec<RelPath> {
+    let name = |path: &str| path.rsplit('/').next().unwrap_or(path).to_owned();
+    let written = written.trim_start_matches("./");
+    let wanted = name(target.as_str());
+    let limit = (wanted.chars().count() / 3).max(2);
+    let twin = sources.case_twin(target);
+    let mut scored: Vec<(bool, usize, RelPath)> = sources
+        .pages()
+        .into_iter()
+        .filter(|p| p != from && p.extension() == Some("md") && Some(p) != twin.as_ref())
+        .filter_map(|p| {
+            let same = name(p.as_str()) == wanted;
+            let path = link_path(&p, from);
+            let distance = if same {
+                edit_distance(written, &path)
+            } else {
+                edit_distance_within(&wanted, &name(p.as_str()), limit)?
+            };
+            Some((!same, distance, p))
+        })
+        .collect();
+    scored.sort();
+    twin.into_iter()
+        .chain(scored.into_iter().map(|(_, _, p)| p))
+        .take(CLOSEST_INCLUDES)
+        .collect()
 }
 
 /// What a link's or image's destination names, from the destination and the

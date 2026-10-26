@@ -30,15 +30,15 @@ The marker sits beside `title` and `tested`, before or after them, as a pair of 
 @available: ascribe planned
 The site and plain outputs leave the marker out of the block's info string, since its link is a path in your repository, which means nothing to a reader of the page or to an agent reading its Markdown.
 
-A marker on a block that isn't a `json` block, or whose code isn't JSON, is `example-not-json`. One that names a body the operation doesn't have, a request body it doesn't take or a status it has no response for, is `example-body-missing`.
+A marker on a block that isn't a `json` block, or whose code isn't JSON, is `api-example-not-json`. One that names a body the operation doesn't have, a request body it doesn't take or a status it has no response for, is `api-example-body-missing`.
 
 ## What's checked
 
-The block's JSON is checked against the schema of the body the marker names, with the schema's `$ref`s into the same file followed. Each disagreement is an error, `example-schema-mismatch`, at its place in the block:
+The block's JSON is checked against the schema of the body the marker names, with the schema's `$ref`s into the same file followed. Each disagreement is an error, `api-example-schema-mismatch`, at its place in the block:
 
 ```console
 $ ascribe check
-error[example-schema-mismatch]: `name` is a number; the request body of `createUser` says it's a string
+error[api-example-schema-mismatch]: `name` is a number; the request body of `createUser` says it's a string
   --> guides/users.md:12:11
 ```
 
@@ -52,7 +52,7 @@ The schema is read as the spec means it. OpenAPI 3.1's and 3.2's schemas are JSO
 
 ## What isn't checked
 
-Some schemas can't be checked whole, and each is advice, `example-schema-unsupported`, at the marker:
+Some schemas can't be checked whole, and each is advice, `api-example-schema-unsupported`, at the marker:
 
 - **A pattern the validator can't read**, such as one with a lookbehind, is left out, and the rest of the schema is still checked.
 - **A `$ref` into another file** isn't followed, and the example isn't checked. Declare the spec's bundled file, the one your renderer is given, so every schema is in it.

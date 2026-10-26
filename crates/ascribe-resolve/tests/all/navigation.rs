@@ -529,21 +529,25 @@ fn a_long_lived_project_follows_the_file_as_it_changes() {
         FileId::new(0),
     )
     .expect("it reads");
+    let side = |nav| {
+        ascribe_resolve::Change::SideFiles(ascribe_resolve::side_file::Indexed {
+            nav,
+            addresses: None,
+        })
+    };
     let before = project.version();
     let affected = project
-        .apply([ascribe_resolve::Change::Nav(Some(Arc::new(nav.clone())))])
+        .apply([side(Some(Arc::new(nav.clone())))])
         .expect("it applies");
     assert!(!affected.is_empty(), "a new snapshot");
     assert!(affected.recheck.is_empty() && affected.re_resolve.is_empty());
     assert_eq!(folders(&project), ["Reference/", "Guides/"]);
     // The same file again changes nothing.
     let again = project
-        .apply([ascribe_resolve::Change::Nav(Some(Arc::new(nav)))])
+        .apply([side(Some(Arc::new(nav)))])
         .expect("it applies");
     assert!(again.is_empty());
     assert_ne!(project.version(), before);
-    project
-        .apply([ascribe_resolve::Change::Nav(None)])
-        .expect("it applies");
+    project.apply([side(None)]).expect("it applies");
     assert_eq!(folders(&project), ["Guides/", "Reference/"]);
 }

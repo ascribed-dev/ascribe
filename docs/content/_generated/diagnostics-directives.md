@@ -459,7 +459,7 @@ Error · file level · next step: choose · [SPEC §4.3]({repo}/blob/main/SPEC.m
 
 **Message:** `{dimension}` isn't a declared dimension; the dimensions are: \{dimensions}
 
-**Fix:** Use a dimension and value declared in `[dimensions]`, or declare them there.
+**Fix:** Use a dimension and value declared in `[dimensions]`, or declare them there: `[dimensions.<name>]` with `values = ["<value>", …]`.
 
 **Read more:** [`@variant`](../writing/directives.md#variant) in the directive reference.
 

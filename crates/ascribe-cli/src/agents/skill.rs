@@ -53,7 +53,7 @@ Each changes nothing, and each takes `--format json`.
     ascribe_core::docs_permalink!("reading-site-output"),
     r#") explains.
 - `ascribe refs <target>`: where a page, a heading (`guides/install.md#configure`), a phrase (`phrase:product`), or another entry is used.
-- `ascribe search "<words>"`: where the pages say something, as their readers read them, with the line to edit for each. It finds what `grep` over the source can't: words a phrase, a fragment, or a snippet puts on a page. Run it before writing a page about a subject, and link to what's there or extend it.
+- `ascribe search "<words>"`: where the pages say something, as their readers read them, with the line to edit for each. It finds what `grep` over the source can't: words a phrase, a fragment, or a snippet puts on a page. Run it before writing a page about a subject, and link to what's there or extend it. Common words such as `how` and `the` needn't match. When no block has every word, it lists partial matches, the blocks with the most of them and the words each lacks: read them before deciding the subject is new, and search again with its other words.
 - `ascribe check --summary`: the problems counted by code and by file, for a project with many; `ascribe check --code <code>` then shows one code's, to fix one rule at a time.
 - `ascribe diff`: which pages changed since the default branch, as readers see them, block by block; `ascribe diff <page>` shows one page's. To show that a change, such as a rename or a refactor, changed nothing for readers, run `ascribe diff --exit-code`: it exits with 0 when no page changed.
 - `ascribe drift`: the pages whose code examples changed since the default branch while their words didn't. Reread each one it lists.

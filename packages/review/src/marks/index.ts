@@ -382,11 +382,29 @@ function charWidth(at: At): number {
 }
 
 /**
+ * The innermost element with `element`'s anchor, which holds its text: a
+ * one-line `@note`'s text is in a paragraph with the note's own anchor.
+ */
+function textHolder(element: HTMLElement): HTMLElement {
+  const source = element.getAttribute(DATA_SOURCE);
+  const via = viaOf(element);
+  let holder = element;
+  for (;;) {
+    const inner = Array.from(holder.querySelectorAll<HTMLElement>(`[${DATA_SOURCE}]`)).find(
+      (el) => el.getAttribute(DATA_SOURCE) === source && viaOf(el) === via,
+    );
+    if (!inner) return holder;
+    holder = inner;
+  }
+}
+
+/**
  * Marks the changed words of a block: the words added or replacing others
  * in `<ins>`, and the words removed in `<del>` where they were. Skipped when
  * the block's text isn't the text the change was computed from.
  */
-function markWords(element: HTMLElement, words: Words): boolean {
+function markWords(block: HTMLElement, words: Words): boolean {
+  const element = textHolder(block);
   const map = textMap(element);
   const nowChars = Array.from(words.now_text);
   const text = map.text.join("");

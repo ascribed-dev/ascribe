@@ -285,7 +285,7 @@ impl World {
             Change::AssetDeleted { path } => {
                 self.files.remove(path);
             }
-            Change::Model(_) | Change::Nav(_) | Change::Addresses(_) | Change::BaseApis(_) => {}
+            Change::Model(_) | Change::SideFiles(_) | Change::BaseApis(_) => {}
         }
     }
 }

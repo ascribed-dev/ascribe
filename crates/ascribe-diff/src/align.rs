@@ -6,7 +6,8 @@
 //! subsequence diff over their fingerprints. In each run the diff couldn't
 //! match, a block whose fingerprint is unmatched on the other side too is
 //! left for the move pass; the rest are paired in order with a block of the
-//! same kind whose text is similar enough, as **changed**; what's left is
+//! same kind whose text is similar enough, or keeps the other's words whole
+//! at one end, as **changed**; what's left is
 //! **added** or **removed**. A changed pair whose blocks contain other blocks
 //! is compared the same way inside. Last, a removed block with the same
 //! fingerprint as an added block anywhere on the page is **moved**.
@@ -139,9 +140,8 @@ fn align<'a>(
         let mut from = 0;
         for &i in &olds {
             let text = old[i].all_text();
-            let hit = (from..news.len()).find(|&k| {
-                new[news[k]].kind == old[i].kind && similarity(&text, &new_texts[k]) >= SIMILARITY
-            });
+            let hit = (from..news.len())
+                .find(|&k| new[news[k]].kind == old[i].kind && alike(&text, &new_texts[k]));
             if let Some(k) = hit {
                 matched[i] = Some(news[k]);
                 new_matched[news[k]] = true;
@@ -200,6 +200,32 @@ fn align<'a>(
 /// both versions.
 fn after_of(matched: &[Option<usize>], i: usize) -> Option<usize> {
     matched[..i].iter().rev().find_map(|m| *m)
+}
+
+/// Whether two blocks' texts are one block changed: their words overlap
+/// enough, or one keeps the other's words whole with words added at one
+/// end, which in a short sentence can be most of its words.
+fn alike(a: &str, b: &str) -> bool {
+    similarity(a, b) >= SIMILARITY || extends(a, b)
+}
+
+/// Whether one text's words, in order, start or end the other's. Words are
+/// runs of letters and digits, lowercased, so punctuation and code spans
+/// don't count: "Run `x`." starts "Run `x` to remove it.".
+pub(crate) fn extends(a: &str, b: &str) -> bool {
+    let words = |t: &str| -> Vec<String> {
+        t.split(|c: char| !c.is_alphanumeric())
+            .filter(|w| !w.is_empty())
+            .map(str::to_lowercase)
+            .collect()
+    };
+    let (wa, wb) = (words(a), words(b));
+    let (short, long) = if wa.len() <= wb.len() {
+        (wa, wb)
+    } else {
+        (wb, wa)
+    };
+    !short.is_empty() && (long.starts_with(&short) || long.ends_with(&short))
 }
 
 /// How much two texts' words overlap: the Dice coefficient of their
@@ -279,5 +305,17 @@ mod tests {
         assert!(similarity("one two", "three four") < SIMILARITY);
         assert!((similarity("", "") - 1.0).abs() < 1e-9);
         assert!((similarity("Same Words", "same words") - 1.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_text_extends_another_kept_whole_at_one_end() {
+        assert!(extends(
+            "Run `widgetly uninstall`.",
+            "Run `widgetly uninstall` to remove it."
+        ));
+        assert!(extends("Then restart it.", "If it stops, then restart it."));
+        assert!(extends("Run it now, or later.", "Run it."));
+        assert!(!extends("Run it.", "Run the installer and then it."));
+        assert!(!extends("", "Anything."));
     }
 }
