@@ -1,0 +1,9 @@
+description: >-
+  `example-stale` is a warning, which `ascribe check --deny-warnings` fails
+  on, and a project can set its level in `[checks]` like any other content
+  check: here, back to advice.
+spec: ["4.8", "7.3"]
+tags: [check]
+
+diagnostics:
+  - {slug: example-stale, file: index.md, line: 5, severity: advice}
