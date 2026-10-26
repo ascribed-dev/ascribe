@@ -6535,7 +6535,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1113"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "One meaning per word: grow the docs' glossary and rename the overloaded terms"
     },
     {
@@ -7578,7 +7578,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1092"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "OpenAPI: when an operationId is renamed, suggest the operation now at its method and path"
     },
     {
@@ -7608,8 +7608,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1016"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlC8c",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1119"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Keep a new project's published addresses from the start: init makes ascribe.addresses"
     },
     {
@@ -7750,7 +7753,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1112"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Benchmarks: a quick run on pull requests, so a slowdown is caught before it merges"
     },
     {
@@ -7872,8 +7875,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1118"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Snippets: regions in Dockerfile, Makefile, CSS, and GraphQL"
     },
     {
@@ -7996,7 +8002,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1116"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Site output: put a tab's label in the text, and a code block's language in its class, for readers that convert HTML"
     },
     {
@@ -8143,7 +8149,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1111"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Load a project once, phase 1: read each source once and index once in every command"
     },
     {
@@ -8228,7 +8234,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1117"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "LSP: a file no page reads keeps the server busy for the addresses' settle time"
     }
   ]
