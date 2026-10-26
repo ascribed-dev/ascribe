@@ -244,8 +244,8 @@
 | [ASC249](../checks/diagnostics/pages.md#ASC249) | `summary-not-paragraph` | Error | File | write |
 | [ASC250](../checks/diagnostics/pages.md#ASC250) | `summary-repeated` | Error | Page | write |
 | [ASC251](../checks/diagnostics/pages.md#ASC251) | `summary-in-variant` | Error | Page | write |
-| [ASC252](../checks/diagnostics/content-checks.md#ASC252) | `summary-missing` | Advice | Page | write |
-| [ASC253](../checks/diagnostics/content-checks.md#ASC253) | `summary-long` | Advice | Page | write |
+| [ASC252](../checks/diagnostics/content-checks.md#ASC252) | `summary-missing` | Advice, off by default | Page | write |
+| [ASC253](../checks/diagnostics/content-checks.md#ASC253) | `summary-long` | Advice, off by default | Page | write |
 | [ASC254](../checks/diagnostics/project-files.md#ASC254) | `addresses-file-invalid` | Error | File | write |
 | [ASC255](../checks/diagnostics/project-files.md#ASC255) | `address-lost` | Warning | File | write |
 | [ASC256](../checks/diagnostics/project-files.md#ASC256) | `anchor-lost` | Advice | File | write |

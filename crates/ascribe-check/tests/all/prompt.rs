@@ -30,6 +30,7 @@ glossary-term-unused = "off"
 image-unused = "off"
 image-large = "off"
 title-duplicate = "off"
+summary-missing = "advice"
 "#;
 
 fn project(files: &[(&str, &str)]) -> Project {

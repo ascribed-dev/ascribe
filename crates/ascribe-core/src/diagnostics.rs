@@ -1222,6 +1222,11 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     API_OPERATION_UNREFERENCED,
 ];
 
+/// The configurable checks that are off unless a project names them in
+/// `[checks]`: the registry's entries with `off-by-default = true`, in
+/// registry order. A test keeps it equal to the registry.
+pub const OFF_BY_DEFAULT: &[DiagnosticSlug] = &[SUMMARY_MISSING, SUMMARY_LONG];
+
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries
 /// whose next step is `review`, each with the place its problems are reported
 /// at, in registry order. A test keeps it equal to the registry.

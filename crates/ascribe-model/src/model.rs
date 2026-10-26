@@ -4,7 +4,8 @@ use std::cmp::Ordering;
 
 use ascribe_core::availability::{AvailabilitySpec, Detail, Entry, Name, Version};
 use ascribe_core::{
-    AttributeSchema, Date, DiagnosticSlug, DirectiveSchema, EntryKind, Issue, Span, builtin_schemas,
+    AttributeSchema, Date, DiagnosticSlug, DirectiveSchema, EntryKind, Issue, Span,
+    builtin_schemas, diagnostics,
 };
 
 use crate::pattern::Pattern;
@@ -192,9 +193,17 @@ impl Checks {
             .and_then(|s| s.level)
     }
 
-    /// Whether the project turns a check off.
+    /// Whether the project names a check, with a level or a table.
+    pub fn names(&self, slug: DiagnosticSlug) -> bool {
+        self.settings.iter().any(|s| s.slug == slug)
+    }
+
+    /// Whether a check is off: the project turns it off, or it's off by
+    /// default ([`diagnostics::OFF_BY_DEFAULT`]) and the project doesn't
+    /// name it.
     pub fn is_off(&self, slug: DiagnosticSlug) -> bool {
         self.level(slug) == Some(CheckLevel::Off)
+            || (diagnostics::OFF_BY_DEFAULT.contains(&slug) && !self.names(slug))
     }
 
     /// The `limit` the project sets for a check, if it sets one: a number
