@@ -170,7 +170,12 @@ describe("sourceFiles", () => {
         page({
           path: "upgrade.md",
           own_file_changed: false,
-          because: ["_fragments/requirements.md", "code:app.py#main", "ascribe.toml"],
+          because: [
+            "_fragments/requirements.md",
+            "code:app.py#main",
+            "api/openapi.yaml#createWidget",
+            "ascribe.toml",
+          ],
         }),
         page({ path: "new.md", status: "added" }),
         page({ path: "old.md", status: "removed" }),
@@ -182,6 +187,12 @@ describe("sourceFiles", () => {
       {
         label: "_fragments/requirements.md",
         path: at("docs", "_fragments", "requirements.md"),
+        before: true,
+        after: true,
+      },
+      {
+        label: "api/openapi.yaml",
+        path: at("api", "openapi.yaml"),
         before: true,
         after: true,
       },

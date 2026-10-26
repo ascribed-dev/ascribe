@@ -512,3 +512,49 @@ fn prompts_about_changes_need_the_base_and_count_unsaved_text() {
     );
     assert_eq!(answer, Value::Null);
 }
+
+#[test]
+fn a_spec_changed_on_disk_changes_the_page_that_shows_its_operation() {
+    let apis = "\n[apis.public]\nspec = \"api/openapi.yaml\"\nreference = { renderer = \"redoc\", at = \"/api/\" }\n";
+    let spec = |summary: &str| {
+        format!(
+            "openapi: 3.1.0\ninfo: {{ title: Users, version: \"1\" }}\npaths:\n  /users/{{id}}:\n    get:\n      operationId: getUser\n      summary: {summary}\n"
+        )
+    };
+    let f = Fixture::new(
+        &format!("{MODEL}{apis}"),
+        &[
+            ("api/openapi.yaml", &spec("Get a user")),
+            (
+                "docs/users.md",
+                "# Users\n\n@operation: ../api/openapi.yaml#getUser\n",
+            ),
+        ],
+    );
+    git(&f.root(), &["init", "-q", "-b", "main"]);
+    git(&f.root(), &["add", "-A"]);
+    git(&f.root(), &["commit", "-q", "-m", "First"]);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    set_base(&mut client, json!({ "base": "main" }));
+    assert_eq!(changes(&mut client)["pages"], json!([]));
+
+    f.write("api/openapi.yaml", &spec("Fetch a user"));
+    client.watched(&[(
+        &f.path("api/openapi.yaml"),
+        lsp_types::FileChangeType::CHANGED,
+    )]);
+    client.settle();
+    let listed = changes(&mut client);
+    let pages = listed["pages"].as_array().unwrap();
+    assert_eq!(pages.len(), 1, "{listed}");
+    assert_eq!(pages[0]["path"], "users.md");
+    assert_eq!(pages[0]["own_file_changed"], false);
+    assert_eq!(pages[0]["because"], json!(["api/openapi.yaml#getUser"]));
+    let review = preview(&mut client, &f.path("docs/users.md"))["review"].clone();
+    assert_eq!(kinds(&review), ["changed"]);
+    assert_eq!(
+        review["changes"]["because"],
+        json!(["api/openapi.yaml#getUser"])
+    );
+}

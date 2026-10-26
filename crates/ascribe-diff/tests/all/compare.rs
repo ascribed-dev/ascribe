@@ -957,3 +957,117 @@ fn a_move_is_in_the_json() {
     assert!(json[0]["pages"][0].get("moved_from").is_none());
     assert!(json[0]["pages"][0].get("moved_links").is_none());
 }
+
+/// A spec with one operation, `createWidget`, as `[apis.widgets]` declares
+/// it at `api/openapi.yaml`.
+fn spec(id: &str, summary: &str, deprecated: bool, description: &str) -> String {
+    format!(
+        "openapi: 3.1.0\ninfo: {{ title: Widgets, version: \"1\" }}\npaths:\n  /widgets:\n    post:\n      operationId: {id}\n      summary: {summary}\n      description: {description}\n      deprecated: {deprecated}\n"
+    )
+}
+
+/// A version declaring `[apis.widgets]` with this spec, and these pages.
+fn with_spec(pages: &[(&str, &str)], spec: &str) -> Version {
+    let model = format!(
+        "{MODEL}[apis.widgets]\nspec = \"api/openapi.yaml\"\nreference = {{ renderer = \"redoc\", at = \"/api/\" }}\n"
+    );
+    let loaded = ascribe_model::load_str(&model, FileId::new(0)).expect("a valid model");
+    let layout = Layout::from_model(&loaded);
+    let mut fs = MemoryFs::new(&layout).with_file("api/openapi.yaml", spec);
+    for (path, text) in pages {
+        fs = fs.with_source(path, text);
+    }
+    Version {
+        model,
+        project: Project::load(Arc::new(loaded), layout, &fs),
+    }
+}
+
+const EMBEDS: &str =
+    "# Widgets\n\n@operation: ../../api/openapi.yaml#createWidget\n\nThen go on.\n";
+const LINKS: &str = "# Widgets\n\nSee [the operation](../../api/openapi.yaml#createWidget).\n";
+
+#[test]
+fn a_page_changed_only_through_its_operation_names_the_spec() {
+    let before = spec("createWidget", "Make a widget", false, "Makes one.");
+    for after in [
+        spec("createWidget", "Create a widget", false, "Makes one."),
+        spec("createWidget", "Make a widget", true, "Makes one."),
+        spec("widgets_create", "Make a widget", false, "Makes one."),
+    ] {
+        let a = with_spec(&[("guides/api.md", EMBEDS)], &before);
+        let b = with_spec(&[("guides/api.md", EMBEDS)], &after);
+        let page = page(&a, &b);
+        assert!(!page.own_file_changed);
+        assert_eq!(page.because, ["api/openapi.yaml#createWidget"], "{after}");
+        assert_eq!(
+            page.describe(str::to_owned),
+            "1 changed (through api/openapi.yaml#createWidget)"
+        );
+        assert_eq!(
+            only_change(&page).now.as_ref().unwrap().source,
+            "guides/api.md:3-3"
+        );
+    }
+}
+
+#[test]
+fn a_link_to_an_operation_changes_only_when_its_address_does() {
+    let before = spec("createWidget", "Make a widget", false, "Makes one.");
+    // A link writes the operation's address alone: its summary and
+    // deprecation aren't on the page.
+    for after in [
+        spec("createWidget", "Create a widget", false, "Makes one."),
+        spec("createWidget", "Make a widget", true, "Makes one."),
+    ] {
+        let a = with_spec(&[("guides/api.md", LINKS)], &before);
+        let b = with_spec(&[("guides/api.md", LINKS)], &after);
+        assert!(diff(&a, &b)[0].pages.is_empty(), "{after}");
+    }
+    let a = with_spec(&[("guides/api.md", LINKS)], &before);
+    let b = with_spec(
+        &[("guides/api.md", LINKS)],
+        &spec("widgets_create", "Make a widget", false, "Makes one."),
+    );
+    let renamed = page(&a, &b);
+    assert!(!renamed.own_file_changed);
+    assert_eq!(renamed.because, ["api/openapi.yaml#createWidget"]);
+    // Named by its method and path, the link leads to the new id's address.
+    let by_path = "# Widgets\n\nSee [the operation](../../api/openapi.yaml#post/widgets).\n";
+    let a = with_spec(&[("guides/api.md", by_path)], &before);
+    let b = with_spec(
+        &[("guides/api.md", by_path)],
+        &spec("widgets_create", "Make a widget", false, "Makes one."),
+    );
+    assert_eq!(page(&a, &b).because, ["api/openapi.yaml#post/widgets"]);
+}
+
+#[test]
+fn a_spec_change_no_page_shows_lists_nothing() {
+    let before = spec("createWidget", "Make a widget", false, "Makes one.");
+    let after = spec("createWidget", "Make a widget", false, "Makes a new one.");
+    for text in [EMBEDS, LINKS] {
+        let a = with_spec(&[("guides/api.md", text)], &before);
+        let b = with_spec(&[("guides/api.md", text)], &after);
+        assert!(diff(&a, &b)[0].pages.is_empty());
+    }
+}
+
+#[test]
+fn an_operation_change_beside_the_pages_own_is_named_too() {
+    let a = with_spec(
+        &[("guides/api.md", EMBEDS)],
+        &spec("createWidget", "Make a widget", false, "Makes one."),
+    );
+    let b = with_spec(
+        &[("guides/api.md", &EMBEDS.replace("go on", "carry on"))],
+        &spec("createWidget", "Create a widget", false, "Makes one."),
+    );
+    let page = page(&a, &b);
+    assert!(page.own_file_changed);
+    assert_eq!(page.because, ["api/openapi.yaml#createWidget"]);
+    assert_eq!(
+        page.describe(str::to_owned),
+        "2 changed (also through api/openapi.yaml#createWidget)"
+    );
+}

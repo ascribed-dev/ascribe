@@ -38,9 +38,12 @@ pub struct Review<'a> {
 impl Review<'_> {
     /// A content path, or another name `because` gives, relative to the
     /// project root, as unsaved files are named; a snippet's address as it
-    /// is.
+    /// is, and an operation's, which is from the project root already.
     fn in_project(&self, name: &str) -> String {
-        if name == crate::compare::MODEL_FILE || name.starts_with("code:") {
+        if name == crate::compare::MODEL_FILE
+            || name.starts_with("code:")
+            || crate::compare::names_operation(name)
+        {
             return name.to_owned();
         }
         match RelPath::parse(name).and_then(|p| self.content_root.join(p.as_str())) {

@@ -11,6 +11,19 @@ import type { BaseInfo, ChangedPage, PageDiff } from "./protocol.js";
 export const MODEL_FILE = "ascribe.toml";
 
 /**
+ * The spec of an operation `because` names, by its path from the project
+ * root: `api/openapi.yaml` of `api/openapi.yaml#createWidget`. `null` for any
+ * other cause: a content file's path ends in `.md`, and a snippet's address
+ * has its source's name and `:` before its path.
+ */
+export function operationSpec(cause: string): string | null {
+  const hash = cause.indexOf("#");
+  if (hash < 0 || cause.endsWith(".md")) return null;
+  const spec = cause.slice(0, hash);
+  return spec.includes(":") ? null : spec;
+}
+
+/**
  * The base as the header and the status bar name it: the revision asked for,
  * or, when that's the pull request's base on a remote (`origin/main`), the
  * branch's name (`main`), as GitHub names it.
@@ -83,7 +96,8 @@ export function pageDetail(page: Omit<PageDiff, "changes">): string {
 
 /**
  * The files a page changed through, when its own file didn't change: each
- * cause's content path (or `ascribe.toml`) and its absolute path.
+ * cause's content path (or `ascribe.toml`, or an operation, whose file is its
+ * spec) and its absolute path.
  */
 export function causes(
   page: Omit<PageDiff, "changes"> | null,
@@ -92,9 +106,10 @@ export function causes(
   if (!page || page.own_file_changed || page.status !== "changed") return [];
   const out: { label: string; path: string }[] = [];
   for (const cause of page.because) {
-    const root = cause === MODEL_FILE ? roots.projectRoot : roots.contentRoot;
+    const spec = operationSpec(cause);
+    const root = cause === MODEL_FILE || spec !== null ? roots.projectRoot : roots.contentRoot;
     if (root === null) continue;
-    out.push({ label: cause, path: fromContentPath(root, cause) });
+    out.push({ label: cause, path: fromContentPath(root, spec ?? cause) });
   }
   return out;
 }

@@ -8,6 +8,7 @@ import {
   baseName,
   causes,
   nextChangedPage,
+  operationSpec,
   pageDetail,
   pageLabel,
   parseSource,
@@ -111,6 +112,17 @@ describe("pageDetail", () => {
   });
 });
 
+describe("operationSpec", () => {
+  it("is the spec of an operation, and null for any other cause", () => {
+    expect(operationSpec("api/openapi.yaml#createWidget")).toBe("api/openapi.yaml");
+    expect(operationSpec("../api/openapi.yaml#post/widgets")).toBe("../api/openapi.yaml");
+    expect(operationSpec("_fragments/prereqs.md")).toBeNull();
+    expect(operationSpec("notes/c#.md")).toBeNull();
+    expect(operationSpec("code:app.py#main")).toBeNull();
+    expect(operationSpec("ascribe.toml")).toBeNull();
+  });
+});
+
 describe("causes", () => {
   const roots = {
     projectRoot: path.join("/w", "docs-project"),
@@ -120,13 +132,20 @@ describe("causes", () => {
   it("points each cause at its file: a content path in the content root, ascribe.toml in the project", () => {
     expect(
       causes(
-        page({ own_file_changed: false, because: ["_fragments/prereqs.md", "ascribe.toml"] }),
+        page({
+          own_file_changed: false,
+          because: ["_fragments/prereqs.md", "api/openapi.yaml#createWidget", "ascribe.toml"],
+        }),
         roots,
       ),
     ).toEqual([
       {
         label: "_fragments/prereqs.md",
         path: path.join("/w", "docs-project", "docs", "_fragments", "prereqs.md"),
+      },
+      {
+        label: "api/openapi.yaml#createWidget",
+        path: path.join("/w", "docs-project", "api", "openapi.yaml"),
       },
       { label: "ascribe.toml", path: path.join("/w", "docs-project", "ascribe.toml") },
     ]);

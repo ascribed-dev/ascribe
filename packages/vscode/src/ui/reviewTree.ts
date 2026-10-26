@@ -2,7 +2,13 @@
 // can check it without VS Code: the changed pages by status, their problems,
 // the badge, and the source files a review changed.
 
-import { fromContentPath, MODEL_FILE, pageDetail, pageLabel } from "../preview/reviewText.js";
+import {
+  fromContentPath,
+  MODEL_FILE,
+  operationSpec,
+  pageDetail,
+  pageLabel,
+} from "../preview/reviewText.js";
 import type { ChangedPage } from "../preview/protocol.js";
 import type { ItemLook } from "./sidebar.js";
 
@@ -189,7 +195,7 @@ export interface SourceFile {
  * The changed source files of `pages`: each page's own file when it changed,
  * and the files it changed through, each once, in the order first named. A
  * snippet's code, named by its address, isn't a file of the content root and
- * isn't listed.
+ * isn't listed; an operation's spec is, from the project root.
  */
 export function sourceFiles(
   pages: readonly ChangedPage[],
@@ -230,6 +236,11 @@ export function sourceFiles(
     }
     for (const cause of page.because) {
       if (cause.startsWith(SNIPPET_PREFIX)) continue;
+      const spec = operationSpec(cause);
+      if (spec !== null) {
+        add(spec, roots.projectRoot, true, true);
+        continue;
+      }
       add(cause, cause === MODEL_FILE ? roots.projectRoot : roots.contentRoot, true, true);
     }
   }
