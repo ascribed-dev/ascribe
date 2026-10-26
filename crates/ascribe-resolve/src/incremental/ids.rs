@@ -28,6 +28,11 @@
 //!    anyway.
 //! 7. **A new load starts over.** Ids are stable within one table, not across
 //!    loads. A consumer that keeps ids across a restart must key by path.
+//! 8. **Code files a `@snippet` reads have their own ids**, from
+//!    [`CODE_FILE_IDS`] up, by the same rules: a code file's path gets the
+//!    next one the first time it's read, and keeps it for the table's life.
+//!    A fresh load numbers them in the order it reads them: files in path
+//!    order, each file's snippets in order.
 //!
 //! `ascribe_check::Project` accepts any ids (it finds a file by id, not by
 //! position), so the language server builds one from a snapshot's ids, and the
@@ -37,6 +42,8 @@ use std::collections::BTreeMap;
 
 use ascribe_core::{FileId, RelPath};
 
+use crate::snippet::CODE_FILE_IDS;
+
 /// The ids of the paths a project has had files at. See the [module
 /// documentation](self) for the rules.
 // Ids are per path, never reused, and a rename is a
@@ -45,6 +52,8 @@ use ascribe_core::{FileId, RelPath};
 pub struct FileIds {
     by_path: BTreeMap<RelPath, FileId>,
     next: u32,
+    /// The code files' ids.
+    pub(crate) code: CodeFileIds,
 }
 
 impl Default for FileIds {
@@ -52,6 +61,7 @@ impl Default for FileIds {
         FileIds {
             by_path: BTreeMap::new(),
             next: 1,
+            code: CodeFileIds::default(),
         }
     }
 }
@@ -95,6 +105,52 @@ impl FileIds {
     pub fn is_empty(&self) -> bool {
         self.by_path.is_empty()
     }
+
+    /// The id of a code file's path, from the project root, if it has been
+    /// read.
+    pub fn code(&self, path: &RelPath) -> Option<FileId> {
+        self.code.get(path)
+    }
+}
+
+/// The ids of the code files snippets have read, by path from the project
+/// root: rule 8 of the [module documentation](self).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct CodeFileIds {
+    by_path: BTreeMap<RelPath, FileId>,
+    next: u32,
+}
+
+impl Default for CodeFileIds {
+    fn default() -> CodeFileIds {
+        CodeFileIds {
+            by_path: BTreeMap::new(),
+            next: CODE_FILE_IDS,
+        }
+    }
+}
+
+impl CodeFileIds {
+    pub(crate) fn get(&self, path: &RelPath) -> Option<FileId> {
+        self.by_path.get(path).copied()
+    }
+
+    /// The id `path` has, or would get from [`CodeFileIds::assign`].
+    pub(crate) fn peek(&self, path: &RelPath) -> FileId {
+        self.get(path).unwrap_or(FileId::new(self.next))
+    }
+
+    /// The id of a code file's path: its own if it has one, else the next
+    /// unused number.
+    pub(crate) fn assign(&mut self, path: &RelPath) -> FileId {
+        if let Some(id) = self.get(path) {
+            return id;
+        }
+        let id = FileId::new(self.next);
+        self.next = self.next.saturating_add(1);
+        self.by_path.insert(path.clone(), id);
+        id
+    }
 }
 
 #[cfg(test)]
@@ -113,5 +169,15 @@ mod tests {
         assert_eq!(ids.assign(&p("b.md")), FileId::new(1));
         assert_eq!(ids.get(&p("c.md")), None);
         assert_eq!(ids.len(), 2);
+    }
+
+    #[test]
+    fn code_ids_start_past_source_ids_and_are_stable_per_path() {
+        let mut ids = CodeFileIds::default();
+        assert_eq!(ids.peek(&p("b.py")), FileId::new(CODE_FILE_IDS));
+        assert_eq!(ids.assign(&p("b.py")), FileId::new(CODE_FILE_IDS));
+        assert_eq!(ids.assign(&p("a.py")), FileId::new(CODE_FILE_IDS + 1));
+        assert_eq!(ids.assign(&p("b.py")), FileId::new(CODE_FILE_IDS));
+        assert_eq!(ids.peek(&p("c.py")), FileId::new(CODE_FILE_IDS + 2));
     }
 }

@@ -577,27 +577,6 @@ pub fn router(project: &Project) -> DefaultRouter {
     DefaultRouter::from_consumer(&project.model().consumer)
 }
 
-/// `text` with each code file's id written as `FileId(code)`. A snippet's
-/// code file is numbered by the resolution that read it, and the incremental
-/// project resolves a file's snippets on their own, so its numbers aren't a
-/// fresh load's (#1129).
-pub fn code_ids_hidden(text: String) -> String {
-    let mut out = String::with_capacity(text.len());
-    let mut rest = text.as_str();
-    while let Some(at) = rest.find("FileId(") {
-        let (before, after) = rest.split_at(at + "FileId(".len());
-        out.push_str(before);
-        let digits = after.bytes().take_while(u8::is_ascii_digit).count();
-        match after[..digits].parse::<u32>() {
-            Ok(id) if id >= ascribe_resolve::snippet::CODE_FILE_IDS => out.push_str("code"),
-            _ => out.push_str(&after[..digits]),
-        }
-        rest = &after[digits..];
-    }
-    out.push_str(rest);
-    out
-}
-
 /// Everything a project answers, as text, to compare exactly.
 pub fn dump(project: &Project) -> Vec<String> {
     let mut out = Vec::new();
@@ -671,7 +650,7 @@ pub fn dump(project: &Project) -> Vec<String> {
         "empty-slug {:?}",
         project.empty_slug_headings().len()
     ));
-    out.into_iter().map(code_ids_hidden).collect()
+    out
 }
 
 /// What each of a file's `@snippet`s shows.
@@ -707,16 +686,13 @@ pub fn file_result(project: &Project, path: &RelPath) -> String {
             }
         }
     }
-    code_ids_hidden(out)
+    out
 }
 
 /// What a consumer that re-resolves only [`Affected::re_resolve`] would hold
 /// for a page in a build.
 pub fn page_result(project: &Project, path: &RelPath, build: &ascribe_model::Build) -> String {
-    code_ids_hidden(format!(
-        "{:?}",
-        project.resolve_page(path, build, &router(project))
-    ))
+    format!("{:?}", project.resolve_page(path, build, &router(project)))
 }
 
 /// A consumer's kept results, updated only where an update says to.

@@ -97,6 +97,7 @@ use ascribe_model::ContentModel;
 use ascribe_model::examples::{EXAMPLES_FILE, OBSERVATIONS_FOLDER};
 
 pub use cache::ResolvedCache;
+pub(crate) use ids::CodeFileIds;
 pub use ids::FileIds;
 pub use signature::ModelImpact;
 
@@ -1099,13 +1100,15 @@ impl IncrementalProject {
             project.put_index(index);
         }
         let mut res_changed: BTreeSet<RelPath> = BTreeSet::new();
+        // Code files keep their ids, and one read for the first time gets
+        // the next, as a fresh load with the same ids gives it.
+        let code = crate::snippet::CodeFiles::with_ids(std::mem::take(&mut self.ids.code));
         for path in &resolve_set {
             let Some(index) = project.file(path).cloned() else {
                 continue;
             };
             let resolutions = project.resolve_file(&index, &self.fs);
-            let snippets =
-                project.resolve_snippets(&index, &self.fs, &crate::snippet::CodeFiles::new());
+            let snippets = project.resolve_snippets(&index, &self.fs, &code);
             project.put_snippets(path, snippets);
             self.stats.resolutions += 1;
             if old_resolutions
@@ -1134,12 +1137,12 @@ impl IncrementalProject {
                 .map(|file| file.path.clone())
                 .collect()
         };
-        let code = crate::snippet::CodeFiles::new();
         for path in showing.iter().filter(|p| !resolve_set.contains(*p)) {
             if let Some(index) = project.file(path).cloned() {
                 project.put_snippets(path, project.resolve_snippets(&index, &self.fs, &code));
             }
         }
+        self.ids.code = code.into_ids();
         for path in created.keys().chain(&gone) {
             let includers: Vec<RelPath> = self.include_rev.includers(path).into_iter().collect();
             project.refresh_include_edges(path, &includers);
