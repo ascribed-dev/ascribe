@@ -224,25 +224,43 @@ fn model_reads_every_example_content_model() {
         let text = stdout(&run(&root, &["--config", config, "model"], 0));
         assert!(text.starts_with("# Content model"), "{config}: {text}");
         let value = json(&root, &["--config", config, "model"], 0);
-        for section in [
-            "types",
-            "dimensions",
-            "phrases",
-            "features",
-            "glossary",
-            "widgets",
-            "builds",
-            "sources",
-            "project",
-            "consumer",
-            "editor",
-            "checks",
-            "crawlers",
-            "listing",
-            "permalinks",
-        ] {
-            assert!(value[section].is_array(), "{config}: no {section}");
+        for section in ascribe_query::Section::ALL.map(|s| s.name()) {
+            let shown = if section == "fragments" {
+                value[section].is_object()
+            } else {
+                value[section].is_array()
+            };
+            assert!(shown, "{config}: no {section}");
         }
+    }
+}
+
+#[test]
+fn model_shows_each_section_alone() {
+    let root = repository_root();
+    let config = "examples/content-models/full.toml";
+    for section in ascribe_query::Section::ALL.map(|s| s.name()) {
+        let value = json(
+            &root,
+            &["--config", config, "model", "--section", section],
+            0,
+        );
+        let shown: Vec<&String> = value
+            .as_object()
+            .unwrap()
+            .keys()
+            .filter(|k| !k.ends_with("_version"))
+            .collect();
+        assert_eq!(shown, [section], "{value}");
+        let text = stdout(&run(
+            &root,
+            &["--config", config, "model", "--section", section],
+            0,
+        ));
+        assert!(
+            text.starts_with("# Content model\n\n## "),
+            "{section}: {text}"
+        );
     }
 }
 
@@ -266,6 +284,66 @@ fn model_cuts_a_long_list_and_names_the_section() {
     let one = json(dir.path(), &["model", "--section", "phrases"], 0);
     assert_eq!(one["phrases"].as_array().unwrap().len(), 400);
     assert!(one.get("types").is_none(), "{one}");
+}
+
+#[test]
+fn model_shows_the_tables_that_say_where_things_come_from() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        &dir.path().join("shared/ascribe.toml"),
+        "spec = \"0.1\"\n\n[phrases]\nproduct = \"Quill\"\n",
+    );
+    write(&dir.path().join("api/openapi.yaml"), "openapi: 3.1.0\n");
+    write(
+        &dir.path().join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[from.\"shared/ascribe.toml\"]\ntake = [\"phrases.product\"]\n\n\
+         [frontmatter]\nowner = \"string\"\n\n\
+         [apis.loom]\nspec = \"api/openapi.yaml\"\n\
+         reference = \"https://loom.dev/api/{operationId}\"\n\n\
+         [[intended]]\ncheck = \"phrase-unused\"\nphrase = \"product\"\n\
+         reason = \"The next release's pages use it.\"\n",
+    );
+    fs::create_dir(dir.path().join("docs")).unwrap();
+
+    let text = stdout(&run(dir.path(), &["model"], 0));
+    for line in [
+        "## Frontmatter every type shares\n\n- `owner` (string, required)\n",
+        "## APIs\n\n- `loom`: spec `api/openapi.yaml`, reference \
+         `https://loom.dev/api/{operationId}`\n",
+        "## Taken from other files\n\n- `shared/ascribe.toml`: takes `phrases.product`\n",
+        "## Intended problems\n\n- `phrase-unused` about phrase `product`: \
+         The next release's pages use it.\n",
+    ] {
+        assert!(text.contains(line), "{line}\n{text}");
+    }
+    // Built in, so in every project: shown when the file writes them.
+    assert!(!text.contains("## Lifecycle states"), "{text}");
+    assert!(!text.contains("## Note types"), "{text}");
+
+    let value = json(dir.path(), &["model"], 0);
+    assert_eq!(
+        value["apis"],
+        serde_json::json!([{
+            "name": "loom",
+            "spec": "api/openapi.yaml",
+            "reference": "https://loom.dev/api/{operationId}",
+        }])
+    );
+    assert_eq!(
+        value["from"],
+        serde_json::json!([{ "file": "shared/ascribe.toml", "take": ["phrases.product"] }])
+    );
+    assert_eq!(
+        value["intended"],
+        serde_json::json!([{
+            "check": "phrase-unused",
+            "kind": "phrase",
+            "name": "product",
+            "reason": "The next release's pages use it.",
+        }])
+    );
+    assert_eq!(value["notes"][0]["name"], "note");
+    assert_eq!(value["notes"][0]["builtin"], true);
 }
 
 #[test]
