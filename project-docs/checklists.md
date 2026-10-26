@@ -18,6 +18,7 @@ New or changed syntax, a directive, a block or inline form, an attribute, or wha
 - [ ] Parsing, in `crates/ascribe-syntax/`. A change to the parser itself is in `crates/comrak-ascribe/`, marked as `crates/comrak-ascribe/FORK.md` says.
 - [ ] The content model, in `crates/ascribe-model/`, if `ascribe.toml` can say something new.
 - [ ] Resolving, in `crates/ascribe-resolve/`: includes, snippets, phrases, links, and builds.
+- [ ] Incremental updates: a new kind of change (a file the project reads, or a new `Change`) is a row of the invalidation table in `crates/ascribe-resolve/src/incremental/mod.rs`, and the differential test's generator makes it, with sources that use it (`crates/ascribe-resolve/tests/all/incremental_differential.rs`, and its vocabulary in `crates/ascribe-resolve/tests/incremental_support/`).
 
 **Checking it**
 
