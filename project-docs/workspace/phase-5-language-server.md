@@ -16,7 +16,7 @@ The language server keeps a `Workspace`, with its open buffers laid over it, and
 ## Design
 
 - **The buffers.** A `Workspace` loads over a `FileSystem` with the open buffers laid over the disk, as `BufferFs` and `LayerFs` do for the sources and the side files today; one layer does both. An edit to an open file is a change applied to the `Workspace`; closing a file whose buffer differed from the disk applies the disk's text.
-- **`Loaded`** keeps a `Workspace` in place of its `IncrementalProject`, model, model text, and `LayerFs`. What's the language server's own stays: the dirty files, the resolved pages for the editor's build, the content checks' results, the baseline matches, the published diagnostics. A change to a side file reaches it through the `Workspace`'s `Affected`, and `is_addresses`, `nav_file`, and `is_baseline` go, with the registry deciding.
+- **`Loaded`** keeps a `Workspace` in place of its `IncrementalProject`, model, model text, and `LayerFs`. What's the language server's own stays: the dirty files, the resolved pages for the editor's build, the content checks' results, the baseline matches, the published diagnostics. A change to a side file reaches it through the `Workspace`'s `Affected`, and `Loaded::side_file` and `nav_file` go, with the `Workspace` finding the entry and its `Stale` saying what follows.
 - **Loading again** happens when `apply` says so, as phase 4 defines, which is when it does today.
 - **`Watched`** takes a `Workspace` it's given. The hook's check server makes one, hands it to `Watched` for the quick check, and checks the whole project on the same one.
 

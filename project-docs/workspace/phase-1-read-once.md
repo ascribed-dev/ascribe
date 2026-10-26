@@ -1,6 +1,6 @@
 # Phase 1: Read once
 
-Part of [Load a project once](README.md). Needs #1007.
+Part of [Load a project once](README.md). Needs nothing before it.
 
 ## Goal
 

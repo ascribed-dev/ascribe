@@ -10,14 +10,14 @@ A `Workspace` takes changes and updates in place. The MCP server keeps one per p
 
 - README decisions 3, 5, and 7.
 - `IncrementalProject::apply`, `Change`, `Affected`, `ApplyError`, and its contract: after any sequence of changes, the snapshot equals a fresh load of the same files (`crates/ascribe-resolve/tests/all/incremental_differential.rs`).
-- #1007's registry: what a change to each side file invalidates.
+- The side files' `Stale` (`crates/ascribe-resolve/src/side_file.rs`): what a change to each makes stale, and `Change::SideFiles`, how one reaches the source index.
 - The MCP cache (`crates/ascribe-cli/src/mcp/cache.rs`): its listing, which files it lists, and how it watches the code files snippets read.
 - The hook's check server (`crates/ascribe-cli/src/agents/checker.rs`), which checks the whole project through the MCP cache.
-- How the language server turns a watched file's change into `Change`s and side-file updates (`crates/ascribe-lsp/src/core.rs`: `classify`, `is_addresses`, `nav_file`, `in_memos`, `is_baseline`), which this phase's mapping is the same as.
+- How the language server turns a watched file's change into `Change`s and side-file updates (`crates/ascribe-lsp/src/core.rs`: `classify`, `side_file`, `nav_file`, and `in_memos`, then the entry's `Stale`), which this phase's mapping is the same as.
 
 ## Design
 
-- **`Workspace::apply`** takes `ascribe_resolve::Change`s and side-file changes, by path from the project root, and returns `Affected`, or an error saying the project must be loaded again: `ApplyError::NestedProjectChanged`, and a model change that moves the content root or the output directory. A side file goes through #1007's registry. A memo file, an image, or a code file a snippet reads drops what the snapshot read of it. A change that changes nothing makes no new snapshot.
+- **`Workspace::apply`** takes `ascribe_resolve::Change`s and side-file changes, by path from the project root, and returns `Affected`, or an error saying the project must be loaded again: `ApplyError::NestedProjectChanged`, and a model change that moves the content root or the output directory. A side file is found by its `Entry` in the list the `Workspace` was given, read again, and what its `Stale` names follows: `Change::SideFiles` when the index reads it, and `Affected` says when every file or the checks across the project are stale. A memo file, an image, or a code file a snippet reads drops what the snapshot read of it. A change that changes nothing makes no new snapshot.
 - **The differential test** extends to the `Workspace`: random sequences of changes to sources, side files, memo files, code files, and `ascribe.toml`, and after each step the snapshot equals a fresh `Workspace::load` of the same files.
 - **From a listing to changes.** A function in `ascribe-workspace` compares two listings of a project's files and gives the `Change`s between them: a path in one and not the other is created or deleted, a stamp that differs is edited, and each is read once. The listing is the MCP cache's today, moved down so the hook's check server and the MCP server share it. It reads no file it doesn't have to.
 - **The MCP cache** keeps a `Workspace` and its listing per project. Before each call it lists again, and applies the difference; a refusal loads the project again. `answer::Loaded`'s kept results (the checks for each set of builds, the readings) belong to a snapshot's version, and a new version drops them.
