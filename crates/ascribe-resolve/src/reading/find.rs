@@ -7,7 +7,7 @@ use std::ops::Range;
 
 use ascribe_core::{FileId, LineIndex, RelPath, Span};
 
-use super::{In, Origin, PieceKind, Query, ReadBlock, Reading, Under, line_col};
+use super::{In, Origin, Partial, PieceKind, Query, ReadBlock, Reading, Under, line_col};
 use crate::Project;
 use crate::fs::MODEL_FILE;
 use crate::snippet::{Snippet, parse_address};
@@ -21,6 +21,18 @@ pub struct Found {
     pub places: Vec<Place>,
     /// How many pages show a place.
     pub pages: usize,
+}
+
+/// A place that has some of the words a query needs, not all of them: what
+/// [`closest`] finds.
+#[derive(Clone, Debug)]
+pub struct Closest {
+    /// The place, its match covering the words it has.
+    pub place: Place,
+    /// How many of the words and phrases a match needs it has.
+    pub has: usize,
+    /// The ones it lacks, as the query writes them, in its order.
+    pub lacks: Vec<String>,
 }
 
 /// A place the query matches: a line of the source.
@@ -141,13 +153,70 @@ pub fn find<'a>(
     readings: impl IntoIterator<Item = &'a Reading>,
     query: &Query,
 ) -> Found {
+    let (places, pages) = gather(project, readings, |text, from| {
+        query.find_from(text, from).map(|range| (range, ()))
+    });
+    Found {
+        places: places.into_iter().map(|(place, ())| place).collect(),
+        pages,
+    }
+}
+
+/// The places in `readings` that have some of the words and phrases
+/// `query` needs, not all, as [`find`] finds places: those that have the
+/// most of them first, then those that have the most of its stop words,
+/// then in [`find`]'s order. Empty when a match needs only one.
+pub fn closest<'a>(
+    project: &Project,
+    readings: impl IntoIterator<Item = &'a Reading>,
+    query: &Query,
+) -> Vec<Closest> {
+    let needed = query.needed();
+    if needed.len() < 2 {
+        return Vec::new();
+    }
+    let (mut places, _) = gather(project, readings, |text, from| {
+        query
+            .partial_from(text, from)
+            .map(|partial| (partial.matched.clone(), partial))
+    });
+    places.sort_by_key(|(_, p)| {
+        (
+            std::cmp::Reverse(p.count()),
+            std::cmp::Reverse(p.stop_words),
+        )
+    });
+    places
+        .into_iter()
+        .map(|(place, partial): (Place, Partial)| Closest {
+            place,
+            has: partial.count(),
+            lacks: needed
+                .iter()
+                .zip(&partial.has)
+                .filter(|(_, has)| !**has)
+                .map(|(word, _)| word.clone())
+                .collect(),
+        })
+        .collect()
+}
+
+/// The places `matches` finds in `readings`, each with what it said of the
+/// first match that made the place, in [`find`]'s order, and how many
+/// pages show one. `matches` is asked for the first match in a block's
+/// text at or after a byte.
+fn gather<'a, T>(
+    project: &Project,
+    readings: impl IntoIterator<Item = &'a Reading>,
+    mut matches: impl FnMut(&str, usize) -> Option<(Range<usize>, T)>,
+) -> (Vec<(Place, T)>, usize) {
     let mut lines: HashMap<FileId, LineIndex> = HashMap::new();
-    let mut places: Vec<Place> = Vec::new();
+    let mut places: Vec<(Place, T)> = Vec::new();
     let mut keys: HashMap<Key, usize> = HashMap::new();
     for reading in readings {
         for block in reading.blocks.iter().filter(|b| b.kind.searched()) {
             let mut from = 0;
-            while let Some(range) = query.find_from(&block.text, from) {
+            while let Some((range, said)) = matches(&block.text, from) {
                 let (place, after) = locate(project, &mut lines, block, range);
                 let key = match &place.at {
                     At::Source { file, line, .. } | At::Code { file, line, .. } => {
@@ -156,10 +225,10 @@ pub fn find<'a>(
                     At::Phrase { key, .. } => Key::Phrase(key.clone()),
                 };
                 let i = *keys.entry(key).or_insert_with(|| {
-                    places.push(place);
+                    places.push((place, said));
                     places.len() - 1
                 });
-                if let Some(place) = places.get_mut(i) {
+                if let Some((place, _)) = places.get_mut(i) {
                     if !place.builds.contains(&reading.build) {
                         place.builds.push(reading.build.clone());
                     }
@@ -206,18 +275,18 @@ pub fn find<'a>(
     };
     // Within each kind, the pages' own places come before those of the
     // files they bring in, fragments and code files.
-    places.sort_by_cached_key(|p| (rank(p.kind), p.shared, path(&p.at), offset(&p.at)));
-    for place in &mut places {
+    places.sort_by_cached_key(|(p, _)| (rank(p.kind), p.shared, path(&p.at), offset(&p.at)));
+    for (place, _) in &mut places {
         place.shown.sort_by(|a, b| a.page.cmp(&b.page));
     }
     let mut pages: Vec<&RelPath> = places
         .iter()
-        .flat_map(|p| p.shown.iter().map(|s| &s.page))
+        .flat_map(|(p, _)| p.shown.iter().map(|s| &s.page))
         .collect();
     pages.sort();
     pages.dedup();
     let pages = pages.len();
-    Found { places, pages }
+    (places, pages)
 }
 
 /// The place a match in a block is, and, when it's a phrase's value, where

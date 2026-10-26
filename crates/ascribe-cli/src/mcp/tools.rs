@@ -252,8 +252,10 @@ pub const TOOLS: &[Spec] = &[
         description: "Find where the pages say something, as their readers read it, with the \
             line to edit for each place, before writing a page about a subject: phrases, \
             fragments, and snippets resolved, which a text search of the source can't. Words \
-            must all be in one block; a phrase in double quotes is matched as written. When \
-            nothing matches, try other words for the subject. Example: {\"query\": \"\\\"sign \
+            must all be in one block, apart from common words such as `how` and `the`; a phrase \
+            in double quotes is matched as written. When nothing matches, it lists the blocks with \
+            the most of the words as partial matches, with the words each lacks: read them, and \
+            try other words for the subject. Example: {\"query\": \"\\\"sign \
             in to quill cloud\\\"\", \"project\": \"docs\"} returns lines such as \
             `docs/install-agent.md:62: Sign in to Quill Cloud and copy an API key…` and \
             `Connect to Quill #connect · deployment=cloud arm · through phrase cloud`.",
@@ -264,7 +266,8 @@ pub const TOOLS: &[Spec] = &[
                     "query": {
                         "type": "string",
                         "description": "Words, which must all be in one block in any order, \
-                            or a phrase in double quotes, matched as written. Case is ignored \
+                            apart from common words such as `how` and `the`, or a phrase in \
+                            double quotes, matched as written. Case is ignored \
                             unless `case`, and a word matches inside a longer one unless \
                             `word`.",
                     },
