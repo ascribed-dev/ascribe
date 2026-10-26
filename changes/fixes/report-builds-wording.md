@@ -1,0 +1,1 @@
+- **Fixed:** `ascribe report` names the line a versioned build's content isn't available on. Under `site@3.4 leaves out …`, content marked for a later line read "not ;"; it now reads "not self-managed 3.4", as the editor's build lens does too. The builds that keep a page or content agree with their verb: "site publishes it", "site and site@3.4 publish it".

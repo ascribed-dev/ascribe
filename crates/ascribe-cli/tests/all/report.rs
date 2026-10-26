@@ -127,6 +127,63 @@ fn with_no_section_it_reports_what_needs_nothing_outside_the_project() {
     );
 }
 
+/// A line of a versioned build names its target and line as what content
+/// isn't available on, and the verb agrees with how many builds keep it.
+#[test]
+fn builds_name_a_line_and_agree_with_the_builds_that_keep_it() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    write(
+        dir.path(),
+        "ascribe.toml",
+        r#"spec = "0.1"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+
+[releases.self-managed]
+live = ["3.4", "3.5"]
+
+[builds.site]
+versions = "self-managed"
+
+[builds.cloud]
+availability = { filter = "cloud" }
+"#,
+    );
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Home\n---\n\n## Keys\n@available: self-managed\n\nOn self-managed.\n\n## Signing\n@available: self-managed 3.5\n\nFrom 3.5.\n",
+    );
+    write(
+        dir.path(),
+        "docs/server.md",
+        "---\ntitle: Server\navailable: self-managed\n---\n\nOn self-managed.\n",
+    );
+    write(
+        dir.path(),
+        "docs/webhooks.md",
+        "---\ntitle: Webhooks\navailable: self-managed 3.5\n---\n\nFrom 3.5.\n",
+    );
+    let out = ascribe(dir.path(), &["report", "builds"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(text.contains("; site publishes it\n"), "{text}");
+    assert!(text.contains("; site and site@3.4 publish it\n"), "{text}");
+    assert!(
+        text.contains(
+            "Available on self-managed (GA, 3.5+), not self-managed 3.4; site keeps it\n"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains("Available on self-managed (GA), not cloud; site and site@3.4 keep it\n"),
+        "{text}"
+    );
+    assert!(!text.contains("not ;"), "{text}");
+}
+
 #[test]
 fn a_section_that_can_t_run_says_why_and_fails_only_with_exit_code() {
     let dir = project(MODEL);

@@ -43,17 +43,24 @@ pub fn removal_detail(model: &ContentModel, build: &Build, removed: &Removed) ->
             format!("Shows only {}", shown.join(", "))
         }
         Removal::Availability(spec) => {
-            // The build's target as a person reads it: `Self-hosted 2.5`.
-            let built = match &build.availability {
-                AvailabilityMode::Filter { target, version } => {
-                    let label = model.value_label(target).unwrap_or(target);
-                    match version {
-                        Some(version) => format!("{label} {}", version.text),
-                        None => label.to_owned(),
-                    }
+            // The build's target as a person reads it: `Self-hosted 2.5`, or
+            // for a line of a versioned build, its target at that line.
+            let target = match (&build.availability, &build.versions, &build.line) {
+                (AvailabilityMode::Filter { target, version }, ..) => {
+                    Some((target, version.as_ref()))
                 }
-                AvailabilityMode::Badge => String::new(),
+                (AvailabilityMode::Badge, Some(target), Some(line)) => {
+                    Some((target, Some(&line.line)))
+                }
+                (AvailabilityMode::Badge, ..) => None,
             };
+            let not = target.map_or(String::new(), |(target, version)| {
+                let label = model.value_label(target).unwrap_or(target);
+                match version {
+                    Some(version) => format!(", not {label} {}", version.text),
+                    None => format!(", not {label}"),
+                }
+            });
             let shown = availability_display(model, &spec.spec);
             let feature = spec
                 .feature
@@ -61,8 +68,8 @@ pub fn removal_detail(model: &ContentModel, build: &Build, removed: &Removed) ->
                 .and_then(|key| model.feature(key))
                 .map(|f| f.name.clone());
             match feature {
-                Some(name) => format!("{name}: available on {shown}, not {built}"),
-                None => format!("Available on {shown}, not {built}"),
+                Some(name) => format!("{name}: available on {shown}{not}"),
+                None => format!("Available on {shown}{not}"),
             }
         }
     }
