@@ -31,6 +31,8 @@ The same problems as `ascribe check`, counted three ways: by check, by file, and
 
 It also lists every problem [acknowledged as intended](../writing/directives.md#intended), with its reason, so an acknowledgement that's no longer true is easy to find. `ascribe check --format concise` lists each problem.
 
+The advice the project's [baseline](baseline.md) puts off isn't in the counts, as it isn't in `ascribe check`'s. The section says how much it holds back instead, `0 errors, 0 warnings, 2 advice, and 3412 in the baseline`, and the JSON's `problems` as `baselined`: the backlog, which goes down as the team fixes it and prunes the file. `--no-baseline` reports everything, without reading the file.
+
 ### What's new since the last report
 
 From its second run on, the section says which problems are new since the last report, and how many that report listed are gone, and lists the new ones:

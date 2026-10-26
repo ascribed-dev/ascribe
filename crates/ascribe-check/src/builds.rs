@@ -7,8 +7,8 @@ use ascribe_core::RelPath;
 use ascribe_model::Build;
 
 use crate::{
-    Acknowledged, Acknowledgements, Diagnostic, PageChecker, PageIndex, Project, apply_levels,
-    check_all_builds, check_builds, check_file, check_files_with,
+    Acknowledged, Acknowledgements, BaselineError, Diagnostic, PageChecker, PageIndex, Project,
+    apply_levels, check_all_builds, check_builds, check_file, check_files_with,
 };
 
 /// A build name that isn't a build of the content model.
@@ -70,6 +70,73 @@ pub struct Diagnosed<'p> {
     pub acknowledged: Vec<Acknowledged>,
     /// The builds checked, as [`select_builds`] chose them.
     pub builds: Vec<&'p Build>,
+    /// The advice `ascribe.baseline` holds back, which isn't in
+    /// `diagnostics`: none unless [`Request::baseline`] asks for it.
+    pub baselined: Vec<Diagnostic>,
+}
+
+/// What a check is asked for, besides the project: the settings every
+/// command that checks a project's builds shares, so `ascribe check`,
+/// `ascribe build`, and `ascribe report` report the same diagnostics.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Request<'a> {
+    /// The builds to check, by name; every build when empty.
+    pub builds: &'a [String],
+    /// Whether `ascribe.baseline`, when the project has one, holds back the
+    /// advice it lists. Without it, everything is reported.
+    pub baseline: bool,
+}
+
+/// Why [`diagnose_with`] couldn't check the project.
+#[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
+pub enum DiagnoseError {
+    /// A build named isn't the content model's.
+    #[error(transparent)]
+    UnknownBuild(#[from] UnknownBuild),
+    /// `ascribe.baseline` can't be read, so nothing is checked with it.
+    #[error("{0}; fix the line, or pass --no-baseline to report without the baseline")]
+    Baseline(BaselineError),
+}
+
+impl ascribe_core::Coded for DiagnoseError {
+    fn code(&self) -> &'static str {
+        match self {
+            DiagnoseError::UnknownBuild(e) => e.code(),
+            DiagnoseError::Baseline(e) => e.code(),
+        }
+    }
+}
+
+/// [`diagnose`], as `request` asks: of the builds it names, and with what
+/// `ascribe.baseline` holds back set aside in [`Diagnosed::baselined`] when
+/// it asks for the baseline. An entry that matches nothing is reported, as
+/// `baseline-entry-unmatched`, when every build is checked, and so would
+/// have found what it lists, apart from Vale's, which this check doesn't
+/// run.
+///
+/// # Errors
+///
+/// The first name that isn't a build of the content model, or a baseline
+/// that can't be read.
+pub fn diagnose_with<'p>(
+    project: &'p Project,
+    request: &Request<'_>,
+) -> Result<Diagnosed<'p>, DiagnoseError> {
+    let baseline = match project.baseline() {
+        Some(Err(e)) if request.baseline => return Err(DiagnoseError::Baseline(e.clone())),
+        Some(Ok(baseline)) if request.baseline => Some(baseline),
+        _ => None,
+    };
+    let mut diagnosed = diagnose(project, request.builds)?;
+    if let Some(baseline) = baseline {
+        let every = request.builds.is_empty();
+        let not_run = [ascribe_core::diagnostics::PROSE.as_str()];
+        let diagnostics = std::mem::take(&mut diagnosed.diagnostics);
+        let held = crate::baseline::apply(project, baseline, diagnostics, every, &not_run);
+        diagnosed.diagnostics = held.diagnostics;
+        diagnosed.baselined = held.held;
+    }
+    Ok(diagnosed)
 }
 
 /// The diagnostics of the builds named in `names`, and the builds: what
@@ -105,6 +172,7 @@ pub fn diagnose<'p>(project: &'p Project, names: &[String]) -> Result<Diagnosed<
         diagnostics,
         acknowledged: applied.acknowledged,
         builds,
+        baselined: Vec::new(),
     })
 }
 
@@ -238,5 +306,6 @@ pub fn diagnose_editor_build_in<'p>(
         diagnostics: applied.diagnostics,
         acknowledged: applied.acknowledged,
         builds: vec![build],
+        baselined: Vec::new(),
     }
 }

@@ -95,6 +95,16 @@ pub struct Args {
     #[arg(long)]
     pub no_history: bool,
 
+    /// Report the advice `ascribe.baseline` holds back too, without reading
+    /// the file.
+    ///
+    /// By default, `problems` and `inventory` leave out what the baseline
+    /// lists while it's advice, as `ascribe check` does, and `problems`
+    /// counts it. A baseline that can't be read stops the report, unless
+    /// this is given.
+    #[arg(long)]
+    pub no_baseline: bool,
+
     /// Exit with 1 when a section finds something at this severity or
     /// above, and with 2 when a section asked for couldn't run: for a
     /// scheduled job that opens an issue.
@@ -289,6 +299,7 @@ pub(crate) fn report(
     let options = Options {
         sections: &sections,
         builds: &args.build,
+        baseline: !args.no_baseline,
         not_listed: args.not_listed,
         site: args.site.as_deref(),
         tools,
@@ -444,6 +455,9 @@ fn command(global: &Global, args: &Args, sections: &[Section], limit: usize) -> 
         // Without it, the lists would differ.
         words.push("--no-history".to_owned());
     }
+    if args.no_baseline {
+        words.push("--no-baseline".to_owned());
+    }
     words.extend(["--limit".to_owned(), limit.to_string()]);
     match args.format {
         Format::Json => words.extend(["--format".to_owned(), "json".to_owned()]),
@@ -457,6 +471,9 @@ fn command(global: &Global, args: &Args, sections: &[Section], limit: usize) -> 
 fn check_command(global: &Global, args: &Args) -> String {
     let mut words = vec!["ascribe".to_owned(), "check".to_owned()];
     words.extend(options(global, args));
+    if args.no_baseline {
+        words.push("--no-baseline".to_owned());
+    }
     if args.format == Format::Json {
         words.extend(["--format".to_owned(), "json".to_owned()]);
     } else {

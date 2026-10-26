@@ -31,8 +31,8 @@ use ascribe_check::report_history::{self, ReportHistory, SiteChecks};
 use ascribe_check::site::{self, CheckResult, SiteChecker};
 use ascribe_check::tool::ToolError;
 use ascribe_check::{
-    Acknowledged, Acknowledgements, Diagnostic, Project, UnknownBuild, apply_levels, diagnose,
-    select_builds,
+    Acknowledged, Acknowledgements, DiagnoseError, Diagnostic, Project, Request, apply_levels,
+    diagnose_with, select_builds,
 };
 use ascribe_core::{DiagnosticSlug, FileId, Location, RelPath, diagnostics};
 use ascribe_emit::labels::removal_detail;
@@ -122,6 +122,9 @@ pub struct Options<'a> {
     /// The builds `problems` checks and `builds` reports on; every build
     /// when empty.
     pub builds: &'a [String],
+    /// Whether `ascribe.baseline` holds back the advice it lists from
+    /// `problems` and `inventory`, as it does from `ascribe check`.
+    pub baseline: bool,
     /// For `pages`, only the pages that aren't `listed`.
     pub not_listed: bool,
     /// The built site `agents` checks.
@@ -175,6 +178,9 @@ pub struct Problems {
     pub diagnostics: Vec<Diagnostic>,
     /// The problems acknowledged as intended, with their reasons.
     pub acknowledged: Vec<Acknowledged>,
+    /// How many advice `ascribe.baseline` holds back, which aren't in
+    /// `diagnostics`: the backlog the project has put off.
+    pub baselined: usize,
     /// The day of the run the history is from, when there's one to go by.
     pub previous_run: Option<ascribe_core::Date>,
     /// The diagnostics the previous run didn't report, in the order of
@@ -433,8 +439,9 @@ impl Report {
 ///
 /// # Errors
 ///
-/// A build named isn't the content model's.
-pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, UnknownBuild> {
+/// A build named isn't the content model's, or, with
+/// [`Options::baseline`], `ascribe.baseline` can't be read.
+pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, DiagnoseError> {
     let asked = |s: Section| options.sections.contains(&s);
     let selected = select_builds(project, options.builds)?;
     let mut out = Report {
@@ -444,17 +451,24 @@ pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, Unknow
     // What this run found, for the history to keep.
     let mut kept = report_history::Found::default();
     if asked(Section::Problems) || asked(Section::Inventory) {
-        let diagnosed = diagnose(project, options.builds)?;
+        let diagnosed = diagnose_with(
+            project,
+            &Request {
+                builds: options.builds,
+                baseline: options.baseline,
+            },
+        )?;
         if asked(Section::Inventory) {
             out.inventory = Some(inventory(project, &diagnosed.diagnostics));
         }
         if asked(Section::Problems) {
-            let (problems, found) = problems(
+            let (mut problems, found) = problems(
                 project,
                 diagnosed.diagnostics,
                 diagnosed.acknowledged,
                 options.history,
             );
+            problems.baselined = diagnosed.baselined.len();
             out.problems = Some(problems);
             kept.problems = found;
         }

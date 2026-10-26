@@ -12,7 +12,7 @@ ascribe agents prompt     [NAME] [--arg <KEY=VALUE>]... [--list]
 ascribe agents hook       HARNESS [--event edit|stop]
 ascribe baseline write    [--format text|json]
 ascribe baseline prune    [--format text|json]
-ascribe build             [--build <NAME>]... [--emit site,plain,json] [--format text|json] [--anchors]
+ascribe build             [--build <NAME>]... [--emit site,plain,json] [--format text|json] [--anchors] [--no-baseline]
 ascribe check             [PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--format text|concise|json|prompt] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]
 ascribe diff              [PAGE] [--base <REV>] [--base-exact] [--build <NAME>]... [--format text|json|html|prompt] [--exit-code] [--pages-only]
 ascribe drift             [--base <REV>] [--build <NAME>]... [--format text|json|markdown] [--exit-code]
@@ -31,7 +31,7 @@ ascribe permalinks verify [NAME]... [--from <FILE>] [--against <PATH>] [--format
 ascribe permalinks retire [NAME]... --reason <TEXT> [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>] [--format text|json]
 ascribe refs              TARGET [--limit <N>] [--format text|json]
 ascribe rename            TARGET NEW
-ascribe report            [SECTION]... [--format text|markdown|json|prompt] [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice|warning|error]
+ascribe report            [SECTION]... [--format text|markdown|json|prompt] [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--no-baseline] [--exit-code advice|warning|error]
 ascribe resolve           PAGE [--build <NAME>] [--emit plain|site] [--frontmatter] [--format text|json]
 ascribe search            QUERY [PATHS]... [--type <NAME>] [--case] [--word] [--summary] [--build <NAME>]... [--limit <N>] [--format text|json]
 ascribe sources fetch     [NAME]...

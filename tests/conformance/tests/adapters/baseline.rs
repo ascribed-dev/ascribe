@@ -1,15 +1,16 @@
 //! The adapter for the baseline, `ascribe.baseline` beside the case's
 //! `ascribe.toml` (tag `baseline`).
 //!
-//! Its diagnostics are what `ascribe check` reports of the whole project for
-//! every build, with the baseline read: `ascribe_check::diagnose`, then
-//! `ascribe_check::baseline::apply`, the calls the command makes. A case
-//! expects them in its top-level `diagnostics`, so it uses file-level checks
-//! only. A baseline that can't be read stops `ascribe check` before it
-//! reports anything, so it's tested with the command, in
-//! `crates/ascribe-cli/tests/all/baseline.rs`, and not here.
+//! Its diagnostics are what `ascribe check`, `ascribe build`, and `ascribe
+//! report` report of the whole project for every build, with the baseline
+//! read: `ascribe_check::diagnose_with`, the call `build` and `report` make,
+//! which applies the baseline as `check` does. A case expects them in its
+//! top-level `diagnostics`, so it uses file-level checks only. A baseline
+//! that can't be read stops the commands before they report anything, so
+//! it's tested with them, in `crates/ascribe-cli/tests/all/baseline.rs`, and
+//! not here.
 
-use ascribe_check::baseline;
+use ascribe_check::Request;
 use ascribe_conformance::{AdapterError, AdapterResult, Case, ConformanceAdapter, Diagnostic};
 
 use super::check::{project, to_conformance};
@@ -28,14 +29,13 @@ impl ConformanceAdapter for BaselineAdapter {
 
     fn diagnostics(&self, case: &Case) -> AdapterResult<Vec<Diagnostic>> {
         let project = project(case)?;
-        let found = ascribe_check::diagnose(&project, &[])
+        let request = Request {
+            builds: &[],
+            baseline: true,
+        };
+        let diagnostics = ascribe_check::diagnose_with(&project, &request)
             .map_err(|e| AdapterError(e.to_string()))?
             .diagnostics;
-        let diagnostics = match project.baseline() {
-            None => found,
-            Some(Err(e)) => return Err(AdapterError(e.to_string())),
-            Some(Ok(b)) => baseline::apply(&project, b, found, true, &[]).diagnostics,
-        };
         to_conformance(&project, diagnostics).map(Some)
     }
 }

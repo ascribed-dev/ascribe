@@ -16,7 +16,7 @@ use ascribe_resolve::pages::PageRecord;
 use serde::Serialize;
 
 use super::text::{by_check, by_file, by_next};
-use crate::report::json::{AcknowledgedEntry, Entry, Range, acknowledged, entry, range};
+use crate::report::json::{AcknowledgedEntry, Entry, Range, acknowledged, entry, is_zero, range};
 use crate::report::{Counts, FileTable};
 
 /// The version of the JSON schema. It changes only when a field is removed or
@@ -128,6 +128,11 @@ struct ProblemsJson {
     /// The problems acknowledged as intended, with their reasons, in file
     /// order.
     acknowledged: Capped<AcknowledgedEntry>,
+    /// How many advice `ascribe.baseline` holds back, which the counts
+    /// leave out: the backlog the project has put off. Left out when there
+    /// are none, and with `--no-baseline`.
+    #[serde(skip_serializing_if = "is_zero")]
+    baselined: usize,
     /// The command that lists each problem: `ascribe check`, as JSON.
     list_command: String,
     /// The day of the last report, `YYYY-MM-DD`, or `null` on a first run,
@@ -685,6 +690,7 @@ fn problems(p: &Problems, files: &FileTable, limit: usize, list_command: &str) -
             advice: counts.advice,
         }),
         acknowledged: Capped::of(p.acknowledged.iter(), limit, |a| acknowledged(files, a)),
+        baselined: p.baselined,
         list_command: list_command.to_owned(),
         previous_run: p.previous_run.map(|d| d.to_string()),
         new: p.new.as_ref().map(Vec::len),
