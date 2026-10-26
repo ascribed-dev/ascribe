@@ -164,6 +164,12 @@ impl Repository {
         }
     }
 
+    /// Whether `rev` names a commit git knows, such as a branch, a tag, or
+    /// `HEAD`.
+    pub fn knows(&self, rev: &str) -> bool {
+        self.commit_of(rev).is_some()
+    }
+
     /// The commit a revision names, or `None`.
     fn commit_of(&self, rev: &str) -> Option<String> {
         // `--end-of-options` keeps a revision that starts with `-` from being

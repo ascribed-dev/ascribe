@@ -282,6 +282,23 @@ fn a_shallow_clone_exits_2_and_says_to_fetch_more() {
 }
 
 #[test]
+fn a_revision_given_as_an_argument_names_the_base_option() {
+    let dir = repo();
+    let out = ascribe(&site(&dir), &["drift", "HEAD"]);
+    assert_eq!(code_of(&out), 2);
+    assert_eq!(
+        stderr(&out),
+        "error: `ascribe drift` takes no argument, and was given `HEAD`; to compare with `HEAD`, use `--base HEAD`\n"
+    );
+    let out = ascribe(&site(&dir), &["drift", "docs/run.md"]);
+    assert_eq!(code_of(&out), 2);
+    assert_eq!(
+        stderr(&out),
+        "error: `ascribe drift` takes no argument, and was given `docs/run.md`\n"
+    );
+}
+
+#[test]
 fn not_a_repository_exits_2() {
     let dir = tempfile::tempdir().unwrap();
     write(dir.path(), "ascribe.toml", MODEL);
