@@ -5,7 +5,7 @@ description: "Record where a page went when it moves or goes, so a link to its o
 available: ascribe 0.4.4
 ---
 
-A link to a page outlives the page's place in the docs: a bookmark, a search result, a product's help menu, an answer on a forum. Rename a folder or merge two pages, and every one of those links stops working unless someone decided where it should lead. `ascribe.addresses` is where that decision is written. With it, a move records itself, `ascribe check` reports an address the docs published that nothing accounts for, and the build writes the redirects the host needs.
+A link to a page outlives the page's place in the docs: a bookmark, a search result, a product's help menu, an answer on a forum. Rename a folder or merge two pages, and every one of those links stops working unless someone decided where it should lead. `ascribe.addresses` is where that decision is written. With it, a move records itself, `ascribe check` reports an [address](../glossary.md#address) the docs published that nothing accounts for, and the build writes the redirects the host needs.
 
 ## Turn it on
 
