@@ -7,7 +7,7 @@ permalink: docs
 
 ## Start
 
-- [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, and publish it with Astro.
+- [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, see it, and publish it with Astro.
 - [Install](install.md): every way to install `ascribe`, with npm or on your path without Node.
 
 ## Write

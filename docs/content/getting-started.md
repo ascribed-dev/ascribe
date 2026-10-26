@@ -1,11 +1,11 @@
 ---
 type: tutorial
 title: Getting started
-description: Install Ascribe, write a first page, check it, build it, and publish it with Astro.
+description: Install Ascribe, write a first page, check it, build it, see it, and publish it with Astro.
 permalink: getting-started
 ---
 
-Ascribe is a toolchain for documentation written as code: Markdown with the structure docs need, checked as you write, and built into a website, plain Markdown, and JSON. This guide sets up a project and writes, checks, and builds a first page. Its second half, [Astro](astro/index.md), publishes the page as a site.
+Ascribe is a toolchain for documentation written as code: Markdown with the structure docs need, checked as you write, and built into a website, plain Markdown, and JSON. This guide sets up a project and writes, checks, builds, and previews a first page. Its second half, [Astro](astro/index.md), publishes the page as a site.
 
 It's for someone new to Ascribe who knows Markdown and a terminal. By the end, you'll have a project with a content model, a page that the editor checks as you write it, and a build of it ready for a site.
 
@@ -137,6 +137,20 @@ Each build writes three outputs to `.ascribe/build/<build>/`:
 
 See [`ascribe build`](checks/check.md#cli-build) for its options, and the [command reference](command/index.md) for the rest.
 
+## See it
+
+```sh
+npx ascribe preview
+```
+
+renders the build's pages as a site into `.ascribe/preview/`, with the sidebar, the page's contents, and search, and serves it on this computer. It prints the check's problems, then the address to open:
+
+```text
+previewing build `site` at http://127.0.0.1:4880/
+```
+
+Open it in a browser to see `install.md` as a reader does, its note, its alternatives by package manager, and its steps. As you edit a page or `ascribe.toml`, it renders the pages again; reload to see the change. It needs nothing but the command: no Node, no editor, and no Astro. Ctrl-C stops it. The published site has its own look, which the next step gives it. See [`ascribe preview`](checks/check.md#cli-preview).
+
 ## Publish it with Astro
 
 Publishing the site is this guide's second half, on its own page: [Astro](astro/index.md) adds Ascribe to an [Astro](https://astro.build) project, writes the site's files with one command, and ends with the site open in your browser. For a new site:
@@ -155,7 +169,7 @@ Either way:
 
 ## Summary
 
-You installed the command and the editor, declared a content model in `ascribe.toml`, and wrote a page with a note, alternatives by package manager, phrases, and a procedure. Then you checked it, formatted it, and built its site output, plain Markdown, and JSON, ready for Astro to publish.
+You installed the command and the editor, declared a content model in `ascribe.toml`, and wrote a page with a note, alternatives by package manager, phrases, and a procedure. Then you checked it, formatted it, built its site output, plain Markdown, and JSON, and saw it as a site with `ascribe preview`, ready for Astro to publish.
 
 ## Next steps
 
