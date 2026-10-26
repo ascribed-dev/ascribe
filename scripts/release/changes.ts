@@ -7,8 +7,9 @@
 //   node scripts/release/changes.ts check    say what's wrong with any entry
 //
 // An entry is one or more of the changelog's list items, as CHANGELOG.md
-// writes them: each starts with `- ` and its other lines are indented under
-// it, and a link is written relative to the repository's root. Its folder is
+// writes them: each one line, starting with `- ` and a bold headline, then one
+// or two sentences ending with a link to the page with the detail (decision
+// #970), and a link is written relative to the repository's root. Its folder is
 // its area, and an area's entries go at the top of the area's `###` heading in
 // the unreleased section, in the order of their names. The site
 // renders the changelog with them gathered (site/src/changelog.ts), so its
@@ -56,6 +57,13 @@ export const AREAS: readonly { folder: string; heading: string }[] = [
  * summary until it's opened (decision #382b).
  */
 export const SUMMARY_LIMIT = 100;
+
+/**
+ * The most words an entry has after its bold text, as a reader sees them: one
+ * or two sentences, with the detail on the page the entry links to (decision
+ * #970).
+ */
+export const DETAIL_LIMIT = 40;
 
 /** One change's entry. */
 export interface Change {
@@ -234,9 +242,33 @@ export function checkChange(change: Change, exists: (file: string) => boolean): 
     const start = item.split("\n")[0]?.slice(0, 40) ?? "";
     if (!item.startsWith("- **")) {
       problems.push(`the item \`${start}…\` doesn't start with a bold sentence, \`- **…**\``);
-    } else if (summary.length > SUMMARY_LIMIT) {
+      continue;
+    }
+    if (summary.length > SUMMARY_LIMIT) {
       problems.push(
         `the summary of \`${start}…\` (its bold sentence, or a fix's first sentence) is ${summary.length} characters, more than ${SUMMARY_LIMIT}: say the change in fewer words, and the rest after it`,
+      );
+    }
+    if (hasLink(summaryMarkdown(item))) {
+      problems.push(
+        `the summary of \`${start}…\` has a link, which the changelog page can't put in an entry's toggle: link after it`,
+      );
+    }
+    if (item.trimEnd().includes("\n")) {
+      problems.push(
+        `the item \`${start}…\` is more than one line: say the change in a sentence or two, and leave the detail to the page it links to`,
+      );
+    }
+    const words = wordsOf(detailOf(item));
+    if (words > DETAIL_LIMIT) {
+      problems.push(
+        `the item \`${start}…\` has ${words} words after its bold text, more than ${DETAIL_LIMIT}: leave the detail to the page it links to`,
+      );
+    }
+    const bold = /^- \*\*([\s\S]+?)\*\*/.exec(item)?.[1] ?? "";
+    if (!FIXED.test(bold) && !ENDS_WITH_LINK.test(item.trimEnd())) {
+      problems.push(
+        `the item \`${start}…\` doesn't end with a link to the page that has the detail, such as \`See [Permalinks](docs/content/permalinks/index.md).\``,
       );
     }
   }
@@ -264,10 +296,33 @@ export function checkChange(change: Change, exists: (file: string) => boolean): 
  * HTML (`site/src/changelog.ts`).
  */
 export function summaryOf(item: string): string {
+  return plainText(summaryMarkdown(item));
+}
+
+/** What an entry shows while it's closed, as `summaryOf` says, in Markdown. */
+export function summaryMarkdown(item: string): string {
   const text = item.replace(/^- /, "");
   const bold = /^\*\*([\s\S]+?)\*\*/.exec(text)?.[1];
-  return plainText(bold !== undefined && endsSentence(bold) ? bold : firstSentence(text));
+  return bold !== undefined && endsSentence(bold) ? bold : firstSentence(text);
 }
+
+/** An entry's text after its bold text, as a reader sees it: all of it, when it has none. */
+export function detailOf(item: string): string {
+  return plainText(item.replace(/^- /, "").replace(/^\*\*[\s\S]+?\*\*/, ""));
+}
+
+/** How many words some plain text has. */
+function wordsOf(text: string): number {
+  return text.split(/\s+/).filter((word) => word !== "").length;
+}
+
+/** Whether some Markdown has a link: `[text](to)`, or an address in `<…>`. */
+function hasLink(markdown: string): boolean {
+  return /\]\(|<https?:/.test(markdown);
+}
+
+/** An entry that ends with a link, then at most a `)` and a `.`, as `See [x](y).` and `([x](y)).` do. */
+const ENDS_WITH_LINK = /\]\([^)\s]+(?:\s+"[^"]*")?\)\)?\.?$/;
 
 /** Whether a bold text is a sentence of its own: it ends as one, and doesn't only label a fix. */
 export function endsSentence(bold: string): boolean {

@@ -1,0 +1,1 @@
+- **Code blocks have a copy button.** `@ascribed/elements` adds one to each code block, which a site can restyle or turn off in CSS. See [the element library reference](docs/content/astro/elements.md#copy-buttons).

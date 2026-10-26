@@ -8,7 +8,7 @@ Review is one comparison shown in three places: the **page preview** in VS Code,
 
 ## What review compares
 
-Review compares the working tree with a **base**, as [`ascribe diff`](diff.md#cli-diff) does: the base of the branch's pull request, when it has one, the default branch (the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists), or a branch, tag, or commit. It compares from the point where the branch left the base, as a pull request does.
+[Review](../glossary.md#review) compares the working tree with a **base**, as [`ascribe diff`](diff.md#cli-diff) does: the base of the branch's pull request, when it has one, the default branch (the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists), or a branch, tag, or commit. It compares from the point where the branch left the base, as a pull request does.
 
 It compares **resolved pages**, not files. A change to a fragment shows on every page that includes it, a change to a [phrase](../glossary.md#phrase) on every page that uses it, and reformatting shows on none. A page that changed only through something it uses says what it changed through, such as `_fragments/requirements.md` or `ascribe.toml`.
 
@@ -43,7 +43,7 @@ Every comment is an ordinary GitHub review comment. Ascribe keeps none of its ow
 - **New comments are unsent until you submit,** and nobody else sees them. GitHub's API calls this your pending review. Submitting sends them as a comment, an approval, or a request for changes, with an optional summary; discarding deletes them.
 - **A reply can go at once, unless you have unsent comments.** While you do, GitHub adds every reply to your review, so **Reply now** is unavailable, and says why, until you submit or discard.
 - **Resolving and reopening act at once,** on GitHub, and aren't part of your review.
-- **A thread whose text changed since it was written** is labeled **Outdated**, beside the text that replaced it, with the text it was on a click away. A thread whose lines are gone from the page, because the text was deleted, the block moved to another page, or the thread is on a whole file, is **detached**: it's listed above the page with the text it was on. A thread on removed text shows on the removed block.
+- **A thread whose text changed since it was written** is labeled **Outdated**, beside the text that replaced it, with the text it was on a click away. A thread whose lines are gone from the page, because the text was deleted, the block moved to another page, or the thread is on a whole file, is **detached**: it's listed above the page with the text it was on. A thread on removed text shows on the removed block. A thread carries one of these labels, the most specific that fits: **On removed text**, then **Detached**, then **Outdated**. When the text a thread was on is empty or can't be read, the thread says so in words instead of quoting it.
 
 ### Your checkout and the pull request
 

@@ -1,5 +1,6 @@
 //! The readable report: each diagnostic with a snippet of its source.
 
+use std::collections::HashSet;
 use std::io::{self, Write};
 use std::ops::Range;
 
@@ -22,6 +23,7 @@ pub fn write_build(
     files_checked: usize,
     covered: &Covered<'_>,
     acknowledged: usize,
+    baselined: usize,
     check: &str,
     color: bool,
 ) -> io::Result<()> {
@@ -39,6 +41,7 @@ pub fn write_build(
             files_checked,
             covered,
             acknowledged,
+            baselined,
             check
         )
     )
@@ -48,12 +51,14 @@ pub fn write_build(
 /// build: no problems` when they found none, and otherwise the counts, with
 /// the command that lists each warning and advice when there are any, as
 /// `checked 8 files in every build: 0 errors, 1 warning, 3 advice: ascribe
-/// check for each`.
+/// check for each`. The problems acknowledged and those the baseline holds
+/// back are counted after, as `ascribe check` counts them.
 pub fn build_summary(
     counts: Counts,
     files_checked: usize,
     covered: &Covered<'_>,
     acknowledged: usize,
+    baselined: usize,
     check: &str,
 ) -> String {
     let builds = match covered {
@@ -64,7 +69,11 @@ pub fn build_summary(
     };
     let checked = format!("checked {} {builds}", plural(files_checked, "file"));
     if counts.total() == 0 {
-        return format!("{checked}: no problems{}", self::acknowledged(acknowledged));
+        return format!(
+            "{checked}: no problems{}{}",
+            self::acknowledged(acknowledged),
+            self::baselined(baselined)
+        );
     }
     let pointer = if counts.warnings + counts.advice > 0 {
         format!(": {check} for each")
@@ -72,11 +81,12 @@ pub fn build_summary(
         String::new()
     };
     format!(
-        "{checked}: {}, {}, {} advice{}{pointer}",
+        "{checked}: {}, {}, {} advice{}{}{pointer}",
         plural(counts.errors, "error"),
         plural(counts.warnings, "warning"),
         counts.advice,
-        self::acknowledged(acknowledged)
+        self::acknowledged(acknowledged),
+        self::baselined(baselined)
     )
 }
 
@@ -96,8 +106,9 @@ pub fn write_diagnostics(
             .text_at(path)
             .ok_or_else(|| format!("no file {path} in the report"))
     });
+    let mut shown = ShownHelp::default();
     for d in diagnostics {
-        write_diagnostic(out, files, &mut cache, d, 0, color)?;
+        write_diagnostic(out, files, &mut cache, &mut shown, d, 0, color)?;
     }
     Ok(())
 }
@@ -115,8 +126,17 @@ pub fn write_reported(
             .text_at(path)
             .ok_or_else(|| format!("no file {path} in the report"))
     });
+    let mut shown = ShownHelp::default();
     for r in reported {
-        write_diagnostic(out, files, &mut cache, &r.diagnostic, r.repeats, color)?;
+        write_diagnostic(
+            out,
+            files,
+            &mut cache,
+            &mut shown,
+            &r.diagnostic,
+            r.repeats,
+            color,
+        )?;
     }
     writeln!(out, "{summary}")
 }
@@ -283,11 +303,32 @@ pub fn baselined(count: usize) -> String {
     }
 }
 
-/// Writes one diagnostic with its snippet, from the report's source cache.
+/// The help a report has printed in full, by code, so a later diagnostic
+/// with the same code and the same help points back to it instead of
+/// repeating it. Help that names this occurrence differs, so it's printed
+/// every time.
+#[derive(Default)]
+struct ShownHelp(HashSet<(&'static str, String)>);
+
+impl ShownHelp {
+    /// The help to print for a diagnostic: in full the first time the code
+    /// shows it, else a pointer to that first one.
+    fn help(&mut self, code: &'static str, help: &str) -> String {
+        if self.0.insert((code, help.to_owned())) {
+            help.to_owned()
+        } else {
+            format!("as for {code} above (ascribe explain {code})")
+        }
+    }
+}
+
+/// Writes one diagnostic with its snippet, from the report's source cache,
+/// and its help, shortened when `shown` has printed it.
 fn write_diagnostic(
     out: &mut dyn Write,
     files: &FileTable,
     cache: &mut impl Cache<String>,
+    shown: &mut ShownHelp,
     d: &Diagnostic,
     repeats: usize,
     color: bool,
@@ -325,7 +366,7 @@ fn write_diagnostic(
             .filter(|help| !help.is_empty())
     });
     if let Some(help) = help {
-        report = report.with_help(help);
+        report = report.with_help(shown.help(d.code, help));
     }
     report.finish().write(cache, out)
 }

@@ -16,7 +16,7 @@ Reports what state a project is in, section by section: what's too slow, needs t
 
 | Section | What it reports | Needs |
 |---|---|---|
-| `problems` | What `ascribe check` finds, counted by check, by file, and by kind of next step; and every problem acknowledged as intended, with its reason | Nothing |
+| `problems` | What `ascribe check` finds, counted by check, by file, and by kind of next step; every problem acknowledged as intended, with its reason; and how many advice [`ascribe.baseline`](baseline.md) holds back, which, as in `ascribe check`, aren't in the counts | Nothing |
 | `inventory` | The pages by content type and by owner; how many of each API's operations a link names; the overdue reviews, the pages nothing links to, and the entries nothing uses | Nothing |
 | `builds` | For each build, the pages and the content it leaves out that another build keeps, and why | Nothing |
 | `pages` | Every page's record, by build and sorted by address: its title, description, canonical address, and listing, and where the listing comes from | Nothing |
@@ -44,7 +44,7 @@ With no section named, it runs the first three; `pages` lists every page rather 
 |---|---|
 | `0` | It ran, whatever it found |
 | `1` | With `--exit-code`: a section found something at the level given, or above (`advice` when none is: any problem) |
-| `2` | With `--exit-code`: a section asked for couldn't run. Without it, too: a usage error, an unknown build, or a project that doesn't load. The reason goes to standard error. |
+| `2` | With `--exit-code`: a section asked for couldn't run. Without it, too: a usage error, an unknown build, a project that doesn't load, or, for a report with `problems` or `inventory`, an `ascribe.baseline` with a line that doesn't parse (`--no-baseline` reports without the file). The reason goes to standard error. |
 
 ### Report JSON
 

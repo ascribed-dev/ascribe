@@ -1,0 +1,2 @@
+- **`init` writes a stylesheet for the starter's layout.** `src/styles/docs.css` gives the layout a readable column, a sidebar (a menu on phones), a side table of contents, and both color schemes, from the element library's `--ascribe-*` properties ([Set up a site](docs/content/astro/index.md#the-stylesheet)).
+- **`MissingPermalink` no longer offers search by default.** Its last paragraph offers the home page alone, since a site may have no search; a site with search passes its own paragraph ([the reference](docs/content/astro/reference.md)).

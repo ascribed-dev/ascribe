@@ -3,6 +3,7 @@
 //! read from the fields the content type gives those roles (SPEC §7.2), and
 //! code blocks without a language.
 
+use ascribe_core::info_string::InfoString;
 use ascribe_core::{Applicability, Fix, Issue, Location, Span, TextEdit, diagnostics};
 use ascribe_model::{FieldRole, FrontmatterSchema};
 use ascribe_syntax::{Block, BlockKind, CodeBlock};
@@ -78,9 +79,10 @@ impl Ctx<'_> {
         if !code.fenced || self.model.checks.is_off(diagnostics::CODE_LANGUAGE_MISSING) {
             return;
         }
-        let first = code.info.split_whitespace().next().unwrap_or("");
-        // `phrases=true` and an attribute block aren't a language.
-        if !first.is_empty() && !first.contains('=') && !first.starts_with('{') {
+        // A pair, such as `phrases=true`, isn't a language (SPEC §3.3.1), nor
+        // is an attribute block.
+        let first = InfoString::parse(&code.info).language.unwrap_or("");
+        if !first.is_empty() && !first.starts_with('{') {
             return;
         }
         let text = &self.file.text;

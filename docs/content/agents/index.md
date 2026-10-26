@@ -5,7 +5,7 @@ description: Working on an Ascribe project with an AI coding agent, such as Clau
 permalink: agents-guide
 ---
 
-An agent is the AI coding tool you work with: Claude Code, GitHub Copilot, Cursor, Codex, and others. Ascribe gives your agent what it knows about a project, in a form an agent reads well, and checks what the agent writes. Its tools answer questions and return edits; your agent makes them, with your approvals.
+An [agent](../glossary.md#agent) is the AI coding tool you work with: Claude Code, GitHub Copilot, Cursor, Codex, and others. Ascribe gives your agent what it knows about a project, in a form an agent reads well, and checks what the agent writes. Its tools answer questions and return edits; your agent makes them, with your approvals.
 
 Nothing here is set up until you run a command for it. The quickest start, in a project's folder:
 

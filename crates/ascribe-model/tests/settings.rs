@@ -80,15 +80,10 @@ fn host(table: &str, key: &str) -> Host {
             &[("check", "\"phrase-unused\""), ("reason", "\"Kept\"")],
         ),
         "checks.vale" => ("", "[checks.vale]", &[("preset", "\"quiet\"")]),
-        "permalinks.retired.<name>" => (
-            "",
-            "[permalinks.retired.old]",
-            &[("reason", "\"Gone for good\"")],
-        ),
         // A site, since `agents` defaults to `true` only with one.
         "consumer" => ("", "[consumer]", &[("site", "\"https://example.com\"")]),
         "project" | "fragments" | "versions" | "glossary" | "images" | "editor" | "checks"
-        | "checks.links" | "permalinks" | "crawlers" | "listing" => {
+        | "checks.links" | "crawlers" | "listing" => {
             let header = Box::leak(format!("[{table}]").into_boxed_str());
             ("", header, &[])
         }

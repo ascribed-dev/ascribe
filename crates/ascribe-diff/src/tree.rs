@@ -245,7 +245,7 @@ impl<'p> TreeBuilder<'p> {
         let snippet_phrases = block
             .snippet
             .as_ref()
-            .is_some_and(|s| s.info.split_whitespace().any(|w| w == "phrases=true"));
+            .is_some_and(|s| ascribe_core::info_string::InfoString::parse(&s.info).phrases());
         let mut uses_model =
             !block.substitutions.is_empty() || !block.glossary.is_empty() || snippet_phrases;
         let mut own = String::new();

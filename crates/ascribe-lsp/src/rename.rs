@@ -402,7 +402,7 @@ fn heading_id(
     };
     if explicit.permalink {
         return Err(RenameError::Refused(format!(
-            "`#{id}` is a permalink, which links from outside the docs use. To end it, change the `@id` by hand, then retire the old name with `ascribe permalinks retire`."
+            "`#{id}` is a permalink, which links from outside the docs use. To end it, change the `@id` by hand, then move the old name to the new one with `ascribe permalinks retire {id} --to go:<new>`."
         )));
     }
     // The id is the end of its `@id` line.

@@ -3,9 +3,9 @@
 //! Every other Ascribe crate depends on this one, and on nothing else for
 //! these types. It holds types and traits only, with the small amount of
 //! behavior they need to be exact (line and column conversion, applying
-//! edits, normalizing paths), and two small parsers every crate shares: the
-//! attribute parser ([`attributes`]) and the availability-spec parser
-//! (`availability`).
+//! edits, normalizing paths), and three small parsers every crate shares: the
+//! attribute parser ([`attributes`]), the info-string parser
+//! ([`info_string`]), and the availability-spec parser (`availability`).
 //!
 //! | Module | Contents |
 //! |---|---|
@@ -20,6 +20,7 @@
 //! | [`schema`] | [`DirectiveSchema`], and the built-in schemas of SPEC §4 |
 //! | [`attributes`] | [`parse_attribute_block`]: the attribute-block parser |
 //! | [`attribute_block`] | [`AttributeBlock`]: parsed attributes, with spans (SPEC §3.3) |
+//! | [`info_string`] | [`InfoString`](info_string::InfoString): a code block's language and its `key=value` pairs (SPEC §3.3.1) |
 //! | [`path`] | [`RelPath`], and how link and image destinations resolve |
 //! | [`boundary`] | [`SourceBoundary`]: which files a symbolic link may lead to, for a crate that walks the disk itself; [`Visited`]: a walk goes into each folder once |
 //! | [`names`] | The names Ascribe puts on a page: elements, attributes, classes, and ids |
@@ -38,6 +39,7 @@ pub mod date;
 pub mod diagnostics;
 pub mod error;
 pub mod git;
+pub mod info_string;
 pub mod intended;
 pub mod issue;
 pub mod line_index;

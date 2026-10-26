@@ -1,0 +1,9 @@
+spec = "0.1"
+
+# No `[dimensions]`: `agent` and `cli` are values of the implicit
+# dimension `release`.
+[releases.agent]
+live = ["2.0", "2.1"]
+
+[releases.cli]
+live = ["0.4"]

@@ -312,6 +312,7 @@ dependencies = [
  "serde_yaml_ng",
  "sha2",
  "toml",
+ "toml_edit",
 ]
 
 [[package]]

@@ -1635,16 +1635,19 @@ fn moving_a_page_records_the_move_in_the_addresses_file_when_there_is_one() {
             .expect("will rename");
         apply_workspace_edit(f, &result)
     };
+    // A permalink moved to a heading on the page follows it.
     let f = quill();
     write(
         &f,
         "ascribe.addresses",
-        "version = 1\n\n[moved]\n\n[retired]\n",
+        "version = 1\n\n[moved]\n\"go:old-rotate\" = \"keys.md#rotate-keys\"\n\n[retired]\n",
     );
     let changed = rename(&f);
     assert!(changed.contains(&f.path("ascribe.addresses")));
     assert!(
-        read(&f, "ascribe.addresses").contains("[moved]\n\"keys.md\" = \"api-keys.md\"\n"),
+        read(&f, "ascribe.addresses").contains(
+            "[moved]\n\"go:old-rotate\" = \"api-keys.md#rotate-keys\"\n\"keys.md\" = \"api-keys.md\"\n"
+        ),
         "{}",
         read(&f, "ascribe.addresses")
     );
@@ -1657,11 +1660,12 @@ fn moving_a_page_records_the_move_in_the_addresses_file_when_there_is_one() {
 
 #[test]
 fn renaming_a_page_s_id_records_it_in_the_addresses_file_when_there_is_one() {
+    // A permalink moved to the heading follows its id.
     let f = quill();
     write(
         &f,
         "ascribe.addresses",
-        "version = 1\n\n[moved]\n\n[retired]\n",
+        "version = 1\n\n[moved]\n\"go:old-rotate\" = \"keys.md#rotate-keys\"\n\n[retired]\n",
     );
     let page = f.path("docs/keys.md");
     let mut client = Client::start(&f.root());
@@ -1682,7 +1686,7 @@ fn renaming_a_page_s_id_records_it_in_the_addresses_file_when_there_is_one() {
     assert!(changed.contains(&f.path("ascribe.addresses")), "{result}");
     assert!(
         read(&f, "ascribe.addresses")
-            .contains("[moved]\n\"keys.md#rotate-keys\" = \"keys.md#rotate-a-key\"\n"),
+            .contains("[moved]\n\"go:old-rotate\" = \"keys.md#rotate-a-key\"\n\"keys.md#rotate-keys\" = \"keys.md#rotate-a-key\"\n"),
         "{}",
         read(&f, "ascribe.addresses")
     );

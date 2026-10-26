@@ -413,29 +413,8 @@ fn page(place: &SearchPlace, shown: &SearchPage, searched: &[String]) -> String 
     text
 }
 
-/// The block's text, cut to about [`WIDTH`] characters around the match at
-/// word boundaries, with `…` where it's cut.
+/// The block's text, cut to about [`WIDTH`] characters around the match's
+/// first character at word boundaries, with `…` where it's cut.
 fn excerpt(place: &SearchPlace) -> String {
-    let chars: Vec<char> = place.text.chars().collect();
-    if chars.len() <= WIDTH {
-        return place.text.clone();
-    }
-    let [first, last] = place.matched;
-    let mut start = first.saturating_sub(WIDTH / 4);
-    if last > start + WIDTH {
-        start = first;
-    }
-    // Start at a word, and end before one that doesn't fit.
-    while start > 0 && start < first && chars.get(start - 1).is_some_and(|c| !c.is_whitespace()) {
-        start += 1;
-    }
-    let mut end = (start + WIDTH).min(chars.len()).max(last.min(chars.len()));
-    while end < chars.len() && end > last && chars.get(end).is_some_and(|c| !c.is_whitespace()) {
-        end -= 1;
-    }
-    let text: String = chars[start..end].iter().collect();
-    let text = text.trim();
-    let before = if start > 0 { "…" } else { "" };
-    let after = if end < chars.len() { "…" } else { "" };
-    format!("{before}{text}{after}")
+    ascribe_query::excerpt(&place.text, place.matched, WIDTH).0
 }

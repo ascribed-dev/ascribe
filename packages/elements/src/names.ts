@@ -37,6 +37,25 @@ export const CLASS_AVAILABILITY_LEAD_IN = "ascribe-availability-lead-in";
 export const CLASS_CODE_TESTED = "ascribe-code-tested";
 
 /**
+ * On the button the element library's script adds after a code block's
+ * `<pre>`, which copies its code; its words are the stylesheet's
+ * (packages/elements/CONTRACT.md §12).
+ */
+export const CLASS_COPY = "ascribe-copy";
+
+/**
+ * On a copy button for a moment after a click: `copied`, or `failed`
+ * when the clipboard refused (packages/elements/CONTRACT.md §12).
+ */
+export const DATA_COPY = "data-ascribe-copy";
+
+/**
+ * The visually hidden live region that says a copy button copied
+ * (packages/elements/CONTRACT.md §12).
+ */
+export const CLASS_COPY_STATUS = "ascribe-copy-status";
+
+/**
  * `<ascribe-operation>`: an operation of a declared API, from `@operation`
  * (packages/elements/CONTRACT.md §11).
  */

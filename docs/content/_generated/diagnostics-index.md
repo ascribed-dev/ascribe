@@ -170,11 +170,7 @@
 | [ASC174](../checks/diagnostics/content-model-builds.md#ASC174) | `model-consumer-permalink-path` | Error | File | write |
 | [ASC175](../checks/diagnostics/pages.md#ASC175) | `permalinks-list-invalid` | Error | File | write |
 | [ASC176](../checks/diagnostics/pages.md#ASC176) | `permalinks-list-behind` | Warning | File | fix |
-| [ASC177](../checks/diagnostics/pages.md#ASC177) | `permalink-removed` | Warning | File | write |
-| [ASC178](../checks/diagnostics/content-model-builds.md#ASC178) | `model-permalinks` | Error | File | write |
-| [ASC179](../checks/diagnostics/pages.md#ASC179) | `permalink-alias-target-missing` | Error | File | write |
-| [ASC180](../checks/diagnostics/pages.md#ASC180) | `permalink-name-conflict` | Error | File | write |
-| [ASC181](../checks/diagnostics/pages.md#ASC181) | `permalink-retired-target-missing` | Error | File | write |
+| [ASC177](../checks/diagnostics/pages.md#ASC177) | `permalink-lost` | Warning | File | write |
 | [ASC182](../checks/diagnostics/directives.md#ASC182) | `include-limit` | Error | Page | write |
 | [ASC183](../checks/diagnostics/content-model-builds.md#ASC183) | `model-crawlers-line` | Error | File | write |
 | [ASC184](../checks/diagnostics/output-checks.md#ASC184) | `listing-disallowed` | Advice | File | fix |

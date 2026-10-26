@@ -1,6 +1,14 @@
 // The changelog's entries in changes/: each one in the repository is well
 // formed, and gathering puts them where a release needs them.
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
@@ -10,6 +18,7 @@ import {
   checkChanges,
   gatherChanges,
   readChanges,
+  summaryMarkdown,
   summaryOf,
   withChanges,
   type Change,
@@ -26,6 +35,49 @@ test("changes/README.md lists the areas, with their folders and headings, in ord
     heading: match[2]?.trim(),
   }));
   expect(rows).toEqual(AREAS);
+});
+
+/** CHANGELOG.md's entries, each with the `## ` heading of its release. */
+function changelogEntries(): { release: string; text: string }[] {
+  const file = readFileSync(path.join(import.meta.dirname, "../../CHANGELOG.md"), "utf8");
+  const entries: { release: string; text: string }[] = [];
+  let release = "";
+  let entry: { release: string; text: string } | undefined;
+  for (const line of file.split("\n")) {
+    if (line.startsWith("## ")) release = line;
+    if (line.startsWith("- ")) {
+      entry = { release, text: line };
+      entries.push(entry);
+    } else if (entry !== undefined && (line === "" || line.startsWith("  "))) {
+      entry.text += `\n${line}`;
+    } else {
+      entry = undefined;
+    }
+  }
+  return entries.map((entry) => ({ ...entry, text: `${entry.text.trimEnd()}\n` }));
+}
+
+test("no entry in CHANGELOG.md has a link in its summary, which the page puts in a toggle", () => {
+  const linked = changelogEntries()
+    .map((entry) => entry.text)
+    .filter((text) => /\]\(|<https?:/.test(summaryMarkdown(text)));
+  expect(linked).toEqual([]);
+});
+
+test("CHANGELOG.md's entries from 0.4.4 on are a line each, as changes/ writes them", () => {
+  const releases = changelogEntries().map((entry) => entry.release);
+  const last = releases.indexOf("## 0.4.4 (2026-10-26)");
+  expect(last).not.toBe(-1);
+  const exists = (file: string): boolean =>
+    existsSync(path.join(import.meta.dirname, "../..", file));
+  const problems = changelogEntries()
+    .filter((entry) => releases.indexOf(entry.release) <= last)
+    .flatMap((entry) =>
+      checkChange({ area: "language", name: "entry.md", text: entry.text }, exists).map(
+        (problem) => `${entry.release}: ${problem}`,
+      ),
+    );
+  expect(problems, "see changes/README.md").toEqual([]);
 });
 
 const changelog = (unreleased: string): string =>
@@ -84,52 +136,81 @@ describe("checkChange", () => {
     ["SPEC.md", "docs/content/index.md", "examples"].includes(file);
   const check = (text: string, name = "a-change.md", area = "editor"): string[] =>
     checkChange({ area, name, text }, exists);
+  /** An entry with nothing wrong, but what a test adds. */
+  const fine = (bold = "Fine."): string => `- **${bold}** See [the spec](SPEC.md).\n`;
 
-  test("takes a list item with indented lines, a fenced block, and links that land", () => {
+  test("takes items of one line each, ending with links that land, and a fix with none", () => {
     expect(
       check(
-        "- **A change.** See [the spec](SPEC.md#links), [the docs](docs/content/index.md), [examples](examples/), and [GitHub](https://github.com).\n\n  ```css\n:root {}\n  ```\n- **A second item.**\n",
+        "- **A change.** See [the docs](docs/content/index.md), [examples](examples/), and [GitHub](https://github.com), then [the spec](SPEC.md#links).\n" +
+          '- **A second item.** See [the spec](SPEC.md "Spec").\n' +
+          "- **A third.** It's in the docs ([the docs](docs/content/index.md)).\n" +
+          "- **Fixed:** a bug.\n",
       ),
     ).toEqual([]);
   });
 
   test("names a bad file name, a missing list item, and a line that ends the item", () => {
-    expect(check("- **Fine.**\n", "Check_Fix.md")).toEqual([
-      expect.stringMatching(/lowercase words/),
-    ]);
+    expect(check(fine(), "Check_Fix.md")).toEqual([expect.stringMatching(/lowercase words/)]);
     expect(check("A paragraph.\n")).toEqual([
       expect.stringMatching(/start with `- `/),
       expect.stringMatching(/^line 1 /),
     ]);
-    expect(check("- **Item.**\n\nA paragraph.\n")).toEqual([expect.stringMatching(/^line 3 /)]);
-    expect(check("- **Item.**\n## Heading\n")).toEqual([expect.stringMatching(/^line 2 /)]);
+    expect(check(`${fine()}\nA paragraph.\n`)).toContainEqual(expect.stringMatching(/^line 3 /));
+    expect(check(`${fine()}## Heading\n`)).toContainEqual(expect.stringMatching(/^line 2 /));
   });
 
   test("names an entry in no area, or in a folder that isn't one", () => {
-    expect(check("- **Item.**\n", "a.md", "")).toEqual([
+    expect(check(fine(), "a.md", "")).toEqual([
       expect.stringMatching(/isn't in an area's folder: .*`language\/`/),
     ]);
-    expect(check("- **Item.**\n", "a.md", "misc")).toEqual([
+    expect(check(fine(), "a.md", "misc")).toEqual([
       expect.stringMatching(/^`misc\/` isn't an area/),
     ]);
   });
 
   test("names an item with no bold sentence, or one too long to scan", () => {
-    expect(check("- **One.** Fine.\n- Two isn't bold.\n")).toEqual([
+    expect(check(`${fine("One.")}- Two isn't bold.\n`)).toEqual([
       expect.stringMatching(/`- Two isn't bold\.…` doesn't start with a bold sentence/),
     ]);
-    const long = `- **${"word ".repeat(20)}and more.** Rest.\n`;
-    expect(check(long)).toEqual([expect.stringMatching(/is 109 characters, more than 100/)]);
+    expect(check(fine(`${"word ".repeat(20)}and more.`))).toEqual([
+      expect.stringMatching(/is 109 characters, more than 100/),
+    ]);
     expect(check(`- **Fixed:** ${"a word ".repeat(15)}ends here. Rest.\n`)).toEqual([
       expect.stringMatching(/is 122 characters/),
     ]);
   });
 
+  test("names a summary with a link, which the page would put in its toggle", () => {
+    expect(check(fine("[`ascribe check`](SPEC.md) fixes."))).toEqual([
+      expect.stringMatching(/has a link/),
+    ]);
+    expect(check("- **Fixed:** <https://example.com> loads. More.\n")).toEqual([
+      expect.stringMatching(/has a link/),
+    ]);
+  });
+
+  test("names an item of more than one line, or too many words, or that doesn't end with a link", () => {
+    expect(check("- **Item.** First.\n\n  More, see [the spec](SPEC.md).\n")).toEqual([
+      expect.stringMatching(/is more than one line/),
+    ]);
+    expect(check(`- **Item.** ${"word ".repeat(37)}See [the spec](SPEC.md).\n`)).toEqual([]);
+    expect(check(`- **Item.** ${"word ".repeat(38)}See [the spec](SPEC.md).\n`)).toEqual([
+      expect.stringMatching(/has 41 words after its bold text, more than 40/),
+    ]);
+    expect(check(`- **Fixed:** a bug. ${"word ".repeat(39)}\n`)).toEqual([
+      expect.stringMatching(/has 41 words/),
+    ]);
+    expect(check("- **Item.** See [the spec](SPEC.md) for more.\n")).toEqual([
+      expect.stringMatching(/doesn't end with a link/),
+    ]);
+  });
+
   test("names an empty entry and a bad ending", () => {
     expect(check("\n")).toEqual([expect.stringMatching(/empty/)]);
-    expect(check("- **Item.**")).toEqual([expect.stringMatching(/one line break/)]);
-    expect(check("- **Item.**\n\n")).toEqual([expect.stringMatching(/one line break/)]);
-    expect(check("- **Item.**\r\n")).toEqual([expect.stringMatching(/carriage return/)]);
+    expect(check(fine().trimEnd())).toEqual([expect.stringMatching(/one line break/)]);
+    expect(check(`${fine()}\n`)).toEqual([expect.stringMatching(/one line break/)]);
+    expect(check(fine().replace("\n", "\r\n"))).toEqual([expect.stringMatching(/carriage return/)]);
   });
 
   test("names a link that leads nowhere or outside the repository", () => {
@@ -183,8 +264,9 @@ describe("gatherChanges", () => {
       "CHANGELOG.md": changelog("## Unreleased\n\n"),
       "changes/README.md": "What this is.\n",
       "changes/fixes/zebra.md": "- **Fixed:** Z.\n",
-      "changes/editor/zebra.md": "- **Z.**\n",
-      "changes/editor/apple.md": "- **A.**\n",
+      "changes/editor/zebra.md": "- **Z.** See [the spec](SPEC.md).\n",
+      "changes/editor/apple.md": "- **A.** See [the spec](SPEC.md).\n",
+      "SPEC.md": "The spec.\n",
     });
     expect(gatherChanges(dir)).toEqual([
       "changes/editor/apple.md",
@@ -193,7 +275,7 @@ describe("gatherChanges", () => {
     ]);
     expect(readFileSync(path.join(dir, "CHANGELOG.md"), "utf8")).toBe(
       changelog(
-        "## Unreleased\n\n### The editor\n\n- **A.**\n- **Z.**\n\n### Fixes\n\n- **Fixed:** Z.\n\n",
+        "## Unreleased\n\n### The editor\n\n- **A.** See [the spec](SPEC.md).\n- **Z.** See [the spec](SPEC.md).\n\n### Fixes\n\n- **Fixed:** Z.\n\n",
       ),
     );
     expect(readChanges(dir)).toEqual([]);

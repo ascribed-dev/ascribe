@@ -436,6 +436,33 @@ describe("the overlay", () => {
     expect(x.textContent).not.toContain("Open source");
   });
 
+  it("gives a detached thread on removed text one label, and says in words that its text is gone", async () => {
+    host.detached = [
+      thread("R", 18, {
+        side: "LEFT",
+        lines: undefined,
+        detached: "line-gone",
+        outdated: true,
+        quote: "",
+      }),
+      thread("G", 20, { lines: undefined, detached: "line-gone" }),
+    ];
+    await open();
+    const r = card("R");
+    expect([...r.querySelectorAll(".badge")].map((b) => b.textContent)).toEqual([
+      "On removed text",
+    ]);
+    expect(r.querySelector(".orig")?.textContent).toBe(
+      "The comment was on a line that's since been removed.",
+    );
+    expect(r.querySelector(".orig q")).toBeNull();
+    const g = card("G");
+    expect([...g.querySelectorAll(".badge")].map((b) => b.textContent)).toEqual(["Detached"]);
+    expect(g.querySelector(".orig")?.textContent).toBe(
+      "The comment was on text that's no longer on the page.",
+    );
+  });
+
   it("comments through the composer, and says where the comment goes", async () => {
     host.target = { kind: "summary", reason: "lines" };
     await open();

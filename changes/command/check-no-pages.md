@@ -1,0 +1,1 @@
+- **`ascribe init` sends you to a first page, and `ascribe check` says when there are none yet.** In a project with no pages, `ascribe check` says `No pages in docs/ yet.` and exits with 0. See [`ascribe init`](docs/content/install.md).

@@ -1,0 +1,1 @@
+- **`ascribe build` and `ascribe report` hold back what `ascribe.baseline` lists, as `ascribe check` does.** Both count what they held back, and `--no-baseline` reports everything. See [The baseline](docs/content/checks/baseline.md).

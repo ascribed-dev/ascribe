@@ -1,0 +1,1 @@
+- **`ascribe check` prints a code's shared help once.** In text output, later diagnostics with the same help point back to the first, and other formats are unchanged. See [Text output](docs/content/checks/check.md#text-output).

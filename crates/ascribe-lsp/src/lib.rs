@@ -42,7 +42,6 @@ mod refactor;
 mod references;
 mod release;
 mod rename;
-mod retire;
 mod retire_line;
 mod review;
 #[cfg(feature = "json-schema")]
@@ -99,7 +98,6 @@ pub use release::{
     Releasing, RewrittenMark, release,
 };
 pub use rename::{RenameError, Renamed, Renaming, Rewritten, rename};
-pub use retire::{Retired, Retirement, retire};
 pub use retire_line::{
     Redirect, RedirectWhy, RetireError, RetiredLine, RetiringLine, Unused, retire_line, unused_in,
 };

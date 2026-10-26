@@ -40,8 +40,9 @@ const { html, contents } = collapseEntries(anchored);
 const split = html.indexOf('<section class="release"');
 const intro = split === -1 ? html : html.slice(0, split);
 const releases = split === -1 ? "" : html.slice(split);
-// The releases whose areas the contents list: what's unreleased, and the newest release.
-const detailed = 2;
+// The releases whose areas the contents list: what's unreleased, when
+// anything is, and the newest release.
+const detailed = contents[0]?.id === "unreleased" ? 2 : 1;
 ---
 
 <Base

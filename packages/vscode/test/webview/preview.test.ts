@@ -328,6 +328,13 @@ describe("the preview webview", () => {
     const options = await preview.page.locator("select option").allTextContents();
     expect(options).toEqual(["site (editor)", "cloud"]);
     await expect(preview.page.locator("select").inputValue()).resolves.toBe("site");
+    // The build's settings are in the picker's tooltip, not in the toolbar.
+    await expect(preview.page.locator("select").getAttribute("title")).resolves.toBe(
+      "variants: switch; availability: badge",
+    );
+    await expect(preview.page.locator(".toolbar").textContent()).resolves.not.toContain(
+      "variants:",
+    );
 
     await preview.page.selectOption("select", "cloud");
     await expect(preview.next("build")).resolves.toEqual({ type: "build", name: "cloud" });
@@ -337,6 +344,9 @@ describe("the preview webview", () => {
     await preview.send(render(2, tall.replace("B</h2>", "B!</h2>"), { build: "cloud" }));
     await preview.next("rendered", 1);
     await expect(preview.page.locator("select").inputValue()).resolves.toBe("cloud");
+    await expect(preview.page.locator("select").getAttribute("title")).resolves.toBe(
+      "variants: deployment=cloud; availability: badge",
+    );
     await expect(preview.page.evaluate(() => Math.round(window.scrollY))).resolves.toBe(1500);
 
     // The cursor moved to section b in the editor: the preview scrolls to it.

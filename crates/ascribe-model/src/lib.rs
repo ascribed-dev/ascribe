@@ -54,8 +54,8 @@ mod names;
 pub mod nav;
 pub mod nav_text;
 pub mod pattern;
-mod permalink_names;
 pub mod permalinks;
+mod permalinks_out;
 mod sections;
 pub mod settings;
 mod toml_util;
@@ -64,7 +64,11 @@ pub mod vale;
 
 use std::path::{Path, PathBuf};
 
-pub use addresses::{ADDRESSES_FILE, ADDRESSES_HEADER, ADDRESSES_VERSION, AddressFile, Former};
+pub use addresses::{
+    ADDRESSES_FILE, ADDRESSES_HEADER, ADDRESSES_VERSION, AddressFile, End, Former,
+    PERMALINK_PREFIX, RETIRED_PLACEHOLDER, RecordedPermalink, RecordedPermalinks,
+    is_retired_placeholder, permalink_key, permalink_name,
+};
 pub use ascribe_core::Issue;
 pub use crawlers::{
     KNOWN_CRAWLERS_FILE, KnownCrawler, crawler_tokens, known_crawlers, parse_known, user_agent,
@@ -81,9 +85,10 @@ pub use names::{
 pub use nav::{NAV_FILE, NAV_VERSION, NavFile, NavSection};
 pub use pattern::{Pattern, PatternError};
 pub use permalinks::{
-    Current, ListedAlias, ListedPermalink, ListedRetired, PERMALINKS_FILE, PERMALINKS_VERSION,
-    PermalinkList, RETIRED_PLACEHOLDER, Synced, is_retired_placeholder,
+    Current, ListedAlias, ListedMoved, ListedPermalink, ListedRetired, PERMALINKS_FILE,
+    PERMALINKS_VERSION, PermalinkList, Synced,
 };
+pub use permalinks_out::{MovedOut, permalinks_out};
 pub use types::{
     Field, FieldRole, FieldType, FrontmatterSchema, SchemaOwner, validate_frontmatter,
 };

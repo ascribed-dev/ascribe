@@ -385,11 +385,10 @@ const suites: Suite[] = [
     fixture: path.join(repositoryRoot, "examples/astro-site"),
     prepare: (workspace) => {
       rmSync(path.join(workspace, "node_modules"), { recursive: true, force: true });
-      if (existsSync(path.join(workspace, "ascribe.addresses"))) {
-        throw new Error(
-          "examples/astro-site keeps its addresses: the suite starts without the file",
-        );
-      }
+      // The suite starts without the file, so the editor offers to make it.
+      // The example's own entries are its permalinks', which the suite doesn't
+      // test.
+      rmSync(path.join(workspace, "ascribe.addresses"), { force: true });
       // The base the server compares with: what's committed on `main`.
       const git = gitIn(workspace);
       git("init", "-q", "-b", "main");
