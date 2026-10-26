@@ -6532,7 +6532,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDeg5Q",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "One meaning per word: grow the docs' glossary and rename the overloaded terms"
     },
     {
@@ -6799,7 +6799,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1062"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Review preview: hide the build's raw settings, and give a detached thread one label"
     },
     {
@@ -6977,8 +6977,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1078"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Define memo files' `about` targets in the spec's grammar, not by pointing at `ascribe refs`"
     },
     {
@@ -7198,7 +7201,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Search: when no block has every word, show the closest matches instead of \"No place matches\""
     },
     {
@@ -7273,8 +7276,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/997"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCkY",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1075"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "pnpm typecheck: say to build first instead of \"Cannot find module\""
     },
     {
@@ -7490,8 +7496,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1011"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlC2c",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1080"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Elements: a copy button on code blocks"
     },
     {
@@ -7844,8 +7853,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1079"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "MCP: cut the tool list from 124 KB, most of it output schemas"
     },
     {
@@ -7941,8 +7953,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1076"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "MCP: ascribe_resolve's error for `project` with a path should say what to pass instead"
     },
     {
@@ -7976,8 +7991,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1077"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Search: bound a match's excerpt, so a code block doesn't return as one 15 KB line"
     },
     {
