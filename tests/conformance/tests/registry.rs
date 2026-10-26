@@ -74,7 +74,7 @@ fn templates(e: &Entry) -> Vec<&String> {
 fn every_spec_row_has_exactly_one_entry() {
     let reg = registry();
     let rows = spec_rows();
-    assert_eq!(rows.len(), 132, "SPEC §8.2 changed; update the registry");
+    assert_eq!(rows.len(), 133, "SPEC §8.2 changed; update the registry");
     let mut by_row: BTreeMap<&str, Vec<&Entry>> = BTreeMap::new();
     for e in &reg.entries {
         if let Some(row) = &e.row {
@@ -225,7 +225,10 @@ fn spec_sections_exist() {
     let sections: BTreeSet<String> = spec
         .lines()
         .filter_map(|l| {
-            let rest = l.strip_prefix("### ").or_else(|| l.strip_prefix("## "))?;
+            let rest = l
+                .strip_prefix("#### ")
+                .or_else(|| l.strip_prefix("### "))
+                .or_else(|| l.strip_prefix("## "))?;
             let number = rest.split(' ').next()?.trim_end_matches('.');
             number
                 .chars()

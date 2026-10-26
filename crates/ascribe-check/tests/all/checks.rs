@@ -1091,3 +1091,85 @@ fn a_dimension_with_none_declared_gets_the_table_to_add() {
         );
     }
 }
+
+/// A word after a code block's language that starts like a pair a processor
+/// reads and isn't one is reported where it's written, with the pair it was
+/// meant to be, written as the page writes it (SPEC §3.3.1).
+#[test]
+fn info_string_words_that_look_like_pairs_get_the_pair() {
+    let cases = [
+        (
+            "```ts phrases = true",
+            "```ts phrases=true",
+            "spaces around",
+        ),
+        (
+            r#"```ts title = "a.ts""#,
+            r#"```ts title="a.ts""#,
+            "spaces around",
+        ),
+        ("```ts Title=a.ts", "```ts title=a.ts", "lowercase"),
+        (
+            r#"```ts title="connect.ts"#,
+            r#"```ts title="connect.ts""#,
+            "no closing quote",
+        ),
+        // CommonMark took the page's backslashes off.
+        (
+            r#"```ts title="say \"hi\"" {1,3}"#,
+            r#"```ts title="say \\"hi\\"" {1,3}"#,
+            "second quote",
+        ),
+        (
+            r#"```ts {1} title = "C:\\\\dir" tested=x"#,
+            r#"```ts {1} title="C:\\\\dir" tested=x"#,
+            "spaces around",
+        ),
+    ];
+    for (before, after, says) in cases {
+        let text = page(&format!("{before}\nlet x;\n```"));
+        let p = project(&[("index.md", &text)]);
+        let d = check_files(&p)
+            .into_iter()
+            .find(|d| d.slug.as_str() == "info-pair-malformed")
+            .unwrap_or_else(|| panic!("{before} is reported"));
+        assert_eq!(d.severity, Severity::Warning, "{before}");
+        assert!(d.message.contains(says), "{before}: {}", d.message);
+        assert_eq!(d.fixes.len(), 1, "{before}");
+        assert_eq!(d.fixes[0].applicability, Applicability::Unsafe);
+        let now = apply_edits(&text, &d.fixes[0].edits).expect("edits apply");
+        assert_eq!(now, page(&format!("{after}\nlet x;\n```")), "{before}");
+        let p = project(&[("index.md", &now)]);
+        assert!(check_files(&p).is_empty(), "{now}");
+    }
+}
+
+#[test]
+fn info_string_words_that_look_like_pairs_are_reported_at_the_word() {
+    let text = page("```ts {1,3} showLineNumbers title= phrases=true\nlet x;\n```");
+    let p = project(&[("index.md", &text)]);
+    let d = one(&p);
+    assert_eq!(d.slug.as_str(), "info-pair-malformed");
+    assert_eq!(&text[d.location.span.range()], "title=");
+    assert!(d.fixes.is_empty(), "{:#?}", d.fixes);
+    // Words that don't start with a key are the consumer's.
+    let p = project(&[(
+        "index.md",
+        &page("```ts {1,3} showLineNumbers titles=x Foo=bar\nlet x;\n```"),
+    )]);
+    assert!(check_files(&p).is_empty());
+}
+
+#[test]
+fn a_pair_first_is_named_in_the_missing_language() {
+    let p = project(&[("index.md", &page("```title=\"a.ts\"\nlet x;\n```"))]);
+    let d = one(&p);
+    assert_eq!(d.slug.as_str(), "code-language-missing");
+    assert!(
+        d.message.contains("`title=\"a.ts\"`, is a pair"),
+        "{}",
+        d.message
+    );
+    let p = project(&[("index.md", &page("```\nlet x;\n```"))]);
+    assert!(!one(&p).message.contains("is a pair"));
+}

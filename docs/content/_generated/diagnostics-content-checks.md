@@ -45,11 +45,11 @@ Advice · page level · next step: fix · configurable in `[checks]` · [SPEC §
 
 ### ASC152 `code-language-missing`
 @id {permalink=true}: ASC152
-@summary: A fenced code block has no language after its opening fence: nothing, or only attributes, such as `phrases=true`. An indented code block isn't looked at.
+@summary: A fenced code block has no language after its opening fence: nothing, or a pair of SPEC §3.3.1 first, such as `phrases=true` or `title="x.ts"`, which a renderer such as comrak or Astro takes as the language. An indented code block isn't looked at.
 
 Advice · file level · next step: choose · configurable in `[checks]` · Ascribe's own, not in SPEC
 
-**When:** A fenced code block has no language after its opening fence: nothing, or only attributes, such as `phrases=true`. An indented code block isn't looked at.
+**When:** A fenced code block has no language after its opening fence: nothing, or a pair of SPEC §3.3.1 first, such as `phrases=true` or `title="x.ts"`, which a renderer such as comrak or Astro takes as the language. An indented code block isn't looked at.
 
 **Message:** this code block has no language; write it after the opening fence, or `text` for output
 

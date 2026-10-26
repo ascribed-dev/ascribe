@@ -238,7 +238,8 @@ A fenced code block's info string holds its language, then words, some of them `
 - **The info string** is the one CommonMark gives: the text after the opening fence, trimmed, with its backslash escapes and entity references taken off. The grammar applies to that text, not to the line as written.
 - **Words** are parted by spaces and tabs. The first word is the block's **language**, unless it's a pair; then the block has no language.
 - **A pair** is a key, `=`, and a value, with nothing between them, then a space, a tab, or the end of the info string. Keys follow §3.3's rule. A value is a **token**, any characters but whitespace and `"`, or a **quoted string** in double quotes, inside which `\"` and `\\` escape, as in §3.3, and any other backslash is itself. A quoted value may hold spaces, and a word inside it isn't a pair: `title="use phrases=true"` doesn't opt in to phrases.
-- **Every other word is left to the consumer,** such as a highlighter's `{1,3}` or `showLineNumbers`, and processors don't report it. So are words that only look like pairs: `phrases = true` is three words, `Title=x` has no key, and `title="say "hi""` isn't a pair, because its value closes after `say ` and something other than a space follows.
+- **Every other word is left to the consumer,** such as a highlighter's `{1,3}` or `showLineNumbers`, and processors don't report it, unless it starts like a pair.
+- **A word that starts like a pair a processor reads, and isn't one, is reported** (§8.2): a word after the language that starts with a key in the table below, in any case, then optional spaces or tabs and `=`. It's left to the consumer as any other word is, but its author almost certainly meant the pair, and without it the block quietly loses its title, its phrases, or its example marker. `phrases = true` is three words, `Title=x` has no key, `title="connect.ts` has no closing quote, and `title="say "hi""` isn't a pair, because its value closes after `say ` and something other than a space follows; each is reported.
 - **Order doesn't matter,** and when a key is given more than once, its first pair counts. A `title` or `tested` whose value is empty means none.
 - **Escapes in a page's source.** CommonMark takes its own escapes off first, and a backslash escapes `"` and `\` in both, so a quote inside a quoted value is written `\\\"` in the page and a backslash `\\\\`. A processor that writes an info string into Markdown escapes each backslash in it, so a reader gets the same info string back.
 
@@ -1275,6 +1276,7 @@ These are the specification's diagnostics, and their severities are fixed: a pro
 | Attributes | Unquoted value containing a reserved character | Error |
 | Attributes | Attribute block that doesn't parse (such as an unclosed quote or brace, or `=` with no value) | Error |
 | Attributes | The same key given more than once | Error |
+| Attributes | A word after a fenced code block's language that starts like a pair a processor reads (its key in any case, then optional spaces and `=`) but isn't one | Warning |
 | Directives | Directive-shaped line (`@word` followed by `{`, `:`, or end of line) with an unknown name | Warning |
 | Directives | Primary given to a directive that takes none, or a required primary missing | Error |
 | Directives | Text on a directive line that fits no part of it: after the name or attributes, after `@end`, or after an identifier primary | Error |
