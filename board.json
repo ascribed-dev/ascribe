@@ -6541,7 +6541,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1113"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "One meaning per word: grow the docs' glossary and rename the overloaded terms"
     },
     {
@@ -8275,7 +8275,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "A lone carriage return shifts the spans after it, and the formatter edits the wrong bytes"
     },
     {
@@ -8292,7 +8292,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "An unclosed container's span takes in the trailing line ending"
     },
     {
@@ -8309,7 +8309,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Incremental project: a snippet's code file id isn't a fresh load's"
     }
   ]
