@@ -15,7 +15,7 @@ Install it in a project with `npm install --save-dev @ascribed/cli` (see [Instal
 
 Each command's options, output, and exit codes are on the page for its kind of work:
 
-- [`ascribe check`, `build`, and `fmt`](../checks/check.md): check a project, build its outputs, and format its Markdown.
+- [`ascribe check`, `build`, `preview`, and `fmt`](../checks/check.md): check a project, build its outputs, see its pages as a site, and format its Markdown.
 - [`ascribe diff` and `drift`](../review/diff.md): compare a project with another revision, and find what drifted from its sources.
 - [`ascribe report`](../checks/report-command.md): report on a project's health.
 - [`ascribe baseline`](../checks/baseline.md#cli-baseline): put a project's existing advice off for now, so `ascribe check` reports only what's new.

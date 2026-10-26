@@ -9,7 +9,7 @@ use crate::support;
 use std::collections::BTreeMap;
 
 use ascribe_core::RelPath;
-use ascribe_emit::{Archive, ArchiveOptions, Contents, FileKind, archive};
+use ascribe_emit::{Archive, ArchiveOptions, Contents, FileKind, archive, preview};
 use support::{load, quill};
 
 fn archived(current: Option<&str>) -> Archive {
@@ -49,6 +49,55 @@ fn values<'a>(html: &'a str, name: &str) -> Vec<&'a str> {
             html[start..].find('"').map(|len| &html[start..start + len])
         })
         .collect()
+}
+
+/// `ascribe preview`'s rendering of a build is the archive's: the same
+/// files, the same bytes but for the statement at the top of each page,
+/// what each page's title says it's of, and the search box's label.
+#[test]
+fn a_preview_is_the_archive_with_its_own_statement() {
+    let root = quill();
+    let project = load(&root);
+    let line = ascribe_model::named_line("self-managed 3.4")
+        .expect("a line")
+        .1;
+    let build = project
+        .model()
+        .line_build("site", &line)
+        .expect("the line's build");
+    let previewed = preview(&project, &root, &build).expect("previewed");
+    let archived = archived(None);
+    let paths = |a: &Archive| {
+        a.files
+            .iter()
+            .map(|f| f.path.to_string())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(paths(&previewed), paths(&archived));
+    assert_eq!(previewed.pages, archived.pages);
+    let statement =
+        "<p>Documentation for self-managed 3.4. This version is no longer maintained.</p>";
+    let previewing = format!(
+        "<p>A preview of build <code>{}</code>, written by <code>ascribe preview</code>. The published site has its own look.</p>",
+        build.name
+    );
+    let archived = texts(&archived);
+    for (path, text) in texts(&previewed) {
+        let expected = archived[&path]
+            .replace(statement, &previewing)
+            .replace(
+                " · self-managed 3.4</title>",
+                &format!(" · {} preview</title>", build.name),
+            )
+            .replace(
+                "\" defer></script>",
+                &format!(
+                    "\" data-label=\"Search build {}\" defer></script>",
+                    build.name
+                ),
+            );
+        assert_eq!(text, expected, "{path}");
+    }
 }
 
 #[test]

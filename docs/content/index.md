@@ -5,7 +5,7 @@ description: Guides and references for writing documentation with Ascribe, and t
 permalink: docs
 ---
 
-- [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, and publish it with Astro.
+- [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, see it, and publish it with Astro.
 - [Install](install.md): every way to install `ascribe`, with npm or on your path without Node.
 - [Content that varies](writing/variants.md): writing one page for readers on different platforms or products, with alternatives, availability, and a build for each audience.
 - [Directive syntax](writing/syntax.md): the language: how a directive is written, its attributes, forms, titles, and what it applies to.

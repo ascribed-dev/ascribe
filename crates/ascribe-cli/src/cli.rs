@@ -179,6 +179,10 @@ pub enum Command {
     /// check names against it.
     #[command(after_help = docs_link!("cli-permalinks"))]
     Permalinks(commands::permalinks::Args),
+    /// Render a build's pages as a site in .ascribe/preview, serve it at
+    /// 127.0.0.1, and render it again as the pages change.
+    #[command(after_help = docs_link!("cli-preview"))]
+    Preview(commands::preview::Args),
     /// Show where a page, a heading, a fragment, a phrase, a feature, or
     /// another content model entry is used.
     #[command(after_help = docs_link!("cli-refs"))]
@@ -238,6 +242,7 @@ impl Command {
             Command::Observe(args) => commands::observe::run(global, args),
             Command::Outline(args) => commands::outline::run(global, args),
             Command::Permalinks(args) => commands::permalinks::run(global, args),
+            Command::Preview(args) => commands::preview::run(global, args),
             Command::Refs(args) => commands::refs::run(global, args),
             Command::Rename(args) => commands::rename::run(global, args),
             Command::Report(args) => commands::report::run(global, args),
