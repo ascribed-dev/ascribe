@@ -667,11 +667,11 @@ Takes a code example from a file outside the content, by name, and puts it in th
 
   | Key | Type | Default | Meaning |
   |---|---|---|---|
-  | `lang` | string | the file's extension | The code block's language |
+  | `lang` | string | from the file's name or extension | The code block's language |
   | `title` | string | none | A title for the code block, written into its info string as `title="…"` |
   | `phrases` | boolean | `false` | Whether phrases in the code are substituted (§5.1) |
 
-  The language defaults to the file's extension, lowercased, without the dot (`toml` for `ascribe.toml`). A file with no extension has no language unless `lang` gives one.
+  The language defaults to the language the table of file names below gives a file it names (`dockerfile` for `Dockerfile`), and otherwise to the file's extension, lowercased, without the dot (`toml` for `ascribe.toml`). Any other file with no extension has no language unless `lang` gives one.
 
 #### Regions
 
@@ -685,25 +685,37 @@ labels = { macos = "macOS" }  # :remove:
 # :snippet-end:
 ```
 
-- **Tag lines.** A tag counts only in a line comment, in the comment syntax of the file's extension (the table below). A component file, with a script and markup, takes either marker on any line. A **tag line** is a line holding only optional whitespace, the comment marker, optional whitespace, the tag, and optional whitespace (then the closing `-->` for `<!--`).
+- **Tag lines.** A tag counts only in a comment on a line of its own, in the comment syntax of the file's name or extension (the tables below). A file with two markers, such as a component file with a script and markup, takes either on any line. A **tag line** is a line holding only optional whitespace, the comment marker, optional whitespace, the tag, and optional whitespace (then the closing `-->` for `<!--`, or `*/` for `/*`).
 - **`:snippet-start: <name>`** opens a region and **`:snippet-end:`** closes the innermost open one; `:snippet-end: <name>` closes the open region with that name, so regions may overlap as well as nest. A region holds the lines between its start and end tag lines. A region name is letters, digits, `-`, `_`, and `.` (ABNF rule `region-name`), and MUST be unique in its file.
-- **`:remove-start:`** and **`:remove-end:`** leave out the lines between them, and a line that ends with the comment marker, optional whitespace, and **`:remove:`** (then `-->` for `<!--`) is left out itself. Removal blocks may nest, and apply to every snippet of the file.
+- **`:remove-start:`** and **`:remove-end:`** leave out the lines between them, and a line that ends with the comment marker, optional whitespace, and **`:remove:`** (then `-->` for `<!--`, or `*/` for `/*`) is left out itself. Removal blocks may nest, and apply to every snippet of the file.
 - **Tag lines never appear in a snippet**, nor do removed lines. Of the lines that remain, those holding only whitespace at the start and the end are dropped, so where a formatter puts a tag line doesn't change the snippet. The rest are dedented by their common leading whitespace; lines holding only whitespace are emptied and don't count toward it.
 - Every start tag MUST have an end tag, and every end tag a start. An unclosed tag or an end with nothing to close makes every snippet of the file an error.
 - **Reserved tags.** Bluehawk's other tags are reserved for later revisions: `state`, `state-remove`, `state-uncomment`, `replace`, `uncomment`, and `emphasize`, each as `-start` and `-end` tag lines, and `:emphasize:` and `:uncomment:` at the end of a line, as `:remove:` is written. A file that uses one can't be used by a snippet, so its code is never shown with a tag left in.
 
-The comment syntax of each extension:
+A file is matched by its whole name first. The comment syntax and language of each file name:
+
+| Marker | Language | File names |
+|---|---|---|
+| `#` | `dockerfile` | `Containerfile`, `Dockerfile` |
+| `#` | `makefile` | `GNUmakefile`, `Makefile` |
+| `#` | `just` | `Justfile` |
+| `#` | `dotenv` | `.env`, `.env.*` |
+| `#` | `gitignore` | `.gitignore` |
+
+Any other file is matched by its extension. The comment syntax of each extension:
 
 | Marker | Extensions |
 |---|---|
 | `//` | `c`, `cc`, `cjs`, `cpp`, `cs`, `cts`, `cxx`, `dart`, `go`, `gradle`, `groovy`, `h`, `hpp`, `java`, `js`, `jsonc`, `jsx`, `kt`, `kts`, `mjs`, `mts`, `php`, `proto`, `rs`, `scala`, `swift`, `ts`, `tsx`, `zig` |
-| `#` | `bash`, `cfg`, `conf`, `ex`, `exs`, `fish`, `hcl`, `nix`, `pl`, `pm`, `ps1`, `py`, `r`, `rb`, `sh`, `tf`, `toml`, `yaml`, `yml`, `zsh` |
+| `#` | `bash`, `cfg`, `conf`, `dockerfile`, `ex`, `exs`, `fish`, `gql`, `graphql`, `hcl`, `mk`, `nix`, `pl`, `pm`, `properties`, `ps1`, `py`, `r`, `rb`, `sh`, `tf`, `toml`, `yaml`, `yml`, `zsh` |
 | `--` | `elm`, `hs`, `lua`, `sql` |
 | `;` | `asm`, `clj`, `cljs`, `el`, `ini`, `lisp`, `scm` |
 | `<!--` … `-->` | `htm`, `html`, `md`, `mdx`, `svg`, `xml` |
+| `/*` … `*/` | `css` |
 | `//` or `<!--` … `-->` | `astro`, `svelte`, `vue` |
+| `//` or `/*` … `*/` | `less`, `scss` |
 
-Extensions are compared without regard to case. A file whose extension isn't in the table has no tags: it can be used whole, but not by region. The table grows with revisions of this specification.
+A name ending in `.*` stands for any name that starts with what comes before the `*` and goes on past it, such as `.env.local`. File names and extensions are compared without regard to case. A file that neither table has, by its name or its extension, has no tags: it can be used whole, but not by region. The tables grow with revisions of this specification.
 
 **No history, no network.** A snippet reads the file as it is in the working tree, through its source, so checking and building need neither version-control history nor a network. A source in another repository is read through the copies in the project (§7.4).
 

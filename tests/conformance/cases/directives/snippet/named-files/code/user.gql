@@ -1,0 +1,3 @@
+# :snippet-start: fields
+query { user(id: 1) { name } }
+# :snippet-end:

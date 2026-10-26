@@ -2600,8 +2600,8 @@ row = "`@snippet` | Region doesn't exist in the file"
 message = "`{path}` has no region `{region}`; its regions are: {regions}"
 messages.suggestion = "`{path}` has no region `{region}`; did you mean `{suggestion}`? Its regions are: {regions}"
 messages.none = "`{path}` has no region `{region}`, and no regions at all: mark one with `:snippet-start: {region}` and `:snippet-end:` comments"
-messages.no-comments = "`{path}` can't have regions, because Ascribe doesn't know the comment syntax of its extension; use the whole file, without `#{region}`"
-fix = "Fix the region's name, or mark the region in the file with `:snippet-start: <name>` and `:snippet-end:` comments. A file whose extension isn't in the comment table can only be used whole."
+messages.no-comments = "`{path}` can't have regions, because Ascribe doesn't know the comment syntax of its name or extension; use the whole file, without `#{region}`"
+fix = "Fix the region's name, or mark the region in the file with `:snippet-start: <name>` and `:snippet-end:` comments. A file whose name and extension are in neither comment table can only be used whole."
 
 [[diagnostic]]
 code = "ASC132"

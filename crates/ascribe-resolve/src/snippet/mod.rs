@@ -33,7 +33,7 @@ use ascribe_model::{ContentModel, Source, suggest};
 use ascribe_syntax::{DirectiveLine, PrimaryValue};
 
 use crate::fs::{FileSystem, Probe};
-use tags::{CommentStyle, Extracted, TagProblem, Tags, comment_style, is_region_name};
+use tags::{CommentStyle, Extracted, TagProblem, Tags, file_comment_style, is_region_name};
 
 /// The file ids code files get, from this one up: past any source file's, so
 /// a diagnostic's related location can point into a code file.
@@ -190,10 +190,7 @@ impl SnippetUse {
     /// observation, then `phrases=true`. With no language but other words,
     /// it starts with `text`, so no word is read as the language.
     pub fn info(&self, file: &CodeFile, tested: Option<&str>) -> String {
-        let lang = self
-            .lang
-            .clone()
-            .or_else(|| file.path.extension().map(str::to_ascii_lowercase));
+        let lang = self.lang.clone().or_else(|| tags::default_lang(&file.path));
         let mut words: Vec<String> = Vec::new();
         if let Some(title) = &self.title {
             words.push(format!("title={}", quote(title)));
@@ -222,7 +219,7 @@ pub struct CodeFile {
     pub path: RelPath,
     /// Its text.
     pub text: Arc<str>,
-    /// Its comment syntax, by extension; `None` when it has no tags.
+    /// Its comment syntax, by name or extension; `None` when it has no tags.
     pub style: Option<CommentStyle>,
     /// Its tags.
     pub tags: Tags,
@@ -319,7 +316,7 @@ fn read_code(fs: &dyn FileSystem, path: &RelPath, id: FileId) -> Result<Arc<Code
     }
     let text =
         String::from_utf8(bytes).map_err(|_| ReadError::NotText("it isn't UTF-8".to_owned()))?;
-    let style = path.extension().and_then(comment_style);
+    let style = file_comment_style(path);
     let tags = style.map(|s| tags::scan(&text, s)).unwrap_or_default();
     Ok(Arc::new(CodeFile {
         id,

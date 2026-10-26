@@ -1,0 +1,46 @@
+description: >-
+  A file is matched by its whole name before its extension, without regard to
+  case: `Dockerfile`, `Containerfile`, `Makefile`, `GNUmakefile`, `Justfile`,
+  `.env` and `.env.*`, and `.gitignore` take `#` comments, and a snippet of
+  one takes its language from the same table, unless `lang` gives one. The
+  extensions `graphql`, `gql`, `properties`, `mk`, and `dockerfile` take `#`
+  comments too.
+spec: ["4.8"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: "Named files, by their whole name:"
+          - code: "RUN cargo build --release\n"
+            info: dockerfile
+          - code: "RUN apk add curl\n"
+            info: dockerfile
+          - code: "cargo build\n"
+            info: makefile
+          - code: "cargo test\n"
+            info: makefile
+          - code: "check:\n    cargo check\n"
+            info: just
+          - code: "PORT=8080\n"
+            info: dotenv
+          - code: "DEBUG=true\n"
+            info: dotenv
+          - code: "/target\n"
+            info: gitignore
+          - paragraph: "Extensions with `#` comments:"
+          - code: "type Query {\n  user(id: ID!): User\n}\n"
+            info: graphql
+          - code: "query { user(id: 1) { name } }\n"
+            info: gql
+          - code: "server.port=8080\n"
+            info: properties
+          - code: "CFLAGS = -O2\n"
+            info: mk
+          - code: "FROM nginx\n"
+            info: dockerfile
+          - paragraph: "`lang` still wins over the name:"
+          - code: "RUN cargo build --release\n"
+            info: docker
