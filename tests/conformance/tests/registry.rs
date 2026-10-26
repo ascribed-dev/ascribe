@@ -1,5 +1,6 @@
 //! Checks the diagnostics registry, `tests/conformance/diagnostics.toml`,
-//! against SPEC.md: every §8.2 row and the sections it cites.
+//! against SPEC.md: every §8.2 row and the sections it cites, and the checks
+//! that the acknowledgement examples in SPEC.md and the docs name.
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
@@ -241,4 +242,75 @@ fn spec_sections_exist() {
             e.spec
         );
     }
+}
+
+/// The check slugs an acknowledgement names in `text`: `{check=…}` on an
+/// `@intended` line, `check: …` in an `intended` frontmatter list, and
+/// `check = "…"` in an `[[intended]]` table.
+fn acknowledged_checks(text: &str) -> Vec<(usize, String)> {
+    let mut out = Vec::new();
+    let mut in_table = false;
+    for (i, line) in text.lines().enumerate() {
+        let n = i + 1;
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') || trimmed.starts_with("```") {
+            in_table = trimmed == "[[intended]]";
+        }
+        if trimmed.starts_with("@intended") {
+            for rest in trimmed.split("check=").skip(1) {
+                let slug: String = rest
+                    .chars()
+                    .take_while(|c| c.is_ascii_alphanumeric() || *c == '-')
+                    .collect();
+                out.push((n, slug));
+            }
+        }
+        let item = trimmed.strip_prefix("- ").unwrap_or(trimmed);
+        if let Some(rest) = item.strip_prefix("check:") {
+            out.push((n, rest.trim().to_owned()));
+        }
+        if in_table
+            && let Some(rest) = trimmed.strip_prefix("check")
+            && let Some(value) = rest.trim_start().strip_prefix('=')
+        {
+            out.push((n, value.trim().trim_matches('"').to_owned()));
+        }
+    }
+    out
+}
+
+fn markdown_files(dir: &std::path::Path, out: &mut Vec<PathBuf>) {
+    for entry in std::fs::read_dir(dir).unwrap() {
+        let path = entry.unwrap().path();
+        if path.is_dir() {
+            markdown_files(&path, out);
+        } else if path.extension().is_some_and(|e| e == "md") {
+            out.push(path);
+        }
+    }
+}
+
+#[test]
+fn acknowledgement_examples_name_checks_that_exist() {
+    let slugs: BTreeSet<String> = registry().entries.into_iter().map(|e| e.slug).collect();
+    let mut files = vec![repo().join("SPEC.md")];
+    markdown_files(&repo().join("docs/content"), &mut files);
+    let mut seen = 0;
+    let mut missing = Vec::new();
+    for file in &files {
+        let text = std::fs::read_to_string(file).unwrap();
+        for (line, slug) in acknowledged_checks(&text) {
+            seen += 1;
+            if !slugs.contains(&slug) {
+                let rel = file.strip_prefix(repo()).unwrap_or(file);
+                missing.push(format!("{}:{line}: {slug:?}", rel.display()));
+            }
+        }
+    }
+    assert!(seen > 0, "found no acknowledgements to check");
+    assert!(
+        missing.is_empty(),
+        "these acknowledgements name a check the registry doesn't have:\n{}",
+        missing.join("\n")
+    );
 }

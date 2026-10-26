@@ -1,0 +1,14 @@
+spec = "0.1"
+
+[dimensions.deployment]
+values = ["self-managed"]
+
+[consumer]
+profile = "astro"
+site = "https://docs.quill.dev"
+
+[releases.self-managed]
+live = ["3.4", "3.5"]
+
+[builds.site]
+versions = "self-managed"

@@ -1807,6 +1807,27 @@ impl ContentModel {
         Some(made)
     }
 
+    /// Whether `name` is the build of a line `[releases]` archives:
+    /// `<build>@<line>`, where `<build>` is declared, versioned by a target
+    /// whose `archived` lists the line. Such a build is gone on purpose.
+    pub fn is_archived_line_build(&self, name: &str) -> bool {
+        let Some((build, line)) = name.rsplit_once('@') else {
+            return false;
+        };
+        let Ok(line) = ascribe_core::availability::parse_version(line, 0) else {
+            return false;
+        };
+        self.builds
+            .iter()
+            .filter(|b| b.declared_name() == build && b.line.is_some())
+            .filter_map(|b| self.releases_of(b.versions.as_deref()?))
+            .any(|r| {
+                r.archived
+                    .iter()
+                    .any(|a| a.line.components == line.components)
+            })
+    }
+
     /// `[releases.<target>]` for a target, when the project lists its lines.
     pub fn releases_of(&self, target: &str) -> Option<&Releases> {
         self.releases.iter().find(|r| r.target == target)

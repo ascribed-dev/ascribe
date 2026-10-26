@@ -1,0 +1,1 @@
+- **Fixed:** the `@intended` example on the directives page names a check that exists. It said `check=link-dead`, which `ascribe check` rejects; it's `check=link-external-broken`, the external link check, as on [the external links page](docs/content/checks/external-links.md).
