@@ -25,4 +25,4 @@ That writes `AGENTS.md` and the skill, which most agents read on their own. Then
 
 [What's sent where](whats-sent.md) says what leaves your machine, and what to watch for when your agent reads someone else's text.
 
-This guide writes commands as `ascribe`. With `@ascribed/cli` installed in your project, as [Install](../install.md#npm) says, run them as `npx ascribe` (`pnpm exec ascribe` with pnpm); your agent does the same.
+This guide writes commands as `ascribe`. With `@ascribed/cli` installed in your project, as [Install](../install.md#npm) says, run them as `npx ascribe` (`pnpm exec ascribe` with pnpm). The files `sync` writes tell your agent to do the same: see [The command they name](instructions.md#the-command-they-name).

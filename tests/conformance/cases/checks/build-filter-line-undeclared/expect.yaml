@@ -1,0 +1,11 @@
+description: >-
+  With `[releases]`, a build filtered for a version older than every line its
+  target declares is advice, at the filter: the version is in no live,
+  planned, or archived line. A build filtered for an archived line, or for a
+  version in a live line, isn't reported, and neither is one filtered for a
+  target `[releases]` doesn't list.
+spec: ["7.2", "9.3"]
+tags: [check]
+
+diagnostics:
+  - {slug: build-filter-line-undeclared, file: ascribe.toml, line: 23, column: 27}

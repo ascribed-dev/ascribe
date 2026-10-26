@@ -54,7 +54,7 @@ pub mod zod;
 
 pub use archive::{
     ARCHIVE_ALL, ARCHIVE_STYLESHEET, Archive, ArchiveOptions, Unlinked, archive,
-    page_file as archive_page_file,
+    page_file as archive_page_file, preview,
 };
 pub use assets::Placement;
 pub use emitter::{

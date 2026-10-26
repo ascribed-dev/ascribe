@@ -9,7 +9,7 @@ spec: ["7.11", "8.2"]
 tags: [check]
 
 diagnostics:
-  - {slug: example-schema-mismatch, file: index.md, line: 8, column: 11}
-  - {slug: example-schema-mismatch, file: index.md, line: 14, column: 1}
-  - {slug: example-schema-mismatch, file: index.md, line: 16, column: 3}
-  - {slug: example-schema-mismatch, file: index.md, line: 17, column: 13}
+  - {slug: api-example-schema-mismatch, file: index.md, line: 8, column: 11}
+  - {slug: api-example-schema-mismatch, file: index.md, line: 14, column: 1}
+  - {slug: api-example-schema-mismatch, file: index.md, line: 16, column: 3}
+  - {slug: api-example-schema-mismatch, file: index.md, line: 17, column: 13}

@@ -153,7 +153,7 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
         }
         _ => None,
     };
-    // Its prompts, in the HTML report too, are for an agent here.
+    // Its prompts, in the HTML preview too, are for an agent here.
     if let Ok(here) = std::env::current_dir() {
         diff.seen_from(here);
     }
@@ -220,7 +220,7 @@ pub(crate) fn prompt(
     {
         return Ok(None);
     }
-    Err(not_a_file(given))
+    Err(not_a_file(project, given))
 }
 
 /// Narrows `report` to the PAGE named, as [`Report::narrow_to`] does, and
@@ -240,16 +240,31 @@ fn narrow(
                 .iter()
                 .find(|path| project.source_at(path).is_some())
         })
-        .ok_or_else(|| not_a_file(given))?;
+        .ok_or_else(|| not_a_file(project, given))?;
     report.narrow_to(path);
     Ok(path.clone())
 }
 
-fn not_a_file(given: &Path) -> String {
-    format!(
+/// The error for a PAGE that isn't one of the project's files. When it's a
+/// revision git knows, such as `main` or `HEAD`, it was likely meant as the
+/// base, as `git diff main` takes it, so the error says how to write that.
+fn not_a_file(project: &ascribe_check::Project, given: &Path) -> String {
+    let not = format!(
         "{} isn't a file of the project, now or at the base",
         given.display()
-    )
+    );
+    match base_hint(project, &given.to_string_lossy()) {
+        Some(hint) => format!("{not}; {hint}"),
+        None => not,
+    }
+}
+
+/// `to compare with `REV`, use `--base REV``, when `rev` names a commit in
+/// the project's repository.
+pub(crate) fn base_hint(project: &ascribe_check::Project, rev: &str) -> Option<String> {
+    let repo = ascribe_diff::Repository::discover(project.root()).ok()?;
+    repo.knows(rev)
+        .then(|| format!("to compare with `{rev}`, use `--base {rev}`"))
 }
 
 /// The warning about the working tree's errors, naming the `ascribe check`
@@ -401,7 +416,7 @@ fn line_groups<'r>(report: &'r Report, model: &ContentModel) -> Vec<Vec<&'r Buil
 
 /// The lines of one versioned build: each changed page once, with the
 /// lines it changed in, "in every line" when it changed in each of them,
-/// as the HTML report says it.
+/// as the HTML preview says it.
 fn write_lines_of(
     out: &mut dyn Write,
     lines: &[&BuildDiff],

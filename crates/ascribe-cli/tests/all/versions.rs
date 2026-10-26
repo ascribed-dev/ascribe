@@ -1186,6 +1186,56 @@ fn retire_records_the_lines_addresses_in_the_addresses_file_and_the_build_redire
 }
 
 #[test]
+fn retire_needs_no_force_when_another_build_changes_only_the_targets_part_of_its_availability_lines()
+ {
+    let dir = retiring_repository();
+    // `both.md` is `cloud, prod 1.0`: its line in the cloud build loses
+    // prod's `1.0+`, and nothing else.
+    let model = format!("{RETIRING}\n[builds.cloud]\navailability = {{ filter = \"cloud\" }}\n");
+    write(dir.path(), "ascribe.toml", &model);
+    git(dir.path(), &["commit", "-q", "-am", "A cloud build"]);
+    let out = retire(dir.path(), &["--dry-run"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(
+        text.contains("Expected: builds that aren't lines of prod change only prod's part of their availability lines:\n  cloud's plain output changes both.md\n  cloud's site output changes both.md\n"),
+        "{text}"
+    );
+    assert!(!text.contains("--force"), "{text}");
+    let out = retire(dir.path(), &["--format", "json"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let json: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(json["outputs"], serde_json::json!([]));
+    assert_eq!(json["expected"][0]["build"], "cloud");
+    assert_eq!(
+        json["expected"][0]["changed"],
+        serde_json::json!(["both.md"])
+    );
+    assert!(read(dir.path(), "docs/both.md").contains("available: cloud, prod\n"));
+}
+
+#[test]
+fn retire_still_needs_force_when_another_build_changes_more_than_the_targets_part() {
+    let dir = retiring_repository();
+    // A filter build for 1.0 also gains the block `prod deprecated 1.1`
+    // no longer limits to 1.1.
+    let model = format!("{RETIRING}\n[builds.old]\navailability = {{ filter = \"prod 1.0\" }}\n");
+    write(dir.path(), "ascribe.toml", &model);
+    git(dir.path(), &["commit", "-q", "-am", "A build for 1.0"]);
+    let out = retire(dir.path(), &["--dry-run"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(
+        text.contains("Builds that aren't lines of prod change what they show:\n  old's plain output changes both.md\n  old's site output changes both.md\nRewriting them needs --force.\n"),
+        "{text}"
+    );
+    let out = retire(dir.path(), &[]);
+    assert_eq!(code_of(&out), 2, "{}", stdout(&out));
+    assert!(stderr(&out).contains("pass --force"), "{}", stderr(&out));
+    assert!(read(dir.path(), "docs/both.md").contains("available: cloud, prod 1.0\n"));
+}
+
+#[test]
 fn without_the_addresses_file_retire_records_nothing() {
     let dir = retiring_repository();
     let out = retire(dir.path(), &["--format", "json"]);

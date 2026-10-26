@@ -72,6 +72,34 @@ describe("pageDetail", () => {
     ).toBe("1 changed · via _fragments/prereqs.md");
   });
 
+  it("says where a page moved from, and that a link changed because a page moved", () => {
+    const none = { changed: 0, added: 0, removed: 0, moved: 0 };
+    expect(
+      pageDetail(
+        page({ moved_from: "guides/configure.md", own_file_changed: false, counts: none }),
+      ),
+    ).toBe("Moved from guides/configure.md · no change to the page");
+    expect(
+      pageDetail(
+        page({
+          moved_from: "guides/configure.md",
+          counts: { changed: 2, added: 0, removed: 0, moved: 0 },
+        }),
+      ),
+    ).toBe("Moved from guides/configure.md · 2 changed");
+    const moved_links = [{ from: "guides/configure.md", to: "guides/setup.md" }];
+    const linking = {
+      because: ["guides/setup.md"],
+      moved_links,
+      counts: { changed: 1, added: 0, removed: 0, moved: 0 },
+    };
+    expect(pageDetail(page({ ...linking, own_file_changed: false }))).toBe(
+      "1 changed · a link changed because guides/configure.md moved",
+    );
+    // Its own file changed too: the page that moved is listed itself.
+    expect(pageDetail(page(linking))).toBe("1 changed");
+  });
+
   it("says a page is new or removed, and what about the page itself changed", () => {
     expect(pageDetail(page({ status: "added" }))).toBe("New page");
     expect(pageDetail(page({ status: "removed" }))).toBe("Removed");

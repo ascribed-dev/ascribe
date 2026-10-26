@@ -7,18 +7,17 @@ use std::process::ExitCode;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use ascribe_check::baseline;
 use ascribe_check::fix;
 use ascribe_check::prompt::{self, Builds};
 use ascribe_check::prose;
 use ascribe_check::{
-    Acknowledged, BaselineError, Diagnosed, Diagnostic, LoadError, Project, Reported, Scope,
-    ScopeError, Severity, diagnose, diagnose_editor_build_in, locate_for,
+    Acknowledged, BaselineError, Diagnostic, Found, LoadError, Project, Reported, Request, Scope,
+    ScopeError, Severity, locate_for,
 };
 use ascribe_core::{Coded, diagnostics};
 use clap::{Args as ClapArgs, ValueEnum};
 
-use crate::answer::{Found, FromDisk, Loaded, Projects};
+use crate::answer::{FromDisk, Loaded, Projects};
 use crate::cli::Global;
 use crate::context::{stdout_is_terminal, use_color};
 use crate::exit;
@@ -415,22 +414,18 @@ pub fn run_check(
         scope,
     } = load(projects, global, args, stdin).map_err(Stopped::Failure)?;
     let project = &loaded.project;
-    let names = |d: Diagnosed<'_>| Found {
-        builds: d.builds.iter().map(|b| b.name.clone()).collect(),
-        diagnostics: d.diagnostics,
-        acknowledged: d.acknowledged,
+    let mut request = Request {
+        builds: &args.build,
+        editor_build: args.editor_build,
+        scope: scope.as_ref(),
+        baseline: !args.no_baseline,
+        vale_ran: false,
     };
-    let Found {
-        diagnostics,
-        builds: builds_checked,
-        mut acknowledged,
-    } = if args.editor_build {
-        let files = scope.as_ref().and_then(|s| s.named_sources(project));
-        names(diagnose_editor_build_in(
-            project,
-            Some(loaded.page_index()),
-            files.as_deref(),
-        ))
+    let mut found = if args.editor_build {
+        request
+            .find(project, Some(loaded.page_index()))
+            .map(Found::from)
+            .map_err(Stopped::Build)?
     } else {
         // The base is read beside the check, as `ascribe diff` reads it.
         // Without the file, only whether the base had one is read, to say
@@ -462,7 +457,7 @@ pub fn run_check(
                 })
             });
             let found = loaded.diagnosed(&args.build, |project| {
-                diagnose(project, &args.build).map(names)
+                request.find(project, None).map(Found::from)
             });
             let base = base.map(|thread| {
                 thread
@@ -485,20 +480,19 @@ pub fn run_check(
                 ascribe_diff::base_apis(project.root(), args.base.as_deref(), args.base_exact)
         {
             let based = project.clone().with_base_apis(Arc::new(apis));
-            found = diagnose(&based, &args.build)
-                .map(names)
+            found = request
+                .find(&based, None)
+                .map(Found::from)
                 .map_err(Stopped::Build)?;
         }
         if let Some(base) = base {
             let more = compared_addresses(&loaded, &found.builds, base);
-            found
-                .diagnostics
-                .extend(ascribe_check::apply_levels(&project.model().checks, more));
+            found.diagnostics.extend(more);
         }
         found
     };
-    let (diagnostics, about_vale) = with_prose(project, scope.as_ref(), args, diagnostics)?;
-    let (diagnostics, mut held) = with_baseline(project, scope.as_ref(), args, diagnostics, {
+    let about_vale = with_prose(project, scope.as_ref(), args, &mut found.diagnostics)?;
+    request.vale_ran = {
         let in_check = project
             .model()
             .checks
@@ -506,16 +500,16 @@ pub fn run_check(
             .as_ref()
             .is_some_and(|v| v.in_check);
         about_vale.is_empty() && (args.vale || in_check)
-    })?;
-    let mut reported = match &scope {
-        Some(scope) => scope.report(project, diagnostics),
-        None => Reported::all(diagnostics),
     };
+    let ascribe_check::Checked {
+        mut reported,
+        mut acknowledged,
+        baselined: mut held,
+        builds: builds_checked,
+    } = request
+        .settle(project, found)
+        .map_err(|e| Stopped::Failure(Failure::Check(CheckError::Baseline(e))))?;
     reported.extend(Reported::all(about_vale));
-    if let Some(scope) = &scope {
-        acknowledged.retain(|a| scope.contains_file(project, a.problem.location.file));
-        held.retain(|d| scope.contains_file(project, d.location.file));
-    }
     if !codes.is_empty() {
         let named = |code: &str| codes.iter().any(|c| c == code);
         reported.retain(|r| named(r.diagnostic.code));
@@ -625,17 +619,17 @@ fn compared_addresses(loaded: &Loaded, builds: &[String], base: BaseRead) -> Vec
     out
 }
 
-/// `diagnostics` with Vale's, when `--vale` or `[checks.vale] in-check` asks
-/// for them: Vale runs once, on the files in the scope, or on every source
-/// file. What it says about the prose is with the rest; that it couldn't be
-/// run, which is about `ascribe.toml`, comes back apart, to be reported
-/// whatever the paths named.
+/// Adds Vale's findings to `diagnostics`, when `--vale` or `[checks.vale]
+/// in-check` asks for them: Vale runs once, on the files in the scope, or on
+/// every source file. What it says about the prose is with the rest; that it
+/// couldn't be run, which is about `ascribe.toml`, comes back apart, to be
+/// reported whatever the paths named.
 fn with_prose(
     project: &Project,
     scope: Option<&Scope>,
     args: &Args,
-    mut diagnostics: Vec<Diagnostic>,
-) -> Result<(Vec<Diagnostic>, Vec<Diagnostic>), Stopped> {
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Result<Vec<Diagnostic>, Stopped> {
     let wanted = match &project.model().checks.vale {
         None if args.vale => {
             return Err(Stopped::Failure(Failure::Check(CheckError::NoVale)));
@@ -644,7 +638,7 @@ fn with_prose(
         Some(settings) => args.vale || settings.in_check,
     };
     if !wanted {
-        return Ok((diagnostics, Vec::new()));
+        return Ok(Vec::new());
     }
     let files: Option<Vec<ascribe_core::FileId>> =
         scope.map(|s| s.sources(project).iter().map(|f| f.id).collect());
@@ -670,38 +664,7 @@ fn with_prose(
         .into_iter()
         .partition(|d| d.location.file == ascribe_core::FileId::new(0));
     diagnostics.extend(found);
-    Ok((diagnostics, about_vale))
-}
-
-/// `diagnostics`, the whole project's, without the advice `ascribe.baseline`
-/// holds back, which comes back apart, unless `--no-baseline` says not to
-/// read it. An entry that matches nothing is reported when the check covers
-/// every build and the whole project, and so would have found what it
-/// lists; an entry of Vale's only when `prose_checked` says Vale ran.
-fn with_baseline(
-    project: &Project,
-    scope: Option<&Scope>,
-    args: &Args,
-    diagnostics: Vec<Diagnostic>,
-    prose_checked: bool,
-) -> Result<(Vec<Diagnostic>, Vec<Diagnostic>), Stopped> {
-    let baseline = match project.baseline() {
-        Some(_) if args.no_baseline => return Ok((diagnostics, Vec::new())),
-        None => return Ok((diagnostics, Vec::new())),
-        Some(Err(e)) => {
-            let e = CheckError::Baseline(e.clone());
-            return Err(Stopped::Failure(Failure::Check(e)));
-        }
-        Some(Ok(baseline)) => baseline,
-    };
-    let whole = scope.is_none() && args.build.is_empty() && !args.editor_build;
-    let not_run: &[&str] = if prose_checked {
-        &[]
-    } else {
-        &[ascribe_core::diagnostics::PROSE.as_str()]
-    };
-    let held = baseline::apply(project, baseline, diagnostics, whole, not_run);
-    Ok((held.diagnostics, held.held))
+    Ok(about_vale)
 }
 
 /// Writes what a check found in `args.format`, as `ascribe check` does.

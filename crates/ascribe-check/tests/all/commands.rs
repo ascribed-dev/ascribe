@@ -8,9 +8,10 @@ use std::fs;
 use std::path::Path;
 
 use ascribe_check::{
-    LoadError, LocateError, MODEL_FILE, Project, Severity, UnknownBuild, count_errors, diagnose,
-    select_builds,
+    BASELINE_FILE, DiagnoseError, Diagnostic, LoadError, LocateError, MODEL_FILE, Project, Request,
+    Scope, Severity, UnknownBuild, baseline, count_errors, diagnose, diagnose_with, select_builds,
 };
+use ascribe_core::RelPath;
 
 const MODEL: &str =
     "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n[builds.site]\n[builds.pdf]\n";
@@ -186,4 +187,92 @@ fn find_below_lists_the_projects_in_the_folders_below() {
             empty.display()
         )
     );
+}
+
+#[test]
+fn a_request_applies_the_baseline_and_the_scope_for_every_surface() {
+    // Two pages whose long `nav-label`s are advice (`nav-label-long`), and
+    // a home page that links to both.
+    let page = |title: &str, label: &str| {
+        format!("---\ntitle: {title}\nnav-label: {label}\n---\n\nText.\n")
+    };
+    let sync = page("Sync", "Synchronize two copies");
+    let keys = page("Keys", "All about the API keys");
+    let home = "---\ntitle: Home\n---\n\nSee [sync](sync.md) and [keys](keys.md).\n";
+    let model = "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n";
+    let dir = project(
+        model,
+        &[("index.md", home), ("sync.md", &sync), ("keys.md", &keys)],
+    );
+    let before = load(dir.path());
+    let found = diagnose(&before, &[]).expect("every build");
+    let written = baseline::write(&before, None, &found.diagnostics);
+    assert_eq!(written.entries, 2, "{}", written.text);
+    fs::write(dir.path().join(BASELINE_FILE), &written.text).expect("write the baseline");
+    let project = load(dir.path());
+    let long = |d: &Diagnostic| d.slug.as_str() == "nav-label-long";
+
+    // The whole project: both held back, and counted.
+    let whole = Request {
+        baseline: true,
+        ..Request::default()
+    };
+    let checked = diagnose_with(&project, &whole).expect("checked");
+    assert!(!checked.reported.iter().any(|r| long(&r.diagnostic)));
+    assert_eq!(checked.baselined.len(), 2);
+    assert_eq!(checked.builds, ["site"]);
+
+    // Without the baseline, both are reported, as `diagnose` finds them.
+    let without = diagnose_with(&project, &Request::default()).expect("checked");
+    assert_eq!(without.baselined.len(), 0);
+    assert_eq!(without.into_diagnostics(), found.diagnostics);
+
+    // With a scope, only what counts for it is reported or counted.
+    let scope = Scope::new([RelPath::parse("docs/sync.md").expect("a path")]);
+    let scoped = Request {
+        scope: Some(&scope),
+        ..whole
+    };
+    let checked = diagnose_with(&project, &scoped).expect("checked");
+    assert_eq!(checked.baselined.len(), 1);
+    assert!(
+        checked
+            .reported
+            .iter()
+            .all(|r| scope.contains_file(&project, r.diagnostic.location.file)),
+        "{:?}",
+        checked.reported
+    );
+
+    // An entry that matches nothing is stale for the whole project only.
+    fs::write(dir.path().join("docs/sync.md"), page("Sync", "Sync")).expect("fix the label");
+    let project = load(dir.path());
+    let stale = |request: &Request<'_>| {
+        diagnose_with(&project, request)
+            .expect("checked")
+            .into_diagnostics()
+            .iter()
+            .filter(|d| d.slug.as_str() == "baseline-entry-unmatched")
+            .count()
+    };
+    assert_eq!(stale(&whole), 1);
+    assert_eq!(stale(&scoped), 0);
+    let editor = Request {
+        editor_build: true,
+        ..whole
+    };
+    assert_eq!(
+        stale(&editor),
+        0,
+        "the editor's build alone isn't the whole"
+    );
+
+    // A baseline that can't be read stops a request that asks for it.
+    fs::write(dir.path().join(BASELINE_FILE), "not a baseline\n").expect("break it");
+    let project = load(dir.path());
+    assert!(matches!(
+        diagnose_with(&project, &whole),
+        Err(DiagnoseError::Baseline(_))
+    ));
+    assert!(diagnose_with(&project, &Request::default()).is_ok());
 }

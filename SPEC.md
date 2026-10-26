@@ -58,7 +58,7 @@ These principles govern the language. They are non-normative, but every normativ
 
 The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this document are to be interpreted as described in RFC 2119 and RFC 8174 when, and only when, they appear in all capitals.
 
-- A **conforming document** is an Ascribe source file that produces no errors (§8) under a given content model.
+- A **conforming document** is an Ascribe source file that produces none of the errors §8.2 lists under a given content model. A processor's own checks, which a project may raise to errors, don't count (§8.2).
 - A **processor** is any software that reads Ascribe source: a parser, validator, compiler, or authoring environment.
 - A **conforming processor** parses documents as this specification describes and reports every error listed in §8. It MAY report additional warnings.
 
@@ -169,11 +169,11 @@ A **directive line** has this shape (ABNF rule `directive-line`):
 - **Name.** The directive's keyword (§3.2).
 - **Attributes.** OPTIONAL. Metadata as `key=value` pairs in braces (§3.3).
 - **Primary.** OPTIONAL. The directive's main value: a path, an identifier, or text (§3.4). Introduced by `:`.
-- **Trailing colon.** A `:` with no primary after it, only the end of the line or whitespace, opens a container (§3.5). Every container opener ends this way, and no other directive line does. A text primary that happens to end in `:` is still a primary: `@note: Important:` is a one-line note.
+- **Trailing colon.** A `:` with no primary after it, only the end of the line or whitespace, opens a container (§3.5). Every container opener ends this way, and, apart from the recovery of attributes written without braces below, no other directive line does. A text primary that happens to end in `:` is still a primary: `@note: Important:` is a one-line note.
 
 Spacing between these parts doesn't matter: processors accept any spaces or tabs between the name, the attributes, the colon, and the primary, including none, and ignore whitespace at the end of the line. Canonical form (§8.3) fixes one spelling.
 
-Attributes, when present, always come before the primary. Nothing else may appear on a directive line: text that fits none of these parts, such as `@steps foo`, `@note hello: text`, anything after `@end`, or a second word after an identifier primary (§3.4), is an error (§8.2).
+Attributes, when present, always come before the primary. Nothing else may appear on a directive line: text that fits none of these parts, such as `@steps foo`, `@note hello: text`, anything after `@end`, or a second word after an identifier primary (§3.4), is an error (§8.2). Processors report that text and not what follows from it: nothing about the line's binding (§3.8), and no required attribute missing from it. One case is recovered further. When the text is `key=value` pairs whose keys are all attributes of the directive, followed by a trailing colon, and the directive has a container form that isn't raw (§3.5), as in `@note type=warning:`, processors read the line as that container's opener, so its `@end` matches. The line is still an error, and the pairs aren't read as its attributes.
 
 ```
 @note {type=caution}: Back up your database first.
@@ -196,7 +196,7 @@ Recognition is block structure, which comes before inline structure. So, as with
 
 Otherwise the line is ordinary text. In particular, `@` followed by an unknown word is literal (`@astrojs/react`, `@timestamp`), and so is an `@` that follows a letter or digit (`support@example.com`).
 
-A line that has the shape of a directive but an unknown name, meaning `@word` at line start followed by `{`, `:`, or the end of the line, is still ordinary text, but processors SHOULD warn about it and suggest the closest known directive (`@warning:` → "did you mean `@note {type=warning}:`?"). Writing `\@` silences the warning. Prose `@` doesn't take this shape in practice.
+A line that has the shape of a directive but an unknown name, meaning `@word` at line start followed by `{`, `:`, or the end of the line, is still ordinary text, but processors SHOULD warn about it and suggest the closest known directive (`@warning:` → "did you mean `@note {type=warning}:`?"). Names are case-sensitive, so a line of that shape whose name is a known keyword in another case is ordinary text too, and processors SHOULD warn about it the same way (`@Note:` → "did you mean `@note`?"). Writing `\@` silences the warning. Prose `@` doesn't take this shape in practice.
 
 Built-in keywords never contain a hyphen. Project widget names always contain one (§6). The keyword set is closed: it grows only by revisions to this specification (built-ins) or by content-model declarations (project widgets). While the specification is a draft, a revision can add a built-in under the same version (§11).
 
@@ -722,7 +722,7 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
   |---|---|---|---|
   | `check` | string | none, REQUIRED | The check whose problem is intended, by the processor's name for it |
 
-- **What can be acknowledged.** A processor's checks are its own, beyond the diagnostics of §8.2. This specification names none of them, so a `check` value is a name the processor defines, and a page that acknowledges a problem depends on the processor that reports it: a processor that doesn't know the name reports the acknowledgement as an error (§8.2), as it does a check that isn't a review check. A check that reports something that may be fine as it is (a page nothing links to, a page longer than an agent reads) is a **review check**, and only a review check can be acknowledged; a problem that makes a document non-conforming never can. Each review check reports its problems at one kind of place: a page or fragment as a whole, one block, or one entry of the content model or one image, which have no page. Its problems are acknowledged at that place, and nowhere else:
+- **What can be acknowledged.** A processor's checks are its own, beyond the diagnostics of §8.2. This specification names none of them, so a `check` value is a name the processor defines, and a page that acknowledges a problem depends on the processor that reports it: a processor that doesn't know the name reports the acknowledgement as an error (§8.2), as it does a check that isn't a review check. A check that reports something that may be fine as it is (a page nothing links to, a page longer than an agent reads) is a **review check**, and only a review check can be acknowledged, at whatever level the project gives it (§8.2), an error included; a problem that makes a document non-conforming never can. Each review check reports its problems at one kind of place: a page or fragment as a whole, one block, or one entry of the content model or one image, which have no page. Its problems are acknowledged at that place, and nowhere else:
   - **A block:** `@intended` directly above it. The acknowledgement covers that check's problems located anywhere in the block, including in a container's content. In a fragment, it covers the block in every page that includes it.
   - **A heading:** `@intended` at the top of its section, among the directives under the heading. The acknowledgement covers that check's problems located at the heading, and, when no blank line comes between, those in the block directly under the `@intended` line, past the directives stacked with it, so a section's first block is acknowledged as any other block is. It covers nothing else in the section:
 
@@ -1003,7 +1003,7 @@ A content model declares the following.
 | Acknowledgements | Problems of review checks about a phrase, feature, glossary term, or image that are intended, each with a reason | §4.9 |
 | Crawlers | What each kind of crawler may do, by purpose (gathering training data, building an AI search index, fetching at a person's request), and the project's own `robots.txt` lines, with paths from the project's base path. A crawler is named in one group; processors reject a content model that names one twice when loading it | §9.4 |
 | Listing | How pages are listed (§2.1): the site's default, and a value for the pages under a folder, by its path from the content root, or of a content type. A folder's value MUST NOT be looser than that of a folder it's under, and neither a folder's nor a type's looser than the default; processors reject a content model that does when loading it | §2.1 |
-| Processor settings | Settings a processor defines for its own checks and tools, such as which of its checks run and at what level, or a page template for a content type. This specification doesn't define them. A processor ignores a setting it doesn't know only where it says so | §4.9 |
+| Processor settings | Settings a processor defines for its own checks and tools, such as which of its checks run and at what level, or a page template for a content type. This specification doesn't define them. A processor ignores a setting it doesn't know only where it says so | §4.9, §8.2 |
 
 Built-in directive schemas are defined by this specification, not by the content model. A content model MAY extend the enumerations they use (note types, lifecycle states).
 
@@ -1265,6 +1265,8 @@ When several places together cause a diagnostic, it's reported once, at the late
 
 Conforming processors MUST report every error below, and SHOULD report the warnings. An error means the document isn't conforming; a build MUST fail on errors. Processors MAY report the advice, which never fails a build.
 
+These are the specification's diagnostics, and their severities are fixed: a project can't lower one or turn it off, and nothing quiets one, neither an acknowledgement (§4.9) nor anything a processor offers to put problems off for now. A processor's own checks, beyond this table, such as the review checks of §4.9, are another kind. A processor MAY let a project set the level of each of them, raising it to an error, lowering it to advice, or turning it off, in the content model's processor settings (§7.2). A check a project raises to an error fails a build as an error does, but it doesn't make the document non-conforming: a conforming document is one with none of the errors below (§1.3), whatever levels a project gives its processor's checks. A review check can be acknowledged at whatever level the project gives it. A processor MAY also let a project put off its own checks' problems for now, without a reason, as Ascribe's `ascribe.baseline` puts off a project's advice until each is fixed; what it puts off is the processor's to say, and never includes an error below.
+
 | Construct | Condition | Severity |
 |---|---|---|
 | Attributes | Unknown key for the directive, image, or table row | Error |
@@ -1470,13 +1472,9 @@ versions = "self-managed"
 [builds.cloud]
 variants = { deployment = "cloud" }
 availability = { filter = "cloud" }
-
-[builds."self-managed-3.3"]
-variants = "switch"
-availability = { filter = "self-managed 3.3" }
 ```
 
-Here `site` keeps every arm and badges availability, for each live line of self-managed (a versioned build, below); `cloud` keeps only cloud's arms and content; and `self-managed-3.3` keeps every arm and only what self-managed 3.3 has.
+Here `site` keeps every arm and badges availability, for each live line of self-managed (a versioned build, below); and `cloud` keeps only cloud's arms and content. A build filtered for a versioned target names its version, as `{ filter = "self-managed 3.3" }` does, and keeps only what that version has.
 
 #### Variant mode
 

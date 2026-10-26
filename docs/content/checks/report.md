@@ -10,10 +10,10 @@ description: Reading ascribe report and acting on each section, from the problem
 ascribe report                       # problems, inventory, and builds
 ascribe report pages --not-listed    # the pages kept out of search, and why
 ascribe report links                 # external links, with lychee
-ascribe report agents --site https://docs.example.com   # the published site, with afdocs
+ascribe report delivery --site https://docs.example.com   # the published site, with afdocs
 ```
 
-Without a section named, it runs the three that say what state the project is in and need nothing outside it. `pages` needs nothing outside it either, and runs when it's named. `links` and `agents` run programs you install, and reach the network: when one can't run, it says what's missing, and the rest of the report is the same. [`ascribe report`](report-command.md#cli-report) lists every option, and the JSON.
+Without a section named, it runs the three that say what state the project is in and need nothing outside it. `pages` needs nothing outside it either, and runs when it's named. `links` and `delivery` run programs you install, and reach the network: when one can't run, it says what's missing, and the rest of the report is the same. [`ascribe report`](report-command.md#cli-report) lists every option, and the JSON.
 
 This guide takes the report a section at a time and says what to do about what each one finds, then runs it every day in CI.
 
@@ -99,14 +99,15 @@ Pages
 
 `ascribe report links` lists each link to another site that's broken or has moved, at its place in the source, and the links it holds back as unconfirmed because they answered on an earlier run. [Check external links](external-links.md) says what to do about each, and what the section remembers from one run to the next.
 
-## The site and agents
+## Delivery to agents
+@id: the-site-and-agents
 
-`ascribe report agents --site <URL>` runs the delivery spec's checker on a built site and reports each check that fails or warns by who changes what it checks: the hosting, or what Ascribe writes. [What to measure](../agents/measuring.md#check-what-the-site-delivers-to-agents) says what to do about each.
+`ascribe report delivery --site <URL>` runs the delivery spec's checker on a built site and reports each check that fails or warns by who changes what it checks: the hosting, or what Ascribe writes. [What to measure](../agents/measuring.md#check-what-the-site-delivers-to-agents) says what to do about each.
 
 From its second run on the same site, the section says which checks are failing since the last report, and how many that failed then no longer do:
 
 ```text
-Agents
+Delivery
   The delivery spec's checks on https://docs.example.com: 21 pass, 2 fail.
   23 checks: 21 passing, 2 failing, 1 of them failing since 9 October: redirect-behavior.
 ```
@@ -117,7 +118,7 @@ Every check runs every time: nothing the checker said is reused, because a publi
 
 ## Handing a section to an agent
 
-`--format prompt` writes one prompt about one section's problems, `problems`, `links`, or `agents`, for an agent to work through: each problem with what Ascribe knows about it, such as the sentence around a broken link or the setting to change, how to fix each kind, and the command that checks the work. It's nothing when the section finds nothing.
+`--format prompt` writes one prompt about one section's problems, `problems`, `links`, or `delivery`, for an agent to work through: each problem with what Ascribe knows about it, such as the sentence around a broken link or the setting to change, how to fix each kind, and the command that checks the work. It's nothing when the section finds nothing.
 
 ```sh
 ascribe report links --format prompt

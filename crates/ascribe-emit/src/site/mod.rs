@@ -241,9 +241,17 @@ impl Emitter for SiteEmitter {
                     HOST_HEADERS_PATH,
                     headers::netlify(cx.model, build, &help_paths),
                 )?);
+                // An older line's permalinks aren't served: the addresses
+                // are the current line's.
+                let permalinks = if cx.build.line_folder().is_none() {
+                    let named = permalinks::named(&recorded, build, &found);
+                    redirects::permalink_rules(cx.model, &named, &redirects)
+                } else {
+                    Vec::new()
+                };
                 files.push(generated(
                     HOST_REDIRECTS_PATH,
-                    redirects::netlify(&redirects),
+                    redirects::netlify(&redirects, &permalinks),
                 )?);
             }
         }

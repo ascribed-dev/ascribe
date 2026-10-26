@@ -28,6 +28,7 @@ description = "string"
 [dimensions.pm]
 label = "Package manager"
 values = ["npm", "pnpm", "yarn"]
+labels = { npm = "npm", pnpm = "pnpm", yarn = "Yarn" }
 
 [phrases]
 product = "Quill"

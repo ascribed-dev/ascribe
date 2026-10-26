@@ -1,0 +1,1 @@
+- **`ascribe preview` shows a build's pages as a site, with no Node, editor, or Astro.** It prints the check's problems, serves the pages at `127.0.0.1`, and renders them again as you edit: [`ascribe preview`](docs/content/checks/check.md).

@@ -1,0 +1,1 @@
+- **A missing include or snippet file is offered the path that names it.** And `@variant` in a project with no dimensions gives the `[dimensions.<name>]` table to add. See [`@include`](docs/content/writing/directives.md).

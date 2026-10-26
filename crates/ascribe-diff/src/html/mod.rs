@@ -335,9 +335,16 @@ pub fn write_report(
                     (data.title, data.formatted_title) = (title.plain, title.formatted);
                     data.now = Some(store.page(rendered));
                 }
+                // A page that moved was rendered where it was.
+                let was_path = diff
+                    .moved_from
+                    .as_deref()
+                    .and_then(|from| RelPath::parse(from).ok())
+                    .unwrap_or_else(|| path.clone());
                 if diff.status != PageStatus::Added
                     && let Some(base) = base
-                    && let Some((rendered, title)) = render(base, &build.build, &path, &mut store)
+                    && let Some((rendered, title)) =
+                        render(base, &build.build, &was_path, &mut store)
                 {
                     if data.title.is_none() {
                         (data.title, data.formatted_title) = (title.plain, title.formatted);
@@ -414,7 +421,7 @@ fn page_shell(title: &str, json: &str) -> String {
          <style>\n{STYLE}</style>\n\
          </head>\n\
          <body>\n\
-         <div id=\"{root}\"><noscript>This report draws its pages with JavaScript; turn it on to see them.</noscript></div>\n\
+         <div id=\"{root}\"><noscript>This preview draws its pages with JavaScript; turn it on to see them.</noscript></div>\n\
          <script type=\"application/json\" id=\"{data}\">{json}</script>\n\
          <script>{SCRIPT}</script>\n\
          </body>\n\

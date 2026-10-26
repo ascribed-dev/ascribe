@@ -14,7 +14,7 @@ Add `.github/workflows/check.yml`, which runs `ascribe check --deny-warnings` an
 
 It installs the latest release. To run the version your `package.json` pins instead, replace that step with `npm ci`, and run each command with `npx`. Where there's no Node, [install `ascribe` on the path](../install.md#without-node) instead.
 
-[`ascribe check`, `build`, and `fmt`](check.md) has each command's options and exit codes.
+[`ascribe check`, `build`, `preview`, and `fmt`](check.md) has each command's options and exit codes.
 
 ## Keep the addresses you've published
 @available: ascribe 0.4.4

@@ -1217,6 +1217,16 @@ fn search() {
         "search-none.txt",
         &stdout(&run(&root, &["search", "zebra", "--config", quill], 1)),
     );
+    // No block has both words: the closest places, and the word each
+    // lacks.
+    expect(
+        "search-partial.txt",
+        &stdout(&run(
+            &root,
+            &["search", "webhook signature", "--config", quill],
+            1,
+        )),
+    );
     // Kept to one page, and to whole words.
     expect(
         "search-scope.txt",

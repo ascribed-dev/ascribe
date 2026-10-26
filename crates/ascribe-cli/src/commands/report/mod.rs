@@ -62,7 +62,7 @@ pub struct Args {
     #[arg(long)]
     pub not_listed: bool,
 
-    /// The address of a built site, for `agents`: the published site, or a
+    /// The address of a built site, for `delivery`: the published site, or a
     /// preview of it.
     #[arg(long, value_name = "URL")]
     pub site: Option<String>,
@@ -83,12 +83,12 @@ pub struct Args {
     pub recheck: bool,
 
     /// Report as a first run would: say nothing about what's new in
-    /// `problems`, `links`, and `agents`, and report every failure of
-    /// `links`. `problems` and `agents` keep nothing for the next report,
+    /// `problems`, `links`, and `delivery`, and report every failure of
+    /// `links`. `problems` and `delivery` keep nothing for the next report,
     /// and `links` still keeps what this run sees.
     ///
     /// By default, `problems` and `links` say which problems are new since
-    /// the last report and how many it listed are gone, `agents` says which
+    /// the last report and how many it listed are gone, `delivery` says which
     /// checks are failing since the last report, and a link that answered
     /// before and fails now is listed as unconfirmed until it has kept
     /// failing for `[checks.links] confirm-days`.
@@ -141,7 +141,8 @@ pub enum SectionArg {
     Links,
     /// The delivery spec's checks on a built site. Needs `afdocs`, the
     /// network, and `--site`.
-    Agents,
+    #[value(alias = "agents")]
+    Delivery,
 }
 
 impl SectionArg {
@@ -152,7 +153,7 @@ impl SectionArg {
             SectionArg::Builds => Section::Builds,
             SectionArg::Pages => Section::Pages,
             SectionArg::Links => Section::Links,
-            SectionArg::Agents => Section::Agents,
+            SectionArg::Delivery => Section::Delivery,
         }
     }
 }
@@ -167,7 +168,7 @@ pub enum Format {
     /// One JSON document, for tools.
     Json,
     /// A prompt for an agent that acts on one section's problems: only
-    /// with one section, `problems`, `links`, or `agents`. Nothing when it
+    /// with one section, `problems`, `links`, or `delivery`. Nothing when it
     /// finds nothing.
     Prompt,
 }
@@ -198,7 +199,7 @@ impl Level {
 pub enum ReportError {
     /// `--format prompt` with other than one of the sections it writes.
     #[error(
-        "--format prompt writes one section's prompt: name one of `problems`, `links`, or `agents`"
+        "--format prompt writes one section's prompt: name one of `problems`, `links`, or `delivery`"
     )]
     PromptSection,
 }
@@ -256,7 +257,7 @@ pub(crate) fn report(
     if args.format == Format::Prompt
         && !matches!(
             sections.as_slice(),
-            [Section::Problems | Section::Links | Section::Agents]
+            [Section::Problems | Section::Links | Section::Delivery]
         )
     {
         return exit::fail(err, &ReportError::PromptSection);
@@ -288,7 +289,7 @@ pub(crate) fn report(
     let history = project
         .today()
         .filter(|_| {
-            (sections.contains(&Section::Problems) || sections.contains(&Section::Agents))
+            (sections.contains(&Section::Problems) || sections.contains(&Section::Delivery))
                 && !args.no_history
         })
         .and_then(|today| {
@@ -545,16 +546,16 @@ fn write_prompt(
             }
             _ => None,
         },
-        [Section::Agents] => match &report.agents {
-            Some(Ran::Done(agents)) => {
-                let problems: Vec<&Diagnostic> = agents.diagnostics.iter().collect();
+        [Section::Delivery] => match &report.delivery {
+            Some(Ran::Done(delivery)) => {
+                let problems: Vec<&Diagnostic> = delivery.diagnostics.iter().collect();
                 prompt::batch(
                     project,
                     &context,
                     "Change what the delivery spec's checks find on the published site. None of it is in the pages: it's the hosting's settings, or a bug to report in Ascribe.",
-                    vec![format!("Site: {}", agents.site)],
+                    vec![format!("Site: {}", delivery.site)],
                     &problems,
-                    &verify(Section::Agents),
+                    &verify(Section::Delivery),
                 )
             }
             _ => None,

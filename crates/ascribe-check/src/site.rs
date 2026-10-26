@@ -1,6 +1,6 @@
 //! A published site, checked against the Web Documentation Delivery Spec
 //! with its own checker, [`afdocs`](https://www.npmjs.com/package/afdocs):
-//! what `ascribe report agents` reports.
+//! what `ascribe report delivery` reports.
 //!
 //! The checker is a program the project installs (content checks decision
 //! 5), run on the site's address ([`Afdocs`]); a test gives a stand-in
@@ -26,7 +26,7 @@ use crate::{Diagnostic, Project};
 pub const COMMAND: &str = "afdocs";
 
 /// The version of the checker Ascribe's output is tested with, and which
-/// `ascribe report agents` asks for when it isn't installed: the one
+/// `ascribe report delivery` asks for when it isn't installed: the one
 /// `examples/astro-site` pins.
 pub const VERSION: &str = "0.22.2";
 

@@ -1,0 +1,9 @@
+description: >-
+  In a project that declares no dimensions, every dimensional arm names an
+  unknown dimension.
+spec: ["4.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: variant-unknown, line: 5}
+  - {slug: variant-unknown, line: 7}

@@ -36,7 +36,7 @@ title-duplicate = "warning"
 limit = "200 KB"
 ```
 
-Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`; `off` turns a check off altogether.
+Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`; `off` turns a check off altogether. A check raised to `"error"` fails the check and stops the build, as an error does, though the page is still valid by the specification, and a review check raised this way can still be acknowledged. [Quieting a problem](../checks/check.md#quieting-a-problem) compares `[checks]` with the other ways to quiet one.
 
 A check the diagnostics reference marks off by default, such as `summary-missing`, is off until `[checks]` names it: with a level, it's reported at that level, and as a table without one, such as `[checks.summary-long]` with only a `limit`, at its default level ([Setting a check's level](../checks/diagnostics.md#setting-a-checks-level)).
 

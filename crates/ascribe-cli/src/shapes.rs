@@ -166,6 +166,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_templates::InitAnswer>(),
     },
     Shape {
+        file: "rename",
+        title: "RenameReport",
+        written_by: "`ascribe rename --format json`, and the MCP server's `ascribe_rename`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::rename::RenameJson>(),
+    },
+    Shape {
         file: "fmt",
         title: "FmtReport",
         written_by: "`ascribe fmt --format json`",

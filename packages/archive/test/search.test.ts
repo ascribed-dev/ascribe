@@ -86,10 +86,11 @@ describe("the box", () => {
     globalThis.ascribeArchiveIndex = undefined;
   });
 
-  function box(): HTMLElement {
+  function box(label?: string): HTMLElement {
     const script = document.createElement("script");
     script.dataset["index"] = "../search-index.js";
     script.dataset["root"] = "../";
+    if (label !== undefined) script.dataset["label"] = label;
     const nav = document.createElement("nav");
     nav.append(script);
     document.body.append(nav);
@@ -101,6 +102,12 @@ describe("the box", () => {
     input.dispatchEvent(new Event("input"));
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
+
+  it("is labeled for a version, or as its script's data-label says", () => {
+    expect(box().querySelector("label")?.textContent).toBe("Search this version");
+    document.body.replaceChildren();
+    expect(box("Search build site").querySelector("label")?.textContent).toBe("Search build site");
+  });
 
   it("is drawn where its script was, and loads the index once it's used", async () => {
     const drawn = box();

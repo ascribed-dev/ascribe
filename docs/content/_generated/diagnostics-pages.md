@@ -571,7 +571,7 @@ Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.m
 
 **Message:** `{path}` doesn't exist in source `{source}`
 
-**Fix:** Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`. For a link, name the file it leads to through a source that includes it. For a source in another repository, run `ascribe sources fetch` to copy the file. When the file isn't in the repository at the pinned commit, because it was moved or deleted there, `fetch` can't copy it: name the file where it is now, or change the code and move the pin with `ascribe sources update`.
+**Fix:** Fix the path. It's relative to the source's folder, so it doesn't repeat it: with `path = "src"`, `src/config.js` is `<source>:config.js`. When the message says the source's patterns leave the file out, it's a link, or it's in another repository, the reference page has the steps.
 
 **Read more:** [`@snippet`](../writing/directives.md#snippet) in the directive reference.
 

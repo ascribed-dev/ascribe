@@ -26,10 +26,6 @@ versions = "self-managed"
 variants = { deployment = "cloud" }
 availability = { filter = "cloud" }
 
-[builds."self-managed-3.3"]
-variants = "switch"
-availability = { filter = "self-managed 3.3" }
-
 # Self-managed 3.5 only: deployment groups reduce to their self-managed arm.
 [builds."self-managed-3.5"]
 variants = { deployment = "self-managed" }

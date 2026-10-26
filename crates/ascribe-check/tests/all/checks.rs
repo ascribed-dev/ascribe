@@ -663,6 +663,21 @@ fn certain_replacements_come_with_fixes_that_clear_the_diagnostic() {
             page("@steps foo\n1. a"),
             page("@steps\n1. a"),
         ),
+        (
+            "directive-extra-text",
+            page("@note type=warning: You need Node 20."),
+            page("@note {type=warning}: You need Node 20."),
+        ),
+        (
+            "directive-extra-text",
+            page("@note type=warning:\nInside.\n@end"),
+            page("@note {type=warning}:\nInside.\n@end"),
+        ),
+        (
+            "directive-extra-text",
+            page(r#"@snippet lang=py title="A: b": code:x.py"#),
+            page(r#"@snippet {lang=py, title="A: b"}: code:x.py"#),
+        ),
     ];
     for (slug, before, after) in cases {
         let now = fixed("index.md", &before, slug);
@@ -674,6 +689,40 @@ fn certain_replacements_come_with_fixes_that_clear_the_diagnostic() {
             "{slug} remains in {now:?}"
         );
     }
+}
+
+#[test]
+fn attributes_without_braces_are_braced_safely_only_before_a_primary() {
+    let fix = |body: &str| {
+        let p = project(&[("index.md", &page(body))]);
+        let d = check_files(&p)
+            .into_iter()
+            .find(|d| d.slug.as_str() == "directive-extra-text")
+            .expect("directive-extra-text");
+        let fix = d.fixes.first().expect("a fix");
+        (d.message.clone(), fix.title.clone(), fix.applicability)
+    };
+    let (message, title, applicability) = fix("@note type=warning: You need Node 20.");
+    assert!(message.contains("`{type=warning}`"), "{message}");
+    assert_eq!(title, "Put `type=warning` in braces");
+    assert_eq!(applicability, Applicability::Safe);
+    // Without a primary, or with more text after the pairs, the braces may
+    // not be all that's meant.
+    for body in [
+        "@note type=warning:\nInside.\n@end",
+        "@note type=warning\nBound.",
+        "@note type=warning and more: text",
+    ] {
+        let (message, _, applicability) = fix(body);
+        assert!(message.contains("go in braces"), "{body}: {message}");
+        assert_eq!(applicability, Applicability::Unsafe, "{body}");
+    }
+    // A key the directive doesn't take isn't an attribute: the text is
+    // removed, as any other extra text is, and not safely.
+    let (message, title, applicability) = fix("@note colour=red: Careful.");
+    assert!(message.contains("isn't part of `@note`"), "{message}");
+    assert_eq!(title, "Remove `colour=red: Careful.`");
+    assert_eq!(applicability, Applicability::Unsafe);
 }
 
 #[test]
@@ -976,4 +1025,69 @@ fn a_memo_is_outdated_when_its_words_are_gone() {
             "no block of `a.md#setup` has the words this memo quotes, so it's on the section `#setup` and no block"
         ]
     );
+}
+
+/// An include of a file that isn't beside the including file is offered
+/// the source file with its name, written from the including file, keeping
+/// the `#id`.
+#[test]
+fn a_missing_include_is_offered_the_file_with_its_name() {
+    let p = project(&[
+        (
+            "guides/setup.md",
+            &page("@include: _shared/restart.md#intro"),
+        ),
+        ("_shared/restart.md", "## Intro\n\nRestart it.\n"),
+        ("_shared/other.md", "Text.\n"),
+    ]);
+    let all = check_files(&p);
+    assert_eq!(slugs(&p), ["include-target-missing"]);
+    let fixes = &all[0].fixes;
+    assert_eq!(fixes.len(), 1, "{fixes:#?}");
+    assert_eq!(fixes[0].title, "Include `../_shared/restart.md`");
+    assert_eq!(fixes[0].applicability, Applicability::Unsafe);
+    let file = p
+        .source_at(&RelPath::parse("guides/setup.md").expect("path"))
+        .expect("a source");
+    assert_eq!(
+        apply_edits(&file.text, &fixes[0].edits).expect("edits apply"),
+        page("@include: ../_shared/restart.md#intro")
+    );
+}
+
+/// In a project that declares no dimensions, an arm's dimension gets the
+/// table to add, with the values every page gives it.
+#[test]
+fn a_dimension_with_none_declared_gets_the_table_to_add() {
+    const BARE: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n";
+    let sources = Project::from_sources([
+        (
+            RelPath::parse("a.md").expect("a path"),
+            page("@variant {os=mac}:\nMac.\n@variant {os=linux|windows}:\nOther.\n@end"),
+        ),
+        (
+            RelPath::parse("b.md").expect("a path"),
+            page("@variant {os=bsd}:\nBSD.\n@end"),
+        ),
+    ]);
+    let p = Project::from_parts(
+        PathBuf::from("/nonexistent-ascribe-project"),
+        RelPath::parse("docs").expect("a relative path"),
+        ascribe_model::load_str(BARE, FileId::new(0)).expect("the model loads"),
+        BARE.to_owned(),
+        sources,
+    );
+    let all: Vec<String> = check_files(&p)
+        .into_iter()
+        .filter(|d| d.slug.as_str() == "variant-unknown")
+        .map(|d| d.message)
+        .collect();
+    assert_eq!(all.len(), 3, "{all:#?}");
+    for message in all {
+        assert_eq!(
+            message,
+            "`os` isn't a declared dimension, and ascribe.toml declares none: add \
+             `[dimensions.os]` with `values = [\"mac\", \"linux\", \"windows\", \"bsd\"]`"
+        );
+    }
 }

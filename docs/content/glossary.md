@@ -25,7 +25,7 @@ See [Keep the addresses you've published](publishing/redirects.md). A snippet's 
 
 An AI program, such as Claude Code or GitHub Copilot, that writes a project's docs with Ascribe's tools, or reads the docs a site publishes.
 
-Most pages mean the agent you work with on the docs, as [Agents](agents/index.md) does. The outputs for agents, [`[consumer] agents`](content-model/output.md#consumer), and [`ascribe report agents`](checks/report.md#the-site-and-agents) are about the agents that read the published site, and [`ascribe agents index`](agents/product-index.md) writes for a product's own agents.
+Most pages mean the agent you work with on the docs, as [Agents](agents/index.md) does. The outputs for agents, [`[consumer] agents`](content-model/output.md#consumer), and [`ascribe report delivery`](checks/report.md#the-site-and-agents) are about the agents that read the published site, and [`ascribe agents index`](agents/product-index.md) writes for a product's own agents.
 
 ## Availability
 @term
@@ -67,7 +67,7 @@ See [`[dimensions]`](content-model/content.md#dimensions) and [Content that vari
 
 Code a page shows from a source's file with `@snippet`, so the page has no copy to fall behind, and that `ascribe.examples.toml` can name so a test runs it.
 
-See [Examples and drift](examples/index.md) and [Show what an example was tested with](examples/tested.md). An OpenAPI spec's JSON bodies that a guide [checks against a schema](openapi/examples.md) are an API's sample requests and responses, and this repository's `examples/` folder holds example projects; neither is this.
+See [Examples and drift](examples/index.md) and [Show what an example was tested with](examples/tested.md). A JSON block marked as an OpenAPI operation's request or response is an API example, which the `api-example-*` checks [compare with its schema](openapi/examples.md), and this repository's `examples/` folder holds example projects; neither is this.
 
 ## Fragment
 @term {aliases=fragments}
@@ -75,6 +75,13 @@ See [Examples and drift](examples/index.md) and [Show what an example was tested
 A source file that exists only to be included in other files: any file with a path segment starting with `_`, or whose path matches one of the content model's [`[fragments] patterns`](content-model/index.md#4-typesname-and-fragments).
 
 See [Files](writing/frontmatter.md#files) and [`@include`](writing/directives.md#include).
+
+## HTML preview
+@term
+
+The HTML file `ascribe diff --format html` writes, showing a pull request's changed pages rendered and marked, which CI can attach to the pull request.
+
+It's the third place to [review](#review), beside the page preview and the site preview, and needs no checkout. See [Attach the HTML preview to every pull request](review/ci-report.md).
 
 ## Memo
 @term {aliases=memos}
@@ -116,12 +123,12 @@ See [Release lines](versions/lines.md). Pages about versions call it a line. Els
 
 What `ascribe report` says about the state of a whole project: its problems, inventory, builds, pages, external links, and published site.
 
-See [The project report](checks/report.md). The HTML file `ascribe diff --format html` writes for a pull request is part of [review](#review), not this.
+See [The project report](checks/report.md). The [HTML preview](#html-preview), which `ascribe diff --format html` writes for a pull request, is part of [review](#review), not this.
 
 ## Review
 @term {aliases=reviews, match=marked}
 
-Reading a pull request's changes as readers will see the pages, in the page preview, the site preview, or the HTML file CI writes, and commenting there.
+Reading a pull request's changes as readers will see the pages, in the page preview, the site preview, or the HTML preview, and commenting there.
 
 See [Review](review/index.md). A diagnostic whose next step is `review` may be fine as it is: see [What to do next](checks/diagnostics.md#what-to-do-next). A page's review date, its field with the `review-date` role that [`review-overdue`](checks/diagnostics/content-checks.md#ASC153) compares with today, is when to check the page again.
 

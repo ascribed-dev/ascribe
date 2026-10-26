@@ -59,6 +59,7 @@ mod tests {
     use crate::commands::check::CheckError;
     use crate::commands::fmt::FmtError;
     use crate::commands::permalinks::PermalinksError;
+    use crate::commands::preview::PreviewError;
     use crate::commands::rename::RenameCommandError;
     use crate::commands::report::ReportError;
     use crate::commands::sources::PagesUnavailable;
@@ -357,6 +358,10 @@ mod tests {
             "init_unwritable",
             "init can't write ascribe.toml or make the content root",
         ),
+        (
+            "preview_port_unavailable",
+            "preview can't listen on its port",
+        ),
     ];
 
     fn path() -> PathBuf {
@@ -613,6 +618,11 @@ mod tests {
                 RenameCommandError::BadTarget { .. } | RenameCommandError::Unwritable { .. } => {}
             }
         }
+        fn preview(e: &PreviewError) {
+            match e {
+                PreviewError::Listen { .. } => {}
+            }
+        }
         let _ = (
             locate,
             load,
@@ -639,6 +649,7 @@ mod tests {
             templates,
             templates_command,
             init,
+            preview,
         );
 
         let store_errors = || {
@@ -824,6 +835,10 @@ mod tests {
             Box::new(ascribe_templates::InitError::Write {
                 path: text(),
                 reason: text(),
+            }),
+            Box::new(PreviewError::Listen {
+                address: text(),
+                message: text(),
             }),
             Box::new(TemplatesError::NoProject(LocateError::NotFound {
                 dir: path(),

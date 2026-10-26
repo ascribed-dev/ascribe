@@ -14,7 +14,7 @@
 //!   by address;
 //! - **links**: the external links a link checker finds broken or moved
 //!   ([`ascribe_check::links`]);
-//! - **agents**: the delivery spec's checks on a built site
+//! - **delivery**: the delivery spec's checks on a built site
 //!   ([`ascribe_check::site`]).
 //!
 //! The first four need nothing outside the project. Each section is
@@ -54,7 +54,7 @@ pub enum Section {
     /// External links that fail, redirect, or time out.
     Links,
     /// The delivery spec's checks on a built site.
-    Agents,
+    Delivery,
 }
 
 impl Section {
@@ -65,7 +65,7 @@ impl Section {
         Section::Builds,
         Section::Pages,
         Section::Links,
-        Section::Agents,
+        Section::Delivery,
     ];
 
     /// The sections the report runs when none is named: those that need
@@ -81,7 +81,7 @@ impl Section {
             Section::Builds => "builds",
             Section::Pages => "pages",
             Section::Links => "links",
-            Section::Agents => "agents",
+            Section::Delivery => "delivery",
         }
     }
 }
@@ -127,7 +127,7 @@ pub struct Options<'a> {
     pub baseline: bool,
     /// For `pages`, only the pages that aren't `listed`.
     pub not_listed: bool,
-    /// The built site `agents` checks.
+    /// The built site `delivery` checks.
     pub site: Option<&'a str>,
     /// The programs to run.
     pub tools: &'a Tools<'a>,
@@ -362,9 +362,9 @@ pub struct Links {
     pub resolved: Option<usize>,
 }
 
-/// `agents`: the delivery spec's checks on a built site.
+/// `delivery`: the delivery spec's checks on a built site.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Agents {
+pub struct Delivery {
     /// The site's address.
     pub site: String,
     /// Each check's result, in the checker's order.
@@ -400,8 +400,8 @@ pub struct Report {
     pub pages: Option<Pages>,
     /// `links`, when asked for.
     pub links: Option<Ran<Links>>,
-    /// `agents`, when asked for.
-    pub agents: Option<Ran<Agents>>,
+    /// `delivery`, when asked for.
+    pub delivery: Option<Ran<Delivery>>,
 }
 
 impl Report {
@@ -411,14 +411,14 @@ impl Report {
         if let Some(Ran::NotRun(why)) = &self.links {
             out.push((Section::Links, why));
         }
-        if let Some(Ran::NotRun(why)) = &self.agents {
-            out.push((Section::Agents, why));
+        if let Some(Ran::NotRun(why)) = &self.delivery {
+            out.push((Section::Delivery, why));
         }
         out
     }
 
     /// Every problem the report found: the diagnostics of `problems`,
-    /// `links`, and `agents`.
+    /// `links`, and `delivery`.
     pub fn all_problems(&self) -> impl Iterator<Item = &Diagnostic> {
         let problems = self.problems.iter().flat_map(|p| &p.diagnostics);
         let links = self
@@ -426,12 +426,12 @@ impl Report {
             .iter()
             .filter_map(Ran::done)
             .flat_map(|l| &l.diagnostics);
-        let agents = self
-            .agents
+        let delivery = self
+            .delivery
             .iter()
             .filter_map(Ran::done)
             .flat_map(|a| &a.diagnostics);
-        problems.chain(links).chain(agents)
+        problems.chain(links).chain(delivery)
     }
 }
 
@@ -451,24 +451,24 @@ pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, Diagno
     // What this run found, for the history to keep.
     let mut kept = report_history::Found::default();
     if asked(Section::Problems) || asked(Section::Inventory) {
-        let diagnosed = diagnose_with(
+        let mut checked = diagnose_with(
             project,
             &Request {
                 builds: options.builds,
                 baseline: options.baseline,
+                ..Request::default()
             },
         )?;
+        let baselined = checked.baselined.len();
+        let acknowledged = std::mem::take(&mut checked.acknowledged);
+        let diagnostics = checked.into_diagnostics();
         if asked(Section::Inventory) {
-            out.inventory = Some(inventory(project, &diagnosed.diagnostics));
+            out.inventory = Some(inventory(project, &diagnostics));
         }
         if asked(Section::Problems) {
-            let (mut problems, found) = problems(
-                project,
-                diagnosed.diagnostics,
-                diagnosed.acknowledged,
-                options.history,
-            );
-            problems.baselined = diagnosed.baselined.len();
+            let (mut problems, found) =
+                problems(project, diagnostics, acknowledged, options.history);
+            problems.baselined = baselined;
             out.problems = Some(problems);
             kept.problems = found;
         }
@@ -486,15 +486,15 @@ pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, Diagno
     if asked(Section::Links) {
         out.links = Some(links(project, options));
     }
-    if asked(Section::Agents) {
-        let mut ran = agents(project, options.site, options.tools);
-        if let (Ran::Done(agents), Some(history)) = (&mut ran, options.history) {
-            kept.agents = Some(agents_since(agents, history));
+    if asked(Section::Delivery) {
+        let mut ran = delivery(project, options.site, options.tools);
+        if let (Ran::Done(delivery), Some(history)) = (&mut ran, options.history) {
+            kept.delivery = Some(delivery_since(delivery, history));
         }
-        out.agents = Some(ran);
+        out.delivery = Some(ran);
     }
     if let Some(history) = options.history
-        && (kept.problems.is_some() || kept.agents.is_some())
+        && (kept.problems.is_some() || kept.delivery.is_some())
     {
         history.save(kept);
     }
@@ -535,32 +535,32 @@ fn problems(
     (out, Some(found.into_iter().collect()))
 }
 
-/// Which of `agents`' checks are failing since the last run on its site,
+/// Which of `delivery`'s checks are failing since the last run on its site,
 /// and how many failing then aren't now, from the history; and what this
 /// run found, for the history to keep. A check's identity is the site's
 /// address and its id. Failing is failed or warned; one that was skipped
 /// or couldn't run, then or now, counts as neither new nor resolved.
-fn agents_since(agents: &mut Agents, history: &ReportHistory) -> SiteChecks {
+fn delivery_since(delivery: &mut Delivery, history: &ReportHistory) -> SiteChecks {
     let found = SiteChecks {
-        site: agents.site.clone(),
-        checks: agents
+        site: delivery.site.clone(),
+        checks: delivery
             .results
             .iter()
             .map(|r| (r.id.clone(), r.status))
             .collect(),
     };
-    if let Some((run, before)) = history.agents_before(&agents.site) {
+    if let Some((run, before)) = history.delivery_before(&delivery.site) {
         let passing = |id: &str| before.get(id).is_none_or(|s| *s == site::Status::Pass);
-        agents.previous_run = Some(run);
-        agents.new = Some(
-            agents
+        delivery.previous_run = Some(run);
+        delivery.new = Some(
+            delivery
                 .results
                 .iter()
                 .filter(|r| r.status.is_finding() && passing(&r.id))
                 .map(|r| r.id.clone())
                 .collect(),
         );
-        agents.resolved = Some(
+        delivery.resolved = Some(
             before
                 .iter()
                 .filter(|(id, status)| {
@@ -901,8 +901,8 @@ fn links(project: &Project, options: &Options<'_>) -> Ran<Links> {
 /// What gets the link checker: installing it, or saying where it is.
 const LYCHEE_HOW: &str = "Install lychee (`cargo install lychee`, or a release from https://github.com/lycheeverse/lychee/releases), or set `[checks.links] command` to where it is";
 
-/// `agents`: runs the site checker on `site`, and applies `[checks]` levels.
-fn agents(project: &Project, site: Option<&str>, tools: &Tools<'_>) -> Ran<Agents> {
+/// `delivery`: runs the site checker on `site`, and applies `[checks]` levels.
+fn delivery(project: &Project, site: Option<&str>, tools: &Tools<'_>) -> Ran<Delivery> {
     let Some(site) = site else {
         let how = match &project.model().consumer.site {
             Some(published) => format!(
@@ -916,11 +916,11 @@ fn agents(project: &Project, site: Option<&str>, tools: &Tools<'_>) -> Ran<Agent
         });
     };
     match site::check(project, tools.site, site, tools.site_timeout) {
-        Ok(found) => Ran::Done(Agents {
+        Ok(found) => Ran::Done(Delivery {
             site: site.to_owned(),
             results: found.results,
             diagnostics: apply_levels(&project.model().checks, found.diagnostics),
-            ..Agents::default()
+            ..Delivery::default()
         }),
         Err(e) => {
             let how = format!(

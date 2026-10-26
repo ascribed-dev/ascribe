@@ -132,7 +132,7 @@ export interface DiffReport {
 /**
  * A piece of a formatted value, as the JSON output writes it:
  * `{ "type": "text" | "code", "value": … }`. Other JSON that shows a
- * formatted title, such as the review report's, writes it the same way.
+ * formatted title, such as the HTML preview's, writes it the same way.
  */
 export interface FormattedPiece {
   /** What the piece is. */
@@ -169,6 +169,14 @@ export interface LineData {
   current: boolean;
 }
 
+/** A page that moved: where it was, and where it is, by content path. */
+export interface MovedPage {
+  /** Where it was, in the base. */
+  from: string;
+  /** Where it is now. */
+  to: string;
+}
+
 /** One changed page: `ascribe diff --format json`'s, and its renderings. */
 export interface PageData {
   /** The page's content path. */
@@ -193,7 +201,8 @@ export interface PageData {
   /**
    * What changed about the page itself besides its blocks, in this
    * order: `title`, `frontmatter`, `availability` (the page-level one),
-   * and `route`. Empty for an added or removed page.
+   * and `route`. Empty for an added or removed page. A moved page's
+   * route moves with it, so it isn't listed for one.
    */
   page_changed: string[];
   /** How many changes of each kind. */
@@ -217,6 +226,21 @@ export interface PageData {
   was: string | null;
   /** Whether it's beyond the limit, so not rendered. */
   omitted: boolean;
+  /**
+   * For a page that moved, the content path it was at: git sees its
+   * file renamed, or `ascribe.addresses` records the move. The page is
+   * listed once, at `path`, compared with the page as it was at
+   * `moved_from`; `status` is `changed`, and its `counts` and `changes`
+   * are what differs besides the move, none for a page that only moved.
+   * Absent for a page that didn't move.
+   */
+  moved_from?: string;
+  /**
+   * The pages among `because` whose only change is that they moved, each
+   * by where it was and where it is: a link on this page leads to its new
+   * address. Absent when there's none.
+   */
+  moved_links?: MovedPage[];
   /**
    * The agent prompt about the page, which its Copy prompt button copies:
    * what `ascribe diff --format prompt` writes for it. Absent when the
@@ -249,7 +273,8 @@ export interface PageDiff {
   /**
    * What changed about the page itself besides its blocks, in this
    * order: `title`, `frontmatter`, `availability` (the page-level one),
-   * and `route`. Empty for an added or removed page.
+   * and `route`. Empty for an added or removed page. A moved page's
+   * route moves with it, so it isn't listed for one.
    */
   page_changed: string[];
   /** How many changes of each kind. */
@@ -260,6 +285,21 @@ export interface PageDiff {
    * the report's `blocks_omitted` is `true`.
    */
   changes: Change[];
+  /**
+   * For a page that moved, the content path it was at: git sees its
+   * file renamed, or `ascribe.addresses` records the move. The page is
+   * listed once, at `path`, compared with the page as it was at
+   * `moved_from`; `status` is `changed`, and its `counts` and `changes`
+   * are what differs besides the move, none for a page that only moved.
+   * Absent for a page that didn't move.
+   */
+  moved_from?: string;
+  /**
+   * The pages among `because` whose only change is that they moved, each
+   * by where it was and where it is: a link on this page leads to its new
+   * address. Absent when there's none.
+   */
+  moved_links?: MovedPage[];
 }
 
 /** Whether a page is new, gone, or different. */

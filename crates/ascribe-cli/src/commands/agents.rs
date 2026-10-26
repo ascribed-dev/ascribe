@@ -13,7 +13,7 @@ use ascribe_check::{LocateError, MODEL_FILE, Project};
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 
 use crate::agents::sync::{self, Agent, Plan};
-use crate::agents::{checker, copilot, hook, index as index_file, prompts, skill};
+use crate::agents::{checker, command, copilot, hook, index as index_file, prompts, skill};
 use crate::answer::{self, Format, FromDisk};
 use crate::cli::Global;
 use crate::context::Failure;
@@ -75,6 +75,22 @@ pub struct HookArgs {
     /// it's about to finish (`stop`).
     #[arg(long, value_enum, default_value_t = hook::Event::Edit, value_name = "EVENT")]
     pub event: hook::Event,
+
+    /// The command the project runs Ascribe with, for the commands the
+    /// hook's messages name.
+    ///
+    /// By default, each project's, as `ascribe agents sync` works it out.
+    #[arg(long, value_name = "COMMAND", value_parser = project_command)]
+    pub command: Option<String>,
+}
+
+/// A `--command`: one a hook's command line can carry in double quotes.
+fn project_command(given: &str) -> Result<String, String> {
+    if command::is_safe(given) {
+        Ok(given.to_owned())
+    } else {
+        Err("a command has only letters, digits, spaces, and `._/@:+=-`".to_owned())
+    }
 }
 
 /// Arguments of `ascribe agents rules`.
@@ -185,6 +201,16 @@ pub struct SyncArgs {
     /// repository whose settings you can't change.
     #[arg(long, requires = "cloud")]
     pub agent: bool,
+
+    /// The command the project runs Ascribe with, which the files name in
+    /// the commands they give: `npx ascribe`, for example.
+    ///
+    /// By default, `npx ascribe`, `pnpm exec ascribe`, or `yarn ascribe`
+    /// when a package.json depends on @ascribed/cli or @ascribed/astro,
+    /// by its lockfile; else `ascribe`. Give it again each time: with
+    /// --check, a file written with another command is out of date.
+    #[arg(long, value_name = "COMMAND", value_parser = project_command)]
+    pub command: Option<String>,
 }
 
 /// What `sync` can write.
@@ -240,7 +266,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
             let text = if args.file == skill::DIRECTIVES {
                 skill::directives_md()
             } else {
-                skill::skill_md(None)
+                skill::skill_md(None, command::PLAIN)
             };
             let result = out.write_all(text.as_bytes());
             answer::written(result, &mut err).unwrap_or(exit::OK)
@@ -249,7 +275,13 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
         Command::Hook(args) => {
             let mut input = String::new();
             let read = io::Read::read_to_string(&mut io::stdin(), &mut input).map(|_| input);
-            let answer = hook::run(args.harness, args.event, read, hook::Limits::default());
+            let answer = hook::run(
+                args.harness,
+                args.event,
+                read,
+                args.command.as_deref(),
+                hook::Limits::default(),
+            );
             let _ = out.write_all(answer.stdout.as_bytes());
             let _ = err.write_all(answer.stderr.as_bytes());
             answer.code
@@ -293,6 +325,7 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
         hooks: args.with_hook,
         cloud: args.cloud,
         agent: args.agent,
+        command: args.command.clone(),
     };
     let mut projects = Vec::new();
     for config in &configs {
@@ -305,7 +338,7 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
     // before any file changes.
     let mut plans = Vec::new();
     for project in &projects {
-        match sync::plan(project, &targets, options) {
+        match sync::plan(project, &targets, &options) {
             Ok(plan) => plans.push(plan),
             Err(e) => return exit::fail(err, &e),
         }
@@ -331,7 +364,7 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
         let plan = if i == 0 {
             plans.swap_remove(0)
         } else {
-            match sync::plan(project, &targets, options) {
+            match sync::plan(project, &targets, &options) {
                 Ok(plan) => plan,
                 Err(e) => return exit::fail(err, &e),
             }

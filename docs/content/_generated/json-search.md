@@ -23,6 +23,113 @@
       ],
       "type": "object"
     },
+    "PartialPlace": {
+      "description": "A place that has some of the words and phrases a place needs, not all\nof them.",
+      "properties": {
+        "arm": {
+          "description": "The arm of a group the block is written in, as its attributes are\nwritten (`deployment=cloud`), or else its title.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "column": {
+          "description": "The column of the match's first character, from 1, in Unicode\ncharacters.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "end_line": {
+          "description": "For a snippet's code that can't be lined up with its file, the last\nline the snippet shows: the place is its lines, from `line`, and\nnot the line the match is on. `null` for every other place.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "file": {
+          "description": "The file, from the project root, as `ascribe check` reports it: a\npage, a fragment, a snippet's code file, or `ascribe.toml` for a\nphrase.",
+          "type": "string"
+        },
+        "has": {
+          "description": "How many of the words and phrases a place needs it has.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "in": {
+          "description": "What it is: `title`, `description`, `heading`, `text`, `table`,\n`code`, or `phrase`, a phrase's value at its line in `ascribe.toml`.",
+          "type": "string"
+        },
+        "lacks": {
+          "description": "The words and phrases it lacks, as the query writes them, a phrase\nin its quotes, in the query's order.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "line": {
+          "description": "The line, from 1.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "match": {
+          "description": "Where the match is in `text`: its first character and the one after\nits last, in Unicode characters; when `text` is cut before the\nmatch's last character, the end ends where it's cut, before the `…`.",
+          "items": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+        },
+        "pages": {
+          "description": "The pages that show it, in path order, at most three.",
+          "items": {
+            "$ref": "#/$defs/SearchPage"
+          },
+          "type": "array"
+        },
+        "pages_total": {
+          "description": "How many pages show it; for a phrase, how many places in the source\nuse it.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "refs_command": {
+          "description": "The `ascribe refs` command that lists where it's used, for a phrase,\nand for a fragment's place when `pages` was cut.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "text": {
+          "description": "The block's text as a reader reads it, or for a phrase, its value:\nwhole when it's at most 240 characters, and otherwise cut to about\nthat many around the match's first character, at words, with `…`\nwhere it's cut. `line` and `column` say where to read the rest.",
+          "type": "string"
+        },
+        "through": {
+          "description": "What the match reads through that the line doesn't spell, in order.",
+          "items": {
+            "$ref": "#/$defs/SearchThrough"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "file",
+        "line",
+        "column",
+        "end_line",
+        "in",
+        "text",
+        "match",
+        "through",
+        "arm",
+        "pages",
+        "pages_total",
+        "refs_command",
+        "has",
+        "lacks"
+      ],
+      "type": "object"
+    },
     "SearchPage": {
       "description": "A page that shows a place.",
       "properties": {
@@ -268,6 +375,13 @@
       "minimum": 0,
       "type": "integer"
     },
+    "partial_places": {
+      "description": "When nothing matched and a place needs two or more words or\nphrases, the places that have some of them, at most 10: those that\nhave the most first, then those with the most stop words, then in\nthe order of `places`. Each is a place as in `places`, its `match`\ncovering the words it has, with how many it `has` and what it\n`lacks`. Empty when something matched.",
+      "items": {
+        "$ref": "#/$defs/PartialPlace"
+      },
+      "type": "array"
+    },
     "places": {
       "description": "The places, at most `shown` of them: titles, then headings, then the\nrest; in each, the places written in pages, then those in fragments\nand code files, each in path order and in order within a file.\nEmpty with `--summary`.",
       "items": {
@@ -296,6 +410,13 @@
       },
       "type": "array"
     },
+    "stop_words": {
+      "description": "The query's stop words, as written: common English words, such as\n`how`, `do`, and `the`, that a place doesn't need to have. Empty\nwhen every word is one, since then a place needs them all.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
     "total": {
       "description": "How many places match.",
       "minimum": 0,
@@ -319,7 +440,9 @@
     "truncated",
     "next_command",
     "source_places",
-    "not_searched_builds"
+    "not_searched_builds",
+    "stop_words",
+    "partial_places"
   ],
   "title": "SearchReport",
   "type": "object"

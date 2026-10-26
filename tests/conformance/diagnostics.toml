@@ -716,7 +716,8 @@ reference = "writing/directives.md#variant"
 row = "`@variant` | Unknown dimension or value"
 message = "`{dimension}` isn't a declared dimension; the dimensions are: {dimensions}"
 messages.value = "`{value}` isn't a value of `{dimension}`; its values are: {values}"
-fix = "Use a dimension and value declared in `[dimensions]`, or declare them there."
+messages.none = "`{dimension}` isn't a declared dimension, and ascribe.toml declares none: add `[dimensions.{dimension}]` with `values = [{values}]`"
+fix = "Use a dimension and value declared in `[dimensions]`, or declare them there: `[dimensions.<name>]` with `values = [\"<value>\", …]`."
 example.wrong = '''
 ---
 title: Install Quill
@@ -2409,7 +2410,8 @@ row = "Directives | Text on a directive line that fits no part of it: after the 
 message = "`@{name}`'s primary is a single word, so `{extra}` isn't part of it; remove it"
 messages.head = "`{extra}` isn't part of `@{name}`: a directive line has only its name, `{{attributes}}` in braces, and `:` with a primary; remove it, or put attributes in braces"
 messages.end = "`@end` takes nothing after it; remove `{extra}`"
-fix = "Remove the extra text. Text a directive should show belongs in its primary, after the colon, or in its content."
+messages.braces = "`{pairs}` reads as attributes of `@{name}`, and attributes go in braces: write `{{{attributes}}}`"
+fix = "Put attributes in braces, as in `@note {type=warning}: text`. Remove any other extra text: text a directive should show belongs in its primary, after the colon, or in its content."
 
 [[diagnostic]]
 code = "ASC121"
@@ -2564,11 +2566,13 @@ reference = "writing/directives.md#snippet"
 row = "`@snippet` | File doesn't exist, or its source doesn't include it"
 message = "`{path}` doesn't exist in source `{source}`"
 messages.case = "`{path}` doesn't exist in source `{source}`, but `{actual}` does: names must match exactly, including case"
+messages.folder = "`{path}` doesn't exist in source `{source}`: the path is relative to the source's folder, `{folder}`, so it doesn't repeat it; the file is `{suggestion}`"
+messages.suggestion = "`{path}` doesn't exist in source `{source}`; did you mean `{suggestion}`?"
 messages.not-included = "`{path}` is in source `{source}`'s folder, but the source's `include` and `ignore` patterns don't make it readable"
 messages.link = "`{path}` is a symbolic link, or is in a linked folder, that leads out of source `{source}`'s folder or to a file its patterns don't make readable; a snippet doesn't follow a link out of its source"
 messages.no-copy = "`{path}` from source `{source}`, in another repository, hasn't been copied into this one; run `ascribe sources fetch`"
 messages.not-at-pin = "`{path}` isn't in source `{source}`'s repository at {commit}, the commit ascribe.lock pins; name the file where it is now, or change the code and run `ascribe sources update {source}`"
-fix = "Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`. For a link, name the file it leads to through a source that includes it. For a source in another repository, run `ascribe sources fetch` to copy the file. When the file isn't in the repository at the pinned commit, because it was moved or deleted there, `fetch` can't copy it: name the file where it is now, or change the code and move the pin with `ascribe sources update`."
+fix = "Fix the path. It's relative to the source's folder, so it doesn't repeat it: with `path = \"src\"`, `src/config.js` is `<source>:config.js`. When the message says the source's patterns leave the file out, it's a link, or it's in another repository, the reference page has the steps."
 
 [[diagnostic]]
 code = "ASC130"
@@ -2874,7 +2878,7 @@ area = "pages"
 when = "A page's Markdown, as a build writes it for agents to read, is as long as the limit or longer: 50,000 characters, or `[checks.page-size] limit`. A page over the limit in several builds is one problem, with its size in the build where it's longest"
 message = "this page's Markdown is {size} characters in build `{build}`, and an agent reads under {limit} in one piece; split the page, or move long tables and code below the prose"
 messages.builds = "this page's Markdown is up to {size} characters in builds {builds}, and an agent reads under {limit} in one piece; split the page, or move long tables and code below the prose"
-fix = "Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The problem names the page's largest parts, up to five, largest first, each with its size: its sections, at their headings, and its includes, at their `@include` lines. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`. It's the spec's `page-size-markdown` check, made from the build before a deploy; `ascribe report agents` names this check for it, and for the spec's other checks of a page's size."
+fix = "Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The problem names the page's largest parts, up to five, largest first, each with its size: its sections, at their headings, and its includes, at their `@include` lines. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`. It's the spec's `page-size-markdown` check, made from the build before a deploy; `ascribe report delivery` names this check for it, and for the spec's other checks of a page's size."
 
 [[diagnostic]]
 code = "ASC150"
@@ -3140,7 +3144,7 @@ area = "outputs"
 when = "The project publishes `llms.txt` (`[consumer] agents = true`), and one of a build's `llms.txt` files is longer than 50,000 characters even with the index split by folder. Reported at the page the file is about"
 message = "{file} is {size} characters in build `{build}`, over the {limit} an agent reads in one fetch; move some of its pages into folders of their own, or shorten their descriptions"
 messages.builds = "{file} is over the {limit} characters an agent reads in one fetch in builds {builds}; move some of its pages into folders of their own, or shorten their descriptions"
-fix = "Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions. It's the delivery spec's `llms-txt-size` check, made from the build before a deploy; `ascribe report agents` names this check for it."
+fix = "Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions. It's the delivery spec's `llms-txt-size` check, made from the build before a deploy; `ascribe report delivery` names this check for it."
 
 [[diagnostic]]
 code = "ASC165"
@@ -3243,10 +3247,10 @@ area = "site"
 stage = "report"
 spec = "9.5"
 reference = "content-model/output.md#consumer"
-when = "`ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation"
+when = "`ascribe report delivery`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation"
 message = "the site fails the delivery spec's `{check}` check: {result}. {setting}"
 messages.warning = "the site passes the delivery spec's `{check}` check with a warning: {result}. {setting}"
-fix = "Change the setting the message names where the site is hosted; no page needs editing. [Serve the Markdown versions](astro/serve-markdown.md) says what to set on the hosts it names. Only `ascribe report agents` checks a published site."
+fix = "Change the setting the message names where the site is hosted; no page needs editing. [Serve the Markdown versions](astro/serve-markdown.md) says what to set on the hosts it names. Only `ascribe report delivery` checks a published site."
 
 [[diagnostic]]
 code = "ASC171"
@@ -3260,7 +3264,7 @@ area = "site"
 stage = "report"
 spec = "9.5"
 reference = "content-model/output.md#consumer"
-when = "`ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`"
+when = "`ascribe report delivery`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`"
 message = "the site fails the delivery spec's `{check}` check, which what Ascribe writes should pass: {result}. Report it at {issues}"
 messages.warning = "the site passes the delivery spec's `{check}` check with a warning, which what Ascribe writes should pass without one: {result}. Report it at {issues}"
 messages.unfetched = "the delivery spec's `{check}` check couldn't fetch every address it tried, so it doesn't say yet whether what Ascribe writes passes: {result}. Run the report again"
@@ -5048,7 +5052,7 @@ fix = "Link to the operation that replaces it, if the spec names one, or say in 
 
 [[diagnostic]]
 code = "ASC277"
-slug = "example-schema-mismatch"
+slug = "api-example-schema-mismatch"
 severity = "error"
 level = "file"
 next = "write"
@@ -5061,7 +5065,7 @@ fix = "Change the example to agree with the schema, or, when the API changed and
 
 [[diagnostic]]
 code = "ASC278"
-slug = "example-not-json"
+slug = "api-example-not-json"
 severity = "error"
 level = "file"
 next = "write"
@@ -5075,7 +5079,7 @@ fix = "Fix the JSON where reading it stopped: a trailing comma, a comment, a key
 
 [[diagnostic]]
 code = "ASC279"
-slug = "example-body-missing"
+slug = "api-example-body-missing"
 severity = "error"
 level = "file"
 next = "write"
@@ -5095,7 +5099,7 @@ fix = "Name a body the operation has: for a request, an operation that takes one
 
 [[diagnostic]]
 code = "ASC280"
-slug = "example-schema-unsupported"
+slug = "api-example-schema-unsupported"
 severity = "advice"
 level = "file"
 next = "outside"
@@ -5136,3 +5140,18 @@ when = "An operation of a declared spec, not marked `deprecated`, that no link n
 message = "no page links to `{operation}` ({method} {route}) in {path}"
 messages.no-id = "no page links to {method} {route} in {path}, which has no `operationId`"
 fix = "Link to the operation from the guide that covers it, by its `operationId`, `openapi.yaml#getUser`, or by its method and path when it has none, `openapi.yaml#delete/users/{id}`. An operation a guide doesn't need to cover can be marked `deprecated` in the spec when it's on its way out, which leaves it out; for an API whose reference is enough on its own, turn the check off in [`[checks]`](content-model/checks.md#19-checks)."
+
+[[diagnostic]]
+code = "ASC283"
+slug = "build-filter-line-undeclared"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+configurable = true
+area = "project"
+spec = "9.3"
+reference = "content-model/output.md#16-buildsname"
+when = "A build's filter names a version of a target `[releases]` declares lines for, and the version is older than every line declared, so it's in no live, planned, or archived line"
+message = "build `{build}` filters for `{target} {version}`, which is older than every line `[releases.{target}]` declares, so `ascribe versions` doesn't list it; declare its line in `archived`, or make the build one output for each live line with `versions = \"{target}\"`"
+fix = "Say in one place which lines the project publishes. To keep a build for an old line, declare the line in `[releases.<target>]` as archived, with no address when nothing else publishes it, as `\"3.3\" = {}`. To publish every live line instead, give one build `versions = \"<target>\"` and remove the filtered build. A version between two declared lines is `available-line-undeclared`."

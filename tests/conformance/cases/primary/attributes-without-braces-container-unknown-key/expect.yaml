@@ -1,0 +1,10 @@
+description: >-
+  Only pairs whose keys are the directive's attributes open its container.
+  With a key it doesn't take, the line stays a line, so the `@end` has
+  nothing to close.
+spec: ["3.1", "3.5", "8.2"]
+tags: [check, structure]
+
+diagnostics:
+  - {slug: directive-extra-text, line: 5}
+  - {slug: end-unmatched, line: 7}

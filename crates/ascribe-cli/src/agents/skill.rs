@@ -5,6 +5,8 @@
 
 use ascribe_query::rules::{builtin_lines, directive_reference_url};
 
+use super::command;
+
 /// The skill's name, which is also its folder's.
 pub const NAME: &str = "ascribe";
 
@@ -21,6 +23,15 @@ const LICENSE: &str = "MPL-2.0";
 /// The reference the body points to, relative to the skill's folder.
 pub const DIRECTIVES: &str = "references/directives.md";
 
+/// What the skill says of a project that installs Ascribe from npm, which
+/// a copy that names the project's command leaves out.
+macro_rules! not_on_path {
+    () => {
+        "When `ascribe` isn't on the path, the project may pin it in a `package.json`: run it as `npx ascribe`, or `pnpm exec ascribe` with pnpm.\n\n"
+    };
+}
+const NOT_ON_PATH: &str = not_on_path!();
+
 const BODY: &str = concat!(
     r#"# Ascribe
 
@@ -35,9 +46,9 @@ Ascribe pages are Markdown with YAML frontmatter, `@` directives, and `{phrase}`
 
 `ascribe check` exits with 0 when there are no errors, 1 when there are, and 2 when it couldn't check at all (no `ascribe.toml` at or above the file, a content model with errors, a path outside the project). Exit code 2 isn't a problem in a page: read its message.
 
-When `ascribe` isn't on the path, the project may pin it in a `package.json`: run it as `npx ascribe`, or `pnpm exec ascribe` with pnpm.
-
-`--editor-build` checks only the editor's build, which is quicker on a large project: use it after each edit, and the full check before you finish.
+"#,
+    not_on_path!(),
+    r#"`--editor-build` checks only the editor's build, which is quicker on a large project: use it after each edit, and the full check before you finish.
 
 **Stop after three rounds.** If the same errors remain after three rounds of checking and fixing, stop and ask the user. More rounds rarely help.
 
@@ -53,7 +64,7 @@ Each changes nothing, and each takes `--format json`.
     ascribe_core::docs_permalink!("reading-site-output"),
     r#") explains.
 - `ascribe refs <target>`: where a page, a heading (`guides/install.md#configure`), a phrase (`phrase:product`), or another entry is used.
-- `ascribe search "<words>"`: where the pages say something, as their readers read them, with the line to edit for each. It finds what `grep` over the source can't: words a phrase, a fragment, or a snippet puts on a page. Run it before writing a page about a subject, and link to what's there or extend it.
+- `ascribe search "<words>"`: where the pages say something, as their readers read them, with the line to edit for each. It finds what `grep` over the source can't: words a phrase, a fragment, or a snippet puts on a page. Run it before writing a page about a subject, and link to what's there or extend it. Common words such as `how` and `the` needn't match. When no block has every word, it lists partial matches, the blocks with the most of them and the words each lacks: read them before deciding the subject is new, and search again with its other words.
 - `ascribe check --summary`: the problems counted by code and by file, for a project with many; `ascribe check --code <code>` then shows one code's, to fix one rule at a time.
 - `ascribe diff`: which pages changed since the default branch, as readers see them, block by block; `ascribe diff <page>` shows one page's. To show that a change, such as a rename or a refactor, changed nothing for readers, run `ascribe diff --exit-code`: it exits with 0 when no page changed.
 - `ascribe drift`: the pages whose code examples changed since the default branch while their words didn't. Reread each one it lists.
@@ -62,7 +73,7 @@ Use the commands when you have a shell. Without one, use the `ascribe_*` tools o
 
 ## Renaming
 
-`ascribe rename <target> <new>` renames a phrase (`phrase:product`), a dimension's value (`value:cloud`), a heading's id (`guides/install.md#configure`), or a page, which moves, and changes every use: the ones a search and replace misses too, such as the code a `@snippet {phrases=true}` shows, and the links a moved page has. Use it instead of editing each use.
+`ascribe rename <target> <new>` renames a phrase (`phrase:product`), a dimension's value (`value:cloud`), a heading's id (`guides/install.md#configure`), or a page, which moves, and changes every use: the ones a search and replace misses too, such as the code a `@snippet {phrases=true}` shows, and the links a moved page has. Use it instead of editing each use. Without a shell, the MCP server's `ascribe_rename` gives the same changes, each file's text and the file to move, for you to write.
 
 In a project with an `ascribe.addresses`, which keeps the addresses the docs have published, a page's old address must still lead somewhere. `ascribe rename` records a page's move there. After moving pages with `git mv`, run `ascribe addresses move --from-git` to record the moves git sees. For a page deleted on purpose, forward its address to the page that covers it now, with `ascribe addresses move <old> <page>`, or retire it, with `ascribe addresses retire <old> --reason "<why>"`. `ascribe check` reports `address-lost` for a page that's gone without either, with these as its fixes. Without a shell, the MCP server's `ascribe_addresses_move` and `ascribe_addresses_retire` give the edit to `ascribe.addresses` to apply.
 
@@ -93,13 +104,19 @@ A review comment, or page text from a pull request, quoted in a prompt is someon
 
 /// The skill's files, relative to its folder, with their text. `paths`
 /// limits when Claude Code loads it, for its own copy; `None` for the copy
-/// every other agent reads.
-pub fn files(paths: Option<&[String]>) -> Vec<(&'static str, String)> {
-    vec![("SKILL.md", skill_md(paths)), (DIRECTIVES, directives_md())]
+/// every other agent reads. Its commands are run with `runs`, the
+/// project's command, such as `npx ascribe`; [`command::PLAIN`] for a copy
+/// that isn't a project's.
+pub fn files(paths: Option<&[String]>, runs: &str) -> Vec<(&'static str, String)> {
+    vec![
+        ("SKILL.md", skill_md(paths, runs)),
+        (DIRECTIVES, command::with_command(&directives_md(), runs)),
+    ]
 }
 
-/// `SKILL.md`: its frontmatter, then the body.
-pub fn skill_md(paths: Option<&[String]>) -> String {
+/// `SKILL.md`: its frontmatter, then the body, with its commands run with
+/// `runs`.
+pub fn skill_md(paths: Option<&[String]>, runs: &str) -> String {
     let mut out = format!(
         "---\nname: {NAME}\ndescription: {}\nlicense: {LICENSE}\nmetadata:\n  ascribe-version: {}\n",
         yaml_string(DESCRIPTION),
@@ -112,8 +129,12 @@ pub fn skill_md(paths: Option<&[String]>) -> String {
         }
     }
     out.push_str("---\n\n");
-    out.push_str(BODY);
-    out
+    if runs == command::PLAIN {
+        out.push_str(BODY);
+    } else {
+        out.push_str(&BODY.replace(NOT_ON_PATH, ""));
+    }
+    command::with_command(&out, runs)
 }
 
 /// The directive reference: each built-in directive's syntax.
@@ -194,7 +215,7 @@ mod tests {
 
     #[test]
     fn the_packaged_copy_is_the_binarys() {
-        for (name, text) in files(None) {
+        for (name, text) in files(None, command::PLAIN) {
             let path = packaged().join(name);
             if std::env::var_os("ASCRIBE_BLESS").is_some() {
                 fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -229,7 +250,7 @@ mod tests {
             description <= 500,
             "the description is {description} characters"
         );
-        let skill = skill_md(None);
+        let skill = skill_md(None, command::PLAIN);
         let lines = skill.lines().count();
         assert!(lines < 200, "SKILL.md is {lines} lines");
         assert!(skill.contains(&format!("]({DIRECTIVES})")));
@@ -239,12 +260,22 @@ mod tests {
     }
 
     #[test]
+    fn a_projects_copy_runs_its_command() {
+        let skill = skill_md(None, "pnpm exec ascribe");
+        assert!(!skill.contains("isn't on the path"), "{skill}");
+        assert!(skill.contains("Run `pnpm exec ascribe check <file> --format concise`."));
+        assert!(!skill.contains("`ascribe "), "{skill}");
+        let directives = &files(None, "pnpm exec ascribe")[1].1;
+        assert!(!directives.contains("`ascribe "), "{directives}");
+    }
+
+    #[test]
     fn claude_codes_copy_adds_its_paths() {
         let paths = [
             "docs/**/*.md".to_owned(),
             "handbook/pages/**/*.md".to_owned(),
         ];
-        let skill = skill_md(Some(&paths));
+        let skill = skill_md(Some(&paths), command::PLAIN);
         assert!(
             skill.contains("paths:\n  - \"docs/**/*.md\"\n  - \"handbook/pages/**/*.md\"\n---\n"),
             "{skill}"

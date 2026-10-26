@@ -1,6 +1,6 @@
 # Design
 
-Ascribe's mark and design tokens, and the images made from them. Everything Ascribe shows takes its colors, type, and mark from here: the docs site, the element library, review, the HTML report, an archive, the Astro toolbar, and the VS Code extension. The decisions behind them are under [The look](../project-docs/decisions.md#the-look) in `project-docs/decisions.md`.
+Ascribe's mark and design tokens, and the images made from them. Everything Ascribe shows takes its colors, type, and mark from here: the docs site, the element library, review, the HTML preview, an archive, the Astro toolbar, and the VS Code extension. The decisions behind them are under [The look](../project-docs/decisions.md#the-look) in `project-docs/decisions.md`.
 
 ## The files
 
@@ -35,7 +35,7 @@ To change the accent, or any color:
    node scripts/design/specimen.ts
    ```
 
-   The first rewrites the stylesheets' generated blocks and the shared colors in `candidates/chosen.toml` (the top-level `[color]` tokens such as `color.accent` or `color.note`, and the palette steps they take); the second the HTML report's embedded stylesheet, the third the mark's images (only a `color.brand` color can change them), and the fourth the specimen.
+   The first rewrites the stylesheets' generated blocks and the shared colors in `candidates/chosen.toml` (the top-level `[color]` tokens such as `color.accent` or `color.note`, and the palette steps they take); the second the HTML preview's embedded stylesheet, the third the mark's images (only a `color.brand` color can change them), and the fourth the specimen.
 3. Run the tests: `pnpm exec vitest run scripts/design`. They fail on a pairing below its contrast in light or dark (4.5:1 for text, 3:1 for a border, bar, or mark that carries meaning), on a stale block or image, and on a color written in a stylesheet outside its generated blocks.
 4. Look at it, in light and dark: the specimen, then each surface the token reaches. The tests check contrast, not taste.
 5. The report's embedded stylesheet is compiled into the binary, so the change is an output change: `node scripts/compare/outputs.ts --base main` lists the report's files, which the pull request accepts by name (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
@@ -55,9 +55,9 @@ Reuse a token when the new use means the same thing: a new panel is `color.surfa
 ### How `tokens.toml` is laid out
 
 - `[palette]`: every color value, by hue and step (`river.494`). Only `[color]` points here; no stylesheet does.
-- `[color]`: what each color is for, with a `light` and a `dark` value, each a palette name. The element library, review, the HTML report, the Astro toolbar, and the docs site share the top-level ones. The VS Code preview's fallbacks and a few colors of one surface's own are under that surface's name.
-- `[font]`, `[space]`, `[radius]`: values the stylesheets use as they are. `font.heading` is the system's serif, for headings on the docs site and in the HTML report's frame; body, UI, and code keep `font.ui` and `font.mono`.
-- `[type]`: the type scale, each step a weight, a size, and a line height (`650 1.375rem/1.3`), for the `font` shorthand with a family after it: `font: var(--type-h2) var(--font-heading)`. The docs site and the HTML report's frame set their text with it; the element library takes the site's type.
+- `[color]`: what each color is for, with a `light` and a `dark` value, each a palette name. The element library, review, the HTML preview, the Astro toolbar, and the docs site share the top-level ones. The VS Code preview's fallbacks and a few colors of one surface's own are under that surface's name.
+- `[font]`, `[space]`, `[radius]`: values the stylesheets use as they are. `font.heading` is the system's serif, for headings on the docs site and in the HTML preview's frame; body, UI, and code keep `font.ui` and `font.mono`.
+- `[type]`: the type scale, each step a weight, a size, and a line height (`650 1.375rem/1.3`), for the `font` shorthand with a family after it: `font: var(--type-h2) var(--font-heading)`. The docs site and the HTML preview's frame set their text with it; the element library takes the site's type.
 - `[emit."<stylesheet>".<block>]`: what a stylesheet's generated block declares. Each key is a property, and its value is a token (`"color.muted"`) or a template with tokens in braces (`"var(--vscode-charts-blue, {color.note})"`).
 
 ### The stylesheets

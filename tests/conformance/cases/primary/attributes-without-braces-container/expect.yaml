@@ -1,0 +1,14 @@
+description: >-
+  A container opener whose attributes lost their braces still opens its
+  container, so its `@end` matches and the line is the one error.
+spec: ["3.1", "3.5", "8.2"]
+tags: [check, structure]
+
+outline:
+  - directive: note
+    form: container
+    children:
+      - paragraph: You need Node 20.
+
+diagnostics:
+  - {slug: directive-extra-text, line: 5}

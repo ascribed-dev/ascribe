@@ -7,6 +7,7 @@
 // serves every project's list.
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { readHelp } from "./help-file.js";
 import { normalizeBase } from "./project.js";
 
 /** The list's format version this reads. */
@@ -33,12 +34,18 @@ export interface PermalinkList {
 }
 
 /**
- * What an address's page needs: where it sends the reader, and the
- * parameters it takes; or, for a retired permalink,
- * why it was removed.
+ * What an address's page needs: where it sends the reader, the parameters it
+ * takes, and, for a name with a help entry, the addresses of its section as
+ * Markdown and as JSON, which the page names as its alternates; or, for a
+ * retired permalink, why it was removed.
  */
 export type Forwarding =
-  { to: string; dimensions: Record<string, string[]> } | { reason: string; home?: string };
+  | {
+      to: string;
+      dimensions: Record<string, string[]>;
+      alternates?: { markdown: string; json: string };
+    }
+  | { reason: string; home?: string };
 
 /** A build's site output whose list the route serves, and the route of its project's root. */
 export interface PermalinkSource {
@@ -109,8 +116,15 @@ export function forwardingPaths(
     const list = readPermalinks(siteRoot);
     if (list === undefined) continue;
     const dimensions = list.dimensions ?? {};
+    // The names with a help entry, served beside their addresses (`help.ts`).
+    const help = readHelp(siteRoot)?.help ?? {};
+    const at = normalizeBase(list.path);
     for (const [id, entry] of Object.entries(list.permalinks)) {
-      if (!pages.has(id)) pages.set(id, { to: destination(entry), dimensions });
+      if (pages.has(id)) continue;
+      const alternates = Object.hasOwn(help, id)
+        ? { alternates: { markdown: `${at}${id}.md`, json: `${at}${id}.json` } }
+        : {};
+      pages.set(id, { to: destination(entry), dimensions, ...alternates });
     }
     for (const [id, entry] of Object.entries(list.removed ?? {})) {
       if (!pages.has(id))

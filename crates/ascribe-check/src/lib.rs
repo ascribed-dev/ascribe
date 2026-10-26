@@ -59,6 +59,7 @@ mod releases;
 pub mod report_history;
 pub mod roles;
 mod scope;
+pub mod side_files;
 pub mod site;
 pub mod tool;
 pub mod type_files;
@@ -68,9 +69,9 @@ pub use across::{IMAGE_EXTENSIONS, IMAGE_LIMIT, NOT_IN_EDITOR, image_file, size_
 use ascribe_core::FileId;
 pub use baseline::{BASELINE_FILE, BASELINE_FILE_ID, Baseline, BaselineError};
 pub use builds::{
-    DiagnoseError, Diagnosed, Request, UnknownBuild, count_errors, count_errors_in, diagnose,
-    diagnose_editor_build, diagnose_editor_build_in, diagnose_every_build_in, diagnose_with,
-    select_builds,
+    Checked, DiagnoseError, Diagnosed, Found, Request, UnknownBuild, count_errors, count_errors_in,
+    diagnose, diagnose_editor_build, diagnose_editor_build_in, diagnose_every_build_in,
+    diagnose_with, select_builds,
 };
 pub use checks::check_file;
 use checks::{check_examples, check_sources};

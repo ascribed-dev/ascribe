@@ -19,7 +19,7 @@ use ascribe_emit::{SiteEmitter, render_site_html};
 use ascribe_resolve::Project;
 use support::{FULL_MODEL, emit_build, first_difference, html_tree, load, memory_project, quill};
 
-const QUILL_BUILDS: [&str; 3] = ["site", "cloud", "self-managed-3.3"];
+const QUILL_BUILDS: [&str; 2] = ["site", "cloud"];
 
 fn render_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/render")

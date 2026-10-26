@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  causesText,
   changedPages,
   errorsNotice,
   linesNote,
   listBuilds,
   pageFragment,
+  pageSummary,
   start,
   type BuildData,
   type ReportData,
@@ -106,8 +108,8 @@ describe("the report", () => {
       (e) => e.textContent,
     );
     expect(placeholders).toEqual([
-      "Image not loaded: https://example.com/a.png (the report makes no network requests)",
-      "Image not included: big.png (3.0 MB, over the report's 1.0 MB limit)",
+      "Image not loaded: https://example.com/a.png (the preview makes no network requests)",
+      "Image not included: big.png (3.0 MB, over the preview's 1.0 MB limit)",
     ]);
   });
 
@@ -190,6 +192,44 @@ describe("the report", () => {
     expect(root.querySelector('[aria-label="Next change"]')).toBeNull();
     expect(root.querySelector(".r-controls .r-legend")?.textContent).toBe(
       "The page's frontmatter changed, which this render doesn't show.",
+    );
+  });
+
+  it("lists a moved page once, with where it moved from", () => {
+    const report = data();
+    const moved = page("guides/setup.md", {
+      moved_from: "guides/configure.md",
+      changes: [],
+      counts: { changed: 0, added: 0, removed: 0, moved: 0 },
+      because: [],
+      own_file_changed: false,
+    });
+    report.builds = [{ build: "site", pages: [moved] }];
+    report.limit = { pages: 300, omitted: 0 };
+    const root = document.createElement("div");
+    document.body.append(root);
+    start(root, report);
+    expect(root.querySelector(".r-page-counts")?.textContent).toBe(
+      "Moved from guides/configure.md · no change to the page",
+    );
+    expect(root.querySelector(".r-controls .r-grow")?.textContent).toContain(
+      "moved from guides/configure.md",
+    );
+    expect(root.querySelector(".r-quiet")?.textContent).toBe("No change to the page");
+    expect(pageSummary({ ...moved, counts: { changed: 2, added: 1, removed: 0, moved: 0 } })).toBe(
+      "Moved from guides/configure.md · 2 changed · 1 added",
+    );
+  });
+
+  it("says a link changed because the page it leads to moved", () => {
+    const moved_links = [{ from: "guides/configure.md", to: "guides/setup.md" }];
+    const linking = page("guides/install.md", { because: ["guides/setup.md"], moved_links });
+    expect(causesText(linking)).toBe("a link changed because guides/configure.md moved");
+    // When the page's own file changed, the move isn't a reason to give.
+    expect(causesText({ ...linking, own_file_changed: true })).toBe("");
+    expect(causesText(page("guide.md"), "via")).toBe("via _fragments/prereqs.md");
+    expect(causesText(page("guide.md", { own_file_changed: true }))).toBe(
+      "also through _fragments/prereqs.md",
     );
   });
 
@@ -314,5 +354,101 @@ describe("the report", () => {
       "/3.4/guide/",
     );
     expect(decodeURIComponent(location.hash)).toBe("#site@3.4/guide.md");
+  });
+
+  it("marks the changed words inside a note, a tab, a step, and details", () => {
+    // `ascribe diff --format html`'s data for these blocks changed, as it
+    // renders them: a one-line note's paragraph has the note's own anchor.
+    const html = (words: Record<string, string>) => `
+<ascribe-note type="warning" label="Warning" data-ascribe-source="index.md:5-5">
+<p data-ascribe-source="index.md:5-5">You need Node ${words.node}.</p>
+</ascribe-note>
+<ascribe-note type="warning" label="Warning" heading="A titled note" data-ascribe-source="index.md:7-10">
+<p data-ascribe-source="index.md:9-9">You need Node ${words.node}.</p>
+</ascribe-note>
+<ascribe-tabs sync="pm" data-ascribe-source="index.md:12-14">
+<ascribe-tab value="npm" label="npm" data-ascribe-source="index.md:12-13">
+<p data-ascribe-source="index.md:13-13">Use npm to ${words.verb}.</p>
+</ascribe-tab>
+</ascribe-tabs>
+<ascribe-steps data-ascribe-source="index.md:16-17">
+<ol data-ascribe-source="index.md:17-17">
+<li data-ascribe-source="index.md:17-17">Run the ${words.age} installer.</li>
+</ol>
+</ascribe-steps>
+<details data-ascribe-source="index.md:19-22">
+<summary>More detail</summary>
+<p data-ascribe-source="index.md:21-21">Hidden until ${words.open}.</p>
+</details>`;
+    const at = (source: string) => ({ source, via: [] });
+    const changed = (
+      line: number,
+      now_text: string,
+      was_text: string,
+      now: number[][],
+      was: number[][],
+    ) => ({
+      kind: "changed" as const,
+      now: at(`index.md:${line}-${line}`),
+      was: at(`index.md:${line}-${line}`),
+      words: { now, was, now_text, was_text } as never,
+    });
+    const report = data();
+    report.builds = [
+      {
+        build: "site",
+        pages: [
+          page("index.md", {
+            because: [],
+            own_file_changed: true,
+            counts: { changed: 5, added: 0, removed: 0, moved: 0 },
+            changes: [
+              changed(5, "You need Node 22 or later.", "You need Node 20.", [[14, 25]], [[14, 16]]),
+              changed(9, "You need Node 22 or later.", "You need Node 20.", [[14, 25]], [[14, 16]]),
+              changed(
+                13,
+                "Use npm to set it up.",
+                "Use npm to install it.",
+                [
+                  [11, 14],
+                  [18, 20],
+                ],
+                [[11, 18]],
+              ),
+              changed(17, "Run the new installer.", "Run the old installer.", [[8, 11]], [[8, 11]]),
+              changed(21, "Hidden until opened.", "Hidden until it opens.", [[13, 19]], [[13, 21]]),
+            ],
+          }),
+        ],
+      },
+    ];
+    report.pages = {
+      p1: {
+        html: html({ node: "22 or later", verb: "set it up", age: "new", open: "opened" }),
+        images: {},
+      },
+      p2: {
+        html: html({ node: "20", verb: "install it", age: "old", open: "it opens" }),
+        images: {},
+      },
+    };
+    report.limit = { pages: 300, omitted: 0 };
+    const root = document.createElement("div");
+    document.body.append(root);
+    start(root, report);
+    const marked = (source: string, tag: string) =>
+      Array.from(
+        root.querySelectorAll(
+          `[data-ascribe-source="${source}"]:not([data-ascribe-was-only] *) ${tag}`,
+        ),
+      ).map((e) => e.textContent);
+    expect(marked("index.md:5-5", "ins")).toEqual(["22 or later"]);
+    expect(marked("index.md:5-5", "del")).toEqual(["20"]);
+    expect(marked("index.md:9-9", "ins")).toEqual(["22 or later"]);
+    expect(marked("index.md:13-13", "ins")).toEqual(["set", "up"]);
+    expect(marked("index.md:13-13", "del")).toEqual(["install"]);
+    expect(marked("index.md:17-17", "ins")).toEqual(["new"]);
+    expect(marked("index.md:21-21", "ins")).toEqual(["opened"]);
+    expect(marked("index.md:21-21", "del")).toEqual(["it opens"]);
   });
 });

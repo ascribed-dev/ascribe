@@ -56,7 +56,7 @@ impl std::fmt::Debug for ProjectDiff {
 }
 
 impl ProjectDiff {
-    /// Writes the prompts, and the HTML report's, for an agent in `here`,
+    /// Writes the prompts, and the HTML preview's, for an agent in `here`,
     /// the folder the command was run in, as [`Context::seen_from`] has it.
     pub fn seen_from(&mut self, here: std::path::PathBuf) {
         self.here = Some(here);
@@ -207,8 +207,11 @@ pub fn diff_project(
     let (before, now, diffs, errors) = std::thread::scope(|scope| {
         let errors = scope.spawn(|| count_errors(project, options.builds).unwrap_or(0));
         let before = scope.spawn(|| read_base(&repo, base.compared()));
+        let renames =
+            scope.spawn(|| crate::renames(&repo, base.compared(), &project.layout().content_root));
         let now = project.index();
         let before = joined(before)?;
+        let renames = joined(renames)?;
         let before_side = before.as_ref().map(|(revision, project)| Side {
             project,
             model_text: &revision.model_text,
@@ -217,7 +220,7 @@ pub fn diff_project(
             project: &now,
             model_text: project.model_text(),
         };
-        let diffs = compare_builds(before_side, now_side, &names);
+        let diffs = compare_builds(before_side, now_side, &names, &renames);
         Ok::<_, DiffError>((before, now, diffs, joined(errors)))
     })?;
     let mut report = Report::new(&repo, &base, diffs);

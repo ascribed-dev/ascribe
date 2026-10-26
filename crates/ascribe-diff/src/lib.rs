@@ -25,7 +25,7 @@
 //!
 //! ```no_run
 //! use std::path::Path;
-//! use ascribe_diff::{BuildDiff, DiffError, Repository, Revision, Side, compare_builds};
+//! use ascribe_diff::{BuildDiff, DiffError, Repository, Revision, Side, compare_builds, renames};
 //!
 //! fn diff(now: &ascribe_resolve::Project, now_model: &str) -> Result<Vec<BuildDiff>, DiffError> {
 //!     let repo = Repository::discover(Path::new("docs"))?;
@@ -37,7 +37,8 @@
 //!         .zip(before_project.as_ref())
 //!         .map(|(r, project)| Side { project, model_text: &r.model_text });
 //!     let now_side = Side { project: now, model_text: now_model };
-//!     Ok(compare_builds(before_side, now_side, &["site"]))
+//!     let renames = renames(&repo, base.compared(), &now.layout().content_root)?;
+//!     Ok(compare_builds(before_side, now_side, &["site"], &renames))
 //! }
 //! ```
 
@@ -60,8 +61,8 @@ pub use addresses::{BaseAddresses, base_addresses, base_file_entries, renames};
 pub use apis::base_apis;
 pub use command::{DiffOptions, DriftOptions, ProjectDiff, diff_project, drift_project};
 pub use compare::{
-    BuildDiff, Change, ChangeKind, Counts, PageDiff, PageStatus, Side, Words, compare_builds,
-    compare_page_in,
+    BuildDiff, Change, ChangeKind, Counts, MovedPage, PageDiff, PageStatus, Renames, Side, Words,
+    compare_builds, compare_page_in,
 };
 pub use drift::{
     BrokenExample, ChangedExample, DRIFT_SCHEMA_VERSION, DriftPage, DriftReport, drift,
@@ -262,29 +263,31 @@ impl Report {
     }
 
     /// Whether any build's change is about the file at `path`, a content
-    /// path: the page there changed, or a page changed through it.
+    /// path: the page there changed or moved away from there, or a page
+    /// changed through it.
     pub fn reaches(&self, path: &ascribe_core::RelPath) -> bool {
         self.builds
             .iter()
             .flat_map(|b| &b.pages)
-            .any(|p| p.path == path.as_str() || p.because.iter().any(|c| c == path.as_str()))
+            .any(|p| p.is(path.as_str()) || p.because.iter().any(|c| c == path.as_str()))
     }
 
     /// Keeps only what's about the file at `path`, a content path, as
     /// `ascribe diff <PAGE>` shows it: the page there, in each build it
-    /// changed in; or, when it's no changed page, such as a fragment, the
-    /// pages that changed through it. A build with none keeps no pages.
+    /// changed in, found where it is or where it moved from; or, when it's
+    /// no changed page, such as a fragment, the pages that changed through
+    /// it. A build with none keeps no pages.
     pub fn narrow_to(&mut self, path: &ascribe_core::RelPath) {
         let path = path.as_str();
         let is_page = self
             .builds
             .iter()
             .flat_map(|b| &b.pages)
-            .any(|p| p.path == path);
+            .any(|p| p.is(path));
         for build in &mut self.builds {
             build.pages.retain(|p| {
                 if is_page {
-                    p.path == path
+                    p.is(path)
                 } else {
                     p.because.iter().any(|c| c == path)
                 }

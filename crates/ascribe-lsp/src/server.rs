@@ -273,9 +273,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         guarded("start", || {
             core.start();
             core.register_watchers();
-            if core.busy() {
-                shared.idle.store(false, Ordering::SeqCst);
-            }
+            note_busy(&shared, &core);
         });
     }
     shared.wake.notify_all();
@@ -313,6 +311,14 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                         .ok();
                 } else {
                     let response = handle_request(&shared, request);
+                    // A request that queued work (the review's base, an
+                    // edit) answers only once that shows, so a client
+                    // waiting for the server to settle waits for it too.
+                    if note_busy(&shared, &shared.lock()) {
+                        shared.wake.notify_all();
+                        shared.prose_wake.notify_all();
+                        shared.addresses_wake.notify_all();
+                    }
                     connection.sender.send(response.into()).ok();
                 }
             }
@@ -422,10 +428,20 @@ fn handle_notification(shared: &Shared, notification: Notification) {
             // action (`$/cancelRequest`, `$/setTrace`, …).
             _ => {}
         }
-        if core.busy() {
-            shared.idle.store(false, Ordering::SeqCst);
-        }
+        note_busy(shared, &core);
     });
+}
+
+/// Marks the server busy when work is queued, before the workers have
+/// taken it: until then `idle` still holds the last round's answer. Called
+/// with the lock held, so a worker can't store `idle` in between. Returns
+/// whether the server is busy.
+fn note_busy(shared: &Shared, core: &Core) -> bool {
+    let busy = core.busy();
+    if busy {
+        shared.idle.store(false, Ordering::SeqCst);
+    }
+    busy
 }
 
 fn parse<T: serde::de::DeserializeOwned>(notification: &Notification) -> Option<T> {

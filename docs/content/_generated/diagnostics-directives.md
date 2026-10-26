@@ -125,7 +125,7 @@ Error · file level · next step: fix · [SPEC §3.1]({repo}/blob/main/SPEC.md#3
 
 **Message:** `@{name}`'s primary is a single word, so `{extra}` isn't part of it; remove it
 
-**Fix:** Remove the extra text. Text a directive should show belongs in its primary, after the colon, or in its content.
+**Fix:** Put attributes in braces, as in `@note {type=warning}: text`. Remove any other extra text: text a directive should show belongs in its primary, after the colon, or in its content.
 
 **Read more:** [Directive lines](../writing/syntax.md#directive-lines) in the directive syntax reference.
 
@@ -459,7 +459,7 @@ Error · file level · next step: choose · [SPEC §4.3]({repo}/blob/main/SPEC.m
 
 **Message:** `{dimension}` isn't a declared dimension; the dimensions are: \{dimensions}
 
-**Fix:** Use a dimension and value declared in `[dimensions]`, or declare them there.
+**Fix:** Use a dimension and value declared in `[dimensions]`, or declare them there: `[dimensions.<name>]` with `values = ["<value>", …]`.
 
 **Read more:** [`@variant`](../writing/directives.md#variant) in the directive reference.
 

@@ -48,6 +48,18 @@ Beyond `AGENTS.md` and the skill, `sync` keeps up to date the files of each targ
 
 A repository with several projects can run `sync` at its root, with no `ascribe.toml` there: it syncs each project below, and the root's `AGENTS.md` gets a block for each, which tells an agent starting at the root which project a page is in.
 
+## The command they name
+
+The files tell the agent which commands to run, and `sync` writes each as your project runs Ascribe. When a `package.json` in the project's folder, or a folder above it up to the repository's root, has `@ascribed/cli` or `@ascribed/astro` in its dependencies, as [Install](../install.md#npm) sets up, the commands are `pnpm exec ascribe` with a `pnpm-lock.yaml` beside it or above it, `yarn ascribe` with a `yarn.lock`, and `npx ascribe` otherwise. Without one, they're `ascribe`, from the path. `AGENTS.md`, the skill, the rules for `claude-rules` and `copilot`, and what the [hooks](hooks.md#what-the-agent-hears) tell the agent all use it.
+
+To name another, such as `bunx ascribe`, give it with `--command`, every time you run `sync`, `--check` too: a file written with another command is out of date.
+
+```shell
+ascribe agents sync --command "bunx ascribe"
+```
+
+The skill at the repository's root is shared by its projects, so when they run Ascribe in different ways, it writes `ascribe`, and says how to run it from a `package.json`.
+
 ## Keeping them current in CI
 
 `--check` writes nothing, and exits with `1` when a file is out of date, naming it. Run it in CI so the instructions can't fall behind `ascribe.toml`:

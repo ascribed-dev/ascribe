@@ -13,7 +13,7 @@ use comrak_ascribe::{Arena, Options, parse_document};
 use support::{emit_build, load, quill};
 
 /// Each build: `site` is versioned, so it's two, one for each live line.
-const BUILDS: [&str; 4] = ["site", "site@3.4", "cloud", "self-managed-3.3"];
+const BUILDS: [&str; 3] = ["site", "site@3.4", "cloud"];
 
 fn output(build: &str, emitter: &dyn Emitter) -> BTreeMap<String, String> {
     let root = quill();
@@ -115,10 +115,13 @@ fn the_cloud_build_keeps_the_package_manager_group_and_shows_availability() {
 }
 
 #[test]
-fn the_self_managed_3_3_build_drops_what_isnt_available_yet() {
-    let plain = output("self-managed-3.3", &PlainEmitter::default());
+fn the_3_4_line_drops_what_isnt_available_yet() {
+    let plain = output("site@3.4", &PlainEmitter::default());
+    assert!(!plain.contains_key("webhooks.md"), "{:?}", plain.keys());
+    let keys = &plain["keys.md"];
+    assert!(!keys.contains("Sign webhook events"), "{keys}");
     let page = &plain["install-agent.md"];
-    assert!(!page.contains("Streaming sync"), "{page}");
+    assert!(page.contains("Streaming sync"), "{page}");
     assert!(page.contains("Point the agent at your server"), "{page}");
     // Both arms of the `deployment` group stay, a switcher.
     assert!(

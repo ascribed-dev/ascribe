@@ -16,7 +16,7 @@ Says what a diagnostic means: its severity, its messages, how to fix it, a link 
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/explain.txt
 
-An example that needs something in `ascribe.toml` to go wrong shows that too: a few lines of the model it was checked against. Every example is checked, so each wrong page reports its diagnostic and nothing else, and each right page reports nothing.
+The text output is for a terminal, so a link in the fix is written as its text, with the address after it when it leads off the docs; `--format json` keeps the Markdown, links and all. An example that needs something in `ascribe.toml` to go wrong shows that too: a few lines of the model it was checked against. Every example is checked, so each wrong page reports its diagnostic and nothing else, and each right page reports nothing.
 
 | Code | Meaning |
 |---|---|
@@ -173,6 +173,9 @@ A path is from the current folder, or from the content root, and the project is 
 | `1` | What it names doesn't exist: a phrase, a value, a page, or a heading |
 | `2` | It couldn't rename: no `ascribe.toml`, one with errors, a new name that can't be its name or is taken, a target it doesn't rename, or a file it can't write |
 
+@available: ascribe planned
+With `--format json`, it writes what it changed as one document, instead of a line for each file: `files`, each file it changed, from the current folder, with its whole `text` after and how many places changed (`edits`), in path order, the page that moved under where it was; `moved`, the page's `from` and `to`, when one moved; and `recorded`, each entry of `ascribe.addresses`'s `[moved]` it recorded, as a `key` and a `value`, as [`ascribe addresses move`](../publishing/redirects.md#cli-addresses-move) writes one. `written` is `true`: the MCP server's [`ascribe_rename`](../agents/commands.md#cli-mcp) gives the same document with `written` false, and writes nothing. Its [schema](../contracts/json-reports/questions.md#ascribe-rename) has every field.
+
 ## `ascribe resolve`
 @id {permalink=true}: cli-resolve
 @summary: Writes a page as one build's readers see it, in the build's plain Markdown or its site output: its variants chosen, filtered blocks removed, and phrases and includes filled in. It writes nothing to disk.
@@ -234,7 +237,7 @@ Finds where the pages say something, as their readers read it, and names the lin
 
 Each place is `file:line:` and the block as a reader reads it, cut to about 80 characters around the match's first word, then where a reader meets it: the heading it's under and that heading's id, the arm of a variant group it's in, the phrases the match reads through, and, when it isn't in every build searched, the builds it's in. A line is listed once however many pages and builds show it. The places are in a fixed order: titles, then headings, then the rest; in each, the places written in pages come before those in fragments and code files, each in path order and in order within a file.
 
-The query is one argument, and paths come after it. Words must all be in one block, in any order; a phrase in double quotes is matched as written, a run of spaces matching any run of white space. Quote several words together, and a phrase inside them: `ascribe search "rate limit"` finds both words in a block, and `ascribe search '"rate limit"'` finds them together. Case is ignored, and nothing else is: `cafe` doesn't find "café". With `--case`, case is matched as written, so `ascribe search Vale --case` doesn't find "vale". A word matches inside a longer one, so `sync` finds "synchronize"; with `--word`, a word or a phrase matches only where the characters on either side of it aren't letters, digits, or `_`, so `ascribe search limit --word` finds "the rate limit." and not "limits". A match never crosses from one block into another.
+The query is one argument, and paths come after it. Words must all be in one block, in any order; a phrase in double quotes is matched as written, a run of spaces matching any run of white space. Common English words outside quotes, such as `how`, `I`, and `the`, needn't be, unless they're all the query has: `how do I publish llms.txt` finds what `publish llms.txt` does. Quote several words together, and a phrase inside them: `ascribe search "rate limit"` finds both words in a block, and `ascribe search '"rate limit"'` finds them together. Case is ignored, and nothing else is: `cafe` doesn't find "café". With `--case`, case is matched as written, so `ascribe search Vale --case` doesn't find "vale". A word matches inside a longer one, so `sync` finds "synchronize"; with `--word`, a word or a phrase matches only where the characters on either side of it aren't letters, digits, or `_`, so `ascribe search limit --word` finds "the rate limit." and not "limits". A match never crosses from one block into another.
 
 There are no regular expressions. To run a pattern over the text readers read, write the plain output with `ascribe build --emit plain` and use `grep` on it. That loses what `ascribe search` adds: `grep` names a line of the build's output, not the line of the source to edit, and it can't say that a line came from a fragment, a phrase, or a snippet, or list a line many pages show once; and it reads one build's output at a time.
 
@@ -294,10 +297,14 @@ When nothing matches, search looks for the query, by the same rules, in the sour
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/search-written.txt
 
+When no block has every word, search lists the blocks that have the most of them, at most 10, as partial matches, each with the words it lacks; they replace "The words aren't in any page." A partial match is a pointer: read it before linking to it, and search again with other words, such as `sign` for "signature", since a word's other forms don't match. The exit code is still `1`. `ascribe search "webhook signature" --config examples/quill`:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/search-partial.txt
+
 | Code | Meaning |
 |---|---|
 | `0` | Something matched |
-| `1` | Nothing matched |
+| `1` | Nothing matched, partial matches aside |
 | `2` | It couldn't run: no `ascribe.toml`, one with errors, an empty query, a quote that isn't closed, a path with no page or fragment of the project, or an unknown build or type |
 
 With `--format json`, the document is a contract of its own, whose schema is in the [JSON report contract](../contracts/json-reports/questions.md#ascribe-search). `ascribe search '"sign in to quill cloud"' --config examples/quill --format json`:
@@ -308,4 +315,4 @@ Each place has its `file` from the project root, its `line`, and the `column` of
 
 `pages` names the pages that show the place, at most three, each with its `title`, the `heading` the place is under there and its `id`, and the `builds` that show it there. `pages_total` is how many pages show it; for a phrase, how many places in the source use it. `refs_command` is the `ascribe refs` command that lists them: for a phrase, and for a fragment's line on more pages than `pages` names; otherwise it's null. A snippet's code that can't be lined up with its file is at the first line the snippet shows, and `end_line` is the last; every other place's `end_line` is null.
 
-`total` is how many places match, `pages_matched` how many pages show one, and `shown` how many places are listed, 500 unless `--limit` says otherwise. When the list was cut, `truncated` is true and `next_command` is the command that lists them all. With `--summary`, `places` is empty and `pages` lists each page, from the project root, with how many `places` it shows, and `shown` and `truncated` count pages; without it, `pages` is null. When nothing matched, `source_places` is where the source writes the words, at most three places, each a `file` and `line`, when no build searched publishes them, and `not_searched_builds` is the builds that weren't searched that publish them; both are empty otherwise.
+`total` is how many places match, `pages_matched` how many pages show one, and `shown` how many places are listed, 500 unless `--limit` says otherwise. When the list was cut, `truncated` is true and `next_command` is the command that lists them all. With `--summary`, `places` is empty and `pages` lists each page, from the project root, with how many `places` it shows, and `shown` and `truncated` count pages; without it, `pages` is null. When nothing matched, `source_places` is where the source writes the words, at most three places, each a `file` and `line`, when no build searched publishes them, and `not_searched_builds` is the builds that weren't searched that publish them; both are empty otherwise. `stop_words` is the common words a place needn't have. `partial_places` is the partial matches, each a place with how many words it `has` and those it `lacks`; `places` and `total` count only full matches.

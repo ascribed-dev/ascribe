@@ -11,7 +11,7 @@ use ascribe_check::{Project, Scope, select_builds};
 use ascribe_core::RelPath;
 use ascribe_core::{LineIndex, WideEncoding};
 use ascribe_model::Build;
-use ascribe_resolve::reading::{self, At, Found, In, Nothing, Query, Reading, Through};
+use ascribe_resolve::reading::{self, At, In, Nothing, Query, Reading, Through};
 use ascribe_resolve::{AstroRouter, Usable};
 use serde::Serialize;
 
@@ -83,11 +83,25 @@ pub struct Searched {
     /// When nothing matched, the builds that weren't searched that publish
     /// the words, in the content model's order; empty otherwise.
     pub not_searched_builds: Vec<String>,
+    /// The query's stop words, as written: common English words, such as
+    /// `how`, `do`, and `the`, that a place doesn't need to have. Empty
+    /// when every word is one, since then a place needs them all.
+    pub stop_words: Vec<String>,
+    /// When nothing matched and a place needs two or more words or
+    /// phrases, the places that have some of them, at most 10: those that
+    /// have the most first, then those with the most stop words, then in
+    /// the order of `places`. Each is a place as in `places`, its `match`
+    /// covering the words it has, with how many it `has` and what it
+    /// `lacks`. Empty when something matched.
+    pub partial_places: Vec<PartialPlace>,
     /// When nothing matched, what the source says: `None` when something
     /// did.
     #[serde(skip)]
     pub nothing: Option<Nothing>,
 }
+
+/// How many places that have some of the words it lists.
+const PARTIAL: usize = 10;
 
 /// How many places [`Nothing::Unpublished`] names.
 const WRITTEN: usize = 3;
@@ -150,6 +164,21 @@ pub struct SearchPlace {
     /// The builds it's in, when it isn't in every build searched.
     #[serde(skip)]
     pub builds: Vec<String>,
+}
+
+/// A place that has some of the words and phrases a place needs, not all
+/// of them.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct PartialPlace {
+    /// The place, as in `places`.
+    #[serde(flatten)]
+    pub place: SearchPlace,
+    /// How many of the words and phrases a place needs it has.
+    pub has: usize,
+    /// The words and phrases it lacks, as the query writes them, a phrase
+    /// in its quotes, in the query's order.
+    pub lacks: Vec<String>,
 }
 
 /// What a match reads through that its line doesn't spell.
@@ -285,7 +314,7 @@ pub fn search(
         known_type(project, name)?;
     }
     let read: Vec<Arc<[Read]>> = builds.iter().map(|b| readings.of(index, b)).collect();
-    let found = find_in(index, &read, &parsed, asked);
+    let found = reading::find(index, kept(index, &read, asked), &parsed);
     let nothing = found
         .places
         .is_empty()
@@ -299,6 +328,19 @@ pub fn search(
         }
     }
     let model_lines = LineIndex::new(project.model_text());
+    let partial_places = if found.places.is_empty() {
+        reading::closest(index, kept(index, &read, asked), &parsed)
+            .iter()
+            .take(PARTIAL.min(asked.limit))
+            .map(|closest| PartialPlace {
+                place: place_of(index, &model_lines, &titles, names.len(), &closest.place),
+                has: closest.has,
+                lacks: closest.lacks.clone(),
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
     let limit = if asked.summary { 0 } else { asked.limit };
     let places: Vec<SearchPlace> = found
         .places
@@ -350,6 +392,8 @@ pub fn search(
         next_command: None,
         source_places,
         not_searched_builds,
+        stop_words: parsed.stop_words(),
+        partial_places,
         nothing,
     })
 }
@@ -499,24 +543,24 @@ fn place_of(
     }
 }
 
-/// The places `query` matches in the pages of `read`, each build's
-/// readings, that `asked` keeps to.
-fn find_in(
-    index: &ascribe_resolve::Project,
-    read: &[Arc<[Read]>],
-    query: &Query,
-    asked: &Search<'_>,
-) -> Found {
-    let kept = read.iter().flat_map(|r| r.iter()).filter(|r| {
-        asked.scope.is_none_or(|scope| {
-            r.path
-                .as_ref()
-                .is_some_and(|path| scope.contains(&index.layout().project_path(path)))
-        }) && asked
-            .page_type
-            .is_none_or(|name| r.page_type.as_deref() == Some(name))
-    });
-    reading::find(index, kept.map(|r| &r.reading), query)
+/// The pages of `read`, each build's readings, that `asked` keeps to.
+fn kept<'r>(
+    index: &'r ascribe_resolve::Project,
+    read: &'r [Arc<[Read]>],
+    asked: &'r Search<'_>,
+) -> impl Iterator<Item = &'r Reading> {
+    read.iter()
+        .flat_map(|r| r.iter())
+        .filter(move |r| {
+            asked.scope.is_none_or(|scope| {
+                r.path
+                    .as_ref()
+                    .is_some_and(|path| scope.contains(&index.layout().project_path(path)))
+            }) && asked
+                .page_type
+                .is_none_or(|name| r.page_type.as_deref() == Some(name))
+        })
+        .map(|r| &r.reading)
 }
 
 /// What the source says about words no build searched publishes: the
@@ -538,7 +582,7 @@ fn nothing(
         .collect();
     if !others.is_empty() {
         let read: Vec<Arc<[Read]>> = others.iter().map(|b| readings.of(index, b)).collect();
-        let found = find_in(index, &read, query, asked);
+        let found = reading::find(index, kept(index, &read, asked), query);
         let mut publish: Vec<String> = Vec::new();
         for build in &others {
             if found.places.iter().any(|p| p.builds.contains(&build.name)) {
@@ -1081,8 +1125,7 @@ mod tests {
             found.nothing,
             Some(Nothing::OtherBuilds(vec![
                 "site".to_owned(),
-                "site@3.4".to_owned(),
-                "self-managed-3.3".to_owned()
+                "site@3.4".to_owned()
             ]))
         );
     }
@@ -1179,7 +1222,88 @@ mod tests {
         let found = quill_search("\"point the agent at your server\"", &["cloud"], 500).unwrap();
         let json = serde_json::to_value(&found).unwrap();
         assert_eq!(json["source_places"], serde_json::json!([]));
-        assert_eq!(json["not_searched_builds"].as_array().unwrap().len(), 3);
+        assert_eq!(json["not_searched_builds"].as_array().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn words_no_block_has_together_list_the_closest_places() {
+        let found = quill_search("webhook signature", &[], 50).unwrap();
+        assert_eq!(found.total, 0, "no full match, so `ascribe search` exits 1");
+        assert!(found.places.is_empty());
+        let sign = found
+            .partial_places
+            .iter()
+            .find(|p| p.place.pages.first().and_then(|p| p.id.as_deref()) == Some("sign-webhooks"))
+            .expect("keys.md#sign-webhooks is a partial match");
+        assert_eq!(sign.place.file, "docs/keys.md");
+        assert_eq!(
+            (sign.has, sign.lacks.as_slice()),
+            (1, ["signature".to_owned()].as_slice())
+        );
+        assert!(found.partial_places.len() <= PARTIAL);
+        let json = serde_json::to_value(&found).unwrap();
+        let first = &json["partial_places"][0];
+        assert_eq!(first["has"], 1);
+        assert_eq!(first["lacks"], serde_json::json!(["signature"]));
+        assert!(
+            first["file"].is_string() && first["match"].is_array(),
+            "{first}"
+        );
+        assert_eq!(json["places"], serde_json::json!([]));
+        // A full match lists none.
+        let found = quill_search("webhook sign", &[], 50).unwrap();
+        assert!(found.total > 0 && found.partial_places.is_empty());
+        // Nor does a query that needs one word.
+        assert!(
+            quill_search("signature", &[], 50)
+                .unwrap()
+                .partial_places
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn a_partial_place_with_more_words_comes_first() {
+        let found = quill_search("webhook events zebra", &[], 50).unwrap();
+        let has: Vec<usize> = found.partial_places.iter().map(|p| p.has).collect();
+        assert_eq!(has.first(), Some(&2), "{has:?}");
+        assert!(has.windows(2).all(|w| w[0] >= w[1]), "{has:?}");
+        assert_eq!(found.partial_places[0].lacks, ["zebra"]);
+    }
+
+    #[test]
+    fn a_question_in_natural_words_matches_as_its_other_words_do() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs");
+        let project = Project::load(&root.join("ascribe.toml")).expect("the docs load");
+        let index = project.index();
+        let readings = Readings::default();
+        let asked_for =
+            |query| search(&project, &index, &readings, &asked(query, &[], 500)).unwrap();
+        let question = asked_for("how do I publish llms.txt");
+        let words = asked_for("publish llms.txt");
+        assert_eq!(question.stop_words, ["how", "do", "I"]);
+        assert!(words.stop_words.is_empty());
+        assert_eq!(question.total, words.total);
+        assert!(question.total > 1, "{}", question.total);
+        assert!(
+            question
+                .places
+                .iter()
+                .any(|p| p.file == "content/astro/agents.md"),
+            "the page titled Publish for AI agents: {:?}",
+            files(&question)
+        );
+    }
+
+    #[test]
+    fn a_query_of_only_stop_words_needs_them_all() {
+        let found = quill_search("to the", &[], 50).unwrap();
+        assert!(found.total > 0);
+        assert!(found.stop_words.is_empty());
+        let found = quill_search("how to", &[], 50).unwrap();
+        assert_eq!(found.total, 0);
+        assert!(found.partial_places.iter().all(|p| p.lacks == ["how"]));
+        assert!(!found.partial_places.is_empty());
     }
 
     #[test]
