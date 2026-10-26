@@ -6433,7 +6433,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1127"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Report: list what a build leaves out once per mark, not once per line"
     },
     {
@@ -6756,8 +6756,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1133"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "CLI conventions: one flag for \"write nothing\", one for \"fail on findings\", and the same guard on every command that writes"
     },
     {
@@ -7068,8 +7071,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/983"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCGY",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1137"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Adopt an existing folder of Markdown: init that keeps it checking, and a guide"
     },
     {
@@ -7154,7 +7160,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1131"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Incremental differential test: generate the change kinds added since it was written"
     },
     {
@@ -7447,8 +7453,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1138"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Tested examples: report an ascribe.examples.toml that no source reads"
     },
     {
@@ -7637,8 +7646,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1017"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDA4",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1132"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Archive: set the page's lang, and add a skip link past the sidebar"
     },
     {
@@ -7729,8 +7741,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1135"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Check: annotate a pull request's lines in GitHub Actions"
     },
     {
@@ -7747,8 +7762,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1141"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Agent Markdown: link to the other pages' Markdown, so an agent following a link stays in Markdown"
     },
     {
@@ -7788,7 +7806,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1128"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Link fixes: rank a heading id the wrong id starts, first, and name the best one in the message"
     },
     {
@@ -7897,7 +7915,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1118"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Snippets: regions in Dockerfile, Makefile, CSS, and GraphQL"
     },
     {
@@ -8274,8 +8292,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1136"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "A lone carriage return shifts the spans after it, and the formatter edits the wrong bytes"
     },
     {
@@ -8291,8 +8312,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1140"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "An unclosed container's span takes in the trailing line ending"
     },
     {
@@ -8311,6 +8335,40 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Ready",
       "title": "Incremental project: a snippet's code file id isn't a fresh load's"
+    },
+    {
+      "content": {
+        "body": "The rest of #965. #1133 writes the conventions down in CONTRIBUTING.md (\"Command-line conventions\", decision #965) and adds `crates/ascribe-cli/src/conventions.rs`, which holds them over the `clap` definitions with an `EXCEPTIONS` list of today's breaks. This issue is the commands themselves: each pull request takes a group of commands, brings them in line, and removes their entries from `EXCEPTIONS`. The test fails on an entry that's no longer needed, so the list can only shrink.\n\nToday's exceptions, by rule:\n\n- **`--dry-run` and `--force` (the git guard):** `init`, `check` (`--fix`), `fmt`, `rename`, `baseline write`, `baseline prune`, `permalinks sync`, `permalinks retire`, `addresses init`, `addresses move`, `addresses retire`, `sources fetch`, `sources update`, `observe`, `templates eject`, `vale eject`, `agents sync`, `agents index`.\n- **`--exit-code`:** `check`, whose `--deny-warnings` becomes an alias of `--exit-code=warning`.\n- **`--format json`:** `sources fetch`, `templates list`, `vale eject`, `agents sync`, `agents prompt`.\n- **`concise` beside `text`:** every command with `--format` apart from `check` (35 commands): an alias of `text` where a command has no one-line form.\n\nThe test can't read two of the conventions from `clap`, so they need output tests in the pull requests that change these commands:\n\n- `--check` prints each change as a unified diff (`fmt`, `permalinks sync`, `agents sync`, `observe`).\n- A revision given where a path goes is answered with `--base`. `drift` does this already; `diff` doesn't yet.\n\nA renamed option keeps its old spelling as a hidden alias for a release. `observe --check` keeps working in CI throughout, and #979 changes `observe` too, so whichever lands second follows the other.\n\n## Done looks like\n\n- `EXCEPTIONS` in `crates/ascribe-cli/src/conventions.rs` is empty.\n- `fmt --check` prints a unified diff, and `diff HEAD` says `--base HEAD`, each with a test.",
+        "number": 1134,
+        "repository": "ascribed-dev/ascribe",
+        "title": "CLI conventions: bring the commands in line, one group at a time",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1134"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDu-Ks",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "CLI conventions: bring the commands in line, one group at a time"
+    },
+    {
+      "content": {
+        "body": "Found by the `parse` fuzz target once it holds all of `check_tree` (#1122).\n\n## What's wrong\n\nWhen a table interrupts a paragraph and the paragraph's line ends with `\\r\\n`, the paragraph's span is empty:\n\n```text\n\"cc8\\r\\n8\\n:-\"\n  paragraph 0..0 \"\": empty\n```\n\nWith `\\n` instead, `\"cc8\\n8\\n:-\"` gives the paragraph `0..3` (`cc8`) and the table `4..8`, as it should. `\"cc8\\r\\n8\\r\\n:-\"` is wrong the same way. The table's span looks right in both; it's the paragraph that's left before it that loses its end, likely where the comrak fork's table extension takes the header line back out of the paragraph and counts the `\\r` wrong.\n\n## Done when\n\n- The paragraph before a table has the span of its own lines after `\\r\\n` and a lone `\\r`, and those inputs are in `directives_in_every_container` (`crates/ascribe-syntax/tests/all/spans.rs`).\n- The `parse` fuzz target runs clean on them.",
+        "number": 1139,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A paragraph before a table loses its span after a CRLF",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1139"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDvU2E",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "A paragraph before a table loses its span after a CRLF"
     }
   ]
 }
