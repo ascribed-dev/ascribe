@@ -18,7 +18,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 use ascribe_core::{FileId, RelPath};
-use ascribe_diff::{BuildDiff, Side, compare_builds, compare_page_in};
+use ascribe_diff::{BuildDiff, Renames, Side, compare_builds, compare_page_in};
 use ascribe_resolve::{Change, Layout, Project};
 use proptest::prelude::*;
 
@@ -184,7 +184,7 @@ fn every_page(base: Side<'_>, now: Side<'_>, builds: &[&str]) -> Vec<BuildDiff> 
             build: (*name).to_owned(),
             pages: paths
                 .iter()
-                .filter_map(|path| compare_page_in(Some(base), now, name, path))
+                .filter_map(|path| compare_page_in(Some(base), now, name, path, &Renames::new()))
                 .collect(),
         })
         .collect()
@@ -209,6 +209,6 @@ proptest! {
         let base = Side { project: &base, model_text: &base_model };
         let now = Side { project: &now, model_text: &now_model };
         let builds = ["site", "cloud"];
-        prop_assert_eq!(compare_builds(Some(base), now, &builds), every_page(base, now, &builds));
+        prop_assert_eq!(compare_builds(Some(base), now, &builds, &Renames::new()), every_page(base, now, &builds));
     }
 }

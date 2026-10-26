@@ -90,7 +90,9 @@ export class SourceChanges implements vscode.Disposable {
       await Promise.all(
         files.map(async (file) => {
           const uri = vscode.Uri.file(file.path);
-          const original = file.before ? baseUri(uri, commit, git) : undefined;
+          // A page that moved is compared with its file where it was.
+          const was = file.basePath === undefined ? uri : vscode.Uri.file(file.basePath);
+          const original = file.before ? baseUri(was, commit, git) : undefined;
           return [uri, original, file.after && (await exists(uri)) ? uri : undefined];
         }),
       );

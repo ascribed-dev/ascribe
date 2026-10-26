@@ -218,10 +218,21 @@ fn change_prompt(
     };
     let prompt = if params.kind == PromptKind::FragmentReach {
         let fragment = RelPath::parse(params.fragment.as_deref()?).ok()?;
-        let diffs = ascribe_diff::compare_builds(review.side(), now, &[build.name.as_str()]);
+        let diffs = ascribe_diff::compare_builds(
+            review.side(),
+            now,
+            &[build.name.as_str()],
+            &review.renames,
+        );
         ascribe_diff::prompt::fragment_reach(&context, &shown, diffs.first()?, &fragment)?
     } else {
-        let page = ascribe_diff::compare_page_in(review.side(), now, &build.name, &ctx.path)?;
+        let page = ascribe_diff::compare_page_in(
+            review.side(),
+            now,
+            &build.name,
+            &ctx.path,
+            &review.renames,
+        )?;
         ascribe_diff::prompt::page(&context, &shown, &build.name, &page)
     };
     Some(AgentPromptResult { prompt })

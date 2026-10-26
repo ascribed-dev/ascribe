@@ -9,7 +9,7 @@ use std::sync::Arc;
 use ascribe_check::prompt::{Base, Builds, Context, LIMIT};
 use ascribe_core::{FileId, RelPath};
 use ascribe_diff::prompt::{self, Review};
-use ascribe_diff::{BaseInfo, BuildDiff, PageDiff, Side, compare_builds};
+use ascribe_diff::{BaseInfo, BuildDiff, PageDiff, Renames, Side, compare_builds};
 use ascribe_resolve::{Layout, MemoryFs, Project};
 
 const MODEL: &str = "spec = \"0.1\"\n[phrases]\nproduct = \"Quill\"\n[builds.site]\n";
@@ -42,7 +42,7 @@ fn side(v: &Version) -> Side<'_> {
 }
 
 fn diff(before: &Version, after: &Version) -> Vec<BuildDiff> {
-    compare_builds(Some(side(before)), side(after), &["site"])
+    compare_builds(Some(side(before)), side(after), &["site"], &Renames::new())
 }
 
 fn pairs(files: &[(String, String)]) -> Vec<(&str, &str)> {
@@ -301,4 +301,44 @@ fn a_change_names_the_memos_on_its_page_its_section_and_its_block() {
         )),
         "{text}"
     );
+}
+
+#[test]
+fn a_moved_page_and_a_link_to_it_say_so() {
+    let configure = "---\ntitle: Configure\n---\n\n# Configure\n\nSet the key.\n";
+    let install = "# Install\n\nThen [](configure.md).\n";
+    let before = version(
+        MODEL,
+        &[
+            ("guides/configure.md", configure),
+            ("guides/install.md", install),
+        ],
+    );
+    let after = version(
+        MODEL,
+        &[
+            ("guides/setup.md", configure),
+            ("guides/install.md", install),
+        ],
+    );
+    let renames = Renames::from([(
+        "guides/configure.md".to_owned(),
+        "guides/setup.md".to_owned(),
+    )]);
+    let builds = compare_builds(Some(side(&before)), side(&after), &["site"], &renames);
+    let moved = page_prompt(&context(), find(&builds, "guides/setup.md"));
+    assert!(
+        moved.contains(
+            "What changed: moved from site/content/guides/configure.md, no change to the page"
+        ),
+        "{moved}"
+    );
+    let linking = page_prompt(&context(), find(&builds, "guides/install.md"));
+    assert!(
+        linking.contains(
+            "A link changed because a page it leads to moved: `site/content/guides/configure.md`"
+        ),
+        "{linking}"
+    );
+    assert!(!linking.contains("Changed through"), "{linking}");
 }

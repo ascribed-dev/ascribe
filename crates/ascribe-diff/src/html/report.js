@@ -1009,7 +1009,23 @@
     if (page.status === "removed") return "Removed";
     const parts = [describeCounts(page.counts)];
     if (page.page_changed.length > 0) parts.push(`${andList(page.page_changed)} changed`);
-    return parts.filter(Boolean).join(" · ");
+    const changed = parts.filter(Boolean);
+    if (page.moved_from === void 0) return changed.join(" · ");
+    if (changed.length === 0) changed.push("no change to the page");
+    return [`Moved from ${page.moved_from}`, ...changed].join(" · ");
+  }
+  function causesText(page, only = "through") {
+    const moved = page.moved_links ?? [];
+    const through = page.because.filter((c) => !moved.some((m) => m.to === c));
+    const reasons = [];
+    if (through.length > 0) {
+      reasons.push(`${page.own_file_changed ? "also through" : only} ${through.join(", ")}`);
+    }
+    if (!page.own_file_changed && moved.length > 0) {
+      const links = moved.length === 1 ? "a link changed" : "links changed";
+      reasons.push(`${links} because ${andList(moved.map((m) => m.from))} moved`);
+    }
+    return reasons.join("; ");
   }
   function andList(items) {
     if (items.length <= 1) return items.join("");
@@ -1225,7 +1241,7 @@
           h("span", { class: "r-page-path" }, [page.path]),
           h("span", { class: "r-page-counts" }, [pageSummary(page)]),
           lines === "" ? null : h("span", { class: "r-page-lines" }, [lines]),
-          !page.own_file_changed && page.because.length > 0 ? h("span", { class: "r-page-via" }, [`via ${page.because.join(", ")}`]) : null
+          !page.own_file_changed && causesText(page) !== "" ? h("span", { class: "r-page-via" }, [causesText(page, "via")]) : null
         ]);
         if (i === state.page) link.setAttribute("aria-current", "page");
         link.addEventListener("click", (event) => {
@@ -1276,15 +1292,14 @@
       }
       const row = h("div", { class: "r-row" });
       const info = h("span", { class: "r-grow" }, [h("b", {}, [page.path]), ` ${page.route}`]);
-      if (!page.own_file_changed && page.because.length > 0) {
-        info.append(` · changed only through ${page.because.join(", ")}`);
-      } else if (page.because.length > 0) {
-        info.append(` · also through ${page.because.join(", ")}`);
-      }
+      if (page.moved_from !== void 0) info.append(` · moved from ${page.moved_from}`);
+      const causes = causesText(page, "changed only through");
+      if (causes !== "") info.append(` · ${causes}`);
       row.append(info);
       const blocks = page.status === "changed" && page.changes.length > 0;
       if (page.status === "changed" && !blocks) {
-        row.append(h("span", { class: "r-quiet" }, ["No changes to the page's content"]));
+        const quiet = page.moved_from !== void 0 && page.page_changed.length === 0 ? "No change to the page" : "No changes to the page's content";
+        row.append(h("span", { class: "r-quiet" }, [quiet]));
       } else if (blocks) {
         const n = marks.length;
         const at = state.at >= 0 && state.at < n && state.show === "changes";

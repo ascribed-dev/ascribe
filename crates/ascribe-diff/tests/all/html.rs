@@ -8,7 +8,9 @@ use std::sync::Arc;
 
 use ascribe_core::{FileId, RelPath};
 use ascribe_diff::html::{AssetFiles, MAX_IMAGE_BYTES, Version, write_html, write_html_with};
-use ascribe_diff::{BaseInfo, Report, RepositoryInfo, SCHEMA_VERSION, Side, compare_builds};
+use ascribe_diff::{
+    BaseInfo, Renames, Report, RepositoryInfo, SCHEMA_VERSION, Side, compare_builds,
+};
 use ascribe_resolve::{Layout, MemoryFs, Project};
 use serde_json::Value;
 
@@ -43,6 +45,7 @@ fn report(before: &Project, after: &Project) -> Report {
             model_text: MODEL,
         },
         &["site", "other"],
+        &Renames::new(),
     );
     Report {
         schema_version: SCHEMA_VERSION,
