@@ -43,7 +43,7 @@ Every comment is an ordinary GitHub review comment. Ascribe keeps none of its ow
 - **New comments are unsent until you submit,** and nobody else sees them. GitHub's API calls this your pending review. Submitting sends them as a comment, an approval, or a request for changes, with an optional summary; discarding deletes them.
 - **A reply can go at once, unless you have unsent comments.** While you do, GitHub adds every reply to your review, so **Reply now** is unavailable, and says why, until you submit or discard.
 - **Resolving and reopening act at once,** on GitHub, and aren't part of your review.
-- **A thread whose text changed since it was written** is labeled **Outdated**, beside the text that replaced it, with the text it was on a click away. A thread whose lines are gone from the page, because the text was deleted, the block moved to another page, or the thread is on a whole file, is **detached**: it's listed above the page with the text it was on. A thread on removed text shows on the removed block.
+- **A thread whose text changed since it was written** is labeled **Outdated**, beside the text that replaced it, with the text it was on a click away. A thread whose lines are gone from the page, because the text was deleted, the block moved to another page, or the thread is on a whole file, is **detached**: it's listed above the page with the text it was on. A thread on removed text shows on the removed block. A thread carries one of these labels, the most specific that fits: **On removed text**, then **Detached**, then **Outdated**. When the text a thread was on is empty or can't be read, the thread says so in words instead of quoting it.
 
 ### Your checkout and the pull request
 

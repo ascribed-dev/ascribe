@@ -59,7 +59,6 @@ const role = <T extends HTMLElement>(name: string): T => {
 };
 
 const buildSelect = role<HTMLSelectElement>("build");
-const buildDescription = role("build-description");
 const problemList = role("problems");
 const page = role("page");
 const title = role("title");
@@ -155,7 +154,9 @@ function showBuilds(next: PreviewBuild[], current: string): void {
   );
   buildSelect.disabled = next.length === 0;
   buildSelect.value = current;
-  buildDescription.textContent = builds.find((b) => b.name === current)?.description ?? "";
+  // The build's settings, as ascribe.toml writes them, are for whoever
+  // asks: they sit in the picker's tooltip, not in the toolbar.
+  buildSelect.title = builds.find((b) => b.name === current)?.description ?? "";
 }
 
 function showProblems(problems: ShownProblem[]): void {
