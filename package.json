@@ -15,7 +15,7 @@
     "check:all": "node scripts/check.ts",
     "check:packages": "node scripts/release/consumers.ts",
     "lint": "oxlint --type-aware",
-    "typecheck": "tsc -p scripts/tsconfig.json && pnpm -r typecheck",
+    "typecheck": "node scripts/typecheck-ready.ts && tsc -p scripts/tsconfig.json && pnpm -r typecheck",
     "test": "vitest run --dir scripts && pnpm -r test",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
