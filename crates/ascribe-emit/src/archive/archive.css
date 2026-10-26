@@ -57,6 +57,24 @@ a {
   color: var(--a-accent);
 }
 
+/* Off screen until it has focus, then over the statement's top left. */
+.archive-skip {
+  position: absolute;
+  top: var(--a-space-small);
+  left: var(--a-space-small);
+  z-index: 1;
+  padding: var(--a-space-small) var(--a-space);
+  border-radius: var(--a-radius);
+  background: var(--a-side);
+  transform: translateY(-200%);
+}
+
+.archive-skip:focus {
+  outline: 2px solid var(--a-focus);
+  outline-offset: 1px;
+  transform: none;
+}
+
 code,
 pre {
   font-family: var(--a-mono);
@@ -273,6 +291,7 @@ td {
 }
 
 @media print {
+  .archive-skip,
   .archive-sidebar,
   .archive-search,
   .archive-current,
