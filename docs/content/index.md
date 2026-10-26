@@ -32,7 +32,7 @@ permalink: docs
 
 ## Review
 
-- [Review](review/index.md): reviewing a pull request as readers will see it, in the page preview, the site preview, or a report from CI, and commenting there.
+- [Review](review/index.md): reviewing a pull request as readers will see it, in the page preview, the site preview, or the HTML preview from CI, and commenting there.
 
 ## Publish
 

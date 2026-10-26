@@ -39,12 +39,29 @@ describe("readHostRedirects", () => {
     ]);
     expect(readHostRedirects(mkdtempSync(path.join(tmpdir(), "ascribe-redirects-")))).toEqual([]);
   });
+
+  it("reads a permalink's rules: a query parameter, and a forced status", () => {
+    const text =
+      "/go/check/ pm=:pm /go/check/ 200!\n/go/check/ /docs/cli/#check 301!\n/go/old/ /go/old/ 410!\n";
+    const rules = readHostRedirects(siteRoot(text));
+    expect(rules).toEqual([
+      { from: "/go/check/", query: ["pm=:pm"], to: "/go/check/", status: 200, force: true },
+      { from: "/go/check/", to: "/docs/cli/#check", status: 301, force: true },
+      { from: "/go/old/", to: "/go/old/", status: 410, force: true },
+    ]);
+    expect(netlifyRedirects(rules)).toBe(text);
+  });
 });
 
 describe("mergeRedirects", () => {
   it("keeps the first project's pair for an address two redirect", () => {
     const other = { ...moved, to: "/docs/elsewhere" };
     expect(mergeRedirects([[moved], [other, markdown]])).toEqual([moved, markdown]);
+  });
+
+  it("keeps a rule for the same address with a query parameter", () => {
+    const query = { ...moved, query: ["pm=:pm"], to: moved.from, status: 200 };
+    expect(mergeRedirects([[query], [moved]])).toEqual([query, moved]);
   });
 });
 
@@ -89,6 +106,18 @@ describe("redirectsOutcome", () => {
     });
     expect(outcome.kind).toBe("fail");
     expect(outcome.kind === "fail" && outcome.text).toContain("/docs/guides/my-setup ");
+  });
+
+  it("writes a forced rule at a page the site publishes: a permalink's forwarding page", () => {
+    const permalink: Redirect = {
+      from: "/go/check/",
+      to: "/docs/cli/#check",
+      status: 301,
+      force: true,
+    };
+    expect(redirectsOutcome({ ...sources, redirects: [permalink], published: () => true })).toEqual(
+      { kind: "write", text: "/go/check/ /docs/cli/#check 301!\n" },
+    );
   });
 });
 

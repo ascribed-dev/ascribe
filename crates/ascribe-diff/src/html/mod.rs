@@ -421,7 +421,7 @@ fn page_shell(title: &str, json: &str) -> String {
          <style>\n{STYLE}</style>\n\
          </head>\n\
          <body>\n\
-         <div id=\"{root}\"><noscript>This report draws its pages with JavaScript; turn it on to see them.</noscript></div>\n\
+         <div id=\"{root}\"><noscript>This preview draws its pages with JavaScript; turn it on to see them.</noscript></div>\n\
          <script type=\"application/json\" id=\"{data}\">{json}</script>\n\
          <script>{SCRIPT}</script>\n\
          </body>\n\

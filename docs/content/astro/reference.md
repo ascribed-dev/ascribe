@@ -97,7 +97,7 @@ Each build lists its [permalinks](../permalinks/index.md) in the site output, `_
 - links to the same place, for a browser that doesn't follow;
 - is marked `noindex`, with a canonical link to where it leads, so search engines list the page and not the address.
 
-So it works on any static host. The addresses end the way the site's routes do (`trailing-slash`), and aren't pages of the collection, `llms.txt`, or the Markdown for agents. A retired permalink's page says what was there was removed from the docs, gives the reason, and links to the docs' home page, unless it was retired `--to` another page, where it forwards.
+So it works on any static host. With `[consumer] host = "netlify"`, the host [forwards each address with a `301`](../publishing/redirects.md#permalinks-on-netlify) instead, and serves the page only for an address with a dimension's parameter. The page names its section's [Markdown and JSON](reference.md#help-entries) as its alternates, `<link rel="alternate">`, for an agent that reads it. The addresses end the way the site's routes do (`trailing-slash`), and aren't pages of the collection, `llms.txt`, or the Markdown for agents. A retired permalink's page says what was there was removed from the docs, gives the reason, and links to the docs' home page, unless it was retired `--to` another page, where it forwards.
 
 The parameters are named for the content model's [dimensions](../content-model/content.md#dimensions), as a product [links to a permalink](../permalinks/index.md#linking-from-a-product):
 
@@ -120,7 +120,9 @@ Each build writes each permalink's section to `_ascribe/help.json` ([output-layo
 
 Each answers with the file narrowed to that one entry: `version`, `build`, and `line` as the line's file has them, and `help` with the entry under its name, so a product reads a fetched entry and its bundled file the same way. A line that has left the window has no address, and an alias has its own. `astro dev` answers with `Access-Control-Allow-Origin: *`, and with `[consumer] host = "netlify"` the build's `_headers` gives each address the same, since the build's [headers list](../publishing/site.md#response-headers) has a rule for each.
 
-Another generator serves the same: for each name in a line's `help.json`, the file with that entry alone, at `<path><name>.json` for the current line, where `path` is `_ascribe/permalinks.json`'s, and at `<base>go/<name>.json` for an older line, where `base` is the line's in `_ascribe/versions.json`.
+Beside each, with `.md` in place of `.json`, `/docs/go/connect.md`, the integration serves the entry's section as Markdown: its title as a heading, then its `text`, the section as the plain output writes it. An agent reads the section a permalink names in one fetch, and a host that [answers content negotiation](serve-markdown.md#3-answer-content-negotiation) by trying the address with `.md` finds it for the permalink's address too. The JSON names it as its alternate, with a `Link` header in `astro dev` and in the build's headers list.
+
+Another generator serves the same: for each name in a line's `help.json`, the file with that entry alone, at `<path><name>.json` for the current line, where `path` is `_ascribe/permalinks.json`'s, and at `<base>go/<name>.json` for an older line, where `base` is the line's in `_ascribe/versions.json`, and the section as Markdown at each with `.md`.
 
 ### A permalink that isn't here
 @id: a-permalink-that-isnt-here

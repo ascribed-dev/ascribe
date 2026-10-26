@@ -2,7 +2,8 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { helpAddresses, helpPaths, helpPatterns, readHelp } from "../src/help.js";
+import { readHelp } from "../src/help-file.js";
+import { helpAddresses, helpMarkdown, helpPaths, helpPatterns } from "../src/help.js";
 
 /** An output directory with each build's files, by build and path under `_ascribe/`; the `site` build's site output root. */
 function output(files: Record<string, Record<string, unknown>>): string {
@@ -65,16 +66,26 @@ function versioned(): string {
   });
 }
 
-/** What `GET pathname` answers on a site with `base`, as Astro routes it: the body, or `undefined` for none. */
-function get(siteRoot: string, base: string, pathname: string): unknown {
+/** What `GET pathname` answers on a site with `base`, as Astro routes it: the body and its type, or `undefined` for none. */
+function answer(
+  siteRoot: string,
+  base: string,
+  pathname: string,
+): ReturnType<typeof helpPaths>[number]["props"] | undefined {
   const root = base.endsWith("/") ? base : `${base}/`;
   for (const pattern of helpPatterns([siteRoot], base)) {
     for (const { params, props } of helpPaths([siteRoot], base, pattern)) {
       const route = `${root}${pattern.slice(1).replace("[id]", params.id)}`;
-      if (route === pathname) return JSON.parse(props.body);
+      if (route === pathname) return props;
     }
   }
   return undefined;
+}
+
+/** What `GET pathname` answers as JSON, parsed, or `undefined` for none. */
+function get(siteRoot: string, base: string, pathname: string): unknown {
+  const props = answer(siteRoot, base, pathname);
+  return props === undefined ? undefined : JSON.parse(props.body);
 }
 
 describe("a help entry's address", () => {
@@ -98,9 +109,16 @@ describe("a help entry's address", () => {
   it("is one route for each line, under Astro's base", () => {
     expect(helpPatterns([versioned()], "/")).toEqual([
       "/docs/go/[id].json",
+      "/docs/go/[id].md",
       "/docs/3.4/go/[id].json",
+      "/docs/3.4/go/[id].md",
     ]);
-    expect(helpPatterns([versioned()], "/docs")).toEqual(["/go/[id].json", "/3.4/go/[id].json"]);
+    expect(helpPatterns([versioned()], "/docs")).toEqual([
+      "/go/[id].json",
+      "/go/[id].md",
+      "/3.4/go/[id].json",
+      "/3.4/go/[id].md",
+    ]);
     expect(get(versioned(), "/docs", "/docs/3.4/go/connect.json")).toMatchObject({ line: "3.4" });
   });
 
@@ -121,6 +139,31 @@ describe("a help entry's address", () => {
       build: "site",
       help: { link: connect("3.5") },
     });
+  });
+
+  it("answers with the section as Markdown beside the JSON, which names it as its alternate", () => {
+    const site = versioned();
+    expect(answer(site, "/", "/docs/go/connect.md")).toEqual({
+      body: "# Connect to Quill\n\nConnect the 3.5 agent.\n",
+      type: "text/markdown",
+    });
+    expect(answer(site, "/", "/docs/3.4/go/connect.md")?.body).toBe(
+      "# Connect to Quill\n\nConnect the 3.4 agent.\n",
+    );
+    expect(answer(site, "/", "/docs/go/connect.json")).toMatchObject({
+      type: "application/json",
+      alternate: "/docs/go/connect.md",
+    });
+  });
+
+  it("writes a section with no text as its heading alone", () => {
+    const help = (text: string) => ({
+      version: 1,
+      build: "site",
+      help: { start: { title: "Start", text, source: "index.md" } },
+    });
+    expect(helpMarkdown(help(""))).toBe("# Start\n");
+    expect(helpMarkdown(help("Text.\n\n"))).toBe("# Start\n\nText.\n");
   });
 
   it("is no route without permalinks, and none without the file", () => {

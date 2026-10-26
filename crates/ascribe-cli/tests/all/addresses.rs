@@ -145,6 +145,16 @@ fn site_file(dir: &Path, rel: &str) -> String {
 const PAIRS: &str = "/docs/guides/my-setup /docs/guides/setup 301\n\
     /docs/guides/my-setup.md /docs/guides/setup.md 301\n";
 
+/// The project's permalinks' rules, after the pairs and the retired
+/// addresses: each dimension as a query parameter serves the forwarding
+/// page, and the address otherwise leads to its section with a 301.
+const PERMALINKS: &str = "/docs/go/options pm=:pm /docs/go/options 200!\n\
+    /docs/go/options deployment=:deployment /docs/go/options 200!\n\
+    /docs/go/options /docs/reference/options 301!\n\
+    /docs/go/weave-config pm=:pm /docs/go/weave-config 200!\n\
+    /docs/go/weave-config deployment=:deployment /docs/go/weave-config 200!\n\
+    /docs/go/weave-config /docs/guides/setup#weave-config 301!\n";
+
 #[test]
 fn a_recorded_move_passes_and_a_deleted_page_is_reported() {
     let dir = renamed();
@@ -193,7 +203,8 @@ fn a_recorded_move_passes_and_a_deleted_page_is_reported() {
         site_file(dir.path(), "_ascribe/host/_redirects"),
         format!(
             "{PAIRS}/docs/guides/teams/share-a-loom /docs/_ascribe/gone/guides/teams/share-a-loom 404\n\
-             /docs/guides/teams/share-a-loom.md /docs/_ascribe/gone/guides/teams/share-a-loom 404\n"
+             /docs/guides/teams/share-a-loom.md /docs/_ascribe/gone/guides/teams/share-a-loom 404\n\
+             {PERMALINKS}"
         )
     );
     let redirects = site_file(dir.path(), "_ascribe/redirects.json");
@@ -222,7 +233,10 @@ fn a_merged_move_keeps_its_redirect_once_the_base_moves_past_it() {
     assert_eq!(code(&out), 0, "{}", both(&out));
     let out = ascribe(dir.path(), &["build"]);
     assert_eq!(code(&out), 0, "{}", both(&out));
-    assert_eq!(site_file(dir.path(), "_ascribe/host/_redirects"), PAIRS);
+    assert_eq!(
+        site_file(dir.path(), "_ascribe/host/_redirects"),
+        format!("{PAIRS}{PERMALINKS}")
+    );
 }
 
 #[test]
