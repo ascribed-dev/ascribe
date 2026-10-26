@@ -15,6 +15,12 @@
 //! nothing unless the answer is yes; `--yes` skips the question, and where
 //! standard input isn't a terminal, as in CI or a hook, it doesn't ask.
 //! The config, the observation, and the hash are `ascribe_model::examples`'s.
+//!
+//! Once it has written the observation, it looks for the nearest
+//! `ascribe.toml` in the folder or one above it, and when that project's
+//! sources don't read the config, because it's below a source's root, it
+//! says so, with the warning `ascribe check` gives (`examples-config-unread`).
+//! Nothing there is run.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -22,12 +28,15 @@ use std::io::{self, BufRead, IsTerminal, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
 
+use ascribe_check::{Diagnostic, Project, apply_levels, unread_config_issue};
+use ascribe_core::path::relative_path;
 use ascribe_core::{FileId, LineIndex};
 use ascribe_model::examples::{
     DEFAULT_OBSERVATION, EXAMPLES_FILE, ExamplesConfig, OBSERVATIONS_FOLDER, Observation, Problem,
     is_observation_name, kept_line, observation_path,
 };
 use ascribe_model::{COPIES_FOLDER, LOCK_FILE, Lock, example_hash};
+use ascribe_resolve::{DiskFs, Layout, unread_config};
 use clap::{Args as ClapArgs, ValueEnum};
 use serde::Serialize;
 
@@ -439,21 +448,59 @@ fn observe(
             if count == 1 { "file" } else { "files" },
             terminal(&tested),
         );
-        match changes {
-            None => {}
-            Some(changes) if changes.is_empty() => {
-                let _ = writeln!(out, "Nothing changed since the observation it replaces.");
-            }
-            Some(changes) => {
-                let _ = writeln!(
-                    out,
-                    "Since the observation it replaces: {}.",
-                    changes.clauses().join("; ")
-                );
-            }
-        }
+        say_changes(out, changes);
+    }
+    if let Some(warning) = unread_warning(folder) {
+        let _ = out.flush();
+        let _ = writeln!(err, "{warning}");
     }
     exit::OK
+}
+
+/// What changed since the observation a run replaces, when it replaced one.
+fn say_changes(out: &mut dyn Write, changes: Option<Changes>) {
+    match changes {
+        None => {}
+        Some(changes) if changes.is_empty() => {
+            let _ = writeln!(out, "Nothing changed since the observation it replaces.");
+        }
+        Some(changes) => {
+            let _ = writeln!(
+                out,
+                "Since the observation it replaces: {}.",
+                changes.clauses().join("; ")
+            );
+        }
+    }
+}
+
+/// The warning `ascribe check` gives the config in `folder` when the project
+/// of the nearest `ascribe.toml`, in the folder or one above it, has it in a
+/// source's folder but no source reads it: `None` when there's no such
+/// project, it can't be loaded, a source reads the config, or `[checks]`
+/// turns the check off.
+fn unread_warning(folder: &Path) -> Option<String> {
+    let config = Project::find_config(folder)?;
+    let file = Project::load_model(&config).ok()?;
+    // Outside FileSystem: the folder `ascribe observe` is run in, and the
+    // project's, made comparable before the project's file system exists.
+    let root = fs::canonicalize(&file.root).ok()?;
+    let here = fs::canonicalize(folder).ok()?;
+    let path = relative_path(&root, &here)?.join(EXAMPLES_FILE).ok()?;
+    let layout = Layout::from_model(&file.model);
+    let disk = DiskFs::new(&root, &layout);
+    let unread = unread_config(&file.model, &disk, &path)?;
+    let found = vec![Diagnostic::from_issue(&unread_config_issue(
+        &unread,
+        FileId::new(0),
+    ))];
+    let warning = apply_levels(&file.model.checks, found).into_iter().next()?;
+    Some(format!(
+        "{}: [{}] {}",
+        warning.severity.as_str(),
+        warning.code,
+        terminal(&warning.message),
+    ))
 }
 
 /// The config's commands, under `heading` and the config's name: the test,

@@ -147,7 +147,8 @@ pub use references::{
 };
 pub use replaces::{REPLACES, replaces_span, replaces_target};
 pub use snippet::examples::{
-    CurrentObservation, Example, ExampleStatus, FolderExamples, ReadObservation, example,
+    CurrentObservation, Example, ExampleStatus, FolderExamples, ReadObservation, UnreadConfig,
+    example, unread_config, unread_configs,
 };
 pub use snippet::{
     Address, AddressError, CodeFile, CodeFiles, Snippet, SnippetUse, SourceFile, resolve_snippet,

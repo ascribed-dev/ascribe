@@ -208,6 +208,46 @@ fn it_runs_only_the_config_in_its_own_folder() {
 }
 
 #[test]
+fn it_warns_when_no_source_of_the_project_above_reads_the_config() {
+    let dir = tempfile::tempdir().unwrap();
+    let model =
+        "spec = \"0.1\"\n\n[sources.code]\npath = \".\"\ninclude = [\"src/**\", \"examples/**\"]\n";
+    fs::write(dir.path().join("ascribe.toml"), model).unwrap();
+    fs::create_dir_all(dir.path().join("docs")).unwrap();
+    let examples = dir.path().join("examples");
+    fs::create_dir_all(&examples).unwrap();
+    fs::write(
+        examples.join("ascribe.examples.toml"),
+        "include = [\"*.ts\"]\ntest = \"exit 0\"\n",
+    )
+    .unwrap();
+    fs::write(examples.join("a.ts"), "a();\n").unwrap();
+
+    // The observation is written, and the warning says why no page shows it.
+    let output = ascribe(&examples, &["observe"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    assert!(examples.join(OBSERVATION).exists());
+    assert_eq!(
+        stderr(&output),
+        "warning: [ASC285] `examples/ascribe.examples.toml` is below the root of source `code`, `.`, and only the `ascribe.examples.toml` at a source's root is read, so no page says what its examples were tested with; declare a source with `path = \"examples\"`, or move the file to `.`\n"
+    );
+
+    // Not with the check turned off.
+    let off = format!("{model}\n[checks]\nexamples-config-unread = \"off\"\n");
+    fs::write(dir.path().join("ascribe.toml"), off).unwrap();
+    let output = ascribe(&examples, &["observe"]);
+    assert_eq!(code_of(&output), 0);
+    assert_eq!(stderr(&output), "");
+
+    // Nor once a source's root is the folder.
+    let declared = format!("{model}\n[sources.ex]\npath = \"examples\"\n");
+    fs::write(dir.path().join("ascribe.toml"), declared).unwrap();
+    let output = ascribe(&examples, &["observe"]);
+    assert_eq!(code_of(&output), 0);
+    assert_eq!(stderr(&output), "");
+}
+
+#[test]
 fn a_config_that_cant_be_read_or_an_environment_that_cant_be_noted_is_2() {
     let dir = folder("exit 0");
     fs::write(

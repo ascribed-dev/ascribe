@@ -24,6 +24,8 @@ In the source's folder, the one `[sources.<name>]` in `ascribe.toml` names with 
 
 An expected output is an example like any other: show it with a second `@snippet`, and have the test compare the program's output with it.
 
+The config goes at the source's root, the folder `path` names, and only the one there is read. When the tests live in a subfolder, such as `examples/` in a source whose `path` is `.`, either declare a source of their own, `[sources.examples]` with `path = "examples"`, and write their snippets with its name, or put the config at the source's root, with `include` and `test` written from there. A config below a source's root is read by no source, and [`examples-config-unread`](../checks/diagnostics/output-checks.md#ASC285) says so, in `ascribe check`, in the editor, and after `ascribe observe` writes its observation.
+
 ## 2. Run the test and commit what it records
 
 In the same folder, run [`ascribe observe`](sources.md#cli-observe). It names the commands it will run, asks before running them, runs them, and when the test passes, writes `examples.observations/default.toml`: where the test ran, and a hash of every example.

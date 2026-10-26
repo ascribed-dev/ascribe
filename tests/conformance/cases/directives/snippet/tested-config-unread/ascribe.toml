@@ -1,0 +1,11 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[sources.code]
+path = "code"
+include = ["src/**", "examples/**"]
+
+[sources.nested]
+path = "code/nested"

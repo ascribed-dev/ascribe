@@ -883,7 +883,7 @@ impl Core {
     /// is `text`; `false` when `path` isn't a source's config.
     fn publish_config(&mut self, path: &Path, text: &str) -> bool {
         let Some((source, project)) = self.examples_config(path) else {
-            return false;
+            return self.publish_unread_config(path, text);
         };
         let Some(loaded) = self.loaded.as_ref() else {
             return false;
@@ -895,6 +895,33 @@ impl Core {
             text,
             self.encoding,
         );
+        self.publish(path, found);
+        true
+    }
+
+    /// Publishes `examples-config-unread` on an open `ascribe.examples.toml`
+    /// that's in a source's folder but no source reads; `false` when it
+    /// isn't one, and has had nothing published, so it's any other file.
+    fn publish_unread_config(&mut self, path: &Path, text: &str) -> bool {
+        let Some(loaded) = self.loaded.as_ref() else {
+            return false;
+        };
+        let Some(Kind::Asset(project)) = loaded.classify(path) else {
+            return false;
+        };
+        if project.file_name() != Some(ascribe_model::examples::EXAMPLES_FILE) {
+            return false;
+        }
+        let found = crate::examples::unread_diagnostics(
+            &loaded.model,
+            &*loaded.fs,
+            &project,
+            text,
+            self.encoding,
+        );
+        if found.is_empty() && !self.published.contains_key(path) {
+            return false;
+        }
         self.publish(path, found);
         true
     }
