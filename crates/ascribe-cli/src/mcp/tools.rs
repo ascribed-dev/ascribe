@@ -1004,6 +1004,8 @@ fn call_resolve(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String
         let mut message =
             "Leave out `project` when `page` is a path; the page's project is found from it"
                 .to_owned();
+        // Outside FileSystem: whether the argument names a file, for the
+        // error's suggested call, before any project is found.
         if server.cwd.join(&args.page).is_file() {
             let mut call = a.map.clone();
             call.remove("project");
