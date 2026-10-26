@@ -624,6 +624,17 @@ fn line_endings_are_preserved() {
 }
 
 #[test]
+fn a_lone_carriage_return_in_frontmatter_ends_a_line() {
+    // It once left every span after it a byte early, so the space went
+    // before the colon (#1121).
+    check("---\n\r\"\n---\n\n@note:{", "---\n\r\"\n---\n\n@note: {");
+    check(
+        "---\ntitle: T\rkind: x\r\n---\n@note{type=tip}:x\r",
+        "---\ntitle: T\rkind: x\r\n---\n@note {type=tip}: x\r",
+    );
+}
+
+#[test]
 fn utf8_is_preserved() {
     check(
         "@note{type=tip}:é → 😀 text\n",
