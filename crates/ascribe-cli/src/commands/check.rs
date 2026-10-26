@@ -263,6 +263,8 @@ impl Coded for CheckError {
 /// warnings under `--deny-warnings`), 2 when the project can't be checked.
 /// Advice never changes the exit code.
 pub fn run(global: &Global, args: Args) -> ExitCode {
+    // DO NOT MERGE: a deliberate slowdown, to show the quick benchmark fails (#1024).
+    std::thread::sleep(std::time::Duration::from_secs(3));
     // Buffered: a report is many small writes, and a locked stdout flushes
     // at every line.
     let stdout = io::stdout();
