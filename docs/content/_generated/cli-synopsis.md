@@ -41,12 +41,12 @@ ascribe templates eject   [NAME]... [--to <DIR>] [--keep-type] [--format text|js
 ascribe templates status  [--format text|json] [--exit-code] [--diff <NAME>]
 ascribe vale eject
 
-ascribe agents sync       [--check] [--target agents-md|skills|claude|claude-rules|copilot|codex]... [--with-hook] [--cloud] [--agent]
+ascribe agents sync       [--check] [--target agents-md|skills|claude|claude-rules|copilot|codex]... [--with-hook] [--cloud] [--agent] [--command <COMMAND>]
 ascribe agents rules      [PATH]
 ascribe agents index      [--build <NAME>] [--into <FILE>] [--pages <DIR>] [--format text|json]
 ascribe agents skill      [FILE]
 ascribe agents prompt     [NAME] [--arg <KEY=VALUE>]... [--list]
-ascribe agents hook       HARNESS [--event edit|stop]
+ascribe agents hook       HARNESS [--event edit|stop] [--command <COMMAND>]
 ascribe mcp
 ascribe lsp
 ascribe --version
