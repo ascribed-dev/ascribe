@@ -506,9 +506,26 @@ fn resolve_shows_a_permalinks_help() {
     );
     let message = server.call_error(
         "ascribe_resolve",
-        json!({ "page": "site/docs/keys.md", "build": "cloud", "project": "site" }),
+        json!({ "page": "site/docs/gone.md", "build": "cloud", "project": "site" }),
     );
-    assert!(message.contains("`project` goes with"), "{message}");
+    assert!(
+        message.starts_with(
+            "Leave out `project` when `page` is a path; the page's project is found from it\n"
+        ),
+        "{message}"
+    );
+    // A page that is a file: the call to make instead.
+    let message = server.call_error(
+        "ascribe_resolve",
+        json!({ "page": "site/docs/rotate.md", "build": "cloud", "project": "site" }),
+    );
+    assert!(
+        message.starts_with(
+            "Leave out `project` when `page` is a path; the page's project is found from it. \
+             Call it with `{\"build\":\"cloud\",\"page\":\"site/docs/rotate.md\"}`\n"
+        ),
+        "{message}"
+    );
 }
 
 /// `ascribe_resolve` with `emit` returns what `ascribe resolve --emit`

@@ -1001,7 +1001,17 @@ fn call_resolve(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String
     };
     let project = a.path("project")?;
     if project.is_some() && resolve::permalink_name(&args.page).is_none() {
-        return Err("`project` goes with a `page` of `go:<name>`: a page finds its project".into());
+        let mut message =
+            "Leave out `project` when `page` is a path; the page's project is found from it"
+                .to_owned();
+        // Outside FileSystem: whether the argument names a file, for the
+        // error's suggested call, before any project is found.
+        if server.cwd.join(&args.page).is_file() {
+            let mut call = a.map.clone();
+            call.remove("project");
+            message.push_str(&format!(". Call it with `{}`", Value::Object(call)));
+        }
+        return Err(message);
     }
     let global = global_at(project.as_deref())?;
     let answer = resolve::answer(&server.cache, &global, &args).map_err(|s| s.message())?;
