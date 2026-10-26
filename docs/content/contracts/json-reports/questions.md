@@ -1,6 +1,7 @@
 ---
 type: reference
 title: "JSON reports: the commands that answer questions"
+nav-label: "The commands that answer questions"
 description: "The JSON Schemas of what ascribe explain, outline, link, refs, rename, resolve, search, and agents index write with --format json."
 ---
 
