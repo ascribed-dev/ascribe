@@ -6498,7 +6498,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1052"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Check: print a diagnostic's help once per run in text output"
     },
     {
@@ -6532,7 +6532,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDeg5Q",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "One meaning per word: grow the docs' glossary and rename the overloaded terms"
     },
     {
@@ -6674,7 +6674,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1054"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Docs: bring the docs index, command reference, and Files Ascribe writes up to date, and test them"
     },
     {
@@ -6836,7 +6836,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1063"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Changelog: one line per entry, with the detail on the page it links"
     },
     {
@@ -6873,7 +6873,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1065"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Docs: lead the editor's sidebar page with what each view shows, and move the update rules after it"
     },
     {
@@ -6981,7 +6981,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1078"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Define memo files' `about` targets in the spec's grammar, not by pointing at `ascribe refs`"
     },
     {
@@ -7200,8 +7200,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1083"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Search: when no block has every word, show the closest matches instead of \"No place matches\""
     },
     {
@@ -7245,8 +7248,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/995"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCek",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1082"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Board: don't start cards that touch the same files at the same time"
     },
     {
@@ -7280,7 +7286,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1075"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "pnpm typecheck: say to build first instead of \"Cannot find module\""
     },
     {
@@ -7372,8 +7378,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1003"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCqc",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1086"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Astro starter: give the layout init writes a default stylesheet"
     },
     {
@@ -7564,8 +7573,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1015"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlC7c",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1085"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Docs site: previous and next links, the current section in On this page, and the phone menu"
     },
     {
@@ -8031,6 +8043,20 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "Warn on a code block info-string word that looks like a pair but isn't one"
+    },
+    {
+      "content": {
+        "body": "From #953's product decision: each diagnostic entry's header line, such as \"Error · file level · next step: choose\", keeps its compact form, and each word in it links to its definition in the diagnostics reference. #1081 (the glossary PR) added the sections those links point at: [Severity](https://github.com/ascribed-dev/ascribe/blob/main/docs/content/checks/diagnostics.md#severity), **File level and page level**, and **What to do next**. It left the links out because they don't fit the docs' own `page-size` limit for agents (50,000 characters of Markdown).\n\nEach link costs about 55 characters in the agent Markdown. Built with links on every entry (generator: `write_entry` in `tests/conformance/tests/docs.rs`):\n\n| Page | Now | With links |\n|---|---|---|\n| Links, pages, and sources (`checks/diagnostics/pages.md`, 67 entries) | ~47,400 | ~61,600 |\n| The content model (`content-model.md`, 59) | under 50,000 | ~50,900 |\n| Content checks (`content-checks.md`, 39) | ~42,500 | ~52,600 |\n\nKyle chose to split these pages first, then add the links (decision in the #953 project thread, 26 October 2026).\n\n## Done looks like\n\n- The three pages are split so that each page stays under 50,000 characters with the links in, and `ascribe check --deny-warnings --config docs` reports no `page-size` advice. The diagnostics reference's list of pages names the new ones. Entries keep their `ASC` permalinks, and any page that moves or goes is recorded in `ascribe.addresses`.\n- Each entry's header line links its severity to `#severity`, its level to `#file-level-and-page-level`, its next step to `#what-to-do-next`, \"configurable\" to `#setting-a-checks-level`, and \"acknowledged\" to the glossary's `acknowledgement` term, regenerated with `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`.",
+        "number": 1084,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Split the long diagnostics pages, then link each word of an entry's header line",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1084"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDpurI",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Split the long diagnostics pages, then link each word of an entry's header line"
     }
   ]
 }
