@@ -315,4 +315,100 @@ describe("the report", () => {
     );
     expect(decodeURIComponent(location.hash)).toBe("#site@3.4/guide.md");
   });
+
+  it("marks the changed words inside a note, a tab, a step, and details", () => {
+    // `ascribe diff --format html`'s data for these blocks changed, as it
+    // renders them: a one-line note's paragraph has the note's own anchor.
+    const html = (words: Record<string, string>) => `
+<ascribe-note type="warning" label="Warning" data-ascribe-source="index.md:5-5">
+<p data-ascribe-source="index.md:5-5">You need Node ${words.node}.</p>
+</ascribe-note>
+<ascribe-note type="warning" label="Warning" heading="A titled note" data-ascribe-source="index.md:7-10">
+<p data-ascribe-source="index.md:9-9">You need Node ${words.node}.</p>
+</ascribe-note>
+<ascribe-tabs sync="pm" data-ascribe-source="index.md:12-14">
+<ascribe-tab value="npm" label="npm" data-ascribe-source="index.md:12-13">
+<p data-ascribe-source="index.md:13-13">Use npm to ${words.verb}.</p>
+</ascribe-tab>
+</ascribe-tabs>
+<ascribe-steps data-ascribe-source="index.md:16-17">
+<ol data-ascribe-source="index.md:17-17">
+<li data-ascribe-source="index.md:17-17">Run the ${words.age} installer.</li>
+</ol>
+</ascribe-steps>
+<details data-ascribe-source="index.md:19-22">
+<summary>More detail</summary>
+<p data-ascribe-source="index.md:21-21">Hidden until ${words.open}.</p>
+</details>`;
+    const at = (source: string) => ({ source, via: [] });
+    const changed = (
+      line: number,
+      now_text: string,
+      was_text: string,
+      now: number[][],
+      was: number[][],
+    ) => ({
+      kind: "changed" as const,
+      now: at(`index.md:${line}-${line}`),
+      was: at(`index.md:${line}-${line}`),
+      words: { now, was, now_text, was_text } as never,
+    });
+    const report = data();
+    report.builds = [
+      {
+        build: "site",
+        pages: [
+          page("index.md", {
+            because: [],
+            own_file_changed: true,
+            counts: { changed: 5, added: 0, removed: 0, moved: 0 },
+            changes: [
+              changed(5, "You need Node 22 or later.", "You need Node 20.", [[14, 25]], [[14, 16]]),
+              changed(9, "You need Node 22 or later.", "You need Node 20.", [[14, 25]], [[14, 16]]),
+              changed(
+                13,
+                "Use npm to set it up.",
+                "Use npm to install it.",
+                [
+                  [11, 14],
+                  [18, 20],
+                ],
+                [[11, 18]],
+              ),
+              changed(17, "Run the new installer.", "Run the old installer.", [[8, 11]], [[8, 11]]),
+              changed(21, "Hidden until opened.", "Hidden until it opens.", [[13, 19]], [[13, 21]]),
+            ],
+          }),
+        ],
+      },
+    ];
+    report.pages = {
+      p1: {
+        html: html({ node: "22 or later", verb: "set it up", age: "new", open: "opened" }),
+        images: {},
+      },
+      p2: {
+        html: html({ node: "20", verb: "install it", age: "old", open: "it opens" }),
+        images: {},
+      },
+    };
+    report.limit = { pages: 300, omitted: 0 };
+    const root = document.createElement("div");
+    document.body.append(root);
+    start(root, report);
+    const marked = (source: string, tag: string) =>
+      Array.from(
+        root.querySelectorAll(
+          `[data-ascribe-source="${source}"]:not([data-ascribe-was-only] *) ${tag}`,
+        ),
+      ).map((e) => e.textContent);
+    expect(marked("index.md:5-5", "ins")).toEqual(["22 or later"]);
+    expect(marked("index.md:5-5", "del")).toEqual(["20"]);
+    expect(marked("index.md:9-9", "ins")).toEqual(["22 or later"]);
+    expect(marked("index.md:13-13", "ins")).toEqual(["set", "up"]);
+    expect(marked("index.md:13-13", "del")).toEqual(["install"]);
+    expect(marked("index.md:17-17", "ins")).toEqual(["new"]);
+    expect(marked("index.md:21-21", "ins")).toEqual(["opened"]);
+    expect(marked("index.md:21-21", "del")).toEqual(["it opens"]);
+  });
 });

@@ -13,6 +13,7 @@ use ascribe_check::Diagnostic;
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{LineIndex, RelPath, Visited};
 use ascribe_model::ContentModel;
+use ascribe_resolve::side_file::{self, Indexed, SideFile};
 use ascribe_resolve::{
     Affected, ApplyError, Change, DiskFs, FileSystem, IncrementalProject, Layout, ResolvedCache,
     in_nested_project, is_source_path,
@@ -98,15 +99,10 @@ impl Loaded {
         )
     }
 
-    /// Whether `abs` is `ascribe.baseline`.
-    pub(crate) fn is_baseline(&self, abs: &Path) -> bool {
+    /// The side file `abs` is (`ascribe_check::side_files`), when it's one.
+    pub(crate) fn side_file(&self, abs: &Path) -> Option<&'static side_file::Entry> {
         relative_path(&self.root, abs)
-            .is_some_and(|p| p.as_str() == ascribe_check::baseline::BASELINE_FILE)
-    }
-
-    /// Whether `abs` is `ascribe.addresses`.
-    pub(crate) fn is_addresses(&self, abs: &Path) -> bool {
-        relative_path(&self.root, abs).is_some_and(|p| p.as_str() == ascribe_model::ADDRESSES_FILE)
+            .and_then(|p| ascribe_check::side_files::side_file(p.as_str()))
     }
 
     /// Whether `abs` is in a memo folder, committed or personal.
@@ -666,14 +662,13 @@ impl Core {
             BufferFs::new(disk.clone(), buffers),
         );
         let fs = Arc::new(LayerFs::new(disk));
-        // The open memo files, `ascribe.nav`, `ascribe.addresses`, and
-        // `ascribe.baseline`, as the editor has them.
+        // The open memo files, and the side files whose open buffer wins, as
+        // the editor has them.
         for (path, doc) in &self.docs {
             if let Some(project) = relative_path(&root, path)
                 && (ascribe_resolve::is_memo_path(&project, &layout)
-                    || project.as_str() == ascribe_model::NAV_FILE
-                    || project.as_str() == ascribe_model::ADDRESSES_FILE
-                    || project.as_str() == ascribe_check::baseline::BASELINE_FILE)
+                    || ascribe_check::side_files::side_file(project.as_str())
+                        .is_some_and(|entry| entry.stale.buffered))
             {
                 fs.set_buffer(&project, Some(doc.text.clone()));
             }
@@ -734,69 +729,59 @@ impl Core {
         for path in gone {
             self.clear(&path);
         }
-        // The project read `ascribe.nav` from the disk; an open buffer wins.
-        self.refresh_nav();
+        // The project read its side files from the disk; an open buffer wins.
+        self.refresh_indexed();
         self.publish_open_configs();
     }
 
-    /// Gives the long-lived project `ascribe.nav` as the editor has it now,
-    /// its open buffer over the disk, so the navigation it gives, which the
-    /// Pages view draws, follows the file. Every change to the file comes
-    /// here, as each sets `across_dirty` for the checks.
-    fn refresh_nav(&mut self) {
+    /// Gives the long-lived project the side files it reads as the editor
+    /// has them now, each open buffer over the disk: `ascribe.nav`, so the
+    /// navigation it gives, which the Pages view draws, follows the file, and
+    /// `ascribe.addresses`, for what it records of permalinks.
+    fn refresh_indexed(&mut self) {
         let Some(loaded) = self.loaded.as_mut() else {
             return;
         };
-        let nav = RelPath::parse(ascribe_model::NAV_FILE)
-            .ok()
-            .and_then(|path| loaded.fs.read_file(&path).ok())
-            .and_then(|bytes| String::from_utf8(bytes).ok())
-            .and_then(|text| {
-                ascribe_model::NavFile::parse(&text, ascribe_core::FileId::new(0)).ok()
-            })
-            .map(Arc::new);
-        if let Ok(affected) = loaded.inc.apply([Change::Nav(nav)]) {
+        let side = Indexed::read(&*loaded.fs);
+        if let Ok(affected) = loaded.inc.apply([Change::SideFiles(side)]) {
             self.absorb(&affected);
         }
     }
 
-    /// Gives the project `ascribe.addresses` as the editor has it, for what
-    /// it records of permalinks: its open buffer, or the disk's.
-    fn refresh_addresses(&mut self) {
+    // -- Side files ------------------------------------------------------------
+
+    /// Gives the project a side file whose open buffer wins as the editor
+    /// has it, when `abs` is one: `text`, or the disk's once it's `None`;
+    /// then what the file's [`side_file::Stale`] says is stale follows it.
+    /// Whether it was one.
+    fn set_side_buffer(&mut self, abs: &Path, text: Option<String>) -> bool {
         let Some(loaded) = self.loaded.as_mut() else {
-            return;
+            return false;
         };
-        let file = RelPath::parse(ascribe_model::ADDRESSES_FILE)
-            .ok()
-            .and_then(|path| loaded.fs.read_file(&path).ok())
-            .and_then(|bytes| String::from_utf8(bytes).ok())
-            .and_then(|text| {
-                ascribe_model::AddressFile::parse(&text, ascribe_core::FileId::new(0)).ok()
-            })
-            .map(Arc::new);
-        if let Ok(affected) = loaded.inc.apply([Change::Addresses(file)]) {
-            self.absorb(&affected);
+        let Some(entry) = loaded.side_file(abs).filter(|entry| entry.stale.buffered) else {
+            return false;
+        };
+        if let Ok(project) = RelPath::parse(entry.path) {
+            loaded.fs.set_buffer(&project, text);
         }
+        if entry.stale.across {
+            loaded.across_dirty = true;
+        }
+        // The addresses are compared with its buffer, so a move's unsaved
+        // entry counts.
+        if entry.path == side_file::Addresses::PATH {
+            self.addresses.changed();
+        }
+        if entry.stale.index {
+            self.refresh_indexed();
+        }
+        if entry.stale.every_file {
+            self.refresh_baseline();
+        }
+        true
     }
 
     // -- `ascribe.baseline` ----------------------------------------------------
-
-    /// Gives the project `ascribe.baseline` as the editor has it, when
-    /// `abs` is it: its open buffer, or the disk's once `text` is `None`.
-    /// Whether it was.
-    fn set_baseline_buffer(&mut self, abs: &Path, text: Option<String>) -> bool {
-        let Some(loaded) = self.loaded.as_ref() else {
-            return false;
-        };
-        if !loaded.is_baseline(abs) {
-            return false;
-        }
-        if let Ok(project) = RelPath::parse(ascribe_check::baseline::BASELINE_FILE) {
-            loaded.fs.set_buffer(&project, text);
-        }
-        self.refresh_baseline();
-        true
-    }
 
     /// Reads `ascribe.baseline` again, its open buffer over the disk. When
     /// it changed, every file is checked again, so what it holds back
@@ -1138,26 +1123,7 @@ impl Core {
             self.refresh_lenses();
             return;
         }
-        if let Some(loaded) = self.loaded.as_mut()
-            && let Some(project) = loaded.nav_file(&path)
-        {
-            loaded.fs.set_buffer(&project, None);
-            loaded.across_dirty = true;
-            self.refresh_nav();
-            return;
-        }
-        if let Some(loaded) = self.loaded.as_mut()
-            && loaded.is_addresses(&path)
-        {
-            if let Ok(project) = RelPath::parse(ascribe_model::ADDRESSES_FILE) {
-                loaded.fs.set_buffer(&project, None);
-            }
-            loaded.across_dirty = true;
-            self.addresses.changed();
-            self.refresh_addresses();
-            return;
-        }
-        if self.set_baseline_buffer(&path, None) {
+        if self.set_side_buffer(&path, None) {
             return;
         }
         self.refresh_from_disk(&path);
@@ -1201,31 +1167,18 @@ impl Core {
             self.refresh_lenses();
             return;
         }
-        // Nor is `ascribe.nav`: the checks across the project hold it to the
-        // project as it's typed.
-        if let Some(project) = loaded.nav_file(path) {
-            loaded.fs.set_buffer(&project, Some(text));
-            loaded.across_dirty = true;
-            self.refresh_nav();
+        // Nor is a side file whose open buffer wins, `ascribe.nav` for one:
+        // what's stale of it follows it as it's typed.
+        if loaded
+            .side_file(path)
+            .is_some_and(|entry| entry.stale.buffered)
+        {
+            self.set_side_buffer(path, Some(text));
             return;
         }
-        // Nor is `ascribe.baseline`: what it holds back follows it as it's
-        // typed.
-        if loaded.is_baseline(path) {
-            self.set_baseline_buffer(path, Some(text));
+        let Some(loaded) = self.loaded.as_mut() else {
             return;
-        }
-        // Nor is `ascribe.addresses`: the addresses are compared with its
-        // buffer, so a move's unsaved entry counts.
-        if loaded.is_addresses(path) {
-            if let Ok(project) = RelPath::parse(ascribe_model::ADDRESSES_FILE) {
-                loaded.fs.set_buffer(&project, Some(text));
-            }
-            loaded.across_dirty = true;
-            self.addresses.changed();
-            self.refresh_addresses();
-            return;
-        }
+        };
         if let Some(Kind::Source(content, project)) = loaded.classify(path) {
             self.apply(
                 vec![Change::Edited {
@@ -1253,8 +1206,7 @@ impl Core {
         let mut mirror: Vec<(RelPath, bool)> = Vec::new();
         let mut visited = Visited::default();
         let mut refresh = false;
-        let mut nav = false;
-        let mut addresses = false;
+        let mut indexed = false;
         let mut baseline = false;
         let mut redrawn = BTreeSet::new();
         for event in events {
@@ -1308,26 +1260,20 @@ impl Core {
                 sync_model = true;
                 continue;
             }
-            if let Some(loaded) = self.loaded.as_ref()
-                && loaded.is_baseline(&path)
-            {
-                // Read again, as `ascribe baseline write` and `prune` change
-                // it; an open buffer of it wins.
-                baseline = true;
-                continue;
-            }
             if let Some(loaded) = self.loaded.as_mut()
-                && (path == loaded.root.join(ascribe_model::PERMALINKS_FILE)
-                    || loaded.nav_file(&path).is_some()
-                    || loaded.is_addresses(&path))
+                && let Some(entry) = loaded.side_file(&path).filter(|entry| entry.watched())
             {
-                // The permalinks list, the navigation file, and the
-                // addresses file aren't sources: the checks across the
-                // project compare them with the content. An open buffer of
-                // `ascribe.nav` or `ascribe.addresses` wins.
-                loaded.across_dirty = true;
-                nav |= loaded.nav_file(&path).is_some();
-                addresses |= loaded.is_addresses(&path);
+                // A side file isn't a source: what its `Stale` says is stale
+                // follows it, the index and the baseline once the events are
+                // through, each read again with an open buffer over the disk.
+                // `ascribe baseline write` and `prune` write the baseline, for
+                // one. A side file nothing else follows, the lock, is any
+                // other file.
+                if entry.stale.across {
+                    loaded.across_dirty = true;
+                }
+                indexed |= entry.stale.index;
+                baseline |= entry.stale.every_file;
                 continue;
             }
             memos |= self
@@ -1398,11 +1344,8 @@ impl Core {
             }
             self.refresh_lenses();
         }
-        if nav {
-            self.refresh_nav();
-        }
-        if addresses {
-            self.refresh_addresses();
+        if indexed {
+            self.refresh_indexed();
         }
         if baseline {
             self.refresh_baseline();
@@ -1993,14 +1936,14 @@ impl Core {
             if is_model {
                 return self.project_target(uri);
             }
-            // `ascribe.permalinks`, beside it, whose fixes edit
-            // `ascribe.addresses` and the list. And `ascribe.nav`, whose fixes
-            // edit itself, and `ascribe.addresses`, whose entry the list can
-            // be behind on.
+            // A side file the checks across the project report on, beside
+            // it: `ascribe.permalinks`, whose fixes edit `ascribe.addresses`
+            // and the list, `ascribe.nav`, whose fixes edit itself, and
+            // `ascribe.addresses`, whose entry the list can be behind on.
             let loaded = self.loaded.as_ref()?;
-            if path == loaded.root.join(ascribe_model::PERMALINKS_FILE)
-                || loaded.nav_file(&path).is_some()
-                || loaded.is_addresses(&path)
+            if loaded
+                .side_file(&path)
+                .is_some_and(|entry| entry.stale.across)
             {
                 let content = RelPath::parse(Ctx::PROJECT).ok()?;
                 return self.ctx(loaded, loaded.inc.snapshot(), content, &path);

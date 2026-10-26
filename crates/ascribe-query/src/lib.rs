@@ -59,8 +59,8 @@ pub use report::{Report, report};
 pub use resolve::{Emit, PermalinkHelp, Resolved, ResolvedPermalink, resolve};
 pub use rules::{pointer, rules};
 pub use search::{
-    PageCount, Readings, Search, SearchPage, SearchPlace, SearchThrough, Searched, SourcePlace,
-    excerpt, search,
+    PageCount, PartialPlace, Readings, Search, SearchPage, SearchPlace, SearchThrough, Searched,
+    SourcePlace, excerpt, search,
 };
 pub use versions::{VersionChanges, VersionsList};
 

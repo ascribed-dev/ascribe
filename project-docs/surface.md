@@ -384,10 +384,10 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC274` | `link-operation-form-unsupported` | error | write | `#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is a template, which has no address for it; a link by method and path needs `renderer = "redoc"` |
 | `ASC275` | `link-operation-by-path` | advice | fix | `#{operation}` names the operation `{id}` of `{path}` by its method and path; link to it by its id, `#{id}` |
 | `ASC276` | `link-operation-deprecated` | advice | write | `#{operation}` names an operation `{path}` marks deprecated |
-| `ASC277` | `example-schema-mismatch` | error | write | {found}; {body} says {expected} |
-| `ASC278` | `example-not-json` | error | write | the example of {body} isn't JSON: {reason} |
-| `ASC279` | `example-body-missing` | error | write | `{operation}` has no request body in `{path}` |
-| `ASC280` | `example-schema-unsupported` | advice | outside | the schema of {body} has a pattern the validator can't read, `{pattern}`, so it's left out, and the rest of the schema is checked |
+| `ASC277` | `api-example-schema-mismatch` | error | write | {found}; {body} says {expected} |
+| `ASC278` | `api-example-not-json` | error | write | the example of {body} isn't JSON: {reason} |
+| `ASC279` | `api-example-body-missing` | error | write | `{operation}` has no request body in `{path}` |
+| `ASC280` | `api-example-schema-unsupported` | advice | outside | the schema of {body} has a pattern the validator can't read, `{pattern}`, so it's left out, and the rest of the schema is checked |
 | `ASC281` | `operation-link-not-operation` | error | write | `{link}` isn't a link to an operation; `@operation` takes a declared API's spec, `#`, and an operation's `operationId` |
 | `ASC282` | `api-operation-unreferenced` | advice | write | no page links to `{operation}` ({method} {route}) in {path} |
 | `ASC283` | `build-filter-line-undeclared` | advice | write | build `{build}` filters for `{target} {version}`, which is older than every line `[releases.{target}]` declares, so `ascribe versions` doesn't list it; declare its line in `archived`, or make the build one output for each live line with `versions = "{target}"` |
@@ -1060,7 +1060,7 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 | `.claude/rules/ascribe*.md` and `.github/instructions/ascribe*.instructions.md` | `ascribe agents sync`, at the repository's root, with `--target claude-rules` and `--target copilot`. | Yes |
 | `.claude/settings.json`, `.mcp.json`, `.codex/hooks.json`, and `.github/hooks/ascribe.json` | `ascribe agents sync --with-hook`, at the repository's root: the hooks' entries and the MCP server, beside your own. | Yes |
 | `.github/workflows/copilot-setup-steps.yml` and `.github/agents/ascribe-docs.md` | `ascribe agents sync --cloud`, at the repository's root: steps between markers in the workflow, and with `--agent`, the custom agent. | Yes |
-| `src/content.config.ts`, `src/pages/[...slug].astro`, and `src/layouts/Docs.astro` | `npx @ascribed/astro init`, once, in the Astro root. From then on they're yours. | Yes |
+| `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Docs.astro`, and `src/styles/docs.css` | `npx @ascribed/astro init`, once, in the Astro root. From then on they're yours. | Yes |
 | `.astro/integrations/_ascribed_astro/` | `@ascribed/astro`, in the Astro root: a copy of the collection's schema, inside Astro's own folder, which Astro's starters leave out of git. | No |
 
 ## What nothing declares

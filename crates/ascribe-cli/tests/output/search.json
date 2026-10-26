@@ -82,5 +82,7 @@
   "truncated": false,
   "next_command": null,
   "source_places": [],
-  "not_searched_builds": []
+  "not_searched_builds": [],
+  "stop_words": [],
+  "partial_places": []
 }

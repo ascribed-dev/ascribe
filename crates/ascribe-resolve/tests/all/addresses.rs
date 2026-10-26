@@ -280,21 +280,23 @@ fn an_incremental_project_follows_ascribe_addresses_for_what_it_records_of_perma
         FileId::new(0),
     )
     .expect("it reads");
+    let side = |addresses| {
+        ascribe_resolve::Change::SideFiles(ascribe_resolve::side_file::Indexed {
+            nav: None,
+            addresses,
+        })
+    };
     let affected = project
-        .apply([ascribe_resolve::Change::Addresses(Some(Arc::new(
-            file.clone(),
-        )))])
+        .apply([side(Some(Arc::new(file.clone())))])
         .expect("it applies");
     assert!(!affected.is_empty(), "a new snapshot");
     assert!(affected.recheck.is_empty() && affected.re_resolve.is_empty());
     assert_eq!(names(&project), ["setting-up"]);
     // The same file again changes nothing.
     let again = project
-        .apply([ascribe_resolve::Change::Addresses(Some(Arc::new(file)))])
+        .apply([side(Some(Arc::new(file)))])
         .expect("it applies");
     assert!(again.is_empty());
-    project
-        .apply([ascribe_resolve::Change::Addresses(None)])
-        .expect("it applies");
+    project.apply([side(None)]).expect("it applies");
     assert!(names(&project).is_empty());
 }

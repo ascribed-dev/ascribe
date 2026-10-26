@@ -1,0 +1,329 @@
+/*
+ * The layout's styles: a readable column, the sidebar beside the page (a menu
+ * on a phone), the table of contents to one side, and both color schemes.
+ * They're yours to change, or to replace: delete this file and its import in
+ * src/layouts/Docs.astro, and the layout's markup still reads in order.
+ *
+ * Its colors and spaces are the element library's --ascribe-* properties, so
+ * a site that sets them restyles the layout and the elements together. The
+ * page's own background and text are the browser's, `Canvas` and
+ * `CanvasText`, light or dark as the reader's system is.
+ */
+
+:root {
+  color-scheme: light dark;
+  --docs-accent: var(--ascribe-tab-active-color);
+  --docs-sidebar-width: 16rem;
+  --docs-toc-width: 12rem;
+  --docs-measure: 46rem;
+  --docs-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --docs-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: Canvas;
+  color: CanvasText;
+  font-family: var(--docs-font);
+  line-height: 1.6;
+  overflow-wrap: break-word;
+}
+
+a {
+  color: var(--docs-accent);
+  text-underline-offset: 0.15em;
+}
+
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--ascribe-tab-focus-color);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.25;
+}
+
+h1 {
+  margin-block: 0 var(--ascribe-space-small);
+  font-size: 2rem;
+}
+
+figure {
+  margin-inline: 0;
+}
+
+img,
+video,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--docs-font-mono);
+  font-size: 0.9em;
+}
+
+pre {
+  overflow-x: auto;
+  padding: var(--ascribe-space);
+  border: var(--ascribe-border-width) solid var(--ascribe-border-color);
+  border-radius: var(--ascribe-radius);
+  line-height: 1.5;
+}
+
+/* A wide table scrolls in its own box rather than widening the page. */
+table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: var(--ascribe-space-small);
+  border: var(--ascribe-border-width) solid var(--ascribe-border-color);
+  text-align: start;
+  vertical-align: top;
+}
+
+/* The frame: the sidebar, then the page --------------------------------- */
+
+body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+main {
+  container-type: inline-size;
+  min-width: 0;
+  padding: var(--ascribe-space);
+}
+
+/* The sidebar is in a <details>: a menu on a phone, and open beside the page
+   on a wider screen, where its toggle is hidden. */
+.menu {
+  border-block-end: var(--ascribe-border-width) solid var(--ascribe-border-color);
+}
+
+.menu > summary {
+  padding: var(--ascribe-space-small) var(--ascribe-space);
+  font-weight: var(--ascribe-font-weight-strong);
+  cursor: pointer;
+}
+
+.menu > nav {
+  padding: 0 var(--ascribe-space) var(--ascribe-space);
+}
+
+@media (min-width: 50rem) {
+  body {
+    grid-template-columns: var(--docs-sidebar-width) minmax(0, 1fr);
+  }
+
+  .menu {
+    position: sticky;
+    inset-block-start: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    border-block-end: 0;
+    border-inline-end: var(--ascribe-border-width) solid var(--ascribe-border-color);
+  }
+
+  .menu > summary {
+    display: none;
+  }
+
+  .menu::details-content {
+    content-visibility: visible;
+  }
+
+  .menu > nav {
+    padding: var(--ascribe-space);
+  }
+
+  main {
+    padding: calc(var(--ascribe-space) * 2);
+  }
+}
+
+/* The sidebar's groups and pages, each indented by its depth. */
+nav[aria-label="Docs"] h2 {
+  margin: var(--ascribe-space) 0 var(--ascribe-space-small);
+  color: var(--ascribe-muted-color);
+  font-size: var(--ascribe-font-size-small);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+nav[aria-label="Docs"] section:first-child h2 {
+  margin-block-start: 0;
+}
+
+nav[aria-label="Docs"] ul,
+nav[aria-label="On this page"] ul,
+nav[aria-label="Versions"] ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+nav[aria-label="Docs"] li {
+  margin-block: 0.125rem;
+}
+
+nav[aria-label="Docs"] li[data-depth="1"] {
+  padding-inline-start: var(--ascribe-space);
+}
+
+nav[aria-label="Docs"] li[data-depth="2"] {
+  padding-inline-start: calc(var(--ascribe-space) * 2);
+}
+
+nav[aria-label="Docs"] a {
+  display: block;
+  padding: 0.125rem var(--ascribe-space-small);
+  border-radius: var(--ascribe-radius);
+  color: inherit;
+  text-decoration: none;
+}
+
+nav[aria-label="Docs"] a:hover {
+  background: var(--ascribe-tab-hover-background);
+}
+
+[aria-current="page"] {
+  color: var(--docs-accent);
+  font-weight: var(--ascribe-font-weight-strong);
+}
+
+nav[aria-label="Docs"] a[aria-current="page"] {
+  color: var(--docs-accent);
+}
+
+/* The page: its column, and the table of contents beside it ------------- */
+
+main > *,
+.page {
+  max-width: var(--docs-measure);
+}
+
+nav[aria-label="Versions"] ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ascribe-space-small) var(--ascribe-space);
+}
+
+[data-version-banner] {
+  margin-block-end: var(--ascribe-space);
+  padding: var(--ascribe-space-small) var(--ascribe-space);
+  border-inline-start: 0.25rem solid var(--ascribe-warning-color);
+  border-radius: var(--ascribe-radius);
+  background: var(--ascribe-warning-background);
+}
+
+[data-version-banner] p {
+  margin: 0;
+}
+
+/* The table of contents: a box above the article, and to its side where the
+   page is wide enough for both. */
+nav[aria-label="On this page"] {
+  margin-block: var(--ascribe-space);
+  padding: var(--ascribe-space-small) var(--ascribe-space);
+  border: var(--ascribe-border-width) solid var(--ascribe-border-color);
+  border-radius: var(--ascribe-radius);
+  font-size: var(--ascribe-font-size-small);
+}
+
+nav[aria-label="On this page"]::before {
+  content: "On this page";
+  display: block;
+  margin-block-end: 0.25rem;
+  color: var(--ascribe-muted-color);
+  font-weight: var(--ascribe-font-weight-strong);
+}
+
+nav[aria-label="On this page"] li[data-depth="3"] {
+  padding-inline-start: var(--ascribe-space);
+}
+
+nav[aria-label="On this page"] li[data-depth="4"] {
+  padding-inline-start: calc(var(--ascribe-space) * 2);
+}
+
+nav[aria-label="On this page"] a {
+  color: inherit;
+}
+
+@container (min-width: 52rem) {
+  .page {
+    display: grid;
+    grid-template-columns: minmax(0, var(--docs-measure)) var(--docs-toc-width);
+    column-gap: calc(var(--ascribe-space) * 2);
+    max-width: none;
+  }
+
+  .page > article {
+    grid-row: 1;
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  nav[aria-label="On this page"] {
+    position: sticky;
+    inset-block-start: var(--ascribe-space);
+    grid-column: 2;
+    align-self: start;
+    margin-block: 0;
+    padding: 0 0 0 var(--ascribe-space);
+    border-width: 0 0 0 var(--ascribe-border-width);
+    border-radius: 0;
+  }
+}
+
+/* Previous and next: two links apart, the next at the end. */
+nav[aria-label="Previous and next"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ascribe-space);
+  margin-block-start: calc(var(--ascribe-space) * 2);
+  padding-block-start: var(--ascribe-space);
+  border-block-start: var(--ascribe-border-width) solid var(--ascribe-border-color);
+}
+
+nav[aria-label="Previous and next"] a {
+  flex: 1 1 14rem;
+  padding: var(--ascribe-space-small) var(--ascribe-space);
+  border: var(--ascribe-border-width) solid var(--ascribe-border-color);
+  border-radius: var(--ascribe-radius);
+  text-decoration: none;
+}
+
+nav[aria-label="Previous and next"] a:hover {
+  border-color: var(--docs-accent);
+}
+
+nav[aria-label="Previous and next"] a[rel="next"] {
+  text-align: end;
+}
+
+nav[aria-label="Previous and next"] a[rel="next"]:only-child {
+  margin-inline-start: auto;
+  flex-grow: 0;
+}

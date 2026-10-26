@@ -5047,7 +5047,7 @@ fix = "Link to the operation that replaces it, if the spec names one, or say in 
 
 [[diagnostic]]
 code = "ASC277"
-slug = "example-schema-mismatch"
+slug = "api-example-schema-mismatch"
 severity = "error"
 level = "file"
 next = "write"
@@ -5060,7 +5060,7 @@ fix = "Change the example to agree with the schema, or, when the API changed and
 
 [[diagnostic]]
 code = "ASC278"
-slug = "example-not-json"
+slug = "api-example-not-json"
 severity = "error"
 level = "file"
 next = "write"
@@ -5074,7 +5074,7 @@ fix = "Fix the JSON where reading it stopped: a trailing comma, a comment, a key
 
 [[diagnostic]]
 code = "ASC279"
-slug = "example-body-missing"
+slug = "api-example-body-missing"
 severity = "error"
 level = "file"
 next = "write"
@@ -5094,7 +5094,7 @@ fix = "Name a body the operation has: for a request, an operation that takes one
 
 [[diagnostic]]
 code = "ASC280"
-slug = "example-schema-unsupported"
+slug = "api-example-schema-unsupported"
 severity = "advice"
 level = "file"
 next = "outside"

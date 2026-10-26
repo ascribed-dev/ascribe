@@ -405,7 +405,12 @@ const projectReport: Check<ProjectReport> = shape<ProjectReport>({
     shape<ProjectReport["sections"][number]>({ key: text, label: text, open: boolean }),
   ),
   groups: listOf(
-    shape<ProjectReport["groups"][number]>({ key: text, head: text, action: nullable(text) }),
+    shape<ProjectReport["groups"][number]>({
+      key: text,
+      head: text,
+      action: nullable(text),
+      none: nullable(text),
+    }),
   ),
   health: listOf(
     shape<ProjectReport["health"][number]>({
@@ -413,6 +418,7 @@ const projectReport: Check<ProjectReport> = shape<ProjectReport>({
       value: text,
       note: text,
       state: text,
+      shown: boolean,
       dimmed: boolean,
       severities: listOf(text),
     }),

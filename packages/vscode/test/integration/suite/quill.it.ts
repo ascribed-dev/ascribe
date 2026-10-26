@@ -109,7 +109,7 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
     );
     assert.ok(model.includes("  api (1 use)"), model.join("\n"));
     assert.ok(model.includes("Dimensions (2)"), model.join("\n"));
-    assert.ok(model.includes("Builds (4)"), model.join("\n"));
+    assert.ok(model.includes("Builds (3)"), model.join("\n"));
     const phrases = items.find((item) => item.label === "Phrases");
     const product = phrases?.children.find((item) => item.label === "product");
     assert.match(product?.opens ?? "", /ascribe\.toml:\d+$/);
@@ -787,7 +787,7 @@ describe("the menus and filters of Pages and Content model on examples/quill", (
     const api = await activated();
     await api.ui.sidebar.filter("model", true);
     try {
-      const lines = await listed("model", "the unused entries", (l) => !l.includes("Builds (4)"));
+      const lines = await listed("model", "the unused entries", (l) => !l.includes("Builds (3)"));
       for (const line of lines.filter((l) => /^  \S/.test(l))) {
         assert.match(line, /\((unused|no pages)\)$/, lines.join("\n"));
       }

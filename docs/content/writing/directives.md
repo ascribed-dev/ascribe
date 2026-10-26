@@ -266,7 +266,7 @@ Says that a problem a check reports is intended: you've looked at it and are kee
 Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 ```
 
-- **Only review checks,** whose next step is *review*, since what they report may be fine as it is, such as a page nothing links to. A problem that's always wrong is fixed instead. The [diagnostics reference](../checks/diagnostics.md) says where each review check is acknowledged.
+- **Only review checks,** whose next step is *review*, since what they report may be fine as it is, such as a page nothing links to. A problem that's always wrong is fixed instead. A review check the project raises to an error in [`[checks]`](../content-model/checks.md#19-checks) can still be acknowledged. The [diagnostics reference](../checks/diagnostics.md) says where each review check is acknowledged, and [Quieting a problem](../checks/check.md#quieting-a-problem) compares `@intended` with the other ways to quiet one.
 - **The names are Ascribe's.** A check is named as the diagnostics reference names it. The specification names no checks, so another processor may name its checks differently, and reports a name it doesn't know as an error, as Ascribe does ([`intended-check`](../checks/diagnostics/pages.md#ASC143)).
 - **Where it's written** depends on the check, which reports its problems at one kind of place:
   - **A block:** `@intended` directly above it, as above. It covers the check's problems anywhere in the block, including inside a container. Above a block of a fragment, it covers that block in every page that includes it.
