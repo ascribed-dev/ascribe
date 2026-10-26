@@ -36,7 +36,7 @@ The conformance suite's format and adapters are in [tests/conformance/README.md]
 - **A server request:** a scenario over `support::Client` in `crates/ascribe-lsp/tests/all/`, and `lsp_parity.rs` if the request reports diagnostics the CLI also reports.
 - **Incremental updates:** add to the vocabulary in `crates/ascribe-resolve/tests/incremental_support/` so the differential tests exercise it. Don't write a second incremental test by hand; the property test is the proof.
 - **The content model:** a failing fixture per loading rule in `crates/ascribe-model/tests/rules.rs` (every `model-` diagnostic must have one), and `load.rs` for the example models.
-- **A formatter rule:** a conformance case under `format/`, and the rule's group in `crates/ascribe-fmt/tests/all/rules.rs`; idempotence over every input is already proved by `inputs.rs` and `fuzz.rs`.
+- **A formatter rule:** a conformance case under `format/`, and the rule's group in `crates/ascribe-fmt/tests/all/rules.rs`; idempotence over every input is already proved by `inputs.rs` and `fuzz.rs`, and the nightly `format` fuzz target (`fuzz/`, CONTRIBUTING.md) feeds it arbitrary text. A crash a fuzz target finds is fixed with a test of its input in the crate's own tests.
 
 ## Fixtures: build on what's there
 
