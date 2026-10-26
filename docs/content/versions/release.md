@@ -1,7 +1,7 @@
 ---
 type: reference
 title: "`ascribe versions`"
-description: "List a project's release lines, say what differs between two, release a line in one command, archive one into a folder of HTML, and retire it from the source."
+description: "List a project's release lines, say what differs between two, release a line in one command, export one into a folder of HTML, and retire it from the source."
 ---
 
 The commands for a project's [release lines](lines.md): what they are, what differs between two, the release that makes a planned line live, the export that keeps a copy of a line once it leaves, and the retirement that takes it out of the source. [Publish a site for each version](index.md) and [Export and retire a line](archive.md) are the tasks they're used in. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts), and the JSON each writes with `--format json` is in [JSON reports: `ascribe versions`](../contracts/json-reports/versions.md).
