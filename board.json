@@ -8098,7 +8098,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Warn on a code block info-string word that looks like a pair but isn't one"
     },
     {
