@@ -59,6 +59,7 @@ mod releases;
 pub mod report_history;
 pub mod roles;
 mod scope;
+pub mod side_files;
 pub mod site;
 pub mod tool;
 pub mod type_files;

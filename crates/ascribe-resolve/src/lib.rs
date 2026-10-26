@@ -96,6 +96,7 @@ mod project;
 pub mod reading;
 pub mod references;
 mod replaces;
+pub mod side_file;
 pub mod slug;
 pub mod snippet;
 mod uses;
