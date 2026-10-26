@@ -6450,7 +6450,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1049"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Report a build that filters for a version [releases] doesn't have, and bring quill's self-managed-3.3 build up to date"
     },
     {
@@ -6532,7 +6532,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDeg5Q",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "One meaning per word: grow the docs' glossary and rename the overloaded terms"
     },
     {
@@ -7093,8 +7093,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1104"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Check: apply the baseline, scope, and levels inside diagnose, so every surface gets the same result"
     },
     {
@@ -7235,7 +7238,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Backlog",
       "title": "Load a project once: one workspace type for the commands, the MCP server, the hook server, and the language server"
     },
     {
@@ -7303,7 +7306,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1091"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Attributes written without braces: one error, and a fix that adds the braces instead of deleting the text"
     },
     {
@@ -7531,8 +7534,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1105"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Libraries return what to write: route cache and history writes through the caller, and group the FileSystem exceptions"
     },
     {
@@ -7627,8 +7633,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1018"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDEQ",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1107"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Diff and review: show a moved page as a move, not a removed page and a new one"
     },
     {
@@ -7645,8 +7654,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1108"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Permalinks: forward with a 301 where the host takes redirects, and answer an agent asking for Markdown"
     },
     {
@@ -7817,8 +7829,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1097"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Review: account for every regenerated file a pull request changes"
     },
     {
@@ -7831,8 +7846,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1030"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDXU",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1106"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "agents sync: write the command the project runs Ascribe with, such as `npx ascribe`"
     },
     {
@@ -7901,7 +7919,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1094"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "CLI papercuts a writer meets: diff's branch argument, fmt --check's what, @Note, and help that only makes sense on the site"
     },
     {
@@ -8086,9 +8104,97 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1096"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDrZDY",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1098"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "In review",
+      "title": "Editor: `setBase` doesn't mark the server busy, so the renamed-operation test is flaky"
+    },
+    {
+      "content": {
+        "body": "Phase 1 of 5 of [Load a project once](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/workspace/README.md), the plan for #994 ([decision #994](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/decisions/994-one-workspace.md)). The phase file has the design, tasks, and verification: [phase-1-read-once.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/workspace/phase-1-read-once.md).\n\n## What to do\n\nEach command reads each source file once per run and indexes the project once. Loading keeps the `Sources` listing it read, and `Held` gives it back, so `Project::index` becomes the one shared index (`link_index`) instead of reading every source a second time.\n\n## Order\n\nThis is the first phase, and it needs nothing before it. Phase 2 needs it. The phases run one at a time and in order.\n\n## Done when\n\n- A test counts reads through a counting `FileSystem`: each command's library entry over `examples/quill` reads each source once and lists once. It fails on `main`.\n- `node scripts/compare/outputs.ts --base main` shows nothing (label `optimization`).\n- The perf benchmark (`cargo bench -p ascribe-corpora --bench perf`) is no slower on the synthetic project and the Elastic sample.\n- ARCHITECTURE.md's \"Loading a project, and reading files\" no longer says the commands index twice.",
+        "number": 1099,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Load a project once, phase 1: read each source once and index once in every command",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1099"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDrs2Y",
+      "labels": [
+        "rust"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
-      "title": "Editor: `setBase` doesn't mark the server busy, so the renamed-operation test is flaky"
+      "title": "Load a project once, phase 1: read each source once and index once in every command"
+    },
+    {
+      "content": {
+        "body": "Phase 2 of 5 of [Load a project once](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/workspace/README.md), the plan for #994. This is part 1 of #1001. Design, tasks, and verification are in [phase-2-loading.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/workspace/phase-2-loading.md).\n\n## What to do\n\nAdd a new crate, `ascribe-workspace` (core, syntax, model, resolve). Move what finds and reads a project into it, unchanged: `find_config`, `find_below`, `locate`, `load_model`, `read_sources`, the loader over any `FileSystem`, `ModelFile`, `SourceFile`, `ReadFailure`, `LoadError`, and `LocateError`. The loader takes the side files' list as `&'static [Entry]`, and `ascribe-check` passes `SIDE_FILES` (README decision 1). Nothing moves out of the checks.\n\n## Order\n\nThis phase needs phase 1 (#1099), and phase 3 needs it. The phases run one at a time and in order.\n\n## Done when\n\n- `ascribe-templates` and `ascribe-query` load a project through `ascribe-workspace`. Neither calls `ascribe_check::Project::load`, `load_model`, `locate`, or `find_config`.\n- `ascribe-workspace` doesn't depend on `ascribe-check` or `ascribe-emit`, and writes no files.\n- `LoadError` and `LocateError` keep their codes.\n- ARCHITECTURE.md's crate table, dependency list, and \"Loading a project, and reading files\" match.\n- `node scripts/compare/outputs.ts --base main` shows nothing, and phase 1's counting test passes.",
+        "number": 1100,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Load a project once, phase 2: move finding and loading a project into ascribe-workspace",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1100"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDrtCI",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Load a project once, phase 2: move finding and loading a project into ascribe-workspace"
+    },
+    {
+      "content": {
+        "body": "Phase 3 of 5 of [Load a project once](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/workspace/README.md), the plan for #994. Design, tasks, and verification are in [phase-3-workspace.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/workspace/phase-3-workspace.md).\n\n## What to do\n\n`ascribe_workspace::Workspace` owns an `IncrementalProject`, the `FileSystem`, the model, and the side files, and gives out an immutable `WorkspaceSnapshot`. A command's load skips the incremental bookkeeping until a first `apply` (README decision 4). `ascribe_check::Project` becomes a view over a snapshot, plus the day and personal memos. `Project::index`, `held_index`, `with_link_index`, `from_parts`, and `from_parts_with_fs` go. Every command and `answer::Loaded` take a `Workspace`, and `ascribe_sources::Workspace` is renamed.\n\n## Order\n\nThis phase needs phase 2 (#1100), and phase 4 needs it. The phases run one at a time and in order.\n\n## Done when\n\n- Phase 1's counting test passes over `Workspace::load_with`, unchanged.\n- No crate but `ascribe-workspace` calls `ascribe_resolve::Project::load` or `IncrementalProject::load`. The exceptions are the language server, until phase 5, and `ascribe-resolve`'s own tests.\n- A `Workspace` loaded lazily and then updated equals one loaded in full and updated the same way.\n- `crates/ascribe-cli/tests/all/lsp_parity.rs` passes.\n- `node scripts/compare/outputs.ts --base main` shows nothing. The perf benchmark, time and peak memory, is no slower.",
+        "number": 1101,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Load a project once, phase 3: every command loads one Workspace, and the checks see a view of it",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1101"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDrtOA",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Load a project once, phase 3: every command loads one Workspace, and the checks see a view of it"
+    },
+    {
+      "content": {
+        "body": "Phase 4 of 5 of [Load a project once](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/workspace/README.md), the plan for #994. Design, tasks, and verification are in [phase-4-kept-warm.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/workspace/phase-4-kept-warm.md).\n\n## What to do\n\nAdd `Workspace::apply` for sources, side files (through each entry's `Stale` and `Change::SideFiles`), memo, image, and code files, and the model. It refuses with \"load again\" where `IncrementalProject` does. Move the MCP cache's listing into `ascribe-workspace`, so the difference between two listings becomes changes that read only the files that differ. The MCP cache keeps a `Workspace`, and `answer::Loaded`'s kept results belong to a snapshot version. The hook's check server checks the whole project on that `Workspace`.\n\n## Order\n\nThis phase needs phase 3 (#1101), and phase 5 needs it. The phases run one at a time and in order.\n\n## Done when\n\n- The differential test covers the `Workspace`: after random sequences of changes to sources, side files, memo files, code files, and `ascribe.toml`, the snapshot equals a fresh `Workspace::load`.\n- After an edit to one page, the MCP server's next call reads that page and no other source, checked with phase 1's counting `FileSystem`.\n- The MCP and hook tests pass.\n- `node scripts/compare/outputs.ts --base main` shows nothing, and the perf benchmark is no slower.",
+        "number": 1102,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Load a project once, phase 4: keep the MCP server's projects up to date instead of loading them again",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1102"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDrtbs",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Load a project once, phase 4: keep the MCP server's projects up to date instead of loading them again"
+    },
+    {
+      "content": {
+        "body": "Phase 5 of 5 of [Load a project once](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/workspace/README.md), the plan for #994. Design, tasks, and verification are in [phase-5-language-server.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/workspace/phase-5-language-server.md).\n\n## What to do\n\nThe language server's `Loaded` keeps a `Workspace` over one buffer layer for sources and side files, in place of `BufferFs`/`LayerFs`, its `IncrementalProject`, and its model. Edits and watched files' changes go through `Workspace::apply`. `Loaded::side_file` and `nav_file` go, and each entry's `Stale` says what follows a change. `ascribe_lsp::Watched` takes a `Workspace` it's given, so the hook's check server keeps one for both its checks.\n\n## Order\n\nThis is the last phase. It needs phase 4 (#1102), and when it's done #994 is done.\n\n## Done when\n\n- `crates/ascribe-lsp/src/core.rs` calls neither `IncrementalProject::load` nor `apply`.\n- The hook's check server keeps one `Workspace` per project.\n- The language server's tests, `lsp_parity.rs`, and the hook's tests pass unchanged.\n- The perf benchmark's language server timings, typing included, are no slower.\n- ARCHITECTURE.md's \"Loading a project, and reading files\" describes one path, and its Surfaces table matches.",
+        "number": 1103,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Load a project once, phase 5: keep the language server's project as a Workspace, with the open buffers over it",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1103"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDrtlU",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Load a project once, phase 5: keep the language server's project as a Workspace, with the open buffers over it"
     }
   ]
 }
