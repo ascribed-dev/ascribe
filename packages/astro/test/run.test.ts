@@ -14,7 +14,7 @@ function script(body: string): string {
 
 describe.skipIf(process.platform === "win32")("runBuild", () => {
   it("passes the build, emitter, and config, and returns what was printed", async () => {
-    const binary = script('echo "args: $*"; echo "built site/site: 1 page" >&2');
+    const binary = script('echo "args: $*"; echo "built site: 1 page, 0 assets (site)" >&2');
     const result = await runBuild({
       binary,
       configPath: "/p/ascribe.toml",
@@ -24,7 +24,7 @@ describe.skipIf(process.platform === "win32")("runBuild", () => {
     expect(result.diagnostics).toBe(
       "args: build --emit site --build site --config /p/ascribe.toml --color never",
     );
-    expect(result.summary).toBe("built site/site: 1 page");
+    expect(result.summary).toBe("built site: 1 page, 0 assets (site)");
   });
 
   it("passes --anchors when asked", async () => {
@@ -103,35 +103,34 @@ describe("reviewFor", () => {
 describe("hasWarnings", () => {
   it("is false for nothing and for a clean check's summary, which is logged as info", () => {
     expect(hasWarnings("")).toBe(false);
+    expect(hasWarnings("checked 14 files in build `site`: no problems")).toBe(false);
+    expect(hasWarnings("checked 14 files in build `site`: no problems, 2 acknowledged")).toBe(
+      false,
+    );
+  });
+
+  it("is false for a summary with only advice", () => {
     expect(
       hasWarnings(
-        "checked 14 files for build `site`, reported on 14: 0 errors, 0 warnings, 0 advice",
+        "checked 4 files in build `site`: 0 errors, 0 warnings, 1 advice: ascribe check --config /p/ascribe.toml --build site for each",
       ),
     ).toBe(false);
   });
 
-  it("is false for a report with only advice", () => {
+  it("is true for a summary with warnings, or anything else", () => {
     expect(
       hasWarnings(
-        "[ASC999] Advice: this page is long\n   ╭─[ docs/keys.md:1:1 ]\n───╯\nchecked 4 files for build `site`, reported on 4: 0 errors, 0 warnings, 1 advice",
-      ),
-    ).toBe(false);
-  });
-
-  it("is true for a report with warnings, or anything else", () => {
-    expect(
-      hasWarnings(
-        "[ASC041] Warning: this looks like a route\n   ╭─[ docs/keys.md:7:15 ]\n───╯\nchecked 4 files for build `site`, reported on 4: 0 errors, 1 warning, 0 advice",
+        "checked 4 files in build `site`: 0 errors, 1 warning, 0 advice: ascribe check --build site for each",
       ),
     ).toBe(true);
     expect(
       hasWarnings(
-        "checked 4 files for build `site`, reported on 4: 0 errors, 2 warnings, 2 advice",
+        "checked 4 files in builds `site` and `site@3.4`: 0 errors, 2 warnings, 2 advice, 1 acknowledged: ascribe check --build site --build site@3.4 for each",
       ),
     ).toBe(true);
-    expect(
-      hasWarnings("checked 4 files for build `site`, reported on 4: 0 errors, 1 warning, 0 advice"),
-    ).toBe(true);
+    expect(hasWarnings("checked 4 files in build `site`: 1 error, 0 warnings, 0 advice")).toBe(
+      true,
+    );
     expect(hasWarnings("something unexpected")).toBe(true);
   });
 });

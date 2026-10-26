@@ -1,8 +1,10 @@
 //! `ascribe build`: check the project, then write each build's outputs.
 //!
-//! The checks run first, for every build asked for, and print exactly what
-//! `ascribe check` prints (the same report code on the same diagnostics). A
-//! build with errors writes nothing (SPEC §8.2: "a build MUST fail on
+//! The checks run first, for every build asked for, on the diagnostics
+//! `ascribe check` reports. The text shows each error in full, since errors
+//! stop the build, and one summary line that points to `ascribe check` for
+//! the warnings and advice; the JSON is exactly `ascribe check`'s. A build
+//! with errors writes nothing (SPEC §8.2: "a build MUST fail on
 //! errors"). Otherwise each build is resolved once and each output is
 //! written from that resolved tree, into a staging
 //! directory that replaces the previous output only on success.
@@ -11,7 +13,7 @@ use std::io::{self, Write};
 use std::process::ExitCode;
 
 use ascribe_check::{Diagnosed, LoadError, Project, Reported, Severity, diagnose};
-use ascribe_emit::{EmitError, Output, WriteEvent, WriteOptions};
+use ascribe_emit::{EmitError, Output, WriteEvent, WriteOptions, Written};
 use ascribe_model::Build;
 use clap::{Args as ClapArgs, ValueEnum};
 
@@ -20,6 +22,7 @@ use crate::context::{Failure, load_project, stdout_is_terminal, use_color};
 use crate::exit;
 use crate::report::json::About;
 use crate::report::{Counts, FileTable, json, text};
+use crate::shell::quote;
 
 /// Arguments of `ascribe build`.
 #[derive(Debug, ClapArgs)]
@@ -118,13 +121,14 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
         text::Covered::Named(&names)
     };
     let written = match args.format {
-        Format::Text => text::write(
+        Format::Text => text::write_build(
             out,
             &files,
             &diagnostics,
             checked,
             &covered,
             acknowledged.len(),
+            &check_command(global, args),
             color,
         ),
         Format::Json => json::write(
@@ -185,27 +189,84 @@ fn write_outputs(
             .collect(),
         anchors,
     };
-    let mut report = |event: &WriteEvent| {
-        let _ = match event {
-            WriteEvent::Warning(warning) => writeln!(err, "warning: {warning}"),
-            WriteEvent::Written(w) => writeln!(
-                err,
-                "built {}/{}: {} page{}, {} asset{}{}",
-                w.build,
-                w.output,
-                w.pages,
-                plural(w.pages),
-                w.assets,
-                plural(w.assets),
-                if w.removed > 0 {
-                    format!(", removed {} stale file{}", w.removed, plural(w.removed))
-                } else {
-                    String::new()
-                }
-            ),
-        };
+    // One line per build, so a build's outputs are held until the next
+    // build's first event, or the end.
+    let mut pending: Vec<Written> = Vec::new();
+    let mut report = |event: &WriteEvent| match event {
+        WriteEvent::Warning(warning) => {
+            flush(&mut pending, err);
+            let _ = writeln!(err, "warning: {warning}");
+        }
+        WriteEvent::Written(w) => {
+            if pending.first().is_some_and(|p| p.build != w.build) {
+                flush(&mut pending, err);
+            }
+            pending.push(w.clone());
+        }
     };
-    ascribe_emit::write_outputs(&index, project.root(), builds, &options, &mut report).map(|_| ())
+    let result = ascribe_emit::write_outputs(&index, project.root(), builds, &options, &mut report)
+        .map(|_| ());
+    flush(&mut pending, err);
+    result
+}
+
+/// Writes one build's line and empties `pending`, its outputs: `built site:
+/// 6 pages, 2 assets (site, plain, json)`. Outputs whose counts differ are
+/// listed apart, `6 pages, 2 assets (site, plain); 6 pages, 0 assets
+/// (json)`, and the stale files removed are added up.
+fn flush(pending: &mut Vec<Written>, err: &mut dyn Write) {
+    let Some(first) = pending.first() else {
+        return;
+    };
+    let mut groups: Vec<(usize, usize, Vec<&str>)> = Vec::new();
+    for w in pending.iter() {
+        match groups
+            .iter_mut()
+            .find(|(pages, assets, _)| *pages == w.pages && *assets == w.assets)
+        {
+            Some((_, _, outputs)) => outputs.push(w.output),
+            None => groups.push((w.pages, w.assets, vec![w.output])),
+        }
+    }
+    let counts: Vec<String> = groups
+        .iter()
+        .map(|(pages, assets, outputs)| {
+            format!(
+                "{pages} page{}, {assets} asset{} ({})",
+                plural(*pages),
+                plural(*assets),
+                outputs.join(", ")
+            )
+        })
+        .collect();
+    let removed: usize = pending.iter().map(|w| w.removed).sum();
+    let _ = writeln!(
+        err,
+        "built {}: {}{}",
+        first.build,
+        counts.join("; "),
+        if removed > 0 {
+            format!(", removed {removed} stale file{}", plural(removed))
+        } else {
+            String::new()
+        }
+    );
+    pending.clear();
+}
+
+/// The `ascribe check` command that lists each of the checks' diagnostics:
+/// this build's `--config` and `--build`, as given.
+fn check_command(global: &Global, args: &Args) -> String {
+    let mut words = vec!["ascribe".to_owned(), "check".to_owned()];
+    if let Some(config) = &global.config {
+        words.push("--config".to_owned());
+        words.push(quote(&config.to_string_lossy()));
+    }
+    for build in &args.build {
+        words.push("--build".to_owned());
+        words.push(quote(build));
+    }
+    words.join(" ")
 }
 
 fn plural(n: usize) -> &'static str {

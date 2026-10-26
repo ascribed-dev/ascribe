@@ -8,32 +8,74 @@ use ascribe_check::{Diagnostic, Registry, Reported, Severity};
 
 use super::{ByCode, ByFile, Counts, FileTable};
 
-/// Writes every diagnostic, then `ascribe check`'s summary line, as
-/// `ascribe build` reports its checks.
+/// Writes what `ascribe build` reports of its checks: each error with its
+/// snippet, since errors stop the build, then one summary line.
 ///
-/// `files_checked` is how many source files were checked, all reported on,
-/// `covered` the builds, and `acknowledged` how many problems were
-/// acknowledged as intended.
-pub fn write(
+/// The line is [`build_summary`]'s. `check` is the `ascribe check` command
+/// that lists each diagnostic, which the line points to when there are
+/// warnings or advice it doesn't show.
+#[allow(clippy::too_many_arguments)] // The line's parts, each needed.
+pub fn write_build(
     out: &mut dyn Write,
     files: &FileTable,
     diagnostics: &[Diagnostic],
     files_checked: usize,
     covered: &Covered<'_>,
     acknowledged: usize,
+    check: &str,
     color: bool,
 ) -> io::Result<()> {
-    write_diagnostics(out, files, diagnostics, color)?;
+    let errors: Vec<Diagnostic> = diagnostics
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .cloned()
+        .collect();
+    write_diagnostics(out, files, &errors, color)?;
     writeln!(
         out,
-        "{}{}",
-        check_summary(
+        "{}",
+        build_summary(
             Counts::of(diagnostics),
             files_checked,
             covered,
-            files_checked,
-            &[]
-        ),
+            acknowledged,
+            check
+        )
+    )
+}
+
+/// The summary line of `ascribe build`'s checks: `checked 8 files in every
+/// build: no problems` when they found none, and otherwise the counts, with
+/// the command that lists each warning and advice when there are any, as
+/// `checked 8 files in every build: 0 errors, 1 warning, 3 advice: ascribe
+/// check for each`.
+pub fn build_summary(
+    counts: Counts,
+    files_checked: usize,
+    covered: &Covered<'_>,
+    acknowledged: usize,
+    check: &str,
+) -> String {
+    let builds = match covered {
+        Covered::Every => "in every build".to_owned(),
+        Covered::Named([one]) => format!("in build `{one}`"),
+        Covered::Named(names) => format!("in builds {}", listed(names)),
+        Covered::Editor(build) => format!("with the page-level checks of build `{build}` only"),
+    };
+    let checked = format!("checked {} {builds}", plural(files_checked, "file"));
+    if counts.total() == 0 {
+        return format!("{checked}: no problems{}", self::acknowledged(acknowledged));
+    }
+    let pointer = if counts.warnings + counts.advice > 0 {
+        format!(": {check} for each")
+    } else {
+        String::new()
+    };
+    format!(
+        "{checked}: {}, {}, {} advice{}{pointer}",
+        plural(counts.errors, "error"),
+        plural(counts.warnings, "warning"),
+        counts.advice,
         self::acknowledged(acknowledged)
     )
 }
