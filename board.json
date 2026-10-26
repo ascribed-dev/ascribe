@@ -6186,8 +6186,11 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/938"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "OpenAPI 3: operations in the editor, and ascribe_link for agents"
     },
     {
@@ -6225,8 +6228,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/937"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "OpenAPI 5: check a marked JSON example against its operation's schema"
     },
     {
@@ -6243,8 +6249,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/936"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "OpenAPI 6: report operations no page links to"
     },
     {
@@ -6262,8 +6271,11 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/940"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "OpenAPI 7: put an operation in a page with @operation"
     },
     {
@@ -6277,7 +6289,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDWask",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs report: links and the published site"
     },
     {
@@ -6293,9 +6305,631 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/935"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Don't suggest a method and path under a template, where taking it gives ASC274"
+    },
+    {
+      "content": {
+        "body": "Left over from #923 (OpenAPI phase 7). `@operation: <spec>#<operation>` is checked as a link to the operation is, through `resolve_reference` and `operation_issue`, so its diagnostics and their fixes reach the editor. What phase 3 (#919) builds for a link to an operation isn't wired to the directive's primary yet, since #919 was in flight when #923 was built:\n\n- completion after `<spec>#` in an `@operation` primary;\n- hover with the operation's method, path, summary, tag, and deprecation;\n- go to definition into the spec at the operation;\n- the fix for a renamed operation, and `link-operation-deprecated`, when #919 adds them.\n\n**Done when:** each of these answers on an `@operation` primary as it does on a link's destination, in the language server's tests.\n\nNeeds #919 and #923.",
+        "number": 939,
+        "repository": "ascribed-dev/ascribe",
+        "title": "OpenAPI: @operation's link in the editor, as a link to an operation is",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/939"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDbCrY",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "OpenAPI: @operation's link in the editor, as a link to an operation is"
+    },
+    {
+      "content": {
+        "body": "The daily docs report (#933) said `llms-txt-links-resolve` warned with \"49/50 same-origin sampled links resolve (98%); 1 broken; 1 failed to fetch\", asked us to report it as a bug in Ascribe, and named no link. Investigating took a fresh run of afdocs: the link was one fetch that failed, and every link resolved the next day. Three changes would have made the report say that itself.\n\n**1. Name the links.** afdocs' JSON gives each check a `details` object; for `llms-txt-links-resolve` it holds `sameOrigin.broken` and `crossOrigin.broken`, each a list of `{ url, status, error }`. `crates/ascribe-check/src/site.rs` deserializes only `id`, `category`, `status`, and `message` (`CheckResult`), so the addresses are lost. ASC171's `{result}` should list each one: the address and its HTTP status for a broken link, or the address and the error for one that failed to fetch. Other checks whose `details` name addresses can follow the same pattern; this one is the case that's bitten.\n\n**2. Don't send a fetch error to the issue tracker.** In afdocs 0.22.2's source, `broken` is every link that didn't come back OK, and `fetchErrors` counts the subset that failed with an error rather than a status. When every failure is a fetch error, nothing Ascribe wrote is wrong yet: ASC171 should say the links couldn't be fetched, name them, and say to run the report again, without \"Report it at …\". A link with an HTTP status keeps today's message.\n\n**3. Fix \"no longer fails\" for a check that went from fail to warn.** `crates/ascribe-cli/src/commands/report/text.rs` (around line 713, \"{resolved} that failed on {since} no longer {}\") counts only `fail` as failing, so a check that moved from `fail` to `warn` is listed as no longer failing while the same report lists it under \"To change\" with a warning. It should say the check now warns instead of failing.\n\n**Done when:**\n- A test with a stand-in checker (`SiteChecker`) whose `llms-txt-links-resolve` result has one broken link and one fetch error shows ASC171 naming both, each with its status or error.\n- A result whose only failures are fetch errors gives the message without the issue tracker's address.\n- The report's history says a check that went from `fail` to `warn` now warns, in its test (`crates/ascribe-cli/tests/all/report.rs`).\n- `tests/conformance/diagnostics.toml`'s ASC171 gains the message variant for fetch errors, with the generated diagnostics page blessed.\n",
+        "number": 942,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Report: name the links llms-txt-links-resolve found, and don't blame Ascribe for a fetch error",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/942"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDdT-g",
+      "labels": [
+        "bug",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Report: name the links llms-txt-links-resolve found, and don't blame Ascribe for a fetch error"
+    },
+    {
+      "content": {
+        "body": "The release of `v0.4.4` failed while publishing.\n\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/40252530947). Failed jobs:\n\n- check the version\n\nSome packages may already be published. Check npm, the Marketplace, and the GitHub release before running this again.\n",
+        "number": 943,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Release failed: v0.4.4",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/943"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDdmEc",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "Release failed: v0.4.4"
+    },
+    {
+      "content": {
+        "body": "Two systems keep the same promise, that a published link keeps working:\n\n| | Permalinks | Addresses |\n|---|---|---|\n| Record | `ascribe.permalinks`, plus `[permalinks.retired]` and `[permalinks.aliases]` in `ascribe.toml` | `ascribe.addresses`: `[moved]`, `[retired]`, `[former]` |\n| Retire | `ascribe permalinks retire NAME --reason` (edits `ascribe.toml`) | `ascribe addresses retire OLD --reason` (edits `ascribe.addresses`) |\n| Gone without a decision | `permalink-removed` | `address-lost`, `anchor-lost` |\n\nSPEC §7.10 carves permalinks out (\"A permalink's name is the permalinks list's to keep\"). A retired permalink with a `to` is a move in all but name, and a writer meets two retire commands and two record files: one record is in the hand-written config, the other in a file Ascribe writes.\n\nDecision (Kyle): merge them. The spec stays a draft for now, so this can change SPEC §7.5, §7.6, and §7.10.\n\n## Done looks like\n\n- What happened to a permalink (retired with a reason, retired to a new place, aliased) is recorded in `ascribe.addresses`, for example under keys at the permalinks' path. `[permalinks.retired]` and `[permalinks.aliases]` leave `ascribe.toml`, and `ascribe check --fix` or a one-time command moves an existing project's entries.\n- `ascribe.permalinks` stays as the published list that a product's `ascribe permalinks verify` checks against, and is still written from the content plus the addresses file.\n- One retire command covers both, or `permalinks retire` writes to `ascribe.addresses`. The diagnostics use one word for \"gone\" (`*-lost` or `*-removed`, not both).\n- SPEC, the content model contract, `publishing/redirects.md`, `permalinks/`, the editor's quick fix on `permalink-removed`, the MCP addresses tools, and the agents skill all describe the one model.\n- The docs project (`docs/`) moves its two `[permalinks.retired]` entries over.\n\nFrom the coherence review: [How Ascribe's features fit together](https://claude.ai/artifact/WdVoVdtBH75vVGPFczwUrC), finding 1.",
+        "number": 944,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Keep permalinks' records in ascribe.addresses, one place for where published things went",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/944"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDegos",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Keep permalinks' records in ascribe.addresses, one place for where published things went"
+    },
+    {
+      "content": {
+        "body": "`ascribe report` in `examples/quill` (main at 887c0a2) has two text bugs in its builds section.\n\n1. **An empty name after \"not\".** Under `site@3.4 leaves out …`:\n   ```text\n   docs/keys.md:23 (availability, on keys.md): Available on self-managed (GA, 3.5+), not ; site keeps it\n   ```\n   The build `site@3.4` has nothing to name after \"not\". The other builds print a name (\"not Quill Cloud\", \"not self-managed 3.3\").\n2. **The verb doesn't agree with a list of builds.**\n   ```text\n   upgrade.md: …; site and site@3.4 publishes it\n   docs/install-agent.md:78 …; site, site@3.4, and cloud keeps it\n   ```\n\n## Done when\n\n- A mark that leaves content out of a versioned build like `site@3.4` names what it isn't available on, such as \"not self-managed 3.4\", and never prints an empty name.\n- \"publishes\" and \"keeps\" agree with one build or several (\"site publishes it\", \"site and site@3.4 publish it\").\n- The report's output tests cover both cases.\n\nFound in the clarity and noise review.",
+        "number": 945,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Report: the builds section prints \"not ;\" and \"site and site@3.4 publishes it\"",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/945"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDegsM",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Report: the builds section prints \"not ;\" and \"site and site@3.4 publishes it\""
+    },
+    {
+      "content": {
+        "body": "Retiring a release line in a project that keeps `ascribe.addresses` loses the line's addresses. All you get is an advice.\n\nSteps, on a copy of `examples/quill` in a fresh git repository:\n\n```sh\nascribe addresses init && git add -A && git commit -m base\nascribe versions retire \"self-managed 3.4\" --url https://archive.example/3.4/ --force\ngit commit -am retire\nascribe check --base HEAD~1\nascribe addresses list\n```\n\n```text\nascribe.addresses:1: [ASC258] the base has the build `site@3.4`, and ascribe.toml doesn't now, so its 17 addresses aren't compared\nNo build writes a redirect or a retired address.\n```\n\n`versions retire` already works out where each address should go (it prints `/3.4/configure-legacy/  →  /configure/`, and `--format json` lists them all). But `docs/content/versions/release.md:134` says \"a host's redirects file is yours to write\", which was written before `ascribe.addresses` could make the build write redirects.\n\n## Done looks like\n\n- When the project has `ascribe.addresses`, `versions retire` records the line's addresses there (a `[former]` entry for the line, `[moved]` entries, or whatever form fits SPEC §7.10). The build then writes the redirects `versions retire` computes, and `ascribe addresses list` shows them.\n- `ascribe check --base` treats a line that `[releases]` archived as accounted for, and doesn't report `addresses-build-gone` for it.\n- Without `ascribe.addresses`, it keeps listing the addresses as it does now.\n- `versions/release.md` and `versions/archive.md` say what's recorded.\n- A test covers the steps above.\n\nFrom the coherence review: [How Ascribe's features fit together](https://claude.ai/artifact/WdVoVdtBH75vVGPFczwUrC), finding 2.",
+        "number": 946,
+        "repository": "ascribed-dev/ascribe",
+        "title": "versions retire: record the line's addresses in ascribe.addresses, so the build writes their redirects",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/946"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDegtE",
+      "labels": [
+        "bug",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "versions retire: record the line's addresses in ascribe.addresses, so the build writes their redirects"
+    },
+    {
+      "content": {
+        "body": "The builds section of `ascribe report` is on by default, and in `examples/quill` it makes up most of the 52 lines the report prints. It lists one entry per source line. `keys.md`'s section \"Sign webhook events\" is marked `@available: self-managed 3.5` once, and it shows up as four entries, for lines 23, 24, 25, and 27. Those are the heading, its `@id`, the `@available` line itself, and the paragraph:\n\n```text\n    docs/keys.md:23 (availability, on keys.md): Available on self-managed (GA, 3.5+), not self-managed 3.3; site keeps it\n    docs/keys.md:24 (availability, on keys.md): Available on self-managed (GA, 3.5+), not self-managed 3.3; site keeps it\n    docs/keys.md:25 (availability, on keys.md): Available on self-managed (GA, 3.5+), not self-managed 3.3; site keeps it\n    docs/keys.md:27 (availability, on keys.md): Available on self-managed (GA, 3.5+), not self-managed 3.3; site keeps it\n```\n\nSix lines of `install-agent.md` get the same treatment. The page reason \"its available frontmatter makes it unavailable for the build's target and version\" is printed 11 times.\n\n## Done when\n\n- Each mark (an `@available` section, a variant arm, a page's `available`) is one entry, at the mark's line, naming the heading it's under, for example:\n  ```text\n  self-managed-3.3 leaves out 4 pages and 2 sections:\n    keys.md § Sign webhook events (line 25): available on self-managed 3.5+; site keeps it\n  ```\n- The count in each build's head line counts marks, not lines.\n- The page reason is short (\"not available\", with the page's `available` value) instead of the full sentence on every line.\n- The JSON and Markdown formats group the same way, and the report contract and tests are updated.\n\nFound in the clarity and noise review.",
+        "number": 947,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Report: list what a build leaves out once per mark, not once per line",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/947"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDegws",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Report: list what a build leaves out once per mark, not once per line"
+    },
+    {
+      "content": {
+        "body": "`examples/quill/ascribe.toml` makes a version's build in two ways at once. `[builds.site] versions = \"self-managed\"` makes `site@3.4`. A hand-written `[builds.\"self-managed-3.3\"]` filters `availability = { filter = \"self-managed 3.3\" }`, but `[releases.self-managed]` has only `live = [\"3.4\", \"3.5\"]`, so 3.3 is neither live nor archived.\n\n- `ascribe check` is clean, and `ascribe versions list` doesn't mention the 3.3 build.\n- `ascribe versions retire \"self-managed 3.4\"` refuses because the change would affect `self-managed-3.3`. With `--force`, that build gains `configure.md`, `upgrade.md`, and `webhooks.md`.\n\n## Done looks like\n\n- A build whose `availability` filter names a version of a target that `[releases]` lists as neither live, planned, nor archived gets a diagnostic. It could be advice that suggests `versions =` or adding the line to `[releases]`. It goes in the registry, with an `explain` entry.\n- Quill uses one model: either 3.3 is an archived line, or the `self-managed-3.3` build goes, and its comments and the render fixtures that depend on it are updated (`tests/render/corpus/quill/`).\n- After that, `versions retire \"self-managed 3.4\"` on quill runs without `--force`.\n\nFrom the coherence review: [How Ascribe's features fit together](https://claude.ai/artifact/WdVoVdtBH75vVGPFczwUrC), finding 3.",
+        "number": 948,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Report a build that filters for a version [releases] doesn't have, and bring quill's self-managed-3.3 build up to date",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/948"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDegw0",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Report a build that filters for a version [releases] doesn't have, and bring quill's self-managed-3.3 build up to date"
+    },
+    {
+      "content": {
+        "body": "In `examples/quill`, everything `ascribe check` reports is `ASC252 summary-missing`, three times: \"the permalink `connect` has no summary, so a product showing its help has none\". It fires on every heading with `@id {permalink=true}`, whether or not the project shows its docs in a product. A team that uses permalinks only for stable links gets advice about a feature it doesn't use, and that advice is the first thing a new user sees from `check`, `build`, and the editor. The help text already says a project that ships embedded help should raise the check to a warning, so for those projects the default adds nothing.\n\n## Done when\n\n- `summary-missing` is off by default, and on when the project opts in. The opt-in could be `[checks] summary-missing = \"advice\"` or `\"warning\"`, or another signal the project gives that it ships `help.json`, such as a `[permalinks]` key. Pick one and record it in the decision log.\n- `summary-long` follows the same rule.\n- The quill example, the docs' examples of `check` output, and the getting-started page's output are updated. The agent rules from `ascribe agents sync` say to write summaries only when the check is on.\n- The diagnostics reference says how to turn the check on.\n\nFound in the clarity and noise review.",
+        "number": 949,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Don't report summary-missing in projects that don't ship embedded help",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/949"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDegzg",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Don't report summary-missing in projects that don't ship embedded help"
+    },
+    {
+      "content": {
+        "body": "`ascribe versions archive LINE --to DIR` renders a line into a folder of HTML. It doesn't make the line archived. `ascribe versions retire` does that, by moving the line to `[releases.<target>.archived]`, and `versions release` also archives the old current line. So \"archive\" means \"write a copy\" in one command and \"the line's state\" in the content model and the other two commands.\n\n## Done looks like\n\n- The command gets a name that says it writes files, such as `versions export` or `versions snapshot`. \"Archived\" stays the line's state.\n- `versions archive` keeps working as a hidden alias with a deprecation note for one release, or goes outright, since the spec is a draft (say which in the PR).\n- The generated CLI docs, `versions/archive.md` (and its title, \"Keep a copy of a release line\"), the JSON contract (`json-versions-archive`), the changelog entry, and `@ascribed/archive`'s README use the new name.\n\nFrom the coherence review: [How Ascribe's features fit together](https://claude.ai/artifact/WdVoVdtBH75vVGPFczwUrC), finding 4.",
+        "number": 950,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Rename versions archive, which writes HTML and doesn't archive the line",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/950"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDegzI",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Rename versions archive, which writes HTML and doesn't archive the line"
+    },
+    {
+      "content": {
+        "body": "`ascribe check`'s text output prints the full `Help:` block under every diagnostic. Several diagnostics with the same code repeat it verbatim. For `summary-missing` that's 88 words each time, so 30 occurrences make about 2,600 words of identical text. `examples/quill` shows three copies one after another.\n\n## Done when\n\n- In `--format text`, the first diagnostic with a code prints its help in full. Later ones with the same code print a short pointer instead, such as `Help: as for ASC252 above (ascribe explain ASC252)`.\n- Help that's specific to the occurrence (it names this file, link, or value) is still printed every time. Only text that's identical is shortened.\n- `concise`, `json`, and `prompt` are unchanged. The editor's hovers are unchanged.\n- Output tests cover repeated codes.\n\nFound in the clarity and noise review.",
+        "number": 951,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Check: print a diagnostic's help once per run in text output",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/951"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDeg3M",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Check: print a diagnostic's help once per run in text output"
+    },
+    {
+      "content": {
+        "body": "**What happened, and what you expected:**\n\nSPEC.md line 685 (§4.9) and `docs/content/writing/directives.md:265` both show:\n\n```markdown\n@intended {check=link-dead}: help.example.com refuses link checkers; checked by hand.\n```\n\nThere's no `link-dead` check in `tests/conformance/diagnostics.toml`; the external link check is `link-external-broken` (ASC168). Copying the example gives `intended-check` (ASC143, \"`link-dead` isn't a check\"). `docs/content/checks/external-links.md:31` already uses the right slug.\n\n**Done when:**\n\n- Both examples say `check=link-external-broken`.\n- A test fails when any `@intended {check=…}` or `check:` in SPEC.md or `docs/content/` names a slug the registry doesn't have, so an example can't drift again.\n\nFound while looking for tensions between features and the spec ([write-up](https://claude.ai/artifact/DLzosEjitkNiiboxykapUA)).",
+        "number": 952,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The `@intended` example in SPEC §4.9 and the directives page names a check that doesn't exist",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/952"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDeg4g",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The `@intended` example in SPEC §4.9 and the directives page names a check that doesn't exist"
+    },
+    {
+      "content": {
+        "body": "Several words mean different things in different features:\n\n| Word | Meanings in use |\n|---|---|\n| example | Tested examples (`example-stale`, `example-unobserved`, `ascribe.examples.toml`); OpenAPI JSON examples checked against a schema (`example-schema-mismatch`, `example-not-json`, `example-body-missing`, `example-schema-unsupported`); the docs' Examples section about code; the repo's `examples/` |\n| agents | Agents that write docs (`ascribe agents`, the skill, hooks) and agents that read them (`[consumer] agents`, `ascribe report agents`, which runs afdocs on a site, `[former] agents`) |\n| report | `ascribe report`, \"the project report\"; and `diff --format html`, \"the review report\" |\n| review | Pull request review; the `review` next step in a report; `review-overdue` page review dates |\n| source(s) | Page source files (\"the source index\", **Open Source Changes**, an addresses key \"is a source\"); `[sources.<name>]` and `ascribe sources`, the code the docs show |\n| target | A release target; `agents sync --target`; the TARGET argument of `refs`, `link`, `rename` |\n| line | A release line; a snippet's \"tested line\"; a file's line |\n\n`docs/content/glossary.md` has eight terms. Release line, availability, permalink, address, source, memo, baseline, and acknowledgement aren't in it, so Ascribe's own `@term` checking can't hold the docs to one meaning.\n\n## Done looks like\n\n- The glossary has an `@term` entry for each of the core concepts above, with one meaning each.\n- For each row of the table, one meaning keeps the word and the others are renamed in diagnostics, report sections, flags, and docs. Proposed: the OpenAPI slugs become `api-example-*` (or `sample-*`), the report section `agents` becomes `delivery`, the review report gets a name without \"report\", and page review dates become something other than \"review\" (e.g. `recheck-overdue`). Renamed diagnostic slugs keep their `ASC` codes, and renamed docs anchors are recorded as retired permalinks or moves.\n- `design/words.toml` and the agents skill match.\n\nThis can be split into a PR per word if that's easier to review.\n\nFrom the coherence review: [How Ascribe's features fit together](https://claude.ai/artifact/WdVoVdtBH75vVGPFczwUrC), finding 5.",
+        "number": 953,
+        "repository": "ascribed-dev/ascribe",
+        "title": "One meaning per word: grow the docs' glossary and rename the overloaded terms",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/953"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDeg5Q",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "One meaning per word: grow the docs' glossary and rename the overloaded terms"
+    },
+    {
+      "content": {
+        "body": "`ascribe build` prints everything `ascribe check` would on standard output, advice and help blocks included. It then prints one `built` line per build and output on standard error. For `examples/quill`, that's three full `summary-missing` advice blocks followed by 12 lines:\n\n```text\nbuilt site/site: 6 pages, 2 assets\nbuilt site/plain: 6 pages, 2 assets\nbuilt site/json: 6 pages, 2 assets\nbuilt site@3.4/site: 5 pages, 2 assets\n…\n```\n\nA build should say what it built, and only say more about problems when they block it.\n\n## Done when\n\n- `ascribe build` prints errors in full, since they stop the build. Warnings and advice become the check's summary line plus a pointer: `0 errors, 1 warning, 3 advice: ascribe check for each`.\n- It prints one line per build: `built site: 6 pages, 2 assets (site, plain, json)`.\n- `--format json` is unchanged. The `@ascribed/astro` integration's log is checked against the new output.\n- Docs that show `build` output are updated.\n\nFound in the clarity and noise review.",
+        "number": 954,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Build: print the check's summary line, not every diagnostic, and one line per build",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/954"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDeg58",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Build: print the check's summary line, not every diagnostic, and one line per build"
+    },
+    {
+      "content": {
+        "body": "**The problem you're trying to solve:**\n\nSPEC.md says \"Version 0.1\", and §11 says \"Changes to the grammar or the built-in vocabulary are made only in new versions of this specification.\" Since 0.1, `@snippet`, `@memo`, `@term`, `@summary`, and `@operation` joined the built-ins, and `spec = \"0.1\"` didn't change (decision 689t: `\"0.1\"` for now). A page written for the earlier 0.1 with a line starting `@summary:` changed meaning when `@summary` arrived. The spec promises a stability it doesn't give.\n\n**Decision (Kyle, 26 October 2026):** keep the spec a draft until 1.0 rather than cut 0.2.\n\n**Done when:**\n\n- The header and §11 say the specification is a draft: its grammar and built-in vocabulary may grow until 1.0, and `spec = \"0.1\"` names the draft, not a frozen version. §11 says what 1.0 will promise (changes only in new versions), so the current sentence moves to the future rather than being dropped.\n- §3.2's \"The keyword set is closed: it grows only by revisions to this specification\" reads consistently with the draft status.\n- The decision is recorded in `project-docs/decisions/` with the change, since SPEC.md is a contract, and decision 689t's \"for now\" points to it.\n- A changelog entry in `changes/`.\n\nFound while looking for tensions between features and the spec ([write-up](https://claude.ai/artifact/DLzosEjitkNiiboxykapUA)).",
+        "number": 955,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Say in the spec that it's a draft until 1.0",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/955"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDeg9M",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Say in the spec that it's a draft until 1.0"
+    },
+    {
+      "content": {
+        "body": "The content model reference and its contract are split into `content.md`, `output.md`, `checks.md`, and `validation.md`, and newer sections went wherever there was room:\n\n- `content-model/checks.md` (and `contracts/content-model/checks.md`) holds `[permalinks]`, `[crawlers]`, `[listing]`, and `[apis]`, none of which are checks. `output.md` holds `[sources]`.\n- `content-model/index.md`'s description still says \"content types, dimensions, availability, phrases, widgets, and builds\".\n- `contracts/json-reports/sources.md` holds `init`, `sources`, `observe`, and `permalinks`.\n- SPEC §7.5 to §7.11 are in arrival order.\n\n## Done looks like\n\n- The reference and the contract are grouped by job, for example: what pages are (types, fields, fragments, frontmatter, notes, glossary, phrases, widgets, images); how content varies (dimensions, versions and releases, lifecycle, features); where it's published (consumer, builds, listing, crawlers, permalinks, addresses); what it draws from (sources, APIs); checks and the editor.\n- The JSON report contract's pages are grouped the same way.\n- Every page and anchor that moves keeps its old address working (permalinks, or the addresses file once that exists for the docs), and `docs/ascribe.nav` and the site's sidebar fixture are updated.\n- SPEC §7's order follows, if the spec thread agrees; otherwise leave it and note that in the PR.\n\nBest done after the permalinks and addresses merge, since that changes these sections.\n\nFrom the coherence review: [How Ascribe's features fit together](https://claude.ai/artifact/WdVoVdtBH75vVGPFczwUrC), finding 6.",
+        "number": 956,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Group the content model reference by job, not by when each section arrived",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/956"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDeg94",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Group the content model reference by job, not by when each section arrived"
+    },
+    {
+      "content": {
+        "body": "`ascribe --help` lists 26 commands in one alphabetical list. A new user's first entry is `addresses`, the most specialized command: \"Keep the record of where the addresses the docs published went, ascribe.addresses: record a move or a retired address, and list the redirects each build writes\". Descriptions run from 5 words (`build`) to 33 (`observe`). A \"For agents:\" paragraph sits between the examples and the commands, though `AGENTS.md` and the skill already tell agents the same thing.\n\n## Done when\n\n- The command list is grouped. The command reference already groups the commands by kind of work, and the help can follow it. For example:\n  - Write and check: `init`, `check`, `fmt`, `build`, `diff`, `drift`, `report`\n  - Ask about the project: `explain`, `model`, `outline`, `link`, `refs`, `search`, `resolve`, `rename`\n  - Keep records: `baseline`, `versions`, `permalinks`, `addresses`, `sources`, `observe`, `templates`, `vale`\n  - Connect tools: `agents`, `mcp`, `lsp`\n- Each top-level description is about 12 words or fewer. The detail moves to the subcommand's own `--help`.\n- The \"For agents:\" paragraph moves to `ascribe agents --help`, or is shortened to one line that points there.\n- The generated `cli-synopsis.md` and the command reference are regenerated and checked.\n\nFound in the clarity and noise review.",
+        "number": 957,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Group ascribe --help's commands by task, and shorten their descriptions",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/957"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDeg9U",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Group ascribe --help's commands by task, and shorten their descriptions"
+    },
+    {
+      "content": {
+        "body": "On a new project, `ascribe init` ends with:\n\n```text\nNext, to publish the pages as a site with Astro, read https://ascribed-dev.com/go/astro-guide/\n```\n\nThe project has no page yet, so this skips a step. Then `ascribe check` in the same project says:\n\n```text\nchecked 0 files for every build, reported on 0: 0 errors, 0 warnings, 0 advice\n```\n\n\"For every build\" is jargon before there's a page, and a check of nothing reads like success.\n\n## Done when\n\n- `ascribe init`'s next step is writing a first page and checking it, as getting started does, for example `Next, write docs/index.md and run ascribe check`. Publishing with Astro comes after that.\n- `ascribe check` in a project with no pages says so, for example `No pages in docs/ yet.`, and exits 0.\n- `init.txt` and the getting-started docs that quote this output are updated.\n\nFound in the clarity and noise review.",
+        "number": 958,
+        "repository": "ascribed-dev/ascribe",
+        "title": "init and check: point a new project at its first page",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/958"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehAY",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "init and check: point a new project at its first page"
+    },
+    {
+      "content": {
+        "body": "`ascribe model --section` takes 16 values (`crates/ascribe-query/src/model.rs`, `Section::ALL`), with no `apis`, `versions`, `lifecycle`, `notes`, `images`, `fragments`, or `frontmatter`:\n\n```text\n$ ascribe model --section apis\nerror: invalid value 'apis' for '--section <NAME>'\n```\n\nThe MCP tool `ascribe_model` is how an agent without a shell learns a project, so it can't see a project's `[apis]`, even though the rules block names them.\n\n## Done looks like\n\n- `ascribe model` and `ascribe_model` cover every top-level table the content model contract lists, `[apis]` with each API's name, spec, and reference renderer.\n- A test compares `Section::ALL` with the contract's tables and fails when a new table has no section, in the style of the other one-home tests.\n- The generated CLI docs and `json-model` schema are regenerated.\n\nFrom the coherence review: [How Ascribe's features fit together](https://claude.ai/artifact/WdVoVdtBH75vVGPFczwUrC), finding 7.",
+        "number": 959,
+        "repository": "ascribed-dev/ascribe",
+        "title": "ascribe model: a section for every table of ascribe.toml, apis among them",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/959"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehA4",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "ascribe model: a section for every table of ascribe.toml, apis among them"
+    },
+    {
+      "content": {
+        "body": "**The problem you're trying to solve:**\n\nFive passages of SPEC.md describe the toolchain as it was, not as it is. Each is a wording change; no behavior changes.\n\n1. **§9.3's builds example is YAML.** The content model is TOML (§7.1), and every example writes `[builds.<name>]` tables. Rewrite it as TOML, ideally as a `@snippet`-backed example of `examples/quill/ascribe.toml` so it can't drift.\n2. **§7.3 says \"A processor reads both files and MUST NOT run any command in them.\"** `ascribe observe` runs the config's commands. `docs/content/contracts/tested-examples.md:15` already scopes the rule to `check`, `build`, `sources`, and the editor. Scope the spec sentence the same way: checking and building never run a command; only a command the person runs to observe examples does.\n3. **§9.4 says the site output \"depends on no consumer component system.\"** Heading ids, glossary terms, and links out of a line are `<ascribe-attributes>` markers (site-render contract §2), and a tested block needs the renderer to build its `<figure>` (§5.1). Say that the site output is markdown, custom elements, and attribute markers, and that a consumer applies the markers, with `render_site_html` or the Astro plugin; otherwise someone feeds it to plain remark and loses every explicit heading id.\n4. **§10 says \"dimension values and lifecycle states have no definition\"**, and its first non-normative note says go to definition in `ascribe.toml` \"currently recognizes `[phrases]` and `[features.<key>]` table forms only.\" `crates/ascribe-lsp/src/definition.rs:186–210` goes to features, dimensions, dimension values, note types, widgets, builds, and types. Update the list and drop the stale note (implementation notes belong in the editor docs).\n5. **§1.2 principle 7 and §9.1 say the editor reports exactly what a command-line check reports.** `docs/content/editor/problems.md` says otherwise, correctly: the editor shows the editor build only, project-wide checks run on save, and the image checks run only in `ascribe check`. Amend §9.1 and §10 to: the same rules, from the same code; an authoring environment MAY defer project-wide checks and other builds' checks, and SHOULD say when it has (as the status bar's \"problems: this build only\" does).\n\n**Done when:** each passage says what's true, with a decision file recorded for the change (SPEC.md is a contract) and a changelog entry. `cargo test -p ascribe-conformance` still passes, since the registry test reads SPEC.md.\n\nFound while looking for tensions between features and the spec ([write-up](https://claude.ai/artifact/DLzosEjitkNiiboxykapUA)).",
+        "number": 960,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Bring five SPEC.md passages up to date with what the toolchain does",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/960"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehDM",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Bring five SPEC.md passages up to date with what the toolchain does"
+    },
+    {
+      "content": {
+        "body": "The pages that route a reader to a feature haven't kept up with the features:\n\n| Hub page | Missing |\n| --- | --- |\n| Docs index (`docs/content/index.md`) | Publish a site for each version (`versions/`), Link to your API reference (`openapi/`), Navigation (`navigation/`), Keep the addresses you've published (`publishing/redirects.md`), Checks in CI (`checks/ci.md`) |\n| Command reference (`command/index.md`) | `ascribe addresses`, though the synopsis included on the same page lists it |\n| Files Ascribe writes (`command/project-files.md`) | `ascribe.addresses`, and `ascribe.examples.toml` as its own row |\n\nThe index is also a flat list of 23 links.\n\n## Done when\n\n- The docs index links every section of `ascribe.nav`, grouped by task (for example write, check, review, publish, agents, reference), with the contracts kept in their own group.\n- The command reference's \"Commands\" list has every top-level command in the synopsis.\n- Files Ascribe writes has a row for every file a command writes, `ascribe.addresses` included.\n- A test fails when one of these falls behind: a section in `ascribe.nav` that the index doesn't link, a command in the synopsis that the command list doesn't name, or a project file (from a list the code keeps) that the files page doesn't have. `scripts/docs-site/facts.test.ts` is a model for this.\n\nIf permalinks and addresses merge, list the merged feature instead.\n\nFound in the clarity and noise review.",
+        "number": 961,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: bring the docs index, command reference, and Files Ascribe writes up to date, and test them",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/961"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehDY",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: bring the docs index, command reference, and Files Ascribe writes up to date, and test them"
+    },
+    {
+      "content": {
+        "body": "The agents skill says `ascribe rename` records a page's move and updates its links, but the MCP server (`crates/ascribe-cli/src/mcp/tools.rs`) has no rename tool, only `ascribe_addresses_move`, which records a move made another way. An agent without a shell has to move the file, fix every link by hand, then record the move. A person with the editor or CLI does it in one step.\n\nThe tool names also differ from the commands they wrap: `ascribe_format` for `ascribe fmt`, and `ascribe_changes` for `ascribe diff`.\n\n## Done looks like\n\n- `ascribe_rename` takes a target and a new name, as `ascribe rename` does, and returns the edits (each file's new text, the file to move, and the `ascribe.addresses` entry), as the addresses tools return their edit. It calls the same code as the command.\n- The skill's no-shell paragraph points to it.\n- Either the tools are named after their commands (`ascribe_fmt`, `ascribe_diff`), with the old names kept as aliases for a release, or the PR says why the names stay. The plugin in `plugins/ascribe/` and `agents/mcp.md` are regenerated.\n\nFrom the coherence review: [How Ascribe's features fit together](https://claude.ai/artifact/WdVoVdtBH75vVGPFczwUrC), finding 8.",
+        "number": 962,
+        "repository": "ascribed-dev/ascribe",
+        "title": "MCP: add ascribe_rename, and name the tools after their commands",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/962"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehDw",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "MCP: add ascribe_rename, and name the tools after their commands"
+    },
+    {
+      "content": {
+        "body": "The This page view repeats itself, and a reader can't tell what its count of things to do refers to.\n\n- **Title and type twice.** The view's header shows the page's title and type, and About's first two rows show them again (`docs/content/images/this-page-light.png`).\n- **File names twice.** Each Connections row shows the file name and then its path, which for a file at the root are the same: \"keys.md keys.md\", \"_fragments/prerequisites.md _fragments/prerequisites.md\".\n- **Warnings in two sections.** About warns about a description that's too long and a review that's overdue. Health holds problems, size, and examples. In the head redesign's screenshot, Health's header says \"2 things to do\" above a Problems row that says \"none\", with three warnings showing across the two sections.\n\n## Done when\n\n- About drops the Title and Type rows the header already shows.\n- A Connections row shows a file's folder only when it adds something to its name.\n- Every row that can warn (description, review, template placeholders, examples, size, problems) is under Health. About only describes the page: address, Markdown, availability, builds, listing, permalinks.\n- Health's count says what it counts, and each counted row shows its warning.\n- `editor/sidebar.md` and its screenshots are updated.\n\nFound in the clarity and noise review.",
+        "number": 963,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Editor: This page says things twice, and splits its warnings between About and Health",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/963"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehG0",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Editor: This page says things twice, and splits its warnings between About and Health"
+    },
+    {
+      "content": {
+        "body": "**The problem you're trying to solve:**\n\nSince #810, a `[releases.<target>]` table whose target no declared dimension has makes that target a value of an implicit dimension named `release` (`RELEASE_DIMENSION`, `crates/ascribe-model/src/model.rs:997`; `model-releases-target` in the content model contract's §25.5; `docs/content/versions/lines.md:58`). SPEC.md never mentions it: §4.4 says a target is \"a value of a declared dimension, or the name of a dimension\", and §7.2's Dimensions and Releases rows say nothing of a dimension the content model doesn't declare.\n\nSo a spec reader can't tell why `@available: agent 2.1` is valid in a project with no `[dimensions]`, or that `release` is a reserved dimension name.\n\n**What you'd like Ascribe to do:**\n\nAdd the implicit dimension to SPEC §4.4 (what a target can be) and §7.2 (the Dimensions and Releases rows): a `[releases.<name>]` table naming no declared dimension's value makes `<name>` a value of the dimension `release`, labeled by the table's `label`; a declared `[dimensions.release]` takes the name instead; and say whether `release` can be used in `@variant` and in a page's `variant` frontmatter, as the implementation does now.\n\n**Done when:** SPEC §4.4 and §7.2 describe the implicit dimension, with a conformance case that covers a target from `[releases]` alone (one may already exist; cite it), a decision file recorded for the change, and a changelog entry.\n\nFound while looking for tensions between features and the spec ([write-up](https://claude.ai/artifact/DLzosEjitkNiiboxykapUA)).",
+        "number": 964,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Spec the implicit `release` dimension",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/964"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehHY",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Spec the implicit `release` dimension"
+    },
+    {
+      "content": {
+        "body": "The commands disagree on a few shared flags:\n\n- **Write nothing:** `--check` (`fmt`, `permalinks sync`, `agents sync`, `observe`) and `--dry-run` (`versions release`, `versions retire`). Other commands that write have neither: `rename`, `addresses move` and `retire`, `permalinks retire`, `templates eject`, `check --fix`, `baseline write`.\n- **Fail on findings:** `--check`, `--exit-code` (`diff`, `drift`, `templates status`), `--exit-code=<level>` (`report`), `--deny-warnings` (`check`).\n- **Safety:** only `versions release` and `retire` refuse, without `--force`, to write files git can't put back.\n- **JSON:** `rename`, `sources fetch`, `templates list`, `vale eject`, `agents sync`, and `agents prompt` have no `--format json`.\n\nThe project-root files have no naming rule either: `ascribe.nav` is TOML without an extension, `ascribe.examples.toml` has one, `templates.lock` has no `ascribe.` prefix. A name doesn't tell you whether you edit the file or Ascribe writes it.\n\n## Done looks like\n\n- The conventions are written down in CONTRIBUTING.md (or `project-docs/`): every command that writes takes `--dry-run` and the git guard with `--force`; `--check` means a dry run that exits 1 when something would change; `--exit-code[=level]` means \"exit 1 on findings\", with `--deny-warnings` kept as an alias of `--exit-code=warning` or explained; every command takes `--format json` unless it only prints a file; a file name rule for new project files.\n- The commands above follow them. Renamed flags keep their old spelling as a hidden alias for a release.\n- A test over the clap definitions holds the conventions, as `names.rs` holds element names.\n- Existing files keep their names (renaming them costs every project a migration). The rule applies to new ones.\n\nFrom the coherence review: [How Ascribe's features fit together](https://claude.ai/artifact/WdVoVdtBH75vVGPFczwUrC), findings 9 and 10.",
+        "number": 965,
+        "repository": "ascribed-dev/ascribe",
+        "title": "CLI conventions: one flag for \"write nothing\", one for \"fail on findings\", and the same guard on every command that writes",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/965"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehIk",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "CLI conventions: one flag for \"write nothing\", one for \"fail on findings\", and the same guard on every command that writes"
+    },
+    {
+      "content": {
+        "body": "The Project view has 8 actions, up to five Health groups with a count on every line, and About. Problems are also counted in This page, the status bar, and `ascribe report`, so a new user has to learn which count comes from which check. Most of the time most counts are `0`, dimmed, and each of them still takes a line.\n\n## Done when\n\n- Health shows a group's counts that are above zero, plus the ones that aren't current (a dash with the group's note). Counts of none are hidden behind one line per group, such as \"Nothing else to do\", that expands to the full list.\n- A group with nothing to do and nothing out of date collapses to its head line.\n- The `To do` count in Health's header is unchanged.\n- `editor/sidebar.md`'s Project view section and its screenshots are updated.\n\nFound in the clarity and noise review.",
+        "number": 966,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Editor: the Project view's Health shows only the counts that need doing",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/966"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehJM",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Editor: the Project view's Health shows only the counts that need doing"
+    },
+    {
+      "content": {
+        "body": "Three small gaps in the docs about the addresses file:\n\n1. `docs/content/publishing/redirects.md:43` says a reader who follows a retired address \"gets the host's not-found page\". Line 185 of the same page, SPEC §7.10, and `packages/astro/src/redirects.ts` all say they get a page saying what was removed and why, answering 404.\n2. `docs/content/command/project-files.md` (\"Every file Ascribe puts in a project\") doesn't list `ascribe.addresses`, or the redirects `@ascribed/astro` writes from it.\n3. Ascribe's own docs (`docs/`) don't keep `ascribe.addresses`, though they retire permalinks, so the feature isn't used on the project's own docs.\n\n## Done looks like\n\n- Line 43 matches line 185 and the spec.\n- `project-files.md` has a row for `ascribe.addresses` (commit it, what writes it), and mentions the `_redirects` lines and `_ascribe/gone/` pages where it lists Astro's output.\n- `docs/` has an `ascribe.addresses`, made with `ascribe addresses init`, and CI's `ascribe check` on the docs runs against the base so a moved docs page is caught.\n\nFrom the coherence review: [How Ascribe's features fit together](https://claude.ai/artifact/WdVoVdtBH75vVGPFczwUrC), finding 11.",
+        "number": 967,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: fix what redirects.md says a retired address gets, list ascribe.addresses in project files, and use it on our own docs",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/967"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehLk",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: fix what redirects.md says a retired address gets, list ascribe.addresses in project files, and use it on our own docs"
+    },
+    {
+      "content": {
+        "body": "Seen in the page preview during review, in the phase 8 screenshot `page-real-1000-light.png`. Check each point against main before changing it.\n\n- **Raw settings in the header.** Beside the Build picker, the first toolbar shows `variants: deployment=cloud; availability: badge`, which is the build's configuration as `ascribe.toml` writes it.\n- **Two state labels on one thread.** A detached comment carries both **On removed text** and **Detached**.\n- **An empty quote.** A detached thread on removed text says \"The comment was on this text, which is no longer on the page: \\\"\\\"\".\n\n## Done when\n\n- The build's settings are in the Build picker's tooltip, not in the toolbar.\n- A thread shows one state label. Pick the more specific one and record the rule in `review/how-it-works.md`.\n- A thread whose old text is empty or can't be read says so in words (for example \"on a line that's since been removed\") instead of an empty quote.\n- The preview tests cover a detached thread on removed text.\n\nFound in the clarity and noise review.",
+        "number": 968,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Review preview: hide the build's raw settings, and give a detached thread one label",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/968"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehMU",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Review preview: hide the build's raw settings, and give a detached thread one label"
+    },
+    {
+      "content": {
+        "body": "**The problem you're trying to solve:**\n\nSPEC §3.3 says \"Attributes use one grammar everywhere: after a directive name, after an image, and at the end of a table row's first cell.\" Fence info strings now carry a second attribute language that's in no grammar:\n\n- `phrases=true` (§5.1: the info string \"contains the word\")\n- `title=\"…\"` and `tested=\"…\"`, which `@snippet` writes (§4.8)\n- `request=\"<link>\"` and `response=\"<link> <status> [media type]\"` (§7.11)\n\nEach is read by its own code; `request` and `response` are parsed by hand in `crates/ascribe-resolve/src/index/examples.rs:144`. Appendix A has no rule for any of them, so it's unclear whether a quoted value may hold `\\\"`, whether order matters, what an unknown key means, or whether `phrases = true` with spaces counts.\n\n**What you'd like Ascribe to do:**\n\nAdd one section to the spec, say §3.3.1 \"Info-string attributes\": after the language word, space-separated `key=value` pairs where a value is a token or a double-quoted string (with the escapes §3.3 allows, or none, stated); the keys a processor reads (`phrases`, `title`, `tested`, `request`, `response`); and that other words are left to the consumer. Add its ABNF to Appendix A. If the hand parsers disagree with the rule chosen, bring them in line in the same change, with conformance cases.\n\n**Done when:** the section and ABNF exist, §4.8, §5.1, and §7.11 point to it, every reader of an info-string attribute goes through one function that follows it, and a decision file and changelog entry come with the change.\n\nFound while looking for tensions between features and the spec ([write-up](https://claude.ai/artifact/DLzosEjitkNiiboxykapUA)).",
+        "number": 969,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Give the attributes in a code fence's info string a grammar in the spec",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/969"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehMI",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Give the attributes in a code fence's info string a grammar in the spec"
+    },
+    {
+      "content": {
+        "body": "`CHANGELOG.md` is about 36,000 words, longer than `SPEC.md`, for releases two days apart. Its 392 entries average about 90 words each, and 0.4.2 alone runs about 170 lines. An entry often restates the feature's page. For example, the entry on `help.json` lists \"its title, its summary, from the section's `@summary`, its section as the plain output writes it, with images as their alt text, and its address\". The site publishes the changelog, so this is what a user skims to find out what changed.\n\n## Done when\n\n- `CONTRIBUTING.md`, or wherever entries are specified, says that an entry is a bold headline and one or two sentences, 40 words at most, ending with a link to the page with the detail.\n- Fixes stay one line each.\n- The Unreleased section and 0.4.4 are rewritten to that shape. Older releases can stay as they are.\n- If entries come from `changes/` files, a check enforces the length there.\n\nFound in the clarity and noise review.",
+        "number": 970,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Changelog: one line per entry, with the detail on the page it links",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/970"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehO8",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Changelog: one line per entry, with the detail on the page it links"
+    },
+    {
+      "content": {
+        "body": "**The problem you're trying to solve:**\n\nParts of `ascribe.toml` and of the diagnostics registry live only in the implementation, while the registry cites spec sections as if the spec defined them:\n\n- `[checks]` and its levels, `[checks.vale]`, `[checks.links]`, `[editor]`, and a content type's `template` and `guide` aren't in SPEC §7.2's table. The content model contract's §26 map, which says \"every declaration SPEC §7.2 lists … maps to one section,\" has no row for `[checks]`.\n- The registry's `spec` field points at sections that don't define the rule: `code-language-missing` → §1.4, `prose` and `baseline-entry-unmatched` → §2.1, `template-placeholder-left`, `template-section-empty`, and `model-type-template` → §7.2.\n- `@intended {check=…}` makes a page depend on the implementation's check names (`page-orphan`, `glossary-term-unused`, …), while §4.9 says \"a processor's checks are its own.\" Another processor that names its checks differently would reject the page.\n\n**What you'd like Ascribe to do:**\n\n1. Add a row to SPEC §7.2 for processor settings: the content model MAY hold settings a processor defines for its own checks and tools, which this specification doesn't, and a processor ignores settings it doesn't know only where it says so. The contract stays where they're defined; add `[checks]` to its §26 map.\n2. Let the registry's `spec` be `\"none\"` for a check the spec doesn't define, and use it for the entries above; teach `tests/conformance/tests/registry.rs` to accept it, and the diagnostics reference to show it.\n3. In §4.9, say that `check` values are a processor's names, and what a processor does with a name it doesn't know (today `intended-check`, an error); or list the review checks in a generated appendix. The first is smaller and matches \"a processor's checks are its own.\"\n\n**Done when:** the three changes are in, with a decision file (SPEC.md and the content model contract are contracts) and a changelog entry.\n\nFound while looking for tensions between features and the spec ([write-up](https://claude.ai/artifact/DLzosEjitkNiiboxykapUA)).",
+        "number": 971,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Separate what the spec defines from the processor's own settings and checks",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/971"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehRo",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Separate what the spec defines from the processor's own settings and checks"
+    },
+    {
+      "content": {
+        "body": "`docs/content/editor/sidebar.md` is about 5,500 words, the longest hand-written page in the docs. Each view's section mixes what a writer needs (what it shows, what to click) with exact rules for when each Health count goes out of date, how a dash differs from a dimmed zero, and what a screen reader reads. Across the 145 hand-written pages, sentences average 25 words. The reference pages are densest: `writing/directives.md` averages 35, and `writing/syntax.md` 34.\n\n## Done when\n\n- Each view's section in `sidebar.md` opens with what it shows and what each row or action opens, in short sentences, with the screenshot.\n- The rules for freshness, states, and accessibility move to a closing section (\"When the counts update\") or a contract page, and the view sections link to it.\n- The page reads in about half the words before that closing section.\n- Nothing documented is dropped, and links into the page's ids still work.\n\nOther long reference pages can follow the same split in later issues.\n\nFound in the clarity and noise review.",
+        "number": 972,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: lead the editor's sidebar page with what each view shows, and move the update rules after it",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/972"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehSA",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: lead the editor's sidebar page with what each view shows, and move the update rules after it"
+    },
+    {
+      "content": {
+        "body": "31 sections of the docs carry `@available: ascribe 0.4.4`, the release from 2026-10-26. On a pre-1.0 tool that releases every two days, these badges mostly say \"new\" and add a line to many sections. The docs publish one live line (0.4.4) with the earlier ones archived, so a reader on an older version reads that version's archive anyway.\n\n## Done when\n\n- A rule is recorded in the decision log for when a docs section gets `@available: ascribe X`. For example, only features in a line that's still live but not current, or none before 1.0.\n- The docs follow it, and the memo or `AGENTS.md` guidance for the docs says so.\n- `ascribe versions release` still works for the docs' own lines.\n\nFound in the clarity and noise review.",
+        "number": 973,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: decide when a section gets an @available: ascribe badge",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/973"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehVE",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs: decide when a section gets an @available: ascribe badge"
+    },
+    {
+      "content": {
+        "body": "**The problem you're trying to solve:**\n\nSPEC §4.9 says only a review check can be acknowledged, and \"a problem that makes a document non-conforming never can\"; §1.3 and §8.2 say an error makes a document non-conforming and fails a build. `[checks]` lets a project raise a review check to `\"error\"` (content model contract §19). A project that sets `page-orphan = \"error\"` now has an error that fails the build and that `@intended` can still acknowledge. \"Error\" means two things, and the spec mentions neither `[checks]` nor `ascribe.baseline`.\n\nThere are four ways to quiet a problem, each with its own rules:\n\n| Mechanism | Scope | Needs a reason | Read by |\n| --- | --- | --- | --- |\n| `@intended`, `intended:` frontmatter, `[[intended]]` | One problem, kept for good | Yes | Everything |\n| `[checks] <slug> = \"off\"` | A check, project-wide | No | Everything |\n| `[checks] <slug> = \"error\"` | Raises a review check | No | Everything |\n| `ascribe.baseline` | Many advice, for now | No | `check`, editor, hooks, MCP; not `build` or `report` (#976) |\n\n**What you'd like Ascribe to do:**\n\n- In SPEC §8.2 (or §1.3), distinguish the spec's errors, which make a document non-conforming and are never quieted, from a project's levels for review checks, which the project may raise, lower, or turn off, and which can be acknowledged or put in a baseline at whatever level. A raised review check fails a build as an error does, without making the document non-conforming.\n- One docs page (or a section of `checks/check.md`) that compares the four mechanisms, from the table above, in place of the partial comparisons in `checks/baseline.md` and `writing/directives.md#intended`.\n\n**Done when:** the spec says it, the docs page exists and the others link to it, with a decision file and a changelog entry.\n\nFound while looking for tensions between features and the spec ([write-up](https://claude.ai/artifact/DLzosEjitkNiiboxykapUA)).",
+        "number": 974,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Name the two kinds of error: the spec's, and a review check a project raises",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/974"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehWU",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Name the two kinds of error: the spec's, and a review check a project raises"
+    },
+    {
+      "content": {
+        "body": "`ascribe diff` lists a change once per build. One edit to `keys.md` in `examples/quill`:\n\n```text\ncompared with HEAD (887c0a2)\nsite: 1 page changed\n  keys.md: 1 changed, in every line\ncloud: 1 page changed\n  keys.md: 1 changed\nself-managed-3.3: 1 page changed\n  keys.md: 1 changed\n```\n\n## Done when\n\n- When a page changed the same way in every build that publishes it, text output says it once: `keys.md: 1 changed, in every build`.\n- Builds that differ are still listed separately.\n- `json` and `html` output are unchanged. The output tests and docs examples are updated.\n\nFound in the clarity and noise review.",
+        "number": 975,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Diff: say a change once when it's the same in every build",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/975"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehXE",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Diff: say a change once when it's the same in every build"
+    },
+    {
+      "content": {
+        "body": "**The problem you're trying to solve:**\n\n`docs/content/checks/baseline.md` says: \"`ascribe build` and `ascribe report` report everything too, for now.\" So a project with a baseline sees `0 errors, 0 warnings, 2 advice, 3412 in the baseline` from `ascribe check` and thousands of advice from `ascribe build` and the report, for the same files. The editor, the hooks, and the MCP server all read the baseline, so the two commands are the odd ones out, and the spec's promise that the toolchain reports the same rules everywhere (§1.2, 7; §9.1) is strained further.\n\n**What you'd like Ascribe to do:**\n\n`ascribe build` and `ascribe report` hold back what the baseline lists, count it as `ascribe check` does (\"N in the baseline\"), and take `--no-baseline` to report everything. The report can still show the baseline's size as a measure of the backlog.\n\n**Done when:** both commands read the baseline, their output and `--format json` count what it held back, `--no-baseline` works on both, `checks/baseline.md` drops \"for now\", tests cover each command with and without a baseline, and a changelog entry comes with it.\n\nFound while looking for tensions between features and the spec ([write-up](https://claude.ai/artifact/DLzosEjitkNiiboxykapUA)).",
+        "number": 976,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe build` and `ascribe report` don't read `ascribe.baseline`",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/976"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehZk",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe build` and `ascribe report` don't read `ascribe.baseline`"
+    },
+    {
+      "content": {
+        "body": "**The problem you're trying to solve:**\n\nThe design principles in SPEC §1.2 and the summary of binding in §3.8 were written for the first vocabulary, and newer features strain them:\n\n1. **Principles 2 and 3** (\"never what it computes\"; \"no computed content\"). `@operation` writes a method, path, and summary read from an OpenAPI file; marked JSON examples are validated against a schema the spec translates from OpenAPI (§7.11); glossary terms are linked in prose the author never marked (§5.4); `planned` stands for a version from `[releases]`, and `ascribe versions release` rewrites it in source. None adds logic, but a reader of §1.2 would predict none of them. Restate principle 3 as what's held: authors write no logic; anything derived comes from something the content model declares (a registry, a source, an API) and is the same for every reader of a build.\n2. **§3.8's \"at the top of a section, a directive describes the section; anywhere else, it describes the block it touches.\"** Following-form `@summary` touches a paragraph anywhere in a section and describes the section (§4.12), and a container that binds (`@memo`) measures touching from its `@end`. Both are paragraphs after the binding table, not rows in it. Add both to the binding table and to §4's table, and say the summary sentence has these exceptions.\n3. **\"Advice\" isn't in §1.3.** Conformance defines errors and warnings; the third severity, used by 61 of 274 diagnostics, first appears in §8.2's introduction. Define it in §1.3.\n4. **§1.4 says the spec doesn't depend on table extensions,** but row availability (§4.4) and the plain output's column alignment (§9.4) exist only with GFM tables. Say once in §1.4 that those rules apply where tables are supported.\n5. **§4.10 \"Nothing reads a memo\"** already has two exceptions (`Generated from` memos, and memo files' `quote`, §7.7). Reword to \"no processor resolves or publishes a memo,\" and say when to use `@memo` (a line or two in place) and when a memo file (anything longer).\n\n**Done when:** the five passages are rewritten, with a decision file (SPEC.md is a contract) and a changelog entry. No behavior changes.\n\nFound while looking for tensions between features and the spec ([write-up](https://claude.ai/artifact/DLzosEjitkNiiboxykapUA)).",
+        "number": 977,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Restate the spec's principles and binding summary to match the features they now cover",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/977"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehdE",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Restate the spec's principles and binding summary to match the features they now cover"
+    },
+    {
+      "content": {
+        "body": "**The problem you're trying to solve:**\n\nSPEC §7.7 says a memo file's `about` \"names what the memo is about, as a target of `ascribe refs` is written\": the spec defines syntax by pointing at a command. The prose lists the forms (`path`, `path#id`, `term:<id>`, `phrase:<key>`, `feature:<key>`, `dimension:<name>`, `note:<type>`, `widget:<name>`), but Appendix A has no rule, so it's unclear how a path with `#` or `:` in it is written, or whether `phrase:` is case-sensitive. The same pattern shows up elsewhere: §7.3 sends readers to a docs path for the tested examples' format, and §7.10's example header names four commands.\n\n**What you'd like Ascribe to do:**\n\nAdd an `about-target` rule to Appendix A and use it in §7.7, so `ascribe refs` follows the spec rather than the reverse. While there, have §7.3 name the tested examples contract as a contract, not as a path in the docs folder.\n\n**Done when:** Appendix A has the rule, §7.7 cites it and no longer mentions `ascribe refs` as its definition, the parser of `about` matches it (with conformance cases for the edge cases above), and a decision file and changelog entry come with the change.\n\nFound while looking for tensions between features and the spec ([write-up](https://claude.ai/artifact/DLzosEjitkNiiboxykapUA)).",
+        "number": 978,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Define memo files' `about` targets in the spec's grammar, not by pointing at `ascribe refs`",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/978"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehgg",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Define memo files' `about` targets in the spec's grammar, not by pointing at `ascribe refs`"
+    },
+    {
+      "content": {
+        "body": "**The problem you're trying to solve:**\n\n`ascribe observe` lists the commands in `ascribe.examples.toml` and asks before running them, but only when standard input is a terminal. Otherwise, \"in CI or a hook, where nobody is there to answer, it runs the commands as it lists them, without asking\" (`docs/content/examples/tested.md:41`; also `examples/sources.md:95`). AGENTS.md notes the same for an agent's shell. So an agent working in a checkout whose `ascribe.examples.toml` someone else wrote runs those commands with no confirmation, which is the case the question exists for. SPEC §7.3's \"MUST NOT run any command\" reads as if this can't happen (that wording is #960, item 2).\n\n**What you'd like Ascribe to do:**\n\nWithout a terminal, `ascribe observe` lists the commands and runs nothing unless `--yes` is given, exiting with a code and message that say to pass `--yes`. CI and the repository's own instructions pass `--yes` explicitly; AGENTS.md already shows `cargo run -p ascribe-cli -- observe --yes`.\n\nThis changes a command's behavior, so it needs Kyle's go-ahead before it's Ready.\n\n**Done when:** the non-terminal path requires `--yes`, CI and `AGENTS.md` pass it, both docs pages say so, a test covers both paths, and a changelog entry names the change.\n\nFound while looking for tensions between features and the spec ([write-up](https://claude.ai/artifact/DLzosEjitkNiiboxykapUA)).",
+        "number": 979,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe observe` runs the config's commands without asking when there's no terminal",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/979"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehkk",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe observe` runs the config's commands without asking when there's no terminal"
+    },
+    {
+      "content": {
+        "body": "**The problem you're trying to solve:**\n\n\"Template\" now means three things: a content type's page template (`[types.<name>] template`, with `template-placeholder-left` and `template-section-empty`), the `ascribe templates` commands, and an API reference's address when it isn't Redoc's (SPEC §7.11, §5.2; `link-operation-form-unsupported`, ASC274: \"the reference of API `{api}` is a template\"). \"Placeholder\" is likewise both a template's slot and an `@intended` reason not yet written. An author who reads ASC274 next to ASC195 has to work out that they're unrelated.\n\n**What you'd like Ascribe to do:**\n\nCall the API one an \"address pattern\" (or similar) in SPEC §5.2, §7.11, §8.2's Links row, ASC274's message, and `docs/content/_fragments/content-model/apis.md`. The TOML stays as it is (`reference = \"<string>\"`), so no content model changes.\n\n**Done when:** the word is changed in those places, `diagnostics.toml` and SPEC §8.2 agree (the registry test checks it), and a changelog entry notes the message change.\n\nFound while looking for tensions between features and the spec ([write-up](https://claude.ai/artifact/DLzosEjitkNiiboxykapUA)).",
+        "number": 980,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Call an API reference's address template something other than \"template\"",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/980"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDehoM",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Call an API reference's address template something other than \"template\""
     }
   ]
 }
