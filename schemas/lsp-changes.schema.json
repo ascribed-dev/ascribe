@@ -248,7 +248,7 @@
       "type": "object"
     },
     "FormattedPiece": {
-      "description": "A piece of a formatted value, as the JSON output writes it:\n`{ \"type\": \"text\" | \"code\", \"value\": … }`. Other JSON that shows a\nformatted title, such as the review report's, writes it the same way.",
+      "description": "A piece of a formatted value, as the JSON output writes it:\n`{ \"type\": \"text\" | \"code\", \"value\": … }`. Other JSON that shows a\nformatted title, such as the HTML preview's, writes it the same way.",
       "properties": {
         "type": {
           "$ref": "#/$defs/PieceKind",

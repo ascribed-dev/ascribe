@@ -153,7 +153,7 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
         }
         _ => None,
     };
-    // Its prompts, in the HTML report too, are for an agent here.
+    // Its prompts, in the HTML preview too, are for an agent here.
     if let Ok(here) = std::env::current_dir() {
         diff.seen_from(here);
     }
@@ -401,7 +401,7 @@ fn line_groups<'r>(report: &'r Report, model: &ContentModel) -> Vec<Vec<&'r Buil
 
 /// The lines of one versioned build: each changed page once, with the
 /// lines it changed in, "in every line" when it changed in each of them,
-/// as the HTML report says it.
+/// as the HTML preview says it.
 fn write_lines_of(
     out: &mut dyn Write,
     lines: &[&BuildDiff],

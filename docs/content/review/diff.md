@@ -47,7 +47,8 @@ warning: the working tree has 3 errors; `ascribe check` lists them
 | `1` | With `--exit-code`: something changed |
 | `2` | It couldn't run: a usage error, an unknown build, not a git repository, an unknown revision, no merge base (a shallow clone, or unrelated histories), `git` not found, or a project that doesn't load at the base or in the working tree. The reason goes to standard error. |
 
-### The HTML report
+### The HTML preview
+@id: the-html-report
 
 `--format html` writes one HTML file to standard output, with everything in it: its styles and script, the element library, and every image a changed page uses, up to 1 MB each (a larger one shows as a placeholder naming its file). It makes no network requests, so it opens from a CI artifact, an email, or a disk with nothing else:
 
@@ -57,16 +58,16 @@ ascribe diff --format html > review.html
 
 It lists the changed pages of each build, and marks a page that changed only through something it uses ("via `_fragments/prereqs.md`"); with more than one build changed, a picker switches between them. Each page is rendered as it is now, the way the editor's page preview renders it, without the site's layout, with review's [marks](how-it-works.md#the-marks):
 
-![The HTML report in a browser. Its header says 1 changed page, compared with main, and that each page is as Ascribe renders it, without the site's layout, navigation, or styles. The list of changed pages has Set up Loom, its file, and 1 changed, 1 added, 1 removed, and 1 moved. Above the page are its file and route, 4 changes on this page, Show: Changes, As it will be, and As it was, the arrows to the previous and next change, and Copy prompt. The page's marks are a changed paragraph, its added words highlighted and its removed ones struck through; a removed paragraph, struck through; the place a paragraph moved from, linking to Requirements; an added paragraph; and, under Requirements, the moved paragraph, linking back to where it was.](../images/html-report-light.png){scheme=light}
-![The HTML report in a browser. Its header says 1 changed page, compared with main, and that each page is as Ascribe renders it, without the site's layout, navigation, or styles. The list of changed pages has Set up Loom, its file, and 1 changed, 1 added, 1 removed, and 1 moved. Above the page are its file and route, 4 changes on this page, Show: Changes, As it will be, and As it was, the arrows to the previous and next change, and Copy prompt. The page's marks are a changed paragraph, its added words highlighted and its removed ones struck through; a removed paragraph, struck through; the place a paragraph moved from, linking to Requirements; an added paragraph; and, under Requirements, the moved paragraph, linking back to where it was.](../images/html-report-dark.png){scheme=dark}
+![The HTML preview in a browser. Its header says 1 changed page, compared with main, and that each page is as Ascribe renders it, without the site's layout, navigation, or styles. The list of changed pages has Set up Loom, its file, and 1 changed, 1 added, 1 removed, and 1 moved. Above the page are its file and route, 4 changes on this page, Show: Changes, As it will be, and As it was, the arrows to the previous and next change, and Copy prompt. The page's marks are a changed paragraph, its added words highlighted and its removed ones struck through; a removed paragraph, struck through; the place a paragraph moved from, linking to Requirements; an added paragraph; and, under Requirements, the moved paragraph, linking back to where it was.](../images/html-report-light.png){scheme=light}
+![The HTML preview in a browser. Its header says 1 changed page, compared with main, and that each page is as Ascribe renders it, without the site's layout, navigation, or styles. The list of changed pages has Set up Loom, its file, and 1 changed, 1 added, 1 removed, and 1 moved. Above the page are its file and route, 4 changes on this page, Show: Changes, As it will be, and As it was, the arrows to the previous and next change, and Copy prompt. The page's marks are a changed paragraph, its added words highlighted and its removed ones struck through; a removed paragraph, struck through; the place a paragraph moved from, linking to Requirements; an added paragraph; and, under Requirements, the moved paragraph, linking back to where it was.](../images/html-report-dark.png){scheme=dark}
 
 Hovering over a block shows the source file and line it came from (`guides/install.md:12`).
 
 The lines of a versioned build are one build in the list: a changed page is listed once, with "in every line" or the lines it changed in, and a **Line** switch shows it as each line publishes it.
 
-**Copy prompt** copies the page's [agent prompt](diff.md#the-agent-prompt), the one `ascribe diff --format prompt <page>` writes, to paste into your agent. The report has no link that opens an agent: a file opened from a disk or a CI artifact can't tell which editor you use, so it only copies.
+**Copy prompt** copies the page's [agent prompt](diff.md#the-agent-prompt), the one `ascribe diff --format prompt <page>` writes, to paste into your agent. The preview has no link that opens an agent: a file opened from a disk or a CI artifact can't tell which editor you use, so it only copies.
 
-A report renders at most 300 changed pages; the rest are listed by name, and the report says so at the top. Each rendered page and image is stored once, however many builds or pages share it. [Attach the review report to every pull request](ci-report.md) has a GitHub Actions job that uploads it.
+The preview renders at most 300 changed pages; the rest are listed by name, and the preview says so at the top. Each rendered page and image is stored once, however many builds or pages share it. [Attach the HTML preview to every pull request](ci-report.md) has a GitHub Actions job that uploads it.
 
 ### The agent prompt
 
@@ -74,7 +75,7 @@ A report renders at most 300 changed pages; the rest are listed by name, and the
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff-prompt.txt
 
-The prompt asks for a report, not edits: a review reads the change, and its author decides what to do. Its paths and commands (`ascribe resolve`, `git diff`, `ascribe diff`) are written from the folder `ascribe diff` was run in, which it names once, with the base, the build, and `--config` as this run had them. The HTML report's **Copy prompt** gives the same prompt, and the editor's **Prompt agent** gives it from the repository's root.
+The prompt asks for a report, not edits: a review reads the change, and its author decides what to do. Its paths and commands (`ascribe resolve`, `git diff`, `ascribe diff`) are written from the folder `ascribe diff` was run in, which it names once, with the base, the build, and `--config` as this run had them. The HTML preview's **Copy prompt** gives the same prompt, and the editor's **Prompt agent** gives it from the repository's root.
 
 ### Diff JSON
 

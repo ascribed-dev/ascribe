@@ -167,7 +167,7 @@
       },
       {
         "href": "/docs/review/ci-report/",
-        "label": "Attach the review report to every pull request"
+        "label": "Attach the HTML preview to every pull request"
       },
       {
         "href": "/docs/review/diff/",

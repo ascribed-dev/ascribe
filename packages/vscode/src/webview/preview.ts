@@ -15,7 +15,7 @@
 // The page's HTML is untrusted text: the author's own files, or, in review,
 // the change under review. It is parsed into an inert `<template>`, disarmed
 // there (scripts, event handlers, and `javascript:` URLs taken out, as the
-// review report does), its asset references are rewritten there (so no
+// HTML preview does), its asset references are rewritten there (so no
 // request is made for a reference before it is rewritten), and only then moved
 // into the document. Nothing here evaluates it: the content security policy
 // (`html.ts`) doesn't allow inline scripts, and none is created.

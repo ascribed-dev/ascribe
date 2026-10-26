@@ -245,7 +245,7 @@ describe("the preview webview", () => {
       ),
     );
     await preview.next("rendered");
-    // The page is disarmed before it's shown, as the review report does it.
+    // The page is disarmed before it's shown, as the HTML preview does it.
     await expect(preview.page.locator("main script").count()).resolves.toBe(0);
     await expect(preview.page.locator("main img").getAttribute("onerror")).resolves.toBeNull();
     await expect(preview.page.locator("main a").getAttribute("href")).resolves.toBeNull();

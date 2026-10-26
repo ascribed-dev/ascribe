@@ -114,21 +114,21 @@ An element, an attribute, a class, or the order of what the `site` output writes
 
 - [ ] The site output, in `crates/ascribe-emit/src/site/`, and its contract in `docs/content/contracts/site-render.md`.
 - [ ] A new or renamed element, attribute, class, or id: in `crates/ascribe-core/src/names.rs`, its one home, then each package's generated `names.ts` (`packages/astro/src/names.ts`, `packages/elements/src/names.ts`, `packages/review/src/names.ts`, and `packages/vscode/src/names.ts`), rewritten by `ASCRIBE_BLESS=1 cargo test -p ascribe-core --test names`. Code uses the constant, never the literal; that test fails on a literal elsewhere, and on a stylesheet selecting a name that isn't declared.
-- [ ] Ascribe's own renderer, `render_site_html` in `crates/ascribe-emit/src/render/`, which the page preview and the HTML report use.
+- [ ] Ascribe's own renderer, `render_site_html` in `crates/ascribe-emit/src/render/`, which the page preview and the HTML preview use.
 - [ ] The fixtures in `tests/render/`, which both renderers must pass: ours, and the site's through `@ascribed/astro`.
 - [ ] Source anchors in review mode (`crates/ascribe-emit/src/site/anchor.rs`, tested by `crates/ascribe-emit/tests/all/site_anchors.rs`): the page with anchors is the page without them, plus the anchors.
 - [ ] `@ascribed/elements`: `packages/elements/src/`, `packages/elements/css/style.css`, and its contract, `packages/elements/CONTRACT.md`.
 - [ ] `@ascribed/astro`: `packages/astro/src/rehype.ts`, `packages/astro/src/attributes.ts`, `packages/astro/src/code-titles.ts`, and the components `packages/astro/src/Elements.astro` and `packages/astro/src/Availability.astro`.
 - [ ] `@ascribed/review`'s marks and placement, in `packages/review/src/marks/` and `packages/review/src/place/`.
 - [ ] The page preview in VS Code: `packages/vscode/src/preview/` and `packages/vscode/src/webview/`.
-- [ ] The HTML report, `crates/ascribe-diff/src/html/`. Its embedded script and styles are rebuilt from `packages/review` and `packages/elements` by `pnpm --filter @ascribed/review embed`.
+- [ ] The HTML preview, `crates/ascribe-diff/src/html/`. Its embedded script and styles are rebuilt from `packages/review` and `packages/elements` by `pnpm --filter @ascribed/review embed`.
 - [ ] The Astro example's end-to-end tests, in `examples/astro-site/test/e2e/`.
 - [ ] The docs site's own styles, in `site/src/styles/site.css`, if they style the changed markup.
 - [ ] Its changelog entry, a file of its own in `changes/` ([changes/README.md](../changes/README.md)), not a line in `CHANGELOG.md`.
 
 ## A change to how something looks
 
-A color, a font, the type scale, a space or radius, the mark, or one of its images, on any surface: the docs site, the element library, review, the HTML report, the Astro toolbar, or the extension. [design/README.md](../design/README.md) has the steps.
+A color, a font, the type scale, a space or radius, the mark, or one of its images, on any surface: the docs site, the element library, review, the HTML preview, the Astro toolbar, or the extension. [design/README.md](../design/README.md) has the steps.
 
 - [ ] The value is in `design/tokens.toml`, and a stylesheet takes it through its `[emit]` block; no stylesheet writes a color of its own.
 - [ ] The generated blocks, and `design/candidates/chosen.toml`'s shared colors, rewritten (`ASCRIBE_BLESS=1 pnpm exec vitest run scripts/design/tokens.test.ts`), and the diff read.
@@ -137,6 +137,6 @@ A color, a font, the type scale, a space or radius, the mark, or one of its imag
 - [ ] Contrast: a new text or meaningful graphic color has its pairings in `design/candidates/pairs.toml`, and `pnpm exec vitest run scripts/design` passes.
 - [ ] The specimen rewritten (`node scripts/design/specimen.ts`) and looked at.
 - [ ] Screenshots in light and dark of each surface it reaches, in the pull request.
-- [ ] `node scripts/compare/outputs.ts --base main`: only the HTML report's files differ, accepted by name, with the label `outputs changed`.
+- [ ] `node scripts/compare/outputs.ts --base main`: only the HTML preview's files differ, accepted by name, with the label `outputs changed`.
 - [ ] A changed default of an `--ascribe-*` or `--ascribe-review-*` property: a **Behavior change** in its changelog entry in `changes/`, with the previous values (decision 44). A new property is a contract addition, recorded as a decision.
 - [ ] In the extension: a codicon and a theme color first (`packages/vscode/DEVELOPMENT.md`, "Icons and colors").

@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Review
-description: Reviewing a pull request as readers will see it, in the page preview, the site preview, or a report from CI, and commenting there.
+description: Reviewing a pull request as readers will see it, in the page preview, the site preview, or the HTML preview from CI, and commenting there.
 permalink: review-guide
 ---
 
@@ -13,7 +13,7 @@ You can review in three places, and they show the same changes and the same comm
 
 - the **page preview** in VS Code, which renders the page by itself and needs nothing but the extension;
 - the **site preview**, the page in your real site, from `astro dev` with [`@ascribed/astro`](../astro/index.md);
-- the **report**, one HTML file that CI can attach to every pull request, for anyone who wants to read the change without a checkout: [Attach the review report to every pull request](ci-report.md).
+- the **HTML preview**, one HTML file that CI can attach to every pull request, for anyone who wants to read the change without a checkout: [Attach the HTML preview to every pull request](ci-report.md).
 
 [How review works](how-it-works.md) says what review compares, what its marks mean, and how its comments map to the pull request.
 

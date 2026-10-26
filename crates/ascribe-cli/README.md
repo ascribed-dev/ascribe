@@ -26,7 +26,7 @@ The JSON report's `schema_version` changes only when a field is removed or chang
 
 - `tests/all/check.rs`: every exit code, the text and JSON output, `--config`, and finding the model in a parent directory.
 - `tests/all/build.rs`: the outputs, replacing a previous build, and reporting what `ascribe check` reports.
-- `tests/all/diff.rs`: comparing with a base revision in a temporary git repository: the text, JSON, and HTML output (a snapshot of the HTML report's data, and that it loads nothing from the network), merge bases, changes through a fragment or the content model, and the failures that exit with 2.
+- `tests/all/diff.rs`: comparing with a base revision in a temporary git repository: the text, JSON, and HTML output (a snapshot of the HTML preview's data, and that it loads nothing from the network), merge bases, changes through a fragment or the content model, and the failures that exit with 2.
 - `tests/all/drift.rs`: the drift report in a temporary git repository: the groups in text, JSON, and the summary, an example that no longer resolves, nothing to report, `--exit-code`, and the failures that exit with 2, a shallow clone among them (where `check` behaves as in the full repository).
 - `tests/all/fmt.rs`: exit statuses, `--check`, and which files it visits.
 - `tests/all/sources.rs`: `ascribe sources`, and every other command over a project with sources in other repositories, in temporary repositories reached by `file://` URLs.
