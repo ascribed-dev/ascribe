@@ -48,7 +48,7 @@ test("the built landing page shows the file's text, and the page built from it b
     const opener = html.indexOf(`<source-and-result page="${page}">`);
     expect(opener).toBeGreaterThan(-1);
     const element = html.slice(opener, html.indexOf("</source-and-result>", opener));
-    const code = /<pre[^>]*><code>([\s\S]*?)<\/code><\/pre>/.exec(element)?.[1] ?? "";
+    const code = /<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/.exec(element)?.[1] ?? "";
     expect(text(code).trim()).toBe(source.trim());
     // The page's title, from its frontmatter, and its first heading, both built.
     const title = /^title: (.+)$/m.exec(source)?.[1] ?? "";
