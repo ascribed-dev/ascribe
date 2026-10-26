@@ -79,6 +79,18 @@ For each API in `[apis]`, it counts the spec's operations, how many of them a li
 
 For each build, the pages it doesn't publish and the content it takes out of the pages it does (a variant arm, a section marked available elsewhere), when another build keeps them, with why. It's what to read before a release of one build: whether what its readers won't see is what you meant to leave out. A project with one build has nothing to compare.
 
+Each is listed once, for the mark a writer made: a page by its `available` or `variant` frontmatter, and content by its `@available` (a section's, a block's, or a table row's) or its variant arm, at the mark's line and under the heading it's in, however many blocks it takes out. The line above a build's list counts the marks, by what each takes out.
+
+```text
+Builds
+  site@3.4 leaves out 2 pages and 1 section that another build keeps:
+    configure.md: not available (available: self-managed 3.5); site publishes it
+    webhooks.md: not available (available: self-managed 3.5); site publishes it
+    keys.md § Sign webhook events (line 25): Available on self-managed (GA, 3.5+), not self-managed 3.4; site keeps it
+```
+
+A mark written in a fragment names the fragment and its line in place of `line 25`.
+
 ## Pages
 
 Every page each build publishes, sorted by address, with what search engines and agents are told about it: its title, its description, and its listing, and where the listing comes from, the page's own `listing` or a rule of [`[listing]`](../content-model/checks.md#22-listing) and its line in `ascribe.toml`. It's the table a team would otherwise crawl its own site to get, made from the build before anything is deployed. The line above it gives the site's address, which each page's canonical address starts with.
