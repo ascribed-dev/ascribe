@@ -37,7 +37,7 @@ Health                                   1 to do
   Every build · not checked yet    ▷ Check Every Build
     Problems                  —
     Tested examples           —
-    Reviews overdue           —
+    Rechecks overdue           —
     Permalinks behind         —
   As you type
     Unused model entries      5 entries
@@ -49,7 +49,7 @@ Health                                   1 to do
 |---|---|---|---|
 | **Every build** | **Problems** | What the last **Check Every Build** found, an icon per severity with its count | The Problems panel |
 | | **Tested examples** | That check's `example-stale` and `example-unobserved`: examples changed since they were tested, or never tested | The Problems panel, and the first of them in the editor |
-| | **Reviews overdue** | That check's `review-overdue` | The Problems panel, and the first of them in the editor |
+| | **Rechecks overdue** | That check's `recheck-overdue` | The Problems panel, and the first of them in the editor |
 | | **Permalinks behind** | That check's `permalinks-list-behind` | The Problems panel, and the first of them in the editor |
 | **As you type** | **Pages nothing links to** | Pages and fragments nothing links to or includes | Pages, with **Orphans Only** on |
 | | **Unused model entries** | Content model entries nothing uses | Content model, with **Unused Only** on |
@@ -205,7 +205,7 @@ The view never checks every build by itself, since that can take a few seconds o
 - **Every build** goes out of date on any change to a file of the project, saved or not: a page, `ascribe.toml`, `ascribe.nav`, `ascribe.permalinks`, a memo, a template, or a file in one of its [sources](../examples/sources.md)' folders. A check that read files with unsaved changes says so: it reads files as they're saved.
 - **Every build** is remembered between sessions, for each project in the workspace. When VS Code opens, the view reads the last check back as it first shows the project, which takes a moment ("reading the last check…"). If no file of the project was modified after the check started, added, or removed, its counts are current, as if it had just run, with its problems back in the Problems panel. If one was, as a `git checkout` or a branch switch does, or a file of the project is open with unsaved changes, they're out of date, "the project changed after the check yesterday at 3:30 PM", with nothing put back. Only names and modification times are compared, so a file put back with its old time isn't seen as a change, and in a source's folder only the files the source reads count. A check made by another version of the extension isn't remembered, nor one with more than 5,000 problems: the project is not checked yet.
 - **Problems** counts as the status bar does: an icon per severity with its count, leaving out a severity there's none of.
-- **Reviews overdue** counts for the day the check ran, so it depends on the day as well as the files. When the check is current but from another day, that count alone is a dash, with its own note, such as "checked on 20 October; reviews fall due by the day", and **Check Every Build** beside it.
+- **Rechecks overdue** counts for the day the check ran, so it depends on the day as well as the files. When the check is current but from another day, that count alone is a dash, with its own note, such as "checked on 20 October; rechecks fall due by the day", and **Check Every Build** beside it.
 - **As you type** comes from the language server, which reads your unsaved text, so its counts are current as you type. **Pages nothing links to** is its list of orphans, as Pages' **Orphans Only** has it, and **Unused model entries** its count of each content model entry's uses, as Content model's **Unused Only** has it. While the server is starting, or isn't running, they show a dash.
 - **At the last save**: agent files are made from the content model and the pages, so most saves can change them. The view checks them when it first shows the project, and again after each save of a file of the project while it's showing, at most once every few seconds and never as you type. A change on disk that isn't a save, such as a `git checkout`, makes the count out of date, with **Check Agent Files** at the group's head.
 
@@ -242,7 +242,7 @@ In Health:
 
 - **Problems** is VS Code's problems for the page, counted as the status bar counts them, leaving out a severity there's none of. Its filter's **Show Active File Only** keeps the Problems panel to the page.
 - **Description** is shown "missing" where [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports the page. Its length is its field's default's when the page leaves the field out or empty. It's measured against the 300 characters its line in `llms.txt` reads best under, when the project publishes one, and led by "too long", with a warning, only where [`description-too-long`](../checks/diagnostics/output-checks.md#ASC163) reports it.
-- **Review** comes from the field with the [`review-date` role](../content-model/index.md#54-field-roles), as [`review-overdue`](../checks/diagnostics/content-checks.md#ASC153) compares it with today, with a warning only where that check reports the page.
+- **Review** comes from the field with the [`recheck-date` role](../content-model/index.md#54-field-roles), as [`recheck-overdue`](../checks/diagnostics/content-checks.md#ASC153) compares it with today, with a warning only where that check reports the page.
 - **Size** is the page's Markdown in the build where it's largest, measured as [`page-size`](../content-model/checks.md#19-checks) measures it. It's shown always, so a page is seen growing toward the limit, and led by "too large" once it reaches it.
 - **Example** is each tested example a `@snippet` of the page shows: its state first, tested, changed since it was tested, or not tested, then its address, what it was tested with, and the heading it's under.
 

@@ -146,7 +146,7 @@
 | [ASC150](../checks/diagnostics/content-checks.md#ASC150) | `page-description-missing` | Advice | File | write |
 | [ASC151](../checks/diagnostics/content-checks.md#ASC151) | `heading-level-skipped` | Advice | Page | fix |
 | [ASC152](../checks/diagnostics/content-checks.md#ASC152) | `code-language-missing` | Advice | File | choose |
-| [ASC153](../checks/diagnostics/content-checks.md#ASC153) | `review-overdue` | Advice | File | review |
+| [ASC153](../checks/diagnostics/content-checks.md#ASC153) | `recheck-overdue` | Advice | File | review |
 | [ASC154](../checks/diagnostics/content-checks.md#ASC154) | `page-orphan` | Advice | Page | review |
 | [ASC155](../checks/diagnostics/content-checks.md#ASC155) | `fragment-unused` | Advice | File | review |
 | [ASC156](../checks/diagnostics/content-checks.md#ASC156) | `phrase-unused` | Advice | File | review |

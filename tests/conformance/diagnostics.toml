@@ -2859,10 +2859,10 @@ reference = "content-model/index.md#54-field-roles"
 group = "content-types"
 when = "A field's `role` isn't one Ascribe knows, is on a field of the wrong type or below a page type's top level, or is on two fields of one type"
 message = "role = \"{role}\" only works on a {expected} field, and `{field}` is \"{type}\""
-messages.value = "role must be \"description\", \"review-date\", or \"owner\", not \"{value}\""
+messages.value = "role must be \"description\", \"recheck-date\", or \"owner\", not \"{value}\""
 messages.nested = "role only works on a page type's top-level fields, its own or `[frontmatter]`'s, and `{field}` is in {place}"
 messages.duplicate = "`{other}` already has role = \"{role}\"; a content type has one field with each role"
-fix = "Give `role = \"description\"` to one string field of a content type's `frontmatter`, `role = \"review-date\"` to one date field, and `role = \"owner\"` to one string or enum field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles."
+fix = "Give `role = \"description\"` to one string field of a content type's `frontmatter`, `role = \"recheck-date\"` to one date field, and `role = \"owner\"` to one string or enum field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles."
 
 [[diagnostic]]
 code = "ASC149"
@@ -2928,7 +2928,7 @@ fix = "Write the block's language right after the opening fence, such as `sh`, `
 
 [[diagnostic]]
 code = "ASC153"
-slug = "review-overdue"
+slug = "recheck-overdue"
 severity = "advice"
 level = "file"
 next = "review"
@@ -2938,9 +2938,9 @@ reference = "content-model/index.md#54-field-roles"
 configurable = true
 area = "pages"
 place = "page"
-when = "A page's content type marks a field `role = \"review-date\"`, and the date the page gives it is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`"
-message = "this page was due for review on {date}; check it still holds, then move `{field}` to the next review"
-fix = "Read the page against what it describes and correct what has changed, then set its review date to when it's next due. If the page is right as it is, moving the date is the whole fix. The check compares with today's date in UTC (or `ASCRIBE_TODAY`), so it can start reporting without a change to the project."
+when = "A page's content type marks a field `role = \"recheck-date\"` (or `\"review-date\"`, its old name), and the date the page gives it is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`"
+message = "this page was due for a recheck on {date}; check it still holds, then move `{field}` to the next recheck"
+fix = "Read the page against what it describes and correct what has changed, then set its recheck date to when it's next due. If the page is right as it is, moving the date is the whole fix. The check compares with today's date in UTC (or `ASCRIBE_TODAY`), so it can start reporting without a change to the project."
 
 ###############################################################################
 # Content checks across the project (area "project"): about the content's

@@ -272,12 +272,16 @@ impl Registry {
         self.entries.get(slug.as_str())
     }
 
-    /// The entry with this slug, or this code (`ASC036`, in any case).
+    /// The entry with this slug, or this code (`ASC036`, in any case), or
+    /// the entry of the check that had this slug as its old name.
     pub fn find(&self, code_or_slug: &str) -> Option<&Entry> {
-        self.entries.get(code_or_slug).or_else(|| {
-            self.entries()
-                .find(|e| e.code.eq_ignore_ascii_case(code_or_slug))
-        })
+        self.entries
+            .get(code_or_slug)
+            .or_else(|| {
+                self.entries()
+                    .find(|e| e.code.eq_ignore_ascii_case(code_or_slug))
+            })
+            .or_else(|| self.get(DiagnosticSlug::from_name(code_or_slug)?))
     }
 
     /// Every entry, in registry order.

@@ -1,5 +1,5 @@
 description: >-
-  An overdue review that the page acknowledges in its `intended` frontmatter,
+  An overdue recheck that the page acknowledges in its `intended` frontmatter,
   with a reason, isn't reported.
 spec: ["4.9", "7.2"]
 tags: [check]

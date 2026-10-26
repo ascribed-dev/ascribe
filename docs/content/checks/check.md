@@ -24,7 +24,7 @@ Every diagnostic, with its fix, is in the [diagnostics reference](diagnostics.md
 
 ### Checking as of another day
 
-Two checks depend on the day they run: `review-overdue` reports a page whose review date has passed, and `release-line-ended` a live release line whose `ends` date has passed, each as of today's date in UTC. Set `ASCRIBE_TODAY=YYYY-MM-DD` to check as of another day, such as in a test that mustn't change with the calendar. Every command that checks, the editor and the hook's check server included, reads it.
+Two checks depend on the day they run: `recheck-overdue` reports a page whose recheck date has passed, and `release-line-ended` a live release line whose `ends` date has passed, each as of today's date in UTC. Set `ASCRIBE_TODAY=YYYY-MM-DD` to check as of another day, such as in a test that mustn't change with the calendar. Every command that checks, the editor and the hook's check server included, reads it.
 
 ### Checking some files
 
@@ -189,7 +189,7 @@ When a page, a fragment, `ascribe.toml`, or a file a snippet takes code from cha
 
 @include: ../_generated/cli-preview-options.md
 
-The preview isn't the published site, which looks the way its Astro project styles it ([Astro](../astro/index.md)). Only this computer can open its address: it listens at `127.0.0.1` alone, answers only a request addressed to `127.0.0.1` or `localhost` with its port, so a web page elsewhere can't read it, and connects to nothing. `.ascribe/` is the folder `.gitignore` already leaves out.
+The preview isn't the published site, which looks the way its Astro project styles it ([Astro](../astro/index.md)), and isn't the editor's page preview or site preview, two of the four [previews](../glossary.md#preview). Only this computer can open its address: it listens at `127.0.0.1` alone, answers only a request addressed to `127.0.0.1` or `localhost` with its port, so a web page elsewhere can't read it, and connects to nothing. `.ascribe/` is the folder `.gitignore` already leaves out.
 
 | Code | Meaning |
 |---|---|

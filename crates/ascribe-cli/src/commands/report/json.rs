@@ -192,7 +192,7 @@ struct InventoryJson {
     /// How many pages each owner has, most first: the value of the
     /// frontmatter field the page's type marks `role = "owner"`.
     by_owner: Vec<OwnerCount>,
-    /// The pages whose review date has passed (`review-overdue`).
+    /// The pages whose recheck date has passed (`recheck-overdue`).
     overdue: Capped<Entry>,
     /// The pages nothing links to (`page-orphan`).
     orphans: Capped<Entry>,
