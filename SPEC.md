@@ -51,7 +51,7 @@ These principles govern the language. They are non-normative, but every normativ
 4. **Structure over grammar.** When a need can be met by a file convention or a content-model declaration instead of new syntax, it is.
 5. **Containers are rare.** Most directives occupy a single line. Nesting is discouraged, and every nesting need has a flat alternative.
 6. **Constrain the grammar, don't strangle it.** `@` marks directives, but other constructs use whatever notation reads best (for example, `{key}` for phrases).
-7. **Validate while authoring.** The rules a build enforces are the same rules the editor reports as you type.
+7. **Validate while authoring.** The rules a build enforces are the same rules the editor checks, as you type, or as you save for the checks that need the whole project.
 8. **Strict inside, tolerant outside.** Processors are strict about what Ascribe source means, not about how it's spaced; compiled output degrades to readable plain markdown.
 
 ### 1.3 Conformance
@@ -1010,7 +1010,7 @@ include = ["src/**", "examples/**"]
 - `path` is the source's folder, relative to the project's folder (the directory containing `ascribe.toml`). It MUST exist and be a directory. When the project is in a version-control repository, it MUST be inside that same repository.
 - `include` lists glob patterns (the content model's pattern syntax, as for `files`) matched against a file's path relative to the source's folder. A file is readable when a pattern matches it and no pattern in `ignore` does. Without `include`, every file in the folder matches. Whatever `ignore` lists, a file in a folder named `node_modules` or `.git`, at any depth, is never readable: a processor leaves both out before the source's own patterns.
 - Which files a source makes readable decides nothing else: a source's files aren't source files (§2.1), assets (§9.4), or pages.
-- **Tested examples.** A source MAY have, at its folder's root, an `ascribe.examples.toml` that says which of its files are examples, and beside it, in `examples.observations/`, the observations `ascribe observe` writes: what a test run passed, and where. A file is an example when the config's `include` matches it and its `ignore` doesn't. A snippet of an example that the observation lists with the hash its file has now carries what it was tested with in its code block's info string (§4.8). The config and the observations are read whatever the source's `include` says, and no snippet can address one: the source doesn't make `ascribe.examples.toml` or a file under `examples.observations/` readable. A processor reads both files and MUST NOT run any command in them. Their formats are in the tested examples contract (`docs/content/contracts/tested-examples.md`). For a source in another repository, they're copies (§7.4).
+- **Tested examples.** A source MAY have, at its folder's root, an `ascribe.examples.toml` that says which of its files are examples, and beside it, in `examples.observations/`, the observations `ascribe observe` writes: what a test run passed, and where. A file is an example when the config's `include` matches it and its `ignore` doesn't. A snippet of an example that the observation lists with the hash its file has now carries what it was tested with in its code block's info string (§4.8). The config and the observations are read whatever the source's `include` says, and no snippet can address one: the source doesn't make `ascribe.examples.toml` or a file under `examples.observations/` readable. Checking, building, and an authoring environment read both files and MUST NOT run any command in them; only a command the person runs to observe the examples, `ascribe observe`, runs the config's commands. Their formats are in the tested examples contract (`docs/content/contracts/tested-examples.md`). For a source in another repository, they're copies (§7.4).
 
 ### 7.4 Sources in another repository
 
@@ -1410,7 +1410,7 @@ source files
   → emit                  one emitter per output
 ```
 
-Because the compiler and the authoring environment share one parser and validator, a command-line check reports exactly what the editor reports.
+Because the compiler and the authoring environment share one parser and validator, they report by the same rules, from the same code. An authoring environment MAY defer the checks that need the whole project, such as a page nothing links to, until a file is saved or a command-line check runs, and MAY report only the build it shows; when it shows fewer problems than a command-line check would, it SHOULD say so (§10).
 
 ### 9.2 Resolution
 
@@ -1430,12 +1430,22 @@ Titles and bindings are attached during parsing. Page-level validation (§8.1) r
 
 A content model declares named builds. Each build sets a variant mode and an availability mode. The source is the same for every build.
 
-```yaml
-builds:
-  site:      { variants: switch, availability: badge }
-  cloud-pdf: { variants: { deployment: cloud }, availability: { filter: cloud } }
-  sm-3.3:    { variants: switch, availability: { filter: self-managed 3.3 } }
+```toml
+[builds.site]
+variants = "switch"
+availability = "badge"
+versions = "self-managed"
+
+[builds.cloud]
+variants = { deployment = "cloud" }
+availability = { filter = "cloud" }
+
+[builds."self-managed-3.3"]
+variants = "switch"
+availability = { filter = "self-managed 3.3" }
 ```
+
+Here `site` keeps every arm and badges availability, for each live line of self-managed (a versioned build, below); `cloud` keeps only cloud's arms and content; and `self-managed-3.3` keeps every arm and only what self-managed 3.3 has.
 
 #### Variant mode
 
@@ -1468,7 +1478,7 @@ A build MAY instead be **versioned** by a versioned target *T* whose live releas
 
 A compiler MUST provide the site output and the plain-markdown output. It MAY provide the JSON output.
 
-**Site output: markdown plus web components.** CommonMark with custom elements for constructs that need presentation or interaction. It depends on no consumer component system. Ascribe provides an element library for it (§9.7).
+**Site output: markdown plus web components.** CommonMark with custom elements for constructs that need presentation or interaction, and attribute markers: an empty `<ascribe-attributes>` element directly after a heading, an image, or a link, holding the attributes that element takes, such as a heading's page id (§5.5), an image's attributes (§5.3), a glossary link's term (§5.4), or a link's release line (§5.2). It needs no consumer component system, but it isn't plain markdown to a consumer: a consumer applies the markers, and makes a tested code block's figure (§4.8), with `render_site_html` or the Astro plugin, as the site-render contract (`docs/content/contracts/site-render.md`) says. Rendered as plain CommonMark, a marker stays an empty element, so a heading takes the consumer's own id, not its page id. Ascribe provides an element library for the custom elements (§9.7).
 
 **Plain-markdown output.** Fully resolved CommonMark with no HTML, for LLM consumption, search indexing, and export. Links are absolute URLs.
 
@@ -1556,7 +1566,7 @@ The element library implements the custom elements used by the site output.
 
 An authoring environment is a processor that edits Ascribe source interactively. It SHOULD provide the following.
 
-- **Diagnostics** from §8, reported as the author types.
+- **Diagnostics** from §8, by the same rules and from the same code as a command-line check, reported as the author types. It MAY defer the checks that need the whole project until a file is saved, and leave other builds' checks, and checks it doesn't run as the author types, to a command-line check (§9.1). When it has, it SHOULD say so, as a status line saying its problems are for one build does.
 - **Completion** for:
   - directive names and attribute keys and values;
   - dimension values and lifecycle states;
@@ -1568,7 +1578,7 @@ An authoring environment is a processor that edits Ascribe source interactively.
   - for a phrase, its value;
   - for an availability spec or feature key, its resolved availability in the words of §9.4, with a feature's name and key;
   - for a directive or attribute key, its description from the schema; for a dimension key, its values with their labels.
-- **Go to definition:** links and includes go to the target heading when they name a source id, otherwise to the top of the file. A missing id falls back to the existing file; a missing file has no target. Images and asset links go to their file. An `@id` primary goes to its heading. Declared phrases and feature keys used as a whole availability spec go to their entries in `ascribe.toml`; dimension values and lifecycle states have no definition.
+- **Go to definition:** links and includes go to the target heading when they name a source id, otherwise to the top of the file. A missing id falls back to the existing file; a missing file has no target. Images and asset links go to their file. An `@id` primary goes to its heading, and a glossary term in prose to its term's heading. A `@snippet`'s address goes to its region's start tag in the code file, or to the file's first line for a whole file, and a link to an API operation, or an `@operation`'s, to the operation in its API's spec. Declared phrases and feature keys used as a whole availability spec go to their entries in `ascribe.toml`, a page's `listing` to the content model's rule it falls under, and its `replaces` to the page it replaces. Dimension values and lifecycle states have no definition.
 - **Navigation:** a CodeLens or equivalent that names a link's or include's target file and opens it.
 - **Document links:** inline link and image destinations as written, and an include's whole primary, are clickable when their target exists. They open the file or heading; an external link opens its URL, after declared destination phrases are replaced, when its scheme is `http`, `https`, or `mailto`, compared without case. An external link with any other scheme has no document link.
 - **Inline hints:** just inside the `[` of an empty-text link, show the existing source target's title (the heading's text for a source id), with declared phrases replaced and a tooltip naming the destination. Images, missing targets, and targets without a title receive no hint. Hints use source titles without applying build modes.
@@ -1587,7 +1597,7 @@ Target hovers identify fragments, missing files or ids, route-style links, and c
 
 Source files store real file paths, but authors should rarely need to read or type them.
 
-*Note (non-normative): the language server's include lens uses `ascribe.openFile` through `workspace/executeCommand`, followed by `window/showDocument` for clients that support it. Clients without that capability retain document links. Go to definition in `ascribe.toml` currently recognizes `[phrases]` and `[features.<key>]` table forms only. Reference-form links and their definition lines currently have no document link because the parser does not expose the definition destination span; their hover, go to definition, and hints still work. These are editor implementation choices and limitations, not restrictions on valid source or content models.*
+*Note (non-normative): the language server's include lens uses `ascribe.openFile` through `workspace/executeCommand`, followed by `window/showDocument` for clients that support it. Clients without that capability retain document links. Reference-form links and their definition lines currently have no document link because the parser does not expose the definition destination span; their hover, go to definition, and hints still work. These are editor implementation choices and limitations, not restrictions on valid source or content models.*
 
 *Note (non-normative): VS Code has no API for hiding text within a line. Hover, CodeLens, and inlay hints are the dependable ways to keep paths out of the author's way.*
 
