@@ -143,7 +143,13 @@ fn respond(request_line: &str, host: Option<&str>, port: u16, folder: &Path) -> 
     let is_folder = std::fs::metadata(&file).is_ok_and(|m| m.is_dir());
     if is_folder {
         if !path.ends_with('/') {
-            return redirect(&format!("{path}/"));
+            // From the path's own segments, so `//x` leads to `/x/`, never
+            // to another host.
+            let raw: Vec<&str> = path
+                .split('/')
+                .filter(|s| !s.is_empty() && *s != ".")
+                .collect();
+            return redirect(&format!("/{}/", raw.join("/")));
         }
         file.push("index.html");
     }
@@ -313,6 +319,7 @@ mod tests {
         assert!(ask("GET / HTTP/1.1", dir.path()).ends_with("top"));
         assert!(ask("GET /guide/?q=1 HTTP/1.1", dir.path()).ends_with("guide"));
         assert!(ask("GET /guide HTTP/1.1", dir.path()).contains("Location: /guide/\r\n"));
+        assert!(ask("GET //guide HTTP/1.1", dir.path()).contains("Location: /guide/\r\n"));
     }
 
     #[test]
