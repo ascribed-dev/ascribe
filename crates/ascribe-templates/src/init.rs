@@ -3,12 +3,12 @@
 //! It writes a project's first `ascribe.toml`, [`MODEL_TEXT`], in a folder
 //! with none at or above it, an empty `ascribe.addresses` beside it, so the
 //! addresses the pages publish are kept from the first commit, and makes its
-//! content root. With the templates,
-//! it calls [`eject()`] with that text, as `ascribe templates eject` would
-//! in a project that had it, so the two can't differ; eject then writes the
-//! file, with the six types added at its end. It asks nothing, and writes
-//! over nothing: where there's a project already, it refuses, and an
-//! `ascribe.addresses` already there is left as it is.
+//! content root. With the templates, it calls [`eject()`] with that text,
+//! as `ascribe templates eject` would in a project that had it, so the two
+//! can't differ; eject then writes the file, with the six types added at
+//! its end. It asks nothing, and writes over nothing: where there's a
+//! project already, it refuses, and an `ascribe.addresses` already there is
+//! left as it is.
 
 use std::path::{Path, PathBuf};
 

@@ -1,6 +1,7 @@
 //! `init` in temporary folders: the `ascribe.toml` and `ascribe.addresses`
-//! it writes and the content root it makes, with the templates and without, in a folder named by a
-//! path, and what it refuses, writing nothing.
+//! it writes and the content root it makes, with the templates and
+//! without, in a folder named by a path, and what it refuses, writing
+//! nothing.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
