@@ -1114,12 +1114,7 @@ const EXPORT_SCHEMA_VERSION: u32 = 1;
 /// isn't declared, live, or planned, no build or more than one is
 /// versioned by its target, the checks find errors, or the folder isn't
 /// empty and isn't an archive Ascribe wrote.
-fn run_export(
-    global: &Global,
-    args: &ExportArgs,
-    out: &mut dyn Write,
-    err: &mut dyn Write,
-) -> u8 {
+fn run_export(global: &Global, args: &ExportArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
         Ok(project) => project,
         Err(failure) => return answer::report_failure(err, &failure),
