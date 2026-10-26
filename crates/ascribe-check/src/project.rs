@@ -443,44 +443,21 @@ impl Project {
             content_root: content_root.clone(),
             output_dir: RelPath::root(),
         };
-        let disk = DiskFs::new(root, &layout);
-        let found = disk.sources();
-        let mut sources = Vec::with_capacity(found.paths.len());
-        let mut failed = Vec::new();
-        for path in found.paths {
-            match disk.read(&path) {
-                Ok(text) => sources.push((path, text)),
-                Err(e) => failed.push((
-                    path,
-                    ReadFailure {
-                        not_utf8: e.kind() == io::ErrorKind::InvalidData,
-                        reason: e.to_string(),
-                    },
-                )),
-            }
-        }
-        failed.extend(found.unreadable.into_iter().map(|u| {
-            (
-                u.path,
-                ReadFailure {
-                    reason: u.reason,
-                    not_utf8: false,
-                },
-            )
-        }));
-        let out = sources
-            .into_iter()
-            .map(|(path, text)| (path, text, None))
-            .chain(failed.into_iter().map(|(p, f)| (p, String::new(), Some(f))))
-            .enumerate()
-            .map(|(i, (path, text, unreadable))| SourceFile {
-                id: FileId::new(i as u32 + 1),
-                path,
-                text,
-                unreadable,
-            })
-            .collect();
-        Ok(out)
+        Ok(read_through(&DiskFs::new(root, &layout)))
+    }
+
+    /// The project of a content model [`Project::load_model`] loaded, with
+    /// every source file under `content_root` read through `fs`, as
+    /// [`FileSystem::sources`] lists them, and `fs` as the file system the
+    /// checks probe.
+    pub fn load_from(
+        model: ModelFile,
+        content_root: RelPath,
+        fs: Arc<dyn FileSystem + Send + Sync>,
+    ) -> Project {
+        let ModelFile { root, text, model } = model;
+        let sources = read_through(&*fs);
+        Project::assemble(root, content_root, model, text, sources, Some(fs))
     }
 
     /// A project from parts the caller already has: the language server's
@@ -1098,6 +1075,48 @@ pub(crate) fn image_id(i: usize) -> FileId {
     // navigation file's.
     #[allow(clippy::cast_possible_truncation)]
     FileId::new(IMAGE_FILE_IDS + i as u32)
+}
+
+/// Reads every source file `fs` lists. The files that could be read have
+/// ids from 1, in path order, as in `ascribe_resolve::Project`; those that
+/// couldn't come after them, with their [`ReadFailure`].
+fn read_through(fs: &dyn FileSystem) -> Vec<SourceFile> {
+    let found = fs.sources();
+    let mut sources = Vec::with_capacity(found.paths.len());
+    let mut failed = Vec::new();
+    for path in found.paths {
+        match fs.read(&path) {
+            Ok(text) => sources.push((path, text)),
+            Err(e) => failed.push((
+                path,
+                ReadFailure {
+                    not_utf8: e.kind() == io::ErrorKind::InvalidData,
+                    reason: e.to_string(),
+                },
+            )),
+        }
+    }
+    failed.extend(found.unreadable.into_iter().map(|u| {
+        (
+            u.path,
+            ReadFailure {
+                reason: u.reason,
+                not_utf8: false,
+            },
+        )
+    }));
+    sources
+        .into_iter()
+        .map(|(path, text)| (path, text, None))
+        .chain(failed.into_iter().map(|(p, f)| (p, String::new(), Some(f))))
+        .enumerate()
+        .map(|(i, (path, text, unreadable))| SourceFile {
+            id: FileId::new(i as u32 + 1),
+            path,
+            text,
+            unreadable,
+        })
+        .collect()
 }
 
 fn read_error(path: &Path, e: std::io::Error) -> LoadError {
