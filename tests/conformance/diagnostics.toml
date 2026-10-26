@@ -25,7 +25,10 @@
 #             `diagnostics`. Page-level diagnostics are checked on each
 #             expanded page, per build; a case expects them under
 #             `builds.<name>.diagnostics`.
-#   spec      The SPEC.md section the rule comes from.
+#   spec      The SPEC.md section the rule comes from, or "none" for a check
+#             SPEC doesn't define: one of the processor's own checks, or a
+#             rule about a processor setting (SPEC §7.2), which only this
+#             processor's docs define.
 #   reference The section of the docs written for the person who meets the
 #             problem: a heading of docs/content/writing/directives.md,
 #             syntax.md, frontmatter.md, or inline.md,
@@ -78,7 +81,8 @@
 #                loader rule: what it checks, one of `AREAS` in
 #                tests/conformance/tests/docs.rs. Only a configurable entry has one; its `severity`
 #                is its default level, and its `spec` is the SPEC section of
-#                the construct it checks. The diagnostics reference lists it
+#                the construct it checks, or "none" when SPEC doesn't define
+#                that construct, as for Vale's prose checks. The diagnostics reference lists it
 #                under "Content checks", in its area's section.
 #   when         For a quality check or a loader rule: when it's reported,
 #                as a sentence without its full stop. Every one has it. A
@@ -2909,7 +2913,7 @@ severity = "advice"
 level = "file"
 next = "choose"
 evidence = ["code-lines"]
-spec = "1.4"
+spec = "none"
 reference = "content-model/checks.md#19-checks"
 configurable = true
 area = "pages"
@@ -3144,7 +3148,7 @@ severity = "advice"
 level = "file"
 next = "write"
 evidence = ["rule", "rule-link"]
-spec = "2.1"
+spec = "none"
 reference = "content-model/checks.md#checksvale"
 area = "prose"
 configurable = true
@@ -3160,7 +3164,7 @@ severity = "advice"
 level = "file"
 next = "outside"
 evidence = []
-spec = "2.1"
+spec = "none"
 reference = "content-model/checks.md#checksvale"
 area = "prose"
 configurable = true
@@ -3661,7 +3665,7 @@ severity = "error"
 level = "file"
 next = "write"
 evidence = []
-spec = "7.2"
+spec = "none"
 reference = "content-model/index.md#41-page-types"
 group = "content-types"
 when = "A content type's template can't be read, or isn't a page Ascribe can read"
@@ -3677,7 +3681,7 @@ severity = "advice"
 level = "file"
 next = "write"
 evidence = []
-spec = "7.2"
+spec = "none"
 reference = "content-model/index.md#41-page-types"
 configurable = true
 area = "pages"
@@ -4293,7 +4297,7 @@ severity = "advice"
 level = "file"
 next = "write"
 evidence = []
-spec = "7.2"
+spec = "none"
 reference = "content-model/index.md#41-page-types"
 configurable = true
 area = "pages"
@@ -4502,7 +4506,7 @@ next = "outside"
 evidence = []
 configurable = true
 area = "project"
-spec = "2.1"
+spec = "none"
 reference = "content-model/checks.md#19-checks"
 when = "`ascribe.baseline` has an entry that no problem of the project matches any more: the problem was fixed, or the text it was about changed. Reported at the entry's line, when `ascribe check` reads the baseline and checks the whole project for every build"
 message = "ascribe.baseline holds back `{check}` in `{file}`, and nothing there matches it any more; run `ascribe baseline prune`"

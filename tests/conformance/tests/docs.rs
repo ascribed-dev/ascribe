@@ -1167,6 +1167,7 @@ fn model_group(entry: &Entry) -> &str {
 
 fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: &Pages) {
     let section = match pages.spec.get(&entry.spec) {
+        None if entry.spec == "none" => "Ascribe's own, not in SPEC".to_owned(),
         Some(anchor) => format!(
             "[SPEC §{}]({{repo}}/blob/main/SPEC.md#{anchor})",
             entry.spec

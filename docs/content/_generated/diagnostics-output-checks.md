@@ -63,7 +63,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 @id {permalink=true}: ASC165
 @summary: The project has `[checks.vale]`, and Vale reports an alert about the prose of a page or a fragment, or of a phrase's text. Reported where the alert is in the source, or at the phrase.
 
-Advice · file level · next step: write · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+Advice · file level · next step: write · configurable in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** The project has `[checks.vale]`, and Vale reports an alert about the prose of a page or a fragment, or of a phrase's text. Reported where the alert is in the source, or at the phrase.
 
@@ -77,7 +77,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 @id {permalink=true}: ASC166
 @summary: The project has `[checks.vale]`, and Vale couldn't be run, failed, or didn't finish in time, or the tool checking the project doesn't start it, as the agents' tools don't. Reported once, at `[checks.vale]`.
 
-Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+Advice · file level · next step: outside · configurable in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** The project has `[checks.vale]`, and Vale couldn't be run, failed, or didn't finish in time, or the tool checking the project doesn't start it, as the agents' tools don't. Reported once, at `[checks.vale]`.
 

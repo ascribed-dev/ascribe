@@ -8,6 +8,8 @@ Part of the [`ascribe.toml` format contract](../content-model.md), whose [conten
 
 ## 19. `[checks]`
 
+`[checks]` holds settings for Ascribe's own checks and tools, the processor settings SPEC §7.2 leaves to a processor: SPEC defines none of these checks, their names, or their levels.
+
 Each key of `[checks]` other than `vale` and `links` is a check's slug, as the [diagnostics reference](../../checks/diagnostics.md) lists it, and its value is a level, `"off"`, `"advice"`, `"warning"`, or `"error"`, or a table, `[checks.<check>]`, with these keys and the check's own settings:
 
 @include: ../../_generated/content-model-checks.md
