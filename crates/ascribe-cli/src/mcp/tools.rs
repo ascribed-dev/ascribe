@@ -455,7 +455,9 @@ pub const TOOLS: &[Spec] = &[
             edits yourself. Example: {\"from_git\": true} returns `moves` such as \
             `{\"key\": \"guides/setup.md\", \"value\": \"start/setup.md\"}`, every move git \
             sees, and `edits`; {\"old\": \"guides/keys.md\", \"new\": \
-            \"security/keys.md\"} records one.",
+            \"security/keys.md\"} records one. A permalink nothing declares now is \
+            `go:<name>`, moved to a page or to another permalink: {\"old\": \
+            \"go:agent-settings\", \"new\": \"go:settings\"}.",
         input: || {
             json!({
                 "type": "object",
@@ -464,12 +466,14 @@ pub const TOOLS: &[Spec] = &[
                         "type": "string",
                         "description": "Where it was: a page's path, from the server's \
                             working directory or from the content root; a file's path, `#`, \
-                            and a heading's id; or an address starting with `/`.",
+                            and a heading's id; an address starting with `/`; or a \
+                            permalink, `go:<name>`.",
                     },
                     "new": {
                         "type": "string",
                         "description": "Where it is now: a page's path, and optionally `#` \
-                            and a heading's id.",
+                            and a heading's id; or, for a permalink, another permalink, \
+                            `go:<name>`.",
                     },
                     "from_git": {
                         "type": "boolean",
@@ -518,7 +522,8 @@ pub const TOOLS: &[Spec] = &[
             page to forward a reader to; otherwise record a move. It writes nothing, so \
             apply the edits yourself. Example: {\"old\": \"reference/legacy-sync.md\", \
             \"reason\": \"The sync agent was removed in 4.0\"} returns `key`, `value`, and \
-            `edits`.",
+            `edits`. A permalink nothing declares now is `go:<name>`, so \
+            `ascribe_check` stops reporting it as `permalink-lost`.",
         input: || {
             json!({
                 "type": "object",
@@ -527,7 +532,8 @@ pub const TOOLS: &[Spec] = &[
                         "type": "string",
                         "description": "What was removed: a page's path, from the server's \
                             working directory or from the content root; a file's path, `#`, \
-                            and a heading's id; or an address starting with `/`.",
+                            and a heading's id; an address starting with `/`; or a \
+                            permalink, `go:<name>`.",
                     },
                     "reason": {
                         "type": "string",

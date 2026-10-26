@@ -1,0 +1,11 @@
+# Where addresses the docs published went. Written by `ascribe rename`, the
+# editor, `ascribe addresses`, and `ascribe check --fix`; edit only
+# [retired]'s reasons.
+version = 1
+
+[moved]
+"go:config" = "go:weave-config"
+"go:old-options" = "Reference/Options.md"
+
+[retired]
+"go:legacy-sync" = "Sync was removed in Loom 3.0, & nothing replaced it."

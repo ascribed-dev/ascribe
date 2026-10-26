@@ -26,6 +26,7 @@
 //! | **A file a `@snippet` reads, created, changed, or deleted** ([`Change::AssetCreated`], [`Change::AssetDeleted`]) | The snippets of the files that show it, read again: the code file itself, or its source's `ascribe.examples.toml` or observations. Those files are checked again, and every page that is one or includes one is re-resolved. |
 //! | **A nested project's `ascribe.toml` created or deleted** | Nothing: it changes which files are sources (a nested project's files aren't), so the batch is refused ([`ApplyError::NestedProjectChanged`]) and the caller loads the project again. A file created, changed, or deleted inside a nested project's folder is a non-source file. |
 //! | **`ascribe.nav`** ([`Change::Nav`]) | Nothing a file holds: the project's [`Project::navigation`] follows it. A new version when the file reads differently. |
+//! | **`ascribe.addresses`** ([`Change::Addresses`]) | Nothing a file holds: the project's [`Project::recorded_permalinks`] follow it. A new version when the file reads differently. |
 //! | **The content model** | See [`ModelImpact`]: a new directive keyword or note type reparses every file, including ones no one has open; changed phrases, fragment patterns, slugger, or sources re-index every file (parses are reused); anything else re-checks every file and re-resolves every page. |
 //!
 //! "What others see of a file" is [`structure_signature`]'s hash: the kind
@@ -93,7 +94,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use ascribe_core::{RelPath, Slugger};
 use ascribe_model::examples::{EXAMPLES_FILE, OBSERVATIONS_FOLDER};
-use ascribe_model::{ContentModel, NavFile};
+use ascribe_model::{AddressFile, ContentModel, NavFile};
 
 pub use cache::ResolvedCache;
 pub use ids::FileIds;
@@ -185,6 +186,9 @@ pub enum Change {
     /// `ascribe.nav` changed: this is what it says now, `None` when it's gone
     /// or doesn't read ([`Project::nav_file`]).
     Nav(Option<Arc<NavFile>>),
+    /// `ascribe.addresses` changed: this is what it says now, `None` when
+    /// it's gone or doesn't read ([`Project::addresses_file`]).
+    Addresses(Option<Arc<AddressFile>>),
     /// A base revision's specs, as the project there read them: where each
     /// `operationId` was there is kept, so a link to one renamed since is
     /// fixed to the operation now in its place
@@ -738,6 +742,7 @@ impl IncrementalProject {
         let mut unreadable_state: BTreeMap<RelPath, Option<String>> = BTreeMap::new();
         let mut new_model: Option<Arc<ContentModel>> = None;
         let mut new_nav: Option<Option<Arc<NavFile>>> = None;
+        let mut new_addresses: Option<Option<Arc<AddressFile>>> = None;
         let mut base_apis: Option<Arc<crate::openapi::ApiSpecs>> = None;
         for change in changes {
             match change {
@@ -804,10 +809,13 @@ impl IncrementalProject {
                     new_model = Some(model);
                 }
                 Change::Nav(nav) => new_nav = Some(nav),
+                Change::Addresses(file) => new_addresses = Some(file),
                 Change::BaseApis(apis) => base_apis = Some(apis),
             }
         }
         let new_nav = new_nav.filter(|nav| nav.as_deref() != self.project.nav_file());
+        let new_addresses =
+            new_addresses.filter(|file| file.as_deref() != self.project.addresses_file());
 
         // A nested project's `ascribe.toml` arrives as any other file that isn't
         // a source does. One appearing where there is no nested project, or
@@ -918,6 +926,7 @@ impl IncrementalProject {
             && impact.is_none()
             && !unreadable_changed
             && new_nav.is_none()
+            && new_addresses.is_none()
             && !specs_reported
             && base_apis.is_none()
         {
@@ -1060,9 +1069,12 @@ impl IncrementalProject {
                 self.fs.remove(path);
             }
         }
-        let nav_changed = new_nav.is_some();
+        let nav_or_addresses_changed = new_nav.is_some() || new_addresses.is_some();
         if let Some(nav) = new_nav {
             project.set_nav(nav);
+        }
+        if let Some(file) = new_addresses {
+            project.set_addresses(file);
         }
         // The specs are read again with the model, and when one is reported,
         // keeping where each id was, for a link to one that was renamed.
@@ -1158,7 +1170,7 @@ impl IncrementalProject {
             && showing.is_empty()
             && spec_linkers.is_empty()
             && !unreadable_changed
-            && !nav_changed
+            && !nav_or_addresses_changed
         {
             return Ok(Affected {
                 version: previous,

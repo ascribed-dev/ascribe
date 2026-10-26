@@ -173,10 +173,6 @@ ASC174 = "_generated/diagnostics-content-model-builds.md#ASC174"
 ASC175 = "_generated/diagnostics-pages.md#ASC175"
 ASC176 = "_generated/diagnostics-pages.md#ASC176"
 ASC177 = "_generated/diagnostics-pages.md#ASC177"
-ASC178 = "_generated/diagnostics-content-model-builds.md#ASC178"
-ASC179 = "_generated/diagnostics-pages.md#ASC179"
-ASC180 = "_generated/diagnostics-pages.md#ASC180"
-ASC181 = "_generated/diagnostics-pages.md#ASC181"
 ASC182 = "_generated/diagnostics-directives.md#ASC182"
 ASC183 = "_generated/diagnostics-content-model-builds.md#ASC183"
 ASC184 = "_generated/diagnostics-output-checks.md#ASC184"
@@ -369,6 +365,12 @@ variants = "writing/variants.md"
 versions = "versions/index.md"
 workspaces-with-several-projects = "editor/settings.md#workspaces-with-several-projects"
 
-[retired]
-ASC073 = "model-type-title is gone: every page type has a required string title, declared or not"
-cli-render = "The command ascribe render was renamed ascribe resolve"
+[aliases]
+ASC179 = "ASC265"
+ASC180 = "ASC266"
+ASC181 = "ASC265"
+
+[moved]
+ASC073 = "content-model/index.md#41-page-types"
+ASC178 = "content-model/checks.md#20-permalinks"
+cli-render = "command/questions.md#cli-resolve"

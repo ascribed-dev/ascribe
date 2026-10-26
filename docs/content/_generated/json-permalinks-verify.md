@@ -31,7 +31,7 @@
       "type": "string"
     },
     "found": {
-      "description": "The names the list has, as permalinks or aliases, in the order\ngiven, each once.",
+      "description": "The names the list has, as permalinks, or moved to another permalink\nor a page, in the order given, each once.",
       "items": {
         "type": "string"
       },

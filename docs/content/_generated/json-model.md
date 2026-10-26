@@ -787,16 +787,6 @@
       ],
       "description": "The project's navigation, its root section: every page that isn't\n`unlisted`, in order, as each build's `_ascribe/nav.json` has its\nshare of it. Only in the whole report."
     },
-    "permalinks": {
-      "description": "`[permalinks]`: each key, with its value in effect.",
-      "items": {
-        "$ref": "#/$defs/ModelSetting"
-      },
-      "type": [
-        "array",
-        "null"
-      ]
-    },
     "phrases": {
       "description": "Phrases, in declaration order.",
       "items": {

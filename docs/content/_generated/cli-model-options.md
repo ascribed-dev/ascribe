@@ -16,7 +16,6 @@
   - `checks`: Each check's level, Vale, and the external links.
   - `crawlers`: What the site tells crawlers.
   - `listing`: What the site lists for search engines.
-  - `permalinks`: Retired permalinks and aliases.
 - `--format <FORMAT>`: How to show the answer.
   - `text` (the default): Short text, for people and agents to read.
   - `json`: One JSON document, for tools.

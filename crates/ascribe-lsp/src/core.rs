@@ -109,6 +109,19 @@ impl Loaded {
         relative_path(&self.root, abs).is_some_and(|p| p.as_str() == ascribe_model::ADDRESSES_FILE)
     }
 
+    /// Whether `abs` is in a memo folder, committed or personal.
+    pub(crate) fn in_memos(&self, abs: &Path) -> bool {
+        relative_path(&self.root, abs).is_some_and(|project| {
+            [
+                ascribe_resolve::MEMOS_FOLDER,
+                ascribe_resolve::PERSONAL_MEMOS_FOLDER,
+            ]
+            .into_iter()
+            .filter_map(|folder| RelPath::parse(folder).ok())
+            .any(|folder| project.starts_with(&folder))
+        })
+    }
+
     /// `ascribe.nav`'s path from the project root, when `abs` is it.
     pub(crate) fn nav_file(&self, abs: &Path) -> Option<RelPath> {
         relative_path(&self.root, abs).filter(|p| p.as_str() == ascribe_model::NAV_FILE)
@@ -747,6 +760,25 @@ impl Core {
         }
     }
 
+    /// Gives the project `ascribe.addresses` as the editor has it, for what
+    /// it records of permalinks: its open buffer, or the disk's.
+    fn refresh_addresses(&mut self) {
+        let Some(loaded) = self.loaded.as_mut() else {
+            return;
+        };
+        let file = RelPath::parse(ascribe_model::ADDRESSES_FILE)
+            .ok()
+            .and_then(|path| loaded.fs.read_file(&path).ok())
+            .and_then(|bytes| String::from_utf8(bytes).ok())
+            .and_then(|text| {
+                ascribe_model::AddressFile::parse(&text, ascribe_core::FileId::new(0)).ok()
+            })
+            .map(Arc::new);
+        if let Ok(affected) = loaded.inc.apply([Change::Addresses(file)]) {
+            self.absorb(&affected);
+        }
+    }
+
     // -- `ascribe.baseline` ----------------------------------------------------
 
     /// Gives the project `ascribe.baseline` as the editor has it, when
@@ -1114,13 +1146,15 @@ impl Core {
             self.refresh_nav();
             return;
         }
-        if let Some(loaded) = self.loaded.as_ref()
+        if let Some(loaded) = self.loaded.as_mut()
             && loaded.is_addresses(&path)
         {
             if let Ok(project) = RelPath::parse(ascribe_model::ADDRESSES_FILE) {
                 loaded.fs.set_buffer(&project, None);
             }
+            loaded.across_dirty = true;
             self.addresses.changed();
+            self.refresh_addresses();
             return;
         }
         if self.set_baseline_buffer(&path, None) {
@@ -1187,7 +1221,9 @@ impl Core {
             if let Ok(project) = RelPath::parse(ascribe_model::ADDRESSES_FILE) {
                 loaded.fs.set_buffer(&project, Some(text));
             }
+            loaded.across_dirty = true;
             self.addresses.changed();
+            self.refresh_addresses();
             return;
         }
         if let Some(Kind::Source(content, project)) = loaded.classify(path) {
@@ -1218,6 +1254,7 @@ impl Core {
         let mut visited = Visited::default();
         let mut refresh = false;
         let mut nav = false;
+        let mut addresses = false;
         let mut baseline = false;
         let mut redrawn = BTreeSet::new();
         for event in events {
@@ -1281,26 +1318,22 @@ impl Core {
             }
             if let Some(loaded) = self.loaded.as_mut()
                 && (path == loaded.root.join(ascribe_model::PERMALINKS_FILE)
-                    || loaded.nav_file(&path).is_some())
+                    || loaded.nav_file(&path).is_some()
+                    || loaded.is_addresses(&path))
             {
-                // The permalinks list and the navigation file aren't
-                // sources: the checks across the project compare them with
-                // the content. An open buffer of `ascribe.nav` wins.
+                // The permalinks list, the navigation file, and the
+                // addresses file aren't sources: the checks across the
+                // project compare them with the content. An open buffer of
+                // `ascribe.nav` or `ascribe.addresses` wins.
                 loaded.across_dirty = true;
                 nav |= loaded.nav_file(&path).is_some();
+                addresses |= loaded.is_addresses(&path);
                 continue;
             }
-            memos |= self.loaded.as_ref().is_some_and(|loaded| {
-                relative_path(&loaded.root, &path).is_some_and(|project| {
-                    [
-                        ascribe_resolve::MEMOS_FOLDER,
-                        ascribe_resolve::PERSONAL_MEMOS_FOLDER,
-                    ]
-                    .into_iter()
-                    .filter_map(|folder| RelPath::parse(folder).ok())
-                    .any(|folder| project.starts_with(&folder))
-                })
-            });
+            memos |= self
+                .loaded
+                .as_ref()
+                .is_some_and(|loaded| loaded.in_memos(&path));
             if event.typ == FileChangeType::DELETED {
                 self.collect_deleted(&path, &mut changes, &mut mirror);
             } else {
@@ -1367,6 +1400,9 @@ impl Core {
         }
         if nav {
             self.refresh_nav();
+        }
+        if addresses {
+            self.refresh_addresses();
         }
         if baseline {
             self.refresh_baseline();
@@ -1957,11 +1993,14 @@ impl Core {
             if is_model {
                 return self.project_target(uri);
             }
-            // `ascribe.permalinks`, beside it: its fixes edit `ascribe.toml`.
-            // And `ascribe.nav`, whose fixes edit itself.
+            // `ascribe.permalinks`, beside it, whose fixes edit
+            // `ascribe.addresses` and the list. And `ascribe.nav`, whose fixes
+            // edit itself, and `ascribe.addresses`, whose entry the list can
+            // be behind on.
             let loaded = self.loaded.as_ref()?;
             if path == loaded.root.join(ascribe_model::PERMALINKS_FILE)
                 || loaded.nav_file(&path).is_some()
+                || loaded.is_addresses(&path)
             {
                 let content = RelPath::parse(Ctx::PROJECT).ok()?;
                 return self.ctx(loaded, loaded.inc.snapshot(), content, &path);

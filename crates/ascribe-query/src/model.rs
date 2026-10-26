@@ -23,9 +23,9 @@ use serde::Serialize;
 
 use crate::ASCRIBE_VERSION;
 
-/// The version of [`ModelReport`]'s schema: 3 since a glossary term has no
-/// `definition` or `link`, and says where its heading is (decision 545a).
-pub const MODEL_SCHEMA_VERSION: u32 = 3;
+/// The version of [`ModelReport`]'s schema: 4 since the content model has
+/// no `[permalinks]` (decision #944a).
+pub const MODEL_SCHEMA_VERSION: u32 = 4;
 
 /// A section of the content model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -60,13 +60,11 @@ pub enum Section {
     Crawlers,
     /// `[listing]`'s settings.
     Listing,
-    /// `[permalinks]`'s settings.
-    Permalinks,
 }
 
 impl Section {
     /// Every section, in the order answers list them.
-    pub const ALL: [Section; 16] = [
+    pub const ALL: [Section; 15] = [
         Section::Types,
         Section::Dimensions,
         Section::Phrases,
@@ -82,7 +80,6 @@ impl Section {
         Section::Checks,
         Section::Crawlers,
         Section::Listing,
-        Section::Permalinks,
     ];
 
     /// Whether it's a table of settings, each key [`ModelSetting`]: shown
@@ -96,7 +93,6 @@ impl Section {
                 | Section::Checks
                 | Section::Crawlers
                 | Section::Listing
-                | Section::Permalinks
         )
     }
 
@@ -118,7 +114,6 @@ impl Section {
             Section::Checks => "checks",
             Section::Crawlers => "crawlers",
             Section::Listing => "listing",
-            Section::Permalinks => "permalinks",
         }
     }
 
@@ -139,7 +134,6 @@ impl Section {
             Section::Checks => "`[checks]`",
             Section::Crawlers => "`[crawlers]`",
             Section::Listing => "`[listing]`",
-            Section::Permalinks => "`[permalinks]`",
         }
     }
 }
@@ -204,9 +198,6 @@ pub struct ModelReport {
     /// `[listing]`: each key, with its value in effect.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub listing: Option<Vec<ModelSetting>>,
-    /// `[permalinks]`: each key, with its value in effect.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub permalinks: Option<Vec<ModelSetting>>,
     /// The project's navigation, its root section: every page that isn't
     /// `unlisted`, in order, as each build's `_ascribe/nav.json` has its
     /// share of it. Only in the whole report.
@@ -688,7 +679,6 @@ pub fn model(
         checks: settings(Section::Checks),
         crawlers: settings(Section::Crawlers),
         listing: settings(Section::Listing),
-        permalinks: settings(Section::Permalinks),
         navigation: None,
     }
 }
@@ -1170,7 +1160,6 @@ fn lines(report: &ModelReport, section: Section) -> Vec<String> {
         Section::Checks => setting_lines(section, &report.checks),
         Section::Crawlers => setting_lines(section, &report.crawlers),
         Section::Listing => setting_lines(section, &report.listing),
-        Section::Permalinks => setting_lines(section, &report.permalinks),
     }
 }
 

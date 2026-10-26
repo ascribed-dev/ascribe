@@ -12,7 +12,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 |---|---|---|---|
 | `ascribe addresses init` | Makes `ascribe.addresses`, with its header, its `version`, and empty tables. |  | `text`, `json` |
 | `ascribe addresses move` | Records that a page, or a heading's id, moved, after a move made without Ascribe, as with `git mv`. | `[OLD] [NEW] [--from-git] [--base <REV>] [--base-exact]` | `text`, `json` |
-| `ascribe addresses retire` | Records that a page, or a heading's id, was removed on purpose, with the reason, which is for whoever reads the file later. | `OLD --reason <TEXT>` | `text`, `json` |
+| `ascribe addresses retire` | Records that a page, or a heading's id, or a permalink, `go:<name>`, was removed on purpose, with the reason, which is for whoever reads the file later. | `OLD --reason <TEXT>` | `text`, `json` |
 | `ascribe addresses list` | Shows the redirects and retired addresses each build writes, as its `_ascribe/redirects.json` has them, and the entry of `ascribe.addresses` each comes from. | `[--build <NAME>]` | `text`, `json` |
 | `ascribe agents sync` | Writes your project's rules and the Ascribe skill where each `--target`'s agents read them. | `[--check] [--target agents-md\|skills\|claude\|claude-rules\|copilot\|codex]... [--with-hook] [--cloud] [--agent]` |  |
 | `ascribe agents rules` | Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside `ascribe.toml`, as it would write it now. | `[PATH]` |  |
@@ -32,13 +32,13 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe link` | Says whether a link works, written on a given page: whether its target exists, the page's title or the heading's text, and the destination to write there. | `TARGET --from <PAGE>` | `text`, `json` |
 | `ascribe lsp` | Runs the language server, speaking the Language Server Protocol over standard input and output. |  |  |
 | `ascribe mcp` | Runs an MCP server, speaking the Model Context Protocol over standard input and output, for an agent that has no shell, or a host that approves tools one by one. |  |  |
-| `ascribe model` | Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. | `[PATH] [--section types\|dimensions\|phrases\|features\|glossary\|widgets\|releases\|builds\|sources\|project\|consumer\|editor\|checks\|crawlers\|listing\|permalinks]` | `text`, `json` |
+| `ascribe model` | Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. | `[PATH] [--section types\|dimensions\|phrases\|features\|glossary\|widgets\|releases\|builds\|sources\|project\|consumer\|editor\|checks\|crawlers\|listing]` | `text`, `json` |
 | `ascribe observe` | Runs the test of a folder of tested examples, and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. | `[--name <NAME>] [--check] [--yes]` | `text`, `json` |
 | `ascribe outline` | Shows a page's title and type, and the headings a link to it can name, with the ids links write after `#`: the page's own headings and those that come from the fragments it includes. | `PAGE [--build <NAME>]` | `text`, `json` |
-| `ascribe permalinks sync` | Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each alias and retired permalink as `ascribe.toml` has it. | `[--check]` | `text`, `json` |
-| `ascribe permalinks list` | Shows every permalink the content declares, with the file and line it's declared on, and each alias and retired permalink in `ascribe.toml`, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that the project no longer has. |  | `text`, `json` |
+| `ascribe permalinks sync` | Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each name `ascribe.addresses` moves or retires as the file has it. | `[--check]` | `text`, `json` |
+| `ascribe permalinks list` | Shows every permalink the content declares, with the file and line it's declared on, and each name `ascribe.addresses` moves or retires, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that the project no longer has. |  | `text`, `json` |
 | `ascribe permalinks verify` | Checks that each name is a permalink or an alias in a list, and names each one that isn't, and each one that was retired, with the reason the docs give. | `[NAME]... [--from <FILE>] [--against <PATH>]` | `text`, `json` |
-| `ascribe permalinks retire` | Retires permalinks on purpose, with a reason: it writes an entry for each in `ascribe.toml`'s [`[permalinks.retired]`](../content-model/checks.md#20-permalinks), in place, keeping the file's comments and order, and, when the project has `ascribe.permalinks`, records there each one the content no longer declares. | `[NAME]... --reason <TEXT> [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>]` | `text`, `json` |
+| `ascribe permalinks retire` | Retires permalinks on purpose, with a reason, or moves them to `--to`: it writes an entry for each in `ascribe.addresses`, keyed `go:` and the name, `[retired]`'s with the reason and `[moved]`'s with where it leads, making the file when there's none, and, when the project has `ascribe.permalinks`, records there each one the content no longer declares. | `[NAME]... [--reason <TEXT>] [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>]` | `text`, `json` |
 | `ascribe refs` | Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model, each as `file:line:column`, with what kind of use it is. | `TARGET [--limit <N>]` | `text`, `json` |
 | `ascribe rename` | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. | `TARGET NEW` |  |
 | `ascribe report` | Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. | `[SECTION]... [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice\|warning\|error]` | `text`, `markdown`, `json`, `prompt` |
@@ -107,7 +107,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 | `[editor]` | Settings for the authoring environment (SPEC §10). | §17 |
 | `[sources.<name>]` | A source is a folder outside the project's content, or another repository, that its pages may take code examples from, with `@snippet` (SPEC §7.3). | §18 |
 | `[checks]` | How loudly each check about your content's quality speaks: whether it's reported as advice, a warning, or an error, or not at all. | §19 |
-| `[permalinks]` | Names for something outside the docs to link to that no heading or page declares: a permalink that was ended on purpose, and another name for one. | §20 |
+| `[permalinks]` | `ascribe.toml` has no `[permalinks]` any more. | §20 |
 | `[crawlers]` | What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. | §21 |
 | `[listing]` | How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type. | §22 |
 | `[apis.<name>]` | OpenAPI specs that pages link into, by name: each one's file, and where its reference is published. | §23 |
@@ -116,7 +116,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-274 in all. By severity: 61 advice, 186 error, 27 warning. By level: 244 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 171 write.
+270 in all. By severity: 61 advice, 182 error, 27 warning. By level: 240 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 167 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -289,11 +289,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC174` | `model-consumer-permalink-path` | error | write | permalink-path must start with "/", such as "/go/" |
 | `ASC175` | `permalinks-list-invalid` | error | write | ascribe.permalinks can't be read: {detail} |
 | `ASC176` | `permalinks-list-behind` | warning | fix | the permalink `{name}` isn't in ascribe.permalinks yet; run `ascribe permalinks sync` |
-| `ASC177` | `permalink-removed` | warning | write | `{name}` was a permalink, in `{was}`, and nothing declares it now. Links to it from outside these docs, such as from a product, aren't found by this check |
-| `ASC178` | `model-permalinks` | error | write | `{name}` is both retired and an alias; a name is one thing |
-| `ASC179` | `permalink-alias-target-missing` | error | write | the alias `{name}` leads to `{target}`, which no heading or page declares |
-| `ASC180` | `permalink-name-conflict` | error | write | `{name}` is retired here, and `{place}` declares it as a permalink; a name is one thing |
-| `ASC181` | `permalink-retired-target-missing` | error | write | `{name}` is retired to `{to}`, and there's no page `{path}` |
+| `ASC177` | `permalink-lost` | warning | write | `{name}` was a permalink, in `{was}`, and nothing declares it now or says where it went. Links to it from outside these docs, such as from a product, aren't found by this check |
 | `ASC182` | `include-limit` | error | write | including `{path}` here takes this page past {limit}, the most a page's includes may expand it to; it isn't expanded, and no include after it is |
 | `ASC183` | `model-crawlers-line` | error | write | `{key}` has a line break; each string in `lines` is one line of robots.txt |
 | `ASC184` | `listing-disallowed` | advice | fix | this page is unlisted, and `{line}` in `[crawlers] lines` disallows its address, so a crawler never fetches it to read that it isn't to be listed; a search engine can still list the address alone |

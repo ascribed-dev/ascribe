@@ -22,13 +22,13 @@ ascribe init              [DIR] [--templates] [--format text|json]
 ascribe link              TARGET --from <PAGE> [--format text|json]
 ascribe lsp
 ascribe mcp
-ascribe model             [PATH] [--section types|dimensions|phrases|features|glossary|widgets|releases|builds|sources|project|consumer|editor|checks|crawlers|listing|permalinks] [--format text|json]
+ascribe model             [PATH] [--section types|dimensions|phrases|features|glossary|widgets|releases|builds|sources|project|consumer|editor|checks|crawlers|listing] [--format text|json]
 ascribe observe           [--name <NAME>] [--check] [--yes] [--format text|json]
 ascribe outline           PAGE [--build <NAME>] [--format text|json]
 ascribe permalinks sync   [--check] [--format text|json]
 ascribe permalinks list   [--format text|json]
 ascribe permalinks verify [NAME]... [--from <FILE>] [--against <PATH>] [--format text|json]
-ascribe permalinks retire [NAME]... --reason <TEXT> [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>] [--format text|json]
+ascribe permalinks retire [NAME]... [--reason <TEXT>] [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>] [--format text|json]
 ascribe refs              TARGET [--limit <N>] [--format text|json]
 ascribe rename            TARGET NEW
 ascribe report            [SECTION]... [--format text|markdown|json|prompt] [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice|warning|error]

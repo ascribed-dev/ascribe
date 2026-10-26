@@ -239,7 +239,6 @@ fn model_reads_every_example_content_model() {
             "checks",
             "crawlers",
             "listing",
-            "permalinks",
         ] {
             assert!(value[section].is_array(), "{config}: no {section}");
         }
@@ -396,13 +395,7 @@ fn model_shows_each_section_of_settings_with_its_values_and_defaults() {
 
     let whole = json(&root, &["--config", "docs", "model"], 0);
     for section in [
-        "project",
-        "consumer",
-        "editor",
-        "checks",
-        "crawlers",
-        "listing",
-        "permalinks",
+        "project", "consumer", "editor", "checks", "crawlers", "listing",
     ] {
         let keys: Vec<String> = whole[section]
             .as_array()
@@ -490,9 +483,7 @@ fn model_shows_settings_the_file_sets_and_the_defaults_it_leaves() {
 
     let text = stdout(&run(dir.path(), &["model"], 0));
     assert!(
-        text.contains(
-            "`permalinks`, each with its keys and values: `ascribe model --section <name>`"
-        ),
+        text.contains("`listing`, each with its keys and values: `ascribe model --section <name>`"),
         "{text}"
     );
     assert!(!text.contains("`[consumer]`"), "{text}");
@@ -1245,9 +1236,12 @@ fn resolve_shows_a_permalinks_help() {
     let dir = tempfile::tempdir().unwrap();
     write(
         &dir.path().join("ascribe.toml"),
-        &format!(
-            "{MODEL}\n[consumer]\nsite = \"https://docs.quill.dev\"\n\n[permalinks.retired]\nlegacy-sync = {{ to = \"keys.md\", reason = \"The sync agent was removed in 4.0\" }}\n\n[permalinks.aliases]\nkey-rotation = \"rotate-keys\"\n"
-        ),
+        &format!("{MODEL}\n[consumer]\nsite = \"https://docs.quill.dev\"\n"),
+    );
+    write(
+        &dir.path().join("ascribe.addresses"),
+        "version = 1\n\n[moved]\n\"go:key-rotation\" = \"go:rotate-keys\"\n\"go:old-keys\" = \"keys.md\"\n\n\
+         [retired]\n\"go:legacy-sync\" = \"The sync agent was removed in 4.0\"\n",
     );
     write(
         &dir.path().join("docs/keys.md"),
@@ -1304,7 +1298,17 @@ fn resolve_shows_a_permalinks_help() {
     assert!(stdout(&retired).is_empty(), "{}", stdout(&retired));
     assert_eq!(
         stderr(&retired),
-        "error: permalink `legacy-sync` is retired: The sync agent was removed in 4.0; its address leads to `keys.md`\n"
+        "error: permalink `legacy-sync` is retired: The sync agent was removed in 4.0\n"
+    );
+    let moved = run(
+        dir.path(),
+        &["resolve", "go:old-keys", "--build", "cloud"],
+        1,
+    );
+    assert!(stdout(&moved).is_empty(), "{}", stdout(&moved));
+    assert_eq!(
+        stderr(&moved),
+        "error: permalink `old-keys` was moved, and has no entry of its own: its address leads to `keys.md`\n"
     );
 }
 

@@ -1413,8 +1413,6 @@ export interface ModelReport {
    * share of it. Only in the whole report.
    */
   navigation?: ModelNavSection;
-  /** `[permalinks]`: each key, with its value in effect. */
-  permalinks?: ModelSetting[];
   /** Phrases, in declaration order. */
   phrases?: ModelPhrase[];
   /** `[project]`: each key, with its value in effect. */

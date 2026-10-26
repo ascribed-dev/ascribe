@@ -2,7 +2,9 @@
 //! the edges between files, and the problems found on the way.
 
 use ascribe_core::{FileId, Issue, Location, RelPath, Slugger, Span, diagnostics};
-use ascribe_model::{ADDRESSES_FILE, AddressFile, ContentModel, NAV_FILE, NavFile};
+use ascribe_model::{
+    ADDRESSES_FILE, AddressFile, ContentModel, NAV_FILE, NavFile, RecordedPermalinks,
+};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::{Arc, Mutex};
 
@@ -447,10 +449,18 @@ impl Project {
 
     /// `ascribe.addresses`, when the project has one and it reads; a file
     /// that doesn't is `addresses-file-invalid`, and the project records no
-    /// addresses. As it was when the project was loaded: an incremental
-    /// update doesn't read it again.
+    /// addresses. As it was when the project was loaded, or as the last
+    /// [`crate::incremental::Change::Addresses`] gave it.
     pub fn addresses_file(&self) -> Option<&AddressFile> {
         self.addresses.as_deref()
+    }
+
+    /// What `ascribe.addresses` records of permalinks (SPEC §7.6): each
+    /// name it moves or retires. Nothing without the file.
+    pub fn recorded_permalinks(&self) -> RecordedPermalinks {
+        self.addresses_file()
+            .map(AddressFile::permalinks)
+            .unwrap_or_default()
     }
 
     /// Each declared API's spec (`[apis.<name>]`), as read when the project
@@ -834,6 +844,10 @@ impl Project {
 
     pub(crate) fn set_nav(&mut self, nav: Option<Arc<NavFile>>) {
         self.nav = nav;
+    }
+
+    pub(crate) fn set_addresses(&mut self, file: Option<Arc<AddressFile>>) {
+        self.addresses = file;
     }
 
     pub(crate) fn set_unreadable(&mut self, unreadable: Vec<Unreadable>) {

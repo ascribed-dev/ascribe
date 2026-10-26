@@ -9,7 +9,7 @@ use std::path::Path;
 
 use ascribe_emit::SiteEmitter;
 use ascribe_emit::site::PERMALINKS_PATH;
-use support::{emit_build, memory_project};
+use support::{emit_build, memory_project, memory_project_with_files};
 
 const MODEL: &str = "spec = \"0.1\"\n\
     [types.page.frontmatter]\ntitle = \"string\"\n\
@@ -143,14 +143,11 @@ fn a_page_s_permalink_reaches_its_frontmatter_in_the_site_output() {
 }
 
 #[test]
-fn aliases_lead_where_their_permalink_does_and_retired_names_where_to_says() {
-    let model = format!(
-        "{MODEL}[permalinks.aliases]\ncheck = \"cli-check\"\nc = \"check\"\nserver = \"install-server\"\n\
-         [permalinks.retired]\n\
-         old-check = {{ to = \"reference/cli.md#cli-check\", reason = \"Merged into the CLI reference\" }}\n\
-         old-server = {{ to = \"self-managed.md\", reason = \"Moved\" }}\n\
-         legacy-sync = {{ reason = \"Removed in 4.0\" }}\n"
-    );
+fn moved_names_lead_where_their_entries_end_and_retired_ones_say_why() {
+    let addresses = "version = 1\n\n[moved]\n\
+         \"go:check\" = \"go:cli-check\"\n\"go:c\" = \"go:check\"\n\"go:server\" = \"go:install-server\"\n\
+         \"go:old-check\" = \"reference/cli.md#cli-check\"\n\"go:old-server\" = \"self-managed.md\"\n\n\
+         [retired]\n\"go:legacy-sync\" = \"Removed in 4.0\"\n";
     let files = [
         (
             "reference/cli.md",
@@ -162,6 +159,14 @@ fn aliases_lead_where_their_permalink_does_and_retired_names_where_to_says() {
              ## Install\n@id {permalink=true}: install-server\n",
         ),
     ];
+    let project = memory_project_with_files(MODEL, &files, &[("ascribe.addresses", addresses)]);
+    let list = |build: &str| -> serde_json::Value {
+        let emitter = SiteEmitter::new(project.model());
+        let text = emit_build(Path::new("/nowhere"), &project, build, &emitter)
+            .remove(PERMALINKS_PATH)
+            .expect("the site output has the list");
+        serde_json::from_str(&text).expect("the list is JSON")
+    };
     let cli_check = |extra: (&str, &str)| {
         let mut entry = serde_json::json!({
             "route": "/docs/reference/cli/",
@@ -171,7 +176,7 @@ fn aliases_lead_where_their_permalink_does_and_retired_names_where_to_says() {
         entry[extra.0] = extra.1.into();
         entry
     };
-    let cloud = list(&model, &files, "cloud");
+    let cloud = list("cloud");
     assert_eq!(
         cloud["permalinks"],
         serde_json::json!({
@@ -182,26 +187,20 @@ fn aliases_lead_where_their_permalink_does_and_retired_names_where_to_says() {
                 "fragment": "cli-check",
                 "source": "reference/cli.md",
             },
-            "old-check": cli_check(("retired", "Merged into the CLI reference")),
+            "old-check": cli_check(("moved", "reference/cli.md#cli-check")),
         })
     );
-    // The cloud build doesn't publish the server's page: its alias isn't
-    // listed, and the retired name that led there has nowhere to lead.
+    // The cloud build doesn't publish the server's page: neither name that
+    // leads there is listed.
     assert_eq!(
         cloud["removed"],
-        serde_json::json!({
-            "legacy-sync": { "reason": "Removed in 4.0" },
-            "old-server": { "reason": "Moved" },
-        })
+        serde_json::json!({ "legacy-sync": { "reason": "Removed in 4.0" } })
     );
-    let site = list(&model, &files, "site");
+    let site = list("site");
     assert_eq!(site["permalinks"]["server"]["alias"], "install-server");
     assert_eq!(
         site["permalinks"]["old-server"]["route"],
         "/docs/self-managed/"
     );
-    assert_eq!(
-        site["removed"],
-        serde_json::json!({ "legacy-sync": { "reason": "Removed in 4.0" } })
-    );
+    assert_eq!(site["permalinks"]["old-server"]["moved"], "self-managed.md");
 }

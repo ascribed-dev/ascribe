@@ -111,8 +111,7 @@ pub(crate) fn check_files_with(
         None if across::any_file_level(&project.model().checks)
             || memos::any(project)
             || project.permalinks().is_some()
-            || project.nav().is_some()
-            || !project.model().permalinks.is_empty() =>
+            || project.nav().is_some() =>
         {
             PageChecker::new(project).for_every_build(true)
         }
@@ -136,6 +135,7 @@ pub(crate) fn check_files_with(
     if let Some(Err(problems)) = project.addresses() {
         sources.extend(problems.iter().map(Diagnostic::from_issue));
     }
+    sources.extend(across.remove(&ADDRESSES_FILE_ID).unwrap_or_default());
     // The specs are read with the source index, so they're asked of it only
     // when the content model declares one.
     if !project.model().apis.is_empty() {

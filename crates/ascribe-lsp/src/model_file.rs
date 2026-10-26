@@ -88,56 +88,6 @@ pub struct TakenFile {
     pub text: String,
 }
 
-/// `ascribe.toml`'s text, and each file `[from]` takes from that could be
-/// read, for edits that write a taken key where it's written. Edits are made
-/// to it in steps, each parsed from what the step before left.
-#[derive(Clone, Debug)]
-pub(crate) struct ModelTexts {
-    /// `ascribe.toml`'s text.
-    pub text: String,
-    /// The files it takes from.
-    taken: Vec<TakenFile>,
-    /// Which of `taken` an edit changed.
-    changed: Vec<bool>,
-}
-
-impl ModelTexts {
-    /// `text`, with the files of `taken` it takes from, as read already.
-    pub(crate) fn new(text: impl Into<String>, taken: Vec<TakenFile>) -> ModelTexts {
-        ModelTexts {
-            text: text.into(),
-            changed: vec![false; taken.len()],
-            taken,
-        }
-    }
-
-    /// The texts, parsed.
-    pub(crate) fn parse(&self) -> Result<ModelFile<'_>, String> {
-        ModelFile::parse_taking(&self.text, &self.taken)
-    }
-
-    /// The texts after `finished`, the edits of a step.
-    pub(crate) fn apply(&mut self, finished: &Finished) {
-        self.text.clone_from(&finished.text);
-        for changed in &finished.taken {
-            if let Some(i) = self.taken.iter().position(|t| t.file == changed.file.file) {
-                self.taken[i].text.clone_from(&changed.file.text);
-                self.changed[i] = true;
-            }
-        }
-    }
-
-    /// The files it takes from that the edits changed, with their texts now.
-    pub(crate) fn changed(&self) -> Vec<TakenFile> {
-        self.taken
-            .iter()
-            .zip(&self.changed)
-            .filter(|(_, changed)| **changed)
-            .map(|(t, _)| t.clone())
-            .collect()
-    }
-}
-
 /// The files the content model in `text`, the text of `config`, takes
 /// from with `[from]`, read from the disk as the loader reads them. One that
 /// can't be read is left out, so an edit of a key it holds is refused.
