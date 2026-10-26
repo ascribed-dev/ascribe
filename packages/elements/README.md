@@ -6,8 +6,9 @@ The custom elements [Ascribe](https://github.com/ascribed-dev/ascribe)'s site ou
 `<ascribe-availability-target>`, `<ascribe-group>`, and `<ascribe-for-agents>`.
 
 - Elements render into the light DOM and are styled by CSS.
-- Only `<ascribe-tabs>` uses JavaScript. Without the script, every tab shows
-  with its label; nothing is hidden.
+- Only `<ascribe-tabs>` uses JavaScript, and the script adds a copy button to
+  each code block. Without the script, every tab shows with its label, nothing
+  is hidden, and there's no copy button.
 
 An Astro site gets them through `@ascribed/astro`, whose `<Elements />`
 component loads the stylesheet and the script.
@@ -15,7 +16,8 @@ component loads the stylesheet and the script.
 ## Using it
 
 ```js
-// Registers <ascribe-tabs>, <ascribe-tab>, and <ascribe-group>.
+// Registers <ascribe-tabs>, <ascribe-tab>, and <ascribe-group>, and adds
+// the copy buttons.
 import "@ascribed/elements";
 // The styles. Import this alone to style the elements without the script.
 import "@ascribed/elements/style.css";

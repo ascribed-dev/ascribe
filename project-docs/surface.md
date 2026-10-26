@@ -750,6 +750,11 @@ CSS properties a site can set:
 | `--ascribe-border-width` |
 | `--ascribe-caution-background` |
 | `--ascribe-caution-color` |
+| `--ascribe-copy-background` |
+| `--ascribe-copy-color` |
+| `--ascribe-copy-display` |
+| `--ascribe-copy-focus-color` |
+| `--ascribe-copy-hover-background` |
 | `--ascribe-font-family` |
 | `--ascribe-font-size-small` |
 | `--ascribe-font-weight-strong` |
