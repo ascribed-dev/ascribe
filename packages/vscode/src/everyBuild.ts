@@ -105,11 +105,11 @@ export function quickFixes(entry: Entry, root: string, file: string, text: strin
 /**
  * The problems the Project view counts on their own, by their diagnostics'
  * names: tested examples changed since they were tested or never tested,
- * reviews overdue, and a permalinks list that's behind.
+ * rechecks overdue, and a permalinks list that's behind.
  */
 const COUNTED = {
   examples: ["example-stale", "example-unobserved"],
-  reviews: ["review-overdue"],
+  rechecks: ["recheck-overdue"],
   permalinks: ["permalinks-list-behind"],
 } as const satisfies Record<string, readonly string[]>;
 
@@ -140,7 +140,7 @@ export function countedIn(
   };
   return {
     examples: found(COUNTED.examples),
-    reviews: found(COUNTED.reviews),
+    rechecks: found(COUNTED.rechecks),
     permalinks: found(COUNTED.permalinks),
   };
 }

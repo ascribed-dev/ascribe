@@ -11,7 +11,7 @@
 //! | `avail` | `@available` specs, the `available` frontmatter key, and table rows' `available` |
 //! | `frontmatter` | Content type, fields, reserved keys, `variant` |
 //! | `acknowledge` | What `@intended` and `intended` frontmatter name (SPEC §4.9) |
-//! | `content` | A page's description and review date, code blocks' languages |
+//! | `content` | A page's description and recheck date, code blocks' languages |
 //! | `comment` | HTML comments, which a memo would keep out of the published page |
 //! | `memo` | Container memos that say nothing |
 //! | `refs` | `@include` targets, `@snippet` addresses, link destinations, image sources and alt text |

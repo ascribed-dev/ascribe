@@ -32,6 +32,7 @@ Each command links to its section, with its options, output, and exit codes, on 
 | [`ascribe observe`](../examples/sources.md#cli-observe) | Runs the test of a folder of tested examples, and records what it passed with. |
 | [`ascribe outline`](questions.md#cli-outline) | Shows a page's title and type, and the headings a link to it can name. |
 | [`ascribe permalinks`](../permalinks/command.md#cli-permalinks) | Keeps the list of permalinks, checks a product's names against it, and retires a permalink. |
+| [`ascribe preview`](../checks/check.md#cli-preview) | Renders a build's pages as a site, serves it on this computer, and renders it again as you edit. |
 | [`ascribe refs`](questions.md#cli-refs) | Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model. |
 | [`ascribe rename`](questions.md#cli-rename) | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it. |
 | [`ascribe report`](../checks/report-command.md#cli-report) | Reports what state a project is in, section by section. |

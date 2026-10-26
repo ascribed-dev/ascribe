@@ -1,0 +1,2 @@
+- **The MCP server's `ascribe_rename` gives what `ascribe rename` changes, for an agent with no shell.** It returns each changed file's text, the page that moves, and the entries recorded in `ascribe.addresses`, writing nothing; `ascribe rename --format json` writes the same ([ascribe rename](docs/content/command/questions.md#cli-rename)).
+- **The MCP tools `ascribe_format` and `ascribe_changes` are now `ascribe_fmt` and `ascribe_diff`.** They're named for their commands; the old names still work for one more release ([ascribe mcp](docs/content/agents/commands.md#cli-mcp)).

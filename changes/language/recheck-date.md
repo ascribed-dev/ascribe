@@ -1,0 +1,1 @@
+- **Behavior change: a page's review date is its recheck date.** `review-overdue` is `recheck-overdue`, keeping ASC153, and the role `review-date` is `recheck-date`; for a release, both old names still work in `ascribe.toml`, acknowledgements, frontmatter, and `ascribe explain` ([Field roles](docs/content/content-model/index.md#54-field-roles)).

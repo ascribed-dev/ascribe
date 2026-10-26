@@ -12,9 +12,9 @@ output-dir = ".ascribe/build"
 [types.guide.frontmatter]
 title = { type = "string", phrases = true, description = "The page title, shown in navigation and the browser tab." }
 # A role says what a field is to the page: the content checks read the
-# description and the review date from the fields that have them.
+# description and the recheck date from the fields that have them.
 description = { type = "string?", role = "description" }
-review-by = { type = "date?", role = "review-date" }
+review-by = { type = "date?", role = "recheck-date" }
 order = "number?"
 featured = "boolean?"
 updated = "date?"

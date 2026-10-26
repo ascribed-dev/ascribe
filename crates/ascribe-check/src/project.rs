@@ -257,7 +257,7 @@ pub struct Project {
     /// ([`Project::with_link_index`]), or one built from the held texts the
     /// first time it's needed, so it's built once.
     link_index: OnceLock<Arc<ascribe_resolve::Project>>,
-    /// The day the checks run on, which `review-overdue` compares with.
+    /// The day the checks run on, which `recheck-overdue` compares with.
     today: Option<Date>,
     /// The templates the content types name, by type, read the first time a
     /// page of one is checked.
@@ -928,10 +928,10 @@ impl Project {
             .unwrap_or_default()
     }
 
-    /// This project, checked as on `today`: the day `review-overdue`
-    /// compares a page's review date with. A library doesn't read the clock,
+    /// This project, checked as on `today`: the day `recheck-overdue`
+    /// compares a page's recheck date with. A library doesn't read the clock,
     /// so a project has no day until its caller gives it one, and without
-    /// one, no review is overdue.
+    /// one, no recheck is overdue.
     #[must_use]
     pub fn with_today(mut self, today: Option<Date>) -> Project {
         self.today = today;

@@ -164,11 +164,11 @@ impl Server {
 
 impl Handler for Server {
     fn tools(&self) -> Vec<Tool> {
-        TOOLS.iter().map(tools::Spec::tool).collect()
+        tools::listed()
     }
 
     fn call_tool(&mut self, name: &str, arguments: &Map<String, Value>) -> Option<ToolResult> {
-        let spec = TOOLS.iter().find(|t| t.name == name)?;
+        let spec = tools::find(name)?;
         Some(spec.call(self, arguments))
     }
 

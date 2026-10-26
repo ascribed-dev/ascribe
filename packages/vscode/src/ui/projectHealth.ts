@@ -39,8 +39,8 @@ export const PROJECT_KEYS = {
   problems: "problems",
   /** Tested examples changed since they were tested, or never tested: the Problems panel, at the first. */
   examples: "examples",
-  /** Reviews overdue: the Problems panel, at the first. */
-  reviews: "reviews",
+  /** Rechecks overdue: the Problems panel, at the first. */
+  rechecks: "rechecks",
   /** A permalinks list that's behind: the Problems panel, at it. */
   permalinks: "permalinks",
   /** Pages whose published addresses are lost, against the base: the Problems panel, at `ascribe.addresses`. */
@@ -114,11 +114,11 @@ export interface ProjectFacts {
   inventory: InventoryCounts | undefined;
   /** Its check of its agent files. */
   agentFiles: AgentFilesResult;
-  /** Now, in milliseconds since the epoch: overdue reviews are counted for a day. */
+  /** Now, in milliseconds since the epoch: overdue rechecks are counted for a day. */
   now: number;
   /** A time of day, as the view says when something ran. */
   time: (at: number) => string;
-  /** A day, as the view says which day overdue reviews are for: the same text for the same day. */
+  /** A day, as the view says which day overdue rechecks are for: the same text for the same day. */
   day: (at: number) => string;
   /** Its builds, as its server lists them; empty until it has. */
   builds: readonly ListedBuild[];
@@ -436,7 +436,7 @@ type Base = Pick<ProjectCount, "key" | "label">;
 const COUNTS = {
   problems: { key: PROJECT_KEYS.problems, label: "Problems" },
   examples: { key: PROJECT_KEYS.examples, label: "Tested examples" },
-  reviews: { key: PROJECT_KEYS.reviews, label: "Reviews overdue" },
+  rechecks: { key: PROJECT_KEYS.rechecks, label: "Rechecks overdue" },
   permalinks: { key: PROJECT_KEYS.permalinks, label: "Permalinks behind" },
   addresses: { key: PROJECT_KEYS.addresses, label: "Addresses lost" },
   orphans: { key: PROJECT_KEYS.orphans, label: "Pages nothing links to" },
@@ -501,7 +501,7 @@ function notCurrent(
  * The counts from the last Check Every Build: dashes until it has run, while
  * it runs, while one kept from an earlier session is compared with the
  * project's files, once it's out of date, or when it couldn't finish. A
- * check from another day says which (`checkedWhen`). Overdue reviews
+ * check from another day says which (`checkedWhen`). Overdue rechecks
  * depend on the day as well as the files, so a check from another day leaves
  * that count alone a dash, with its own note and the check, whatever
  * `isCurrent` says.
@@ -509,7 +509,7 @@ function notCurrent(
 export function everyBuildGroup(facts: ProjectFacts): ProjectHealthGroup {
   const { everyBuild, day, now } = facts;
   const head = { key: "everyBuild", label: "Every build" };
-  const bases = [COUNTS.problems, COUNTS.examples, COUNTS.reviews, COUNTS.permalinks];
+  const bases = [COUNTS.problems, COUNTS.examples, COUNTS.rechecks, COUNTS.permalinks];
   switch (everyBuild.kind) {
     case "none":
       return notCurrent(head, bases, "unknown", "not checked yet", CHECK);
@@ -544,14 +544,14 @@ export function everyBuildGroup(facts: ProjectFacts): ProjectHealthGroup {
         return counted(base, n, count(n, noun));
       };
       const checkedOn = day(everyBuild.at);
-      const reviews: ProjectCount =
+      const rechecks: ProjectCount =
         checkedOn === day(now)
-          ? kind(COUNTS.reviews, "reviews", "page")
+          ? kind(COUNTS.rechecks, "rechecks", "page")
           : {
-              ...COUNTS.reviews,
+              ...COUNTS.rechecks,
               state: "outOfDate",
               value: "—",
-              note: `checked on ${checkedOn}; reviews fall due by the day`,
+              note: `checked on ${checkedOn}; rechecks fall due by the day`,
               opens: false,
               action: CHECK,
             };
@@ -572,7 +572,7 @@ export function everyBuildGroup(facts: ProjectFacts): ProjectHealthGroup {
                 problems: { errors, warnings, advice },
               },
           kind(COUNTS.examples, "examples", "example"),
-          reviews,
+          rechecks,
           kind(COUNTS.permalinks, "permalinks", "permalink"),
         ],
       };

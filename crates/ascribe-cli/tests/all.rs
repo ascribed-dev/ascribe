@@ -61,6 +61,8 @@ mod page_parity;
 mod permalinks;
 #[path = "../../ascribe-diff/tests/planted/mod.rs"]
 mod planted;
+#[path = "all/preview.rs"]
+mod preview;
 #[path = "all/program_starts.rs"]
 mod program_starts;
 #[path = "all/read_once.rs"]

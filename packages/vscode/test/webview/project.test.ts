@@ -187,7 +187,7 @@ const made = (
       count: examples,
       first: null,
     },
-    reviews: none,
+    rechecks: none,
     permalinks: none,
   },
 });
@@ -236,7 +236,7 @@ describe("the Project view's webview", () => {
     expect(report.health.map(({ key }) => key)).toEqual([
       "problems",
       "examples",
-      "reviews",
+      "rechecks",
       "permalinks",
       "orphans",
       "unused",
@@ -439,7 +439,7 @@ describe("the Project view's webview", () => {
       Object.fromEntries(report.health.map((count) => [count.key, count]));
     expect(byKey(current)).toMatchObject({
       examples: { value: "2 examples", state: "current", dimmed: false },
-      reviews: { value: "0", state: "none", dimmed: true },
+      rechecks: { value: "0", state: "none", dimmed: true },
       orphans: { value: "3 pages", state: "current", dimmed: false },
       unused: { value: "0", state: "none", dimmed: true },
       agentFiles: { value: "1 file", state: "current", dimmed: false },
@@ -463,7 +463,7 @@ describe("the Project view's webview", () => {
         }),
       ),
     );
-    for (const key of ["examples", "reviews", "permalinks", "agentFiles"]) {
+    for (const key of ["examples", "rechecks", "permalinks", "agentFiles"]) {
       expect(byKey(stale)[key]).toMatchObject({ value: "—", state: "outOfDate", dimmed: false });
     }
     for (const key of ["everyBuild", "lastSave"]) {
@@ -511,13 +511,13 @@ describe("the Project view's webview", () => {
     // Showing them sends nothing to the extension, and stays as the reader left it when the view draws again.
     expect(view.posted.filter((message) => message.type === "open")).toEqual([]);
     const again = await view.draw(2, projectAnswer(facts(made(true, 2, 1))));
-    expect(shown(again)).toEqual(["problems", "examples", "reviews", "permalinks"]);
+    expect(shown(again)).toEqual(["problems", "examples", "rechecks", "permalinks"]);
     await view.page.getByRole("button", { name: "Nothing to do" }).first().click();
     const opened = await view.draw(3, projectAnswer(facts(made(true, 2, 1))));
     expect(shown(opened)).toEqual([
       "problems",
       "examples",
-      "reviews",
+      "rechecks",
       "permalinks",
       "orphans",
       "unused",
@@ -525,7 +525,7 @@ describe("the Project view's webview", () => {
     expect(opened.violations).toEqual([]);
   });
 
-  it("says overdue reviews from another day are a dash with their own note and the check", async () => {
+  it("says overdue rechecks from another day are a dash with their own note and the check", async () => {
     const view = await open();
     const report = await view.draw(
       1,
@@ -542,9 +542,9 @@ describe("the Project view's webview", () => {
       none: "Nothing else to do",
     });
     expect(report.health[2]).toMatchObject({
-      key: "reviews",
+      key: "rechecks",
       value: "—",
-      note: "checked on 20 October; reviews fall due by the day",
+      note: "checked on 20 October; rechecks fall due by the day",
       state: "outOfDate",
       shown: true,
     });
@@ -559,7 +559,7 @@ describe("the Project view's webview", () => {
     ]);
     await expect(
       view.page
-        .getByRole("img", { name: "checked on 20 October; reviews fall due by the day" })
+        .getByRole("img", { name: "checked on 20 October; rechecks fall due by the day" })
         .count(),
     ).resolves.toBe(1);
   });

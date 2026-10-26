@@ -83,7 +83,7 @@ pub use page::{
 };
 pub use page_rows::{
     ExampleState, IncludeKind, LeftOut, PageBuild, PageDescription, PageExample, PageHealth,
-    PageInclude, PageListing, PagePermalink, PageReview, PageSize, PageTemplate,
+    PageInclude, PageListing, PagePermalink, PageRecheck, PageSize, PageTemplate,
 };
 pub use position::Encoding;
 pub use preview::{
@@ -160,8 +160,8 @@ pub struct Options {
     /// and to `false` as soon as a handler queues work: a test's way to wait
     /// until every result of the messages it sent has been published.
     pub idle: Option<Arc<AtomicBool>>,
-    /// The day the checks run on, which `review-overdue` compares a page's
-    /// review date with. Without one, no review is overdue.
+    /// The day the checks run on, which `recheck-overdue` compares a page's
+    /// recheck date with. Without one, no recheck is overdue.
     pub today: Option<Clock>,
     /// What checks the prose on open and on save, for a project with
     /// `[checks.vale]`: Vale itself when `None`, or a test's stand-in.

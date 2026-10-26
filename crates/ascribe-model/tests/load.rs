@@ -839,13 +839,13 @@ fn an_unreadable_file_is_reported_not_a_panic() {
 }
 
 #[test]
-fn full_marks_its_description_and_review_date() {
+fn full_marks_its_description_and_recheck_date() {
     use ascribe_model::{CheckLevel, FieldRole};
     let m = example("full.toml");
     let guide = &m.types[0].frontmatter;
     let name = |role| guide.field_with_role(role).map(|f| f.name.as_str());
     assert_eq!(name(FieldRole::Description), Some("description"));
-    assert_eq!(name(FieldRole::ReviewDate), Some("review-by"));
+    assert_eq!(name(FieldRole::RecheckDate), Some("review-by"));
     assert_eq!(
         m.types[1]
             .frontmatter
@@ -869,7 +869,7 @@ fn a_type_has_the_shared_fields_and_the_roles_of_their_names() {
 [frontmatter]
 description = "string?"
 owner = "enum(docs, api)"
-review-date = "date?"
+recheck-date = "date?"
 audience = "string"
 
 [types.guide]
@@ -899,14 +899,14 @@ team = { type = "string", role = "owner" }
     // replaces a shared one in its place.
     assert_eq!(
         names(0),
-        ["title", "description", "owner", "review-date", "audience"]
+        ["title", "description", "owner", "recheck-date", "audience"]
     );
     assert_eq!(
         names(1),
         [
             "description",
             "owner",
-            "review-date",
+            "recheck-date",
             "audience",
             "title",
             "summary",
@@ -915,11 +915,11 @@ team = { type = "string", role = "owner" }
     );
     assert_eq!(role(0, FieldRole::Description), Some("description"));
     assert_eq!(role(0, FieldRole::Owner), Some("owner"));
-    assert_eq!(role(0, FieldRole::ReviewDate), Some("review-date"));
+    assert_eq!(role(0, FieldRole::RecheckDate), Some("recheck-date"));
     // The type gives two roles to fields of other names.
     assert_eq!(role(1, FieldRole::Description), Some("summary"));
     assert_eq!(role(1, FieldRole::Owner), Some("team"));
-    assert_eq!(role(1, FieldRole::ReviewDate), Some("review-date"));
+    assert_eq!(role(1, FieldRole::RecheckDate), Some("recheck-date"));
     let title = &m.types[1].frontmatter.fields[4];
     assert!(title.required && title.inline.is_some());
     assert_eq!(m.frontmatter.len(), 4);

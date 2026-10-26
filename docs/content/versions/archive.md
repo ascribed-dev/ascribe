@@ -62,7 +62,7 @@ It moves 3.4 from `live` to `archived`, with its address and the day it ended, s
 | `self-managed (preview 3.3, ga 3.5, deprecated 3.6)` | `self-managed (ga 3.5, deprecated 3.6)` |
 | `cloud, self-managed 3.4` | `cloud, self-managed` |
 
-No live line's output changes, and the command proves it by building before and after. A build that isn't a line, such as a badge build that shows "3.4+", does change: the command names its pages, and needs `--force` to go ahead. Run it with `--dry-run` first to read what it would do, as in `examples/quill`:
+No live line's output changes, and the command proves it by building before and after. A build that isn't a line, such as a filter build for an older version, can change: the command names its pages, and needs `--force` to go ahead. When a page's only change is self-managed's part of its availability lines, as in a cloud build that shows "self-managed (preview, 3.4+)", the change is expected: the command lists it apart and goes ahead without `--force`. Run it with `--dry-run` first to read what it would do, as in `examples/quill`:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-retire.txt
 

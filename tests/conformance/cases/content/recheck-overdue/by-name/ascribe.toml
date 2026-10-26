@@ -1,0 +1,5 @@
+spec = "0.1"
+
+# A date field named `recheck-date` is the page's recheck date, without `role`.
+[types.page.frontmatter]
+recheck-date = "date?"

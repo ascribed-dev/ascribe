@@ -126,12 +126,12 @@ A field the page leaves out gets its default's formatted form, so `formatted.<fi
 
 ### 5.4 Field roles
 
-A page type's top-level field MAY have a `role`, which says what the field is for, so a check or the report reads it whatever the field's name (SPEC §7.2). A field named `description`, `review-date`, or `owner` has that role without `role`, unless another field of the type has it:
+A page type's top-level field MAY have a `role`, which says what the field is for, so a check or the report reads it whatever the field's name (SPEC §7.2). A field named `description`, `recheck-date`, or `owner` has that role without `role`, unless another field of the type has it:
 
 | Role | The field's type | Read by |
 |---|---|---|
 | `description` | `string` or `string?` | `page-description-missing`, which reports a page of the type whose field is absent, null, or blank. A field that's required or has a default is never absent, so the check skips it. |
-| `review-date` | `date` or `date?` | `review-overdue`, which reports a page whose date is before the day the check runs. |
+| `recheck-date` | `date` or `date?` | `recheck-overdue`, which reports a page whose date is before the day the check runs. `review-date`, its old name, names it too, for a release. |
 | `owner` | `string`, `string?`, or an `enum`, optional or not | `ascribe report inventory`, which counts pages by the field's value; a page without one counts as having no owner. |
 
 A type without a field with the role has none of that check's diagnostics. A role changes no output: not the generated schemas, the JSON, or the pages.
