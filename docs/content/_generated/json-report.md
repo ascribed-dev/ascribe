@@ -55,78 +55,6 @@
       ],
       "type": "object"
     },
-    "AgentsJson": {
-      "description": "`agents`: the delivery spec's checks on a built site.",
-      "properties": {
-        "diagnostics": {
-          "$ref": "#/$defs/Capped_Entry",
-          "description": "A diagnostic for each check that failed or warned that the hosting\nor Ascribe owns. One a page owns is `ascribe check`'s, and isn't\nrepeated."
-        },
-        "new": {
-          "description": "How many checks fail or warn now that passed on the last report or\nweren't in it, or `null` when `previous_run` is. A check is told from\nanother by the site's address and its id.",
-          "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "new_checks": {
-          "description": "The ids of the checks `new` counts, in the checker's order; empty\nwhen `previous_run` is `null`.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "not_run": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/NotRunJson"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Why it couldn't run, or `null` when it ran. When it isn't `null`,\nthe rest is empty."
-        },
-        "previous_run": {
-          "description": "The day of the last report that checked the same site,\n`YYYY-MM-DD`, or `null` on a first run, with `--no-history`, or when\nthe last report checked another site or none.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "resolved": {
-          "description": "How many checks that failed or warned on the last report pass now or\naren't in this one, or `null` when `previous_run` is.",
-          "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "results": {
-          "description": "Each check's result, in the checker's order.",
-          "items": {
-            "$ref": "#/$defs/CheckResultJson"
-          },
-          "type": "array"
-        },
-        "site": {
-          "description": "The site checked, as `--site` gives it; empty when none was given.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "not_run",
-        "site",
-        "results",
-        "diagnostics",
-        "previous_run",
-        "new",
-        "resolved",
-        "new_checks"
-      ],
-      "type": "object"
-    },
     "ApiCount": {
       "description": "How many of one API's operations the pages cover.",
       "properties": {
@@ -509,6 +437,78 @@
         "status",
         "message",
         "owner"
+      ],
+      "type": "object"
+    },
+    "DeliveryJson": {
+      "description": "`delivery`: the delivery spec's checks on a built site.",
+      "properties": {
+        "diagnostics": {
+          "$ref": "#/$defs/Capped_Entry",
+          "description": "A diagnostic for each check that failed or warned that the hosting\nor Ascribe owns. One a page owns is `ascribe check`'s, and isn't\nrepeated."
+        },
+        "new": {
+          "description": "How many checks fail or warn now that passed on the last report or\nweren't in it, or `null` when `previous_run` is. A check is told from\nanother by the site's address and its id.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "new_checks": {
+          "description": "The ids of the checks `new` counts, in the checker's order; empty\nwhen `previous_run` is `null`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "not_run": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NotRunJson"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Why it couldn't run, or `null` when it ran. When it isn't `null`,\nthe rest is empty."
+        },
+        "previous_run": {
+          "description": "The day of the last report that checked the same site,\n`YYYY-MM-DD`, or `null` on a first run, with `--no-history`, or when\nthe last report checked another site or none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "resolved": {
+          "description": "How many checks that failed or warned on the last report pass now or\naren't in this one, or `null` when `previous_run` is.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "results": {
+          "description": "Each check's result, in the checker's order.",
+          "items": {
+            "$ref": "#/$defs/CheckResultJson"
+          },
+          "type": "array"
+        },
+        "site": {
+          "description": "The site checked, as `--site` gives it; empty when none was given.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "not_run",
+        "site",
+        "results",
+        "diagnostics",
+        "previous_run",
+        "new",
+        "resolved",
+        "new_checks"
       ],
       "type": "object"
     },
@@ -1426,17 +1426,6 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe report --format json` writes: one document, whatever the\noutcome. A reader ignores fields it doesn't know.",
   "properties": {
-    "agents": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/AgentsJson"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "description": "`agents`, when asked for."
-    },
     "ascribe_version": {
       "description": "The version of Ascribe that wrote it.",
       "type": "string"
@@ -1457,6 +1446,17 @@
         "type": "string"
       },
       "type": "array"
+    },
+    "delivery": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DeliveryJson"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "`delivery`, when asked for."
     },
     "error": {
       "description": "Why the report couldn't be made (exit code 2), or `null`. When it\nisn't `null`, no section is there.",
@@ -1528,7 +1528,7 @@
       "type": "integer"
     },
     "sections": {
-      "description": "The sections asked for, in the order the report has them:\n`problems`, `inventory`, `builds`, `pages`, `links`, `agents`.",
+      "description": "The sections asked for, in the order the report has them:\n`problems`, `inventory`, `builds`, `pages`, `links`, `delivery`.",
       "items": {
         "type": "string"
       },
@@ -1536,7 +1536,7 @@
     },
     "summary": {
       "$ref": "#/$defs/Summary",
-      "description": "How many problems of each severity the sections that ran have, and\nof each kind of next step: the diagnostics of `problems`, `links`,\nand `agents`."
+      "description": "How many problems of each severity the sections that ran have, and\nof each kind of next step: the diagnostics of `problems`, `links`,\nand `delivery`."
     }
   },
   "required": [

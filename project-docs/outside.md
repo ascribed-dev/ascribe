@@ -45,7 +45,7 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 | Trusted publishers on each package: `release.yml` with environment `release`, and `canary.yml` with environment `canary` | Publishing without a token | Maintainer, on each package's npm page |
 | Tag `latest` | `npm install`. 0.1.1, except **`@ascribed/review`'s, which is `0.1.2-next.2`**, a canary, until the next release moves it | `release.yml` |
 | Tags `next` and `next-pending` | The nightly canary (0.1.2-next.6 when the inventory ran) | `canary.yml` |
-| `afdocs`, the delivery spec's checker, at 0.22.2 | `examples/astro-site`'s end-to-end job, and `report.yml`'s weekly `ascribe report agents` on <https://ascribed-dev.com>. The version is written in both, and in `ascribe_check::site::VERSION`, which says it in the report's install hint | Anyone, by pull request, after reading the new version's checks: a check it adds is listed in `ascribe_check::site::CHECKS` |
+| `afdocs`, the delivery spec's checker, at 0.22.2 | `examples/astro-site`'s end-to-end job, and `report.yml`'s weekly `ascribe report delivery` on <https://ascribed-dev.com>. The version is written in both, and in `ascribe_check::site::VERSION`, which says it in the report's install hint | Anyone, by pull request, after reading the new version's checks: a check it adds is listed in `ascribe_check::site::CHECKS` |
 
 ## Microsoft
 
