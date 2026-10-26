@@ -8,6 +8,11 @@ use std::path::{Path, PathBuf};
 use ascribe_core::Span;
 use ascribe_syntax::*;
 
+/// The problem [`check_tree`] gives a span outside the source or off a
+/// character boundary. The fuzz target `parse` (fuzz/) fails on this one
+/// alone.
+pub const NOT_IN_SOURCE: &str = "not a valid range of the source";
+
 /// Checks every span in `doc` against `source`. Returns the problems found.
 pub fn check_tree(source: &str, doc: &ParsedDocument) -> Vec<String> {
     let mut c = Checker {
@@ -53,7 +58,7 @@ impl Checker<'_> {
             && self.source.is_char_boundary(span.start())
             && self.source.is_char_boundary(span.end());
         if !ok {
-            self.problem(what, span, "not a valid range of the source");
+            self.problem(what, span, NOT_IN_SOURCE);
         }
         ok
     }
