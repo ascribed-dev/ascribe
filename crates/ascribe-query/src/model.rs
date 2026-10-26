@@ -5,15 +5,15 @@
 //! [`summary`] gives a short Markdown summary for an agent to read, cut to a
 //! character budget.
 
-use ascribe_core::schema::{AttributeType, Attributes, DefaultValue, SetMember};
+use ascribe_core::schema::{AttributeSchema, AttributeType, Attributes, DefaultValue, SetMember};
 use std::collections::BTreeMap;
 
 use ascribe_core::RelPath;
 use ascribe_model::examples::Status;
 use ascribe_model::settings::{self as registry, Setting, SettingValue};
 use ascribe_model::{
-    AvailabilityMode, ContentModel, Field, FieldSource, FieldType, GlossaryMatch, Listing, Source,
-    VariantMode,
+    ApiReference, AvailabilityMode, ContentModel, Field, FieldSource, FieldType, GlossaryMatch,
+    Listing, Source, VariantMode,
 };
 use ascribe_resolve::navigation::ROOT_LABEL;
 use ascribe_resolve::{
@@ -32,14 +32,24 @@ pub const MODEL_SCHEMA_VERSION: u32 = 4;
 pub enum Section {
     /// Page types and their frontmatter.
     Types,
+    /// `[frontmatter]`: the fields every page type shares.
+    Frontmatter,
+    /// `[fragments]`: the files that are fragments, and their frontmatter.
+    Fragments,
     /// Dimensions and their values.
     Dimensions,
+    /// Lifecycle states.
+    Lifecycle,
     /// Phrases.
     Phrases,
     /// Features.
     Features,
+    /// Note types.
+    Notes,
     /// Glossary terms.
     Glossary,
+    /// Image attributes.
+    Images,
     /// Project widgets.
     Widgets,
     /// Release lines: each target's, with its status.
@@ -48,8 +58,16 @@ pub enum Section {
     Builds,
     /// Sources.
     Sources,
+    /// APIs.
+    Apis,
+    /// What `[from]` takes from other projects' files.
+    From,
+    /// `[[intended]]`: the acknowledged problems.
+    Intended,
     /// `[project]`'s settings.
     Project,
+    /// `[versions]`'s settings.
+    Versions,
     /// `[consumer]`'s settings.
     Consumer,
     /// `[editor]`'s settings.
@@ -64,17 +82,26 @@ pub enum Section {
 
 impl Section {
     /// Every section, in the order answers list them.
-    pub const ALL: [Section; 15] = [
+    pub const ALL: [Section; 24] = [
         Section::Types,
+        Section::Frontmatter,
+        Section::Fragments,
         Section::Dimensions,
+        Section::Lifecycle,
         Section::Phrases,
         Section::Features,
+        Section::Notes,
         Section::Glossary,
+        Section::Images,
         Section::Widgets,
         Section::Releases,
         Section::Builds,
         Section::Sources,
+        Section::Apis,
+        Section::From,
+        Section::Intended,
         Section::Project,
+        Section::Versions,
         Section::Consumer,
         Section::Editor,
         Section::Checks,
@@ -88,6 +115,7 @@ impl Section {
         matches!(
             self,
             Section::Project
+                | Section::Versions
                 | Section::Consumer
                 | Section::Editor
                 | Section::Checks
@@ -96,19 +124,35 @@ impl Section {
         )
     }
 
-    /// The section's name, as `--section` takes it.
+    /// Whether it has entries that are built in, so it has some in every
+    /// project: shown in the summary only when `ascribe.toml` writes it.
+    pub fn has_built_ins(self) -> bool {
+        matches!(self, Section::Lifecycle | Section::Notes)
+    }
+
+    /// The section's name, as `--section` takes it, and its table's in
+    /// `ascribe.toml`.
     pub fn name(self) -> &'static str {
         match self {
             Section::Types => "types",
+            Section::Frontmatter => "frontmatter",
+            Section::Fragments => "fragments",
             Section::Dimensions => "dimensions",
+            Section::Lifecycle => "lifecycle",
             Section::Phrases => "phrases",
             Section::Features => "features",
+            Section::Notes => "notes",
             Section::Glossary => "glossary",
+            Section::Images => "images",
             Section::Widgets => "widgets",
             Section::Releases => "releases",
             Section::Builds => "builds",
             Section::Sources => "sources",
+            Section::Apis => "apis",
+            Section::From => "from",
+            Section::Intended => "intended",
             Section::Project => "project",
+            Section::Versions => "versions",
             Section::Consumer => "consumer",
             Section::Editor => "editor",
             Section::Checks => "checks",
@@ -120,15 +164,24 @@ impl Section {
     pub(crate) fn heading(self) -> &'static str {
         match self {
             Section::Types => "Page types",
+            Section::Frontmatter => "Frontmatter every type shares",
+            Section::Fragments => "Fragments",
             Section::Dimensions => "Dimensions",
+            Section::Lifecycle => "Lifecycle states",
             Section::Phrases => "Phrases",
             Section::Features => "Features",
+            Section::Notes => "Note types",
             Section::Glossary => "Glossary",
+            Section::Images => "Image attributes",
             Section::Widgets => "Widgets",
             Section::Releases => "Releases",
             Section::Builds => "Builds",
             Section::Sources => "Sources",
+            Section::Apis => "APIs",
+            Section::From => "Taken from other files",
+            Section::Intended => "Intended problems",
             Section::Project => "`[project]`",
+            Section::Versions => "`[versions]`",
             Section::Consumer => "`[consumer]`",
             Section::Editor => "`[editor]`",
             Section::Checks => "`[checks]`",
@@ -152,19 +205,39 @@ pub struct ModelReport {
     /// is declared.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub types: Option<Vec<ModelType>>,
+    /// `[frontmatter]`: the fields every page type has, as written, in
+    /// declaration order. Each type's `fields` has them already.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub frontmatter: Option<Vec<ModelField>>,
+    /// `[fragments]`: the files that are fragments, and the fields a
+    /// fragment's frontmatter may give.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fragments: Option<ModelFragments>,
     /// Dimensions, in declaration order.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dimensions: Option<Vec<ModelDimension>>,
+    /// Lifecycle states: the built-in ones, as the project adjusts them,
+    /// then the ones it declares.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lifecycle: Option<Vec<ModelLifecycleState>>,
     /// Phrases, in declaration order.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub phrases: Option<Vec<ModelPhrase>>,
     /// Features, in declaration order.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub features: Option<Vec<ModelFeature>>,
+    /// Note types, the values of `@note`'s `type`: the built-in ones, as
+    /// the project labels them, then the ones it declares.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notes: Option<Vec<ModelNoteType>>,
     /// Glossary terms, in the order of `[glossary] pages`, and on each page
     /// in document order.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub glossary: Option<Vec<ModelTerm>>,
+    /// `[images.attributes]`: the keys an image's attribute block may give,
+    /// in declaration order.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub images: Option<Vec<ModelAttribute>>,
     /// Project widgets, in declaration order.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub widgets: Option<Vec<ModelWidget>>,
@@ -179,9 +252,22 @@ pub struct ModelReport {
     /// Sources, in declaration order.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sources: Option<Vec<ModelSource>>,
+    /// APIs, in declaration order.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub apis: Option<Vec<ModelApi>>,
+    /// `[from]`: each file the project takes from, in the order `take`
+    /// names them, with what it takes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from: Option<Vec<ModelFrom>>,
+    /// `[[intended]]`: the acknowledged problems, in declaration order.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub intended: Option<Vec<ModelIntended>>,
     /// `[project]`: each key, with its value in effect.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub project: Option<Vec<ModelSetting>>,
+    /// `[versions]`: each key, with its value in effect.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub versions: Option<Vec<ModelSetting>>,
     /// `[consumer]`: each key, with its value in effect.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub consumer: Option<Vec<ModelSetting>>,
@@ -398,6 +484,86 @@ pub struct ModelFeature {
     pub name: String,
     /// Its availability spec, as written.
     pub availability: String,
+}
+
+/// `[fragments]`.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ModelFragments {
+    /// The patterns of the files that are fragments besides those whose
+    /// path has a file or folder name starting with `_`, from the content
+    /// root.
+    pub patterns: Vec<String>,
+    /// The fields a fragment's frontmatter may give, in declaration order.
+    pub fields: Vec<ModelField>,
+}
+
+/// A lifecycle state.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ModelLifecycleState {
+    /// Its name, which an availability spec gives.
+    pub name: String,
+    /// Its label.
+    pub label: String,
+    /// Whether content in it counts as available.
+    pub available: bool,
+    /// Whether it's built in, rather than declared by the project.
+    pub builtin: bool,
+}
+
+/// A note type.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ModelNoteType {
+    /// Its name, which `@note`'s `type` gives.
+    pub name: String,
+    /// Its label.
+    pub label: String,
+    /// Whether it's built in, rather than declared by the project.
+    pub builtin: bool,
+}
+
+/// An API: an OpenAPI spec that pages link into.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ModelApi {
+    /// Its name, as `@operation` and `api:` addresses write it.
+    pub name: String,
+    /// The spec's file, from the folder `ascribe.toml` is in.
+    pub spec: String,
+    /// The renderer its reference is published with, `redoc`; absent when
+    /// `reference` is a template of an operation's address.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub renderer: Option<&'static str>,
+    /// Where its reference is: the renderer's page, or the template of an
+    /// operation's address, as written.
+    pub reference: String,
+}
+
+/// A file `[from]` takes tables or keys from.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ModelFrom {
+    /// The file, from the folder `ascribe.toml` is in.
+    pub file: String,
+    /// What it takes, as `take` names it: `releases`, `consumer.site`.
+    pub take: Vec<String>,
+}
+
+/// An acknowledged problem: a check's problem about a content model entry
+/// or an image, which is intended.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ModelIntended {
+    /// The check, by its slug.
+    pub check: &'static str,
+    /// What it's about: `phrase`, `feature`, or `image`.
+    pub kind: &'static str,
+    /// Its key, or the image's path.
+    pub name: String,
+    /// Why the problem is intended.
+    pub reason: String,
 }
 
 /// A glossary term: a heading marked `@term` on a glossary page. Its
@@ -620,11 +786,7 @@ pub fn model(
     fs: Option<&dyn FileSystem>,
 ) -> ModelReport {
     let wants = |s: Section| section.is_none_or(|wanted| wanted == s).then_some(());
-    let mut file: Option<toml::Table> = config.and_then(|text| text.parse().ok());
-    // What `[from]` takes is the project's as if written in its file.
-    if let Some(file) = file.as_mut() {
-        model.put_taken(file);
-    }
+    let file = parsed(model, config);
     let settings = |s: Section| {
         wants(s).map(|()| {
             let mut keys = settings(s.name(), file.as_ref());
@@ -640,7 +802,36 @@ pub fn model(
         schema_version: MODEL_SCHEMA_VERSION,
         ascribe_version: ASCRIBE_VERSION,
         types: wants(Section::Types).map(|()| types(model)),
+        frontmatter: wants(Section::Frontmatter)
+            .map(|()| model.frontmatter.iter().map(field).collect()),
+        fragments: wants(Section::Fragments).map(|()| ModelFragments {
+            patterns: model
+                .fragments
+                .patterns
+                .iter()
+                .map(|p| p.as_str().to_owned())
+                .collect(),
+            fields: model
+                .fragments
+                .frontmatter
+                .fields
+                .iter()
+                .map(field)
+                .collect(),
+        }),
         dimensions: wants(Section::Dimensions).map(|()| dimensions(model)),
+        lifecycle: wants(Section::Lifecycle).map(|()| {
+            model
+                .lifecycle
+                .iter()
+                .map(|l| ModelLifecycleState {
+                    name: l.name.clone(),
+                    label: l.label.clone(),
+                    available: l.available,
+                    builtin: l.builtin,
+                })
+                .collect()
+        }),
         phrases: wants(Section::Phrases).map(|()| {
             model
                 .phrases
@@ -662,12 +853,40 @@ pub fn model(
                 })
                 .collect()
         }),
+        notes: wants(Section::Notes).map(|()| {
+            model
+                .notes
+                .iter()
+                .map(|n| ModelNoteType {
+                    name: n.name.clone(),
+                    label: n.label.clone(),
+                    builtin: n.builtin,
+                })
+                .collect()
+        }),
         glossary: wants(Section::Glossary).map(|()| terms),
+        images: wants(Section::Images)
+            .map(|()| model.image_attributes.iter().map(attribute).collect()),
         widgets: wants(Section::Widgets).map(|()| widgets(model)),
         releases: wants(Section::Releases).map(|()| releases(model)),
         builds: wants(Section::Builds).map(|()| builds(model)),
         sources: wants(Section::Sources).map(|()| sources(model, fs)),
+        apis: wants(Section::Apis).map(|()| apis(model)),
+        from: wants(Section::From).map(|()| from(model)),
+        intended: wants(Section::Intended).map(|()| {
+            model
+                .intended
+                .iter()
+                .map(|i| ModelIntended {
+                    check: i.check.as_str(),
+                    kind: i.kind.key(),
+                    name: i.name.clone(),
+                    reason: i.reason.clone(),
+                })
+                .collect()
+        }),
         project: settings(Section::Project),
+        versions: settings(Section::Versions),
         consumer: settings(Section::Consumer),
         editor: settings(Section::Editor).map(|mut keys| {
             // The build the loader chose, which isn't one default.
@@ -681,6 +900,16 @@ pub fn model(
         listing: settings(Section::Listing),
         navigation: None,
     }
+}
+
+/// `config`, the text of `ascribe.toml`, parsed, with what `[from]` takes
+/// in it, as the project's as if written in its file.
+fn parsed(model: &ContentModel, config: Option<&str>) -> Option<toml::Table> {
+    let mut file: Option<toml::Table> = config.and_then(|text| text.parse().ok());
+    if let Some(file) = file.as_mut() {
+        model.put_taken(file);
+    }
+    file
 }
 
 fn sources(model: &ContentModel, fs: Option<&dyn FileSystem>) -> Vec<ModelSource> {
@@ -837,32 +1066,7 @@ fn widgets(model: &ContentModel) -> Vec<ModelWidget> {
         .map(|w| {
             let schema = &w.schema;
             let attributes = match &schema.attributes {
-                Attributes::Declared(list) => list
-                    .iter()
-                    .map(|a| {
-                        let (value_type, values) = match &a.ty {
-                            AttributeType::String => ("string", Vec::new()),
-                            AttributeType::Number => ("number", Vec::new()),
-                            AttributeType::Boolean => ("boolean", Vec::new()),
-                            AttributeType::Enum(values) => ("enum", values.clone()),
-                            AttributeType::Set(SetMember::String) => ("set", Vec::new()),
-                            AttributeType::Set(SetMember::Enum(values)) => ("set", values.clone()),
-                            AttributeType::NoteType => ("note-type", Vec::new()),
-                        };
-                        ModelAttribute {
-                            key: a.key.clone(),
-                            value_type,
-                            values,
-                            required: a.required,
-                            default: a.default.as_ref().map(|d| match d {
-                                DefaultValue::Text(text) => text.clone(),
-                                DefaultValue::Boolean(b) => b.to_string(),
-                                DefaultValue::Set(members) => members.join("|"),
-                            }),
-                            description: a.description.clone(),
-                        }
-                    })
-                    .collect(),
+                Attributes::Declared(list) => list.iter().map(attribute).collect(),
                 Attributes::Dimensions => Vec::new(),
             };
             ModelWidget {
@@ -874,6 +1078,64 @@ fn widgets(model: &ContentModel) -> Vec<ModelWidget> {
             }
         })
         .collect()
+}
+
+fn attribute(a: &AttributeSchema) -> ModelAttribute {
+    let (value_type, values) = match &a.ty {
+        AttributeType::String => ("string", Vec::new()),
+        AttributeType::Number => ("number", Vec::new()),
+        AttributeType::Boolean => ("boolean", Vec::new()),
+        AttributeType::Enum(values) => ("enum", values.clone()),
+        AttributeType::Set(SetMember::String) => ("set", Vec::new()),
+        AttributeType::Set(SetMember::Enum(values)) => ("set", values.clone()),
+        AttributeType::NoteType => ("note-type", Vec::new()),
+    };
+    ModelAttribute {
+        key: a.key.clone(),
+        value_type,
+        values,
+        required: a.required,
+        default: a.default.as_ref().map(|d| match d {
+            DefaultValue::Text(text) => text.clone(),
+            DefaultValue::Boolean(b) => b.to_string(),
+            DefaultValue::Set(members) => members.join("|"),
+        }),
+        description: a.description.clone(),
+    }
+}
+
+fn apis(model: &ContentModel) -> Vec<ModelApi> {
+    model
+        .apis
+        .iter()
+        .map(|a| {
+            let (renderer, reference) = match &a.reference {
+                ApiReference::Redoc { at } => (Some("redoc"), at.clone()),
+                ApiReference::Template(template) => (None, template.clone()),
+            };
+            ModelApi {
+                name: a.name.clone(),
+                spec: a.spec.clone(),
+                renderer,
+                reference,
+            }
+        })
+        .collect()
+}
+
+/// Each file `[from]` takes from, in the order `take` first names it.
+fn from(model: &ContentModel) -> Vec<ModelFrom> {
+    let mut out: Vec<ModelFrom> = Vec::new();
+    for taken in &model.taken {
+        match out.iter_mut().find(|f| f.file == taken.file) {
+            Some(file) => file.take.push(taken.key.clone()),
+            None => out.push(ModelFrom {
+                file: taken.file.clone(),
+                take: vec![taken.key.clone()],
+            }),
+        }
+    }
+    out
 }
 
 fn builds(model: &ContentModel) -> Vec<ModelBuild> {
@@ -948,11 +1210,15 @@ pub fn summary(
     fs: Option<&dyn FileSystem>,
 ) -> String {
     let report = self::model(model, config, terms, section, fs);
+    let file = parsed(model, config);
+    // A section with built-in entries shows them for every project: only
+    // one the file writes says something of its own.
+    let writes = |s: Section| file.as_ref().is_some_and(|f| f.contains_key(s.name()));
     let sections: Vec<(Section, Vec<String>)> = Section::ALL
         .into_iter()
         .filter(|s| match section {
             Some(wanted) => wanted == *s,
-            None => !s.is_settings(),
+            None => !s.is_settings() && (!s.has_built_ins() || writes(*s)),
         })
         .map(|s| (s, lines(&report, s)))
         .filter(|(s, lines)| !lines.is_empty() || section == Some(*s))
@@ -1071,6 +1337,19 @@ fn lines(report: &ModelReport, section: Section) -> Vec<String> {
             .flatten()
             .map(|t| type_line(t, true))
             .collect(),
+        Section::Frontmatter => report
+            .frontmatter
+            .iter()
+            .flatten()
+            .map(field_text)
+            .collect(),
+        Section::Fragments => report.fragments.iter().flat_map(fragment_lines).collect(),
+        Section::Lifecycle => report
+            .lifecycle
+            .iter()
+            .flatten()
+            .map(lifecycle_line)
+            .collect(),
         Section::Dimensions => report
             .dimensions
             .iter()
@@ -1102,6 +1381,15 @@ fn lines(report: &ModelReport, section: Section) -> Vec<String> {
             .flatten()
             .map(|f| format!("{} ({}): {}", code(&f.key), f.name, f.availability))
             .collect(),
+        Section::Notes => report
+            .notes
+            .iter()
+            .flatten()
+            .map(|n| {
+                let builtin = if n.builtin { ", built in" } else { "" };
+                format!("{} ({}{builtin})", code(&n.name), n.label)
+            })
+            .collect(),
         Section::Glossary => report
             .glossary
             .iter()
@@ -1114,6 +1402,7 @@ fn lines(report: &ModelReport, section: Section) -> Vec<String> {
                 text
             })
             .collect(),
+        Section::Images => report.images.iter().flatten().map(attribute_text).collect(),
         Section::Widgets => report.widgets.iter().flatten().map(widget_line).collect(),
         Section::Releases => report
             .releases
@@ -1154,7 +1443,24 @@ fn lines(report: &ModelReport, section: Section) -> Vec<String> {
             })
             .collect(),
         Section::Sources => report.sources.iter().flatten().map(source_line).collect(),
+        Section::Apis => report.apis.iter().flatten().map(api_line).collect(),
+        Section::From => report
+            .from
+            .iter()
+            .flatten()
+            .map(|f| {
+                let take: Vec<String> = f.take.iter().map(|t| code(t)).collect();
+                format!("{}: takes {}", code(&f.file), take.join(", "))
+            })
+            .collect(),
+        Section::Intended => report
+            .intended
+            .iter()
+            .flatten()
+            .map(intended_line)
+            .collect(),
         Section::Project => setting_lines(section, &report.project),
+        Section::Versions => setting_lines(section, &report.versions),
         Section::Consumer => setting_lines(section, &report.consumer),
         Section::Editor => setting_lines(section, &report.editor),
         Section::Checks => setting_lines(section, &report.checks),
@@ -1187,6 +1493,48 @@ fn setting_lines(section: Section, settings: &Option<Vec<ModelSetting>>) -> Vec<
             }
         })
         .collect()
+}
+
+/// `[fragments]`'s lines: its patterns, when it has any, then a line for
+/// each field.
+fn fragment_lines(f: &ModelFragments) -> Vec<String> {
+    let patterns: Vec<String> = f.patterns.iter().map(|p| format!("`{p}`")).collect();
+    let files = (!patterns.is_empty()).then(|| {
+        format!(
+            "files {}, and any whose path has a name starting with `_`",
+            patterns.join(", ")
+        )
+    });
+    files
+        .into_iter()
+        .chain(
+            f.fields
+                .iter()
+                .map(|field| format!("frontmatter {}", field_text(field))),
+        )
+        .collect()
+}
+
+fn lifecycle_line(l: &ModelLifecycleState) -> String {
+    let builtin = if l.builtin { ", built in" } else { "" };
+    let available = if l.available {
+        "available"
+    } else {
+        "not available"
+    };
+    format!("`{}` ({}{builtin}): {available}", l.name, l.label)
+}
+
+fn api_line(a: &ModelApi) -> String {
+    let reference = match a.renderer {
+        Some(renderer) => format!("`{}` ({renderer})", a.reference),
+        None => format!("`{}`", a.reference),
+    };
+    format!("`{}`: spec `{}`, reference {reference}", a.name, a.spec)
+}
+
+fn intended_line(i: &ModelIntended) -> String {
+    format!("`{}` about {} `{}`: {}", i.check, i.kind, i.name, i.reason)
 }
 
 fn source_line(s: &ModelSource) -> String {
@@ -1307,6 +1655,24 @@ fn type_line(t: &ModelType, sources: bool) -> String {
     text
 }
 
+/// A field, as a section other than the page types' lists it.
+fn field_text(f: &ModelField) -> String {
+    let required = if f.required { ", required" } else { "" };
+    format!("`{}` ({}{required})", f.name, f.field_type)
+}
+
+/// An attribute: its key, its type with the values it allows, and whether
+/// it's required.
+fn attribute_text(a: &ModelAttribute) -> String {
+    let ty = if a.values.is_empty() {
+        a.value_type.to_owned()
+    } else {
+        format!("{}: {}", a.value_type, a.values.join("|"))
+    };
+    let required = if a.required { ", required" } else { "" };
+    format!("`{}` ({ty}{required})", a.key)
+}
+
 fn widget_line(w: &ModelWidget) -> String {
     let forms = match (w.line, w.container) {
         (true, true) => "line or container",
@@ -1315,19 +1681,7 @@ fn widget_line(w: &ModelWidget) -> String {
     };
     let mut text = format!("`@{}` ({forms})", w.name);
     if !w.attributes.is_empty() {
-        let attributes: Vec<String> = w
-            .attributes
-            .iter()
-            .map(|a| {
-                let ty = if a.values.is_empty() {
-                    a.value_type.to_owned()
-                } else {
-                    format!("{}: {}", a.value_type, a.values.join("|"))
-                };
-                let required = if a.required { ", required" } else { "" };
-                format!("`{}` ({ty}{required})", a.key)
-            })
-            .collect();
+        let attributes: Vec<String> = w.attributes.iter().map(attribute_text).collect();
         text.push_str(&format!(": {}", attributes.join(", ")));
     }
     if let Some(description) = &w.description {
@@ -1468,5 +1822,27 @@ fn setting(
         default,
         default_text: s.default_text.clone().filter(|t| !t.is_empty()),
         from: None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `ascribe.toml`'s tables have one home, the registry the loader reads
+    /// its keys from: each one the file can have at its top level, a table
+    /// or an array of them such as `[[intended]]`, has a section, so
+    /// `ascribe model` and `ascribe_model` can show it.
+    #[test]
+    fn every_table_of_ascribe_toml_has_a_section() {
+        let mut tables: Vec<&str> = registry::settings()
+            .iter()
+            .filter(|s| s.table.is_empty() && s.type_text.contains("table"))
+            .map(|s| s.key.as_str())
+            .collect();
+        let mut sections: Vec<&str> = Section::ALL.iter().map(|s| s.name()).collect();
+        tables.sort_unstable();
+        sections.sort_unstable();
+        assert_eq!(sections, tables);
     }
 }

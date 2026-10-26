@@ -4,6 +4,36 @@
 ```json
 {
   "$defs": {
+    "ModelApi": {
+      "description": "An API: an OpenAPI spec that pages link into.",
+      "properties": {
+        "name": {
+          "description": "Its name, as `@operation` and `api:` addresses write it.",
+          "type": "string"
+        },
+        "reference": {
+          "description": "Where its reference is: the renderer's page, or the template of an\noperation's address, as written.",
+          "type": "string"
+        },
+        "renderer": {
+          "description": "The renderer its reference is published with, `redoc`; absent when\n`reference` is a template of an operation's address.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "spec": {
+          "description": "The spec's file, from the folder `ascribe.toml` is in.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "spec",
+        "reference"
+      ],
+      "type": "object"
+    },
     "ModelAttribute": {
       "description": "An attribute a widget accepts.",
       "properties": {
@@ -246,6 +276,107 @@
       ],
       "type": "object"
     },
+    "ModelFragments": {
+      "description": "`[fragments]`.",
+      "properties": {
+        "fields": {
+          "description": "The fields a fragment's frontmatter may give, in declaration order.",
+          "items": {
+            "$ref": "#/$defs/ModelField"
+          },
+          "type": "array"
+        },
+        "patterns": {
+          "description": "The patterns of the files that are fragments besides those whose\npath has a file or folder name starting with `_`, from the content\nroot.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "patterns",
+        "fields"
+      ],
+      "type": "object"
+    },
+    "ModelFrom": {
+      "description": "A file `[from]` takes tables or keys from.",
+      "properties": {
+        "file": {
+          "description": "The file, from the folder `ascribe.toml` is in.",
+          "type": "string"
+        },
+        "take": {
+          "description": "What it takes, as `take` names it: `releases`, `consumer.site`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "file",
+        "take"
+      ],
+      "type": "object"
+    },
+    "ModelIntended": {
+      "description": "An acknowledged problem: a check's problem about a content model entry\nor an image, which is intended.",
+      "properties": {
+        "check": {
+          "description": "The check, by its slug.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "What it's about: `phrase`, `feature`, or `image`.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its key, or the image's path.",
+          "type": "string"
+        },
+        "reason": {
+          "description": "Why the problem is intended.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "check",
+        "kind",
+        "name",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "ModelLifecycleState": {
+      "description": "A lifecycle state.",
+      "properties": {
+        "available": {
+          "description": "Whether content in it counts as available.",
+          "type": "boolean"
+        },
+        "builtin": {
+          "description": "Whether it's built in, rather than declared by the project.",
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Its label.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name, which an availability spec gives.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "label",
+        "available",
+        "builtin"
+      ],
+      "type": "object"
+    },
     "ModelLine": {
       "description": "A release line.",
       "properties": {
@@ -344,6 +475,29 @@
         "pages",
         "sections",
         "listed"
+      ],
+      "type": "object"
+    },
+    "ModelNoteType": {
+      "description": "A note type.",
+      "properties": {
+        "builtin": {
+          "description": "Whether it's built in, rather than declared by the project.",
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Its label.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name, which `@note`'s `type` gives.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "label",
+        "builtin"
       ],
       "type": "object"
     },
@@ -682,6 +836,16 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe model --format json` answers: the content model's sections,\nor the one asked for.",
   "properties": {
+    "apis": {
+      "description": "APIs, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelApi"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
     "ascribe_version": {
       "description": "The version of Ascribe that wrote it.",
       "type": "string"
@@ -756,10 +920,71 @@
         "null"
       ]
     },
+    "fragments": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelFragments"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "`[fragments]`: the files that are fragments, and the fields a\nfragment's frontmatter may give."
+    },
+    "from": {
+      "description": "`[from]`: each file the project takes from, in the order `take`\nnames them, with what it takes.",
+      "items": {
+        "$ref": "#/$defs/ModelFrom"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "frontmatter": {
+      "description": "`[frontmatter]`: the fields every page type has, as written, in\ndeclaration order. Each type's `fields` has them already.",
+      "items": {
+        "$ref": "#/$defs/ModelField"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
     "glossary": {
       "description": "Glossary terms, in the order of `[glossary] pages`, and on each page\nin document order.",
       "items": {
         "$ref": "#/$defs/ModelTerm"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "images": {
+      "description": "`[images.attributes]`: the keys an image's attribute block may give,\nin declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelAttribute"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "intended": {
+      "description": "`[[intended]]`: the acknowledged problems, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelIntended"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "lifecycle": {
+      "description": "Lifecycle states: the built-in ones, as the project adjusts them,\nthen the ones it declares.",
+      "items": {
+        "$ref": "#/$defs/ModelLifecycleState"
       },
       "type": [
         "array",
@@ -786,6 +1011,16 @@
         }
       ],
       "description": "The project's navigation, its root section: every page that isn't\n`unlisted`, in order, as each build's `_ascribe/nav.json` has its\nshare of it. Only in the whole report."
+    },
+    "notes": {
+      "description": "Note types, the values of `@note`'s `type`: the built-in ones, as\nthe project labels them, then the ones it declares.",
+      "items": {
+        "$ref": "#/$defs/ModelNoteType"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
     },
     "phrases": {
       "description": "Phrases, in declaration order.",
@@ -836,6 +1071,16 @@
       "description": "Page types, in declaration order: the implicit `page` type when none\nis declared.",
       "items": {
         "$ref": "#/$defs/ModelType"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "versions": {
+      "description": "`[versions]`: each key, with its value in effect.",
+      "items": {
+        "$ref": "#/$defs/ModelSetting"
       },
       "type": [
         "array",

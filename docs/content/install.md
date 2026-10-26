@@ -112,7 +112,7 @@ It sets the content root, `docs`, though that's the default, since it's the firs
 
 With `--templates`, the six types are added after `page`, and the templates, their guides, Ascribe's notes, and `templates.lock` are written into `templates/`, as `eject` writes them. When a file is where one would be written, it's named, as `eject` names it, and nothing is written.
 
-It lists each file it wrote, `ascribe.toml` last, from the current folder; the content root, when it made it; with `--templates`, each type it added, as `eject` says it; and last, the [Astro guide](astro/index.md), to publish the pages as a site.
+It lists each file it wrote, `ascribe.toml` last, from the current folder; the content root, when it made it; with `--templates`, each type it added, as `eject` says it; then the next step, a first page in the content root and [`ascribe check`](checks/check.md#cli-check); and last, the [Astro guide](astro/index.md), to publish the pages as a site.
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/init.txt
 

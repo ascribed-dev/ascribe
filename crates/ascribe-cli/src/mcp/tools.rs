@@ -122,7 +122,7 @@ pub const TOOLS: &[Spec] = &[
         description: "Read what a project's content model allows before writing frontmatter, \
             a directive's attributes, or a phrase: page types and their fields, dimensions, \
             phrases, features, glossary terms, widgets, release lines with their status, builds, \
-            and sources. Example: {\"path\": \
+            sources, APIs, and every other table of ascribe.toml. Example: {\"path\": \
             \"docs\", \"section\": \"phrases\"} returns `phrases` such as `{\"key\": \
             \"product\", \"value\": \"Quill\"}`.",
         input: || {

@@ -1,6 +1,6 @@
 # Ascribe Specification
 
-Version 0.1
+Version 0.1, draft. Until 1.0, the grammar and the built-in vocabulary may grow without a new version number (§11).
 
 ## Contents
 
@@ -198,7 +198,7 @@ Otherwise the line is ordinary text. In particular, `@` followed by an unknown w
 
 A line that has the shape of a directive but an unknown name, meaning `@word` at line start followed by `{`, `:`, or the end of the line, is still ordinary text, but processors SHOULD warn about it and suggest the closest known directive (`@warning:` → "did you mean `@note {type=warning}:`?"). Writing `\@` silences the warning. Prose `@` doesn't take this shape in practice.
 
-Built-in keywords never contain a hyphen. Project widget names always contain one (§6). The keyword set is closed: it grows only by revisions to this specification (built-ins) or by content-model declarations (project widgets).
+Built-in keywords never contain a hyphen. Project widget names always contain one (§6). The keyword set is closed: it grows only by revisions to this specification (built-ins) or by content-model declarations (project widgets). While the specification is a draft, a revision can add a built-in under the same version (§11).
 
 ### 3.3 Attributes
 
@@ -1595,7 +1595,11 @@ Source files store real file paths, but authors should rarely need to read or ty
 
 ## 11. Versioning
 
-Versions of this specification are numbered. A documentation set's content model declares the version it targets. Changes to the grammar or the built-in vocabulary are made only in new versions of this specification.
+Versions of this specification are numbered. A documentation set's content model declares the version it targets.
+
+This specification is a draft until 1.0. Until then, its grammar and built-in vocabulary may grow, and `spec = "0.1"` names the draft as it stands, not a frozen version. A new built-in keyword can change the meaning of a page written before it: a line starting `@summary:` meant something else before `@summary` joined the built-ins.
+
+From 1.0, changes to the grammar or the built-in vocabulary will be made only in new versions of this specification.
 
 ---
 

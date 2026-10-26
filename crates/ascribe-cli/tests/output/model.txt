@@ -16,6 +16,11 @@
 - `{version}`: 3.4.1
 - `{api}`: https://api.quill.dev/v3/
 
+## Image attributes
+
+- `width` (number)
+- `height` (number)
+
 ## Releases
 
 - `self-managed`: 3.5 (current, `site`); 3.4 (live, `site@3.4`)
@@ -29,4 +34,4 @@
 
 ## Settings
 
-- `project`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, each with its keys and values: `ascribe model --section <name>`
+- `project`, `versions`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, each with its keys and values: `ascribe model --section <name>`
