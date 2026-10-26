@@ -1,1 +1,1 @@
-- **The specification says it's a draft until 1.0.** Its grammar and built-in vocabulary may grow until then, and `spec = "0.1"` names the draft, not a frozen version: a page that targets 0.1 can meet a new built-in, as a line starting `@summary:` did. From 1.0, those changes will come only in new versions ([SPEC.md](SPEC.md#11-versioning) §11).
+- **The specification says it's a draft until 1.0.** Its grammar and built-in vocabulary may grow until then, and `spec = "0.1"` names the draft, not a frozen version. See [SPEC.md §11](SPEC.md#11-versioning).
