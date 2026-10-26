@@ -22,7 +22,7 @@ use crate::cli::Global;
 use crate::context::{stdout_is_terminal, use_color};
 use crate::exit;
 use crate::report::json::About;
-use crate::report::{Counts, FileTable, concise, json, tally, text};
+use crate::report::{Counts, FileTable, concise, github, json, tally, text};
 use crate::shell::quote;
 
 /// Arguments of `ascribe check`.
@@ -214,6 +214,10 @@ pub enum Format {
     Concise,
     /// One JSON document, for tools.
     Json,
+    /// A GitHub Actions workflow command per problem, which shows it on the
+    /// pull request's lines, with the path from the repository's root, then
+    /// the summary line: for CI.
+    Github,
     /// A prompt for an agent that fixes the problems: about the file, when
     /// the paths name one file, else about the project or the paths. Nothing
     /// when there are no problems.
@@ -715,7 +719,7 @@ pub fn write(
             + &text::baselined(*baselined)
     };
     let command = Command::new(global, args, codes);
-    if matches!(args.format, Format::Text | Format::Concise) {
+    if matches!(args.format, Format::Text | Format::Concise | Format::Github) {
         write_fixed(out, fixed)?;
     }
     match (args.format, args.summary) {
@@ -735,7 +739,7 @@ pub fn write(
             },
         ),
         (Format::Prompt, _) => write_prompt(out, project, args, codes, scope.as_ref(), reported),
-        (Format::Text | Format::Concise, true) => {
+        (Format::Text | Format::Concise | Format::Github, true) => {
             let (by_code, by_file) = tally(files, reported);
             let first = by_code.first().map(|c| command.of_code(c.code));
             text::write_tally(out, &by_code, &by_file, &command.tally(), first.as_deref())
@@ -750,7 +754,16 @@ pub fn write(
             args.limit.unwrap_or_default(),
             &command.concise_all(),
         ),
+        (Format::Github, false) => {
+            github::write(out, files, reported, &summary, &repository_prefix(project))
+        }
     }
+}
+
+/// The path from the repository's root to the project's, as
+/// `git rev-parse --show-prefix` prints it; empty outside a repository.
+fn repository_prefix(project: &Project) -> String {
+    ascribe_diff::Repository::discover(project.root()).map_or_else(|_| String::new(), |r| r.prefix)
 }
 
 /// What `ascribe check` says in place of its summary when the project has
@@ -986,8 +999,10 @@ impl<'a> Command<'a> {
         let mut words = self.on_paths();
         words.extend(self.checked());
         words.extend(["--code".to_owned(), quote(code)]);
-        if self.args.format == Format::Concise {
-            words.extend(["--format".to_owned(), "concise".to_owned()]);
+        match self.args.format {
+            Format::Concise => words.extend(["--format".to_owned(), "concise".to_owned()]),
+            Format::Github => words.extend(["--format".to_owned(), "github".to_owned()]),
+            Format::Text | Format::Json | Format::Prompt => {}
         }
         words.join(" ")
     }
@@ -1064,6 +1079,13 @@ fn report_failure(
                 let _ = concise::write_line(out, &files, &r);
             }
             writeln!(err, "error: {message}")
+        }
+        Format::Github => {
+            for r in Reported::all(diagnostics) {
+                // The project's place in the repository isn't known.
+                let _ = writeln!(out, "{}", github::annotation(&files, &r, None));
+            }
+            writeln!(err, "{}", github::command("error", &[], &message))
         }
         Format::Json => json::write(
             out,

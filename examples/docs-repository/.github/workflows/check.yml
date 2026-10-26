@@ -24,7 +24,8 @@ jobs:
           node-version: 24
       - run: npm install --global @ascribed/cli
       - run: npm install --global @ascribed/cli@next # :remove:
-      # Fails on errors and warnings, then on a page `ascribe fmt` would change.
-      - run: ascribe check --deny-warnings
-      - run: ascribe fmt --check
+      # Fails on errors and warnings, then on a page `ascribe fmt` would change,
+      # and shows each on the pull request's lines.
+      - run: ascribe check --deny-warnings --format github
+      - run: ascribe fmt --check --format github
 # :snippet-end:
