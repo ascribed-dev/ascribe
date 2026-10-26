@@ -52,7 +52,7 @@ With no section named, it runs the first three; `pages` lists every page rather 
 
 | Field | Type | Meaning |
 |---|---|---|
-| `schema_version` | number | `2`, since the section `agents` became `delivery` |
+| `schema_version` | number | `3`, since `builds` lists each mark once |
 | `ascribe_version` | string | The version of `ascribe` that wrote the report |
 | `error` | string or null | Why the report couldn't be made (exit code `2`); no section is there then |
 | `sections` | array of strings | The sections asked for, in the report's order |
