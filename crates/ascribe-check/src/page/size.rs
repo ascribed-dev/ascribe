@@ -83,7 +83,10 @@ pub fn markdown_size(
 fn markdown(index: &Project, root: &Path, build: &Build, page: &ResolvedPage) -> Option<String> {
     let cx = EmitContext::new(index, root, build);
     // As the build writes it: with the outputs for agents on, the pointer
-    // to llms.txt is part of the page.
+    // to llms.txt is part of the page. One page alone doesn't learn the
+    // build's pages (`PlainEmitter::learn_pages`), so a link's fragment is
+    // its page id and a glossary link keeps its HTML address: a few
+    // characters off, the same for every caller, the editor's included.
     emit_page(&PlainEmitter::new(index.model()), &cx, page)
         .ok()
         .map(|page| page.text)
