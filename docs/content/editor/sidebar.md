@@ -18,8 +18,8 @@ The views show the active file's project, named beside Pages' and Content model'
 
 **Project** is about the whole project, where This page is about one page. It shows the same project as the views below it.
 
-![The Project view for the project quill, with the rest of the Ascribe sidebar closed: at its top the project's name, with a gear and a settings button beside it, its folder, its server "running" with buttons to show its output and restart it, the version of `ascribe` the server runs, and a Build switch showing "site, line 3.5, the current line, editor build". Actions lists Check Every Build under Check; Apply Every Safe Fix, Format Every Page, Build, Sync Agent Files, and Observe Examples under Write; and Start Review and Prompt Agent to Fix This Project under Review and agents. Health, "3 to do", groups its counts by when each is from. Every build, "checked at 02:02 PM": no problems, no tested examples, no reviews overdue, and no permalinks behind. As you type: 1 page nothing links to and 2 unused model entries. At the last save, "02:02 PM": 3 agent files out of date. About is closed.](../images/project-light.png){scheme=light}
-![The Project view for the project quill, with the rest of the Ascribe sidebar closed: at its top the project's name, with a gear and a settings button beside it, its folder, its server "running" with buttons to show its output and restart it, the version of `ascribe` the server runs, and a Build switch showing "site, line 3.5, the current line, editor build". Actions lists Check Every Build under Check; Apply Every Safe Fix, Format Every Page, Build, Sync Agent Files, and Observe Examples under Write; and Start Review and Prompt Agent to Fix This Project under Review and agents. Health, "3 to do", groups its counts by when each is from. Every build, "checked at 02:02 PM": no problems, no tested examples, no reviews overdue, and no permalinks behind. As you type: 1 page nothing links to and 2 unused model entries. At the last save, "02:02 PM": 3 agent files out of date. About is closed.](../images/project-dark.png){scheme=dark}
+![The Project view for the project quill, with the rest of the Ascribe sidebar closed: at its top the project's name, with a gear and a settings button beside it, its folder, its server "running" with buttons to show its output and restart it, the version of `ascribe` the server runs, and a Build switch showing "site, line 3.5, the current line, editor build". Actions lists Check Every Build under Check; Apply Every Safe Fix, Format Every Page, Build, Sync Agent Files, and Observe Examples under Write; and Start Review and Prompt Agent to Fix This Project under Review and agents. Health, "3 to do", groups its counts by when each is from. Every build, "checked at 02:02 PM", has nothing to do, so it's its head alone, with "Nothing to do" at its end. As you type: 1 page nothing links to and 2 unused model entries. At the last save, "02:02 PM": 3 agent files out of date. About is closed.](../images/project-light.png){scheme=light}
+![The Project view for the project quill, with the rest of the Ascribe sidebar closed: at its top the project's name, with a gear and a settings button beside it, its folder, its server "running" with buttons to show its output and restart it, the version of `ascribe` the server runs, and a Build switch showing "site, line 3.5, the current line, editor build". Actions lists Check Every Build under Check; Apply Every Safe Fix, Format Every Page, Build, Sync Agent Files, and Observe Examples under Write; and Start Review and Prompt Agent to Fix This Project under Review and agents. Health, "3 to do", groups its counts by when each is from. Every build, "checked at 02:02 PM", has nothing to do, so it's its head alone, with "Nothing to do" at its end. As you type: 1 page nothing links to and 2 unused model entries. At the last save, "02:02 PM": 3 agent files out of date. About is closed.](../images/project-dark.png){scheme=dark}
 
 At its top:
 
@@ -30,20 +30,19 @@ At its top:
 
 Its sections are **Actions**, open at first, then **Health** and **About**. Actions come first so they stay put as Health's counts change. The view has no badge: This page's badge is the one that counts what to do.
 
-**Health** counts what needs doing, in groups by when each count is from. **To do**, in its header, counts the counts above zero. A count of none is a dimmed `0`. A dash means the count isn't known now: the group's head says why, with the action that brings it current. See [Health's counts](#healths-counts).
+**Health** counts what needs doing, in groups by when each count is from. **To do**, in its header, counts the counts above zero. Only the counts that need doing are shown: a group's counts of none are behind a **Nothing else to do** line, and a group with nothing to do is its head alone. A dash means the count isn't known now: the group's head says why, with the action that brings it current. See [Health's counts](#healths-counts).
 
 ```text
-Health                                   2 to do
+Health                                   1 to do
   Every build · not checked yet    ▷ Check Every Build
     Problems                  —
     Tested examples           —
     Reviews overdue           —
     Permalinks behind         —
   As you type
-    Pages nothing links to    0
     Unused model entries      5 entries
-  At the last save · 3:30 PM
-    Agent files out of date   4 files
+    › Nothing else to do
+  At the last save · 3:30 PM       › Nothing to do
 ```
 
 | Group | Count | Counts | Opens |
@@ -199,7 +198,7 @@ This page shows the last editor of a page that was active. Clicking in the view,
 
 A group's head says when its counts are from: "checked at 3:30 PM", "checked yesterday at 3:30 PM", "not checked yet", "checking…", "out of date" with why, or why its check couldn't finish. While its counts aren't current, the action that brings them current is at its head, once for the group: **Check Every Build**, or **Check Agent Files**.
 
-A count of none shows `0`, dimmed, and opens nothing. A count that isn't current shows a dash, and its group's head says why. A dash is never dimmed, and an out-of-date group has a warning icon, so none and not known never look alike. **To do** counts only the current counts above zero: a group that isn't current isn't a thing to do, and its head says so, with its action.
+A group's counts of none are behind one line under its other counts, **Nothing else to do**, which shows them. A group with nothing to do and nothing out of date is its head alone, with **Nothing to do** at its end. Each stays shown or hidden as you leave it. Shown, a count of none is `0`, dimmed, and opens nothing. A count that isn't current shows a dash, and its group's head says why. A dash is never dimmed, and an out-of-date group has a warning icon, so none and not known never look alike. **To do** counts only the current counts above zero: a group that isn't current isn't a thing to do, and its head says so, with its action.
 
 The view never checks every build by itself, since that can take a few seconds on a large project. Each group goes out of date by its own rule:
 

@@ -215,15 +215,21 @@ describe("the Project view's webview", () => {
     ]);
     expect(report.off).toEqual([]);
     expect(report.groups).toEqual([
-      { key: "everyBuild", head: "Every build·not checked yet", action: "Check Every Build" },
-      { key: "asYouType", head: "As you type", action: null },
-      { key: "lastSave", head: "At the last save·14:02", action: null },
+      {
+        key: "everyBuild",
+        head: "Every build·not checked yet",
+        action: "Check Every Build",
+        none: null,
+      },
+      { key: "asYouType", head: "As you type", action: null, none: "Nothing to do" },
+      { key: "lastSave", head: "At the last save·14:02", action: null, none: "Nothing to do" },
     ]);
     expect(report.health[0]).toEqual({
       key: "problems",
       value: "—",
       note: "not checked yet",
       state: "unknown",
+      shown: true,
       dimmed: false,
       severities: [],
     });
@@ -236,8 +242,16 @@ describe("the Project view's webview", () => {
       "unused",
       "agentFiles",
     ]);
-    // The head's, the actions', then one Check Every Build for the four counts from it.
-    expect(report.buttons).toEqual([...HEAD, "Check Every Build", ...TASKS, "Check Every Build"]);
+    // The head's, the actions', then one Check Every Build for the four counts from it, and the
+    // line that shows each group's counts of none.
+    expect(report.buttons).toEqual([
+      ...HEAD,
+      "Check Every Build",
+      ...TASKS,
+      "Check Every Build",
+      "Nothing to do",
+      "Nothing to do",
+    ]);
     // A dash is named by its group's note.
     await expect(
       view.page
@@ -271,7 +285,10 @@ describe("the Project view's webview", () => {
   it("keeps a long label's value on its line in a narrow sidebar", async () => {
     const view = await open();
     await view.page.setViewportSize({ width: 160, height: 600 });
-    await view.draw(1, projectAnswer(facts(made(true, 0, 0, 2))));
+    await view.draw(
+      1,
+      projectAnswer(facts(made(true, 0, 0, 2), "docs", { inventory: { orphans: 3, unused: 5 } })),
+    );
     const box = async (selector: string) => {
       const found = await view.page.locator(selector).boundingBox();
       if (!found) throw new Error(`no ${selector}`);
@@ -294,12 +311,20 @@ describe("the Project view's webview", () => {
     const none = await view.draw(2, projectAnswer(facts(made(true, 0, 0))));
     expect(none.health[0]).toMatchObject({ value: "0", state: "none", dimmed: true });
     expect(none.health.every((count) => count.value === "0" && count.dimmed)).toBe(true);
-    expect(none.buttons).toEqual([...HEAD, "Check Every Build", ...TASKS]);
+    expect(none.buttons).toEqual([
+      ...HEAD,
+      "Check Every Build",
+      ...TASKS,
+      "Nothing to do",
+      "Nothing to do",
+      "Nothing to do",
+    ]);
     const stale = await view.draw(3, projectAnswer(facts(made(false))));
     expect(stale.groups[0]).toEqual({
       key: "everyBuild",
       head: "Every build·out of date: the project changed after the check at 14:02",
       action: "Check Every Build",
+      none: null,
     });
     expect(stale.health[0]).toMatchObject({
       value: "—",
@@ -307,7 +332,14 @@ describe("the Project view's webview", () => {
       state: "outOfDate",
       dimmed: false,
     });
-    expect(stale.buttons).toEqual([...HEAD, "Check Every Build", ...TASKS, "Check Every Build"]);
+    expect(stale.buttons).toEqual([
+      ...HEAD,
+      "Check Every Build",
+      ...TASKS,
+      "Check Every Build",
+      "Nothing to do",
+      "Nothing to do",
+    ]);
   });
 
   it("draws problems as an icon per severity with its count, said in words on hover and to a screen reader", async () => {
@@ -349,7 +381,14 @@ describe("the Project view's webview", () => {
   it("opens a current count's list, and runs the check, from the keyboard", async () => {
     const view = await open();
     const report = await view.draw(4, projectAnswer(facts(made(false))));
-    expect(report.buttons).toEqual([...HEAD, "Check Every Build", ...TASKS, "Check Every Build"]);
+    expect(report.buttons).toEqual([
+      ...HEAD,
+      "Check Every Build",
+      ...TASKS,
+      "Check Every Build",
+      "Nothing to do",
+      "Nothing to do",
+    ]);
     // Tab: the head's four buttons, Actions' header, its buttons, Health's header, then its Check Every Build.
     for (let i = 0; i < HEAD.length + TASKS.length + 4; i++) {
       await view.page.keyboard.press("Tab");
@@ -405,13 +444,15 @@ describe("the Project view's webview", () => {
       unused: { value: "0", state: "none", dimmed: true },
       agentFiles: { value: "1 file", state: "current", dimmed: false },
     });
-    // The counts above zero open their lists.
+    // The counts above zero open their lists; the counts of none are behind a line that shows them.
     expect(current.buttons).toEqual([
       ...HEAD,
       "Check Every Build",
       ...TASKS,
       "2 examples",
+      "Nothing else to do",
       "3 pages",
+      "Nothing else to do",
       "1 file",
     ]);
     const stale = await view.draw(
@@ -438,6 +479,52 @@ describe("the Project view's webview", () => {
     await expect(view.page.locator(".count.none .codicon-warning").count()).resolves.toBe(0);
   });
 
+  it("shows the counts that need doing, with the counts of none behind a line that shows them", async () => {
+    const view = await open();
+    const report = await view.draw(
+      1,
+      projectAnswer(
+        facts(made(true, 2, 1), "docs", {
+          inventory: { orphans: 0, unused: 0 },
+          agentFiles: { kind: "made", at: 0, stale: [], error: null, current: false },
+        }),
+      ),
+    );
+    const shown = (drawn: ProjectReport) =>
+      drawn.health.filter((count) => count.shown).map(({ key }) => key);
+    // Problems need doing; the other counts of every build are none, under one line.
+    // As you type has nothing to do: its head alone. The agent files are out of date: a dash.
+    expect(shown(report)).toEqual(["problems", "agentFiles"]);
+    expect(report.groups.map(({ none }) => none)).toEqual([
+      "Nothing else to do",
+      "Nothing to do",
+      null,
+    ]);
+    // Health's header counts what's to do as before.
+    expect(report.sections[1]).toEqual({ key: "health", label: "Health1 to do", open: true });
+    const nothingElse = view.page.getByRole("button", { name: "Nothing else to do" });
+    await expect(nothingElse.getAttribute("aria-expanded")).resolves.toBe("false");
+    await expect(view.page.locator(".count[data-key=examples]").isVisible()).resolves.toBe(false);
+    await nothingElse.click();
+    await expect(nothingElse.getAttribute("aria-expanded")).resolves.toBe("true");
+    await expect(view.page.locator(".count[data-key=examples]").isVisible()).resolves.toBe(true);
+    // Showing them sends nothing to the extension, and stays as the reader left it when the view draws again.
+    expect(view.posted.filter((message) => message.type === "open")).toEqual([]);
+    const again = await view.draw(2, projectAnswer(facts(made(true, 2, 1))));
+    expect(shown(again)).toEqual(["problems", "examples", "reviews", "permalinks"]);
+    await view.page.getByRole("button", { name: "Nothing to do" }).first().click();
+    const opened = await view.draw(3, projectAnswer(facts(made(true, 2, 1))));
+    expect(shown(opened)).toEqual([
+      "problems",
+      "examples",
+      "reviews",
+      "permalinks",
+      "orphans",
+      "unused",
+    ]);
+    expect(opened.violations).toEqual([]);
+  });
+
   it("says overdue reviews from another day are a dash with their own note and the check", async () => {
     const view = await open();
     const report = await view.draw(
@@ -452,14 +539,24 @@ describe("the Project view's webview", () => {
     expect(report.groups[0]).toMatchObject({
       head: "Every build·checked yesterday at 14:02",
       action: null,
+      none: "Nothing else to do",
     });
     expect(report.health[2]).toMatchObject({
       key: "reviews",
       value: "—",
       note: "checked on 20 October; reviews fall due by the day",
       state: "outOfDate",
+      shown: true,
     });
-    expect(report.buttons).toEqual([...HEAD, "Check Every Build", ...TASKS, "Check Every Build"]);
+    expect(report.buttons).toEqual([
+      ...HEAD,
+      "Check Every Build",
+      ...TASKS,
+      "Check Every Build",
+      "Nothing else to do",
+      "Nothing to do",
+      "Nothing to do",
+    ]);
     await expect(
       view.page
         .getByRole("img", { name: "checked on 20 October; reviews fall due by the day" })
