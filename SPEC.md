@@ -1472,13 +1472,9 @@ versions = "self-managed"
 [builds.cloud]
 variants = { deployment = "cloud" }
 availability = { filter = "cloud" }
-
-[builds."self-managed-3.3"]
-variants = "switch"
-availability = { filter = "self-managed 3.3" }
 ```
 
-Here `site` keeps every arm and badges availability, for each live line of self-managed (a versioned build, below); `cloud` keeps only cloud's arms and content; and `self-managed-3.3` keeps every arm and only what self-managed 3.3 has.
+Here `site` keeps every arm and badges availability, for each live line of self-managed (a versioned build, below); and `cloud` keeps only cloud's arms and content. A build filtered for a versioned target names its version, as `{ filter = "self-managed 3.3" }` does, and keeps only what that version has.
 
 #### Variant mode
 

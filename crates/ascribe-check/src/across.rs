@@ -13,6 +13,8 @@
 //!   `availability-left-behind` compares each feature's versions with each
 //!   target's current line in `[releases]`; `release-line-ended` compares
 //!   each live line's `ends` with the day the check runs as;
+//!   `build-filter-line-undeclared` places each build's filter in
+//!   `[releases]`;
 //!   `crawlers-disallowed` reads `[crawlers]`; and `description-too-long`
 //!   measures a description field's `default`, once, where `ascribe.toml`
 //!   writes it, since every page that leaves the field to it shares it;
@@ -41,8 +43,8 @@ use ascribe_core::{
     diagnostics,
 };
 use ascribe_model::{
-    AvailabilityMode, CheckLevel, Checks, ContentModel, FieldRole, Listing, Permission, Purpose,
-    in_line,
+    AvailabilityMode, CheckLevel, Checks, ContentModel, FieldRole, Listing, Permission, Placement,
+    Purpose, in_line,
 };
 use ascribe_resolve::{FileIndex, LinkTarget, ResolvedPage, Usable};
 
@@ -79,6 +81,7 @@ const FILE_LEVEL: &[DiagnosticSlug] = &[
     diagnostics::DESCRIPTION_TOO_LONG,
     diagnostics::FRONTMATTER_FIELD_REPEATED,
     diagnostics::API_OPERATION_UNREFERENCED,
+    diagnostics::BUILD_FILTER_LINE_UNDECLARED,
 ];
 
 /// The checks of this module the editor doesn't report: an image isn't a
@@ -206,6 +209,10 @@ pub(crate) fn for_every_build(
         placement(project.model(), &mut issues);
     }
 
+    if on(diagnostics::BUILD_FILTER_LINE_UNDECLARED) {
+        filters_before(project.model(), &mut issues);
+    }
+
     if on(diagnostics::RELEASE_LINE_ENDED)
         && let Some(today) = project.today()
     {
@@ -273,6 +280,32 @@ fn placement(model: &ContentModel, issues: &mut Vec<Issue>) {
             issues.extend(releases::placement_issue(
                 model, target, placed, version, &at, false,
             ));
+        }
+    }
+}
+
+/// `build-filter-line-undeclared`: a build filtered for a version older
+/// than every line its target's `[releases]` declares, which no list holds,
+/// so `ascribe versions` can't tell what the build publishes. Reported at the
+/// filter's version.
+fn filters_before(model: &ContentModel, issues: &mut Vec<Issue>) {
+    for build in &model.builds {
+        if let AvailabilityMode::Filter {
+            target,
+            version: Some(version),
+        } = &build.availability
+            && let Some(list) = model.releases_of(target)
+            && matches!(list.place(version), Some(Placement::Before))
+        {
+            issues.push(
+                Issue::new(
+                    diagnostics::BUILD_FILTER_LINE_UNDECLARED,
+                    Location::new(FileId::new(0), version.span),
+                )
+                .with_arg("build", build.name.clone())
+                .with_arg("target", target.clone())
+                .with_arg("version", version.text.clone()),
+            );
         }
     }
 }

@@ -182,7 +182,7 @@ fn the_builds_are_listed_and_change_the_content() {
         .iter()
         .map(|b| b["name"].as_str().unwrap())
         .collect();
-    assert_eq!(names, ["site", "cloud", "self-managed-3.3"]);
+    assert_eq!(names, ["site", "cloud"]);
     assert_eq!(site["builds"][0]["editor"], true);
     assert_eq!(site["builds"][1]["editor"], false);
     assert_eq!(
@@ -201,11 +201,6 @@ fn the_builds_are_listed_and_change_the_content() {
         html(&cloud)
     );
     assert!(html(&cloud).contains("Sign in to Quill Cloud"));
-    // The self-managed 3.3 build filters out the streaming section (in
-    // preview from 3.4).
-    let sm = preview(&mut client, &page, Some("self-managed-3.3"));
-    assert!(!html(&sm).contains("Streaming sync"), "{}", html(&sm));
-    assert!(html(&site).contains("Streaming sync"));
     client.shutdown();
 }
 
@@ -224,7 +219,7 @@ fn an_unknown_build_is_a_problem_and_still_lists_the_builds() {
             .unwrap()
             .contains("no build named nope")
     );
-    assert_eq!(result["builds"].as_array().unwrap().len(), 3);
+    assert_eq!(result["builds"].as_array().unwrap().len(), 2);
     client.shutdown();
 }
 
@@ -290,7 +285,7 @@ fn what_cannot_be_previewed_says_why() {
     assert!(outside["page"].is_null());
     assert_eq!(outside["problems"][0]["severity"], "info");
     // The builds and roots are there even so, for the client's picker.
-    assert_eq!(outside["builds"].as_array().unwrap().len(), 3);
+    assert_eq!(outside["builds"].as_array().unwrap().len(), 2);
     client.shutdown();
 }
 

@@ -873,6 +873,10 @@ pub const OPERATION_LINK_NOT_OPERATION: DiagnosticSlug =
 /// `ASC282`, advice, file level: a content check (area `project`).
 pub const API_OPERATION_UNREFERENCED: DiagnosticSlug = DiagnosticSlug("api-operation-unreferenced");
 
+/// `ASC283`, advice, file level: a content check (area `project`).
+pub const BUILD_FILTER_LINE_UNDECLARED: DiagnosticSlug =
+    DiagnosticSlug("build-filter-line-undeclared");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -1145,6 +1149,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     API_EXAMPLE_SCHEMA_UNSUPPORTED,
     OPERATION_LINK_NOT_OPERATION,
     API_OPERATION_UNREFERENCED,
+    BUILD_FILTER_LINE_UNDECLARED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1204,6 +1209,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     SUMMARY_LONG,
     ADDRESSES_BASE_UNREADABLE,
     API_OPERATION_UNREFERENCED,
+    BUILD_FILTER_LINE_UNDECLARED,
 ];
 
 /// The configurable checks that are off unless a project names them in

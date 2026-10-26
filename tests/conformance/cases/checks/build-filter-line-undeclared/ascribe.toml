@@ -1,0 +1,32 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page.frontmatter]
+title = "string"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed", "edge"]
+versionless = ["cloud"]
+
+[releases.self-managed]
+live = ["3.4", "3.5"]
+
+[releases.self-managed.archived]
+"3.2" = {}
+
+[builds.site]
+versions = "self-managed"
+
+[builds.old]
+availability = { filter = "self-managed 3.1" }
+
+[builds.archived]
+availability = { filter = "self-managed 3.2" }
+
+[builds.patch]
+availability = { filter = "self-managed 3.4.2" }
+
+[builds.edge]
+availability = { filter = "edge 1.0" }

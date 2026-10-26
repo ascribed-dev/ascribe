@@ -146,7 +146,7 @@ fn every_build_of_quill_is_listed_by_name() {
     let project = Project::load(Arc::new(model), layout, &fs);
     let builds = every_build(&project);
     let names: Vec<&str> = builds.iter().map(|b| b.build.as_str()).collect();
-    assert_eq!(names, ["site", "site@3.4", "cloud", "self-managed-3.3"]);
+    assert_eq!(names, ["site", "site@3.4", "cloud"]);
     let pages = |build: &BuildAddresses| -> Vec<String> {
         build
             .addresses
