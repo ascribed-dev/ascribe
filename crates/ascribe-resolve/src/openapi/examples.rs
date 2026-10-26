@@ -6,12 +6,12 @@
 //! doesn't have is `link-operation-missing`, and a spec that can't be read is
 //! `api-spec-unreadable`; neither is said again here. The rest is:
 //!
-//! - `example-not-json`, a marked block that isn't a `json` block, or whose
+//! - `api-example-not-json`, a marked block that isn't a `json` block, or whose
 //!   code isn't JSON, at where reading it stopped;
-//! - `example-body-missing`, an operation with no body the marker names, or
+//! - `api-example-body-missing`, an operation with no body the marker names, or
 //!   a marker whose link isn't to an operation;
-//! - `example-schema-mismatch`, one for each disagreement;
-//! - `example-schema-unsupported`, advice, for a schema that can't all be
+//! - `api-example-schema-mismatch`, one for each disagreement;
+//! - `api-example-schema-unsupported`, advice, for a schema that can't all be
 //!   checked: a pattern the validator can't read, left out so the rest is
 //!   still checked, or a `$ref` into another file, which isn't followed.
 
@@ -44,7 +44,7 @@ pub fn problems(project: &Project, index: &FileIndex, resolutions: &[Resolution]
             Resolution::Operation { api, id } => (api, id),
             Resolution::External | Resolution::Source { .. } | Resolution::Asset { .. } => {
                 out.push(
-                    Issue::new(diagnostics::EXAMPLE_BODY_MISSING, at)
+                    Issue::new(diagnostics::API_EXAMPLE_BODY_MISSING, at)
                         .with_variant("not-operation")
                         .with_arg("attribute", marker.of.attribute())
                         .with_arg("link", link),
@@ -81,7 +81,7 @@ pub fn problems(project: &Project, index: &FileIndex, resolutions: &[Resolution]
         };
         if !marker.language.eq_ignore_ascii_case("json") {
             out.push(
-                issue(diagnostics::EXAMPLE_NOT_JSON)
+                issue(diagnostics::API_EXAMPLE_NOT_JSON)
                     .with_variant("language")
                     .with_arg("language", marker.language.clone()),
             );
@@ -90,7 +90,7 @@ pub fn problems(project: &Project, index: &FileIndex, resolutions: &[Resolution]
         let body = match body_of(marker, operation) {
             Ok(body) => body,
             Err(missing) => {
-                out.push(missing.issue(issue(diagnostics::EXAMPLE_BODY_MISSING), &link));
+                out.push(missing.issue(issue(diagnostics::API_EXAMPLE_BODY_MISSING), &link));
                 continue;
             }
         };
@@ -112,13 +112,14 @@ pub fn problems(project: &Project, index: &FileIndex, resolutions: &[Resolution]
             } => {
                 for pattern in patterns_left_out {
                     out.push(
-                        issue(diagnostics::EXAMPLE_SCHEMA_UNSUPPORTED).with_arg("pattern", pattern),
+                        issue(diagnostics::API_EXAMPLE_SCHEMA_UNSUPPORTED)
+                            .with_arg("pattern", pattern),
                     );
                 }
                 for disagreement in disagreements {
                     let place = Location::new(index.file, marker.span_of(disagreement.at));
                     out.push(
-                        Issue::new(diagnostics::EXAMPLE_SCHEMA_MISMATCH, place)
+                        Issue::new(diagnostics::API_EXAMPLE_SCHEMA_MISMATCH, place)
                             .with_arg("body", body_name.clone())
                             .with_arg("found", disagreement.found)
                             .with_arg("expected", disagreement.expected),
@@ -131,18 +132,18 @@ pub fn problems(project: &Project, index: &FileIndex, resolutions: &[Resolution]
             } => {
                 let place = Location::new(index.file, marker.span_of(stopped..stopped + 1));
                 out.push(
-                    Issue::new(diagnostics::EXAMPLE_NOT_JSON, place)
+                    Issue::new(diagnostics::API_EXAMPLE_NOT_JSON, place)
                         .with_arg("body", body_name.clone())
                         .with_arg("reason", reason),
                 );
             }
             Checked::Elsewhere { reference } => out.push(
-                issue(diagnostics::EXAMPLE_SCHEMA_UNSUPPORTED)
+                issue(diagnostics::API_EXAMPLE_SCHEMA_UNSUPPORTED)
                     .with_variant("elsewhere")
                     .with_arg("reference", reference),
             ),
             Checked::Unusable(reason) => out.push(
-                issue(diagnostics::EXAMPLE_SCHEMA_UNSUPPORTED)
+                issue(diagnostics::API_EXAMPLE_SCHEMA_UNSUPPORTED)
                     .with_variant("unusable")
                     .with_arg("reason", reason),
             ),

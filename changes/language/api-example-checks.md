@@ -1,0 +1,1 @@
+- **Behavior change: the OpenAPI example checks are `api-example-*`.** `example-schema-mismatch`, `example-not-json`, `example-body-missing`, and `example-schema-unsupported` keep their codes, ASC277 to ASC280 ([Check a JSON example against its schema](docs/content/openapi/examples.md)).

@@ -67,7 +67,7 @@ See [`[dimensions]`](content-model/content.md#dimensions) and [Content that vari
 
 Code a page shows from a source's file with `@snippet`, so the page has no copy to fall behind, and that `ascribe.examples.toml` can name so a test runs it.
 
-See [Examples and drift](examples/index.md) and [Show what an example was tested with](examples/tested.md). An OpenAPI spec's JSON bodies that a guide [checks against a schema](openapi/examples.md) are an API's sample requests and responses, and this repository's `examples/` folder holds example projects; neither is this.
+See [Examples and drift](examples/index.md) and [Show what an example was tested with](examples/tested.md). A JSON block marked as an OpenAPI operation's request or response is an API example, which the `api-example-*` checks [compare with its schema](openapi/examples.md), and this repository's `examples/` folder holds example projects; neither is this.
 
 ## Fragment
 @term {aliases=fragments}
