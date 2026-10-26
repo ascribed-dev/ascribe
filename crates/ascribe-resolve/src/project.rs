@@ -449,6 +449,13 @@ impl Project {
         &self.apis
     }
 
+    /// Keeps where each `operationId` was in a base revision's specs, so a
+    /// link to one renamed since is offered the operation in its place
+    /// ([`ApiSpecs::renamed`]).
+    pub fn remember_base_apis(&mut self, base: &ApiSpecs) {
+        Arc::make_mut(&mut self.apis).remember(base);
+    }
+
     /// The project's navigation (SPEC §7.8): `ascribe.nav`'s order over the
     /// default ([`Navigation::of`]).
     pub fn navigation(&self) -> Navigation {

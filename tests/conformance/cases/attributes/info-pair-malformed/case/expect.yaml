@@ -1,0 +1,9 @@
+description: >-
+  Keys are lowercase, so `Title=` and `PHRASES=` aren't pairs, and each is
+  reported: the key is matched in any case.
+spec: ["3.3.1", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: info-pair-malformed, line: 5, column: 7, severity: warning}
+  - {slug: info-pair-malformed, line: 5, column: 26}

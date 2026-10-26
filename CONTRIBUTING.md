@@ -56,6 +56,28 @@ It builds `ascribe` at `main` and at your checkout and runs `check`, `build`, `d
 
 A test, `cargo test -p ascribe-cli --test determinism`, holds that one binary writes the same bytes from one run to the next, which the comparison relies on.
 
+### Fuzzing
+
+`fuzz/` holds three [cargo-fuzz](https://rust-fuzz.github.io/book/cargo-fuzz.html) targets that feed arbitrary text to the entry points every keystroke and every agent's edit goes through:
+
+| Target | Calls | Fails when |
+|---|---|---|
+| `parse` | `ascribe_syntax::parse`, with the built-in directives | it panics, or a span in the tree is outside the input or off a character boundary |
+| `model` | `ascribe_model::load_str_in`, on TOML | it panics |
+| `format` | `ascribe_fmt::format`, under the conformance suite's shared model | it panics, its edits don't apply, or formatting its output changes it again |
+
+`fuzz/` is a crate of its own, outside the workspace, with its own `Cargo.lock`, so `libfuzzer-sys` never reaches the workspace's, and its own `rust-toolchain.toml`, which pins the dated nightly cargo-fuzz needs (decision [#1020](project-docs/decisions/1020-fuzzing-outside-the-workspace.md)). From `fuzz/`, which picks that nightly:
+
+```sh
+cargo install cargo-fuzz --locked
+./seed.sh                               # the conformance cases, as each target's first corpus
+cargo fuzz run parse -- -max_total_time=300 -max_len=4096
+cargo fuzz run parse artifacts/parse/crash-<hash>   # run one input again
+cargo fuzz tmin parse artifacts/parse/crash-<hash>  # make it smaller
+```
+
+A crash is written to `fuzz/artifacts/<target>/`, and the corpus grows in `fuzz/corpus/<target>/`; neither is committed. The Fuzz workflow (`.github/workflows/fuzz.yml`) runs each target for five minutes every night, keeps the corpus in its cache, and opens an issue for each distinct crash, named by its signature (`fuzz/signature.sh`), or comments on the one that's open. Pull requests don't run it. A fix comes with a test of the input in the crate's own tests, so it stays fixed without the nightly toolchain.
+
 ## Documenting a change
 
 The user docs are in `docs/`, an Ascribe project, and change in the same pull request as the code they describe. A change someone using Ascribe would notice updates the page that describes it, under `docs/content/`, and adds its changelog entry as a file of its own in its area's folder of [changes/](changes/README.md), which says how to name and write one. An entry is one line: a bold headline and one or two sentences, 40 words at most, ending with a link to the page with the detail; a fix is **Fixed:** and a sentence or two. The detail goes on the page, not in the entry. It doesn't edit [CHANGELOG.md](CHANGELOG.md): a release gathers the entries into it, so two pull requests never conflict there. What no release has yet is marked `@available: ascribe planned` on its page or section. Every page must pass the checks CI runs on it (in `site.yml`):

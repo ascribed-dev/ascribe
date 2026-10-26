@@ -226,7 +226,7 @@
       "description": "What changed on one page of a build.",
       "properties": {
         "because": {
-          "description": "The other changed files the page's change can come from: fragments it\nincludes and pages its links take a title or a heading from, in path\norder; then the snippets whose code changed, by address\n(`code:app.py#main`); and `ascribe.toml` (last) when the content model\nis a cause.",
+          "description": "The other changed files the page's change can come from: fragments it\nincludes and pages its links take a title or a heading from, in path\norder; then the snippets whose code changed, by address\n(`code:app.py#main`); then the operations of a declared API whose spec\nchanged what the page writes for them, an `@operation`'s method, path,\nsummary, or deprecation, or a link's address, each by its spec's path\nfrom the project root, `#`, and the fragment the page names it by\n(`api/openapi.yaml#createWidget`); and `ascribe.toml` (last) when the\ncontent model is a cause. The kinds are told apart by their form: a\ncontent file's path ends in `.md`, a snippet's address has its\nsource's name and `:` before its path, and an operation's has a `#`\nand neither.",
           "items": {
             "type": "string"
           },

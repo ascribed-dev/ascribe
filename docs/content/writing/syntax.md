@@ -56,6 +56,22 @@ Attributes are `key=value` pairs in braces, separated by commas. They use the sa
 
 A value's type comes from the directive's schema, never from how it looks: `3.10` is a string where the schema says string.
 
+### Code block info strings
+
+([SPEC §3.3.1]({repo}/blob/main/SPEC.md#331-info-string-attributes))
+
+A fenced code block's info string holds its language, then words, some of them `key=value` pairs Ascribe reads: `phrases`, `title`, `tested`, `request`, and `response`. They take no braces or commas, and a value with a space or a quote is quoted:
+
+````markdown
+```ts title="connect.ts" phrases=true
+````
+
+- **The language comes first.** A pair written as the first word means the block has no language, and a renderer such as Astro's takes the pair as the language, so the title is lost. Ascribe reports it as a block with no language.
+- **A pair has nothing around its `=`**, and its key is lowercase. Any other word, such as a highlighter's `{1,3}` or `showLineNumbers`, is left to the renderer.
+- **A quote inside a quoted value is written `\\"`.** CommonMark takes one backslash off before the pair is read, so `title="say \"hi\""` ends its value at the second quote. Write `title="say \\"hi\\""`, and a backslash as `\\\\`.
+
+A word that starts with one of these keys and `=` but isn't a pair, such as `phrases = true`, `Title=x`, or `title="connect.ts` with no closing quote, is a warning, because the block quietly loses what the pair meant. The quick fix writes the pair it was meant to be.
+
 ## Forms: line and container
 
 ([SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms))

@@ -1,4 +1,4 @@
-/* The search script of an archive written by `ascribe versions archive`, generated from
+/* The search script of an archive written by `ascribe versions export`, generated from
    packages/archive by `pnpm --filter @ascribed/archive embed`. Don't edit it. */
 "use strict";
 (() => {

@@ -39,7 +39,7 @@ All in `packages/`, a pnpm workspace with `examples/astro-site` and `tests/zod`.
 | [`@ascribed/elements`](packages/elements) | The custom elements the site output uses, to the letter of [CONTRACT.md](packages/elements/CONTRACT.md). |
 | [`@ascribed/review`](packages/review) | Reviewing pages as readers see them: marking changed blocks, and placing a pull request's review threads beside them. |
 | [Ascribe for VS Code](packages/vscode) (`ascribe-vscode`) | The editor extension: a client of the language server, the page preview, and review in the editor. |
-| [`@ascribed/archive`](packages/archive) | An archive's search script, which `ascribe versions archive` and `ascribe preview` write from the binary's copy. Private: it isn't published. |
+| [`@ascribed/archive`](packages/archive) | An archive's search script, which `ascribe versions export` and `ascribe preview` write from the binary's copy. Private: it isn't published. |
 
 ### Everything else
 
@@ -49,6 +49,7 @@ All in `packages/`, a pnpm workspace with `examples/astro-site` and `tests/zod`.
 | `tests/commonmark` | The CommonMark spec's examples, run against the fork and the parser. |
 | `tests/corpora` | Real documentation sets, the 3,000-page synthetic project (`tests/corpora/synthetic`), and the performance benchmarks with their baselines. |
 | `tests/render` | The site-render fixtures both HTML renderers must pass. |
+| `fuzz` | The fuzz targets (`cargo-fuzz`): the parser, the content model's loader, and the formatter on arbitrary text. A crate of its own, outside the workspace, on a dated nightly ([CONTRIBUTING.md](CONTRIBUTING.md#fuzzing)). |
 | [`tests/zod`](tests/zod) | Type-checks the generated Zod schemas and validates pages with them. |
 | `examples/` | Example projects. `examples/quill` is the complete one most tests use; `examples/astro-site` publishes one with Astro. |
 | `docs/`, `site/` | The user docs, an Ascribe project, and the Astro site that publishes them. `site/` installs Ascribe from npm, outside the workspace. |
@@ -97,7 +98,7 @@ Every surface reaches the same core.
 | Review | `packages/review` | Reads `ascribe diff --format json`'s data, and GitHub through `gh` (`packages/review/src/github/`). |
 | Elements | `packages/elements` | The site output's markup. |
 | HTML preview | `ascribe-diff`, `crates/ascribe-diff/src/html/` | In the binary. Its script and stylesheet are built from `review` and `elements` by `pnpm --filter @ascribed/review embed`. |
-| Archive | `ascribe-emit`, `crates/ascribe-emit/src/archive/` | In the binary, for `ascribe versions archive` and `ascribe preview`. Its search script is built from `archive` by `pnpm --filter @ascribed/archive embed`. |
+| Archive | `ascribe-emit`, `crates/ascribe-emit/src/archive/` | In the binary, for `ascribe versions export` and `ascribe preview`. Its search script is built from `archive` by `pnpm --filter @ascribed/archive embed`. |
 
 ## From a source file to an output
 
@@ -210,6 +211,7 @@ What Ascribe says it is has one home too, `design/words.toml`: the headline, the
 | Conformance cases, written from the spec | `tests/conformance/cases/`, run by `cargo test -p ascribe-conformance` |
 | Snapshots (`insta`) | A `snapshots/` folder beside the test file: `crates/ascribe-emit/tests/all/snapshots/`, `crates/ascribe-cli/tests/all/snapshots/`, and the others. Review a change with `cargo insta review` |
 | Property tests (`proptest`) | `ascribe-core`, `ascribe-syntax`, `ascribe-resolve`, `ascribe-fmt`, `ascribe-check`, `ascribe-diff` |
+| Fuzzing (`cargo-fuzz`) | `fuzz/fuzz_targets/`: `parse`, `model`, and `format`, run a few minutes each by the nightly Fuzz workflow, which opens an issue for each crash |
 | Two implementations compared | `crates/ascribe-syntax/tests/all/agreement.rs` (two parsers), `crates/ascribe-resolve/tests/all/incremental_differential.rs` and `crates/ascribe-lsp/tests/all/differential.rs` (incremental against from scratch), `crates/ascribe-diff/tests/all/reach.rs` (`diff`'s short path against comparing every page), `crates/ascribe-check/tests/all/parity.rs` (checks against the index), `crates/ascribe-cli/tests/all/lsp_parity.rs` (the command against the server), and the renderers above |
 | The command's output, as files the docs show | `crates/ascribe-cli/tests/all/output.rs`, writing `crates/ascribe-cli/tests/output/` |
 | Browser tests | `packages/elements/test/`, in Chromium, Firefox, and WebKit |

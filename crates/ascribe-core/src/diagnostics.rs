@@ -877,6 +877,11 @@ pub const API_OPERATION_UNREFERENCED: DiagnosticSlug = DiagnosticSlug("api-opera
 pub const BUILD_FILTER_LINE_UNDECLARED: DiagnosticSlug =
     DiagnosticSlug("build-filter-line-undeclared");
 
+/// `ASC284`, warning, file level: SPEC §8.2, "Attributes | A word after a
+/// fenced code block's language that starts like a pair a processor reads
+/// (its key in any case, then optional spaces and `=`) but isn't one".
+pub const INFO_PAIR_MALFORMED: DiagnosticSlug = DiagnosticSlug("info-pair-malformed");
+
 /// The checks renamed, each by the name it had before, which still names
 /// it in `[checks]`, in an acknowledgement, and to `ascribe explain`, for a
 /// release (decision #953).
@@ -1155,6 +1160,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     OPERATION_LINK_NOT_OPERATION,
     API_OPERATION_UNREFERENCED,
     BUILD_FILTER_LINE_UNDECLARED,
+    INFO_PAIR_MALFORMED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

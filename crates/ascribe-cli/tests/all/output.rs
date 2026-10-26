@@ -1355,10 +1355,10 @@ fn versions() {
     );
 }
 
-/// `ascribe versions archive` on a copy of `examples/quill`, into a folder
+/// `ascribe versions export` on a copy of `examples/quill`, into a folder
 /// in it: the command reference's example.
 #[test]
-fn versions_archive() {
+fn versions_export() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();
     copy_tree(
@@ -1366,12 +1366,12 @@ fn versions_archive() {
         root,
     );
     expect(
-        "versions-archive.txt",
+        "versions-export.txt",
         &stdout(&run(
             root,
             &[
                 "versions",
-                "archive",
+                "export",
                 "self-managed 3.4",
                 "--to",
                 "archive/3.4",
@@ -1382,12 +1382,12 @@ fn versions_archive() {
         )),
     );
     expect(
-        "versions-archive.json",
+        "versions-export.json",
         &json(&run(
             root,
             &[
                 "versions",
-                "archive",
+                "export",
                 "self-managed 3.4",
                 "--to",
                 "archive/3.4",

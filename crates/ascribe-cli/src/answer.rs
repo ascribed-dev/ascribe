@@ -8,6 +8,7 @@ use std::cell::{OnceCell, RefCell};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::sync::Arc;
 
 use ascribe_check::{Found, LoadError, LocateError, MODEL_FILE, Project};
 use ascribe_core::path::{normalize, relative_path};
@@ -49,6 +50,9 @@ pub fn locate(global: &Global, path: Option<&Path>) -> Result<PathBuf, LocateErr
 pub struct Loaded {
     /// The project.
     pub project: Project,
+    /// The source index with the base's specs, once a link to a missing
+    /// operation asks for it; `None` inside when the base can't be read.
+    based_index: OnceCell<Option<Arc<ascribe_resolve::Project>>>,
     /// The index the page-level checks read, once a check asks for it.
     page_index: OnceCell<ascribe_check::PageIndex>,
     /// Each build's readings of its pages, once a search asks for the
@@ -71,6 +75,7 @@ impl Loaded {
     pub fn new(project: Project) -> Loaded {
         Loaded {
             project,
+            based_index: OnceCell::new(),
             page_index: OnceCell::new(),
             readings: ascribe_query::Readings::default(),
             checks: RefCell::new(Vec::new()),
@@ -115,6 +120,21 @@ impl Loaded {
     /// The project's source index ([`Project::index`]), made on first use.
     pub fn index(&self) -> &ascribe_resolve::Project {
         self.project.index()
+    }
+
+    /// The project's source index keeping where each `operationId` was in
+    /// the specs of the base `ascribe diff` compares with by default
+    /// ([`ascribe_diff::base_apis`]), so a link to one renamed since is
+    /// offered the operation in its place. Made on first use; `None` when
+    /// the base can't be read, as in a shallow clone.
+    pub fn index_with_base_apis(&self) -> Option<&ascribe_resolve::Project> {
+        self.based_index
+            .get_or_init(|| {
+                let apis = ascribe_diff::base_apis(self.project.root(), None, false)?;
+                let based = self.project.clone().with_base_apis(Arc::new(apis));
+                Some(Arc::clone(based.index()))
+            })
+            .as_deref()
     }
 }
 

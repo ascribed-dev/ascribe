@@ -3,7 +3,7 @@
 Ascribe's website: a landing page at the root, Why Ascribe at `/why/`, and Credits at `/credits/`, from `home/`, the user docs, `../docs`, under `/docs/`, and the changelog, `../CHANGELOG.md` with the entries in `../changes/` not yet gathered into it, at `/changelog/`. Plain Astro with `@ascribed/astro`, building both projects into one site, and no documentation theme. It's set up as a user's site is, following the [getting-started](https://ascribed-dev.com/go/getting-started/) and [Astro](https://ascribed-dev.com/docs/astro/) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
 
 ```
-astro.config.mjs            ascribe({ projects: [docs, home, demo] }); routing as in each project's [consumer]; the sitemap's exclusions
+astro.config.mjs            ascribe({ projects: [docs, home, demo] }); routing as in each project's [consumer]; the sitemap's exclusions; the changelog in the docs' llms.txt
 home/                       the site's own pages, an Ascribe project: ascribe.toml (a page type, the pages' widgets, the screenshots' `scheme`, the docs' release tables) and content/
 home/content/screenshots/   the pictures of review and the editor, light and dark, each with the release it was taken at (see Screenshots)
 demo/                       the page the landing page demonstrates, an Ascribe project of its own, which the landing page draws beside its source; it has no address
@@ -13,13 +13,15 @@ public/*.png, favicon.*     the mark's favicons, touch icon, and social card, ge
 public/cards/               a social card for each page outside the docs, generated (../design/README.md)
 src/assets/logo.svg         the header's mark and wordmark, generated (../design/README.md)
 src/content.config.ts       a collection per project, `docs`, `home`, and `demo`, each with the schema ascribe build generates, and `changelog`
-src/changelog.ts            the changelog's collection, how its links and headings are pointed, and how its entries are collapsed and grouped
+src/changelog.ts            the changelog's collection, how its links and headings are pointed, how its entries are collapsed and grouped, and its Markdown version
+src/agents.ts               the integration that lists the changelog's Markdown in the docs' llms.txt
 src/demo.ts                 where the landing page's demonstration draws demo/'s page: inside its widget, after the source
 src/toc.ts                  a docs page's table of contents: its sections and subsections, each heading with its code spans
 src/site.ts                 the site's name, repository, the docs' route, and the site's own pages left out of the sitemap
 src/pages/[...slug].astro   a route per page of home/, at the root, through render() so its images are Astro's, with demo/'s page drawn in each demonstration (src/components/Demonstrations.astro)
 src/pages/docs/[...slug].astro  a route per docs page: the docs' base path plus its entry id
 src/pages/changelog.astro   the changelog, in the frame of home/'s pages
+src/pages/changelog.md.ts   the changelog as Markdown, for agents, at /changelog.md
 src/pages/404.astro         the 404 page, in the docs' frame
 src/layouts/                the shell (the head, with each project page's from its record; header; footer; the docs' sidebar, the menu that opens it with its backdrop, and search), a docs page (title, availability, previous and next pages, edit link, contents), and a page of home/ (wide, no title of its own)
 src/components/             search, the sidebar, the table of contents with the section in view, the page's availability badge, and a page of home/ with its demonstrations
@@ -71,9 +73,9 @@ npm test              # after a build
 ```
 
 - `test/projects.test.ts`: the docs' route is their base path; every permalink `home/`'s pages link to is one the docs publish, by `ascribe permalinks verify`, which also fails on a retired name; and the landing page's install commands are getting started's.
-- `test/negotiation.test.ts`: the edge function answers a docs page asked for as Markdown with its `.md`, passing on the `.md` file's `x-robots-tag` and `link`, and a page of `home/`, which has none, with the page; and a permalink's address with its section's `.md`, which its forwarding page names as its alternate.
+- `test/negotiation.test.ts`: the edge function answers a docs page asked for as Markdown with its `.md`, passing on the `.md` file's `x-robots-tag` and `link`, and a page of `home/`, which has none, with the page; and a permalink's address with its section's `.md`, which its forwarding page names as its alternate; the changelog with `/changelog.md`, which its head names, with each release the page has, anchored as on the page, and every link absolute; and the docs' `llms.txt` lists it under Optional.
 - `test/redirects.test.ts`: `_redirects` forwards a permalink's address to its section with a `301`, and serves its forwarding page for an address with a dimension's parameter.
-- `test/changelog.test.ts`: the changelog's rules for links, anchors, and collapsed entries, and an unreleased section with nothing in it left out, on Markdown made in the test, with no build.
+- `test/changelog.test.ts`: the changelog's rules for links, anchors, and collapsed entries, and an unreleased section with nothing in it left out, on the page and in its Markdown version, on Markdown made in the test, with no build.
 - `test/toc.test.ts`: a docs page's table of contents lists its sections and subsections, each heading with its code spans, with no build.
 - `test/links.test.ts`: every link and anchor between the built pages lands, the changelog's included.
 - `test/crawlers.test.ts`: the sitemap lists every built page that doesn't say `noindex`, other than a permalink's forwarding page, the 404 page, and `unindexed` in `src/site.ts`, and nothing else; a page that says `noindex` is in neither the sitemap nor `llms.txt`; `robots.txt` names the sitemap; and the changelog has its canonical link. No docs page is marked `listing: unlisted`, so the rules are also run on `test/fixtures/crawled/`, which has such a page.
@@ -109,13 +111,19 @@ Each entry shows only what it says first until it's opened (`collapseEntries`): 
 
 Each release's heading is anchored by `v` and its version, its tag (`/changelog/#v0.2.0`), so a release's notes can link to it; a heading inside a release is anchored by both (`#v0.2.0-the-language`). The unreleased section, `## Unreleased` or a version marked `(unreleased)`, is `#unreleased`, and says under its heading that it's in `main` and not yet released.
 
+### The changelog for agents
+
+`/changelog.md` is the same releases and entries as the page, the unreleased ones included, as CommonMark (`changelogMarkdown` in `src/changelog.ts`, through `src/pages/changelog.md.ts`): the Markdown the page renders, nothing collapsed or grouped, with an empty unreleased section left out as on the page. Each `##` and `###` heading starts with `<a id="…"></a>`, the page's anchor for it (`v0.4.4`, `v0.4.4-the-language`), and the unreleased section says it's unreleased. Its links are pointed as the page's, then made absolute, as the docs' Markdown versions' are, so a reader of the file alone can follow them; a link inside code is left as it is.
+
+The page's head links to it (`rel="alternate" type="text/markdown"`), and the edge function answers `/changelog/` asked for as Markdown with it, as it does a docs page. An agent reading the docs finds it in the docs' `llms.txt`: the changelog isn't a page of the docs project, so the docs' build can't list it, and `src/agents.ts`, an integration after Ascribe's in `astro.config.mjs`, adds it under `## Optional`, the llms.txt format's section for what an agent can skip, once the build has copied the file to `dist/docs/`. The build fails if the docs' `llms.txt` ever has an Optional section of its own, rather than writing two. It has no `_headers` rule: it's listed, and its page is its canonical.
+
 The footer links to it, on every page, beside the license and the repository: the header is for the site's main pages, Docs and Why Ascribe, and GitHub. On a docs page at phone width, where the menu and search fill the header, Why Ascribe is on the site's own pages only; and below 26rem, those pages' header leaves out GitHub to fit Docs and Why Ascribe beside the mark.
 
 ## Search engines
 
 Each page of a project, the docs' and home/'s, has everything its head says about it from its record in its build's `_ascribe/pages.json`, through `@ascribed/astro/Head.astro` in `src/layouts/Base.astro`: its `<title>`, description, canonical link, robots rule, link to its Markdown version, link preview, and breadcrumbs, with the site's name and its social card passed in. The layout keeps the rest of the head: the icons, the theme color, and `twitter:card`. `test/head.test.ts` holds each kind of page's head to the tags it had when the layout wrote them, `test/fixtures/head.json`. A docs page marked `listing: unlisted` says `noindex`, and is in neither the sitemap nor `llms.txt`. The changelog and the 404 page have no record and write their own title, description, and link preview, and the changelog its canonical link.
 
-The integration writes one `sitemap.xml` and one `robots.txt` at the site's root, from the three projects together ([the head, sitemap, `robots.txt`, and headers](https://ascribed-dev.com/go/search-engines/)): the docs' listed pages, home/'s, and every other page Astro built, the changelog among them, but not a permalink's forwarding page, the 404 page, or `unindexed` in `src/site.ts`. A page of the site's own that should say `noindex` writes it and goes in `unindexed`, since the integration reads no HTML. The demo's page has no route, so it isn't in the sitemap. There's no `llms.txt` at the root: the delivery spec's checker finds the docs' at `/docs/llms.txt` from there too, and `home/` publishes nothing for agents. The Report workflow's `--site` stays at `/docs/`: the delivery spec's checks are about the docs' pages, and at the root they add only that `home/`'s pages aren't in the docs' `llms.txt` ([decision 32](https://github.com/ascribed-dev/ascribe/blob/5b22286fd2f370e796219e68a7c9d7cdb2ba8acc/project-docs/search-and-answers/README.md#decisions) of the search and answers plan).
+The integration writes one `sitemap.xml` and one `robots.txt` at the site's root, from the three projects together ([the head, sitemap, `robots.txt`, and headers](https://ascribed-dev.com/go/search-engines/)): the docs' listed pages, home/'s, and every other page Astro built, the changelog among them, but not a permalink's forwarding page, the 404 page, or `unindexed` in `src/site.ts`. A page of the site's own that should say `noindex` writes it and goes in `unindexed`, since the integration reads no HTML. The demo's page has no route, so it isn't in the sitemap. There's no `llms.txt` at the root: the delivery spec's checker finds the docs' at `/docs/llms.txt` from there too, and `home/` publishes nothing for agents. The docs' lists the changelog's Markdown too, under Optional (see The changelog for agents). The Report workflow's `--site` stays at `/docs/`: the delivery spec's checks are about the docs' pages, and at the root they add only that `home/`'s pages aren't in the docs' `llms.txt` ([decision 32](https://github.com/ascribed-dev/ascribe/blob/5b22286fd2f370e796219e68a7c9d7cdb2ba8acc/project-docs/search-and-answers/README.md#decisions) of the search and answers plan).
 
 ## Search
 

@@ -10,16 +10,18 @@
 //! reader sees besides the text is in the fingerprint too: a link's resolved
 //! URL, an availability badge's labels, a glossary link, an arm's label.
 
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-use ascribe_core::{FileId, LineIndex, RelPath, Span};
+use ascribe_core::{Builtin, FileId, LineIndex, RelPath, Span};
 use ascribe_emit::labels::{attribute_values, availability_display, dimensional_label};
 use ascribe_model::ContentModel;
 use ascribe_resolve::reading::{self, html_text, is_br};
+use ascribe_resolve::references::{operation_target, reference_target};
 use ascribe_resolve::{
-    Availability, IncludeSite, LinkTarget, Project, RefKind, ResolvedBlock, ResolvedKind,
-    ResolvedPage, Scope,
+    Availability, IncludeSite, LinkTarget, Project, RefKind, Resolution, ResolvedBlock,
+    ResolvedKind, ResolvedPage, Scope,
 };
 use ascribe_syntax::{
     Alignment, BlockKind, Bound, DirectiveLine, Inline, InlineKind, PrimaryValue,
@@ -70,6 +72,12 @@ pub(crate) struct Node {
     /// For a code block a `@snippet` became, its address and a fingerprint
     /// of its code.
     pub snippet: Option<(String, u64)>,
+    /// The operations its own content names, an `@operation`'s or a link's,
+    /// each by its spec's path from the project root and the fragment
+    /// (`api/openapi.yaml#createWidget`), with a fingerprint of what the
+    /// page writes from the spec for it: an `@operation`'s method, path,
+    /// summary, deprecation, and address, or a link's address.
+    pub operations: Vec<(String, u64)>,
 }
 
 impl Node {
@@ -121,6 +129,9 @@ pub(crate) struct TreeBuilder<'p> {
     project: &'p Project,
     model: &'p ContentModel,
     lines: HashMap<FileId, LineIndex>,
+    /// The operations the block being built names so far, for
+    /// [`Node::operations`].
+    operations: RefCell<Vec<(String, u64)>>,
 }
 
 impl<'p> TreeBuilder<'p> {
@@ -129,6 +140,7 @@ impl<'p> TreeBuilder<'p> {
             project,
             model: project.model(),
             lines: HashMap::new(),
+            operations: RefCell::default(),
         }
     }
 
@@ -224,6 +236,8 @@ impl<'p> TreeBuilder<'p> {
     // changing it for another reason.
     #[allow(clippy::too_many_lines)]
     fn block(&mut self, page: &ResolvedPage, block: &ResolvedBlock) -> Node {
+        // A block inside this one names its own operations.
+        let outer = self.operations.take();
         let anchor = self.anchor(block.file, block.span, &block.via);
         let mut files = self.files_of(block.file, &block.via);
         for link in &block.links {
@@ -312,6 +326,9 @@ impl<'p> TreeBuilder<'p> {
                     kind = format!("directive:{}", line.name);
                     own.push_str(&kind);
                     self.directive_head(block, line, &mut own);
+                    if line.name == Builtin::Operation.name() {
+                        self.embedded_operation(block, line, &mut own);
+                    }
                     prose = !text.is_empty();
                     if let Some(annotation) = &block.annotation {
                         own.push_str(&format!("\u{1}@{}", annotation.text));
@@ -395,6 +412,7 @@ impl<'p> TreeBuilder<'p> {
         let hash = fingerprint(&own, &children);
         files.sort();
         files.dedup();
+        let operations = self.operations.replace(outer);
         Node {
             anchor,
             kind,
@@ -410,6 +428,7 @@ impl<'p> TreeBuilder<'p> {
                 lf(&s.code).hash(&mut hasher);
                 (s.address.clone(), hasher.finish())
             }),
+            operations,
         }
     }
 
@@ -436,6 +455,7 @@ impl<'p> TreeBuilder<'p> {
             files: self.files_of(parent.file, &parent.via),
             uses_model: false,
             snippet: None,
+            operations: Vec::new(),
         }
     }
 
@@ -587,14 +607,64 @@ impl<'p> TreeBuilder<'p> {
             .links
             .iter()
             .find(|l| l.span == span && l.kind == kind);
-        match resolved.map(|l| &l.target) {
+        let url = match resolved.map(|l| &l.target) {
             Some(LinkTarget::Page { url, .. }) => url.clone(),
             Some(LinkTarget::Asset { path, fragment }) => match fragment {
                 Some(f) => format!("{path}#{f}"),
                 None => path.to_string(),
             },
+            Some(LinkTarget::Operation { address, .. }) => address.clone(),
             _ => written.to_owned(),
+        };
+        if kind == RefKind::Link
+            && let Some(operation) = self.operation_named(block, written)
+        {
+            self.operations
+                .borrow_mut()
+                .push((operation, hash_of(&url)));
         }
+        url
+    }
+
+    /// What an `@operation` writes from its spec: the operation's method,
+    /// path, summary, deprecation, and address, or nothing when the spec
+    /// has no operation its link names.
+    fn embedded_operation(&self, block: &ResolvedBlock, line: &DirectiveLine, own: &mut String) {
+        let written = block.operation.as_deref().map(|o| {
+            format!(
+                "{}\u{1}{}\u{1}{}\u{1}{:?}\u{1}{}\u{1}{}",
+                o.method,
+                o.path,
+                o.operation_id.as_deref().unwrap_or_default(),
+                o.summary,
+                o.deprecated,
+                o.address
+            )
+        });
+        let written = written.unwrap_or_default();
+        own.push_str(&format!("\u{1}operation\u{1}{written}"));
+        if let Some(PrimaryValue::Identifier(primary)) = &line.primary
+            && let Some(operation) = self.operation_named(block, &primary.text)
+        {
+            self.operations
+                .borrow_mut()
+                .push((operation, hash_of(&written)));
+        }
+    }
+
+    /// The operation a link's destination, written in `block`, names, as
+    /// [`Node::operations`] names it: the spec's path from the project root,
+    /// `#`, and the fragment. Found from the content model alone, so a link
+    /// whose operation the spec no longer has is named the same.
+    fn operation_named(&self, block: &ResolvedBlock, destination: &str) -> Option<String> {
+        let written_in = self.project.path_of(block.file)?;
+        let target = reference_target(RefKind::Link, destination, &[], written_in, self.model);
+        let Resolution::Operation { api, id } =
+            operation_target(&target, self.model, self.project.layout())?
+        else {
+            return None;
+        };
+        Some(format!("{}#{id}", self.model.api(&api)?.spec))
     }
 }
 
@@ -607,6 +677,12 @@ fn following(block: &ResolvedBlock) -> Option<&DirectiveLine> {
         },
         _ => None,
     }
+}
+
+fn hash_of(text: &str) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    text.hash(&mut hasher);
+    hasher.finish()
 }
 
 fn fingerprint(own: &str, children: &[Node]) -> u64 {

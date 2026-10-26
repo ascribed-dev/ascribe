@@ -1,7 +1,7 @@
 {
   "name": "@ascribed/archive",
   "private": true,
-  "description": "The search script of an archive that `ascribe versions archive` writes, and of `ascribe preview`'s pages, embedded in the binary.",
+  "description": "The search script of an archive that `ascribe versions export` writes, and of `ascribe preview`'s pages, embedded in the binary.",
   "type": "module",
   "license": "MPL-2.0",
   "engines": {

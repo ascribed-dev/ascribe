@@ -8,6 +8,10 @@ on:
         description: The runners for clippy and the tests, as a JSON list
         type: string
         required: true
+      bench:
+        description: Whether to run the quick benchmark (the crates or the corpora changed)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -70,11 +74,11 @@ jobs:
             echo "::error file=ascribe.examples.toml::An example the docs show changed since it was last observed. Run \`cargo run -p ascribe-cli -- observe\` in the repository's root, and commit examples.observations/default.toml."
             exit 1
           }
-      # An archive of examples/quill's older line (`ascribe versions archive`),
+      # An archive of examples/quill's older line (`ascribe versions export`),
       # kept as an artifact so each pull request has one to open from disk.
       - if: runner.os == 'Linux'
         name: Archive examples/quill's 3.4 line
-        run: ./target/debug/ascribe versions archive "self-managed 3.4" --to "$RUNNER_TEMP/quill-archive" --config examples/quill
+        run: ./target/debug/ascribe versions export "self-managed 3.4" --to "$RUNNER_TEMP/quill-archive" --config examples/quill
       - if: runner.os == 'Linux'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -169,3 +173,50 @@ jobs:
           shared-key: check
           save-if: false
       - run: cargo test -p ascribe-cli --test determinism --locked
+
+  # A quick run of the benchmarks, so a slowdown is caught on the pull request
+  # that causes it and not days later by the weekly run (corpora.yml). It
+  # measures the metrics perf.json's `quick` section names, against the same
+  # baselines, with that section's wider margin: one run on a shared runner,
+  # of a build without the release profile's link-time optimization (which
+  # alone takes over ten minutes), is noisier and slower than the weekly one
+  # (tests/corpora/README.md). About five minutes with the cache warm.
+  bench:
+    name: benchmarks (quick)
+    if: inputs.bench
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CARGO_PROFILE_RELEASE_LTO: "off"
+      CARGO_PROFILE_RELEASE_CODEGEN_UNITS: 16
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      # Peak memory is read through /usr/bin/time (GNU time on Linux).
+      - name: Install time
+        run: "[ -x /usr/bin/time ] || { sudo apt-get update && sudo apt-get install -y time; }"
+      - name: Build the command
+        run: cargo build --release --locked -p ascribe-cli -p ascribe-corpora
+      - name: Benchmarks
+        env:
+          ASCRIBE_BENCH_OUT: ${{ github.workspace }}/bench-results.jsonl
+          ASCRIBE_BENCH_QUICK: "1"
+        run: |
+          rm -f "$ASCRIBE_BENCH_OUT"
+          cargo bench --locked -p ascribe-corpora --bench perf
+          cargo bench --locked -p ascribe-lsp --bench keystroke
+      - name: Compare with the recorded baselines
+        shell: bash
+        run: ./target/release/corpora compare bench-results.jsonl --quick | tee "$RUNNER_TEMP/compare.txt"
+      - if: always()
+        shell: bash
+        run: |
+          if [ -f "$RUNNER_TEMP/compare.txt" ]; then
+            {
+              echo '### Quick benchmarks'
+              echo '```text'
+              cat "$RUNNER_TEMP/compare.txt"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
