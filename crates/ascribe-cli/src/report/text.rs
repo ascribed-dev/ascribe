@@ -1,5 +1,6 @@
 //! The readable report: each diagnostic with a snippet of its source.
 
+use std::collections::HashSet;
 use std::io::{self, Write};
 use std::ops::Range;
 
@@ -54,8 +55,9 @@ pub fn write_diagnostics(
             .text_at(path)
             .ok_or_else(|| format!("no file {path} in the report"))
     });
+    let mut shown = ShownHelp::default();
     for d in diagnostics {
-        write_diagnostic(out, files, &mut cache, d, 0, color)?;
+        write_diagnostic(out, files, &mut cache, &mut shown, d, 0, color)?;
     }
     Ok(())
 }
@@ -73,8 +75,17 @@ pub fn write_reported(
             .text_at(path)
             .ok_or_else(|| format!("no file {path} in the report"))
     });
+    let mut shown = ShownHelp::default();
     for r in reported {
-        write_diagnostic(out, files, &mut cache, &r.diagnostic, r.repeats, color)?;
+        write_diagnostic(
+            out,
+            files,
+            &mut cache,
+            &mut shown,
+            &r.diagnostic,
+            r.repeats,
+            color,
+        )?;
     }
     writeln!(out, "{summary}")
 }
@@ -241,11 +252,32 @@ pub fn baselined(count: usize) -> String {
     }
 }
 
-/// Writes one diagnostic with its snippet, from the report's source cache.
+/// The help a report has printed in full, by code, so a later diagnostic
+/// with the same code and the same help points back to it instead of
+/// repeating it. Help that names this occurrence differs, so it's printed
+/// every time.
+#[derive(Default)]
+struct ShownHelp(HashSet<(&'static str, String)>);
+
+impl ShownHelp {
+    /// The help to print for a diagnostic: in full the first time the code
+    /// shows it, else a pointer to that first one.
+    fn help(&mut self, code: &'static str, help: &str) -> String {
+        if self.0.insert((code, help.to_owned())) {
+            help.to_owned()
+        } else {
+            format!("as for {code} above (ascribe explain {code})")
+        }
+    }
+}
+
+/// Writes one diagnostic with its snippet, from the report's source cache,
+/// and its help, shortened when `shown` has printed it.
 fn write_diagnostic(
     out: &mut dyn Write,
     files: &FileTable,
     cache: &mut impl Cache<String>,
+    shown: &mut ShownHelp,
     d: &Diagnostic,
     repeats: usize,
     color: bool,
@@ -283,7 +315,7 @@ fn write_diagnostic(
             .filter(|help| !help.is_empty())
     });
     if let Some(help) = help {
-        report = report.with_help(help);
+        report = report.with_help(shown.help(d.code, help));
     }
     report.finish().write(cache, out)
 }
