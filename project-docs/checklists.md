@@ -141,3 +141,10 @@ A color, a font, the type scale, a space or radius, the mark, or one of its imag
 - [ ] `node scripts/compare/outputs.ts --base main`: only the HTML preview's files differ, accepted by name, with the label `outputs changed`.
 - [ ] A changed default of an `--ascribe-*` or `--ascribe-review-*` property: a **Behavior change** in its changelog entry in `changes/`, with the previous values (decision 44). A new property is a contract addition, recorded as a decision.
 - [ ] In the extension: a codicon and a theme color first (`packages/vscode/DEVELOPMENT.md`, "Icons and colors").
+
+## A docs page added, moved, or retitled
+
+A page added to `docs/content/`, moved or renamed there, or given a new `title` or `nav-label`, or a change to `docs/ascribe.nav`.
+
+- [ ] Its place in the sidebar: `docs/ascribe.nav` lists the page where the default order (its own page, then by type, then by title) isn't the one it should have, and labels a new section whose own page's title isn't the sidebar's.
+- [ ] The site's sidebar fixture, `site/test/fixtures/sidebar.json`, rewritten (`ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test all site_sidebar`), and the diff read: it's the sidebar's change, and `site/test/e2e.test.ts` holds the published sidebar to it.

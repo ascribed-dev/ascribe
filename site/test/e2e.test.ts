@@ -642,7 +642,9 @@ test("the sidebar lists the pages and marks the current one", async () => {
 
 // The sidebar is ../docs/ascribe.nav's order over the docs' pages, held to
 // test/fixtures/sidebar.json group by group and page by page. A page added,
-// moved, or relabeled changes the fixture with it.
+// moved, or relabeled changes the fixture with it, which
+// ../crates/ascribe-emit/tests/all/site_sidebar.rs rewrites:
+// `ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test all site_sidebar`.
 test("the sidebar is the docs' navigation, entry by entry", async () => {
   const fixture = path.join(siteDir, "test", "fixtures", "sidebar.json");
   const page = await open("/docs/");
