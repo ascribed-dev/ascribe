@@ -9,7 +9,7 @@
   "retired": [
     {
       "name": "rotate-keys",
-      "reason": "Merged into the security guide"
+      "reason": "Moved to guides/security.md"
     }
   ],
   "missing": [

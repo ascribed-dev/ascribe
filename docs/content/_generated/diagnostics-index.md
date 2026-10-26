@@ -170,7 +170,7 @@
 | [ASC174](../checks/diagnostics/content-model-builds.md#ASC174) | `model-consumer-permalink-path` | Error | File | write |
 | [ASC175](../checks/diagnostics/pages.md#ASC175) | `permalinks-list-invalid` | Error | File | write |
 | [ASC176](../checks/diagnostics/pages.md#ASC176) | `permalinks-list-behind` | Warning | File | fix |
-| [ASC177](../checks/diagnostics/pages.md#ASC177) | `permalink-removed` | Warning | File | write |
+| [ASC177](../checks/diagnostics/pages.md#ASC177) | `permalink-lost` | Warning | File | write |
 | [ASC178](../checks/diagnostics/content-model-builds.md#ASC178) | `model-permalinks` | Error | File | write |
 | [ASC179](../checks/diagnostics/pages.md#ASC179) | `permalink-alias-target-missing` | Error | File | write |
 | [ASC180](../checks/diagnostics/pages.md#ASC180) | `permalink-name-conflict` | Error | File | write |
@@ -275,3 +275,4 @@
 | [ASC280](../checks/diagnostics/project-files.md#ASC280) | `example-schema-unsupported` | Advice | File | outside |
 | [ASC281](../checks/diagnostics/pages.md#ASC281) | `operation-link-not-operation` | Error | File | write |
 | [ASC282](../checks/diagnostics/content-checks.md#ASC282) | `api-operation-unreferenced` | Advice | File | write |
+| [ASC283](../checks/diagnostics/content-model-builds.md#ASC283) | `model-permalinks-moved` | Warning | File | fix |

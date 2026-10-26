@@ -453,6 +453,18 @@ impl Project {
         self.addresses.as_deref()
     }
 
+    /// What the project records of its permalinks beyond what the content
+    /// declares: `ascribe.addresses`' `permalink:` entries, and the records
+    /// still in `ascribe.toml` whose names it doesn't have
+    /// ([`ascribe_model::PermalinkRecords::merged`]).
+    pub fn permalink_records(&self) -> ascribe_model::PermalinkRecords {
+        let addresses = self
+            .addresses_file()
+            .map(AddressFile::permalinks)
+            .unwrap_or_default();
+        ascribe_model::PermalinkRecords::merged(addresses, &self.model.permalinks)
+    }
+
     /// Each declared API's spec (`[apis.<name>]`), as read when the project
     /// was loaded or its content model last changed.
     pub fn apis(&self) -> &ApiSpecs {

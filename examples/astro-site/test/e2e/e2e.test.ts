@@ -230,12 +230,12 @@ describe("the built site", () => {
     await page.close();
   });
 
-  it("forwards an alias, and a retired permalink with somewhere to lead", async () => {
+  it("forwards an alias, and a moved permalink", async () => {
     const page = await context.newPage();
-    // `config = "weave-config"` in `[permalinks.aliases]`.
+    // `"permalink:config" = "permalink:weave-config"` in ascribe.addresses' `[moved]`.
     await page.goto(`${origin}${BASE}/go/config`);
     await page.waitForURL(`${origin}${BASE}/guides/my-setup#weave-config`);
-    // `old-options`, retired with `to = "Reference/Options.md"`.
+    // `"permalink:old-options" = "Reference/Options.md"`, there too.
     await page.goto(`${origin}${BASE}/go/old-options`);
     await page.waitForURL(`${origin}${BASE}/reference/options`);
     await page.close();

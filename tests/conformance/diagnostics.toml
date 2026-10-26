@@ -3332,24 +3332,24 @@ reference = "writing/directives.md#permalinks"
 row = "Permalinks list | A permalink the content declares, an alias, or a retired permalink that `ascribe.permalinks` doesn't list as it is"
 message = "the permalink `{name}` isn't in ascribe.permalinks yet; run `ascribe permalinks sync`"
 messages.moved = "ascribe.permalinks has the permalink `{name}` in `{was}`; run `ascribe permalinks sync` to record that it's here now"
-messages.alias = "ascribe.permalinks doesn't have the alias `{name}` as it's declared here; run `ascribe permalinks sync`"
-messages.retired = "ascribe.permalinks doesn't record that `{name}` was retired, as it is here; run `ascribe permalinks sync`"
-fix = "Run `ascribe permalinks sync`, which adds each new permalink to ascribe.permalinks, records where each is declared now, and records each alias and retired permalink as `ascribe.toml` has it, and commit the file with the change. In the editor, the quick fix does the same."
+messages.alias = "ascribe.permalinks doesn't have the alias `{name}` as it's recorded here; run `ascribe permalinks sync`"
+messages.retired = "ascribe.permalinks doesn't record that `{name}` was retired or moved, as it is here; run `ascribe permalinks sync`"
+fix = "Run `ascribe permalinks sync`, which adds each new permalink to ascribe.permalinks, records where each is declared now, and records each alias and each retired or moved permalink as ascribe.addresses has it, and commit the file with the change. In the editor, the quick fix does the same."
 
 [[diagnostic]]
 code = "ASC177"
-slug = "permalink-removed"
+slug = "permalink-lost"
 severity = "warning"
 level = "file"
 next = "write"
 evidence = []
 spec = "7.5"
 reference = "writing/directives.md#permalinks"
-row = "Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, an alias, or retired"
+row = "Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, and not recorded as an alias, moved, or retired"
 message = "`{name}` was a permalink, in `{was}`, and nothing declares it now. Links to it from outside these docs, such as from a product, aren't found by this check"
-messages.alias = "`{name}` was an alias of `{target}`, and ascribe.toml doesn't declare it now. Links to it from outside these docs, such as from a product, aren't found by this check"
-messages.retired = "`{name}` was retired, and ascribe.toml doesn't retire it now. Links to it from outside these docs, such as from a product, aren't found by this check"
-fix = "Something outside the docs may link to the name. When what it named is still in the docs, put it back: `@id {permalink=true}: <name>` under the heading that now covers it, `permalink: <name>` in a page's frontmatter, or an alias in `[permalinks.aliases]` that leads to the permalink that covers it now. When it's gone, retire it: `ascribe permalinks retire <name> --reason \"…\"`, with `--to` for a page that covers it now, writes it in `[permalinks.retired]`, and its address shows the reason. In the editor, the quick fix writes the entry for you to give a reason. A permalink can move to another page or heading and keep working; run `ascribe permalinks sync` after moving it. Running `sync` doesn't quiet this: it keeps every name that's gone."
+messages.alias = "`{name}` was an alias of `{target}`, and nothing records it now. Links to it from outside these docs, such as from a product, aren't found by this check"
+messages.retired = "`{name}` was retired, and nothing records it now. Links to it from outside these docs, such as from a product, aren't found by this check"
+fix = "Something outside the docs may link to the name. When what it named is still in the docs, put it back: `@id {permalink=true}: <name>` under the heading that now covers it, `permalink: <name>` in a page's frontmatter, or make it an alias of the permalink that covers it now, `ascribe addresses move permalink:<name> permalink:<other>`. When it's gone, retire it: `ascribe permalinks retire <name> --reason \"…\"` writes it in ascribe.addresses, and its address shows the reason; with `--to <page>` in place of a reason, its address leads there. In the editor, the quick fix writes the entry for you to give a reason. A permalink can move to another page or heading and keep working; run `ascribe permalinks sync` after moving it. Running `sync` doesn't quiet this: it keeps every name that's gone."
 
 [[diagnostic]]
 code = "ASC178"
@@ -3365,7 +3365,7 @@ when = "A name in `[permalinks]` is both retired and an alias, an alias leads ba
 message = "`{name}` is both retired and an alias; a name is one thing"
 messages.loop = "the alias `{name}` leads back to itself, through aliases alone, and never to a permalink"
 messages.placeholder = "\"{reason}\" is a placeholder, not a reason: write why `{name}` was retired"
-fix = "Give each name in `[permalinks]` one meaning: retired, in `[permalinks.retired]`, or an alias, in `[permalinks.aliases]`. A retired permalink can still lead somewhere: give it `to`. Make each alias lead, perhaps through other aliases, to a permalink a heading or page declares. Write the reason a permalink was retired in place of the placeholder the editor's quick fix writes: a reader whose link led there sees it."
+fix = "Give each name in `[permalinks]` one meaning: retired, in `[permalinks.retired]`, or an alias, in `[permalinks.aliases]`. A retired permalink can still lead somewhere: give it `to`. Make each alias lead, perhaps through other aliases, to a permalink a heading or page declares. Write the reason a permalink was retired in place of the placeholder: a reader whose link led there sees it. These tables are kept in ascribe.addresses now (`model-permalinks-moved`): once they read, `ascribe addresses init` moves them there."
 
 [[diagnostic]]
 code = "ASC179"
@@ -3379,7 +3379,8 @@ reference = "content-model/checks.md#20-permalinks"
 row = "Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares"
 message = "the alias `{name}` leads to `{target}`, which no heading or page declares"
 messages.retired = "the alias `{name}` leads to `{target}`, which is retired; an alias leads to a permalink that's there"
-fix = "Point the alias at a permalink a heading's `@id {permalink=true}` or a page's `permalink` declares, or at another alias that leads to one. When what it named is gone, retire the alias instead: move it to `[permalinks.retired]`, with a reason."
+messages.loop = "the alias `{name}` leads to `{target}`, which leads back to it through aliases alone, and never to a permalink"
+fix = "Point the alias at a permalink a heading's `@id {permalink=true}` or a page's `permalink` declares, or at another alias that leads to one: `ascribe addresses move permalink:<alias> permalink:<name>` replaces its entry. When what it named is gone, retire the alias instead: `ascribe addresses retire permalink:<alias> --reason \"…\"`."
 
 [[diagnostic]]
 code = "ASC180"
@@ -3390,10 +3391,11 @@ next = "write"
 evidence = []
 spec = "7.6"
 reference = "content-model/checks.md#20-permalinks"
-row = "Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too"
+row = "Retired permalinks and aliases | A name the project records as retired, moved, or an alias that the content declares too"
 message = "`{name}` is retired here, and `{place}` declares it as a permalink; a name is one thing"
 messages.alias = "`{name}` is an alias here, and `{place}` declares it as a permalink; a name is one thing"
-fix = "When the permalink is back, delete its entry from `[permalinks.retired]` or `[permalinks.aliases]`. When it's going, remove the `@id {permalink=true}` or the page's `permalink` that still declares it: a name retired on purpose is retired once what declared it has gone."
+messages.moved = "`{name}` is moved here, and `{place}` declares it as a permalink; a name is one thing"
+fix = "When the permalink is back, delete its entry, `permalink:<name>` in ascribe.addresses. When it's going, remove the `@id {permalink=true}` or the page's `permalink` that still declares it: a name retired on purpose is retired once what declared it has gone."
 
 [[diagnostic]]
 code = "ASC181"
@@ -3404,11 +3406,11 @@ next = "write"
 evidence = []
 spec = "7.6"
 reference = "content-model/checks.md#20-permalinks"
-row = "Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it"
-message = "`{name}` is retired to `{to}`, and there's no page `{path}`"
-messages.fragment = "`{name}` is retired to `{to}`, which is a fragment; lead to a page that includes it"
-messages.heading = "`{name}` is retired to `{to}`, and `{path}` has no heading with the id `{id}`"
-fix = "Write `to` as a link from the content root is written: a page's path, such as `guides/security.md`, and `#` and a heading's id, such as `guides/security.md#rotate-keys`. Leave `to` out to show the reason alone."
+row = "Retired permalinks and aliases | A moved permalink's page, or a retired one's `to`, that isn't a page, or a heading on it"
+message = "`{name}` leads to `{to}`, and there's no page `{path}`"
+messages.fragment = "`{name}` leads to `{to}`, which is a fragment; lead to a page that includes it"
+messages.heading = "`{name}` leads to `{to}`, and `{path}` has no heading with the id `{id}`"
+fix = "Write where it leads as a link from the content root is written: a page's path, such as `guides/security.md`, and `#` and a heading's id, such as `guides/security.md#rotate-keys`. `ascribe addresses move permalink:<name> <page>` replaces the entry. When nothing replaces it, retire it instead, with a reason: `ascribe addresses retire permalink:<name> --reason \"…\"`."
 
 [[diagnostic]]
 code = "ASC182"
@@ -5187,3 +5189,18 @@ when = "An operation of a declared spec, not marked `deprecated`, that no link n
 message = "no page links to `{operation}` ({method} {route}) in {path}"
 messages.no-id = "no page links to {method} {route} in {path}, which has no `operationId`"
 fix = "Link to the operation from the guide that covers it, by its `operationId`, `openapi.yaml#getUser`, or by its method and path when it has none, `openapi.yaml#delete/users/{id}`. An operation a guide doesn't need to cover can be marked `deprecated` in the spec when it's on its way out, which leaves it out; for an API whose reference is enough on its own, turn the check off in [`[checks]`](content-model/checks.md#19-checks)."
+
+[[diagnostic]]
+code = "ASC283"
+slug = "model-permalinks-moved"
+severity = "warning"
+level = "file"
+next = "outside"
+evidence = []
+spec = "7.6"
+reference = "content-model/checks.md#20-permalinks"
+group = "permalinks"
+when = "`ascribe.toml` has `[permalinks.retired]` or `[permalinks.aliases]`, which are kept in `ascribe.addresses` now"
+message = "`[permalinks.retired]` is kept in ascribe.addresses now; run `ascribe addresses init` to move it there"
+messages.aliases = "`[permalinks.aliases]` is kept in ascribe.addresses now; run `ascribe addresses init` to move it there"
+fix = "Run `ascribe addresses init`, which moves each retired permalink and alias to ascribe.addresses, under its key `permalink:<name>`, and takes the tables out of ascribe.toml, keeping the rest of it as written; it makes the file when there's none. A retired permalink with a `to` becomes a move, and keeps no reason. Until then, they work as they did."

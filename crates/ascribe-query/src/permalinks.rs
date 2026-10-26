@@ -6,7 +6,7 @@
 //! a page or a folder ends ([`retiring`]).
 
 use ascribe_core::{FileId, Issue};
-use ascribe_model::{Current, PERMALINKS_FILE, PermalinkList};
+use ascribe_model::{Current, PERMALINKS_FILE, PermalinkList, RecordedIn};
 use ascribe_resolve::{DeclaredPermalink, Project};
 use serde::Serialize;
 
@@ -29,15 +29,17 @@ pub struct PermalinksAnswer {
     /// document order, a page's own first. A name declared in several
     /// places is here once for each.
     pub permalinks: Vec<DeclaredEntry>,
-    /// The aliases `ascribe.toml` declares, in declaration order.
+    /// The aliases the project records, in the order they're written:
+    /// `ascribe.addresses`' first, then any `ascribe.toml` still has.
     pub aliases: Vec<AliasEntry>,
-    /// The permalinks `ascribe.toml` retires, in declaration order.
+    /// The permalinks the project records as retired or moved, in the
+    /// order they're written, as `aliases` are.
     pub retired: Vec<RetiredEntry>,
     /// The names the list has that the project no longer has, by name.
     pub removed: Vec<RemovedEntry>,
 }
 
-/// An alias `ascribe.toml` declares.
+/// An alias the project records.
 #[derive(Debug, Serialize)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct AliasEntry {
@@ -45,21 +47,31 @@ pub struct AliasEntry {
     pub name: String,
     /// The name it leads to.
     pub target: String,
+    /// The file it's written in: `ascribe.addresses`, or `ascribe.toml`
+    /// until it's moved from there.
+    pub file: String,
     /// Whether the list has it, leading there: `listed`, or `not_listed`.
     pub state: ListState,
 }
 
-/// A permalink `ascribe.toml` retires.
+/// A permalink the project records as retired or moved.
 #[derive(Debug, Serialize)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct RetiredEntry {
     /// Its name.
     pub name: String,
-    /// Why it was retired.
+    /// Why it was retired; for one moved, which has no reason of its own,
+    /// `Moved to` and where, as the list records it.
     pub reason: String,
     /// Where its address leads now, as written: a page, and `#` and a
     /// heading's id.
     pub to: Option<String>,
+    /// Whether it was moved, in `ascribe.addresses`' `[moved]`, with
+    /// nowhere for a reason of its own.
+    pub moved: bool,
+    /// The file it's written in: `ascribe.addresses`, or `ascribe.toml`
+    /// until it's moved from there.
+    pub file: String,
     /// Whether the list has it as retired, with this reason: `listed`, or
     /// `not_listed`.
     pub state: ListState,
@@ -160,7 +172,8 @@ pub fn list(
             }
         })
         .collect();
-    let model = &project.model().permalinks;
+    let records = project.permalink_records();
+    let model = &records;
     let current = Current::new(places, model);
     let aliases = model
         .aliases
@@ -169,6 +182,7 @@ pub fn list(
         .map(|a| AliasEntry {
             name: a.name.clone(),
             target: a.target.clone(),
+            file: recorded_in(a.file).to_owned(),
             state: listed(
                 list.and_then(|l| l.aliases.get(&a.name))
                     .is_some_and(|e| e.target == a.target),
@@ -181,11 +195,13 @@ pub fn list(
         .filter(|r| current.retired.contains_key(&r.name))
         .map(|r| RetiredEntry {
             name: r.name.clone(),
-            reason: r.reason.clone(),
+            reason: r.why(),
             to: r.to.clone(),
+            moved: r.reason.is_none(),
+            file: recorded_in(r.file).to_owned(),
             state: listed(
                 list.and_then(|l| l.retired.get(&r.name))
-                    .is_some_and(|e| e.reason == r.reason),
+                    .is_some_and(|e| e.reason == r.why()),
             ),
         })
         .collect();
@@ -199,6 +215,14 @@ pub fn list(
         retired,
         removed,
     })
+}
+
+/// The name of the file a record is written in.
+fn recorded_in(file: RecordedIn) -> &'static str {
+    match file {
+        RecordedIn::Addresses => ascribe_model::ADDRESSES_FILE,
+        RecordedIn::Model => ascribe_model::MODEL_FILE,
+    }
 }
 
 /// `listed` or `not_listed`.
@@ -282,9 +306,9 @@ pub struct MovedEntry {
 }
 
 /// The list brought up to date with what the project has: a new name
-/// added, a moved one's place changed, each alias and retired permalink
-/// recorded as `ascribe.toml` has it, and a name the project doesn't have
-/// kept.
+/// added, a moved one's place changed, each alias and retired or moved
+/// permalink recorded as the project records it, and a name the project
+/// doesn't have kept.
 /// It writes nothing; [`SyncAnswer::text`] is what the file should hold.
 ///
 /// # Errors
@@ -298,7 +322,7 @@ pub fn sync(
     let before = readable(list)?;
     let current = Current::new(
         DeclaredPermalink::places(&project.declared_permalinks()),
-        &project.model().permalinks,
+        &project.permalink_records(),
     );
     let synced = before.cloned().unwrap_or_default().synced(&current);
     let new_text = synced.list.to_toml();
@@ -425,20 +449,26 @@ pub fn retiring(
 ) -> Result<Vec<String>, QueryError> {
     let list = readable(list)?;
     let declared = project.declared_permalinks();
-    let model = &project.model().permalinks;
+    let records = project.permalink_records();
+    let model = &records;
     let refuse = |name: &str, why: String| QueryError::NotRetirable {
         name: name.to_owned(),
         why,
     };
     let already = |name: &str| -> Result<(), QueryError> {
-        if model.retired(name).is_some() {
-            return Err(refuse(name, "ascribe.toml retires it already".to_owned()));
-        }
-        if model.alias(name).is_some() {
+        if let Some(retired) = model.retired(name) {
             return Err(refuse(
                 name,
-                "it's an alias in ascribe.toml; remove it from [permalinks.aliases] first"
-                    .to_owned(),
+                format!("{} records it already", recorded_in(retired.file)),
+            ));
+        }
+        if let Some(alias) = model.alias(name) {
+            return Err(refuse(
+                name,
+                format!(
+                    "it's an alias in {}; remove its entry first",
+                    recorded_in(alias.file)
+                ),
             ));
         }
         Ok(())
@@ -550,10 +580,12 @@ pub struct RetireAnswer {
     pub schema_version: u32,
     /// The version of Ascribe that wrote it.
     pub ascribe_version: &'static str,
-    /// The names retired, each written in `ascribe.toml`'s
-    /// `[permalinks.retired]`, in order.
+    /// The names retired, each written in `ascribe.addresses` under its
+    /// `permalink:` key, in order: in `[retired]`, or, with `to`, in
+    /// `[moved]`.
     pub retired: Vec<String>,
-    /// The reason each was given.
+    /// The reason each was given; with `to`, `Moved to` and where, as the
+    /// list records it.
     pub reason: String,
     /// Where each address leads now, as given; none when it shows the
     /// reason.

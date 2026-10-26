@@ -448,14 +448,16 @@ pub const TOOLS: &[Spec] = &[
         name: "ascribe_addresses_move",
         title: "Record a move",
         command: "ascribe addresses move",
-        description: "Get the edit to `ascribe.addresses` that records where a page, or a \
-            heading's id, moved, after you moved it without `ascribe rename`, as with `git \
-            mv`, so the build forwards its old addresses; `ascribe_check` reports a page \
-            moved with nothing recorded as `address-lost`. It writes nothing, so apply the \
-            edits yourself. Example: {\"from_git\": true} returns `moves` such as \
-            `{\"key\": \"guides/setup.md\", \"value\": \"start/setup.md\"}`, every move git \
-            sees, and `edits`; {\"old\": \"guides/keys.md\", \"new\": \
-            \"security/keys.md\"} records one.",
+        description: "Get the edit to `ascribe.addresses` that records where a page, a \
+            heading's id, or a permalink moved, after you moved it without `ascribe rename`, \
+            as with `git mv`, so the build forwards its old addresses; `ascribe_check` \
+            reports a page moved with nothing recorded as `address-lost`, and a permalink as \
+            `permalink-lost`. It writes nothing, so apply the edits yourself. Example: \
+            {\"from_git\": true} returns `moves` such as `{\"key\": \"guides/setup.md\", \
+            \"value\": \"start/setup.md\"}`, every move git sees, and `edits`; {\"old\": \
+            \"guides/keys.md\", \"new\": \"security/keys.md\"} records one, and {\"old\": \
+            \"permalink:cli-render\", \"new\": \"permalink:cli-resolve\"} makes one \
+            permalink an alias of another.",
         input: || {
             json!({
                 "type": "object",
@@ -464,12 +466,14 @@ pub const TOOLS: &[Spec] = &[
                         "type": "string",
                         "description": "Where it was: a page's path, from the server's \
                             working directory or from the content root; a file's path, `#`, \
-                            and a heading's id; or an address starting with `/`.",
+                            and a heading's id; an address starting with `/`; or \
+                            `permalink:` and a permalink's name.",
                     },
                     "new": {
                         "type": "string",
                         "description": "Where it is now: a page's path, and optionally `#` \
-                            and a heading's id.",
+                            and a heading's id; or, for a permalink, `permalink:` and the \
+                            name of the permalink it's an alias of now.",
                     },
                     "from_git": {
                         "type": "boolean",
@@ -512,11 +516,11 @@ pub const TOOLS: &[Spec] = &[
         name: "ascribe_addresses_retire",
         title: "Record a retired page",
         command: "ascribe addresses retire",
-        description: "Get the edit to `ascribe.addresses` that records that a page, or a \
-            heading's id, was removed on purpose, and why, so `ascribe_check` stops \
-            reporting it as `address-lost`. Use it only for content that's gone with no \
-            page to forward a reader to; otherwise record a move. It writes nothing, so \
-            apply the edits yourself. Example: {\"old\": \"reference/legacy-sync.md\", \
+        description: "Get the edit to `ascribe.addresses` that records that a page, a \
+            heading's id, or a permalink was removed on purpose, and why, so `ascribe_check` \
+            stops reporting it as `address-lost` or `permalink-lost`. Use it only for \
+            content that's gone with no page to forward a reader to; otherwise record a \
+            move. It writes nothing, so apply the edits yourself. Example: {\"old\": \"reference/legacy-sync.md\", \
             \"reason\": \"The sync agent was removed in 4.0\"} returns `key`, `value`, and \
             `edits`.",
         input: || {
@@ -527,7 +531,8 @@ pub const TOOLS: &[Spec] = &[
                         "type": "string",
                         "description": "What was removed: a page's path, from the server's \
                             working directory or from the content root; a file's path, `#`, \
-                            and a heading's id; or an address starting with `/`.",
+                            and a heading's id; an address starting with `/`; or \
+                            `permalink:` and a permalink's name.",
                     },
                     "reason": {
                         "type": "string",

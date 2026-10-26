@@ -53,6 +53,7 @@ mod tests {
 
     use crate::agents::markers::Damage;
     use crate::agents::sync::SyncError;
+    use crate::commands::addresses::AddressesError;
     use crate::commands::baseline::BaselineCommandError;
     use crate::commands::check::CheckError;
     use crate::commands::fmt::FmtError;
@@ -226,6 +227,14 @@ mod tests {
             "ascribe.toml can't be changed in place",
         ),
         ("model_unwritable", "ascribe.toml can't be written"),
+        (
+            "addresses_edit_refused",
+            "ascribe.addresses can't be changed in place",
+        ),
+        (
+            "addresses_file_unwritable",
+            "ascribe.addresses can't be written",
+        ),
         ("bad_line", "a line isn't named as a mark names one"),
         ("no_lines", "a target has no lines in [releases]"),
         ("undeclared_line", "a target's list doesn't declare a line"),
@@ -524,8 +533,8 @@ mod tests {
                 | PermalinksError::Unreadable { .. }
                 | PermalinksError::Unwritable { .. }
                 | PermalinksError::NoReason
-                | PermalinksError::ModelUnchanged(_)
-                | PermalinksError::ModelUnwritable { .. } => {}
+                | PermalinksError::AddressesUnchanged(_)
+                | PermalinksError::AddressesUnwritable { .. } => {}
             }
         }
         fn rename(e: &RenameError) {
@@ -875,8 +884,12 @@ mod tests {
                 message: text(),
             }),
             Box::new(PermalinksError::NoReason),
-            Box::new(PermalinksError::ModelUnchanged(text())),
-            Box::new(PermalinksError::ModelUnwritable {
+            Box::new(PermalinksError::AddressesUnchanged(text())),
+            Box::new(PermalinksError::AddressesUnwritable {
+                path: path(),
+                message: text(),
+            }),
+            Box::new(AddressesError::ModelUnwritable {
                 path: path(),
                 message: text(),
             }),

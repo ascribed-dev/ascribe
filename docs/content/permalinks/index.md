@@ -53,23 +53,35 @@ jobs:
 
 `docs-links.txt` lists the names the product links to, one on each line. [`ascribe permalinks verify`](command.md#cli-permalinks-verify) exits with 1, naming each name the list doesn't have, and each the docs retired, with the reason they gave, so a link to a section the docs removed, or never had, fails the product's pull request rather than reaching its users. An alias passes, as the permalink it leads to does.
 
-In the docs, `ascribe check` reports a list that's behind the content (`permalinks-list-behind`): a new permalink, or one that moved. Run `ascribe permalinks sync`, or take the editor's quick fix, and commit the list with the change; `ascribe permalinks sync --check` fails in CI when it wasn't. Moving a permalink to another page changes one line of the list and removes nothing. Deleting one is a warning (`permalink-removed`), which `sync` doesn't clear: restore the name, or retire it ([when a section moves or goes away](index.md#moving-aliasing-and-retiring)).
+In the docs, `ascribe check` reports a list that's behind the content (`permalinks-list-behind`): a new permalink, or one that moved. Run `ascribe permalinks sync`, or take the editor's quick fix, and commit the list with the change; `ascribe permalinks sync --check` fails in CI when it wasn't. Moving a permalink to another page changes one line of the list and removes nothing. Deleting one is a warning (`permalink-lost`), which `sync` doesn't clear: restore the name, or record what became of it ([when a section moves or goes away](index.md#moving-aliasing-and-retiring)).
 
 ## When a section moves or goes away
 @id: moving-aliasing-and-retiring
 
-A permalink is a promise to whatever links to it, so what to do when its section changes depends on what happened to the section:
+A permalink is a promise to whatever links to it, so what to do when its section changes depends on what happened to the section. What became of a name no heading declares any more is kept in [`ascribe.addresses`](../publishing/redirects.md#ascribeaddresses), with every other address the docs have published, under the key `permalink:` and the name:
 
 - **It moved,** to another page or under another heading: move the `@id` with it, and run `ascribe permalinks sync`. The address leads to the new place, and nothing else changes.
-- **It has a second name,** such as one an older release of the product prints: add an alias in [`[permalinks.aliases]`](../content-model/checks.md#20-permalinks), `config = "weave-config"`. The alias's address leads where the permalink's does, and `verify` accepts both names.
-- **It's gone,** merged into another section or removed with the feature it described: retire it, with a reason a reader can understand.
+- **It has a second name,** such as one an older release of the product prints, or a name it had before: make that name an alias, `ascribe addresses move permalink:config permalink:weave-config`. The alias's address leads where the permalink's does, and `verify` accepts both names.
+- **It's covered somewhere else now,** merged into another section: move it there, with `--to` and the page.
+- **It's gone,** removed with the feature it described: retire it, with a reason a reader can understand.
 
 ```sh
-ascribe permalinks retire rotate-keys --reason "Merged into the security guide" --to guides/security.md
+ascribe permalinks retire rotate-keys --to guides/security.md
 ascribe permalinks retire legacy-sync --reason "The sync agent was removed in 4.0"
 ```
 
-[`ascribe permalinks retire`](command.md#cli-permalinks-retire) writes each to `[permalinks.retired]` in `ascribe.toml`, keeping the file's comments, and records it in `ascribe.permalinks`, so `ascribe check` no longer warns. With `--to`, its address leads there; without it, the address is a page that says the section was removed, with the reason. A product's `verify` then fails on the name, with the reason, so the product changes its link. In the editor, the quick fix on `permalink-removed` writes the entry with a placeholder reason, which is an error until you replace it. To retire every permalink on a page you're about to delete, run it with `--page` before deleting the page, or with `--under` for every page in a folder.
+```toml
+[moved]
+"permalink:config" = "permalink:weave-config"
+"permalink:rotate-keys" = "guides/security.md"
+
+[retired]
+"permalink:legacy-sync" = "The sync agent was removed in 4.0"
+```
+
+[`ascribe permalinks retire`](command.md#cli-permalinks-retire) writes each to `ascribe.addresses`, making the file when there's none, and records it in `ascribe.permalinks`, so `ascribe check` no longer warns. With `--to`, its address leads there; with `--reason`, the address is a page that says the section was removed, and why. A product's `verify` then fails on the name, with the reason, or with where it moved, so the product changes its link. In the editor, the quick fix on `permalink-lost` writes the entry with a placeholder reason, which is an error until you replace it. To retire every permalink on a page you're about to delete, run it with `--page` before deleting the page, or with `--under` for every page in a folder. [`ascribe addresses move` and `retire`](../publishing/redirects.md) take `permalink:<name>` too.
+
+Before they were kept in `ascribe.addresses`, retired permalinks and aliases were written in `ascribe.toml`'s `[permalinks.retired]` and `[permalinks.aliases]`. Ascribe still reads them, and warns of each table (`model-permalinks-moved`): run [`ascribe addresses init`](../publishing/redirects.md#cli-addresses-init) once to move them, which takes the tables out of `ascribe.toml`. A retired permalink with a `to` becomes a move, and keeps no reason.
 
 Retire rather than delete the line from the list: a deleted line makes the address a 404 with nothing to say why, and a product's `verify` says only that the name is missing.
 
@@ -77,7 +89,7 @@ Retire rather than delete the line from the list: a deleted line makes the addre
 
 - [Permalinks](../writing/directives.md#permalinks), in the directive reference: how a heading or a page gets one, and the names it may have.
 - [Show the docs in your product](in-your-product.md): a permalink's section, from the build's `_ascribe/help.json`, in a tooltip or beside an error.
-- [`[permalinks]`](../content-model/checks.md#20-permalinks): the moved, aliased, and retired names in `ascribe.toml`.
+- [Keep the addresses you've published](../publishing/redirects.md): `ascribe.addresses`, where moved, aliased, and retired names are kept with the docs' other addresses.
 - [`ascribe permalinks`](command.md): `sync`, `list`, `verify`, and `retire`, their options, and their output.
 - [The permalinks list](../contracts/permalinks-list.md): the file a product's CI checks against.
 - [Permalinks](../astro/reference.md#permalinks), in the `@ascribed/astro` reference: the page at each address, its parameters, and [`MissingPermalink`](../astro/reference.md#a-permalink-that-isnt-here) for the site's 404 page.

@@ -463,6 +463,12 @@ fn rebased() -> TempDir {
     let dir = repo();
     let out = ascribe(dir.path(), &["addresses", "init"]);
     assert_eq!(code(&out), 0, "{}", both(&out));
+    // The example's file: what `init` writes, and its permalinks' records.
+    fs::copy(
+        example().join("ascribe.addresses"),
+        dir.path().join("ascribe.addresses"),
+    )
+    .expect("copy the file");
     commit(dir.path(), "Keep the addresses we publish");
     git(dir.path(), &["switch", "-q", "-c", "handbook"]);
     let model = fs::read_to_string(dir.path().join("ascribe.toml")).expect("the model");

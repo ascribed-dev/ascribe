@@ -1,7 +1,7 @@
 ---
 type: reference
 title: "`ascribe permalinks`"
-description: "Keep a project's list of permalinks, check a product's names against it, and retire a permalink with a reason."
+description: "Keep a project's list of permalinks, check a product's names against it, and retire or move a permalink."
 ---
 
 The commands that keep a project's list of permalinks, check names against it, and retire permalinks. [Permalinks](index.md) is the task they're used in. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts), and the JSON each writes with `--format json` is in [their JSON reports' schemas](../contracts/json-reports/sources.md#ascribe-permalinks-sync).
@@ -10,15 +10,15 @@ The commands that keep a project's list of permalinks, check names against it, a
 @id {permalink=true}: cli-permalinks
 @summary: Keeps the project's list of permalinks, `ascribe.permalinks`, checks names against it, and retires permalinks.
 
-Keeps the project's list of [permalinks](../writing/directives.md#permalinks), `ascribe.permalinks` beside `ascribe.toml`, checks names against it, and retires permalinks. The list names each permalink the content declares and where, and each alias and retired permalink in `ascribe.toml`'s [`[permalinks]`](../content-model/checks.md#20-permalinks), and is committed with the docs: with it, `ascribe check` reports a permalink that goes away (`permalink-removed`) and one the list doesn't have yet (`permalinks-list-behind`), and a product's CI can check the names it links to with `verify`. A project without the list isn't told about either. Its format is in the [permalinks list contract](../contracts/permalinks-list.md).
+Keeps the project's list of [permalinks](../writing/directives.md#permalinks), `ascribe.permalinks` beside `ascribe.toml`, checks names against it, and retires permalinks. The list names each permalink the content declares and where, and each alias and retired or moved permalink [`ascribe.addresses`](../publishing/redirects.md#ascribeaddresses) records, and is committed with the docs: with it, `ascribe check` reports a permalink that goes away (`permalink-lost`) and one the list doesn't have yet (`permalinks-list-behind`), and a product's CI can check the names it links to with `verify`. A project without the list isn't told about either. Its format is in the [permalinks list contract](../contracts/permalinks-list.md).
 
-The examples below are one project's: a page, `guides/weave.md`, with the permalinks `weaving`, `weave-config`, and `rotate-keys`, and an alias, `config`, for `weave-config`. Then `weave-config`'s section moves to `reference/loom.md`, and `rotate-keys`'s goes.
+The examples below are one project's: a page, `guides/weave.md`, with the permalinks `weaving`, `weave-config`, and `rotate-keys`, and an alias, `config`, for `weave-config`, in `ascribe.addresses`. Then `weave-config`'s section moves to `reference/loom.md`, and `rotate-keys`'s goes.
 
 ### `ascribe permalinks sync`
 @id {permalink=true}: cli-permalinks-sync
 @summary: Brings `ascribe.permalinks` up to date with the project, and makes it when there's none. It never drops a name the project no longer has.
 
-Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each alias and retired permalink as `ascribe.toml` has it. It never drops a name the project no longer has: that stays in the list, and `ascribe check` reports it until it's back or retired, so running `sync` can't hide a removal. With `--check`, it writes nothing, and says what it would change, so CI can fail on a list that wasn't committed with the change; `ascribe check` reports the same thing as `permalinks-list-behind`.
+Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each alias and retired or moved permalink as `ascribe.addresses` has it. It never drops a name the project no longer has: that stays in the list, and `ascribe check` reports it until it's back or retired, so running `sync` can't hide a removal. With `--check`, it writes nothing, and says what it would change, so CI can fail on a list that wasn't committed with the change; `ascribe check` reports the same thing as `permalinks-list-behind`.
 
 @include: ../_generated/cli-permalinks-sync-options.md
 
@@ -49,9 +49,9 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 
 ### `ascribe permalinks list`
 @id {permalink=true}: cli-permalinks-list
-@summary: Shows every permalink the content declares, where it's declared, and each alias and retired permalink, and which ones `ascribe.permalinks` doesn't have yet. It changes nothing.
+@summary: Shows every permalink the content declares, where it's declared, and each alias and retired or moved permalink, and which ones `ascribe.permalinks` doesn't have yet. It changes nothing.
 
-Shows every permalink the content declares, with the file and line it's declared on, and each alias and retired permalink in `ascribe.toml`, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that the project no longer has. It changes nothing. Once the sections have changed, before the list is synced:
+Shows every permalink the content declares, with the file and line it's declared on, and each alias and retired or moved permalink the project records, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that the project no longer has. It changes nothing. Once the sections have changed, before the list is synced:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/permalinks-list.txt
 
@@ -96,23 +96,23 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 
 ### `ascribe permalinks retire`
 @id {permalink=true}: cli-permalinks-retire
-@summary: Retires permalinks on purpose, with a reason, in `ascribe.toml`'s `[permalinks.retired]`. A retired permalink's address shows the reason, or leads to `--to`.
+@summary: Retires permalinks on purpose, with a reason, or moves them to a page with `--to`, in `ascribe.addresses`. A retired permalink's address shows the reason; a moved one's leads to the page.
 
-Retires permalinks on purpose, with a reason: it writes an entry for each in `ascribe.toml`'s [`[permalinks.retired]`](../content-model/checks.md#20-permalinks), in place, keeping the file's comments and order, and, when the project has `ascribe.permalinks`, records there each one the content no longer declares. A retired permalink's address shows the reason, or leads to `--to`; `ascribe check` no longer reports it as removed; and `verify` tells a product it was retired, with the reason.
+Retires permalinks on purpose, with a reason, or moves them to a page: it writes an entry for each in [`ascribe.addresses`](../publishing/redirects.md#ascribeaddresses), under its key `permalink:<name>`, in `[retired]` with `--reason` or in `[moved]` with `--to`, making the file when there's none, and, when the project has `ascribe.permalinks`, records there each one the content no longer declares. A retired permalink's address shows the reason, and a moved one's leads to `--to`; `ascribe check` no longer reports it as lost; and `verify` tells a product it was retired, with the reason, or where it moved.
 
 ```sh
-ascribe permalinks retire rotate-keys --reason "Merged into the security guide" --to guides/security.md
+ascribe permalinks retire rotate-keys --to guides/security.md
 ascribe permalinks retire --page guides/legacy.md --reason "The sync agent was removed in 4.0"
 ascribe permalinks retire --under guides/legacy/ --reason "The sync agent was removed in 4.0"
 ```
 
-It retires a name given only when the content no longer declares it and `ascribe.permalinks` has it, and with `--page` or `--under`, each permalink declared in that page or in a file under that folder, or that the list has there. `--page`, `--under`, and `--to` take a path from the current folder, as `ascribe check` prints it, or from the content root; what it writes in `ascribe.toml` is from the content root, as links there are. It refuses a name still declared anywhere else, an alias, or one already retired, and changes nothing then. Retiring what a page holds before the page is deleted leaves each name both declared and retired (`permalink-name-conflict`) until it is. The first command above, in the project above:
+It retires a name given only when the content no longer declares it and `ascribe.permalinks` has it, and with `--page` or `--under`, each permalink declared in that page or in a file under that folder, or that the list has there. `--page`, `--under`, and `--to` take a path from the current folder, as `ascribe check` prints it, or from the content root; what it writes in `ascribe.addresses` is from the content root, as its other entries are. It takes `--reason` or `--to`, not both: a moved permalink has nowhere for a reason. It refuses a name still declared anywhere else, an alias, or one already retired or moved, and changes nothing then. Retiring what a page holds before the page is deleted leaves each name both declared and retired (`permalink-name-conflict`) until it is. To make a gone name an alias of another permalink, use [`ascribe addresses move`](../publishing/redirects.md#cli-addresses-move) `permalink:<old> permalink:<new>`. The first command above, in the project above:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/permalinks-retire.txt
 
 @include: ../_generated/cli-permalinks-retire-options.md
 
-With `--format json`, it writes the document its [schema](../contracts/json-reports/sources.md#ascribe-permalinks-retire) describes. It exits with `0` when the names are retired, and `2` when the project doesn't load, the reason is empty, a name can't be retired, or a file can't be written.
+With `--format json`, it writes the document its [schema](../contracts/json-reports/sources.md#ascribe-permalinks-retire) describes. It exits with `0` when the names are retired, and `2` when the project doesn't load, the reason is empty, a name can't be retired, or a file can't be read or written.
 
 .The JSON for this example
 @details:

@@ -37,7 +37,7 @@ Without `@id`, a heading's id is the slug of its text ([heading ids](inline.md#h
 
 - **The id is still the heading's anchor,** and links inside the docs name it as they name any id: `checks/check.md#cli-check`. A permalink is for links from outside the docs; inside, link to the file.
 - **A build publishes a permalink in one place only** (`permalink-duplicate`), and names that differ only in case, such as `Setup` and `setup`, are one name. So a marked heading belongs in a fragment only one page of each build includes. Two pages that no build publishes together may share a permalink.
-- **A permalink that's removed is a warning** (`permalink-removed`) once the project commits [its list](../contracts/permalinks-list.md); restore the name or [retire it](../permalinks/index.md#moving-aliasing-and-retiring). Moving the heading to another page isn't removing it.
+- **A permalink that's removed is a warning** (`permalink-lost`) once the project commits [its list](../contracts/permalinks-list.md); restore the name or [retire it](../permalinks/index.md#moving-aliasing-and-retiring). Moving the heading to another page isn't removing it.
 - **A page has a permalink** in its frontmatter, from the same set of names: [a page's permalink](frontmatter.md#a-pages-permalink).
 
 ## `@include`

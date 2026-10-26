@@ -11,11 +11,11 @@
       "type": "boolean"
     },
     "reason": {
-      "description": "The reason each was given.",
+      "description": "The reason each was given; with `to`, `Moved to` and where, as the\nlist records it.",
       "type": "string"
     },
     "retired": {
-      "description": "The names retired, each written in `ascribe.toml`'s\n`[permalinks.retired]`, in order.",
+      "description": "The names retired, each written in `ascribe.addresses` under its\n`permalink:` key, in order: in `[retired]`, or, with `to`, in\n`[moved]`.",
       "items": {
         "type": "string"
       },

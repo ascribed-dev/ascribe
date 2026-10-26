@@ -5,8 +5,12 @@
 {
   "$defs": {
     "AliasEntry": {
-      "description": "An alias `ascribe.toml` declares.",
+      "description": "An alias the project records.",
       "properties": {
+        "file": {
+          "description": "The file it's written in: `ascribe.addresses`, or `ascribe.toml`\nuntil it's moved from there.",
+          "type": "string"
+        },
         "name": {
           "description": "Its name.",
           "type": "string"
@@ -23,6 +27,7 @@
       "required": [
         "name",
         "target",
+        "file",
         "state"
       ],
       "type": "object"
@@ -133,14 +138,22 @@
       "type": "object"
     },
     "RetiredEntry": {
-      "description": "A permalink `ascribe.toml` retires.",
+      "description": "A permalink the project records as retired or moved.",
       "properties": {
+        "file": {
+          "description": "The file it's written in: `ascribe.addresses`, or `ascribe.toml`\nuntil it's moved from there.",
+          "type": "string"
+        },
+        "moved": {
+          "description": "Whether it was moved, in `ascribe.addresses`' `[moved]`, with\nnowhere for a reason of its own.",
+          "type": "boolean"
+        },
         "name": {
           "description": "Its name.",
           "type": "string"
         },
         "reason": {
-          "description": "Why it was retired.",
+          "description": "Why it was retired; for one moved, which has no reason of its own,\n`Moved to` and where, as the list records it.",
           "type": "string"
         },
         "state": {
@@ -159,6 +172,8 @@
         "name",
         "reason",
         "to",
+        "moved",
+        "file",
         "state"
       ],
       "type": "object"
@@ -168,7 +183,7 @@
   "description": "What `ascribe permalinks list` answers.",
   "properties": {
     "aliases": {
-      "description": "The aliases `ascribe.toml` declares, in declaration order.",
+      "description": "The aliases the project records, in the order they're written:\n`ascribe.addresses`' first, then any `ascribe.toml` still has.",
       "items": {
         "$ref": "#/$defs/AliasEntry"
       },
@@ -197,7 +212,7 @@
       "type": "array"
     },
     "retired": {
-      "description": "The permalinks `ascribe.toml` retires, in declaration order.",
+      "description": "The permalinks the project records as retired or moved, in the\norder they're written, as `aliases` are.",
       "items": {
         "$ref": "#/$defs/RetiredEntry"
       },

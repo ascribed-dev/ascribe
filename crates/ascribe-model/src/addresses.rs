@@ -2,7 +2,9 @@
 //! published went, so none stops working without someone deciding it
 //! should. `[moved]` says where a source's addresses lead now, `[retired]`
 //! why they were removed, and `[former]` the settings the docs were
-//! published under before.
+//! published under before. A permalink's name is a key too, `permalink:`
+//! and the name (§7.6): retired, moved to a page, or, moved to another
+//! permalink, an alias ([`AddressFile::permalinks`]).
 //!
 //! Ascribe writes the file whole ([`AddressFile::to_toml`]), each table
 //! sorted, one entry per line, when a move is recorded or a command adds an
@@ -16,7 +18,12 @@ use ascribe_core::{FileId, Issue, Location, Span, TextEdit, diagnostics};
 
 use toml::de::{DeTable, DeValue};
 
+use crate::model::{PermalinkAlias, PermalinkRecords, RecordedIn, RetiredPermalink};
 use crate::toml_util::{describe, entries, sp};
+
+/// What a key, or a `[moved]` value, that names a permalink starts with:
+/// `permalink:` and the name.
+pub const PERMALINK_PREFIX: &str = "permalink:";
 
 /// The file's name, beside `ascribe.toml`.
 pub const ADDRESSES_FILE: &str = "ascribe.addresses";
@@ -115,11 +122,17 @@ pub enum Key<'a> {
     /// An address from the host's root, from before the project used
     /// Ascribe.
     Address(&'a str),
+    /// A permalink, by its name: what its address under the permalinks'
+    /// path leads to.
+    Permalink(&'a str),
 }
 
 impl<'a> Key<'a> {
     /// What `text` names, when it's a key the file can hold.
     pub fn parse(text: &'a str) -> Option<Key<'a>> {
+        if let Some(name) = text.strip_prefix(PERMALINK_PREFIX) {
+            return ascribe_core::is_id(name).then_some(Key::Permalink(name));
+        }
         if text.starts_with('/') {
             return (!text.chars().any(char::is_whitespace)).then_some(Key::Address(text));
         }
@@ -133,9 +146,21 @@ impl<'a> Key<'a> {
     pub fn path(self) -> Option<&'a str> {
         match self {
             Key::Source(path) | Key::Id { path, .. } => Some(path),
-            Key::Address(_) => None,
+            Key::Address(_) | Key::Permalink(_) => None,
         }
     }
+}
+
+/// The permalink `text` names, as a key or a `[moved]` value writes one:
+/// `permalink:` and a valid name.
+pub fn permalink_name(text: &str) -> Option<&str> {
+    text.strip_prefix(PERMALINK_PREFIX)
+        .filter(|name| ascribe_core::is_id(name))
+}
+
+/// `name` as a key: `permalink:` and the name.
+pub fn permalink_key(name: &str) -> String {
+    format!("{PERMALINK_PREFIX}{name}")
 }
 
 /// A place as the file writes one: a content path ending in `.md`, and
@@ -171,6 +196,84 @@ impl AddressFile {
         } else {
             Err(reader.issues)
         }
+    }
+
+    /// What the file records of permalinks, each under its `permalink:` key:
+    /// a `[retired]` entry is a retired permalink, with its reason; a
+    /// `[moved]` entry to a page is one moved there; and one to another
+    /// permalink is an alias of it. In key order, each table's.
+    pub fn permalinks(&self) -> PermalinkRecords {
+        let mut out = PermalinkRecords::default();
+        for (key, entry) in &self.retired {
+            if let Some(name) = permalink_name(key) {
+                out.retired.push(RetiredPermalink {
+                    name: name.to_owned(),
+                    reason: Some(entry.value.clone()),
+                    to: None,
+                    span: entry.span,
+                    to_span: None,
+                    file: RecordedIn::Addresses,
+                });
+            }
+        }
+        for (key, entry) in &self.moved {
+            let Some(name) = permalink_name(key) else {
+                continue;
+            };
+            match permalink_name(&entry.value) {
+                Some(target) => out.aliases.push(PermalinkAlias {
+                    name: name.to_owned(),
+                    target: target.to_owned(),
+                    span: entry.span,
+                    target_span: entry.span,
+                    file: RecordedIn::Addresses,
+                }),
+                None => out.retired.push(RetiredPermalink {
+                    name: name.to_owned(),
+                    reason: None,
+                    to: Some(entry.value.clone()),
+                    span: entry.span,
+                    to_span: Some(entry.span),
+                    file: RecordedIn::Addresses,
+                }),
+            }
+        }
+        out
+    }
+
+    /// Records `records`, permalinks' records `ascribe.toml` had, each
+    /// under its `permalink:` key: a retired permalink in `[retired]`, or,
+    /// with a `to`, in `[moved]`, leading there; and an alias in `[moved]`,
+    /// leading to the permalink it names. A name the file records already
+    /// keeps its entry. The names recorded, in order.
+    pub fn record_permalinks(&mut self, records: &PermalinkRecords) -> Vec<String> {
+        let mut out = Vec::new();
+        for retired in &records.retired {
+            let key = permalink_key(&retired.name);
+            if self.entry(&key).is_some() {
+                continue;
+            }
+            match (&retired.to, &retired.reason) {
+                (Some(to), _) => {
+                    self.moved.insert(key, Entry::new(to.clone()));
+                }
+                (None, Some(reason)) => {
+                    self.retired.insert(key, Entry::new(reason.clone()));
+                }
+                (None, None) => continue,
+            }
+            out.push(retired.name.clone());
+        }
+        for alias in &records.aliases {
+            let key = permalink_key(&alias.name);
+            if self.entry(&key).is_some() {
+                continue;
+            }
+            self.moved
+                .insert(key, Entry::new(permalink_key(&alias.target)));
+            out.push(alias.name.clone());
+        }
+        out
     }
 
     /// The table that has `key`, and its entry: `moved` or `retired`.
@@ -434,8 +537,16 @@ impl Reader {
             },
         }
         for (key, span, value) in self.table(root, "moved") {
-            if split_place(&value).is_some() {
+            let permalink = permalink_name(&key).is_some();
+            if split_place(&value).is_some() || (permalink && permalink_name(&value).is_some()) {
                 out.moved.insert(key, Entry { value, span });
+            } else if permalink {
+                self.problem(
+                    span,
+                    format!(
+                        "`{key}` moved to `{value}`, which isn't a file's path ending in `.md`, with `#` and an id for a heading, or `permalink:` and a permalink's name"
+                    ),
+                );
             } else {
                 self.problem(
                     span,
@@ -566,7 +677,7 @@ impl Reader {
                 self.problem(
                     span,
                     format!(
-                        "`{name}` isn't a key `[{key}]` can have: a file's path ending in `.md`, with `#` and an id for a heading, or an address starting with `/`"
+                        "`{name}` isn't a key `[{key}]` can have: a file's path ending in `.md`, with `#` and an id for a heading, an address starting with `/`, or `permalink:` and a permalink's name"
                     ),
                 );
                 continue;
@@ -884,9 +995,64 @@ mod tests {
             Key::parse("/docs/intro.html"),
             Some(Key::Address("/docs/intro.html"))
         );
+        assert_eq!(
+            Key::parse("permalink:cli-check"),
+            Some(Key::Permalink("cli-check"))
+        );
+        assert_eq!(Key::parse("permalink:a/b"), None);
         assert_eq!(Key::parse("a.txt"), None);
         assert_eq!(Key::parse("../a.md"), None);
         assert_eq!(Key::parse("/a b"), None);
+    }
+
+    #[test]
+    fn permalinks_are_keys() {
+        let file = read(
+            "version = 1\n[moved]\n\
+             \"permalink:agent-settings\" = \"permalink:settings\"\n\
+             \"permalink:rotate-keys\" = \"guides/security.md#keys\"\n\
+             [retired]\n\"permalink:legacy-sync\" = \"Removed in 4.0\"\n",
+        );
+        let records = file.permalinks();
+        assert_eq!(records.alias_end("agent-settings"), Some("settings"));
+        let moved = records.retired("rotate-keys").expect("moved");
+        assert_eq!(moved.to.as_deref(), Some("guides/security.md#keys"));
+        assert_eq!(moved.reason, None);
+        assert_eq!(moved.why(), "Moved to guides/security.md#keys");
+        let retired = records.retired("legacy-sync").expect("retired");
+        assert_eq!(retired.reason.as_deref(), Some("Removed in 4.0"));
+        assert_eq!(retired.to, None);
+        // What `ascribe.toml` had, recorded as the file has it.
+        let mut again = AddressFile::default();
+        let recorded = again.record_permalinks(&records);
+        assert_eq!(recorded, ["legacy-sync", "rotate-keys", "agent-settings"]);
+        assert_eq!(
+            again.to_toml(),
+            {
+                let mut file = file.clone();
+                for entry in file.moved.values_mut().chain(file.retired.values_mut()) {
+                    entry.span = Span::empty(0);
+                }
+                file
+            }
+            .to_toml()
+        );
+        // A name the file has keeps its entry.
+        assert!(again.record_permalinks(&records).is_empty());
+        // A permalink leads to a page or another permalink, and only a
+        // permalink leads to a permalink.
+        assert_eq!(
+            bad("version = 1\n[moved]\n\"permalink:a\" = \"b\"\n"),
+            [
+                "`permalink:a` moved to `b`, which isn't a file's path ending in `.md`, with `#` and an id for a heading, or `permalink:` and a permalink's name"
+            ]
+        );
+        assert_eq!(
+            bad("version = 1\n[moved]\n\"a.md\" = \"permalink:b\"\n"),
+            [
+                "`a.md` moved to `permalink:b`, which isn't a file's path ending in `.md`, with `#` and an id for a heading"
+            ]
+        );
     }
 
     #[test]
@@ -904,7 +1070,7 @@ mod tests {
         assert_eq!(
             bad("version = 1\n[moved]\n\"a.txt\" = \"b.md\"\n"),
             [
-                "`a.txt` isn't a key `[moved]` can have: a file's path ending in `.md`, with `#` and an id for a heading, or an address starting with `/`"
+                "`a.txt` isn't a key `[moved]` can have: a file's path ending in `.md`, with `#` and an id for a heading, an address starting with `/`, or `permalink:` and a permalink's name"
             ]
         );
         assert_eq!(

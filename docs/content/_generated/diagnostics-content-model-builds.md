@@ -237,7 +237,21 @@ Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md
 
 **Message:** `{name}` is both retired and an alias; a name is one thing
 
-**Fix:** Give each name in `[permalinks]` one meaning: retired, in `[permalinks.retired]`, or an alias, in `[permalinks.aliases]`. A retired permalink can still lead somewhere: give it `to`. Make each alias lead, perhaps through other aliases, to a permalink a heading or page declares. Write the reason a permalink was retired in place of the placeholder the editor's quick fix writes: a reader whose link led there sees it.
+**Fix:** Give each name in `[permalinks]` one meaning: retired, in `[permalinks.retired]`, or an alias, in `[permalinks.aliases]`. A retired permalink can still lead somewhere: give it `to`. Make each alias lead, perhaps through other aliases, to a permalink a heading or page declares. Write the reason a permalink was retired in place of the placeholder: a reader whose link led there sees it. These tables are kept in ascribe.addresses now (`model-permalinks-moved`): once they read, `ascribe addresses init` moves them there.
+
+**Read more:** [`[permalinks]`](../content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.
+
+### ASC283 `model-permalinks-moved`
+@id {permalink=true}: ASC283
+@summary: `ascribe.toml` has `[permalinks.retired]` or `[permalinks.aliases]`, which are kept in `ascribe.addresses` now.
+
+Warning · file level · next step: fix · [SPEC §7.6]({repo}/blob/main/SPEC.md#76-retired-permalinks-and-aliases)
+
+**When:** `ascribe.toml` has `[permalinks.retired]` or `[permalinks.aliases]`, which are kept in `ascribe.addresses` now.
+
+**Message:** `[permalinks.retired]` is kept in ascribe.addresses now; run `ascribe addresses init` to move it there
+
+**Fix:** Run `ascribe addresses init`, which moves each retired permalink and alias to ascribe.addresses, under its key `permalink:<name>`, and takes the tables out of ascribe.toml, keeping the rest of it as written; it makes the file when there's none. A retired permalink with a `to` becomes a move, and keeps no reason. Until then, they work as they did.
 
 **Read more:** [`[permalinks]`](../content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.
 

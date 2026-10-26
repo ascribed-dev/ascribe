@@ -1,0 +1,7 @@
+version = 1
+
+[moved]
+"permalink:old-keys" = "keys.md"
+
+[retired]
+"permalink:rotate-keys" = "Merged into the security guide"

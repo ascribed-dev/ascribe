@@ -216,7 +216,7 @@ pub fn of_resolved(
             });
         }
     }
-    addresses.extend(permalinks(&settings, model, resolved));
+    addresses.extend(permalinks(&settings, index, resolved));
     if settings.agents && model.consumer.site.is_some() {
         addresses.extend(llms(index, build, resolved));
     }
@@ -228,28 +228,40 @@ pub fn of_resolved(
 }
 
 /// The address of each name `resolved` answers to under the permalinks'
-/// path, in name order: each permalink it publishes, each retired one, and
-/// each alias of one it publishes. A page is served at each, which forwards
-/// to the permalink's page or says why it was removed.
-fn permalinks(settings: &Settings, model: &ContentModel, resolved: &ResolvedBuild) -> Vec<Address> {
+/// path, in name order: each permalink it publishes, each retired one, each
+/// moved one whose page it publishes, and each alias of one it publishes. A
+/// page is served at each, which forwards to the permalink's page or says
+/// why it was removed.
+fn permalinks(settings: &Settings, index: &Project, resolved: &ResolvedBuild) -> Vec<Address> {
     let found = resolved.permalinks();
-    let mut names: std::collections::BTreeMap<&str, Option<&RelPath>> =
+    let records = index.permalink_records();
+    let mut names: std::collections::BTreeMap<&str, Option<RelPath>> =
         std::collections::BTreeMap::new();
     for permalink in &found {
         names
             .entry(&permalink.name)
-            .or_insert(Some(&permalink.page));
+            .or_insert(Some(permalink.page.clone()));
     }
-    for retired in &model.permalinks.retired {
-        names.entry(&retired.name).or_insert(None);
+    for retired in &records.retired {
+        // One moved has an address only where its page is published; one
+        // retired with a reason has one in every build, which says why.
+        let page = match (&retired.reason, &retired.to) {
+            (None, Some(to)) => match resolved.retired_destination(to) {
+                Some(to) => Some(to.page),
+                None => continue,
+            },
+            _ => None,
+        };
+        names.entry(&retired.name).or_insert(page);
     }
-    for alias in &model.permalinks.aliases {
-        let target = model
-            .permalinks
+    for alias in &records.aliases {
+        let target = records
             .alias_end(&alias.name)
             .and_then(|end| found.iter().find(|p| p.name == end));
         if let Some(target) = target {
-            names.entry(&alias.name).or_insert(Some(&target.page));
+            names
+                .entry(&alias.name)
+                .or_insert(Some(target.page.clone()));
         }
     }
     let home = RelPath::parse("index.md").ok();
@@ -260,7 +272,7 @@ fn permalinks(settings: &Settings, model: &ContentModel, resolved: &ResolvedBuil
                 address: settings.permalink_address(name),
                 kind: AddressKind::Permalink,
                 source: name.to_owned(),
-                page: page.cloned().or_else(|| home.clone())?,
+                page: page.or_else(|| home.clone())?,
             })
         })
         .collect()

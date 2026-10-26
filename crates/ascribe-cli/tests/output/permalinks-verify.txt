@@ -1,2 +1,2 @@
-error: rotate-keys was retired from the docs: Merged into the security guide
+error: rotate-keys was retired from the docs: Moved to guides/security.md
 error: weave-colour isn't a permalink in ascribe.permalinks

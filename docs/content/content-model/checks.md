@@ -101,7 +101,7 @@ A broken link is `link-external-broken` and a moved one `link-external-moved`; b
 
 ## 20. `[permalinks]`
 
-Names for something outside the docs to link to that no heading or page declares: a [permalink](../writing/directives.md#permalinks) that was ended on purpose, and another name for one. Each is published at an address, as a permalink is, and recorded in `ascribe.permalinks` when the project has it (SPEC §7.6). The [guide](../permalinks/index.md#moving-aliasing-and-retiring) says when to use each.
+Where a project used to record what became of a [permalink](../writing/directives.md#permalinks) no heading or page declares: one ended on purpose, and another name for one. They're kept in [`ascribe.addresses`](../publishing/redirects.md#ascribeaddresses) now, under the key `permalink:` and the name, with every other address the docs have published; the [guide](../permalinks/index.md#moving-aliasing-and-retiring) says when to use each. A project with these tables still has them read, as they were, and is warned of each (`model-permalinks-moved`) until [`ascribe addresses init`](../publishing/redirects.md#cli-addresses-init) moves them there.
 
 ```toml
 [permalinks.retired]
@@ -117,11 +117,11 @@ cli-settings = "settings"
 
 @include: ../_generated/content-model-permalinks-retired.md
 
-`[permalinks.aliases]` has an entry for each alias, keyed by its name, whose value is the name it leads to: a permalink a heading or page declares, or another alias that leads to one. An alias's address leads where its permalink's does, in every build that publishes it, so repointing the alias changes where it leads and nothing else.
+`[permalinks.aliases]` has an entry for each alias, keyed by its name, whose value is the name it leads to: a permalink a heading or page declares, or another alias that leads to one.
 
-[`ascribe permalinks retire`](../permalinks/command.md#cli-permalinks-retire) writes `[permalinks.retired]` for you, and the editor's quick fix on a removed permalink writes an entry with a placeholder reason for you to replace. To bring a retired permalink back, delete its entry and declare the name again.
+Moved, a retired permalink with a `to` is a `[moved]` entry, which keeps no reason, one without is a `[retired]` entry, and an alias is a `[moved]` entry whose value is `permalink:` and the name it leads to. Ascribe writes neither table any more: [`ascribe permalinks retire`](../permalinks/command.md#cli-permalinks-retire) and the editor's quick fix write `ascribe.addresses`.
 
-**Rules.** A name has the characters of an `@id` (`model-invalid-name`). A retired permalink has a `reason`, not empty and not the quick fix's placeholder, and no keys but `reason` and `to` (`model-missing-key`, `model-empty-text`, `model-permalinks`, `model-unknown-key`). A name is one thing: retired, an alias, or declared by the content, never two (`model-permalinks`, `permalink-name-conflict`). An alias leads, through aliases, to a permalink the content declares, never back to itself or to a retired permalink (`model-permalinks`, `permalink-alias-target-missing`). A `to` leads to a page, not a fragment, and to a heading on it when it names one (`permalink-retired-target-missing`).
+**Rules.** A name has the characters of an `@id` (`model-invalid-name`). A retired permalink has a `reason`, not empty and not the quick fix's placeholder, and no keys but `reason` and `to` (`model-missing-key`, `model-empty-text`, `model-permalinks`, `model-unknown-key`). A name is one thing: retired, an alias, or declared by the content, never two (`model-permalinks`, `permalink-name-conflict`). An alias leads, through aliases, to a permalink the content declares, never back to itself or to a retired permalink (`model-permalinks`, `permalink-alias-target-missing`). A `to` leads to a page, not a fragment, and to a heading on it when it names one (`permalink-retired-target-missing`). A name `ascribe.addresses` records too is its entry there.
 
 ---
 

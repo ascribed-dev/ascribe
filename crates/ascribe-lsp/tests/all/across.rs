@@ -430,8 +430,8 @@ fn a_removed_permalink_is_reported_on_the_list_and_retired_by_a_quick_fix() {
     let diagnostic = client
         .diagnostics(&list)
         .into_iter()
-        .find(|d| slug(d) == "permalink-removed")
-        .expect("permalink-removed, on the list");
+        .find(|d| slug(d) == "permalink-lost")
+        .expect("permalink-lost, on the list");
     assert_eq!(diagnostic.range.start.line, 4);
     let actions = client
         .request(
@@ -452,22 +452,27 @@ fn a_removed_permalink_is_reported_on_the_list_and_retired_by_a_quick_fix() {
         .expect("the quick fix");
     // It needs a person's sentence, so it isn't applied unasked.
     assert_eq!(retire["isPreferred"], false);
-    let model = uri(&f.path("ascribe.toml"));
-    let edits = retire["edit"]["changes"][model.as_str()]
+    // The project has no ascribe.addresses, so the fix makes it.
+    let addresses = uri(&f.path("ascribe.addresses"));
+    let operations = retire["edit"]["documentChanges"]
         .as_array()
-        .expect("an edit to ascribe.toml");
-    assert_eq!(edits.len(), 1);
-    let text = apply(crate::support::MODEL, &edits[0]);
+        .expect("operations");
+    assert_eq!(operations.len(), 2, "{operations:?}");
+    assert_eq!(operations[0]["kind"], "create");
+    assert_eq!(operations[0]["uri"], addresses.as_str());
+    assert_eq!(operations[1]["textDocument"]["uri"], addresses.as_str());
+    let text = operations[1]["edits"][0]["newText"]
+        .as_str()
+        .expect("the file")
+        .to_owned();
     assert!(
-        text.ends_with(
-            "\n[permalinks.retired]\nrotate-keys = { reason = \"why this permalink was retired\" }\n"
-        ),
+        text.ends_with("[retired]\n\"permalink:rotate-keys\" = \"why this address was retired\"\n"),
         "{text}"
     );
-    // And it opens ascribe.toml with the placeholder selected.
+    // And it opens ascribe.addresses with the placeholder selected.
     let command = &retire["command"];
     assert_eq!(command["command"], "ascribe.openFile");
-    assert_eq!(command["arguments"][0], model.as_str());
+    assert_eq!(command["arguments"][0], addresses.as_str());
     let selection = &command["arguments"][1];
     let line = text.lines().count() - 1;
     let column = text
@@ -482,34 +487,27 @@ fn a_removed_permalink_is_reported_on_the_list_and_retired_by_a_quick_fix() {
     );
     assert_eq!(
         selection["end"],
-        json!({ "line": line, "character": column + "why this permalink was retired".len() })
+        json!({ "line": line, "character": column + "why this address was retired".len() })
     );
 
-    // Taken, the placeholder is an error until it's replaced, and the
-    // model with the reason written quiets the removal.
-    let model_path = f.path("ascribe.toml");
-    f.write("ascribe.toml", &text);
-    client.watched(&[(&model_path, lsp_types::FileChangeType::CHANGED)]);
+    // Taken, the placeholder keeps the file from reading until it's
+    // replaced, so the removal stays reported; the reason written quiets it.
+    let addresses_path = f.path("ascribe.addresses");
+    f.write("ascribe.addresses", &text);
+    client.watched(&[(&addresses_path, lsp_types::FileChangeType::CREATED)]);
     client.settle();
-    assert!(
-        client
-            .diagnostics(&model_path)
-            .iter()
-            .any(|d| slug(d) == "model-permalinks"),
-        "{:?}",
-        client.codes(&model_path)
-    );
+    assert_eq!(client.codes(&list), ["permalink-lost"]);
     f.write(
-        "ascribe.toml",
-        &text.replace("why this permalink was retired", "Merged into Keys"),
+        "ascribe.addresses",
+        &text.replace("why this address was retired", "Merged into Keys"),
     );
-    client.watched(&[(&model_path, lsp_types::FileChangeType::CHANGED)]);
+    client.watched(&[(&addresses_path, lsp_types::FileChangeType::CHANGED)]);
     client.settle();
     assert!(client.codes(&list).is_empty(), "{:?}", client.codes(&list));
     // The list is behind on the retired name now, and the same quick fix as
     // for a declared name records it.
     let behind = client
-        .diagnostics(&model_path)
+        .diagnostics(&addresses_path)
         .into_iter()
         .find(|d| slug(d) == "permalinks-list-behind")
         .expect("permalinks-list-behind, on the entry");
@@ -517,7 +515,7 @@ fn a_removed_permalink_is_reported_on_the_list_and_retired_by_a_quick_fix() {
         .request(
             "textDocument/codeAction",
             json!({
-                "textDocument": { "uri": model.as_str() },
+                "textDocument": { "uri": addresses.as_str() },
                 "range": behind.range,
                 "context": { "diagnostics": [behind] }
             }),

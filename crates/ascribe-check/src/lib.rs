@@ -112,7 +112,7 @@ pub(crate) fn check_files_with(
             || memos::any(project)
             || project.permalinks().is_some()
             || project.nav().is_some()
-            || !project.model().permalinks.is_empty() =>
+            || !project.permalink_records().is_empty() =>
         {
             PageChecker::new(project).for_every_build(true)
         }

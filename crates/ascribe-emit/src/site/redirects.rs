@@ -178,7 +178,8 @@ pub fn redirects(
                 Err(_) => Vec::new(),
             },
             Some(Key::Address(address)) => vec![(address.to_owned(), false)],
-            Some(Key::Id { .. }) | None => Vec::new(),
+            // A permalink's address is the permalinks list's to publish.
+            Some(Key::Id { .. } | Key::Permalink(_)) | None => Vec::new(),
         }
     };
     let mut pairs = Pairs {
@@ -347,7 +348,8 @@ fn former_pairs(now: &Now<'_>, routers: &[AstroRouter], had_agents: bool, pairs:
     paths.retain(|(path, _)| *path != now);
     if !paths.is_empty() {
         let found = build.permalinks();
-        for name in super::permalinks::named(model, build, &found).keys() {
+        let records = project.permalink_records();
+        for name in super::permalinks::named(&records, build, &found).keys() {
             for (path, entry) in &paths {
                 pairs.push(
                     format!("{path}{name}{slash}"),

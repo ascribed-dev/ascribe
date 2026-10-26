@@ -24,6 +24,7 @@
     {
       "name": "config",
       "target": "weave-config",
+      "file": "ascribe.addresses",
       "state": "listed"
     }
   ],

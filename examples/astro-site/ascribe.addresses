@@ -1,0 +1,11 @@
+# Where addresses the docs published went. Written by `ascribe rename`, the
+# editor, `ascribe addresses`, and `ascribe check --fix`; edit only
+# [retired]'s reasons.
+version = 1
+
+[moved]
+"permalink:config" = "permalink:weave-config"
+"permalink:old-options" = "Reference/Options.md"
+
+[retired]
+"permalink:legacy-sync" = "Sync was removed in Loom 3.0, & nothing replaced it."

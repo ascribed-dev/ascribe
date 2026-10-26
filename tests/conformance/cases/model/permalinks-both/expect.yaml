@@ -1,8 +1,12 @@
 description: >-
   A name both retired and an alias is an error at the alias: a name is one
   thing.
+  Each table is also `model-permalinks-moved`: they're kept in
+  `ascribe.addresses` now.
 spec: ["7.6"]
 tags: [model]
 
 diagnostics:
+  - {slug: model-permalinks-moved, file: ascribe.toml, line: 3}
+  - {slug: model-permalinks-moved, file: ascribe.toml, line: 6}
   - {slug: model-permalinks, file: ascribe.toml, line: 7}

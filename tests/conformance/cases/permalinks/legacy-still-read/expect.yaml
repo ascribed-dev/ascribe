@@ -1,0 +1,11 @@
+description: >-
+  Retired permalinks and aliases still written in `ascribe.toml`, from before
+  `ascribe.addresses` kept them, are read and checked as before, and each
+  table is a warning until they're moved.
+spec: ["7.6", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: model-permalinks-moved, file: ascribe.toml, line: 6}
+  - {slug: permalink-retired-target-missing, file: ascribe.toml, line: 8}
+  - {slug: model-permalinks-moved, file: ascribe.toml, line: 10}

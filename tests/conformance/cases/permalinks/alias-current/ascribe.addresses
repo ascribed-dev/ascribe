@@ -1,0 +1,7 @@
+version = 1
+
+[moved]
+"permalink:agent-settings" = "permalink:settings"
+"permalink:cli-settings" = "permalink:agent-settings"
+
+[retired]

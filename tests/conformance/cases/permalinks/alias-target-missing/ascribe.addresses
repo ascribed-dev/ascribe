@@ -1,0 +1,10 @@
+version = 1
+
+[moved]
+"permalink:agent-settings" = "permalink:settings"
+"permalink:loop-a" = "permalink:loop-b"
+"permalink:loop-b" = "permalink:loop-a"
+"permalink:old-keys" = "permalink:rotate-keys"
+
+[retired]
+"permalink:rotate-keys" = "Merged into the security guide"

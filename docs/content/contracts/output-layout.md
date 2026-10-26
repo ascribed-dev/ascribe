@@ -79,9 +79,9 @@ The site output holds `_ascribe/permalinks.json`: every permalink the build publ
 | `permalinks.*.route` | The route of the page the permalink is on, as the site output's links write it. |
 | `permalinks.*.fragment` | The heading's anchor on that page, without `#`. Absent for a page's own permalink, which leads to the top of the page. |
 | `permalinks.*.source` | The page's source path, relative to the content root. |
-| `permalinks.*.alias` | For an alias in `ascribe.toml`'s `[permalinks.aliases]` (SPEC §7.6), the name it leads to, as written there. It's listed with the page and anchor of the permalink its aliases end at, when the build publishes that permalink, and not listed otherwise. |
-| `permalinks.*.retired` | For a retired permalink in `[permalinks.retired]` whose `to` leads to a page the build publishes, why it was retired; `route`, `fragment`, and `source` are the `to`'s. |
-| `removed` | The retired permalinks with nowhere to lead in this build, keyed by name and sorted: those without `to`, and those whose `to`'s page the build doesn't publish. Each has `reason`, why it was retired. Their addresses show that what was there was removed, and why. Absent when there are none. |
+| `permalinks.*.alias` | For an alias, a `[moved]` entry of `ascribe.addresses` that leads to another permalink (SPEC §7.6), the name it leads to, as written there. It's listed with the page and anchor of the permalink its aliases end at, when the build publishes that permalink, and not listed otherwise. |
+| `permalinks.*.retired` | For a permalink moved to a page the build publishes, from `ascribe.toml`'s `[permalinks.retired]` with a `to`, why it was retired. A permalink moved by `ascribe.addresses`' `[moved]` has none. Either way, `route`, `fragment`, and `source` are the page's it leads to, and a build that doesn't publish that page doesn't list it. |
+| `removed` | The retired permalinks with nowhere to lead in this build, keyed by name and sorted: those `ascribe.addresses` retires, and, in `ascribe.toml`'s `[permalinks.retired]`, those without `to` and those whose `to`'s page the build doesn't publish. Each has `reason`, why it was retired. Their addresses show that what was there was removed, and why. Absent when there are none. |
 
 An address forwards to `route`, then `#` and `fragment` when there is one. A later version may add keys to the file or to an entry; it doesn't change these.
 

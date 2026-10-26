@@ -74,6 +74,9 @@ fn reported(dir: &Path) -> Vec<(String, String)> {
         .unwrap()
         .iter()
         .filter(|d| d["severity"] != "advice")
+        // The project isn't in a git repository, so once it has
+        // `ascribe.addresses` there's no base to compare its addresses with.
+        .filter(|d| d["slug"] != "addresses-base-unreadable")
         .map(|d| {
             (
                 d["slug"].as_str().unwrap().to_owned(),
@@ -176,7 +179,7 @@ fn deleting_a_marked_heading_warns_naming_it_and_what_the_check_cant_see() {
     let found = reported(dir.path());
     assert_eq!(found.len(), 1, "{found:?}");
     let (slug, message) = &found[0];
-    assert_eq!(slug, "permalink-removed");
+    assert_eq!(slug, "permalink-lost");
     assert!(
         message.contains("`rotate-keys` was a permalink"),
         "{message}"
@@ -210,7 +213,7 @@ fn sync_keeps_a_removed_name_and_says_so() {
     );
     let found = reported(dir.path());
     assert_eq!(found.len(), 1, "{found:?}");
-    assert_eq!(found[0].0, "permalink-removed");
+    assert_eq!(found[0].0, "permalink-lost");
 }
 
 #[test]
@@ -378,7 +381,7 @@ fn verify_cant_run_without_a_list_or_with_one_it_cant_read() {
 }
 
 #[test]
-fn retiring_a_removed_permalink_keeps_the_model_s_comments_and_quiets_check() {
+fn retiring_a_removed_permalink_writes_ascribe_addresses_and_quiets_check() {
     let dir = project();
     write(
         dir.path(),
@@ -412,37 +415,25 @@ fn retiring_a_removed_permalink_keeps_the_model_s_comments_and_quiets_check() {
 
     let retire = ascribe(
         dir.path(),
-        &[
-            "permalinks",
-            "retire",
-            "rotate-keys",
-            "--reason",
-            "Merged into the install page",
-            "--to",
-            "install.md",
-        ],
+        &["permalinks", "retire", "rotate-keys", "--to", "install.md"],
     );
     assert_eq!(code_of(&retire), 0, "{}", stderr(&retire));
     assert_eq!(
         stdout(&retire),
-        "retired rotate-keys, leading to install.md\nwrote ascribe.toml\nwrote ascribe.permalinks\n"
+        "moved rotate-keys to install.md\nwrote ascribe.addresses\nwrote ascribe.permalinks\n"
     );
     let model = fs::read_to_string(dir.path().join("ascribe.toml")).unwrap();
+    assert_eq!(
+        model,
+        "# The docs' model.\nspec = \"0.1\"\n\n[project]\ncontent-root = \"docs\" # beside it\n"
+    );
+    let addresses = fs::read_to_string(dir.path().join("ascribe.addresses")).unwrap();
     assert!(
-        model.starts_with(
-            "# The docs' model.\nspec = \"0.1\"\n\n[project]\ncontent-root = \"docs\" # beside it\n"
-        ),
-        "{model}"
+        addresses.contains("[moved]\n\"permalink:rotate-keys\" = \"install.md\"\n"),
+        "{addresses}"
     );
     assert!(
-        model.contains(
-            "[permalinks.retired]\nrotate-keys = { to = \"install.md\", reason = \"Merged into the install page\" }\n"
-        ),
-        "{model}"
-    );
-    assert!(
-        list_text(dir.path())
-            .ends_with("[retired]\nrotate-keys = \"Merged into the install page\"\n"),
+        list_text(dir.path()).ends_with("[retired]\nrotate-keys = \"Moved to install.md\"\n"),
         "{}",
         list_text(dir.path())
     );
@@ -454,7 +445,7 @@ fn retiring_a_removed_permalink_keeps_the_model_s_comments_and_quiets_check() {
     assert_eq!(code_of(&verify), 1);
     assert_eq!(
         stderr(&verify),
-        "error: rotate-keys was retired from the docs: Merged into the install page\n"
+        "error: rotate-keys was retired from the docs: Moved to install.md\n"
     );
 }
 
@@ -471,24 +462,20 @@ fn retire_takes_a_page_as_check_names_it_and_writes_it_from_the_content_root() {
             "retire",
             "--page",
             "docs/keys.md",
-            "--reason",
-            "Merged into the install page",
             "--to",
             "docs/install.md",
         ],
     );
     assert_eq!(code_of(&retire), 0, "{}", stderr(&retire));
     assert!(
-        stdout(&retire).starts_with("retired rotate-keys, leading to docs/install.md\n"),
+        stdout(&retire).starts_with("moved rotate-keys to docs/install.md\n"),
         "{}",
         stdout(&retire)
     );
-    let model = fs::read_to_string(dir.path().join("ascribe.toml")).unwrap();
+    let addresses = fs::read_to_string(dir.path().join("ascribe.addresses")).unwrap();
     assert!(
-        model.contains(
-            "rotate-keys = { to = \"install.md\", reason = \"Merged into the install page\" }\n"
-        ),
-        "{model}"
+        addresses.contains("\"permalink:rotate-keys\" = \"install.md\"\n"),
+        "{addresses}"
     );
 
     // From the content root, a path from there.
@@ -534,9 +521,17 @@ fn retire_takes_a_page_as_check_names_it_and_writes_it_from_the_content_root() {
 #[test]
 fn an_alias_is_listed_and_verified_as_found() {
     let dir = project();
-    let mut model = MODEL.to_owned();
-    model.push_str("\n[permalinks.aliases]\nkey-rotation = \"rotate-keys\"\n");
-    write(dir.path(), "ascribe.toml", &model);
+    assert_eq!(code_of(&ascribe(dir.path(), &["addresses", "init"])), 0);
+    let move_ = ascribe(
+        dir.path(),
+        &[
+            "addresses",
+            "move",
+            "permalink:key-rotation",
+            "permalink:rotate-keys",
+        ],
+    );
+    assert_eq!(code_of(&move_), 0, "{}", stderr(&move_));
     let sync = ascribe(dir.path(), &["permalinks", "sync"]);
     assert_eq!(code_of(&sync), 0, "{}", stderr(&sync));
     assert!(

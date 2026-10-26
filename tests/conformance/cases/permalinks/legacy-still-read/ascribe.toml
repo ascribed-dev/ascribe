@@ -1,0 +1,11 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[permalinks.retired]
+gone = { reason = "Removed in 4.0" }
+lost = { to = "missing.md", reason = "Merged" }
+
+[permalinks.aliases]
+keys-alias = "keys"

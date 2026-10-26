@@ -1,9 +1,9 @@
 description: >-
-  An alias or a retired permalink the list has that `ascribe.toml` no longer
-  declares is removed, like a permalink the content no longer declares.
+  An alias or a retired permalink the list has that the project no longer
+  records is lost, like a permalink the content no longer declares.
 spec: ["7.5", "8.2"]
 tags: [check]
 
 diagnostics:
-  - {slug: permalink-removed, file: ascribe.permalinks, line: 7}
-  - {slug: permalink-removed, file: ascribe.permalinks, line: 10}
+  - {slug: permalink-lost, file: ascribe.permalinks, line: 7}
+  - {slug: permalink-lost, file: ascribe.permalinks, line: 10}

@@ -4,7 +4,7 @@
   "retired": [
     "rotate-keys"
   ],
-  "reason": "Merged into the security guide",
+  "reason": "Moved to guides/security.md",
   "to": "guides/security.md",
   "list_changed": true
 }

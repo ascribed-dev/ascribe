@@ -2,9 +2,3 @@ spec = "0.1"
 
 [project]
 content-root = "files"
-
-[permalinks.retired]
-rotate-keys = { reason = "Merged into the security guide" }
-
-[permalinks.aliases]
-keys = "rotate-keys"

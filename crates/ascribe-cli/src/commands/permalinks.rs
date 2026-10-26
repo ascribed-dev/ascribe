@@ -2,14 +2,16 @@
 //! `ascribe.permalinks` (SPEC §7.5), and retiring them (§7.6). `sync`
 //! brings the list up to date, `list` shows every permalink and whether the
 //! list has it, `verify` checks names against a list alone, as a product's
-//! CI does, and `retire` ends permalinks on purpose, with a reason.
+//! CI does, and `retire` ends permalinks on purpose, with a reason or
+//! somewhere to lead, in `ascribe.addresses`.
 
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use ascribe_core::Coded;
-use ascribe_model::{PERMALINKS_FILE, is_retired_placeholder};
+use ascribe_model::addresses::RETIRED_PLACEHOLDER as ADDRESS_PLACEHOLDER;
+use ascribe_model::{ADDRESSES_FILE, PERMALINKS_FILE, is_retired_placeholder};
 use ascribe_query::permalinks::{ListState, ListedAs};
 use ascribe_query::{PermalinksAnswer, Retire, RetireAnswer, SyncAnswer, VerifyAnswer};
 use clap::{Args as ClapArgs, Subcommand};
@@ -42,9 +44,9 @@ pub enum Command {
     /// list, so a product's repository can check its links against a copy.
     #[command(after_help = docs_link!("cli-permalinks-verify"))]
     Verify(VerifyArgs),
-    /// Retire permalinks, with a reason, in ascribe.toml's
-    /// [permalinks.retired]: names gone from the content, every permalink
-    /// on a page, or every one under a folder. Their addresses show the
+    /// Retire permalinks in ascribe.addresses, with a reason, or move them
+    /// to a page with --to: names gone from the content, every permalink on
+    /// a page, or every one under a folder. Their addresses show the
     /// reason, or lead to --to. With ascribe.permalinks, records them there
     /// too.
     #[command(after_help = docs_link!("cli-permalinks-retire"))]
@@ -102,13 +104,13 @@ pub struct RetireArgs {
     pub names: Vec<String>,
 
     /// Why they were retired, for a reader whose link leads there.
-    #[arg(long, value_name = "TEXT")]
-    pub reason: String,
+    #[arg(long, value_name = "TEXT", required_unless_present = "to")]
+    pub reason: Option<String>,
 
-    /// Where their addresses lead now: a page, by its path from the current
-    /// folder or from the content root, and `#` and a heading's id. Without
-    /// it, an address shows the reason.
-    #[arg(long, value_name = "PAGE")]
+    /// Where their addresses lead now, in place of a reason: a page, by its
+    /// path from the current folder or from the content root, and `#` and a
+    /// heading's id. They're recorded as moved there.
+    #[arg(long, value_name = "PAGE", conflicts_with = "reason")]
     pub to: Option<String>,
 
     /// Retire every permalink this page declares, or that ascribe.permalinks
@@ -154,12 +156,12 @@ pub enum PermalinksError {
         "give --reason a sentence that says why they were retired: a reader whose link leads there sees it"
     )]
     NoReason,
-    /// `ascribe.toml` can't be changed in place.
+    /// `ascribe.addresses` can't be read, or records a name already.
     #[error("{0}")]
-    ModelUnchanged(String),
-    /// `ascribe.toml` can't be written.
+    AddressesUnchanged(String),
+    /// `ascribe.addresses` can't be written.
     #[error("can't write {}: {message}", path.display())]
-    ModelUnwritable {
+    AddressesUnwritable {
         /// The file.
         path: PathBuf,
         /// What went wrong.
@@ -174,8 +176,8 @@ impl Coded for PermalinksError {
             PermalinksError::Unreadable { .. } => "permalinks_file_unreadable",
             PermalinksError::Unwritable { .. } => "permalinks_list_unwritable",
             PermalinksError::NoReason => "retire_reason_missing",
-            PermalinksError::ModelUnchanged(_) => "model_edit_refused",
-            PermalinksError::ModelUnwritable { .. } => "model_unwritable",
+            PermalinksError::AddressesUnchanged(_) => "addresses_edit_refused",
+            PermalinksError::AddressesUnwritable { .. } => "addresses_file_unwritable",
         }
     }
 }
@@ -358,30 +360,35 @@ fn write_list(out: &mut dyn Write, a: &PermalinksAnswer) -> io::Result<()> {
         let state = behind(alias.state);
         writeln!(
             out,
-            "ascribe.toml: {} is an alias of {}{state}",
-            alias.name, alias.target
+            "{}: {} is an alias of {}{state}",
+            alias.file, alias.name, alias.target
         )?;
     }
     for retired in &a.retired {
         let state = behind(retired.state);
-        let to = retired
-            .to
-            .as_deref()
-            .map_or_else(String::new, |to| format!(", leading to {to}"));
-        writeln!(
-            out,
-            "ascribe.toml: {} is retired{to}: {}{state}",
-            retired.name, retired.reason
-        )?;
+        match (&retired.to, retired.moved) {
+            (Some(to), true) => writeln!(
+                out,
+                "{}: {} moved to {to}{state}",
+                retired.file, retired.name
+            )?,
+            (Some(to), false) => writeln!(
+                out,
+                "{}: {} is retired, leading to {to}: {}{state}",
+                retired.file, retired.name, retired.reason
+            )?,
+            (None, _) => writeln!(
+                out,
+                "{}: {} is retired: {}{state}",
+                retired.file, retired.name, retired.reason
+            )?,
+        }
     }
     for r in &a.removed {
         let was = match r.was {
             ListedAs::Permalink => format!("was in {}, and nothing declares it now", r.place),
-            ListedAs::Alias => format!(
-                "was an alias of {}, and ascribe.toml doesn't declare it now",
-                r.place
-            ),
-            ListedAs::Retired => "was retired, and ascribe.toml doesn't retire it now".to_owned(),
+            ListedAs::Alias => format!("was an alias of {}, and nothing records it now", r.place),
+            ListedAs::Retired => "was retired, and nothing records it now".to_owned(),
         };
         writeln!(out, "{PERMALINKS_FILE}: {} {was}", r.name)?;
     }
@@ -468,14 +475,11 @@ fn write_verify(out: &mut dyn Write, err: &mut dyn Write, v: &VerifyAnswer) -> i
 /// Exit codes: 0 when the names are retired; 2 when the project doesn't
 /// load, a name can't be retired, or a file can't be read or written.
 fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let reason = args.reason.trim();
-    if reason.is_empty() || is_retired_placeholder(reason) {
+    let reason = args.reason.as_deref().map(str::trim);
+    if reason.is_some_and(|r| r.is_empty() || is_retired_placeholder(r) || r == ADDRESS_PLACEHOLDER)
+    {
         return answer::fail(err, &PermalinksError::NoReason);
     }
-    let config = match crate::context::locate(global) {
-        Ok(config) => config,
-        Err(e) => return answer::fail(err, &e),
-    };
     let project = match load_project(global) {
         Ok(project) => project,
         Err(failure) => return answer::report_failure(err, &failure),
@@ -514,55 +518,43 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         Some(Err(e)) => return answer::fail(err, &e),
         None => Vec::new(),
     };
-    // What's written into ascribe.toml is from the content root, as links
-    // there are.
+    // What's written into ascribe.addresses is from the content root, as
+    // its values are.
     let to = args.to.as_deref().map(|to| target_in_content(&project, to));
     let entries: Vec<ascribe_lsp::Retirement<'_>> = names
         .iter()
         .map(|name| ascribe_lsp::Retirement {
             name,
-            reason,
+            reason: reason.unwrap_or_default(),
             to: to.as_deref(),
         })
         .collect();
-    // `[permalinks.retired]` is written where it is: here, or in the file
-    // `[from]` takes it from.
-    let taken = ascribe_lsp::read_taken(project.model_text(), &config);
-    let retired = match ascribe_lsp::retire(project.model_text(), &taken, &entries) {
-        Ok(retired) => retired,
-        Err(message) => return answer::fail(err, &PermalinksError::ModelUnchanged(message)),
-    };
-    let mut writes: Vec<(PathBuf, &str)> = Vec::new();
-    if retired.text != project.model_text() {
-        writes.push((config.clone(), &retired.text));
-    }
-    writes.extend(
-        retired
-            .taken
-            .iter()
-            .map(|t| (t.path.clone(), t.text.as_str())),
-    );
-    for (path, text) in &writes {
-        if let Err(e) = std::fs::write(path, text) {
-            let error = PermalinksError::ModelUnwritable {
-                path: path.clone(),
-                message: e.to_string(),
-            };
+    // The project's file, or a new one.
+    let file = match project.addresses() {
+        Some(Ok(file)) => file.clone(),
+        Some(Err(_)) => {
+            let error = PermalinksError::AddressesUnchanged(format!(
+                "{ADDRESSES_FILE} can't be read; run `ascribe check` to see where"
+            ));
             return answer::fail(err, &error);
         }
+        None => ascribe_model::AddressFile::default(),
+    };
+    let after = match ascribe_lsp::retire(&file, &entries) {
+        Ok(after) => after.to_toml(),
+        Err(message) => return answer::fail(err, &PermalinksError::AddressesUnchanged(message)),
+    };
+    let wrote = project.addresses_text() != Some(after.as_str());
+    if wrote && let Err(error) = write_addresses(project.root(), &after) {
+        return answer::fail(err, &error);
     }
-    let wrote: Vec<String> = writes
-        .iter()
-        .map(|(path, _)| {
-            if *path == config {
-                ascribe_check::MODEL_FILE.to_owned()
-            } else {
-                answer::path_from_here(path)
-            }
-        })
-        .collect();
+    // The list records a moved name as retired, saying where it moved.
+    let why = match &to {
+        Some(to) => format!("Moved to {to}"),
+        None => reason.unwrap_or_default().to_owned(),
+    };
     let list = match project.permalinks() {
-        Some(Ok(list)) => ascribe_query::permalinks::record_retired(&index, list, &names, reason),
+        Some(Ok(list)) => ascribe_query::permalinks::record_retired(&index, list, &names, &why),
         _ => None,
     };
     if let Some(text) = &list
@@ -570,7 +562,12 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
     {
         return answer::fail(err, &error);
     }
-    let done = RetireAnswer::new(names, reason, args.to.as_deref(), list.is_some());
+    let done = RetireAnswer::new(names, &why, args.to.as_deref(), list.is_some());
+    let wrote: Vec<String> = if wrote {
+        vec![ADDRESSES_FILE.to_owned()]
+    } else {
+        Vec::new()
+    };
     let result = match args.format {
         Format::Json => answer::write_json(out, &done),
         Format::Text => write_retire(out, &done, &wrote, project.permalinks().is_some()),
@@ -586,7 +583,7 @@ fn write_retire(
 ) -> io::Result<()> {
     for name in &r.retired {
         match &r.to {
-            Some(to) => writeln!(out, "retired {name}, leading to {to}")?,
+            Some(to) => writeln!(out, "moved {name} to {to}")?,
             None => writeln!(out, "retired {name}")?,
         }
     }
@@ -640,6 +637,22 @@ fn target_in_content(project: &ascribe_check::Project, to: &str) -> String {
         Some(id) => format!("{page}#{id}"),
         None => page.to_string(),
     }
+}
+
+/// Writes the project's `ascribe.addresses`, but never through a link.
+fn write_addresses(root: &Path, text: &str) -> Result<(), PermalinksError> {
+    let path = root.join(ADDRESSES_FILE);
+    // Outside FileSystem: writing the project's own file beside
+    // ascribe.toml, as the list is written.
+    let written = if ascribe_resolve::is_link(&path) {
+        Err("it's a link; replace it with a file, or remove it".to_owned())
+    } else {
+        std::fs::write(&path, text).map_err(|e| e.to_string())
+    };
+    written.map_err(|message| PermalinksError::AddressesUnwritable {
+        path: PathBuf::from(ADDRESSES_FILE),
+        message,
+    })
 }
 
 /// Writes the project's `ascribe.permalinks`, but never through a link,

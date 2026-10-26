@@ -76,8 +76,9 @@ pub struct ContentModel {
     /// `[[intended]]`: the acknowledged problems about an entry or an image
     /// (SPEC §4.9), in declaration order.
     pub intended: Vec<Intended>,
-    /// `[permalinks]`: the retired permalinks and the aliases.
-    pub permalinks: ModelPermalinks,
+    /// `[permalinks]`: the retired permalinks and the aliases still written
+    /// in `ascribe.toml`, before they were moved to `ascribe.addresses`.
+    pub permalinks: PermalinkRecords,
     /// `[crawlers]`: what the project says to crawlers.
     pub crawlers: Crawlers,
     /// `[listing]`: how the site's, a folder's, or a type's pages are listed.
@@ -553,47 +554,79 @@ impl ContentModel {
     }
 }
 
-/// `[permalinks]`: the names `ascribe.toml` gives somewhere to lead that
-/// no heading or page declares (SPEC §7.6). Each name is in one of them.
+/// What the project records of its permalinks beyond what the content
+/// declares (SPEC §7.6): each retired, moved, or aliased name. They're kept
+/// in `ascribe.addresses`, under keys `permalink:<name>`
+/// ([`crate::AddressFile::permalinks`]); a project that hasn't moved them
+/// there yet has them in `ascribe.toml`'s `[permalinks.retired]` and
+/// `[permalinks.aliases]`, which the loader still reads, and warns of. Each
+/// name is in one of them.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct ModelPermalinks {
-    /// `[permalinks.retired]`, in declaration order.
+pub struct PermalinkRecords {
+    /// The retired and moved permalinks, in the order they're written.
     pub retired: Vec<RetiredPermalink>,
-    /// `[permalinks.aliases]`, in declaration order.
+    /// The aliases, in the order they're written.
     pub aliases: Vec<PermalinkAlias>,
 }
 
-/// A permalink retired on purpose, in `[permalinks.retired]`.
+/// The file a permalink's record is written in.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RecordedIn {
+    /// `ascribe.addresses`.
+    Addresses,
+    /// `ascribe.toml`, before its records were moved to `ascribe.addresses`.
+    Model,
+}
+
+/// A permalink ended on purpose: retired, with a reason, or moved, with
+/// where its address leads now.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RetiredPermalink {
     /// The name.
     pub name: String,
-    /// Why it was retired, as the author wrote it.
-    pub reason: String,
+    /// Why it was retired, as the author wrote it. `None` for a permalink
+    /// moved in `ascribe.addresses`, which has only `to`.
+    pub reason: Option<String>,
     /// Where its address leads now, written as a link from the content
     /// root is: a page's content path, and `#` and a heading's id.
     pub to: Option<String>,
-    /// The name's key, in `ascribe.toml`.
+    /// The name's key.
     pub span: Span,
-    /// The `to` value.
+    /// The `to` value: in `ascribe.addresses`, the entry's key.
     pub to_span: Option<Span>,
+    /// The file it's written in.
+    pub file: RecordedIn,
 }
 
-/// A second name for a permalink, in `[permalinks.aliases]`.
+impl RetiredPermalink {
+    /// Why it was ended, for a list that says so of every name: its
+    /// reason, or, for one moved, where it moved.
+    pub fn why(&self) -> String {
+        match (&self.reason, &self.to) {
+            (Some(reason), _) => reason.clone(),
+            (None, Some(to)) => format!("Moved to {to}"),
+            (None, None) => String::new(),
+        }
+    }
+}
+
+/// A second name for a permalink.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PermalinkAlias {
     /// The alias.
     pub name: String,
     /// The name it leads to: a permalink, or another alias.
     pub target: String,
-    /// The alias's key, in `ascribe.toml`.
+    /// The alias's key.
     pub span: Span,
-    /// The target's value.
+    /// The target's value: in `ascribe.addresses`, the entry's key.
     pub target_span: Span,
+    /// The file it's written in.
+    pub file: RecordedIn,
 }
 
-impl ModelPermalinks {
-    /// Whether `ascribe.toml` retires or aliases nothing.
+impl PermalinkRecords {
+    /// Whether it records nothing.
     pub fn is_empty(&self) -> bool {
         self.retired.is_empty() && self.aliases.is_empty()
     }
@@ -606,6 +639,33 @@ impl ModelPermalinks {
     /// The alias `name`.
     pub fn alias(&self, name: &str) -> Option<&PermalinkAlias> {
         self.aliases.iter().find(|a| a.name == name)
+    }
+
+    /// Whether it records `name`, retired, moved, or as an alias.
+    pub fn has(&self, name: &str) -> bool {
+        self.retired(name).is_some() || self.alias(name).is_some()
+    }
+
+    /// `addresses`' records, then each of `model`'s whose name it doesn't
+    /// record: a name moved to `ascribe.addresses` is read from there, and
+    /// one still in `ascribe.toml` from there until it's moved.
+    pub fn merged(addresses: PermalinkRecords, model: &PermalinkRecords) -> PermalinkRecords {
+        let mut out = addresses;
+        let retired: Vec<RetiredPermalink> = model
+            .retired
+            .iter()
+            .filter(|r| !out.has(&r.name))
+            .cloned()
+            .collect();
+        let aliases: Vec<PermalinkAlias> = model
+            .aliases
+            .iter()
+            .filter(|a| !out.has(&a.name))
+            .cloned()
+            .collect();
+        out.retired.extend(retired);
+        out.aliases.extend(aliases);
+        out
     }
 
     /// The name the alias `name` ends at, following aliases of aliases: a

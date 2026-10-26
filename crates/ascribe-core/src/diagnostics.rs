@@ -541,8 +541,8 @@ pub const PERMALINKS_LIST_INVALID: DiagnosticSlug = DiagnosticSlug("permalinks-l
 /// `ASC176`, warning, file level: SPEC §8.2, "Permalinks list | A permalink the content declares, an alias, or a retired permalink that `ascribe.permalinks` doesn't list as it is".
 pub const PERMALINKS_LIST_BEHIND: DiagnosticSlug = DiagnosticSlug("permalinks-list-behind");
 
-/// `ASC177`, warning, file level: SPEC §8.2, "Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, an alias, or retired".
-pub const PERMALINK_REMOVED: DiagnosticSlug = DiagnosticSlug("permalink-removed");
+/// `ASC177`, warning, file level: SPEC §8.2, "Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, and not recorded as an alias, moved, or retired".
+pub const PERMALINK_LOST: DiagnosticSlug = DiagnosticSlug("permalink-lost");
 
 /// `ASC178`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_PERMALINKS: DiagnosticSlug = DiagnosticSlug("model-permalinks");
@@ -551,10 +551,10 @@ pub const MODEL_PERMALINKS: DiagnosticSlug = DiagnosticSlug("model-permalinks");
 pub const PERMALINK_ALIAS_TARGET_MISSING: DiagnosticSlug =
     DiagnosticSlug("permalink-alias-target-missing");
 
-/// `ASC180`, error, file level: SPEC §8.2, "Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too".
+/// `ASC180`, error, file level: SPEC §8.2, "Retired permalinks and aliases | A name the project records as retired, moved, or an alias that the content declares too".
 pub const PERMALINK_NAME_CONFLICT: DiagnosticSlug = DiagnosticSlug("permalink-name-conflict");
 
-/// `ASC181`, error, file level: SPEC §8.2, "Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it".
+/// `ASC181`, error, file level: SPEC §8.2, "Retired permalinks and aliases | A moved permalink's page, or a retired one's `to`, that isn't a page, or a heading on it".
 pub const PERMALINK_RETIRED_TARGET_MISSING: DiagnosticSlug =
     DiagnosticSlug("permalink-retired-target-missing");
 
@@ -885,6 +885,9 @@ pub const OPERATION_LINK_NOT_OPERATION: DiagnosticSlug =
 /// `ASC282`, advice, file level: a content check (area `project`).
 pub const API_OPERATION_UNREFERENCED: DiagnosticSlug = DiagnosticSlug("api-operation-unreferenced");
 
+/// `ASC283`, warning, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_PERMALINKS_MOVED: DiagnosticSlug = DiagnosticSlug("model-permalinks-moved");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -1056,7 +1059,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_CONSUMER_PERMALINK_PATH,
     PERMALINKS_LIST_INVALID,
     PERMALINKS_LIST_BEHIND,
-    PERMALINK_REMOVED,
+    PERMALINK_LOST,
     MODEL_PERMALINKS,
     PERMALINK_ALIAS_TARGET_MISSING,
     PERMALINK_NAME_CONFLICT,
@@ -1161,6 +1164,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     EXAMPLE_SCHEMA_UNSUPPORTED,
     OPERATION_LINK_NOT_OPERATION,
     API_OPERATION_UNREFERENCED,
+    MODEL_PERMALINKS_MOVED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

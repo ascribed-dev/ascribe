@@ -1,12 +1,12 @@
 //! `_ascribe/permalinks.json`: the permalinks a build publishes, for a site
 //! to give each an address that forwards to its page or heading
 //! (output-layout contract §1.2): each declared permalink, each alias of
-//! one, and each retired permalink, which forwards to its `to` or shows why
-//! it was removed.
+//! one, each moved permalink whose page the build publishes, and each
+//! retired permalink, which shows why it was removed.
 
 use std::collections::BTreeMap;
 
-use ascribe_model::ContentModel;
+use ascribe_model::{ContentModel, PermalinkRecords};
 use ascribe_resolve::{Destination, Permalink, ResolvedBuild};
 use serde::Serialize;
 
@@ -32,10 +32,13 @@ struct Entry<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     fragment: Option<String>,
     source: String,
-    /// For an alias, the name it leads to, as `ascribe.toml` writes it.
+    /// For an alias, the name it leads to, as its record writes it.
     #[serde(skip_serializing_if = "Option::is_none")]
     alias: Option<&'a str>,
-    /// For a retired permalink, why it was retired.
+    /// For a permalink retired with a reason that still leads somewhere,
+    /// why it was retired: one `ascribe.toml` retires with a `to`, until
+    /// it's moved to `ascribe.addresses`, where a moved permalink has no
+    /// reason.
     #[serde(skip_serializing_if = "Option::is_none")]
     retired: Option<&'a str>,
 }
@@ -52,17 +55,18 @@ pub(super) enum Named<'a> {
     Declared(&'a Permalink),
     /// An alias, and the permalink it ends at.
     Alias {
-        /// The name it leads to, as `ascribe.toml` writes it.
+        /// The name it leads to, as its record writes it.
         written: &'a str,
         /// The permalink at the end of its chain.
         target: &'a Permalink,
     },
-    /// A retired permalink whose `to` the build publishes.
+    /// A moved permalink, or one retired with a `to`, whose `to` the build
+    /// publishes.
     Retired {
         /// Where `to` leads.
         to: Destination,
-        /// Why it was retired.
-        reason: &'a str,
+        /// Why it was retired; none for one moved.
+        reason: Option<&'a str>,
     },
     /// A retired permalink with nowhere to lead in this build.
     Removed {
@@ -72,13 +76,15 @@ pub(super) enum Named<'a> {
 }
 
 /// Every name the build answers to, from the permalinks it publishes
-/// (`found`, [`ResolvedBuild::permalinks`]) and `[permalinks]`: a name
-/// published twice, which `permalink-duplicate` reports, with its first
-/// page; a retired name, unless it's declared too (`permalink-name-conflict`,
-/// where the declaration wins); and an alias, unless its name is taken, when
-/// the build publishes the permalink it ends at.
+/// (`found`, [`ResolvedBuild::permalinks`]) and the project's records of
+/// its permalinks (`records`, [`ascribe_resolve::Project::permalink_records`]):
+/// a name published twice, which `permalink-duplicate` reports, with its
+/// first page; a retired or moved name, unless it's declared too
+/// (`permalink-name-conflict`, where the declaration wins), a moved one only
+/// when the build publishes its page; and an alias, unless its name is
+/// taken, when the build publishes the permalink it ends at.
 pub(super) fn named<'a>(
-    model: &'a ContentModel,
+    records: &'a PermalinkRecords,
     build: &ResolvedBuild,
     found: &'a [Permalink],
 ) -> BTreeMap<&'a str, Named<'a>> {
@@ -87,19 +93,20 @@ pub(super) fn named<'a>(
         out.entry(permalink.name.as_str())
             .or_insert(Named::Declared(permalink));
     }
-    let names = &model.permalinks;
+    let names = records;
     for retired in &names.retired {
         if out.contains_key(retired.name.as_str()) {
             continue;
         }
-        let reason = retired.reason.as_str();
-        let named = match retired
+        let reason = retired.reason.as_deref();
+        let to = retired
             .to
             .as_deref()
-            .and_then(|to| build.retired_destination(to))
-        {
-            Some(to) => Named::Retired { to, reason },
-            None => Named::Removed { reason },
+            .and_then(|to| build.retired_destination(to));
+        let named = match (to, reason) {
+            (Some(to), reason) => Named::Retired { to, reason },
+            (None, Some(reason)) => Named::Removed { reason },
+            (None, None) => continue,
         };
         out.insert(retired.name.as_str(), named);
     }
@@ -127,15 +134,19 @@ pub(super) fn named<'a>(
 /// The list, as JSON. A build with no permalinks has an empty table, so a
 /// reader can tell "none" from an output without the file. Each name is
 /// listed as [`named`] finds it: an alias with the page and anchor of the
-/// permalink it ends at; a retired permalink with its `to`'s when the build
-/// publishes that page, and under `removed` otherwise. `dimensions` is the
-/// content model's dimensions, each with its values in declaration order:
-/// the parameters an address takes.
-pub(super) fn list(model: &ContentModel, build: &ResolvedBuild) -> String {
+/// permalink it ends at; a moved permalink with its `to`'s; and a retired
+/// one under `removed`, or, retired with a `to` the build publishes, with
+/// its `to`'s. `dimensions` is the content model's dimensions, each with its
+/// values in declaration order: the parameters an address takes.
+pub(super) fn list(
+    model: &ContentModel,
+    records: &PermalinkRecords,
+    build: &ResolvedBuild,
+) -> String {
     let found = build.permalinks();
     let mut permalinks: BTreeMap<&str, Entry<'_>> = BTreeMap::new();
     let mut removed = BTreeMap::new();
-    for (name, named) in named(model, build, &found) {
+    for (name, named) in named(records, build, &found) {
         let entry = match named {
             Named::Declared(permalink) => Entry {
                 route: permalink.route.clone(),
@@ -156,7 +167,7 @@ pub(super) fn list(model: &ContentModel, build: &ResolvedBuild) -> String {
                 fragment: to.anchor,
                 source: to.page.to_string(),
                 alias: None,
-                retired: Some(reason),
+                retired: reason,
             },
             Named::Removed { reason } => {
                 removed.insert(name, Removed { reason });

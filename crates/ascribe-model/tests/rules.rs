@@ -780,6 +780,16 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[permalinks.retired]\na = { reason = \"why this permalink was retired\" } #!\n",
         ),
         case(
+            "model-permalinks-moved",
+            None,
+            "spec = \"0.1\"\n[permalinks.retired] #!\na = { reason = \"r\" }\n",
+        ),
+        case(
+            "model-permalinks-moved",
+            Some("aliases"),
+            "spec = \"0.1\"\n[permalinks.aliases] #!\na = \"b\"\n",
+        ),
+        case(
             "model-crawlers-line",
             None,
             "spec = \"0.1\"\n[crawlers]\nlines = [\"Disallow: /a/\\nDisallow: /b/\"] #!\n",

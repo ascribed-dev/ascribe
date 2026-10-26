@@ -758,6 +758,17 @@ impl Project {
         self.addresses.as_ref()
     }
 
+    /// What the project records of its permalinks beyond what the content
+    /// declares: `ascribe.addresses`' `permalink:` entries, when it reads,
+    /// and the records still in `ascribe.toml` whose names it doesn't have.
+    pub fn permalink_records(&self) -> ascribe_model::PermalinkRecords {
+        let addresses = match self.addresses() {
+            Some(Ok(file)) => file.permalinks(),
+            _ => ascribe_model::PermalinkRecords::default(),
+        };
+        ascribe_model::PermalinkRecords::merged(addresses, &self.model().permalinks)
+    }
+
     /// The text of `ascribe.baseline`, when the project has one.
     pub fn baseline_text(&self) -> Option<&str> {
         self.baseline_text.as_deref()

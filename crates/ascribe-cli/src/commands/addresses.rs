@@ -1,8 +1,11 @@
 //! `ascribe addresses`: the project's record of where the addresses it has
 //! published went, `ascribe.addresses` (SPEC §7.10). `init` makes the file,
+//! and moves into it the permalinks' records `ascribe.toml` still has;
 //! `move` records a move already made, `retire` an address removed on
 //! purpose, and `list` shows the redirects and retired addresses each build
-//! writes, and the entry each comes from.
+//! writes, and the entry each comes from. A permalink is named
+//! `permalink:<name>`, and moving it to another permalink makes it an alias
+//! (§7.6).
 
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -11,7 +14,9 @@ use std::process::ExitCode;
 use ascribe_check::Project;
 use ascribe_core::{Coded, RelPath};
 use ascribe_emit::site::redirects::{self, Redirects};
-use ascribe_model::addresses::{Key, RETIRED_PLACEHOLDER, split_place};
+use ascribe_model::addresses::{
+    Key, PERMALINK_PREFIX, RETIRED_PLACEHOLDER, permalink_name, split_place,
+};
 use ascribe_model::{ADDRESSES_FILE, AddressFile};
 use clap::{Args as ClapArgs, Subcommand};
 use serde::Serialize;
@@ -37,8 +42,9 @@ pub struct Args {
 #[derive(Debug, Subcommand)]
 pub enum Command {
     /// Make ascribe.addresses, so moves are recorded and `ascribe check`
-    /// reports an address the docs published that's lost. A file already
-    /// there is left alone.
+    /// reports an address the docs published that's lost, and move into it
+    /// the retired permalinks and aliases ascribe.toml's [permalinks] still
+    /// has. A file already there keeps its entries.
     #[command(after_help = docs_link!("cli-addresses-init"))]
     Init(InitArgs),
     /// Record that a page, or a heading's id, moved, after a move made
@@ -68,14 +74,16 @@ pub struct InitArgs {
 #[derive(Debug, ClapArgs)]
 pub struct MoveArgs {
     /// Where it was: a page's path, from the current folder or from the
-    /// content root; a file's path, `#`, and a heading's id; or an address
+    /// content root; a file's path, `#`, and a heading's id; an address
     /// from the host's root, starting with `/`, from before the project used
-    /// Ascribe.
+    /// Ascribe; or `permalink:` and a permalink's name.
     #[arg(value_name = "OLD", required_unless_present = "from_git")]
     pub old: Option<String>,
 
     /// Where it is now: a page's path, from the current folder or from the
-    /// content root, and optionally `#` and a heading's id.
+    /// content root, and optionally `#` and a heading's id. A permalink can
+    /// also move to another permalink, `permalink:` and its name, which
+    /// makes it an alias of that one.
     #[arg(value_name = "NEW", required_unless_present = "from_git")]
     pub new: Option<String>,
 
@@ -106,8 +114,9 @@ pub struct MoveArgs {
 #[derive(Debug, ClapArgs)]
 pub struct RetireArgs {
     /// What was removed: a page's path, from the current folder or from the
-    /// content root; a file's path, `#`, and a heading's id; or an address
-    /// from the host's root, starting with `/`.
+    /// content root; a file's path, `#`, and a heading's id; an address from
+    /// the host's root, starting with `/`; or `permalink:` and a
+    /// permalink's name.
     #[arg(value_name = "OLD")]
     pub old: String,
 
@@ -143,9 +152,35 @@ pub enum AddressesError {
     Invalid(String),
     /// What was given isn't something the file records.
     #[error(
-        "`{0}` isn't a page's path, a file's path with `#` and a heading's id, or an address starting with `/`"
+        "`{0}` isn't a page's path, a file's path with `#` and a heading's id, an address starting with `/`, or `permalink:` and a permalink's name"
     )]
     NotAKey(String),
+    /// A permalink given is still declared by the content.
+    #[error(
+        "the permalink `{name}` is still declared in `{place}`: remove it from the content first"
+    )]
+    PermalinkStillThere {
+        /// The name.
+        name: String,
+        /// Where it's declared.
+        place: String,
+    },
+    /// A permalink a permalink moved to isn't one.
+    #[error(
+        "`{0}` isn't a permalink of the project: no heading or page declares it, and it isn't an alias"
+    )]
+    NotAPermalink(String),
+    /// `ascribe.toml`'s records can't be moved.
+    #[error("{0}")]
+    ModelUnchanged(String),
+    /// `ascribe.toml` can't be written.
+    #[error("can't write {}: {message}", path.display())]
+    ModelUnwritable {
+        /// The file.
+        path: PathBuf,
+        /// What went wrong.
+        message: String,
+    },
     /// Where it moved isn't a page or a heading of the project.
     #[error(
         "`{0}` isn't a page of the project: give the page it's on now, as a path from here or from the content root"
@@ -184,6 +219,10 @@ impl Coded for AddressesError {
             AddressesError::NoFile => "addresses_file_missing",
             AddressesError::Invalid(_) => "addresses_file_invalid",
             AddressesError::NotAKey(_) => "addresses_key_invalid",
+            AddressesError::PermalinkStillThere { .. } => "addresses_source_still_there",
+            AddressesError::NotAPermalink(_) => "addresses_target_not_a_permalink",
+            AddressesError::ModelUnchanged(_) => "model_edit_refused",
+            AddressesError::ModelUnwritable { .. } => "model_unwritable",
             AddressesError::NotAPage(_) => "addresses_target_not_a_page",
             AddressesError::NoHeading { .. } => "addresses_target_no_heading",
             AddressesError::StillThere(_) => "addresses_source_still_there",
@@ -207,8 +246,12 @@ pub(crate) struct InitJson {
     /// The file, from the project's folder: `ascribe.addresses`.
     file: &'static str,
     /// Whether the project had no file, so this made one. A file already
-    /// there is left as it is.
+    /// there keeps its entries.
     created: bool,
+    /// The permalinks whose records were moved from `ascribe.toml`'s
+    /// `[permalinks.retired]` and `[permalinks.aliases]`, in the order
+    /// they're written there; those tables are gone from it.
+    moved_permalinks: Vec<String>,
 }
 
 /// What `ascribe addresses move` and `retire` write with `--format json`.
@@ -225,7 +268,8 @@ pub(crate) struct RecordJson {
     /// The table the entry is in: `moved` or `retired`.
     table: &'static str,
     /// The entry's key: a page's path from the content root, a file's path
-    /// with `#` and an id, or an address starting with `/`.
+    /// with `#` and an id, an address starting with `/`, or `permalink:`
+    /// and a permalink's name.
     key: String,
     /// The entry's value: where it moved, or why it was retired.
     value: String,
@@ -317,9 +361,37 @@ fn run_init(global: &Global, args: &InitArgs, out: &mut dyn Write, err: &mut dyn
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let created = project.addresses_text().is_none();
-    if created && let Err(e) = write_file(project.root(), &AddressFile::default().to_toml()) {
+    let file = match project.addresses() {
+        Some(Ok(file)) => file.clone(),
+        Some(Err(issues)) => return answer::fail(err, &AddressesError::Invalid(detail(issues))),
+        None => AddressFile::default(),
+    };
+    // `[permalinks.retired]` and `[permalinks.aliases]` move here.
+    let moved =
+        match ascribe_lsp::move_records(project.model_text(), &file, &project.model().permalinks) {
+            Ok(moved) => moved,
+            Err(message) => return answer::fail(err, &AddressesError::ModelUnchanged(message)),
+        };
+    let after = moved.as_ref().map_or(&file, |m| &m.file).to_toml();
+    if (created || moved.is_some())
+        && let Err(e) = write_file(project.root(), &after)
+    {
         return answer::fail(err, &e);
     }
+    if let Some(moved) = &moved {
+        let config = match crate::context::locate(global) {
+            Ok(config) => config,
+            Err(e) => return answer::fail(err, &e),
+        };
+        if let Err(e) = std::fs::write(&config, &moved.model_text) {
+            let error = AddressesError::ModelUnwritable {
+                path: config,
+                message: e.to_string(),
+            };
+            return answer::fail(err, &error);
+        }
+    }
+    let moved_permalinks = moved.map(|m| m.names).unwrap_or_default();
     let result = match args.format {
         Format::Json => answer::write_json(
             out,
@@ -328,18 +400,40 @@ fn run_init(global: &Global, args: &InitArgs, out: &mut dyn Write, err: &mut dyn
                 ascribe_version: env!("CARGO_PKG_VERSION"),
                 file: ADDRESSES_FILE,
                 created,
+                moved_permalinks,
             },
         ),
-        Format::Text if created => writeln!(
-            out,
-            "Wrote {ADDRESSES_FILE}. Moves are recorded from now on."
-        ),
-        Format::Text => writeln!(
-            out,
-            "{ADDRESSES_FILE} is already here, so it's left as it is."
-        ),
+        Format::Text => write_init(out, created, &moved_permalinks),
     };
     answer::written(result, err).unwrap_or(exit::OK)
+}
+
+fn write_init(out: &mut dyn Write, created: bool, moved: &[String]) -> io::Result<()> {
+    if created {
+        writeln!(
+            out,
+            "Wrote {ADDRESSES_FILE}. Moves are recorded from now on."
+        )?;
+    } else if moved.is_empty() {
+        writeln!(
+            out,
+            "{ADDRESSES_FILE} is already here, so it's left as it is."
+        )?;
+    }
+    if !moved.is_empty() {
+        let count = if moved.len() == 1 {
+            "1 permalink's record".to_owned()
+        } else {
+            format!("{} permalinks' records", moved.len())
+        };
+        writeln!(
+            out,
+            "Moved {count} from {}'s [permalinks] to {ADDRESSES_FILE}: {}.",
+            ascribe_check::MODEL_FILE,
+            moved.join(", ")
+        )?;
+    }
+    Ok(())
 }
 
 /// Exit codes: 0 when the move is recorded, or with `--from-git` when
@@ -441,7 +535,17 @@ pub(crate) fn answer_move(
         return Err(AddressesError::NotAKey(String::new()));
     };
     let old = old_key(project, old)?;
-    let new = new_place(project, new)?;
+    let new = match permalink_name(&old).and(permalink_name(new)) {
+        Some(name) => {
+            let index = project.index();
+            let declared = index.declared_permalinks().iter().any(|p| p.name == name);
+            if !declared && index.permalink_records().alias(name).is_none() {
+                return Err(AddressesError::NotAPermalink(new.clone()));
+            }
+            new.clone()
+        }
+        None => new_place(project, new)?,
+    };
     let mut after = file.clone();
     after.record_move(&old, &new);
     let (changed, edits) = change(project, text, &after, write)?;
@@ -645,6 +749,22 @@ fn detail(issues: &[ascribe_core::Issue]) -> String {
 /// or a path read from the current folder, or else from the content root,
 /// with its `#` and id. Refused while the file is still a source.
 fn old_key(project: &Project, given: &str) -> Result<String, AddressesError> {
+    if given.starts_with(PERMALINK_PREFIX) {
+        let name =
+            permalink_name(given).ok_or_else(|| AddressesError::NotAKey(given.to_owned()))?;
+        if let Some(at) = project
+            .index()
+            .declared_permalinks()
+            .iter()
+            .find(|p| p.name == name)
+        {
+            return Err(AddressesError::PermalinkStillThere {
+                name: name.to_owned(),
+                place: at.place(),
+            });
+        }
+        return Ok(given.to_owned());
+    }
     if given.starts_with('/') {
         return Key::parse(given)
             .map(|_| given.to_owned())

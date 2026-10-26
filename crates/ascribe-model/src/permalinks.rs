@@ -13,7 +13,7 @@ use ascribe_core::{FileId, Issue, Location, Span, diagnostics};
 
 use toml::de::{DeTable, DeValue};
 
-use crate::model::ModelPermalinks;
+use crate::model::PermalinkRecords;
 use crate::toml_util::{describe, entries, sp};
 
 /// The list's file name, beside `ascribe.toml`.
@@ -76,31 +76,32 @@ pub struct ListedRetired {
 
 /// What the project has now, which the list should record: each name the
 /// content declares, with the places it's declared, the first being where a
-/// new or moved entry points; and the aliases and retired permalinks of
-/// `ascribe.toml` that the content doesn't declare too.
+/// new or moved entry points; and the aliases and retired or moved
+/// permalinks the project records that the content doesn't declare too.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Current {
     /// Each declared name, with its places.
     pub declared: BTreeMap<String, Vec<String>>,
     /// Each alias, with the name it leads to.
     pub aliases: BTreeMap<String, String>,
-    /// Each retired permalink, with its reason.
+    /// Each retired permalink, with its reason; and each moved one, with
+    /// where it moved ([`crate::RetiredPermalink::why`]).
     pub retired: BTreeMap<String, String>,
 }
 
 impl Current {
-    /// What the project has: `declared`, and `model`'s aliases and retired
-    /// permalinks. A name the content declares is a permalink, whatever
-    /// `ascribe.toml` says of it (`permalink-name-conflict` reports that),
-    /// and a name both retired and an alias is retired.
-    pub fn new(declared: BTreeMap<String, Vec<String>>, model: &ModelPermalinks) -> Current {
-        let retired: BTreeMap<String, String> = model
+    /// What the project has: `declared`, and the aliases and retired
+    /// permalinks of `records`. A name the content declares is a permalink,
+    /// whatever the records say of it (`permalink-name-conflict` reports
+    /// that), and a name both retired and an alias is retired.
+    pub fn new(declared: BTreeMap<String, Vec<String>>, records: &PermalinkRecords) -> Current {
+        let retired: BTreeMap<String, String> = records
             .retired
             .iter()
             .filter(|r| !declared.contains_key(&r.name))
-            .map(|r| (r.name.clone(), r.reason.clone()))
+            .map(|r| (r.name.clone(), r.why()))
             .collect();
-        let aliases = model
+        let aliases = records
             .aliases
             .iter()
             .filter(|a| !declared.contains_key(&a.name) && !retired.contains_key(&a.name))

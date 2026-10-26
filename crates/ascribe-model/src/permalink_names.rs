@@ -1,27 +1,43 @@
-//! `[permalinks]`: the names `ascribe.toml` gives somewhere to lead that no
-//! heading or page declares (SPEC §7.6). `[permalinks.retired]` ends a
-//! permalink on purpose, with a reason; `[permalinks.aliases]` gives one
-//! place a second name. What needs the content (whether an alias leads to a
-//! permalink, whether `to` leads anywhere, a name the content declares too)
-//! is checked with the project, in `ascribe-check`.
+//! `[permalinks]`: the names `ascribe.toml` gave somewhere to lead that no
+//! heading or page declares, before they were kept in `ascribe.addresses`
+//! (SPEC §7.6). `[permalinks.retired]` ends a permalink on purpose, with a
+//! reason; `[permalinks.aliases]` gives one place a second name. They're
+//! still read, so a project builds as it did until they're moved, and each
+//! table is `model-permalinks-moved`, which `ascribe addresses init` fixes.
+//! What needs the content (whether an alias leads to a permalink, whether
+//! `to` leads anywhere, a name the content declares too) is checked with the
+//! project, in `ascribe-check`.
 
 use ascribe_core::{Span, diagnostics};
 
 use crate::loader::Loader;
-use crate::model::{ModelPermalinks, PermalinkAlias, RetiredPermalink};
+use crate::model::{PermalinkAlias, PermalinkRecords, RecordedIn, RetiredPermalink};
 use crate::permalinks::{NAME_RULE, RETIRED_PLACEHOLDER, is_retired_placeholder};
 use crate::toml_util::{V, entries, sp};
 
 impl Loader<'_> {
     /// `[permalinks]`: its two tables, each name valid, a retired name with
-    /// a reason of its own, and aliases that end somewhere.
-    pub(crate) fn permalinks(&mut self, v: Option<&V<'_>>) -> ModelPermalinks {
-        let mut out = ModelPermalinks::default();
+    /// a reason of its own, and aliases that end somewhere; and each table
+    /// that's there, `model-permalinks-moved`.
+    pub(crate) fn permalinks(&mut self, v: Option<&V<'_>>) -> PermalinkRecords {
+        let mut out = PermalinkRecords::default();
         let Some(v) = v else { return out };
         let Some(t) = self.as_table("permalinks", v) else {
             return out;
         };
         self.check_table("permalinks", t, "permalinks");
+        for (key, span, _) in entries(t) {
+            let variant = match key {
+                "retired" => None,
+                "aliases" => Some("aliases"),
+                _ => continue,
+            };
+            let issue = self.issue(diagnostics::MODEL_PERMALINKS_MOVED, span);
+            self.warnings.push(match variant {
+                Some(variant) => issue.with_variant(variant),
+                None => issue,
+            });
+        }
         if let Some(retired) = t.get("retired")
             && let Some(retired) = self.as_table("permalinks.retired", retired)
         {
@@ -52,6 +68,7 @@ impl Loader<'_> {
                     target,
                     span,
                     target_span: sp(value),
+                    file: RecordedIn::Model,
                 });
             }
         }
@@ -103,10 +120,11 @@ impl Loader<'_> {
         let (reason, to) = (reason?, to?);
         Some(RetiredPermalink {
             name: name.to_owned(),
-            reason,
+            reason: Some(reason),
             to_span: to.as_ref().map(|(_, span)| *span),
             to: to.map(|(text, _)| text),
             span,
+            file: RecordedIn::Model,
         })
     }
 
@@ -131,13 +149,15 @@ mod tests {
     use super::*;
     use ascribe_core::{DiagnosticSlug, FileId};
 
-    fn load(permalinks: &str) -> Result<ModelPermalinks, Vec<(DiagnosticSlug, Option<String>)>> {
+    fn load(permalinks: &str) -> Result<PermalinkRecords, Vec<(DiagnosticSlug, Option<String>)>> {
         let text = format!("spec = \"0.1\"\n{permalinks}");
         crate::load_str(&text, FileId::new(0))
             .map(|m| m.permalinks)
             .map_err(|issues| {
+                // Each table is `model-permalinks-moved` too; it's beside the point.
                 issues
                     .into_iter()
+                    .filter(|i| i.slug != diagnostics::MODEL_PERMALINKS_MOVED)
                     .map(|i| (i.slug, i.variant.map(|v| v.to_owned())))
                     .collect()
             })
@@ -161,7 +181,9 @@ mod tests {
         );
         assert_eq!(loaded.retired[1].to, None);
         assert_eq!(
-            loaded.retired("legacy-sync").map(|r| r.reason.as_str()),
+            loaded
+                .retired("legacy-sync")
+                .and_then(|r| r.reason.as_deref()),
             Some("The sync agent was removed in 4.0")
         );
         assert_eq!(loaded.alias_end("cli-settings"), Some("settings"));

@@ -1,0 +1,10 @@
+version = 1
+
+[moved]
+"permalink:fragment" = "_part.md"
+"permalink:good" = "security.md#keys"
+"permalink:no-heading" = "security.md#gone"
+"permalink:no-page" = "gone.md"
+"permalink:top" = "security.md"
+
+[retired]

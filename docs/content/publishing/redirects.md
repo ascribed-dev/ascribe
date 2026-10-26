@@ -39,11 +39,13 @@ version = 1
 "reference/legacy-sync.md" = "The sync agent was removed in 4.0"
 ```
 
-- **`[moved]`:** where each key's addresses lead now. A key is a page's path from the content root, which stands for every address the page was published at, its Markdown version's too; a file's path, `#`, and a heading's id, with the file the `@id` is written in, a fragment's once for every page that includes it; or an address from the host's root, starting with `/`, from before the project used Ascribe. A value is a page's path, and optionally `#` and a heading's id.
-- **`[retired]`:** the addresses removed on purpose, each key as `[moved]`'s, with why. A reader who follows an old link gets the host's not-found page.
+- **`[moved]`:** where each key's addresses lead now. A key is a page's path from the content root, which stands for every address the page was published at, its Markdown version's too; a file's path, `#`, and a heading's id, with the file the `@id` is written in, a fragment's once for every page that includes it; an address from the host's root, starting with `/`, from before the project used Ascribe; or `permalink:` and a [permalink](../permalinks/index.md)'s name. A value is a page's path, and optionally `#` and a heading's id; a permalink's may also be `permalink:` and another permalink's name, which makes it an alias of that one.
+- **`[retired]`:** the addresses removed on purpose, each key as `[moved]`'s, with why. A reader who follows an old link gets the host's not-found page, or, for a permalink, a page that gives the reason.
 - **`[former]`:** the routing settings the docs were published under before, each oldest first: `base-path`, `permalink-path`, and `agents`, each a list of values, and `builds`, a table from a build's old name to its new one. [`ascribe check --fix` writes it](#a-settings-change) when a setting changes.
 
-Its format is in [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file).
+A permalink's entry is what became of a name no heading or page declares any more: retired, moved to a page, or an alias of another permalink ([When a section moves or goes away](../permalinks/index.md#moving-aliasing-and-retiring)). Its address is published with the build's permalinks, not as a redirect, and the check holds it to the content, not to the base: `permalink-lost` reports a name the [permalinks list](../contracts/permalinks-list.md) has that nothing records.
+
+Its format is in [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file), and a permalink's entries in [§7.6]({repo}/blob/main/SPEC.md#76-retired-permalinks-and-aliases).
 
 ## What a move records
 
@@ -198,17 +200,25 @@ Keeps `ascribe.addresses`. Each takes `--format json`, and writes the document i
 
 ### `ascribe addresses init`
 @id {permalink=true}: cli-addresses-init
-@summary: Makes `ascribe.addresses`, so moves are recorded and the check reports an address that's lost. A file already there is left alone.
+@summary: Makes `ascribe.addresses`, so moves are recorded and the check reports an address that's lost, and moves into it the retired permalinks and aliases `ascribe.toml` still has.
 
-Makes `ascribe.addresses`, with its header, its `version`, and empty tables. A file already there is left as it is, and it says so.
+Makes `ascribe.addresses`, with its header, its `version`, and empty tables. A file already there keeps its entries, and it says so.
+
+A project whose `ascribe.toml` still has `[permalinks.retired]` or `[permalinks.aliases]`, from before `ascribe.addresses` kept them, has them moved: each name is recorded under its `permalink:` key, a retired permalink with a `to` as a move, which keeps no reason, and the tables are taken out of `ascribe.toml`, the rest of it kept as written. A name the file records already keeps its entry. `ascribe check` warns of the tables until they're moved (`model-permalinks-moved`).
+
+```console
+$ ascribe addresses init
+Wrote ascribe.addresses. Moves are recorded from now on.
+Moved 2 permalinks' records from ascribe.toml's [permalinks] to ascribe.addresses: legacy-sync, config.
+```
 
 @include: ../_generated/cli-addresses-init-options.md
 
 ### `ascribe addresses move`
 @id {permalink=true}: cli-addresses-move
-@summary: Records that a page, or a heading's id, moved, after a move made without Ascribe, so the build forwards its old addresses.
+@summary: Records that a page, a heading's id, or a permalink moved, after a move made without Ascribe, so the build forwards its old addresses.
 
-Records that a page, or a heading's id, moved, after a move made without Ascribe, as with `git mv`. The old path is gone; the new one is a page of the project, or a heading on one.
+Records that a page, or a heading's id, moved, after a move made without Ascribe, as with `git mv`. The old path is gone; the new one is a page of the project, or a heading on one. A permalink no heading declares any more, `permalink:<name>`, can move to a page, or to another permalink, `permalink:<name>`, which makes it an alias of that one.
 
 ```console
 $ ascribe addresses move guides/keys.md security/keys.md
@@ -226,9 +236,9 @@ Recorded 1 move git sees: guides/setup.md → start/setup.md.
 
 ### `ascribe addresses retire`
 @id {permalink=true}: cli-addresses-retire
-@summary: Records that a page, or a heading's id, was removed on purpose, and why.
+@summary: Records that a page, a heading's id, or a permalink was removed on purpose, and why.
 
-Records that a page, or a heading's id, was removed on purpose, with the reason, which is for whoever reads the file later.
+Records that a page, or a heading's id, was removed on purpose, with the reason, which is for whoever reads the file later. A permalink, `permalink:<name>`, is retired the same way, and its address shows the reason; [`ascribe permalinks retire`](../permalinks/command.md#cli-permalinks-retire) does the same, for names gone from the content or every one a page holds.
 
 ```console
 $ ascribe addresses retire reference/legacy-sync.md --reason "The sync agent was removed in 4.0"

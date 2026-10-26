@@ -1,9 +1,12 @@
 description: >-
   Aliases that lead to each other and never to a permalink are an error at
   each one's target.
+  The table is also `model-permalinks-moved`: it's kept in
+  `ascribe.addresses` now.
 spec: ["7.6"]
 tags: [model]
 
 diagnostics:
+  - {slug: model-permalinks-moved, file: ascribe.toml, line: 3}
   - {slug: model-permalinks, file: ascribe.toml, line: 4}
   - {slug: model-permalinks, file: ascribe.toml, line: 5}

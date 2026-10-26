@@ -1,9 +1,12 @@
 description: >-
-  An alias that leads to a name no heading or page declares, or to a
-  retired permalink, is an error at its target in `ascribe.toml`.
+  An alias that leads to a name no heading or page declares, to a retired
+  permalink, or back to itself through other aliases, is an error at its
+  entry in `ascribe.addresses`.
 spec: ["7.6", "8.2"]
 tags: [check]
 
 diagnostics:
-  - {slug: permalink-alias-target-missing, file: ascribe.toml, line: 7}
-  - {slug: permalink-alias-target-missing, file: ascribe.toml, line: 8}
+  - {slug: permalink-alias-target-missing, file: ascribe.addresses, line: 4}
+  - {slug: permalink-alias-target-missing, file: ascribe.addresses, line: 5}
+  - {slug: permalink-alias-target-missing, file: ascribe.addresses, line: 6}
+  - {slug: permalink-alias-target-missing, file: ascribe.addresses, line: 7}

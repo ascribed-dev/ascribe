@@ -20,6 +20,9 @@
 //! - **`addresses-soft-404`**, advice: many addresses forwarded to one
 //!   index page.
 //!
+//! A `permalink:` key isn't checked here: what it records is checked against
+//! the content with the project's other permalinks, in `permalinks.rs`.
+//!
 //! What needs the base is checked only when there's one. A key written
 //! twice is found when the file is read (`AddressFile::parse`), and
 //! `addresses-file-deleted` by [`file_deleted`].
@@ -44,6 +47,9 @@ pub fn entries(here: &Here<'_>, base: Option<&Base>) -> Vec<Diagnostic> {
     let mut out = Vec::new();
     for (table, map) in [("moved", &here.file.moved), ("retired", &here.file.retired)] {
         for (key, entry) in map {
+            if matches!(Key::parse(key), Some(Key::Permalink(_))) {
+                continue;
+            }
             let at = Location::new(ADDRESSES_FILE_ID, entry.span);
             if let Some(found) = whether_kept(here, base, table, key, at) {
                 out.push(found);
@@ -97,7 +103,7 @@ fn whether_kept(
             .iter()
             .flat_map(|b| &b.addresses)
             .any(|a| a.source == key),
-        Key::Address(_) => false,
+        Key::Address(_) | Key::Permalink(_) => false,
     };
     if live {
         let issue = Issue::new(diagnostics::ADDRESSES_ENTRY_LIVE, at)
@@ -340,7 +346,10 @@ fn anchor_collision(here: &Here<'_>, key: &str, value: &str, at: Location) -> Op
 /// `[moved]` entries forward to, at the first of them.
 fn soft_404s(here: &Here<'_>) -> Vec<Diagnostic> {
     let mut to: BTreeMap<&str, Vec<&Entry>> = BTreeMap::new();
-    for entry in here.file.moved.values() {
+    for (key, entry) in &here.file.moved {
+        if matches!(Key::parse(key), Some(Key::Permalink(_))) {
+            continue;
+        }
         let value = entry.value.as_str();
         if value == "index.md" || value.ends_with("/index.md") {
             to.entry(value).or_default().push(entry);

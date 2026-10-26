@@ -90,7 +90,7 @@
       "type": "string"
     },
     "key": {
-      "description": "The entry's key: a page's path from the content root, a file's path\nwith `#` and an id, or an address starting with `/`.",
+      "description": "The entry's key: a page's path from the content root, a file's path\nwith `#` and an id, an address starting with `/`, or `permalink:`\nand a permalink's name.",
       "type": "string"
     },
     "schema_version": {

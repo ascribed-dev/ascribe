@@ -1534,11 +1534,10 @@ fn observe_check() {
 fn permalinks() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();
-    write(
-        root,
-        "ascribe.toml",
-        "spec = \"0.1\"\n\n[permalinks.aliases]\nconfig = \"weave-config\"\n",
-    );
+    write(root, "ascribe.toml", "spec = \"0.1\"\n");
+    let mut addresses = ascribe_model::AddressFile::default();
+    addresses.record_move("permalink:config", "permalink:weave-config");
+    write(root, "ascribe.addresses", &addresses.to_toml());
     write(
         root,
         "docs/guides/weave.md",
@@ -1603,8 +1602,6 @@ fn permalinks() {
         "permalinks",
         "retire",
         "rotate-keys",
-        "--reason",
-        "Merged into the security guide",
         "--to",
         "guides/security.md",
     ];

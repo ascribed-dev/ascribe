@@ -3,4 +3,5 @@ version = 1
 [permalinks]
 
 [retired]
+old-keys = "Moved to keys.md"
 rotate-keys = "Merged into the security guide"

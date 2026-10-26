@@ -1114,12 +1114,15 @@ impl Core {
             self.refresh_nav();
             return;
         }
-        if let Some(loaded) = self.loaded.as_ref()
+        if let Some(loaded) = self.loaded.as_mut()
             && loaded.is_addresses(&path)
         {
             if let Ok(project) = RelPath::parse(ascribe_model::ADDRESSES_FILE) {
                 loaded.fs.set_buffer(&project, None);
             }
+            // It records permalinks too, which the checks across the
+            // project hold to the content.
+            loaded.across_dirty = true;
             self.addresses.changed();
             return;
         }
@@ -1187,6 +1190,7 @@ impl Core {
             if let Ok(project) = RelPath::parse(ascribe_model::ADDRESSES_FILE) {
                 loaded.fs.set_buffer(&project, Some(text));
             }
+            loaded.across_dirty = true;
             self.addresses.changed();
             return;
         }
@@ -1281,11 +1285,12 @@ impl Core {
             }
             if let Some(loaded) = self.loaded.as_mut()
                 && (path == loaded.root.join(ascribe_model::PERMALINKS_FILE)
+                    || loaded.is_addresses(&path)
                     || loaded.nav_file(&path).is_some())
             {
-                // The permalinks list and the navigation file aren't
-                // sources: the checks across the project compare them with
-                // the content. An open buffer of `ascribe.nav` wins.
+                // The permalinks list, `ascribe.addresses`, and `ascribe.nav`
+                // aren't sources: the checks across the project compare
+                // them with the content. An open buffer of `ascribe.nav` wins.
                 loaded.across_dirty = true;
                 nav |= loaded.nav_file(&path).is_some();
                 continue;
@@ -1957,10 +1962,12 @@ impl Core {
             if is_model {
                 return self.project_target(uri);
             }
-            // `ascribe.permalinks`, beside it: its fixes edit `ascribe.toml`.
-            // And `ascribe.nav`, whose fixes edit itself.
+            // `ascribe.permalinks` and `ascribe.addresses`, beside it: their
+            // permalinks' fixes write the one or the other. And
+            // `ascribe.nav`, whose fixes edit itself.
             let loaded = self.loaded.as_ref()?;
             if path == loaded.root.join(ascribe_model::PERMALINKS_FILE)
+                || loaded.is_addresses(&path)
                 || loaded.nav_file(&path).is_some()
             {
                 let content = RelPath::parse(Ctx::PROJECT).ok()?;

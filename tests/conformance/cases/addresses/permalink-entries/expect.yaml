@@ -1,0 +1,10 @@
+description: >-
+  A `permalink:` entry isn't one of the file's sources: it isn't compared
+  with the base or checked as a page's entry, so a name the base never
+  published, or several leading to the home page, is reported by nothing
+  here. What it records is checked against the content with the project's
+  other permalinks.
+spec: ["7.6", "7.10"]
+tags: [addresses]
+
+diagnostics: []

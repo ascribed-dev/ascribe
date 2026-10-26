@@ -11,12 +11,19 @@
       "type": "string"
     },
     "created": {
-      "description": "Whether the project had no file, so this made one. A file already\nthere is left as it is.",
+      "description": "Whether the project had no file, so this made one. A file already\nthere keeps its entries.",
       "type": "boolean"
     },
     "file": {
       "description": "The file, from the project's folder: `ascribe.addresses`.",
       "type": "string"
+    },
+    "moved_permalinks": {
+      "description": "The permalinks whose records were moved from `ascribe.toml`'s\n`[permalinks.retired]` and `[permalinks.aliases]`, in the order\nthey're written there; those tables are gone from it.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
     },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
@@ -28,7 +35,8 @@
     "schema_version",
     "ascribe_version",
     "file",
-    "created"
+    "created",
+    "moved_permalinks"
   ],
   "title": "AddressesInitReport",
   "type": "object"
