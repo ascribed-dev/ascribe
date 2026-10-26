@@ -184,6 +184,13 @@
         "null"
       ]
     },
+    "expected": {
+      "description": "The outputs of builds that aren't lines of the target whose pages\nchange only in the target's part of their availability lines, by\nbuild and output: expected, so they need no `--force`.",
+      "items": {
+        "$ref": "#/$defs/OutputJson"
+      },
+      "type": "array"
+    },
     "features": {
       "description": "Each feature whose spec is rewritten.",
       "items": {
@@ -279,6 +286,7 @@
     "redirects",
     "recorded",
     "outputs",
+    "expected",
     "from"
   ],
   "title": "VersionsRetireReport",

@@ -1,0 +1,9 @@
+description: >-
+  `[checks]` sets the check's level by its old name, `review-overdue`, which
+  still names `recheck-overdue` for a release.
+spec: ["7.2", "8.2"]
+tags: [check]
+today: "2026-10-10"
+
+diagnostics:
+  - {slug: recheck-overdue, line: 4, severity: warning}

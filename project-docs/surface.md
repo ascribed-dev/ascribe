@@ -24,7 +24,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe refs` | Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model, each as `file:line:column`, with what kind of use it is. | `TARGET [--limit <N>]` | `text`, `json` |
 | `ascribe search` | Finds where the pages say something, as their readers read it, and names the line to edit for each place. | `QUERY [PATHS]... [--type <NAME>] [--case] [--word] [--summary] [--build <NAME>]... [--limit <N>]` | `text`, `json` |
 | `ascribe resolve` | Resolves a page for one build and writes it as the build's plain Markdown output by default, as `ascribe build --emit plain` writes it, or, with `--emit site`, as its site output: the page as a reader of that build sees it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. | `PAGE [--build <NAME>] [--emit plain\|site] [--frontmatter]` | `text`, `json` |
-| `ascribe rename` | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. | `TARGET NEW` |  |
+| `ascribe rename` | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. | `TARGET NEW` | `text`, `json` |
 | `ascribe baseline write` | Adds every advice `ascribe check` reports to `ascribe.baseline`, and makes the file when there's none. |  | `text`, `json` |
 | `ascribe baseline prune` | Removes the entries of `ascribe.baseline` that match nothing the project has any more: the problems that were fixed, and those whose text changed, which `ascribe check` reports as new. |  | `text`, `json` |
 | `ascribe versions list` | Shows each target's lines, newest first: whether each is current, live, planned, or archived, the output and base path of each live line on each build versioned by the target, with how many pages it publishes, the last day of support from `ends`, and an archived line's address and the day it ended. |  | `text`, `json` |
@@ -626,8 +626,9 @@ Tools:
 | `ascribe_refs` | Find uses | `ascribe refs` |
 | `ascribe_search` | Search pages | `ascribe search` |
 | `ascribe_resolve` | Resolve a page | `ascribe resolve` |
-| `ascribe_format` | Format pages | `ascribe fmt` |
-| `ascribe_changes` | List changed pages | `ascribe diff` |
+| `ascribe_fmt` | Format pages | `ascribe fmt` |
+| `ascribe_diff` | List changed pages | `ascribe diff` |
+| `ascribe_rename` | Rename | `ascribe rename` |
 | `ascribe_addresses_move` | Record a move | `ascribe addresses move` |
 | `ascribe_addresses_retire` | Record a retired page | `ascribe addresses retire` |
 
@@ -858,6 +859,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/permalinks-sync.schema.json` | PermalinksSyncReport | What `ascribe permalinks sync` does to the list. |
 | `schemas/permalinks-verify.schema.json` | PermalinksVerifyReport | What `ascribe permalinks verify` answers. |
 | `schemas/refs.schema.json` | RefsReport | What `ascribe refs <TARGET>` answers. |
+| `schemas/rename.schema.json` | RenameReport | What `ascribe rename --format json` writes, and the MCP server's `ascribe_rename` gives. |
 | `schemas/report.schema.json` | ReportReport | What `ascribe report --format json` writes: one document, whatever the outcome. |
 | `schemas/resolve-permalink.schema.json` | ResolvePermalinkReport | What `ascribe resolve go:<name> --format json` answers: the name's entry as the build's `_ascribe/help.json` writes it, with the file's `version`, `build`, and `line`. |
 | `schemas/resolve.schema.json` | ResolveReport | What `ascribe resolve <PAGE> --format json` answers. |

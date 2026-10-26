@@ -670,6 +670,18 @@ struct OutputJson {
     changed: Vec<String>,
 }
 
+impl OutputJson {
+    fn new(o: &ascribe_lsp::ChangedOutput) -> OutputJson {
+        OutputJson {
+            build: o.build.clone(),
+            output: o.output.clone(),
+            added: o.added.clone(),
+            removed: o.removed.clone(),
+            changed: o.changed.clone(),
+        }
+    }
+}
+
 /// The version of the release's JSON.
 const RELEASE_SCHEMA_VERSION: u32 = 2;
 
@@ -733,17 +745,7 @@ impl ReleaseJson {
                     kept: f.kept.clone(),
                 })
                 .collect(),
-            outputs: r
-                .outputs
-                .iter()
-                .map(|o| OutputJson {
-                    build: o.build.clone(),
-                    output: o.output.clone(),
-                    added: o.added.clone(),
-                    removed: o.removed.clone(),
-                    changed: o.changed.clone(),
-                })
-                .collect(),
+            outputs: r.outputs.iter().map(OutputJson::new).collect(),
         }
     }
 }
@@ -1357,6 +1359,10 @@ pub(crate) struct RetireJson {
     /// rewrite changes, by build and output: they need `--force`, and a dry
     /// run lists them.
     outputs: Vec<OutputJson>,
+    /// The outputs of builds that aren't lines of the target whose pages
+    /// change only in the target's part of their availability lines, by
+    /// build and output: expected, so they need no `--force`.
+    expected: Vec<OutputJson>,
     /// The `ascribe.toml` the target's lines are written in, from the
     /// current folder, when the project's `[from]` takes them from another
     /// project's: the retirement is made in that project, and `files` are
@@ -1455,17 +1461,8 @@ impl RetireJson {
                 })
                 .collect(),
             recorded: r.recorded > 0,
-            outputs: r
-                .builds_changed
-                .iter()
-                .map(|o| OutputJson {
-                    build: o.build.clone(),
-                    output: o.output.clone(),
-                    added: o.added.clone(),
-                    removed: o.removed.clone(),
-                    changed: o.changed.clone(),
-                })
-                .collect(),
+            outputs: r.builds_changed.iter().map(OutputJson::new).collect(),
+            expected: r.expected.iter().map(OutputJson::new).collect(),
         }
     }
 }
@@ -1532,6 +1529,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
             redirects: Vec::new(),
             recorded: false,
             outputs: Vec::new(),
+            expected: Vec::new(),
             from: from.as_deref().map(answer::path_from_here),
         };
         let result = match args.format {
@@ -1815,6 +1813,33 @@ fn write_unused(
     Ok(())
 }
 
+/// Each output, with the pages it adds, removes, and changes.
+fn write_outputs(out: &mut dyn Write, outputs: &[ascribe_lsp::ChangedOutput]) -> io::Result<()> {
+    for o in outputs {
+        let parts: Vec<String> = [
+            ("adds", &o.added),
+            ("removes", &o.removed),
+            ("changes", &o.changed),
+        ]
+        .into_iter()
+        .filter(|(_, files)| !files.is_empty())
+        .map(|(verb, files)| {
+            let mut files: Vec<&str> = files.iter().map(String::as_str).collect();
+            files.sort_unstable();
+            format!("{verb} {}", files.join(", "))
+        })
+        .collect();
+        writeln!(
+            out,
+            "  {}'s {} output {}",
+            o.build,
+            o.output,
+            parts.join("; ")
+        )?;
+    }
+    Ok(())
+}
+
 fn write_retire(
     out: &mut dyn Write,
     r: &RetiredLine,
@@ -1851,33 +1876,19 @@ fn write_retire(
             f.key, f.from, f.to
         )?;
     }
+    if !r.expected.is_empty() {
+        writeln!(
+            out,
+            "Expected: builds that aren't lines of {target} change only {target}'s part of their availability lines:"
+        )?;
+        write_outputs(out, &r.expected)?;
+    }
     if !r.builds_changed.is_empty() {
         writeln!(
             out,
             "Builds that aren't lines of {target} change what they show:"
         )?;
-        for o in &r.builds_changed {
-            let parts: Vec<String> = [
-                ("adds", &o.added),
-                ("removes", &o.removed),
-                ("changes", &o.changed),
-            ]
-            .into_iter()
-            .filter(|(_, files)| !files.is_empty())
-            .map(|(verb, files)| {
-                let mut files: Vec<&str> = files.iter().map(String::as_str).collect();
-                files.sort_unstable();
-                format!("{verb} {}", files.join(", "))
-            })
-            .collect();
-            writeln!(
-                out,
-                "  {}'s {} output {}",
-                o.build,
-                o.output,
-                parts.join("; ")
-            )?;
-        }
+        write_outputs(out, &r.builds_changed)?;
         if !args.force {
             writeln!(out, "Rewriting them needs --force.")?;
         }

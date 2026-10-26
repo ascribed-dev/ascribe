@@ -97,7 +97,8 @@
     }
   ],
   "recorded": false,
-  "outputs": [
+  "outputs": [],
+  "expected": [
     {
       "build": "cloud",
       "output": "plain",

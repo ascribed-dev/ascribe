@@ -877,6 +877,11 @@ pub const API_OPERATION_UNREFERENCED: DiagnosticSlug = DiagnosticSlug("api-opera
 pub const BUILD_FILTER_LINE_UNDECLARED: DiagnosticSlug =
     DiagnosticSlug("build-filter-line-undeclared");
 
+/// The checks renamed, each by the name it had before, which still names
+/// it in `[checks]`, in an acknowledgement, and to `ascribe explain`, for a
+/// release (decision #953).
+pub const OLD_NAMES: &[(&str, DiagnosticSlug)] = &[("review-overdue", RECHECK_OVERDUE)];
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,

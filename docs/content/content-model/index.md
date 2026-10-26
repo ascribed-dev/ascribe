@@ -175,7 +175,7 @@ team = { type = "enum(docs, platform)", role = "owner" }
 | Role | The field's type | What reads it |
 |---|---|---|
 | `description` | `string`, optional or not | [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports a page of the type without one. A required field, or one with a default, always has one, so the check has nothing to report: a page that leaves a field with a default out, or empty, has the default as its description, in `llms.txt` and the page records too. [`description-link`](../checks/diagnostics/content-checks.md#ASC198) reports a Markdown link in one: a description is plain text, so the link is shown as written. |
-| `recheck-date` | `date`, optional or not | [`recheck-overdue`](../checks/diagnostics/content-checks.md#ASC153) reports a page whose date has passed. `review-date`, the role's old name, still works, as a value of `role` and as a field's name, until the next release. |
+| `recheck-date` | `date`, optional or not | [`recheck-overdue`](../checks/diagnostics/content-checks.md#ASC153) reports a page whose date has passed. `review-date`, the role's old name, still works, as a value of `role` and as a field's name, and so does the check's, `review-overdue`, in `[checks]` and in an acknowledgement, until the next release. |
 | `owner` | `string` or `enum`, optional or not | [`ascribe report inventory`](../checks/report-command.md#cli-report) counts pages by owner. |
 
 Without a field with the role, those checks don't look at the type's pages, and the report counts its pages as having no owner. A role changes nothing in the outputs.

@@ -114,7 +114,7 @@ See [Phrases](writing/inline.md#phrases).
 ## Recheck date
 @term {aliases="recheck dates"}
 
-When a page is next due to be read against what it describes: its field with the `recheck-date` role, which [`recheck-overdue`](checks/diagnostics/content-checks.md#ASC153) compares with today. It was the review date, and the role `review-date`, which still works for a release.
+When a page is next due to be read against what it describes: its field with the `recheck-date` role, which [`recheck-overdue`](checks/diagnostics/content-checks.md#ASC153) compares with today. It was the review date, with the role `review-date` and the check `review-overdue`, and both old names still work for a release.
 
 See [Field roles](content-model/index.md#54-field-roles).
 
