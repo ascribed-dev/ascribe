@@ -657,7 +657,7 @@ other: about.md: 1 changed, 1 added
         assert_eq!(pages[0]["changes"].as_array().map(Vec::len), Some(2));
     }
 
-    // The HTML report: that page alone.
+    // The HTML preview: that page alone.
     let out = ascribe(&site(&dir), &["diff", "docs/about.md", "--format", "html"]);
     assert_eq!(code(&out), 0, "{}", stderr(&out));
     let data = report_data(&stdout(&out), &[]);

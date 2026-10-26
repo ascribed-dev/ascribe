@@ -76,6 +76,13 @@ A source file that exists only to be included in other files: any file with a pa
 
 See [Files](writing/frontmatter.md#files) and [`@include`](writing/directives.md#include).
 
+## HTML preview
+@term
+
+The HTML file `ascribe diff --format html` writes, showing a pull request's changed pages rendered and marked, which CI can attach to the pull request.
+
+It's the third place to [review](#review), beside the page preview and the site preview, and needs no checkout. See [Attach the HTML preview to every pull request](review/ci-report.md).
+
 ## Memo
 @term {aliases=memos}
 
@@ -116,12 +123,12 @@ See [Release lines](versions/lines.md). Pages about versions call it a line. Els
 
 What `ascribe report` says about the state of a whole project: its problems, inventory, builds, pages, external links, and published site.
 
-See [The project report](checks/report.md). The HTML file `ascribe diff --format html` writes for a pull request is part of [review](#review), not this.
+See [The project report](checks/report.md). The [HTML preview](#html-preview), which `ascribe diff --format html` writes for a pull request, is part of [review](#review), not this.
 
 ## Review
 @term {aliases=reviews, match=marked}
 
-Reading a pull request's changes as readers will see the pages, in the page preview, the site preview, or the HTML file CI writes, and commenting there.
+Reading a pull request's changes as readers will see the pages, in the page preview, the site preview, or the HTML preview, and commenting there.
 
 See [Review](review/index.md). A diagnostic whose next step is `review` may be fine as it is: see [What to do next](checks/diagnostics.md#what-to-do-next). A page's review date, its field with the `review-date` role that [`review-overdue`](checks/diagnostics/content-checks.md#ASC153) compares with today, is when to check the page again.
 
