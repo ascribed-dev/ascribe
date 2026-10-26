@@ -239,7 +239,9 @@ impl<'a> Converter<'a> {
                 BlockKind::Paragraph(Paragraph { inlines })
             }
             NodeValue::CodeBlock(code) => {
-                let info = code.info.trim().to_owned();
+                // CommonMark trims the info string of spaces and tabs only,
+                // as `info_span` does.
+                let info = code.info.trim_matches([' ', '\t']).to_owned();
                 let info_span = (code.fenced && !info.is_empty())
                     .then(|| self.info_span(span))
                     .flatten();
