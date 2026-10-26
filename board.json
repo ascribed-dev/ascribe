@@ -6429,8 +6429,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/947"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDegws",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1127"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Report: list what a build leaves out once per mark, not once per line"
     },
     {
@@ -6480,8 +6483,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/950"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDegzI",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1123"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Rename versions archive, which writes HTML and doesn't archive the line"
     },
     {
@@ -7144,8 +7150,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1131"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Incremental differential test: generate the change kinds added since it was written"
     },
     {
@@ -7339,8 +7348,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1126"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Diff: list a page as changed when the OpenAPI spec it uses changed"
     },
     {
@@ -7680,8 +7692,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1125"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Fuzz the parser, the content model's loader, and the formatter nightly"
     },
     {
@@ -7753,7 +7768,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1112"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Benchmarks: a quick run on pull requests, so a slowdown is caught before it merges"
     },
     {
@@ -7769,8 +7784,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1128"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Link fixes: rank a heading id the wrong id starts, first, and name the best one in the message"
     },
     {
@@ -7981,8 +7999,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1120"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Site: publish the changelog as Markdown and list it for agents"
     },
     {
@@ -8097,8 +8118,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1124"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Warn on a code block info-string word that looks like a pair but isn't one"
     },
     {
@@ -8236,6 +8260,57 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "LSP: a file no page reads keeps the server busy for the addresses' settle time"
+    },
+    {
+      "content": {
+        "body": "Found by the fuzz targets added for #1020.\n\n## What's wrong\n\nA lone `\\r` (not followed by `\\n`) in some places makes the spans after it point one byte early. The parser treats a lone `\\r` as a line ending elsewhere (`tree.rs`'s line splitting, `nest.rs`), so this looks like one place that counts it differently.\n\n**In frontmatter**, the formatter then edits the wrong bytes, and formatting isn't idempotent:\n\n```text\n\"---\\n\\r\\\"\\n---\\n\\n@note:{\"\n -> \"---\\n\\r\\\"\\n---\\n\\n@note :{\"     (the space goes before the colon, not after it)\n -> \"---\\n\\r\\\"\\n---\\n\\n@not  :{\"     (and the second pass eats the `e`)\n```\n\nThe directive's span is `11..18`; its text is at `12..19`. With `\\r\\n` instead of the lone `\\r` (`\"---\\n\\r\\n---\\n\\nx\"`), the spans are right.\n\n**In a link reference definition**, `\"[r]:[\\r]\"` gives a text inline whose value is `\"]\"` and whose span covers `\"[\"` (`check_tree` in `crates/ascribe-syntax/tests/support/mod.rs` reports it).\n\n## Done when\n\n- Both inputs parse with every span covering its own text (`check_tree` reports nothing), and `\"---\\n\\r\\\"\\n---\\n\\n@note:{\"` formats once to its canonical form.\n- `cargo fuzz run format` (from `fuzz/`, CONTRIBUTING.md) runs without finding this again.",
+        "number": 1121,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A lone carriage return shifts the spans after it, and the formatter edits the wrong bytes",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1121"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDuTWw",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "A lone carriage return shifts the spans after it, and the formatter edits the wrong bytes"
+    },
+    {
+      "content": {
+        "body": "Found by the fuzz targets added for #1020.\n\n## What's wrong\n\n`check_tree` (`crates/ascribe-syntax/tests/support/mod.rs`), the span checker the parser's tests use, holds every container's span to end where its end line or last block does, without trailing whitespace. An unclosed container at the end of a file doesn't:\n\n```text\n\"@memo:\\n\"\n  block     0..7 \"@memo:\\n\": ends with a line ending\n  container 0..7 \"@memo:\\n\": ends with whitespace\n  container 0..7 \"@memo:\\n\": doesn't end where its end line or last block does\n```\n\nand with content, `\"…@memo:\\n  - Not an item.\\n\\n   \"` gives a container span ending in the blank lines after its last block.\n\nEither the span is wrong, or `check_tree`'s rule should say what an unclosed container's span is. Whichever is decided, the parser and the checker should agree.\n\n## Done when\n\n- `check_tree` reports nothing for an unclosed container, and the decision is in a test.\n- The `parse` fuzz target (`fuzz/fuzz_targets/parse.rs`) can then hold all of `check_tree`, not only the in-bounds check, once the lone carriage return issue is fixed too.",
+        "number": 1122,
+        "repository": "ascribed-dev/ascribe",
+        "title": "An unclosed container's span takes in the trailing line ending",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1122"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDuTbs",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "An unclosed container's span takes in the trailing line ending"
+    },
+    {
+      "content": {
+        "body": "Found by the differential test's new generator (#988).\n\n## What's wrong\n\nA fresh load (`Project::assemble`) reads every file's snippets through one `CodeFiles`, so each code file gets the next id from `CODE_FILE_IDS` in the order the project first reads it. `IncrementalProject::apply` resolves each file's snippets with a new `CodeFiles` (`crates/ascribe-resolve/src/incremental/mod.rs`, the `resolve_snippets` calls), so the first code file each file reads is `0x8000_0000`. After an update, two different code files can share an id, and a code file's id differs from the one a fresh load gives it.\n\n`Snippet::file` is read as a code file's identity: `reading::find` keys its line indexes by `block.file`, and the language server's search (`crates/ascribe-lsp/src/search.rs`, `code_text`) finds a code file's text by it. So in the editor, a search match in the second code file can get the first one's line numbers or text.\n\nSmallest case: start from disk with `docs/_shared.md` showing `code:app.py#main`, then edit `docs/index.md` to `@snippet: code:lib.py`. The incremental snapshot gives `lib.py` id `0x8000_0000`, the same as `app.py`; a fresh load gives it `0x8000_0001`.\n\n## Done when\n\n- A code file's id after any sequence of updates is what a fresh load with the same ids gives it, or ids are by path in both, so two code files never share one.\n- `code_ids_hidden` in `crates/ascribe-resolve/tests/incremental_support/mod.rs` is gone, and the differential test compares the ids.",
+        "number": 1129,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Incremental project: a snippet's code file id isn't a fresh load's",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1129"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDuppY",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Incremental project: a snippet's code file id isn't a fresh load's"
     }
   ]
 }
