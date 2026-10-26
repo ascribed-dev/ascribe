@@ -4,15 +4,15 @@ Ideas for Ascribe that nobody has built, planned, or started. This is exploratio
 
 Written on 2 October 2026, after 0.1.1, and cut back on 11 October 2026 to what's still open. Most of what it held then has been built, and the rest of it has a plan or a proposal of its own, so it's gone from here:
 
-- **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, external links, and what's new since the last run), [a baseline](../docs/content/checks/baseline.md) of existing advice, [permalinks](../docs/content/permalinks/index.md), [embedded help](../docs/content/permalinks/in-your-product.md) with section summaries, [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), [versions](../docs/content/versions/index.md), [navigation](../docs/content/navigation/index.md), [the glossary as pages](../docs/content/content-model/glossary.md), a content model that says only what's the project's own ([shared frontmatter, defaults, and `[from]`](../docs/content/content-model/index.md)), the editor's [sidebar](../docs/content/editor/sidebar.md), with This page and the Project view, and Project Settings, [search](../docs/content/command/questions.md#ascribe-search), and what a search engine and a crawler are told, in [Publishing](../docs/content/publishing/index.md).
-- **Planned.** [OpenAPI](openapi/README.md), from its [proposal](proposals/openapi.md). [Redirects](redirects/README.md), from its [proposal](proposals/redirects.md). **Proposed:** [drafts](proposals/drafts.md), [redirects' later steps](proposals/redirects-later.md), and [a page in the site output, from the command line](proposals/resolve-emit.md) (section 22), now [planned](resolve-emit/README.md).
+- **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, external links, and what's new since the last run), [a baseline](../docs/content/checks/baseline.md) of existing advice, [permalinks](../docs/content/permalinks/index.md), [embedded help](../docs/content/permalinks/in-your-product.md) with section summaries, [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), [versions](../docs/content/versions/index.md), [navigation](../docs/content/navigation/index.md), [the glossary as pages](../docs/content/content-model/glossary.md), a content model that says only what's the project's own ([shared frontmatter, defaults, and `[from]`](../docs/content/content-model/index.md)), the editor's [sidebar](../docs/content/editor/sidebar.md), with This page and the Project view, and Project Settings, [search](../docs/content/command/questions.md#ascribe-search), what a search engine and a crawler are told, in [Publishing](../docs/content/publishing/index.md), [redirects](../docs/content/publishing/redirects.md) that keep published addresses working, [links into an OpenAPI spec](../docs/content/openapi/index.md) with checked examples, coverage, and `@operation`, and [a page in the site output](../docs/content/command/site-output.md) from `ascribe resolve --emit site`.
+- **Proposed.** [Drafts](proposals/drafts.md), and [redirects' later steps](proposals/redirects-later.md).
 - **Waiting.** [The rest of the cache](https://github.com/ascribed-dev/ascribe/blob/bb56bfb3/project-docs/proposals/cache.md) is built, apart from Vale's results, which wait for a project that needs them (section 15).
 
 The sections keep the numbers they had, since other documents name them, so the numbers have gaps.
 
 Three groups of ideas:
 
-- [Product features](#product-features): what's left of snippets and Vale, editable previews, OpenAPI, redirects, and other things a docs system does, what the landing page showed about widgets, what's left of the editor's views, a page in any output from the command line, and passages written twice.
+- [Product features](#product-features): what's left of snippets and Vale, editable previews, what's left of OpenAPI, other things a docs system does, what the landing page showed about widgets, what's left of the editor's views, what's left of a page in any output from the command line, and passages written twice.
 - [Beyond the pages](#beyond-the-pages): the cache, whose one piece left waits for a project that needs it.
 - [Paid features](#paid-features): what could be charged for, if Ascribe ever goes that way. A list to keep, not a plan.
 
@@ -62,27 +62,14 @@ A general WYSIWYG editor that serializes back to Markdown tends to produce sourc
 - Who would use it: writers who avoid Markdown, or everyone, for structure?
 - How should a preview edit and a concurrent edit in the text editor reconcile? (VS Code's document versions help; the server already rejects stale versions.)
 
-## 3. OpenAPI
+## 3. OpenAPI: what's left
 
-Planned in [OpenAPI](openapi/README.md), from [its proposal](proposals/openapi.md) and the research in [OpenAPI documentation pain points](reports/OpenAPI%20documentation%20pain%20points.md): level 1 and a thin level 2, with reference pages left to the renderers.
+Links into a spec, checked examples, coverage, and a thin `@operation` are built ([Link to your API reference](../docs/content/openapi/index.md)), from [the proposal](https://github.com/ascribed-dev/ascribe/blob/9162c25a/project-docs/proposals/openapi.md) and the research in [OpenAPI documentation pain points](reports/OpenAPI%20documentation%20pain%20points.md). Redoc is the one renderer Ascribe knows by name, and a template serves the renderers whose addresses are an operation's id as written. What's left:
 
-### Levels
-
-1. **Checked links into the spec.** `[Get a user](../api/openapi.yaml#getUser)`, checked like heading links, with completion of operation ids and hover showing the operation. Cheap and immediately useful.
-2. **Embeds.** `@openapi-operation: getUser` in a hand-written page renders the method, path, parameters, request and response schemas, and examples. Writers keep the narrative; the spec supplies the facts.
-3. **Generated reference pages.** Virtual pages, one per tag or operation, built from the spec at build time and never written to disk, with hooks for authored prose around them.
-
-### What Ascribe could do that other tools don't
-
-- **Check examples against schemas.** JSON in a page's code blocks that claims to be a request or response is validated against the spec, so a stale example is an error.
-- **Coverage.** Report operations no page documents.
-- **Versions.** Map API versions onto builds and variants; availability from a spec extension such as `x-ascribe-available`.
-
-### Questions
-
-- Embedded rendering needs elements in `@ascribed/elements` (operation, schema, example), and an Astro story.
-- Start with OpenAPI 3.1 only? GraphQL and AsyncAPI would follow the same design later.
-- Generated pages raise navigation and URL questions (see [navigation](../docs/content/navigation/index.md)).
+- **Generated reference pages.** Virtual pages, one per tag or operation, built from the spec and never written to disk, with authored prose around them. The renderers do this, and do it better than a first version would; it comes back if teams want one look across guides and reference.
+- **Other renderers by name.** Scalar, whose addresses changed within a year and have no form by id, waits until teams ask. starlight-openapi and the Docusaurus plugin belong to their own frameworks.
+- **A spec in another repository, a spec per release line, and availability from the spec** (`x-ascribe-available`).
+- **AsyncAPI and GraphQL,** which `[apis]` leaves room for.
 
 ## 5. Vale: what's left
 
@@ -93,15 +80,7 @@ Ascribe runs Vale on a page's prose, with phrases substituted and directives lef
 
 ## 6. Other things a docs system does
 
-Review dates, the inventory, external link checking, the checks for unused and oversized images, and [navigation](../docs/content/navigation/index.md) are built. These aren't.
-
-### Redirects
-
-Planned in [redirects](redirects/README.md), from the research in [Redirects for docs as code](reports/Redirects%20for%20docs%20as%20code.md).
-
-Renaming or moving a page updates the links to it, and a permalink gives a product an address that doesn't move. Neither helps a bookmark or a link from another site to a page's old address. Ascribe could record a redirect from the old published address and emit it with the site. The Web Documentation Delivery Spec asks for same-host redirects when content moves.
-
-It needs something Ascribe doesn't have: a record of what was published before, read from an earlier run. Two finished or planned pieces of work stopped at that seam on purpose. What a crawler is told is written without it, so a sitemap has addresses and no dates. And the versions plan's `retire` reports each old address and where it should go, as a list, and writes nothing for a host. Redirects would take that list as their first input.
+Review dates, the inventory, external link checking, the checks for unused and oversized images, [navigation](../docs/content/navigation/index.md), and [redirects](../docs/content/publishing/redirects.md) are built. These aren't.
 
 ### Differences between builds
 
@@ -163,24 +142,12 @@ Added 2026-10-18, from what the [editor's views plan](https://github.com/ascribe
 - **A webview for the Review view.** This page and the Project view are webviews, and Project Settings a webview tab ([proposal](https://github.com/ascribed-dev/ascribe/blob/62bf76a9/project-docs/proposals/this-page-webview.md)); Review, Pages, and Content model stay trees. Whether Review follows is the question left, now that This page has been used.
 - **A drop handler that asks for alt text.** Dropping or pasting an image into a page is VS Code's Markdown extension's, which writes the image's link with no alt text, where **Insert an image** asks for it. A handler of Ascribe's own would ask as that action does, and put the image where the project keeps its images. [Decision #544h](decisions/544h-editor-leaves-out.md) holds it back until what VS Code's drop writes fails `ascribe check`, which nobody has yet checked by hand: drop and paste an image, and drop a page, into a page of `examples/quill` with the settings at their defaults, then run `ascribe check`.
 
-## 22. A page in any output, from the command line
+## 22. A page in any output, from the command line: what's left
 
-Added 2026-10-20. Proposed in [a page in the site output, from the command line](proposals/resolve-emit.md), which settles this section's questions: the site output first, no HTML, and an `emit` field in the JSON.
+Added 2026-10-20. `ascribe resolve --emit site`, and `emit` on `ascribe_resolve`, are built ([A page in the site output](../docs/content/command/site-output.md)), from [the proposal](https://github.com/ascribed-dev/ascribe/blob/9162c25a/project-docs/proposals/resolve-emit.md). Two forms wait for a use:
 
-`ascribe resolve`, `ascribe render` until [#665](https://github.com/ascribed-dev/ascribe/issues/665) renamed it, writes one page as a build's plain output writes it: SPEC §9's resolution, then the plain emitter. The rename leaves room for what the old name promised: a page in the other outputs, without building the project.
-
-- **`--emit site`:** the page as the site output writes it, Markdown with Ascribe's elements (`<ascribe-note>`, `<ascribe-tabs>`, availability badges), as `@ascribed/astro` receives it. The option is `ascribe build`'s own word, so `ascribe resolve PAGE --emit plain` is today's answer and `--emit site` the new one. It shows what a site's integration is given, which the plain output can't: what a switcher, a badge, or a glossary link becomes before a site draws it.
-- **`--emit json`:** the page as the JSON output writes it, blocks and all, for a tool that reads one page.
-- **HTML,** from `render_site_html`, the renderer the editor's preview uses and the Astro plugin is held to: the page's content as HTML, without a site's frame, so an agent or a test can see what the elements produce without a browser. It's the one case where "render" was the right word, and it might be a command of its own rather than an output, since no build writes HTML.
-- **For agents:** an `emit` argument on `ascribe_resolve`, not a tool of its own, since a tool takes its command's arguments under the same names (the command checklist). `site` first: it's the view an agent without a shell can't get otherwise, of what a badge or a switcher becomes. `json` only if a use turns up, since the tool's JSON would hold the page's JSON in a field, and HTML not at all, since it costs an agent far more than the Markdown it came from and says nothing the site output doesn't. With `emit: site`, the tool's default text is the site output's Markdown. An argument added to a tool is still a recorded decision (decision 56), though no caller breaks.
-
-What it would serve: the [docs audit](https://github.com/ascribed-dev/ascribe/blob/62bf76a9/project-docs/docs-audit.md)'s "where a screenshot would do the work" question, which needed a browser to see tabs and badges; an agent checking what a reader of the site gets, not only a reader of the Markdown version; and tests of a site's integration that start from one page.
-
-Questions:
-
-- **Is HTML an output or a separate thing?** Every other `--emit` value is an output a build writes. HTML isn't, so `--emit html` would make the option mean two things.
-- **The JSON document.** The command's JSON wraps the page's text in `text`; a site or JSON page in it needs a field that says which output it is, which decision 4 lets the document add.
-- **Elements without their script.** The site output's elements are custom elements that `@ascribed/elements` defines. Their HTML is readable without it, but tabs show every panel at once, as a page without JavaScript does.
+- **`--emit json`:** the page as the JSON output writes it, under a key of its own in the command's JSON, not as a string in `text`.
+- **HTML,** from `render_site_html`, without source anchors: as `--html` on `--emit site`, not a third meaning for `--emit`, since no build writes HTML.
 
 ## 23. Passages written twice
 
@@ -256,11 +223,9 @@ Added 2026-10-09. A place to collect ideas, so they're on record if the question
 
 # Suggested order
 
-No plan or proposal is in progress here, apart from the cache's Vale results, which wait for a project that needs them. Of what's left in this document:
+No plan is in progress here. Drafts and redirects' later steps are proposed, and the cache's Vale results wait for a project that needs them. Of what's left in this document:
 
-1. **Redirects** (section 6), once something records what was published. The versions plan's `retire` gives it a first input.
-2. **OpenAPI links and embeds** (section 3, levels 1 and 2).
-3. **Structural editing in the preview** (section 2, layers 1 and 2).
+1. **Structural editing in the preview** (section 2, layers 1 and 2).
 
 # Open questions
 

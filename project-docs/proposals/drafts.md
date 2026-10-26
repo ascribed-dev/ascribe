@@ -56,7 +56,7 @@ It's a key of its own, not a value of `listing` or of availability, because it's
 
 ### Publishing
 
-Taking out `draft: true` publishes the page in every build that would otherwise publish it; nothing else changes. With [redirects](redirects.md)' `ascribe.addresses`, publishing a draft loses no address, since it had none, and turning a published page back into a draft loses its addresses, which `address-lost` reports, as a deliberate decision should be.
+Taking out `draft: true` publishes the page in every build that would otherwise publish it; nothing else changes. With [redirects](../../docs/content/publishing/redirects.md)' `ascribe.addresses`, publishing a draft loses no address, since it had none, and turning a published page back into a draft loses its addresses, which `address-lost` reports, as a deliberate decision should be.
 
 ### Permalinks
 
