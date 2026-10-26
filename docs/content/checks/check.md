@@ -102,6 +102,23 @@ A problem [acknowledged as intended](../writing/directives.md#intended) isn't li
 
 Advice the project's [baseline](baseline.md), `ascribe.baseline`, holds back isn't listed either, and the summary counts it: `0 errors, 0 warnings, 2 advice, 3412 in the baseline`, and the JSON's `summary` as `baselined`. An entry of the baseline that matches nothing is reported, as `baseline-entry-unmatched`, when the check covers the whole project and every build. `--no-baseline` lists everything, without reading the file.
 
+### Quieting a problem
+
+There are four ways to quiet a problem, each with its own rules:
+
+| Way | What it quiets | For how long | Reason | Read by |
+|---|---|---|---|---|
+| [`@intended`](../writing/directives.md#intended), the `intended` frontmatter key, or [`[[intended]]`](../content-model/checks.md#intended-acknowledgements) | One problem of a review check, at its place | For good | Required | Everything |
+| [`[checks]`](../content-model/checks.md#19-checks) `<check> = "off"` | A content check, in the whole project | Until it's turned back on | None | Everything |
+| `[checks]` `<check> = "advice"` or `"warning"` | Lowers a content check, in the whole project | Until it's set again | None | Everything |
+| [`ascribe.baseline`](baseline.md) | Many advice, each by its problem | Until it's fixed and pruned | None | `ascribe check`, the editor, the hooks, and the MCP server; not `ascribe build` or `ascribe report`, for now |
+
+- **An error about whether the project is valid is never quieted,** by any of the four: a broken link, an unclosed container, or an unknown attribute makes a page wrong, and is fixed instead. These are the specification's diagnostics ([SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics)), and none is configurable. The four are for the [content checks](diagnostics.md#setting-a-checks-level), Ascribe's own checks of the content's quality.
+- **A content check raised to an error isn't the same.** `[checks]` can raise a content check, such as `page-orphan = "error"`: its problems then fail `ascribe check` and stop `ascribe build`, as an error does, but the page is still valid by the specification. A review check raised this way can still be acknowledged with `@intended`, at whatever level the project gives it.
+- **The baseline holds advice only.** A check raised to a warning or an error is reported, whatever the baseline lists. To put a check's warnings off, lower it to `"advice"`, then run `ascribe baseline write` again.
+
+Which to use: acknowledge a problem the team has looked at and means to keep, with why, beside it. Turn off or lower a check the project doesn't need, which a reviewer sees in `ascribe.toml`. Put a backlog of advice in the baseline, to fix at the team's own pace, so `ascribe check` reports only what's new.
+
 ### JSON output
 
 `--format json` writes one JSON document to standard output, whatever the outcome, so a tool can always parse it. Its [schema](../contracts/json-reports.md#ascribe-check-and-ascribe-build) has every field, under the rules the [JSON report contract](../contracts/json-reports.md) sets for every document, such as ignoring fields you don't know:
