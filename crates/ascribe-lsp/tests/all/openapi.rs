@@ -2,7 +2,8 @@
 //! completion after `#`, its hover, going to it in the spec, the spec read
 //! again when it changes on disk, inside the project's folder or outside it,
 //! and the safe fix for a link to an operation that was renamed, from what
-//! the server read before or from the review's base.
+//! the server read before or from the review's base; and the same on an
+//! `@operation`'s link.
 
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
