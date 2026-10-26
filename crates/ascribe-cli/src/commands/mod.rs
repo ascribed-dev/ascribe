@@ -17,6 +17,7 @@ pub mod model;
 pub mod observe;
 pub mod outline;
 pub mod permalinks;
+pub mod preview;
 pub mod refs;
 pub mod rename;
 pub mod report;

@@ -14,6 +14,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe check` | Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. | `[PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]` | `text`, `concise`, `json`, `prompt` |
 | `ascribe fmt` | Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. | `[--check] [--diff] [PATHS]...` | `text`, `json` |
 | `ascribe build` | Checks the project, then writes each build's outputs. | `[--build <NAME>]... [--emit site,plain,json] [--anchors] [--no-baseline]` | `text`, `json` |
+| `ascribe preview` | Shows a build's pages as readers see them, with nothing but the `ascribe` command: no Node, no editor, and no Astro. | `[--build <NAME>] [--port <PORT>]` |  |
 | `ascribe diff` | Shows what changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved. | `[PAGE] [--base <REV>] [--base-exact] [--build <NAME>]... [--exit-code] [--pages-only]` | `text`, `json`, `html`, `prompt` |
 | `ascribe drift` | Lists the pages whose code examples changed between a git revision and the working tree, and whether the words around them changed too, and the pages whose examples no longer resolve. | `[--base <REV>] [--build <NAME>]... [--exit-code]` | `text`, `json`, `markdown` |
 | `ascribe report` | Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. | `[SECTION]... [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--no-baseline] [--exit-code advice\|warning\|error]` | `text`, `markdown`, `json`, `prompt` |
@@ -901,7 +902,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `astro/reference.md` | `@ascribed/astro` reference | reference |
 | `astro/serve-markdown.md` | Serve the Markdown versions | how-to |
 | `checks/baseline.md` | The baseline | reference |
-| `checks/check.md` | `ascribe check`, `build`, and `fmt` | reference |
+| `checks/check.md` | `ascribe check`, `build`, `preview`, and `fmt` | reference |
 | `checks/ci.md` | Checks in CI | how-to |
 | `checks/diagnostics.md` | Diagnostics | reference |
 | `checks/diagnostics/content-checks.md` | Diagnostics: content checks | reference |
