@@ -323,3 +323,105 @@ fn openapi_a_renamed_operation_is_fixed_from_the_review_s_base() {
     );
     assert!(safe, "the rename is safe");
 }
+
+/// `PAGE`, putting `getUser` in the page with `@operation` instead.
+const EMBED: &str = "---\ntitle: Users\n---\n\n@operation: ../api/openapi.yaml#getUser\n";
+
+fn embedding() -> Fixture {
+    Fixture::new(
+        &format!("{MODEL}{APIS}"),
+        &[("api/openapi.yaml", SPEC), ("docs/users.md", EMBED)],
+    )
+}
+
+#[test]
+fn openapi_an_operation_directive_completes_its_operations_after_the_spec_s_hash() {
+    let f = embedding();
+    let path = f.path("docs/users.md");
+    let mut client = Client::start(&f.root());
+    client.open(&path, 1, EMBED);
+    client.settle();
+
+    let typed = "---\ntitle: Users\n---\n\n@operation: ../api/openapi.yaml#";
+    let all = complete(&mut client, &path, typed, "#");
+    assert_eq!(
+        labels(&all),
+        ["listUsers", "getUser", "delete/users/{id}", "listTeams"]
+    );
+    assert_eq!(all[1]["detail"], "GET /users/{id}");
+    assert_eq!(all[1]["tags"], json!([1]), "deprecated");
+    let by_summary = complete(&mut client, &path, &format!("{typed}team"), "#team");
+    assert_eq!(labels(&by_summary), ["listTeams"]);
+    let edit = &by_summary[0]["textEdit"];
+    assert_eq!(edit["newText"], "listTeams");
+    assert_eq!(edit["range"]["start"], after(typed, "#"));
+    // A file that isn't a declared spec has no operations to offer.
+    let page = "---\ntitle: Users\n---\n\n@operation: users.md#";
+    assert!(complete(&mut client, &path, page, "#").is_empty());
+}
+
+#[test]
+fn openapi_an_operation_directive_shows_its_operation_on_hover_and_opens_it_in_the_spec() {
+    let f = embedding();
+    let path = f.path("docs/users.md");
+    let mut client = Client::start(&f.root());
+    client.open(&path, 1, EMBED);
+    client.settle();
+    let on_link = after(EMBED, "openapi.yaml#get");
+
+    let hover = client
+        .request(
+            "textDocument/hover",
+            json!({ "textDocument": text_doc(&path), "position": on_link }),
+        )
+        .response_result
+        .expect("a hover");
+    let text = hover["contents"]["value"].as_str().expect("markup");
+    assert!(text.contains("**GET** `/users/{id}`"), "{text}");
+    assert!(text.contains("Get a user"), "{text}");
+    assert!(text.contains("**Deprecated**"), "{text}");
+    assert!(text.contains("tagged Users"), "{text}");
+    assert_eq!(hover["range"]["start"], after(EMBED, "@operation: "));
+
+    let location = client
+        .request(
+            "textDocument/definition",
+            json!({ "textDocument": text_doc(&path), "position": on_link }),
+        )
+        .response_result
+        .expect("a location");
+    assert_eq!(location["uri"], uri(&f.path("api/openapi.yaml")).as_str());
+    let line = SPEC
+        .lines()
+        .position(|l| l == "      operationId: getUser")
+        .expect("getUser")
+        - 1;
+    assert_eq!(
+        location["range"]["start"],
+        json!({ "line": line, "character": 0 })
+    );
+    // The operation is deprecated, which the page is told.
+    assert!(diagnostic(&client, &path, "link-operation-deprecated").is_some());
+}
+
+#[test]
+fn openapi_an_operation_directive_to_a_renamed_operation_is_fixed() {
+    let f = embedding();
+    let path = f.path("docs/users.md");
+    let mut client = Client::start(&f.root());
+    client.settle();
+    assert!(diagnostic(&client, &path, "link-operation-missing").is_none());
+
+    f.write("api/openapi.yaml", &renamed());
+    client.watched(&[(&f.path("api/openapi.yaml"), FileChangeType::CHANGED)]);
+    client.settle();
+    let missing = diagnostic(&client, &path, "link-operation-missing")
+        .expect("the @operation's getUser is missing now");
+    assert_eq!(missing["range"]["start"], after(EMBED, "@operation: "));
+    let (titles, safe) = fixes(&mut client, &path, &missing);
+    assert_eq!(
+        titles[0], "Link to `../api/openapi.yaml#fetchUser`",
+        "{titles:?}"
+    );
+    assert!(safe, "the rename is safe");
+}
