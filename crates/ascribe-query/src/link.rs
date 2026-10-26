@@ -322,7 +322,18 @@ fn operation_answer(
         answer.href = Some(format!("{written}#{}", encode_destination(id)));
         answer.operation = Some(operation_of(project, api, id, operation));
     } else if spec.is_some() {
-        answer.problem = Some(format!("`{written}` has no operation `{id}`"));
+        let mut problem = format!("`{written}` has no operation `{id}`");
+        // The operation now at the method and path the id had, as
+        // `link-operation-missing` names it.
+        if let Some(now) = project.apis().renamed(api, id)
+            && let Some(new_id) = &now.operation_id
+        {
+            problem.push_str(&format!(
+                "; `{id}` is now `{new_id}` ({})",
+                now.method_and_path_shown()
+            ));
+        }
+        answer.problem = Some(problem);
     } else {
         answer.problem = Some(format!("the spec of API `{api}` can't be read"));
     }

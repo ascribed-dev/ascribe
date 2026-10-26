@@ -11,6 +11,7 @@ use ascribe_core::{AttributeValue, Date, FileId, Issue, LineIndex, RelPath, Span
 use ascribe_model::{
     AddressFile, ContentModel, Lock, LockedSource, NavFile, PermalinkList, SourceBound,
 };
+use ascribe_resolve::openapi::ApiSpecs;
 use ascribe_resolve::side_file::{self, Held, SideFile};
 use ascribe_resolve::{
     CodeFile, CodeFiles, Committed, DiskFs, FileSystem, Layout, MemoFile, MemoStore, Personal,
@@ -253,6 +254,9 @@ pub struct Project {
     /// ([`Project::with_link_index`]), or one built from the held texts the
     /// first time either needs it, so it's built once.
     link_index: OnceLock<Arc<ascribe_resolve::Project>>,
+    /// A base revision's specs, which the source index it builds keeps
+    /// where each `operationId` was from ([`Project::with_base_apis`]).
+    base_apis: Option<Arc<ApiSpecs>>,
     /// The day the checks run on, which `recheck-overdue` compares with.
     today: Option<Date>,
     /// The templates the content types name, by type, read the first time a
@@ -564,6 +568,7 @@ impl Project {
             side,
             images: OnceLock::new(),
             link_index: OnceLock::new(),
+            base_apis: None,
             today: None,
             templates: Arc::default(),
             memos: Arc::default(),
@@ -971,10 +976,30 @@ impl Project {
         Project { link_index, ..self }
     }
 
+    /// The project with a base revision's specs, so a link to an
+    /// `operationId` renamed since is offered the operation now at the
+    /// method and path it had there, first and as a safe fix
+    /// ([`ascribe_resolve::openapi::ApiSpecs::renamed`]). The source index
+    /// is built again, keeping them.
+    #[must_use]
+    pub fn with_base_apis(self, base: Arc<ApiSpecs>) -> Project {
+        Project {
+            base_apis: Some(base),
+            link_index: OnceLock::new(),
+            ..self
+        }
+    }
+
     /// The source index a broken link's closest targets are looked for in,
     /// and the page-level checks read, built the first time it's needed.
     pub(crate) fn link_index(&self) -> &Arc<ascribe_resolve::Project> {
-        self.link_index.get_or_init(|| Arc::new(self.held_index()))
+        self.link_index.get_or_init(|| {
+            let mut index = self.held_index();
+            if let Some(base) = &self.base_apis {
+                index.remember_base_apis(base);
+            }
+            Arc::new(index)
+        })
     }
 
     /// Lets go of the source index the checks built and kept, for a caller
