@@ -25,7 +25,10 @@ use std::fmt;
 use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_core::info_string::quote;
-use ascribe_core::{FileId, Issue, Location, RelPath, Span, diagnostics, percent_decode};
+use ascribe_core::{
+    Applicability, FileId, Fix, Issue, Location, RelPath, Span, TextEdit, diagnostics,
+    percent_decode,
+};
 use ascribe_model::{ContentModel, Source, suggest};
 use ascribe_syntax::{DirectiveLine, PrimaryValue};
 
@@ -586,7 +589,10 @@ pub fn snippet_issues(
                 // A source in another repository is read through its copies
                 // (SPEC §7.4), which are made by a command of their own.
                 None if remote => issue.with_variant("no-copy"),
-                None => issue,
+                None => match moved(snippet, address, model, fs, code) {
+                    Some(found) => suggestion_issue(issue, snippet, found, file),
+                    None => issue,
+                },
             }]
         }
         SnippetError::NotIncluded => vec![
@@ -635,6 +641,94 @@ pub fn snippet_issues(
             vec![issue]
         }
     }
+}
+
+/// Where the file a snippet names most likely is, when it isn't where the
+/// address says.
+struct Moved {
+    /// Its path relative to the source's folder.
+    path: String,
+    /// The source's folder, when the address repeated it.
+    folder: Option<String>,
+}
+
+/// The file of `address`'s source that it most likely meant: the path with
+/// the source's folder, or the end of it, taken off the front (an address is
+/// relative to the folder, so it doesn't repeat it), else the one file of
+/// the source with the same name. Only a file the snippet could be taken
+/// from is offered.
+fn moved(
+    snippet: &SnippetUse,
+    address: &Address,
+    model: &ContentModel,
+    fs: &dyn FileSystem,
+    code: &CodeFiles,
+) -> Option<Moved> {
+    let source = model.source(&address.source)?;
+    let folder = RelPath::parse(&source.path).ok()?;
+    let found = |path: &str| {
+        let candidate = Address {
+            path: path.to_owned(),
+            ..address.clone()
+        };
+        !matches!(
+            resolve_snippet(snippet, &candidate, model, fs, code),
+            Err(SnippetError::UnknownSource
+                | SnippetError::Missing { .. }
+                | SnippetError::NotIncluded
+                | SnippetError::Link)
+        )
+    };
+    // `src/config.js` in a source whose folder is `src`, or `app/src`.
+    let segments: Vec<&str> = folder.segments().filter(|s| *s != "..").collect();
+    for start in 0..segments.len() {
+        let prefix = format!("{}/", segments[start..].join("/"));
+        if let Some(rest) = address.path.strip_prefix(&prefix)
+            && found(rest)
+        {
+            return Some(Moved {
+                path: rest.to_owned(),
+                folder: Some(folder.to_string()),
+            });
+        }
+    }
+    // `config.js` for the source's only `lib/config.js`.
+    let name = address.path.rsplit('/').next().unwrap_or(&address.path);
+    let mut same: Vec<String> = fs
+        .files_in(&folder)
+        .into_iter()
+        .filter(|p| p.file_name() == Some(name))
+        .filter_map(|p| p.relative_to(&folder).map(|rest| rest.as_str().to_owned()))
+        .filter(|rest| *rest != address.path && found(rest))
+        .collect();
+    if same.len() != 1 {
+        return None;
+    }
+    same.pop().map(|path| Moved { path, folder: None })
+}
+
+/// The issue for a file that isn't where its address says, naming the one
+/// that is, with a fix that rewrites the address to it.
+fn suggestion_issue(issue: Issue, snippet: &SnippetUse, found: Moved, file: FileId) -> Issue {
+    let written = snippet.written.as_str();
+    let source = written.split_once(':').map_or(written, |(s, _)| s);
+    let region = written.find('#').map_or("", |at| &written[at..]);
+    let suggestion = format!("{source}:{}", encode_address_path(&found.path));
+    let mut issue = match found.folder {
+        Some(folder) => issue.with_variant("folder").with_arg("folder", folder),
+        None => issue.with_variant("suggestion"),
+    }
+    .with_arg("suggestion", suggestion.clone());
+    if let Some(primary) = snippet.primary {
+        issue.fixes = vec![Fix {
+            title: format!("Use `{suggestion}{region}`"),
+            file,
+            edits: vec![TextEdit::replace(primary, format!("{suggestion}{region}"))],
+            // A guess at the file meant, which only the author can confirm.
+            applicability: Applicability::Unsafe,
+        }];
+    }
+    issue
 }
 
 fn tag_issue(problem: &TagProblem, file: &CodeFile, named: &str, at: Location) -> Issue {
