@@ -88,9 +88,11 @@ In VS Code, **Source Action… → Apply the safe fixes in this page** applies a
 
 ### Text output
 
-Each diagnostic shows its code, message, and source, and its next step as `Help:`: the title of its first fix, or, with none, the fix advice the JSON gives as `help`. The output ends with a summary in one form: the files checked, the builds (`for every build`, or with `--build`, `` for build `cloud` ``), the files reported on, which with no paths are all of them, and the counts of errors, warnings, and advice (`checked 12 files for every build, reported on 1: 1 error, 0 warnings, 0 advice`):
+Each diagnostic shows its code, message, and source, and its next step as `Help:`: the title of its first fix, or, with none, the fix advice the JSON gives as `help`. Help that's the same for every diagnostic with a code is printed in full once; later diagnostics with that code point back to it, as `Help: as for ASC252 above (ascribe explain ASC252)`. The output ends with a summary in one form: the files checked, the builds (`for every build`, or with `--build`, `` for build `cloud` ``), the files reported on, which with no paths are all of them, and the counts of errors, warnings, and advice (`checked 12 files for every build, reported on 1: 1 error, 0 warnings, 0 advice`):
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check.txt
+
+A project with no pages yet, and nothing to report, says so in place of the summary, with the content root: `No pages in docs/ yet.` It exits with 0. The JSON is the same as for any check, with `files_checked` 0.
 
 Diagnostics go to standard output. A failure that stops the command (exit code 2) goes to standard error.
 

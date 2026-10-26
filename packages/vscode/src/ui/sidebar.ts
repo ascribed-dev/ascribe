@@ -935,16 +935,6 @@ export function thisPageRoots(
   if (!about) return [];
   const live = onTheSite(about, context.build);
   const rows: AboutRow[] = [
-    { label: "Title", value: about.title ?? basename(about.path), tooltip: about.path },
-    {
-      label: "Type",
-      value: about.fragment ? "fragment" : (about.type ?? "none"),
-      tooltip: about.fragment
-        ? "A fragment exists to be included, and is published only where it is"
-        : about.type === null
-          ? "No one content type applies to it"
-          : `Content type ${about.type}`,
-    },
     about.fragment
       ? {
           label: "Address",
@@ -982,7 +972,10 @@ export function thisPageRoots(
   return [
     { kind: "about", rows },
     ...(review ? [{ kind: "review" as const, review }] : []),
-    { kind: "health", rows: healthRows(page.health, page.includes, context) },
+    {
+      kind: "health",
+      rows: healthRows(page.health, page.includes, context, fieldRows(about, context.uri)),
+    },
     {
       kind: "connections",
       heading: page.heading?.text,
@@ -1029,12 +1022,15 @@ function addressRow(
     : { label, value: address, tooltip: ON_THE_SITE, opens: { kind: "site", url: site + address } };
 }
 
-/** About's rows past what the page is: each only when it has something to say. */
-function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
+/**
+ * Health's rows for the page's own fields that can warn: its description,
+ * its review date, and what its template leaves to fill in.
+ */
+function fieldRows(about: PageAbout, uri: string | undefined): AboutRow[] {
   const rows: AboutRow[] = [];
   const at = (range: LspRange | null): RowTarget | undefined =>
     uri && range ? { kind: "place", uri, range } : undefined;
-  const { description, review, listing, template } = about;
+  const { description, review, template } = about;
   if (description) {
     const { length, limit } = description;
     const long = description.reported;
@@ -1067,6 +1063,25 @@ function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
       opens: at(review.range),
     });
   }
+  if (template) {
+    rows.push({
+      label: "Template",
+      state: `${count(template.left, "placeholder", "placeholders")} left`,
+      value: `${template.type} template`,
+      tooltip: "Goes to the next place the template left to fill in",
+      warn: true,
+      opens: { kind: "command", command: NEXT_PLACEHOLDER, title: "Go to Next Placeholder" },
+    });
+  }
+  return rows;
+}
+
+/** About's rows past where the page is: each only when it has something to say. */
+function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
+  const rows: AboutRow[] = [];
+  const at = (range: LspRange | null): RowTarget | undefined =>
+    uri && range ? { kind: "place", uri, range } : undefined;
+  const { listing } = about;
   if (about.availability !== null) {
     rows.push({
       label: "Availability",
@@ -1112,16 +1127,6 @@ function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
       value: permalink.name,
       tooltip: permalinkTooltip(permalink),
       opens: at(permalink.range),
-    });
-  }
-  if (template) {
-    rows.push({
-      label: "Template",
-      state: `${count(template.left, "placeholder", "placeholders")} left`,
-      value: `${template.type} template`,
-      tooltip: "Goes to the next place the template left to fill in",
-      warn: true,
-      opens: { kind: "command", command: NEXT_PLACEHOLDER, title: "Go to Next Placeholder" },
     });
   }
   return rows;
@@ -1191,13 +1196,15 @@ function listingFrom(from: string): string {
 }
 
 /**
- * Health's rows: the problems, the size, and each tested example, which
+ * Health's rows, every row of the view that can warn: the problems, the
+ * page's fields that can (`fields`), the size, and each tested example, which
  * opens the file its `@snippet` shows, beside the page, as the include does.
  */
 function healthRows(
   health: PageHealth,
   includes: readonly PageInclude[],
   { uri, problems }: ThisPageContext,
+  fields: readonly AboutRow[],
 ): AboutRow[] {
   const rows: AboutRow[] = [];
   if (problems) {
@@ -1212,6 +1219,7 @@ function healthRows(
       opens: { kind: "command", command: SHOW_PROBLEMS, title: "Show Problems" },
     });
   }
+  rows.push(...fields);
   const { size } = health;
   if (size) {
     const over = size.limit !== null && size.characters >= size.limit;
@@ -1278,28 +1286,26 @@ function byFile(places: readonly Place[]): PlacesInFile[] {
   return [...files.values()];
 }
 
-/** How many things there are to do: the rows that warn. */
+/** How many rows warn: those with a warning icon and their state in the warning color. */
 function toDo(rows: readonly AboutRow[]): number {
   return rows.filter((row) => row.warn).length;
 }
 
 /**
- * How many things Health says there are to do, which its header says and
- * the view's badge shows, so they're seen with Health closed.
+ * How many of Health's rows warn, which its header says and the view's
+ * badge shows, so they're seen with Health closed.
  */
 function healthToDo(roots: readonly ThisPageNode[]): number {
   const health = roots.find((node) => node.kind === "health");
   return health?.kind === "health" ? toDo(health.rows) : 0;
 }
 
-/** The view's badge: Health's things to do, when there are any. */
+/** The view's badge: how many of Health's rows warn, when any do. */
 export function healthBadge(
   roots: readonly ThisPageNode[],
 ): { value: number; tooltip: string } | undefined {
   const n = healthToDo(roots);
-  return n === 0
-    ? undefined
-    : { value: n, tooltip: `Health: ${count(n, "thing to do", "things to do")} on this page` };
+  return n === 0 ? undefined : { value: n, tooltip: `Health: ${warnings(n)} on this page` };
 }
 
 /**
@@ -1421,9 +1427,9 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
       return {
         ...section(
           "Health",
-          warned === 0 ? "" : count(warned, "thing to do", "things to do"),
+          warned === 0 ? "" : warnings(warned),
           "pulse",
-          "Its problems, its size, and its tested examples",
+          "What can warn: its problems, description, review date, template, size, and tested examples",
         ),
         expandable: node.rows.length > 0,
         dimmed: node.rows.length === 0,
@@ -1442,7 +1448,12 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
       const snippet = include.kind === "snippet";
       return {
         label: include.written,
-        description: include.path ?? "not found",
+        description:
+          include.path === null
+            ? "not found"
+            : include.path === include.written
+              ? ""
+              : include.path,
         tooltip: `${snippet ? "@snippet" : "@include"}: ${include.written}, line ${include.range.start.line + 1}`,
         icon: snippet ? "code" : "file-symlink-file",
         dimmed: include.uri === null,
@@ -1543,7 +1554,7 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
     case "file":
       return {
         label: basename(node.file.path),
-        description: node.file.path,
+        description: folder(node.file.path),
         tooltip: node.file.path,
         icon: "file",
         dimmed: false,
@@ -1640,6 +1651,16 @@ function capitalized(text: string): string {
 /** A number with commas between its thousands, as `page-size` writes it. */
 function thousands(n: number): string {
   return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+/** "2 rows warn": how Health's header and the badge count the rows that warn. */
+function warnings(n: number): string {
+  return `${n} ${n === 1 ? "row warns" : "rows warn"}`;
+}
+
+/** A path's folder, or "" for a file at the root, which its name says in full. */
+function folder(path: string): string {
+  return path.slice(0, Math.max(path.lastIndexOf("/"), 0));
 }
 
 function basename(path: string): string {

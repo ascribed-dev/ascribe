@@ -94,7 +94,7 @@ pub enum DiagnoseError {
     #[error(transparent)]
     UnknownBuild(#[from] UnknownBuild),
     /// `ascribe.baseline` can't be read, so nothing is checked with it.
-    #[error("{0}; fix the line, or pass --no-baseline to report without the baseline")]
+    #[error("{0}; fix the line, or pass --no-baseline to check without the baseline")]
     Baseline(BaselineError),
 }
 

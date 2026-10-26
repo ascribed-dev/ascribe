@@ -100,8 +100,8 @@ pub struct Args {
     ///
     /// By default, `problems` and `inventory` leave out what the baseline
     /// lists while it's advice, as `ascribe check` does, and `problems`
-    /// counts it. A baseline that can't be read stops the report, unless
-    /// this is given.
+    /// counts it. A baseline that can't be read stops a report with either
+    /// section, unless this is given.
     #[arg(long)]
     pub no_baseline: bool,
 

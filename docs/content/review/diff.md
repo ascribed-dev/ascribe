@@ -16,7 +16,7 @@ Shows what changed between a git revision and the working tree, as readers will 
 
 The other side is the working tree: the files on disk, committed or not, as `ascribe build` would read them now. Unsaved editor changes aren't included. The base is read from git, `ascribe.toml` included, so a change to the content model is compared too; if the project didn't exist at the base, every page is added. `ascribe diff` needs `git` on the path, and nothing else: no network and no GitHub account. It runs `git` so that the repository can't make it run a command of its own: with no file system monitor, and taking a bare repository only when one is named, never a folder in the project shaped like one, where `git` says it can't use the repository.
 
-The text output lists each build's changed pages with counts, and where a change comes from when it isn't only the page's own file:
+The text output lists each build's changed pages with counts, and where a change comes from when it isn't only the page's own file. A page that changed the same way in every build that publishes it is said once, first, "in every build" (or "in every build that publishes it", when some don't), and each build lists its other pages:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff.txt
 

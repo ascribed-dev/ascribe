@@ -44,7 +44,7 @@ With no section named, it runs the first three; `pages` lists every page rather 
 |---|---|
 | `0` | It ran, whatever it found |
 | `1` | With `--exit-code`: a section found something at the level given, or above (`advice` when none is: any problem) |
-| `2` | With `--exit-code`: a section asked for couldn't run. Without it, too: a usage error, an unknown build, a project that doesn't load, or an `ascribe.baseline` with a line that doesn't parse (`--no-baseline` reports without the file). The reason goes to standard error. |
+| `2` | With `--exit-code`: a section asked for couldn't run. Without it, too: a usage error, an unknown build, a project that doesn't load, or, for a report with `problems` or `inventory`, an `ascribe.baseline` with a line that doesn't parse (`--no-baseline` reports without the file). The reason goes to standard error. |
 
 ### Report JSON
 
