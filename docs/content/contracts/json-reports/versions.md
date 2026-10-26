@@ -1,7 +1,7 @@
 ---
 type: reference
 title: "JSON reports: `ascribe versions`"
-description: "The JSON Schemas of what ascribe versions list, changes, release, archive, and retire write with --format json."
+description: "The JSON Schemas of what ascribe versions list, changes, release, export, and retire write with --format json."
 ---
 
 Part of the [JSON report contract](../json-reports.md), whose rules every document here follows.
@@ -18,9 +18,9 @@ Part of the [JSON report contract](../json-reports.md), whose rules every docume
 
 @include: ../../_generated/json-versions-release.md
 
-## `ascribe versions archive`
+## `ascribe versions export`
 
-@include: ../../_generated/json-versions-archive.md
+@include: ../../_generated/json-versions-export.md
 
 ## `ascribe versions retire`
 

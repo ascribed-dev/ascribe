@@ -1,3 +1,7 @@
+@memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/versions-export.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
+[`schemas/versions-export.schema.json`]({repo}/blob/main/schemas/versions-export.schema.json):
+
+```json
 {
   "$defs": {
     "UnlinkedJson": {
@@ -33,7 +37,7 @@
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe versions archive --format json` writes: the line, the\nfolder, and what's in it.",
+  "description": "What `ascribe versions export --format json` writes: the line, the\nfolder, and what's in it.",
   "properties": {
     "ascribe_version": {
       "description": "The version of Ascribe that wrote it.",
@@ -57,7 +61,7 @@
       "type": "string"
     },
     "line": {
-      "description": "The line archived, as `[releases.<target>]` writes it.",
+      "description": "The line exported, as `[releases.<target>]` writes it.",
       "type": "string"
     },
     "pages": {
@@ -116,6 +120,7 @@
     "search_index_large",
     "unlinked"
   ],
-  "title": "VersionsArchiveReport",
+  "title": "VersionsExportReport",
   "type": "object"
 }
+```

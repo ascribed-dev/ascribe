@@ -192,7 +192,7 @@ pub enum RetireError {
     },
     /// The line has no address.
     #[error(
-        "`{target} {line}` has no address; run `ascribe versions archive \"{target} {line}\" --to <folder>` first, host the folder, and give its address with --url: once the marks are rewritten, the source no longer holds what the line needs"
+        "`{target} {line}` has no address; run `ascribe versions export \"{target} {line}\" --to <folder>` first, host the folder, and give its address with --url: once the marks are rewritten, the source no longer holds what the line needs"
     )]
     NoAddress {
         /// The target.

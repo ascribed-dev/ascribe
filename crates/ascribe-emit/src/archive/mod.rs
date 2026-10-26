@@ -1,6 +1,6 @@
 //! The archive: one line of a versioned build rendered once more, by
 //! Ascribe alone, into a folder of HTML that needs nothing else
-//! (`ascribe versions archive`, the archive contract in
+//! (`ascribe versions export`, the archive contract in
 //! `docs/content/contracts/archive.md`).
 //!
 //! The archive is a fourth emitter, `archive`, that `ascribe build` never

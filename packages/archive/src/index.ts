@@ -1,4 +1,4 @@
-// The search box of an archive's pages. `ascribe versions archive` writes
+// The search box of an archive's pages. `ascribe versions export` writes
 // this script, bundled, as the folder's `search.js`, and a `<script>` for it
 // in each page's sidebar: the box is drawn where that element is, so with
 // scripts off there's none. The index is `search-index.js`, added to the page
