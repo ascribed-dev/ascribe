@@ -11,10 +11,14 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use ascribe_core::path::normalize;
+use ascribe_core::schema::Builtin;
 use ascribe_core::{LineIndex, RelPath, Span};
 use ascribe_emit::labels::plain_text;
 use ascribe_model::{ContentModel, Listing};
-use ascribe_resolve::{FileIndex, Heading, Include, PhraseUse, Reference, Snapshot};
+use ascribe_resolve::references::{operation_target, reference_target};
+use ascribe_resolve::{
+    FileIndex, Heading, Include, PhraseUse, RefKind, Reference, Resolution, Snapshot,
+};
 use ascribe_syntax::{Block, BlockKind, DirectiveLine, PrimaryValue};
 use lsp_types::{Location, Position, Range, Uri};
 
@@ -167,6 +171,8 @@ pub(crate) enum Hit<'a> {
     Listing(Span),
     /// The value of a frontmatter `replaces:` key.
     Replaces(Span),
+    /// The link of an `@operation` (SPEC §4.13), as written, and its span.
+    Operation(&'a str, Span),
     /// A directive's name, or one of its attribute keys.
     Directive(&'a DirectiveLine),
 }
@@ -222,6 +228,12 @@ pub(crate) fn hit_at(file: &FileIndex, offset: usize) -> Option<Hit<'_>> {
         return Some(hit);
     }
     let d = directive_at(&file.document.blocks, offset)?;
+    if d.name == Builtin::Operation.name()
+        && let Some((text, span)) = identifier_primary(d)
+        && touches(span, offset)
+    {
+        return Some(Hit::Operation(text, span));
+    }
     let on_key = d
         .attributes
         .as_ref()
@@ -426,6 +438,14 @@ pub(crate) fn directive_at(blocks: &[Block], offset: usize) -> Option<&Directive
         }
     }
     None
+}
+
+/// The operation an `@operation`'s link names (SPEC §4.13), resolved as the
+/// build resolves it: `None` when it isn't a link to a declared spec with a
+/// fragment, which the page's problems say.
+pub(crate) fn operation_resolution(ctx: &Ctx, link: &str) -> Option<Resolution> {
+    let target = reference_target(RefKind::Link, link, &[], &ctx.path, &ctx.model);
+    operation_target(&target, &ctx.model, ctx.snapshot.layout())
 }
 
 /// The text of a directive's identifier primary, with its span.
