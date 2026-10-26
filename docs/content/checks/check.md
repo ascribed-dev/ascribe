@@ -92,6 +92,8 @@ Each diagnostic shows its code, message, and source, and its next step as `Help:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check.txt
 
+A project with no pages yet, and nothing to report, says so in place of the summary, with the content root: `No pages in docs/ yet.` It exits with 0. The JSON is the same as for any check, with `files_checked` 0.
+
 Diagnostics go to standard output. A failure that stops the command (exit code 2) goes to standard error.
 
 Advice, a diagnostic below a warning, is listed after the errors and warnings, in every format, and the summary counts it apart: `0 errors, 2 warnings, 5 advice`. It never fails the command, even with `--deny-warnings`. A project sets how loudly a check about its content's quality speaks in [`[checks]`](../content-model/checks.md#19-checks).
