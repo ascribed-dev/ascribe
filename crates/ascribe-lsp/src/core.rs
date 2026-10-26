@@ -1199,9 +1199,9 @@ impl Core {
         self.page_uses.forget();
         // The addresses are compared again only for a change they read: a
         // page moved or deleted, a side file as `ascribe.addresses` written,
-        // the model or a spec, or git's refs in a pull. A
-        // build's output isn't one, and would keep the server busy for
-        // `addresses::SETTLE` after each write.
+        // the model or a spec, or git's refs in a pull. A build's output
+        // isn't one, and would keep the server busy for `addresses::SETTLE`
+        // after each write.
         let mut addresses = false;
         let mut sync_model = false;
         let mut memos = false;
@@ -1851,8 +1851,6 @@ impl Core {
     }
 }
 
-/// The nearest `ascribe.toml` at or above a workspace folder, trying the
-/// folders in order. It never looks below a folder.
 /// Whether `path` is one of git's refs, which a commit, a checkout, or a
 /// pull writes: `.git/HEAD`, `.git/packed-refs`, or a file under
 /// `.git/refs`.
@@ -1868,6 +1866,8 @@ fn is_git_ref(path: &Path) -> bool {
     }
 }
 
+/// The nearest `ascribe.toml` at or above a workspace folder, trying the
+/// folders in order. It never looks below a folder.
 fn find_config(folders: &[PathBuf]) -> Option<PathBuf> {
     folders
         .iter()
@@ -2159,6 +2159,17 @@ impl Core {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn git_s_refs_are_head_packed_refs_and_the_files_under_refs() {
+        let repo = PathBuf::from("repo");
+        for path in [".git/HEAD", ".git/packed-refs", ".git/refs/heads/main"] {
+            assert!(is_git_ref(&repo.join(path)), "{path}");
+        }
+        for path in [".git/objects/ab/cd", ".git/index", "HEAD", "refs/x", ".git"] {
+            assert!(!is_git_ref(&repo.join(path)), "{path}");
+        }
+    }
 
     #[test]
     fn the_start_message_names_the_project() {
