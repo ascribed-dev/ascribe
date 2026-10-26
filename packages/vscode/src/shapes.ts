@@ -1749,10 +1749,10 @@ export interface PageAbout {
    */
   description: PageDescription | null;
   /**
-   * When it's due for review, when its type gives a field the
-   * review-date role and the page has a date in it.
+   * When it's due to be checked again, when its type gives a field the
+   * recheck-date role and the page has a date in it.
    */
-  review: PageReview | null;
+  recheck: PageRecheck | null;
   /** Its own `available`, as shown; `null` when it has none. */
   availability: string | null;
   /**
@@ -2024,6 +2024,28 @@ export interface PagePlace {
   text: string;
 }
 
+/** When a page is due to be checked again. */
+export interface PageRecheck {
+  /** The frontmatter field with the recheck-date role. */
+  field: string;
+  /** The date it holds, `YYYY-MM-DD`. */
+  date: string;
+  /**
+   * The days from today to the date: negative once it's passed. `null`
+   * when the server has no day to count from.
+   */
+  days: number | null;
+  /** Whether the date has passed. */
+  overdue: boolean;
+  /**
+   * Whether `recheck-overdue` reports the page: the date has passed, and
+   * the project hasn't turned the check off.
+   */
+  reported: boolean;
+  /** The field's line, in the negotiated position encoding. */
+  range: LspRange;
+}
+
 /**
  * The answer to `ascribe/page`. A document that isn't a page or a fragment
  * of the project gets an empty answer: no `about`, no heading, and empty
@@ -2066,28 +2088,6 @@ export interface PageResult {
   health: PageHealth;
   /** The file's `@include`s and `@snippet`s, in document order. */
   includes: PageInclude[];
-}
-
-/** When a page is due for review. */
-export interface PageReview {
-  /** The frontmatter field with the review-date role. */
-  field: string;
-  /** The date it holds, `YYYY-MM-DD`. */
-  date: string;
-  /**
-   * The days from today to the date: negative once it's passed. `null`
-   * when the server has no day to count from.
-   */
-  days: number | null;
-  /** Whether the date has passed. */
-  overdue: boolean;
-  /**
-   * Whether `review-overdue` reports the page: the date has passed, and
-   * the project hasn't turned the check off.
-   */
-  reported: boolean;
-  /** The field's line, in the negotiated position encoding. */
-  range: LspRange;
 }
 
 /** A page's size, as `page-size` measures it. */

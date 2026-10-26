@@ -226,9 +226,9 @@ table = "<field>"
 key = "role"
 kind = "choice"
 type = "string"
-choices = ["description", "review-date", "owner"]
+choices = ["description", "recheck-date", "owner"]
 only = "fields"
-description = '''What the field is for, which a check reads: `"description"`, `"review-date"`, or `"owner"`. Allowed only on a page type's top-level fields, its own or `[frontmatter]`'s. A field named for a role has it without `role`, unless the type gives it to another field. See §5.4.'''
+description = '''What the field is for, which a check reads: `"description"`, `"recheck-date"` (or `"review-date"`, its old name, for a release), or `"owner"`. Allowed only on a page type's top-level fields, its own or `[frontmatter]`'s. A field named for a role has it without `role`, unless the type gives it to another field. See §5.4.'''
 
 # ---- 6. `[dimensions.<name>]` -------------------------------------------------
 

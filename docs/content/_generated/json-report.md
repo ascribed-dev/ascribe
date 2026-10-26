@@ -767,7 +767,7 @@
         },
         "overdue": {
           "$ref": "#/$defs/Capped_Entry",
-          "description": "The pages whose review date has passed (`review-overdue`)."
+          "description": "The pages whose recheck date has passed (`recheck-overdue`)."
         },
         "pages": {
           "description": "How many pages.",

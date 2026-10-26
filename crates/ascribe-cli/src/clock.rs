@@ -1,4 +1,4 @@
-//! The day the checks run on: `review-overdue` compares a page's review date
+//! The day the checks run on: `recheck-overdue` compares a page's recheck date
 //! with it. The libraries don't read the clock, so the binary does, here,
 //! and hands the day to each project it loads.
 

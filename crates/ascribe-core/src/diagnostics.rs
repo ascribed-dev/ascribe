@@ -468,7 +468,7 @@ pub const HEADING_LEVEL_SKIPPED: DiagnosticSlug = DiagnosticSlug("heading-level-
 pub const CODE_LANGUAGE_MISSING: DiagnosticSlug = DiagnosticSlug("code-language-missing");
 
 /// `ASC153`, advice, file level: a content check (area `pages`).
-pub const REVIEW_OVERDUE: DiagnosticSlug = DiagnosticSlug("review-overdue");
+pub const RECHECK_OVERDUE: DiagnosticSlug = DiagnosticSlug("recheck-overdue");
 
 /// `ASC154`, advice, page level: a content check (area `project`).
 pub const PAGE_ORPHAN: DiagnosticSlug = DiagnosticSlug("page-orphan");
@@ -1024,7 +1024,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     PAGE_DESCRIPTION_MISSING,
     HEADING_LEVEL_SKIPPED,
     CODE_LANGUAGE_MISSING,
-    REVIEW_OVERDUE,
+    RECHECK_OVERDUE,
     PAGE_ORPHAN,
     FRAGMENT_UNUSED,
     PHRASE_UNUSED,
@@ -1160,7 +1160,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     PAGE_DESCRIPTION_MISSING,
     HEADING_LEVEL_SKIPPED,
     CODE_LANGUAGE_MISSING,
-    REVIEW_OVERDUE,
+    RECHECK_OVERDUE,
     PAGE_ORPHAN,
     FRAGMENT_UNUSED,
     PHRASE_UNUSED,
@@ -1221,7 +1221,7 @@ pub const OFF_BY_DEFAULT: &[DiagnosticSlug] = &[SUMMARY_MISSING, SUMMARY_LONG];
 /// whose next step is `review`, each with the place its problems are reported
 /// at, in registry order. A test keeps it equal to the registry.
 pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] = &[
-    (REVIEW_OVERDUE, crate::Place::Page),
+    (RECHECK_OVERDUE, crate::Place::Page),
     (PAGE_ORPHAN, crate::Place::Page),
     (FRAGMENT_UNUSED, crate::Place::Page),
     (PHRASE_UNUSED, crate::Place::Entry),

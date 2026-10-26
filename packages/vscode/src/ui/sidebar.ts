@@ -1024,13 +1024,13 @@ function addressRow(
 
 /**
  * Health's rows for the page's own fields that can warn: its description,
- * its review date, and what its template leaves to fill in.
+ * its recheck date, and what its template leaves to fill in.
  */
 function fieldRows(about: PageAbout, uri: string | undefined): AboutRow[] {
   const rows: AboutRow[] = [];
   const at = (range: LspRange | null): RowTarget | undefined =>
     uri && range ? { kind: "place", uri, range } : undefined;
-  const { description, review, template } = about;
+  const { description, recheck, template } = about;
   if (description) {
     const { length, limit } = description;
     const long = description.reported;
@@ -1053,14 +1053,14 @@ function fieldRows(about: PageAbout, uri: string | undefined): AboutRow[] {
       opens: at(description.range),
     });
   }
-  if (review) {
+  if (recheck) {
     rows.push({
-      label: "Review",
-      state: review.overdue ? "overdue" : undefined,
-      value: reviewText(review.date, review.days, review.overdue),
-      tooltip: `\`${review.field}\`: ${review.date}`,
-      warn: review.reported,
-      opens: at(review.range),
+      label: "Recheck",
+      state: recheck.overdue ? "overdue" : undefined,
+      value: recheckText(recheck.date, recheck.days, recheck.overdue),
+      tooltip: `\`${recheck.field}\`: ${recheck.date}`,
+      warn: recheck.reported,
+      opens: at(recheck.range),
     });
   }
   if (template) {
@@ -1148,7 +1148,7 @@ function permalinkTooltip(permalink: PagePermalink): string {
 }
 
 /** "since 3 October", after the state "overdue"; "due in 12 days", "due today". */
-function reviewText(date: string, days: number | null, overdue: boolean): string {
+function recheckText(date: string, days: number | null, overdue: boolean): string {
   const [year, month, day] = date.split("-").map(Number);
   const months = [
     "January",
@@ -1429,7 +1429,7 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
           "Health",
           warned === 0 ? "" : warnings(warned),
           "pulse",
-          "What can warn: its problems, description, review date, template, size, and tested examples",
+          "What can warn: its problems, description, recheck date, template, size, and tested examples",
         ),
         expandable: node.rows.length > 0,
         dimmed: node.rows.length === 0,

@@ -24,7 +24,7 @@ Every diagnostic, with its fix, is in the [diagnostics reference](diagnostics.md
 
 ### Checking as of another day
 
-Two checks depend on the day they run: `review-overdue` reports a page whose review date has passed, and `release-line-ended` a live release line whose `ends` date has passed, each as of today's date in UTC. Set `ASCRIBE_TODAY=YYYY-MM-DD` to check as of another day, such as in a test that mustn't change with the calendar. Every command that checks, the editor and the hook's check server included, reads it.
+Two checks depend on the day they run: `recheck-overdue` reports a page whose recheck date has passed, and `release-line-ended` a live release line whose `ends` date has passed, each as of today's date in UTC. Set `ASCRIBE_TODAY=YYYY-MM-DD` to check as of another day, such as in a test that mustn't change with the calendar. Every command that checks, the editor and the hook's check server included, reads it.
 
 ### Checking some files
 

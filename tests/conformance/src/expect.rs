@@ -40,8 +40,8 @@ pub struct Expect {
     #[serde(default)]
     pub builds: BTreeMap<String, BuildExpect>,
     /// The day the checks run on, `YYYY-MM-DD`, for a case whose
-    /// diagnostics depend on it (a review date). Without it, the checks have
-    /// no day, and no review is overdue.
+    /// diagnostics depend on it (a recheck date). Without it, the checks have
+    /// no day, and no recheck is overdue.
     #[serde(default)]
     pub today: Option<String>,
 }

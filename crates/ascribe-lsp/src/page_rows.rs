@@ -6,7 +6,7 @@
 //! or an output, never from a second reading of the model: the description
 //! is measured as `description-too-long` measures it, and is too long or
 //! missing where `description-too-long` or `page-description-missing` says
-//! so, the review date is overdue where `review-overdue` says so
+//! so, the recheck date is overdue where `recheck-overdue` says so
 //! ([`ascribe_check::roles`]), the builds are the builds' own drops
 //! ([`ascribe_resolve::Project::dropped`]), the listing is what the page's
 //! record in `pages.json` says ([`ascribe_resolve::pages::records`]),
@@ -56,12 +56,12 @@ pub struct PageDescription {
     pub range: Range,
 }
 
-/// When a page is due for review.
+/// When a page is due to be checked again.
 #[derive(Clone, Debug, Serialize, PartialEq)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
-pub struct PageReview {
-    /// The frontmatter field with the review-date role.
+pub struct PageRecheck {
+    /// The frontmatter field with the recheck-date role.
     pub field: String,
     /// The date it holds, `YYYY-MM-DD`.
     pub date: String,
@@ -70,7 +70,7 @@ pub struct PageReview {
     pub days: Option<i64>,
     /// Whether the date has passed.
     pub overdue: bool,
-    /// Whether `review-overdue` reports the page: the date has passed, and
+    /// Whether `recheck-overdue` reports the page: the date has passed, and
     /// the project hasn't turned the check off.
     pub reported: bool,
     /// The field's line, in the negotiated position encoding.
@@ -250,7 +250,7 @@ pub enum IncludeKind {
 /// The rows of About beyond what the page is, for `file`.
 pub(crate) struct AboutRows {
     pub description: Option<PageDescription>,
-    pub review: Option<PageReview>,
+    pub recheck: Option<PageRecheck>,
     pub availability: Option<String>,
     pub builds: Vec<PageBuild>,
     pub listing: Option<PageListing>,
@@ -278,7 +278,7 @@ pub(crate) fn rows(ctx: &Ctx, file: &FileIndex, lines: &LineIndex) -> Rows {
     Rows {
         about: AboutRows {
             description: page.then(|| description(ctx, file, &range)).flatten(),
-            review: page.then(|| review(ctx, file, &range)).flatten(),
+            recheck: page.then(|| recheck(ctx, file, &range)).flatten(),
             availability: page.then(|| availability(ctx, file)).flatten(),
             builds,
             listing,
@@ -353,19 +353,19 @@ fn description(
     })
 }
 
-fn review(ctx: &Ctx, file: &FileIndex, range: &dyn Fn(Span) -> Range) -> Option<PageReview> {
+fn recheck(ctx: &Ctx, file: &FileIndex, range: &dyn Fn(Span) -> Range) -> Option<PageRecheck> {
     let field = file
         .content_type(&ctx.model)?
         .frontmatter
-        .field_with_role(FieldRole::ReviewDate)?;
-    let due = roles::review_date(field, file.frontmatter.as_ref()?)?;
+        .field_with_role(FieldRole::RecheckDate)?;
+    let due = roles::recheck_date(field, file.frontmatter.as_ref()?)?;
     let at = frontmatter_line(file, &field.name).unwrap_or_else(|| first_line(file));
-    Some(PageReview {
+    Some(PageRecheck {
         field: field.name.clone(),
         date: due.to_string(),
         days: ctx.today.map(|today| due.days_since(today)),
         overdue: ctx.today.is_some_and(|today| due < today),
-        reported: roles::review_overdue(&ctx.model.checks, ctx.today, due),
+        reported: roles::recheck_overdue(&ctx.model.checks, ctx.today, due),
         range: range(at),
     })
 }

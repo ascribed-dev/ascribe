@@ -351,7 +351,7 @@ impl Writer<'_> {
             self.line(&format!("APIs: {counts}."))?;
         }
         for (label, list) in [
-            ("Overdue reviews", &i.overdue),
+            ("Overdue rechecks", &i.overdue),
             ("Pages nothing links to", &i.orphans),
             ("Entries nothing uses", &i.unused),
         ] {

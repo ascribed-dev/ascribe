@@ -265,7 +265,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC150` | `page-description-missing` | advice | write | this page has no `{field}`; write a sentence saying what the page is for, which search results and agents show with its title |
 | `ASC151` | `heading-level-skipped` | advice | fix | this heading is level {level}, after a level-{previous} heading; make it level {expected}, so the outline has no gap |
 | `ASC152` | `code-language-missing` | advice | choose | this code block has no language; write it after the opening fence, or `text` for output |
-| `ASC153` | `review-overdue` | advice | review | this page was due for review on {date}; check it still holds, then move `{field}` to the next review |
+| `ASC153` | `recheck-overdue` | advice | review | this page was due for a recheck on {date}; check it still holds, then move `{field}` to the next recheck |
 | `ASC154` | `page-orphan` | advice | review | no other page links to this page or includes it, so readers reach it only through the sidebar |
 | `ASC155` | `fragment-unused` | advice | review | no file includes this fragment, so nothing publishes it |
 | `ASC156` | `phrase-unused` | advice | review | no file uses the phrase `{key}` |

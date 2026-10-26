@@ -1,0 +1,9 @@
+description: >-
+  A date field named `recheck-date` has the `recheck-date` role by its name, so
+  a page whose date has passed is reported at the date.
+spec: ["7.2", "8.2"]
+tags: [check]
+today: "2026-10-10"
+
+diagnostics:
+  - {slug: recheck-overdue, line: 4, column: 15, severity: advice}

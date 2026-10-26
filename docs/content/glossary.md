@@ -111,6 +111,13 @@ A reusable string declared in `ascribe.toml` and written `{key}` in a page.
 
 See [Phrases](writing/inline.md#phrases).
 
+## Recheck date
+@term {aliases="recheck dates"}
+
+When a page is next due to be read against what it describes: its field with the `recheck-date` role, which [`recheck-overdue`](checks/diagnostics/content-checks.md#ASC153) compares with today. It was the review date, and the role `review-date`, which still works for a release.
+
+See [Field roles](content-model/index.md#54-field-roles).
+
 ## Release line
 @term {aliases="release lines"}
 
@@ -130,7 +137,7 @@ See [The project report](checks/report.md). The [HTML preview](#html-preview), w
 
 Reading a pull request's changes as readers will see the pages, in the page preview, the site preview, or the HTML preview, and commenting there.
 
-See [Review](review/index.md). A diagnostic whose next step is `review` may be fine as it is: see [What to do next](checks/diagnostics.md#what-to-do-next). A page's review date, its field with the `review-date` role that [`review-overdue`](checks/diagnostics/content-checks.md#ASC153) compares with today, is when to check the page again.
+See [Review](review/index.md). A diagnostic whose next step is `review` may be fine as it is: see [What to do next](checks/diagnostics.md#what-to-do-next). When to check a page again is its [recheck date](#recheck-date), not a review.
 
 ## Site preview
 @term

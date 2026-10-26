@@ -1,7 +1,7 @@
 //! This page's parity with the outputs and the checks: what `ascribe/page`
 //! says of a page's size is what `page-size` measures in `ascribe check`,
 //! its listing is what `pages.json` writes for it in `ascribe build`, its
-//! review warns exactly where `ascribe check` reports `review-overdue`, and
+//! recheck date warns exactly where `ascribe check` reports `recheck-overdue`, and
 //! its description is missing exactly where it reports
 //! `page-description-missing` and too long exactly where it reports
 //! `description-too-long`, on the page or on the default it leaves the
@@ -233,9 +233,9 @@ fn record(out: &Path, build: &str, source: &str) -> Value {
 /// check the project exercises it.
 #[derive(Debug, Default, PartialEq)]
 struct Said {
-    /// Pages whose review date has passed.
+    /// Pages whose recheck date has passed.
     overdue: usize,
-    /// Of those, the ones whose review warns.
+    /// Of those, the ones whose recheck date warns.
     reported: usize,
     /// Pages whose description is measured.
     measured: usize,
@@ -329,16 +329,16 @@ fn parity(root: &Path, builds: bool) -> Said {
                 "{rel} in {build}"
             );
         }
-        // Review: a warning where review-overdue is reported.
-        let review = &about["review"];
-        let reported = review["reported"] == true;
+        // Recheck: a warning where recheck-overdue is reported.
+        let recheck = &about["recheck"];
+        let reported = recheck["reported"] == true;
         assert_eq!(
             reported,
-            slugged("review-overdue").is_some(),
-            "{rel}: This page says {review}, and check reports {found:?}",
+            slugged("recheck-overdue").is_some(),
+            "{rel}: This page says {recheck}, and check reports {found:?}",
         );
-        assert!(!reported || review["overdue"] == true, "{rel}: {review}");
-        said.overdue += usize::from(review["overdue"] == true);
+        assert!(!reported || recheck["overdue"] == true, "{rel}: {recheck}");
+        said.overdue += usize::from(recheck["overdue"] == true);
         said.reported += usize::from(reported);
         // Description: missing where page-description-missing is reported.
         let description = &about["description"];
@@ -393,7 +393,7 @@ content-root = "docs"
 [types.guide.frontmatter]
 title = "string"
 description = { type = "string?", role = "description" }
-review-by = { type = "date?", role = "review-date" }
+review-by = { type = "date?", role = "recheck-date" }
 
 [dimensions.deployment]
 label = "Deployment"
@@ -458,7 +458,7 @@ fn this_page_agrees_with_check_and_build_for_a_project_with_every_row() {
     );
 }
 
-/// A project that turns `review-overdue` off, whose description has a
+/// A project that turns `recheck-overdue` off, whose description has a
 /// default, and whose pages' descriptions are each a case the check is
 /// silent for.
 const QUIET_MODEL: &str = r#"spec = "0.1"
@@ -469,7 +469,7 @@ content-root = "docs"
 [types.guide.frontmatter]
 title = "string"
 summary = { type = "string", role = "description", default = "A guide to *Lantern*." }
-review-by = { type = "date?", role = "review-date" }
+review-by = { type = "date?", role = "recheck-date" }
 
 [types.note.frontmatter]
 title = "string"
@@ -484,7 +484,7 @@ site = "https://docs.example.com"
 agents = true
 
 [checks]
-review-overdue = "off"
+recheck-overdue = "off"
 description-too-long = "off"
 "#;
 
@@ -498,7 +498,7 @@ fn this_page_agrees_with_check_where_the_checks_stay_silent() {
     );
     let files = [
         ("ascribe.toml", QUIET_MODEL),
-        // The default is its description, and its review is overdue with
+        // The default is its description, and its recheck is overdue with
         // the check off.
         (
             "docs/index.md",
