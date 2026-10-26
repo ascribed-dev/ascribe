@@ -25,7 +25,7 @@ See [Keep the addresses you've published](publishing/redirects.md). A snippet's 
 
 An AI program, such as Claude Code or GitHub Copilot, that writes a project's docs with Ascribe's tools, or reads the docs a site publishes.
 
-Most pages mean the agent you work with on the docs, as [Agents](agents/index.md) does. The outputs for agents, [`[consumer] agents`](content-model/output.md#consumer), and [`ascribe report agents`](checks/report.md#the-site-and-agents) are about the agents that read the published site, and [`ascribe agents index`](agents/product-index.md) writes for a product's own agents.
+Most pages mean the agent you work with on the docs, as [Agents](agents/index.md) does. The outputs for agents, [`[consumer] agents`](content-model/output.md#consumer), and [`ascribe report delivery`](checks/report.md#the-site-and-agents) are about the agents that read the published site, and [`ascribe agents index`](agents/product-index.md) writes for a product's own agents.
 
 ## Availability
 @term

@@ -9,8 +9,8 @@ use ascribe_check::links::Answer;
 use ascribe_check::{Diagnostic, Next};
 use ascribe_model::{ListingFrom, ListingLevel};
 use ascribe_query::report::{
-    Agents, BuildPages, Builds, LeftContent, LeftPage, Links, NotRun, Pages, Problems, Ran, Report,
-    Section,
+    BuildPages, Builds, Delivery, LeftContent, LeftPage, Links, NotRun, Pages, Problems, Ran,
+    Report, Section,
 };
 use ascribe_resolve::pages::PageRecord;
 use serde::Serialize;
@@ -21,7 +21,7 @@ use crate::report::{Counts, FileTable};
 
 /// The version of the JSON schema. It changes only when a field is removed or
 /// changes meaning; fields may be added without a new version.
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 
 /// What `ascribe report --format json` writes: one document, whatever the
 /// outcome. A reader ignores fields it doesn't know.
@@ -37,7 +37,7 @@ pub(crate) struct ReportJson {
     /// isn't `null`, no section is there.
     error: Option<String>,
     /// The sections asked for, in the order the report has them:
-    /// `problems`, `inventory`, `builds`, `pages`, `links`, `agents`.
+    /// `problems`, `inventory`, `builds`, `pages`, `links`, `delivery`.
     sections: Vec<&'static str>,
     /// The builds `problems` checked and `builds` and `pages` report on, in
     /// `ascribe.toml`'s order.
@@ -47,7 +47,7 @@ pub(crate) struct ReportJson {
     not_run: Vec<&'static str>,
     /// How many problems of each severity the sections that ran have, and
     /// of each kind of next step: the diagnostics of `problems`, `links`,
-    /// and `agents`.
+    /// and `delivery`.
     summary: Summary,
     /// The command that lists everything a list here leaves out, when one
     /// does; `null` otherwise.
@@ -67,9 +67,9 @@ pub(crate) struct ReportJson {
     /// `links`, when asked for.
     #[serde(skip_serializing_if = "Option::is_none")]
     links: Option<LinksJson>,
-    /// `agents`, when asked for.
+    /// `delivery`, when asked for.
     #[serde(skip_serializing_if = "Option::is_none")]
-    agents: Option<AgentsJson>,
+    delivery: Option<DeliveryJson>,
 }
 
 /// A list of at most `--limit` items.
@@ -466,10 +466,10 @@ struct UnconfirmedEntry {
     reported_from: String,
 }
 
-/// `agents`: the delivery spec's checks on a built site.
+/// `delivery`: the delivery spec's checks on a built site.
 #[derive(Serialize, Default)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
-struct AgentsJson {
+struct DeliveryJson {
     /// Why it couldn't run, or `null` when it ran. When it isn't `null`,
     /// the rest is empty.
     not_run: Option<NotRunJson>,
@@ -641,12 +641,12 @@ pub(crate) fn of(report: &Report, files: &FileTable, about: &About<'_>) -> Repor
             },
             Ran::Done(links) => links_json(links, files, limit),
         }),
-        agents: report.agents.as_ref().map(|a| match a {
-            Ran::NotRun(why) => AgentsJson {
+        delivery: report.delivery.as_ref().map(|a| match a {
+            Ran::NotRun(why) => DeliveryJson {
                 not_run: Some(not_run(why)),
-                ..AgentsJson::default()
+                ..DeliveryJson::default()
             },
-            Ran::Done(agents) => agents_json(agents, files, limit),
+            Ran::Done(delivery) => delivery_json(delivery, files, limit),
         }),
     }
 }
@@ -667,7 +667,7 @@ pub(crate) fn failed(error: &str, sections: &[Section]) -> ReportJson {
         builds: None,
         pages: None,
         links: None,
-        agents: None,
+        delivery: None,
     }
 }
 
@@ -812,11 +812,11 @@ fn links_json(links: &Links, files: &FileTable, limit: usize) -> LinksJson {
     }
 }
 
-fn agents_json(agents: &Agents, files: &FileTable, limit: usize) -> AgentsJson {
-    AgentsJson {
+fn delivery_json(delivery: &Delivery, files: &FileTable, limit: usize) -> DeliveryJson {
+    DeliveryJson {
         not_run: None,
-        site: agents.site.clone(),
-        results: agents
+        site: delivery.site.clone(),
+        results: delivery
             .results
             .iter()
             .map(|r| CheckResultJson {
@@ -827,11 +827,11 @@ fn agents_json(agents: &Agents, files: &FileTable, limit: usize) -> AgentsJson {
                 owner: ascribe_check::site::owner(&r.id).as_str(),
             })
             .collect(),
-        diagnostics: Capped::of(agents.diagnostics.iter(), limit, |d| entry(files, d, 0)),
-        previous_run: agents.previous_run.map(|d| d.to_string()),
-        new: agents.new.as_ref().map(Vec::len),
-        resolved: agents.resolved,
-        new_checks: agents.new.clone().unwrap_or_default(),
+        diagnostics: Capped::of(delivery.diagnostics.iter(), limit, |d| entry(files, d, 0)),
+        previous_run: delivery.previous_run.map(|d| d.to_string()),
+        new: delivery.new.as_ref().map(Vec::len),
+        resolved: delivery.resolved,
+        new_checks: delivery.new.clone().unwrap_or_default(),
     }
 }
 
@@ -880,7 +880,7 @@ pub(crate) fn longest(report: &Report) -> usize {
         see(l.acknowledged.len());
         see(l.unconfirmed.len());
     }
-    if let Some(Ran::Done(a)) = &report.agents {
+    if let Some(Ran::Done(a)) = &report.delivery {
         see(a.diagnostics.len());
     }
     most
