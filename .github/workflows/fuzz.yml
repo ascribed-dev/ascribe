@@ -102,7 +102,7 @@ jobs:
               echo 'In base64, to reproduce with `base64 -d > crash && cargo fuzz run '"$TARGET"' crash` in `fuzz/`:'
               echo
               echo '```text'
-              base64 -w 0 "$input" | head -c 8000
+              base64 -w 0 "$input" | head -c 8000 || true
               echo
               echo '```'
             fi
@@ -111,7 +111,7 @@ jobs:
             echo
             echo '```text'
             if grep -q 'panicked at' "$log"; then
-              sed -n '/panicked at/,/^stack backtrace/p' "$log" | head -n 60
+              sed -n '/panicked at/,/^stack backtrace/p' "$log" | head -n 60 || true
             else
               tail -n 60 "$log"
             fi
