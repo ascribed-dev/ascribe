@@ -14,6 +14,7 @@ use ascribe_query::report::{
 };
 use ascribe_resolve::pages::PageRecord;
 
+use crate::commands::drift::escape;
 use crate::report::{Counts, FileTable};
 
 /// How the report is written.
@@ -418,10 +419,24 @@ impl Writer<'_> {
                     .files
                     .position(c.location.file, c.location.span.start())
                     .line;
-                let heading = c
-                    .heading
-                    .as_ref()
-                    .map_or(String::new(), |h| format!(" § {h}"));
+                let heading = c.heading.as_ref().map_or(String::new(), |h| {
+                    if self.style.markdown {
+                        format!(" § {}", escape(h))
+                    } else {
+                        format!(" § {h}")
+                    }
+                });
+                // A variant arm's reason names only what the build shows.
+                let why = if c.kind == "variant" {
+                    let mut chars = c.why.chars();
+                    let shows: String = chars
+                        .next()
+                        .map(|first| first.to_lowercase().chain(chars).collect())
+                        .unwrap_or_default();
+                    format!("variant arm the build doesn't show (it {shows})")
+                } else {
+                    c.why.clone()
+                };
                 // A mark in a fragment says which, so it can be found.
                 let at = if c.in_page {
                     format!("line {line}")
@@ -429,9 +444,8 @@ impl Writer<'_> {
                     self.code(&format!("{}:{line}", self.files.path(c.location.file)))
                 };
                 format!(
-                    "{}{heading} ({at}): {}; {} {} it",
+                    "{}{heading} ({at}): {why}; {} {} it",
                     self.code(c.page.as_str()),
-                    c.why,
                     names(&c.kept_by, |n| self.code(n)),
                     plural(c.kept_by.len(), "keeps", "keep"),
                 )

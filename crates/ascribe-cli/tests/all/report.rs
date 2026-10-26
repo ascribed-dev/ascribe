@@ -190,7 +190,7 @@ build = "cloud"
     );
     assert!(
         text.contains(
-            "    index.md § Connect (line 20): Shows only deployment=cloud; server keeps it\n"
+            "    index.md § Connect (line 20): variant arm the build doesn't show (it shows only deployment=cloud); server keeps it\n"
         ),
         "{text}"
     );
@@ -212,6 +212,21 @@ build = "cloud"
     assert_eq!(first["range"]["start"]["line"], 7);
     assert_eq!(content["items"][2]["file"], "docs/_parts/note.md");
     assert_eq!(content["items"][2]["scope"], "block");
+
+    // In Markdown, a heading's text is escaped.
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Home\n---\n\n## Use `snake_case` keys\n@available: server\n\nOne.\n",
+    );
+    let markdown = stdout(&ascribe(
+        dir.path(),
+        &["report", "builds", "--format", "markdown"],
+    ));
+    assert!(
+        markdown.contains("§ Use snake\\_case keys (line 6)"),
+        "{markdown}"
+    );
 }
 
 /// A line of a versioned build names its target and line as what content
