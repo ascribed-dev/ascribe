@@ -35,14 +35,15 @@ export interface Step {
   warn?: string;
 }
 
+// With no arguments, rustup installs the toolchain and components
+// rust-toolchain.toml pins; it runs once.
 const rustup = "rustup toolchain install";
-const rustupSkip = "cargo installs the toolchain rust-toolchain.toml pins when it first runs";
 
 export const steps: Step[] = [
-  { workflow: "rust.yml", job: "fmt", ci: rustup, skip: rustupSkip },
+  { workflow: "rust.yml", job: "fmt", ci: rustup },
   { workflow: "rust.yml", job: "fmt", ci: "cargo fmt --all --check" },
 
-  { workflow: "rust.yml", job: "dependencies", ci: rustup, skip: rustupSkip },
+  { workflow: "rust.yml", job: "dependencies", ci: rustup },
   {
     workflow: "rust.yml",
     job: "dependencies",
@@ -74,7 +75,7 @@ export const steps: Step[] = [
   { workflow: "js.yml", job: "check", ci: "pnpm --filter @ascribed/astro build" },
   { workflow: "js.yml", job: "check", ci: "pnpm check:packages" },
 
-  { workflow: "rust.yml", job: "check", ci: rustup, skip: rustupSkip },
+  { workflow: "rust.yml", job: "check", ci: rustup },
   {
     workflow: "rust.yml",
     job: "check",
@@ -133,7 +134,7 @@ export const steps: Step[] = [
   { workflow: "rust.yml", job: "check", ci: "pnpm install --frozen-lockfile" },
   { workflow: "rust.yml", job: "check", ci: "node scripts/templates/convert.ts --check" },
 
-  { workflow: "rust.yml", job: "determinism", ci: rustup, skip: rustupSkip },
+  { workflow: "rust.yml", job: "determinism", ci: rustup },
   {
     workflow: "rust.yml",
     job: "determinism",
