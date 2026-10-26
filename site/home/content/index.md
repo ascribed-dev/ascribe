@@ -123,7 +123,7 @@ A pull request's changes are read the way readers will see them: in the site's o
 
 - [`llms.txt`]({site}/go/publish-for-agents/).
 - A [Markdown version]({site}/go/publish-for-agents/) of every page.
-- [JSON]({site}/go/cli-build/).
+- Each permalink's [help as JSON]({site}/go/astro-reference/).
 - An [index of the docs]({site}/go/cli-agents-index/) written into the product's `AGENTS.md`.
 @end
 
