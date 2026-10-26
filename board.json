@@ -6532,7 +6532,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDeg5Q",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "In progress",
       "title": "One meaning per word: grow the docs' glossary and rename the overloaded terms"
     },
     {
@@ -6765,7 +6765,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1059"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Editor: the Project view's Health shows only the counts that need doing"
     },
     {
@@ -6907,7 +6907,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1073"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Name the two kinds of error: the spec's, and a review check a project raises"
     },
     {
@@ -7204,7 +7204,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1083"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Search: when no block has every word, show the closest matches instead of \"No place matches\""
     },
     {
@@ -7235,7 +7235,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Load a project once: one workspace type for the commands, the MCP server, the hook server, and the language server"
     },
     {
@@ -7299,8 +7299,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/998"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCmI",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1091"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Attributes written without braces: one error, and a fix that adds the braces instead of deleting the text"
     },
     {
@@ -7443,8 +7446,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1090"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "One trait for a project's side files, so a new one is one implementation instead of edits in four crates"
     },
     {
@@ -7559,8 +7565,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1092"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "OpenAPI: when an operationId is renamed, suggest the operation now at its method and path"
     },
     {
@@ -7667,8 +7676,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1021"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDKc",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1088"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Review report: mark the changed words inside a callout, and in a short sentence that grew"
     },
     {
@@ -7767,8 +7779,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1027"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDQw",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1093"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Check: suggest the path for a missing include or snippet, and say when no dimension is declared"
     },
     {
@@ -7882,8 +7897,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1034"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDhA",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1094"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "CLI papercuts a writer meets: diff's branch argument, fmt --check's what, @Note, and help that only makes sense on the site"
     },
     {
@@ -8055,8 +8073,22 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDpurI",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Split the long diagnostics pages, then link each word of an entry's header line"
+    },
+    {
+      "content": {
+        "body": "`ascribe-lsp`'s `openapi::openapi_a_renamed_operation_is_fixed_from_the_review_s_base` failed once on ubuntu CI ([#1093's run](https://github.com/ascribed-dev/ascribe/actions/runs/40371865538)) and passed on re-run. It failed at `assert!(safe, \"the rename is safe\")` (`crates/ascribe-lsp/tests/all/openapi.rs:325`), after `titles[0]` had already matched `` Link to `../api/openapi.yaml#fetchUser` ``. So the fix was the right one, but it was still the unsafe guess made without the base.\n\n## Why\n\n`set_base_request` (`crates/ascribe-lsp/src/server.rs`, around line 1212) calls `core.remember_base_apis(...)`. That applies `Change::BaseApis` and queues the affected files as dirty. The function then calls `shared.wake.notify_all()`, but it never stores `shared.idle = false`. Notifications do set it: `if core.busy() { shared.idle.store(false, …) }` at the end of notification handling, around line 425.\n\nUntil the diagnostics worker wakes and plans the job, `idle` therefore still reads `true` from the round before. The test's `client.settle()` (`tests/support/mod.rs:237`) can see that stale `true` and return straight away. `diagnostic()` then returns the `link-operation-missing` published before the base was set, whose fixes were computed without the base's operation ids. Whether this happens depends on whether the worker thread wins the race to the lock, which explains why the failure is rare.\n\nThis is a reading of the code that I haven't reproduced. Other requests that apply changes (for example `edit_request` and `project_edit_request`) may have the same gap, and are worth checking at the same time.\n\n## Done when\n\n- Every request handler that queues work leaves `idle` false before it answers, as notification handling does. A shared helper for this would be better than a line per handler.\n- `settle()` after `ascribe/review/setBase` only returns once the round that uses the base has been published.\n- The test passes reliably when run in a loop (for example 200 runs, or under `--test-threads` contention), and stays unchanged apart from the fix.",
+        "number": 1096,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Editor: `setBase` doesn't mark the server busy, so the renamed-operation test is flaky",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1096"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDrZDY",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Editor: `setBase` doesn't mark the server busy, so the renamed-operation test is flaky"
     }
   ]
 }
