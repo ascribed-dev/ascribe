@@ -362,11 +362,14 @@ pub struct DirectiveLine {
     /// Whether the attribute block has its closing `}`. `true` when there is
     /// no block.
     pub attributes_closed: bool,
-    /// The `:`, if the line has one.
+    /// The `:`, if the line has one. It's inside [`DirectiveLine::unexpected`]
+    /// on an opener whose attributes lost their braces (`@note type=warning:`).
     pub colon: Option<Span>,
     /// The primary, if the line has one.
     pub primary: Option<PrimaryValue>,
-    /// Whether the line opens a container.
+    /// Whether the line opens a container. An opener whose attributes lost
+    /// their braces (`@note type=warning:`) still opens one, so its `@end`
+    /// matches.
     pub form: Form,
     /// Text after the name (and attribute block) that fits no part of the
     /// head, such as the `hello: text` of `@note hello: text`. It's kept, not

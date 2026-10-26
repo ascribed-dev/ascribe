@@ -139,8 +139,9 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
 
 impl Ctx<'_> {
     /// Fixes for the parser's issues whose replacement is certain: a
-    /// misspelled directive (the suggested one) and text that doesn't belong
-    /// on a directive line (remove it).
+    /// misspelled directive (the suggested one), attributes written without
+    /// their braces (add them), and other text that doesn't belong on a
+    /// directive line (remove it).
     fn parser_fixes(&mut self) {
         let text = self.file.text.clone();
         let id = self.id;
@@ -167,6 +168,30 @@ impl Ctx<'_> {
                     edits: vec![TextEdit::replace(Span::new(span.start(), end), suggestion)],
                     // The nearest name, which may not be the one meant.
                     applicability: Applicability::Unsafe,
+                }
+            } else if issue.slug == diagnostics::DIRECTIVE_EXTRA_TEXT
+                && issue.variant == Some("braces")
+            {
+                let (Some(pairs), Some(attributes)) = (issue.arg("pairs"), issue.arg("attributes"))
+                else {
+                    continue;
+                };
+                let pairs = Span::new(span.start(), span.start() + pairs.len());
+                // `type=warning: text` has its meaning certain once braced;
+                // without a primary, the line might have been meant otherwise.
+                let after = text[pairs.end()..span.end()].trim_start_matches([' ', '\t']);
+                let primary = after
+                    .strip_prefix(':')
+                    .is_some_and(|p| !p.trim_matches([' ', '\t']).is_empty());
+                Fix {
+                    title: format!("Put `{}` in braces", &text[pairs.range()]),
+                    file: id,
+                    edits: vec![TextEdit::replace(pairs, format!("{{{attributes}}}"))],
+                    applicability: if primary {
+                        Applicability::Safe
+                    } else {
+                        Applicability::Unsafe
+                    },
                 }
             } else if issue.slug == diagnostics::DIRECTIVE_EXTRA_TEXT {
                 let before = &text[..span.start()];
@@ -328,6 +353,7 @@ impl Ctx<'_> {
             &schema,
             d.attributes.as_ref(),
             d.attributes_closed,
+            d.unexpected.is_none(),
             d.name_span,
         );
         // An unclosed attribute block hides the rest of the line (SPEC §3.3).

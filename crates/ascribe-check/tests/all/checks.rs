@@ -663,6 +663,21 @@ fn certain_replacements_come_with_fixes_that_clear_the_diagnostic() {
             page("@steps foo\n1. a"),
             page("@steps\n1. a"),
         ),
+        (
+            "directive-extra-text",
+            page("@note type=warning: You need Node 20."),
+            page("@note {type=warning}: You need Node 20."),
+        ),
+        (
+            "directive-extra-text",
+            page("@note type=warning:\nInside.\n@end"),
+            page("@note {type=warning}:\nInside.\n@end"),
+        ),
+        (
+            "directive-extra-text",
+            page(r#"@snippet lang=py title="A: b": code:x.py"#),
+            page(r#"@snippet {lang=py, title="A: b"}: code:x.py"#),
+        ),
     ];
     for (slug, before, after) in cases {
         let now = fixed("index.md", &before, slug);
@@ -674,6 +689,40 @@ fn certain_replacements_come_with_fixes_that_clear_the_diagnostic() {
             "{slug} remains in {now:?}"
         );
     }
+}
+
+#[test]
+fn attributes_without_braces_are_braced_safely_only_before_a_primary() {
+    let fix = |body: &str| {
+        let p = project(&[("index.md", &page(body))]);
+        let d = check_files(&p)
+            .into_iter()
+            .find(|d| d.slug.as_str() == "directive-extra-text")
+            .expect("directive-extra-text");
+        let fix = d.fixes.first().expect("a fix");
+        (d.message.clone(), fix.title.clone(), fix.applicability)
+    };
+    let (message, title, applicability) = fix("@note type=warning: You need Node 20.");
+    assert!(message.contains("`{type=warning}`"), "{message}");
+    assert_eq!(title, "Put `type=warning` in braces");
+    assert_eq!(applicability, Applicability::Safe);
+    // Without a primary, or with more text after the pairs, the braces may
+    // not be all that's meant.
+    for body in [
+        "@note type=warning:\nInside.\n@end",
+        "@note type=warning\nBound.",
+        "@note type=warning and more: text",
+    ] {
+        let (message, _, applicability) = fix(body);
+        assert!(message.contains("go in braces"), "{body}: {message}");
+        assert_eq!(applicability, Applicability::Unsafe, "{body}");
+    }
+    // A key the directive doesn't take isn't an attribute: the text is
+    // removed, as any other extra text is, and not safely.
+    let (message, title, applicability) = fix("@note colour=red: Careful.");
+    assert!(message.contains("isn't part of `@note`"), "{message}");
+    assert_eq!(title, "Remove `colour=red: Careful.`");
+    assert_eq!(applicability, Applicability::Unsafe);
 }
 
 #[test]

@@ -1,0 +1,9 @@
+description: >-
+  Two attributes written without braces are one error. The widget's
+  required `lab` is written, without its braces, so it isn't reported
+  missing.
+spec: ["3.1", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: directive-extra-text, line: 5}

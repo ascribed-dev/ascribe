@@ -34,6 +34,8 @@ Anything else is text. `@astrojs/react` at the start of a line and `support@exam
 
 Spaces between the parts don't matter, and nothing else may be on the line: `@steps foo` is an error. Built-in names never contain a hyphen; project widget names always do.
 
+Attributes written without their braces, as in `@note type=warning: You need Node 20.`, are the same error, and it's the one reported for the line: the errors that would follow from it, such as the note binding the heading below, aren't. When the keys are the directive's attributes, the fix adds the braces (`@note {type=warning}: …`), and `ascribe check --fix` applies it when a primary follows the colon.
+
 ## Attributes
 
 ([SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes))

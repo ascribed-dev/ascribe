@@ -173,7 +173,7 @@ A **directive line** has this shape (ABNF rule `directive-line`):
 
 Spacing between these parts doesn't matter: processors accept any spaces or tabs between the name, the attributes, the colon, and the primary, including none, and ignore whitespace at the end of the line. Canonical form (§8.3) fixes one spelling.
 
-Attributes, when present, always come before the primary. Nothing else may appear on a directive line: text that fits none of these parts, such as `@steps foo`, `@note hello: text`, anything after `@end`, or a second word after an identifier primary (§3.4), is an error (§8.2).
+Attributes, when present, always come before the primary. Nothing else may appear on a directive line: text that fits none of these parts, such as `@steps foo`, `@note hello: text`, anything after `@end`, or a second word after an identifier primary (§3.4), is an error (§8.2). Processors report that text and not its consequences: nothing about the line's binding (§3.8) or a required attribute missing from it, and a line whose text is `key=value` pairs and a colon (`@note type=warning:`, attributes without their braces) still opens a container (§3.5), so its `@end` matches.
 
 ```
 @note {type=caution}: Back up your database first.

@@ -1,0 +1,1 @@
+- **Attributes written without braces are one error, with a fix that adds the braces.** `@note type=warning: text` no longer also reports the heading below it, and `ascribe check --fix` braces it. See [Directive lines](docs/content/writing/syntax.md#directive-lines).
