@@ -94,18 +94,26 @@ export function headerProblems(
 }
 
 /**
- * The headers each help entry's address needs, by its path, in the site
- * output at `dir`: `Access-Control-Allow-Origin: *` at `<path><name>.json`,
- * the permalinks' path from `_ascribe/permalinks.json` and each name in
- * `_ascribe/help.json`.
+ * The headers each help entry's addresses need, by path, in the site output
+ * at `dir`: `Access-Control-Allow-Origin: *` at `<path><name>.json` and
+ * `<path><name>.md`, the permalinks' path from `_ascribe/permalinks.json` and
+ * each name in `_ascribe/help.json`, and the JSON's `Link` to the Markdown,
+ * its alternate.
  */
 export async function readHelpHeaders(dir: string): Promise<Map<string, Record<string, string>>> {
   const read = async (file: string): Promise<unknown> =>
     JSON.parse(await readFile(path.join(dir, "_ascribe", file), "utf8"));
   const { path: at } = (await read("permalinks.json")) as { path: string };
   const { help } = (await read("help.json")) as { help: Record<string, unknown> };
+  const any = { "access-control-allow-origin": "*" };
   return new Map(
-    Object.keys(help).map((name) => [`${at}${name}.json`, { "access-control-allow-origin": "*" }]),
+    Object.keys(help).flatMap((name): [string, Record<string, string>][] => [
+      [
+        `${at}${name}.json`,
+        { ...any, link: `<${at}${name}.md>; rel="alternate"; type="text/markdown"` },
+      ],
+      [`${at}${name}.md`, any],
+    ]),
   );
 }
 

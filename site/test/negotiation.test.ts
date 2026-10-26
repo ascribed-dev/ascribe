@@ -136,12 +136,23 @@ describe("the built site", () => {
     expect(await response.text()).toMatch(/^<!DOCTYPE html>/i);
   });
 
-  test("a permalink asked for as Markdown is its forwarding page", async () => {
-    const [page] = await forwardingPages();
-    expect(page).toBeDefined();
-    const response = await answer(page ?? "", "text/markdown");
+  test("a permalink asked for as Markdown is its section, from its .md", async () => {
+    const response = await answer("/go/ASC036/", "text/markdown");
     expect(response.status).toBe(200);
-    expect(response.headers.get("content-type")).toMatch(/^text\/html/);
+    expect(response.headers.get("content-type")).toBe("text/markdown; charset=utf-8");
+    expect(response.headers.get("content-location")).toBe("/go/ASC036.md");
+    const text = await response.text();
+    expect(text).toBe(await readFile(`${distDir}/go/ASC036.md`, "utf8"));
+    // The section alone, under its heading, not the whole page.
+    expect(text).toMatch(/^# /);
+    expect(text.length).toBeLessThan(10_000);
+  });
+
+  test("a permalink's forwarding page names its section's Markdown and JSON", async () => {
+    const response = await answer("/go/ASC036/", "text/html");
+    const page = await response.text();
+    expect(page).toContain('<link rel="alternate" type="text/markdown" href="/go/ASC036.md">');
+    expect(page).toContain('<link rel="alternate" type="application/json" href="/go/ASC036.json">');
   });
 
   test("a missing page asked for as Markdown is still the 404 page", async () => {
