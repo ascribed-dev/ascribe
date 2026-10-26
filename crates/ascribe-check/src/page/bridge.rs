@@ -14,13 +14,20 @@ use crate::Project;
 /// on disk), and everything else, such as images, from the project's own file
 /// system.
 ///
-/// It reports no nested projects' folders, so `Project::is_source` on an index
-/// built from it goes by the path alone: fine for the page checks, which only
-/// read the sources listed here, and those already leave such folders out.
+/// A loaded project's sources are listed as loading listed them, with the
+/// unreadable entries, the nested projects' folders, and the project's own
+/// folder, so an index built from it is the one the files on disk give. A
+/// project built from parts lists its readable sources and no folders, so
+/// `Project::is_source` on an index built from it goes by the path alone:
+/// fine for the page checks, which only read the sources listed here, and
+/// those already leave such folders out.
 struct Held<'p>(&'p Project);
 
 impl FileSystem for Held<'_> {
     fn sources(&self) -> Sources {
+        if let Some(listing) = self.0.listing() {
+            return listing.clone();
+        }
         Sources {
             // A file that couldn't be read isn't a source another file can
             // name, and is reported as `source-unreadable` at file level.
@@ -39,11 +46,23 @@ impl FileSystem for Held<'_> {
     }
 
     fn read(&self, path: &RelPath) -> io::Result<String> {
-        self.0
+        let source = self
+            .0
             .source_at(path)
-            .filter(|s| s.unreadable.is_none())
-            .map(|s| s.text.clone())
-            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "no such source file"))
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "no such source file"))?;
+        match &source.unreadable {
+            // Failing as loading's read failed, for the index to list it as
+            // unreadable for the same reason.
+            Some(failure) => {
+                let kind = if failure.not_utf8 {
+                    io::ErrorKind::InvalidData
+                } else {
+                    io::ErrorKind::Other
+                };
+                Err(io::Error::new(kind, failure.reason.clone()))
+            }
+            None => Ok(source.text.clone()),
+        }
     }
 
     fn probe(&self, project_path: &RelPath) -> Probe {
@@ -111,7 +130,7 @@ impl<'p> Indexed<'p> {
     /// (a broken link's closest targets are looked for in it), so a check
     /// of the whole project indexes it once.
     pub fn new(project: &Project) -> Indexed<'p> {
-        let index = project.link_index().clone();
+        let index = project.index().clone();
         let ids = index
             .files()
             .filter_map(|f| Some((f.file, project.source_at(&f.path)?.id)))

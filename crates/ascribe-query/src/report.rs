@@ -579,7 +579,7 @@ fn delivery_since(delivery: &mut Delivery, history: &ReportHistory) -> SiteCheck
 /// `inventory`, from the project's pages and what `ascribe check` found.
 fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
     let model = project.model();
-    let index = project.held_index();
+    let index = project.index();
     let mut by_type: BTreeMap<Option<String>, usize> = BTreeMap::new();
     let mut by_owner: BTreeMap<Option<String>, usize> = BTreeMap::new();
     let mut pages = 0;
@@ -612,8 +612,8 @@ fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
         overdue: listed(&[diagnostics::REVIEW_OVERDUE]),
         orphans: listed(&[diagnostics::PAGE_ORPHAN]),
         unused: listed(UNUSED),
-        examples: examples(project, &index),
-        apis: apis(&index),
+        examples: examples(project, index),
+        apis: apis(index),
     }
 }
 
@@ -697,7 +697,7 @@ fn most_first(counts: BTreeMap<Option<String>, usize>) -> Vec<(Option<String>, u
 /// content it takes out that another build of the project keeps.
 fn builds(project: &Project, names: &[String]) -> Builds {
     let model = project.model();
-    let index = project.held_index();
+    let index = project.index();
     let all = &model.builds;
     let pages: Vec<&RelPath> = index
         .files()
@@ -788,7 +788,7 @@ fn builds(project: &Project, names: &[String]) -> Builds {
 /// the pages that aren't `listed`.
 fn page_records(project: &Project, names: &[String], not_listed: bool) -> Pages {
     let model = project.model();
-    let index = project.held_index();
+    let index = project.index();
     let router = AstroRouter::from_consumer(&model.consumer);
     let builds = model
         .builds

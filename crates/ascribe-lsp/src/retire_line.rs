@@ -311,7 +311,7 @@ pub fn retire_line(
     let window = Window::of(&after_model, target);
 
     // The marks, and the features.
-    let index = project.held_index();
+    let index = project.index();
     let mut files = Vec::new();
     for file in index.files() {
         if let Some(rewritten) = rewrite_marks(file, &after_model, &window)? {
@@ -721,8 +721,8 @@ fn rewrite_marks(
 fn unused_content(project: &Project, target: &str) -> Vec<Unused> {
     let model = project.model();
     let window = Window::of(model, target);
-    let index = project.held_index();
-    let says_nothing = marks_that_say_nothing(&index, model);
+    let index = project.index();
+    let says_nothing = marks_that_say_nothing(index, model);
     let mut out: Vec<Unused> = Vec::new();
     for file in index.files() {
         let source: &str = &file.source;
@@ -1029,7 +1029,7 @@ fn first_line(source: &str, span: Span) -> String {
 /// goes; and each page that replaced a page that goes, without its
 /// `replaces` line.
 fn removals(project: &Project, unused: &[Unused]) -> Vec<(RelPath, Option<String>)> {
-    let index = project.held_index();
+    let index = project.index();
     let mut by_file: BTreeMap<RelPath, Vec<Span>> = BTreeMap::new();
     let mut gone: Vec<RelPath> = Vec::new();
     for u in unused {
@@ -1099,7 +1099,7 @@ fn recorded(project: &Project, redirects: &[Redirect]) -> (usize, Option<String>
 /// the current line, the page that replaces it there, or the page in the
 /// archive.
 fn redirects(project: &Project, releases: &Releases, line: &Version, url: &str) -> Vec<Redirect> {
-    let index = project.held_index();
+    let index = project.index();
     let model = index.model();
     let target = releases.target.as_str();
     let replacements = index.replacements();

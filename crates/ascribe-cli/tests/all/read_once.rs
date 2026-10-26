@@ -115,7 +115,7 @@ fn each_command_reads_each_source_once_and_lists_them_once() {
             outputs: vec![Output::Site, Output::Plain, Output::Json],
             anchors: false,
         };
-        ascribe_emit::outputs_in_memory(&project.index(), project.root(), &options)
+        ascribe_emit::outputs_in_memory(project.index(), project.root(), &options)
             .expect("Quill builds");
     });
     reads_once(dir, "diff", |project| {
@@ -135,12 +135,12 @@ fn each_command_reads_each_source_once_and_lists_them_once() {
         ascribe_diff::drift_project(project, &options).expect("Quill compares with HEAD");
     });
     reads_once(dir, "outline", |project| {
-        ascribe_query::outline(&project.index(), &quickstart, None, project.all_memos())
+        ascribe_query::outline(project.index(), &quickstart, None, project.all_memos())
             .expect("an outline");
     });
     reads_once(dir, "link", |project| {
         ascribe_query::link(
-            &project.index(),
+            project.index(),
             project.file_system(),
             &quickstart,
             "docs/quickstart.md",
@@ -154,7 +154,7 @@ fn each_command_reads_each_source_once_and_lists_them_once() {
             id: None,
         };
         ascribe_query::refs(
-            &project.index(),
+            project.index(),
             &asked,
             "quickstart.md",
             usize::MAX,
@@ -164,7 +164,7 @@ fn each_command_reads_each_source_once_and_lists_them_once() {
     reads_once(dir, "resolve", |project| {
         let build = project.model().build("site").expect("the site build");
         ascribe_query::resolve(
-            &project.index(),
+            project.index(),
             project.root(),
             &quickstart,
             build,
@@ -184,14 +184,14 @@ fn each_command_reads_each_source_once_and_lists_them_once() {
             summary: false,
             limit: 10,
         };
-        ascribe_query::search(project, &project.index(), &Readings::default(), &asked)
+        ascribe_query::search(project, project.index(), &Readings::default(), &asked)
             .expect("a search");
     });
     reads_once(dir, "permalinks", |project| {
-        ascribe_query::permalinks::list(&project.index(), project.permalinks())
+        ascribe_query::permalinks::list(project.index(), project.permalinks())
             .expect("the permalinks");
     });
     reads_once(dir, "versions", |project| {
-        ascribe_query::versions::list(&project.index());
+        ascribe_query::versions::list(project.index());
     });
 }

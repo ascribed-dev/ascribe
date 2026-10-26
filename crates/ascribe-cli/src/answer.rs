@@ -45,11 +45,10 @@ pub fn locate(global: &Global, path: Option<&Path>) -> Result<PathBuf, LocateErr
     Project::find_config(&start).ok_or_else(|| LocateError::not_found(start))
 }
 
-/// A loaded project, and its source index once something asks for it.
+/// A loaded project, and what's kept with it between questions.
 pub struct Loaded {
     /// The project.
     pub project: Project,
-    index: OnceCell<ascribe_resolve::Project>,
     /// The index the page-level checks read, once a check asks for it.
     page_index: OnceCell<ascribe_check::PageIndex>,
     /// Each build's readings of its pages, once a search asks for the
@@ -72,7 +71,6 @@ impl Loaded {
     pub fn new(project: Project) -> Loaded {
         Loaded {
             project,
-            index: OnceCell::new(),
             page_index: OnceCell::new(),
             readings: ascribe_query::Readings::default(),
             checks: RefCell::new(Vec::new()),
@@ -116,7 +114,7 @@ impl Loaded {
 
     /// The project's source index ([`Project::index`]), made on first use.
     pub fn index(&self) -> &ascribe_resolve::Project {
-        self.index.get_or_init(|| self.project.index())
+        self.project.index()
     }
 }
 

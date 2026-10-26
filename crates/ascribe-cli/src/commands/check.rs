@@ -795,7 +795,7 @@ fn write_prompt(
     let index = std::cell::OnceCell::new();
     let shown_on = |fragment: &ascribe_core::RelPath| {
         index
-            .get_or_init(|| project.held_index())
+            .get_or_init(|| project.index())
             .including_pages(fragment)
     };
     let text = match one {
