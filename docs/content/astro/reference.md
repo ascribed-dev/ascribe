@@ -112,7 +112,6 @@ Another generator reads the same list and publishes a page like these at `path` 
 
 ### Help entries
 @id: help-entries
-@available: ascribe 0.4.3
 
 Each build writes each permalink's section to `_ascribe/help.json` ([output-layout contract §1.7](../contracts/output-layout.md#17-the-help-file)), for a product to [show in itself](../permalinks/in-your-product.md). The integration serves each entry at an address of its own, in `astro build` and in `astro dev`, so a product can fetch its line's:
 

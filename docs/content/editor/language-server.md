@@ -58,6 +58,6 @@ Beside the standard requests, the server answers requests of its own, which the 
 The server also sends one notification of its own, `ascribe/preview/changed`, with `{ "pages": [uri, …] }`, when files changed on disk change how pages read: a page or a fragment it includes, or a file a `@snippet` in either shows. A client with a preview of one asks for it again; one that doesn't preview can ignore it.
 
 ### Lost addresses
-@available: ascribe planned
+@available: ascribe 0.4.4
 
 In a project that [keeps its addresses](../publishing/redirects.md), the server sends a second notification, `ascribe/addresses`, with what comparing the addresses with the base's found: `ascribe.addresses`' URI, the base, the count of pages lost, and the problems at the file, as `ascribe check` reports them (`lsp-addresses.schema.json`). It compares after the project loads, a save, a change on disk, or an edit to `ascribe.addresses`, never as a page is typed. A client shows the problems as the project's, not as a page's diagnostics. `ascribe/page`'s `about.alsoAnswersAt` lists the old addresses that lead to the page.

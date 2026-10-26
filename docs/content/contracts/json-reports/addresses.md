@@ -7,21 +7,21 @@ description: "The JSON Schemas of what ascribe addresses init, move, retire, and
 Part of the [JSON report contract](../json-reports.md), whose rules every document here follows.
 
 ## `ascribe addresses init`
-@available: ascribe planned
+@available: ascribe 0.4.4
 
 @include: ../../_generated/json-addresses-init.md
 
 ## `ascribe addresses move` and `retire`
-@available: ascribe planned
+@available: ascribe 0.4.4
 
 @include: ../../_generated/json-addresses-record.md
 
 ## `ascribe addresses move --from-git`
-@available: ascribe planned
+@available: ascribe 0.4.4
 
 @include: ../../_generated/json-addresses-from-git.md
 
 ## `ascribe addresses list`
-@available: ascribe planned
+@available: ascribe 0.4.4
 
 @include: ../../_generated/json-addresses-list.md

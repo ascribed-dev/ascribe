@@ -12,5 +12,5 @@
 | [`@intended`](../writing/directives.md#intended) | line | a reason | Acknowledge a check's problem in the next block, or at the section's heading |
 | [`@memo`](../writing/directives.md#memo) | line, container | text | Text for whoever edits the page next, never published |
 | [`@term`](../writing/directives.md#term) | line | none | Make a glossary page's heading a term |
-| [`@summary`](../writing/directives.md#summary) {available="ascribe 0.4.3"} | line | text, optional | Give a section a summary: this text, or the paragraph below it |
-| [`@operation`](../writing/directives.md#operation) {available="ascribe planned"} | line | a link to an operation | Put an operation of a declared API in the page: its method, path, and summary, linked to its reference |
+| [`@summary`](../writing/directives.md#summary) | line | text, optional | Give a section a summary: this text, or the paragraph below it |
+| [`@operation`](../writing/directives.md#operation) {available="ascribe 0.4.4"} | line | a link to an operation | Put an operation of a declared API in the page: its method, path, and summary, linked to its reference |

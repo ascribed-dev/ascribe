@@ -2,7 +2,7 @@
 type: how-to
 title: Link to an operation with no id
 description: "Link a guide to an OpenAPI operation the spec gives no operationId, by its method and path, which needs Redoc 3, and why setting ids is better."
-available: ascribe planned
+available: ascribe 0.4.4
 ---
 
 A link names an operation by its `operationId`, and some specs leave operations without one: .NET's generators write none by default. To link to an operation with no id, name it by its method and path instead.

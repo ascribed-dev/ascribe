@@ -2,7 +2,7 @@
 type: how-to
 title: Link to your API reference
 description: "Declare your OpenAPI spec in ascribe.toml, link a guide to an operation by its operationId, and have the link checked against the spec and written as the operation's address in Redoc or another renderer."
-available: ascribe planned
+available: ascribe 0.4.4
 ---
 
 A guide that says "call `getUser`" should link to `getUser` in the API reference, and the link should break the build when the spec loses it. Declare the spec in `ascribe.toml`, and a link to it with an `operationId` as its fragment is a link to that operation: `ascribe check` checks the spec has it, the editor completes it after `#` and shows it on hover ([in the editor](editor.md)), and the build writes the operation's address in your published reference.
