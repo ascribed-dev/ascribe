@@ -682,7 +682,7 @@ Extensions are compared without regard to case. A file whose extension isn't in 
 Says that a problem a processor reports is intended: the author has looked at it and keeps it. An acknowledgement names one check and gives a reason, and it applies to one page, one block, one heading, or one content model entry.
 
 ```
-@intended {check=link-dead}: help.example.com refuses link checkers; checked by hand.
+@intended {check=link-external-broken}: help.example.com refuses link checkers; checked by hand.
 Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 ```
 
