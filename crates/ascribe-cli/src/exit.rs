@@ -41,7 +41,9 @@ mod tests {
     use std::path::PathBuf;
 
     use ascribe_check::prose::EjectError;
-    use ascribe_check::{BaselineError, LoadError, LocateError, ScopeError, UnknownBuild};
+    use ascribe_check::{
+        BaselineError, DiagnoseError, LoadError, LocateError, ScopeError, UnknownBuild,
+    };
     use ascribe_core::Coded;
     use ascribe_diff::DiffError;
     use ascribe_emit::{EmitError, StoreError};
@@ -469,6 +471,11 @@ mod tests {
                 ReportError::PromptSection => {}
             }
         }
+        fn diagnose(e: &DiagnoseError) {
+            match e {
+                DiagnoseError::UnknownBuild(_) | DiagnoseError::Baseline(_) => {}
+            }
+        }
         fn eject(e: &EjectError) {
             match e {
                 EjectError::NoPreset { .. }
@@ -613,6 +620,7 @@ mod tests {
             scope,
             check,
             report,
+            diagnose,
             eject,
             format,
             emit,
@@ -777,6 +785,11 @@ mod tests {
                 message: text(),
             })),
             Box::new(BaselineCommandError::Unwritable(text())),
+            Box::new(DiagnoseError::UnknownBuild(unknown_build())),
+            Box::new(DiagnoseError::Baseline(BaselineError {
+                line: 1,
+                message: text(),
+            })),
             Box::new(ReportError::PromptSection),
             Box::new(EjectError::NoPreset { config: None }),
             Box::new(EjectError::Exists { path: text() }),

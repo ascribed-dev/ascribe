@@ -3,10 +3,10 @@
 ascribe init              [DIR] [--templates] [--format text|json]
 ascribe check             [PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--format text|concise|json|prompt] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]
 ascribe fmt               [--check] [PATHS]... [--format text|json]
-ascribe build             [--build <NAME>]... [--emit site,plain,json] [--format text|json] [--anchors]
+ascribe build             [--build <NAME>]... [--emit site,plain,json] [--format text|json] [--anchors] [--no-baseline]
 ascribe diff              [PAGE] [--base <REV>] [--base-exact] [--build <NAME>]... [--format text|json|html|prompt] [--exit-code] [--pages-only]
 ascribe drift             [--base <REV>] [--build <NAME>]... [--format text|json|markdown] [--exit-code]
-ascribe report            [SECTION]... [--format text|markdown|json|prompt] [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice|warning|error]
+ascribe report            [SECTION]... [--format text|markdown|json|prompt] [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--no-baseline] [--exit-code advice|warning|error]
 
 ascribe explain           [CODE] [--list] [--format text|json]
 ascribe model             [PATH] [--section types|frontmatter|fragments|dimensions|lifecycle|phrases|features|notes|glossary|images|widgets|releases|builds|sources|apis|from|intended|project|versions|consumer|editor|checks|crawlers|listing|permalinks] [--format text|json]

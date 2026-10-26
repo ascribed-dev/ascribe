@@ -217,11 +217,18 @@ impl Writer<'_> {
         self.heading("Problems")?;
         let counts = Counts::of(&p.diagnostics);
         let mut line = counts_words(counts);
+        let mut aside = Vec::new();
         if !p.acknowledged.is_empty() {
-            line.push_str(&format!(
-                ", and {} acknowledged as intended",
-                p.acknowledged.len()
-            ));
+            aside.push(format!("{} acknowledged as intended", p.acknowledged.len()));
+        }
+        if p.baselined > 0 {
+            aside.push(format!("{} in the baseline", p.baselined));
+        }
+        if let Some((last, rest)) = aside.split_last() {
+            for part in rest {
+                line.push_str(&format!(", {part}"));
+            }
+            line.push_str(&format!(", and {last}"));
         }
         self.line(&format!("{}.", capitalized(&line)))?;
         self.problems_since(p)?;

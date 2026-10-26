@@ -118,7 +118,7 @@ Checks the project, then writes each build's outputs. The checks run first, exac
 
 The Astro integration turns the source anchors that `--anchors` writes into attributes on every block's element ([site-render contract](../contracts/site-render.md#7-source-anchors)).
 
-The build prints each error in full, since errors stop it. Warnings and advice are only counted, in the check's summary line, with the command that lists each: `checked 8 files in every build: 0 errors, 1 warning, 3 advice: ascribe check for each`, or `checked 8 files in every build: no problems`. `--format json` prints exactly what `ascribe check --format json` does.
+The build prints each error in full, since errors stop it. Warnings and advice are only counted, in the check's summary line, with the command that lists each: `checked 8 files in every build: 0 errors, 1 warning, 3 advice: ascribe check for each`, or `checked 8 files in every build: no problems`. The advice the [baseline](baseline.md) holds back isn't counted with the rest, but after it, as `ascribe check` counts it: `no problems, 3412 in the baseline`. `--format json` prints exactly what `ascribe check --format json` does.
 
 Then it prints one line for each build it wrote, with the outputs it wrote, on standard error, with its warnings:
 
@@ -148,7 +148,7 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 |---|---|
 | `0` | Built |
 | `1` | The checks found errors; nothing was written |
-| `2` | The build couldn't run: a usage error, no `ascribe.toml`, a content model with errors, another build writing to the output directory, a file in the output directory that Ascribe didn't write and would have to overwrite, or two pages of the site output with the same route |
+| `2` | The build couldn't run: a usage error, no `ascribe.toml`, a content model with errors, an `ascribe.baseline` with a line that doesn't parse (`--no-baseline` builds without the file), another build writing to the output directory, a file in the output directory that Ascribe didn't write and would have to overwrite, or two pages of the site output with the same route |
 
 ## `ascribe fmt`
 @id {permalink=true}: cli-fmt
