@@ -716,7 +716,8 @@ reference = "writing/directives.md#variant"
 row = "`@variant` | Unknown dimension or value"
 message = "`{dimension}` isn't a declared dimension; the dimensions are: {dimensions}"
 messages.value = "`{value}` isn't a value of `{dimension}`; its values are: {values}"
-fix = "Use a dimension and value declared in `[dimensions]`, or declare them there."
+messages.none = "`{dimension}` isn't a declared dimension, and ascribe.toml declares none: add `[dimensions.{dimension}]` with `values = [{values}]`"
+fix = "Use a dimension and value declared in `[dimensions]`, or declare them there: `[dimensions.<name>]` with `values = [\"<value>\", …]`."
 example.wrong = '''
 ---
 title: Install Quill
@@ -2564,11 +2565,13 @@ reference = "writing/directives.md#snippet"
 row = "`@snippet` | File doesn't exist, or its source doesn't include it"
 message = "`{path}` doesn't exist in source `{source}`"
 messages.case = "`{path}` doesn't exist in source `{source}`, but `{actual}` does: names must match exactly, including case"
+messages.folder = "`{path}` doesn't exist in source `{source}`: the path is relative to the source's folder, `{folder}`, so it doesn't repeat it; the file is `{suggestion}`"
+messages.suggestion = "`{path}` doesn't exist in source `{source}`; did you mean `{suggestion}`?"
 messages.not-included = "`{path}` is in source `{source}`'s folder, but the source's `include` and `ignore` patterns don't make it readable"
 messages.link = "`{path}` is a symbolic link, or is in a linked folder, that leads out of source `{source}`'s folder or to a file its patterns don't make readable; a snippet doesn't follow a link out of its source"
 messages.no-copy = "`{path}` from source `{source}`, in another repository, hasn't been copied into this one; run `ascribe sources fetch`"
 messages.not-at-pin = "`{path}` isn't in source `{source}`'s repository at {commit}, the commit ascribe.lock pins; name the file where it is now, or change the code and run `ascribe sources update {source}`"
-fix = "Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`. For a link, name the file it leads to through a source that includes it. For a source in another repository, run `ascribe sources fetch` to copy the file. When the file isn't in the repository at the pinned commit, because it was moved or deleted there, `fetch` can't copy it: name the file where it is now, or change the code and move the pin with `ascribe sources update`."
+fix = "Fix the path. It's relative to the source's folder, so it doesn't repeat it: with `path = \"src\"`, `src/config.js` is `<source>:config.js`. When the message says the source's patterns leave the file out, it's a link, or it's in another repository, the reference page has the steps."
 
 [[diagnostic]]
 code = "ASC130"

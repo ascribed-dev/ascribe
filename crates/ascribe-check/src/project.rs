@@ -1,13 +1,13 @@
 //! The project the checks run on: the content model and the source files.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use ascribe_core::path::{normalize, relative_path};
-use ascribe_core::{Date, FileId, Issue, LineIndex, RelPath, Span};
+use ascribe_core::{AttributeValue, Date, FileId, Issue, LineIndex, RelPath, Span};
 use ascribe_model::{
     AddressFile, ContentModel, Lock, LockedSource, NavFile, PermalinkList, SourceBound,
 };
@@ -16,6 +16,7 @@ use ascribe_resolve::{
     CodeFile, CodeFiles, Committed, DiskFs, FileSystem, Layout, MemoFile, MemoStore, Personal,
     SourceSet,
 };
+use ascribe_syntax::{Block, BlockKind, DirectiveLine, ParseOptions, parse};
 
 use crate::Diagnostic;
 use crate::baseline::{BASELINE_FILE_ID, Baseline, BaselineError};
@@ -265,6 +266,9 @@ pub struct Project {
     /// Whether the checks read the personal memos too: the editor's do, and
     /// `ascribe check`'s don't ([`Project::with_personal_memos`]).
     personal_memos: bool,
+    /// The values the pages' `@variant` arms give each dimension, read the
+    /// first time a check asks.
+    variant_values: OnceLock<BTreeMap<String, Vec<String>>>,
 }
 
 /// The file system a project probes for what isn't a source file. It has a
@@ -565,6 +569,7 @@ impl Project {
             memos: Arc::default(),
             all_memos: Arc::default(),
             personal_memos: false,
+            variant_values: OnceLock::new(),
         }
     }
 
@@ -979,6 +984,25 @@ impl Project {
         self.link_index = OnceLock::new();
     }
 
+    /// The values the pages' `@variant` arms give the dimension `name`, in
+    /// the order they're first given: what a `[dimensions.<name>]` table
+    /// for them would list. Read from every source file the first time any
+    /// dimension is asked for, which only a project that doesn't declare
+    /// the dimension does.
+    pub(crate) fn variant_values(&self, name: &str) -> &[String] {
+        let all = self.variant_values.get_or_init(|| {
+            let mut out: BTreeMap<String, Vec<String>> = BTreeMap::new();
+            // A file without the word has no arm to read, and a mention of
+            // it is cheap to look for.
+            for file in self.sources.iter().filter(|f| f.text.contains("@variant")) {
+                let options = ParseOptions::new(self.model.directive_schemas());
+                variant_values_in(&parse(&file.text, &options).blocks, &mut out);
+            }
+            out
+        });
+        all.get(name).map_or(&[], Vec::as_slice)
+    }
+
     /// The day the checks run on, if the caller gave one.
     pub fn today(&self) -> Option<Date> {
         self.today
@@ -1008,6 +1032,55 @@ impl SourceSet for Project {
         let mut pages: Vec<RelPath> = self.source_paths.values().cloned().collect();
         pages.sort();
         pages
+    }
+}
+
+/// Adds the values each `@variant` arm in `blocks` gives its dimensions to
+/// `out`, each once.
+fn variant_values_in(blocks: &[Block], out: &mut BTreeMap<String, Vec<String>>) {
+    for block in blocks {
+        match &block.kind {
+            BlockKind::Group(group) => {
+                for arm in &group.arms {
+                    opener_values(&arm.opener, out);
+                    variant_values_in(&arm.children, out);
+                }
+            }
+            BlockKind::Container(container) => {
+                opener_values(&container.opener, out);
+                variant_values_in(&container.children, out);
+            }
+            BlockKind::Directive(line) => opener_values(line, out),
+            BlockKind::BlockQuote(quote) => variant_values_in(&quote.children, out),
+            BlockKind::List(list) => {
+                for item in &list.items {
+                    variant_values_in(&item.children, out);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Adds the values a `@variant` opener's attributes give to `out`.
+fn opener_values(line: &DirectiveLine, out: &mut BTreeMap<String, Vec<String>>) {
+    let Some(block) = line.attributes.as_ref().filter(|_| line.name == "variant") else {
+        return;
+    };
+    for attribute in &block.attributes {
+        let values: Vec<String> = match &attribute.value {
+            Some(AttributeValue::Set { members, .. }) => {
+                members.iter().map(|m| m.text.clone()).collect()
+            }
+            Some(other) => other.as_text().map(str::to_owned).into_iter().collect(),
+            None => Vec::new(),
+        };
+        let known = out.entry(attribute.key.clone()).or_default();
+        for value in values {
+            if !known.contains(&value) {
+                known.push(value);
+            }
+        }
     }
 }
 
