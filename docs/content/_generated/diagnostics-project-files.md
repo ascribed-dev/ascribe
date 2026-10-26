@@ -45,15 +45,15 @@ Advice · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.
 
 ### ASC258 `addresses-build-gone`
 @id {permalink=true}: ASC258
-@summary: A build the base has and the working tree doesn't.
+@summary: A build the base has and the working tree doesn't, other than a line archived now.
 
 Advice · file level · next step: outside · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
-**When:** A build the base has and the working tree doesn't.
+**When:** A build the base has and the working tree doesn't, other than a line archived now.
 
 **Message:** the base has the build `{build}`, and ascribe.toml doesn't now, so its \{count} addresses aren't compared
 
-**Fix:** Nothing to do when the build was retired on purpose, as an older line is when it leaves the window: its addresses aren't compared, since builds are matched by name. When the build was renamed, its addresses are compared under its new name once the base has it.
+**Fix:** Nothing to do when the build was removed on purpose: its addresses aren't compared, since builds are matched by name. A line `[releases]` archives isn't reported: `ascribe versions retire` records where its addresses go. When the build was renamed, its addresses are compared under its new name once the base has it.
 
 **Read more:** [What the check reports](../publishing/redirects.md#what-the-check-reports) in the guide to keeping addresses.
 

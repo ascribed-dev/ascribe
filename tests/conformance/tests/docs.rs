@@ -1135,7 +1135,7 @@ fn index<'a>(entries: impl Iterator<Item = &'a Entry>, page_of: &BTreeMap<&str, 
             page = page_of[entry.code.as_str()],
             anchor = entry.code,
             slug = entry.slug,
-            severity = severity(entry.severity),
+            severity = shown_severity(entry),
             level = level(entry.level),
             next = next(entry),
         );
@@ -1180,7 +1180,7 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
         entry.slug,
         entry.code,
         summary(entry.summary.as_deref().or(condition)),
-        severity(entry.severity),
+        shown_severity(entry),
         level(entry.level).to_lowercase(),
         next(entry),
     );
@@ -1357,6 +1357,17 @@ fn place_words(place: &str) -> Option<&'static str> {
         "block" => Some("with `@intended` above the block, or under the heading for a heading"),
         "entry" => Some("in `[[intended]]`"),
         _ => None,
+    }
+}
+
+/// An entry's severity, as the reference shows it: with "off by default"
+/// for a check that's off unless a project names it in `[checks]`.
+fn shown_severity(entry: &Entry) -> String {
+    let shown = severity(entry.severity);
+    if entry.off_by_default {
+        format!("{shown}, off by default")
+    } else {
+        shown.to_owned()
     }
 }
 

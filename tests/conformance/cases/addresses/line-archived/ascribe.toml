@@ -1,0 +1,17 @@
+spec = "0.1"
+
+[dimensions.deployment]
+values = ["self-managed"]
+
+[consumer]
+profile = "astro"
+site = "https://docs.quill.dev"
+
+[releases.self-managed]
+live = ["3.5"]
+
+[releases.self-managed.archived]
+"3.4" = { url = "https://archive.quill.dev/3.4/", ended = 2026-06-30 }
+
+[builds.site]
+versions = "self-managed"

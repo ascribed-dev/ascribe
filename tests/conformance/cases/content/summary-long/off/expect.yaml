@@ -1,0 +1,10 @@
+description: >-
+  `summary-long` is off unless the project names it in `[checks]`, as
+  `summary-missing` is: a summary of 300 characters or more isn't reported.
+spec: ["4.12", "7.2"]
+tags: [check, page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics: []

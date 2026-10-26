@@ -367,7 +367,12 @@ fn checks_now(now: &ModelNow, file: Option<&ModelFile<'_>>, index: &LineIndex) -
                 area: area.to_owned(),
                 when: pieces(&sentence(entry.when.as_deref().unwrap_or_default())),
                 choices: choices.clone(),
-                default: entry.severity.as_str().to_owned(),
+                default: if entry.off_by_default {
+                    "off"
+                } else {
+                    entry.severity.as_str()
+                }
+                .to_owned(),
                 named: item.is_some(),
                 level: file
                     .and_then(|f| f.get(&level_at))

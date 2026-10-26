@@ -809,7 +809,7 @@ fn run_release(
         paths.sort();
         paths.dedup();
         if !args.force
-            && let Err(e) = restorable(&project, &config, &paths, "release")
+            && let Err(e) = restorable(&project, &config, &[], &paths, "release")
         {
             return answer::fail(err, &e);
         }
@@ -833,12 +833,14 @@ fn run_release(
     answer::written(result, err).unwrap_or(exit::OK)
 }
 
-/// Whether git can put back every file a command writes: `ascribe.toml`
-/// and each source file in `files`, by content path. Each is in a
+/// Whether git can put back every file a command writes: `ascribe.toml`,
+/// each file `beside` names beside it, and each source file in `files`, by
+/// content path. Each is in a
 /// repository, tracked, and unchanged.
 fn restorable(
     project: &ascribe_check::Project,
     config: &Path,
+    beside: &[&str],
     files: &[&RelPath],
     command: &'static str,
 ) -> Result<(), VersionsError> {
@@ -858,6 +860,7 @@ fn restorable(
         .and_then(|n| n.to_str())
         .and_then(|n| RelPath::parse(n).ok());
     let mut paths: Vec<RelPath> = model_file.into_iter().collect();
+    paths.extend(beside.iter().filter_map(|name| RelPath::parse(name).ok()));
     paths.extend(files.iter().map(|f| project.layout().project_path(f)));
     let found = repo
         .not_restorable(&paths)
@@ -1344,6 +1347,12 @@ pub(crate) struct RetireJson {
     /// same page in the current line, the page that replaces it there, or
     /// its page in the archive.
     redirects: Vec<RedirectJson>,
+    /// Whether `ascribe.addresses` records the redirects that go to a page
+    /// in the current line, in `[moved]` keyed by the address, so the build
+    /// writes them: true when the project has the file and the line has
+    /// one. With `--dry-run`, whether it would. Those to the archive are
+    /// never recorded.
+    recorded: bool,
     /// The outputs of builds that aren't lines of the target that the
     /// rewrite changes, by build and output: they need `--force`, and a dry
     /// run lists them.
@@ -1445,6 +1454,7 @@ impl RetireJson {
                     to: d.to.clone(),
                 })
                 .collect(),
+            recorded: r.recorded > 0,
             outputs: r
                 .builds_changed
                 .iter()
@@ -1494,8 +1504,15 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
     {
         let (unused, removals) = ascribe_lsp::unused_in(&project, &target, args.remove_unused);
         if !args.dry_run
-            && let Some(code) =
-                write_files(&project, &config, None, &[], &removals, args.force, err)
+            && let Some(code) = write_files(
+                &project,
+                &config,
+                (None, None),
+                &[],
+                &removals,
+                args.force,
+                err,
+            )
         {
             return code;
         }
@@ -1513,6 +1530,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
             unused: unused_json(&unused, project.layout()),
             removed: !removals.is_empty(),
             redirects: Vec::new(),
+            recorded: false,
             outputs: Vec::new(),
             from: from.as_deref().map(answer::path_from_here),
         };
@@ -1543,7 +1561,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         if let Some(code) = write_files(
             &project,
             &config,
-            Some(&retired.model_text),
+            (Some(&retired.model_text), retired.addresses_text.as_deref()),
             &rewritten,
             &retired.removals,
             args.force,
@@ -1597,13 +1615,14 @@ fn write_lines_from(out: &mut dyn Write, target: &str, from: &Path) -> io::Resul
     )
 }
 
-/// Writes `ascribe.toml`'s new text, each rewritten file, and then each
-/// removal, a deletion for `None`, once git says each can be put back,
-/// unless `force`. `Some` is the exit code of a failure, reported.
+/// Writes `ascribe.toml`'s new text, `ascribe.addresses`', each rewritten
+/// file, and then each removal, a deletion for `None`, once git says each
+/// can be put back, unless `force`. `Some` is the exit code of a failure,
+/// reported.
 fn write_files(
     project: &ascribe_check::Project,
     config: &Path,
-    model_text: Option<&str>,
+    (model_text, addresses_text): (Option<&str>, Option<&str>),
     rewritten: &[(&RelPath, &str)],
     removals: &[(RelPath, Option<String>)],
     force: bool,
@@ -1613,16 +1632,27 @@ fn write_files(
     paths.extend(removals.iter().map(|(p, _)| p));
     paths.sort();
     paths.dedup();
-    if paths.is_empty() && model_text.is_none() {
+    if paths.is_empty() && model_text.is_none() && addresses_text.is_none() {
         return None;
     }
-    if !force && let Err(e) = restorable(project, config, &paths, "retirement") {
+    let beside: &[&str] = if addresses_text.is_some() {
+        &[ascribe_model::ADDRESSES_FILE]
+    } else {
+        &[]
+    };
+    if !force && let Err(e) = restorable(project, config, beside, &paths, "retirement") {
         return Some(answer::fail(err, &e));
     }
     let content = project.root().join(project.content_root().as_str());
     let mut writes: Vec<(PathBuf, Option<&str>)> = Vec::new();
     if let Some(text) = model_text {
         writes.push((config.to_path_buf(), Some(text)));
+    }
+    if let Some(text) = addresses_text {
+        writes.push((
+            config.with_file_name(ascribe_model::ADDRESSES_FILE),
+            Some(text),
+        ));
     }
     for (path, text) in rewritten {
         if !removals.iter().any(|(p, _)| p == *path) {
@@ -1891,6 +1921,31 @@ fn write_retire(
             if rest == 1 { "" } else { "es" },
             if rest == 1 { "es" } else { "" }
         )?;
+    }
+    if r.recorded > 0 {
+        writeln!(
+            out,
+            "{} {} address{} in {}, each to its page in the current line, so the build redirects {}.",
+            if dry { "Would record" } else { "Recorded" },
+            r.recorded,
+            if r.recorded == 1 { "" } else { "es" },
+            ascribe_model::ADDRESSES_FILE,
+            if r.recorded == 1 { "it" } else { "them" }
+        )?;
+        let archived = r.redirects.len() - r.recorded;
+        if archived > 0 {
+            writeln!(
+                out,
+                "{} that go{} to the archive {} your host's to redirect.",
+                if archived == 1 {
+                    "The one".to_owned()
+                } else {
+                    format!("The {archived}")
+                },
+                if archived == 1 { "es" } else { "" },
+                if archived == 1 { "is" } else { "are" }
+            )?;
+        }
     }
     if dry {
         writeln!(out, "Dry run: nothing written.")?;

@@ -110,13 +110,20 @@ Advice the project's [baseline](baseline.md), `ascribe.baseline`, holds back isn
 @id {permalink=true}: cli-build
 
 @summary
-Checks the project, then writes each build's outputs. The checks run first, exactly as `ascribe check` runs them, and print what it prints. **If any check finds an error, nothing is written, for any build.**
+Checks the project, then writes each build's outputs. The checks run first, exactly as `ascribe check` runs them. **If any check finds an error, nothing is written, for any build.**
 
 @include: ../_generated/cli-build-options.md
 
 The Astro integration turns the source anchors that `--anchors` writes into attributes on every block's element ([site-render contract](../contracts/site-render.md#7-source-anchors)).
 
-Progress (`built cloud/plain: 3 pages, 2 assets`) and warnings go to standard error.
+The build prints each error in full, since errors stop it. Warnings and advice are only counted, in the check's summary line, with the command that lists each: `checked 8 files in every build: 0 errors, 1 warning, 3 advice: ascribe check for each`, or `checked 8 files in every build: no problems`. `--format json` prints exactly what `ascribe check --format json` does.
+
+Then it prints one line for each build it wrote, with the outputs it wrote, on standard error, with its warnings:
+
+```text
+built site: 6 pages, 2 assets (site, plain, json)
+built cloud: 3 pages, 2 assets (site, plain, json)
+```
 
 ### Outputs
 

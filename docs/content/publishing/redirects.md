@@ -71,7 +71,7 @@ With the file, `ascribe check` lists every address the base published, in each b
 
 - **[`address-lost`](../checks/diagnostics/project-files.md#ASC255)**, a warning: a page's address, or its Markdown version's, once for each page, listing its addresses and, when it isn't every build, the builds. Forward it with `ascribe addresses move`, or retire it with `ascribe addresses retire`.
 - **[`anchor-lost`](../checks/diagnostics/project-files.md#ASC256)**, advice: a heading's explicit `@id` the base published on a page still published, which the page doesn't have now. A link to it lands at the top of the page, so it's advice for now. A generated id isn't kept: it changes with the heading's text.
-- **[`addresses-build-gone`](../checks/diagnostics/project-files.md#ASC258)**, advice: a build the base has and `ascribe.toml` doesn't, whose addresses aren't compared.
+- **[`addresses-build-gone`](../checks/diagnostics/project-files.md#ASC258)**, advice: a build the base has and `ascribe.toml` doesn't, whose addresses aren't compared. A line's build isn't reported once `[releases]` archives the line: it left on purpose, and [`ascribe versions retire`](../versions/archive.md#retire-a-line) records where its addresses go.
 
 ```console
 $ git rm content/guides/teams/share-a-loom.md && ascribe check --base main --deny-warnings

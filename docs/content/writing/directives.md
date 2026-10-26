@@ -262,7 +262,7 @@ In VS Code, a code file says which pages show it: see [code files a page shows](
 Says that a problem a check reports is intended: you've looked at it and are keeping it. Write the check's name and why.
 
 ```markdown
-@intended {check=link-dead}: help.example.com refuses link checkers; checked by hand.
+@intended {check=link-external-broken}: help.example.com refuses link checkers; checked by hand.
 Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 ```
 

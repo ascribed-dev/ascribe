@@ -42,6 +42,8 @@ mod parity;
 mod permalinks_list;
 #[path = "all/prompt.rs"]
 mod prompt;
+#[path = "all/site.rs"]
+mod site;
 #[path = "all/snippets.rs"]
 mod snippets;
 #[path = "all/type_files.rs"]

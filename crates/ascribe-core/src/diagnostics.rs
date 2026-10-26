@@ -780,7 +780,7 @@ pub const ANCHOR_LOST: DiagnosticSlug = DiagnosticSlug("anchor-lost");
 pub const ADDRESSES_BASE_UNREADABLE: DiagnosticSlug = DiagnosticSlug("addresses-base-unreadable");
 
 /// `ASC258`, advice, file level: SPEC §8.2, "Addresses file | A build the base
-/// has and the working tree doesn't".
+/// has and the working tree doesn't, other than a line archived now".
 pub const ADDRESSES_BUILD_GONE: DiagnosticSlug = DiagnosticSlug("addresses-build-gone");
 
 /// `ASC259`, error, file level: a content model loader rule.
@@ -1203,6 +1203,11 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     ADDRESSES_BASE_UNREADABLE,
     API_OPERATION_UNREFERENCED,
 ];
+
+/// The configurable checks that are off unless a project names them in
+/// `[checks]`: the registry's entries with `off-by-default = true`, in
+/// registry order. A test keeps it equal to the registry.
+pub const OFF_BY_DEFAULT: &[DiagnosticSlug] = &[SUMMARY_MISSING, SUMMARY_LONG];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries
 /// whose next step is `review`, each with the place its problems are reported

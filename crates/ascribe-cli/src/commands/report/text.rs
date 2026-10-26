@@ -376,10 +376,11 @@ impl Writer<'_> {
                 .iter()
                 .map(|p| {
                     format!(
-                        "{}: {}; {} publishes it",
+                        "{}: {}; {} {} it",
                         self.code(p.path.as_str()),
                         p.why,
-                        names(&p.kept_by, |n| self.code(n))
+                        names(&p.kept_by, |n| self.code(n)),
+                        plural(p.kept_by.len(), "publishes", "publish"),
                     )
                 })
                 .collect();
@@ -394,11 +395,12 @@ impl Writer<'_> {
                     format!(", on {}", self.code(c.page.as_str()))
                 };
                 format!(
-                    "{} ({}{on}): {}; {} keeps it",
+                    "{} ({}{on}): {}; {} {} it",
                     self.code(&at),
                     c.kind,
                     c.why,
-                    names(&c.kept_by, |n| self.code(n))
+                    names(&c.kept_by, |n| self.code(n)),
+                    plural(c.kept_by.len(), "keeps", "keep"),
                 )
             }));
             self.items(&lines, |_, line| line.clone())?;
@@ -708,15 +710,17 @@ impl Writer<'_> {
             (_, 0) => line.push_str(&format!(", none of them new since {since}")),
             (_, k) => line.push_str(&format!(", {k} of them failing since {since}")),
         }
+        // The new checks are named next to what says they're new, before
+        // what's no longer failing, which they aren't.
+        if !new.is_empty() {
+            let ids: Vec<String> = new.iter().map(|id| self.code(id)).collect();
+            line.push_str(&format!(": {}", ids.join(", ")));
+        }
         if resolved > 0 {
             line.push_str(&format!(
                 "; {resolved} that failed on {since} no longer {}",
                 plural(resolved, "fails", "fail")
             ));
-        }
-        if !new.is_empty() {
-            let ids: Vec<String> = new.iter().map(|id| self.code(id)).collect();
-            line.push_str(&format!(": {}", ids.join(", ")));
         }
         line.push('.');
         self.line(&line)
