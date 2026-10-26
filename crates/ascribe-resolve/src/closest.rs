@@ -301,9 +301,20 @@ fn shares_words(short: &str, long: &str) -> bool {
     let short = words(short);
     let mut long = words(long).into_iter();
     !short.is_empty()
-        && short.iter().all(|word| {
-            long.any(|other| other.starts_with(word.as_str()) || word.starts_with(other.as_str()))
-        })
+        && short
+            .iter()
+            .all(|word| long.any(|other| word_matches(word, &other)))
+}
+
+/// Whether `word`, from the shorter id, stands for `other`: the same word,
+/// its first three letters or more (`inst` for `install`), or a word that
+/// starts it and is most of it (`webhook` for `webhooks`). A short word
+/// such as `a` or `in` starts too many to stand for any of them.
+fn word_matches(word: &str, other: &str) -> bool {
+    let length = |w: &str| w.chars().count();
+    word == other
+        || (other.starts_with(word) && length(word) >= 3)
+        || (word.starts_with(other) && length(other) >= 3 && length(other) * 3 >= length(word) * 2)
 }
 
 /// The pages a link to the missing page `written`, with the heading `id`,

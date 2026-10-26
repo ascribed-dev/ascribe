@@ -209,6 +209,28 @@ fn a_link_to_a_longer_or_shorter_id_is_offered_the_heading_it_shares_words_with(
     );
 }
 
+/// A short word in a heading, such as `a`, starts too many words to stand
+/// for the id's, so it doesn't rank that heading first or name it.
+#[test]
+fn a_short_heading_word_does_not_stand_for_the_id() {
+    let p = project(&[
+        ("index.md", &page("See [it](other.md#authentication).")),
+        (
+            "other.md",
+            &page("## A quick start\n\n## Authenticate users"),
+        ),
+    ]);
+    let found = page_level(&p);
+    assert_eq!(
+        found[0].fixes[0].edits[0].new_text,
+        "other.md#authenticate-users"
+    );
+    assert_eq!(
+        found[0].message,
+        "`other.md` has no heading with the id `authentication`"
+    );
+}
+
 /// With two headings equally likely, the message names neither.
 #[test]
 fn a_link_with_no_clear_closest_heading_names_none() {
