@@ -1042,7 +1042,7 @@ include = ["src/**", "examples/**"]
 - `path` is the source's folder, relative to the project's folder (the directory containing `ascribe.toml`). It MUST exist and be a directory. When the project is in a version-control repository, it MUST be inside that same repository.
 - `include` lists glob patterns (the content model's pattern syntax, as for `files`) matched against a file's path relative to the source's folder. A file is readable when a pattern matches it and no pattern in `ignore` does. Without `include`, every file in the folder matches. Whatever `ignore` lists, a file in a folder named `node_modules` or `.git`, at any depth, is never readable: a processor leaves both out before the source's own patterns.
 - Which files a source makes readable decides nothing else: a source's files aren't source files (§2.1), assets (§9.4), or pages.
-- **Tested examples.** A source MAY have, at its folder's root, an `ascribe.examples.toml` that says which of its files are examples, and beside it, in `examples.observations/`, the observations `ascribe observe` writes: what a test run passed, and where. A file is an example when the config's `include` matches it and its `ignore` doesn't. A snippet of an example that the observation lists with the hash its file has now carries what it was tested with in its code block's info string (§4.8). The config and the observations are read whatever the source's `include` says, and no snippet can address one: the source doesn't make `ascribe.examples.toml` or a file under `examples.observations/` readable. Checking, building, and an authoring environment read both files and MUST NOT run any command in them; only a command the person runs to observe the examples, `ascribe observe`, runs the config's commands. Their formats are in the tested examples contract (`docs/content/contracts/tested-examples.md`). For a source in another repository, they're copies (§7.4).
+- **Tested examples.** A source MAY have, at its folder's root, an `ascribe.examples.toml` that says which of its files are examples, and beside it, in `examples.observations/`, the observations `ascribe observe` writes: what a test run passed, and where. A file is an example when the config's `include` matches it and its `ignore` doesn't. A snippet of an example that the observation lists with the hash its file has now carries what it was tested with in its code block's info string (§4.8). The config and the observations are read whatever the source's `include` says, and no snippet can address one: the source doesn't make `ascribe.examples.toml` or a file under `examples.observations/` readable. Checking, building, and an authoring environment read both files and MUST NOT run any command in them; only a command the person runs to observe the examples, `ascribe observe`, runs the config's commands. Their formats are the tested examples contract's, a document of its own beside this specification, which a processor that reads or writes either file follows. For a source in another repository, they're copies (§7.4).
 
 ### 7.4 Sources in another repository
 
@@ -1124,7 +1124,8 @@ The agent goes first because its installer writes the config file that
 `quill init` reads.
 ```
 
-- The frontmatter has two keys. `about`, required, names what the memo is about, as a target of `ascribe refs` is written: a page or a fragment by its content path, a heading as the content path, `#`, and its id, a glossary term as `term:<id>`, or a content model entry as `phrase:<key>`, `feature:<key>`, `dimension:<name>`, `note:<type>`, or `widget:<name>`. A heading in a fragment is named in the fragment. A glossary term is its heading (§5.4): a memo about `term:<id>` is about that heading, where it's written. `quote`, optional, narrows the memo to the block whose source holds it; a content model entry has no text to quote. A memo is about one thing.
+- The frontmatter has two keys. `about`, required, names what the memo is about (ABNF rule `about-target`): a page or a fragment by its content path, a heading as the content path, `#`, and its id, a glossary term as `term:<id>`, or a content model entry as `phrase:<key>`, `feature:<key>`, `dimension:<name>`, `note:<type>`, or `widget:<name>`. A heading in a fragment is named in the fragment. A glossary term is its heading (§5.4): a memo about `term:<id>` is about that heading, where it's written. `quote`, optional, narrows the memo to the block whose source holds it; a content model entry has no text to quote. A memo is about one thing.
+- **How `about` is read.** Its value, with the whitespace around it taken off, MUST match `about-target`; a memo file whose `about` doesn't is an error. A value that starts with one of the six prefixes and `:` names an entry, and its name may be written in braces, as a phrase is on a page: `phrase:{product}`. Any other value is a content path: segments parted by `/`, none of them empty, `.`, or `..`, after an optional `./`, and percent-decoded as a link destination is (§5.2). The first `#` ends the path, and what follows it is the heading's id, as written. So a `#` in a file's name is written `%23`, a `%` is written `%25`, and a path whose first segment starts like an entry, such as `term:basics.md`, is written `./term:basics.md`. Prefixes, names, paths, and ids are compared as written, so case counts: `Phrase:product` is a path, and `phrase:Product` names no phrase, since a phrase's key is lowercase. A processor that writes an `about` writes it so that it reads back the same.
 - The body is CommonMark, shown as written. Nothing in it is a phrase, a link a processor checks, an include, or a heading with an id.
 - A memo's place is worked out each time it's read, and nothing is written back to the file. With no `quote`, it's **placed** on what `about` names. With one, the blocks of what `about` names (a page's or fragment's, or a heading's section) are searched in source order, each block's source as written, whitespace runs read as one space and case kept; the first that holds the quote is the memo's block, and the memo is placed there. A quote across two blocks isn't found. A quote that no block holds makes the memo **outdated**: it stays on the page or section. An `about` that names nothing in the project makes the memo **detached**.
 - `memos/` MUST NOT be inside the content root, where its files would be pages; it is when the content root is the project's folder.
@@ -1698,6 +1699,19 @@ info-word       = info-pair / info-other                     ; a word that is an
 info-pair       = key "=" ( info-token / quoted )
 info-token      = 1*( %x21 / %x23-7E / UTF8-non-ascii )      ; no whitespace or DQUOTE
 info-other      = 1*( %x21-7E / UTF8-non-ascii )
+
+about-target    = about-entry / about-path [ "#" about-id ]   ; §7.7; a value that
+                                        ; starts with an about-prefix and ":" is an
+                                        ; about-entry
+about-entry     = about-prefix ":" ( about-name / "{" about-name "}" )
+about-prefix    = %s"term" / %s"phrase" / %s"feature" / %s"dimension" / %s"note"
+                / %s"widget"
+about-name      = 1*( %x21-7A / %x7C / %x7E / UTF8-non-ascii ) ; no whitespace, "{", or "}"
+about-path      = [ "./" ] about-segment *( "/" about-segment )
+                                        ; percent-decoded, as a link destination (§5.2)
+about-segment   = 1*( %x20-22 / %x24-2E / %x30-7E / UTF8-non-ascii )
+                                        ; no "/" or "#"; not "." or ".."
+about-id        = 1*( %x21-7E / UTF8-non-ascii )             ; no whitespace
 
 availability    = entry *( OWS "," OWS entry ) / feature-key
 entry           = target [ RWS detail ]

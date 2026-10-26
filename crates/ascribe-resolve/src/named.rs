@@ -1,9 +1,11 @@
-//! What `ascribe refs` and a memo file's `about` name (SPEC §7.7): a page or
-//! a fragment by its content path, a heading as `page.md#id`, or a content
-//! model entry as `<prefix>:<name>`, such as `phrase:product`. This is the
-//! one reading of that grammar.
+//! What a memo file's `about` names (SPEC §7.7, ABNF rule `about-target`),
+//! and `ascribe refs` takes: a page or a fragment by its content path, a
+//! heading as `page.md#id`, or a content model entry as `<prefix>:<name>`,
+//! such as `phrase:product`. This is the one reading of that grammar, and
+//! [`Named::written`] the one writing of it.
 
 use ascribe_core::RelPath;
+use ascribe_core::path::percent_decode;
 
 use crate::project::Project;
 use crate::uses::Usable;
@@ -64,36 +66,49 @@ pub struct BadTarget {
 }
 
 impl Named {
-    /// A content model entry, when `given` starts with one of [`PREFIXES`]
-    /// and a colon, or else a content path with an optional `#id`.
+    /// What a memo file's `about` names, by the ABNF rule `about-target`: a
+    /// content model entry, when `given` starts with one of [`PREFIXES`] and
+    /// a colon, or else a content path, percent-decoded, with an optional
+    /// `#id`.
     ///
     /// # Errors
     ///
-    /// Nothing follows the colon, or `given` isn't a content path.
+    /// `given` doesn't match the rule.
     pub fn parse(given: &str) -> Result<Named, BadTarget> {
-        Named::entry(given).unwrap_or_else(|| Named::path(given))
+        Named::entry(given).unwrap_or_else(|| Named::about_path(given))
     }
 
     /// A content model entry, when `given` starts with one of [`PREFIXES`]
-    /// and a colon: `phrase:product`.
+    /// and a colon: `phrase:product`, or `phrase:{product}`, as a phrase is
+    /// written. The prefix and the name are compared as written, so case
+    /// counts.
     ///
     /// # Errors
     ///
-    /// Nothing follows the colon.
+    /// Nothing follows the colon, or the name has whitespace or a brace.
     pub fn entry(given: &str) -> Option<Result<Named, BadTarget>> {
         let (prefix, name) = given.split_once(':')?;
         let (_, kind) = PREFIXES.iter().find(|(p, _)| *p == prefix)?;
-        let name = name.trim();
-        // `phrase:{product}` names `phrase:product`.
         let name = name
             .strip_prefix('{')
             .and_then(|n| n.strip_suffix('}'))
             .unwrap_or(name);
-        if name.is_empty() {
-            return Some(Err(BadTarget {
+        let bad = |reason: String| {
+            Some(Err(BadTarget {
                 given: given.to_owned(),
-                reason: format!("give a name after `{prefix}:`"),
-            }));
+                reason,
+            }))
+        };
+        if name.is_empty() {
+            return bad(format!("give a name after `{prefix}:`"));
+        }
+        if name
+            .chars()
+            .any(|c| c == ' ' || c.is_ascii_control() || c == '{' || c == '}')
+        {
+            return bad(format!(
+                "the name after `{prefix}:` has a space or a brace, which no name has"
+            ));
         }
         Some(Ok(Named::Entry {
             kind: *kind,
@@ -101,8 +116,56 @@ impl Named {
         }))
     }
 
-    /// A file and an optional heading, from a content path with an optional
-    /// `#id`.
+    /// A file and an optional heading, from a content path, as `about`
+    /// writes one: segments parted by `/`, after an optional `./`, none
+    /// empty, `.`, or `..`, and percent-decoded as a link destination is,
+    /// then an optional `#` and an id. The first `#` ends the path, so a
+    /// `#` in a file's name is written `%23`.
+    fn about_path(given: &str) -> Result<Named, BadTarget> {
+        let bad = |reason: &str| BadTarget {
+            given: given.to_owned(),
+            reason: reason.to_owned(),
+        };
+        let (path, id) = match given.split_once('#') {
+            Some((path, id)) => (path, Some(id)),
+            None => (given, None),
+        };
+        if let Some(id) = id {
+            if id.is_empty() {
+                return Err(bad("give a heading's id after `#`, or leave the `#` out"));
+            }
+            if id.chars().any(|c| c == ' ' || c.is_ascii_control()) {
+                return Err(bad("a heading's id has no spaces or tabs"));
+            }
+        }
+        let path = path.strip_prefix("./").unwrap_or(path);
+        if path.is_empty() {
+            return Err(bad(
+                "give a page's or a fragment's content path, or an entry such as `phrase:product`",
+            ));
+        }
+        if path
+            .split('/')
+            .any(|seg| seg.is_empty() || seg == "." || seg == "..")
+        {
+            return Err(bad(
+                "a content path has no empty, `.`, or `..` segments, and doesn't start with `/`",
+            ));
+        }
+        if path.chars().any(|c| c.is_ascii_control()) {
+            return Err(bad("a content path has no tabs or line breaks"));
+        }
+        let path = RelPath::parse(&percent_decode(path)).map_err(|_| {
+            bad("it isn't a path in the project, or an entry such as `phrase:product`")
+        })?;
+        Ok(Named::Path {
+            path,
+            id: id.map(str::to_owned),
+        })
+    }
+
+    /// A file and an optional heading, from a content path as the command
+    /// line gives it, not decoded, with an optional `#id`.
     ///
     /// # Errors
     ///
@@ -121,6 +184,32 @@ impl Named {
             path,
             id: id.map(str::to_owned),
         })
+    }
+
+    /// How a memo file's `about` writes this, which [`Named::parse`] reads
+    /// back: a path's `%` and `#` percent-encoded, and `./` before a path
+    /// that would read as an entry.
+    pub fn written(&self) -> String {
+        match self {
+            Named::Entry { kind, name } => {
+                let prefix = PREFIXES
+                    .iter()
+                    .find(|(_, k)| k == kind)
+                    .map_or("", |(p, _)| p);
+                format!("{prefix}:{name}")
+            }
+            Named::Path { path, id } => {
+                let mut out = path.as_str().replace('%', "%25").replace('#', "%23");
+                if Named::entry(&out).is_some() {
+                    out.insert_str(0, "./");
+                }
+                if let Some(id) = id {
+                    out.push('#');
+                    out.push_str(id);
+                }
+                out
+            }
+        }
     }
 
     /// The thing in `project` this names, when it exists. A page's heading

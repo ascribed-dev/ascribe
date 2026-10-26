@@ -8,8 +8,8 @@ use std::sync::Arc;
 
 use ascribe_core::{FileId, RelPath};
 use ascribe_resolve::{
-    Committed, Invalid, Layout, MemoFile, MemoState, MemoStore, MemoryFs, Personal, Project,
-    Usable, folder_in_content, is_memo_path, place,
+    Committed, EntryKind, Invalid, Layout, MemoFile, MemoState, MemoStore, MemoryFs, Named,
+    Personal, Project, Usable, folder_in_content, is_memo_path, place,
 };
 
 const MODEL: &str = r#"
@@ -160,6 +160,90 @@ fn a_memo_without_a_quote_is_on_what_it_names() {
             "{about}"
         );
     }
+}
+
+#[test]
+fn about_is_read_by_the_about_target_rule() {
+    let file = |p: &str, id: Option<&str>| Named::Path {
+        path: path(p),
+        id: id.map(str::to_owned),
+    };
+    let phrase = |name: &str| Named::Entry {
+        kind: EntryKind::Phrase,
+        name: name.to_owned(),
+    };
+    for (about, named) in [
+        ("c%23-notes.md", file("c#-notes.md", None)),
+        (
+            "c%23-notes.md#install",
+            file("c#-notes.md", Some("install")),
+        ),
+        ("c#-notes.md", file("c", Some("-notes.md"))),
+        ("100%25.md", file("100%.md", None)),
+        ("./guide.md", file("guide.md", None)),
+        ("my notes/guide.md", file("my notes/guide.md", None)),
+        ("./phrase:product", file("phrase:product", None)),
+        ("Phrase:product", file("Phrase:product", None)),
+        ("phrase:Product", phrase("Product")),
+        ("phrase:{product}", phrase("product")),
+        ("guide.md#a#b", file("guide.md", Some("a#b"))),
+    ] {
+        assert_eq!(Named::parse(about), Ok(named), "{about}");
+    }
+    for about in [
+        "guide.md#",
+        "guide.md#an id",
+        "#install",
+        "phrase:",
+        "phrase:{}",
+        "phrase:pro duct",
+        "phrase:{product",
+        "../guide.md",
+        "a/./guide.md",
+        "a//guide.md",
+        "/guide.md",
+        ".",
+        "a\tb.md",
+    ] {
+        assert!(Named::parse(about).is_err(), "{about}");
+    }
+}
+
+#[test]
+fn an_about_written_reads_back_the_same() {
+    for named in [
+        Named::Path {
+            path: path("c#-notes.md"),
+            id: Some("install".to_owned()),
+        },
+        Named::Path {
+            path: path("100%.md"),
+            id: None,
+        },
+        Named::Path {
+            path: path("term:basics.md"),
+            id: None,
+        },
+        Named::Path {
+            path: path("guides/install.md"),
+            id: None,
+        },
+        Named::Entry {
+            kind: EntryKind::Widget,
+            name: "api-card".to_owned(),
+        },
+    ] {
+        assert_eq!(
+            Named::parse(&named.written()),
+            Ok(named.clone()),
+            "{named:?}"
+        );
+    }
+    let plain = Named::Path {
+        path: path("guides/install.md"),
+        id: Some("npm".to_owned()),
+    };
+    assert_eq!(plain.written(), "guides/install.md#npm");
 }
 
 #[test]
