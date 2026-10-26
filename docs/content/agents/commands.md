@@ -180,7 +180,7 @@ Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextpr
 | `ascribe_resolve` | `ascribe resolve`, and its `go:<name>` with `project` to find the project. `emit` is its `--emit`, `plain` (the default) or `site`, to read the page [as the site output gives it](../command/site-output.md), and isn't for `go:<name>` |
 | `ascribe_fmt` | `ascribe fmt --check --format json`: the edits, and nothing written |
 | `ascribe_diff` | `ascribe diff --format json --pages-only`, or with `blocks` each changed block too |
-| `ascribe_rename` | `ascribe rename --format json`, with `target` and `new`: each changed file's whole `text`, the page that `moved`, and the entries `recorded` in `ascribe.addresses`, with `written` false and nothing written or moved |
+| `ascribe_rename` | `ascribe rename --format json`, with `target` and `new`, and `project` to find the project for a target that isn't a path: each changed file's whole `text`, the page that `moved`, and the entries `recorded` in `ascribe.addresses`, with `written` false and nothing written or moved |
 | `ascribe_addresses_move` | `ascribe addresses move --format json`, with `old` and `new`, or `from_git` with `base` and `base_exact`: the `edits` that record the move in `ascribe.addresses`, and nothing written |
 | `ascribe_addresses_retire` | `ascribe addresses retire --format json`, with `old` and `reason`: the `edits` that retire it, and nothing written |
 

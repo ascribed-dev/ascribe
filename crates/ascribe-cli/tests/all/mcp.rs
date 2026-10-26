@@ -1331,7 +1331,7 @@ fn call_in_project(tool: &str) -> Value {
         "ascribe_resolve" => json!({ "page": "docs/install.md", "build": "cloud" }),
         "ascribe_fmt" | "ascribe_format" => json!({ "paths": ["docs"] }),
         "ascribe_diff" | "ascribe_changes" => json!({ "base": "HEAD" }),
-        "ascribe_rename" => json!({ "target": "keys.md", "new": "api-keys.md" }),
+        "ascribe_rename" => json!({ "target": "keys.md", "new": "api-keys.md", "project": "." }),
         "ascribe_addresses_move" => json!({ "old": "keys.md", "new": "api-keys.md" }),
         "ascribe_addresses_retire" => json!({ "old": "keys.md", "reason": "Removed." }),
         other => panic!("{other} is a new tool: give it a call here"),
@@ -1704,6 +1704,53 @@ fn an_agent_moves_a_page_with_the_rename_tool() {
         .map(|d| d["slug"].as_str().unwrap())
         .collect();
     assert!(!codes.contains(&"address-lost"), "{report}");
+}
+
+/// `ascribe_rename` renames a phrase in the project `project` names, from a
+/// server started above it, as `ascribe rename --config` does; without
+/// `project`, there's no project at or above the server's folder.
+#[test]
+fn rename_finds_the_project_an_entry_is_in_from_project() {
+    let repo = repository();
+    let root = repo.path();
+    let before = contents(root);
+    let mut server = Server::start(root);
+    let message = server.call_error(
+        "ascribe_rename",
+        json!({ "target": "phrase:product", "new": "brand" }),
+    );
+    assert!(message.contains("ascribe.toml"), "{message}");
+
+    let (_, renamed) = server.call_ok(
+        "ascribe_rename",
+        json!({ "target": "phrase:product", "new": "brand", "project": "site" }),
+    );
+    assert_eq!(contents(root), before, "the tool wrote");
+    let files: Vec<&str> = renamed["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|f| f["file"].as_str().unwrap())
+        .collect();
+    assert!(files.contains(&"site/ascribe.toml"), "{renamed}");
+    assert!(files.contains(&"site/docs/install.md"), "{renamed}");
+
+    let out = ascribe(
+        root,
+        &[
+            "rename",
+            "phrase:product",
+            "brand",
+            "--config",
+            "site",
+            "--format",
+            "json",
+        ],
+    );
+    assert!(out.status.success(), "{out:?}");
+    let mut command: Value = serde_json::from_slice(&out.stdout).unwrap();
+    command["written"] = json!(false);
+    assert_eq!(renamed, command);
 }
 
 /// A tool's old name calls the tool, and `tools/list` gives it as the tool

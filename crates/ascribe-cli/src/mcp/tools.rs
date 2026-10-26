@@ -474,6 +474,11 @@ pub const TOOLS: &[Spec] = &[
                         "description": "The new name: a phrase's key, a value, or an id. For a \
                             page or fragment, where it moves to, read as `target` is.",
                     },
+                    "project": {
+                        "type": "string",
+                        "description": "A file or folder in the project, for a target that \
+                            isn't a path. By default, the server's working directory.",
+                    },
                 },
                 "required": ["target", "new"],
                 "additionalProperties": false,
@@ -1113,7 +1118,8 @@ fn call_rename(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String>
         new: a.string("new")?.unwrap_or_default(),
         format: Format::Json,
     };
-    let answer = rename::answer(&server.cache, &global(), &args, false).map_err(|s| s.message)?;
+    let global = global_at(a.path("project")?.as_deref())?;
+    let answer = rename::answer(&server.cache, &global, &args, false).map_err(|s| s.message)?;
     json_result(&answer.json)
 }
 
