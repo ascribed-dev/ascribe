@@ -315,7 +315,7 @@ fn describe_resolution(ctx: &Ctx, resolution: &Resolution, destination: &str) ->
 /// An operation's method, in capitals, and its path: `GET /users/{id}`, as
 /// a reference shows it.
 pub(crate) fn method_and_path(operation: &Operation) -> String {
-    format!("{} {}", operation.method.to_uppercase(), operation.path)
+    operation.method_and_path_shown()
 }
 
 /// What a link to an operation names: its method and path, its summary,

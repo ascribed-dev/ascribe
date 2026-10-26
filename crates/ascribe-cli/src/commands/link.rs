@@ -59,13 +59,29 @@ pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<L
         .join(from.as_str())
         .map_or_else(|_| from.to_string(), |path| path.to_string());
     let named = answer::from_here(project.root(), &in_project);
-    Ok(ascribe_query::link(
+    let link = ascribe_query::link(
         loaded.index(),
         project.file_system(),
         &from,
         &named,
         &args.target,
-    )?)
+    )?;
+    // A link to an operation the spec doesn't have is answered again with
+    // the base's specs, as `ascribe check` checks it: an id renamed since is
+    // answered with the operation now at its method and path.
+    if link.kind == ascribe_query::LinkKind::Operation
+        && !link.exists
+        && let Some(index) = loaded.index_with_base_apis()
+    {
+        return Ok(ascribe_query::link(
+            index,
+            project.file_system(),
+            &from,
+            &named,
+            &args.target,
+        )?);
+    }
+    Ok(link)
 }
 
 fn link(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {

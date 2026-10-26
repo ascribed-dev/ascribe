@@ -1,5 +1,5 @@
 description: >-
-  Checked on no day, no review is overdue: the date is given to the checks,
+  Checked on no day, no recheck is overdue: the date is given to the checks,
   which don't read a clock.
 spec: ["7.2", "8.2"]
 tags: [check]

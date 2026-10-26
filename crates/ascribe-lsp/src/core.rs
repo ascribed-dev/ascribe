@@ -1197,9 +1197,12 @@ impl Core {
     pub(crate) fn did_change_watched(&mut self, events: Vec<FileEvent>) {
         // This page's rows read files the snapshot doesn't hold.
         self.page_uses.forget();
-        // Whatever changed on disk, the addresses are compared again: a
-        // page moved or deleted, `ascribe.addresses` written, a pull.
-        self.addresses.changed();
+        // The addresses are compared again only for a change they read: a
+        // page moved or deleted, a side file as `ascribe.addresses` written,
+        // the model or a spec, or git's refs in a pull. A build's output
+        // isn't one, and would keep the server busy for `addresses::SETTLE`
+        // after each write.
+        let mut addresses = false;
         let mut sync_model = false;
         let mut memos = false;
         let mut changes: Vec<Change> = Vec::new();
@@ -1213,6 +1216,12 @@ impl Core {
             let Some(path) = Core::doc_path(&event.uri) else {
                 continue;
             };
+            if is_git_ref(&path) {
+                // The base is the merge base of `HEAD` and the default
+                // branch.
+                addresses = true;
+                continue;
+            }
             if self.from_files.contains(&path) {
                 // What `[from]` takes is the model's, wherever the file is.
                 sync_model = true;
@@ -1221,9 +1230,10 @@ impl Core {
             if let Some(loaded) = self.loaded.as_ref() {
                 if crate::shown::used_by_a_source(&loaded.root, &loaded.model, &path) {
                     refresh = true;
-                } else if !self.spec_files.contains(&path)
-                    && !relative_path(&loaded.root, &path).is_some_and(|p| p.is_inside())
-                {
+                } else if self.spec_files.contains(&path) {
+                    // An API's pages are published from its spec.
+                    addresses = true;
+                } else if !relative_path(&loaded.root, &path).is_some_and(|p| p.is_inside()) {
                     // Outside the project, only a source's files matter: a
                     // build's output in a source's folder isn't walked.
                     continue;
@@ -1274,6 +1284,7 @@ impl Core {
                 }
                 indexed |= entry.stale.index;
                 baseline |= entry.stale.every_file;
+                addresses = true;
                 continue;
             }
             memos |= self
@@ -1330,6 +1341,7 @@ impl Core {
             if let Some(loaded) = self.loaded.as_mut() {
                 if source || before != Some(loaded.inc.version()) {
                     loaded.across_dirty = true;
+                    addresses = true;
                 }
                 for path in written {
                     self.forced.insert(loaded.source_path(&path));
@@ -1360,6 +1372,9 @@ impl Core {
         }
         if refresh {
             self.refresh_lenses();
+        }
+        if addresses || sync_model {
+            self.addresses.changed();
         }
         self.pages_changed(&redrawn);
     }
@@ -1836,6 +1851,21 @@ impl Core {
     }
 }
 
+/// Whether `path` is one of git's refs, which a commit, a checkout, or a
+/// pull writes: `.git/HEAD`, `.git/packed-refs`, or a file under
+/// `.git/refs`.
+fn is_git_ref(path: &Path) -> bool {
+    let mut parts = path.components().map(|c| c.as_os_str());
+    if !parts.any(|part| part == ".git") {
+        return false;
+    }
+    match parts.next() {
+        Some(part) if part == "HEAD" || part == "packed-refs" => parts.next().is_none(),
+        Some(part) => part == "refs",
+        None => false,
+    }
+}
+
 /// The nearest `ascribe.toml` at or above a workspace folder, trying the
 /// folders in order. It never looks below a folder.
 fn find_config(folders: &[PathBuf]) -> Option<PathBuf> {
@@ -2129,6 +2159,17 @@ impl Core {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn git_s_refs_are_head_packed_refs_and_the_files_under_refs() {
+        let repo = PathBuf::from("repo");
+        for path in [".git/HEAD", ".git/packed-refs", ".git/refs/heads/main"] {
+            assert!(is_git_ref(&repo.join(path)), "{path}");
+        }
+        for path in [".git/objects/ab/cd", ".git/index", "HEAD", "refs/x", ".git"] {
+            assert!(!is_git_ref(&repo.join(path)), "{path}");
+        }
+    }
 
     #[test]
     fn the_start_message_names_the_project() {

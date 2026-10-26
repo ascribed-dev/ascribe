@@ -1,5 +1,5 @@
 //! The checks about a page's content rather than its validity, which a
-//! project can set the level of: a page's description and its review date,
+//! project can set the level of: a page's description and its recheck date,
 //! read from the fields the content type gives those roles (SPEC §7.2), and
 //! code blocks without a language.
 
@@ -20,7 +20,7 @@ const MAX_OPENING: usize = 600;
 const MAX_CODE_LINES: usize = 5;
 
 impl Ctx<'_> {
-    /// `page-description-missing` and `review-overdue`, on a page whose
+    /// `page-description-missing` and `recheck-overdue`, on a page whose
     /// frontmatter is `value`.
     pub(super) fn check_roles(
         &mut self,
@@ -44,12 +44,12 @@ impl Ctx<'_> {
             .with_arg("opening", self.opening(value));
             self.report(issue);
         }
-        if let Some(field) = schema.field_with_role(FieldRole::ReviewDate)
-            && let Some(due) = roles::review_date(field, value)
-            && roles::review_overdue(checks, self.project.today(), due)
+        if let Some(field) = schema.field_with_role(FieldRole::RecheckDate)
+            && let Some(due) = roles::recheck_date(field, value)
+            && roles::recheck_overdue(checks, self.project.today(), due)
         {
             let at = index.get(&field.name).map_or(first_line, |n| n.value);
-            let issue = Issue::new(diagnostics::REVIEW_OVERDUE, Location::new(self.id, at))
+            let issue = Issue::new(diagnostics::RECHECK_OVERDUE, Location::new(self.id, at))
                 .with_arg("date", due.to_string())
                 .with_arg("field", field.name.clone());
             self.report(issue);

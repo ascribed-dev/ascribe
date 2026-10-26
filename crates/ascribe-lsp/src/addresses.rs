@@ -11,9 +11,11 @@
 //! without this thread, so it never reports them.
 //!
 //! - **When.** The comparison runs once the project loads, and again after a
-//!   save, a change on disk, or an edit to `ascribe.addresses` itself, a
-//!   moment after the last of a burst ([`SETTLE`]): a move in the Explorer
-//!   is a deletion and a creation, and an edit to the file the move's own.
+//!   save, a change on disk it reads (a page, a side file, the model, a
+//!   spec, git's refs; not a build's output), or an edit to
+//!   `ascribe.addresses` itself, a moment after the last of a burst
+//!   ([`SETTLE`]): a move in the Explorer is a deletion and a creation, and
+//!   an edit to the file the move's own.
 //!   Not as a page is typed.
 //! - **The base** is chosen as `ascribe check` chooses it: the merge base of
 //!   `HEAD` and the repository's default branch. Resolving it is a couple of
@@ -27,6 +29,11 @@
 //! - **What's sent** is `ascribe check`'s: the lost addresses and ids, a
 //!   build only the base has, the file's own checks, and a base that can't
 //!   be read, with the content model's levels and the baseline applied.
+//!
+//! The first round for a project that declares an API also reads the
+//! base's specs, once, so a link to an `operationId` renamed since is offered
+//! the operation now at its method and path, as `ascribe check` offers it
+//! (`ascribe_diff::base_apis`).
 //!
 //! The same round keeps each page's redirects, from `redirects.json` as
 //! each build would write it ([`ascribe_emit::site::redirects`]), for This
@@ -135,6 +142,8 @@ pub(crate) struct State {
     pub redirects: Arc<Redirects>,
     /// What was sent last, so the same isn't sent again.
     sent: Option<AddressesParams>,
+    /// Whether the base's specs were read for the project served.
+    apis_read: bool,
 }
 
 impl State {
@@ -156,6 +165,7 @@ impl State {
     pub(crate) fn forget(&mut self) {
         self.kept = None;
         self.redirects = Arc::default();
+        self.apis_read = false;
     }
 }
 
@@ -175,11 +185,17 @@ pub(crate) struct Job {
     /// Ascribe's version, which keys the base listed.
     pub version: String,
     kept: Option<Arc<Kept>>,
+    /// Whether to read the base's specs too: once for each project served,
+    /// when it declares an API.
+    pub read_apis: bool,
 }
 
 impl Job {
     /// The job for the project loaded, when there is one.
-    pub(crate) fn of(core: &crate::core::Core) -> Option<Job> {
+    pub(crate) fn of(core: &mut crate::core::Core) -> Option<Job> {
+        let declares_apis = !core.loaded.as_ref()?.model.apis.is_empty();
+        let read_apis = declares_apis && !core.addresses.apis_read;
+        core.addresses.apis_read |= read_apis;
         let loaded = core.loaded.as_ref()?;
         Some(Job {
             root: loaded.root.clone(),
@@ -191,6 +207,7 @@ impl Job {
             encoding: core.encoding,
             version: core.version.clone(),
             kept: core.addresses.kept.clone(),
+            read_apis,
         })
     }
 }

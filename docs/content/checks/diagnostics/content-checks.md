@@ -18,7 +18,7 @@ level = "warning"
 limit = 40_000
 ```
 
-`review-overdue` and `release-line-ended` depend on the day, so `ascribe check` can report them on one day and not the day before: see [Checking as of another day](../check.md#checking-as-of-another-day).
+`recheck-overdue` and `release-line-ended` depend on the day, so `ascribe check` can report them on one day and not the day before: see [Checking as of another day](../check.md#checking-as-of-another-day).
 
 The checks across the project need every page, so the editor reports a page's orphan and duplicate title, and what's unused, when you save, and the checks of image files run only in `ascribe check`.
 

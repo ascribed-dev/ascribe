@@ -80,6 +80,12 @@ impl Operation {
     pub fn method_and_path(&self) -> String {
         format!("{}{}", self.method, self.path)
     }
+
+    /// Its method, in capitals, and its path: `POST /widgets`, as a
+    /// reference shows it.
+    pub fn method_and_path_shown(&self) -> String {
+        format!("{} {}", self.method.to_ascii_uppercase(), self.path)
+    }
 }
 
 /// How a link's fragment names an operation.
@@ -631,7 +637,8 @@ fn read_api(api: &Api, fs: &dyn FileSystem) -> Result<Spec, Unreadable> {
 ///
 /// - `link-operation-missing`, when the spec has no operation the fragment
 ///   names, with the closest as its fixes, the first safe when it's the
-///   operation the id was renamed to ([`ApiSpecs::renamed`]);
+///   operation the id was renamed to ([`ApiSpecs::renamed`]), which the
+///   message names then, with its method and path;
 /// - `link-operation-form-unsupported`, when it names an operation with no id
 ///   by its method and path, and the reference is a template, which has no
 ///   address for it;
@@ -700,7 +707,14 @@ pub fn operation_issue(
                 .with_arg("path", path.clone())
                 .with_arg("id", id.clone());
             let by_path = !matches!(declared.reference, ApiReference::Template(_));
-            if let Some(closest) = closest_operations(project.apis(), api, id, by_path)
+            if let Some((operation, closest)) =
+                renamed.and_then(|o| Some((o, o.operation_id.clone()?)))
+            {
+                issue = issue
+                    .with_variant("renamed")
+                    .with_arg("closest", closest)
+                    .with_arg("at", operation.method_and_path_shown());
+            } else if let Some(closest) = closest_operations(project.apis(), api, id, by_path)
                 .into_iter()
                 .next()
             {

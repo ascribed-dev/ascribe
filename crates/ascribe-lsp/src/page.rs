@@ -32,7 +32,7 @@ use serde::{Deserialize, Serialize};
 use crate::addresses::{PageOldAddress, Redirects};
 use crate::nav::{Ctx, Lines};
 use crate::page_rows::{
-    PageBuild, PageDescription, PageHealth, PageInclude, PageListing, PagePermalink, PageReview,
+    PageBuild, PageDescription, PageHealth, PageInclude, PageListing, PagePermalink, PageRecheck,
     PageTemplate, Rows,
 };
 
@@ -115,9 +115,9 @@ pub struct PageAbout {
     /// Its description, when its type gives a field the description role;
     /// `null` for a fragment.
     pub description: Option<PageDescription>,
-    /// When it's due for review, when its type gives a field the
-    /// review-date role and the page has a date in it.
-    pub review: Option<PageReview>,
+    /// When it's due to be checked again, when its type gives a field the
+    /// recheck-date role and the page has a date in it.
+    pub recheck: Option<PageRecheck>,
     /// Its own `available`, as shown; `null` when it has none.
     pub availability: Option<String>,
     /// Whether each build publishes it, in declaration order; empty for a
@@ -365,7 +365,7 @@ fn about(ctx: &Ctx, file: &FileIndex, rows: &Rows, redirects: &Redirects) -> Pag
             .map(|r| r.markdown_url(&file.path)),
         site: ctx.model.consumer.site.clone().filter(|_| !fragment),
         description: rows.description.clone(),
-        review: rows.review.clone(),
+        recheck: rows.recheck.clone(),
         availability: rows.availability.clone(),
         builds: rows.builds.clone(),
         listing: rows.listing.clone(),

@@ -128,7 +128,7 @@ pub enum SectionArg {
     /// What `ascribe check` finds, counted by check, by file, and by kind
     /// of next step; and every acknowledgement, with its reason.
     Problems,
-    /// Pages by type and by owner; overdue reviews, orphan pages, and
+    /// Pages by type and by owner; overdue rechecks, orphan pages, and
     /// unused entries.
     Inventory,
     /// What each build leaves out that another keeps.

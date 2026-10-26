@@ -259,7 +259,9 @@ fn every_block_has_an_anchor() {
                 continue;
             };
             let tag = rest.split([' ', '>']).next().unwrap_or("");
-            if is_block(tag) {
+            // A tab's label is its tab's attribute again, as text (element
+            // contract §3): the tab's anchor says where it is.
+            if is_block(tag) && !node.contains("class=\"ascribe-tab-label\"") {
                 assert!(
                     node.contains("data-ascribe-source="),
                     "{name}: a block has no anchor: {node}\n--- HTML\n{html}"

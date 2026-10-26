@@ -31,9 +31,21 @@ Fetch the user with [Get a user](../../api/openapi.yaml#getUser).
 
 The path is relative to the page, as any link's is. An id with `/` or a space is written percent-encoded, `#activity%2Flist%20events`, and matched decoded.
 
-- **It's checked.** An id the spec doesn't have is an error at the link, `link-operation-missing`, with the closest ids the spec has as its fixes. A link to an operation the spec marks deprecated is advice, `link-operation-deprecated`.
+- **It's checked.** An id the spec doesn't have is an error at the link, `link-operation-missing`, with the closest ids the spec has as its fixes, or the operation it was [renamed to](#a-renamed-id). A link to an operation the spec marks deprecated is advice, `link-operation-deprecated`.
 - **It's written as the reference's address.** For Redoc, `getUser`'s is `/api/#operation/getUser`, under `[consumer] base-path`: `/docs/api/#operation/getUser` with a base path of `/docs/`. The plain output writes it absolute when `[consumer] site` is set, and the JSON output gives the link an `operation` target with the address.
 - **A link to the spec with no fragment** is a link to the file, as to any file. When the spec is outside the project's folder, that's an error (`link-spec-outside-project`): only a link to one of its operations is allowed.
+
+## A renamed id
+
+A generator or a change to the code can rename an `operationId`, which breaks every link to it. Spelling alone would offer the wrong operation: when `createWidget` becomes `widgets_create`, the closest id by spelling can be `getWidget`. So `ascribe check` reads the spec as it was at the base `ascribe diff` compares with, the merge base of `HEAD` and the default branch, or `--base`. When the missing id named an operation there, the operation the spec now has at that method and path is offered first, as a safe fix:
+
+```text
+`api/openapi.yaml` has no operation `createWidget`; `createWidget` is now `widgets_create` (POST /widgets)
+```
+
+`ascribe check --fix` applies it, and `ascribe link`, and the MCP server's `ascribe_link`, answer with it first. The base is only read when a link names an operation the spec doesn't have.
+
+It's safe only when exactly one operation is at that method and path, with an id that's new there. When the path moved too, nothing is there, or there's no history to read, as in a shallow clone, the closest ids are offered as for any missing one, and nothing more is reported. The editor does the same: see [Fix a link to a renamed operation](editor.md#fix-a-link-to-a-renamed-operation).
 
 ## Publish the reference
 

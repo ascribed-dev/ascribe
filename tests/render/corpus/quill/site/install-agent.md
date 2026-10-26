@@ -34,6 +34,8 @@ Before you install the agent, make sure you have:
 
    <ascribe-tab value="npm" label="npm" data-ascribe-source="install-agent.md:25-28">
 
+   <p class="ascribe-tab-label">npm</p>
+
    <!--ascribe-anchor tag="pre" source="install-agent.md:26-28"-->
    ```shell
    npm install -g @quill/agent
@@ -43,6 +45,8 @@ Before you install the agent, make sure you have:
 
    <ascribe-tab value="pnpm" label="pnpm" data-ascribe-source="install-agent.md:29-32">
 
+   <p class="ascribe-tab-label">pnpm</p>
+
    <!--ascribe-anchor tag="pre" source="install-agent.md:30-32"-->
    ```shell
    pnpm add -g @quill/agent
@@ -51,6 +55,8 @@ Before you install the agent, make sure you have:
    </ascribe-tab>
 
    <ascribe-tab value="yarn" label="Yarn" data-ascribe-source="install-agent.md:33-36">
+
+   <p class="ascribe-tab-label">Yarn</p>
 
    <!--ascribe-anchor tag="pre" source="install-agent.md:34-36"-->
    ```shell
@@ -98,6 +104,8 @@ Before you install the agent, make sure you have:
 
 <ascribe-tab value="cloud" label="Quill Cloud" data-ascribe-source="install-agent.md:61-67">
 
+<p class="ascribe-tab-label">Quill Cloud</p>
+
 <!--ascribe-anchor tag="p" source="install-agent.md:62-62"-->
 Sign in to Quill Cloud and copy an API key from **Settings → Keys**, then add it to `quill.yaml`:
 
@@ -110,6 +118,8 @@ cloud:
 </ascribe-tab>
 
 <ascribe-tab value="self-managed" label="self-managed" data-ascribe-source="install-agent.md:69-75">
+
+<p class="ascribe-tab-label">self-managed</p>
 
 <!--ascribe-anchor tag="p" source="install-agent.md:70-70"-->
 Point the agent at your server. Self-managed servers must run Quill Server 3.3 or later.

@@ -1399,7 +1399,7 @@ fn addresses_worker(shared: &Shared) {
                         .map_or(Duration::ZERO, |at| SETTLE.saturating_sub(at.elapsed()));
                     if quiet.is_zero() {
                         core.addresses.dirty = false;
-                        if let Some(job) = Job::of(&core) {
+                        if let Some(job) = Job::of(&mut core) {
                             core.addresses.running = true;
                             break job;
                         }
@@ -1421,7 +1421,21 @@ fn addresses_worker(shared: &Shared) {
             }
         };
         let outcome = catch_unwind(AssertUnwindSafe(|| compare(&job, &listed)));
+        // The base's specs, read once for the project, so a link to an
+        // operation renamed since is offered the one in its place, as
+        // `ascribe check` offers it; a base that can't be read leaves the
+        // closest.
+        let apis = job
+            .read_apis
+            .then(|| ascribe_diff::base_apis(&job.root, None, false))
+            .flatten();
         let mut core = shared.lock();
+        if let Some(apis) = apis
+            && core.project_root().as_deref() == Some(job.root.as_path())
+        {
+            core.remember_base_apis(&apis);
+            shared.wake.notify_all();
+        }
         core.addresses.running = false;
         match outcome {
             // Sent only for the project still served.

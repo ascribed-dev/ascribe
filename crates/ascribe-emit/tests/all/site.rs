@@ -121,10 +121,19 @@ fn a_group_is_tabs_that_sync_on_their_dimension() {
     assert_eq!(
         body(source),
         "<ascribe-tabs sync=\"pm\">\n\n\
-         <ascribe-tab value=\"npm\" label=\"npm\">\n\nnpm i\n\n</ascribe-tab>\n\n\
-         <ascribe-tab value=\"yarn\" label=\"Yarn\">\n\nyarn add\n\n</ascribe-tab>\n\n\
+         <ascribe-tab value=\"npm\" label=\"npm\">\n\n<p class=\"ascribe-tab-label\">npm</p>\n\nnpm i\n\n</ascribe-tab>\n\n\
+         <ascribe-tab value=\"yarn\" label=\"Yarn\">\n\n<p class=\"ascribe-tab-label\">Yarn</p>\n\nyarn add\n\n</ascribe-tab>\n\n\
          </ascribe-tabs>\n"
     );
+}
+
+#[test]
+fn a_tabs_label_text_is_escaped_as_its_attribute_is() {
+    let source = ".Use `<T>` & co\n@variant:\nA\n\n.Other\n@variant:\nB\n@end\n";
+    assert!(body(source).contains(
+        "<ascribe-tab label=\"Use &lt;T&gt; &amp; co\">\n\n\
+         <p class=\"ascribe-tab-label\">Use &lt;T&gt; &amp; co</p>\n\nA\n\n</ascribe-tab>"
+    ));
 }
 
 #[test]
@@ -133,8 +142,8 @@ fn a_labeled_group_has_no_sync_and_no_values() {
     assert_eq!(
         body(source),
         "<ascribe-tabs>\n\n\
-         <ascribe-tab label=\"Docker\">\n\nA\n\n</ascribe-tab>\n\n\
-         <ascribe-tab label=\"Use k8s now\">\n\nB\n\n</ascribe-tab>\n\n\
+         <ascribe-tab label=\"Docker\">\n\n<p class=\"ascribe-tab-label\">Docker</p>\n\nA\n\n</ascribe-tab>\n\n\
+         <ascribe-tab label=\"Use k8s now\">\n\n<p class=\"ascribe-tab-label\">Use k8s now</p>\n\nB\n\n</ascribe-tab>\n\n\
          </ascribe-tabs>\n"
     );
 }
