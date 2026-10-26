@@ -1522,8 +1522,6 @@ export interface ModelReport {
    * the project labels them, then the ones it declares.
    */
   notes?: ModelNoteType[];
-  /** `[permalinks]`: each key, with its value in effect. */
-  permalinks?: ModelSetting[];
   /** Phrases, in declaration order. */
   phrases?: ModelPhrase[];
   /** `[project]`: each key, with its value in effect. */
@@ -2612,8 +2610,8 @@ export interface Summary {
   acknowledged?: number;
   /**
    * How many problems `ascribe.baseline` holds back, which `diagnostics`
-   * leaves out and which are advice. Left out when there are none, and by
-   * `ascribe build`, which doesn't read the baseline.
+   * leaves out and which are advice. Left out when there are none, and
+   * with `--no-baseline`.
    */
   baselined?: number;
   /** With `--summary`: how many diagnostics have each code, most first. */

@@ -15,12 +15,13 @@ The site output (SPEC §9.4) is markdown plus custom elements. This contract is 
 | A tested example's `@snippet` | [A caption line on its code block](#9-a-tested-code-block), with the class `ascribe-code-tested` | CSS only |
 | A link out of a line of a versioned build | [An ordinary link](#10-a-link-out-of-a-line), marked with `data-ascribe-release-line` | Optional CSS |
 | `@operation` | [`<ascribe-operation>`](#11-ascribe-operation) | CSS only |
+| A code block | [A copy button after its `<pre>`](#12-a-code-blocks-copy-button), which the script adds | JavaScript and CSS |
 
 A change to this contract changes the site emitter (`crates/ascribe-emit`), the element library, and the site-render fixtures (`tests/render/`) together.
 
 ## 0. Rules for every element
 
-**Light DOM, CSS, no behavior.** Elements render into the light DOM, so site styles apply and content stays visible to search engines and assistive technology (SPEC §9.7). They're styled with CSS and themed with custom properties whose names start with `--ascribe-`; the package README lists them. The names are part of this contract; their default values aren't, and a release may change them, noting it in the changelog. Only `<ascribe-tabs>` runs JavaScript. Everything else must render meaningfully with the library's CSS and no script, and must stay readable with neither.
+**Light DOM, CSS, no behavior.** Elements render into the light DOM, so site styles apply and content stays visible to search engines and assistive technology (SPEC §9.7). They're styled with CSS and themed with custom properties whose names start with `--ascribe-`; the package README lists them. The names are part of this contract; their default values aren't, and a release may change them, noting it in the changelog. Only `<ascribe-tabs>`, and the copy button the script adds to code blocks (§12), run JavaScript. Everything else must render meaningfully with the library's CSS and no script, and must stay readable with neither.
 
 **How the emitter writes elements.** Custom elements are raw HTML blocks in CommonMark, so the layout matters:
 
@@ -316,3 +317,17 @@ An operation of a declared API (SPEC §4.13, §7.11), from an `@operation` whose
 ```
 
 **Rendering, with or without JavaScript:** a block holding the line, a deprecated operation's link struck through and its "(deprecated)" in the deprecated state's color. A site styles the method or the path by selecting on the attributes (`ascribe-operation[method="delete"]`). With no CSS, it's the link and its words: the deprecation is in the text, never only in the styling.
+
+## 12. A code block's copy button
+
+There's no element for a code block, and the emitter writes nothing for this: the library's script adds a button to each code block in the page, a `<pre>` with a `<code>` child, as the site output's fenced code blocks render, including one in a figure with a title or a tested line (§9) and one in a tab (§3). It copies the code ([decision #1011](../../project-docs/decisions/1011-copy-button.md)).
+
+- **Where it goes:** the button is a `<button type="button" class="ascribe-copy">`, inserted directly after the `<pre>`, as its next sibling: outside the `<pre>` and its `<code>`, so their text, and an HTML-to-text converter's, is the code alone. It has no text of its own; its words are the stylesheet's (below).
+- **What it copies:** the `<code>` element's text, without the newline that ends the block, and nothing else: not a figure's caption, not the button.
+- **Naming and saying:** its accessible name, `aria-label`, is the stylesheet's word for it when it's made, "Copy". After a click it carries `data-ascribe-copy="copied"`, or `"failed"` when the clipboard refuses, for two seconds, and the page's one live region, a `<div class="ascribe-copy-status" role="status">` the script adds to the end of `<body>`, says the stylesheet's words for that state, "Copied" or "Couldn't copy", then empties.
+- **Placement:** the script gives each `<pre>` an `anchor-name` of its own and the button the same `position-anchor`, in their `style`, and the stylesheet puts the button in the block's top corner, at its inline end. A browser without CSS anchor positioning shows it under the block, at its end.
+- **Code blocks added later,** by a script, or a page swapped in place, get a button too.
+
+**Without JavaScript** there's no button, and the page reads as it does with no element library: the script adds the button, and the stylesheet doesn't. **Without a clipboard,** on a page that isn't a secure context, the script adds none either.
+
+**Theming:** `--ascribe-copy-display` is the button's `display`, `block` by default; a site sets it to `none` to leave the button out, on `:root` or on any element around the blocks it means. Its colors are `--ascribe-copy-color`, `--ascribe-copy-background`, `--ascribe-copy-hover-background`, and `--ascribe-copy-focus-color`. Its words are generated content, `.ascribe-copy::before`, and `.ascribe-copy[data-ascribe-copy="copied"]::before` and `[data-ascribe-copy="failed"]` for its two states, so a site restyles or translates them once, as it does "Available:", and the button's name and the live region follow. It isn't printed.

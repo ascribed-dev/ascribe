@@ -53,10 +53,11 @@ fn docs_permalinks(base: &str) -> Vec<ascribe_resolve::Permalink> {
 /// Every address of the docs the binary builds, each with the page and the
 /// heading, as written, it must lead to: each command's help, each
 /// diagnostic's entry (in `check`'s JSON, `explain`, and the editor), the
-/// agents' rules, and the plugin's homepage. A page with a folder of the same
-/// name, as `checks/diagnostics.md` has `checks/diagnostics/`, stands for
-/// itself and the pages in that folder, and the command reference for its
-/// pages wherever they are.
+/// agents' rules, the plugin's homepage, and the JSON report contract the
+/// MCP tools name. A page with a folder of the same name, as
+/// `checks/diagnostics.md` has `checks/diagnostics/`, stands for itself and
+/// the pages in that folder, and the command reference for its pages
+/// wherever they are.
 fn addresses() -> Vec<(String, &'static str, Option<String>)> {
     let mut helps = Vec::new();
     let mut cli = crate::cli::command();
@@ -105,6 +106,11 @@ fn addresses() -> Vec<(String, &'static str, Option<String>)> {
     out.push((
         crate::agents::plugin::HOMEPAGE.to_owned(),
         "agents/index.md",
+        None,
+    ));
+    out.push((
+        crate::mcp::CONTRACT.to_owned(),
+        "contracts/json-reports.md",
         None,
     ));
     out

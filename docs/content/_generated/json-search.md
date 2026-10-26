@@ -105,7 +105,7 @@
           "type": "integer"
         },
         "match": {
-          "description": "Where the match is in `text`: its first character and the one after\nits last, in Unicode characters.",
+          "description": "Where the match is in `text`: its first character and the one after\nits last, in Unicode characters; when `text` is cut before the\nmatch's last character, the end ends where it's cut, before the `…`.",
           "items": {
             "minimum": 0,
             "type": "integer"
@@ -134,7 +134,7 @@
           ]
         },
         "text": {
-          "description": "The block's text as a reader reads it, whole; for a phrase, its\nvalue.",
+          "description": "The block's text as a reader reads it, or for a phrase, its value:\nwhole when it's at most 240 characters, and otherwise cut to about\nthat many around the match's first character, at words, with `…`\nwhere it's cut. `line` and `column` say where to read the rest.",
           "type": "string"
         },
         "through": {

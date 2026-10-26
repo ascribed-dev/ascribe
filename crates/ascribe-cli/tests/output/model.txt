@@ -34,4 +34,4 @@
 
 ## Settings
 
-- `project`, `versions`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, `permalinks`, each with its keys and values: `ascribe model --section <name>`
+- `project`, `versions`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, each with its keys and values: `ascribe model --section <name>`

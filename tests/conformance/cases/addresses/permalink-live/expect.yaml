@@ -1,0 +1,10 @@
+description: >-
+  A permalink's name `ascribe.addresses` moves or retires that the content
+  declares again does nothing, since the content's permalink is the name:
+  advice at each entry, whose fix removes it.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: addresses-entry-live, file: ascribe.addresses, line: 4}
+  - {slug: addresses-entry-live, file: ascribe.addresses, line: 7}

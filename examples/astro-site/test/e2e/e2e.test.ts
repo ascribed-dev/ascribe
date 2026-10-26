@@ -230,18 +230,18 @@ describe("the built site", () => {
     await page.close();
   });
 
-  it("forwards an alias, and a retired permalink with somewhere to lead", async () => {
+  it("forwards a permalink moved to another, and one moved to a page", async () => {
     const page = await context.newPage();
-    // `config = "weave-config"` in `[permalinks.aliases]`.
+    // `"go:config" = "go:weave-config"` in `ascribe.addresses`.
     await page.goto(`${origin}${BASE}/go/config`);
     await page.waitForURL(`${origin}${BASE}/guides/my-setup#weave-config`);
-    // `old-options`, retired with `to = "Reference/Options.md"`.
+    // `"go:old-options" = "Reference/Options.md"`.
     await page.goto(`${origin}${BASE}/go/old-options`);
     await page.waitForURL(`${origin}${BASE}/reference/options`);
     await page.close();
   });
 
-  it("says why a retired permalink with nowhere to lead was removed", async () => {
+  it("says why a retired permalink was removed", async () => {
     const page = await context.newPage();
     const response = await page.goto(`${origin}${BASE}/go/legacy-sync`);
     expect(response?.status()).toBe(200);

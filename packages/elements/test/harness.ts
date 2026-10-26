@@ -55,6 +55,13 @@ export interface PageOptions {
   css?: boolean;
   /** Make `localStorage` throw, as in a private window with storage blocked. */
   blockStorage?: boolean;
+  /**
+   * The page's clipboard: `record`, the default, a stand-in that keeps what's
+   * written in `window.copied` (the test page isn't a secure context, so it
+   * has no clipboard of its own); `refuse`, one whose writes fail; `none`, no
+   * clipboard.
+   */
+  clipboard?: "record" | "refuse" | "none";
 }
 
 /** Serve `body` from a fixed origin, so `localStorage` works, with the library files from disk. */
@@ -63,8 +70,19 @@ export async function open(
   body: string,
   options: PageOptions = {},
 ): Promise<Page> {
-  const { script = true, css = true, blockStorage = false } = options;
+  const { script = true, css = true, blockStorage = false, clipboard = "record" } = options;
   const page = await context.newPage();
+  await page.addInitScript((kind) => {
+    const writeText = async (text: string): Promise<void> => {
+      if (kind === "refuse") throw new DOMException("refused", "NotAllowedError");
+      (window as unknown as { copied: string[] }).copied.push(text);
+    };
+    (window as unknown as { copied: string[] }).copied = [];
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: kind === "none" ? undefined : { writeText },
+    });
+  }, clipboard);
   if (blockStorage) {
     await page.addInitScript(() => {
       Object.defineProperty(window, "localStorage", {

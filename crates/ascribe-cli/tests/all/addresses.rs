@@ -457,10 +457,16 @@ fn deleting_the_file_the_base_has_is_an_error() {
     assert_eq!(code(&out), 0, "{}", both(&out));
 }
 
-/// The project with `ascribe.addresses`, committed on `main`, and a branch
-/// `handbook` where `base-path` is `/handbook/` and that's committed.
+/// The project with the example's `ascribe.addresses`, which moves and
+/// retires permalinks, committed on `main`, and a branch `handbook` where
+/// `base-path` is `/handbook/` and that's committed.
 fn rebased() -> TempDir {
     let dir = repo();
+    fs::copy(
+        example().join("ascribe.addresses"),
+        dir.path().join("ascribe.addresses"),
+    )
+    .expect("copy the addresses");
     let out = ascribe(dir.path(), &["addresses", "init"]);
     assert_eq!(code(&out), 0, "{}", both(&out));
     commit(dir.path(), "Keep the addresses we publish");
@@ -531,4 +537,66 @@ fn a_base_path_changed_is_recorded_and_every_address_under_it_forwarded() {
     let out = ascribe(dir.path(), &["check", "--base", "main", "--deny-warnings"]);
     assert_eq!(code(&out), 0, "{}", both(&out));
     assert_eq!(forwarded(dir.path()), before);
+}
+
+#[test]
+fn moving_permalinks_out_of_ascribe_toml_loses_no_address_of_the_base() {
+    let dir = repo();
+    let model = fs::read_to_string(dir.path().join("ascribe.toml")).expect("the model");
+    fs::write(
+        dir.path().join("ascribe.toml"),
+        format!(
+            "{model}\n[permalinks.retired]\nlegacy-sync = {{ reason = \"Removed in 3.0\" }}\n\n[permalinks.aliases]\nconfig = \"weave-config\"\n"
+        ),
+    )
+    .expect("write the model");
+    commit(dir.path(), "Retire a permalink in ascribe.toml");
+    git(dir.path(), &["switch", "-q", "-c", "moved"]);
+    let out = ascribe(dir.path(), &["addresses", "init"]);
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    commit(dir.path(), "Move the permalinks to ascribe.addresses");
+    // The base's `[permalinks]` is read as if it were moved too: nothing
+    // it published is lost, and the base reads.
+    let out = ascribe(dir.path(), &["check", "--base", "main"]);
+    let text = both(&out);
+    assert!(!text.contains("address-lost"), "{text}");
+    assert!(!text.contains("addresses-base-unreadable"), "{text}");
+    assert!(!text.contains("weren't compared"), "{text}");
+}
+
+#[test]
+fn a_name_moved_to_an_alias_keeps_the_alias_and_an_unknown_name_is_refused() {
+    let dir = repo();
+    fs::copy(
+        example().join("ascribe.addresses"),
+        dir.path().join("ascribe.addresses"),
+    )
+    .expect("copy the file");
+    // `go:config` is an alias of `go:weave-config`: moving another name to
+    // it keeps it.
+    let out = ascribe(
+        dir.path(),
+        &["addresses", "move", "go:another", "go:config"],
+    );
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    let file = fs::read_to_string(dir.path().join("ascribe.addresses")).expect("the file");
+    assert!(file.contains("\"go:another\" = \"go:config\"\n"), "{file}");
+    assert!(
+        file.contains("\"go:config\" = \"go:weave-config\"\n"),
+        "{file}"
+    );
+
+    // A name the project neither declares nor records is refused, and the
+    // file stays as it was.
+    let before = fs::read_to_string(dir.path().join("ascribe.addresses")).expect("the file");
+    let out = ascribe(dir.path(), &["addresses", "move", "go:x", "go:typo"]);
+    assert_eq!(code(&out), 2, "{}", both(&out));
+    assert_eq!(
+        stderr(&out),
+        "error: `go:typo` isn't a permalink of the project: no page declares it, and ascribe.addresses doesn't record it\n"
+    );
+    assert_eq!(
+        fs::read_to_string(dir.path().join("ascribe.addresses")).expect("the file"),
+        before
+    );
 }

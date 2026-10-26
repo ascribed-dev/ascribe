@@ -12,6 +12,7 @@
     }
   ],
   "aliased": [],
+  "forwarded": [],
   "retired": [],
   "removed": [
     "rotate-keys"

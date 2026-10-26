@@ -31,6 +31,7 @@
   --type-hero: 750 2.75rem/1.1;
   --type-display: 700 3.75rem/1.04;
   --type-section: 700 2.125rem/1.15;
+  --scrim: rgb(11 24 36 / 0.4);
   /* End of generated root. */
 
   --header-height: 3.5rem;
@@ -59,6 +60,7 @@
     --accent-text: #0b1824;
     --focus: #f0a35e;
     --mark-gutter: #56d0f0;
+    --scrim: rgb(11 24 36 / 0.4);
     /* End of generated root. */
   }
 }
@@ -375,6 +377,13 @@ pre {
 
 .toc li[data-depth="3"] a {
   padding-left: 1.25rem;
+}
+
+/* The section in view, as the sidebar marks the page. */
+.toc a[aria-current="location"] {
+  box-shadow: inset 2px 0 var(--accent);
+  color: var(--text);
+  font-weight: 600;
 }
 
 .page {
@@ -1345,12 +1354,55 @@ quiet-pillar > ul + p {
   color: var(--muted);
 }
 
+/* The previous and next pages, at the foot of a docs page. */
+.neighbors {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  max-width: var(--measure);
+  margin-top: 3rem;
+}
+
+.neighbors a {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.neighbors a:hover {
+  border-color: var(--accent);
+}
+
+.neighbors a[rel="next"] {
+  grid-column: 2;
+  text-align: right;
+}
+
+.neighbors + .page-footer {
+  margin-top: 2rem;
+}
+
+.neighbor-label {
+  color: var(--muted);
+  font: var(--type-small) var(--font);
+}
+
 .page-footer {
   max-width: var(--measure);
   margin-top: 3rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
   font: var(--type-small) var(--font);
+}
+
+/* The menu's backdrop is the drawer's alone, at phone width (below). */
+.menu-backdrop {
+  display: none;
 }
 
 /* The footer ---------------------------------------------------------------- */
@@ -1540,6 +1592,24 @@ quiet-pillar > ul + p {
   .sidebar.open {
     transform: none;
     visibility: visible;
+  }
+
+  .neighbors {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .neighbors a[rel="next"] {
+    grid-column: auto;
+  }
+
+  /* With the drawer open, the page beside it is dimmed, and a click on it closes the drawer. */
+  .menu-backdrop:not([hidden]) {
+    position: fixed;
+    inset: var(--header-height) 0 0 0;
+    z-index: 9;
+    display: block;
+    /* As the search dialog's backdrop. */
+    background: var(--scrim);
   }
 
   .page {

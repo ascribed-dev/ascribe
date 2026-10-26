@@ -183,13 +183,10 @@ fn a_permalink_is_refused_since_links_from_outside_use_it() {
 
 #[test]
 fn a_page_that_moves_takes_what_ascribe_toml_names_it_by_along() {
-    // A glossary page and a retired permalink's `to`, each written with or
-    // without the `/`, follow the page, keeping their `#id`; one naming
-    // another page, and the file's comments, stay as they are.
-    let model = format!(
-        "{MODEL}\n[glossary]\npages = [\"/keys.md\", # the first\n  \"install.md\"]\n\n\
-         [permalinks.retired]\nold-keys = {{ to = \"keys.md\", reason = \"Merged\" }}\nold-setup = {{ to = \"keys.md#set-up\", reason = \"Merged\" }}\n"
-    );
+    // A glossary page, written with or without the `/`, follows the page;
+    // one naming another page, and the file's comments, stay as they are.
+    let model =
+        format!("{MODEL}\n[glossary]\npages = [\"/keys.md\", # the first\n  \"install.md\"]\n");
     let f = Fixture::new(
         &model,
         &[("docs/keys.md", KEYS), ("docs/install.md", INSTALL)],
@@ -209,44 +206,9 @@ fn a_page_that_moves_takes_what_ascribe_toml_names_it_by_along() {
         .expect("ascribe.toml changes");
     assert_eq!(
         toml.text,
-        model
-            .replace("\"/keys.md\"", "\"/reference/keys.md\"")
-            .replace("\"keys.md#", "\"reference/keys.md#")
-            .replace("\"keys.md\"", "\"reference/keys.md\"")
+        model.replace("\"/keys.md\"", "\"/reference/keys.md\"")
     );
-    assert_eq!(toml.edits, 3);
-}
-
-#[test]
-fn a_heading_whose_id_changes_takes_what_ascribe_toml_names_it_by_along() {
-    // A retired permalink's `to` that names the heading changes with its
-    // id, and with the numbering after it; one naming the same id on another
-    // page stays as it is.
-    let model = format!(
-        "{MODEL}\n[permalinks.retired]\nold-setup = {{ to = \"/keys.md#set-up\", reason = \"Merged\" }} # the first\n\
-         again = {{ to = \"keys.md#set-up-1\", reason = \"Merged\" }}\n\
-         install = {{ to = \"install.md#set-up\", reason = \"Merged\" }}\n\
-         plain = {{ to = \"keys.md#set-up\", reason = \"Merged\" }}\n"
-    );
-    let f = Fixture::new(
-        &model,
-        &[("docs/keys.md", KEYS), ("docs/install.md", INSTALL)],
-    );
-    let renamed =
-        rename(&f.path("ascribe.toml"), &id("keys.md", "set-up", "setup")).expect("renamed");
-    let toml = renamed
-        .files
-        .iter()
-        .find(|file| file.path == f.path("ascribe.toml"))
-        .expect("ascribe.toml changes");
-    assert_eq!(
-        toml.text,
-        model
-            .replace("\"/keys.md#set-up\"", "\"/keys.md#setup\"")
-            .replace("\"keys.md#set-up\"", "\"keys.md#setup\"")
-            .replace("\"keys.md#set-up-1\"", "\"keys.md#set-up\"")
-    );
-    assert_eq!(toml.edits, 3);
+    assert_eq!(toml.edits, 1);
 }
 
 /// The text of each memo file `renaming` changes, by its path from the

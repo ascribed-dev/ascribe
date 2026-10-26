@@ -14,6 +14,12 @@ use crate::answer::{self, Format};
 use crate::cli::Global;
 use crate::commands::{addresses, check, diff, fmt, link, model, outline, refs, resolve, search};
 
+/// The JSON report contract, which gives each command's JSON Schema. A tool
+/// names it instead of giving an output schema: the schemas were three
+/// quarters of `tools/list`, which a host sends the model in every session,
+/// and an agent reads a result's fields without them (#1033).
+pub(crate) const CONTRACT: &str = ascribe_core::docs_permalink!("json-reports");
+
 /// A tool.
 pub struct Spec {
     /// Its name.
@@ -26,8 +32,6 @@ pub struct Spec {
     pub description: &'static str,
     /// The JSON Schema of its arguments.
     pub input: fn() -> Value,
-    /// The JSON Schema of its result: the command's JSON.
-    pub output: fn() -> Value,
     /// Calls it.
     call: fn(&Server, &Arguments<'_>) -> Result<ToolResult, String>,
 }
@@ -84,11 +88,6 @@ pub const TOOLS: &[Spec] = &[
                 "additionalProperties": false,
             })
         },
-        output: || {
-            with_concise(schema(include_str!(
-                "../../../../schemas/check.schema.json"
-            )))
-        },
         call: call_check,
     },
     Spec {
@@ -112,7 +111,6 @@ pub const TOOLS: &[Spec] = &[
                 "additionalProperties": false,
             })
         },
-        output: || schema(include_str!("../../../../schemas/explain.schema.json")),
         call: call_explain,
     },
     Spec {
@@ -143,7 +141,6 @@ pub const TOOLS: &[Spec] = &[
                 "additionalProperties": false,
             })
         },
-        output: || schema(include_str!("../../../../schemas/model.schema.json")),
         call: call_model,
     },
     Spec {
@@ -168,7 +165,6 @@ pub const TOOLS: &[Spec] = &[
                 "additionalProperties": false,
             })
         },
-        output: || schema(include_str!("../../../../schemas/outline.schema.json")),
         call: call_outline,
     },
     Spec {
@@ -201,7 +197,6 @@ pub const TOOLS: &[Spec] = &[
                 "additionalProperties": false,
             })
         },
-        output: || schema(include_str!("../../../../schemas/link.schema.json")),
         call: call_link,
     },
     Spec {
@@ -242,7 +237,6 @@ pub const TOOLS: &[Spec] = &[
                 "additionalProperties": false,
             })
         },
-        output: || with_concise(schema(include_str!("../../../../schemas/refs.schema.json"))),
         call: call_refs,
     },
     Spec {
@@ -312,11 +306,6 @@ pub const TOOLS: &[Spec] = &[
                 "additionalProperties": false,
             })
         },
-        output: || {
-            with_concise(schema(include_str!(
-                "../../../../schemas/search.schema.json"
-            )))
-        },
         call: call_search,
     },
     Spec {
@@ -368,14 +357,6 @@ pub const TOOLS: &[Spec] = &[
                 "additionalProperties": false,
             })
         },
-        output: || {
-            either(
-                schema(include_str!("../../../../schemas/resolve.schema.json")),
-                schema(include_str!(
-                    "../../../../schemas/resolve-permalink.schema.json"
-                )),
-            )
-        },
         call: call_resolve,
     },
     Spec {
@@ -402,7 +383,6 @@ pub const TOOLS: &[Spec] = &[
                 "additionalProperties": false,
             })
         },
-        output: || schema(include_str!("../../../../schemas/fmt.schema.json")),
         call: call_format,
     },
     Spec {
@@ -441,7 +421,6 @@ pub const TOOLS: &[Spec] = &[
                 "additionalProperties": false,
             })
         },
-        output: || schema(include_str!("../../../../schemas/diff.schema.json")),
         call: call_changes,
     },
     Spec {
@@ -455,7 +434,9 @@ pub const TOOLS: &[Spec] = &[
             edits yourself. Example: {\"from_git\": true} returns `moves` such as \
             `{\"key\": \"guides/setup.md\", \"value\": \"start/setup.md\"}`, every move git \
             sees, and `edits`; {\"old\": \"guides/keys.md\", \"new\": \
-            \"security/keys.md\"} records one.",
+            \"security/keys.md\"} records one. A permalink nothing declares now is \
+            `go:<name>`, moved to a page or to another permalink: {\"old\": \
+            \"go:agent-settings\", \"new\": \"go:settings\"}.",
         input: || {
             json!({
                 "type": "object",
@@ -464,12 +445,14 @@ pub const TOOLS: &[Spec] = &[
                         "type": "string",
                         "description": "Where it was: a page's path, from the server's \
                             working directory or from the content root; a file's path, `#`, \
-                            and a heading's id; or an address starting with `/`.",
+                            and a heading's id; an address starting with `/`; or a \
+                            permalink, `go:<name>`.",
                     },
                     "new": {
                         "type": "string",
                         "description": "Where it is now: a page's path, and optionally `#` \
-                            and a heading's id.",
+                            and a heading's id; or, for a permalink, another permalink, \
+                            `go:<name>`.",
                     },
                     "from_git": {
                         "type": "boolean",
@@ -496,16 +479,6 @@ pub const TOOLS: &[Spec] = &[
                 "additionalProperties": false,
             })
         },
-        output: || {
-            either(
-                schema(include_str!(
-                    "../../../../schemas/addresses-record.schema.json"
-                )),
-                schema(include_str!(
-                    "../../../../schemas/addresses-from-git.schema.json"
-                )),
-            )
-        },
         call: call_addresses_move,
     },
     Spec {
@@ -518,7 +491,8 @@ pub const TOOLS: &[Spec] = &[
             page to forward a reader to; otherwise record a move. It writes nothing, so \
             apply the edits yourself. Example: {\"old\": \"reference/legacy-sync.md\", \
             \"reason\": \"The sync agent was removed in 4.0\"} returns `key`, `value`, and \
-            `edits`.",
+            `edits`. A permalink nothing declares now is `go:<name>`, so \
+            `ascribe_check` stops reporting it as `permalink-lost`.",
         input: || {
             json!({
                 "type": "object",
@@ -527,7 +501,8 @@ pub const TOOLS: &[Spec] = &[
                         "type": "string",
                         "description": "What was removed: a page's path, from the server's \
                             working directory or from the content root; a file's path, `#`, \
-                            and a heading's id; or an address starting with `/`.",
+                            and a heading's id; an address starting with `/`; or a \
+                            permalink, `go:<name>`.",
                     },
                     "reason": {
                         "type": "string",
@@ -544,11 +519,6 @@ pub const TOOLS: &[Spec] = &[
                 "additionalProperties": false,
             })
         },
-        output: || {
-            schema(include_str!(
-                "../../../../schemas/addresses-record.schema.json"
-            ))
-        },
         call: call_addresses_retire,
     },
 ];
@@ -559,9 +529,12 @@ impl Spec {
         Tool {
             name: self.name.to_owned(),
             title: self.title.to_owned(),
-            description: format!("{} The command: `{}`.", self.description, self.command),
+            description: format!(
+                "{} The command: `{}`, whose JSON's schema is in the JSON report contract: {}",
+                self.description, self.command, CONTRACT
+            ),
             input_schema: (self.input)(),
-            output_schema: Some((self.output)()),
+            output_schema: None,
             annotations: Annotations::READ_ONLY,
         }
     }
@@ -609,72 +582,6 @@ fn page() -> Value {
         "description": "The page or fragment: a path from the server's working directory, \
             or from the content root.",
     })
-}
-
-/// A command's JSON Schema, embedded from `schemas/`.
-fn schema(text: &str) -> Value {
-    serde_json::from_str(text).unwrap_or(Value::Null)
-}
-
-/// `schema`, or the concise form `{"concise": "<text>"}`: the schema of a
-/// tool that takes `response_format`. The definitions move to the root,
-/// where the references in `schema` find them.
-fn with_concise(mut schema: Value) -> Value {
-    let Some(fields) = schema.as_object_mut() else {
-        return schema;
-    };
-    let defs = fields.remove("$defs").unwrap_or_else(|| json!({}));
-    let dialect = fields.remove("$schema");
-    let mut root = json!({
-        "type": "object",
-        "anyOf": [
-            schema,
-            {
-                "type": "object",
-                "description": "With `response_format: concise`: the command's text.",
-                "properties": {
-                    "concise": {
-                        "type": "string",
-                        "description": "What the command writes without `--format json`.",
-                    },
-                },
-                "required": ["concise"],
-                "additionalProperties": false,
-            },
-        ],
-        "$defs": defs,
-    });
-    if let Some(dialect) = dialect {
-        root["$schema"] = dialect;
-    }
-    root
-}
-
-/// One schema or the other: the schema of a tool whose result is one of two
-/// commands' JSON. The definitions move to the root, where the references
-/// in each find them.
-fn either(first: Value, second: Value) -> Value {
-    let mut defs = Map::new();
-    let mut dialect = None;
-    let mut parts = Vec::new();
-    for mut schema in [first, second] {
-        if let Some(fields) = schema.as_object_mut() {
-            if let Some(Value::Object(own)) = fields.remove("$defs") {
-                defs.extend(own);
-            }
-            dialect = fields.remove("$schema").or(dialect);
-        }
-        parts.push(schema);
-    }
-    let mut root = json!({
-        "type": "object",
-        "anyOf": parts,
-        "$defs": defs,
-    });
-    if let Some(dialect) = dialect {
-        root["$schema"] = dialect;
-    }
-    root
 }
 
 /// A call's arguments, checked against the tool's input schema's property
@@ -995,7 +902,17 @@ fn call_resolve(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String
     };
     let project = a.path("project")?;
     if project.is_some() && resolve::permalink_name(&args.page).is_none() {
-        return Err("`project` goes with a `page` of `go:<name>`: a page finds its project".into());
+        let mut message =
+            "Leave out `project` when `page` is a path; the page's project is found from it"
+                .to_owned();
+        // Outside FileSystem: whether the argument names a file, for the
+        // error's suggested call, before any project is found.
+        if server.cwd.join(&args.page).is_file() {
+            let mut call = a.map.clone();
+            call.remove("project");
+            message.push_str(&format!(". Call it with `{}`", Value::Object(call)));
+        }
+        return Err(message);
     }
     let global = global_at(project.as_deref())?;
     let answer = resolve::answer(&server.cache, &global, &args).map_err(|s| s.message())?;
