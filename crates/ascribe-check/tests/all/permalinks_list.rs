@@ -143,7 +143,7 @@ fn every_entry_point_reports_the_list_the_same() {
     let p = project(&files, Some(&format!("{LIST_HEAD}gone = \"b.md\"\n")));
     let expected = [
         (
-            "permalink-removed".to_owned(),
+            "permalink-lost".to_owned(),
             "ascribe.permalinks".to_owned(),
             3,
         ),

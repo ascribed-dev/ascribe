@@ -5,7 +5,7 @@ description: "`@ascribed/elements`: the custom elements the site output uses, th
 permalink: elements
 ---
 
-The site output writes Ascribe's constructs as custom elements, such as `<ascribe-note>` for a note. `@ascribed/elements` is the library that draws them: a stylesheet for every element, and a small script for `<ascribe-tabs>`, the only one with behavior. This page lists the elements and the CSS custom properties a site sets to theme them, and shows how to style what the library doesn't know, such as a project's own note types.
+The site output writes Ascribe's constructs as custom elements, such as `<ascribe-note>` for a note. `@ascribed/elements` is the library that draws them: a stylesheet for every element, and a small script for `<ascribe-tabs>`, the only one with behavior, which also adds a [copy button](#copy-buttons) to each code block. This page lists the elements and the CSS custom properties a site sets to theme them, and shows how to style what the library doesn't know, such as a project's own note types.
 
 The [element contract]({repo}/blob/main/packages/elements/CONTRACT.md) defines each element exactly: its attributes, its children, and how it renders with and without the script. It's in the package, as `CONTRACT.md`.
 
@@ -14,13 +14,14 @@ The [element contract]({repo}/blob/main/packages/elements/CONTRACT.md) defines e
 A site built with [`@ascribed/astro`](index.md) has the library already: its `<Elements />` component loads the stylesheet and the script. Any other site imports them:
 
 ```js
-// Registers <ascribe-tabs>, <ascribe-tab>, and <ascribe-group>.
+// Registers <ascribe-tabs>, <ascribe-tab>, and <ascribe-group>, and adds
+// the copy buttons.
 import "@ascribed/elements";
 // The styles. Import this alone to style the elements without the script.
 import "@ascribed/elements/style.css";
 ```
 
-The elements render into the page, with no shadow DOM, so the site's own styles apply to them too. The stylesheet works with no script at all: without it, every tab of a group shows, one after another, each with its label, and nothing is hidden.
+The elements render into the page, with no shadow DOM, so the site's own styles apply to them too. The stylesheet works with no script at all: without it, every tab of a group shows, one after another, each with its label, nothing is hidden, and code blocks have no copy button.
 
 ## The elements
 
@@ -99,6 +100,35 @@ ascribe-availability::before {
 ```
 
 A table row's badges have no lead-in in sight. Their `(Available: ` and `)` are in the HTML, in spans with the class `ascribe-availability-lead-in`, which the stylesheet hides from sight and not from a screen reader, so the row reads as the page's Markdown writes it.
+
+## Copy buttons
+@available: ascribe planned
+
+The script adds a button to each code block, a `<pre>` holding a `<code>`, that copies the code: one with a title or a tested line, and one in a tab, too. It copies the code alone, without its caption or the newline that ends it, and says "Copied" in a live region, so a screen reader hears it. The button is `<button class="ascribe-copy">`, put after the `<pre>`, not inside it, so the code's text never holds it, and it sits in the block's top corner. With scripts off there's no button, and on a page that isn't a secure context, which has no clipboard, the script adds none either ([§12]({repo}/blob/main/packages/elements/CONTRACT.md#12-a-code-blocks-copy-button)).
+
+To leave it out, everywhere or around some blocks, set `--ascribe-copy-display` to `none`:
+
+```css
+:root {
+  --ascribe-copy-display: none;
+}
+```
+
+Restyle it with `--ascribe-copy-color`, `--ascribe-copy-background`, `--ascribe-copy-hover-background`, and `--ascribe-copy-focus-color`, or by selecting `.ascribe-copy`. Its words are the stylesheet's generated content, like the lead-ins below, and its name and what the live region says are read from them, so translating them translates all three:
+
+```css
+.ascribe-copy::before {
+  content: "Copier";
+}
+
+.ascribe-copy[data-ascribe-copy="copied"]::before {
+  content: "Copié";
+}
+
+.ascribe-copy[data-ascribe-copy="failed"]::before {
+  content: "Échec de la copie";
+}
+```
 
 ## Choosing a tab from a script
 

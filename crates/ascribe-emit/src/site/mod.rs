@@ -207,7 +207,8 @@ impl Emitter for SiteEmitter {
             })
         };
         let found = build.permalinks();
-        let help = help::entries(cx, build, &found);
+        let recorded = cx.project().recorded_permalinks();
+        let help = help::entries(cx, &recorded, build, &found);
         let help_paths = help::entry_paths(cx, help.keys().copied());
         let redirects = redirects::redirects(
             cx.model,
@@ -226,7 +227,10 @@ impl Emitter for SiteEmitter {
                 }),
             )?,
             generated(PAGES_PATH, pages::list(cx.model, build))?,
-            generated(PERMALINKS_PATH, permalinks::list(cx.model, build))?,
+            generated(
+                PERMALINKS_PATH,
+                permalinks::list(cx.model, &recorded, build),
+            )?,
             generated(REDIRECTS_PATH, redirects::json(&redirects))?,
             generated(SCHEMA_PATH, crate::zod::generate(cx.model))?,
         ];

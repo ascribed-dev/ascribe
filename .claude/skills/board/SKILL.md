@@ -35,6 +35,16 @@ Several cards going to the same Status move in one run, listed with spaces or co
 
 A move doesn't read the board, so `board.json` stays as it was; add `read: "true"` to `inputs` to read it in the same run. Every call the workflow makes to the board counts against one token's hourly GraphQL limit, and a read lists the whole board, so use one run for a batch and read only when you need to. When a run fails on the limit, its log says `API rate limit exceeded` or `unknown owner type`: wait for the limit to reset instead of retrying in a loop, since every retry spends the same limit and so do other sessions'.
 
+## Start cards that don't collide
+
+The coordinator moves cards from Ready to In progress, up to the project's limit. Cards that change the same files at once make their implementors merge `main` over and over, renumber, and sometimes build the same fix twice, so it also holds back a card that would collide:
+
+- **Read the card's `Touches:` line** in triage's report ([the `triage` skill](../triage/SKILL.md), step 6) before starting it.
+- **Don't start a card while an In progress card names the same module.** Start it once that card's pull request is merged. Two cards in different modules of one crate can run together; the line names modules so that they can.
+- **Start a plan's phases in order,** each once the one before is merged, unless the plan says two can run at once.
+
+The files nearly every card touches, `changes/`, generated references, and `project-docs/surface.md`, don't count as a collision.
+
 ## Approve a pull request
 
 Agents post as the maintainer, who also authors their pull requests, and GitHub doesn't let a pull request's author approve it. Approve posts the approval as `github-actions[bot]`, for the commit you reviewed.

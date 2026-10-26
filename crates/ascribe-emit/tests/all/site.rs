@@ -30,6 +30,18 @@ fn a_page_is_its_frontmatter_and_its_body() {
 }
 
 #[test]
+fn a_code_blocks_request_and_response_are_left_out() {
+    // SPEC §3.3.1: the site keeps `title` and `tested` for the caption.
+    let out = body(
+        "```json response=\"../api.yaml#create 201\" title=\"Created\" tested=\"Node 24\"\n{}\n```\n",
+    );
+    assert!(
+        out.contains("```json title=\"Created\" tested=\"Node 24\"\n{}\n```"),
+        "{out}"
+    );
+}
+
+#[test]
 fn every_heading_ends_in_a_marker_with_its_page_id() {
     assert_eq!(
         body("# One\n\nTwo\n---\n\n## One\n\n### Custom\n@id: mine\n\n## \n"),

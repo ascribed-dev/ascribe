@@ -27,8 +27,8 @@ use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_check::identity::Identity;
 use ascribe_check::{
-    Acknowledgements, Diagnostic, NAV_FILE_ID, PERMALINKS_FILE_ID, PageChecker, Project,
-    ReadFailure, Registry, Severity, SourceFile, apply_levels, check_file,
+    ADDRESSES_FILE_ID, Acknowledgements, Diagnostic, NAV_FILE_ID, PERMALINKS_FILE_ID, PageChecker,
+    Project, ReadFailure, Registry, Severity, SourceFile, apply_levels, check_file,
 };
 use ascribe_core::path::normalize;
 use ascribe_core::{FileId, LineIndex, RelPath};
@@ -83,6 +83,11 @@ pub(crate) struct Across {
     pub list: Vec<lsp_types::Diagnostic>,
     /// The navigation file's, `ascribe.nav`, which isn't a source either.
     pub nav: Vec<lsp_types::Diagnostic>,
+    /// What they found at `ascribe.addresses`, nor that: an entry the
+    /// permalinks list is behind on. The file's own checks, and the
+    /// addresses compared with the base, are sent apart
+    /// ([`crate::addresses`]).
+    pub addresses: Vec<lsp_types::Diagnostic>,
     /// Each memo file's, committed and personal (SPEC §7.7), by its path
     /// from the project root, levels applied: every memo file the checks
     /// read, with nothing for one that has no problem.
@@ -220,6 +225,7 @@ impl Core {
         let mut model_changed = false;
         let mut list_changed = false;
         let mut nav_changed = false;
+        let mut addresses_changed = false;
         let mut memos_changed: Vec<(RelPath, Vec<lsp_types::Diagnostic>)> = Vec::new();
         if let Some(across) = across
             && *across != *loaded.across
@@ -239,6 +245,7 @@ impl Core {
             model_changed = across.model != loaded.across.model;
             list_changed = across.list != loaded.across.list;
             nav_changed = across.nav != loaded.across.nav;
+            addresses_changed = across.addresses != loaded.across.addresses;
             // A memo file that's gone is published empty, once.
             for path in loaded.across.memos.keys() {
                 if !across.memos.contains_key(path) {
@@ -286,6 +293,11 @@ impl Core {
         if nav_changed && let Some(loaded) = self.loaded.as_ref() {
             let path = loaded.root.join(ascribe_model::NAV_FILE);
             let found = loaded.across.nav.clone();
+            self.publish(&path, found);
+        }
+        if addresses_changed && let Some(loaded) = self.loaded.as_ref() {
+            let path = loaded.root.join(ascribe_model::ADDRESSES_FILE);
+            let found = loaded.across.addresses.clone();
             self.publish(&path, found);
         }
         self.publish_baseline();
@@ -637,11 +649,13 @@ fn run_across(
         ),
         ..Across::default()
     };
-    // The permalinks list's own, and the navigation file's, at the levels
+    // The permalinks list's own, the navigation file's, and what's at the
+    // addresses file, at the levels
     // `[checks]` sets (none of them is configurable, so as they are).
     for (id, out) in [
         (PERMALINKS_FILE_ID, &mut found.list),
         (NAV_FILE_ID, &mut found.nav),
+        (ADDRESSES_FILE_ID, &mut found.addresses),
     ] {
         let list = hold(by_file.remove(&id).unwrap_or_default()).diagnostics;
         if let Some(entry) = project.file(id) {

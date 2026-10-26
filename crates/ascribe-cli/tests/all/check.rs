@@ -78,6 +78,44 @@ fn errors_exit_1_and_show_the_source() {
     assert!(text.contains("1 error"), "{text}");
 }
 
+/// Three broken links: two whose help is the registry's, the same text, and
+/// one whose help names the page it likely meant.
+const REPEATED_HELP: &str =
+    "---\ntitle: Home\n---\n\n[Gone](gone.md) [Also](also.md) [Guide](guide.md)\n";
+
+#[test]
+fn text_prints_a_codes_shared_help_once_and_points_back_to_it_after() {
+    let dir = project(&[("index.md", REPEATED_HELP), ("guides.md", CLEAN)]);
+    let text = stdout(&ascribe(dir.path(), &["check"]));
+    let helps: Vec<&str> = text
+        .lines()
+        .filter_map(|line| line.split_once("Help: ").map(|(_, help)| help))
+        .collect();
+    let [first, second, third] = helps[..] else {
+        panic!("three helps: {text}");
+    };
+    assert!(
+        !first.contains("as for ASC036"),
+        "the first in full: {text}"
+    );
+    assert_eq!(
+        second, "as for ASC036 above (ascribe explain ASC036)",
+        "{text}"
+    );
+    assert!(
+        third.contains("guides.md"),
+        "help naming the occurrence stays: {text}"
+    );
+}
+
+#[test]
+fn json_keeps_every_diagnostics_help_in_full() {
+    let dir = project(&[("index.md", REPEATED_HELP), ("guides.md", CLEAN)]);
+    let text = stdout(&ascribe(dir.path(), &["check", "--format", "json"]));
+    assert!(text.contains("\"help\""), "{text}");
+    assert!(!text.contains("as for ASC036"), "{text}");
+}
+
 #[test]
 fn warnings_exit_0_unless_denied() {
     let dir = project(&[("index.md", WITH_WARNING)]);

@@ -88,9 +88,11 @@ In VS Code, **Source Action… → Apply the safe fixes in this page** applies a
 
 ### Text output
 
-Each diagnostic shows its code, message, and source, and its next step as `Help:`: the title of its first fix, or, with none, the fix advice the JSON gives as `help`. The output ends with a summary in one form: the files checked, the builds (`for every build`, or with `--build`, `` for build `cloud` ``), the files reported on, which with no paths are all of them, and the counts of errors, warnings, and advice (`checked 12 files for every build, reported on 1: 1 error, 0 warnings, 0 advice`):
+Each diagnostic shows its code, message, and source, and its next step as `Help:`: the title of its first fix, or, with none, the fix advice the JSON gives as `help`. Help that's the same for every diagnostic with a code is printed in full once; later diagnostics with that code point back to it, as `Help: as for ASC252 above (ascribe explain ASC252)`. The output ends with a summary in one form: the files checked, the builds (`for every build`, or with `--build`, `` for build `cloud` ``), the files reported on, which with no paths are all of them, and the counts of errors, warnings, and advice (`checked 12 files for every build, reported on 1: 1 error, 0 warnings, 0 advice`):
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check.txt
+
+A project with no pages yet, and nothing to report, says so in place of the summary, with the content root: `No pages in docs/ yet.` It exits with 0. The JSON is the same as for any check, with `files_checked` 0.
 
 Diagnostics go to standard output. A failure that stops the command (exit code 2) goes to standard error.
 
@@ -110,13 +112,20 @@ Advice the project's [baseline](baseline.md), `ascribe.baseline`, holds back isn
 @id {permalink=true}: cli-build
 
 @summary
-Checks the project, then writes each build's outputs. The checks run first, exactly as `ascribe check` runs them, and print what it prints. **If any check finds an error, nothing is written, for any build.**
+Checks the project, then writes each build's outputs. The checks run first, exactly as `ascribe check` runs them. **If any check finds an error, nothing is written, for any build.**
 
 @include: ../_generated/cli-build-options.md
 
 The Astro integration turns the source anchors that `--anchors` writes into attributes on every block's element ([site-render contract](../contracts/site-render.md#7-source-anchors)).
 
-Progress (`built cloud/plain: 3 pages, 2 assets`) and warnings go to standard error.
+The build prints each error in full, since errors stop it. Warnings and advice are only counted, in the check's summary line, with the command that lists each: `checked 8 files in every build: 0 errors, 1 warning, 3 advice: ascribe check for each`, or `checked 8 files in every build: no problems`. The advice the [baseline](baseline.md) holds back isn't counted with the rest, but after it, as `ascribe check` counts it: `no problems, 3412 in the baseline`. `--format json` prints exactly what `ascribe check --format json` does.
+
+Then it prints one line for each build it wrote, with the outputs it wrote, on standard error, with its warnings:
+
+```text
+built site: 6 pages, 2 assets (site, plain, json)
+built cloud: 3 pages, 2 assets (site, plain, json)
+```
 
 ### Outputs
 
@@ -139,7 +148,7 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 |---|---|
 | `0` | Built |
 | `1` | The checks found errors; nothing was written |
-| `2` | The build couldn't run: a usage error, no `ascribe.toml`, a content model with errors, another build writing to the output directory, a file in the output directory that Ascribe didn't write and would have to overwrite, or two pages of the site output with the same route |
+| `2` | The build couldn't run: a usage error, no `ascribe.toml`, a content model with errors, an `ascribe.baseline` with a line that doesn't parse (`--no-baseline` builds without the file), another build writing to the output directory, a file in the output directory that Ascribe didn't write and would have to overwrite, or two pages of the site output with the same route |
 
 ## `ascribe fmt`
 @id {permalink=true}: cli-fmt

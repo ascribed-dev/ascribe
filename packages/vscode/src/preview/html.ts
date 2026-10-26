@@ -85,7 +85,6 @@ export function shellHtml(resources: ShellResources): string {
     <header class="chrome">
       <div class="toolbar">
         <label>Build <select data-role="build" disabled></select></label>
-        <span data-role="build-description"></span>
         <div class="surface" role="group" aria-label="Preview" data-role="surface">
           <button type="button" data-surface="page" aria-pressed="true">Page</button>
           <button type="button" data-surface="site" aria-pressed="false">Site</button>

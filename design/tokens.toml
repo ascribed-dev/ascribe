@@ -386,6 +386,12 @@ section = "700 2.125rem/1.15"
 "--ascribe-tab-focus-color" = "color.focus"
 "--ascribe-tab-hover-background" = "color.panel"
 
+[emit."packages/elements/css/style.css".copy]
+"--ascribe-copy-color" = "color.muted"
+"--ascribe-copy-background" = "color.surface"
+"--ascribe-copy-hover-background" = "color.panel"
+"--ascribe-copy-focus-color" = "color.focus"
+
 [emit."packages/elements/css/style.css".states]
 "--ascribe-state-color" = "color.state"
 "--ascribe-state-background" = "color.state-background"
@@ -558,6 +564,7 @@ section = "700 2.125rem/1.15"
 "--type-hero" = "type.hero"
 "--type-display" = "type.display"
 "--type-section" = "type.section"
+"--scrim" = "color.scrim"
 
 [emit."site/src/styles/site.css".backdrop]
 "background" = "color.scrim"

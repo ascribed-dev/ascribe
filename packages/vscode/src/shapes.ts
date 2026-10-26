@@ -1140,6 +1140,24 @@ export interface LspWorkspaceEdit {
   documentChanges?: LspDocumentChange[];
 }
 
+/** An API: an OpenAPI spec that pages link into. */
+export interface ModelApi {
+  /** Its name, as `@operation` and `api:` addresses write it. */
+  name: string;
+  /** The spec's file, from the folder `ascribe.toml` is in. */
+  spec: string;
+  /**
+   * Where its reference is: the renderer's page, or the template of an
+   * operation's address, as written.
+   */
+  reference: string;
+  /**
+   * The renderer its reference is published with, `redoc`; absent when
+   * `reference` is a template of an operation's address.
+   */
+  renderer?: string;
+}
+
 /** An attribute a widget accepts. */
 export interface ModelAttribute {
   /** The key. */
@@ -1265,9 +1283,56 @@ export interface ModelField {
   declared?: string;
 }
 
+/** `[fragments]`. */
+export interface ModelFragments {
+  /**
+   * The patterns of the files that are fragments besides those whose
+   * path has a file or folder name starting with `_`, from the content
+   * root.
+   */
+  patterns: string[];
+  /** The fields a fragment's frontmatter may give, in declaration order. */
+  fields: ModelField[];
+}
+
+/** A file `[from]` takes tables or keys from. */
+export interface ModelFrom {
+  /** The file, from the folder `ascribe.toml` is in. */
+  file: string;
+  /** What it takes, as `take` names it: `releases`, `consumer.site`. */
+  take: string[];
+}
+
+/**
+ * An acknowledged problem: a check's problem about a content model entry
+ * or an image, which is intended.
+ */
+export interface ModelIntended {
+  /** The check, by its slug. */
+  check: string;
+  /** What it's about: `phrase`, `feature`, or `image`. */
+  kind: string;
+  /** Its key, or the image's path. */
+  name: string;
+  /** Why the problem is intended. */
+  reason: string;
+}
+
 /** A kind of content model entry. */
 export type ModelKind =
   "phrase" | "feature" | "term" | "dimension" | "note" | "widget" | "build" | "type";
+
+/** A lifecycle state. */
+export interface ModelLifecycleState {
+  /** Its name, which an availability spec gives. */
+  name: string;
+  /** Its label. */
+  label: string;
+  /** Whether content in it counts as available. */
+  available: boolean;
+  /** Whether it's built in, rather than declared by the project. */
+  builtin: boolean;
+}
 
 /** A release line. */
 export interface ModelLine {
@@ -1319,6 +1384,16 @@ export interface ModelNavSection {
    * name, which is then one of the parent's `pages` too.
    */
   page?: ModelNavPage;
+}
+
+/** A note type. */
+export interface ModelNoteType {
+  /** Its name, which `@note`'s `type` gives. */
+  name: string;
+  /** Its label. */
+  label: string;
+  /** Whether it's built in, rather than declared by the project. */
+  builtin: boolean;
 }
 
 /** An observation of a source's examples. */
@@ -1380,6 +1455,8 @@ export interface ModelReport {
   schema_version: number;
   /** The version of Ascribe that wrote it. */
   ascribe_version: string;
+  /** APIs, in declaration order. */
+  apis?: ModelApi[];
   /**
    * Builds, in declaration order, a versioned build as one for each live
    * line, the current line first.
@@ -1401,10 +1478,37 @@ export interface ModelReport {
   /** Features, in declaration order. */
   features?: ModelFeature[];
   /**
+   * `[fragments]`: the files that are fragments, and the fields a
+   * fragment's frontmatter may give.
+   */
+  fragments?: ModelFragments;
+  /**
+   * `[from]`: each file the project takes from, in the order `take`
+   * names them, with what it takes.
+   */
+  from?: ModelFrom[];
+  /**
+   * `[frontmatter]`: the fields every page type has, as written, in
+   * declaration order. Each type's `fields` has them already.
+   */
+  frontmatter?: ModelField[];
+  /**
    * Glossary terms, in the order of `[glossary] pages`, and on each page
    * in document order.
    */
   glossary?: ModelTerm[];
+  /**
+   * `[images.attributes]`: the keys an image's attribute block may give,
+   * in declaration order.
+   */
+  images?: ModelAttribute[];
+  /** `[[intended]]`: the acknowledged problems, in declaration order. */
+  intended?: ModelIntended[];
+  /**
+   * Lifecycle states: the built-in ones, as the project adjusts them,
+   * then the ones it declares.
+   */
+  lifecycle?: ModelLifecycleState[];
   /** `[listing]`: each key, with its value in effect. */
   listing?: ModelSetting[];
   /**
@@ -1413,8 +1517,11 @@ export interface ModelReport {
    * share of it. Only in the whole report.
    */
   navigation?: ModelNavSection;
-  /** `[permalinks]`: each key, with its value in effect. */
-  permalinks?: ModelSetting[];
+  /**
+   * Note types, the values of `@note`'s `type`: the built-in ones, as
+   * the project labels them, then the ones it declares.
+   */
+  notes?: ModelNoteType[];
   /** Phrases, in declaration order. */
   phrases?: ModelPhrase[];
   /** `[project]`: each key, with its value in effect. */
@@ -1431,6 +1538,8 @@ export interface ModelReport {
    * is declared.
    */
   types?: ModelType[];
+  /** `[versions]`: each key, with its value in effect. */
+  versions?: ModelSetting[];
   /** Project widgets, in declaration order. */
   widgets?: ModelWidget[];
 }
@@ -2501,8 +2610,8 @@ export interface Summary {
   acknowledged?: number;
   /**
    * How many problems `ascribe.baseline` holds back, which `diagnostics`
-   * leaves out and which are advice. Left out when there are none, and by
-   * `ascribe build`, which doesn't read the baseline.
+   * leaves out and which are advice. Left out when there are none, and
+   * with `--no-baseline`.
    */
   baselined?: number;
   /** With `--summary`: how many diagnostics have each code, most first. */

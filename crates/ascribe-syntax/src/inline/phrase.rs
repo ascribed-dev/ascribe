@@ -190,7 +190,7 @@ impl Pass<'_> {
     // SPEC §5.1: backslashes don't escape in code, so `\{key}` is a
     // candidate here.
     pub(super) fn code_block(&mut self, span: Span, code: &mut CodeBlock) {
-        if !code.fenced || !code.info.split_whitespace().any(|w| w == "phrases=true") {
+        if !code.fenced || !ascribe_core::info_string::InfoString::parse(&code.info).phrases() {
             return;
         }
         let text = self.source.get(span.start()..span.end()).unwrap_or("");

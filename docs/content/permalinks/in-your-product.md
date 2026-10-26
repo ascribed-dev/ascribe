@@ -50,20 +50,20 @@ Generate a new key in the dashboard, then …
 
 Nothing is guessed: a section without `@summary` has no `summary` in the file, whatever it opens with, and a product shows its title and "Read more" alone.
 
-`ascribe check` says where one is missing, and where one is too long, as advice:
+Two checks say where one is missing, and where one is too long. They're off unless the project names them in [`[checks]`](../content-model/checks.md), since a project that uses permalinks only for links that last doesn't need summaries:
 
 - [`summary-missing`](../checks/diagnostics/content-checks.md#ASC252): a heading's permalink with no `@summary`. A page's own permalink has its description, which [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) asks for.
 - [`summary-long`](../checks/diagnostics/content-checks.md#ASC253): a summary of 300 characters or more, counted as a description is. `limit` changes the number.
 
-To require a summary for every permalink, raise `summary-missing` to a warning in [`[checks]`](../content-model/checks.md):
+Turn them on in the project that ships `help.json`. As advice, `ascribe check` lists what's missing without failing; as a warning, `--deny-warnings` requires a summary for every permalink:
 
 ```toml
 [checks]
 summary-missing = "warning"
-
-[checks.summary-long]
-limit = 200
+summary-long = "advice"
 ```
+
+`[checks.summary-long]` with a `limit`, such as `limit = 200`, turns `summary-long` on too, at its default level, advice.
 
 ## Read it in the product
 @id: reading-the-file

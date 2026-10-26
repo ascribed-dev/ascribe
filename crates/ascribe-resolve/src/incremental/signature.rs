@@ -241,7 +241,6 @@ impl Fingerprints {
             editor_build,
             checks,
             intended,
-            permalinks,
             crawlers,
             listing,
             // What's taken is in the fields above; where it was taken from
@@ -341,7 +340,6 @@ impl Fingerprints {
                     &read_through,
                     checks,
                     intended,
-                    permalinks,
                     crawlers,
                     (listing, api_specs)
                 ),

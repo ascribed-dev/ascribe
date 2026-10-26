@@ -8,6 +8,8 @@ Part of the [`ascribe.toml` format contract](../content-model.md), whose [conten
 
 ## 19. `[checks]`
 
+`[checks]` holds settings for Ascribe's own checks and tools, the processor settings SPEC §7.2 leaves to a processor: SPEC defines none of these checks, their names, or their levels.
+
 Each key of `[checks]` other than `vale` and `links` is a check's slug, as the [diagnostics reference](../../checks/diagnostics.md) lists it, and its value is a level, `"off"`, `"advice"`, `"warning"`, or `"error"`, or a table, `[checks.<check>]`, with these keys and the check's own settings:
 
 @include: ../../_generated/content-model-checks.md
@@ -16,7 +18,7 @@ A check's own settings are listed with the check in the [diagnostics reference](
 
 `summary-long` takes `limit` too.
 
-A level applies wherever the diagnostic is reported: by `ascribe check`, by `ascribe build`, and in the editor. `"off"` MUST NOT be reported, and advice MUST NOT fail `ascribe check`, with `--deny-warnings` or without.
+A level applies wherever the diagnostic is reported: by `ascribe check`, by `ascribe build`, and in the editor. `"off"` MUST NOT be reported, and advice MUST NOT fail `ascribe check`, with `--deny-warnings` or without. A check the diagnostics registry marks off by default (`off-by-default`) MUST NOT be reported unless `[checks]` names it: named with a level, it's reported at that level, and named as a table without `level`, at its registry severity.
 
 **Rules** (§25.9): a key MUST be a check's slug, or `vale` or `links`, and an unknown one is reported with a did-you-mean suggestion (`model-unknown-key`). The check MUST be one the diagnostics registry marks configurable (`model-check-not-configurable`), and a level one of the four (`model-invalid-value`). A value MUST be a string or a table, and a table MUST have only `level` and the check's settings (`model-unknown-key`). `page-size`'s, `memo-long`'s, and `summary-long`'s `limit` MUST be an integer above 0, and `image-large`'s an integer number of bytes or a string of a number and `B`, `KB`, or `MB`, with or without a space between, where a kilobyte is 1,000 bytes and a megabyte 1,000,000 (`model-wrong-type`).
 
@@ -64,13 +66,7 @@ How `ascribe report links` checks external links: with lychee, which the project
 
 ## 20. `[permalinks]`
 
-`[permalinks.retired]` and `[permalinks.aliases]` hold names that no heading or page declares (SPEC §7.6). A key of `[permalinks.retired]` is a retired permalink's name, and its table takes:
-
-@include: ../../_generated/content-model-permalinks-retired.md
-
-A key of `[permalinks.aliases]` is an alias's name, and its value the name it leads to, which MUST be a heading's or a page's permalink or another alias. `ascribe permalinks retire` and the editor's quick fix on `permalink-removed` MUST write `[permalinks.retired]` in place, and the quick fix's reason is the placeholder `why this permalink was retired`.
-
-**Rules** (§25.10): `[permalinks]` and a retired permalink's table MUST have no keys but those above (`model-unknown-key`). A name MUST have the characters of an `@id` (`model-invalid-name`). A retired permalink MUST have a `reason` (`model-missing-key`), not empty (`model-empty-text`) and not the placeholder (`model-permalinks`). A name MUST NOT be both retired and an alias, and an alias MUST NOT lead back to itself (`model-permalinks`). What needs the content is checked with the project, not by the loader: SPEC §8.2's `permalink-name-conflict`, `permalink-alias-target-missing`, and `permalink-retired-target-missing`.
+None. A permalink's record, retired or moved, is an entry of `ascribe.addresses` keyed `go:<name>` (SPEC §7.10), and `[permalinks]` is a replaced key: a loader MUST report it as an error at the key (`model-unknown-key`), whose fix says that `ascribe addresses init` moves its entries.
 
 ---
 

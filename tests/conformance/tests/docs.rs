@@ -732,13 +732,6 @@ const SETTINGS_TABLES: &[SettingsTable] = &[
         releases: false,
     },
     SettingsTable {
-        name: "content-model-permalinks-retired.md",
-        page: "content-model/checks.md",
-        table: "permalinks.retired.<name>",
-        keys: &[],
-        releases: false,
-    },
-    SettingsTable {
         name: "content-model-crawlers.md",
         page: "_fragments/content-model/crawlers.md",
         table: "crawlers",
@@ -834,9 +827,6 @@ const DESCRIBED_IN_PROSE: &[(&str, &str)] = &[
     ("", "checks"),
     ("", "intended"),
     ("checks", "vale"),
-    ("", "permalinks"),
-    ("permalinks", "retired"),
-    ("permalinks", "aliases"),
     ("listing", "older-lines"),
 ];
 
@@ -970,7 +960,6 @@ const RULE_GROUPS: &[(&str, &str)] = &[
     ("phrases", "Phrases and the glossary"),
     ("widgets", "Widgets"),
     ("consumer", "The consumer, builds, and the editor"),
-    ("permalinks", "`[permalinks]`"),
     ("crawlers", "`[crawlers]`"),
     ("listing", "`[listing]`"),
     ("apis", "`[apis]`"),
@@ -1146,7 +1135,7 @@ fn index<'a>(entries: impl Iterator<Item = &'a Entry>, page_of: &BTreeMap<&str, 
             page = page_of[entry.code.as_str()],
             anchor = entry.code,
             slug = entry.slug,
-            severity = severity(entry.severity),
+            severity = shown_severity(entry),
             level = level(entry.level),
             next = next(entry),
         );
@@ -1167,6 +1156,7 @@ fn model_group(entry: &Entry) -> &str {
 
 fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: &Pages) {
     let section = match pages.spec.get(&entry.spec) {
+        None if entry.spec == "none" => "Ascribe's own, not in SPEC".to_owned(),
         Some(anchor) => format!(
             "[SPEC §{}]({{repo}}/blob/main/SPEC.md#{anchor})",
             entry.spec
@@ -1191,7 +1181,7 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
         entry.slug,
         entry.code,
         summary(entry.summary.as_deref().or(condition)),
-        severity(entry.severity),
+        shown_severity(entry),
         level(entry.level).to_lowercase(),
         next(entry),
     );
@@ -1368,6 +1358,17 @@ fn place_words(place: &str) -> Option<&'static str> {
         "block" => Some("with `@intended` above the block, or under the heading for a heading"),
         "entry" => Some("in `[[intended]]`"),
         _ => None,
+    }
+}
+
+/// An entry's severity, as the reference shows it: with "off by default"
+/// for a check that's off unless a project names it in `[checks]`.
+fn shown_severity(entry: &Entry) -> String {
+    let shown = severity(entry.severity);
+    if entry.off_by_default {
+        format!("{shown}, off by default")
+    } else {
+        shown.to_owned()
     }
 }
 

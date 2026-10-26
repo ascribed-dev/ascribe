@@ -1,8 +1,8 @@
 description: >-
-  An alias leads to a permalink the content declares, directly or through
-  another alias, and a list that records each alias as declared reports
-  nothing.
-spec: ["7.5", "7.6"]
+  A name `ascribe.addresses` moves to another permalink leads to a
+  permalink the content declares, directly or through another moved name,
+  and a list that records each as an alias reports nothing.
+spec: ["7.5", "7.10"]
 tags: [check]
 
 diagnostics: []

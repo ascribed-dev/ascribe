@@ -150,7 +150,10 @@ struct RoleName {
 /// Keys a table had and doesn't now, each with its table and the variant of
 /// `model-unknown-key` that says what replaced it: before 1.0, an old key
 /// isn't kept as an alias.
-const REPLACED: &[(&str, &str, &str)] = &[("consumer", "headers", "consumer-headers")];
+const REPLACED: &[(&str, &str, &str)] = &[
+    ("consumer", "headers", "consumer-headers"),
+    ("ascribe.toml", "permalinks", "permalinks-moved"),
+];
 
 impl<'s> Loader<'s> {
     // ---- helpers ---------------------------------------------------------
@@ -415,7 +418,6 @@ impl<'s> Loader<'s> {
         let apis = self.apis(root.get("apis"));
         let checks = self.checks(root.get("checks"));
         let intended = self.intended(root.get("intended"), &phrases, &features);
-        let permalinks = self.permalinks(root.get("permalinks"));
         let crawlers = self.crawlers(root.get("crawlers"));
         let listing = self.listing(root.get("listing"), &types, &project.value.content_root);
 
@@ -443,7 +445,6 @@ impl<'s> Loader<'s> {
             editor_build,
             checks,
             intended,
-            permalinks,
             crawlers,
             listing,
             taken,

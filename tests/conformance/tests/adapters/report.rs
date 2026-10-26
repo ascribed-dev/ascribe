@@ -30,7 +30,9 @@
 //! The site checker's stand-in checks `[consumer] site`: on a host
 //! `failing.test`, three checks fail, one each that Ascribe, the hosting,
 //! and the pages own (`llms-txt-exists`, `content-negotiation`,
-//! `page-size-markdown`); every other check passes.
+//! `page-size-markdown`); on a host `unfetched.test`,
+//! `llms-txt-links-resolve` warns that a link couldn't be fetched; every
+//! other check passes.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Mutex;
@@ -127,6 +129,7 @@ fn found(case: &Case) -> Result<(Project, Vec<ascribe_check::Diagnostic>), Adapt
     let options = Options {
         sections: &[section],
         builds: &[],
+        baseline: true,
         not_listed: false,
         site: site.as_deref(),
         tools: &tools,
@@ -228,12 +231,14 @@ impl LinkChecker for StandInLinks {
     }
 }
 
-/// A site checker that fails three checks on `failing.test`.
+/// A site checker that fails three checks on `failing.test`, and on
+/// `unfetched.test` warns of a link that couldn't be fetched.
 struct StandInSite;
 
 impl SiteChecker for StandInSite {
     fn check(&self, request: &site::Request) -> Result<Vec<CheckResult>, ToolError> {
         let failing = links::host(&request.site) == Some("failing.test");
+        let unfetched = links::host(&request.site) == Some("unfetched.test");
         Ok(site::CHECKS
             .iter()
             .map(|(id, _)| {
@@ -242,6 +247,18 @@ impl SiteChecker for StandInSite {
                         *id,
                         "llms-txt-exists" | "content-negotiation" | "page-size-markdown"
                     );
+                if unfetched && *id == "llms-txt-links-resolve" {
+                    return CheckResult {
+                        id: (*id).to_owned(),
+                        category: "test".to_owned(),
+                        status: Status::Warn,
+                        message: "1/2 same-origin links resolve (50%); 1 broken; 1 failed to fetch"
+                            .to_owned(),
+                        details: serde_json::json!({"sameOrigin": {"broken": [
+                            {"url": "https://unfetched.test/a.md", "status": 0, "error": "fetch failed"}
+                        ]}}),
+                    };
+                }
                 CheckResult {
                     id: (*id).to_owned(),
                     category: "test".to_owned(),
@@ -251,6 +268,7 @@ impl SiteChecker for StandInSite {
                     } else {
                         "passed".to_owned()
                     },
+                    details: serde_json::Value::Null,
                 }
             })
             .collect())

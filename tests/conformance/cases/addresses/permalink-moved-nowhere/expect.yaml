@@ -1,0 +1,8 @@
+description: >-
+  A permalink's name moved to a name no heading or page declares leads
+  nowhere: an error at the entry.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: addresses-entry-not-a-page, file: ascribe.addresses, line: 4}

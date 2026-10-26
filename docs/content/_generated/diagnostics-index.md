@@ -170,11 +170,7 @@
 | [ASC174](../checks/diagnostics/content-model-builds.md#ASC174) | `model-consumer-permalink-path` | Error | File | write |
 | [ASC175](../checks/diagnostics/pages.md#ASC175) | `permalinks-list-invalid` | Error | File | write |
 | [ASC176](../checks/diagnostics/pages.md#ASC176) | `permalinks-list-behind` | Warning | File | fix |
-| [ASC177](../checks/diagnostics/pages.md#ASC177) | `permalink-removed` | Warning | File | write |
-| [ASC178](../checks/diagnostics/content-model-builds.md#ASC178) | `model-permalinks` | Error | File | write |
-| [ASC179](../checks/diagnostics/pages.md#ASC179) | `permalink-alias-target-missing` | Error | File | write |
-| [ASC180](../checks/diagnostics/pages.md#ASC180) | `permalink-name-conflict` | Error | File | write |
-| [ASC181](../checks/diagnostics/pages.md#ASC181) | `permalink-retired-target-missing` | Error | File | write |
+| [ASC177](../checks/diagnostics/pages.md#ASC177) | `permalink-lost` | Warning | File | write |
 | [ASC182](../checks/diagnostics/directives.md#ASC182) | `include-limit` | Error | Page | write |
 | [ASC183](../checks/diagnostics/content-model-builds.md#ASC183) | `model-crawlers-line` | Error | File | write |
 | [ASC184](../checks/diagnostics/output-checks.md#ASC184) | `listing-disallowed` | Advice | File | fix |
@@ -244,8 +240,8 @@
 | [ASC249](../checks/diagnostics/pages.md#ASC249) | `summary-not-paragraph` | Error | File | write |
 | [ASC250](../checks/diagnostics/pages.md#ASC250) | `summary-repeated` | Error | Page | write |
 | [ASC251](../checks/diagnostics/pages.md#ASC251) | `summary-in-variant` | Error | Page | write |
-| [ASC252](../checks/diagnostics/content-checks.md#ASC252) | `summary-missing` | Advice | Page | write |
-| [ASC253](../checks/diagnostics/content-checks.md#ASC253) | `summary-long` | Advice | Page | write |
+| [ASC252](../checks/diagnostics/content-checks.md#ASC252) | `summary-missing` | Advice, off by default | Page | write |
+| [ASC253](../checks/diagnostics/content-checks.md#ASC253) | `summary-long` | Advice, off by default | Page | write |
 | [ASC254](../checks/diagnostics/project-files.md#ASC254) | `addresses-file-invalid` | Error | File | write |
 | [ASC255](../checks/diagnostics/project-files.md#ASC255) | `address-lost` | Warning | File | write |
 | [ASC256](../checks/diagnostics/project-files.md#ASC256) | `anchor-lost` | Advice | File | write |

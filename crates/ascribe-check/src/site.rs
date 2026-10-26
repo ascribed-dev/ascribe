@@ -217,6 +217,70 @@ pub struct CheckResult {
     /// What the checker said.
     #[serde(default)]
     pub message: String,
+    /// What else the checker wrote about it, in its own shape:
+    /// [`CheckResult::unreached`] reads the addresses it names.
+    #[serde(default)]
+    pub details: serde_json::Value,
+}
+
+impl CheckResult {
+    /// The addresses the check asked for and didn't get, as its `details`
+    /// name them: for `llms-txt-links-resolve`, the same-origin links and
+    /// then the external ones that didn't come back OK. None for a check
+    /// whose `details` don't name any.
+    pub fn unreached(&self) -> Vec<Unreached> {
+        ["sameOrigin", "crossOrigin"]
+            .iter()
+            .filter_map(|origin| self.details[origin]["broken"].as_array())
+            .flatten()
+            .filter_map(|link| {
+                Some(Unreached {
+                    url: link["url"].as_str()?.to_owned(),
+                    status: link["status"]
+                        .as_u64()
+                        .and_then(|s| u16::try_from(s).ok())
+                        .unwrap_or(0),
+                    error: link["error"].as_str().map(str::to_owned),
+                })
+            })
+            .collect()
+    }
+}
+
+/// An address a check asked for and didn't get.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Unreached {
+    /// The address.
+    pub url: String,
+    /// The HTTP status it answered with, or 0 when it didn't answer.
+    pub status: u16,
+    /// Why it couldn't be fetched, when it didn't answer.
+    pub error: Option<String>,
+}
+
+impl Unreached {
+    /// Whether it couldn't be fetched at all, rather than answering with a
+    /// status: nothing about the site is known from it yet.
+    pub fn is_fetch_error(&self) -> bool {
+        self.error.is_some()
+    }
+}
+
+/// What the checker said, without its last period, and each address it
+/// didn't get with its status or why it couldn't be fetched.
+fn said(result: &CheckResult, unreached: &[Unreached]) -> String {
+    let message = result.message.trim_end_matches('.');
+    if unreached.is_empty() {
+        return message.to_owned();
+    }
+    let each: Vec<String> = unreached
+        .iter()
+        .map(|u| match &u.error {
+            Some(error) => format!("`{}` (couldn't be fetched: {error})", u.url),
+            None => format!("`{}` (HTTP {})", u.url, u.status),
+        })
+        .collect();
+    format!("{message}. Not reached: {}", each.join(", "))
 }
 
 /// What to give the checker.
@@ -277,8 +341,22 @@ pub fn check(
         .iter()
         .filter(|r| r.status.is_finding())
         .filter_map(|r| {
-            let result = r.message.trim_end_matches('.').to_owned();
+            let unreached = r.unreached();
+            let result = said(r, &unreached);
             let issue = match owner(&r.id) {
+                // Every address the check didn't get failed to fetch: no
+                // answer says yet that what Ascribe wrote is wrong.
+                Owner::Ascribe
+                    if !off(diagnostics::DELIVERY_OUTPUT)
+                        && !unreached.is_empty()
+                        && unreached.iter().all(Unreached::is_fetch_error) =>
+                {
+                    let issue = Issue::new(diagnostics::DELIVERY_OUTPUT, at)
+                        .with_arg("check", r.id.clone())
+                        .with_arg("result", result)
+                        .with_variant("unfetched");
+                    return Some(Diagnostic::from_issue(&issue));
+                }
                 Owner::Ascribe if !off(diagnostics::DELIVERY_OUTPUT) => {
                     Issue::new(diagnostics::DELIVERY_OUTPUT, at)
                         .with_arg("check", r.id.clone())

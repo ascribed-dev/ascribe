@@ -31,6 +31,8 @@ The same problems as `ascribe check`, counted three ways: by check, by file, and
 
 It also lists every problem [acknowledged as intended](../writing/directives.md#intended), with its reason, so an acknowledgement that's no longer true is easy to find. `ascribe check --format concise` lists each problem.
 
+The advice the project's [baseline](baseline.md) puts off isn't in the counts, as it isn't in `ascribe check`'s. The section says how much it holds back instead, `0 errors, 0 warnings, 2 advice, and 3412 in the baseline`, and the JSON's `problems` as `baselined`: the backlog, which goes down as the team fixes it and prunes the file. `--no-baseline` reports everything, without reading the file.
+
 ### What's new since the last report
 
 From its second run on, the section says which problems are new since the last report, and how many that report listed are gone, and lists the new ones:
@@ -109,7 +111,7 @@ Agents
   23 checks: 21 passing, 2 failing, 1 of them failing since 9 October: redirect-behavior.
 ```
 
-A check is the same as one the last report had when it's on the same site, by the address given with `--site`, and has the same id. Failing, here, is failing or warning. A check is new when it's failing now and was passing on the last report, or wasn't in it, as a check the checker adds in a later version; one that was skipped or couldn't run then isn't counted as new, since there's nothing to say it was passing. One that failed then and passes now, or is gone, no longer fails.
+A check is the same as one the last report had when it's on the same site, by the address given with `--site`, and has the same id. Failing, here, is failing or warning. A check is new when it's failing now and was passing on the last report, or wasn't in it, as a check the checker adds in a later version; one that was skipped or couldn't run then isn't counted as new, since there's nothing to say it was passing. One that failed then and passes now, or is gone, no longer fails. One that failed then and warns now is still failing, so it's neither.
 
 Every check runs every time: nothing the checker said is reused, because a published site changes without a commit. The report only remembers how each check came out, to compare with. A first run says nothing about what's new, and neither does a run on another site than the last one's, such as a preview after the published site, since that's a different site. `--no-history` says nothing about what's new either, and keeps nothing. How each check came out is kept in `.ascribe/history/report.json`, beside the last report's problems; a report that doesn't run `agents` keeps what the file had for it.
 

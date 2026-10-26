@@ -11,12 +11,19 @@
       "type": "string"
     },
     "created": {
-      "description": "Whether the project had no file, so this made one. A file already\nthere is left as it is.",
+      "description": "Whether the project had no file, so this made one. A file already\nthere is left as it is, but for what's moved into it.",
       "type": "boolean"
     },
     "file": {
       "description": "The file, from the project's folder: `ascribe.addresses`.",
       "type": "string"
+    },
+    "moved": {
+      "description": "The keys moved into the file from `ascribe.toml`'s `[permalinks]`,\neach `go:<name>`, in the order written there; empty when it has\nnone.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
     },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
@@ -28,7 +35,8 @@
     "schema_version",
     "ascribe_version",
     "file",
-    "created"
+    "created",
+    "moved"
   ],
   "title": "AddressesInitReport",
   "type": "object"

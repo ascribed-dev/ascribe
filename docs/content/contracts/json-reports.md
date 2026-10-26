@@ -2,6 +2,7 @@
 type: reference
 title: JSON report contract
 description: The JSON Schemas of what the ascribe commands write with --format json.
+permalink: json-reports
 ---
 
 The commands that take `--format json` each write one JSON document, and this contract gives each document's schema. The schemas are JSON Schema (draft 2020-12), generated from the code that writes the documents, so the two can't disagree. They're in the repository's [`schemas/`]({repo}/tree/main/schemas/) folder. The [command reference](../command/index.md) says what each command does, with an example of its document.

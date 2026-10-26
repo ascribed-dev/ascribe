@@ -96,6 +96,7 @@
       "to": "/upgrade/"
     }
   ],
+  "recorded": false,
   "outputs": [
     {
       "build": "cloud",

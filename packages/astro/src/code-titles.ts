@@ -15,13 +15,55 @@ type ShikiTransformer = NonNullable<
 >[number];
 
 /**
- * The value of `key="…"` in a code block's meta, if it has one. The meta has
- * its Markdown escapes taken off (`title="say \"hi\""` arrives as
- * `title="say "hi""`), so the value ends at a quote followed by a space or
- * the end, and a quote inside it survives.
+ * The value of the first `key=value` pair in a code block's meta, the info
+ * string past its language, when it isn't empty. The meta has its Markdown
+ * escapes taken off, and is read as SPEC §3.3.1 reads an info string, as
+ * `ascribe_core::info_string` does: words parted by spaces and tabs, a pair's
+ * value a token or a quoted string in which `\"` and `\\` escape, and a pair
+ * followed by a space, a tab, or the end. Any other word isn't a pair.
  */
 function metaValue(meta: string, key: string): string | undefined {
-  return new RegExp(`(?:^|\\s)${key}="(.*?)"(?=\\s|$)`).exec(meta)?.[1] || undefined;
+  let i = 0;
+  while (i < meta.length) {
+    if (meta[i] === " " || meta[i] === "\t") {
+      i += 1;
+      continue;
+    }
+    const pair = /^([a-z][a-z0-9-]*)=/.exec(meta.slice(i));
+    let end = wordEnd(meta, i);
+    let value: string | undefined;
+    if (pair !== null) {
+      let j = i + pair[0].length;
+      if (meta[j] === '"') {
+        let text = "";
+        j += 1;
+        while (j < meta.length && meta[j] !== '"') {
+          if (meta[j] === "\\" && (meta[j + 1] === '"' || meta[j + 1] === "\\")) j += 1;
+          text += meta[j];
+          j += 1;
+        }
+        if (j < meta.length && (j + 1 === meta.length || isSpace(meta[j + 1]))) {
+          value = text;
+          end = j + 1;
+        }
+      } else if (j < end && !meta.slice(j, end).includes('"')) {
+        value = meta.slice(j, end);
+      }
+    }
+    if (value !== undefined && pair?.[1] === key) return value || undefined;
+    i = end;
+  }
+  return undefined;
+}
+
+function isSpace(c: string | undefined): boolean {
+  return c === " " || c === "\t";
+}
+
+function wordEnd(text: string, from: number): number {
+  let i = from;
+  while (i < text.length && !isSpace(text[i])) i += 1;
+  return i;
 }
 
 /** The `title="…"` in a code block's meta, if it has one. */

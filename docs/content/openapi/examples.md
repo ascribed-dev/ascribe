@@ -25,7 +25,10 @@ Add `request="<link>"` or `response="<link> <status>"` to a `json` block's info 
 - **A response's status** is written as the spec's key is: `201`, `2XX`, or `default`.
 - **A media type** goes after the status, or after the link for a request, when the body has more than one JSON media type: `response="../api/openapi.yaml#getUser 404 application/problem+json"`. Otherwise the body's one JSON media type is used, `application/json` or any `…+json`.
 
-The marker sits beside `title` and `tested`, and the block stays a plain fenced block, shown as it is by every Markdown viewer. The published page doesn't change.
+The marker sits beside `title` and `tested`, before or after them, as a pair of the info string ([SPEC §3.3.1]({repo}/blob/main/SPEC.md)), and the block stays a plain fenced block, shown as it is by every Markdown viewer. The published page doesn't change.
+
+@available: ascribe planned
+The site and plain outputs leave the marker out of the block's info string, since its link is a path in your repository, which means nothing to a reader of the page or to an agent reading its Markdown.
 
 A marker on a block that isn't a `json` block, or whose code isn't JSON, is `example-not-json`. One that names a body the operation doesn't have, a request body it doesn't take or a status it has no response for, is `example-body-missing`.
 

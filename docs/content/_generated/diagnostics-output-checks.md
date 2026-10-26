@@ -63,7 +63,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 @id {permalink=true}: ASC165
 @summary: The project has `[checks.vale]`, and Vale reports an alert about the prose of a page or a fragment, or of a phrase's text. Reported where the alert is in the source, or at the phrase.
 
-Advice · file level · next step: write · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+Advice · file level · next step: write · configurable in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** The project has `[checks.vale]`, and Vale reports an alert about the prose of a page or a fragment, or of a phrase's text. Reported where the alert is in the source, or at the phrase.
 
@@ -77,7 +77,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 @id {permalink=true}: ASC166
 @summary: The project has `[checks.vale]`, and Vale couldn't be run, failed, or didn't finish in time, or the tool checking the project doesn't start it, as the agents' tools don't. Reported once, at `[checks.vale]`.
 
-Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+Advice · file level · next step: outside · configurable in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** The project has `[checks.vale]`, and Vale couldn't be run, failed, or didn't finish in time, or the tool checking the project doesn't start it, as the agents' tools don't. Reported once, at `[checks.vale]`.
 
@@ -143,7 +143,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 **Message:** the site fails the delivery spec's `{check}` check, which what Ascribe writes should pass: \{result}. Report it at \{issues}
 
-**Fix:** First check that the site publishes what the build wrote, as it wrote it: `llms.txt` and the Markdown pages from the plain output, and each page's pointer from the site output. When it does, this is a bug in Ascribe: report it at the issue tracker the message names, with the report's output. No page needs editing.
+**Fix:** First check that the site publishes what the build wrote, as it wrote it: `llms.txt` and the Markdown pages from the plain output, and each page's pointer from the site output. When it does, this is a bug in Ascribe: report it at the issue tracker the message names, with the report's output. No page needs editing. When the message says an address couldn't be fetched, the checker got no answer, which may be the network's doing: run the report again, and look into the address only when it keeps failing.
 
 **Read more:** [`[consumer]`](../content-model/output.md#consumer) in the `ascribe.toml` reference.
 

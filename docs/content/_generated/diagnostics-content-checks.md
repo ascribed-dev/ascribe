@@ -47,7 +47,7 @@ Advice · page level · next step: fix · configurable in `[checks]` · [SPEC §
 @id {permalink=true}: ASC152
 @summary: A fenced code block has no language after its opening fence: nothing, or only attributes, such as `phrases=true`. An indented code block isn't looked at.
 
-Advice · file level · next step: choose · configurable in `[checks]` · [SPEC §1.4]({repo}/blob/main/SPEC.md#14-relationship-to-commonmark)
+Advice · file level · next step: choose · configurable in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** A fenced code block has no language after its opening fence: nothing, or only attributes, such as `phrases=true`. An indented code block isn't looked at.
 
@@ -89,7 +89,7 @@ Advice · page level · next step: review · configurable in `[checks]` · ackno
 @id {permalink=true}: ASC195
 @summary: A page of a content type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value.
 
-Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Advice · file level · next step: write · configurable in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** A page of a content type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped, or a frontmatter field with the template's value. A memo the page keeps from the template, its instructions to the writer, isn't reported. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found.
 
@@ -173,7 +173,7 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 @id {permalink=true}: ASC229
 @summary: A page of a content type that names a template has a section the template gives only memos, and the page's section still has nothing but memos and headings.
 
-Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Advice · file level · next step: write · configurable in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** A page of a content type that names a template has a section the template gives nothing under its heading but memos, with the same heading at the same level, and nothing in the page's section, its subsections included, but memos, directives bound to its heading such as `@id`, and the subsections' headings. A section the template gives any other content is `template-placeholder-left`'s, and a page of a type with no template isn't looked at.
 
@@ -215,13 +215,13 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 @id {permalink=true}: ASC252
 @summary: A heading's `@id` marks it a permalink, and its section has no `@summary`, once includes are expanded. A page's own permalink has its description, which `page-description-missing` reports; a permalink in a fragment is reported once, in the fragment.
 
-Advice · page level · next step: write · configurable in `[checks]` · [SPEC §4.12]({repo}/blob/main/SPEC.md#412-summary)
+Advice, off by default · page level · next step: write · configurable in `[checks]` · [SPEC §4.12]({repo}/blob/main/SPEC.md#412-summary)
 
 **When:** A heading's `@id` marks it a permalink, and its section has no `@summary`, once includes are expanded. A page's own permalink has its description, which `page-description-missing` reports; a permalink in a fragment is reported once, in the fragment.
 
 **Message:** the permalink `{name}` has no summary, so a product showing its help has none; add a `@summary` to its section
 
-**Fix:** Give the section a summary with `@summary`: a sentence or two a product shows in a tooltip or beside an error. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once and shown in both places, or write `@summary: <text>` directly under the heading and its `@id` when nothing on the page reads well alone. A project that ships embedded help can raise this check to a warning, so every permalink needs one: `[checks] summary-missing = "warning"`.
+**Fix:** Give the section a summary with `@summary`: a sentence or two a product shows in a tooltip or beside an error. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once and shown in both places, or write `@summary: <text>` directly under the heading and its `@id` when nothing on the page reads well alone. The check is off unless the project turns it on, as one that ships embedded help does: `[checks] summary-missing = "warning"` makes every permalink need a summary.
 
 **Read more:** [`@summary`](../writing/directives.md#summary) in the directive reference.
 
@@ -229,13 +229,13 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 @id {permalink=true}: ASC253
 @summary: A section's summary, as plain text on one line, is as long as the limit or longer: 300 characters, or `[checks.summary-long] limit`. A summary in a fragment is reported once, in the fragment.
 
-Advice · page level · next step: write · configurable in `[checks]` · [SPEC §4.12]({repo}/blob/main/SPEC.md#412-summary)
+Advice, off by default · page level · next step: write · configurable in `[checks]` · [SPEC §4.12]({repo}/blob/main/SPEC.md#412-summary)
 
 **When:** A section's summary, as plain text on one line, is as long as the limit or longer: 300 characters, or `[checks.summary-long] limit`. A summary in a fragment is reported once, in the fragment.
 
 **Message:** this summary is \{length} characters, and a product shows one under \{limit}; shorten it to a sentence or two
 
-**Fix:** Shorten the summary to a sentence or two that say what the section is for. A product shows it in a tooltip or beside an error, where there's room for little more. Its length is counted as `description-too-long` counts a description's: as plain text on one line, with phrases replaced and formatting dropped. The limit is 300 characters; set another in `ascribe.toml`, such as `[checks.summary-long] limit = 200`.
+**Fix:** Shorten the summary to a sentence or two that say what the section is for. A product shows it in a tooltip or beside an error, where there's room for little more. Its length is counted as `description-too-long` counts a description's: as plain text on one line, with phrases replaced and formatting dropped. The check is off unless the project names it in `[checks]`; the limit is 300 characters, and `[checks.summary-long] limit = 200` turns it on with another.
 
 **Read more:** [`@summary`](../writing/directives.md#summary) in the directive reference.
 
@@ -497,7 +497,7 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 @id {permalink=true}: ASC243
 @summary: `ascribe.baseline` has an entry that no problem of the project matches any more: the problem was fixed, or the text it was about changed. Reported at the entry's line, when `ascribe check` reads the baseline and checks the whole project for every build.
 
-Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+Advice · file level · next step: outside · configurable in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** `ascribe.baseline` has an entry that no problem of the project matches any more: the problem was fixed, or the text it was about changed. Reported at the entry's line, when `ascribe check` reads the baseline and checks the whole project for every build.
 

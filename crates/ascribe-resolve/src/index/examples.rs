@@ -4,6 +4,7 @@
 //! which is indexed as one, so it's resolved and checked as a link is
 //! (decision #920).
 
+use ascribe_core::info_string::InfoString;
 use ascribe_core::{RelPath, Span};
 use ascribe_model::ContentModel;
 use ascribe_syntax::{CodeBlock, LinkForm};
@@ -88,35 +89,49 @@ pub(crate) fn collect(
     let Some(info_span) = code.info_span.filter(|_| code.fenced) else {
         return;
     };
-    let Some(info) = source.get(info_span.range()) else {
-        return;
+    let info = InfoString::parse(&code.info);
+    // The info string is CommonMark's, with its Markdown escapes taken off,
+    // so a place in it is a place in the file only when it's written with
+    // none; otherwise a marker is reported at the whole info string.
+    let exact = source.get(info_span.range()) == Some(code.info.as_str());
+    let at = |from: usize, len: usize| {
+        if exact {
+            Span::new(info_span.start() + from, info_span.start() + from + len)
+        } else {
+            info_span
+        }
     };
-    let language = info
-        .split_whitespace()
-        .next()
-        .unwrap_or_default()
-        .to_owned();
+    let language = info.language.unwrap_or_default().to_owned();
     for of in [ExampleOf::Request, ExampleOf::Response] {
-        let Some((value, at)) = attribute(info, of.attribute()) else {
+        let Some(word) = info
+            .words
+            .iter()
+            .find(|w| w.pair.as_ref().is_some_and(|p| p.key == of.attribute()))
+        else {
             continue;
         };
-        let value_start = info_span.start() + at;
+        let Some(pair) = &word.pair else { continue };
+        let value: &str = &pair.value;
         let mut words = value.split(' ').filter(|w| !w.is_empty());
         let link = words.next().unwrap_or_default();
-        let link_at = value_start + value.find(link).unwrap_or_default();
         let status = match of {
             ExampleOf::Request => None,
             ExampleOf::Response => words.next().map(str::to_owned),
         };
         let media_type = words.next().map(str::to_owned);
-        let span = Span::new(
-            value_start - of.attribute().len() - 2,
-            value_start + value.len() + 1,
-        );
+        let span = at(word.start, word.text.len());
+        let destination_span = if pair.value_len == value.len() {
+            at(
+                pair.value_start + value.find(link).unwrap_or_default(),
+                link.len(),
+            )
+        } else {
+            span
+        };
         references.push(Reference {
             kind: RefKind::Link,
             span,
-            destination_span: Some(Span::new(link_at, link_at + link.len())),
+            destination_span: Some(destination_span),
             destination: link.to_owned(),
             expanded_destination: link.to_owned(),
             form: LinkForm::Inline,
@@ -136,31 +151,6 @@ pub(crate) fn collect(
             lines: lines(&code.literal, block, source),
         });
     }
-}
-
-/// The value of `key="…"` in an info string, and its offset there: from a
-/// space, to the quote that's followed by a space or the end, as a title is
-/// read.
-fn attribute<'a>(info: &'a str, key: &str) -> Option<(&'a str, usize)> {
-    let open = format!("{key}=\"");
-    let mut from = 0;
-    while let Some(found) = info[from..].find(&open) {
-        let at = from + found;
-        from = at + open.len();
-        if at > 0 && !info[..at].ends_with(char::is_whitespace) {
-            continue;
-        }
-        let value = &info[from..];
-        let end = value.char_indices().find(|&(i, c)| {
-            c == '"'
-                && value[i + 1..]
-                    .chars()
-                    .next()
-                    .is_none_or(char::is_whitespace)
-        })?;
-        return Some((&value[..end.0], from));
-    }
-    None
 }
 
 /// Where each line of a fenced block's code is in the file: the block's

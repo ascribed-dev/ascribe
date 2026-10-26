@@ -59,108 +59,15 @@
       "help": "Link to the page's file, not its URL: Ascribe writes each output's URLs. The editor's quick fix makes the change.",
       "docs": "https://ascribed-dev.com/go/ASC041/",
       "repeats": 0
-    },
-    {
-      "code": "ASC252",
-      "slug": "summary-missing",
-      "severity": "advice",
-      "next": "write",
-      "message": "the permalink `prerequisites` has no summary, so a product showing its help has none; add a `@summary` to its section",
-      "file": "docs/install-agent.md",
-      "range": {
-        "start": {
-          "line": 15,
-          "column": 1,
-          "offset": 664
-        },
-        "end": {
-          "line": 15,
-          "column": 36,
-          "offset": 699
-        }
-      },
-      "related": [],
-      "fixes": [],
-      "builds": [
-        "site",
-        "site@3.4",
-        "cloud"
-      ],
-      "unpublished": false,
-      "help": "Give the section a summary with `@summary`: a sentence or two a product shows in a tooltip or beside an error. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once and shown in both places, or write `@summary: <text>` directly under the heading and its `@id` when nothing on the page reads well alone. A project that ships embedded help can raise this check to a warning, so every permalink needs one: `[checks] summary-missing = \"warning\"`.",
-      "docs": "https://ascribed-dev.com/go/ASC252/",
-      "repeats": 0
-    },
-    {
-      "code": "ASC252",
-      "slug": "summary-missing",
-      "severity": "advice",
-      "next": "write",
-      "message": "the permalink `install-agent` has no summary, so a product showing its help has none; add a `@summary` to its section",
-      "file": "docs/install-agent.md",
-      "range": {
-        "start": {
-          "line": 20,
-          "column": 1,
-          "offset": 761
-        },
-        "end": {
-          "line": 20,
-          "column": 36,
-          "offset": 796
-        }
-      },
-      "related": [],
-      "fixes": [],
-      "builds": [
-        "site",
-        "site@3.4",
-        "cloud"
-      ],
-      "unpublished": false,
-      "help": "Give the section a summary with `@summary`: a sentence or two a product shows in a tooltip or beside an error. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once and shown in both places, or write `@summary: <text>` directly under the heading and its `@id` when nothing on the page reads well alone. A project that ships embedded help can raise this check to a warning, so every permalink needs one: `[checks] summary-missing = \"warning\"`.",
-      "docs": "https://ascribed-dev.com/go/ASC252/",
-      "repeats": 0
-    },
-    {
-      "code": "ASC252",
-      "slug": "summary-missing",
-      "severity": "advice",
-      "next": "write",
-      "message": "the permalink `connect` has no summary, so a product showing its help has none; add a `@summary` to its section",
-      "file": "docs/install-agent.md",
-      "range": {
-        "start": {
-          "line": 59,
-          "column": 1,
-          "offset": 1429
-        },
-        "end": {
-          "line": 59,
-          "column": 30,
-          "offset": 1458
-        }
-      },
-      "related": [],
-      "fixes": [],
-      "builds": [
-        "site",
-        "site@3.4",
-        "cloud"
-      ],
-      "unpublished": false,
-      "help": "Give the section a summary with `@summary`: a sentence or two a product shows in a tooltip or beside an error. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once and shown in both places, or write `@summary: <text>` directly under the heading and its `@id` when nothing on the page reads well alone. A project that ships embedded help can raise this check to a warning, so every permalink needs one: `[checks] summary-missing = \"warning\"`.",
-      "docs": "https://ascribed-dev.com/go/ASC252/",
-      "repeats": 0
     }
   ],
   "truncated": false,
-  "shown": 4,
-  "total": 4,
+  "shown": 1,
+  "total": 1,
   "next_command": null,
   "summary": {
     "errors": 0,
     "warnings": 1,
-    "advice": 3
+    "advice": 0
   }
 }

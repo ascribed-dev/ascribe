@@ -376,15 +376,15 @@ fn add_nav_edit(
 }
 
 /// The edits to `ascribe.toml` that keep what it names by path following
-/// the files that move: a glossary page in `[glossary] pages`, and a retired
-/// permalink's `to`, keeping its `#id`. `None` when they can't be made in
-/// place.
+/// the files that move: a glossary page in `[glossary] pages`. `None` when
+/// they can't be made in place. A moved permalink is an entry of
+/// `ascribe.addresses`, which the move's own entry keeps.
 fn model_path_edits(ctx: &Ctx, mappings: &[(RelPath, RelPath)]) -> Option<Vec<(Uri, TextEdit)>> {
     model_link_edits(ctx, |written| moved_path(written, mappings))
 }
 
 /// The edits to `ascribe.toml` that change what it names by a path from the
-/// content root, a glossary page and a retired permalink's `to`, to what
+/// content root, a glossary page, to what
 /// `change` gives for each as it's written, leaving those it gives `None`
 /// for, each with its file's URI: `ascribe.toml`'s, or that of the file
 /// `[from]` takes it from. `None` when they can't be made in place.
@@ -397,11 +397,6 @@ fn model_link_edits(
         return Some(Vec::new());
     };
     let mut named: Vec<Vec<model_file::Seg>> = Vec::new();
-    if let Some(entries) = file.table_like(&model_file::path(&["permalinks", "retired"])) {
-        for (name, _) in entries.iter() {
-            named.push(model_file::path(&["permalinks", "retired", name, "to"]));
-        }
-    }
     let pages = model_file::path(&["glossary", "pages"]);
     if let Some(list) = file.get(&pages).and_then(toml_edit::Item::as_array) {
         for i in 0..list.len() {
@@ -468,24 +463,6 @@ fn moved_path(written: &str, mappings: &[(RelPath, RelPath)]) -> Option<String> 
     let old = RelPath::parse(path.trim_start_matches('/')).ok()?;
     let new = remap(&old, mappings);
     (new != old).then(|| format!("{slash}{new}{rest}"))
-}
-
-/// `written`, a link from the content root, with its `#old_id` made
-/// `#new_id`; `None` when it names another id, or a page `names_heading`
-/// says doesn't have the heading.
-fn renamed_fragment(
-    written: &str,
-    old_id: &str,
-    new_id: &str,
-    names_heading: impl FnOnce(&RelPath) -> bool,
-) -> Option<String> {
-    let (before, fragment) = written.split_once('#')?;
-    if fragment != old_id {
-        return None;
-    }
-    let path = before.split('?').next().unwrap_or(before);
-    let page = RelPath::parse(path.trim_start_matches('/')).ok()?;
-    names_heading(&page).then(|| format!("{before}#{}", encode_destination(new_id)))
 }
 
 pub(crate) fn rename(ctx: &Ctx, params: RenameParams) -> Option<WorkspaceEdit> {
@@ -1084,21 +1061,6 @@ fn add_id_reference_edits(
                 }
             }
         }
-    }
-    // A retired permalink's `to` names the heading the same way, from the
-    // content root. Their edits go with the
-    // phrases' to `ascribe.toml`, keyed by where each is, which no phrase's
-    // key can be.
-    for edit in model_link_edits(ctx, |written| {
-        renamed_fragment(written, old_id, new_id, &mut links_here)
-    })? {
-        let at = format!(
-            "#{}#{}:{}",
-            edit.0.as_str(),
-            edit.1.range.start.line,
-            edit.1.range.start.character
-        );
-        phrase_edits.insert(at, edit);
     }
     Some(())
 }
