@@ -2,6 +2,3 @@ spec = "0.1"
 
 [permalinks.retired]
 keys = { reason = "Merged into the security guide" }
-
-[permalinks.aliases]
-keys = "settings"

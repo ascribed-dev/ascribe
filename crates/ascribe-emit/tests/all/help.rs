@@ -22,7 +22,9 @@ use ascribe_emit::{Contents, EmitContext, Emitter, PlainEmitter, SiteEmitter, em
 use ascribe_model::VariantMode;
 use ascribe_resolve::{AstroRouter, Project, ResolvedPage, select};
 use serde_json::{Value, json};
-use support::{cases, emit_build, example, memory_project, models, repository};
+use support::{
+    cases, emit_build, example, memory_project, memory_project_with_files, models, repository,
+};
 
 const MODEL: &str = "spec = \"0.1\"\n\
     [types.page.frontmatter]\ntitle = \"string\"\n\
@@ -216,18 +218,20 @@ fn a_summary_an_include_brings_into_an_arm_is_none() {
 }
 
 #[test]
-fn an_alias_has_its_permalink_s_entry_and_a_retired_permalink_none() {
-    let model = format!(
-        "{MODEL}[permalinks.aliases]\nrotate = \"rotate-keys\"\n\
-         [permalinks.retired]\n\
-         old-rotate = {{ to = \"keys.md#rotate-keys\", reason = \"Renamed\" }}\n\
-         legacy = {{ reason = \"Removed\" }}\n"
-    );
+fn a_name_moved_to_a_permalink_has_its_entry_and_a_retired_or_moved_name_none() {
     let files = [(
         "keys.md",
         "---\ntitle: Keys\n---\n\n## Rotate\n@id {permalink=true}: rotate-keys\n\nRotate them.\n",
     )];
-    let help = &file(&model, &files, "site")["help"];
+    let addresses = "version = 1\n\n[moved]\n\"go:rotate\" = \"go:rotate-keys\"\n\
+         \"go:old-rotate\" = \"keys.md#rotate-keys\"\n\n[retired]\n\"go:legacy\" = \"Removed\"\n";
+    let project = memory_project_with_files(MODEL, &files, &[("ascribe.addresses", addresses)]);
+    let emitter = SiteEmitter::new(project.model());
+    let text = emit_build(Path::new("/nowhere"), &project, "site", &emitter)
+        .remove(HELP_PATH)
+        .expect("the site output has the file");
+    let file: Value = serde_json::from_str(&text).expect("the file is JSON");
+    let help = &file["help"];
     let names: Vec<&str> = help
         .as_object()
         .expect("a table")

@@ -1522,8 +1522,6 @@ export interface ModelReport {
    * the project labels them, then the ones it declares.
    */
   notes?: ModelNoteType[];
-  /** `[permalinks]`: each key, with its value in effect. */
-  permalinks?: ModelSetting[];
   /** Phrases, in declaration order. */
   phrases?: ModelPhrase[];
   /** `[project]`: each key, with its value in effect. */

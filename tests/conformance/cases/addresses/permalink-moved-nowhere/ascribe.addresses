@@ -1,0 +1,6 @@
+version = 1
+
+[moved]
+"go:agent-settings" = "go:settings"
+
+[retired]

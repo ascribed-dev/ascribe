@@ -44,6 +44,10 @@ pub struct GitFs {
     folded: HashMap<String, RelPath>,
     /// The code files read so far, by blob, and the `git` that reads them.
     code: Arc<Mutex<CodeFiles>>,
+    /// Files whose text is read as other than the revision has it, by path
+    /// from the project's folder: `ascribe.addresses`, with the
+    /// permalinks the revision's `ascribe.toml` still records.
+    replaced: BTreeMap<RelPath, Vec<u8>>,
 }
 
 /// The code files a [`GitFs`] has read, and the one `git` process that
@@ -101,6 +105,13 @@ impl Revision {
         let model_text = String::from_utf8(bytes).map_err(|_| DiffError::BaseModelText {
             commit: commit.to_owned(),
         })?;
+        // A revision from before `ascribe.addresses` recorded permalinks
+        // (#944a) is read as if `ascribe addresses init` had moved its
+        // `[permalinks]` there: what it published is the same.
+        let (model_text, moved) = match ascribe_model::permalinks_out(&model_text) {
+            Ok(Some((after, moved))) => (after, moved),
+            Ok(None) | Err(_) => (model_text, Vec::new()),
+        };
         let mut model = ascribe_model::load_str(&model_text, FileId::new(0)).map_err(|issues| {
             DiffError::BaseModel {
                 commit: commit.to_owned(),
@@ -116,7 +127,10 @@ impl Revision {
         if !more.is_empty() {
             tree.files.extend(repo.tree_in(commit, &more)?.files);
         }
-        let fs = GitFs::read(repo, Arc::new(tree), &layout)?;
+        let mut fs = GitFs::read(repo, Arc::new(tree), &layout)?;
+        if !moved.is_empty() {
+            fs.take_permalinks_in(&moved);
+        }
         // The lock is in the project's folder, so in the tree read already.
         ascribe_check::type_files::from_lock(&mut model, &fs);
         Ok(Some(Revision {
@@ -169,6 +183,7 @@ impl GitFs {
                 read: HashMap::new(),
                 git: repo.blob_reader(),
             })),
+            replaced: BTreeMap::new(),
         };
         fs.folded = fs
             .tree
@@ -189,6 +204,25 @@ impl GitFs {
         let contents = wanted.into_iter().map(|(p, _)| p).zip(blobs).collect();
         fs.contents = contents;
         Ok(fs)
+    }
+
+    /// Reads `ascribe.addresses` with `moved` recorded in it, as `ascribe
+    /// addresses init` would write it; a file that doesn't read is left as
+    /// it is.
+    fn take_permalinks_in(&mut self, moved: &[ascribe_model::MovedOut]) {
+        let Ok(path) = RelPath::parse(ascribe_model::ADDRESSES_FILE) else {
+            return;
+        };
+        let file = match self.read_file(&path) {
+            Ok(bytes) => String::from_utf8(bytes)
+                .ok()
+                .and_then(|text| ascribe_model::AddressFile::parse(&text, FileId::new(0)).ok()),
+            Err(_) => Some(ascribe_model::AddressFile::default()),
+        };
+        if let Some(mut file) = file {
+            file.take_in(moved);
+            self.replaced.insert(path, file.to_toml().into_bytes());
+        }
     }
 
     /// The blob of the file at a content path, when there's one and it
@@ -301,6 +335,9 @@ impl FileSystem for GitFs {
     }
 
     fn probe(&self, project_path: &RelPath) -> Probe {
+        if self.replaced.contains_key(project_path) {
+            return Probe::File;
+        }
         let Ok(path) = self.project_dir.join(project_path.as_str()) else {
             return Probe::Missing;
         };
@@ -327,6 +364,9 @@ impl FileSystem for GitFs {
     }
 
     fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {
+        if let Some(bytes) = self.replaced.get(project_path) {
+            return Ok(bytes.clone());
+        }
         let missing = || io::Error::new(io::ErrorKind::NotFound, "no such file");
         let path = self
             .project_dir

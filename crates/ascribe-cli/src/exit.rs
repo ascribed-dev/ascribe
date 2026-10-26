@@ -531,8 +531,7 @@ mod tests {
                 | PermalinksError::Unreadable { .. }
                 | PermalinksError::Unwritable { .. }
                 | PermalinksError::NoReason
-                | PermalinksError::ModelUnchanged(_)
-                | PermalinksError::ModelUnwritable { .. } => {}
+                | PermalinksError::Addresses(_) => {}
             }
         }
         fn rename(e: &RenameError) {
@@ -888,11 +887,12 @@ mod tests {
                 message: text(),
             }),
             Box::new(PermalinksError::NoReason),
-            Box::new(PermalinksError::ModelUnchanged(text())),
-            Box::new(PermalinksError::ModelUnwritable {
-                path: path(),
-                message: text(),
-            }),
+            // `ascribe addresses init` writing `ascribe.toml` without its
+            // `[permalinks]`.
+            Box::new(crate::commands::addresses::AddressesError::Model(
+                "write",
+                text(),
+            )),
             Box::new(QueryError::BadLine { given: text() }),
             Box::new(QueryError::NoLines {
                 target: text(),

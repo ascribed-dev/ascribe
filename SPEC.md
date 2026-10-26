@@ -1055,31 +1055,32 @@ cli-reference = "reference/cli.md"
 ```
 
 - `version` is `1`. `[permalinks]` has one entry for each name, keyed by the name, whose value is where the name is **declared**: the content path of the file it's written in, and, for a heading, `#` and its id. A heading in a fragment is declared in the fragment. A place is where the name is written in the source, not a published address, which differs by build.
-- `[aliases]` has one entry for each alias of `ascribe.toml` (§7.6), whose value is the name it leads to, and `[retired]` one for each retired permalink, whose value is its reason. Each table is written only when it has an entry, and a name is in one table. A name is a permalink of the documentation when `[permalinks]` or `[aliases]` has it; one in `[retired]` was, and has been retired on purpose.
+- The names `ascribe.addresses` records (§7.6) have an entry each: `[aliases]` one for each name moved to another permalink, whose value is that permalink's name; `[moved]` one for each name moved to a page, whose value is where, as the file writes it; and `[retired]` one for each retired permalink, whose value is its reason. Each table is written only when it has an entry, and a name is in one table. A name is a permalink of the documentation when `[permalinks]`, `[aliases]`, or `[moved]` has it; one in `[retired]` was, and has been retired on purpose.
 - The list is the project's, not one build's: a permalink is declared by a page's `permalink` frontmatter, or by an `@id {permalink=true}`, in any source file, whether or not a build publishes it. A name declared in several places (on pages no build publishes together) has one entry, at any of them.
-- Processors check the list whenever they check the project, from the files alone: each declared name has an entry, at one of the places it's declared, each alias and retired permalink an entry as `ascribe.toml` has it, and each entry is still one of the three. A name without its entry, or with an entry at a place that no longer declares it, means the list is **behind**; moving a permalink to another page or heading makes the list behind, and doesn't remove it. An entry the project has no name for any more is a **removed** permalink: something outside the documentation may still link to it, which no check can see. Retiring it (§7.6) is how its removal is recorded.
-- A processor writes the list on request, adding each declared name, moving each entry to where its name is declared now, and recording each alias and retired permalink. It MUST NOT drop an entry the project no longer has, so writing the list never hides a removal.
+- Processors check the list whenever they check the project, from the files alone: each declared name has an entry, at one of the places it's declared, each name `ascribe.addresses` records an entry as the file has it, and each entry is still one of the project's names. A name without its entry, or with an entry at a place that no longer declares it, means the list is **behind**; moving a permalink to another page or heading makes the list behind, and doesn't lose it. An entry the project has no name for any more is a **lost** permalink: something outside the documentation may still link to it, which no check can see. Retiring it, or moving it (§7.6), is how its removal is recorded.
+- A processor writes the list on request, adding each declared name, moving each entry to where its name is declared now, and recording each name `ascribe.addresses` records. It MUST NOT drop an entry the project no longer has, so writing the list never hides a removal.
 
-### 7.6 Retired permalinks and aliases
+### 7.6 Retired and moved permalinks
 
-`ascribe.toml` MAY give names to lead somewhere that no heading or page declares, in `[permalinks]`:
+What happened to a permalink that no heading or page declares any more is recorded in `ascribe.addresses` (§7.10), with the rest of where the documentation's addresses went, keyed by `go:` and the name:
 
 ```toml
-[permalinks.retired]
-rotate-keys = { to = "guides/security.md", reason = "Merged into the security guide" }
-legacy-sync = { reason = "The sync agent was removed in 4.0" }
+[moved]
+"go:agent-settings" = "go:settings"
+"go:rotate-keys" = "guides/security.md#rotate-keys"
 
-[permalinks.aliases]
-agent-settings = "settings"
-cli-settings = "settings"
+[retired]
+"go:legacy-sync" = "The sync agent was removed in 4.0"
 ```
 
-- A **retired** permalink is one ended on purpose. Its `reason` is required, and is the author's text, shown to a reader whose link leads there. Its `to`, when given, is where its address leads now: a page, and `#` and a heading's id, written as a link from the content root is; it MUST lead to a page, and to a heading on it.
-- An **alias** is a second name for a permalink. Its value is the name it leads to: a permalink a heading or page declares, or another alias that leads to one. It MUST NOT lead to a retired permalink, or back to itself.
-- A name is one thing: declared by the content, an alias, or retired. A name in two of them is an error.
-- Each build's list of permalinks (§9.5) has an alias where it has the permalink the alias leads to, and a retired permalink with a `to` where it has that page. A consumer publishes an alias's address, and a retired permalink's with a `to`, as it does a permalink's. A retired permalink with no `to`, or whose `to` the build doesn't publish, has an address that says what was there was removed, and why.
+- A name **moved** to another permalink, `go:` and its name, is an **alias**: a second name for that permalink, leading where it does, through other moved names. It MUST end at a permalink a heading or page declares, or at a retired one, and is retired with it then; a chain that comes back to its start leads nowhere. Only a `go:` key's value can be a `go:` name.
+- A name moved to a place is written as any `[moved]` value: a page's content path, and optionally `#` and a heading's id. It MUST lead to a page, and to a heading on it.
+- A **retired** permalink is one ended on purpose. Its reason is the author's text, shown to a reader whose link leads there.
+- A name the content declares is the content's: an entry for it does nothing.
+- Each build's list of permalinks (§9.5) has a moved name where it has what the name ends at. A consumer publishes its address as it does a permalink's. A retired permalink, or a name moved to one, has an address that says what was there was removed, and why.
+- `ascribe.toml` has no `[permalinks]` table. A processor reports one, and MAY move its entries on request: each of `[permalinks.retired]`, as retired, or as moved to its `to` when it has one, and each of `[permalinks.aliases]` as moved to the name it leads to. A base (§7.10) whose `ascribe.toml` has the table is read as if they had been moved.
 
-Bringing a retired permalink back is deleting its entry and declaring the name again.
+Bringing a retired or moved permalink back is deleting its entry and declaring the name again.
 
 ### 7.7 Memo files
 
@@ -1172,7 +1173,7 @@ base-path = ["/docs/"]
 ```
 
 - `version` is `1`; a version a processor doesn't know is an error naming a newer one. The tables are `[moved]`, `[former]`, and `[retired]`, each optional; a table or key the file doesn't define is an error.
-- A **key** of `[moved]` or `[retired]` is a source: a page's content path, standing for every address the page was published at; a file's content path, `#`, and a heading's id, with the file the `@id` is written in, so a fragment's id is one key however many pages include it; or an address from the host's root, starting with `/`, published before the project used a processor. A `[moved]` value is a page's content path, and optionally `#` and a heading's id. A `[retired]` value is the reason, the author's text, which MUST NOT be empty or the placeholder a processor writes.
+- A **key** of `[moved]` or `[retired]` is a source: a page's content path, standing for every address the page was published at; a file's content path, `#`, and a heading's id, with the file the `@id` is written in, so a fragment's id is one key however many pages include it; `go:` and a permalink's name (§7.6); or an address from the host's root, starting with `/`, published before the project used a processor. A `[moved]` value is a page's content path, and optionally `#` and a heading's id, or, for a `go:` key, `go:` and a permalink's name. A `[retired]` value is the reason, the author's text, which MUST NOT be empty or the placeholder a processor writes.
 - `[former]` lists the routing settings the documentation was published under before, each oldest first: `base-path`, `permalink-path`, and `agents`, each a list of values, and `builds`, a table from a build's old name to its new one. `trailing-slash` isn't one: a host matches an address in either form.
 - An **address** a build publishes is a page's route, its Markdown version's when the build publishes one, and each heading's explicit id as the page's route, `#`, and the id; each name the build answers to under the permalinks' path (§7.5); and each `llms.txt` file it publishes. A generated id isn't one: it changes with the heading's text.
 - Processors compare the addresses a **base** published, the documentation as a revision of its repository had it, with the addresses the project publishes now, build by build, matching builds by name. A build the base had for a line that the project's releases (§7.2) archive now left on purpose: its addresses are accounted for, and it isn't compared. An address the base published and no build of that name publishes now is **lost** unless an entry accounts for it: `[moved]` has its source, or the address itself, and the value is a page a build publishes now; `[retired]` has its source, or the address; or an availability mark takes its page out of that build while another build publishes it. An id is compared only while its page is at the same address: what happened to the page decides it. Each source lost is reported once. A permalink's name is the permalinks list's to keep (§7.5), and an `llms.txt` file has no source, so either is lost only by a setting.
@@ -1293,14 +1294,14 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Source copies | A file in a source's copies folder that `ascribe.lock` doesn't list | Error |
 | Source copies | A copy that no snippet uses | Warning |
 | Permalinks list | `ascribe.permalinks` isn't valid TOML, or doesn't have the shape §7.5 gives it | Error |
-| Permalinks list | A permalink the content declares, an alias, or a retired permalink that `ascribe.permalinks` doesn't list as it is | Warning |
-| Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, an alias, or retired | Warning |
+| Permalinks list | A permalink the content declares, or a name `ascribe.addresses` moves or retires, that `ascribe.permalinks` doesn't list as it is | Warning |
+| Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, and not moved or retired in `ascribe.addresses` | Warning |
 | Addresses file | `ascribe.addresses` isn't valid TOML, or doesn't have the shape §7.10 gives it | Error |
 | Addresses file | A page's address, or its Markdown version's, that the base published and nothing accounts for | Warning |
 | Addresses file | A heading's explicit id that the base published on a page still published, and nothing accounts for | Advice |
 | Addresses file | A build the base has and the working tree doesn't, other than a line archived now | Advice |
-| Addresses file | A `[moved]` value that isn't a page, or a heading on one, in every build that published its key | Error |
-| Addresses file | A key of `[moved]` or `[retired]` whose source is back | Advice |
+| Addresses file | A `[moved]` value that isn't a page, or a heading on one, in every build that published its key, or, for a permalink, a permalink the content declares | Error |
+| Addresses file | A key of `[moved]` or `[retired]` whose source is back: a page, a heading's `@id`, or a permalink the content declares | Advice |
 | Addresses file | A key of `[moved]` or `[retired]` whose address another source publishes now | Error |
 | Addresses file | An entry the base's `ascribe.addresses` doesn't have, whose key the base never published | Advice |
 | Addresses file | A key written twice in a table, or in both `[moved]` and `[retired]` | Error |
@@ -1310,9 +1311,6 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Addresses file | Many addresses forwarded to one index page or the home page | Advice |
 | APIs | A declared spec that doesn't exist, can't be read, or isn't YAML or JSON | Error |
 | APIs | A declared spec with no operations | Advice |
-| Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares | Error |
-| Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too | Error |
-| Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it | Error |
 | Memo files | A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry other than a glossary term; or a `memos/` folder inside the content root | Error |
 | Memo files | A memo file's `about` that names nothing in the project | Warning |
 | Navigation | `ascribe.nav` isn't valid TOML, or doesn't have the shape §7.8 gives it | Error |

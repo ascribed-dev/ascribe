@@ -3,11 +3,16 @@
 use std::collections::HashMap;
 
 use ascribe_core::{FileId, LineIndex, RelPath, Span};
-use ascribe_model::{Current, NAV_FILE, PERMALINKS_FILE, PermalinkList, RETIRED_PLACEHOLDER};
+use ascribe_model::{
+    ADDRESSES_FILE, AddressFile, Current, NAV_FILE, PERMALINKS_FILE, PermalinkList,
+    RETIRED_PLACEHOLDER, permalink_key,
+};
 use ascribe_resolve::{DeclaredPermalink, FileSystem};
 use ascribe_syntax::{BlockKind, Bound};
 use lsp_types::{
-    CodeAction, CodeActionKind, CodeActionOrCommand, CodeActionParams, Diagnostic, TextEdit,
+    CodeAction, CodeActionKind, CodeActionOrCommand, CodeActionParams, CreateFile,
+    CreateFileOptions, Diagnostic, DocumentChangeOperation, DocumentChanges, OneOf,
+    OptionalVersionedTextDocumentIdentifier, Range, ResourceOp, TextDocumentEdit, TextEdit,
     WorkspaceEdit,
 };
 
@@ -493,7 +498,10 @@ fn sync_permalinks(ctx: &Ctx, diagnostic: Diagnostic) -> Option<CodeActionOrComm
     let text = String::from_utf8(ctx.fs.read_file(&path).ok()?).ok()?;
     let list = PermalinkList::parse(&text, FileId::new(0)).ok()?;
     let declared = ctx.snapshot.project().declared_permalinks();
-    let current = Current::new(DeclaredPermalink::places(&declared), &ctx.model.permalinks);
+    let current = Current::new(
+        DeclaredPermalink::places(&declared),
+        &ctx.snapshot.project().recorded_permalinks(),
+    );
     let synced = list.synced(&current).list.to_toml();
     if synced == text {
         return None;
@@ -520,14 +528,15 @@ fn sync_permalinks(ctx: &Ctx, diagnostic: Diagnostic) -> Option<CodeActionOrComm
     }))
 }
 
-/// The title of the quick fix on `permalink-removed`.
+/// The title of the quick fix on `permalink-lost`.
 pub(crate) const RETIRE_TITLE: &str = "Retire this permalink, and write why";
 
-/// The quick fix on `permalink-removed`, in `ascribe.permalinks`: an entry
-/// in `ascribe.toml`'s `[permalinks.retired]` for the name, with a
-/// placeholder reason, which it then selects for the author to replace. The
-/// placeholder is reported until it is, so the fix alone quiets nothing,
-/// and it's never the preferred fix.
+/// The quick fix on `permalink-lost`, in `ascribe.permalinks`: an entry in
+/// `ascribe.addresses`' `[retired]` for the name, `go:<name>`, with a
+/// placeholder reason, which it then selects for the author to replace,
+/// making the file when there's none. The placeholder is reported until
+/// it is, so the fix alone quiets nothing, and it's never the preferred
+/// fix.
 fn retire_permalink(ctx: &Ctx, diagnostic: Diagnostic) -> Option<CodeActionOrCommand> {
     let path = RelPath::parse(PERMALINKS_FILE).ok()?;
     let text = String::from_utf8(ctx.fs.read_file(&path).ok()?).ok()?;
@@ -539,63 +548,75 @@ fn retire_permalink(ctx: &Ctx, diagnostic: Diagnostic) -> Option<CodeActionOrCom
         .permalinks
         .keys()
         .chain(list.aliases.keys())
+        .chain(list.moved.keys())
         .chain(list.retired.keys())
         .find(|name| list.span_of(name).is_some_and(|span| span.start() == at))?;
-    let retired = crate::retire::retire(
-        &ctx.model_text,
-        ctx.taken(),
-        &[crate::retire::Retirement {
-            name,
-            reason: RETIRED_PLACEHOLDER,
-            to: None,
-        }],
-    )
-    .ok()?;
-    // The entry is written where `[permalinks.retired]` is: in
-    // `ascribe.toml`, or in the file `[from]` takes it from.
-    let (path, before, after) = match retired.taken.first() {
-        Some(file) => (
-            file.path.clone(),
-            ctx.taken()
-                .iter()
-                .find(|t| t.file == file.file)?
-                .text
-                .as_str(),
-            file.text.as_str(),
-        ),
-        None => (
-            ctx.config.clone(),
-            ctx.model_text.as_str(),
-            retired.text.as_str(),
-        ),
+    let before = RelPath::parse(ADDRESSES_FILE)
+        .ok()
+        .and_then(|path| ctx.fs.read_file(&path).ok())
+        .and_then(|bytes| String::from_utf8(bytes).ok());
+    let mut file = match &before {
+        Some(text) => AddressFile::parse(text, FileId::new(0)).ok()?,
+        None => AddressFile::default(),
     };
-    let edit = match retired.edits.first() {
-        Some(edit) => edit.clone(),
-        None => crate::edit::navigation::text_edit(before, after),
-    };
-    let start = edit.span.start() + edit.new_text.find(RETIRED_PLACEHOLDER)?;
+    let key = permalink_key(name);
+    file.record_retired(&key, RETIRED_PLACEHOLDER);
+    let after = file.to_toml();
+    let line = format!("{} = \"{RETIRED_PLACEHOLDER}\"", toml_quoted(&key));
+    let start = after.find(&line)? + line.len() - RETIRED_PLACEHOLDER.len() - 1;
     let selection = ctx.encoding.range(
-        &LineIndex::new(after),
+        &LineIndex::new(&after),
         Span::new(start, start + RETIRED_PLACEHOLDER.len()),
     );
-    let config = crate::uri::path_to_uri(&path)?;
-    let change = TextEdit {
-        range: ctx.encoding.range(&LineIndex::new(before), edit.span),
-        new_text: edit.new_text.clone(),
+    let uri = crate::uri::path_to_uri(&ctx.config.with_file_name(ADDRESSES_FILE))?;
+    let edit = match &before {
+        Some(text) => {
+            let edit = file.edit_from(text)?;
+            WorkspaceEdit {
+                changes: Some(HashMap::from([(
+                    uri.clone(),
+                    vec![TextEdit {
+                        range: ctx.encoding.range(&LineIndex::new(text), edit.span),
+                        new_text: edit.new_text,
+                    }],
+                )])),
+                ..WorkspaceEdit::default()
+            }
+        }
+        None => WorkspaceEdit {
+            document_changes: Some(DocumentChanges::Operations(vec![
+                DocumentChangeOperation::Op(ResourceOp::Create(CreateFile {
+                    uri: uri.clone(),
+                    options: Some(CreateFileOptions {
+                        overwrite: Some(false),
+                        ignore_if_exists: Some(false),
+                    }),
+                    annotation_id: None,
+                })),
+                DocumentChangeOperation::Edit(TextDocumentEdit {
+                    text_document: OptionalVersionedTextDocumentIdentifier {
+                        uri: uri.clone(),
+                        version: None,
+                    },
+                    edits: vec![OneOf::Left(TextEdit {
+                        range: Range::default(),
+                        new_text: after,
+                    })],
+                }),
+            ])),
+            ..WorkspaceEdit::default()
+        },
     };
     Some(CodeActionOrCommand::CodeAction(CodeAction {
         title: RETIRE_TITLE.to_owned(),
         kind: Some(CodeActionKind::QUICKFIX),
         diagnostics: Some(vec![diagnostic]),
-        edit: Some(WorkspaceEdit {
-            changes: Some(HashMap::from([(config.clone(), vec![change])])),
-            ..WorkspaceEdit::default()
-        }),
+        edit: Some(edit),
         command: Some(lsp_types::Command {
             title: RETIRE_TITLE.to_owned(),
             command: crate::links::OPEN_FILE.to_owned(),
             arguments: Some(vec![
-                serde_json::Value::String(config.as_str().to_owned()),
+                serde_json::Value::String(uri.as_str().to_owned()),
                 serde_json::to_value(selection).ok()?,
             ]),
         }),
@@ -603,6 +624,12 @@ fn retire_permalink(ctx: &Ctx, diagnostic: Diagnostic) -> Option<CodeActionOrCom
         disabled: None,
         data: None,
     }))
+}
+
+/// `text` as `ascribe.addresses` writes a key: a TOML basic string. A
+/// permalink's name needs no escapes.
+fn toml_quoted(text: &str) -> String {
+    format!("\"{text}\"")
 }
 
 /// The actions on `ascribe.toml`'s and `ascribe.permalinks`'s diagnostics:
@@ -637,7 +664,7 @@ fn model_actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCommand
                 .and_then(serde_json::Value::as_str)
         };
         match field("slug") {
-            Some("permalink-removed") => {
+            Some("permalink-lost") => {
                 actions.extend(retire_permalink(ctx, diagnostic.clone()));
                 continue;
             }

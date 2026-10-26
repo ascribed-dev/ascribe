@@ -8,7 +8,7 @@ import type { SidebarItem } from "../../../src/ui/sidebarViews.js";
 import { activated, uriOf, waitFor, workspace } from "./helpers.js";
 
 // The real `ascribe lsp` on a copy of examples/astro-site made into a git
-// repository on `main`, without ascribe.addresses: the editor offers to keep
+// repository on `main`, its ascribe.addresses taken away: the editor offers to keep
 // the addresses after a move, then shows an address lost between checks, the
 // old addresses that answer at a page, and what a move's undo leaves. The
 // tests run in order, each from where the one before left the project.

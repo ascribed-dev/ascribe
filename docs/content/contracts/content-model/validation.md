@@ -141,9 +141,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 
 ### 25.10 Permalinks
 
-| Slug | Rule | Message |
-|---|---|---|
-| `model-permalinks` | A name in `[permalinks]` is retired or an alias, not both; an alias leads, through aliases, to a name that isn't one; a retired permalink's reason isn't the quick fix's placeholder. | `` `{name}` is both retired and an alias; a name is one thing `` |
+None: `[permalinks]` is a replaced key (§20, §25.1).
 
 ### 25.11 Crawlers
 

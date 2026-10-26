@@ -15,6 +15,8 @@ serde_yaml_ng.workspace = true
 sha2.workspace = true
 # `preserve_order` keeps declaration order.
 toml = { workspace = true, features = ["preserve_order"] }
+# Taking `[permalinks]` out of an `ascribe.toml`, keeping the rest as written.
+toml_edit.workspace = true
 
 [lints]
 workspace = true

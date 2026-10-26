@@ -9,7 +9,7 @@ ascribe drift             [--base <REV>] [--build <NAME>]... [--format text|json
 ascribe report            [SECTION]... [--format text|markdown|json|prompt] [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--no-baseline] [--exit-code advice|warning|error]
 
 ascribe explain           [CODE] [--list] [--format text|json]
-ascribe model             [PATH] [--section types|frontmatter|fragments|dimensions|lifecycle|phrases|features|notes|glossary|images|widgets|releases|builds|sources|apis|from|intended|project|versions|consumer|editor|checks|crawlers|listing|permalinks] [--format text|json]
+ascribe model             [PATH] [--section types|frontmatter|fragments|dimensions|lifecycle|phrases|features|notes|glossary|images|widgets|releases|builds|sources|apis|from|intended|project|versions|consumer|editor|checks|crawlers|listing] [--format text|json]
 ascribe outline           PAGE [--build <NAME>] [--format text|json]
 ascribe link              TARGET --from <PAGE> [--format text|json]
 ascribe refs              TARGET [--limit <N>] [--format text|json]
@@ -27,7 +27,7 @@ ascribe versions retire   LINE [--url <URL>] [--dry-run] [--force] [--show-unuse
 ascribe permalinks sync   [--check] [--format text|json]
 ascribe permalinks list   [--format text|json]
 ascribe permalinks verify [NAME]... [--from <FILE>] [--against <PATH>] [--format text|json]
-ascribe permalinks retire [NAME]... --reason <TEXT> [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>] [--format text|json]
+ascribe permalinks retire [NAME]... [--reason <TEXT>] [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>] [--format text|json]
 ascribe addresses init    [--format text|json]
 ascribe addresses move    [OLD] [NEW] [--from-git] [--base <REV>] [--base-exact] [--format text|json]
 ascribe addresses retire  OLD --reason <TEXT> [--format text|json]

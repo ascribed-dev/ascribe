@@ -88,8 +88,6 @@ pub enum Section {
     Crawlers,
     /// What the site lists for search engines.
     Listing,
-    /// Retired permalinks and aliases.
-    Permalinks,
 }
 
 impl Section {
@@ -119,7 +117,6 @@ impl Section {
             Section::Checks => QuerySection::Checks,
             Section::Crawlers => QuerySection::Crawlers,
             Section::Listing => QuerySection::Listing,
-            Section::Permalinks => QuerySection::Permalinks,
         }
     }
 }
