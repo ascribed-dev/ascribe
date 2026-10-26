@@ -222,6 +222,7 @@ impl Cx<'_> {
             }
             Head::Primary(primary) => match name {
                 "include" => Some(self.include(primary)),
+                "operation" => Some(self.operation(primary)),
                 "available" => Some(list(self.availability(primary), false)),
                 _ => {
                     let schemas = self.ctx.model.directive_schemas();
@@ -650,6 +651,32 @@ impl Cx<'_> {
             return list(items, incomplete);
         }
         self.search(&percent_decode(raw), raw.len(), angle)
+    }
+
+    /// The primary of an `@operation` (SPEC §4.13): after a declared spec's
+    /// `#`, its operations, as a link's destination offers them.
+    fn operation(&self, typed: &str) -> CompletionResponse {
+        let Some((path_part, id)) = typed.split_once('#') else {
+            return list(Vec::new(), false);
+        };
+        let api = match reference_target(
+            RefKind::Link,
+            path_part,
+            &[],
+            &self.ctx.path,
+            &self.ctx.model,
+        ) {
+            Target::Local(local) => local.path.and_then(|path| {
+                declared_spec(&self.ctx.model, self.ctx.snapshot.layout(), &path)
+                    .map(|api| api.name.clone())
+            }),
+            Target::External => None,
+        };
+        let Some(api) = api else {
+            return list(Vec::new(), false);
+        };
+        let (items, incomplete) = self.operations_of(&api, id, false);
+        list(items, incomplete)
     }
 
     /// The headings of a file, by the id being typed: for `file.md#…` and

@@ -244,7 +244,7 @@ fn position<'c, 's>(
 /// What the links of a file's `@operation` lines name (SPEC §4.13), which
 /// aren't among its references: each is resolved from the declaration
 /// alone, as the build resolves it.
-fn embedded_operations(project: &Project, file: &FileIndex) -> Vec<Resolution> {
+pub(crate) fn embedded_operations(project: &Project, file: &FileIndex) -> Vec<Resolution> {
     let model = project.model();
     let mut out = Vec::new();
     walk_blocks(&file.document.blocks, &mut |block: &Block| {

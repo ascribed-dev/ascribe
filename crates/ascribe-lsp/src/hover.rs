@@ -197,6 +197,10 @@ fn hover_at(ctx: &Ctx, position: Position) -> Option<Hover> {
             };
             (include.primary?, text)
         }
+        Hit::Operation(link, span) => (
+            span,
+            describe_resolution(ctx, &crate::nav::operation_resolution(ctx, link)?, link),
+        ),
         Hit::Snippet(snippet) => (
             snippet.primary?,
             crate::examples::snippet_hover(ctx, snippet)?,
