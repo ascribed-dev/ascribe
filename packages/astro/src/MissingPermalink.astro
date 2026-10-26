@@ -10,8 +10,8 @@
 //
 // `home` is where it sends the reader: by default the root of the project whose
 // permalinks it explains, which with several projects is the first that has
-// any. Children replace its last paragraph, which offers the home page and
-// searching.
+// any. Children replace its last paragraph, which offers the home page: a site
+// with search can offer that too.
 import { home as root, permalinks } from "virtual:ascribe/site";
 import { servedList } from "@ascribed/astro/permalinks";
 
@@ -33,7 +33,7 @@ const path = served?.path;
         older version of the product than they describe.
       </p>
       <slot>
-        <p>Start from the <a href={home}>home page</a>, or search the docs for what you need.</p>
+        <p>Start from the <a href={home}>home page</a>.</p>
       </slot>
     </section>
   )

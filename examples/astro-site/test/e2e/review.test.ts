@@ -90,6 +90,10 @@ describe("review in the site preview", () => {
   it("marks a working-tree change on the real page", async () => {
     const root = await gitSite("review-marks");
     await edit(path.join(root, GUIDE), addParagraph);
+    // The starter's stylesheet follows the system; this site is light only.
+    await edit(path.join(root, "src", "styles", "docs.css"), (text) =>
+      text.replace("color-scheme: light dark;", "color-scheme: light;"),
+    );
     const server = await serveDev(root);
     try {
       // The system is dark, but the site is light only: review's colors follow the site.
