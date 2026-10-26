@@ -171,6 +171,9 @@ A path is from the current folder, or from the content root, and the project is 
 | `1` | What it names doesn't exist: a phrase, a value, a page, or a heading |
 | `2` | It couldn't rename: no `ascribe.toml`, one with errors, a new name that can't be its name or is taken, a target it doesn't rename, or a file it can't write |
 
+@available: ascribe planned
+With `--format json`, it writes what it changed as one document, instead of a line for each file: `files`, each file it changed, from the current folder, with its whole `text` after and how many places changed (`edits`), in path order, the page that moved under where it was; `moved`, the page's `from` and `to`, when one moved; and `recorded`, each entry of `ascribe.addresses`'s `[moved]` it recorded, as a `key` and a `value`, as [`ascribe addresses move`](../publishing/redirects.md#cli-addresses-move) writes one. `written` is `true`: the MCP server's [`ascribe_rename`](../agents/commands.md#cli-mcp) gives the same document with `written` false, and writes nothing. Its [schema](../contracts/json-reports/questions.md#ascribe-rename) has every field.
+
 ## `ascribe resolve`
 @id {permalink=true}: cli-resolve
 @summary: Writes a page as one build's readers see it, in the build's plain Markdown or its site output: its variants chosen, filtered blocks removed, and phrases and includes filled in. It writes nothing to disk.

@@ -12,7 +12,9 @@ use serde_json::{Map, Value, json};
 use super::Server;
 use crate::answer::{self, Format};
 use crate::cli::Global;
-use crate::commands::{addresses, check, diff, fmt, link, model, outline, refs, resolve, search};
+use crate::commands::{
+    addresses, check, diff, fmt, link, model, outline, refs, rename, resolve, search,
+};
 
 /// A tool.
 pub struct Spec {
@@ -379,7 +381,7 @@ pub const TOOLS: &[Spec] = &[
         call: call_resolve,
     },
     Spec {
-        name: "ascribe_format",
+        name: "ascribe_fmt",
         title: "Format pages",
         command: "ascribe fmt",
         description: "Get the edits that put Ascribe's syntax in pages into canonical form; it \
@@ -403,10 +405,10 @@ pub const TOOLS: &[Spec] = &[
             })
         },
         output: || schema(include_str!("../../../../schemas/fmt.schema.json")),
-        call: call_format,
+        call: call_fmt,
     },
     Spec {
-        name: "ascribe_changes",
+        name: "ascribe_diff",
         title: "List changed pages",
         command: "ascribe diff",
         description: "List the pages that changed against a git base, as readers see them, \
@@ -442,14 +444,50 @@ pub const TOOLS: &[Spec] = &[
             })
         },
         output: || schema(include_str!("../../../../schemas/diff.schema.json")),
-        call: call_changes,
+        call: call_diff,
+    },
+    Spec {
+        name: "ascribe_rename",
+        title: "Rename",
+        command: "ascribe rename",
+        description: "Get the changes that rename a phrase, a dimension's value, a heading's \
+            id, or a page, which moves, everywhere it's used: the links a moved page has \
+            and the ones to it, and the move recorded in `ascribe.addresses`. It writes \
+            nothing, so write each file's text, move the file, and delete it where it was \
+            yourself. Example: {\"target\": \"docs/keys.md\", \"new\": \
+            \"docs/security/keys.md\"} returns `files` such as `{\"file\": \
+            \"docs/quickstart.md\", \"text\": …, \"edits\": 1}`, `moved` with `from` and `to`, \
+            and `recorded` such as `{\"key\": \"keys.md\", \"value\": \"security/keys.md\"}`.",
+        input: || {
+            json!({
+                "type": "object",
+                "properties": {
+                    "target": {
+                        "type": "string",
+                        "description": "What to rename: `phrase:<key>`, `value:<value>` (a \
+                            dimension's value), a heading's id (`keys.md#rotate-keys`), or a \
+                            page or fragment (`keys.md`), which moves. A path is from the \
+                            server's working directory or from the content root.",
+                    },
+                    "new": {
+                        "type": "string",
+                        "description": "The new name: a phrase's key, a value, or an id. For a \
+                            page or fragment, where it moves to, read as `target` is.",
+                    },
+                },
+                "required": ["target", "new"],
+                "additionalProperties": false,
+            })
+        },
+        output: || schema(include_str!("../../../../schemas/rename.schema.json")),
+        call: call_rename,
     },
     Spec {
         name: "ascribe_addresses_move",
         title: "Record a move",
         command: "ascribe addresses move",
         description: "Get the edit to `ascribe.addresses` that records where a page, or a \
-            heading's id, moved, after you moved it without `ascribe rename`, as with `git \
+            heading's id, moved, after you moved it without `ascribe_rename`, as with `git \
             mv`, so the build forwards its old addresses; `ascribe_check` reports a page \
             moved with nothing recorded as `address-lost`. It writes nothing, so apply the \
             edits yourself. Example: {\"from_git\": true} returns `moves` such as \
@@ -552,6 +590,39 @@ pub const TOOLS: &[Spec] = &[
         call: call_addresses_retire,
     },
 ];
+
+/// The tools' old names, each with the name of the tool it calls, kept for
+/// a release after they changed to the commands' own words (decision #962):
+/// `tools/list` gives each after the tools, as the tool it calls with a
+/// sentence saying so first.
+pub const OLD_NAMES: &[(&str, &str)] = &[
+    ("ascribe_format", "ascribe_fmt"),
+    ("ascribe_changes", "ascribe_diff"),
+];
+
+/// The tool `name` names: its own name, or an old one.
+pub fn find(name: &str) -> Option<&'static Spec> {
+    let name = OLD_NAMES
+        .iter()
+        .find(|(old, _)| *old == name)
+        .map_or(name, |(_, new)| new);
+    TOOLS.iter().find(|t| t.name == name)
+}
+
+/// Every tool's definition, in the order `tools/list` gives them: the
+/// tools, then their old names.
+pub fn listed() -> Vec<Tool> {
+    let old = OLD_NAMES.iter().filter_map(|(old, new)| {
+        let mut tool = find(new)?.tool();
+        tool.name = (*old).to_owned();
+        tool.description = format!(
+            "The old name of `{new}`, kept for a release: call `{new}` instead. {}",
+            tool.description
+        );
+        Some(tool)
+    });
+    TOOLS.iter().map(Spec::tool).chain(old).collect()
+}
 
 impl Spec {
     /// The definition `tools/list` gives.
@@ -1009,7 +1080,7 @@ fn call_resolve(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String
     }
 }
 
-fn call_format(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
+fn call_fmt(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
     let paths: Vec<PathBuf> = a.strings("paths")?.into_iter().map(PathBuf::from).collect();
     let global = global_at(paths.first().map(PathBuf::as_path))?;
     let args = fmt::Args {
@@ -1021,7 +1092,7 @@ fn call_format(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String
     json_result(&report)
 }
 
-fn call_changes(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
+fn call_diff(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
     let global = global_at(a.path("project")?.as_deref())?;
     let args = diff::Args {
         page: None,
@@ -1034,6 +1105,16 @@ fn call_changes(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String
     };
     let (_, diff) = diff::answer(&server.cache, &global, &args)?;
     json_result(&diff.report)
+}
+
+fn call_rename(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
+    let args = rename::Args {
+        target: a.string("target")?.unwrap_or_default(),
+        new: a.string("new")?.unwrap_or_default(),
+        format: Format::Json,
+    };
+    let answer = rename::answer(&server.cache, &global(), &args, false).map_err(|s| s.message)?;
+    json_result(&answer.json)
 }
 
 fn call_addresses_move(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {

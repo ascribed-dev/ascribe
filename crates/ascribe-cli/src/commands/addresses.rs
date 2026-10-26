@@ -271,9 +271,9 @@ pub(crate) struct FromGitJson {
 #[cfg_attr(test, derive(schemars::JsonSchema))]
 pub(crate) struct MoveJson {
     /// The entry's key: where the page was.
-    key: String,
+    pub key: String,
     /// The entry's value: where it is now.
-    value: String,
+    pub value: String,
 }
 
 /// What `ascribe addresses list --format json` writes.

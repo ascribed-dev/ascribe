@@ -30,7 +30,7 @@ ascribe permalinks list   [--format text|json]
 ascribe permalinks verify [NAME]... [--from <FILE>] [--against <PATH>] [--format text|json]
 ascribe permalinks retire [NAME]... --reason <TEXT> [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>] [--format text|json]
 ascribe refs              TARGET [--limit <N>] [--format text|json]
-ascribe rename            TARGET NEW
+ascribe rename            TARGET NEW [--format text|json]
 ascribe report            [SECTION]... [--format text|markdown|json|prompt] [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice|warning|error]
 ascribe resolve           PAGE [--build <NAME>] [--emit plain|site] [--frontmatter] [--format text|json]
 ascribe search            QUERY [PATHS]... [--type <NAME>] [--case] [--word] [--summary] [--build <NAME>]... [--limit <N>] [--format text|json]
