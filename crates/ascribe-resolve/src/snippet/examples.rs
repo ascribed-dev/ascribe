@@ -12,14 +12,14 @@
 use std::sync::Arc;
 
 use ascribe_core::RelPath;
-use ascribe_model::Source;
 use ascribe_model::examples::{
     DEFAULT_OBSERVATION, EXAMPLES_FILE, ExamplesConfig, OBSERVATIONS_FOLDER, Observation, Problem,
     Status, observation_name, observation_path, tested_line,
 };
+use ascribe_model::{ContentModel, Source};
 
 use super::CodeFiles;
-use crate::fs::{FileSystem, Probe};
+use crate::fs::{FileSystem, MODEL_FILE, Probe};
 
 /// A source folder's config and observations, as read.
 #[derive(Debug)]
@@ -109,6 +109,130 @@ impl FolderExamples {
             .iter()
             .filter_map(|o| Some((o.name.as_str(), o.read.as_ref().ok()?)))
     }
+}
+
+/// An `ascribe.examples.toml` in the folder of a source in this repository,
+/// below its root, where no source reads it: only the config at a source's
+/// root is read, so its examples are never shown as tested.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UnreadConfig {
+    /// The config, from the project root.
+    pub path: RelPath,
+    /// The folder it's in, from the project root: the `path` a source would
+    /// need for it to be read.
+    pub folder: RelPath,
+    /// The source whose folder it's in: the innermost, when one source's
+    /// folder is in another's.
+    pub source: String,
+    /// That source's folder, from the project root.
+    pub root: RelPath,
+}
+
+/// Every `ascribe.examples.toml` in a source's folder that no source reads
+/// ([`UnreadConfig`]), in path order. A source's folder is looked in where
+/// it may hold a file the source reads ([`Source::may_use`]): not in a
+/// folder its `include` can't match or its `ignore` leaves out, not in
+/// another source's folder, which that source looks in, and not in a folder
+/// that holds an `ascribe.toml`, which is a project of its own. A source in
+/// another repository has only the copies its snippets use, so it isn't
+/// looked in.
+pub fn unread_configs(model: &ContentModel, fs: &dyn FileSystem) -> Vec<UnreadConfig> {
+    let roots = source_roots(model);
+    let mut out: Vec<UnreadConfig> = Vec::new();
+    for source in model.sources.iter().filter(|s| s.git.is_none()) {
+        let Ok(root) = RelPath::parse(&source.path) else {
+            continue;
+        };
+        let enter = |dir: &RelPath| looks_in(source, &root, dir, &roots, fs);
+        for path in fs.files_named(&root, EXAMPLES_FILE, &enter) {
+            let Some(folder) = path.parent() else {
+                continue;
+            };
+            if folder == root || out.iter().any(|u| u.path == path) {
+                continue;
+            }
+            out.push(UnreadConfig {
+                path,
+                folder,
+                source: source.name.clone(),
+                root: root.clone(),
+            });
+        }
+    }
+    out.sort_by(|a, b| a.path.cmp(&b.path));
+    out
+}
+
+/// The config at `path`, from the project root, when it's one
+/// [`unread_configs`] lists: asked of one file, as the editor asks of a
+/// config it opens, without looking in any other folder.
+pub fn unread_config(
+    model: &ContentModel,
+    fs: &dyn FileSystem,
+    path: &RelPath,
+) -> Option<UnreadConfig> {
+    if path.file_name() != Some(EXAMPLES_FILE) {
+        return None;
+    }
+    let folder = path.parent()?;
+    let roots = source_roots(model);
+    if roots.contains(&folder) {
+        return None;
+    }
+    // The innermost source whose folder holds it; one in another source's
+    // folder is that source's to look in.
+    let (source, root) = model
+        .sources
+        .iter()
+        .filter_map(|s| Some((s, RelPath::parse(&s.path).ok()?)))
+        .filter(|(_, root)| folder.starts_with(root))
+        .max_by_key(|(_, root)| root.segments().count())?;
+    if source.git.is_some() {
+        return None;
+    }
+    // Each folder from the source's root down to the config's is looked in.
+    let mut dir = Some(folder.clone());
+    while let Some(at) = dir {
+        if at == root {
+            break;
+        }
+        if !looks_in(source, &root, &at, &roots, fs) {
+            return None;
+        }
+        dir = at.parent();
+    }
+    Some(UnreadConfig {
+        path: path.clone(),
+        folder,
+        source: source.name.clone(),
+        root,
+    })
+}
+
+/// Every source's folder, from the project root.
+fn source_roots(model: &ContentModel) -> Vec<RelPath> {
+    model
+        .sources
+        .iter()
+        .filter_map(|s| RelPath::parse(&s.path).ok())
+        .collect()
+}
+
+/// Whether `dir`, a folder below `root`, the folder of `source`, is looked
+/// in for a config no source reads.
+fn looks_in(
+    source: &Source,
+    root: &RelPath,
+    dir: &RelPath,
+    roots: &[RelPath],
+    fs: &dyn FileSystem,
+) -> bool {
+    dir.relative_to(root)
+        .is_some_and(|rest| source.may_use(rest.as_str()))
+        && !roots.contains(dir)
+        && dir
+            .join(MODEL_FILE)
+            .map_or(true, |model| fs.probe(&model) != Probe::File)
 }
 
 /// What a snippet's file is, when it's an example (decision 11 of the tested

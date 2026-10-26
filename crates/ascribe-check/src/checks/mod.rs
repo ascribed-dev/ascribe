@@ -41,7 +41,8 @@ use ascribe_syntax::{
 
 use crate::{Diagnostic, Project, SourceFile};
 
-pub(crate) use sources::{check_examples, check_sources};
+pub use sources::unread_config_issue;
+pub(crate) use sources::{check_examples, check_sources, check_unread_configs};
 
 /// State shared by the checks of one file.
 struct Ctx<'a> {

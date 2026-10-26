@@ -71,6 +71,15 @@ impl FileSystem for BufferFs {
         self.disk.files_in(project_dir)
     }
 
+    fn files_named(
+        &self,
+        project_dir: &RelPath,
+        name: &str,
+        enter: &dyn Fn(&RelPath) -> bool,
+    ) -> Vec<RelPath> {
+        self.disk.files_named(project_dir, name, enter)
+    }
+
     fn probe(&self, project_path: &RelPath) -> Probe {
         let mut probes = self.probes.lock().unwrap_or_else(PoisonError::into_inner);
         if let Some(answer) = probes.get(project_path) {
@@ -173,6 +182,17 @@ impl FileSystem for LayerFs {
         }
         files.sort();
         files
+    }
+
+    /// The disk's files: an open file that isn't saved yet is looked for by
+    /// name only when it's asked about, as `ascribe.examples.toml` is.
+    fn files_named(
+        &self,
+        project_dir: &RelPath,
+        name: &str,
+        enter: &dyn Fn(&RelPath) -> bool,
+    ) -> Vec<RelPath> {
+        self.disk.files_named(project_dir, name, enter)
     }
 
     /// Exact names win; among names that differ only in case, files added here

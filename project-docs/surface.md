@@ -117,7 +117,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-272 in all. By severity: 62 advice, 182 error, 28 warning. By level: 242 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 169 write.
+273 in all. By severity: 62 advice, 182 error, 29 warning. By level: 243 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 170 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -393,6 +393,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC282` | `api-operation-unreferenced` | advice | write | no page links to `{operation}` ({method} {route}) in {path} |
 | `ASC283` | `build-filter-line-undeclared` | advice | write | build `{build}` filters for `{target} {version}`, which is older than every line `[releases.{target}]` declares, so `ascribe versions` doesn't list it; declare its line in `archived`, or make the build one output for each live line with `versions = "{target}"` |
 | `ASC284` | `info-pair-malformed` | warning | write | `{written}` starts like the pair `{key}` but isn't one, so it isn't read; write `{key}=` with nothing around `=`, then the value, in double quotes if it has a space or a quote |
+| `ASC285` | `examples-config-unread` | warning | write | `{file}` is below the root of source `{source}`, `{root}`, and only the `ascribe.examples.toml` at a source's root is read, so no page says what its examples were tested with; declare a source with `path = "{folder}"`, or move the file to `{root}` |
 
 ## The VS Code extension
 

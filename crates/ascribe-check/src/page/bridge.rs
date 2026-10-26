@@ -65,6 +65,15 @@ impl FileSystem for Held<'_> {
     fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {
         self.0.file_system().files_in(project_dir)
     }
+
+    fn files_named(
+        &self,
+        project_dir: &RelPath,
+        name: &str,
+        enter: &dyn Fn(&RelPath) -> bool,
+    ) -> Vec<RelPath> {
+        self.0.file_system().files_named(project_dir, name, enter)
+    }
 }
 
 /// The source index over a checked project's texts, in the project's

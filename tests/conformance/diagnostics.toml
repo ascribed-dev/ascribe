@@ -5173,3 +5173,18 @@ messages.spaced = "`{written}` isn't a pair, because of the spaces around `=`, s
 messages.quote = "the value of `{key}` ends at its second quote, so the pair isn't read; write a quote inside it as `\\\\\"`: `{fixed}`"
 messages.unclosed = "the value of `{key}` has no closing quote, so the pair isn't read; write `{fixed}`"
 fix = "Write the pair as SPEC §3.3.1 reads it: the key in lowercase, `=` with nothing around it, and the value, in double quotes when it has a space or a quote. Inside the quotes, write a quote as `\\\\\"` and a backslash as `\\\\\\\\` in the page, since CommonMark takes one backslash off before the pair is read. A word that isn't meant as a pair can't start with `phrases`, `title`, `tested`, `request`, or `response` and `=`."
+
+[[diagnostic]]
+code = "ASC285"
+slug = "examples-config-unread"
+severity = "warning"
+level = "file"
+next = "write"
+evidence = []
+configurable = true
+area = "examples"
+spec = "7.3"
+reference = "content-model/output.md#18-sourcesname"
+when = "An `ascribe.examples.toml` is in the folder of a source in the same repository, below its root, in a folder the source may read files from, and no source's root holds it, so no source reads it. Reported at the file, once for each"
+message = "`{file}` is below the root of source `{source}`, `{root}`, and only the `ascribe.examples.toml` at a source's root is read, so no page says what its examples were tested with; declare a source with `path = \"{folder}\"`, or move the file to `{root}`"
+fix = "Ascribe reads a source's tested examples from the `ascribe.examples.toml` at the root of its `path`, and the observations beside it. To keep the config beside the tests it runs, declare a source whose `path` is the config's folder, and write the snippets of its files with that source's name; the folder can stay inside the other source's too. Or move the config, and its `examples.observations/`, to the root of the source the snippets name, with its `include` and `test` written from there, and run `ascribe observe` there. A folder that holds an `ascribe.toml` is a project of its own, and isn't looked in."
