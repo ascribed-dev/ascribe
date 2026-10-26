@@ -58,7 +58,7 @@ fn quill_resolves_under_every_build_with_no_problems() {
         .iter()
         .map(|b| b.name.clone())
         .collect();
-    assert_eq!(builds, ["site", "site@3.4", "cloud", "self-managed-3.3"]);
+    assert_eq!(builds, ["site", "site@3.4", "cloud"]);
     for name in &builds {
         let pages = resolve_all(&project, name);
         let paths: Vec<String> = pages.iter().map(|p| p.path.to_string()).collect();
@@ -143,19 +143,6 @@ fn the_cloud_build_reduces_the_deployment_group_and_keeps_the_pm_switcher() {
         site.contains("group[deployment=cloud | deployment=self-managed]"),
         "{site}"
     );
-}
-
-#[test]
-fn the_self_managed_3_3_build_drops_the_streaming_section() {
-    let has = |build: &str| {
-        install(build)
-            .headings()
-            .iter()
-            .any(|(_, h)| h.text == "Streaming sync")
-    };
-    assert!(has("site"));
-    assert!(has("cloud"));
-    assert!(!has("self-managed-3.3"));
 }
 
 #[test]

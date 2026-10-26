@@ -271,3 +271,4 @@
 | [ASC280](../checks/diagnostics/project-files.md#ASC280) | `api-example-schema-unsupported` | Advice | File | outside |
 | [ASC281](../checks/diagnostics/pages.md#ASC281) | `operation-link-not-operation` | Error | File | write |
 | [ASC282](../checks/diagnostics/content-checks.md#ASC282) | `api-operation-unreferenced` | Advice | File | write |
+| [ASC283](../checks/diagnostics/content-checks.md#ASC283) | `build-filter-line-undeclared` | Advice | File | write |

@@ -4,7 +4,8 @@ use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use ascribe_core::RelPath;
-use ascribe_resolve::{AstroRouter, Project, ResolvedPage};
+use ascribe_model::addresses::Key;
+use ascribe_resolve::{AstroRouter, FileKind, Project, ResolvedPage};
 use serde::Serialize;
 
 use crate::align::{self, Found};
@@ -33,6 +34,11 @@ pub struct BuildDiff {
     pub pages: Vec<PageDiff>,
 }
 
+/// The source files git sees renamed between the base and the working
+/// tree, each old content path with its new one, as [`crate::renames`]
+/// lists them.
+pub type Renames = BTreeMap<String, String>;
+
 /// What changed on one page of a build.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
@@ -40,6 +46,14 @@ pub struct BuildDiff {
 pub struct PageDiff {
     /// The page's content path.
     pub path: String,
+    /// For a page that moved, the content path it was at: git sees its
+    /// file renamed, or `ascribe.addresses` records the move. The page is
+    /// listed once, at `path`, compared with the page as it was at
+    /// `moved_from`; `status` is `changed`, and its `counts` and `changes`
+    /// are what differs besides the move, none for a page that only moved.
+    /// Absent for a page that didn't move.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub moved_from: Option<String>,
     /// Its route: the new one, or for a removed page the old one.
     pub route: String,
     /// Whether the build publishes it only now, only before, or in both
@@ -55,8 +69,14 @@ pub struct PageDiff {
     pub because: Vec<String>,
     /// What changed about the page itself besides its blocks, in this
     /// order: `title`, `frontmatter`, `availability` (the page-level one),
-    /// and `route`. Empty for an added or removed page.
+    /// and `route`. Empty for an added or removed page. A moved page's
+    /// route moves with it, so it isn't listed for one.
     pub page_changed: Vec<&'static str>,
+    /// The pages among `because` whose only change is that they moved, each
+    /// by where it was and where it is: a link on this page leads to its new
+    /// address. Absent when there's none.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub moved_links: Vec<MovedPage>,
     /// How many changes of each kind.
     pub counts: Counts,
     /// The block-level changes, in the page's order, a removed block where
@@ -66,26 +86,62 @@ pub struct PageDiff {
 }
 
 impl PageDiff {
-    /// What changed on the page, in a few words: "2 changed, 1 added", or
-    /// "added", and the files the change comes through, each written by
-    /// `cause`: "(through _fragments/prereqs.md)".
+    /// What changed on the page, in a few words: "2 changed, 1 added",
+    /// "added", or "moved from guides/configure.md, no change to the page",
+    /// and the files the change comes through, each written by `cause`:
+    /// "(through _fragments/prereqs.md)". A page that changed only because a
+    /// page it links to moved says so, "(a link changed because
+    /// guides/configure.md moved)"; when its own file changed too, the move
+    /// isn't named here, since that page is listed as moved.
     pub fn describe(&self, cause: impl Fn(&str) -> String) -> String {
-        let mut text = self.summary();
-        if !self.because.is_empty() {
+        let mut text = self.summary_with(&cause);
+        let through: Vec<String> = self
+            .because
+            .iter()
+            .filter(|c| !self.moved_links.iter().any(|m| m.to == **c))
+            .map(|c| cause(c))
+            .collect();
+        let mut reasons = Vec::new();
+        if !through.is_empty() {
             let lead = if self.own_file_changed {
                 "also through"
             } else {
                 "through"
             };
-            let causes: Vec<String> = self.because.iter().map(|c| cause(c)).collect();
-            text.push_str(&format!(" ({lead} {})", causes.join(", ")));
+            reasons.push(format!("{lead} {}", through.join(", ")));
+        }
+        if !self.own_file_changed && !self.moved_links.is_empty() {
+            let moved: Vec<String> = self.moved_links.iter().map(|m| cause(&m.from)).collect();
+            let moved: Vec<&str> = moved.iter().map(String::as_str).collect();
+            let links = if moved.len() == 1 {
+                "a link changed"
+            } else {
+                "links changed"
+            };
+            reasons.push(format!("{links} because {} moved", and_list(&moved)));
+        }
+        if !reasons.is_empty() {
+            text.push_str(&format!(" ({})", reasons.join("; ")));
         }
         text
     }
 
     /// What changed on the page, without where from: "2 changed, 1 added,
-    /// title changed", or "added".
+    /// title changed", "added", or "moved from guides/configure.md, no
+    /// change to the page".
     pub fn summary(&self) -> String {
+        self.summary_with(&str::to_owned)
+    }
+
+    /// Whether this is the page at `path`, a content path: where it is, or
+    /// where it moved from.
+    pub fn is(&self, path: &str) -> bool {
+        self.path == path || self.moved_from.as_deref() == Some(path)
+    }
+
+    /// [`PageDiff::summary`], with the path a page moved from written by
+    /// `path`, as [`PageDiff::describe`] writes its causes.
+    pub fn summary_with(&self, path: &dyn Fn(&str) -> String) -> String {
         match self.status {
             PageStatus::Added => "added".to_owned(),
             PageStatus::Removed => "removed".to_owned(),
@@ -104,10 +160,26 @@ impl PageDiff {
                 if !self.page_changed.is_empty() {
                     parts.push(format!("{} changed", and_list(&self.page_changed)));
                 }
+                if let Some(from) = &self.moved_from {
+                    if parts.is_empty() {
+                        parts.push("no change to the page".to_owned());
+                    }
+                    parts.insert(0, format!("moved from {}", path(from)));
+                }
                 parts.join(", ")
             }
         }
     }
+}
+
+/// A page that moved: where it was, and where it is, by content path.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct MovedPage {
+    /// Where it was, in the base.
+    pub from: String,
+    /// Where it is now.
+    pub to: String,
 }
 
 /// `a`, `a and b`, `a, b, and c`.
@@ -209,19 +281,21 @@ pub struct Words {
     pub was_text: String,
 }
 
-/// The files whose text differs between two versions, and whether the
-/// content model's does.
+/// The files whose text differs between two versions, whether the content
+/// model's does, and the pages that moved.
 struct ChangedFiles {
     files: BTreeSet<RelPath>,
     model: bool,
+    moves: Moves,
 }
 
 impl ChangedFiles {
-    fn between(base: Option<Side<'_>>, now: Side<'_>) -> ChangedFiles {
+    fn between(base: Option<Side<'_>>, now: Side<'_>, renames: &Renames) -> ChangedFiles {
         let Some(base) = base else {
             return ChangedFiles {
                 files: now.project.files().map(|f| f.path.clone()).collect(),
                 model: true,
+                moves: Moves::default(),
             };
         };
         let mut files = BTreeSet::new();
@@ -243,7 +317,66 @@ impl ChangedFiles {
         ChangedFiles {
             files,
             model: base.model_text != now.model_text,
+            moves: Moves::between(base, now, renames),
         }
+    }
+}
+
+/// The pages that moved between two versions: each page of the base whose
+/// file isn't there now, paired with a page the base didn't have, as git
+/// sees the file renamed (`renames`) or as the working tree's
+/// `ascribe.addresses` records the move. Each page is paired once, git's
+/// renames first.
+#[derive(Default)]
+struct Moves {
+    /// Each moved page's path before, by its path now.
+    from: BTreeMap<RelPath, RelPath>,
+    /// Each moved page's path now, by its path before.
+    to: BTreeMap<RelPath, RelPath>,
+    /// The paths now of the moved pages whose file reads as it did, so that
+    /// moving is all that changed about them.
+    only_moved: BTreeSet<RelPath>,
+}
+
+impl Moves {
+    fn between(base: Side<'_>, now: Side<'_>, renames: &Renames) -> Moves {
+        let is_page = |project: &Project, path: &RelPath| {
+            project.file(path).is_some_and(|f| f.kind == FileKind::Page)
+        };
+        let mut pairs: Vec<(String, String)> = renames
+            .iter()
+            .map(|(old, new)| (old.clone(), new.clone()))
+            .collect();
+        if let Some(file) = now.project.addresses_file() {
+            pairs.extend(file.moved.iter().filter_map(|(key, entry)| {
+                let Some(Key::Source(old)) = Key::parse(key) else {
+                    return None;
+                };
+                Some((old.to_owned(), file.follow(&entry.value)?))
+            }));
+        }
+        let mut moves = Moves::default();
+        for (old, new) in pairs {
+            let (Ok(old), Ok(new)) = (RelPath::parse(&old), RelPath::parse(&new)) else {
+                continue;
+            };
+            let moved = is_page(base.project, &old)
+                && now.project.file(&old).is_none()
+                && is_page(now.project, &new)
+                && base.project.file(&new).is_none();
+            if !moved || moves.to.contains_key(&old) || moves.from.contains_key(&new) {
+                continue;
+            }
+            let text = |project: &Project, path: &RelPath| {
+                project.file(path).map(|f| lf(&f.source).into_owned())
+            };
+            if text(base.project, &old) == text(now.project, &new) {
+                moves.only_moved.insert(new.clone());
+            }
+            moves.from.insert(new.clone(), old.clone());
+            moves.to.insert(old, new);
+        }
+        moves
     }
 }
 
@@ -251,8 +384,18 @@ impl ChangedFiles {
 /// build that `base` doesn't have publishes every page as added; with no
 /// `base` at all (the project didn't exist), so does every build. A name
 /// that isn't a build of `now` is skipped.
-pub fn compare_builds(base: Option<Side<'_>>, now: Side<'_>, builds: &[&str]) -> Vec<BuildDiff> {
-    let changed = ChangedFiles::between(base, now);
+///
+/// A page that moved is listed once, where it is now, with
+/// [`PageDiff::moved_from`]: one whose file git sees renamed (`renames`,
+/// from [`crate::renames`]; empty where git isn't asked), or whose move
+/// `now`'s `ascribe.addresses` records.
+pub fn compare_builds(
+    base: Option<Side<'_>>,
+    now: Side<'_>,
+    builds: &[&str],
+    renames: &Renames,
+) -> Vec<BuildDiff> {
+    let changed = ChangedFiles::between(base, now, renames);
     let reach = base.and_then(|base| reachable(base, now));
     let routers = Routers::new(base, now);
     let mut out = Vec::new();
@@ -308,14 +451,16 @@ fn line_route(
 
 /// What changed on the page at `path` in the build `build` between `base`
 /// and `now`, as [`compare_builds`] reports it; `None` when nothing did, the
-/// page is in neither version, or `now` has no such build.
+/// page is in neither version, `now` has no such build, or the page moved
+/// away from `path` (it's reported where it is now).
 pub fn compare_page_in(
     base: Option<Side<'_>>,
     now: Side<'_>,
     build: &str,
     path: &RelPath,
+    renames: &Renames,
 ) -> Option<PageDiff> {
-    let changed = ChangedFiles::between(base, now);
+    let changed = ChangedFiles::between(base, now, renames);
     Routers::new(base, now)
         .build(build)?
         .compare(path, &changed)
@@ -331,7 +476,7 @@ pub fn changed_apart_from_snippets(
     build: &str,
     paths: &[&RelPath],
 ) -> BTreeSet<RelPath> {
-    let changed = ChangedFiles::between(base, now);
+    let changed = ChangedFiles::between(base, now, &Renames::new());
     let routers = Routers::new(base, now);
     let Some(sides) = routers.build(build) else {
         return BTreeSet::new();
@@ -497,10 +642,30 @@ impl BuildSides<'_> {
     /// [`BuildSides::compare`], with how many of the page's `because` are
     /// snippets.
     fn compare_parts(&self, path: &RelPath, changed: &ChangedFiles) -> Option<(PageDiff, usize)> {
+        let base_page = |path: &RelPath| self.base.as_ref().and_then(|(_, r)| r.page(path));
         let now_page = self.now.1.page(path);
-        let base_page = self.base.as_ref().and_then(|(_, r)| r.page(path));
+        // A page that moved, in a build that published it at both places, is
+        // compared with where it was, and isn't reported there.
+        if let Some(new) = changed.moves.to.get(path)
+            && now_page.is_none()
+            && self.now.1.page(new).is_some()
+            && base_page(path).is_some()
+        {
+            return None;
+        }
+        let moved = changed
+            .moves
+            .from
+            .get(path)
+            .filter(|_| now_page.is_some())
+            .and_then(|old| Some((old, base_page(old)?)));
+        let (was_path, base_page) = match moved {
+            Some((old, page)) => (old, Some(page)),
+            None => (path, base_page(path)),
+        };
         compare_page(
             path,
+            was_path,
             base_page.as_ref().zip(self.base.as_ref().map(|(b, _)| *b)),
             now_page.as_ref().map(|p| (p, self.now.0)),
             changed,
@@ -508,14 +673,22 @@ impl BuildSides<'_> {
     }
 }
 
-/// What changed on a page, and how many of its `because` are snippets.
+/// What changed on a page, and how many of its `because` are snippets: the
+/// page at `path` now, compared with the page at `was_path` in the base,
+/// which is `path` unless it moved.
 fn compare_page(
     path: &RelPath,
+    was_path: &RelPath,
     base: Option<(&ResolvedPage, Side<'_>)>,
     now: Option<(&ResolvedPage, Side<'_>)>,
     changed: &ChangedFiles,
 ) -> Option<(PageDiff, usize)> {
-    let own_file_changed = changed.files.contains(path);
+    let moved_from = (was_path != path).then(|| was_path.to_string());
+    let own_file_changed = if moved_from.is_some() {
+        !changed.moves.only_moved.contains(path)
+    } else {
+        changed.files.contains(path)
+    };
     let page_only = |status, route: &str| {
         let because = if !own_file_changed && changed.model {
             vec![MODEL_FILE.to_owned()]
@@ -524,11 +697,13 @@ fn compare_page(
         };
         PageDiff {
             path: path.to_string(),
+            moved_from: None,
             route: route.to_owned(),
             status,
             own_file_changed,
             because,
             page_changed: Vec::new(),
+            moved_links: Vec::new(),
             counts: Counts::default(),
             changes: Vec::new(),
         }
@@ -541,7 +716,7 @@ fn compare_page(
     };
     let was_tree: PageTree = TreeBuilder::new(base.project).page(was_page);
     let now_tree: PageTree = TreeBuilder::new(now.project).page(now_page);
-    if was_tree.hash == now_tree.hash && was_tree.route == now_tree.route {
+    if moved_from.is_none() && was_tree.hash == now_tree.hash && was_tree.route == now_tree.route {
         return None;
     }
     let found = align::compare(&was_tree.nodes, &now_tree.nodes);
@@ -552,7 +727,10 @@ fn compare_page(
             "availability",
             was_tree.availability != now_tree.availability,
         ),
-        ("route", was_tree.route != now_tree.route),
+        (
+            "route",
+            moved_from.is_none() && was_tree.route != now_tree.route,
+        ),
     ]
     .into_iter()
     .filter_map(|(name, differs)| differs.then_some(name))
@@ -586,11 +764,25 @@ fn compare_page(
             }
         }
     }
-    let mut because: Vec<String> = used
+    // A page that moved is named once, where it is now.
+    let moves = &changed.moves;
+    let causes: BTreeSet<&RelPath> = used
         .iter()
-        .filter(|p| *p != path && changed.files.contains(*p))
-        .map(ToString::to_string)
+        .filter(|p| *p != path && *p != was_path && changed.files.contains(*p))
+        .map(|p| moves.to.get(p).unwrap_or(p))
+        .filter(|p| *p != path)
         .collect();
+    let moved_links: Vec<MovedPage> = causes
+        .iter()
+        .filter(|p| moves.only_moved.contains(**p))
+        .filter_map(|p| {
+            Some(MovedPage {
+                from: moves.from.get(*p)?.to_string(),
+                to: p.to_string(),
+            })
+        })
+        .collect();
+    let mut because: Vec<String> = causes.iter().map(ToString::to_string).collect();
     // A snippet whose code differs: named by its address, as a fragment is
     // by its path.
     let snippets = changed_snippets(&was_tree, &now_tree);
@@ -616,11 +808,13 @@ fn compare_page(
         .collect();
     let diff = PageDiff {
         path: path.to_string(),
+        moved_from,
         route: now_tree.route,
         status: PageStatus::Changed,
         own_file_changed,
         because,
         page_changed,
+        moved_links,
         counts,
         changes,
     };

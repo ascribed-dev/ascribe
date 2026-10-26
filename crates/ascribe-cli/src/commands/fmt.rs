@@ -40,17 +40,27 @@ use crate::context::locate;
 use crate::exit;
 use crate::report::json::Edit;
 
+mod changes;
+
 /// The version of `--format json`'s schema.
 pub const SCHEMA_VERSION: u32 = 1;
 
 /// Arguments of `ascribe fmt`.
 #[derive(Debug, Default, ClapArgs)]
 pub struct Args {
-    /// Change nothing, and list each file that would change.
+    /// Change nothing, and list each change it would make: the file and
+    /// line, and the lines as they are and as they'd be.
     ///
-    /// Exits with 1 if any would. Use it in CI.
+    /// Exits with 1 if any file would change. Use it in CI.
     #[arg(long)]
     pub check: bool,
+
+    /// Change nothing, and show what would change as a unified diff, which
+    /// `git apply` applies.
+    ///
+    /// Implies `--check`, and exits as it does.
+    #[arg(long, conflicts_with = "format")]
+    pub diff: bool,
 
     /// Files and directories to format: the `.md` files among them.
     ///
@@ -70,6 +80,25 @@ pub struct Args {
     /// `--check`, that's the edits without writing them.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
+}
+
+impl Args {
+    /// Whether it only checks, writing nothing: `--check`, or `--diff`.
+    fn checks(&self) -> bool {
+        self.check || self.diff
+    }
+}
+
+/// A file as `--check` and `--diff` name it: from the current directory
+/// when it's inside it, with `/` separators, so `git apply` run there finds
+/// it; otherwise in full.
+fn shown(file: &Path) -> String {
+    let path = normalize(&std::path::absolute(file).unwrap_or(file.to_owned()));
+    std::env::current_dir()
+        .ok()
+        .and_then(|here| relative_path(&normalize(&here), &path))
+        .filter(ascribe_core::RelPath::is_inside)
+        .map_or_else(|| path.display().to_string(), |rel| rel.to_string())
 }
 
 /// What `ascribe fmt --format json` writes: one document. Fields can be
@@ -122,16 +151,17 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     let mut out = std::io::stdout().lock();
     let mut err = std::io::stderr().lock();
     let formatted = match args.format {
-        Format::Text => {
-            let verb = if args.check {
-                "would reformat"
-            } else {
-                "formatted"
-            };
-            format_all(global, &args, &mut |file, _, _| {
-                let _ = writeln!(out, "{verb} {}", file.display());
-            })
-        }
+        Format::Text if args.diff => format_all(global, &args, &mut |file, source, edits| {
+            let found = changes::changes(source, edits);
+            let _ = changes::write_diff(&mut out, &shown(file), source, &found);
+        }),
+        Format::Text if args.check => format_all(global, &args, &mut |file, source, edits| {
+            let found = changes::changes(source, edits);
+            let _ = changes::write_lines(&mut out, &shown(file), &found);
+        }),
+        Format::Text => format_all(global, &args, &mut |file, _, _| {
+            let _ = writeln!(out, "formatted {}", file.display());
+        }),
         Format::Json => answer(global, &args).and_then(|(done, report)| {
             match answer::written(answer::write_json(&mut out, &report), &mut err) {
                 Some(code) => Err(FmtError::Written(code)),
@@ -160,7 +190,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
         );
     }
     let changed = done.changed.len();
-    if args.check && changed > 0 {
+    if args.checks() && changed > 0 {
         let _ = writeln!(
             err,
             "{changed} file{} would be reformatted",
@@ -169,7 +199,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     }
     if !done.refused.is_empty() {
         exit::code(exit::FAILURE)
-    } else if args.check && changed > 0 {
+    } else if args.checks() && changed > 0 {
         exit::code(exit::PROBLEMS)
     } else {
         exit::code(exit::OK)
@@ -246,7 +276,7 @@ fn format_all(
         &config,
         &model,
         &options.paths,
-        options.check,
+        options.checks(),
         &boundary,
         on_changed,
     )?)
@@ -287,7 +317,7 @@ pub(crate) fn answer(global: &Global, options: &Args) -> Result<(Formatted, FmtR
     let report = FmtReport {
         schema_version: SCHEMA_VERSION,
         ascribe_version: env!("CARGO_PKG_VERSION"),
-        written: !options.check,
+        written: !options.checks(),
         files,
         refused,
     };

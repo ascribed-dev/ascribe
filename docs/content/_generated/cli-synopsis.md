@@ -2,7 +2,7 @@
 ```text
 ascribe init              [DIR] [--templates] [--format text|json]
 ascribe check             [PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--format text|concise|json|prompt] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]
-ascribe fmt               [--check] [PATHS]... [--format text|json]
+ascribe fmt               [--check] [--diff] [PATHS]... [--format text|json]
 ascribe build             [--build <NAME>]... [--emit site,plain,json] [--format text|json] [--anchors] [--no-baseline]
 ascribe diff              [PAGE] [--base <REV>] [--base-exact] [--build <NAME>]... [--format text|json|html|prompt] [--exit-code] [--pages-only]
 ascribe drift             [--base <REV>] [--build <NAME>]... [--format text|json|markdown] [--exit-code]
@@ -41,12 +41,12 @@ ascribe templates eject   [NAME]... [--to <DIR>] [--keep-type] [--format text|js
 ascribe templates status  [--format text|json] [--exit-code] [--diff <NAME>]
 ascribe vale eject
 
-ascribe agents sync       [--check] [--target agents-md|skills|claude|claude-rules|copilot|codex]... [--with-hook] [--cloud] [--agent]
+ascribe agents sync       [--check] [--target agents-md|skills|claude|claude-rules|copilot|codex]... [--with-hook] [--cloud] [--agent] [--command <COMMAND>]
 ascribe agents rules      [PATH]
 ascribe agents index      [--build <NAME>] [--into <FILE>] [--pages <DIR>] [--format text|json]
 ascribe agents skill      [FILE]
 ascribe agents prompt     [NAME] [--arg <KEY=VALUE>]... [--list]
-ascribe agents hook       HARNESS [--event edit|stop]
+ascribe agents hook       HARNESS [--event edit|stop] [--command <COMMAND>]
 ascribe mcp
 ascribe lsp
 ascribe --version

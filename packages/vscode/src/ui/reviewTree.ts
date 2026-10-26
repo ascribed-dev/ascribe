@@ -181,6 +181,8 @@ export interface SourceFile {
   /** Whether it's at the base, and whether it's now: an added page's file isn't at the base. */
   before: boolean;
   after: boolean;
+  /** For a page that moved, its absolute path at the base, where it was. */
+  basePath?: string;
 }
 
 /**
@@ -194,14 +196,37 @@ export function sourceFiles(
   roots: { projectRoot: string | null; contentRoot: string | null },
 ): SourceFile[] {
   const out = new Map<string, SourceFile>();
-  const add = (label: string, root: string | null, before: boolean, after: boolean): void => {
+  const add = (
+    label: string,
+    root: string | null,
+    before: boolean,
+    after: boolean,
+    from?: string,
+  ): void => {
     if (root === null) return;
     const path = fromContentPath(root, label);
-    if (!out.has(path)) out.set(path, { label, path, before, after });
+    const basePath = from === undefined ? undefined : fromContentPath(root, from);
+    const known = out.get(path);
+    // A page that moved is compared with where it was, however it was named first.
+    if (known) {
+      if (basePath !== undefined) known.basePath = basePath;
+      return;
+    }
+    out.set(
+      path,
+      basePath === undefined
+        ? { label, path, before, after }
+        : { label, path, before, after, basePath },
+    );
   };
   for (const page of pages) {
-    if (page.own_file_changed || page.status !== "changed") {
+    if (page.moved_from !== undefined) {
+      add(page.path, roots.contentRoot, true, true, page.moved_from);
+    } else if (page.own_file_changed || page.status !== "changed") {
       add(page.path, roots.contentRoot, page.status !== "added", page.status !== "removed");
+    }
+    for (const moved of page.moved_links ?? []) {
+      add(moved.to, roots.contentRoot, true, true, moved.from);
     }
     for (const cause of page.because) {
       if (cause.startsWith(SNIPPET_PREFIX)) continue;

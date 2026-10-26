@@ -9,7 +9,7 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
-use ascribe_check::{Acknowledged, Diagnostic, LoadError, LocateError, MODEL_FILE, Project};
+use ascribe_check::{Found, LoadError, LocateError, MODEL_FILE, Project};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{Coded, RelPath, diagnostics};
 use ascribe_query::QueryError;
@@ -65,17 +65,6 @@ pub struct Loaded {
 struct Checked {
     asked: Vec<String>,
     found: Found,
-}
-
-/// What a check of a project found.
-#[derive(Clone, Debug, Default)]
-pub struct Found {
-    /// The diagnostics to report.
-    pub diagnostics: Vec<Diagnostic>,
-    /// The builds whose page-level checks ran, by name.
-    pub builds: Vec<String>,
-    /// The problems acknowledged as intended, which aren't reported.
-    pub acknowledged: Vec<Acknowledged>,
 }
 
 impl Loaded {

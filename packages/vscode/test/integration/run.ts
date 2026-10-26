@@ -75,7 +75,6 @@
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
 import { execFileSync } from "node:child_process";
 import {
-  appendFileSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -202,7 +201,14 @@ const suites: Suite[] = [
         { recursive: true },
       );
       // Nothing links to broken.md, and its tests count every diagnostic.
-      appendFileSync(path.join(workspace, "ascribe.toml"), '\n[checks]\npage-orphan = "off"\n');
+      const model = path.join(workspace, "ascribe.toml");
+      const text = readFileSync(model, "utf8");
+      writeFileSync(
+        model,
+        text.includes("\n[checks]\n")
+          ? text.replace("\n[checks]\n", '\n[checks]\npage-orphan = "off"\n')
+          : `${text}\n[checks]\npage-orphan = "off"\n`,
+      );
       return { "ascribe.path": realServer, ...startAll };
     },
   },

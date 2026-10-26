@@ -714,6 +714,132 @@ fn with_hook_runs_the_pinned_ascribe() {
     assert!(mcp.contains(r#""command": "ascribe""#), "{mcp}");
 }
 
+/// A copy of quill synced for Claude Code with its hooks, with
+/// `package.json` and the lockfile given.
+fn synced_with(package: Option<&str>, lockfile: Option<&str>, more: &[&str]) -> TempDir {
+    let repo = repository("quill");
+    let root = repo.path();
+    if let Some(package) = package {
+        write(&root.join("package.json"), package);
+    }
+    if let Some(lockfile) = lockfile {
+        write(&root.join(lockfile), "");
+    }
+    let mut args = vec!["--target", "claude", "--with-hook"];
+    args.extend_from_slice(more);
+    sync(root, ".", &args);
+    repo
+}
+
+const DEPENDS_ON_CLI: &str = "{\"devDependencies\": {\"@ascribed/cli\": \"1.0.0\"}}\n";
+
+/// Asserts that each file an agent reads runs Ascribe with `command`.
+fn assert_runs(root: &Path, command: &str) {
+    for file in [
+        "AGENTS.md",
+        ".agents/skills/ascribe/SKILL.md",
+        ".agents/skills/ascribe/references/directives.md",
+        ".claude/skills/ascribe/SKILL.md",
+    ] {
+        let text = read(&root.join(file));
+        if command != "ascribe" {
+            assert!(!text.contains("`ascribe "), "{file}: {text}");
+        }
+        assert!(
+            text.contains(&format!("`{command} ")),
+            "{file} doesn't name `{command}`: {text}"
+        );
+    }
+    let skill = read(&root.join(".agents/skills/ascribe/SKILL.md"));
+    assert!(skill.contains(&format!("Run `{command} check <file> --format concise`.")));
+    assert_eq!(skill.contains("isn't on the path"), command == "ascribe");
+}
+
+#[test]
+fn sync_names_the_command_the_project_runs_ascribe_with() {
+    let astro = "{\"dependencies\": {\"@ascribed/astro\": \"1.0.0\"}}\n";
+    for (package, lockfile, command) in [
+        (None, None, "ascribe"),
+        (
+            Some("{\"dependencies\": {}}\n"),
+            Some("package-lock.json"),
+            "ascribe",
+        ),
+        (Some(DEPENDS_ON_CLI), None, "npx ascribe"),
+        (
+            Some(DEPENDS_ON_CLI),
+            Some("package-lock.json"),
+            "npx ascribe",
+        ),
+        (
+            Some(DEPENDS_ON_CLI),
+            Some("pnpm-lock.yaml"),
+            "pnpm exec ascribe",
+        ),
+        (Some(DEPENDS_ON_CLI), Some("yarn.lock"), "yarn ascribe"),
+        (Some(astro), Some("pnpm-lock.yaml"), "pnpm exec ascribe"),
+    ] {
+        let repo = synced_with(package, lockfile, &[]);
+        assert_runs(repo.path(), command);
+        // The hooks work it out themselves.
+        let settings = read(&repo.path().join(".claude/settings.json"));
+        assert!(!settings.contains("--command"), "{settings}");
+        run(repo.path(), &["agents", "sync", "--check"], 0);
+    }
+}
+
+#[test]
+fn command_overrides_the_one_worked_out() {
+    let repo = synced_with(
+        Some(DEPENDS_ON_CLI),
+        Some("pnpm-lock.yaml"),
+        &["--command", "bunx ascribe"],
+    );
+    let root = repo.path();
+    assert_runs(root, "bunx ascribe");
+    let settings = read(&root.join(".claude/settings.json"));
+    assert!(
+        settings.contains(r#"agents hook claude-code --event edit --command \"bunx ascribe\""#),
+        "{settings}"
+    );
+    run(
+        root,
+        &["agents", "sync", "--command", "bunx ascribe", "--check"],
+        0,
+    );
+    // Without it, the files name another command, so they're out of date.
+    let out = run(root, &["agents", "sync", "--check"], 1);
+    assert!(
+        stdout(&out).contains("stale      AGENTS.md"),
+        "{}",
+        stdout(&out)
+    );
+    // A command a hook's command line can't carry is refused.
+    let out = ascribe(root, &["agents", "sync", "--command", "npx ascribe; rm x"]);
+    assert_eq!(out.status.code(), Some(2), "{}", stderr(&out));
+}
+
+#[test]
+fn projects_that_run_ascribe_differently_share_a_skill_that_says_how() {
+    let repo = repository("monorepo");
+    let root = repo.path();
+    write(&root.join("docs/package.json"), DEPENDS_ON_CLI);
+    write(&root.join("pnpm-lock.yaml"), "");
+    sync(root, "docs", &[]);
+    sync(root, "handbook", &[]);
+    assert!(read(&root.join("docs/AGENTS.md")).contains("`pnpm exec ascribe check"));
+    assert!(!read(&root.join("handbook/AGENTS.md")).contains("pnpm exec"));
+    let skill = read(&root.join(".agents/skills/ascribe/SKILL.md"));
+    assert!(
+        skill.contains("Run `ascribe check <file> --format concise`."),
+        "{skill}"
+    );
+    assert!(skill.contains("isn't on the path"), "{skill}");
+    for project in ["docs", "handbook"] {
+        run(root, &["agents", "sync", "--config", project, "--check"], 0);
+    }
+}
+
 #[test]
 fn a_settings_file_that_isnt_json_stops_everything() {
     let repo = repository("quill");

@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  causesText,
   changedPages,
   errorsNotice,
   linesNote,
   listBuilds,
   pageFragment,
+  pageSummary,
   start,
   type BuildData,
   type ReportData,
@@ -190,6 +192,44 @@ describe("the report", () => {
     expect(root.querySelector('[aria-label="Next change"]')).toBeNull();
     expect(root.querySelector(".r-controls .r-legend")?.textContent).toBe(
       "The page's frontmatter changed, which this render doesn't show.",
+    );
+  });
+
+  it("lists a moved page once, with where it moved from", () => {
+    const report = data();
+    const moved = page("guides/setup.md", {
+      moved_from: "guides/configure.md",
+      changes: [],
+      counts: { changed: 0, added: 0, removed: 0, moved: 0 },
+      because: [],
+      own_file_changed: false,
+    });
+    report.builds = [{ build: "site", pages: [moved] }];
+    report.limit = { pages: 300, omitted: 0 };
+    const root = document.createElement("div");
+    document.body.append(root);
+    start(root, report);
+    expect(root.querySelector(".r-page-counts")?.textContent).toBe(
+      "Moved from guides/configure.md · no change to the page",
+    );
+    expect(root.querySelector(".r-controls .r-grow")?.textContent).toContain(
+      "moved from guides/configure.md",
+    );
+    expect(root.querySelector(".r-quiet")?.textContent).toBe("No change to the page");
+    expect(pageSummary({ ...moved, counts: { changed: 2, added: 1, removed: 0, moved: 0 } })).toBe(
+      "Moved from guides/configure.md · 2 changed · 1 added",
+    );
+  });
+
+  it("says a link changed because the page it leads to moved", () => {
+    const moved_links = [{ from: "guides/configure.md", to: "guides/setup.md" }];
+    const linking = page("guides/install.md", { because: ["guides/setup.md"], moved_links });
+    expect(causesText(linking)).toBe("a link changed because guides/configure.md moved");
+    // When the page's own file changed, the move isn't a reason to give.
+    expect(causesText({ ...linking, own_file_changed: true })).toBe("");
+    expect(causesText(page("guide.md"), "via")).toBe("via _fragments/prereqs.md");
+    expect(causesText(page("guide.md", { own_file_changed: true }))).toBe(
+      "also through _fragments/prereqs.md",
     );
   });
 

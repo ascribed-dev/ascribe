@@ -269,6 +269,27 @@ fn failures_exit_with_2() {
 }
 
 #[test]
+fn a_revision_given_as_the_page_names_the_base_option() {
+    let dir = repo();
+    for rev in ["main", "HEAD"] {
+        let out = ascribe(&site(&dir), &["diff", rev]);
+        assert_eq!(code(&out), 2);
+        assert_eq!(
+            stderr(&out),
+            format!(
+                "error: {rev} isn't a file of the project, now or at the base; to compare with `{rev}`, use `--base {rev}`\n"
+            )
+        );
+    }
+    // A name git doesn't know is only not a file.
+    let out = ascribe(&site(&dir), &["diff", "nope"]);
+    assert_eq!(
+        stderr(&out),
+        "error: nope isn't a file of the project, now or at the base\n"
+    );
+}
+
+#[test]
 fn a_base_model_with_errors_exits_with_2() {
     let dir = repo();
     write(
