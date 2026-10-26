@@ -126,11 +126,8 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
   function keysPage(connections: string[]): string[] {
     return [
       "About",
-      "  Title (API keys)",
-      "  Type (page)",
       "  Address (/keys/)",
       "  Markdown (not published)",
-      "  Description (52 characters)",
       "  Builds (Published by site, site@3.4, cloud, self-managed-3.3)",
       "  Listing (Listed (the default))",
       ...connections,
@@ -151,7 +148,7 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
     const rotate = keysPage([
       "Connections (to “Rotate keys”)",
       "  Linked from (1)",
-      "    install-agent.md (install-agent.md)",
+      "    install-agent.md",
       linkToRotate,
       "  Included by (0)",
       "  Includes (0)",
@@ -202,11 +199,19 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
     );
     assert.equal(rows[0] === "Problems (none)", problems.length === 0, rows.join("\n"));
     assert.equal(health.children[0]?.runs, "workbench.action.problems.focus");
-    assert.match(rows[1] ?? "", /^Size \([\d,]+ of 50,000 characters, in site\)$/, rows.join("\n"));
+    assert.ok(
+      rows.some((row) => /^Size \([\d,]+ of 50,000 characters, in site\)$/.test(row)),
+      rows.join("\n"),
+    );
+    // The description can warn, so it's Health's; About only says what the page is.
+    const description = health.children.find((item) => item.label === "Description");
+    assert.ok(description?.opens?.endsWith("/docs/keys.md:4"), description?.opens);
     const about = api.ui.thisPage.items().find((item) => item.label === "About");
-    const row = (label: string) => about?.children.find((item) => item.label === label);
-    assert.ok(row("Description")?.opens?.endsWith("/docs/keys.md:4"), row("Description")?.opens);
-    assert.equal(row("Builds")?.runs, "ascribe.switchBuild");
+    assert.ok(!about?.children.some((item) => item.label === "Description"));
+    assert.equal(
+      about?.children.find((item) => item.label === "Builds")?.runs,
+      "ascribe.switchBuild",
+    );
   });
 
   it("counts an unsaved edit's link before it's saved", async () => {
@@ -278,9 +283,8 @@ describe("This page's webview on examples/quill", () => {
   const installAgent = uriOf("docs", "install-agent.md");
   const quickstart = uriOf("docs", "quickstart.md");
 
-  /** The title About's first row gives, in what the webview drew last. */
-  const title = (drawn: Drawn<ThisPageReport>): string | undefined =>
-    drawn.report.sections.find((section) => section.key === "about")?.items[0];
+  /** The title the view's head gives, in what the webview drew last. */
+  const title = (drawn: Drawn<ThisPageReport>): string | undefined => drawn.report.head[0];
 
   after(async () => {
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
@@ -293,7 +297,7 @@ describe("This page's webview on examples/quill", () => {
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(installAgent));
     const first = await view.whenDrawn(
       "install-agent.md",
-      (drawn) => title(drawn) === "Title (Install the Quill agent)",
+      (drawn) => title(drawn) === "Install the Quill agent",
     );
     assert.deepEqual(
       first.report.sections.map(({ label, open }) => `${label} ${open ? "open" : "closed"}`),
@@ -305,7 +309,7 @@ describe("This page's webview on examples/quill", () => {
     // Clicking in the view takes the focus from the editor: the view stays on the page.
     await vscode.commands.executeCommand("ascribe.thisPage.focus");
     await view.whenSettled();
-    assert.equal(title(view.drawn() ?? first), "Title (Install the Quill agent)");
+    assert.equal(title(view.drawn() ?? first), "Install the Quill agent");
     // So does focus in a webview editor, the preview's, which leaves VS Code
     // reporting no active editor at all.
     await vscode.commands.executeCommand("ascribe.openPreview");
@@ -316,7 +320,7 @@ describe("This page's webview on examples/quill", () => {
     );
     const asked = view.asked();
     await view.whenSettled();
-    assert.equal(title(view.drawn() ?? first), "Title (Install the Quill agent)");
+    assert.equal(title(view.drawn() ?? first), "Install the Quill agent");
     assert.equal(view.drawn()?.report.message, null);
     // Escape in the view gives the focus back to the page's editor.
     await view.escape();
@@ -339,7 +343,7 @@ describe("This page's webview on examples/quill", () => {
     await vscode.commands.executeCommand("ascribe.thisPage.focus");
     const again = await view.whenDrawn(
       "quickstart.md",
-      (drawn) => drawn.seq > before && title(drawn) === "Title (Try Quill in the browser)",
+      (drawn) => drawn.seq > before && title(drawn) === "Try Quill in the browser",
     );
     assert.equal(again.report.sections[0]?.open, true);
     assert.ok(view.asked() > hidden);
@@ -354,10 +358,7 @@ describe("This page's webview on examples/quill", () => {
       viewColumn: vscode.ViewColumn.One,
       preview: false,
     });
-    await view.whenDrawn(
-      "install-agent.md",
-      (drawn) => title(drawn) === "Title (Install the Quill agent)",
-    );
+    await view.whenDrawn("install-agent.md", (drawn) => title(drawn) === "Install the Quill agent");
 
     // ascribe.toml in the page's group covers its tab: the page's editor
     // leaves the screen, and This page stays on it.
@@ -377,7 +378,7 @@ describe("This page's webview on examples/quill", () => {
     const covered = view.drawn();
     assert.ok(covered);
     assert.equal(covered.report.message, null);
-    assert.equal(title(covered), "Title (Install the Quill agent)");
+    assert.equal(title(covered), "Install the Quill agent");
     // Escape brings the page's tab back to the top, and the focus to it.
     await view.escape();
     assert.equal(vscode.window.activeTextEditor?.document.uri.toString(), installAgent.toString());
@@ -401,16 +402,13 @@ describe("This page's webview on examples/quill", () => {
     const view = api.ui.thisPage;
     await vscode.commands.executeCommand("ascribe.thisPage.focus");
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(installAgent));
-    await view.whenDrawn(
-      "install-agent.md",
-      (drawn) => title(drawn) === "Title (Install the Quill agent)",
-    );
-    // Its Description row goes to the field, in the page's frontmatter.
-    const about = view.items().find((item) => item.label === "About");
-    const at = about?.children.findIndex((item) => item.label === "Description") ?? -1;
+    await view.whenDrawn("install-agent.md", (drawn) => title(drawn) === "Install the Quill agent");
+    // Health's Description row goes to the field, in the page's frontmatter.
+    const health = view.items().find((item) => item.label === "Health");
+    const at = health?.children.findIndex((item) => item.label === "Description") ?? -1;
     assert.ok(at >= 0);
     await vscode.commands.executeCommand("ascribe.thisPage.focus");
-    view.choose(`about/${at}`);
+    view.choose(`health/${at}`);
     await waitFor("the description's line", async () => {
       const editor = vscode.window.activeTextEditor;
       return editor?.document.uri.toString() === installAgent.toString() &&
@@ -430,10 +428,7 @@ describe("This page's webview on examples/quill", () => {
     const opened = view.stubExternal();
     await vscode.commands.executeCommand("ascribe.thisPage.focus");
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(installAgent));
-    await view.whenDrawn(
-      "install-agent.md",
-      (drawn) => title(drawn) === "Title (Install the Quill agent)",
-    );
+    await view.whenDrawn("install-agent.md", (drawn) => title(drawn) === "Install the Quill agent");
     // Quill names its site, so Address opens the page there, as the row shows it.
     const about = view.items().find((item) => item.label === "About");
     const at = about?.children.findIndex((item) => item.label === "Address") ?? -1;
@@ -455,10 +450,7 @@ describe("This page's webview on examples/quill", () => {
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(installAgent), {
       viewColumn: vscode.ViewColumn.One,
     });
-    await view.whenDrawn(
-      "install-agent.md",
-      (drawn) => title(drawn) === "Title (Install the Quill agent)",
-    );
+    await view.whenDrawn("install-agent.md", (drawn) => title(drawn) === "Install the Quill agent");
     // Connections' third group, Includes, lists the page's one `@include`.
     const includes = view.items().find((item) => item.label === "Connections")?.children[2];
     assert.equal(includes?.children[0]?.label, "_fragments/prerequisites.md");
@@ -484,7 +476,7 @@ describe("This page's webview on examples/quill", () => {
     // The view stays on the page, and the focus where the choice left it.
     await view.whenSettled();
     const after = await view.probe({});
-    assert.equal(title(after), "Title (Install the Quill agent)");
+    assert.equal(title(after), "Install the Quill agent");
     assert.equal(after.report.focused, "connections/2/0");
     assert.equal(after.report.hasFocus, true);
     assert.notEqual(vscode.window.activeTextEditor?.document.uri.toString(), fragment.toString());
@@ -512,10 +504,10 @@ describe("This page's webview on examples/quill", () => {
       ),
     );
 
-    // Every section open, the focus on About's Description, and the view scrolled.
+    // Every section open, the focus on Health's Description, and the view scrolled.
     await vscode.commands.executeCommand("ascribe.thisPage.focus");
-    const placed = await view.probe({ open: true, focus: "about/4", scroll: 40 });
-    assert.equal(placed.report.focused, "about/4");
+    const placed = await view.probe({ open: true, focus: "health/1", scroll: 40 });
+    assert.equal(placed.report.focused, "health/1");
     assert.ok(placed.report.scroll > 0, "the view doesn't scroll");
 
     // The cursor moves to another heading: Connections changes, and the
@@ -530,7 +522,7 @@ describe("This page's webview on examples/quill", () => {
           (item) => item.startsWith("install-agent.md"),
         ),
     );
-    assert.equal(moved.report.focused, "about/4");
+    assert.equal(moved.report.focused, "health/1");
     assert.equal(moved.report.scroll, placed.report.scroll);
   });
 
@@ -557,7 +549,7 @@ describe("This page's webview on examples/quill", () => {
     assert.ok(!health?.children.some((item) => item.label === "Size"), JSON.stringify(health));
   });
 
-  it("badges the view with Health's things to do, as its header counts them", async () => {
+  it("badges the view with how many of Health's rows warn, as its header counts them", async () => {
     const api = await activated();
     const view = api.ui.thisPage;
     const original = readFileSync(quickstart.fsPath, "utf8");
@@ -566,7 +558,7 @@ describe("This page's webview on examples/quill", () => {
       const editor = await vscode.window.showTextDocument(
         await vscode.workspace.openTextDocument(quickstart),
       );
-      // A broken link, unsaved: an error in Problems, so one more thing to do.
+      // A broken link, unsaved: an error in Problems, so one more row warns.
       const before = view.badge()?.value ?? 0;
       await editor.edit((edit) =>
         edit.insert(
@@ -582,8 +574,8 @@ describe("This page's webview on examples/quill", () => {
       const health = view.items().find((item) => item.label === "Health");
       const warned = (health?.children ?? []).filter((item) => item.icon === "warning").length;
       assert.equal(badge.value, warned, JSON.stringify(health));
-      assert.equal(health?.description, `${warned} ${warned === 1 ? "thing" : "things"} to do`);
-      assert.match(badge.tooltip, /^Health: \d+ things? to do on this page$/);
+      assert.equal(health?.description, `${warned} ${warned === 1 ? "row warns" : "rows warn"}`);
+      assert.match(badge.tooltip, /^Health: \d+ rows? warns? on this page$/);
     } finally {
       await vscode.commands.executeCommand("workbench.action.revertAndCloseActiveEditor");
       writeFileSync(quickstart.fsPath, original);

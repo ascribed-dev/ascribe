@@ -12,6 +12,7 @@
   },
   "scripts": {
     "build:all": "node scripts/build-all.ts",
+    "check:all": "node scripts/check.ts",
     "check:packages": "node scripts/release/consumers.ts",
     "lint": "oxlint --type-aware",
     "typecheck": "tsc -p scripts/tsconfig.json && pnpm -r typecheck",

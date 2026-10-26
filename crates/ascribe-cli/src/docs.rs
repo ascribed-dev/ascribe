@@ -59,7 +59,7 @@ fn docs_permalinks(base: &str) -> Vec<ascribe_resolve::Permalink> {
 /// pages wherever they are.
 fn addresses() -> Vec<(String, &'static str, Option<String>)> {
     let mut helps = Vec::new();
-    let mut cli = Cli::command();
+    let mut cli = crate::cli::command();
     helps.push((cli.render_long_help().to_string(), None));
     // Rendering builds the command, which adds clap's own `help` subcommand.
     for command in cli.get_subcommands_mut().filter(|c| c.get_name() != "help") {
@@ -496,7 +496,8 @@ fn documented(arg: &Arg) -> bool {
     !arg.is_hide_set() && !matches!(arg.get_id().as_str(), "help" | "version")
 }
 
-/// The synopsis: a line for each command, with its options in order.
+/// The synopsis: a line for each command, with its options in order, and a
+/// blank line between the groups `--help` lists them in.
 fn synopsis(commands: &[(String, &Command)]) -> String {
     let width = commands
         .iter()
@@ -504,7 +505,16 @@ fn synopsis(commands: &[(String, &Command)]) -> String {
         .max()
         .unwrap_or(0);
     let mut out = format!("{HEADER}```text\n");
+    let mut group = None;
     for (name, command) in commands {
+        let top = name.split(' ').next().unwrap_or_default();
+        let this = crate::cli::GROUPS
+            .iter()
+            .position(|(_, names)| names.contains(&top));
+        if group.is_some() && group != this {
+            out.push('\n');
+        }
+        group = this;
         let usage: Vec<String> = command
             .get_arguments()
             .filter(|a| documented(a) && !a.is_global_set())

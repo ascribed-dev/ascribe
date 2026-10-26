@@ -60,9 +60,10 @@ impl Server {
     /// its own, for as long as the process runs.
     pub fn spawn(self) {
         thread::spawn(move || {
+            let port = self.listener.local_addr().map_or(PORT, |at| at.port());
             for stream in self.listener.incoming().flatten() {
                 let folder = self.folder.clone();
-                thread::spawn(move || answer(stream, &folder));
+                thread::spawn(move || answer(stream, port, &folder));
             }
         });
     }
@@ -70,7 +71,7 @@ impl Server {
 
 /// Reads one request from `stream` and answers it from `folder`. A
 /// connection that breaks off is let go.
-fn answer(stream: TcpStream, folder: &Path) {
+fn answer(stream: TcpStream, port: u16, folder: &Path) {
     let _ = stream.set_read_timeout(Some(READ_TIMEOUT));
     let Ok(read) = stream.try_clone() else {
         return;
@@ -80,24 +81,42 @@ fn answer(stream: TcpStream, folder: &Path) {
     if reader.read_line(&mut request_line).is_err() {
         return;
     }
-    // The rest of the head: its fields say nothing the answer needs.
+    // The rest of the head: of its fields, only `Host` matters.
+    let mut host = None;
     loop {
         let mut line = String::new();
         match reader.read_line(&mut line) {
             Ok(0) | Err(_) => break,
             Ok(_) if line == "\r\n" || line == "\n" => break,
-            Ok(_) => {}
+            Ok(_) => {
+                if let Some((name, value)) = line.split_once(':')
+                    && name.trim().eq_ignore_ascii_case("host")
+                {
+                    host = Some(value.trim().to_owned());
+                }
+            }
         }
     }
-    let response = respond(&request_line, folder);
+    let response = respond(&request_line, host.as_deref(), port, folder);
     let mut stream = stream;
     let _ = stream.write_all(&response);
     let _ = stream.flush();
 }
 
-/// The whole response to `request_line`, `GET /guide/ HTTP/1.1`, from
-/// `folder`.
-fn respond(request_line: &str, folder: &Path) -> Vec<u8> {
+/// The whole response to `request_line`, `GET /guide/ HTTP/1.1`, with the
+/// request's `Host`, from `folder`, served at `port`.
+///
+/// A request whose `Host` isn't this server's own address, `127.0.0.1` or
+/// `localhost` with its port, is refused: a page elsewhere that points a
+/// name of its own at 127.0.0.1 (DNS rebinding) can't read the preview.
+fn respond(request_line: &str, host: Option<&str>, port: u16, folder: &Path) -> Vec<u8> {
+    if !host.is_some_and(|host| is_own(host, port)) {
+        return status(
+            403,
+            "Forbidden",
+            "The preview answers only at its own address, 127.0.0.1 or localhost with its port.",
+        );
+    }
     let mut words = request_line.split_whitespace();
     let (Some(method), Some(target)) = (words.next(), words.next()) else {
         return status(
@@ -142,6 +161,15 @@ fn respond(request_line: &str, folder: &Path) -> Vec<u8> {
         out.extend(body);
     }
     out
+}
+
+/// Whether `host`, a request's `Host`, is this server's own address:
+/// `127.0.0.1` or `localhost`, with `port`.
+fn is_own(host: &str, port: u16) -> bool {
+    let host = host.to_ascii_lowercase();
+    [Ipv4Addr::LOCALHOST.to_string(), "localhost".to_owned()]
+        .iter()
+        .any(|name| host == format!("{name}:{port}"))
 }
 
 /// The segments of a request's path, each decoded; `None` for one that
@@ -243,10 +271,37 @@ mod tests {
         String::from_utf8_lossy(response).into_owned()
     }
 
+    /// The response to `request_line`, asked at the server's own address.
+    fn ask(request_line: &str, dir: &Path) -> String {
+        text(&respond(request_line, Some("127.0.0.1:4880"), 4880, dir))
+    }
+
+    #[test]
+    fn only_a_request_for_its_own_address_is_answered() {
+        let dir = folder();
+        for host in ["127.0.0.1:4880", "localhost:4880", "LocalHost:4880"] {
+            let response = text(&respond("GET / HTTP/1.1", Some(host), 4880, dir.path()));
+            assert!(response.starts_with("HTTP/1.1 200 "), "{host}: {response}");
+        }
+        for host in [
+            Some("evil.example:4880"),
+            Some("127.0.0.1:4881"),
+            Some("127.0.0.1"),
+            Some("localhost.evil.example:4880"),
+            None,
+        ] {
+            let response = text(&respond("GET / HTTP/1.1", host, 4880, dir.path()));
+            assert!(
+                response.starts_with("HTTP/1.1 403 "),
+                "{host:?}: {response}"
+            );
+        }
+    }
+
     #[test]
     fn a_file_is_answered_with_its_type() {
         let dir = folder();
-        let response = text(&respond("GET /guide/a%20b.html HTTP/1.1\r\n", dir.path()));
+        let response = ask("GET /guide/a%20b.html HTTP/1.1\r\n", dir.path());
         assert!(response.starts_with("HTTP/1.1 200 OK\r\n"), "{response}");
         assert!(response.contains("Content-Type: text/html; charset=utf-8\r\n"));
         assert!(response.ends_with("\r\n\r\nspaced"));
@@ -255,17 +310,15 @@ mod tests {
     #[test]
     fn a_folder_is_its_index_and_its_address_ends_with_a_slash() {
         let dir = folder();
-        assert!(text(&respond("GET / HTTP/1.1", dir.path())).ends_with("top"));
-        assert!(text(&respond("GET /guide/?q=1 HTTP/1.1", dir.path())).ends_with("guide"));
-        assert!(
-            text(&respond("GET /guide HTTP/1.1", dir.path())).contains("Location: /guide/\r\n")
-        );
+        assert!(ask("GET / HTTP/1.1", dir.path()).ends_with("top"));
+        assert!(ask("GET /guide/?q=1 HTTP/1.1", dir.path()).ends_with("guide"));
+        assert!(ask("GET /guide HTTP/1.1", dir.path()).contains("Location: /guide/\r\n"));
     }
 
     #[test]
     fn head_has_no_body() {
         let dir = folder();
-        let response = text(&respond("HEAD / HTTP/1.1", dir.path()));
+        let response = ask("HEAD / HTTP/1.1", dir.path());
         assert!(response.contains("Content-Length: 3\r\n"));
         assert!(response.ends_with("\r\n\r\n"));
     }
@@ -280,13 +333,13 @@ mod tests {
             "/%zz",
             "relative",
         ] {
-            let response = text(&respond(&format!("GET {target} HTTP/1.1"), dir.path()));
+            let response = ask(&format!("GET {target} HTTP/1.1"), dir.path());
             assert!(
                 response.starts_with("HTTP/1.1 404 "),
                 "{target}: {response}"
             );
         }
-        let response = text(&respond("POST / HTTP/1.1", dir.path()));
+        let response = ask("POST / HTTP/1.1", dir.path());
         assert!(response.starts_with("HTTP/1.1 405 "));
     }
 }

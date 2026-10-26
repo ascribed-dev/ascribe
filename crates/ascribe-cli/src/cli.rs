@@ -6,10 +6,12 @@
 //! [`Command::run`].
 
 use std::ffi::OsString;
+use std::fmt::Write as _;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::builder::StyledStr;
+use clap::{CommandFactory, FromArgMatches, Parser, Subcommand, ValueEnum};
 
 use crate::{commands, exit};
 
@@ -31,8 +33,8 @@ pub(crate) const DOCS_SITE: &str = ascribe_core::docs_site!();
 pub(crate) const DOCS_PERMALINKS: &str = ascribe_core::docs_permalinks!();
 
 /// What `ascribe --help` shows before the commands and options: examples,
-/// and the commands an agent needs first, since agents read `--help` before
-/// anything else.
+/// and where an agent reads what to do first, since agents read `--help`
+/// before anything else.
 const EXAMPLES: &str = "\
 Examples:
   ascribe check                          Check the project in this folder or above
@@ -47,14 +49,79 @@ Examples:
   ascribe resolve guides/install.md --build cloud
                                          A page as one build's readers see it
 
-For agents: after each edit, run `ascribe check --format concise` and fix
-what it reports; `ascribe explain <CODE>` says how to fix a diagnostic, with
-an example. Before writing frontmatter, a directive's attributes, or a
-phrase, read `ascribe model` for what this project allows.";
+For agents: `ascribe agents --help` says how to check and fix each edit.";
+
+/// The commands `--help` lists, under a heading for each kind of work, as
+/// the command reference groups them. Every command is in one group, in the
+/// order [`Command`] declares them.
+pub(crate) const GROUPS: &[(&str, &[&str])] = &[
+    (
+        "Write and check",
+        &[
+            "init", "check", "fmt", "build", "preview", "diff", "drift", "report",
+        ],
+    ),
+    (
+        "Ask about the project",
+        &[
+            "explain", "model", "outline", "link", "refs", "search", "resolve", "rename",
+        ],
+    ),
+    (
+        "Keep records",
+        &[
+            "baseline",
+            "versions",
+            "permalinks",
+            "addresses",
+            "sources",
+            "observe",
+            "templates",
+            "vale",
+        ],
+    ),
+    ("Connect tools", &["agents", "mcp", "lsp"]),
+];
+
+/// The command line, with `--help` listing the commands in [`GROUPS`]:
+/// `clap` puts every subcommand under one heading, so the groups are written
+/// here, from each command's description, and `clap` lists the options.
+pub fn command() -> clap::Command {
+    let cli = Cli::command();
+    let header = *cli.get_styles().get_header();
+    let literal = *cli.get_styles().get_literal();
+    let width = GROUPS
+        .iter()
+        .flat_map(|(_, names)| names.iter())
+        .map(|name| name.len())
+        .max()
+        .unwrap_or(0);
+    let mut before = StyledStr::new();
+    let _ = write!(before, "{EXAMPLES}");
+    for (heading, names) in GROUPS {
+        let _ = write!(before, "\n\n{header}{heading}:{header:#}");
+        for name in *names {
+            let about = cli
+                .find_subcommand(name)
+                .and_then(clap::Command::get_about)
+                .map(StyledStr::to_string)
+                .unwrap_or_default();
+            let pad = width - name.len();
+            let _ = write!(before, "\n  {literal}{name}{literal:#}{:pad$}  {about}", "");
+        }
+    }
+    let mut template = StyledStr::new();
+    let _ = write!(
+        template,
+        "{{about-with-newline}}\n{{usage-heading}} {{usage}}\n\n{{before-help}}\
+         {header}Options:{header:#}\n{{options}}{{after-help}}"
+    );
+    cli.before_help(before).help_template(template)
+}
 
 /// The command line. Its about, which `--help` opens with, is the crate's
 /// description: the short form in `design/words.toml`. The subcommands are
-/// listed by `--help` itself.
+/// listed by [`command`], in groups.
 #[derive(Debug, Parser)]
 #[command(
     name = "ascribe",
@@ -62,8 +129,6 @@ phrase, read `ascribe model` for what this project allows.";
     about,
     long_about = None,
     arg_required_else_help = true,
-    help_template = "{about-with-newline}\n{usage-heading} {usage}\n\n{before-help}{all-args}{after-help}",
-    before_help = EXAMPLES,
     after_help = docs_link!("cli-reference"),
 )]
 pub struct Cli {
@@ -102,69 +167,120 @@ pub enum Color {
     Never,
 }
 
-/// The subcommands.
+/// The subcommands, in the order of [`GROUPS`]. A description, the first
+/// paragraph of a doc comment, is about twelve words at most; what else a
+/// command needs to say is the paragraphs after it, which only its own
+/// `--help` shows.
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// Keep the record of where the addresses the docs published went,
-    /// ascribe.addresses: record a move or a retired address, and list the
-    /// redirects each build writes.
-    #[command(after_help = docs_link!("cli-addresses"))]
-    Addresses(commands::addresses::Args),
-    /// Write the files agents read on their own: the project's rules, and
-    /// the Ascribe skill.
-    #[command(after_help = docs_link!("cli-agents"))]
-    Agents(commands::agents::Args),
-    /// Put the project's existing advice off for now, so `ascribe check`
-    /// reports only what's new.
-    #[command(after_help = docs_link!("cli-baseline"))]
-    Baseline(commands::baseline::Args),
-    /// Build the documentation set's outputs.
-    #[command(after_help = docs_link!("cli-build"))]
-    Build(commands::build::Args),
+    /// Start a project: write its first ascribe.toml and its pages' folder.
+    ///
+    /// With --templates, take the page templates too. Writes nothing where
+    /// there's an ascribe.toml at or above the folder.
+    #[command(after_help = docs_link!("cli-init"))]
+    Init(commands::init::Args),
     /// Check every source file for problems, without building anything.
     #[command(after_help = docs_link!("cli-check"))]
     Check(commands::check::Args),
-    /// Show what changed between a git revision and the working tree, page
-    /// by page, as readers will see it.
+    /// Rewrite Ascribe constructs into canonical form.
+    #[command(after_help = docs_link!("cli-fmt"))]
+    Fmt(commands::fmt::Args),
+    /// Build the documentation set's outputs.
+    #[command(after_help = docs_link!("cli-build"))]
+    Build(commands::build::Args),
+    /// Serve a build's pages as a site, rendered again as they change.
+    ///
+    /// Renders the pages into .ascribe/preview, serves them at 127.0.0.1,
+    /// and renders them again when the project's files change.
+    #[command(after_help = docs_link!("cli-preview"))]
+    Preview(commands::preview::Args),
+    /// Show what changed since a git revision, page by page.
+    ///
+    /// Compares a git revision with the working tree, page by page, as
+    /// readers will see it.
     #[command(after_help = docs_link!("cli-diff"))]
     Diff(commands::diff::Args),
-    /// List the pages whose code examples changed between a git revision and
-    /// the working tree, and whether the words around them changed too.
+    /// List the pages whose code examples changed since a git revision.
+    ///
+    /// Compares a git revision with the working tree, and says whether the
+    /// words around each changed example changed too.
     #[command(after_help = docs_link!("cli-drift"))]
     Drift(commands::drift::Args),
-    /// Explain a diagnostic: what it means, how to fix it, and an example.
+    /// Report what state the project is in.
+    ///
+    /// Problems, inventory, what each build leaves out, external links, and
+    /// the published site's delivery to agents.
+    #[command(after_help = docs_link!("cli-report"))]
+    Report(commands::report::Args),
+    /// Explain a diagnostic: what it means, and how to fix it.
+    ///
+    /// Shows an example of the problem, and of its fix.
     #[command(
         after_help = docs_link!("cli-explain"),
         override_usage = "ascribe explain [OPTIONS] <CODE>\n       ascribe explain [OPTIONS] --list"
     )]
     Explain(commands::explain::Args),
-    /// Rewrite Ascribe constructs into canonical form.
-    #[command(after_help = docs_link!("cli-fmt"))]
-    Fmt(commands::fmt::Args),
-    /// Start a project: write its first ascribe.toml, and make the folder its
-    /// pages go in. With --templates, take the page templates too.
+    /// Show what the content model allows.
     ///
-    /// Writes nothing where there's an ascribe.toml at or above the folder.
-    #[command(after_help = docs_link!("cli-init"))]
-    Init(commands::init::Args),
-    /// Say whether a link target exists as seen from a page, its title, and
-    /// the link to write.
-    #[command(after_help = docs_link!("cli-link"))]
-    Link(commands::link::Args),
-    /// Run the language server, speaking LSP over standard input and output.
-    #[command(after_help = docs_link!("cli-lsp"))]
-    Lsp(commands::lsp::Args),
-    /// Run the MCP server, speaking the Model Context Protocol over standard
-    /// input and output: the commands that answer questions, as tools.
-    #[command(after_help = docs_link!("cli-mcp"))]
-    Mcp(commands::mcp::Args),
-    /// Show what the content model allows: page types and their
-    /// frontmatter, dimensions, phrases, features, glossary terms, widgets,
-    /// and builds.
+    /// Page types and their frontmatter, dimensions, phrases, features,
+    /// glossary terms, widgets, and builds.
     #[command(after_help = docs_link!("cli-model"))]
     Model(commands::model::Args),
-    /// Run the test of the ascribe.examples.toml in this folder, and when it
-    /// passes, write down what it passed and where: an observation, which
+    /// Show a page's title, type, and headings, with their ids and lines.
+    #[command(after_help = docs_link!("cli-outline"))]
+    Outline(commands::outline::Args),
+    /// Say whether a link target exists, and the link to write.
+    ///
+    /// Looks the target up as seen from a page, and gives its title.
+    #[command(after_help = docs_link!("cli-link"))]
+    Link(commands::link::Args),
+    /// Show where a page, heading, phrase, or other entry is used.
+    ///
+    /// Takes a page, a heading, a fragment, a phrase, a feature, or another
+    /// content model entry.
+    #[command(after_help = docs_link!("cli-refs"))]
+    Refs(commands::refs::Args),
+    /// Show where the pages say something, as their readers read it.
+    ///
+    /// Searches the words as each build publishes them, through phrases,
+    /// each found at the line to edit.
+    #[command(after_help = docs_link!("cli-search"))]
+    Search(commands::search::Args),
+    /// Write a page as one build's plain Markdown output.
+    ///
+    /// Resolves the page for the build first.
+    #[command(after_help = docs_link!("cli-resolve"))]
+    Resolve(commands::resolve::Args),
+    /// Rename a phrase, value, heading id, or page, and every use.
+    ///
+    /// Renames a phrase, a dimension's value, a heading's id, or a page, and
+    /// changes everything that uses it, as the editor's rename does.
+    #[command(after_help = docs_link!("cli-rename"))]
+    Rename(commands::rename::Args),
+    /// Put existing advice off, so `ascribe check` reports only what's new.
+    #[command(after_help = docs_link!("cli-baseline"))]
+    Baseline(commands::baseline::Args),
+    /// Show the release lines, compare two, and release one.
+    #[command(after_help = docs_link!("cli-versions"))]
+    Versions(commands::versions::Args),
+    /// Keep the list of permalinks, and check names against it.
+    ///
+    /// The list is the project's ascribe.permalinks.
+    #[command(after_help = docs_link!("cli-permalinks"))]
+    Permalinks(commands::permalinks::Args),
+    /// Record where published addresses went, and list the redirects.
+    ///
+    /// The record is ascribe.addresses: record a move or a retired address,
+    /// and list the redirects each build writes.
+    #[command(after_help = docs_link!("cli-addresses"))]
+    Addresses(commands::addresses::Args),
+    /// Copy code from sources in other repositories, and move their pins.
+    #[command(after_help = docs_link!("cli-sources"))]
+    Sources(commands::sources::Args),
+    /// Test this folder's examples, and record what they passed with.
+    ///
+    /// Runs the test of the ascribe.examples.toml in this folder, and when it
+    /// passes, writes down what it passed and where: an observation, which
     /// pages read to say what an example was tested with.
     ///
     /// Runs the config's commands as lines of shell (`sh`, or `cmd` on
@@ -172,54 +288,34 @@ pub enum Command {
     /// folder, never one in a parent folder or another project.
     #[command(after_help = docs_link!("cli-observe"))]
     Observe(commands::observe::Args),
-    /// Show a page's title, type, and headings, with their ids and lines.
-    #[command(after_help = docs_link!("cli-outline"))]
-    Outline(commands::outline::Args),
-    /// Keep the list of the project's permalinks, ascribe.permalinks, and
-    /// check names against it.
-    #[command(after_help = docs_link!("cli-permalinks"))]
-    Permalinks(commands::permalinks::Args),
-    /// Render a build's pages as a site in .ascribe/preview, serve it at
-    /// 127.0.0.1, and render it again as the pages change.
-    #[command(after_help = docs_link!("cli-preview"))]
-    Preview(commands::preview::Args),
-    /// Show where a page, a heading, a fragment, a phrase, a feature, or
-    /// another content model entry is used.
-    #[command(after_help = docs_link!("cli-refs"))]
-    Refs(commands::refs::Args),
-    /// Rename a phrase, a dimension's value, a heading's id, or a page, and
-    /// change everything that uses it, as the editor's rename does.
-    #[command(after_help = docs_link!("cli-rename"))]
-    Rename(commands::rename::Args),
-    /// Report what state the project is in: problems, inventory, what each
-    /// build leaves out, external links, and the published site's delivery
-    /// to agents.
-    #[command(after_help = docs_link!("cli-report"))]
-    Report(commands::report::Args),
-    /// Resolve a page for one build and write it as the build's plain
-    /// Markdown output.
-    #[command(after_help = docs_link!("cli-resolve"))]
-    Resolve(commands::resolve::Args),
-    /// Show where the pages say something, as their readers read it: words
-    /// as each build publishes them, through phrases, each found at the line
-    /// to edit.
-    #[command(after_help = docs_link!("cli-search"))]
-    Search(commands::search::Args),
-    /// Copy code from sources in other repositories, and move their pins.
-    #[command(after_help = docs_link!("cli-sources"))]
-    Sources(commands::sources::Args),
-    /// Write a page template, and its guide, into the project, and declare
-    /// its type; or list the templates Ascribe carries.
+    /// Write a page template into the project, or list the templates.
+    ///
+    /// Writes the template, and its guide, and declares its type; or lists
+    /// the templates Ascribe carries.
     #[command(after_help = docs_link!("cli-templates"))]
     Templates(commands::templates::Args),
-    /// Set up Vale, which checks the prose: write a preset out as the
-    /// project's own configuration.
+    /// Set up Vale, which checks the prose.
+    ///
+    /// Writes a preset out as the project's own configuration.
     #[command(after_help = docs_link!("cli-vale"))]
     Vale(commands::vale::Args),
-    /// Show a project's release lines, say what differs between two, and
-    /// release one.
-    #[command(after_help = docs_link!("cli-versions"))]
-    Versions(commands::versions::Args),
+    /// Write the files agents read: the project's rules, and the skill.
+    ///
+    /// For agents: after each edit, run `ascribe check --format concise` and
+    /// fix what it reports; `ascribe explain <CODE>` says how to fix a
+    /// diagnostic, with an example. Before writing frontmatter, a directive's
+    /// attributes, or a phrase, read `ascribe model` for what this project
+    /// allows.
+    #[command(after_help = docs_link!("cli-agents"))]
+    Agents(commands::agents::Args),
+    /// Run the MCP server: the question commands, as tools for agents.
+    ///
+    /// Speaks the Model Context Protocol over standard input and output.
+    #[command(after_help = docs_link!("cli-mcp"))]
+    Mcp(commands::mcp::Args),
+    /// Run the language server, speaking LSP over standard input and output.
+    #[command(after_help = docs_link!("cli-lsp"))]
+    Lsp(commands::lsp::Args),
 }
 
 impl Command {
@@ -259,7 +355,10 @@ impl Command {
 /// Parses the arguments and runs the subcommand. A usage error prints its
 /// message and exits with 2.
 pub fn run(args: impl IntoIterator<Item = OsString>) -> ExitCode {
-    let cli = match Cli::try_parse_from(args) {
+    let cli = match command()
+        .try_get_matches_from(args)
+        .and_then(|matches| Cli::from_arg_matches(&matches))
+    {
         Ok(cli) => cli,
         Err(e) => {
             // `--help` and `--version` are successes; a mistake is a usage
@@ -315,5 +414,42 @@ mod tests {
                 panic!("`ascribe {name}` and `ascribe {other}` share the description: {about}");
             }
         }
+    }
+
+    /// `--help` lists every command once, under the heading of its kind of
+    /// work, in the order `Command` declares them, and each description is
+    /// short enough to read down the list (#957).
+    #[test]
+    fn the_help_lists_every_command_in_its_group() {
+        let command = Cli::command();
+        let declared: Vec<&str> = command
+            .get_subcommands()
+            .map(clap::Command::get_name)
+            .collect();
+        let grouped: Vec<&str> = super::GROUPS
+            .iter()
+            .flat_map(|(_, names)| names.iter().copied())
+            .collect();
+        assert_eq!(grouped, declared);
+        for sub in command.get_subcommands() {
+            let about = sub.get_about().map(ToString::to_string).unwrap_or_default();
+            let words = about.split_whitespace().count();
+            assert!(
+                words <= 12,
+                "`ascribe {}`'s description is {words} words; move the rest to a paragraph after it: {about}",
+                sub.get_name()
+            );
+        }
+        let help = super::command().render_long_help().to_string();
+        for (heading, names) in super::GROUPS {
+            let at = help.find(&format!("\n{heading}:\n")).unwrap();
+            for name in *names {
+                assert!(
+                    help[at..].contains(&format!("\n  {name} ")),
+                    "{name}\n{help}"
+                );
+            }
+        }
+        assert!(help.contains("\nOptions:\n      --config"), "{help}");
     }
 }
