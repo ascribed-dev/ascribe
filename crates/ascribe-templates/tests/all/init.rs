@@ -88,8 +88,8 @@ fn an_empty_folder_gets_ascribe_toml_and_its_content_root() {
         read(dir.path(), "ascribe.addresses"),
         ascribe_model::AddressFile::default().to_toml()
     );
-    let project = ascribe_check::Project::load(&dir.path().join("ascribe.toml"))
-        .expect("the project loads");
+    let project =
+        ascribe_check::Project::load(&dir.path().join("ascribe.toml")).expect("the project loads");
     assert!(
         project.addresses().is_some_and(Result::is_ok),
         "the addresses are kept"
