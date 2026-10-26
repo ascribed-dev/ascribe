@@ -1,6 +1,10 @@
 //! The differential property test: after every step of a random sequence of
-//! edits, creations, deletions, renames, asset changes, and model changes,
-//! the incremental project equals a from-scratch load of the same files, and a
+//! edits, creations, deletions, renames, asset changes, sources that can't be
+//! read, changes to the files outside the content root the project reads
+//! (code a `@snippet` shows and its source's examples, a declared API's spec,
+//! memo files, `ascribe.nav`), a base revision's specs, and model changes
+//! (among them snippets' sources, the API, and release lines), the
+//! incremental project equals a from-scratch load of the same files, and a
 //! consumer that redoes only what [`Affected`] lists holds exactly what a
 //! from-scratch consumer would. A step that adds or removes a nested project's
 //! `ascribe.toml` is refused, exactly then, and the project is loaded again,
@@ -8,25 +12,58 @@
 //!
 //! The second half is what makes `Affected` trustworthy: a file or page left
 //! out of it must be unchanged.
+//!
+//! A kind of change the incremental project learns to handle joins the
+//! generator here, with sources that use it, in the same change.
 
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
 use crate::incremental_support;
 
 use std::collections::BTreeSet;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use ascribe_core::RelPath;
-use ascribe_resolve::{ApplyError, Change, IncrementalProject, Layout, ModelImpact};
+use ascribe_model::ContentModel;
+use ascribe_resolve::openapi::ApiSpecs;
+use ascribe_resolve::side_file::Indexed;
+use ascribe_resolve::{
+    Affected, ApplyError, Change, Committed, IncrementalProject, Layout, MemoStore, ModelImpact,
+    Project, is_memo_path, place,
+};
 use proptest::prelude::*;
 
 use incremental_support::{
-    BODY, Consumer, FILES, FRONT, ModelSpec, NESTED, SOURCES, TWINS, World, dump, load, path,
-    render, scratch,
+    BODY, Consumer, Disk, FILES, FRONT, ModelSpec, NESTED, SOURCES, TEXTS, TWINS, USES, World,
+    dump, load, path, render_uses, scratch,
 };
 
+/// The text file whose changes the project hears as its side files'.
+const NAV: &str = "ascribe.nav";
+
+/// The folder of the snippets' source, deleted at once.
+const CODE: &str = "code";
+
+/// The declared API's spec.
+const SPEC: &str = "api/pets.yaml";
+
+/// [`models`], each loaded once for every run.
+static LOADED: LazyLock<Vec<(ModelSpec, Arc<ContentModel>)>> = LazyLock::new(|| {
+    models()
+        .into_iter()
+        .map(|spec| {
+            let model = spec.model();
+            (spec, model)
+        })
+        .collect()
+});
+
 fn models() -> Vec<ModelSpec> {
-    let base = ModelSpec::base();
+    let base = ModelSpec {
+        code: true,
+        api: true,
+        ..ModelSpec::base()
+    };
     vec![
         base.clone(),
         ModelSpec {
@@ -69,6 +106,27 @@ fn models() -> Vec<ModelSpec> {
             widgets: 1,
             shared_pattern: true,
             hybrid: true,
+            ..base.clone()
+        },
+        ModelSpec {
+            code: false,
+            ..base.clone()
+        },
+        ModelSpec {
+            api: false,
+            ..base.clone()
+        },
+        ModelSpec {
+            releases: 1,
+            ..base.clone()
+        },
+        ModelSpec {
+            releases: 2,
+            ..base.clone()
+        },
+        ModelSpec {
+            releases: 3,
+            hybrid: true,
             ..base
         },
     ]
@@ -99,18 +157,45 @@ enum Op {
     Model {
         spec: usize,
     },
+    /// A file in [`TEXTS`] written with one of its texts, or deleted.
+    Text {
+        file: usize,
+        text: Option<usize>,
+    },
+    /// The snippets' source's folder deleted.
+    Folder,
+    /// A base revision whose spec has one of [`TEXTS`]'s texts.
+    Base {
+        text: usize,
+    },
+    Unreadable {
+        file: usize,
+    },
 }
 
 fn op() -> impl Strategy<Value = Op> {
     prop_oneof![
-        6 => (0..SOURCES.len(), 0..FRONT.len(), prop::collection::vec(0..BODY.len(), 0..6), any::<bool>())
+        6 => (0..SOURCES.len(), 0..=FRONT.len(), prop::collection::vec(0..BODY.len() + USES.len(), 0..6), any::<bool>())
             .prop_map(|(file, front, body, create)| Op::Write { file, front, body, create }),
         1 => (0..SOURCES.len()).prop_map(|file| Op::Same { file }),
         2 => (0..SOURCES.len()).prop_map(|file| Op::Delete { file }),
         2 => (0..SOURCES.len(), 0..SOURCES.len()).prop_map(|(from, to)| Op::Rename { from, to }),
         3 => (0..FILES.len(), any::<bool>()).prop_map(|(file, content_form)| Op::Asset { file, content_form }),
-        2 => (0..models().len()).prop_map(|spec| Op::Model { spec }),
+        2 => (0..LOADED.len()).prop_map(|spec| Op::Model { spec }),
+        3 => (0..TEXTS.len(), prop::option::weighted(0.8, 0..4usize)).prop_map(|(file, text)| Op::Text { file, text }),
+        1 => Just(Op::Folder),
+        1 => (0..4usize).prop_map(|text| Op::Base { text }),
+        1 => (0..SOURCES.len()).prop_map(|file| Op::Unreadable { file }),
     ]
+}
+
+/// The file a change says appeared, changed, or went, by project path, when
+/// it isn't a source.
+fn reported(change: &Change) -> Option<&RelPath> {
+    match change {
+        Change::AssetCreated { path } | Change::AssetDeleted { path } => Some(path),
+        _ => None,
+    }
 }
 
 fn content_form(layout: &Layout, project_path: &str) -> RelPath {
@@ -133,63 +218,94 @@ fn content_form(layout: &Layout, project_path: &str) -> RelPath {
 struct Run {
     inc: IncrementalProject,
     world: World,
+    /// The file system the incremental project reads, which follows the
+    /// world.
+    disk: Disk,
     spec: ModelSpec,
+    model: Arc<ContentModel>,
     consumer: Consumer,
     layout: Layout,
     twins: bool,
+    /// The specs as the project last read them: at load, and again whenever
+    /// the model or the declared spec changes.
+    apis: ApiSpecs,
+    /// The readings before, oldest first, and the base revisions' specs:
+    /// where each id was in them is what the project remembers, so a fresh
+    /// load is given them too.
+    readings: Vec<ApiSpecs>,
+    bases: Vec<Arc<ApiSpecs>>,
 }
 
 impl Run {
     fn new(initial: bool) -> Run {
-        let spec = ModelSpec::base();
-        let (inc, world) = if initial {
-            load(
-                &spec,
-                &[
-                    (
-                        "index.md",
-                        "---\ntitle: Home\n---\n\n# Intro\n\n[g](guide.md#setup)\n",
-                    ),
-                    (
-                        "guide.md",
-                        "---\ntitle: Guide\n---\n\n## Setup\n\n@include: _shared.md\n",
-                    ),
-                    ("_shared.md", "## Shared setup\n\n![l](logo.png)\n"),
-                ],
-            )
-        } else {
-            load(&spec, &[])
-        };
-        let mut world = world;
+        let (spec, model) = LOADED[0].clone();
+        let layout = Layout::from_model(&model);
+        let mut world = World::default();
         if initial {
+            for (at, text) in [
+                (
+                    "index.md",
+                    "---\ntitle: Home\n---\n\n# Intro\n\n[g](guide.md#setup)\n",
+                ),
+                (
+                    "guide.md",
+                    "---\ntitle: Guide\n---\n\n## Setup\n\n@include: _shared.md\n",
+                ),
+                (
+                    "_shared.md",
+                    "## Shared setup\n\n![l](logo.png)\n\n@snippet: code:app.py#main\n",
+                ),
+                (
+                    "glossary.md",
+                    "---\ntitle: Glossary\n---\n\n## API key\n@id: api\n@term\n\nA secret.\n\n[list](../api/pets.yaml#listPets)\n",
+                ),
+            ] {
+                world.sources.insert(path(at), text.to_owned());
+            }
             world.files.insert(path("docs/logo.png"));
             // A nested project from the start, with a page in it.
             world.files.insert(path("docs/nested/ascribe.toml"));
             world
                 .sources
                 .insert(path("nested/page.md"), "---\ntitle: N\n---\n".to_owned());
+            for (file, texts) in TEXTS.iter() {
+                world.put_text(&path(file), Some(&texts[0]));
+            }
         }
-        let layout = Layout::from_model(&spec.model());
-        // The incremental project reads its initial state from a file system
-        // that must have the asset too.
-        let model = spec.model();
-        let inc = if initial {
-            IncrementalProject::load(model, layout.clone(), world.fs(&layout))
-        } else {
-            inc
-        };
+        let disk = world.disk(&layout);
+        let inc = IncrementalProject::load(model.clone(), layout.clone(), disk.clone());
         let consumer = Consumer::from_scratch(&inc.snapshot());
+        let apis = ApiSpecs::read(&model, &world.disk(&layout));
         Run {
             inc,
             world,
+            disk,
             spec,
+            model,
             consumer,
             layout,
             twins: !initial,
+            apis,
+            readings: Vec::new(),
+            bases: Vec::new(),
         }
     }
 
-    fn change_for(&mut self, op: &Op, models: &[ModelSpec]) -> Option<Change> {
+    /// A from-scratch load of the world, remembering the specs as the
+    /// project does: where each id was in the latest reading that had it,
+    /// else in the first base that did.
+    fn reference(&self, model: &Arc<ContentModel>) -> Project {
+        let mut reference = scratch(&self.inc, model, &self.world);
+        for reading in self.readings.iter().rev() {
+            reference.remember_base_apis(reading);
+        }
+        for base in &self.bases {
+            reference.remember_base_apis(base);
+        }
+        reference
+    }
+
+    fn change_for(&mut self, op: &Op, models: &[(ModelSpec, Arc<ContentModel>)]) -> Option<Change> {
         let source = |i: usize| path(SOURCES[i]);
         Some(match op {
             Op::Write {
@@ -201,7 +317,7 @@ impl Run {
                 if !self.twins && SOURCES[*file] == "Guide.md" {
                     return None;
                 }
-                let text = render(*front, body);
+                let text = render_uses(*front, body);
                 let path = source(*file);
                 if *create {
                     Change::Created { path, text }
@@ -258,14 +374,115 @@ impl Run {
                 }
             }
             Op::Model { spec } => {
-                self.spec = models[*spec].clone();
-                Change::Model(self.spec.model())
+                (self.spec, self.model) = models[*spec].clone();
+                Change::Model(Arc::clone(&self.model))
             }
+            // The world changes as the change is made, as the disk does
+            // before the editor hears of it.
+            Op::Text { file, text } => {
+                let (name, texts) = &TEXTS[*file];
+                let at = path(name);
+                let text = text.map(|t| texts[t % texts.len()].as_str());
+                self.world.put_text(&at, text);
+                if *name == NAV {
+                    Change::SideFiles(Indexed::read(&self.world.disk(&self.layout)))
+                } else if text.is_some() {
+                    Change::AssetCreated { path: at }
+                } else {
+                    Change::AssetDeleted { path: at }
+                }
+            }
+            Op::Folder => {
+                let at = path(CODE);
+                self.world.remove_folder(&at);
+                Change::AssetDeleted { path: at }
+            }
+            Op::Base { text } => {
+                let texts = &TEXTS.iter().find(|(name, _)| *name == SPEC)?.1;
+                let base = World {
+                    files: BTreeSet::from([path(SPEC)]),
+                    texts: [(path(SPEC), texts[text % texts.len()].clone())].into(),
+                    ..World::default()
+                };
+                Change::BaseApis(Arc::new(ApiSpecs::read(
+                    &models[0].1,
+                    &base.fs(&self.layout),
+                )))
+            }
+            Op::Unreadable { file } => Change::Unreadable {
+                path: source(*file),
+                reason: "permission denied".to_owned(),
+            },
         })
     }
 
-    fn step(&mut self, batch: &[Op], models: &[ModelSpec]) {
+    /// The specs read as a fresh load reads them, with the same history.
+    fn check_apis(&self, snapshot: &Project, reference: &Project, batch: &[Op]) {
+        assert_eq!(
+            snapshot.apis(),
+            reference.apis(),
+            "the specs differ after {batch:?}"
+        );
+    }
+
+    /// The specs are read again when the model changes, or the declared
+    /// spec does, and a base revision's are remembered.
+    fn follow_apis(&mut self, changes: &[Change], spec_before: &ModelSpec, model: &ContentModel) {
+        let spec_reported = self.spec.api
+            && changes
+                .iter()
+                .any(|c| reported(c).is_some_and(|p| p.as_str() == SPEC));
+        if self.spec != *spec_before || spec_reported {
+            let reading = ApiSpecs::read(model, &self.world.disk(&self.layout));
+            self.readings
+                .push(std::mem::replace(&mut self.apis, reading));
+        }
+        if let Some(base) = changes.iter().rev().find_map(|c| match c {
+            Change::BaseApis(base) => Some(base),
+            _ => None,
+        }) {
+            self.bases.push(Arc::clone(base));
+        }
+    }
+
+    /// After a step that changes a memo file, each memo file is placed as a
+    /// fresh load places it. Placing reads only the index, which the dumps
+    /// compare after every step. A memo file is no part of any page, so a
+    /// step that changes only memo files changes nothing.
+    fn check_memos(
+        &self,
+        changes: &[Change],
+        affected: &Affected,
+        snapshot: &Project,
+        reference: &Project,
+        batch: &[Op],
+    ) {
+        let memos: Vec<bool> = changes
+            .iter()
+            .map(|c| reported(c).is_some_and(|p| is_memo_path(p, &self.layout)))
+            .collect();
+        if memos.iter().all(|m| *m) {
+            assert!(
+                affected.is_empty(),
+                "{batch:?} changed something: {affected:?}"
+            );
+        }
+        if !memos.contains(&true) {
+            return;
+        }
+        for memo in Committed::new(&self.disk, &self.layout).memos() {
+            assert_eq!(
+                place(&memo, snapshot),
+                place(&memo, reference),
+                "{} is placed differently after {batch:?}",
+                memo.path
+            );
+        }
+    }
+
+    fn step(&mut self, batch: &[Op], models: &[(ModelSpec, Arc<ContentModel>)]) {
         let before = self.inc.snapshot();
+        let spec_before = self.spec.clone();
         let changes: Vec<Change> = batch
             .iter()
             .filter_map(|op| self.change_for(op, models))
@@ -282,7 +499,8 @@ impl Run {
             applied.push(change.clone());
         }
         let nested_after = self.world.nested(&self.layout);
-        let model = self.spec.model();
+        let model = Arc::clone(&self.model);
+        self.disk.update(&self.world, &self.layout);
         let affected = match self.inc.apply(applied) {
             Ok(affected) => {
                 assert_eq!(
@@ -298,11 +516,12 @@ impl Run {
                 );
                 // Nothing was applied; the project is loaded again.
                 assert_eq!(self.inc.version(), before.version());
-                self.inc = IncrementalProject::load(
-                    model.clone(),
-                    self.layout.clone(),
-                    self.world.fs(&self.layout),
-                );
+                self.disk = self.world.disk(&self.layout);
+                self.inc =
+                    IncrementalProject::load(model.clone(), self.layout.clone(), self.disk.clone());
+                self.apis = ApiSpecs::read(&model, &self.world.disk(&self.layout));
+                self.readings.clear();
+                self.bases.clear();
                 let reference = scratch(&self.inc, &model, &self.world);
                 assert_eq!(
                     dump(&self.inc.snapshot()),
@@ -315,7 +534,11 @@ impl Run {
             Err(ApplyError::LayoutChanged) => panic!("no model moves the content root"),
         };
         let snapshot = self.inc.snapshot();
-        let reference = scratch(&self.inc, &model, &self.world);
+
+        self.follow_apis(&changes, &spec_before, &model);
+        let reference = self.reference(&model);
+        self.check_apis(&snapshot, &reference, batch);
+        self.check_memos(&changes, &affected, &snapshot, &reference, batch);
 
         // 1. The state equals a from-scratch load.
         let ours = dump(&snapshot);
@@ -425,19 +648,19 @@ proptest! {
 
     #[test]
     fn incremental_equals_from_scratch_starting_empty(batches in steps()) {
-        let models = models();
+        let models = &LOADED;
         let mut run = Run::new(false);
         for batch in &batches {
-            run.step(batch, &models);
+            run.step(batch, models);
         }
     }
 
     #[test]
     fn incremental_equals_from_scratch_starting_from_disk(batches in steps()) {
-        let models = models();
+        let models = &LOADED;
         let mut run = Run::new(true);
         for batch in &batches {
-            run.step(batch, &models);
+            run.step(batch, models);
         }
     }
 }
