@@ -47,6 +47,10 @@ A generator or a change to the code can rename an `operationId`, which breaks ev
 
 It's safe only when exactly one operation is at that method and path, with an id that's new there. When the path moved too, nothing is there, or there's no history to read, as in a shallow clone, the closest ids are offered as for any missing one, and nothing more is reported. The editor does the same: see [Fix a link to a renamed operation](editor.md#fix-a-link-to-a-renamed-operation).
 
+## When the spec changes
+
+A spec edit can change published pages: an [`@operation`](operation.md) shows the operation's method, path, summary, and deprecation, and a link writes its address. [`ascribe diff`](../review/diff.md#cli-diff) reads the spec at the base too, and lists each page whose output changed through it, naming the operation as the page names it: `guides/api.md: 1 changed (through api/openapi.yaml#createWidget)`. Its JSON, its agent prompt, and review in the editor and the site name it the same way. A change no page shows, such as to a schema or a description, lists nothing.
+
 ## Publish the reference
 
 Ascribe doesn't draw the reference: a renderer does, on a page of your site, and the link goes to the address that renderer gives the operation.

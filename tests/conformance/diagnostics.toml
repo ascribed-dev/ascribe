@@ -2922,8 +2922,9 @@ spec = "none"
 reference = "content-model/checks.md#19-checks"
 configurable = true
 area = "pages"
-when = "A fenced code block has no language after its opening fence: nothing, or only attributes, such as `phrases=true`. An indented code block isn't looked at"
+when = "A fenced code block has no language after its opening fence: nothing, or a pair of SPEC §3.3.1 first, such as `phrases=true` or `title=\"x.ts\"`, which a renderer such as comrak or Astro takes as the language. An indented code block isn't looked at"
 message = "this code block has no language; write it after the opening fence, or `text` for output"
+messages.pair = "this code block's first word, `{word}`, is a pair, so the block has no language, and a renderer that takes the first word as the language loses the pair; write the language before it, or `text` for output"
 fix = "Write the block's language right after the opening fence, such as `sh`, `toml`, or `json`. Use `text` for program output, logs, and anything else that isn't code. A highlighter colors the block by it, and an agent knows what the block is."
 
 [[diagnostic]]
@@ -5155,3 +5156,20 @@ reference = "content-model/output.md#16-buildsname"
 when = "A build's filter names a version of a target `[releases]` declares lines for, and the version is older than every line declared, so it's in no live, planned, or archived line"
 message = "build `{build}` filters for `{target} {version}`, which is older than every line `[releases.{target}]` declares, so `ascribe versions` doesn't list it; declare its line in `archived`, or make the build one output for each live line with `versions = \"{target}\"`"
 fix = "Say in one place which lines the project publishes. To keep a build for an old line, declare the line in `[releases.<target>]` as archived, with no address when nothing else publishes it, as `\"3.3\" = {}`. To publish every live line instead, give one build `versions = \"<target>\"` and remove the filtered build. A version between two declared lines is `available-line-undeclared`."
+
+[[diagnostic]]
+code = "ASC284"
+slug = "info-pair-malformed"
+severity = "warning"
+level = "file"
+next = "write"
+evidence = []
+spec = "3.3.1"
+reference = "writing/syntax.md#code-block-info-strings"
+row = "Attributes | A word after a fenced code block's language that starts like a pair a processor reads (its key in any case, then optional spaces and `=`) but isn't one"
+message = "`{written}` starts like the pair `{key}` but isn't one, so it isn't read; write `{key}=` with nothing around `=`, then the value, in double quotes if it has a space or a quote"
+messages.case = "`{written}` isn't a pair, because keys are lowercase, so it isn't read; write `{fixed}`"
+messages.spaced = "`{written}` isn't a pair, because of the spaces around `=`, so it isn't read; write `{fixed}`"
+messages.quote = "the value of `{key}` ends at its second quote, so the pair isn't read; write a quote inside it as `\\\\\"`: `{fixed}`"
+messages.unclosed = "the value of `{key}` has no closing quote, so the pair isn't read; write `{fixed}`"
+fix = "Write the pair as SPEC §3.3.1 reads it: the key in lowercase, `=` with nothing around it, and the value, in double quotes when it has a space or a quote. Inside the quotes, write a quote as `\\\\\"` and a backslash as `\\\\\\\\` in the page, since CommonMark takes one backslash off before the pair is read. A word that isn't meant as a pair can't start with `phrases`, `title`, `tested`, `request`, or `response` and `=`."

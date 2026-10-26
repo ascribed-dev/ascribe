@@ -248,6 +248,7 @@ impl Ctx<'_> {
                 }
                 BlockKind::CodeBlock(code) => {
                     self.check_code_language(block, code);
+                    self.check_info_pairs(code);
                     let info = InfoString::parse(&code.info);
                     self.marked_examples |=
                         info.get("request").is_some() || info.get("response").is_some();
