@@ -25,18 +25,18 @@
 //!   version is no history, and a date that doesn't parse is no date.
 //!   Deleting the file costs one noisier report, and never a missed one.
 //!
-//! The file isn't the project's sources, so it's read outside
-//! `ascribe_resolve::FileSystem`. Only the report's code opens it
-//! (`tests/all/link_cache.rs` holds that).
+//! The file isn't the project's sources, so it's read and written through
+//! the [`Store`] the caller hands it, not `ascribe_resolve::FileSystem`.
+//! Only the report's code opens it (`tests/all/link_cache.rs` holds that).
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use ascribe_core::Date;
 use serde::{Deserialize, Serialize};
 
 use super::Answer;
-use super::cache::{clean_beside, write_whole};
+use crate::store::Store;
 
 /// The history's file, relative to the project's folder.
 pub const FILE: &str = ".ascribe/history/links.json";
@@ -47,8 +47,8 @@ const VERSION: u32 = 1;
 /// What a project's link checks remember from earlier runs, as on one day.
 #[derive(Clone, Debug)]
 pub struct History {
-    /// The folder `.ascribe/` is in: the project's folder.
-    root: PathBuf,
+    /// Where the file is kept.
+    store: Arc<dyn Store>,
     /// The day the run is on.
     today: Date,
     /// `[checks.links] confirm-days`.
@@ -117,13 +117,12 @@ struct RecordJson {
 }
 
 impl History {
-    /// The history of the project under `root` (`root` is the project's
-    /// folder, but for a test), as on `today`, holding failures for
+    /// The history kept in `store`, as on `today`, holding failures for
     /// `confirm_days`. With `first_run`, nothing is held and nothing is
     /// new, as with no history, and the run's observations are still kept.
-    pub fn open(root: &Path, today: Date, confirm_days: u32, first_run: bool) -> History {
+    pub fn open(store: Arc<dyn Store>, today: Date, confirm_days: u32, first_run: bool) -> History {
         let mut history = History {
-            root: root.to_owned(),
+            store,
             today,
             confirm_days,
             first_run,
@@ -234,21 +233,15 @@ impl History {
             return;
         };
         text.push('\n');
-        let path = self.path();
-        let _ = write_whole(&self.root, &path, &text);
-        clean_beside(&path, self.today);
-    }
-
-    /// The file's path.
-    fn path(&self) -> PathBuf {
-        FILE.split('/').fold(self.root.clone(), |p, s| p.join(s))
+        let _ = self.store.write(FILE, &text);
+        if let Some((folder, _)) = FILE.rsplit_once('/') {
+            self.store.tidy(folder, self.today);
+        }
     }
 
     /// What the file holds, when it's a history of this version.
     fn load(&self) -> Option<Saved> {
-        // Outside FileSystem: the history Ascribe writes under `.ascribe/`,
-        // not the project's sources.
-        let text = std::fs::read_to_string(self.path()).ok()?;
+        let text = self.store.read(FILE)?;
         let file: FileJson = serde_json::from_str(&text).ok()?;
         if file.version != VERSION {
             return None;
@@ -340,6 +333,7 @@ mod tests {
     #![allow(clippy::unwrap_used)]
 
     use super::*;
+    use crate::store::MemoryStore;
 
     fn day(s: &str) -> Date {
         Date::parse(s).unwrap()
@@ -354,10 +348,10 @@ mod tests {
     }
 
     /// A history under `root` on `today` that has `record` for [`URL`].
-    fn with(root: &Path, today: &str, record: Record) -> History {
-        History::open(root, day("2026-10-01"), 3, false)
+    fn with(store: &Arc<dyn Store>, today: &str, record: Record) -> History {
+        History::open(store.clone(), day("2026-10-01"), 3, false)
             .save(BTreeMap::from([(URL.to_owned(), record)]));
-        History::open(root, day(today), 3, false)
+        History::open(store.clone(), day(today), 3, false)
     }
 
     fn record(answered: Option<&str>, failing_since: Option<&str>) -> Record {
@@ -370,8 +364,8 @@ mod tests {
 
     /// A run on `today` that sees `seen` of [`URL`]: the record it keeps,
     /// and whether it's held.
-    fn run(root: &Path, today: &str, seen: Seen) -> (Record, Option<Held>) {
-        let history = History::open(root, day(today), 3, false);
+    fn run(store: &Arc<dyn Store>, today: &str, seen: Seen) -> (Record, Option<Held>) {
+        let history = History::open(store.clone(), day(today), 3, false);
         let held = match seen {
             Seen::Failed => history.held(URL, &unavailable()),
             Seen::Answered(_) => None,
@@ -386,8 +380,8 @@ mod tests {
 
     #[test]
     fn with_nothing_about_the_address_a_failure_is_reported() {
-        let dir = tempfile::tempdir().unwrap();
-        let (kept, held) = run(dir.path(), "2026-10-10", Seen::Failed);
+        let store: Arc<dyn Store> = Arc::new(MemoryStore::new());
+        let (kept, held) = run(&store, "2026-10-10", Seen::Failed);
         assert_eq!(held, None);
         assert_eq!(kept.failing_since, Some(day("2026-10-10")));
         assert_eq!(kept.answered, None);
@@ -395,9 +389,9 @@ mod tests {
 
     #[test]
     fn a_first_failure_after_an_answer_is_held_for_confirm_days() {
-        let dir = tempfile::tempdir().unwrap();
-        run(dir.path(), "2026-10-08", Seen::Answered(day("2026-10-08")));
-        let (kept, held) = run(dir.path(), "2026-10-10", Seen::Failed);
+        let store: Arc<dyn Store> = Arc::new(MemoryStore::new());
+        run(&store, "2026-10-08", Seen::Answered(day("2026-10-08")));
+        let (kept, held) = run(&store, "2026-10-10", Seen::Failed);
         assert_eq!(
             held,
             Some(Held {
@@ -408,15 +402,15 @@ mod tests {
         );
         assert_eq!(kept, record(Some("2026-10-08"), Some("2026-10-10")));
         // Still held the day before, with the streak's first day kept.
-        let (_, held) = run(dir.path(), "2026-10-12", Seen::Failed);
+        let (_, held) = run(&store, "2026-10-12", Seen::Failed);
         assert_eq!(held.map(|h| h.failing_since), Some(day("2026-10-10")));
     }
 
     #[test]
     fn a_failure_that_kept_on_for_confirm_days_is_reported() {
-        let dir = tempfile::tempdir().unwrap();
+        let store: Arc<dyn Store> = Arc::new(MemoryStore::new());
         let history = with(
-            dir.path(),
+            &store,
             "2026-10-13",
             record(Some("2026-10-08"), Some("2026-10-10")),
         );
@@ -425,23 +419,23 @@ mod tests {
 
     #[test]
     fn an_answer_forgets_the_streak() {
-        let dir = tempfile::tempdir().unwrap();
+        let store: Arc<dyn Store> = Arc::new(MemoryStore::new());
         with(
-            dir.path(),
+            &store,
             "2026-10-12",
             record(Some("2026-10-08"), Some("2026-10-10")),
         );
-        let (kept, _) = run(dir.path(), "2026-10-12", Seen::Answered(day("2026-10-12")));
+        let (kept, _) = run(&store, "2026-10-12", Seen::Answered(day("2026-10-12")));
         assert_eq!(kept, record(Some("2026-10-12"), None));
         // The next failure starts a streak of its own.
-        let (_, held) = run(dir.path(), "2026-10-14", Seen::Failed);
+        let (_, held) = run(&store, "2026-10-14", Seen::Failed);
         assert_eq!(held.map(|h| h.reported_from), Some(day("2026-10-17")));
     }
 
     #[test]
     fn a_page_that_s_gone_or_moved_isn_t_held() {
-        let dir = tempfile::tempdir().unwrap();
-        let history = with(dir.path(), "2026-10-10", record(Some("2026-10-08"), None));
+        let store: Arc<dyn Store> = Arc::new(MemoryStore::new());
+        let history = with(&store, "2026-10-10", record(Some("2026-10-08"), None));
         for status in ["404 Not Found", "410 Gone"] {
             let gone = Answer::Broken {
                 status: status.to_owned(),
@@ -470,11 +464,11 @@ mod tests {
 
     #[test]
     fn confirm_days_of_0_or_a_first_run_holds_nothing() {
-        let dir = tempfile::tempdir().unwrap();
-        with(dir.path(), "2026-10-10", record(Some("2026-10-08"), None));
-        let off = History::open(dir.path(), day("2026-10-10"), 0, false);
+        let store: Arc<dyn Store> = Arc::new(MemoryStore::new());
+        with(&store, "2026-10-10", record(Some("2026-10-08"), None));
+        let off = History::open(store.clone(), day("2026-10-10"), 0, false);
         assert_eq!(off.held(URL, &unavailable()), None);
-        let first = History::open(dir.path(), day("2026-10-10"), 3, true);
+        let first = History::open(store.clone(), day("2026-10-10"), 3, true);
         assert_eq!(first.held(URL, &unavailable()), None);
         assert_eq!(first.previous_run(), None);
         // A first run still keeps what it sees, with the answers before it.
@@ -486,27 +480,26 @@ mod tests {
 
     #[test]
     fn a_reader_trusts_nothing() {
-        let dir = tempfile::tempdir().unwrap();
-        let history = History::open(dir.path(), day("2026-10-10"), 3, false);
-        std::fs::create_dir_all(history.path().parent().unwrap()).unwrap();
+        let store: Arc<dyn Store> = Arc::new(MemoryStore::new());
         for text in [
             "not json",
             r#"{"version":2,"run":"2026-10-09","addresses":{}}"#,
         ] {
-            std::fs::write(history.path(), text).unwrap();
+            store.write(FILE, text).unwrap();
             assert_eq!(
-                History::open(dir.path(), day("2026-10-10"), 3, false).previous_run(),
+                History::open(store.clone(), day("2026-10-10"), 3, false).previous_run(),
                 None
             );
         }
-        std::fs::write(
-            history.path(),
-            format!(
+        store
+            .write(
+                FILE,
+                &format!(
                 r#"{{"version":1,"run":"2026-10-09","addresses":{{"{URL}":{{"answered":"someday","failing_since":"2026-10-09"}}}}}}"#
             ),
         )
         .unwrap();
-        let history = History::open(dir.path(), day("2026-10-10"), 3, false);
+        let history = History::open(store.clone(), day("2026-10-10"), 3, false);
         assert_eq!(history.previous_run(), Some(day("2026-10-09")));
         // An answer that isn't a date is no evidence.
         assert_eq!(history.held(URL, &unavailable()), None);
@@ -514,8 +507,8 @@ mod tests {
 
     #[test]
     fn the_file_is_sorted_and_says_what_was_reported() {
-        let dir = tempfile::tempdir().unwrap();
-        let history = History::open(dir.path(), day("2026-10-10"), 3, false);
+        let store: Arc<dyn Store> = Arc::new(MemoryStore::new());
+        let history = History::open(store.clone(), day("2026-10-10"), 3, false);
         history.save(BTreeMap::from([
             (
                 "https://vale.sh/docs/install".to_owned(),
@@ -530,7 +523,7 @@ mod tests {
             ),
         ]));
         assert_eq!(
-            std::fs::read_to_string(history.path()).unwrap(),
+            store.read(FILE).unwrap(),
             r#"{
   "version": 1,
   "run": "2026-10-10",
@@ -547,7 +540,7 @@ mod tests {
 }
 "#
         );
-        let next = History::open(dir.path(), day("2026-10-11"), 3, false);
+        let next = History::open(store.clone(), day("2026-10-11"), 3, false);
         assert_eq!(
             next.reported_before(),
             BTreeSet::from(["https://vale.sh/docs/install"])
@@ -561,14 +554,14 @@ mod tests {
     #[test]
     fn two_runs_finishing_together_confirm_later_never_earlier() {
         for answer_saves_first in [true, false] {
-            let dir = tempfile::tempdir().unwrap();
+            let store: Arc<dyn Store> = Arc::new(MemoryStore::new());
             with(
-                dir.path(),
+                &store,
                 "2026-10-12",
                 record(Some("2026-10-08"), Some("2026-10-10")),
             );
-            let answering = History::open(dir.path(), day("2026-10-12"), 3, false);
-            let failing = History::open(dir.path(), day("2026-10-12"), 3, false);
+            let answering = History::open(store.clone(), day("2026-10-12"), 3, false);
+            let failing = History::open(store.clone(), day("2026-10-12"), 3, false);
             let answered = answering.observe(URL, Seen::Answered(day("2026-10-12")));
             let failed = failing.observe(URL, Seen::Failed);
             let save = |h: &History, r: Record| h.save(BTreeMap::from([(URL.to_owned(), r)]));
@@ -581,7 +574,7 @@ mod tests {
             }
             // The failure's streak from the 10th, which would be confirmed
             // on the 13th, isn't kept: the answer is.
-            let after = History::open(dir.path(), day("2026-10-13"), 3, false);
+            let after = History::open(store.clone(), day("2026-10-13"), 3, false);
             assert_eq!(
                 after.held(URL, &unavailable()).map(|h| h.failing_since),
                 Some(day("2026-10-13"))
@@ -597,17 +590,17 @@ mod tests {
 
     #[test]
     fn an_address_the_other_run_saw_is_kept_and_one_nobody_links_to_is_forgotten() {
-        let dir = tempfile::tempdir().unwrap();
-        with(dir.path(), "2026-10-12", record(Some("2026-10-08"), None));
-        let one = History::open(dir.path(), day("2026-10-12"), 3, false);
-        let other = History::open(dir.path(), day("2026-10-12"), 3, false);
+        let store: Arc<dyn Store> = Arc::new(MemoryStore::new());
+        with(&store, "2026-10-12", record(Some("2026-10-08"), None));
+        let one = History::open(store.clone(), day("2026-10-12"), 3, false);
+        let other = History::open(store.clone(), day("2026-10-12"), 3, false);
         let new = "https://new.example.com";
         other.save(BTreeMap::from([(
             new.to_owned(),
             record(Some("2026-10-12"), None),
         )]));
         one.save(BTreeMap::new());
-        let after = History::open(dir.path(), day("2026-10-13"), 3, false);
+        let after = History::open(store.clone(), day("2026-10-13"), 3, false);
         let addresses = &after.read.as_ref().unwrap().addresses;
         assert_eq!(addresses.keys().collect::<Vec<_>>(), [new]);
     }

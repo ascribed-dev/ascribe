@@ -163,6 +163,7 @@ pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
             return Ok(answer);
         }
     } else {
+        // Library write: the first `ascribe.toml`, through `write`.
         write(root, MODEL_FILE, |file| std::fs::write(file, MODEL_TEXT))?;
         answer.written.push(MODEL_FILE.to_owned());
     }
@@ -170,6 +171,7 @@ pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
     // Outside FileSystem: the content root of a project just written, which
     // must exist for the project to load.
     answer.content_root_made = !root.join(content_root).is_dir();
+    // Library write: as above.
     write(root, content_root, |dir| std::fs::create_dir_all(dir))?;
     Ok(answer)
 }
@@ -186,6 +188,8 @@ fn write(
         path: path.to_owned(),
         reason: e.to_string(),
     };
+    // Library write: the project `ascribe init` makes, which has no
+    // project to return its files to before it exists.
     if let Some(dir) = target.parent() {
         std::fs::create_dir_all(dir).map_err(failed)?;
     }
