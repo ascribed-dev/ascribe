@@ -1,7 +1,7 @@
 @memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
 - `[SECTION]...`: The sections to report, in any order. By default, those that need nothing outside the project: `problems`, `inventory`, and `builds`.
   - `problems`: What `ascribe check` finds, counted by check, by file, and by kind of next step; and every acknowledgement, with its reason.
-  - `inventory`: Pages by type and by owner; overdue reviews, orphan pages, and unused entries.
+  - `inventory`: Pages by type and by owner; overdue rechecks, orphan pages, and unused entries.
   - `builds`: What each build leaves out that another keeps.
   - `pages`: Every page's record, sorted by address: its title, description, canonical address, and listing, and where the listing comes from.
   - `links`: External links that fail, redirect, or time out. Needs a link checker, lychee, and the network.

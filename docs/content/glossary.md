@@ -4,7 +4,7 @@ title: Glossary
 description: The terms these docs use, each with a sentence on what it means and a link to the page that documents it.
 ---
 
-Each term below is linked from the pages that use it, with its first paragraph as the link's title. Most of them are ordinary words too, so they're linked only where a page links them here: acknowledgement, address, agent, build, example, phrase, report, review, source, target, and variant. Each has one meaning in these docs, and where a word is also used another way, its entry says where and what it means there.
+Each term below is linked from the pages that use it, with its first paragraph as the link's title. Most of them are ordinary words too, so they're linked only where a page links them here: acknowledgement, address, agent, build, example, phrase, preview, report, review, source, target, and variant. Each has one meaning in these docs, and where a word is also used another way, its entry says where and what it means there.
 
 ## Acknowledgement
 @term {aliases=acknowledgements, match=marked}
@@ -76,6 +76,13 @@ A source file that exists only to be included in other files: any file with a pa
 
 See [Files](writing/frontmatter.md#files) and [`@include`](writing/directives.md#include).
 
+## HTML preview
+@term
+
+The HTML file `ascribe diff --format html` writes, showing a pull request's changed pages rendered and marked, which CI can attach to the pull request.
+
+It's the third place to [review](#review), beside the page preview and the site preview, and needs no checkout. See [Attach the HTML preview to every pull request](review/ci-report.md).
+
 ## Memo
 @term {aliases=memos}
 
@@ -104,6 +111,20 @@ A reusable string declared in `ascribe.toml` and written `{key}` in a page.
 
 See [Phrases](writing/inline.md#phrases).
 
+## Preview
+@term {aliases=previews, match=marked}
+
+Pages shown before they're published. These docs always say which of the four: the page preview, the site preview, the HTML preview, or `ascribe preview`.
+
+The [page preview](#page-preview) is in the editor; the [site preview](#site-preview) is the project's own dev server; the [HTML preview](#html-preview) is a pull request's, from `ascribe diff --format html`; and [`ascribe preview`](checks/check.md#cli-preview) renders a build as a plain site and serves it on this computer with the command alone. None of them is the published site.
+
+## Recheck date
+@term {aliases="recheck dates"}
+
+When a page is next due to be read against what it describes: its field with the `recheck-date` role, which [`recheck-overdue`](checks/diagnostics/content-checks.md#ASC153) compares with today. It was the review date, with the role `review-date` and the check `review-overdue`, and both old names still work for a release.
+
+See [Field roles](content-model/index.md#54-field-roles).
+
 ## Release line
 @term {aliases="release lines"}
 
@@ -116,19 +137,19 @@ See [Release lines](versions/lines.md). Pages about versions call it a line. Els
 
 What `ascribe report` says about the state of a whole project: its problems, inventory, builds, pages, external links, and published site.
 
-See [The project report](checks/report.md). The HTML file `ascribe diff --format html` writes for a pull request is part of [review](#review), not this.
+See [The project report](checks/report.md). The [HTML preview](#html-preview), which `ascribe diff --format html` writes for a pull request, is part of [review](#review), not this.
 
 ## Review
 @term {aliases=reviews, match=marked}
 
-Reading a pull request's changes as readers will see the pages, in the page preview, the site preview, or the HTML file CI writes, and commenting there.
+Reading a pull request's changes as readers will see the pages, in the page preview, the site preview, or the HTML preview, and commenting there.
 
-See [Review](review/index.md). A diagnostic whose next step is `review` may be fine as it is: see [What to do next](checks/diagnostics.md#what-to-do-next). A page's review date, its field with the `review-date` role that [`review-overdue`](checks/diagnostics/content-checks.md#ASC153) compares with today, is when to check the page again.
+See [Review](review/index.md). A diagnostic whose next step is `review` may be fine as it is: see [What to do next](checks/diagnostics.md#what-to-do-next). When to check a page again is its [recheck date](#recheck-date), not a review.
 
 ## Site preview
 @term
 
-The active page on the project's own dev server, in the browser or the preview panel.
+The active page on the project's own dev server, in the browser or the preview panel. It has the published site's look, where `ascribe preview` has the element library's.
 
 See [the site preview](editor/preview.md#site-preview).
 

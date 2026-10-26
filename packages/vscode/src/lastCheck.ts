@@ -51,7 +51,7 @@ export function readKept(value: unknown, version: string): KeptCheck | undefined
     typeof kept.unsaved === "number" &&
     typeof counted === "object" &&
     counted !== null &&
-    (["examples", "reviews", "permalinks"] as const).every(
+    (["examples", "rechecks", "permalinks"] as const).every(
       (of) => typeof counted[of]?.count === "number",
     ) &&
     Array.isArray(kept.problems) &&

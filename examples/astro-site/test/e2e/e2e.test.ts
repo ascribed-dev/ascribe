@@ -7,6 +7,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { resolveBinary } from "@ascribed/cli/binary";
 import type { Browser, BrowserContext, Page } from "playwright-core";
+import TurndownService from "turndown";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { BASE, buildSite, launchChromium, servePreview, siteDir } from "./harness.js";
 
@@ -163,6 +164,62 @@ describe("the built site", () => {
     await page.close();
   });
 
+  it("names each tab once to a screen reader, and keeps each code block's language on its <code>", async () => {
+    const page = await open(`${BASE}/guides/my-setup`);
+    const group = page.locator('ascribe-tabs[sync="pm"]');
+    // The label paragraph is hidden from the accessibility tree: the tab's
+    // button names it, and the panel is labelled by the button.
+    // (An earlier test chose pnpm, and the choice is remembered.)
+    const tree = await group.ariaSnapshot();
+    expect(tree).toMatch(/^- tabpanel "pnpm":$/m);
+    expect(tree, tree).not.toMatch(/^\s*- (?:paragraph|text): (?:npm|pnpm|yarn)$/m);
+    await expect(
+      group.locator("ascribe-tab > .ascribe-tab-label").allTextContents(),
+    ).resolves.toEqual(["npm", "pnpm", "yarn"]);
+    const codes = group.locator("pre > code");
+    await expect(codes.count()).resolves.toBe(3);
+    await expect(
+      codes.evaluateAll((all) =>
+        all.map((code) => [code.className, code.parentElement?.dataset["language"]]),
+      ),
+    ).resolves.toEqual([
+      ["language-shell", "shell"],
+      ["language-shell", "shell"],
+      ["language-shell", "shell"],
+    ]);
+    await page.close();
+  });
+
+  it("reads to an HTML-to-Markdown converter as each tab's label before its block, in its language", async () => {
+    const turndown = new TurndownService({ codeBlockStyle: "fenced", headingStyle: "atx" });
+    const built = readFileSync(path.join(siteDir, "dist", "guides", "my-setup.html"), "utf8");
+    // The page after its script: the tab list, and a copy button after each block.
+    const page = await open(`${BASE}/guides/my-setup`);
+    await expect(page.locator("button.ascribe-copy").count()).resolves.toBeGreaterThan(0);
+    const rendered = await page.content();
+    await page.close();
+    for (const [name, html] of [
+      ["built", built],
+      ["rendered", rendered],
+    ] as const) {
+      const markdown = turndown.turndown(html);
+      let from = 0;
+      for (const [label, command] of [
+        ["npm", "npm install -g @loom/cli"],
+        ["pnpm", "pnpm add -g @loom/cli"],
+        ["yarn", "yarn global add @loom/cli"],
+      ] as const) {
+        const at = markdown.indexOf(`\n${label}\n\n\`\`\`shell\n${command}\n\`\`\``, from);
+        expect(at, `${name}: ${label}\n${markdown}`).toBeGreaterThanOrEqual(from);
+        from = at + 1;
+      }
+      // The copy button is outside the code, with no text of its own.
+      const fences = markdown.match(/```[\s\S]*?```/g) ?? [];
+      expect(fences.length).toBeGreaterThan(0);
+      for (const fence of fences) expect(fence, name).not.toContain("Copy");
+    }
+  });
+
   it("renders the availability badges, page-level from frontmatter and section-level", async () => {
     const page = await open(`${BASE}/guides/my-setup`);
     const pageBadge = page.locator('ascribe-availability[scope="page"]');
@@ -317,12 +374,14 @@ describe("the built site", () => {
     await page.close();
   });
 
-  it("leaves permalinks' addresses out of what agents read", async () => {
+  it("leaves permalinks' addresses out of llms.txt, and serves each section as Markdown", async () => {
     const llms = await (await fetch(`${origin}${BASE}/llms.txt`)).text();
     expect(llms).toContain("/guides/my-setup.md");
     expect(llms).not.toContain("/go/");
+    // The section a permalink names, under its title, for an agent to read in one fetch.
     const markdown = await fetch(`${origin}${BASE}/go/weave-config.md`);
-    expect(markdown.status).toBe(404);
+    expect(markdown.status).toBe(200);
+    expect(await markdown.text()).toMatch(/^# .+\n/);
   });
 
   it("gives every heading the id Ascribe validated, at the route Ascribe computed", async () => {

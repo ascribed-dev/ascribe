@@ -14,6 +14,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe check` | Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. | `[PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]` | `text`, `concise`, `json`, `prompt` |
 | `ascribe fmt` | Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. | `[--check] [--diff] [PATHS]...` | `text`, `json` |
 | `ascribe build` | Checks the project, then writes each build's outputs. | `[--build <NAME>]... [--emit site,plain,json] [--anchors] [--no-baseline]` | `text`, `json` |
+| `ascribe preview` | Shows a build's pages as readers see them, with nothing but the `ascribe` command: no Node, no editor, and no Astro. | `[--build <NAME>] [--port <PORT>]` |  |
 | `ascribe diff` | Shows what changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved. | `[PAGE] [--base <REV>] [--base-exact] [--build <NAME>]... [--exit-code] [--pages-only]` | `text`, `json`, `html`, `prompt` |
 | `ascribe drift` | Lists the pages whose code examples changed between a git revision and the working tree, and whether the words around them changed too, and the pages whose examples no longer resolve. | `[--base <REV>] [--build <NAME>]... [--exit-code]` | `text`, `json`, `markdown` |
 | `ascribe report` | Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. | `[SECTION]... [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--no-baseline] [--exit-code advice\|warning\|error]` | `text`, `markdown`, `json`, `prompt` |
@@ -24,7 +25,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe refs` | Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model, each as `file:line:column`, with what kind of use it is. | `TARGET [--limit <N>]` | `text`, `json` |
 | `ascribe search` | Finds where the pages say something, as their readers read it, and names the line to edit for each place. | `QUERY [PATHS]... [--type <NAME>] [--case] [--word] [--summary] [--build <NAME>]... [--limit <N>]` | `text`, `json` |
 | `ascribe resolve` | Resolves a page for one build and writes it as the build's plain Markdown output by default, as `ascribe build --emit plain` writes it, or, with `--emit site`, as its site output: the page as a reader of that build sees it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. | `PAGE [--build <NAME>] [--emit plain\|site] [--frontmatter]` | `text`, `json` |
-| `ascribe rename` | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. | `TARGET NEW` |  |
+| `ascribe rename` | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. | `TARGET NEW` | `text`, `json` |
 | `ascribe baseline write` | Adds every advice `ascribe check` reports to `ascribe.baseline`, and makes the file when there's none. |  | `text`, `json` |
 | `ascribe baseline prune` | Removes the entries of `ascribe.baseline` that match nothing the project has any more: the problems that were fixed, and those whose text changed, which `ascribe check` reports as new. |  | `text`, `json` |
 | `ascribe versions list` | Shows each target's lines, newest first: whether each is current, live, planned, or archived, the output and base path of each live line on each build versioned by the target, with how many pages it publishes, the last day of support from `ends`, and an archived line's address and the day it ended. |  | `text`, `json` |
@@ -265,7 +266,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC150` | `page-description-missing` | advice | write | this page has no `{field}`; write a sentence saying what the page is for, which search results and agents show with its title |
 | `ASC151` | `heading-level-skipped` | advice | fix | this heading is level {level}, after a level-{previous} heading; make it level {expected}, so the outline has no gap |
 | `ASC152` | `code-language-missing` | advice | choose | this code block has no language; write it after the opening fence, or `text` for output |
-| `ASC153` | `review-overdue` | advice | review | this page was due for review on {date}; check it still holds, then move `{field}` to the next review |
+| `ASC153` | `recheck-overdue` | advice | review | this page was due for a recheck on {date}; check it still holds, then move `{field}` to the next recheck |
 | `ASC154` | `page-orphan` | advice | review | no other page links to this page or includes it, so readers reach it only through the sidebar |
 | `ASC155` | `fragment-unused` | advice | review | no file includes this fragment, so nothing publishes it |
 | `ASC156` | `phrase-unused` | advice | review | no file uses the phrase `{key}` |
@@ -626,8 +627,9 @@ Tools:
 | `ascribe_refs` | Find uses | `ascribe refs` |
 | `ascribe_search` | Search pages | `ascribe search` |
 | `ascribe_resolve` | Resolve a page | `ascribe resolve` |
-| `ascribe_format` | Format pages | `ascribe fmt` |
-| `ascribe_changes` | List changed pages | `ascribe diff` |
+| `ascribe_fmt` | Format pages | `ascribe fmt` |
+| `ascribe_diff` | List changed pages | `ascribe diff` |
+| `ascribe_rename` | Rename | `ascribe rename` |
 | `ascribe_addresses_move` | Record a move | `ascribe addresses move` |
 | `ascribe_addresses_retire` | Record a retired page | `ascribe addresses retire` |
 
@@ -858,6 +860,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/permalinks-sync.schema.json` | PermalinksSyncReport | What `ascribe permalinks sync` does to the list. |
 | `schemas/permalinks-verify.schema.json` | PermalinksVerifyReport | What `ascribe permalinks verify` answers. |
 | `schemas/refs.schema.json` | RefsReport | What `ascribe refs <TARGET>` answers. |
+| `schemas/rename.schema.json` | RenameReport | What `ascribe rename --format json` writes, and the MCP server's `ascribe_rename` gives. |
 | `schemas/report.schema.json` | ReportReport | What `ascribe report --format json` writes: one document, whatever the outcome. |
 | `schemas/resolve-permalink.schema.json` | ResolvePermalinkReport | What `ascribe resolve go:<name> --format json` answers: the name's entry as the build's `_ascribe/help.json` writes it, with the file's `version`, `build`, and `line`. |
 | `schemas/resolve.schema.json` | ResolveReport | What `ascribe resolve <PAGE> --format json` answers. |
@@ -899,7 +902,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `astro/reference.md` | `@ascribed/astro` reference | reference |
 | `astro/serve-markdown.md` | Serve the Markdown versions | how-to |
 | `checks/baseline.md` | The baseline | reference |
-| `checks/check.md` | `ascribe check`, `build`, and `fmt` | reference |
+| `checks/check.md` | `ascribe check`, `build`, `preview`, and `fmt` | reference |
 | `checks/ci.md` | Checks in CI | how-to |
 | `checks/diagnostics.md` | Diagnostics | reference |
 | `checks/diagnostics/content-checks.md` | Diagnostics: content checks | reference |
@@ -978,7 +981,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `publishing/index.md` | Publishing | concept |
 | `publishing/redirects.md` | Keep the addresses you've published | how-to |
 | `publishing/site.md` | The head, sitemap, `robots.txt`, and headers | reference |
-| `review/ci-report.md` | Attach the review report to every pull request | how-to |
+| `review/ci-report.md` | Attach the HTML preview to every pull request | how-to |
 | `review/diff.md` | `ascribe diff` and `drift` | reference |
 | `review/how-it-works.md` | How review works | concept |
 | `review/index.md` | Review | how-to |
@@ -1074,4 +1077,4 @@ These are part of the surface, and no file a script can read lists them, so they
 | The language | Attributes each directive takes, phrases (`{key}`), and the inline forms | `Builtin::schema` in `crates/ascribe-core/src/schema.rs`, as code, not as a list |
 | The VS Code extension | The status bar item (the build, and review's state), the preview and its header, the build lens, and review's marks and threads | `packages/vscode/src/`, as code |
 | `@ascribed/astro` | The dev toolbar's review app, and what the integration serves: published files, `llms.txt`, each page's Markdown, and a page for each permalink | `packages/astro/src/`, as code |
-| The outputs | The HTML report `ascribe diff --format html` writes, and the layout of each output's folder | `packages/review/`, and `docs/content/contracts/output-layout.md` |
+| The outputs | The HTML preview `ascribe diff --format html` writes, and the layout of each output's folder | `packages/review/`, and `docs/content/contracts/output-layout.md` |

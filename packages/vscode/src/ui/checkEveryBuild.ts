@@ -85,7 +85,7 @@ interface Checked {
 
 const NOTHING_COUNTED: Record<Counted, Found> = {
   examples: { count: 0, first: null },
-  reviews: { count: 0, first: null },
+  rechecks: { count: 0, first: null },
   permalinks: { count: 0, first: null },
 };
 

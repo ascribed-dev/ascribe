@@ -108,8 +108,8 @@ describe("the report", () => {
       (e) => e.textContent,
     );
     expect(placeholders).toEqual([
-      "Image not loaded: https://example.com/a.png (the report makes no network requests)",
-      "Image not included: big.png (3.0 MB, over the report's 1.0 MB limit)",
+      "Image not loaded: https://example.com/a.png (the preview makes no network requests)",
+      "Image not included: big.png (3.0 MB, over the preview's 1.0 MB limit)",
     ]);
   });
 

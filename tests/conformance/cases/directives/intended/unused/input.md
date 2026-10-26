@@ -1,7 +1,7 @@
 ---
 title: Test
 intended:
-  - check: review-overdue
+  - check: recheck-overdue
     reason: The problem was fixed since.
 ---
 

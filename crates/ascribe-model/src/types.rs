@@ -56,9 +56,9 @@ pub enum FieldRole {
     /// A sentence saying what the page is for (`role = "description"`): a
     /// string field.
     Description,
-    /// When the page is next due for review (`role = "review-date"`): a date
-    /// field.
-    ReviewDate,
+    /// When the page is next due to be checked again (`role =
+    /// "recheck-date"`): a date field.
+    RecheckDate,
     /// Who looks after the page (`role = "owner"`), such as a team: a string
     /// or enum field.
     Owner,
@@ -68,7 +68,7 @@ impl FieldRole {
     /// Every role, in the order the docs list them.
     pub const ALL: [FieldRole; 3] = [
         FieldRole::Description,
-        FieldRole::ReviewDate,
+        FieldRole::RecheckDate,
         FieldRole::Owner,
     ];
 
@@ -76,21 +76,32 @@ impl FieldRole {
     pub fn name(self) -> &'static str {
         match self {
             FieldRole::Description => "description",
-            FieldRole::ReviewDate => "review-date",
+            FieldRole::RecheckDate => "recheck-date",
             FieldRole::Owner => "owner",
         }
     }
 
-    /// The role a setting's value names, if any.
+    /// The name the role had before, which still names it, and a field of
+    /// that name still has it, for a release: `review-date`.
+    pub fn old_name(self) -> Option<&'static str> {
+        match self {
+            FieldRole::RecheckDate => Some("review-date"),
+            FieldRole::Description | FieldRole::Owner => None,
+        }
+    }
+
+    /// The role a setting's value names, if any, by its name or its old one.
     pub fn from_name(name: &str) -> Option<FieldRole> {
-        FieldRole::ALL.into_iter().find(|r| r.name() == name)
+        FieldRole::ALL
+            .into_iter()
+            .find(|r| r.name() == name || r.old_name() == Some(name))
     }
 
     /// Whether a field of type `ty` can have this role.
     pub fn accepts(self, ty: &FieldType) -> bool {
         match self {
             FieldRole::Description => *ty == FieldType::String,
-            FieldRole::ReviewDate => *ty == FieldType::Date,
+            FieldRole::RecheckDate => *ty == FieldType::Date,
             FieldRole::Owner => matches!(ty, FieldType::String | FieldType::Enum(_)),
         }
     }
@@ -100,7 +111,7 @@ impl FieldRole {
     pub fn expected(self) -> &'static str {
         match self {
             FieldRole::Description => "string",
-            FieldRole::ReviewDate => "date",
+            FieldRole::RecheckDate => "date",
             FieldRole::Owner => "string or enum",
         }
     }

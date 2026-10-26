@@ -1,9 +1,8 @@
 self-managed 3.4 would be archived, at https://archive.quill.dev/3.4/.
 Would rewrite 6 marks in 5 files. No live line's output would change.
-Builds that aren't lines of self-managed change what they show:
+Expected: builds that aren't lines of self-managed change only self-managed's part of their availability lines:
   cloud's plain output changes install-agent.md
   cloud's site output changes install-agent.md
-Rewriting them needs --force.
 1 page is in no live line:
   docs/configure-legacy.md:5: the page "Configure the agent (3.4)"
 Delete it with: ascribe versions retire "self-managed 3.4" --url https://archive.quill.dev/3.4/ --remove-unused

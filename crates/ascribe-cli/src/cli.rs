@@ -57,7 +57,9 @@ For agents: `ascribe agents --help` says how to check and fix each edit.";
 pub(crate) const GROUPS: &[(&str, &[&str])] = &[
     (
         "Write and check",
-        &["init", "check", "fmt", "build", "diff", "drift", "report"],
+        &[
+            "init", "check", "fmt", "build", "preview", "diff", "drift", "report",
+        ],
     ),
     (
         "Ask about the project",
@@ -186,6 +188,12 @@ pub enum Command {
     /// Build the documentation set's outputs.
     #[command(after_help = docs_link!("cli-build"))]
     Build(commands::build::Args),
+    /// Serve a build's pages as a site, rendered again as they change.
+    ///
+    /// Renders the pages into .ascribe/preview, serves them at 127.0.0.1,
+    /// and renders them again when the project's files change.
+    #[command(after_help = docs_link!("cli-preview"))]
+    Preview(commands::preview::Args),
     /// Show what changed since a git revision, page by page.
     ///
     /// Compares a git revision with the working tree, page by page, as
@@ -330,6 +338,7 @@ impl Command {
             Command::Observe(args) => commands::observe::run(global, args),
             Command::Outline(args) => commands::outline::run(global, args),
             Command::Permalinks(args) => commands::permalinks::run(global, args),
+            Command::Preview(args) => commands::preview::run(global, args),
             Command::Refs(args) => commands::refs::run(global, args),
             Command::Rename(args) => commands::rename::run(global, args),
             Command::Report(args) => commands::report::run(global, args),

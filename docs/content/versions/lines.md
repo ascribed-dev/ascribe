@@ -106,7 +106,7 @@ The sidebar shows the pages of the page's own line when the layout passes the en
 The lines show wherever a build does, and a page that's the same in every line shows once:
 
 - **The editor.** Switch build lists a versioned build's lines under it, the current line first, and the build lens and the preview follow the line you choose: in 3.4, a page new in 3.5 is dimmed whole, and the preview is at the line's address, `/3.4/install/`. The editor checks every line of its build, and a problem only some lines have says which, such as "(only in build `site@3.4`)". A hover on a mark's version says which line it falls in, and a hover on `replaces` says which page each line publishes. [The editor](../editor/preview.md#the-build-youre-looking-at) has the rest.
-- **Review.** `ascribe diff` lists a changed page once with the lines it changed in: "in every line" for a page the lines share, "only in 3.4" for a change inside a section only 3.4 has. The HTML report lists the page once too, and switches between the lines it changed in. [Diff](../review/diff.md) has the details.
+- **Review.** `ascribe diff` lists a changed page once with the lines it changed in: "in every line" for a page the lines share, "only in 3.4" for a change inside a section only 3.4 has. The HTML preview lists the page once too, and switches between the lines it changed in. [Diff](../review/diff.md) has the details.
 - **The tools.** `ascribe resolve install.md --build site@3.4` resolves the page as that line publishes it, at its address under `/3.4/`, and so does `ascribe_resolve`. `ascribe model` has a `releases` section: each target's lines, with their status and the build that is each.
 
 ## For agents

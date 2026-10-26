@@ -14,6 +14,12 @@ export const ELEMENT_TABS = "ascribe-tabs";
 /** `<ascribe-tab>`: one arm of `<ascribe-tabs>` (packages/elements/CONTRACT.md §3). */
 export const ELEMENT_TAB = "ascribe-tab";
 
+/**
+ * On the paragraph that starts an `<ascribe-tab>` and holds its label as
+ * text, for a reader of the HTML with no script (packages/elements/CONTRACT.md §3).
+ */
+export const CLASS_TAB_LABEL = "ascribe-tab-label";
+
 /** `<ascribe-availability>`: a badge or filter (packages/elements/CONTRACT.md §4). */
 export const ELEMENT_AVAILABILITY = "ascribe-availability";
 

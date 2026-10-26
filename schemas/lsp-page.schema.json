@@ -21,7 +21,7 @@
       ]
     },
     "FormattedPiece": {
-      "description": "A piece of a formatted value, as the JSON output writes it:\n`{ \"type\": \"text\" | \"code\", \"value\": … }`. Other JSON that shows a\nformatted title, such as the review report's, writes it the same way.",
+      "description": "A piece of a formatted value, as the JSON output writes it:\n`{ \"type\": \"text\" | \"code\", \"value\": … }`. Other JSON that shows a\nformatted title, such as the HTML preview's, writes it the same way.",
       "properties": {
         "type": {
           "$ref": "#/$defs/PieceKind",
@@ -191,16 +191,16 @@
           },
           "type": "array"
         },
-        "review": {
+        "recheck": {
           "anyOf": [
             {
-              "$ref": "#/$defs/PageReview"
+              "$ref": "#/$defs/PageRecheck"
             },
             {
               "type": "null"
             }
           ],
-          "description": "When it's due for review, when its type gives a field the\nreview-date role and the page has a date in it."
+          "description": "When it's due to be checked again, when its type gives a field the\nrecheck-date role and the page has a date in it."
         },
         "site": {
           "description": "The project's published site, its origin (`[consumer] site`), which\nthe addresses are on: `null` when the project names none, and for a\nfragment.",
@@ -245,7 +245,7 @@
         "markdownAddress",
         "site",
         "description",
-        "review",
+        "recheck",
         "availability",
         "builds",
         "listing",
@@ -619,8 +619,8 @@
       ],
       "type": "object"
     },
-    "PageReview": {
-      "description": "When a page is due for review.",
+    "PageRecheck": {
+      "description": "When a page is due to be checked again.",
       "properties": {
         "date": {
           "description": "The date it holds, `YYYY-MM-DD`.",
@@ -634,7 +634,7 @@
           ]
         },
         "field": {
-          "description": "The frontmatter field with the review-date role.",
+          "description": "The frontmatter field with the recheck-date role.",
           "type": "string"
         },
         "overdue": {
@@ -646,7 +646,7 @@
           "description": "The field's line, in the negotiated position encoding."
         },
         "reported": {
-          "description": "Whether `review-overdue` reports the page: the date has passed, and\nthe project hasn't turned the check off.",
+          "description": "Whether `recheck-overdue` reports the page: the date has passed, and\nthe project hasn't turned the check off.",
           "type": "boolean"
         }
       },

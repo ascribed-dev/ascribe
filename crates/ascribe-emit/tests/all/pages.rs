@@ -499,7 +499,7 @@ fn without_markdown_versions_the_headers_are_an_empty_list() {
 }
 
 #[test]
-fn the_headers_let_any_origin_read_each_help_entry() {
+fn the_headers_let_any_origin_read_each_help_entry_as_json_and_markdown() {
     let model = "spec = \"0.1\"\n\
         [releases.self-managed]\nlive = [\"3.4\", \"3.5\"]\n\
         [builds.site]\nversions = \"self-managed\"\n\
@@ -516,6 +516,13 @@ fn the_headers_let_any_origin_read_each_help_entry() {
         )],
     );
     let any = json!({ "Access-Control-Allow-Origin": "*" });
+    // The JSON names the Markdown beside it as its alternate.
+    let json = |markdown: String| {
+        json!({
+            "Access-Control-Allow-Origin": "*",
+            "Link": format!("<{markdown}>; rel=\"alternate\"; type=\"text/markdown\""),
+        })
+    };
     // The current line's at the permalinks' path; an older line's under its own base path.
     for (build, folder) in [("site", "/docs/go/"), ("site@3.4", "/docs/3.4/go/")] {
         assert_eq!(
@@ -523,8 +530,10 @@ fn the_headers_let_any_origin_read_each_help_entry() {
             json!({
                 "version": 1,
                 "headers": [
-                    { "path": format!("{folder}connect.json"), "headers": any },
-                    { "path": format!("{folder}link.json"), "headers": any },
+                    { "path": format!("{folder}connect.json"), "headers": json(format!("{folder}connect.md")) },
+                    { "path": format!("{folder}connect.md"), "headers": any },
+                    { "path": format!("{folder}link.json"), "headers": json(format!("{folder}link.md")) },
+                    { "path": format!("{folder}link.md"), "headers": any },
                 ],
             }),
             "{build}"
@@ -543,7 +552,16 @@ fn the_headers_find_the_help_entries_under_the_permalink_path() {
     );
     assert_eq!(
         headers(&project)["headers"],
-        json!([{ "path": "/go/a.json", "headers": { "Access-Control-Allow-Origin": "*" } }])
+        json!([
+            {
+                "path": "/go/a.json",
+                "headers": {
+                    "Access-Control-Allow-Origin": "*",
+                    "Link": "</go/a.md>; rel=\"alternate\"; type=\"text/markdown\"",
+                },
+            },
+            { "path": "/go/a.md", "headers": { "Access-Control-Allow-Origin": "*" } },
+        ])
     );
 }
 

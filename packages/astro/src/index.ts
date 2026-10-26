@@ -46,6 +46,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AstroIntegration, IntegrationResolvedRoute } from "astro";
 import { findBinary } from "./binary.js";
+import { codeLanguages } from "./code-languages.js";
 import { codeTitles } from "./code-titles.js";
 import { SeenFiles, watchDev, type DevBuilds } from "./dev.js";
 import {
@@ -486,9 +487,9 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
               prerender: true,
             });
           }
-          // Each permalink's help, at `<name>.json` beside its address, and each older line's
-          // under the line's base path. One route for each folder: the current line's, then each
-          // older line's.
+          // Each permalink's help, at `<name>.json` and `<name>.md` beside its address, and each
+          // older line's under the line's base path. One route for each folder and format: the
+          // current line's, then each older line's.
           for (const pattern of helpPatterns(
             entries.map((entry) => entry.siteRoot),
             astro.base,
@@ -507,9 +508,12 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         updateConfig({
           ...supplied,
           ...(format.supplied === undefined ? {} : { build: { format: format.supplied } }),
-          ...(options.codeTitles === false
-            ? {}
-            : { markdown: { shikiConfig: { transformers: [codeTitles] } } }),
+          markdown: {
+            shikiConfig: {
+              transformers:
+                options.codeTitles === false ? [codeLanguages] : [codeTitles, codeLanguages],
+            },
+          },
           vite: {
             // `Elements.astro` is Astro source, so Vite must compile it, not load it as a Node module.
             ssr: { noExternal: ["@ascribed/astro"] },

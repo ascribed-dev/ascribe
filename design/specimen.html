@@ -2317,18 +2317,13 @@ ascribe-tab[hidden] {
   display: none;
 }
 
-/* Without the script: every tab shows, introduced by its label. */
-ascribe-tab::before {
-  content: attr(label);
-  display: block;
-  margin-top: var(--ascribe-space);
+/* Without the script: every tab shows, introduced by its label, which is
+   text in the page, its first paragraph. With it, the tab list carries the
+   labels, and the paragraph is out of sight (below). */
+.ascribe-tab-label {
+  margin-block: var(--ascribe-space) 0;
   color: var(--ascribe-muted-color);
   font-weight: var(--ascribe-font-weight-strong);
-}
-
-/* With the script: the tab list carries the labels. */
-ascribe-tab[role="tabpanel"]::before {
-  display: none;
 }
 
 ascribe-tab[role="tabpanel"] {
@@ -2555,8 +2550,10 @@ ascribe-group {
    screen reader) to read. Not `display: none`, which some readers skip. A
    table row's "(Available: " and ")" around its badges are hidden the same
    way, so a screen reader says what the badges are, as the Markdown does,
-   and so is what a copy button says when it has copied. */
+   and so is what a copy button says when it has copied, and a tab's label
+   once the tab list shows it, for a reader that takes the page's text. */
 ascribe-for-agents,
+ascribe-tab[role="tabpanel"] > .ascribe-tab-label,
 .ascribe-availability-lead-in,
 .ascribe-copy-status {
   position: absolute;

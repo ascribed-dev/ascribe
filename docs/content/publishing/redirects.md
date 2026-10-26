@@ -180,6 +180,8 @@ site:
 /docs/guides/my-setup.md /docs/guides/setup.md 301
 ```
 
+The same file forwards each [permalink](../permalinks/index.md)'s address, as [below](#permalinks-on-netlify).
+
 **On another host,** read `_ascribe/redirects.json` after the build and give each pair to the host's own configuration.
 
 ## A retired address's page
@@ -192,6 +194,24 @@ A reader who follows a link to a retired address gets a page that says what was 
 ```
 
 Another site generator reads `gone` from `_ascribe/redirects.json` and makes its own page for each.
+
+## Permalinks on Netlify
+@id: permalinks-on-netlify
+@available: ascribe planned
+
+With `host = "netlify"`, the `_redirects` the build writes forwards each permalink's address with a `301`, straight to its page and heading, so a fetcher that doesn't follow the forwarding page's refresh, as `curl` and most agents' tools don't, still lands there in one step. Netlify keeps the heading's anchor. The forwarding page stays, for a host without redirects:
+
+```text
+/docs/go/connect/ pm=:pm /docs/go/connect/ 200!
+/docs/go/connect/ /docs/install-agent/#connect 301!
+/docs/go/legacy-sync/ /docs/go/legacy-sync/ 410!
+```
+
+- **An address with a [dimension](../content-model/content.md#dimensions)'s parameter,** such as `?pm=pnpm`, gets the forwarding page instead, whose script sets the reader's choice before it forwards: a line for each dimension, ahead of the `301`, since Netlify uses the first rule that matches.
+- **A retired permalink's address** serves its page, which says why it was removed, with a `410`, which tells a fetcher it's gone on purpose.
+- **`!`** forces each rule past the forwarding page at the address, which Netlify would serve otherwise.
+
+The lines come after the moves and the retired addresses, and the [output-layout contract](../contracts/output-layout.md#19-the-hosts-files) has their format. On another host, read `_ascribe/permalinks.json` and write the same rules for it.
 
 ## `ascribe addresses`
 @id {permalink=true}: cli-addresses

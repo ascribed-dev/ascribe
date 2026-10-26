@@ -57,17 +57,17 @@ Advice · file level · next step: choose · configurable in `[checks]` · Ascri
 
 **Read more:** [`[checks]`](../content-model/checks.md#19-checks) in the `ascribe.toml` reference.
 
-### ASC153 `review-overdue`
+### ASC153 `recheck-overdue`
 @id {permalink=true}: ASC153
-@summary: A page's content type marks a field `role = "review-date"`, and the date the page gives it is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`.
+@summary: A page's content type marks a field `role = "recheck-date"` (or `"review-date"`, its old name), and the date the page gives it is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`.
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in the page's `intended` frontmatter · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**When:** A page's content type marks a field `role = "review-date"`, and the date the page gives it is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`.
+**When:** A page's content type marks a field `role = "recheck-date"` (or `"review-date"`, its old name), and the date the page gives it is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`.
 
-**Message:** this page was due for review on \{date}; check it still holds, then move `{field}` to the next review
+**Message:** this page was due for a recheck on \{date}; check it still holds, then move `{field}` to the next recheck
 
-**Fix:** Read the page against what it describes and correct what has changed, then set its review date to when it's next due. If the page is right as it is, moving the date is the whole fix. The check compares with today's date in UTC (or `ASCRIBE_TODAY`), so it can start reporting without a change to the project.
+**Fix:** Read the page against what it describes and correct what has changed, then set its recheck date to when it's next due. If the page is right as it is, moving the date is the whole fix. The check compares with today's date in UTC (or `ASCRIBE_TODAY`), so it can start reporting without a change to the project.
 
 **Read more:** [Field roles](../content-model/index.md#54-field-roles) in the `ascribe.toml` reference.
 

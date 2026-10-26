@@ -1,6 +1,6 @@
 description: >-
   A role belongs on a page type's top-level field of its type: a string for
-  `description`, a date for `review-date`, a string or an enum for `owner`.
+  `description`, a date for `recheck-date`, a string or an enum for `owner`.
   A type has one field with each role, a role is one of those three, and a
   fragment's fields have none.
 spec: ["7.2"]
