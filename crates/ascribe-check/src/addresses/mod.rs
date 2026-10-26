@@ -23,7 +23,9 @@
 //! sees the page renamed, which is safe, since git's rename is the
 //! decision; the page forwarded to the pages most like it; and the page
 //! retired, with the placeholder for its reason. A build only the base has
-//! is `addresses-build-gone`. Each is located at `ascribe.addresses`.
+//! is `addresses-build-gone`, unless it's a line `[releases]` archives now:
+//! the line left the window on purpose, and `ascribe versions retire`
+//! recorded where its addresses go. Each is located at `ascribe.addresses`.
 //!
 //! The file's own checks, each at its entry, are in [`entries`].
 
@@ -156,7 +158,8 @@ impl Lost {
 /// account for, as diagnostics at `ascribe.addresses`, with their fixes: an
 /// `address-lost` warning for each page, an `anchor-lost` advice for each
 /// id, and an `addresses-build-gone` advice for each build of `base` that
-/// `here` doesn't have. Each of `base`'s builds is compared with `here`'s of
+/// `here` doesn't have, unless it's a line `[releases]` archives, whose
+/// addresses are accounted for. Each of `base`'s builds is compared with `here`'s of
 /// the same name, or of the name `[former] builds` gives it; a caller that
 /// checks only some builds passes only those.
 ///
@@ -193,7 +196,7 @@ pub fn compare(here: &Here<'_>, base: &Base) -> Vec<Diagnostic> {
     let accounted = |key: &str| {
         file.retired.contains_key(key) || file.moved.get(key).is_some_and(|e| published(&e.value))
     };
-    let pairs = matched(file, base, now);
+    let pairs = matched(file, base, now, index.model());
     let mut pages: BTreeMap<String, Lost> = BTreeMap::new();
     let mut anchors: BTreeMap<String, Lost> = BTreeMap::new();
     let mut moved = Moved::default();
@@ -331,11 +334,14 @@ pub fn compare(here: &Here<'_>, base: &Base) -> Vec<Diagnostic> {
 /// the build of its own name, or of the name `[former] builds` gives it;
 /// or else, of the builds of `now` the base doesn't have, the one that
 /// publishes the most of its pages, when that's more than half of them, as
-/// a renamed build does; or none, for a build that's gone.
+/// a renamed build does; or none, for a build that's gone. A build of a
+/// line `model`'s `[releases]` archives isn't one of them: the line left
+/// the window on purpose, so its addresses are accounted for.
 fn matched<'a>(
     file: &'a AddressFile,
     base: &'a Base,
     now: &'a [BuildAddresses],
+    model: &ascribe_model::ContentModel,
 ) -> Vec<(&'a BuildAddresses, Option<&'a str>)> {
     let named = |name: &str| {
         now.iter()
@@ -345,6 +351,7 @@ fn matched<'a>(
     let mut pairs: Vec<(&BuildAddresses, Option<&str>)> = base
         .builds
         .iter()
+        .filter(|before| !model.is_archived_line_build(&before.build))
         .map(|before| {
             let after = named(&before.build).or_else(|| {
                 file.former

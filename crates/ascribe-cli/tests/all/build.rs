@@ -161,10 +161,10 @@ fn builds_quill_under_every_build_with_both_emitters() {
     );
     // One line per build.
     assert_eq!(stderr(&out).lines().count(), 4, "{}", stderr(&out));
-    // The advice isn't shown, only counted, with where to see it.
+    // With the summary checks off by default, quill has nothing to report.
     assert_eq!(
         stdout(&out),
-        "checked 8 files in every build: 0 errors, 0 warnings, 3 advice: ascribe check for each\n"
+        "checked 8 files in every build: no problems\n"
     );
     // Building again changes nothing on disk that hasn't changed.
     let again = ascribe(dir.path(), &["build"]);
