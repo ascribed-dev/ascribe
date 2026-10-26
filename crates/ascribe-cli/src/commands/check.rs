@@ -719,14 +719,20 @@ pub fn write(
         _ if args.build.is_empty() => text::Covered::Every,
         _ => text::Covered::Named(builds_checked),
     };
-    let summary = text::check_summary(
-        *counts,
-        checked,
-        &covered,
-        files_reported.unwrap_or(checked),
-        codes,
-    ) + &text::acknowledged(acknowledged.len())
-        + &text::baselined(*baselined);
+    // A project with no pages yet says so, since a check of nothing would
+    // read as a clean one.
+    let summary = if checked == 0 && reported.is_empty() {
+        no_pages(project)
+    } else {
+        text::check_summary(
+            *counts,
+            checked,
+            &covered,
+            files_reported.unwrap_or(checked),
+            codes,
+        ) + &text::acknowledged(acknowledged.len())
+            + &text::baselined(*baselined)
+    };
     let command = Command::new(global, args, codes);
     if matches!(args.format, Format::Text | Format::Concise) {
         write_fixed(out, fixed)?;
@@ -763,6 +769,18 @@ pub fn write(
             args.limit.unwrap_or_default(),
             &command.concise_all(),
         ),
+    }
+}
+
+/// What `ascribe check` says in place of its summary when the project has
+/// no pages: `No pages in docs/ yet.`, the content root as `ascribe.toml`
+/// names it.
+fn no_pages(project: &Project) -> String {
+    let content_root = project.content_root();
+    if content_root.is_root() {
+        "No pages in the project yet.".to_owned()
+    } else {
+        format!("No pages in {content_root}/ yet.")
     }
 }
 

@@ -42,14 +42,24 @@ pub struct Args {
 pub enum Section {
     /// Page types, with their files and frontmatter fields.
     Types,
+    /// Frontmatter every page type shares.
+    Frontmatter,
+    /// Fragments' files and frontmatter.
+    Fragments,
     /// Dimensions and their values.
     Dimensions,
+    /// Lifecycle states.
+    Lifecycle,
     /// Phrases, with their values.
     Phrases,
     /// Features, with their availability.
     Features,
+    /// Note types, with their labels.
+    Notes,
     /// Glossary terms.
     Glossary,
+    /// Image attributes.
+    Images,
     /// Project widgets, with their attributes.
     Widgets,
     /// Release lines, each target's with its status and the builds that are it.
@@ -58,8 +68,16 @@ pub enum Section {
     Builds,
     /// Sources, with their folders and the files they make readable.
     Sources,
+    /// APIs, with their specs and references.
+    Apis,
+    /// What `[from]` takes.
+    From,
+    /// Acknowledged problems.
+    Intended,
     /// Where the content is, and where builds go.
     Project,
+    /// How versions are compared.
+    Versions,
     /// The site the outputs are for.
     Consumer,
     /// The build the editor checks.
@@ -78,15 +96,24 @@ impl Section {
     fn query(self) -> QuerySection {
         match self {
             Section::Types => QuerySection::Types,
+            Section::Frontmatter => QuerySection::Frontmatter,
+            Section::Fragments => QuerySection::Fragments,
             Section::Dimensions => QuerySection::Dimensions,
+            Section::Lifecycle => QuerySection::Lifecycle,
             Section::Phrases => QuerySection::Phrases,
             Section::Features => QuerySection::Features,
+            Section::Notes => QuerySection::Notes,
             Section::Glossary => QuerySection::Glossary,
+            Section::Images => QuerySection::Images,
             Section::Widgets => QuerySection::Widgets,
             Section::Releases => QuerySection::Releases,
             Section::Builds => QuerySection::Builds,
             Section::Sources => QuerySection::Sources,
+            Section::Apis => QuerySection::Apis,
+            Section::From => QuerySection::From,
+            Section::Intended => QuerySection::Intended,
             Section::Project => QuerySection::Project,
+            Section::Versions => QuerySection::Versions,
             Section::Consumer => QuerySection::Consumer,
             Section::Editor => QuerySection::Editor,
             Section::Checks => QuerySection::Checks,

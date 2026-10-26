@@ -166,26 +166,29 @@ const MEMO = "The agent goes first because its installer writes the config file 
 const MEMO_FILE = "memos/agent-goes-first-because-its-installer-writes.md";
 
 /** About, Health, Connections, and Memos, as the model builds them for a page, under its head. */
-function sections(title = "API keys"): ThisPageAnswer {
+function sections(address = "/keys/"): ThisPageAnswer {
   return {
     message: null,
     actions: [],
-    head: { title: [{ type: "text", value: title }], type: "page", path: "keys.md" },
+    head: { title: [{ type: "text", value: "API keys" }], type: "page", path: "keys.md" },
     sections: [
       item("about", "section", "About", {
         icon: "info",
         open: true,
         children: [
-          item("about/0", "row", "Title", { description: title, tooltip: "keys.md" }),
-          item("about/1", "row", "Description", {
-            description: "52 characters",
+          item("about/0", "row", "Address", {
+            description: address,
+            tooltip: "Its address on the site",
+          }),
+          item("about/1", "row", "Builds", {
+            description: "Published by site",
             acts: true,
           }),
         ],
       }),
       item("health", "section", "Health", {
         icon: "pulse",
-        description: "1 thing to do",
+        description: "1 row warns",
         children: [
           item("health/0", "row", "Example", {
             state: STALE,
@@ -203,7 +206,6 @@ function sections(title = "API keys"): ThisPageAnswer {
             description: "1",
             children: [
               item("connections/0/0", "group", "a.md", {
-                description: "a.md",
                 children: [
                   item("connections/0/0/0", "item", "See [](keys.md).", {
                     description: "line 4",
@@ -231,7 +233,7 @@ describe("This page's webview", () => {
       ["Connections", false],
       ["Memos", false],
     ]);
-    expect(report.sections[0]?.items).toEqual(["Title (API keys)", "Description (52 characters)"]);
+    expect(report.sections[0]?.items).toEqual(["Address (/keys/)", "Builds (Published by site)"]);
     expect(report.wraps).toBe(true);
     expect(report.violations).toEqual([]);
     // The codicons are the extension's own font, read from its files.
@@ -239,7 +241,7 @@ describe("This page's webview", () => {
     expect(view.fonts).toEqual(["/dist/codicon.ttf"]);
     // A closed section's header still says whether to open it.
     await expect(view.page.locator("summary").nth(1).textContent()).resolves.toBe(
-      "Health1 thing to do",
+      "Health1 row warns",
     );
     // Each header's twistie is the codicon chevron for open or closed.
     const twisties = await view.page
@@ -375,14 +377,14 @@ describe("This page's webview", () => {
       2,
     );
     await expect(
-      view.page.getByRole("button", { name: "Description: 52 characters" }).count(),
+      view.page.getByRole("button", { name: "Builds: Published by site" }).count(),
     ).resolves.toBe(1);
     // No ARIA tree roles: they'd promise a tree's whole keyboard.
     await expect(view.page.locator("[role=tree], [role=treeitem]").count()).resolves.toBe(0);
     // Hover text is on the row's label.
     await expect(
-      view.page.locator(".row .label", { hasText: "Title" }).getAttribute("title"),
-    ).resolves.toBe("keys.md");
+      view.page.locator(".row .label", { hasText: "Address" }).getAttribute("title"),
+    ).resolves.toBe("Its address on the site");
   });
 
   it("shows a permalink's summary on its row's hover", async () => {
@@ -472,7 +474,7 @@ describe("This page's webview", () => {
     ).resolves.toBe(true);
     await view.page.keyboard.press("Tab");
     await expect(view.page.evaluate(() => document.activeElement?.textContent)).resolves.toBe(
-      "52 characters",
+      "Published by site",
     );
     const from = view.posted.length;
     await view.page.keyboard.press("Enter");
@@ -502,11 +504,11 @@ describe("This page's webview", () => {
       (window as unknown as Record<string, unknown>)["kept"] = document.activeElement;
     });
     // The cursor moved: the same rows, one of them saying something else.
-    const moved = sections("Rotate keys");
+    const moved = sections("/rotate-keys/");
     const report = await draw(view, 2, moved);
     expect(report.focused).toBe("connections/0/0/0");
     expect(report.scroll).toBe(60);
-    await expect(view.page.locator(".row dd").first().textContent()).resolves.toBe("Rotate keys");
+    await expect(view.page.locator(".row dd").first().textContent()).resolves.toBe("/rotate-keys/");
     // The row is the element it was, not one drawn again.
     await expect(
       view.page.evaluate(
@@ -560,7 +562,7 @@ describe("This page's webview", () => {
       });
     await view.page.locator("details[data-key=about] > summary").focus();
     await view.page.keyboard.press("ArrowDown");
-    // About's Title has nothing to open, so its Description is next.
+    // About's Address has nothing to open, so its Builds is next.
     await expect(focused()).resolves.toBe("about/1");
     await view.page.keyboard.press("ArrowDown");
     await expect(focused()).resolves.toBe("health");
@@ -602,12 +604,12 @@ describe("This page's webview", () => {
 
   it("ignores an answer older than the one it drew", async () => {
     const view = await open();
-    await draw(view, 2, sections("Newer"));
+    await draw(view, 2, sections("/newer/"));
     const from = view.posted.length;
-    await view.send(1, sections("Older"));
-    await draw(view, 3, sections("Newest"));
+    await view.send(1, sections("/older/"));
+    await draw(view, 3, sections("/newest/"));
     expect(view.posted.slice(from).filter((m) => m.type === "drawn")).toHaveLength(1);
-    await expect(view.page.locator(".row dd").first().textContent()).resolves.toBe("Newest");
+    await expect(view.page.locator(".row dd").first().textContent()).resolves.toBe("/newest/");
   });
 
   it("keeps which sections the reader opened, for every page, and draws again when made again", async () => {
@@ -620,10 +622,10 @@ describe("This page's webview", () => {
       .toBe(JSON.stringify({ sections: { health: true, about: false } }));
     // Another page, then the view hidden and shown: its document is made
     // again, says it's ready, and the extension sends the newest answer.
-    const other = await draw(view, 2, sections("Quickstart"));
+    const other = await draw(view, 2, sections("/quickstart/"));
     expect(other.sections.map(({ open }) => open)).toEqual([false, true, false, false]);
     await view.reload();
-    const again = await draw(view, 2, sections("Quickstart"));
+    const again = await draw(view, 2, sections("/quickstart/"));
     expect(again.sections.map(({ open }) => open)).toEqual([false, true, false, false]);
   });
 
@@ -714,7 +716,7 @@ describe("This page's webview", () => {
 
   it("names a fragment in its head", async () => {
     const view = await open();
-    const answer = sections("_setup.md");
+    const answer = sections("only where it's included");
     answer.head = {
       title: [{ type: "text", value: "_setup.md" }],
       type: "fragment",

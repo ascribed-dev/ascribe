@@ -1,0 +1,5 @@
+---
+section: The language
+---
+
+**The specification is a draft until 1.0: its grammar and built-in vocabulary may grow under `spec = "0.1"`, which names the draft, not a frozen version.** SPEC.md's header says it's a draft, §3.2 says a revision can add a built-in under the same version while it is one, and §11 says that from 1.0, changes to the grammar or the built-in vocabulary will be made only in new versions. Decision [#689t](689t-spec-version.md)'s `"0.1"` for now stays, and a page that targets 0.1 can meet a new built-in. _Why:_ since 0.1, `@snippet`, `@memo`, `@term`, `@summary`, and `@operation` joined the built-ins without a new version, so §11's promise that changes come only in new versions wasn't kept; a page with a line starting `@summary:` changed meaning when `@summary` arrived. Keeping a draft until 1.0 says what's true, where cutting 0.2 for each built-in would add versions no one targets. _From:_ Kyle, [#955](https://github.com/ascribed-dev/ascribe/issues/955), 26 October 2026.
