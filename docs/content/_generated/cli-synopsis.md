@@ -9,7 +9,7 @@ ascribe drift             [--base <REV>] [--build <NAME>]... [--format text|json
 ascribe report            [SECTION]... [--format text|markdown|json|prompt] [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice|warning|error]
 
 ascribe explain           [CODE] [--list] [--format text|json]
-ascribe model             [PATH] [--section types|dimensions|phrases|features|glossary|widgets|releases|builds|sources|project|consumer|editor|checks|crawlers|listing|permalinks] [--format text|json]
+ascribe model             [PATH] [--section types|frontmatter|fragments|dimensions|lifecycle|phrases|features|notes|glossary|images|widgets|releases|builds|sources|apis|from|intended|project|versions|consumer|editor|checks|crawlers|listing|permalinks] [--format text|json]
 ascribe outline           PAGE [--build <NAME>] [--format text|json]
 ascribe link              TARGET --from <PAGE> [--format text|json]
 ascribe refs              TARGET [--limit <N>] [--format text|json]
