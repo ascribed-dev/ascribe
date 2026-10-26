@@ -6,11 +6,13 @@
 //! from them (Ascribe lines' sub-spans come from the head parser instead,
 //! anchored at the `@`).
 
-use ascribe_core::{DirectiveSchema, Issue, LineIndex, Location, Primary, Span, diagnostics};
+use ascribe_core::{
+    Attributes, DirectiveSchema, Issue, LineIndex, Location, Primary, Span, diagnostics,
+};
 use comrak_ascribe::nodes::{LineColumn, Node, NodeLink, NodeValue};
 use comrak_ascribe::{Arena, Options, parse_document_with_definitions};
 
-use crate::head::{Head, parse_head};
+use crate::head::{Head, bare_pairs, parse_head};
 use crate::options::ParseOptions;
 use crate::tree::*;
 use crate::unknown::{directive_shape, is_known, suggest};
@@ -443,18 +445,55 @@ impl<'a> Converter<'a> {
     ) -> DirectiveLine {
         let schema = self.options.schema(&line.name).cloned();
         let attributes_closed = head.attributes.as_ref().is_none_or(|a| a.closed);
-        let colon = head.colon.map(|c| Span::new(at + c, at + c + 1));
+        let mut colon = head.colon.map(|c| Span::new(at + c, at + c + 1));
         let unexpected = head
             .unexpected_start
             .map(|start| Span::new(at + start, at + head.content_end));
+        // A container opener whose attributes lost their braces
+        // (`@note type=warning:`) still opens its container, so its `@end`
+        // matches and the line is reported once.
+        let mut opens_unbraced = false;
         if let Some(span) = unexpected {
             // SPEC §3.1: nothing else may appear on a directive line.
-            self.report(
-                Issue::new(diagnostics::DIRECTIVE_EXTRA_TEXT, self.location(span))
-                    .with_variant("head")
-                    .with_arg("name", line.name.clone())
-                    .with_arg("extra", self.text(span)),
-            );
+            let extra = self.text(span);
+            let issue = Issue::new(diagnostics::DIRECTIVE_EXTRA_TEXT, self.location(span))
+                .with_arg("name", line.name.clone())
+                .with_arg("extra", extra);
+            let bare = (head.attributes.is_none())
+                .then(|| bare_pairs(extra))
+                .flatten()
+                .filter(|bare| {
+                    schema
+                        .as_ref()
+                        .is_some_and(|s| bare.pairs.iter().all(|(key, _)| accepts(s, key)))
+                });
+            let issue = match bare {
+                Some(bare) => {
+                    let after = &extra[bare.len..];
+                    let rest = after.trim_start_matches([' ', '\t']);
+                    if rest == ":"
+                        && schema
+                            .as_ref()
+                            .is_some_and(|s| s.forms.container && !s.raw_container())
+                    {
+                        let c = span.start() + bare.len + (after.len() - rest.len());
+                        colon = Some(Span::new(c, c + 1));
+                        opens_unbraced = true;
+                    }
+                    let braced = bare
+                        .pairs
+                        .iter()
+                        .map(|(key, value)| format!("{key}={value}"))
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    issue
+                        .with_variant("braces")
+                        .with_arg("pairs", &extra[..bare.len])
+                        .with_arg("attributes", braced)
+                }
+                None => issue.with_variant("head"),
+            };
+            self.report(issue);
         }
         let attributes = match head.attributes.clone() {
             Some(parsed) => {
@@ -465,7 +504,9 @@ impl<'a> Converter<'a> {
         };
 
         let primary = self.primary(node, line, &head, at, schema.as_ref());
-        let form = if colon.is_some() && head.primary_start.is_none() && unexpected.is_none() {
+        let form = if opens_unbraced
+            || (colon.is_some() && head.primary_start.is_none() && unexpected.is_none())
+        {
             Form::Container
         } else {
             Form::Line
@@ -834,6 +875,15 @@ fn fix_offsets(inlines: &mut [Inline], fix: &dyn Fn(usize) -> usize) {
             }
             _ => {}
         }
+    }
+}
+
+/// Whether `key` is one of the directive's attributes. `@variant`'s keys
+/// are the model's dimensions, which the parse doesn't know, so none counts.
+fn accepts(schema: &DirectiveSchema, key: &str) -> bool {
+    match &schema.attributes {
+        Attributes::Declared(declared) => declared.iter().any(|a| a.key == key),
+        Attributes::Dimensions => false,
     }
 }
 

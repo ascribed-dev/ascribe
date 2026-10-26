@@ -169,11 +169,11 @@ A **directive line** has this shape (ABNF rule `directive-line`):
 - **Name.** The directive's keyword (§3.2).
 - **Attributes.** OPTIONAL. Metadata as `key=value` pairs in braces (§3.3).
 - **Primary.** OPTIONAL. The directive's main value: a path, an identifier, or text (§3.4). Introduced by `:`.
-- **Trailing colon.** A `:` with no primary after it, only the end of the line or whitespace, opens a container (§3.5). Every container opener ends this way, and no other directive line does. A text primary that happens to end in `:` is still a primary: `@note: Important:` is a one-line note.
+- **Trailing colon.** A `:` with no primary after it, only the end of the line or whitespace, opens a container (§3.5). Every container opener ends this way, and, apart from the recovery of attributes written without braces below, no other directive line does. A text primary that happens to end in `:` is still a primary: `@note: Important:` is a one-line note.
 
 Spacing between these parts doesn't matter: processors accept any spaces or tabs between the name, the attributes, the colon, and the primary, including none, and ignore whitespace at the end of the line. Canonical form (§8.3) fixes one spelling.
 
-Attributes, when present, always come before the primary. Nothing else may appear on a directive line: text that fits none of these parts, such as `@steps foo`, `@note hello: text`, anything after `@end`, or a second word after an identifier primary (§3.4), is an error (§8.2).
+Attributes, when present, always come before the primary. Nothing else may appear on a directive line: text that fits none of these parts, such as `@steps foo`, `@note hello: text`, anything after `@end`, or a second word after an identifier primary (§3.4), is an error (§8.2). Processors report that text and not what follows from it: nothing about the line's binding (§3.8), and no required attribute missing from it. One case is recovered further. When the text is `key=value` pairs whose keys are all attributes of the directive, followed by a trailing colon, and the directive has a container form that isn't raw (§3.5), as in `@note type=warning:`, processors read the line as that container's opener, so its `@end` matches. The line is still an error, and the pairs aren't read as its attributes.
 
 ```
 @note {type=caution}: Back up your database first.

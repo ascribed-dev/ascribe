@@ -2410,7 +2410,8 @@ row = "Directives | Text on a directive line that fits no part of it: after the 
 message = "`@{name}`'s primary is a single word, so `{extra}` isn't part of it; remove it"
 messages.head = "`{extra}` isn't part of `@{name}`: a directive line has only its name, `{{attributes}}` in braces, and `:` with a primary; remove it, or put attributes in braces"
 messages.end = "`@end` takes nothing after it; remove `{extra}`"
-fix = "Remove the extra text. Text a directive should show belongs in its primary, after the colon, or in its content."
+messages.braces = "`{pairs}` reads as attributes of `@{name}`, and attributes go in braces: write `{{{attributes}}}`"
+fix = "Put attributes in braces, as in `@note {type=warning}: text`. Remove any other extra text: text a directive should show belongs in its primary, after the colon, or in its content."
 
 [[diagnostic]]
 code = "ASC121"
