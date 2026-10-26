@@ -131,7 +131,7 @@ It refuses a line that isn't live, which is why running it twice changes nothing
 
 It deletes nothing unless it's told to. A page, section, block, or table row that no live or planned line has is listed with its file, line, and first line, and so is a mark that says nothing once rewritten: one for every target its scope allows, generally available, with nothing inside it relying on it. Such a mark still draws a badge, so the rewrite keeps it. `--show-unused` lists each, and `--remove-unused` deletes them, along with the `replaces` line of a page that replaced one it deletes. Both work on a line retired already.
 
-The addresses are listed and not written: a host's redirects file is yours to write. Each address the line published goes to the same page in the current line, to the page that replaces it there, or to its page in the archive when the current line has neither. The text names the replaced pages, and the JSON lists every address.
+Each address the line published goes to the same page in the current line, to the page that replaces it there, or to its page in the archive when the current line has neither. The text names the replaced pages, and the JSON lists every address. In a project with [`ascribe.addresses`](../publishing/redirects.md), each address that goes to a page in the current line is recorded there as a `[moved]` entry keyed by the address, so the build writes its redirect, and the text says how many; the JSON's `recorded` says whether they were. The archive's addresses aren't recorded, since an entry leads to a page of the project, and without the file nothing is: those are yours to add to the host's redirects.
 
 @include: ../_generated/cli-versions-retire-options.md
 

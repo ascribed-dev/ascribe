@@ -1114,16 +1114,19 @@ impl IncrementalProject {
             project.put_resolutions(path, resolutions);
             project.attach_file(path);
         }
-        // The files that link to an operation of a spec that changed.
+        // The files that link to an operation of a spec that changed, in a
+        // link or an `@operation`.
         let spec_linkers: BTreeSet<RelPath> = if changed_apis.is_empty() {
             BTreeSet::new()
         } else {
+            let names = |r: &crate::Resolution| matches!(r, crate::Resolution::Operation { api, .. } if changed_apis.contains(api));
             project
                 .files()
                 .filter(|file| {
-                    project.resolution_list(&file.path).iter().any(|r| {
-                        matches!(r, crate::Resolution::Operation { api, .. } if changed_apis.contains(api))
-                    })
+                    project.resolution_list(&file.path).iter().any(names)
+                        || crate::openapi::embedded_operations(project, file)
+                            .iter()
+                            .any(names)
                 })
                 .map(|file| file.path.clone())
                 .collect()
