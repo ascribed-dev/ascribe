@@ -1,0 +1,7 @@
+description: >-
+  Pairs, words that don't start with a key a processor reads, a first word,
+  which is the language, and words inside a quoted value aren't reported.
+spec: ["3.3.1", "8.2"]
+tags: [check]
+
+diagnostics: []

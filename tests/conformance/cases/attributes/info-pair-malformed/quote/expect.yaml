@@ -1,0 +1,10 @@
+description: >-
+  CommonMark takes a page's backslash escapes off first, so a quote escaped
+  once ends the title's value and the word isn't a pair: it's reported. A
+  quote escaped as §3.3.1 says, `\\\"`, is part of the value, and the block
+  is clean. `{1,3}` is the highlighter's either way.
+spec: ["3.3.1", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: info-pair-malformed, line: 5, column: 7, severity: warning}
