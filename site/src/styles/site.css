@@ -31,6 +31,7 @@
   --type-hero: 750 2.75rem/1.1;
   --type-display: 700 3.75rem/1.04;
   --type-section: 700 2.125rem/1.15;
+  --scrim: rgb(11 24 36 / 0.4);
   /* End of generated root. */
 
   --header-height: 3.5rem;
@@ -59,6 +60,7 @@
     --accent-text: #0b1824;
     --focus: #f0a35e;
     --mark-gutter: #56d0f0;
+    --scrim: rgb(11 24 36 / 0.4);
     /* End of generated root. */
   }
 }
@@ -1607,7 +1609,7 @@ quiet-pillar > ul + p {
     z-index: 9;
     display: block;
     /* As the search dialog's backdrop. */
-    background: rgb(11 24 36 / 0.4);
+    background: var(--scrim);
   }
 
   .page {
