@@ -30,7 +30,7 @@ The view's sections are **Actions**, open at first, then **Health** and **About*
 **Health** counts what needs doing in the project, in groups by when each count is from. A group's head says it once, and each count is one line, its label then its value. Only the counts that need doing are shown: those above zero, and those that aren't current:
 
 ```text
-Health                                   2 to do
+Health                                   1 to do
   Every build · not checked yet    ▷ Check Every Build
     Problems                  —
     Tested examples           —
