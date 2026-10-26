@@ -51,7 +51,7 @@ These principles govern the language. They are non-normative, but every normativ
 4. **Structure over grammar.** When a need can be met by a file convention or a content-model declaration instead of new syntax, it is.
 5. **Containers are rare.** Most directives occupy a single line. Nesting is discouraged, and every nesting need has a flat alternative.
 6. **Constrain the grammar, don't strangle it.** `@` marks directives, but other constructs use whatever notation reads best (for example, `{key}` for phrases).
-7. **Validate while authoring.** The rules a build enforces are the same rules the editor reports as you type.
+7. **Validate while authoring.** The rules a build enforces are the same rules the editor checks, as you type, or as you save for the checks that need the whole project.
 8. **Strict inside, tolerant outside.** Processors are strict about what Ascribe source means, not about how it's spaced; compiled output degrades to readable plain markdown.
 
 ### 1.3 Conformance
@@ -202,7 +202,7 @@ Built-in keywords never contain a hyphen. Project widget names always contain on
 
 ### 3.3 Attributes
 
-Attributes use one grammar everywhere: after a directive name, after an image (§5.3), and at the end of a table row's first cell (§4.4).
+Attributes use one grammar everywhere: after a directive name, after an image (§5.3), and at the end of a table row's first cell (§4.4). A fenced code block's info string holds `key=value` pairs instead, with the same keys and quoted values, in a grammar of their own (§3.3.1).
 
 ```
 {key=value, key=value}
@@ -225,6 +225,34 @@ Attributes use one grammar everywhere: after a directive name, after an image (�
 - **An unclosed block** runs to the end of its line, so the rest of the directive line can't be read: whether it has a colon or a primary, and so its form and binding, are unknown. Processors report the unclosed block and nothing else about that line.
 
 Attributes carry semantic metadata only. There are no class or id shorthands (`.class`, `#id`).
+
+#### 3.3.1 Info-string attributes
+
+A fenced code block's info string holds its language, then words, some of them `key=value` pairs that a processor reads (ABNF rule `info-string`):
+
+````markdown
+```yaml title="ascribe.toml" phrases=true
+```
+````
+
+- **The info string** is the one CommonMark gives: the text after the opening fence, trimmed, with its backslash escapes and entity references taken off. The grammar applies to that text, not to the line as written.
+- **Words** are parted by spaces and tabs. The first word is the block's **language**, unless it's a pair; then the block has no language.
+- **A pair** is a key, `=`, and a value, with nothing between them, then a space, a tab, or the end of the info string. Keys follow §3.3's rule. A value is a **token**, any characters but whitespace and `"`, or a **quoted string** in double quotes, inside which `\"` and `\\` escape, as in §3.3, and any other backslash is itself. A quoted value may hold spaces, and a word inside it isn't a pair: `title="use phrases=true"` doesn't opt in to phrases.
+- **Every other word is left to the consumer,** such as a highlighter's `{1,3}` or `showLineNumbers`, and processors don't report it. So are words that only look like pairs: `phrases = true` is three words, `Title=x` has no key, and `title="say "hi""` isn't a pair, because its value closes after `say ` and something other than a space follows.
+- **Order doesn't matter,** and when a key is given more than once, its first pair counts. A `title` or `tested` whose value is empty means none.
+- **Escapes in a page's source.** CommonMark takes its own escapes off first, and a backslash escapes `"` and `\` in both, so a quote inside a quoted value is written `\\\"` in the page and a backslash `\\\\`. A processor that writes an info string into Markdown escapes each backslash in it, so a reader gets the same info string back.
+
+The pairs a processor reads, and which outputs (§9.4) keep each in the block's info string:
+
+| Key | Value | Meaning | Site output | Plain output | JSON output |
+|---|---|---|---|---|---|
+| `phrases` | `true` or `false` | Whether the block's phrases are substituted (§5.1) | Left out | Left out | Kept |
+| `title` | string | The block's title, which `@snippet` writes (§4.8) | Kept, and shown as the block's caption | Kept | Kept |
+| `tested` | string | What a tested example was tested with, which `@snippet` writes (§4.8) | Kept, and shown in the caption | Left out, and written as a line under the block, `Tested with …` | Kept |
+| `request` | a link | The block is an example of an operation's request body (§7.11) | Left out | Left out | Kept |
+| `response` | a link, a status, and a media type | The block is an example of one of an operation's responses (§7.11) | Left out | Left out | Kept |
+
+`request` and `response` are left out of the site and plain outputs because they're instructions to the checker, and their links are the source's: a path in the repository means nothing to a reader of the page or to an agent reading `llms.txt`. Every other pair and word is kept in every output, as written.
 
 ### 3.4 The primary
 
@@ -540,7 +568,8 @@ A spec is a comma-separated list of **targets**, each optionally followed by its
 | `cloud, self-managed preview 3.3` | Two targets |
 | `self-managed preview planned` | In preview on `self-managed` from its planned line, as `self-managed preview 3.6` is when 3.6 is that line |
 
-- A **target** is a value of a declared dimension, or the name of a dimension, which stands for all of its values. A dimension name takes a state but never a version, since its values don't share one version line: write `deployment beta`, or name the value, as in `self-managed beta 3.4`.
+- A **target** is a value of a dimension, or the name of a dimension, which stands for all of its values. A dimension name takes a state but never a version, since its values don't share one version line: write `deployment beta`, or name the value, as in `self-managed beta 3.4`.
+- A target with release lines that no declared dimension has is a value of the implicit dimension `release` (§7.2), so a project that declares no dimensions can still write `@available: agent 2.1` once it declares `agent`'s lines, and `release` names all such targets at once.
 - A **state** is a declared lifecycle state (§7.2). A target with no state is generally available (`ga`). A bare version means generally available since that version. A state with no version on a versioned target (`self-managed beta`) is in effect at every version, as a bare target is.
 - Each lifecycle state declares whether content in that state **counts as available**. By default every state counts as available except `removed`.
 - States in a history MUST be in chronological order, compared using the content model's version scheme. A target that the content model declares as versionless takes a single state and no versions.
@@ -632,7 +661,7 @@ Takes a code example from a file outside the content, by name, and puts it in th
   - `<path>` is the file's path relative to the source's folder, with `/` between segments on every platform. It has no empty, `.`, or `..` segments, and doesn't start with `/`. It's percent-decoded as a link destination is (§5.2). The file MUST exist, with exactly this name (as for assets, §9.4), and its source's file patterns MUST include it (§7.3). A symbolic link on the way to the file is followed, and the file it leads to MUST be in the source's folder (not above it), at a path the source's patterns include, so a link can't lead a snippet out of its source.
   - `#<region>` names a region of the file (below). Without one, the snippet is the whole file, with every tag line and removed line left out.
 - **The file** MUST be text: valid UTF-8, with no NUL character. Its line endings don't matter; the snippet's lines end in a line feed.
-- **What it becomes.** A `@snippet` is a block, allowed wherever a fenced code block is (in a list item, a container, or an arm), and a following-block directive directly above it binds it (§3.8). It becomes a fenced code block whose info string is the language, then `title="…"` when the directive has a title attribute, then `tested="…"` when its file is a tested example with a current observation (§7.3), then `phrases=true` when it opts in to phrases. With no language, the info string is empty, or starts with `text` when a title, a tested line, or `phrases=true` follows, so its first word is always a language. With `phrases=true`, declared phrases in the snippet are substituted as they are in a fence that opts in (§5.1).
+- **What it becomes.** A `@snippet` is a block, allowed wherever a fenced code block is (in a list item, a container, or an arm), and a following-block directive directly above it binds it (§3.8). It becomes a fenced code block whose info string is the language, then `title="…"` when the directive has a title attribute, then `tested="…"` when its file is a tested example with a current observation (§7.3), then `phrases=true` when it opts in to phrases, each a pair of §3.3.1, its value quoted with `"` and `\` escaped. With no language, the info string is empty, or starts with `text` when a title, a tested line, or `phrases=true` follows, so its first word is always a language. With `phrases=true`, declared phrases in the snippet are substituted as they are in a fence that opts in (§5.1).
 - **Attributes:**
 
   | Key | Type | Default | Meaning |
@@ -691,9 +720,9 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 
   | Key | Type | Default | Meaning |
   |---|---|---|---|
-  | `check` | string | none, REQUIRED | The check whose problem is intended, by its name |
+  | `check` | string | none, REQUIRED | The check whose problem is intended, by the processor's name for it |
 
-- **What can be acknowledged.** A processor's checks are its own, beyond the diagnostics of §8.2. A check that reports something that may be fine as it is (a page nothing links to, a page longer than an agent reads) is a **review check**, and only a review check can be acknowledged; a problem that makes a document non-conforming never can. Each review check reports its problems at one kind of place: a page or fragment as a whole, one block, or one entry of the content model or one image, which have no page. Its problems are acknowledged at that place, and nowhere else:
+- **What can be acknowledged.** A processor's checks are its own, beyond the diagnostics of §8.2. This specification names none of them, so a `check` value is a name the processor defines, and a page that acknowledges a problem depends on the processor that reports it: a processor that doesn't know the name reports the acknowledgement as an error (§8.2), as it does a check that isn't a review check. A check that reports something that may be fine as it is (a page nothing links to, a page longer than an agent reads) is a **review check**, and only a review check can be acknowledged; a problem that makes a document non-conforming never can. Each review check reports its problems at one kind of place: a page or fragment as a whole, one block, or one entry of the content model or one image, which have no page. Its problems are acknowledged at that place, and nowhere else:
   - **A block:** `@intended` directly above it. The acknowledgement covers that check's problems located anywhere in the block, including in a container's content. In a fragment, it covers the block in every page that includes it.
   - **A heading:** `@intended` at the top of its section, among the directives under the heading. The acknowledgement covers that check's problems located at the heading, and, when no blank line comes between, those in the block directly under the `@intended` line, past the directives stacked with it, so a section's first block is acknowledged as any other block is. It covers nothing else in the section:
 
@@ -844,7 +873,7 @@ See the [streaming API reference]({api}streaming).
 - **Boundaries:** braces delimit the phrase, so it can sit directly against punctuation, letters, or hyphens.
 - **Where phrases apply:**
   - Prose, headings, link text, and link destinations, including the destinations of link reference definitions (`[ref]: {api}streaming`) and autolinks (`<https://{host}/status>`).
-  - Fenced code blocks only when the info string contains the word `phrases=true` (for example ` ```yaml phrases=true `).
+  - Fenced code blocks only when the info string has the pair `phrases=true` (§3.3.1), for example ` ```yaml phrases=true `.
   - Frontmatter fields, as the content model declares.
 - **Where phrases never apply:** code spans, indented code blocks, and raw HTML.
 - **Escapes in code.** A backslash doesn't escape in code, so in a fenced block with `phrases=true`, `\{key}` is a backslash followed by a phrase, and a fence's content never differs from its source except where phrases are substituted. For a literal `{key}` in code, leave `phrases=true` off that fence.
@@ -958,9 +987,9 @@ A content model declares the following.
 | Content types | A frontmatter schema per page type, each with a required string `title`, fields every page type shares, and a fragment schema. Fields are typed as string, number, boolean, date, enumeration, list, or object, and may be optional or have a default. A page type's string field may opt in to code spans, so a title can show code, and a page type's fields may have roles. A page names its type in its frontmatter, with `type` | §2, §5.2 |
 | Fragment patterns | Additional globs that mark files as fragments | §2.2 |
 | Directive schemas | For each project widget: forms, primary kind, attributes, binding, title, groupable, plain fallback | §3, §6 |
-| Dimensions | Each dimension's name, values, and display labels, and which values are versionless | §4.3, §4.4 |
+| Dimensions | Each dimension's name, values, and display labels, and which values are versionless. Besides the declared dimensions, the implicit dimension `release` holds each target the Releases declaration names that isn't a declared dimension's value or name (below) | §4.3, §4.4 |
 | Versions | How versions are compared | §4.4 |
-| Releases | For a versioned target, its release lines: those that are live, those planned, each newer than every live line, and those archived, each older; when a live line's support ends; and the label of a planned version. A line is a version as written, and holds every version that starts with its parts: `3.4` holds `3.4`, `3.4.2`, and `3.4.2.1`. Every line of one target has the same number of parts, and the newest live line is the target's current line. A version in a planned line is planned | §4.4, §9.3, §9.4 |
+| Releases | For a versioned target, its release lines: those that are live, those planned, each newer than every live line, and those archived, each older; when a live line's support ends; and the label of a planned version. A line is a version as written, and holds every version that starts with its parts: `3.4` holds `3.4`, `3.4.2`, and `3.4.2.1`. Every line of one target has the same number of parts, and the newest live line is the target's current line. A version in a planned line is planned. A target is a declared dimension's value, or else a value of the implicit dimension `release`, with a display label of its own; the Releases declaration also gives the implicit dimension's label | §4.4, §9.3, §9.4 |
 | Lifecycle states | Default `preview`, `beta`, `ga`, `deprecated`, `removed`, each declaring whether it counts as available (by default, all but `removed` do); extensible | §4.4 |
 | Features registry | Feature keys, each with a name and an availability spec | §4.4 |
 | Note types | Default `note`, `tip`, `important`, `warning`, `caution`; extensible | §4.5 |
@@ -974,8 +1003,11 @@ A content model declares the following.
 | Acknowledgements | Problems of review checks about a phrase, feature, glossary term, or image that are intended, each with a reason | §4.9 |
 | Crawlers | What each kind of crawler may do, by purpose (gathering training data, building an AI search index, fetching at a person's request), and the project's own `robots.txt` lines, with paths from the project's base path. A crawler is named in one group; processors reject a content model that names one twice when loading it | §9.4 |
 | Listing | How pages are listed (§2.1): the site's default, and a value for the pages under a folder, by its path from the content root, or of a content type. A folder's value MUST NOT be looser than that of a folder it's under, and neither a folder's nor a type's looser than the default; processors reject a content model that does when loading it | §2.1 |
+| Processor settings | Settings a processor defines for its own checks and tools, such as which of its checks run and at what level, or a page template for a content type. This specification doesn't define them. A processor ignores a setting it doesn't know only where it says so | §4.9 |
 
 Built-in directive schemas are defined by this specification, not by the content model. A content model MAY extend the enumerations they use (note types, lifecycle states).
+
+**The implicit dimension `release`.** A target the Releases declaration names that no declared dimension has as a value or as its name is a value of a dimension the content model doesn't declare, named `release`, in the order the targets are declared. Each such value is labeled by its target's label, or by its name when it has none, and the dimension by the Releases declaration's label. It is a dimension like a declared one: its values are targets in an availability spec (§4.4), `release` is a dimension name there, and both are used in `@variant` attributes (§4.3), in a page's `variant` frontmatter, and in a build's selection (§9.3), as `@variant {release=agent}:` and `variant: {release: agent}`. There is no implicit dimension when every target is a declared dimension's value, and none when the content model declares a dimension named `release` itself: that one takes the name, and a target that would be left to the implicit dimension is then an error, since it is in no dimension. A target that is a declared dimension's name is never a value of `release`: it is an error, since a dimension name takes no version (§4.4).
 
 Dimension names, dimension values, lifecycle states, and feature keys are names (ABNF rule `name-word`). A name MUST NOT be used in more than one of these roles, and a dimension value MUST NOT belong to more than one dimension; processors reject a content model that does either when loading it. `planned` is the version word (§4.4) and takes none of these roles. This keeps every bare word in an availability spec unambiguous (§4.4). Dimension names are also attribute keys (§4.3), so they follow the attribute key rule (ABNF rule `key`, §3.3).
 
@@ -1010,7 +1042,7 @@ include = ["src/**", "examples/**"]
 - `path` is the source's folder, relative to the project's folder (the directory containing `ascribe.toml`). It MUST exist and be a directory. When the project is in a version-control repository, it MUST be inside that same repository.
 - `include` lists glob patterns (the content model's pattern syntax, as for `files`) matched against a file's path relative to the source's folder. A file is readable when a pattern matches it and no pattern in `ignore` does. Without `include`, every file in the folder matches. Whatever `ignore` lists, a file in a folder named `node_modules` or `.git`, at any depth, is never readable: a processor leaves both out before the source's own patterns.
 - Which files a source makes readable decides nothing else: a source's files aren't source files (§2.1), assets (§9.4), or pages.
-- **Tested examples.** A source MAY have, at its folder's root, an `ascribe.examples.toml` that says which of its files are examples, and beside it, in `examples.observations/`, the observations `ascribe observe` writes: what a test run passed, and where. A file is an example when the config's `include` matches it and its `ignore` doesn't. A snippet of an example that the observation lists with the hash its file has now carries what it was tested with in its code block's info string (§4.8). The config and the observations are read whatever the source's `include` says, and no snippet can address one: the source doesn't make `ascribe.examples.toml` or a file under `examples.observations/` readable. A processor reads both files and MUST NOT run any command in them. Their formats are in the tested examples contract (`docs/content/contracts/tested-examples.md`). For a source in another repository, they're copies (§7.4).
+- **Tested examples.** A source MAY have, at its folder's root, an `ascribe.examples.toml` that says which of its files are examples, and beside it, in `examples.observations/`, the observations `ascribe observe` writes: what a test run passed, and where. A file is an example when the config's `include` matches it and its `ignore` doesn't. A snippet of an example that the observation lists with the hash its file has now carries what it was tested with in its code block's info string (§4.8). The config and the observations are read whatever the source's `include` says, and no snippet can address one: the source doesn't make `ascribe.examples.toml` or a file under `examples.observations/` readable. Checking, building, and an authoring environment read both files and MUST NOT run any command in them; only a command the person runs to observe the examples, `ascribe observe`, runs the config's commands. Their formats are in the tested examples contract (`docs/content/contracts/tested-examples.md`). For a source in another repository, they're copies (§7.4).
 
 ### 7.4 Sources in another repository
 
@@ -1051,31 +1083,32 @@ cli-reference = "reference/cli.md"
 ```
 
 - `version` is `1`. `[permalinks]` has one entry for each name, keyed by the name, whose value is where the name is **declared**: the content path of the file it's written in, and, for a heading, `#` and its id. A heading in a fragment is declared in the fragment. A place is where the name is written in the source, not a published address, which differs by build.
-- `[aliases]` has one entry for each alias of `ascribe.toml` (§7.6), whose value is the name it leads to, and `[retired]` one for each retired permalink, whose value is its reason. Each table is written only when it has an entry, and a name is in one table. A name is a permalink of the documentation when `[permalinks]` or `[aliases]` has it; one in `[retired]` was, and has been retired on purpose.
+- The names `ascribe.addresses` records (§7.6) have an entry each: `[aliases]` one for each name moved to another permalink, whose value is that permalink's name; `[moved]` one for each name moved to a page, whose value is where, as the file writes it; and `[retired]` one for each retired permalink, whose value is its reason. Each table is written only when it has an entry, and a name is in one table. A name is a permalink of the documentation when `[permalinks]`, `[aliases]`, or `[moved]` has it; one in `[retired]` was, and has been retired on purpose.
 - The list is the project's, not one build's: a permalink is declared by a page's `permalink` frontmatter, or by an `@id {permalink=true}`, in any source file, whether or not a build publishes it. A name declared in several places (on pages no build publishes together) has one entry, at any of them.
-- Processors check the list whenever they check the project, from the files alone: each declared name has an entry, at one of the places it's declared, each alias and retired permalink an entry as `ascribe.toml` has it, and each entry is still one of the three. A name without its entry, or with an entry at a place that no longer declares it, means the list is **behind**; moving a permalink to another page or heading makes the list behind, and doesn't remove it. An entry the project has no name for any more is a **removed** permalink: something outside the documentation may still link to it, which no check can see. Retiring it (§7.6) is how its removal is recorded.
-- A processor writes the list on request, adding each declared name, moving each entry to where its name is declared now, and recording each alias and retired permalink. It MUST NOT drop an entry the project no longer has, so writing the list never hides a removal.
+- Processors check the list whenever they check the project, from the files alone: each declared name has an entry, at one of the places it's declared, each name `ascribe.addresses` records an entry as the file has it, and each entry is still one of the project's names. A name without its entry, or with an entry at a place that no longer declares it, means the list is **behind**; moving a permalink to another page or heading makes the list behind, and doesn't lose it. An entry the project has no name for any more is a **lost** permalink: something outside the documentation may still link to it, which no check can see. Retiring it, or moving it (§7.6), is how its removal is recorded.
+- A processor writes the list on request, adding each declared name, moving each entry to where its name is declared now, and recording each name `ascribe.addresses` records. It MUST NOT drop an entry the project no longer has, so writing the list never hides a removal.
 
-### 7.6 Retired permalinks and aliases
+### 7.6 Retired and moved permalinks
 
-`ascribe.toml` MAY give names to lead somewhere that no heading or page declares, in `[permalinks]`:
+What happened to a permalink that no heading or page declares any more is recorded in `ascribe.addresses` (§7.10), with the rest of where the documentation's addresses went, keyed by `go:` and the name:
 
 ```toml
-[permalinks.retired]
-rotate-keys = { to = "guides/security.md", reason = "Merged into the security guide" }
-legacy-sync = { reason = "The sync agent was removed in 4.0" }
+[moved]
+"go:agent-settings" = "go:settings"
+"go:rotate-keys" = "guides/security.md#rotate-keys"
 
-[permalinks.aliases]
-agent-settings = "settings"
-cli-settings = "settings"
+[retired]
+"go:legacy-sync" = "The sync agent was removed in 4.0"
 ```
 
-- A **retired** permalink is one ended on purpose. Its `reason` is required, and is the author's text, shown to a reader whose link leads there. Its `to`, when given, is where its address leads now: a page, and `#` and a heading's id, written as a link from the content root is; it MUST lead to a page, and to a heading on it.
-- An **alias** is a second name for a permalink. Its value is the name it leads to: a permalink a heading or page declares, or another alias that leads to one. It MUST NOT lead to a retired permalink, or back to itself.
-- A name is one thing: declared by the content, an alias, or retired. A name in two of them is an error.
-- Each build's list of permalinks (§9.5) has an alias where it has the permalink the alias leads to, and a retired permalink with a `to` where it has that page. A consumer publishes an alias's address, and a retired permalink's with a `to`, as it does a permalink's. A retired permalink with no `to`, or whose `to` the build doesn't publish, has an address that says what was there was removed, and why.
+- A name **moved** to another permalink, `go:` and its name, is an **alias**: a second name for that permalink, leading where it does, through other moved names. It MUST end at a permalink a heading or page declares, or at a retired one, and is retired with it then; a chain that comes back to its start leads nowhere. Only a `go:` key's value can be a `go:` name.
+- A name moved to a place is written as any `[moved]` value: a page's content path, and optionally `#` and a heading's id. It MUST lead to a page, and to a heading on it.
+- A **retired** permalink is one ended on purpose. Its reason is the author's text, shown to a reader whose link leads there.
+- A name the content declares is the content's: an entry for it does nothing.
+- Each build's list of permalinks (§9.5) has a moved name where it has what the name ends at. A consumer publishes its address as it does a permalink's. A retired permalink, or a name moved to one, has an address that says what was there was removed, and why.
+- `ascribe.toml` has no `[permalinks]` table. A processor reports one, and MAY move its entries on request: each of `[permalinks.retired]`, as retired, or as moved to its `to` when it has one, and each of `[permalinks.aliases]` as moved to the name it leads to. A base (§7.10) whose `ascribe.toml` has the table is read as if they had been moved.
 
-Bringing a retired permalink back is deleting its entry and declaring the name again.
+Bringing a retired or moved permalink back is deleting its entry and declaring the name again.
 
 ### 7.7 Memo files
 
@@ -1168,7 +1201,7 @@ base-path = ["/docs/"]
 ```
 
 - `version` is `1`; a version a processor doesn't know is an error naming a newer one. The tables are `[moved]`, `[former]`, and `[retired]`, each optional; a table or key the file doesn't define is an error.
-- A **key** of `[moved]` or `[retired]` is a source: a page's content path, standing for every address the page was published at; a file's content path, `#`, and a heading's id, with the file the `@id` is written in, so a fragment's id is one key however many pages include it; or an address from the host's root, starting with `/`, published before the project used a processor. A `[moved]` value is a page's content path, and optionally `#` and a heading's id. A `[retired]` value is the reason, the author's text, which MUST NOT be empty or the placeholder a processor writes.
+- A **key** of `[moved]` or `[retired]` is a source: a page's content path, standing for every address the page was published at; a file's content path, `#`, and a heading's id, with the file the `@id` is written in, so a fragment's id is one key however many pages include it; `go:` and a permalink's name (§7.6); or an address from the host's root, starting with `/`, published before the project used a processor. A `[moved]` value is a page's content path, and optionally `#` and a heading's id, or, for a `go:` key, `go:` and a permalink's name. A `[retired]` value is the reason, the author's text, which MUST NOT be empty or the placeholder a processor writes.
 - `[former]` lists the routing settings the documentation was published under before, each oldest first: `base-path`, `permalink-path`, and `agents`, each a list of values, and `builds`, a table from a build's old name to its new one. `trailing-slash` isn't one: a host matches an address in either form.
 - An **address** a build publishes is a page's route, its Markdown version's when the build publishes one, and each heading's explicit id as the page's route, `#`, and the id; each name the build answers to under the permalinks' path (§7.5); and each `llms.txt` file it publishes. A generated id isn't one: it changes with the heading's text.
 - Processors compare the addresses a **base** published, the documentation as a revision of its repository had it, with the addresses the project publishes now, build by build, matching builds by name. A build the base had for a line that the project's releases (§7.2) archive now left on purpose: its addresses are accounted for, and it isn't compared. An address the base published and no build of that name publishes now is **lost** unless an entry accounts for it: `[moved]` has its source, or the address itself, and the value is a page a build publishes now; `[retired]` has its source, or the address; or an availability mark takes its page out of that build while another build publishes it. An id is compared only while its page is at the same address: what happened to the page decides it. Each source lost is reported once. A permalink's name is the permalinks list's to keep (§7.5), and an `llms.txt` file has no source, so either is lost only by a setting.
@@ -1195,7 +1228,7 @@ reference = { renderer = "redoc", at = "/api/" }
 - A processor reads, of the spec, each operation in `paths`: its method, its path, and its `operationId`, `summary`, first tag, and `deprecated`, the same way in Swagger 2.0 and in OpenAPI 3.0 to 3.2. It doesn't validate the spec, apply overlays, or follow a `$ref` into another file: a spec split across files is declared by its bundled file, the one its renderer is given.
 - `reference` says where an operation's address is. `{ renderer = "redoc", at = "<address>" }` names Redoc's page: an operation's address is `<address>#operation/<operationId>`, and one with no id's is `<address>#paths/<pointer>/<method>`, its path as a JSON pointer token (`~0` for `~`, `~1` for `/`) and its method in lowercase, each percent-encoded, an address of Redoc 3's. Any other value is a template of the address, whose placeholders are `{operationId}`, which it MUST have, and `{tag}`, the operation's first tag, each as the spec writes it and percent-encoded. An address that isn't absolute (with a scheme, or starting with `//`) is relative to the consumer profile's base path (§9.5).
 
-A fenced code block whose language is `json` is an **example** of an operation's request body when its info string has `request="<link>"`, and of one of its responses when it has `response="<link> <status>"`, beside `title` and `tested` (§4.8):
+A fenced code block whose language is `json` is an **example** of an operation's request body when its info string has the pair `request="<link>"`, and of one of its responses when it has `response="<link> <status>"`, in any order beside `title` and `tested` (§3.3.1, §4.8):
 
 ````markdown
 ```json request="../api/openapi.yaml#createUser"
@@ -1289,14 +1322,14 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Source copies | A file in a source's copies folder that `ascribe.lock` doesn't list | Error |
 | Source copies | A copy that no snippet uses | Warning |
 | Permalinks list | `ascribe.permalinks` isn't valid TOML, or doesn't have the shape §7.5 gives it | Error |
-| Permalinks list | A permalink the content declares, an alias, or a retired permalink that `ascribe.permalinks` doesn't list as it is | Warning |
-| Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, an alias, or retired | Warning |
+| Permalinks list | A permalink the content declares, or a name `ascribe.addresses` moves or retires, that `ascribe.permalinks` doesn't list as it is | Warning |
+| Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, and not moved or retired in `ascribe.addresses` | Warning |
 | Addresses file | `ascribe.addresses` isn't valid TOML, or doesn't have the shape §7.10 gives it | Error |
 | Addresses file | A page's address, or its Markdown version's, that the base published and nothing accounts for | Warning |
 | Addresses file | A heading's explicit id that the base published on a page still published, and nothing accounts for | Advice |
 | Addresses file | A build the base has and the working tree doesn't, other than a line archived now | Advice |
-| Addresses file | A `[moved]` value that isn't a page, or a heading on one, in every build that published its key | Error |
-| Addresses file | A key of `[moved]` or `[retired]` whose source is back | Advice |
+| Addresses file | A `[moved]` value that isn't a page, or a heading on one, in every build that published its key, or, for a permalink, a permalink the content declares | Error |
+| Addresses file | A key of `[moved]` or `[retired]` whose source is back: a page, a heading's `@id`, or a permalink the content declares | Advice |
 | Addresses file | A key of `[moved]` or `[retired]` whose address another source publishes now | Error |
 | Addresses file | An entry the base's `ascribe.addresses` doesn't have, whose key the base never published | Advice |
 | Addresses file | A key written twice in a table, or in both `[moved]` and `[retired]` | Error |
@@ -1306,9 +1339,6 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Addresses file | Many addresses forwarded to one index page or the home page | Advice |
 | APIs | A declared spec that doesn't exist, can't be read, or isn't YAML or JSON | Error |
 | APIs | A declared spec with no operations | Advice |
-| Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares | Error |
-| Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too | Error |
-| Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it | Error |
 | Memo files | A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry other than a glossary term; or a `memos/` folder inside the content root | Error |
 | Memo files | A memo file's `about` that names nothing in the project | Warning |
 | Navigation | `ascribe.nav` isn't valid TOML, or doesn't have the shape §7.8 gives it | Error |
@@ -1410,7 +1440,7 @@ source files
   → emit                  one emitter per output
 ```
 
-Because the compiler and the authoring environment share one parser and validator, a command-line check reports exactly what the editor reports.
+Because the compiler and the authoring environment share one parser and validator, they report by the same rules, from the same code. An authoring environment MAY defer the checks that need the whole project, such as a page nothing links to, until a file is saved or a command-line check runs, and MAY report only the build it shows; when it shows fewer problems than a command-line check would, it SHOULD say so (§10).
 
 ### 9.2 Resolution
 
@@ -1430,12 +1460,22 @@ Titles and bindings are attached during parsing. Page-level validation (§8.1) r
 
 A content model declares named builds. Each build sets a variant mode and an availability mode. The source is the same for every build.
 
-```yaml
-builds:
-  site:      { variants: switch, availability: badge }
-  cloud-pdf: { variants: { deployment: cloud }, availability: { filter: cloud } }
-  sm-3.3:    { variants: switch, availability: { filter: self-managed 3.3 } }
+```toml
+[builds.site]
+variants = "switch"
+availability = "badge"
+versions = "self-managed"
+
+[builds.cloud]
+variants = { deployment = "cloud" }
+availability = { filter = "cloud" }
+
+[builds."self-managed-3.3"]
+variants = "switch"
+availability = { filter = "self-managed 3.3" }
 ```
+
+Here `site` keeps every arm and badges availability, for each live line of self-managed (a versioned build, below); `cloud` keeps only cloud's arms and content; and `self-managed-3.3` keeps every arm and only what self-managed 3.3 has.
 
 #### Variant mode
 
@@ -1468,7 +1508,7 @@ A build MAY instead be **versioned** by a versioned target *T* whose live releas
 
 A compiler MUST provide the site output and the plain-markdown output. It MAY provide the JSON output.
 
-**Site output: markdown plus web components.** CommonMark with custom elements for constructs that need presentation or interaction. It depends on no consumer component system. Ascribe provides an element library for it (§9.7).
+**Site output: markdown plus web components.** CommonMark with custom elements for constructs that need presentation or interaction, and attribute markers: an empty `<ascribe-attributes>` element directly after a heading, an image, or a link, holding the attributes that element takes, such as a heading's page id (§5.5), an image's attributes (§5.3), a glossary link's term (§5.4), or a link's release line (§5.2). It needs no consumer component system, but it isn't plain markdown to a consumer: a consumer applies the markers, and makes a tested code block's figure (§4.8), with `render_site_html` or the Astro plugin, as the site-render contract (`docs/content/contracts/site-render.md`) says. Rendered as plain CommonMark, a marker stays an empty element, so a heading takes the consumer's own id, not its page id. Ascribe provides an element library for the custom elements (§9.7).
 
 **Plain-markdown output.** Fully resolved CommonMark with no HTML, for LLM consumption, search indexing, and export. Links are absolute URLs.
 
@@ -1480,6 +1520,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 - A dimensional arm's label joins the labels of one attribute's values with ` / `, and several attributes with `, `. A note without a title leads with its type's label alone (`**Tip**`).
 - A widget becomes its plain fallback followed by its content, unless the widget drops its content; its title, primary, and attributes aren't shown.
 - Image attributes aren't part of plain markdown and are left out. A table keeps each column's alignment.
+- A fenced code block's info string loses the pairs §3.3.1 leaves out of the plain output, and a block with `tested` is followed by a line saying what it was tested with.
 - A `@variant` group with more than one arm left, which the site output makes a switcher, opens with a line saying a reader sees one of its arms at a time, and by which dimension's label when the arms are dimensional: `A reader sees one of the next 3 sections at a time, chosen by package manager.` Each arm is then a section under a heading one level below the section the group is in (at most level 6), naming each of its dimensions and values, as `### Package manager: pnpm`, or with a labeled arm's title.
 - A heading inside a `@variant` arm that stays a labeled section ends with the arm's label in parentheses, as `## Install (pnpm)`, and with each enclosing arm's, outermost first, when groups nest: so every section's headings stay distinct.
 
@@ -1556,7 +1597,7 @@ The element library implements the custom elements used by the site output.
 
 An authoring environment is a processor that edits Ascribe source interactively. It SHOULD provide the following.
 
-- **Diagnostics** from §8, reported as the author types.
+- **Diagnostics** from §8, by the same rules and from the same code as a command-line check, reported as the author types. It MAY defer the checks that need the whole project until a file is saved, and leave other builds' checks, and checks it doesn't run as the author types, to a command-line check (§9.1). When it has, it SHOULD say so, as a status line saying its problems are for one build does.
 - **Completion** for:
   - directive names and attribute keys and values;
   - dimension values and lifecycle states;
@@ -1568,7 +1609,7 @@ An authoring environment is a processor that edits Ascribe source interactively.
   - for a phrase, its value;
   - for an availability spec or feature key, its resolved availability in the words of §9.4, with a feature's name and key;
   - for a directive or attribute key, its description from the schema; for a dimension key, its values with their labels.
-- **Go to definition:** links and includes go to the target heading when they name a source id, otherwise to the top of the file. A missing id falls back to the existing file; a missing file has no target. Images and asset links go to their file. An `@id` primary goes to its heading. Declared phrases and feature keys used as a whole availability spec go to their entries in `ascribe.toml`; dimension values and lifecycle states have no definition.
+- **Go to definition:** links and includes go to the target heading when they name a source id, otherwise to the top of the file. A missing id falls back to the existing file; a missing file has no target. Images and asset links go to their file. An `@id` primary goes to its heading, and a glossary term in prose to its term's heading. A `@snippet`'s address goes to its region's start tag in the code file, or to the file's first line for a whole file, and a link to an API operation, or an `@operation`'s, to the operation in its API's spec. Declared phrases and feature keys used as a whole availability spec go to their entries in `ascribe.toml`, a page's `listing` to the content model's rule it falls under, and its `replaces` to the page it replaces. Dimension values and lifecycle states have no definition.
 - **Navigation:** a CodeLens or equivalent that names a link's or include's target file and opens it.
 - **Document links:** inline link and image destinations as written, and an include's whole primary, are clickable when their target exists. They open the file or heading; an external link opens its URL, after declared destination phrases are replaced, when its scheme is `http`, `https`, or `mailto`, compared without case. An external link with any other scheme has no document link.
 - **Inline hints:** just inside the `[` of an empty-text link, show the existing source target's title (the heading's text for a source id), with declared phrases replaced and a tooltip naming the destination. Images, missing targets, and targets without a title receive no hint. Hints use source titles without applying build modes.
@@ -1587,7 +1628,7 @@ Target hovers identify fragments, missing files or ids, route-style links, and c
 
 Source files store real file paths, but authors should rarely need to read or type them.
 
-*Note (non-normative): the language server's include lens uses `ascribe.openFile` through `workspace/executeCommand`, followed by `window/showDocument` for clients that support it. Clients without that capability retain document links. Go to definition in `ascribe.toml` currently recognizes `[phrases]` and `[features.<key>]` table forms only. Reference-form links and their definition lines currently have no document link because the parser does not expose the definition destination span; their hover, go to definition, and hints still work. These are editor implementation choices and limitations, not restrictions on valid source or content models.*
+*Note (non-normative): the language server's include lens uses `ascribe.openFile` through `workspace/executeCommand`, followed by `window/showDocument` for clients that support it. Clients without that capability retain document links. Reference-form links and their definition lines currently have no document link because the parser does not expose the definition destination span; their hover, go to definition, and hints still work. These are editor implementation choices and limitations, not restrictions on valid source or content models.*
 
 *Note (non-normative): VS Code has no API for hiding text within a line. Hover, CodeLens, and inlay hints are the dependable ways to keep paths out of the author's way.*
 
@@ -1648,6 +1689,15 @@ snippet-path    = path-segment *( "/" path-segment )
 path-segment    = 1*( %x21-22 / %x24-2E / %x30-7E / UTF8-non-ascii )
                                         ; no "/", "#", or whitespace; not "." or ".."
 region-name     = 1*( ALPHA / DIGIT / "-" / "_" / "." )
+
+info-string     = [ info-word *( RWS info-word ) ]           ; §3.3.1, with CommonMark's
+                                        ; escapes taken off; a first word that isn't
+                                        ; an info-pair is the language
+info-word       = info-pair / info-other                     ; a word that is an
+                                        ; info-pair is one
+info-pair       = key "=" ( info-token / quoted )
+info-token      = 1*( %x21 / %x23-7E / UTF8-non-ascii )      ; no whitespace or DQUOTE
+info-other      = 1*( %x21-7E / UTF8-non-ascii )
 
 availability    = entry *( OWS "," OWS entry ) / feature-key
 entry           = target [ RWS detail ]

@@ -106,7 +106,8 @@ pub(crate) fn snippet_hover(ctx: &Ctx, snippet: &SnippetUse) -> Option<String> {
         out.push_str("\n\n");
         out.push_str(&tested(ctx, address, example, &code)?);
     }
-    let lang = resolved.info.split(' ').next().unwrap_or_default();
+    let info = ascribe_core::info_string::InfoString::parse(&resolved.info);
+    let lang = info.language.unwrap_or_default();
     out.push_str(&format!("\n\n{}", code_block(lang, &resolved.code)));
     Some(out)
 }

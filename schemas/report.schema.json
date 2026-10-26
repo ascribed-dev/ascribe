@@ -1198,6 +1198,11 @@
           "$ref": "#/$defs/Capped_AcknowledgedEntry",
           "description": "The problems acknowledged as intended, with their reasons, in file\norder."
         },
+        "baselined": {
+          "description": "How many advice `ascribe.baseline` holds back, which the counts\nleave out: the backlog the project has put off. Left out when there\nare none, and with `--no-baseline`.",
+          "minimum": 0,
+          "type": "integer"
+        },
         "by_check": {
           "$ref": "#/$defs/Capped_CheckCount",
           "description": "How many diagnostics each check reports, most first."

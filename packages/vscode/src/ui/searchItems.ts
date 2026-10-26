@@ -100,20 +100,28 @@ function detail(place: SearchPlace): string[] {
 }
 
 /**
- * The block's text, cut to about 80 characters around the match at word
- * boundaries, with `…` where it's cut, as `ascribe search` cuts it. `match`
- * is in Unicode characters of `text`.
+ * The block's text, cut to about 80 characters around the match's first
+ * character at word boundaries, with `…` where it's cut, as `ascribe search`
+ * cuts it. `match` is in Unicode characters of `text`; a match of several
+ * words can span a long block, so the excerpt keeps its first character only.
  */
 export function excerpt(text: string, match: readonly [number, number]): string {
   const chars = Array.from(text);
   if (chars.length <= WIDTH) return text;
-  const [first, last] = match;
+  const first = Math.min(match[0], chars.length);
   let start = Math.max(0, first - Math.floor(WIDTH / 4));
-  if (last > start + WIDTH) start = first;
-  // Start at a word, and end before one that doesn't fit.
+  // Start at a word, and end before one that doesn't fit, unless that would
+  // cut the match's first word.
   while (start > 0 && start < first && !isSpace(chars[start - 1])) start += 1;
-  let end = Math.max(Math.min(start + WIDTH, chars.length), Math.min(last, chars.length));
-  while (end < chars.length && end > last && !isSpace(chars[end])) end -= 1;
+  let end = Math.min(start + WIDTH, chars.length);
+  if (end < chars.length) {
+    for (let e = end; e > first; e -= 1) {
+      if (isSpace(chars[e])) {
+        end = e;
+        break;
+      }
+    }
+  }
   const before = start > 0 ? "…" : "";
   const after = end < chars.length ? "…" : "";
   return `${before}${chars.slice(start, end).join("").trim()}${after}`;

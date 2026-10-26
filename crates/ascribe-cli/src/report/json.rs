@@ -112,8 +112,8 @@ struct Summary {
     #[serde(skip_serializing_if = "is_zero")]
     acknowledged: usize,
     /// How many problems `ascribe.baseline` holds back, which `diagnostics`
-    /// leaves out and which are advice. Left out when there are none, and by
-    /// `ascribe build`, which doesn't read the baseline.
+    /// leaves out and which are advice. Left out when there are none, and
+    /// with `--no-baseline`.
     #[serde(skip_serializing_if = "is_zero")]
     baselined: usize,
     /// With `--summary`: how many diagnostics have each code, most first.
@@ -160,7 +160,7 @@ struct Place {
     clippy::trivially_copy_pass_by_ref,
     reason = "serde passes a reference"
 )]
-fn is_zero(n: &usize) -> bool {
+pub(crate) fn is_zero(n: &usize) -> bool {
     *n == 0
 }
 

@@ -25,7 +25,7 @@ Error · file level · next step: choose · [SPEC §7.1]({repo}/blob/main/SPEC.m
 
 **Message:** unknown key `{key}` in `[{table}]`; this is ascribe \{version}, and the project may need a newer one
 
-**Fix:** Fix the key's spelling, or remove it. A key added in a later version of Ascribe is unknown to an older one: when the project was written for a newer Ascribe, install it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`. `[[intended]]` has no `term`: acknowledge a term's problem with `@intended` under its heading. `[consumer]` has no `headers`: write `host = "netlify"`, which writes Netlify's `_headers` as `headers` did, and `_redirects` beside it.
+**Fix:** Fix the key's spelling, or remove it. A key added in a later version of Ascribe is unknown to an older one: when the project was written for a newer Ascribe, install it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`. `[[intended]]` has no `term`: acknowledge a term's problem with `@intended` under its heading. `[consumer]` has no `headers`: write `host = "netlify"`, which writes Netlify's `_headers` as `headers` did, and `_redirects` beside it. `ascribe.toml` has no `[permalinks]`: `ascribe addresses init` moves its retired permalinks and aliases into `ascribe.addresses`, as `go:<name>` keys of `[retired]` and `[moved]`.
 
 **Read more:** [The file](../content-model/index.md#11-the-file) in the `ascribe.toml` reference.
 
@@ -417,7 +417,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC194
 @summary: A content type's template can't be read, or isn't a page Ascribe can read.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · Ascribe's own, not in SPEC
 
 **When:** A content type's template can't be read, or isn't a page Ascribe can read.
 

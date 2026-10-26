@@ -1,14 +1,14 @@
 @memo: Generated from packages/elements/css/style.css by scripts/docs-site/elements.test.ts; say what a new property sets in the test, then run `ASCRIBE_BLESS=1 pnpm exec vitest run scripts/docs-site/elements.test.ts` to rewrite it.
 | Property | What it sets |
 |---|---|
-| `--ascribe-font-family` | The font of notes, tabs, and availability badges. |
-| `--ascribe-font-size-small` | The size of a step's number and of availability badges. |
+| `--ascribe-font-family` | The font of notes, tabs, availability badges, and copy buttons. |
+| `--ascribe-font-size-small` | The size of a step's number, of availability badges, and of a copy button's words. |
 | `--ascribe-font-weight-strong` | The weight of a note's heading line, a step's number, a tab's label when the script isn't running, and the selected tab. |
-| `--ascribe-border-width` | The width of the line joining steps and of the line under the tabs. |
+| `--ascribe-border-width` | The width of the line joining steps, of the line under the tabs, and of a copy button's border. |
 | `--ascribe-space` | The space above and below notes, steps, and tabs, beside a note's content, between steps and beside their numbers, either side of a tab's label, and above a tab's label when the script isn't running. |
-| `--ascribe-space-small` | The smaller space: above and below a note's content and under its heading line, between tabs, above and below a tab's label and under the tabs, and above and below a line of availability badges. |
-| `--ascribe-border-color` | The line joining steps and the line under the tabs. |
-| `--ascribe-radius` | The corners of notes, and the top corners of tabs. |
+| `--ascribe-space-small` | The smaller space: above and below a note's content and under its heading line, between tabs, above and below a tab's label and under the tabs, above and below a line of availability badges, and either side of a copy button's words; half of it sets the button in from its code block's corner. |
+| `--ascribe-border-color` | The line joining steps, the line under the tabs, and a copy button's border. |
+| `--ascribe-radius` | The corners of notes and copy buttons, and the top corners of tabs. |
 | `--ascribe-text-color` | The text of a note. |
 | `--ascribe-surface-color` | Nothing yet: no element uses it. |
 | `--ascribe-muted-color` | A tab's label when the script isn't running, and the lead-in of availability badges. |
@@ -29,6 +29,11 @@
 | `--ascribe-tab-active-color` | The selected tab's label and its underline. |
 | `--ascribe-tab-focus-color` | The outline of a tab focused from the keyboard. |
 | `--ascribe-tab-hover-background` | A tab's background under the pointer. |
+| `--ascribe-copy-display` | Whether code blocks have a copy button: `block`, or `none` to leave it out. |
+| `--ascribe-copy-color` | A copy button's words. |
+| `--ascribe-copy-background` | A copy button's background. |
+| `--ascribe-copy-hover-background` | A copy button's background under the pointer. |
+| `--ascribe-copy-focus-color` | The outline of a copy button focused from the keyboard. |
 | `--ascribe-state-color` | The text of an availability badge whose state the library doesn't style, such as a project's own. |
 | `--ascribe-state-background` | The background of an availability badge whose state the library doesn't style, such as a project's own. |
 | `--ascribe-state-ga-color` | The text of an availability badge whose last state is `ga`. |

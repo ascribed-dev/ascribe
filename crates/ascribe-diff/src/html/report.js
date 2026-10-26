@@ -2,14 +2,124 @@
    packages/elements by `pnpm --filter @ascribed/review embed`. Don't edit it. */
 "use strict";
 (() => {
-  // ../elements/src/group.ts
-  var AscribeGroup = class extends HTMLElement {
-  };
-
   // ../elements/src/names.ts
   var ELEMENT_TABS = "ascribe-tabs";
   var ELEMENT_TAB = "ascribe-tab";
+  var CLASS_COPY = "ascribe-copy";
+  var DATA_COPY = "data-ascribe-copy";
+  var CLASS_COPY_STATUS = "ascribe-copy-status";
   var ELEMENT_GROUP = "ascribe-group";
+
+  // ../elements/src/copy.ts
+  var SHOWN_MS = 2e3;
+  var FALLBACK = { copy: "Copy", copied: "Copied", failed: "Couldn't copy" };
+  var timers = /* @__PURE__ */ new WeakMap();
+  var anchors = /* @__PURE__ */ new WeakMap();
+  var anchorCount = 0;
+  var status = null;
+  function codeOf(element) {
+    if (element.localName !== "pre") return null;
+    return Array.from(element.children).find((child) => child.localName === "code") ?? null;
+  }
+  function addButton(pre) {
+    if (codeOf(pre) === null || anchors.has(pre)) return void 0;
+    const name = `--ascribe-code-${++anchorCount}`;
+    anchors.set(pre, name);
+    pre.style.setProperty("anchor-name", name);
+    const next = pre.nextElementSibling;
+    if (next instanceof HTMLButtonElement && next.classList.contains(CLASS_COPY)) {
+      next.style.setProperty("position-anchor", name);
+      return void 0;
+    }
+    const button2 = document.createElement("button");
+    button2.type = "button";
+    button2.className = CLASS_COPY;
+    button2.style.setProperty("position-anchor", name);
+    pre.after(button2);
+    return button2;
+  }
+  function addButtons(root) {
+    const made = [root, ...Array.from(root.querySelectorAll("pre"))].map(addButton).filter((button2) => button2 !== void 0);
+    for (const button2 of made) button2.setAttribute("aria-label", wordsOn(button2) || FALLBACK.copy);
+  }
+  function blockOf(button2) {
+    for (let el = button2.previousElementSibling; el !== null; el = el.previousElementSibling) {
+      if (codeOf(el) !== null) return el;
+    }
+    return null;
+  }
+  function liveRegion() {
+    if (status === null || !status.isConnected) {
+      status = document.createElement("div");
+      status.className = CLASS_COPY_STATUS;
+      status.setAttribute("role", "status");
+      document.body.append(status);
+    }
+    return status;
+  }
+  function wordsOn(button2) {
+    const content = getComputedStyle(button2, "::before").content;
+    const parts = content.match(/"(?:[^"\\]|\\.)*"/g) ?? [];
+    return parts.map((part) => part.slice(1, -1).replace(/\\(.)/g, "$1")).join("");
+  }
+  function show(button2, outcome) {
+    const region = liveRegion();
+    button2.setAttribute(DATA_COPY, outcome);
+    region.textContent = "";
+    region.textContent = wordsOn(button2) || FALLBACK[outcome];
+    clearTimeout(timers.get(button2));
+    timers.set(
+      button2,
+      setTimeout(() => {
+        button2.removeAttribute(DATA_COPY);
+        if (region.textContent !== "") region.textContent = "";
+      }, SHOWN_MS)
+    );
+  }
+  async function copy(button2) {
+    const block = blockOf(button2);
+    const code = block === null ? null : codeOf(block);
+    if (code === null) return;
+    const text = (code.textContent ?? "").replace(/\n+$/, "");
+    try {
+      await navigator.clipboard.writeText(text);
+      show(button2, "copied");
+    } catch {
+      show(button2, "failed");
+    }
+  }
+  function onClick(event) {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const button2 = target.closest(`button.${CLASS_COPY}`);
+    if (button2 !== null) void copy(button2);
+  }
+  function setup() {
+    addButtons(document.body);
+    new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of Array.from(record.addedNodes)) {
+          if (node instanceof Element) addButtons(node);
+        }
+      }
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  }
+  var started = false;
+  function startCopyButtons() {
+    if (started || typeof document === "undefined") return;
+    started = true;
+    if (typeof navigator.clipboard?.writeText !== "function") return;
+    document.addEventListener("click", onClick);
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", setup, { once: true });
+    } else {
+      setup();
+    }
+  }
+
+  // ../elements/src/group.ts
+  var AscribeGroup = class extends HTMLElement {
+  };
 
   // ../elements/src/tabs.ts
   var STORAGE_PREFIX = "ascribe-tabs:";
@@ -174,6 +284,7 @@
   for (const [name, constructor] of registry) {
     if (!customElements.get(name)) customElements.define(name, constructor);
   }
+  startCopyButtons();
 
   // src/names.ts
   var ELEMENT_TAB2 = "ascribe-tab";
@@ -322,18 +433,18 @@
     }
   }
   function contentOf(holder, before) {
-    const copy = copyOf(before);
-    if (holder.localName === "li" && copy.localName === "li") return Array.from(copy.childNodes);
-    return [copy];
+    const copy2 = copyOf(before);
+    if (holder.localName === "li" && copy2.localName === "li") return Array.from(copy2.childNodes);
+    return [copy2];
   }
   function copyOf(element) {
-    const copy = element.cloneNode(true);
-    for (const el of [copy, ...Array.from(copy.querySelectorAll("*"))]) {
+    const copy2 = element.cloneNode(true);
+    for (const el of [copy2, ...Array.from(copy2.querySelectorAll("*"))]) {
       el.removeAttribute(DATA_SOURCE);
       el.removeAttribute(DATA_VIA);
       el.removeAttribute("id");
     }
-    return copy;
+    return copy2;
   }
   function holderFor(container) {
     return container.localName === "ul" || container.localName === "ol" ? "li" : "div";
@@ -547,10 +658,10 @@
             const before = was && change.was ? findBlock(was, change.was) : null;
             if (change.words) markWords(element, change.words);
             if (before) {
-              const copy = copyOf(before);
-              copy.setAttribute(DATA_UI, "");
-              copy.setAttribute(DATA_WAS_ONLY, "");
-              element.after(copy);
+              const copy2 = copyOf(before);
+              copy2.setAttribute(DATA_UI, "");
+              copy2.setAttribute(DATA_WAS_ONLY, "");
+              element.after(copy2);
               element.setAttribute(DATA_HAS_WAS, "");
             }
           }
@@ -599,11 +710,11 @@
             link.href = `#${id}`;
             note.append(link);
             holder.append(note);
-            const copy = ui(doc, "div", CLASS_WAS_COPY);
-            copy.setAttribute(DATA_WAS_ONLY, "");
-            if (before) copy.append(...contentOf(holder, before));
-            else copy.textContent = change.text ?? ownText(element);
-            holder.append(copy);
+            const copy2 = ui(doc, "div", CLASS_WAS_COPY);
+            copy2.setAttribute(DATA_WAS_ONLY, "");
+            if (before) copy2.append(...contentOf(holder, before));
+            else copy2.textContent = change.text ?? ownText(element);
+            holder.append(copy2);
             return holder;
           });
           element.setAttribute(DATA_CHANGE, "moved");
@@ -734,8 +845,8 @@
     }
     root.normalize();
   }
-  function setShow(root, show) {
-    root.setAttribute(DATA_SHOW, show);
+  function setShow(root, show2) {
+    root.setAttribute(DATA_SHOW, show2);
   }
   function reveal(element) {
     for (let el = element; el; el = el.parentElement) {
@@ -759,7 +870,7 @@
     const tip = ui(doc, "span", CLASS_WHERE);
     tip.setAttribute("role", "status");
     let current = null;
-    const show = (target) => {
+    const show2 = (target) => {
       const el = target instanceof Element ? target.closest(`[${DATA_SOURCE}], [${DATA_WAS_SOURCE}]`) : null;
       if (el === current) return;
       current = el;
@@ -775,10 +886,10 @@
       tip.style.top = `${box.top - host.top}px`;
       root.append(tip);
     };
-    const over = (event) => show(event.target);
+    const over = (event) => show2(event.target);
     const out = (event) => {
       const to = event.relatedTarget;
-      if (!(to instanceof Node) || !root.contains(to)) show(null);
+      if (!(to instanceof Node) || !root.contains(to)) show2(null);
     };
     root.addEventListener("mouseover", over);
     root.addEventListener("focusin", over);
@@ -813,9 +924,9 @@
     for (const child of children) if (child !== null) el.append(child);
     return el;
   }
-  function button(text, className, onClick, attributes = {}) {
+  function button(text, className, onClick2, attributes = {}) {
     const el = h("button", { type: "button", class: className, ...attributes }, [text]);
-    el.addEventListener("click", onClick);
+    el.addEventListener("click", onClick2);
     return el;
   }
   async function copyText(text) {
@@ -1125,7 +1236,7 @@
         );
       }
     };
-    const status = h("div", { class: "r-status", role: "status" });
+    const status2 = h("div", { class: "r-status", role: "status" });
     const renderControls = () => {
       controls.replaceChildren();
       const build = builds[state.build];
@@ -1208,15 +1319,15 @@
       }
       if (page.prompt) {
         const prompt = page.prompt;
-        const copy = button("Copy prompt", "r-ghost r-copy", () => {
+        const copy2 = button("Copy prompt", "r-ghost r-copy", () => {
           void copyText(prompt).then((copied) => {
-            status.textContent = copied ? "Prompt copied. Paste it into your agent." : "The prompt couldn't be copied: the browser didn't allow it.";
+            status2.textContent = copied ? "Prompt copied. Paste it into your agent." : "The prompt couldn't be copied: the browser didn't allow it.";
           });
         });
-        copy.title = "Copy a prompt that asks an agent to review this page's changes";
-        row.append(copy);
+        copy2.title = "Copy a prompt that asks an agent to review this page's changes";
+        row.append(copy2);
       }
-      controls.append(row, status);
+      controls.append(row, status2);
       if (state.breakdown)
         controls.append(h("div", { class: "r-legend" }, [describeCounts(page.counts)]));
       if (page.page_changed.length > 0) {
@@ -1255,7 +1366,7 @@
       marks = [];
       const page = shown();
       main.replaceChildren(controls);
-      status.textContent = "";
+      status2.textContent = "";
       article.replaceChildren();
       article.removeAttribute(DATA_SHOW);
       article.className = "r-page";

@@ -234,6 +234,33 @@ fn phrases_are_substituted_in_prose_code_and_headings() {
 }
 
 #[test]
+fn info_string_pairs_the_checker_read_are_left_out() {
+    // SPEC §3.3.1: `phrases`, `request`, and `response` have done their
+    // work, and `tested` is its own line; other words stay, in order.
+    assert_eq!(
+        body(
+            "```json {1} title=\"New\" request=\"../api.yaml#create\" tested=\"Node 24\" phrases=true\n{}\n```\n"
+        ),
+        "```json {1} title=\"New\"\n{}\n```\n\nTested with Node 24.\n"
+    );
+    // A pair's word inside a quoted value is part of the value.
+    assert_eq!(
+        body("```yaml title=\"phrases=true\"\nv: {version}\n```\n"),
+        "```yaml title=\"phrases=true\"\nv: {version}\n```\n"
+    );
+}
+
+#[test]
+fn an_info_strings_backslashes_survive_a_reader_of_the_output() {
+    // The source's `\\\"` is `\"` in the info string, an escaped quote in the
+    // title; the output writes `\\"`, which a reader reads as `\"` again.
+    assert_eq!(
+        body("```text title=\"say \\\\\\\"hi\\\\\\\"\"\nx\n```\n"),
+        "```text title=\"say \\\\\"hi\\\\\"\"\nx\n```\n"
+    );
+}
+
+#[test]
 fn lists_keep_their_shape_and_adjacent_lists_stay_apart() {
     assert_eq!(body("- a\n- b\n  - c\n"), "- a\n- b\n  - c\n");
     assert_eq!(body("- a\n\n- b\n"), "- a\n\n- b\n");

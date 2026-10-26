@@ -1,5 +1,0 @@
-spec = "0.1"
-
-[permalinks.aliases]
-a = "b"
-b = "a"

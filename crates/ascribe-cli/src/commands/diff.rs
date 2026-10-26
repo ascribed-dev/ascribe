@@ -14,7 +14,7 @@ use ascribe_check::prompt::Builds;
 use ascribe_check::{Diagnostic, LoadError};
 use ascribe_core::{RelPath, percent_decode};
 use ascribe_diff::{
-    Anchor, BuildDiff, Change, ChangeKind, DiffError, DiffOptions, ProjectDiff, Report,
+    Anchor, BuildDiff, Change, ChangeKind, DiffError, DiffOptions, PageDiff, ProjectDiff, Report,
     diff_project,
 };
 use ascribe_model::ContentModel;
@@ -170,7 +170,7 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
     let written = match args.format {
         Format::Text => match &page {
             Some(path) => write_page_text(out, &diff, path, !args.pages_only),
-            None => write_text(out, report, project.model()),
+            None => write_text(out, &diff, project.model()),
         },
         Format::Json => serde_json::to_writer_pretty(&mut *out, report)
             .map_err(io::Error::from)
@@ -267,15 +267,113 @@ fn errors_line(errors: usize, names: &[String]) -> String {
     format!("the working tree has {count}; `{check}` lists {them}")
 }
 
-fn write_text(out: &mut dyn Write, report: &Report, model: &ContentModel) -> io::Result<()> {
+fn write_text(out: &mut dyn Write, diff: &ProjectDiff, model: &ContentModel) -> io::Result<()> {
+    let report = &diff.report;
     write_base(out, report)?;
-    for group in line_groups(report, model) {
+    let groups = line_groups(report, model);
+    let shared = same_in_every_build(&groups, |build, path| diff.publishes(build, path));
+    for page in &shared {
+        let builds = if page.everywhere {
+            "every build"
+        } else {
+            "every build that publishes it"
+        };
+        writeln!(out, "{}: {}, in {builds}", page.path, page.text)?;
+    }
+    let listed = Listed {
+        said: shared.iter().map(|page| page.path).collect(),
+    };
+    for group in &groups {
         match group.as_slice() {
-            [build] => write_build(out, build)?,
-            lines => write_lines_of(out, lines, model)?,
+            [build] => write_build(out, build, &listed)?,
+            lines => write_lines_of(out, lines, model, &listed)?,
         }
     }
     Ok(())
+}
+
+/// A page that changed the same way in every build that publishes it, in
+/// more than one of the builds the text lists apart, so it's said once.
+struct Shared<'r> {
+    path: &'r str,
+    /// What changed on it, as each build's list says it.
+    text: String,
+    /// Whether every build compared publishes it.
+    everywhere: bool,
+}
+
+/// The pages said once, before the builds: each build then lists only its
+/// other pages.
+struct Listed<'r> {
+    said: Vec<&'r str>,
+}
+
+impl Listed<'_> {
+    /// A build's pages that aren't said once.
+    fn rest<'p>(&self, pages: &'p [PageDiff]) -> Vec<&'p PageDiff> {
+        pages
+            .iter()
+            .filter(|page| !self.said.contains(&page.path.as_str()))
+            .collect()
+    }
+
+    /// The line over a build's pages: "site: 2 pages changed", or "2 more
+    /// pages changed" when some were said once.
+    fn heading(&self, name: &str, pages: usize) -> String {
+        let more = if self.said.is_empty() { "" } else { "more " };
+        match pages {
+            1 => format!("{name}: 1 {more}page changed"),
+            n => format!("{name}: {n} {more}pages changed"),
+        }
+    }
+}
+
+/// The pages of `groups`, as [`line_groups`] makes them, that changed the
+/// same way in every build that publishes them (by `publishes`, build and
+/// path), in more than one group, in path order.
+fn same_in_every_build<'r>(
+    groups: &[Vec<&'r BuildDiff>],
+    publishes: impl Fn(&str, &str) -> bool,
+) -> Vec<Shared<'r>> {
+    let mut paths: Vec<&str> = groups
+        .iter()
+        .flatten()
+        .flat_map(|build| build.pages.iter().map(|page| page.path.as_str()))
+        .collect();
+    paths.sort_unstable();
+    paths.dedup();
+    let mut shared = Vec::new();
+    'paths: for path in paths {
+        let mut text: Option<String> = None;
+        let mut groups_in = 0;
+        let mut everywhere = true;
+        for group in groups {
+            let mut listed = false;
+            for build in group {
+                match build.pages.iter().find(|page| page.path == path) {
+                    Some(page) => {
+                        let said = page.describe(str::to_owned);
+                        if text.get_or_insert_with(|| said.clone()) != &said {
+                            continue 'paths;
+                        }
+                        listed = true;
+                    }
+                    // Published there and unchanged.
+                    None if publishes(&build.build, path) => continue 'paths,
+                    None => everywhere = false,
+                }
+            }
+            groups_in += usize::from(listed);
+        }
+        if let (Some(text), true) = (text, groups_in > 1) {
+            shared.push(Shared {
+                path,
+                text,
+                everywhere,
+            });
+        }
+    }
+    shared
 }
 
 /// The builds of a report in its order, each line of a versioned build in
@@ -308,6 +406,7 @@ fn write_lines_of(
     out: &mut dyn Write,
     lines: &[&BuildDiff],
     model: &ContentModel,
+    listed: &Listed<'_>,
 ) -> io::Result<()> {
     let name = lines
         .first()
@@ -321,20 +420,22 @@ fn write_lines_of(
             .and_then(|b| b.line.as_ref())
             .map_or_else(|| build.to_owned(), |l| l.line.text.clone())
     };
+    if lines.iter().all(|line| line.pages.is_empty()) {
+        return writeln!(out, "{name}: no changes in any line");
+    }
     let mut paths: Vec<&str> = Vec::new();
     for line in lines {
-        for page in &line.pages {
+        for page in listed.rest(&line.pages) {
             if !paths.contains(&page.path.as_str()) {
                 paths.push(&page.path);
             }
         }
     }
-    paths.sort_unstable();
-    match paths.len() {
-        0 => return writeln!(out, "{name}: no changes in any line"),
-        1 => writeln!(out, "{name}: 1 page changed")?,
-        n => writeln!(out, "{name}: {n} pages changed")?,
+    if paths.is_empty() {
+        return Ok(());
     }
+    paths.sort_unstable();
+    writeln!(out, "{}", listed.heading(name, paths.len()))?;
     for path in paths {
         // Each description, with the lines it's true in.
         let mut said: Vec<(String, Vec<&str>)> = Vec::new();
@@ -532,13 +633,16 @@ fn named_base(requested: &str, commit: &str) -> String {
     }
 }
 
-fn write_build(out: &mut dyn Write, build: &BuildDiff) -> io::Result<()> {
-    match build.pages.len() {
-        0 => return writeln!(out, "{}: no changes", build.build),
-        1 => writeln!(out, "{}: 1 page changed", build.build)?,
-        n => writeln!(out, "{}: {n} pages changed", build.build)?,
+fn write_build(out: &mut dyn Write, build: &BuildDiff, listed: &Listed<'_>) -> io::Result<()> {
+    if build.pages.is_empty() {
+        return writeln!(out, "{}: no changes", build.build);
     }
-    for page in &build.pages {
+    let pages = listed.rest(&build.pages);
+    if pages.is_empty() {
+        return Ok(());
+    }
+    writeln!(out, "{}", listed.heading(&build.build, pages.len()))?;
+    for page in pages {
         writeln!(out, "  {}: {}", page.path, page.describe(str::to_owned))?;
     }
     Ok(())

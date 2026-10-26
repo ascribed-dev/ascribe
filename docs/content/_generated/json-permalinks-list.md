@@ -5,7 +5,7 @@
 {
   "$defs": {
     "AliasEntry": {
-      "description": "An alias `ascribe.toml` declares.",
+      "description": "A name `ascribe.addresses` moves to another permalink: an alias.",
       "properties": {
         "name": {
           "description": "Its name.",
@@ -16,7 +16,7 @@
           "description": "Whether the list has it, leading there: `listed`, or `not_listed`."
         },
         "target": {
-          "description": "The name it leads to.",
+          "description": "The name it was moved to.",
           "type": "string"
         }
       },
@@ -99,7 +99,12 @@
         },
         {
           "const": "alias",
-          "description": "`[aliases]`: an alias.",
+          "description": "`[aliases]`: a name moved to another permalink.",
+          "type": "string"
+        },
+        {
+          "const": "moved",
+          "description": "`[moved]`: a name moved to a page.",
           "type": "string"
         },
         {
@@ -109,6 +114,29 @@
         }
       ]
     },
+    "MovedName": {
+      "description": "A name `ascribe.addresses` moves to a page.",
+      "properties": {
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/ListState",
+          "description": "Whether the list has it, leading there: `listed`, or `not_listed`."
+        },
+        "to": {
+          "description": "Where its address leads now, as written: a page, and `#` and a\nheading's id.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "to",
+        "state"
+      ],
+      "type": "object"
+    },
     "RemovedEntry": {
       "description": "A name the list has that the project doesn't.",
       "properties": {
@@ -117,7 +145,7 @@
           "type": "string"
         },
         "place": {
-          "description": "Where the list says a permalink was declared; for an alias, the name\nit led to; for a retired permalink, its reason.",
+          "description": "Where the list says a permalink was declared; for an alias, the name\nit led to; for a moved one, where; for a retired one, its reason.",
           "type": "string"
         },
         "was": {
@@ -133,7 +161,7 @@
       "type": "object"
     },
     "RetiredEntry": {
-      "description": "A permalink `ascribe.toml` retires.",
+      "description": "A name `ascribe.addresses` retires.",
       "properties": {
         "name": {
           "description": "Its name.",
@@ -146,19 +174,11 @@
         "state": {
           "$ref": "#/$defs/ListState",
           "description": "Whether the list has it as retired, with this reason: `listed`, or\n`not_listed`."
-        },
-        "to": {
-          "description": "Where its address leads now, as written: a page, and `#` and a\nheading's id.",
-          "type": [
-            "string",
-            "null"
-          ]
         }
       },
       "required": [
         "name",
         "reason",
-        "to",
         "state"
       ],
       "type": "object"
@@ -168,7 +188,7 @@
   "description": "What `ascribe permalinks list` answers.",
   "properties": {
     "aliases": {
-      "description": "The aliases `ascribe.toml` declares, in declaration order.",
+      "description": "The names `ascribe.addresses` moves to another permalink, by name.",
       "items": {
         "$ref": "#/$defs/AliasEntry"
       },
@@ -181,6 +201,13 @@
     "has_list": {
       "description": "Whether the project has `ascribe.permalinks`. Without it, every\npermalink is `not_listed`, and nothing is `removed`.",
       "type": "boolean"
+    },
+    "moved": {
+      "description": "The names `ascribe.addresses` moves to a page, by name.",
+      "items": {
+        "$ref": "#/$defs/MovedName"
+      },
+      "type": "array"
     },
     "permalinks": {
       "description": "Every permalink the content declares, in path order and then in\ndocument order, a page's own first. A name declared in several\nplaces is here once for each.",
@@ -197,7 +224,7 @@
       "type": "array"
     },
     "retired": {
-      "description": "The permalinks `ascribe.toml` retires, in declaration order.",
+      "description": "The names `ascribe.addresses` retires, or moves to one that's\nretired, by name.",
       "items": {
         "$ref": "#/$defs/RetiredEntry"
       },
@@ -215,6 +242,7 @@
     "has_list",
     "permalinks",
     "aliases",
+    "moved",
     "retired",
     "removed"
   ],

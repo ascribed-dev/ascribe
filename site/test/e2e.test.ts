@@ -1,6 +1,6 @@
 // The built site in Chromium: the landing page, the changelog and its entries, the head, the
 // header and the footer, each page's social card, variants, availability, code
-// titles, links between pages, search, the edit link, the 404 page, the narrow
+// titles, copy buttons, links between pages, search, the edit link, the 404 page, the narrow
 // layout, the landing page's call to action, tools, mark, demonstration,
 // pillars and their links, audiences, marks, phone width, and reading without
 // a script, Why Ascribe, with its screenshots, and Credits; the notes' split
@@ -579,6 +579,34 @@ test("a code example taken from a file shows its title", async () => {
   const figure = page.locator("figure.code-title", { hasText: "export default defineConfig" });
   await expect.poll(() => figure.locator("figcaption").textContent()).toBe("astro.config.mjs");
   await page.close();
+});
+
+test("a code block's copy button copies its code, and says so", async () => {
+  const page = await open("/docs/getting-started/");
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  const clipboard = () => page.evaluate(() => navigator.clipboard.readText());
+  // In a tab: the shown tab's block.
+  const tabs = page.locator("ascribe-tabs").first();
+  await tabs.getByRole("tab", { name: "pnpm" }).click();
+  const tab = tabs.locator("ascribe-tab:not([hidden])");
+  await tab.getByRole("button", { name: "Copy" }).click();
+  await expect.poll(clipboard).toMatch(/^pnpm add --save-dev @ascribed\/cli\n/);
+  expect(await clipboard()).toBe((await tab.locator("pre code").textContent())?.trimEnd());
+  await expect.poll(() => page.getByRole("status").textContent()).toBe("Copied");
+  // The button is beside the code, not in it.
+  expect(await tab.locator("pre").textContent()).not.toContain("Copy");
+  await page.close();
+
+  // A block with a title copies its code, not its title.
+  const titled = await open("/docs/astro/");
+  await titled.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  const figure = titled.locator("figure.code-title", { hasText: "export default defineConfig" });
+  await figure.getByRole("button", { name: "Copy" }).click();
+  const copied = await titled.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toContain("export default defineConfig");
+  expect(copied).not.toContain("astro.config.mjs");
+  expect(copied.endsWith("\n")).toBe(false);
+  await titled.close();
 });
 
 test("a link between pages lands on the page, and a glossary link on its heading", async () => {

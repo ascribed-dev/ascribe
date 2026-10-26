@@ -74,7 +74,7 @@ fn templates(e: &Entry) -> Vec<&String> {
 fn every_spec_row_has_exactly_one_entry() {
     let reg = registry();
     let rows = spec_rows();
-    assert_eq!(rows.len(), 135, "SPEC §8.2 changed; update the registry");
+    assert_eq!(rows.len(), 132, "SPEC §8.2 changed; update the registry");
     let mut by_row: BTreeMap<&str, Vec<&Entry>> = BTreeMap::new();
     for e in &reg.entries {
         if let Some(row) = &e.row {
@@ -235,6 +235,16 @@ fn spec_sections_exist() {
         .collect();
     assert!(sections.contains("8.2") && sections.contains("11"));
     for e in registry().entries {
+        // A check SPEC doesn't define cites no section (SPEC §7.2's
+        // processor settings). A §8.2 row is SPEC's, so it always cites one.
+        if e.spec == "none" {
+            assert!(
+                e.row.is_none(),
+                "{}: a SPEC §8.2 row cites the section that defines it",
+                e.slug
+            );
+            continue;
+        }
         assert!(
             sections.contains(&e.spec),
             "{}: SPEC has no §{}",

@@ -1,0 +1,9 @@
+description: >-
+  With no declared dimension, a target from `[releases]` alone is a value of
+  the implicit dimension `release`: an availability spec names it, with a
+  version from its lines, and names `release` for all of its values, and a
+  page's `variant` frontmatter names `release` as a dimension.
+spec: ["4.3", "4.4", "7.2"]
+tags: [check]
+
+diagnostics: []

@@ -15,7 +15,7 @@ Start a workflow with the GitHub MCP tool `actions_run_trigger`, never `gh workf
 
 1. **Read the issue** and its comments. If triage or the maintainer answered a question there, the answer is part of the ask.
 2. **Read [AGENTS.md](../../../AGENTS.md)** and the checklist in [project-docs/checklists.md](../../../project-docs/checklists.md) that fits the change. They hold the rules a reviewer checks against.
-3. **Build the change** on the thread's branch, with its tests, its conformance case for a behavior change, its docs page, and its changelog entry in `changes/` (never an edit to `CHANGELOG.md`), as AGENTS.md says. Run every check AGENTS.md lists before pushing.
+3. **Build the change** on the thread's branch, with its tests, its conformance case for a behavior change, its docs page, and its changelog entry in `changes/` (never an edit to `CHANGELOG.md`), as AGENTS.md says. Run `pnpm check:all`, which runs every check CI runs, before pushing.
 4. **Open the pull request** with the repository's template. Put `Closes #N` in the description, so the merge closes the issue and GitHub moves the card to Done.
 5. **Watch the pull request:** subscribe to its activity. Fix CI until it's green.
 6. **Move the card to In review** once CI is green. Not before: a red pull request in review wastes the reviewer's pass. Then say so in a new reply in your thread, with the pull request's link, and don't only edit an earlier message: an edit notifies no one, so no reviewer is started for the card.

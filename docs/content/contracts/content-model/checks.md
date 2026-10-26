@@ -8,6 +8,8 @@ Part of the [`ascribe.toml` format contract](../content-model.md), whose [conten
 
 ## 19. `[checks]`
 
+`[checks]` holds settings for Ascribe's own checks and tools, the processor settings SPEC §7.2 leaves to a processor: SPEC defines none of these checks, their names, or their levels.
+
 Each key of `[checks]` other than `vale` and `links` is a check's slug, as the [diagnostics reference](../../checks/diagnostics.md) lists it, and its value is a level, `"off"`, `"advice"`, `"warning"`, or `"error"`, or a table, `[checks.<check>]`, with these keys and the check's own settings:
 
 @include: ../../_generated/content-model-checks.md
@@ -64,13 +66,7 @@ How `ascribe report links` checks external links: with lychee, which the project
 
 ## 20. `[permalinks]`
 
-`[permalinks.retired]` and `[permalinks.aliases]` hold names that no heading or page declares (SPEC §7.6). A key of `[permalinks.retired]` is a retired permalink's name, and its table takes:
-
-@include: ../../_generated/content-model-permalinks-retired.md
-
-A key of `[permalinks.aliases]` is an alias's name, and its value the name it leads to, which MUST be a heading's or a page's permalink or another alias. `ascribe permalinks retire` and the editor's quick fix on `permalink-removed` MUST write `[permalinks.retired]` in place, and the quick fix's reason is the placeholder `why this permalink was retired`.
-
-**Rules** (§25.10): `[permalinks]` and a retired permalink's table MUST have no keys but those above (`model-unknown-key`). A name MUST have the characters of an `@id` (`model-invalid-name`). A retired permalink MUST have a `reason` (`model-missing-key`), not empty (`model-empty-text`) and not the placeholder (`model-permalinks`). A name MUST NOT be both retired and an alias, and an alias MUST NOT lead back to itself (`model-permalinks`). What needs the content is checked with the project, not by the loader: SPEC §8.2's `permalink-name-conflict`, `permalink-alias-target-missing`, and `permalink-retired-target-missing`.
+None. A permalink's record, retired or moved, is an entry of `ascribe.addresses` keyed `go:<name>` (SPEC §7.10), and `[permalinks]` is a replaced key: a loader MUST report it as an error at the key (`model-unknown-key`), whose fix says that `ascribe addresses init` moves its entries.
 
 ---
 

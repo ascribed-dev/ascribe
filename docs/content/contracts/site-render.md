@@ -122,7 +122,7 @@ Apart from markers, both implementations render CommonMark with raw HTML passed 
 
 ### 5.1 A tested code block
 
-A fenced code block whose info string has a `tested="…"` word after its language, as a `@snippet` of a tested example has (SPEC §4.8), is put in a figure with a caption: the block's title, when its info string has `title="…"`, then a `<div class="ascribe-code-tested">` holding the tested line, escaped as text. The value is read as a title is: from a space or the start, to the quote that's followed by a space or the end, with the Markdown escapes taken off.
+A fenced code block whose info string has a `tested="…"` word after its language, as a `@snippet` of a tested example has (SPEC §4.8), is put in a figure with a caption: the block's title, when its info string has `title="…"`, then a `<div class="ascribe-code-tested">` holding the tested line, escaped as text. Both are pairs of the info string, read as [SPEC §3.3.1]({repo}/blob/main/SPEC.md) reads them from the info string CommonMark gives, with its Markdown escapes taken off: a quoted value runs to its closing quote, inside it `\"` and `\\` escape, and the pair is followed by a space or the end. The site output writes a quote in a title as `\\"`, which CommonMark reads as `\"`. A word that isn't a pair, such as `title="say "hi""`, gives no title.
 
 ```html
 <figure class="code-title"><figcaption>connect.ts<div class="ascribe-code-tested">Node 24.9.0 on Linux</div></figcaption><pre><code class="language-ts">…</code></pre></figure>
