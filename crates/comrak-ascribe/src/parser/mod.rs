@@ -248,18 +248,13 @@ where
     }
 
     fn handle_front_matter(&mut self, front_matter: &str, delimiter: &str) {
-        let lines = front_matter
-            .as_bytes()
-            .iter()
-            .filter(|b| **b == b'\n')
-            .count();
+        // ASCRIBE: a lone `\r` ends a line here too, as it does in `parse`
+        // (upstream counts only `\n`, so every line after a frontmatter with
+        // one was numbered one early).
+        let lines = ascribe::line_endings(front_matter);
 
         let stripped_front_matter = strings::remove_trailing_blank_lines_slice(front_matter);
-        let stripped_lines = stripped_front_matter
-            .as_bytes()
-            .iter()
-            .filter(|b| **b == b'\n')
-            .count();
+        let stripped_lines = ascribe::line_endings(stripped_front_matter);
 
         let node = self.add_child(
             self.root,
@@ -1407,12 +1402,12 @@ where
             let ast = &mut *ast;
             // ASCRIBE: definitions taken from the start of the heading's text
             // move its first line down (see `finalize_borrowed`).
-            let lines_before = ast.content.matches('\n').count();
+            let lines_before = ascribe::line_endings(&ast.content);
             let has_content = self.resolve_reference_link_definitions(
                 &mut ast.content,
                 (ast.sourcepos.start.line, &ast.line_offsets),
             );
-            ast.sourcepos.start.line += lines_before - ast.content.matches('\n').count();
+            ast.sourcepos.start.line += lines_before - ascribe::line_endings(&ast.content);
             has_content
         };
         if has_content {
@@ -2205,7 +2200,7 @@ where
             }
             NodeValue::Paragraph => {
                 // ASCRIBE: a text primary has no link reference definitions.
-                let lines_before = content.matches('\n').count();
+                let lines_before = ascribe::line_endings(content);
                 let has_content = ascribe::is_text_primary(node)
                     || self.resolve_reference_link_definitions(
                         content,
@@ -2217,7 +2212,7 @@ where
                 // ASCRIBE: definitions taken from the start of a paragraph
                 // move its first line down, so the inline positions (and the
                 // paragraph's) are right.
-                ast.sourcepos.start.line += lines_before - content.matches('\n').count();
+                ast.sourcepos.start.line += lines_before - ascribe::line_endings(content);
             }
             NodeValue::CodeBlock(ref mut ncb) => {
                 if !ncb.fenced {

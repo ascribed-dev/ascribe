@@ -83,6 +83,11 @@ fn directives_in_every_container() {
         "@note:\n  [é →]: /π \"😀\"\n@end\n[a]: /x\r\n\"t\"\r\n\r\n[b]:\r/y\r",
         "\t[a]: /x\n\n> \t[b]: /y\n",
         "@note: [a]: /x\n[b]: /y\n\n[c]: /z\n",
+        // A lone carriage return ends a line wherever it is (#1121).
+        "---\n\r\"\n---\n\n@note:{",
+        "---\r\ntitle: x\rkind: y\r\n---\r\n@note: after\r",
+        "[r]:[\r]",
+        "[r]: /x\r[s]:[\r]\r\rtext\r",
     ] {
         assert_exact("container case", source);
     }

@@ -51,7 +51,7 @@ Every change to an upstream file is marked in the code with a `// ASCRIBE:` comm
 | | | `NodeValue::accepts_lines` | An Ascribe line takes its own line |
 | | | `Node::can_contain_type` | An Ascribe line contains only its primary's paragraph |
 | `src/parser/options.rs` | 1 | `Extension` | The `ascribe: Option<Arc<AscribeOptions>>` option, after `front_matter_delimiter` |
-| `src/parser/mod.rs` | 15 | module list | `mod ascribe;` |
+| `src/parser/mod.rs` | 16 | module list | `mod ascribe;` |
 | | | `check_open_blocks_inner` | An Ascribe line stays open while its primary's paragraph does, and a raw container's opener until a line that's only `@end` at its indent (`continues_raw_container`) |
 | | | `open_new_blocks` | `handle_ascribe_line` in the chain of block starts, between block quotes and ATX headings |
 | | | `open_new_blocks` | No block starts inside a raw container's opener, as none does in a code block (`holds_raw_lines`; changed condition) |
@@ -63,6 +63,7 @@ Every change to an upstream file is marked in the code with a `// ASCRIBE:` comm
 | | | `handle_setext_heading` | The same, for a setext heading's text. **Candidate to upstream**, with the row above |
 | | | `parse_document` | Delegates to the new `parse_document_with_definitions`, which returns the link reference definitions the parser consumed along with the document (the body is upstream's, with the parser kept so its list can be taken) |
 | | | `Parser::parse` | Borrows the parser (`&mut self`, was `mut self`) so the caller can take the definitions |
+| | | `handle_front_matter` | Counts a lone `\r` as a line ending, as `parse` does when it splits the rest into lines (upstream counts only `\n`, so every line after a frontmatter with one is numbered one early, [#1121](https://github.com/ascribed-dev/ascribe/issues/1121)). **Candidate to upstream** (comrak bug) |
 | | | `Parser` | Two fields: the definitions found so far, and the last one `parse_reference_inline` read |
 | | | `resolve_reference_link_definitions` | Takes the content's first line and column offsets, and records each definition with its positions (`ascribe::locate`); the setext and paragraph call sites pass them |
 | | | `parse_reference_inline` | `&mut self` (was `&self`); records the label, destination, and title ranges, and the cleaned values, in the field above. The parsing itself is unchanged |
