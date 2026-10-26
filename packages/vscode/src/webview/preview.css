@@ -173,11 +173,6 @@ body {
   outline-offset: -1px;
 }
 
-[data-role="build-description"] {
-  color: var(--vscode-descriptionForeground, inherit);
-  font-size: 0.85em;
-}
-
 .problems {
   margin: 0 0 1rem;
   padding: 0;
@@ -478,7 +473,6 @@ body.site-mode .chrome {
 }
 
 body.site-mode .toolbar > label,
-body.site-mode [data-role="build-description"],
 body.site-mode [data-role="review"],
 body.site-mode .problems,
 body.site-mode main {
