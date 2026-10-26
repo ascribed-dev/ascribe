@@ -317,7 +317,7 @@ fn try_inserting_table_header_paragraph<'a>(
             .as_bytes()
             .iter()
             .rev()
-            .skip(1)
+            .skip(newlines_of(preface))
             .take_while(|&&c| !is_line_end_char(c))
             .count();
 
