@@ -4848,9 +4848,9 @@ next = "outside"
 evidence = []
 spec = "7.10"
 reference = "publishing/redirects.md#what-the-check-reports"
-row = "Addresses file | A build the base has and the working tree doesn't"
+row = "Addresses file | A build the base has and the working tree doesn't, other than a line archived now"
 message = "the base has the build `{build}`, and ascribe.toml doesn't now, so its {count} addresses aren't compared"
-fix = "Nothing to do when the build was retired on purpose, as an older line is when it leaves the window: its addresses aren't compared, since builds are matched by name. When the build was renamed, its addresses are compared under its new name once the base has it."
+fix = "Nothing to do when the build was removed on purpose: its addresses aren't compared, since builds are matched by name. A line `[releases]` archives isn't reported: `ascribe versions retire` records where its addresses go. When the build was renamed, its addresses are compared under its new name once the base has it."
 
 [[diagnostic]]
 code = "ASC259"

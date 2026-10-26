@@ -2,7 +2,8 @@
 //! heading, `@id`s to the heading they name, a glossary term in prose to its
 //! heading, phrases and feature keys to their entry in `ascribe.toml`, a
 //! `@snippet`'s address to its region's start tag in the code file, and a
-//! link to an operation to the operation in its API's spec.
+//! link to an operation, or an `@operation`'s, to the operation in its API's
+//! spec.
 
 use ascribe_core::{LineIndex, RelPath, Span};
 use ascribe_model::RELEASE_DIMENSION;
@@ -22,6 +23,10 @@ pub(crate) fn definition(ctx: &Ctx, position: Position) -> Option<Location> {
         Some(Hit::Reference(i, _)) => {
             let resolution = ctx.snapshot.resolutions(&ctx.path).get(i)?;
             resolution_location(ctx, &mut lines, resolution)
+        }
+        Some(Hit::Operation(link, _)) => {
+            let resolution = crate::nav::operation_resolution(ctx, link)?;
+            resolution_location(ctx, &mut lines, &resolution)
         }
         Some(Hit::Include(include)) => {
             let target = include.target.as_ref()?;
