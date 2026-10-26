@@ -191,8 +191,8 @@ pub(crate) struct Job {
 impl Job {
     /// The job for the project loaded, when there is one.
     pub(crate) fn of(core: &mut crate::core::Core) -> Option<Job> {
-        let loaded = core.loaded.as_ref()?;
-        let read_apis = !core.addresses.apis_read && !loaded.model.apis.is_empty();
+        let declares_apis = !core.loaded.as_ref()?.model.apis.is_empty();
+        let read_apis = declares_apis && !core.addresses.apis_read;
         core.addresses.apis_read |= read_apis;
         let loaded = core.loaded.as_ref()?;
         Some(Job {

@@ -51,7 +51,7 @@ A first run says nothing about what's new, and neither does a run on other build
 
 ## Inventory
 
-How many pages the project has, by content type and by owner, and three lists from the checks across the project: the pages whose review date has passed, the pages nothing links to, and the fragments, phrases, features, glossary terms, and images nothing uses.
+How many pages the project has, by content type and by owner, and three lists from the checks across the project: the pages whose recheck date has passed, the pages nothing links to, and the fragments, phrases, features, glossary terms, and images nothing uses.
 
 A page's owner is the value of the frontmatter field its type marks `role = "owner"`, such as a team's name:
 

@@ -2,6 +2,8 @@
 
 <ascribe-tab value="cloud" label="Quill Cloud">
 
+<p class="ascribe-tab-label">Quill Cloud</p>
+
 <ascribe-steps>
 
 1. Sign in.
@@ -15,6 +17,8 @@
 </ascribe-tab>
 
 <ascribe-tab value="self-managed" label="Self-managed">
+
+<p class="ascribe-tab-label">Self-managed</p>
 
 > A quote with a list:
 >

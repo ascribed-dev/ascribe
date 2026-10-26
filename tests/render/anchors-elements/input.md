@@ -94,12 +94,16 @@ New way.
 
 <ascribe-tab value="npm" label="npm" data-ascribe-source="index.md:52-53">
 
+<p class="ascribe-tab-label">npm</p>
+
 <!--ascribe-anchor tag="p" source="index.md:53-53"-->
 Use npm.
 
 </ascribe-tab>
 
 <ascribe-tab value="pnpm" label="pnpm" data-ascribe-source="index.md:54-55">
+
+<p class="ascribe-tab-label">pnpm</p>
 
 <!--ascribe-anchor tag="p" source="index.md:55-55"-->
 Use pnpm.

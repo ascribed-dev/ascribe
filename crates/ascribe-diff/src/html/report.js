@@ -5,6 +5,7 @@
   // ../elements/src/names.ts
   var ELEMENT_TABS = "ascribe-tabs";
   var ELEMENT_TAB = "ascribe-tab";
+  var CLASS_TAB_LABEL = "ascribe-tab-label";
   var CLASS_COPY = "ascribe-copy";
   var DATA_COPY = "data-ascribe-copy";
   var CLASS_COPY_STATUS = "ascribe-copy-status";
@@ -145,6 +146,10 @@
   function valuesOf(tab) {
     return (tab.getAttribute("value") ?? "").split(/\s+/).filter(Boolean);
   }
+  function labelOf(tab) {
+    const first = tab.firstElementChild;
+    return first?.classList.contains(CLASS_TAB_LABEL) ? first : void 0;
+  }
   var followChoice;
   var AscribeTab = class extends HTMLElement {
   };
@@ -194,6 +199,7 @@
         tablist.append(button2);
         tab.setAttribute("role", "tabpanel");
         tab.setAttribute("aria-labelledby", button2.id);
+        labelOf(tab)?.setAttribute("aria-hidden", "true");
         return button2;
       });
       this.prepend(tablist);
@@ -215,6 +221,7 @@
         tab.removeAttribute("role");
         tab.removeAttribute("aria-labelledby");
         tab.removeAttribute("hidden");
+        labelOf(tab)?.removeAttribute("aria-hidden");
       }
       this.#tablist = null;
       this.#tabs = [];

@@ -20,12 +20,20 @@ impl DiagnosticSlug {
         self.0
     }
 
-    /// The slug with this text, if the registry has one.
+    /// The slug with this text, if the registry has one, or the slug of
+    /// the check that had it as its old name
+    /// ([`OLD_NAMES`](crate::diagnostics::OLD_NAMES)).
     pub fn from_name(name: &str) -> Option<DiagnosticSlug> {
         crate::diagnostics::ALL
             .iter()
             .copied()
             .find(|s| s.0 == name)
+            .or_else(|| {
+                crate::diagnostics::OLD_NAMES
+                    .iter()
+                    .find(|(old, _)| *old == name)
+                    .map(|(_, slug)| *slug)
+            })
     }
 }
 
@@ -201,6 +209,10 @@ mod tests {
             Some(diagnostics::CONTAINER_UNCLOSED)
         );
         assert_eq!(DiagnosticSlug::from_name("no-such-diagnostic"), None);
+        assert_eq!(
+            DiagnosticSlug::from_name("review-overdue"),
+            Some(diagnostics::RECHECK_OVERDUE)
+        );
         assert_eq!(
             diagnostics::CONTAINER_UNCLOSED.to_string(),
             "container-unclosed"

@@ -2,7 +2,7 @@ spec = "0.1"
 
 [types.page.frontmatter]
 title = "string"
-updated = { type = "string?", role = "review-date" }
+updated = { type = "string?", role = "recheck-date" }
 summary = { type = "string?", role = "summary" }
 description = { type = "string?", role = "description" }
 abstract = { type = "string?", role = "description" }

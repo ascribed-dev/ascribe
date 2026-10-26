@@ -2,6 +2,8 @@
 
 <ascribe-tab value="cloud" label="Quill Cloud" data-ascribe-source="index.md:5-11">
 
+<p class="ascribe-tab-label">Quill Cloud</p>
+
 <ascribe-steps data-ascribe-source="index.md:6-11">
 
 <!--ascribe-anchor tag="ol" source="index.md:7-11" items="7-9 11-11"-->
@@ -19,6 +21,8 @@
 </ascribe-tab>
 
 <ascribe-tab value="self-managed" label="Self-managed" data-ascribe-source="index.md:12-16">
+
+<p class="ascribe-tab-label">Self-managed</p>
 
 <!--ascribe-anchor tag="blockquote" source="index.md:13-16"-->
 > <!--ascribe-anchor tag="p" source="index.md:13-13"-->

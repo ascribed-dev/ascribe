@@ -223,7 +223,7 @@ export interface ProjectCount {
   problems?: ProblemCounts;
   /**
    * Its own note, when it isn't current though its group is, as overdue
-   * reviews checked on another day; `null` when its group's says it.
+   * rechecks checked on another day; `null` when its group's says it.
    */
   note: string | null;
   /** Whether choosing the count opens its list, which only a current count above zero does. */

@@ -1,5 +1,5 @@
 //! What `page-description-missing`, `description-too-long`, and
-//! `review-overdue` decide about a page, read from the fields its content
+//! `recheck-overdue` decide about a page, read from the fields its content
 //! type gives those roles (SPEC §7.2).
 //!
 //! The checks report from these, and the language server's This page rows
@@ -49,16 +49,16 @@ pub fn description_too_long(model: &ContentModel, length: usize) -> bool {
         && !model.checks.is_off(diagnostics::DESCRIPTION_TOO_LONG)
 }
 
-/// The date a page's review-date field `field` holds, when it holds one.
-pub fn review_date(field: &Field, value: &Value) -> Option<Date> {
+/// The date a page's recheck-date field `field` holds, when it holds one.
+pub fn recheck_date(field: &Field, value: &Value) -> Option<Date> {
     match value.get(field.name.as_str()) {
         Some(Value::String(text)) => Date::parse(text),
         _ => None,
     }
 }
 
-/// Whether `review-overdue` reports a page due for review on `due`, on the
+/// Whether `recheck-overdue` reports a page due for a recheck on `due`, on the
 /// day `today`: the date has passed, and the check is on.
-pub fn review_overdue(checks: &Checks, today: Option<Date>, due: Date) -> bool {
-    today.is_some_and(|today| due < today) && !checks.is_off(diagnostics::REVIEW_OVERDUE)
+pub fn recheck_overdue(checks: &Checks, today: Option<Date>, due: Date) -> bool {
+    today.is_some_and(|today| due < today) && !checks.is_off(diagnostics::RECHECK_OVERDUE)
 }

@@ -1,0 +1,8 @@
+description: >-
+  An acknowledgement that names the check by its old name, `review-overdue`,
+  still acknowledges `recheck-overdue`'s problem for a release.
+spec: ["4.9", "7.2"]
+tags: [check]
+today: "2026-10-10"
+
+diagnostics: []

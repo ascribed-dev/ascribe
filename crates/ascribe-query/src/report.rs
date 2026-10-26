@@ -5,7 +5,7 @@
 //! - **problems**: what `ascribe check` reports, and the problems
 //!   acknowledged as intended;
 //! - **inventory**: the pages by type and by owner, how many of each
-//!   declared API's operations a link names, and the overdue reviews, orphan
+//!   declared API's operations a link names, and the overdue rechecks, orphan
 //!   pages, and unused entries the checks find, as lists;
 //! - **builds**: the pages and the content each build leaves out that
 //!   another keeps;
@@ -45,7 +45,7 @@ use ascribe_resolve::{AstroRouter, ExampleStatus, FileKind, Removal};
 pub enum Section {
     /// What `ascribe check` reports, and what's acknowledged.
     Problems,
-    /// Pages by type and owner, overdue reviews, orphans, unused entries.
+    /// Pages by type and owner, overdue rechecks, orphans, unused entries.
     Inventory,
     /// What each build leaves out that another keeps.
     Builds,
@@ -203,7 +203,7 @@ pub struct Inventory {
     /// the page's type marks `role = "owner"`; `None` for pages without
     /// one.
     pub by_owner: Vec<(Option<String>, usize)>,
-    /// The pages whose review date has passed (`review-overdue`).
+    /// The pages whose recheck date has passed (`recheck-overdue`).
     pub overdue: Vec<Diagnostic>,
     /// The pages nothing links to (`page-orphan`).
     pub orphans: Vec<Diagnostic>,
@@ -609,7 +609,7 @@ fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
         pages,
         by_type: most_first(by_type),
         by_owner: most_first(by_owner),
-        overdue: listed(&[diagnostics::REVIEW_OVERDUE]),
+        overdue: listed(&[diagnostics::RECHECK_OVERDUE]),
         orphans: listed(&[diagnostics::PAGE_ORPHAN]),
         unused: listed(UNUSED),
         examples: examples(project, &index),

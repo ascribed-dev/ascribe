@@ -152,14 +152,14 @@ Only a page type's top-level `string` fields can set it, its own or `[frontmatte
 
 ### 5.4 Field roles
 
-A check that needs a page's description or the date it's due for review, or a report that counts pages by owner, reads the field with that role.
+A check that needs a page's description or the date it's next due to be checked, or a report that counts pages by owner, reads the field with that role.
 
 A field named for a role has it, when its type is one the role takes:
 
 ```toml
 [frontmatter]
 description = "string?"
-review-date = "date?"
+recheck-date = "date?"
 owner = "enum(docs, platform)"
 ```
 
@@ -168,18 +168,18 @@ A field's name is yours to choose, so a field of another name takes a role with 
 ```toml
 [types.guide.frontmatter]
 summary = { type = "string?", role = "description" }
-review-by = { type = "date?", role = "review-date" }
+review-by = { type = "date?", role = "recheck-date" }
 team = { type = "enum(docs, platform)", role = "owner" }
 ```
 
 | Role | The field's type | What reads it |
 |---|---|---|
 | `description` | `string`, optional or not | [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports a page of the type without one. A required field, or one with a default, always has one, so the check has nothing to report: a page that leaves a field with a default out, or empty, has the default as its description, in `llms.txt` and the page records too. [`description-link`](../checks/diagnostics/content-checks.md#ASC198) reports a Markdown link in one: a description is plain text, so the link is shown as written. |
-| `review-date` | `date`, optional or not | [`review-overdue`](../checks/diagnostics/content-checks.md#ASC153) reports a page whose date has passed. |
+| `recheck-date` | `date`, optional or not | [`recheck-overdue`](../checks/diagnostics/content-checks.md#ASC153) reports a page whose date has passed. `review-date`, the role's old name, still works, as a value of `role` and as a field's name, and so does the check's, `review-overdue`, in `[checks]` and in an acknowledgement, until the next release. |
 | `owner` | `string` or `enum`, optional or not | [`ascribe report inventory`](../checks/report-command.md#cli-report) counts pages by owner. |
 
 Without a field with the role, those checks don't look at the type's pages, and the report counts its pages as having no owner. A role changes nothing in the outputs.
 
-In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) shows a page's description against its limit, and when it's due for review, from the fields with these roles.
+In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) shows a page's description against its limit, and when it's due for a recheck, from the fields with these roles.
 
 **Rules.** A role is one of the three (`model-field-role`), on a field of its type, in a page type's top-level fields, its own or `[frontmatter]`'s: not a field in an object, nor in the fragment schema. Two fields of one table can't have the same role. A role a type gives one of its own fields with `role` is that field's, and not a field's in `[frontmatter]`. A field named for a role has it only when no other field of the type is given it, and its type is one the role takes: a `description` that's a number is a field like any other.
