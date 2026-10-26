@@ -814,6 +814,7 @@ fn a_missing_title_takes_the_opening_heading() {
         "# Install {product}\n",
         "#\n\nText.\n",
         "# Install\n@id: install\n\nText.\n",
+        "# Install {#setup}\n\nText.\n",
         "---\ntitle:\n---\n\n# Install\n",
     ] {
         assert_eq!(fixed(text), None, "{text}");
