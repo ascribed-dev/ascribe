@@ -566,7 +566,20 @@
     const code = at.node.nodeValue?.codePointAt(at.offset) ?? 0;
     return code > 65535 ? 2 : 1;
   }
-  function markWords(element, words) {
+  function textHolder(element) {
+    const source = element.getAttribute(DATA_SOURCE);
+    const via = viaOf(element);
+    let holder = element;
+    for (; ; ) {
+      const inner = Array.from(holder.querySelectorAll(`[${DATA_SOURCE}]`)).find(
+        (el) => el.getAttribute(DATA_SOURCE) === source && viaOf(el) === via
+      );
+      if (!inner) return holder;
+      holder = inner;
+    }
+  }
+  function markWords(block, words) {
+    const element = textHolder(block);
     const map = textMap(element);
     const nowChars = Array.from(words.now_text);
     const text = map.text.join("");

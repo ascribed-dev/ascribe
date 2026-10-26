@@ -12,7 +12,7 @@ Base: `origin/main`, from where this branch left it (9f8e7d6)
 To read a page: `ascribe resolve <page> --build site`
 Changed pages of build `site`:
 - site/content/about.md: 1 added, 1 removed
-- site/content/install.md: 1 added, 1 removed (through site/content/_fragments/prereqs.md)
+- site/content/install.md: 1 changed (through site/content/_fragments/prereqs.md)
 - site/content/new.md: added
 
 Follow the project's rules in `AGENTS.md`.

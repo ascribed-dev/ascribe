@@ -658,6 +658,54 @@ fn a_rewritten_block_is_removed_and_added() {
 }
 
 #[test]
+fn a_short_sentence_that_grew_is_changed_with_its_new_words() {
+    let a = version(MODEL, &[("p.md", "# P\n\nRun `widgetly uninstall`.\n")]);
+    let b = version(
+        MODEL,
+        &[("p.md", "# P\n\nRun `widgetly uninstall` to remove it.\n")],
+    );
+    let grown = page(&a, &b);
+    let change = only_change(&grown);
+    assert_eq!(change.kind, ChangeKind::Changed);
+    let words = change.words.as_ref().unwrap();
+    let now_words: Vec<String> = words
+        .now
+        .iter()
+        .map(|r| slice(&words.now_text, *r))
+        .collect();
+    let was_words: Vec<String> = words
+        .was
+        .iter()
+        .map(|r| slice(&words.was_text, *r))
+        .collect();
+    assert_eq!(now_words, ["to remove it"]);
+    assert!(was_words.is_empty());
+
+    // Words taken off the start are a change too.
+    let c = version(
+        MODEL,
+        &[("p.md", "# P\n\nFirst, run `widgetly uninstall`.\n")],
+    );
+    let d = version(MODEL, &[("p.md", "# P\n\nRun `widgetly uninstall`.\n")]);
+    let shorter = page(&c, &d);
+    assert_eq!(only_change(&shorter).kind, ChangeKind::Changed);
+}
+
+#[test]
+fn most_of_a_short_sentence_replaced_is_removed_and_added() {
+    let a = version(MODEL, &[("p.md", "# P\n\nRun `widgetly uninstall`.\n")]);
+    let b = version(
+        MODEL,
+        &[("p.md", "# P\n\nDelete the widgetly folder by hand.\n")],
+    );
+    let page = page(&a, &b);
+    assert_eq!(
+        page.changes.iter().map(|c| c.kind).collect::<Vec<_>>(),
+        [ChangeKind::Removed, ChangeKind::Added]
+    );
+}
+
+#[test]
 fn the_json_has_the_documented_shape() {
     let a = version(MODEL, &[("install.md", PAGE)]);
     let b = version(
