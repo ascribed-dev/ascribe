@@ -11,7 +11,7 @@ use ascribe_emit::{PlainEmitter, SiteEmitter};
 use ascribe_resolve::Project;
 use serde_json::{Value, json};
 
-use crate::support::{emit_build, memory_project, site};
+use crate::support::{emit_build, memory_project, memory_project_with_files, site};
 
 const MODEL: &str = "spec = \"0.1\"\n\
     [types.page]\n\
@@ -503,13 +503,16 @@ fn the_headers_let_any_origin_read_each_help_entry() {
     let model = "spec = \"0.1\"\n\
         [releases.self-managed]\nlive = [\"3.4\", \"3.5\"]\n\
         [builds.site]\nversions = \"self-managed\"\n\
-        [permalinks.aliases]\nlink = \"connect\"\n\
         [consumer]\nbase-path = \"/docs/\"\n";
-    let project = memory_project(
+    let project = memory_project_with_files(
         model,
         &[(
             "a.md",
             "---\ntitle: A\nlisting: unlisted\n---\n\n## Connect\n@id {permalink=true}: connect\n\nConnect it.\n",
+        )],
+        &[(
+            "ascribe.addresses",
+            "version = 1\n\n[moved]\n\"go:link\" = \"go:connect\"\n",
         )],
     );
     let any = json!({ "Access-Control-Allow-Origin": "*" });

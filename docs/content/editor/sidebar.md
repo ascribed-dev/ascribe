@@ -95,36 +95,37 @@ In a project that [keeps its addresses](../publishing/redirects.md), Health has 
 
 **This page** says what's known about the page you're working in. Its sections are **About**, **Health**, **Connections**, and **Memos**. While review is on, **Review** comes after About ([Review in the preview](review.md#the-review-view)).
 
-![The This page view, with the rest of the Ascribe sidebar closed, beside the page Install the Quill agent with the cursor under its heading "Install the agent". At the view's top are the page's title, its type, page, and its path, install-agent.md. About gives its title, its type, its address, /install-agent/, its Markdown version, not published, its description's length, 102 characters, its availability, the builds that publish it, and its listing, "Listed (the default)". Health says its problems, none, and its size, "2,567 of 50,000 characters, in site@3.4". Connections, titled to “Install the agent”, lists under Linked from the file keys.md and its line that links there, with its line number, under Included by none, and under Includes the fragment _fragments/prerequisites.md. Memos, titled about “Install the agent”, lists one memo by its first line, with its file, memos/agent-first.md, beside it.](../images/this-page-light.png){scheme=light}
-![The This page view, with the rest of the Ascribe sidebar closed, beside the page Install the Quill agent with the cursor under its heading "Install the agent". At the view's top are the page's title, its type, page, and its path, install-agent.md. About gives its title, its type, its address, /install-agent/, its Markdown version, not published, its description's length, 102 characters, its availability, the builds that publish it, and its listing, "Listed (the default)". Health says its problems, none, and its size, "2,567 of 50,000 characters, in site@3.4". Connections, titled to “Install the agent”, lists under Linked from the file keys.md and its line that links there, with its line number, under Included by none, and under Includes the fragment _fragments/prerequisites.md. Memos, titled about “Install the agent”, lists one memo by its first line, with its file, memos/agent-first.md, beside it.](../images/this-page-dark.png){scheme=dark}
+![The This page view, with the rest of the Ascribe sidebar closed, beside the page Install the Quill agent with the cursor under its heading "Install the agent". At the view's top are the page's title, its type, page, and its path, install-agent.md. About gives its address, /install-agent/, its Markdown version, not published, its availability, the builds that publish it, its listing, "Listed (the default)", and its three permalinks. Health says its problems, none, its description's length, 102 characters, and its size, "2,567 of 50,000 characters, in site@3.4". Connections, titled to “Install the agent”, lists under Linked from the file keys.md and its line that links there, with its line number, under Included by none, and under Includes the fragment _fragments/prerequisites.md. Memos, titled about “Install the agent”, lists one memo by its first line, with its file, memos/agent-first.md, beside it.](../images/this-page-light.png){scheme=light}
+![The This page view, with the rest of the Ascribe sidebar closed, beside the page Install the Quill agent with the cursor under its heading "Install the agent". At the view's top are the page's title, its type, page, and its path, install-agent.md. About gives its address, /install-agent/, its Markdown version, not published, its availability, the builds that publish it, its listing, "Listed (the default)", and its three permalinks. Health says its problems, none, its description's length, 102 characters, and its size, "2,567 of 50,000 characters, in site@3.4". Connections, titled to “Install the agent”, lists under Linked from the file keys.md and its line that links there, with its line number, under Included by none, and under Includes the fragment _fragments/prerequisites.md. Memos, titled about “Install the agent”, lists one memo by its first line, with its file, memos/agent-first.md, beside it.](../images/this-page-dark.png){scheme=dark}
 
-Only About starts open. The other headers say whether to open them: Health's count of things to do, Connections' heading, and Memos' "none". The view's badge counts Health's things to do, so you see them with This page collapsed or Health closed.
+Only About starts open. The other headers say whether to open them: Health's count of the rows that warn, such as "2 rows warn", Connections' heading, and Memos' "none". The view's badge shows Health's count, so you see it with This page collapsed or Health closed.
 
 - **Connections** lists what links to the page, what includes it, and what it includes. With the cursor under a heading, it narrows to that heading's links and the includes of its section, whichever page they reach it through. Includes stays the page's.
 - **Memos** lists the [memo files](actions.md#memo-files) about the heading, or about the page outside any heading, including memos about a block in it. A personal or outdated memo is marked.
+- A file in Connections is named, with its folder beside it when it's in one. An include is shown as the page writes it, with the file it reaches beside it when that says more.
 - Each item opens its link, include, or memo. An include opens in the editor group beside the page's, with the focus left in the view, and This page stays on the page.
 
-The title at the top shows the page's title, its type ("fragment" for a fragment), and its path. A row that warns says the state first, in the warning color: "changed since it was tested" before an example's address, "too long" before a description's length.
+The head at the top shows the page's title, its type ("fragment" for a fragment), and its path, so About doesn't say them again. Every row that can warn is in Health, and says its state first, in the warning color: "changed since it was tested" before an example's address, "too long" before a description's length. Each row that warns is marked with the warning icon.
 
-**About** says where the page is, and whether it's published, listed, due, and finished. **Address** is always there, and **Markdown** for a page. Each other row shows only when it has something to say, apart from **Description**, which shows "missing" when the page has none. A row with somewhere to go opens it:
+**About** says what the page is: where it is, and where it's published and listed. **Address** is always there, and **Markdown** for a page. Each other row shows only when it has something to say. A row with somewhere to go opens it:
 
 | Row | Says | Opens |
 |---|---|---|
 | **Address** | The page's address from the host's root, such as `/guides/install/`; "only where it's included" for a fragment | The page on the live site, when the project names its [`site`](../content-model/output.md#consumer) |
 | **Markdown** | Its Markdown version's address, or "not published" | Its Markdown version on the live site |
-| **Description** | Its length, or "missing" | The field in the frontmatter |
-| **Review** | "overdue, since 3 October" or "due in 12 days" | The field |
 | **Availability** | The page's own `available` | Nothing |
 | **Builds** | "Published by site, agents; left out by cloud", with why in its tooltip | **Switch Build**, to see the page as a build publishes it; **Dim What the Build Leaves Out** shows what that build leaves out of it |
 | **Listing** | "Listed (the default)" or "Unlisted, by `[listing.folders]`" | The page's own `listing`, or the rule in `ascribe.toml` |
 | **Permalink** | A [permalink](../permalinks/index.md) the page or one of its headings declares, one row each, with its summary in its tooltip | Its `permalink` or its `@id` line |
-| **Template** | "2 placeholders left, how-to template": what its [type's template](../templates/index.md#whats-left-to-fill-in) still leaves to fill in | **Go to Next Placeholder** |
 
-**Health** has these rows:
+**Health** has every row that can warn. **Problems** is always there, and **Size** for a page. Each other row shows only when it has something to say, apart from **Description**, which shows "missing" when the page has none:
 
 | Row | Says | Opens |
 |---|---|---|
 | **Problems** | The page's problems, an icon per severity with its count, or "none" | The Problems panel, kept to the page |
+| **Description** | Its length, or "missing" | The field in the frontmatter |
+| **Review** | "overdue, since 3 October" or "due in 12 days" | The field |
+| **Template** | "2 placeholders left, how-to template": what its [type's template](../templates/index.md#whats-left-to-fill-in) still leaves to fill in | **Go to Next Placeholder** |
 | **Size** | "31,200 of 50,000 characters, in site" | Nothing; its tooltip says which build and the limit |
 | **Example** | Each [tested example](../examples/tested.md) the page shows, with its state | The file its `@snippet` shows, beside the page |
 
@@ -234,8 +235,6 @@ A row whose state can warn says the state in the warning color only when there's
 
 - **Address** is written as the site output's links write it. It opens the site's origin and the address, in your browser, after VS Code asks about a domain it doesn't trust yet. That's the published site, not your branch: a page that's new or moved on your branch isn't there yet, and the row's tooltip says so. Without a `site`, for a fragment, and where the build the status bar shows leaves the page out, it's text and opens nothing.
 - **Markdown** says "not published" when the project publishes no Markdown versions ([`[consumer] agents`](../content-model/output.md#consumer), on by default with a `site`). It opens its Markdown version as Address opens the page. A fragment's address is only where it's included.
-- **Description** is shown "missing" where [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports the page. Its length is its field's default's when the page leaves the field out or empty. It's measured against the 300 characters its line in `llms.txt` reads best under, when the project publishes one, and led by "too long", with a warning, only where [`description-too-long`](../checks/diagnostics/output-checks.md#ASC163) reports it.
-- **Review** comes from the field with the [`review-date` role](../content-model/index.md#54-field-roles), as [`review-overdue`](../checks/diagnostics/content-checks.md#ASC153) compares it with today, with a warning only where that check reports the page.
 - **Builds** names the builds that publish the page and the ones that leave it out.
 - **Listing** is what [`pages.json`](../content-model/checks.md#22-listing) says of the page, and the rule that sets it.
 - **Permalink**'s tooltip has the summary a product shows with its help, as [`help.json`](../permalinks/in-your-product.md#writing-summaries) writes it in the editor's build: the section's `@summary`, or the page's description for its own. Or it says the section has none, which [`summary-missing`](../checks/diagnostics/content-checks.md#ASC252) reports when it's turned on.
@@ -243,6 +242,8 @@ A row whose state can warn says the state in the warning color only when there's
 In Health:
 
 - **Problems** is VS Code's problems for the page, counted as the status bar counts them, leaving out a severity there's none of. Its filter's **Show Active File Only** keeps the Problems panel to the page.
+- **Description** is shown "missing" where [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports the page. Its length is its field's default's when the page leaves the field out or empty. It's measured against the 300 characters its line in `llms.txt` reads best under, when the project publishes one, and led by "too long", with a warning, only where [`description-too-long`](../checks/diagnostics/output-checks.md#ASC163) reports it.
+- **Review** comes from the field with the [`review-date` role](../content-model/index.md#54-field-roles), as [`review-overdue`](../checks/diagnostics/content-checks.md#ASC153) compares it with today, with a warning only where that check reports the page.
 - **Size** is the page's Markdown in the build where it's largest, measured as [`page-size`](../content-model/checks.md#19-checks) measures it. It's shown always, so a page is seen growing toward the limit, and led by "too large" once it reaches it.
 - **Example** is each tested example a `@snippet` of the page shows: its state first, tested, changed since it was tested, or not tested, then its address, what it was tested with, and the heading it's under.
 

@@ -2,7 +2,9 @@
 //! published went, so none stops working without someone deciding it
 //! should. `[moved]` says where a source's addresses lead now, `[retired]`
 //! why they were removed, and `[former]` the settings the docs were
-//! published under before.
+//! published under before. A permalink's name, `go:<name>`, is a key like
+//! any other: moved to a page, to another permalink, or retired
+//! ([`AddressFile::permalinks`]).
 //!
 //! Ascribe writes the file whole ([`AddressFile::to_toml`]), each table
 //! sorted, one entry per line, when a move is recorded or a command adds an
@@ -33,6 +35,30 @@ pub const ADDRESSES_HEADER: &str = "# Where addresses the docs published went. W
 /// It isn't a reason: an entry that still has it is
 /// `addresses-file-invalid`.
 pub const RETIRED_PLACEHOLDER: &str = "why this address was retired";
+
+/// What a key or a `[moved]` value that names a permalink starts with:
+/// `go:<name>`, as `ascribe resolve` names one.
+pub const PERMALINK_PREFIX: &str = "go:";
+
+/// What a permalink's name may hold, for messages.
+pub const NAME_RULE: &str = "letters, digits, hyphens, underscores, and periods";
+
+/// Whether `reason` is still [`RETIRED_PLACEHOLDER`].
+pub fn is_retired_placeholder(reason: &str) -> bool {
+    reason.trim() == RETIRED_PLACEHOLDER
+}
+
+/// The key that names the permalink `name`: `go:<name>`.
+pub fn permalink_key(name: &str) -> String {
+    format!("{PERMALINK_PREFIX}{name}")
+}
+
+/// The permalink's name `text` names, when it's `go:<name>` with a name a
+/// permalink can have.
+pub fn permalink_name(text: &str) -> Option<&str> {
+    text.strip_prefix(PERMALINK_PREFIX)
+        .filter(|name| ascribe_core::is_id(name))
+}
 
 /// What `ascribe.addresses` records.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -115,6 +141,9 @@ pub enum Key<'a> {
     /// An address from the host's root, from before the project used
     /// Ascribe.
     Address(&'a str),
+    /// A permalink's name, `go:<name>`: its address under the permalinks'
+    /// path, in every build.
+    Permalink(&'a str),
 }
 
 impl<'a> Key<'a> {
@@ -122,6 +151,9 @@ impl<'a> Key<'a> {
     pub fn parse(text: &'a str) -> Option<Key<'a>> {
         if text.starts_with('/') {
             return (!text.chars().any(char::is_whitespace)).then_some(Key::Address(text));
+        }
+        if text.starts_with(PERMALINK_PREFIX) {
+            return permalink_name(text).map(Key::Permalink);
         }
         match split_place(text)? {
             (path, None) => Some(Key::Source(path)),
@@ -133,7 +165,142 @@ impl<'a> Key<'a> {
     pub fn path(self) -> Option<&'a str> {
         match self {
             Key::Source(path) | Key::Id { path, .. } => Some(path),
-            Key::Address(_) => None,
+            Key::Address(_) | Key::Permalink(_) => None,
+        }
+    }
+}
+
+/// What `ascribe.addresses` records of permalinks (SPEC §7.6): each `go:`
+/// key, in key order, with where it leads. A name the content declares
+/// too is still here; the content's declaration wins, and
+/// `addresses-entry-live` reports the entry.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RecordedPermalinks {
+    /// Each `go:` key's entry, by name.
+    pub names: Vec<RecordedPermalink>,
+}
+
+/// A permalink's entry in `ascribe.addresses`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RecordedPermalink {
+    /// The name, without `go:`.
+    pub name: String,
+    /// The entry's value as written: the reason, for a retired one; a
+    /// place, or `go:` and another permalink's name, for a moved one.
+    pub value: String,
+    /// Where it leads in the end, following the file's other entries.
+    pub end: End,
+    /// The entry's key, in `ascribe.addresses`.
+    pub span: Span,
+}
+
+/// Where a permalink's entry leads in the end.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum End {
+    /// Nowhere: it was retired, for this reason, or leads to an entry that
+    /// was.
+    Retired(String),
+    /// To a place: a page's content path, and optionally `#` and a
+    /// heading's id.
+    Place(String),
+    /// To the permalink of this name, which no entry moves: one the content
+    /// declares, when it's there.
+    Permalink(String),
+    /// Nowhere: its entries lead back to it (`addresses-chain`).
+    Cycle,
+}
+
+impl RecordedPermalinks {
+    /// Whether the file records no permalink.
+    pub fn is_empty(&self) -> bool {
+        self.names.is_empty()
+    }
+
+    /// The entry for `name`.
+    pub fn get(&self, name: &str) -> Option<&RecordedPermalink> {
+        self.names.iter().find(|r| r.name == name)
+    }
+
+    /// Whether the file has an entry for `name`.
+    pub fn has(&self, name: &str) -> bool {
+        self.get(name).is_some()
+    }
+
+    /// The entries that retire a name, or lead to one that's retired.
+    pub fn retired(&self) -> impl Iterator<Item = (&RecordedPermalink, &str)> {
+        self.names.iter().filter_map(|r| match &r.end {
+            End::Retired(reason) => Some((r, reason.as_str())),
+            _ => None,
+        })
+    }
+}
+
+impl RecordedPermalink {
+    /// The name it was moved to, as written, for one moved to another
+    /// permalink: an alias.
+    pub fn alias_of(&self) -> Option<&str> {
+        match self.end {
+            End::Permalink(_) | End::Place(_) => permalink_name(&self.value),
+            End::Retired(_) | End::Cycle => None,
+        }
+    }
+
+    /// The place it was moved to, as written, for one moved to a page.
+    pub fn moved_to(&self) -> Option<&str> {
+        match self.end {
+            End::Permalink(_) | End::Place(_) => {
+                (!self.value.starts_with(PERMALINK_PREFIX)).then_some(self.value.as_str())
+            }
+            End::Retired(_) | End::Cycle => None,
+        }
+    }
+}
+
+impl AddressFile {
+    /// What the file records of permalinks: each `go:` key, with where it
+    /// leads in the end.
+    pub fn permalinks(&self) -> RecordedPermalinks {
+        let mut names = Vec::new();
+        for (table, map) in [("moved", &self.moved), ("retired", &self.retired)] {
+            for (key, entry) in map {
+                let Some(name) = permalink_name(key) else {
+                    continue;
+                };
+                let end = if table == "retired" {
+                    End::Retired(entry.value.clone())
+                } else {
+                    self.end_of(key, &entry.value)
+                };
+                names.push(RecordedPermalink {
+                    name: name.to_owned(),
+                    value: entry.value.clone(),
+                    end,
+                    span: entry.span,
+                });
+            }
+        }
+        names.sort_by(|a, b| a.name.cmp(&b.name));
+        RecordedPermalinks { names }
+    }
+
+    /// Where `key`'s `[moved]` entry, `value`, leads in the end.
+    fn end_of(&self, key: &str, value: &str) -> End {
+        let mut seen = vec![key.to_owned()];
+        let mut current = value.to_owned();
+        loop {
+            if seen.contains(&current) {
+                return End::Cycle;
+            }
+            match self.step(&current) {
+                Some(Step::Moved(next)) => seen.push(std::mem::replace(&mut current, next)),
+                Some(Step::Retired(reason)) => return End::Retired(reason),
+                None => {
+                    return match permalink_name(&current) {
+                        Some(name) => End::Permalink(name.to_owned()),
+                        None => End::Place(current),
+                    };
+                }
+            }
         }
     }
 }
@@ -184,7 +351,8 @@ impl AddressFile {
     /// Records that `old` moved to `new`: `[moved]`'s entry for `old`, in
     /// place of any `[retired]` one. Each entry that led to `old` leads to
     /// `new` instead, so every pair stays flat; and an entry keyed by `new`,
-    /// whose source is back at its key, goes.
+    /// whose source is back at its key, goes. A permalink, `go:<name>`,
+    /// keeps its own entry: a name may move to a name that moved itself.
     ///
     /// When `old` is a page, an entry that leads to one of its headings,
     /// `old#id`, leads to `new#id`: the heading moved with its page.
@@ -204,8 +372,10 @@ impl AddressFile {
             }
         }
         self.moved.insert(old.to_owned(), Entry::new(new));
-        self.moved.remove(new);
-        self.retired.remove(new);
+        if !new.starts_with(PERMALINK_PREFIX) {
+            self.moved.remove(new);
+            self.retired.remove(new);
+        }
         self.moved.retain(|key, entry| *key != entry.value);
     }
 
@@ -434,8 +604,23 @@ impl Reader {
             },
         }
         for (key, span, value) in self.table(root, "moved") {
-            if split_place(&value).is_some() {
+            let permalink = key.starts_with(PERMALINK_PREFIX);
+            if split_place(&value).is_some() || (permalink && permalink_name(&value).is_some()) {
                 out.moved.insert(key, Entry { value, span });
+            } else if value.starts_with(PERMALINK_PREFIX) && !permalink {
+                self.problem(
+                    span,
+                    format!(
+                        "`{key}` moved to `{value}`, a permalink; only a permalink, `go:<name>`, moves to another"
+                    ),
+                );
+            } else if permalink && value.starts_with(PERMALINK_PREFIX) {
+                self.problem(
+                    span,
+                    format!(
+                        "`{key}` moved to `{value}`, which isn't a permalink's name: {NAME_RULE}"
+                    ),
+                );
             } else {
                 self.problem(
                     span,
@@ -566,7 +751,7 @@ impl Reader {
                 self.problem(
                     span,
                     format!(
-                        "`{name}` isn't a key `[{key}]` can have: a file's path ending in `.md`, with `#` and an id for a heading, or an address starting with `/`"
+                        "`{name}` isn't a key `[{key}]` can have: a file's path ending in `.md`, with `#` and an id for a heading, an address starting with `/`, or `go:` and a permalink's name"
                     ),
                 );
                 continue;
@@ -825,6 +1010,25 @@ mod tests {
     }
 
     #[test]
+    fn a_name_moved_to_an_alias_keeps_the_alias() {
+        let mut file = AddressFile::default();
+        file.record_move("go:config", "go:weave-config");
+        file.record_move("go:another", "go:config");
+        let moved: Vec<(&str, &str)> = file
+            .moved
+            .iter()
+            .map(|(k, e)| (k.as_str(), e.value.as_str()))
+            .collect();
+        assert_eq!(
+            moved,
+            [
+                ("go:another", "go:config"),
+                ("go:config", "go:weave-config")
+            ]
+        );
+    }
+
+    #[test]
     fn the_edit_is_the_lines_that_change() {
         let mut file = AddressFile::default();
         file.record_move("a.md", "b.md");
@@ -860,6 +1064,47 @@ mod tests {
     }
 
     #[test]
+    fn permalinks_lead_where_their_entries_end() {
+        let file = read(
+            "version = 1\n[moved]\n\
+             \"go:alias\" = \"go:settings\"\n\
+             \"go:chain\" = \"go:alias\"\n\
+             \"go:keys\" = \"guides/keys.md#rotate\"\n\
+             \"go:loop\" = \"go:loop\"\n\
+             \"go:old\" = \"go:sync\"\n\
+             \"guides/keys.md\" = \"security/keys.md\"\n\
+             [retired]\n\"go:sync\" = \"Removed in 4.0\"\n",
+        );
+        let recorded = file.permalinks();
+        let ends: Vec<(&str, &End)> = recorded
+            .names
+            .iter()
+            .map(|r| (r.name.as_str(), &r.end))
+            .collect();
+        assert_eq!(
+            ends,
+            [
+                ("alias", &End::Permalink("settings".to_owned())),
+                ("chain", &End::Permalink("settings".to_owned())),
+                // Its page moved, so it leads to the heading on the new one.
+                ("keys", &End::Place("security/keys.md#rotate".to_owned())),
+                ("loop", &End::Cycle),
+                ("old", &End::Retired("Removed in 4.0".to_owned())),
+                ("sync", &End::Retired("Removed in 4.0".to_owned())),
+            ]
+        );
+        assert_eq!(
+            recorded.get("chain").and_then(|r| r.alias_of()),
+            Some("alias")
+        );
+        assert_eq!(
+            recorded.get("keys").and_then(|r| r.moved_to()),
+            Some("guides/keys.md#rotate")
+        );
+        assert_eq!(recorded.get("old").and_then(|r| r.alias_of()), None);
+    }
+
+    #[test]
     fn retiring_replaces_a_move() {
         let mut file = AddressFile::default();
         file.record_move("a.md", "b.md");
@@ -884,6 +1129,11 @@ mod tests {
             Key::parse("/docs/intro.html"),
             Some(Key::Address("/docs/intro.html"))
         );
+        assert_eq!(
+            Key::parse("go:cli-check"),
+            Some(Key::Permalink("cli-check"))
+        );
+        assert_eq!(Key::parse("go:"), None);
         assert_eq!(Key::parse("a.txt"), None);
         assert_eq!(Key::parse("../a.md"), None);
         assert_eq!(Key::parse("/a b"), None);
@@ -904,7 +1154,25 @@ mod tests {
         assert_eq!(
             bad("version = 1\n[moved]\n\"a.txt\" = \"b.md\"\n"),
             [
-                "`a.txt` isn't a key `[moved]` can have: a file's path ending in `.md`, with `#` and an id for a heading, or an address starting with `/`"
+                "`a.txt` isn't a key `[moved]` can have: a file's path ending in `.md`, with `#` and an id for a heading, an address starting with `/`, or `go:` and a permalink's name"
+            ]
+        );
+        assert_eq!(
+            bad("version = 1\n[moved]\n\"go:a/b\" = \"b.md\"\n"),
+            [
+                "`go:a/b` isn't a key `[moved]` can have: a file's path ending in `.md`, with `#` and an id for a heading, an address starting with `/`, or `go:` and a permalink's name"
+            ]
+        );
+        assert_eq!(
+            bad("version = 1\n[moved]\n\"a.md\" = \"go:b\"\n"),
+            [
+                "`a.md` moved to `go:b`, a permalink; only a permalink, `go:<name>`, moves to another"
+            ]
+        );
+        assert_eq!(
+            bad("version = 1\n[moved]\n\"go:a\" = \"go:b c\"\n"),
+            [
+                "`go:a` moved to `go:b c`, which isn't a permalink's name: letters, digits, hyphens, underscores, and periods"
             ]
         );
         assert_eq!(

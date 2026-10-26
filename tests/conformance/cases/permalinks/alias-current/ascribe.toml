@@ -2,7 +2,3 @@ spec = "0.1"
 
 [project]
 content-root = "files"
-
-[permalinks.aliases]
-agent-settings = "settings"
-cli-settings = "agent-settings"

@@ -150,6 +150,7 @@ const canonical = new URL(Astro.url.pathname, site).href;
         <div class="site-body">
           <slot />
           <Sidebar current={current} />
+          <div class="menu-backdrop" hidden />
         </div>
       ) : (
         <slot />
@@ -169,14 +170,21 @@ const canonical = new URL(Astro.url.pathname, site).href;
       <p class="made-by">Made by <a href="https://bryostudio.com">Bryo Studio</a></p>
     </footer>
     <script>
-      // The sidebar is a drawer at narrow widths.
-      // It follows the page in the HTML, so opening it moves focus into it,
-      // to the current page's link, and focus leaving it closes it.
+      // The sidebar is a drawer at narrow widths, over a backdrop that dims the
+      // page. It follows the page in the HTML, so opening it moves focus into
+      // it, to the current page's link, and focus leaving it closes it. A click
+      // on the backdrop or Escape closes it and returns focus to the menu.
       const button = document.querySelector<HTMLButtonElement>(".menu-button");
       const sidebar = document.getElementById("sidebar");
+      const backdrop = document.querySelector<HTMLElement>(".menu-backdrop");
       function setOpen(open: boolean): void {
         button?.setAttribute("aria-expanded", String(open));
         sidebar?.classList.toggle("open", open);
+        if (backdrop) backdrop.hidden = !open;
+      }
+      function close(): void {
+        setOpen(false);
+        button?.focus();
       }
       button?.addEventListener("click", () => {
         const open = button.getAttribute("aria-expanded") !== "true";
@@ -188,15 +196,13 @@ const canonical = new URL(Astro.url.pathname, site).href;
           link?.focus();
         }
       });
+      backdrop?.addEventListener("click", close);
       sidebar?.addEventListener("focusout", (event) => {
         const to = event.relatedTarget;
         if (to instanceof Node && !sidebar.contains(to) && to !== button) setOpen(false);
       });
       document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && sidebar?.classList.contains("open")) {
-          setOpen(false);
-          button?.focus();
-        }
+        if (event.key === "Escape" && sidebar?.classList.contains("open")) close();
       });
     </script>
   </body>

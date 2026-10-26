@@ -57,16 +57,6 @@ availability = "badge"
 [editor]
 build = "site"
 
-# Names with no heading or page of their own: a second name for a permalink,
-# and permalinks retired on purpose, one leading somewhere new and one that
-# says why it's gone.
-[permalinks.aliases]
-config = "weave-config"
-
-[permalinks.retired]
-old-options = { to = "Reference/Options.md", reason = "Every option is on one page now." }
-legacy-sync = { reason = "Sync was removed in Loom 3.0, & nothing replaced it." }
-
 # Loom's API: a guide's link to `../../api/openapi.yaml#getLoom` is checked
 # against the spec, and written as the operation's address on Redoc's page,
 # src/pages/api.astro, under the base path.

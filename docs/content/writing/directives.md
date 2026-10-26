@@ -37,7 +37,7 @@ Without `@id`, a heading's id is the slug of its text ([heading ids](inline.md#h
 
 - **The id is still the heading's anchor,** and links inside the docs name it as they name any id: `checks/check.md#cli-check`. A permalink is for links from outside the docs; inside, link to the file.
 - **A build publishes a permalink in one place only** (`permalink-duplicate`), and names that differ only in case, such as `Setup` and `setup`, are one name. So a marked heading belongs in a fragment only one page of each build includes. Two pages that no build publishes together may share a permalink.
-- **A permalink that's removed is a warning** (`permalink-removed`) once the project commits [its list](../contracts/permalinks-list.md); restore the name or [retire it](../permalinks/index.md#moving-aliasing-and-retiring). Moving the heading to another page isn't removing it.
+- **A permalink that's lost is a warning** (`permalink-lost`) once the project commits [its list](../contracts/permalinks-list.md); restore the name, or [move or retire it](../permalinks/index.md#moving-aliasing-and-retiring). Moving the heading to another page isn't removing it.
 - **A page has a permalink** in its frontmatter, from the same set of names: [a page's permalink](frontmatter.md#a-pages-permalink).
 
 ## `@include`
@@ -119,7 +119,7 @@ Says where content applies and its lifecycle state. Unlike `@variant`, it doesn'
 
 ### Availability specs
 
-A spec is a comma-separated list of **targets**, each with an optional lifecycle:
+A spec is a comma-separated list of [targets](../glossary.md#target), each with an optional lifecycle:
 
 | Spec | Meaning |
 |---|---|
@@ -243,7 +243,7 @@ Takes a code example from a file outside the content, and puts it in the page as
 @snippet {lang=shell, title="Install"}: code:scripts/install.sh
 ```
 
-- **The address** is `<source>:<path>`, optionally followed by `#<region>`. `<source>` is a source declared in `ascribe.toml` ([`[sources.<name>]`](../content-model/output.md#18-sourcesname)), and `<path>` is the file's path relative to the source's folder (for a [source in another repository](../content-model/output.md#a-source-in-another-repository), its path in that repository), with `/` on every platform. There's no relative form: an address doesn't depend on where the page is.
+- **The address** is `<source>:<path>`, optionally followed by `#<region>`. `<source>` is a [source](../glossary.md#source) declared in `ascribe.toml` ([`[sources.<name>]`](../content-model/output.md#18-sourcesname)), and `<path>` is the file's path relative to the source's folder (for a [source in another repository](../content-model/output.md#a-source-in-another-repository), its path in that repository), with `/` on every platform. There's no relative form: an address doesn't depend on where the page is.
 - The file must exist with exactly that name, the source's `include` and `ignore` must take it in, and it must be text. A symbolic link is followed, but only to a file in the source's folder that `include` and `ignore` take in.
 - Without `#<region>`, the snippet is the whole file.
 - **Attributes:** `lang` sets the code block's language, which is otherwise the file's extension (`toml` for `ascribe.toml`); `title` gives the code block a title; `phrases=true` substitutes phrases in the code, as in a fence that opts in ([phrases](inline.md#phrases)).
@@ -267,6 +267,7 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 ```
 
 - **Only review checks,** whose next step is *review*, since what they report may be fine as it is, such as a page nothing links to. A problem that's always wrong is fixed instead. The [diagnostics reference](../checks/diagnostics.md) says where each review check is acknowledged.
+- **The names are Ascribe's.** A check is named as the diagnostics reference names it. The specification names no checks, so another processor may name its checks differently, and reports a name it doesn't know as an error, as Ascribe does ([`intended-check`](../checks/diagnostics/pages.md#ASC143)).
 - **Where it's written** depends on the check, which reports its problems at one kind of place:
   - **A block:** `@intended` directly above it, as above. It covers the check's problems anywhere in the block, including inside a container. Above a block of a fragment, it covers that block in every page that includes it.
   - **A heading:** `@intended` at the top of its section, among the directives under the heading. It covers the check's problems at the heading, and, when no blank line comes between, in the block directly under the `@intended` line, so a section's first block is acknowledged as any other block is. It covers nothing else in the section. An unused glossary term is acknowledged this way:

@@ -1,0 +1,9 @@
+description: >-
+  `[permalinks]` isn't a key any more: `ascribe.addresses` records what
+  happened to a permalink. Any value of it is an error at the key, which
+  says `ascribe addresses init` moves its entries.
+spec: ["7.10", "9.5"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-unknown-key, file: ascribe.toml, line: 3}

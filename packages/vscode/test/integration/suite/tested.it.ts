@@ -134,7 +134,7 @@ describe("a code file a page shows", () => {
       (item) => item.description === "code/examples/greet.out.txt",
     );
     assert.ok(example >= 0 && snippet >= 0, JSON.stringify(items));
-    const title = drawn.report.sections.find((section) => section.key === "about")?.items[0];
+    const title = drawn.report.head[0];
 
     for (const [key, file] of [
       [`connections/2/${snippet}`, uriOf("code", "examples", "greet.out.txt")],
@@ -151,10 +151,7 @@ describe("a code file a page shows", () => {
       assert.equal(beside.viewColumn, vscode.ViewColumn.Two);
       await view.whenSettled();
       const after = await view.probe({});
-      assert.equal(
-        after.report.sections.find((section) => section.key === "about")?.items[0],
-        title,
-      );
+      assert.equal(after.report.head[0], title);
       assert.equal(after.report.focused, key);
       assert.equal(after.report.hasFocus, true);
     }

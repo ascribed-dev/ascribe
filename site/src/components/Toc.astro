@@ -1,11 +1,17 @@
 ---
 // The page's table of contents, from the headings Astro's markdown pipeline
-// found: sections and their subsections.
+// found: sections and their subsections, with their code spans as <code>
+// (src/toc.ts). As the reader scrolls, the section in view is marked
+// `aria-current="location"`.
+import { tocHeadings, type Heading } from "../toc.ts";
+
 interface Props {
-  headings: { depth: number; slug: string; text: string }[];
+  headings: Heading[];
+  /** The page's HTML, where each heading's markup is. */
+  rendered?: string | undefined;
 }
 
-const headings = Astro.props.headings.filter((h) => h.depth === 2 || h.depth === 3);
+const headings = tocHeadings(Astro.props.headings, Astro.props.rendered);
 ---
 
 {
@@ -15,10 +21,51 @@ const headings = Astro.props.headings.filter((h) => h.depth === 2 || h.depth ===
       <ul>
         {headings.map((heading) => (
           <li data-depth={heading.depth}>
-            <a href={`#${heading.slug}`}>{heading.text}</a>
+            <a href={`#${heading.slug}`} set:html={heading.html} />
           </li>
         ))}
       </ul>
     </nav>
   )
 }
+
+<script>
+  // The section in view is the last whose heading has passed the top of the
+  // window, under the header; above the first, it's the first, and once the
+  // page is scrolled to its foot, the last.
+  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>(".toc a"));
+  const sections = links.flatMap((link) => {
+    const heading = document.getElementById(decodeURIComponent(link.hash.slice(1)));
+    return heading ? [{ link, heading }] : [];
+  });
+  let current: HTMLAnchorElement | undefined;
+  function mark(): void {
+    const top = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+    const end =
+      window.scrollY > 0 &&
+      window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+    let at = sections[0];
+    for (const section of sections) {
+      if (section.heading.getBoundingClientRect().top <= top + 1) at = section;
+    }
+    if (end) at = sections.at(-1);
+    if (at?.link === current) return;
+    current?.removeAttribute("aria-current");
+    current = at?.link;
+    current?.setAttribute("aria-current", "location");
+  }
+  if (sections.length > 0) {
+    let queued = false;
+    const schedule = (): void => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        mark();
+      });
+    };
+    mark();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+  }
+</script>

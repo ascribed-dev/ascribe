@@ -187,7 +187,3 @@ example-stale = "error"
 # so.
 [checks.vale]
 preset = "quiet"
-
-[permalinks.retired]
-cli-render = { to = "command/questions.md#cli-resolve", reason = "The command ascribe render was renamed ascribe resolve" }
-ASC073 = { to = "content-model/index.md#41-page-types", reason = "model-type-title is gone: every page type has a required string title, declared or not" }

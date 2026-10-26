@@ -1,9 +1,0 @@
-description: >-
-  A permalink the list has that nothing declares any more is removed,
-  reported at its entry in the list. An `@id` that isn't marked as a
-  permalink doesn't declare one.
-spec: ["7.5", "8.2"]
-tags: [check]
-
-diagnostics:
-  - {slug: permalink-removed, file: ascribe.permalinks, line: 4}

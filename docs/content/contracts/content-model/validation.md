@@ -141,9 +141,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 
 ### 25.10 Permalinks
 
-| Slug | Rule | Message |
-|---|---|---|
-| `model-permalinks` | A name in `[permalinks]` is retired or an alias, not both; an alias leads, through aliases, to a name that isn't one; a retired permalink's reason isn't the quick fix's placeholder. | `` `{name}` is both retired and an alias; a name is one thing `` |
+None: `[permalinks]` is a replaced key (§20, §25.1).
 
 ### 25.11 Crawlers
 
@@ -195,11 +193,13 @@ Every declaration SPEC §7.2 lists, and every setting SPEC §9.3 and §9.5 need,
 | Consumer profile (§9.5) | `[consumer]` | [§15](output.md#15-consumer) |
 | Builds (§9.3) | `[builds.<name>]` | [§16](output.md#16-buildsname) |
 | Name roles (§7.2, last paragraph) | Validation rule `model-name-multiple-roles` | [§25](#25-validation-rules) |
-| The editor's default build | `[editor]` | [§17](output.md#17-editor) |
 | Sources: the folders outside the content a snippet may read (§4.8, §7.3) | `[sources.<name>]` | [§18](output.md#18-sourcesname) |
 | Acknowledgements of a content model entry's or an image's problems (§4.9) | `[[intended]]` | [§19.1](checks.md#191-intended) |
 | Retired permalinks and aliases (§7.6) | `[permalinks]` | [§20](checks.md#20-permalinks) |
 | The project's own `robots.txt` lines (§7.2, §9.4) | `[crawlers]` | [§21](checks.md#21-crawlers) |
 | How the site's, a folder's, or a type's pages are listed (§2.1, §7.2) | `[listing]` | [§22](checks.md#22-listing) |
 | The OpenAPI specs pages link into (§7.11) | `[apis.<name>]` | [§23](checks.md#23-apisname) |
+| Processor settings (§7.2): which of Ascribe's checks run, and at what level; Vale; the link checker | `[checks]`, `[checks.vale]`, `[checks.links]` | [§19](checks.md#19-checks) |
+| Processor settings (§7.2): a content type's page template and guide | A type's `template` and `guide` | [§4](../content-model.md#4-typesname-and-fragments) |
+| Processor settings (§7.2): the editor's default build | `[editor]` | [§17](output.md#17-editor) |
 

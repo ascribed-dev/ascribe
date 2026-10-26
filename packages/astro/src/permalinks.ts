@@ -1,6 +1,6 @@
 // Permalinks' addresses: a page at `<path><id>` for each permalink the build
 // publishes, which sends the reader on to its heading, and for each retired
-// one with nowhere to lead, which says why it was removed. Ascribe writes the list,
+// one, which says why it was removed. Ascribe writes the list,
 // `_ascribe/permalinks.json` in the site output (output-layout contract §1.2);
 // the integration adds the route (`Permalink.astro`) and builds its pages
 // from it, in `astro build` and `astro dev`. With several projects, one route
@@ -20,20 +20,21 @@ export interface PermalinkList {
   /** The content model's dimensions, each with its values: the parameters an address takes. */
   dimensions?: Record<string, string[]>;
   /**
-   * Each permalink's destination. An alias names the permalink it leads to,
-   * and a retired permalink that leads somewhere its reason.
+   * Each permalink's destination. A name `ascribe.addresses` moves to
+   * another permalink names that permalink, and one it moves to a page
+   * where, as the file writes it.
    */
   permalinks: Record<
     string,
-    { route: string; fragment?: string; source: string; alias?: string; retired?: string }
+    { route: string; fragment?: string; source: string; alias?: string; moved?: string }
   >;
-  /** The retired permalinks with nowhere to lead in this build, each with why. */
+  /** The retired permalinks in this build, each with why. */
   removed?: Record<string, { reason: string }>;
 }
 
 /**
  * What an address's page needs: where it sends the reader, and the
- * parameters it takes; or, for a retired permalink with nowhere to lead,
+ * parameters it takes; or, for a retired permalink,
  * why it was removed.
  */
 export type Forwarding =

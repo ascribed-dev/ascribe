@@ -39,7 +39,7 @@
 //! block. A list's anchor also gives each of its items an anchor, found by
 //! counting nested lists. comrak escapes `<` in text, so the next `<` is a tag.
 
-use ascribe_core::names;
+use ascribe_core::{info_string, names};
 use comrak_ascribe::{Options, markdown_to_html};
 
 /// The tag name of the attribute marker.
@@ -566,30 +566,15 @@ fn code_block(html: &str) -> Option<(Vec<(String, String)>, Vec<(String, String)
     Some((pre, code, body_start, end))
 }
 
-/// The value of `key="…"` in a code block's info string past its language,
-/// read as `@ascribed/astro` reads a title: from a space or the start, to
-/// the quote that's followed by a space or the end.
+/// The value of the `key` pair in a code block's info string past its
+/// language (SPEC §3.3.1), when it isn't empty.
 fn meta_value(meta: &str, key: &str) -> Option<String> {
-    let open = format!("{key}=\"");
-    let mut from = 0;
-    while let Some(found) = meta[from..].find(&open) {
-        let at = from + found;
-        from = at + open.len();
-        if at > 0 && !meta[..at].ends_with(char::is_whitespace) {
-            continue;
-        }
-        let value = &meta[from..];
-        let end = value.char_indices().find(|&(i, c)| {
-            c == '"'
-                && value[i + 1..]
-                    .chars()
-                    .next()
-                    .is_none_or(char::is_whitespace)
-        })?;
-        let value = &value[..end.0];
-        return (!value.is_empty()).then(|| value.to_owned());
-    }
-    None
+    info_string::words(meta)
+        .into_iter()
+        .filter_map(|w| w.pair)
+        .find(|p| p.key == key)
+        .map(|p| p.value.into_owned())
+        .filter(|v| !v.is_empty())
 }
 
 /// The attributes comrak wrote on a tag, as `(name, decoded value)`.

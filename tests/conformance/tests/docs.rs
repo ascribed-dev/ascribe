@@ -732,13 +732,6 @@ const SETTINGS_TABLES: &[SettingsTable] = &[
         releases: false,
     },
     SettingsTable {
-        name: "content-model-permalinks-retired.md",
-        page: "content-model/checks.md",
-        table: "permalinks.retired.<name>",
-        keys: &[],
-        releases: false,
-    },
-    SettingsTable {
         name: "content-model-crawlers.md",
         page: "_fragments/content-model/crawlers.md",
         table: "crawlers",
@@ -834,9 +827,6 @@ const DESCRIBED_IN_PROSE: &[(&str, &str)] = &[
     ("", "checks"),
     ("", "intended"),
     ("checks", "vale"),
-    ("", "permalinks"),
-    ("permalinks", "retired"),
-    ("permalinks", "aliases"),
     ("listing", "older-lines"),
 ];
 
@@ -970,7 +960,6 @@ const RULE_GROUPS: &[(&str, &str)] = &[
     ("phrases", "Phrases and the glossary"),
     ("widgets", "Widgets"),
     ("consumer", "The consumer, builds, and the editor"),
-    ("permalinks", "`[permalinks]`"),
     ("crawlers", "`[crawlers]`"),
     ("listing", "`[listing]`"),
     ("apis", "`[apis]`"),
@@ -1167,6 +1156,7 @@ fn model_group(entry: &Entry) -> &str {
 
 fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: &Pages) {
     let section = match pages.spec.get(&entry.spec) {
+        None if entry.spec == "none" => "Ascribe's own, not in SPEC".to_owned(),
         Some(anchor) => format!(
             "[SPEC §{}]({{repo}}/blob/main/SPEC.md#{anchor})",
             entry.spec

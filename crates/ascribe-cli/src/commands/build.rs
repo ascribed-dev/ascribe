@@ -3,7 +3,9 @@
 //! The checks run first, for every build asked for, on the diagnostics
 //! `ascribe check` reports. The text shows each error in full, since errors
 //! stop the build, and one summary line that points to `ascribe check` for
-//! the warnings and advice; the JSON is exactly `ascribe check`'s. A build
+//! the warnings and advice; the JSON is exactly `ascribe check`'s. The
+//! advice `ascribe.baseline` lists is held back and counted, as `ascribe
+//! check` holds it back, unless `--no-baseline` says not to. A build
 //! with errors writes nothing (SPEC §8.2: "a build MUST fail on
 //! errors"). Otherwise each build is resolved once and each output is
 //! written from that resolved tree, into a staging
@@ -12,7 +14,7 @@
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use ascribe_check::{Diagnosed, LoadError, Project, Reported, Severity, diagnose};
+use ascribe_check::{Diagnosed, LoadError, Project, Reported, Request, Severity, diagnose_with};
 use ascribe_emit::{EmitError, Output, WriteEvent, WriteOptions, Written};
 use ascribe_model::Build;
 use clap::{Args as ClapArgs, ValueEnum};
@@ -57,6 +59,15 @@ pub struct Args {
     /// anchors. The other outputs are the same either way.
     #[arg(long)]
     pub anchors: bool,
+
+    /// Report the advice `ascribe.baseline` holds back too, without reading
+    /// the file.
+    ///
+    /// By default, the checks hold back what the baseline lists while it's
+    /// advice, and count it, as `ascribe check` does. A baseline that can't
+    /// be read stops the build, unless this is given.
+    #[arg(long)]
+    pub no_baseline: bool,
 }
 
 /// An output.
@@ -102,11 +113,16 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
         Err(failure) => return report_failure(failure, args, color, out, err),
     };
     // The checks, for every build asked for, before anything is written.
+    let request = Request {
+        builds: &args.build,
+        baseline: !args.no_baseline,
+    };
     let Diagnosed {
         mut diagnostics,
         builds,
         acknowledged,
-    } = match diagnose(&project, &args.build) {
+        baselined,
+    } = match diagnose_with(&project, &request) {
         Ok(found) => found,
         Err(e) => return exit::fail(err, &e),
     };
@@ -128,6 +144,7 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
             checked,
             &covered,
             acknowledged.len(),
+            baselined.len(),
             &check_command(global, args),
             color,
         ),
@@ -141,7 +158,7 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
                 files_reported: checked,
                 builds_checked: names.clone(),
                 acknowledged: &acknowledged,
-                baselined: 0,
+                baselined: baselined.len(),
                 summary_only: None,
                 fixed: &[],
             },
@@ -265,6 +282,9 @@ fn check_command(global: &Global, args: &Args) -> String {
     for build in &args.build {
         words.push("--build".to_owned());
         words.push(quote(build));
+    }
+    if args.no_baseline {
+        words.push("--no-baseline".to_owned());
     }
     words.join(" ")
 }

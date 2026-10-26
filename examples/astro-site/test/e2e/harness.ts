@@ -162,7 +162,7 @@ export async function copySite(name: string): Promise<string> {
   const target = path.join(siteDir, ".e2e-tmp", name);
   await rm(target, { recursive: true, force: true });
   await mkdir(target, { recursive: true });
-  for (const entry of ["astro.config.mjs", "ascribe.toml", "api", "content", "src"]) {
+  for (const entry of ["astro.config.mjs", "ascribe.toml", "ascribe.addresses", "api", "content", "src"]) {
     await cp(path.join(siteDir, entry), path.join(target, entry), { recursive: true });
   }
   return target;

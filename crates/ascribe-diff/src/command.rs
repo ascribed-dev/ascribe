@@ -4,7 +4,7 @@
 
 use ascribe_check::{count_errors, select_builds};
 use ascribe_core::{RelPath, percent_decode};
-use ascribe_resolve::Project;
+use ascribe_resolve::{FileKind, Project};
 
 use crate::drift::{BaseProject, drift_with, read_base};
 use crate::html::{
@@ -133,6 +133,20 @@ impl ProjectDiff {
             let context = self.context(Builds::Named(vec![build.build.clone()]));
             prompt::fragment_reach(&context, &self.review(), build, path)
         })
+    }
+
+    /// Whether the build `build` publishes the page at `path` now. A page a
+    /// build publishes on one side only is in its report, as added or
+    /// removed, so one it publishes now and isn't in its report didn't
+    /// change there.
+    pub fn publishes(&self, build: &str, path: &str) -> bool {
+        let (Some(build), Ok(path)) = (self.now.model().build(build), RelPath::parse(path)) else {
+            return false;
+        };
+        self.now
+            .file(&path)
+            .is_some_and(|f| f.kind == FileKind::Page)
+            && self.now.dropped(&path, build).is_none()
     }
 
     /// A block's lines as they're written, in the base when `base` is true

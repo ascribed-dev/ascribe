@@ -225,22 +225,6 @@ Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 
 **Read more:** [`[builds.<name>]`](../content-model/output.md#16-buildsname) in the `ascribe.toml` reference.
 
-## `[permalinks]`
-
-### ASC178 `model-permalinks`
-@id {permalink=true}: ASC178
-@summary: A name in `[permalinks]` is both retired and an alias, an alias leads back to itself, or a retired permalink's reason is still a placeholder.
-
-Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md#76-retired-permalinks-and-aliases)
-
-**When:** A name in `[permalinks]` is both retired and an alias, an alias leads back to itself, or a retired permalink's reason is still a placeholder.
-
-**Message:** `{name}` is both retired and an alias; a name is one thing
-
-**Fix:** Give each name in `[permalinks]` one meaning: retired, in `[permalinks.retired]`, or an alias, in `[permalinks.aliases]`. A retired permalink can still lead somewhere: give it `to`. Make each alias lead, perhaps through other aliases, to a permalink a heading or page declares. Write the reason a permalink was retired in place of the placeholder the editor's quick fix writes: a reader whose link led there sees it.
-
-**Read more:** [`[permalinks]`](../content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.
-
 ## `[crawlers]`
 
 ### ASC183 `model-crawlers-line`

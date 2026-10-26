@@ -1,0 +1,1 @@
+- **`ascribe_resolve` says to leave out `project` when `page` is a path.** The page's project is found from it, and when the page is a file the error gives the call to make instead, such as `{"page": "docs/content/install.md"}`. It said only that `project` goes with `go:<name>`, so an agent retried with other paths ([the MCP tools](docs/content/agents/commands.md)).

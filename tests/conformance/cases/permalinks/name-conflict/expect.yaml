@@ -1,9 +1,0 @@
-description: >-
-  A name `ascribe.toml` retires or makes an alias that the content declares
-  too is an error at its entry in `ascribe.toml`: a name is one thing.
-spec: ["7.6", "8.2"]
-tags: [check]
-
-diagnostics:
-  - {slug: permalink-name-conflict, file: ascribe.toml, line: 7}
-  - {slug: permalink-name-conflict, file: ascribe.toml, line: 10}

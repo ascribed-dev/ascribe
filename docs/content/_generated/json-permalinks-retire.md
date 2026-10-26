@@ -10,16 +10,23 @@
       "description": "The version of Ascribe that wrote it.",
       "type": "string"
     },
+    "created": {
+      "description": "Whether `ascribe.addresses` was made, since the project had none.",
+      "type": "boolean"
+    },
     "list_changed": {
       "description": "Whether `ascribe.permalinks` was changed to record them. Only a name\nthe content no longer declares is recorded as retired.",
       "type": "boolean"
     },
     "reason": {
-      "description": "The reason each was given.",
-      "type": "string"
+      "description": "The reason each was given; none when each leads to `to`.",
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "retired": {
-      "description": "The names retired, each written in `ascribe.toml`'s\n`[permalinks.retired]`, in order.",
+      "description": "The names retired, each written in `ascribe.addresses` as\n`go:<name>`: in `[retired]`, or, with `to`, in `[moved]`, in order.",
       "items": {
         "type": "string"
       },
@@ -31,7 +38,7 @@
       "type": "integer"
     },
     "to": {
-      "description": "Where each address leads now, as given; none when it shows the\nreason.",
+      "description": "Where each address leads now, as written in `ascribe.addresses`;\nnone when it shows the reason.",
       "type": [
         "string",
         "null"
@@ -44,6 +51,7 @@
     "retired",
     "reason",
     "to",
+    "created",
     "list_changed"
   ],
   "title": "PermalinksRetireReport",

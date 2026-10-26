@@ -24,7 +24,9 @@ Commit `ascribe.baseline` with the docs: a reviewer sees in its diff what a chan
 
 An entry that matches nothing, because its problem was fixed or its text changed, is reported, as the advice `baseline-entry-unmatched` at its line, so a stale entry can't hide a later problem whose text happens to be the same. `ascribe baseline prune` removes it. It's reported only when `ascribe check` checks the whole project for every build: with paths, `--build`, or `--editor-build`, the check doesn't see every problem the file lists.
 
-`ascribe check --no-baseline` reports everything, as if there were no baseline, and doesn't read the file. `ascribe build` and `ascribe report` report everything too, for now. [The editor](#in-the-editor) and [the agents' tools](#for-agents) read the baseline.
+[`ascribe build`](check.md#cli-build) and [`ascribe report`](report.md#problems) read the baseline as `ascribe check` does: the build's summary line and its JSON count what it holds back, and so do the [report](../glossary.md#report)'s `problems` section and its JSON, as `baselined`, a measure of the backlog the project has put off. A baseline that can't be read stops them as it stops `ascribe check`: the build, and a report with `problems` or `inventory`. [The editor](#in-the-editor) and [the agents' tools](#for-agents) read it too.
+
+`--no-baseline`, on `ascribe check`, `ascribe build`, and `ascribe report`, reports everything, as if there were no baseline, and doesn't read the file.
 
 ## In the editor
 @id: in-the-editor
@@ -103,4 +105,4 @@ link-text-generic 91c04e2d7b5a6f18 1 guides/install.md
 
 **The fingerprint** is the first 16 hexadecimal digits of the SHA-256 of the text the problem is reported at, or of its line's text when it's reported at no text, with each run of spaces and line ends read as one space and the ends trimmed. **The order** tells apart problems with the same check, file, and fingerprint, as two links to one missing page in one paragraph: 0 for the first in the file, then 1, and so on.
 
-A line that doesn't parse is an error that names it, and `ascribe check` doesn't run with a baseline it can't read: it exits with `2`, and says which line, as `ascribe baseline write` and `prune` do. Fix the line, or run `ascribe check --no-baseline`.
+A line that doesn't parse is an error that names it, and `ascribe check`, `ascribe build`, and `ascribe report` don't run with a baseline they can't read: they exit with `2`, and say which line, as `ascribe baseline write` and `prune` do. Fix the line, or pass `--no-baseline`.
