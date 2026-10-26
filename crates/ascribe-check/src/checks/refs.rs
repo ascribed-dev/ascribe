@@ -14,8 +14,8 @@ use ascribe_model::short_commit;
 use ascribe_resolve::openapi::operation_issue;
 use ascribe_resolve::{
     ExampleStatus, RefKind, Resolution, SnippetUse, closest_fixes, destination_phrases,
-    destination_span, example, include_issue, include_target, reference_issue, reference_target,
-    resolve_reference, resolve_snippet, snippet_issues,
+    destination_span, example, include_fixes, include_issue, include_target, reference_issue,
+    reference_target, resolve_reference, resolve_snippet, snippet_issues,
 };
 use ascribe_syntax::{DirectiveLine, Image, Inline, Link, LinkForm, Phrase};
 
@@ -29,11 +29,18 @@ impl Ctx<'_> {
     pub(super) fn check_include(&mut self, primary: &str, span: Span) {
         let include = include_target(primary, &self.file.path);
         let at = self.location(span);
-        if let Some(issue) =
+        let Some(mut issue) =
             include_issue(&include.written, include.target.as_ref(), self.project, at)
+        else {
+            return;
+        };
+        if issue.variant != Some("not-source")
+            && let Some(target) = &include.target
         {
-            self.report(issue);
+            issue.fixes =
+                include_fixes(&include.written, target, &self.file.path, self.project, at);
         }
+        self.report(issue);
     }
 
     /// A `@snippet`'s address names a file of a source, and a region of it

@@ -37,6 +37,7 @@ pub(crate) mod inline;
 
 use std::cell::{Cell, RefCell};
 
+use ascribe_core::info_string::InfoString;
 use ascribe_core::{AssetUse, RelPath, Router};
 use ascribe_model::{ContentModel, PlainContent, Segment};
 use ascribe_resolve::{
@@ -540,10 +541,11 @@ impl Renderer<'_> {
                 vec![self.inlines(block, &p.inlines, Style::default())]
             }
             BlockKind::CodeBlock(c) => {
-                let mut out = vec![fenced(c)];
+                let mut out = vec![fenced(c, PLAIN_DROPS)];
                 // A tested example says what it was tested with in a line of
-                // its own, which nothing styles (decision #458b).
-                if let Some(tested) = block.snippet.as_ref().and_then(|s| s.tested()) {
+                // its own, which nothing styles (decision #458b), in place of
+                // its `tested` pair.
+                if let Some(tested) = InfoString::parse(&c.info).get("tested") {
                     out.push(format!("Tested with {}.", escape(tested, true)));
                 }
                 out
@@ -1009,15 +1011,24 @@ pub(crate) fn starts_nested(chunk: &str) -> bool {
         || (digits > 0 && matches!(first[digits..].chars().next(), Some('.' | ')')))
 }
 
+/// The info-string pairs the site output leaves out (SPEC §3.3.1): they've
+/// done their work. `phrases` was substituted, and `request` and `response`
+/// were checked; their links are the source's, which mean nothing to a
+/// reader.
+pub(crate) const SITE_DROPS: &[&str] = &["phrases", "request", "response"];
+
+/// The pairs the plain output leaves out: the site output's, and `tested`,
+/// which it writes as a line of its own under the block.
+const PLAIN_DROPS: &[&str] = &["phrases", "request", "response", "tested"];
+
 /// A code block as a fenced one: the fence is longer than any run of backticks
-/// in the code. A `phrases=true` info word has done its work and is dropped.
-pub(crate) fn fenced(code: &CodeBlock) -> String {
-    let info = code
-        .info
-        .split_whitespace()
-        .filter(|word| *word != "phrases=true")
-        .collect::<Vec<_>>()
-        .join(" ");
+/// in the code. The info string loses the pairs in `drops`, and its
+/// backslashes are escaped, so that a reader of the output takes off the
+/// Markdown escapes and gets the info string back.
+pub(crate) fn fenced(code: &CodeBlock, drops: &[&str]) -> String {
+    let info = InfoString::parse(&code.info)
+        .without(drops)
+        .replace('\\', "\\\\");
     let mut longest = 0;
     let mut run = 0;
     for ch in code.literal.chars() {

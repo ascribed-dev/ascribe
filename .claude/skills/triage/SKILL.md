@@ -22,7 +22,16 @@ Start a workflow with the GitHub MCP tool `actions_run_trigger`, never `gh workf
    - it doesn't ask for a decision only the maintainer can make: a change to a contract (see AGENTS.md's "Contracts don't move"), a new dependency outside the repository, or anything in `project-docs/outside.md`.
 4. **Move the ready cards to Ready,** all in one run of Board.
 5. **Comment on each card that isn't ready,** once, with the one thing that would make it ready, phrased as a question the maintainer can answer in a line. Leave it in Backlog.
-6. **Report, in the thread:** the cards moved to Ready, oldest first, each as `#N title`, then the cards left with a question. The coordinator starts implementors from that list, so put nothing else in it.
+6. **Report, in the thread:** the cards moved to Ready, oldest first, each as `#N title` with a `Touches:` line under it, then the cards left with a question. The coordinator starts implementors from that list, so put nothing else in it.
+
+   The `Touches:` line names the folders, modules, or spec sections the card will mostly change, at module depth, not a whole crate: `crates/ascribe-check/src/page/`, `SPEC §7`. It's a best guess from the issue and a look at the code, in one line. Leave out what nearly every card touches: `changes/`, generated references, and `project-docs/surface.md`. When the card is a phase of a plan, say which plan and phase, and whether the plan lets it run alongside another phase:
+
+   ```
+   #995 Board: don't start cards that touch the same files at the same time
+   Touches: .claude/skills/triage/, .claude/skills/board/
+   ```
+
+   The coordinator uses that line to keep two cards that change the same module from running at once ([the `board` skill](../board/SKILL.md#start-cards-that-dont-collide)).
 
 ## Judgment
 

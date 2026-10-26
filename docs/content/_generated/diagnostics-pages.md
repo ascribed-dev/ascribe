@@ -571,7 +571,7 @@ Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.m
 
 **Message:** `{path}` doesn't exist in source `{source}`
 
-**Fix:** Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`. For a link, name the file it leads to through a source that includes it. For a source in another repository, run `ascribe sources fetch` to copy the file. When the file isn't in the repository at the pinned commit, because it was moved or deleted there, `fetch` can't copy it: name the file where it is now, or change the code and move the pin with `ascribe sources update`.
+**Fix:** Fix the path. It's relative to the source's folder, so it doesn't repeat it: with `path = "src"`, `src/config.js` is `<source>:config.js`. When the message says the source's patterns leave the file out, it's a link, or it's in another repository, the reference page has the steps.
 
 **Read more:** [`@snippet`](../writing/directives.md#snippet) in the directive reference.
 
@@ -759,75 +759,31 @@ Error · file level · next step: write · [SPEC §7.5]({repo}/blob/main/SPEC.md
 
 ### ASC176 `permalinks-list-behind`
 @id {permalink=true}: ASC176
-@summary: A permalink the content declares, an alias, or a retired permalink that `ascribe.permalinks` doesn't list as it is.
+@summary: A permalink the content declares, or a name `ascribe.addresses` moves or retires, that `ascribe.permalinks` doesn't list as it is.
 
 Warning · file level · next step: fix · [SPEC §7.5]({repo}/blob/main/SPEC.md#75-the-permalinks-list)
 
-**When:** A permalink the content declares, an alias, or a retired permalink that `ascribe.permalinks` doesn't list as it is.
+**When:** A permalink the content declares, or a name `ascribe.addresses` moves or retires, that `ascribe.permalinks` doesn't list as it is.
 
 **Message:** the permalink `{name}` isn't in ascribe.permalinks yet; run `ascribe permalinks sync`
 
-**Fix:** Run `ascribe permalinks sync`, which adds each new permalink to ascribe.permalinks, records where each is declared now, and records each alias and retired permalink as `ascribe.toml` has it, and commit the file with the change. In the editor, the quick fix does the same.
+**Fix:** Run `ascribe permalinks sync`, which adds each new permalink to ascribe.permalinks, records where each is declared now, and records each name `ascribe.addresses` moves or retires as it has it, and commit the file with the change. In the editor, the quick fix does the same.
 
 **Read more:** [Permalinks](../writing/directives.md#permalinks) in the directive reference.
 
-### ASC177 `permalink-removed`
+### ASC177 `permalink-lost`
 @id {permalink=true}: ASC177
-@summary: A name `ascribe.permalinks` lists that the project no longer has: not declared, an alias, or retired.
+@summary: A name `ascribe.permalinks` lists that the project no longer has: not declared, and not moved or retired in `ascribe.addresses`.
 
 Warning · file level · next step: write · [SPEC §7.5]({repo}/blob/main/SPEC.md#75-the-permalinks-list)
 
-**When:** A name `ascribe.permalinks` lists that the project no longer has: not declared, an alias, or retired.
+**When:** A name `ascribe.permalinks` lists that the project no longer has: not declared, and not moved or retired in `ascribe.addresses`.
 
-**Message:** `{name}` was a permalink, in `{was}`, and nothing declares it now. Links to it from outside these docs, such as from a product, aren't found by this check
+**Message:** `{name}` was a permalink, in `{was}`, and nothing declares it now or says where it went. Links to it from outside these docs, such as from a product, aren't found by this check
 
-**Fix:** Something outside the docs may link to the name. When what it named is still in the docs, put it back: `@id {permalink=true}: <name>` under the heading that now covers it, `permalink: <name>` in a page's frontmatter, or an alias in `[permalinks.aliases]` that leads to the permalink that covers it now. When it's gone, retire it: `ascribe permalinks retire <name> --reason "…"`, with `--to` for a page that covers it now, writes it in `[permalinks.retired]`, and its address shows the reason. In the editor, the quick fix writes the entry for you to give a reason. A permalink can move to another page or heading and keep working; run `ascribe permalinks sync` after moving it. Running `sync` doesn't quiet this: it keeps every name that's gone.
+**Fix:** Something outside the docs may link to the name. When what it named is still in the docs, put it back: `@id {permalink=true}: <name>` under the heading that now covers it, or `permalink: <name>` in a page's frontmatter. When it moved, record where: `ascribe permalinks retire <name> --to <page>` writes `"go:<name>" = "<page>"` in `ascribe.addresses`' `[moved]`, and its address leads there; a page and `#` and a heading's id, or `go:` and another permalink's name, are both places it can lead. When it's gone, retire it: `ascribe permalinks retire <name> --reason "…"` writes it in `[retired]`, and its address shows the reason. In the editor, the quick fix writes the entry for you to give a reason. A permalink can move to another page or heading and keep working; run `ascribe permalinks sync` after moving it. Running `sync` doesn't quiet this: it keeps every name that's gone.
 
 **Read more:** [Permalinks](../writing/directives.md#permalinks) in the directive reference.
-
-## Retired permalinks and aliases
-
-### ASC179 `permalink-alias-target-missing`
-@id {permalink=true}: ASC179
-@summary: An alias that doesn't lead to a permalink the content declares.
-
-Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md#76-retired-permalinks-and-aliases)
-
-**When:** An alias that doesn't lead to a permalink the content declares.
-
-**Message:** the alias `{name}` leads to `{target}`, which no heading or page declares
-
-**Fix:** Point the alias at a permalink a heading's `@id {permalink=true}` or a page's `permalink` declares, or at another alias that leads to one. When what it named is gone, retire the alias instead: move it to `[permalinks.retired]`, with a reason.
-
-**Read more:** [`[permalinks]`](../content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.
-
-### ASC180 `permalink-name-conflict`
-@id {permalink=true}: ASC180
-@summary: A name `ascribe.toml` retires or aliases that the content declares too.
-
-Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md#76-retired-permalinks-and-aliases)
-
-**When:** A name `ascribe.toml` retires or aliases that the content declares too.
-
-**Message:** `{name}` is retired here, and `{place}` declares it as a permalink; a name is one thing
-
-**Fix:** When the permalink is back, delete its entry from `[permalinks.retired]` or `[permalinks.aliases]`. When it's going, remove the `@id {permalink=true}` or the page's `permalink` that still declares it: a name retired on purpose is retired once what declared it has gone.
-
-**Read more:** [`[permalinks]`](../content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.
-
-### ASC181 `permalink-retired-target-missing`
-@id {permalink=true}: ASC181
-@summary: A retired permalink's `to` that doesn't lead to a page, or to a heading on it.
-
-Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md#76-retired-permalinks-and-aliases)
-
-**When:** A retired permalink's `to` that doesn't lead to a page, or to a heading on it.
-
-**Message:** `{name}` is retired to `{to}`, and there's no page `{path}`
-
-**Fix:** Write `to` as a link from the content root is written: a page's path, such as `guides/security.md`, and `#` and a heading's id, such as `guides/security.md#rotate-keys`. Leave `to` out to show the reason alone.
-
-**Read more:** [`[permalinks]`](../content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.
 
 ## Memo files
 

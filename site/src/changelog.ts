@@ -260,7 +260,8 @@ export interface ContentsRelease extends ContentsEntry {
  * An entry that's all summary isn't collapsed. An entry that says
  * **Behavior change** is marked, with a badge in its summary: its own words,
  * when the summary starts with them. Also returns the releases and their
- * areas, for the page's contents.
+ * areas, for the page's contents. The unreleased section, when it has no
+ * entries, is left out of both.
  */
 export function collapseEntries(html: string): { html: string; contents: ContentsRelease[] } {
   const contents: ContentsRelease[] = [];
@@ -285,6 +286,11 @@ export function collapseEntries(html: string): { html: string; contents: Content
   const closeRelease = (): void => {
     closeArea();
     if (release === undefined) return;
+    // Just after a release, nothing is unreleased: the section is left out.
+    if (release.entry.id === "unreleased" && release.entry.count === 0) {
+      release = undefined;
+      return;
+    }
     const none = release.behavior === 0 ? ['<p class="no-behavior">No behavior changes.</p>'] : [];
     out.push(
       `<section class="release" data-behavior="${release.behavior}">\n${[...release.open, ...none, ...release.body].join("\n")}\n</section>`,

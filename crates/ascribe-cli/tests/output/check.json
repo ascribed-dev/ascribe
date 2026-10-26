@@ -7,8 +7,7 @@
   "builds_checked": [
     "site",
     "site@3.4",
-    "cloud",
-    "self-managed-3.3"
+    "cloud"
   ],
   "diagnostics": [
     {

@@ -2,21 +2,29 @@
 - `[PATH]`: A file or folder in the project, to find its `ascribe.toml` from. By default, the current directory.
 - `--section <NAME>`: Show only this section, in full.
   - `types`: Page types, with their files and frontmatter fields.
+  - `frontmatter`: Frontmatter every page type shares.
+  - `fragments`: Fragments' files and frontmatter.
   - `dimensions`: Dimensions and their values.
+  - `lifecycle`: Lifecycle states.
   - `phrases`: Phrases, with their values.
   - `features`: Features, with their availability.
+  - `notes`: Note types, with their labels.
   - `glossary`: Glossary terms.
+  - `images`: Image attributes.
   - `widgets`: Project widgets, with their attributes.
   - `releases`: Release lines, each target's with its status and the builds that are it.
   - `builds`: Builds, with their variant and availability modes.
   - `sources`: Sources, with their folders and the files they make readable.
+  - `apis`: APIs, with their specs and references.
+  - `from`: What `[from]` takes.
+  - `intended`: Acknowledged problems.
   - `project`: Where the content is, and where builds go.
+  - `versions`: How versions are compared.
   - `consumer`: The site the outputs are for.
   - `editor`: The build the editor checks.
   - `checks`: Each check's level, Vale, and the external links.
   - `crawlers`: What the site tells crawlers.
   - `listing`: What the site lists for search engines.
-  - `permalinks`: Retired permalinks and aliases.
 - `--format <FORMAT>`: How to show the answer.
   - `text` (the default): Short text, for people and agents to read.
   - `json`: One JSON document, for tools.

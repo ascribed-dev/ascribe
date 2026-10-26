@@ -1,0 +1,21 @@
+description: >-
+  A fence opts in to phrases with the pair `phrases=true` of its info string,
+  in any order beside other pairs. The same text inside a quoted value isn't a
+  pair, nor is `phrases = true` with spaces, and the first pair with a key
+  counts.
+spec: ["3.3.1", "5.1"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - code: "name: Quill\n"
+            info: yaml title="Install" phrases=true
+          - code: "name: {product}\n"
+            info: yaml title="use phrases=true here"
+          - code: "name: {product}\n"
+            info: yaml phrases = true
+          - code: "name: {product}\n"
+            info: yaml phrases=false phrases=true

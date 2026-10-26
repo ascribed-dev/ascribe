@@ -90,6 +90,74 @@ pub(crate) fn parse_head(raw: &str, base: usize, file: FileId) -> Head {
     head
 }
 
+/// `key=value` pairs written where an attribute block goes, without its
+/// braces, as in the `type=warning` of `@note type=warning: text`.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct BarePairs<'a> {
+    /// Each pair's key and value, the value as written (quotes included).
+    pub pairs: Vec<(&'a str, &'a str)>,
+    /// How many bytes of the text the pairs cover, through the last value.
+    pub len: usize,
+}
+
+/// The `key=value` pairs at the start of `text`, separated by spaces or
+/// commas, if it starts with one. An unquoted value ends at whitespace, a
+/// comma, or a `:` that ends the text or has whitespace after it, so the
+/// colon before a primary isn't taken as part of the value.
+pub(crate) fn bare_pairs(text: &str) -> Option<BarePairs<'_>> {
+    let bytes = text.as_bytes();
+    let mut pairs = Vec::new();
+    let mut len = 0;
+    let mut i = 0;
+    loop {
+        let key_end = i + bytes
+            .get(i..)
+            .unwrap_or_default()
+            .iter()
+            .take_while(|&&b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+            .count();
+        if !bytes.get(i).is_some_and(u8::is_ascii_lowercase) || bytes.get(key_end) != Some(&b'=') {
+            break;
+        }
+        let start = key_end + 1;
+        let end = if bytes.get(start) == Some(&b'"') {
+            let mut j = start + 1;
+            loop {
+                match bytes.get(j) {
+                    None => return None,
+                    Some(b'\\') => j += 2,
+                    Some(b'"') => break j + 1,
+                    Some(_) => j += 1,
+                }
+            }
+        } else {
+            let mut j = start;
+            while let Some(&b) = bytes.get(j) {
+                let ends_value = match b {
+                    b' ' | b'\t' | b',' | b'{' | b'}' | b'"' | b'=' => true,
+                    b':' => matches!(bytes.get(j + 1), None | Some(b' ' | b'\t')),
+                    _ => false,
+                };
+                if ends_value {
+                    break;
+                }
+                j += 1;
+            }
+            j
+        };
+        if end == start {
+            break;
+        }
+        pairs.push((&text[i..key_end], &text[start..end]));
+        len = end;
+        i = skip_ows(bytes, end, bytes.len());
+        if bytes.get(i) == Some(&b',') {
+            i = skip_ows(bytes, i + 1, bytes.len());
+        }
+    }
+    (!pairs.is_empty()).then_some(BarePairs { pairs, len })
+}
+
 fn skip_ows(bytes: &[u8], mut i: usize, end: usize) -> usize {
     while i < end && matches!(bytes.get(i), Some(b' ' | b'\t')) {
         i += 1;
@@ -176,6 +244,31 @@ mod tests {
         assert!(h.attributes.is_some_and(|a| !a.closed));
         assert_eq!(h.colon, None);
         assert_eq!(h.primary_start, None);
+    }
+
+    #[test]
+    fn finds_attributes_written_without_braces() {
+        let p = bare_pairs("type=warning: You need Node 20.").unwrap();
+        assert_eq!(p.pairs, [("type", "warning")]);
+        assert_eq!(p.len, 12);
+        let text = r#"type=tip, label="A: b" rest"#;
+        let p = bare_pairs(text).unwrap();
+        assert_eq!(p.pairs, [("type", "tip"), ("label", r#""A: b""#)]);
+        assert_eq!(&text[..p.len], r#"type=tip, label="A: b""#);
+        let p = bare_pairs("href=https://x.dev/a: text").unwrap();
+        assert_eq!(p.pairs, [("href", "https://x.dev/a")]);
+        let p = bare_pairs("type=warning:").unwrap();
+        assert_eq!(p.len, 12);
+        for text in [
+            "hello: text",
+            "foo",
+            "type= x",
+            "Type=x",
+            "=x",
+            r#"label="open"#,
+        ] {
+            assert_eq!(bare_pairs(text), None, "{text:?}");
+        }
     }
 
     #[test]

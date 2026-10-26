@@ -166,7 +166,7 @@ The first hook in a project starts a check server in the background, the same `a
 @id {permalink=true}: cli-mcp
 @summary: Runs an MCP server over standard input and output, for an agent that has no shell: the commands that answer questions as tools, the project's rules as resources, and the named prompts.
 
-Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextprotocol.io) over standard input and output, for an agent that has no shell, or a host that approves tools one by one. An agent's host starts it; you don't run it yourself. It offers the commands that answer questions as tools, the project's rules as resources, and the named prompts of [`ascribe agents prompt`](commands.md#cli-agents-prompt). Each tool's result is the JSON its command writes, so an agent with a shell does as well with the commands. See [The MCP server](mcp.md) to set it up.
+Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextprotocol.io) over standard input and output, for an agent that has no shell, or a host that approves tools one by one. An agent's host starts it; you don't run it yourself. It offers the commands that answer questions as tools, the project's rules as resources, and the named prompts of [`ascribe agents prompt`](commands.md#cli-agents-prompt). Each tool's result is the JSON its command writes, so an agent with a shell does as well with the commands. No tool gives an output schema: each tool's description names the [JSON report contract](../contracts/json-reports.md), which has its command's schema, so the tool list a host sends the model in every session stays small. See [The MCP server](mcp.md) to set it up.
 
 | Tool | The command it runs |
 |---|---|
@@ -177,7 +177,7 @@ Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextpr
 | `ascribe_link` | `ascribe link`, which answers a link to an API's operation with the operation |
 | `ascribe_refs` | `ascribe refs`, with `response_format` as for `ascribe_check` |
 | `ascribe_search` | `ascribe search`, with `response_format` as for `ascribe_check`, and `project` to find the project when no `paths` are given |
-| `ascribe_resolve` | `ascribe resolve`, and its `go:<name>` with `project` to find the project. `emit` is its `--emit`, `plain` (the default) or `site`, to read the page [as the site output gives it](../command/site-output.md), and isn't for `go:<name>` |
+| `ascribe_resolve` | `ascribe resolve`, and its `go:<name>` with `project` to find the project. A page's path finds its own project: with `project`, it's an error that gives the call to make without it. `emit` is its `--emit`, `plain` (the default) or `site`, to read the page [as the site output gives it](../command/site-output.md), and isn't for `go:<name>` |
 | `ascribe_fmt` | `ascribe fmt --check --format json`: the edits, and nothing written |
 | `ascribe_diff` | `ascribe diff --format json --pages-only`, or with `blocks` each changed block too |
 | `ascribe_rename` | `ascribe rename --format json`, with `target` and `new`, and `project` to find the project for a target that isn't a path: each changed file's whole `text`, the page that `moved`, and the entries `recorded` in `ascribe.addresses`, with `written` false and nothing written or moved |

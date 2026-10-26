@@ -6,6 +6,6 @@ spec: ["7.11", "8.2"]
 tags: [check]
 
 diagnostics:
-  - {slug: example-schema-unsupported, file: index.md, line: 7, column: 9}
-  - {slug: example-schema-mismatch, file: index.md, line: 8, column: 27}
-  - {slug: example-schema-unsupported, file: index.md, line: 13, column: 9}
+  - {slug: api-example-schema-unsupported, file: index.md, line: 7, column: 9}
+  - {slug: api-example-schema-mismatch, file: index.md, line: 8, column: 27}
+  - {slug: api-example-schema-unsupported, file: index.md, line: 13, column: 9}

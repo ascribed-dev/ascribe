@@ -1,0 +1,1 @@
+- **Behavior change: a code block's info string has a grammar, and the outputs drop the checker's pairs.** Pairs such as `title` and `tested` are read as §3.3.1 says, and the site and plain outputs leave out `request` and `response`. See [SPEC.md](SPEC.md).

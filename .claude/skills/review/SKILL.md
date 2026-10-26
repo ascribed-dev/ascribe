@@ -15,9 +15,10 @@ Start a workflow with the GitHub MCP tool `actions_run_trigger`, never `gh workf
 
 1. **Find the pull request:** the one that closes the card's issue. Read the issue, the description, and the whole diff.
 2. **Check it against [AGENTS.md](../../../AGENTS.md)** and the checklist in [project-docs/checklists.md](../../../project-docs/checklists.md) that fits, and against what the issue asked for. Run what you need to believe it: the tests it adds, the command it changes.
-3. **Write one review,** with a comment on each line that needs one. Mark each comment as blocking or not. Blocking means wrong, unsafe, against a rule in AGENTS.md, or missing what the issue asked for. A preference isn't blocking; say it once, or not at all.
-4. **Wait for the implementor** when anything is blocking. Subscribe to the pull request; each push wakes you. Review the new commits, and resolve each thread the push fixed.
-5. **Approve and merge** when nothing blocking is left, CI is green on the head, and there's no merge conflict:
+3. **Account for every generated file it changes.** Run `node scripts/repo-docs/generated.ts` on the pull request's branch: it lists each changed file that a test run with `ASCRIBE_BLESS=1`, `cargo insta`, or another generator writes, and what writes it, from the tables in [ARCHITECTURE.md](../../../ARCHITECTURE.md#ascribe_bless1). For each one, say in the review why it changed (files that changed for one reason can share a line): which change to its source it follows from, and that the commands the description names would write it. Flag, as blocking, a generated file whose change nothing in the pull request explains (an output change nobody meant is what "A clean-up changes no output" in AGENTS.md stops), and a generated file the description's commands don't account for. Rerun a command when the diff is too large to read line by line, and compare.
+4. **Write one review,** with a comment on each line that needs one. Mark each comment as blocking or not. Blocking means wrong, unsafe, against a rule in AGENTS.md, or missing what the issue asked for. A preference isn't blocking; say it once, or not at all.
+5. **Wait for the implementor** when anything is blocking. Subscribe to the pull request; each push wakes you. Review the new commits, and resolve each thread the push fixed.
+6. **Approve and merge** when nothing blocking is left, CI is green on the head, and there's no merge conflict:
    - run Approve with the head commit you reviewed, and check that its run passed;
    - merge with a merge commit, giving the same commit, so a push since your review stops the merge.
 

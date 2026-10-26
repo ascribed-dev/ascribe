@@ -50,7 +50,11 @@ function codeSpan(value: string): string {
   return `${fence}${pad}${value}${pad}${fence}`;
 }
 
-/** A changed page's detail in the list: its counts, and what it changed through. */
+/**
+ * A changed page's detail in the list: where it moved from, its counts, and
+ * what it changed through. A page that changed only because a page it links
+ * to moved says so, as `ascribe diff` does.
+ */
 export function pageDetail(page: Omit<PageDiff, "changes">): string {
   let text: string;
   if (page.status === "added") text = "New page";
@@ -61,10 +65,18 @@ export function pageDetail(page: Omit<PageDiff, "changes">): string {
       const what = `${page.page_changed.join(", ")} changed`;
       text = text ? `${text} · ${what}` : what;
     }
+    if (page.moved_from !== undefined) {
+      text = `Moved from ${page.moved_from} · ${text || "no change to the page"}`;
+    }
     if (!text) text = "Changed";
   }
-  if (!page.own_file_changed && page.because.length > 0) {
-    text += ` · via ${page.because.join(", ")}`;
+  if (page.own_file_changed) return text;
+  const moved = page.moved_links ?? [];
+  const through = page.because.filter((c) => !moved.some((m) => m.to === c));
+  if (through.length > 0) text += ` · via ${through.join(", ")}`;
+  if (moved.length > 0) {
+    const links = moved.length === 1 ? "a link changed" : "links changed";
+    text += ` · ${links} because ${moved.map((m) => m.from).join(", ")} moved`;
   }
   return text;
 }

@@ -10,7 +10,7 @@ use ascribe_check::{Acknowledged, Diagnostic, Next};
 use ascribe_core::Date;
 use ascribe_model::{ListingFrom, ListingLevel};
 use ascribe_query::report::{
-    Agents, Builds, Inventory, Links, NotRun, Pages, Problems, Ran, Report,
+    Builds, Delivery, Inventory, Links, NotRun, Pages, Problems, Ran, Report,
 };
 use ascribe_resolve::pages::PageRecord;
 
@@ -99,9 +99,9 @@ fn write_sections(
         gap(&mut w)?;
         w.links(l)?;
     }
-    if let Some(a) = &report.agents {
+    if let Some(a) = &report.delivery {
         gap(&mut w)?;
-        w.agents(a)?;
+        w.delivery(a)?;
     }
     Ok(())
 }
@@ -217,11 +217,18 @@ impl Writer<'_> {
         self.heading("Problems")?;
         let counts = Counts::of(&p.diagnostics);
         let mut line = counts_words(counts);
+        let mut aside = Vec::new();
         if !p.acknowledged.is_empty() {
-            line.push_str(&format!(
-                ", and {} acknowledged as intended",
-                p.acknowledged.len()
-            ));
+            aside.push(format!("{} acknowledged as intended", p.acknowledged.len()));
+        }
+        if p.baselined > 0 {
+            aside.push(format!("{} in the baseline", p.baselined));
+        }
+        if let Some((last, rest)) = aside.split_last() {
+            for part in rest {
+                line.push_str(&format!(", {part}"));
+            }
+            line.push_str(&format!(", and {last}"));
         }
         self.line(&format!("{}.", capitalized(&line)))?;
         self.problems_since(p)?;
@@ -630,14 +637,14 @@ impl Writer<'_> {
         )
     }
 
-    fn agents(&mut self, a: &Ran<Agents>) -> io::Result<()> {
-        self.heading("Agents")?;
-        let agents = match a {
+    fn delivery(&mut self, a: &Ran<Delivery>) -> io::Result<()> {
+        self.heading("Delivery")?;
+        let delivery = match a {
             Ran::NotRun(why) => return self.not_run(why),
-            Ran::Done(agents) => agents,
+            Ran::Done(delivery) => delivery,
         };
         let mut counts: Vec<(&str, usize)> = Vec::new();
-        for r in &agents.results {
+        for r in &delivery.results {
             let status = r.status.as_str();
             match counts.iter_mut().find(|(s, _)| *s == status) {
                 Some((_, n)) => *n += 1,
@@ -647,17 +654,17 @@ impl Writer<'_> {
         let said: Vec<String> = counts.iter().map(|(s, n)| format!("{n} {s}")).collect();
         self.line(&format!(
             "The delivery spec's checks on {}: {}.",
-            self.code(&agents.site),
+            self.code(&delivery.site),
             said.join(", ")
         ))?;
-        self.agents_since(agents)?;
-        if agents.diagnostics.is_empty() {
+        self.delivery_since(delivery)?;
+        if delivery.diagnostics.is_empty() {
             self.line("Nothing for the hosting or Ascribe to change.")?;
         } else {
             self.line("To change:")?;
-            self.items(&agents.diagnostics, |w, d| w.diagnostic(d))?;
+            self.items(&delivery.diagnostics, |w, d| w.diagnostic(d))?;
         }
-        let pages: Vec<String> = agents
+        let pages: Vec<String> = delivery
             .results
             .iter()
             .filter(|r| {
@@ -682,14 +689,14 @@ impl Writer<'_> {
     /// any more: `23 checks: 21 passing, 2 failing, 1 of them failing since
     /// 9 October: `content-negotiation`.` Nothing on a first run, or when
     /// nothing fails now or did then.
-    fn agents_since(&mut self, agents: &Agents) -> io::Result<()> {
+    fn delivery_since(&mut self, delivery: &Delivery) -> io::Result<()> {
         let (Some(since), Some(new), Some(resolved)) =
-            (agents.previous_run, &agents.new, agents.resolved)
+            (delivery.previous_run, &delivery.new, delivery.resolved)
         else {
             return Ok(());
         };
         let since = day(since);
-        let results = &agents.results;
+        let results = &delivery.results;
         let passing = results
             .iter()
             .filter(|r| r.status == ascribe_check::site::Status::Pass)

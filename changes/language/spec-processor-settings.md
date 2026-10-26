@@ -1,0 +1,1 @@
+- **The specification says which settings and checks are Ascribe's own.** Nothing Ascribe reports changes, and the diagnostics reference marks the checks the specification doesn't define. See [SPEC.md §7.2](SPEC.md#72-declarations) and [the diagnostics reference](docs/content/checks/diagnostics.md).

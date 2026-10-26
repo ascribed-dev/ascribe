@@ -1,1 +1,1 @@
-- **Fixed:** `ascribe report agents` names the checks new since the last report next to that count. They came after "no longer fails", which read as if those checks had stopped failing.
+- **Fixed:** `ascribe report delivery` names the checks new since the last report next to that count. They came after "no longer fails", which read as if those checks had stopped failing.

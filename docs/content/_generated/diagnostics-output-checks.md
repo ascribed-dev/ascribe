@@ -25,7 +25,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Message:** \{file} is \{size} characters in build `{build}`, over the \{limit} an agent reads in one fetch; move some of its pages into folders of their own, or shorten their descriptions
 
-**Fix:** Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions. It's the delivery spec's `llms-txt-size` check, made from the build before a deploy; `ascribe report agents` names this check for it.
+**Fix:** Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions. It's the delivery spec's `llms-txt-size` check, made from the build before a deploy; `ascribe report delivery` names this check for it.
 
 **Read more:** [`[consumer]`](../content-model/output.md#consumer) in the `ascribe.toml` reference.
 
@@ -63,7 +63,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 @id {permalink=true}: ASC165
 @summary: The project has `[checks.vale]`, and Vale reports an alert about the prose of a page or a fragment, or of a phrase's text. Reported where the alert is in the source, or at the phrase.
 
-Advice · file level · next step: write · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+Advice · file level · next step: write · configurable in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** The project has `[checks.vale]`, and Vale reports an alert about the prose of a page or a fragment, or of a phrase's text. Reported where the alert is in the source, or at the phrase.
 
@@ -77,7 +77,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 @id {permalink=true}: ASC166
 @summary: The project has `[checks.vale]`, and Vale couldn't be run, failed, or didn't finish in time, or the tool checking the project doesn't start it, as the agents' tools don't. Reported once, at `[checks.vale]`.
 
-Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+Advice · file level · next step: outside · configurable in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** The project has `[checks.vale]`, and Vale couldn't be run, failed, or didn't finish in time, or the tool checking the project doesn't start it, as the agents' tools don't. Reported once, at `[checks.vale]`.
 
@@ -121,25 +121,25 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 
 ### ASC170 `delivery-hosting`
 @id {permalink=true}: ASC170
-@summary: `ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation.
+@summary: `ascribe report delivery`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation.
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
-**When:** `ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation.
+**When:** `ascribe report delivery`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation.
 
 **Message:** the site fails the delivery spec's `{check}` check: \{result}. \{setting}
 
-**Fix:** Change the setting the message names where the site is hosted; no page needs editing. [Serve the Markdown versions](../astro/serve-markdown.md) says what to set on the hosts it names. Only `ascribe report agents` checks a published site.
+**Fix:** Change the setting the message names where the site is hosted; no page needs editing. [Serve the Markdown versions](../astro/serve-markdown.md) says what to set on the hosts it names. Only `ascribe report delivery` checks a published site.
 
 **Read more:** [`[consumer]`](../content-model/output.md#consumer) in the `ascribe.toml` reference.
 
 ### ASC171 `delivery-output`
 @id {permalink=true}: ASC171
-@summary: `ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`.
+@summary: `ascribe report delivery`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`.
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
-**When:** `ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`.
+**When:** `ascribe report delivery`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`.
 
 **Message:** the site fails the delivery spec's `{check}` check, which what Ascribe writes should pass: \{result}. Report it at \{issues}
 

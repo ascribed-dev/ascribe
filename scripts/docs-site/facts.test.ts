@@ -7,7 +7,8 @@
 // from docs/ascribe.toml, the docs' address the Report workflow checks, and the
 // install commands the landing page, in its hero and in Start, and the
 // README repeat from getting started, and the language server's own
-// requests the editor's language server page lists. A copy that can't be generated is compared here, so
+// requests the editor's language server page lists, and SPEC.md's example of
+// builds, which is the Quill example's. A copy that can't be generated is compared here, so
 // changing one place and not the others fails. The npm platform packages are
 // checked the same way in scripts/release/manifests.test.ts.
 import { execFileSync } from "node:child_process";
@@ -331,4 +332,21 @@ test("the language server's page lists each request of its own, with its schema"
   expect(rows.map((row) => row.request).sort()).toEqual(declared);
   for (const { schema } of rows)
     expect(existsSync(path.join(root, "schemas", schema)), schema).toBe(true);
+});
+
+test("SPEC.md's example of builds is the Quill example's builds", () => {
+  const spec = read("SPEC.md");
+  const start = spec.indexOf("\n### 9.3 Build modes\n");
+  expect(start).toBeGreaterThan(-1);
+  const block = /^```toml\n([\s\S]*?)^```$/m.exec(spec.slice(start))?.[1];
+  // The Quill example's `[builds.*]` tables, as written, without their comments.
+  const quill = read("examples/quill/ascribe.toml");
+  const builds = /^\[builds\.[\s\S]*?(?=^\[(?!builds\.))/m.exec(quill)?.[0] ?? "";
+  const tables = builds
+    .split("\n")
+    .filter((line) => !line.startsWith("#"))
+    .join("\n")
+    .trim();
+  expect(tables).not.toBe("");
+  expect(block?.trim()).toBe(tables);
 });

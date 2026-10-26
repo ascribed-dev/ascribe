@@ -1,6 +1,7 @@
 //! The concise report, `--format concise`: one line per diagnostic, for an
-//! agent reading text. `file:line: [code] message`, grouped by file, at most
-//! [`LIMIT`] of them unless `--limit` says otherwise, then the summary line.
+//! agent reading text. `file:line: [code] message`, then `→` and the first
+//! fix's title when there's one, grouped by file, at most [`LIMIT`] of them
+//! unless `--limit` says otherwise, then the summary line.
 
 use std::io::{self, Write};
 use std::str::FromStr;
@@ -93,20 +94,30 @@ pub fn write(
     writeln!(out, "{summary}")
 }
 
-/// Writes one diagnostic's line.
+/// Writes one diagnostic's line, [`head`], with its first fix's title after
+/// `→` when it has one: what to change.
 pub fn write_line(out: &mut dyn Write, files: &FileTable, r: &Reported) -> io::Result<()> {
+    write!(out, "{}", head(files, r))?;
+    match r.diagnostic.fixes.first() {
+        Some(fix) => writeln!(out, " → {}", fix.title),
+        None => writeln!(out),
+    }
+}
+
+/// One diagnostic's line without its fix: `file:line: [code] message`, and
+/// how many times it repeats.
+pub fn head(files: &FileTable, r: &Reported) -> String {
     let d = &r.diagnostic;
     let start = files.position(d.location.file, d.location.span.start());
-    write!(
-        out,
+    let mut line = format!(
         "{}:{}: [{}] {}",
         files.path(d.location.file),
         start.line,
         d.code,
         d.message
-    )?;
-    match repeats_note(r.repeats) {
-        Some(note) => writeln!(out, " ({note})"),
-        None => writeln!(out),
+    );
+    if let Some(note) = repeats_note(r.repeats) {
+        line.push_str(&format!(" ({note})"));
     }
+    line
 }

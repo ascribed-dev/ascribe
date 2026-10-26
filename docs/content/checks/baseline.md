@@ -20,11 +20,13 @@ Commit `ascribe.baseline` with the docs: a reviewer sees in its diff what a chan
 - **Advice only.** An error makes a page wrong, and a warning is something the project has decided matters, so neither is ever put off: `ascribe baseline write` leaves them out and says how many. To put off a check's warnings, lower the check to `"advice"` in [`[checks]`](../content-model/checks.md#19-checks), then run `ascribe baseline write` again. That's a change to `ascribe.toml` a reviewer sees.
 - **By the problem, not its line.** An entry names the problem's check, its file, the text it's reported at, and its order among problems alike in all three, as [the project report](report.md#whats-new-since-the-last-report) tells one problem from another. A problem stays held back when lines are added above it, and is new, and reported, when the text it's about is edited, which is usually what someone should look at.
 - **Until the check is raised.** An entry whose check the project has since raised to a warning or an error doesn't hide it: the problem is reported at its level, and the entry stays, matched.
-- **Not what `@intended` does.** An [acknowledgement](../writing/directives.md#intended) is one problem, kept for good, with a reason, beside its block. A baseline is many, kept for now, with none. A problem the team means to keep is acknowledged, and pruned from the baseline.
+- **Not what `@intended` does.** An [acknowledgement](../writing/directives.md#intended) is one problem, kept for good, with a reason, beside its block. A baseline is many, kept for now, with none. A problem the team means to keep is acknowledged, and pruned from the baseline. [Quieting a problem](check.md#quieting-a-problem) compares the four ways to quiet one.
 
 An entry that matches nothing, because its problem was fixed or its text changed, is reported, as the advice `baseline-entry-unmatched` at its line, so a stale entry can't hide a later problem whose text happens to be the same. `ascribe baseline prune` removes it. It's reported only when `ascribe check` checks the whole project for every build: with paths, `--build`, or `--editor-build`, the check doesn't see every problem the file lists.
 
-`ascribe check --no-baseline` reports everything, as if there were no baseline, and doesn't read the file. `ascribe build` and `ascribe report` report everything too, for now. [The editor](#in-the-editor) and [the agents' tools](#for-agents) read the baseline.
+[`ascribe build`](check.md#cli-build) and [`ascribe report`](report.md#problems) read the baseline as `ascribe check` does: the build's summary line and its JSON count what it holds back, and so do the [report](../glossary.md#report)'s `problems` section and its JSON, as `baselined`, a measure of the backlog the project has put off. A baseline that can't be read stops them as it stops `ascribe check`: the build, and a report with `problems` or `inventory`. [The editor](#in-the-editor) and [the agents' tools](#for-agents) read it too.
+
+`--no-baseline`, on `ascribe check`, `ascribe build`, and `ascribe report`, reports everything, as if there were no baseline, and doesn't read the file.
 
 ## In the editor
 @id: in-the-editor
@@ -103,4 +105,4 @@ link-text-generic 91c04e2d7b5a6f18 1 guides/install.md
 
 **The fingerprint** is the first 16 hexadecimal digits of the SHA-256 of the text the problem is reported at, or of its line's text when it's reported at no text, with each run of spaces and line ends read as one space and the ends trimmed. **The order** tells apart problems with the same check, file, and fingerprint, as two links to one missing page in one paragraph: 0 for the first in the file, then 1, and so on.
 
-A line that doesn't parse is an error that names it, and `ascribe check` doesn't run with a baseline it can't read: it exits with `2`, and says which line, as `ascribe baseline write` and `prune` do. Fix the line, or run `ascribe check --no-baseline`.
+A line that doesn't parse is an error that names it, and `ascribe check`, `ascribe build`, and `ascribe report` don't run with a baseline they can't read: they exit with `2`, and say which line, as `ascribe baseline write` and `prune` do. Fix the line, or pass `--no-baseline`.

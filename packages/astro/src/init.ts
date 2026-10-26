@@ -1,7 +1,7 @@
 // The starter, `npx @ascribed/astro init`: writes into an Astro project, once,
 // the files every site built with Ascribe writes again: the collection, the
-// route, and a layout that loads the elements and draws the sidebar from the
-// project's navigation. From then on they're the site's own, as `ascribe
+// route, a layout that loads the elements and draws the sidebar from the
+// project's navigation, and the layout's stylesheet. From then on they're the site's own, as `ascribe
 // templates eject` leaves a project's templates; `init` never writes over a
 // file.
 //
@@ -18,6 +18,7 @@ export const STARTER_FILES = [
   "src/content.config.ts",
   "src/pages/[...slug].astro",
   "src/layouts/Docs.astro",
+  "src/styles/docs.css",
 ] as const;
 
 /** The starter's files, in the package beside `src/` and `dist/`. */

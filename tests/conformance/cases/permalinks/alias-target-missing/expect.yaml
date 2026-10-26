@@ -1,9 +1,0 @@
-description: >-
-  An alias that leads to a name no heading or page declares, or to a
-  retired permalink, is an error at its target in `ascribe.toml`.
-spec: ["7.6", "8.2"]
-tags: [check]
-
-diagnostics:
-  - {slug: permalink-alias-target-missing, file: ascribe.toml, line: 7}
-  - {slug: permalink-alias-target-missing, file: ascribe.toml, line: 8}

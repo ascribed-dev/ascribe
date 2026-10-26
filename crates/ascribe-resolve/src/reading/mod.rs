@@ -25,7 +25,8 @@
 //!
 //! The matching is in [`Query`], and [`find`] gathers the places a query
 //! matches across the readings of many pages and builds. When none does,
-//! [`scan`] looks in the source as written.
+//! [`closest`] gathers those that have some of its words, and [`scan`]
+//! looks in the source as written.
 
 mod find;
 mod query;
@@ -40,8 +41,8 @@ use ascribe_syntax::{
     Block, BlockKind, Bound, CodeBlock, DirectiveLine, Inline, InlineKind, PrimaryValue, Table,
 };
 
-pub use find::{At, Found, Place, Shown, Through, find};
-pub use query::{BadQuery, Query};
+pub use find::{At, Closest, Found, Place, Shown, Through, closest, find};
+pub use query::{BadQuery, Partial, Query};
 pub use scan::{Nothing, Written, scan};
 
 use crate::build::{LinkTarget, ResolvedBlock, ResolvedKind, ResolvedLink, Substitution};

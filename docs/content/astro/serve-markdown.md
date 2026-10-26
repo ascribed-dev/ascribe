@@ -79,4 +79,4 @@ A rule that challenges unfamiliar clients blocks agents too; let them read `llms
 
 - [Response headers](../publishing/site.md#response-headers): what `astro dev` sends, and how the build treats a site's own `_headers`.
 - [`[consumer] host`](../content-model/output.md#consumer): the host whose files the build writes.
-- `ascribe report agents`, which checks a published site against the spec: [the report](../checks/report.md).
+- `ascribe report delivery`, which checks a published site against the spec: [the report](../checks/report.md).

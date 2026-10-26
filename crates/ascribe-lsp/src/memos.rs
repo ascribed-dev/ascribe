@@ -242,10 +242,11 @@ pub(crate) fn add(
         .filter(|h| !h.source_id.is_empty())
         .filter(|h| h.section.start() <= start && start <= h.section.end())
         .min_by_key(|h| h.section.len());
-    let about = match heading {
-        Some(h) => format!("{}#{}", ctx.path, h.source_id),
-        None => ctx.path.to_string(),
-    };
+    let about = Named::Path {
+        path: ctx.path.clone(),
+        id: heading.map(|h| h.source_id.clone()),
+    }
+    .written();
     let quote = quote_at(file, start, end).filter(|quote| {
         // A quote the memo wouldn't find isn't written.
         let memo = memo_text(&about, Some(quote));
@@ -461,14 +462,21 @@ pub(crate) fn complete(ctx: &Ctx, text: &str, offset: usize) -> Option<Vec<Compl
     files.sort_by(|a, b| a.path.cmp(&b.path));
     let mut out = Vec::new();
     for file in files {
+        let named = |id: Option<&str>| {
+            Named::Path {
+                path: file.path.clone(),
+                id: id.map(str::to_owned),
+            }
+            .written()
+        };
         out.push(item(
-            file.path.to_string(),
+            named(None),
             CompletionItemKind::FILE,
             file.title.clone(),
         ));
         for heading in file.headings.iter().filter(|h| !h.source_id.is_empty()) {
             out.push(item(
-                format!("{}#{}", file.path, heading.source_id),
+                named(Some(&heading.source_id)),
                 CompletionItemKind::REFERENCE,
                 Some(heading.text.clone()),
             ));
@@ -639,7 +647,13 @@ pub(crate) fn id_edits(
                         .page_heading(path, old_id)
                         .is_some_and(|(written_in, _)| written_in == file.path)) =>
         {
-            Some(format!("{path}#{new_id}"))
+            Some(
+                Named::Path {
+                    path: path.clone(),
+                    id: Some(new_id.to_owned()),
+                }
+                .written(),
+            )
         }
         Named::Entry {
             kind: EntryKind::Term,
@@ -676,9 +690,12 @@ pub(crate) fn move_edits(ctx: &Ctx, moved: impl Fn(&RelPath) -> RelPath) -> Vec<
             return None;
         };
         let new = moved(path);
-        (new != *path).then(|| match id {
-            Some(id) => format!("{new}#{id}"),
-            None => new.to_string(),
+        (new != *path).then(|| {
+            Named::Path {
+                path: new,
+                id: id.clone(),
+            }
+            .written()
         })
     })
 }

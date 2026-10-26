@@ -25,6 +25,7 @@ use clap::ValueEnum;
 use serde_json::{Value, json};
 
 use super::checker::{self, Ask, Found, LIMIT};
+use super::command;
 use crate::answer::FromDisk;
 use crate::exit;
 
@@ -100,10 +101,18 @@ impl Answer {
     }
 }
 
-/// Runs the hook on its input. Exit codes: 0 whatever was found, and when
-/// the check takes too long; 1 when the input can't be read, which every
-/// harness shows its user and not the model.
-pub fn run(harness: Harness, event: Event, input: io::Result<String>, limits: Limits) -> Answer {
+/// Runs the hook on its input. The commands it names are run with
+/// `command`, or when it's `None` with each project's, as `sync` works it
+/// out. Exit codes: 0 whatever was found, and when the check takes too
+/// long; 1 when the input can't be read, which every harness shows its
+/// user and not the model.
+pub fn run(
+    harness: Harness,
+    event: Event,
+    input: io::Result<String>,
+    command: Option<&str>,
+    limits: Limits,
+) -> Answer {
     let input = match input
         .map_err(|e| e.to_string())
         .and_then(|text| serde_json::from_str::<Value>(&text).map_err(|e| e.to_string()))
@@ -120,9 +129,22 @@ pub fn run(harness: Harness, event: Event, input: io::Result<String>, limits: Li
         .map(|dir| normalize(&std::path::absolute(&dir).unwrap_or(dir)))
         .unwrap_or_default();
     match event {
-        Event::Edit => edit(harness, &input, &cwd, limits.edit, limits.server),
-        Event::Stop => stop(harness, &input, &cwd, limits.stop, limits.server),
+        Event::Edit => edit(harness, &input, &cwd, command, limits),
+        Event::Stop => stop(harness, &input, &cwd, command, limits),
     }
+}
+
+/// The command the project of `config` runs Ascribe with: `given`, or the
+/// one `sync` works out.
+fn runs(config: &Path, given: Option<&str>) -> String {
+    if let Some(given) = given {
+        return given.to_owned();
+    }
+    let here = config.parent().unwrap_or(config);
+    let root = Repository::discover(here)
+        .map(|repository| PathBuf::from(&repository.root))
+        .unwrap_or_else(|_| here.to_owned());
+    command::detect(here, &root)
 }
 
 fn unreadable(why: &str) -> Answer {
@@ -133,8 +155,14 @@ fn unreadable(why: &str) -> Answer {
     }
 }
 
-fn edit(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bool) -> Answer {
-    let deadline = Instant::now() + limit;
+fn edit(
+    harness: Harness,
+    input: &Value,
+    cwd: &Path,
+    command: Option<&str>,
+    limits: Limits,
+) -> Answer {
+    let deadline = Instant::now() + limits.edit;
     let quiet = Answer::quiet(harness, Event::Edit);
     let written: Vec<PathBuf> = written_files(harness, input)
         .into_iter()
@@ -148,9 +176,9 @@ fn edit(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bo
             continue;
         }
         let shown: Vec<String> = files.iter().map(|f| from(cwd, f)).collect();
-        match check_by(&config, Ask::Files(files), deadline, server) {
+        match check_by(&config, Ask::Files(files), deadline, limits.server) {
             Some(Ok(f)) if f.errors > 0 || f.fixable > 0 || f.baseline_problem.is_some() => {
-                found.push((shown, f));
+                found.push((shown, f, runs(&config, command)));
             }
             // Nothing to report, a project that can't be checked (the stop
             // hook says why), or out of time: nothing to say.
@@ -162,7 +190,7 @@ fn edit(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bo
     }
     let text = found
         .iter()
-        .map(|(files, f)| edit_text(files, f))
+        .map(|(files, f, runs)| command::with_command(&edit_text(files, f), runs))
         .collect::<Vec<_>>()
         .join("\n");
     let stdout = match harness {
@@ -229,8 +257,14 @@ fn edit_text(files: &[String], found: &Found) -> String {
     lines.join("\n") + "\n"
 }
 
-fn stop(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bool) -> Answer {
-    let deadline = Instant::now() + limit;
+fn stop(
+    harness: Harness,
+    input: &Value,
+    cwd: &Path,
+    command: Option<&str>,
+    limits: Limits,
+) -> Answer {
+    let deadline = Instant::now() + limits.stop;
     let quiet = Answer::quiet(harness, Event::Stop);
     // Every harness names it this way, Copilot too.
     if input
@@ -246,11 +280,12 @@ fn stop(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bo
         let dir = config.parent().map(|d| from(cwd, d)).unwrap_or_default();
         // Out of time, the agent goes on; a project that can't be checked
         // at all, as `ascribe check` would refuse it, holds it.
-        match check_by(&config, Ask::Project, deadline, server) {
-            Some(Ok(found)) if found.errors > 0 => reasons.push(stop_text(&dir, &found)),
-            Some(Err(why)) => reasons.push(unchecked_text(&dir, &why)),
-            Some(Ok(_)) | None => {}
-        }
+        let reason = match check_by(&config, Ask::Project, deadline, limits.server) {
+            Some(Ok(found)) if found.errors > 0 => stop_text(&dir, &found),
+            Some(Err(why)) => unchecked_text(&dir, &why),
+            Some(Ok(_)) | None => continue,
+        };
+        reasons.push(command::with_command(&reason, &runs(&config, command)));
     }
     if reasons.is_empty() {
         return quiet;
@@ -514,16 +549,22 @@ mod tests {
             "tool_input": { "file_path": dir.path().join("docs").join("a.md") },
         })
         .to_string();
-        let answer = run(Harness::ClaudeCode, Event::Edit, Ok(input.clone()), limits);
+        let answer = run(
+            Harness::ClaudeCode,
+            Event::Edit,
+            Ok(input.clone()),
+            None,
+            limits,
+        );
         assert_eq!(answer, Answer::default());
-        let answer = run(Harness::Codex, Event::Stop, Ok(input.clone()), limits);
+        let answer = run(Harness::Codex, Event::Stop, Ok(input.clone()), None, limits);
         assert_eq!(answer.stdout, "{}\n");
         // With time, the same input reports the error.
         let limits = Limits {
             edit: Duration::from_secs(60),
             ..limits
         };
-        let answer = run(Harness::ClaudeCode, Event::Edit, Ok(input), limits);
+        let answer = run(Harness::ClaudeCode, Event::Edit, Ok(input), None, limits);
         assert!(answer.stdout.contains("[ASC036]"), "{answer:?}");
     }
 

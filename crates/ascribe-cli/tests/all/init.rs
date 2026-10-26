@@ -42,7 +42,8 @@ fn init_says_what_it_wrote_and_where_to_go_next() {
         stdout(&output),
         "wrote ascribe.toml\n\
          made docs/, the folder the pages go in\n\
-         Next, to publish the pages as a site with Astro, read https://ascribed-dev.com/go/astro-guide/\n"
+         Next, write a first page, docs/index.md, and run `ascribe check`\n\
+         Then, to publish the pages as a site with Astro, read https://ascribed-dev.com/go/astro-guide/\n"
     );
 }
 
@@ -65,11 +66,7 @@ fn init_with_the_templates_checks_clean_and_a_page_is_of_the_type_it_names() {
     );
     let check = ascribe(dir.path(), &["check"]);
     assert_eq!(code_of(&check), 0, "{}{}", stdout(&check), stderr(&check));
-    assert!(
-        stdout(&check).contains("0 errors, 0 warnings, 0 advice"),
-        "{}",
-        stdout(&check)
-    );
+    assert_eq!(stdout(&check), "No pages in docs/ yet.\n");
 
     fs::write(
         dir.path().join("docs/index.md"),
@@ -87,6 +84,41 @@ fn init_with_the_templates_checks_clean_and_a_page_is_of_the_type_it_names() {
     assert_eq!(code_of(&outline), 0, "{}", stderr(&outline));
     let outline: Value = serde_json::from_slice(&outline.stdout).unwrap();
     assert_eq!(outline["type"], "page", "{outline:#}");
+}
+
+/// A check of the project `ascribe init` starts, before its first page,
+/// says there are none, naming the content root as `ascribe.toml` does
+/// from wherever it's run, and exits 0; once the page
+/// is written, it's counted.
+#[test]
+fn check_before_the_first_page_says_there_are_none() {
+    let dir = tempfile::tempdir().unwrap();
+    let output = ascribe(dir.path(), &["init"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    for (from, said) in [
+        (dir.path().to_path_buf(), "No pages in docs/ yet.\n"),
+        (dir.path().join("docs"), "No pages in docs/ yet.\n"),
+    ] {
+        let check = ascribe(&from, &["check"]);
+        assert_eq!(code_of(&check), 0, "{}", stderr(&check));
+        assert_eq!(stdout(&check), said);
+    }
+    let concise = ascribe(dir.path(), &["check", "--format", "concise"]);
+    assert_eq!(code_of(&concise), 0, "{}", stderr(&concise));
+    assert_eq!(stdout(&concise), "No pages in docs/ yet.\n");
+
+    fs::write(
+        dir.path().join("docs/index.md"),
+        "---\ntype: page\ntitle: Handbook\ndescription: How the team works.\n---\n\nWelcome.\n",
+    )
+    .unwrap();
+    let check = ascribe(dir.path(), &["check"]);
+    assert_eq!(code_of(&check), 0, "{}", stderr(&check));
+    assert!(
+        stdout(&check).starts_with("checked 1 file"),
+        "{}",
+        stdout(&check)
+    );
 }
 
 #[test]

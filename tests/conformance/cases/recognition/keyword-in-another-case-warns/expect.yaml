@@ -1,0 +1,10 @@
+description: >-
+  Names are case-sensitive, so a line shaped like a directive whose name is
+  a keyword in another case (`@Note:`) is text, but draws a warning that
+  suggests the keyword. A capitalized word that isn't a keyword doesn't.
+spec: ["3.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: directive-unknown, line: 5}
+  - {slug: directive-unknown, line: 7}

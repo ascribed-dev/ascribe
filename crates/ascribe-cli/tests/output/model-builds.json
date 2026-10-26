@@ -1,5 +1,5 @@
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "ascribe_version": "{version}",
   "builds": [
     {
@@ -22,12 +22,6 @@
       "name": "cloud",
       "variants": "deployment=cloud",
       "availability": "filter cloud",
-      "editor": false
-    },
-    {
-      "name": "self-managed-3.3",
-      "variants": "switch",
-      "availability": "filter self-managed 3.3",
       "editor": false
     }
   ]

@@ -41,7 +41,7 @@ A later profile that offers a choice will add a key for it.
 
 @include: ../_fragments/content-model/builds.md
 
-**Rules.** Two build names can't differ only in case (`model-build-name-case`): they become folder names, and some file systems ignore case. A versioned build needs a target with a live line, and can't filter as well (`model-build-versions`). A build that filters for a target its own selection leaves out, such as one selecting `deployment = "cloud"` and filtering for `self-managed 3.3`, builds, but it's almost certainly a mistake, so you get a warning (`model-build-filter-excluded`).
+**Rules.** Two build names can't differ only in case (`model-build-name-case`): they become folder names, and some file systems ignore case. A versioned build needs a target with a live line, and can't filter as well (`model-build-versions`). A build that filters for a target its own selection leaves out, such as one selecting `deployment = "cloud"` and filtering for `self-managed 3.3`, builds, but it's almost certainly a mistake, so you get a warning (`model-build-filter-excluded`). A build that filters for a version older than every line `[releases.<target>]` declares is in no line the project knows, so `ascribe versions` doesn't list it and a retirement counts it as a build its rewrite changes: that's advice (`build-filter-line-undeclared`), to declare the line in `archived` or to publish the lines with `versions` instead.
 
 A versioned build's outputs, their names and addresses, and what each line keeps and shows are in [Versions](../versions/index.md#build-a-site-for-each-line). An older line's output says nothing to agents: it has no `llms.txt`, and its pages point to no Markdown version.
 

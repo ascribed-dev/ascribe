@@ -202,3 +202,22 @@ test("the contents list each release and its areas, with their counts", () => {
     { id: "v0.1.0", html: "0.1.0 (2026-10-01)", count: 1, areas: [] },
   ]);
 });
+
+test("an unreleased section with no entries is left out, and so are its contents", () => {
+  const { html, contents } = collapseEntries(
+    anchorReleases(
+      [
+        "<h1>Changelog</h1>",
+        "<p>Intro.</p>",
+        "<h2>Unreleased</h2>",
+        "<h2>0.1.0 (2026-10-01)</h2>",
+        "<ul>",
+        "<li>A plain entry.</li>",
+        "</ul>",
+      ].join("\n"),
+    ),
+  );
+  expect(html).not.toContain('id="unreleased"');
+  expect(html).not.toContain("unreleased-note");
+  expect(contents.map((release) => release.id)).toEqual(["v0.1.0"]);
+});

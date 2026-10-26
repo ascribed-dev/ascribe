@@ -173,13 +173,16 @@ pub struct ResolvedPermalink {
 #[derive(Debug)]
 pub enum PermalinkHelp {
     /// Its entry.
-    Found(ResolvedPermalink),
+    Found(Box<ResolvedPermalink>),
     /// The permalink is retired.
     Retired {
-        /// Why, as `ascribe.toml` writes it.
+        /// Why, as `ascribe.addresses` writes it.
         reason: String,
-        /// Where its address leads now, as `ascribe.toml` writes it.
-        to: Option<String>,
+    },
+    /// The permalink was moved to a page.
+    Moved {
+        /// Where its address leads now, as `ascribe.addresses` writes it.
+        to: String,
     },
     /// The build publishes no permalink by the name.
     Missing {
@@ -207,7 +210,7 @@ pub fn permalink(
     match help(&cx, &resolved, name) {
         Help::Entry(entry) => {
             let (version, build, line) = help_header(&cx);
-            PermalinkHelp::Found(ResolvedPermalink {
+            PermalinkHelp::Found(Box::new(ResolvedPermalink {
                 schema_version: SCHEMA_VERSION,
                 ascribe_version: ASCRIBE_VERSION,
                 version,
@@ -215,9 +218,10 @@ pub fn permalink(
                 line: line.map(str::to_owned),
                 name: name.to_owned(),
                 entry,
-            })
+            }))
         }
-        Help::Retired { reason, to } => PermalinkHelp::Retired { reason, to },
+        Help::Retired { reason } => PermalinkHelp::Retired { reason },
+        Help::Moved { to } => PermalinkHelp::Moved { to },
         Help::Missing { names } => PermalinkHelp::Missing {
             closest: closest(&names, name),
         },

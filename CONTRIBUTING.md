@@ -27,19 +27,17 @@ It builds the `ascribe` binary (`cargo build -p ascribe-cli`), stages it into `@
 CI runs all of these, and every check must pass:
 
 ```sh
-cargo fmt --all --check
-cargo clippy --workspace --all-targets --locked -- -D warnings
-cargo test --workspace --locked
-cargo deny check && cargo machete
-pnpm format:check && pnpm lint && pnpm exec knip && pnpm typecheck && pnpm test
+pnpm check:all
 ```
+
+It runs each step of the Rust and JavaScript workflows (`rust.yml` and `js.yml`) that can run on your machine, one job after another, and stops at the first that fails. [scripts/check.ts](scripts/check.ts) lists them, with the reason for each it skips; `scripts/check.test.ts` fails when it and the workflows disagree. The VS Code integration tests and the Astro end-to-end run in CI only.
 
 - Behavior changes come with a conformance case in [tests/conformance](tests/conformance). Diagnostics are defined only in `tests/conformance/diagnostics.toml`; the diagnostics reference is generated from it.
 - Changes to `crates/comrak-ascribe` follow [FORK.md](crates/comrak-ascribe/FORK.md): mark each one `// ASCRIBE:` and update the table.
 - Libraries don't panic on user input; `unwrap` and `expect` are linted.
 - The property tests run as many cases as `PROPTEST_CASES` says, set to 256 in [.cargo/config.toml](.cargo/config.toml); set it in the environment to raise it for a soak (`PROPTEST_CASES=5000 cargo test -p ascribe-syntax --test all agreement::`). The language server's differential test loops over seeds instead, with `ASCRIBE_LSP_SEEDS`.
 - Dependencies come from Dependabot. Keep the toolchain, `.nvmrc`, and lockfiles current rather than pinning old versions. A new Node or Rust version goes in every file that names it; `scripts/docs-site/facts.test.ts` finds each one, and fails until they agree. A new `playwright-core` version needs the same version of Playwright's container image in `.github/workflows/js.yml`; `scripts/ci/workflows.test.ts` fails until they agree, and says how to find the image's digest.
-- Dependencies are audited. `cargo deny` ([.cargo/deny.toml](.cargo/deny.toml)) allows the licenses listed there and crates.io only, and warns on a second version of a crate. It also reports security advisories, as a failed step that doesn't fail CI, since a new one can appear with no change here: file an issue for it, and fix it or ignore it in deny.toml with the issue as the reason. `cargo machete` and `knip` ([knip.jsonc](knip.jsonc)) fail on an unused dependency, and `knip` on an unused file or export too. Where one is wrong, ignore the name in its configuration with a comment saying why. Install the Rust tools with `cargo install --locked cargo-deny@0.20.2 cargo-machete@0.9.2`, the versions `rust.yml` pins.
+- Dependencies are audited. `cargo deny` ([.cargo/deny.toml](.cargo/deny.toml)) allows the licenses listed there and crates.io only, and warns on a second version of a crate. It also reports security advisories, as a failed step that doesn't fail CI, since a new one can appear with no change here: file an issue for it, and fix it or ignore it in deny.toml with the issue as the reason. `cargo machete` and `knip` ([knip.jsonc](knip.jsonc)) fail on an unused dependency, and `knip` on an unused file or export too. Where one is wrong, ignore the name in its configuration with a comment saying why. `pnpm check:all` says how to install the Rust tools when they're missing, at the versions `rust.yml` pins.
 - The published npm packages are checked as a consumer gets them. `pnpm check:packages` packs each JavaScript package `scripts/release/manifests.ts` lists and runs [publint](https://publint.dev) and [Are the Types Wrong](https://arethetypeswrong.github.io) on each, for ESM consumers: the packages don't support `require`. Build the packages first (`pnpm build:all`). A fix that would change what a consumer imports is a contract change.
 - A change to the language, a new command or option, or a change to the site output's markup goes through its list in [project-docs/checklists.md](project-docs/checklists.md): each line is done, or says why it doesn't apply.
 - A decision made in an issue, a review, or a conversation is added as a file of its own to [project-docs/decisions/](project-docs/decisions/README.md), numbered by its issue, in the pull request that acts on it. [project-docs/decisions.md](project-docs/decisions.md) keeps the numbered decisions made before and takes no new ones.
@@ -60,7 +58,7 @@ A test, `cargo test -p ascribe-cli --test determinism`, holds that one binary wr
 
 ## Documenting a change
 
-The user docs are in `docs/`, an Ascribe project, and change in the same pull request as the code they describe. A change someone using Ascribe would notice updates the page that describes it, under `docs/content/`, and adds its changelog entry as a file of its own in its area's folder of [changes/](changes/README.md), which says how to name and write one. It doesn't edit [CHANGELOG.md](CHANGELOG.md): a release gathers the entries into it, so two pull requests never conflict there. What no release has yet is marked `@available: ascribe planned` on its page or section. Every page must pass the checks CI runs on it (in `site.yml`):
+The user docs are in `docs/`, an Ascribe project, and change in the same pull request as the code they describe. A change someone using Ascribe would notice updates the page that describes it, under `docs/content/`, and adds its changelog entry as a file of its own in its area's folder of [changes/](changes/README.md), which says how to name and write one. An entry is one line: a bold headline and one or two sentences, 40 words at most, ending with a link to the page with the detail; a fix is **Fixed:** and a sentence or two. The detail goes on the page, not in the entry. It doesn't edit [CHANGELOG.md](CHANGELOG.md): a release gathers the entries into it, so two pull requests never conflict there. What no release has yet is marked `@available: ascribe planned` on its page or section. Every page must pass the checks CI runs on it (in `site.yml`):
 
 ```sh
 cargo build -p ascribe-cli

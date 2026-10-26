@@ -1,43 +1,41 @@
 //! The project the checks run on: the content model and the source files.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use ascribe_core::path::{normalize, relative_path};
-use ascribe_core::{Date, FileId, Issue, LineIndex, RelPath, Span};
+use ascribe_core::{AttributeValue, Date, FileId, Issue, LineIndex, RelPath, Span};
 use ascribe_model::{
-    ADDRESSES_FILE, AddressFile, ContentModel, LOCK_FILE, Lock, LockedSource, NAV_FILE, NavFile,
-    PERMALINKS_FILE, PermalinkList, SourceBound,
+    AddressFile, ContentModel, Lock, LockedSource, NavFile, PermalinkList, SourceBound,
 };
+use ascribe_resolve::side_file::{self, Held, SideFile};
 use ascribe_resolve::{
     CodeFile, CodeFiles, Committed, DiskFs, FileSystem, Layout, MemoFile, MemoStore, Personal,
     SourceSet,
 };
+use ascribe_syntax::{Block, BlockKind, DirectiveLine, ParseOptions, parse};
 
 use crate::Diagnostic;
-use crate::baseline::{BASELINE_FILE, BASELINE_FILE_ID, Baseline, BaselineError};
+use crate::baseline::{BASELINE_FILE_ID, Baseline, BaselineError};
 use crate::checks::template::Template;
+use crate::side_files::{SIDE_FILES, side_file_by_id};
 
 pub use ascribe_model::MODEL_FILE;
 
-/// The id of `ascribe.lock` (SPEC §7.4), for locations in it: past any
-/// source file's, and before the code files'.
-pub const LOCK_FILE_ID: FileId = FileId::new(0x7FFF_FFFF);
+/// The id of `ascribe.lock` (SPEC §7.4), for locations in it.
+pub const LOCK_FILE_ID: FileId = side_file::Lock::ID;
 
-/// The id of `ascribe.permalinks` (SPEC §7.5), for locations in it: just
-/// before the lock's.
-pub const PERMALINKS_FILE_ID: FileId = FileId::new(0x7FFF_FFFE);
+/// The id of `ascribe.permalinks` (SPEC §7.5), for locations in it.
+pub const PERMALINKS_FILE_ID: FileId = side_file::Permalinks::ID;
 
-/// The id of `ascribe.nav` (SPEC §7.8), for locations in it: just before
-/// the permalinks list's.
-pub const NAV_FILE_ID: FileId = FileId::new(0x7FFF_FFFD);
+/// The id of `ascribe.nav` (SPEC §7.8), for locations in it.
+pub const NAV_FILE_ID: FileId = side_file::Nav::ID;
 
-/// The id of `ascribe.addresses` (SPEC §7.10), for locations in it: just
-/// before the baseline's.
-pub const ADDRESSES_FILE_ID: FileId = FileId::new(0x7FFF_FFFB);
+/// The id of `ascribe.addresses` (SPEC §7.10), for locations in it.
+pub const ADDRESSES_FILE_ID: FileId = side_file::Addresses::ID;
 
 /// The id of the first image file under the content root, for locations
 /// in image files: the image checks list them in path order, and number them
@@ -82,8 +80,7 @@ pub struct FileEntry<'a> {
     /// The text.
     pub text: &'a str,
     /// The path relative to the content root, for a source file or an image
-    /// file under it; `None` for the content model, the lock, the
-    /// permalinks list, the navigation file, and the baseline.
+    /// file under it; `None` for the content model and the side files.
     pub content_path: Option<&'a RelPath>,
 }
 
@@ -244,27 +241,9 @@ pub struct Project {
     fs: Files,
     /// The code files snippets have read, read as the checks ask for them.
     code: Arc<CodeFiles>,
-    /// The text of `ascribe.lock`, when there is one.
-    lock_text: Option<String>,
-    /// `ascribe.lock` read, or its problems, when there's one.
-    lock: Option<Result<Lock, Vec<Issue>>>,
-    /// The text of `ascribe.permalinks`, when there is one.
-    permalinks_text: Option<String>,
-    /// `ascribe.permalinks` read, or its problems, when there's one.
-    permalinks: Option<Result<PermalinkList, Vec<Issue>>>,
-    /// The text of `ascribe.nav`, when there is one.
-    nav_text: Option<String>,
-    /// `ascribe.nav` read, or its problems, when there's one.
-    nav: Option<Result<NavFile, Vec<Issue>>>,
-    /// The text of `ascribe.addresses`, when there is one.
-    addresses_text: Option<String>,
-    /// `ascribe.addresses` read, or its problems, when there's one.
-    addresses: Option<Result<AddressFile, Vec<Issue>>>,
-    /// The text of `ascribe.baseline`, when there is one.
-    baseline_text: Option<String>,
-    /// `ascribe.baseline` read, or the line that doesn't parse, when
-    /// there's one.
-    baseline: Option<Result<Baseline, BaselineError>>,
+    /// The side files the project has ([`SIDE_FILES`]), each read with its
+    /// text, in the order of the list.
+    side: Vec<Held>,
     /// The image files under the content root, by path from the project
     /// root and from the content root, once the image checks have listed
     /// them.
@@ -287,6 +266,9 @@ pub struct Project {
     /// Whether the checks read the personal memos too: the editor's do, and
     /// `ascribe check`'s don't ([`Project::with_personal_memos`]).
     personal_memos: bool,
+    /// The values the pages' `@variant` arms give each dimension, read the
+    /// first time a check asks.
+    variant_values: OnceLock<BTreeMap<String, Vec<String>>>,
 }
 
 /// The file system a project probes for what isn't a source file. It has a
@@ -563,41 +545,12 @@ impl Project {
         // test): the disk doesn't change while it runs, so listings are kept.
         let fs: Arc<dyn FileSystem + Send + Sync> =
             fs.unwrap_or_else(|| Arc::new(DiskFs::with_listing_cache(&root, &layout)));
-        // The lock is read like any other file beside the content model, so
-        // a project in memory can have one.
-        let lock_text = RelPath::parse(LOCK_FILE)
-            .ok()
-            .and_then(|path| fs.read_file(&path).ok())
-            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
-        let lock = lock_text
-            .as_deref()
-            .map(|text| Lock::parse(text, LOCK_FILE_ID));
-        let permalinks_text = RelPath::parse(PERMALINKS_FILE)
-            .ok()
-            .and_then(|path| fs.read_file(&path).ok())
-            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
-        let permalinks = permalinks_text
-            .as_deref()
-            .map(|text| PermalinkList::parse(text, PERMALINKS_FILE_ID));
-        let nav_text = RelPath::parse(NAV_FILE)
-            .ok()
-            .and_then(|path| fs.read_file(&path).ok())
-            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
-        let nav = nav_text
-            .as_deref()
-            .map(|text| NavFile::parse(text, NAV_FILE_ID));
-        let addresses_text = RelPath::parse(ADDRESSES_FILE)
-            .ok()
-            .and_then(|path| fs.read_file(&path).ok())
-            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
-        let addresses = addresses_text
-            .as_deref()
-            .map(|text| AddressFile::parse(text, ADDRESSES_FILE_ID));
-        let baseline_text = RelPath::parse(BASELINE_FILE)
-            .ok()
-            .and_then(|path| fs.read_file(&path).ok())
-            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
-        let baseline = baseline_text.as_deref().map(Baseline::parse);
+        // The side files are read like any other file beside the content
+        // model, so a project in memory can have them.
+        let side = SIDE_FILES
+            .iter()
+            .filter_map(|entry| entry.read(&*fs))
+            .collect();
         Project {
             root,
             layout,
@@ -608,16 +561,7 @@ impl Project {
             source_paths,
             fs: Files(fs),
             code: Arc::default(),
-            lock_text,
-            lock,
-            permalinks_text,
-            permalinks,
-            nav_text,
-            nav,
-            addresses_text,
-            addresses,
-            baseline_text,
-            baseline,
+            side,
             images: OnceLock::new(),
             link_index: OnceLock::new(),
             today: None,
@@ -625,6 +569,7 @@ impl Project {
             memos: Arc::default(),
             all_memos: Arc::default(),
             personal_memos: false,
+            variant_values: OnceLock::new(),
         }
     }
 
@@ -723,50 +668,64 @@ impl Project {
         self.sources.iter().find(|s| &s.path == path)
     }
 
+    /// The side file `F` read, when the project has it ([`SIDE_FILES`]).
+    pub fn side_file<F: SideFile>(&self) -> Option<&F::Read> {
+        self.side.iter().find_map(Held::get::<F>)
+    }
+
+    /// The text of the side file at `path`, from the project root, when the
+    /// project has it.
+    pub fn side_text(&self, path: &str) -> Option<&str> {
+        self.side
+            .iter()
+            .find(|held| held.path() == path)
+            .map(Held::text)
+    }
+
     /// The text of `ascribe.lock`, when the project has one.
     pub fn lock_text(&self) -> Option<&str> {
-        self.lock_text.as_deref()
+        self.side_text(side_file::Lock::PATH)
     }
 
     /// `ascribe.lock` read, or its problems, when the project has one.
     pub(crate) fn lock(&self) -> Option<&Result<Lock, Vec<Issue>>> {
-        self.lock.as_ref()
+        self.side_file::<side_file::Lock>()
     }
 
     /// The text of `ascribe.permalinks`, when the project has one.
     pub fn permalinks_text(&self) -> Option<&str> {
-        self.permalinks_text.as_deref()
+        self.side_text(side_file::Permalinks::PATH)
     }
 
     /// `ascribe.permalinks` read, or its problems, when the project has one.
     pub fn permalinks(&self) -> Option<&Result<PermalinkList, Vec<Issue>>> {
-        self.permalinks.as_ref()
+        self.side_file::<side_file::Permalinks>()
     }
 
     /// `ascribe.nav` read, or its problems, when the project has one.
     pub fn nav(&self) -> Option<&Result<NavFile, Vec<Issue>>> {
-        self.nav.as_ref()
+        self.side_file::<side_file::Nav>()
     }
 
     /// The text of `ascribe.addresses`, when the project has one.
     pub fn addresses_text(&self) -> Option<&str> {
-        self.addresses_text.as_deref()
+        self.side_text(side_file::Addresses::PATH)
     }
 
     /// `ascribe.addresses` read, or its problems, when the project has one.
     pub fn addresses(&self) -> Option<&Result<AddressFile, Vec<Issue>>> {
-        self.addresses.as_ref()
+        self.side_file::<side_file::Addresses>()
     }
 
     /// The text of `ascribe.baseline`, when the project has one.
     pub fn baseline_text(&self) -> Option<&str> {
-        self.baseline_text.as_deref()
+        self.side_text(crate::side_files::Baseline::PATH)
     }
 
     /// `ascribe.baseline` read, or the line that doesn't parse, when the
     /// project has one.
     pub fn baseline(&self) -> Option<&Result<Baseline, BaselineError>> {
-        self.baseline.as_ref()
+        self.side_file::<crate::side_files::Baseline>()
     }
 
     /// The pin of the source `name` in another repository, when
@@ -775,7 +734,7 @@ impl Project {
     pub(crate) fn pin(&self, name: &str) -> Option<&LockedSource> {
         let url = &self.model.source(name)?.git.as_ref()?.url;
         // A lock that can't be read is reported by the sources check.
-        let lock = self.lock.as_ref()?.as_ref().ok()?;
+        let lock = self.lock()?.as_ref().ok()?;
         lock.source(name).filter(|l| &l.git == url)
     }
 
@@ -798,10 +757,12 @@ impl Project {
 
     /// What a file id names.
     pub fn file(&self, id: FileId) -> Option<FileEntry<'_>> {
-        if id == ADDRESSES_FILE_ID {
-            return self.addresses_text.as_deref().map(|text| FileEntry {
+        // A side file's id can be in the images' range, so it's looked for
+        // first.
+        if let Some(entry) = side_file_by_id(id) {
+            return self.side_text(entry.path).map(|text| FileEntry {
                 id,
-                display_path: ADDRESSES_FILE.to_owned(),
+                display_path: entry.path.to_owned(),
                 text,
                 content_path: None,
             });
@@ -836,38 +797,6 @@ impl Project {
                 content_path: None,
             });
         }
-        if id == LOCK_FILE_ID {
-            return self.lock_text.as_deref().map(|text| FileEntry {
-                id,
-                display_path: LOCK_FILE.to_owned(),
-                text,
-                content_path: None,
-            });
-        }
-        if id == NAV_FILE_ID {
-            return self.nav_text.as_deref().map(|text| FileEntry {
-                id,
-                display_path: NAV_FILE.to_owned(),
-                text,
-                content_path: None,
-            });
-        }
-        if id == BASELINE_FILE_ID {
-            return self.baseline_text.as_deref().map(|text| FileEntry {
-                id,
-                display_path: BASELINE_FILE.to_owned(),
-                text,
-                content_path: None,
-            });
-        }
-        if id == PERMALINKS_FILE_ID {
-            return self.permalinks_text.as_deref().map(|text| FileEntry {
-                id,
-                display_path: PERMALINKS_FILE.to_owned(),
-                text,
-                content_path: None,
-            });
-        }
         let source = self.sources.iter().find(|s| s.id == id)?;
         Some(FileEntry {
             id,
@@ -882,7 +811,7 @@ impl Project {
     }
 
     /// The path a report shows for a file id: [`FileEntry::display_path`] for
-    /// the content model, the lock, the permalinks list, the navigation file, and a source file, and the code file's
+    /// the content model, a side file, and a source file, and the code file's
     /// path for a code file a snippet read.
     pub fn display_path(&self, id: FileId) -> Option<String> {
         match self.file(id) {
@@ -1055,6 +984,25 @@ impl Project {
         self.link_index = OnceLock::new();
     }
 
+    /// The values the pages' `@variant` arms give the dimension `name`, in
+    /// the order they're first given: what a `[dimensions.<name>]` table
+    /// for them would list. Read from every source file the first time any
+    /// dimension is asked for, which only a project that doesn't declare
+    /// the dimension does.
+    pub(crate) fn variant_values(&self, name: &str) -> &[String] {
+        let all = self.variant_values.get_or_init(|| {
+            let mut out: BTreeMap<String, Vec<String>> = BTreeMap::new();
+            // A file without the word has no arm to read, and a mention of
+            // it is cheap to look for.
+            for file in self.sources.iter().filter(|f| f.text.contains("@variant")) {
+                let options = ParseOptions::new(self.model.directive_schemas());
+                variant_values_in(&parse(&file.text, &options).blocks, &mut out);
+            }
+            out
+        });
+        all.get(name).map_or(&[], Vec::as_slice)
+    }
+
     /// The day the checks run on, if the caller gave one.
     pub fn today(&self) -> Option<Date> {
         self.today
@@ -1084,6 +1032,55 @@ impl SourceSet for Project {
         let mut pages: Vec<RelPath> = self.source_paths.values().cloned().collect();
         pages.sort();
         pages
+    }
+}
+
+/// Adds the values each `@variant` arm in `blocks` gives its dimensions to
+/// `out`, each once.
+fn variant_values_in(blocks: &[Block], out: &mut BTreeMap<String, Vec<String>>) {
+    for block in blocks {
+        match &block.kind {
+            BlockKind::Group(group) => {
+                for arm in &group.arms {
+                    opener_values(&arm.opener, out);
+                    variant_values_in(&arm.children, out);
+                }
+            }
+            BlockKind::Container(container) => {
+                opener_values(&container.opener, out);
+                variant_values_in(&container.children, out);
+            }
+            BlockKind::Directive(line) => opener_values(line, out),
+            BlockKind::BlockQuote(quote) => variant_values_in(&quote.children, out),
+            BlockKind::List(list) => {
+                for item in &list.items {
+                    variant_values_in(&item.children, out);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Adds the values a `@variant` opener's attributes give to `out`.
+fn opener_values(line: &DirectiveLine, out: &mut BTreeMap<String, Vec<String>>) {
+    let Some(block) = line.attributes.as_ref().filter(|_| line.name == "variant") else {
+        return;
+    };
+    for attribute in &block.attributes {
+        let values: Vec<String> = match &attribute.value {
+            Some(AttributeValue::Set { members, .. }) => {
+                members.iter().map(|m| m.text.clone()).collect()
+            }
+            Some(other) => other.as_text().map(str::to_owned).into_iter().collect(),
+            None => Vec::new(),
+        };
+        let known = out.entry(attribute.key.clone()).or_default();
+        for value in values {
+            if !known.contains(&value) {
+                known.push(value);
+            }
+        }
     }
 }
 

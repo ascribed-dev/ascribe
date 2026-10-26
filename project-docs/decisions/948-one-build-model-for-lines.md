@@ -1,0 +1,5 @@
+---
+section: The language
+---
+
+**A build filtered for a version older than every line `[releases]` declares is advice, `build-filter-line-undeclared`, and Quill, with SPEC §9.3's example of builds, makes its lines only with `versions`.** Quill's `self-managed-3.3` build filtered for a line `[releases.self-managed]` didn't list, beside a `site` build versioned by self-managed, so `ascribe versions` didn't know it and a retirement of 3.4 counted it as a build its rewrite changes. The build is removed from `examples/quill` and from §9.3's example, which a test holds to Quill's builds, and §9.3 says in prose how a filter names a version. Quill turns off `available-same-in-every-line`, since Appendix B's page keeps `self-managed preview 3.3` as a badge. A version between two declared lines stays `available-line-undeclared`. _Why:_ one project shouldn't make a line's output two ways, and a filter at a version no list holds is invisible to the commands that manage lines. Declaring an archived 3.3 and keeping the build was tried and still left the retirement refusing. _From:_ Kyle, [#948](https://github.com/ascribed-dev/ascribe/issues/948), 26 October 2026.

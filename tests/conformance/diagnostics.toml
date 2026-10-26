@@ -25,7 +25,10 @@
 #             `diagnostics`. Page-level diagnostics are checked on each
 #             expanded page, per build; a case expects them under
 #             `builds.<name>.diagnostics`.
-#   spec      The SPEC.md section the rule comes from.
+#   spec      The SPEC.md section the rule comes from, or "none" for a check
+#             SPEC doesn't define: one of the processor's own checks, or a
+#             rule about a processor setting (SPEC §7.2), which only this
+#             processor's docs define.
 #   reference The section of the docs written for the person who meets the
 #             problem: a heading of docs/content/writing/directives.md,
 #             syntax.md, frontmatter.md, or inline.md,
@@ -78,7 +81,8 @@
 #                loader rule: what it checks, one of `AREAS` in
 #                tests/conformance/tests/docs.rs. Only a configurable entry has one; its `severity`
 #                is its default level, and its `spec` is the SPEC section of
-#                the construct it checks. The diagnostics reference lists it
+#                the construct it checks, or "none" when SPEC doesn't define
+#                that construct, as for Vale's prose checks. The diagnostics reference lists it
 #                under "Content checks", in its area's section.
 #   when         For a quality check or a loader rule: when it's reported,
 #                as a sentence without its full stop. Every one has it. A
@@ -712,7 +716,8 @@ reference = "writing/directives.md#variant"
 row = "`@variant` | Unknown dimension or value"
 message = "`{dimension}` isn't a declared dimension; the dimensions are: {dimensions}"
 messages.value = "`{value}` isn't a value of `{dimension}`; its values are: {values}"
-fix = "Use a dimension and value declared in `[dimensions]`, or declare them there."
+messages.none = "`{dimension}` isn't a declared dimension, and ascribe.toml declares none: add `[dimensions.{dimension}]` with `values = [{values}]`"
+fix = "Use a dimension and value declared in `[dimensions]`, or declare them there: `[dimensions.<name>]` with `values = [\"<value>\", …]`."
 example.wrong = '''
 ---
 title: Install Quill
@@ -1614,7 +1619,8 @@ messages.type-key = "`{key}` isn't a key of `[{table}]`: a page says what type i
 messages.glossary-terms = "`{key}` isn't a key of `[{table}]`: a term is a heading marked `@term` on a page that `[glossary] pages` lists"
 messages.intended-term = "`{key}` isn't a key of `[[{table}]]`: a glossary term is acknowledged with `@intended` at the top of its section, under its heading"
 messages.consumer-headers = "`headers` isn't a key of `[consumer]` any more: write `host = \"netlify\"`, which writes Netlify's `_headers` and `_redirects` into each build's site output"
-fix = "Fix the key's spelling, or remove it. A key added in a later version of Ascribe is unknown to an older one: when the project was written for a newer Ascribe, install it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`. `[[intended]]` has no `term`: acknowledge a term's problem with `@intended` under its heading. `[consumer]` has no `headers`: write `host = \"netlify\"`, which writes Netlify's `_headers` as `headers` did, and `_redirects` beside it."
+messages.permalinks-moved = "`[permalinks]` isn't a table of ascribe.toml any more: ascribe.addresses records each retired permalink and alias, as `go:<name>`; run `ascribe addresses init` to move them there"
+fix = "Fix the key's spelling, or remove it. A key added in a later version of Ascribe is unknown to an older one: when the project was written for a newer Ascribe, install it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`. `[[intended]]` has no `term`: acknowledge a term's problem with `@intended` under its heading. `[consumer]` has no `headers`: write `host = \"netlify\"`, which writes Netlify's `_headers` as `headers` did, and `_redirects` beside it. `ascribe.toml` has no `[permalinks]`: `ascribe addresses init` moves its retired permalinks and aliases into `ascribe.addresses`, as `go:<name>` keys of `[retired]` and `[moved]`."
 
 [[diagnostic]]
 code = "ASC062"
@@ -2404,7 +2410,8 @@ row = "Directives | Text on a directive line that fits no part of it: after the 
 message = "`@{name}`'s primary is a single word, so `{extra}` isn't part of it; remove it"
 messages.head = "`{extra}` isn't part of `@{name}`: a directive line has only its name, `{{attributes}}` in braces, and `:` with a primary; remove it, or put attributes in braces"
 messages.end = "`@end` takes nothing after it; remove `{extra}`"
-fix = "Remove the extra text. Text a directive should show belongs in its primary, after the colon, or in its content."
+messages.braces = "`{pairs}` reads as attributes of `@{name}`, and attributes go in braces: write `{{{attributes}}}`"
+fix = "Put attributes in braces, as in `@note {type=warning}: text`. Remove any other extra text: text a directive should show belongs in its primary, after the colon, or in its content."
 
 [[diagnostic]]
 code = "ASC121"
@@ -2559,11 +2566,13 @@ reference = "writing/directives.md#snippet"
 row = "`@snippet` | File doesn't exist, or its source doesn't include it"
 message = "`{path}` doesn't exist in source `{source}`"
 messages.case = "`{path}` doesn't exist in source `{source}`, but `{actual}` does: names must match exactly, including case"
+messages.folder = "`{path}` doesn't exist in source `{source}`: the path is relative to the source's folder, `{folder}`, so it doesn't repeat it; the file is `{suggestion}`"
+messages.suggestion = "`{path}` doesn't exist in source `{source}`; did you mean `{suggestion}`?"
 messages.not-included = "`{path}` is in source `{source}`'s folder, but the source's `include` and `ignore` patterns don't make it readable"
 messages.link = "`{path}` is a symbolic link, or is in a linked folder, that leads out of source `{source}`'s folder or to a file its patterns don't make readable; a snippet doesn't follow a link out of its source"
 messages.no-copy = "`{path}` from source `{source}`, in another repository, hasn't been copied into this one; run `ascribe sources fetch`"
 messages.not-at-pin = "`{path}` isn't in source `{source}`'s repository at {commit}, the commit ascribe.lock pins; name the file where it is now, or change the code and run `ascribe sources update {source}`"
-fix = "Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`. For a link, name the file it leads to through a source that includes it. For a source in another repository, run `ascribe sources fetch` to copy the file. When the file isn't in the repository at the pinned commit, because it was moved or deleted there, `fetch` can't copy it: name the file where it is now, or change the code and move the pin with `ascribe sources update`."
+fix = "Fix the path. It's relative to the source's folder, so it doesn't repeat it: with `path = \"src\"`, `src/config.js` is `<source>:config.js`. When the message says the source's patterns leave the file out, it's a link, or it's in another repository, the reference page has the steps."
 
 [[diagnostic]]
 code = "ASC130"
@@ -2869,7 +2878,7 @@ area = "pages"
 when = "A page's Markdown, as a build writes it for agents to read, is as long as the limit or longer: 50,000 characters, or `[checks.page-size] limit`. A page over the limit in several builds is one problem, with its size in the build where it's longest"
 message = "this page's Markdown is {size} characters in build `{build}`, and an agent reads under {limit} in one piece; split the page, or move long tables and code below the prose"
 messages.builds = "this page's Markdown is up to {size} characters in builds {builds}, and an agent reads under {limit} in one piece; split the page, or move long tables and code below the prose"
-fix = "Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The problem names the page's largest parts, up to five, largest first, each with its size: its sections, at their headings, and its includes, at their `@include` lines. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`. It's the spec's `page-size-markdown` check, made from the build before a deploy; `ascribe report agents` names this check for it, and for the spec's other checks of a page's size."
+fix = "Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The problem names the page's largest parts, up to five, largest first, each with its size: its sections, at their headings, and its includes, at their `@include` lines. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`. It's the spec's `page-size-markdown` check, made from the build before a deploy; `ascribe report delivery` names this check for it, and for the spec's other checks of a page's size."
 
 [[diagnostic]]
 code = "ASC150"
@@ -2909,7 +2918,7 @@ severity = "advice"
 level = "file"
 next = "choose"
 evidence = ["code-lines"]
-spec = "1.4"
+spec = "none"
 reference = "content-model/checks.md#19-checks"
 configurable = true
 area = "pages"
@@ -3135,7 +3144,7 @@ area = "outputs"
 when = "The project publishes `llms.txt` (`[consumer] agents = true`), and one of a build's `llms.txt` files is longer than 50,000 characters even with the index split by folder. Reported at the page the file is about"
 message = "{file} is {size} characters in build `{build}`, over the {limit} an agent reads in one fetch; move some of its pages into folders of their own, or shorten their descriptions"
 messages.builds = "{file} is over the {limit} characters an agent reads in one fetch in builds {builds}; move some of its pages into folders of their own, or shorten their descriptions"
-fix = "Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions. It's the delivery spec's `llms-txt-size` check, made from the build before a deploy; `ascribe report agents` names this check for it."
+fix = "Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions. It's the delivery spec's `llms-txt-size` check, made from the build before a deploy; `ascribe report delivery` names this check for it."
 
 [[diagnostic]]
 code = "ASC165"
@@ -3144,7 +3153,7 @@ severity = "advice"
 level = "file"
 next = "write"
 evidence = ["rule", "rule-link"]
-spec = "2.1"
+spec = "none"
 reference = "content-model/checks.md#checksvale"
 area = "prose"
 configurable = true
@@ -3160,7 +3169,7 @@ severity = "advice"
 level = "file"
 next = "outside"
 evidence = []
-spec = "2.1"
+spec = "none"
 reference = "content-model/checks.md#checksvale"
 area = "prose"
 configurable = true
@@ -3238,10 +3247,10 @@ area = "site"
 stage = "report"
 spec = "9.5"
 reference = "content-model/output.md#consumer"
-when = "`ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation"
+when = "`ascribe report delivery`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation"
 message = "the site fails the delivery spec's `{check}` check: {result}. {setting}"
 messages.warning = "the site passes the delivery spec's `{check}` check with a warning: {result}. {setting}"
-fix = "Change the setting the message names where the site is hosted; no page needs editing. [Serve the Markdown versions](astro/serve-markdown.md) says what to set on the hosts it names. Only `ascribe report agents` checks a published site."
+fix = "Change the setting the message names where the site is hosted; no page needs editing. [Serve the Markdown versions](astro/serve-markdown.md) says what to set on the hosts it names. Only `ascribe report delivery` checks a published site."
 
 [[diagnostic]]
 code = "ASC171"
@@ -3255,7 +3264,7 @@ area = "site"
 stage = "report"
 spec = "9.5"
 reference = "content-model/output.md#consumer"
-when = "`ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`"
+when = "`ascribe report delivery`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`"
 message = "the site fails the delivery spec's `{check}` check, which what Ascribe writes should pass: {result}. Report it at {issues}"
 messages.warning = "the site passes the delivery spec's `{check}` check with a warning, which what Ascribe writes should pass without one: {result}. Report it at {issues}"
 messages.unfetched = "the delivery spec's `{check}` check couldn't fetch every address it tried, so it doesn't say yet whether what Ascribe writes passes: {result}. Run the report again"
@@ -3329,86 +3338,27 @@ next = "fix"
 evidence = []
 spec = "7.5"
 reference = "writing/directives.md#permalinks"
-row = "Permalinks list | A permalink the content declares, an alias, or a retired permalink that `ascribe.permalinks` doesn't list as it is"
+row = "Permalinks list | A permalink the content declares, or a name `ascribe.addresses` moves or retires, that `ascribe.permalinks` doesn't list as it is"
 message = "the permalink `{name}` isn't in ascribe.permalinks yet; run `ascribe permalinks sync`"
 messages.moved = "ascribe.permalinks has the permalink `{name}` in `{was}`; run `ascribe permalinks sync` to record that it's here now"
-messages.alias = "ascribe.permalinks doesn't have the alias `{name}` as it's declared here; run `ascribe permalinks sync`"
-messages.retired = "ascribe.permalinks doesn't record that `{name}` was retired, as it is here; run `ascribe permalinks sync`"
-fix = "Run `ascribe permalinks sync`, which adds each new permalink to ascribe.permalinks, records where each is declared now, and records each alias and retired permalink as `ascribe.toml` has it, and commit the file with the change. In the editor, the quick fix does the same."
+messages.recorded = "ascribe.permalinks doesn't record `{name}` as ascribe.addresses has it here; run `ascribe permalinks sync`"
+fix = "Run `ascribe permalinks sync`, which adds each new permalink to ascribe.permalinks, records where each is declared now, and records each name `ascribe.addresses` moves or retires as it has it, and commit the file with the change. In the editor, the quick fix does the same."
 
 [[diagnostic]]
 code = "ASC177"
-slug = "permalink-removed"
+slug = "permalink-lost"
 severity = "warning"
 level = "file"
 next = "write"
 evidence = []
 spec = "7.5"
 reference = "writing/directives.md#permalinks"
-row = "Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, an alias, or retired"
-message = "`{name}` was a permalink, in `{was}`, and nothing declares it now. Links to it from outside these docs, such as from a product, aren't found by this check"
-messages.alias = "`{name}` was an alias of `{target}`, and ascribe.toml doesn't declare it now. Links to it from outside these docs, such as from a product, aren't found by this check"
-messages.retired = "`{name}` was retired, and ascribe.toml doesn't retire it now. Links to it from outside these docs, such as from a product, aren't found by this check"
-fix = "Something outside the docs may link to the name. When what it named is still in the docs, put it back: `@id {permalink=true}: <name>` under the heading that now covers it, `permalink: <name>` in a page's frontmatter, or an alias in `[permalinks.aliases]` that leads to the permalink that covers it now. When it's gone, retire it: `ascribe permalinks retire <name> --reason \"…\"`, with `--to` for a page that covers it now, writes it in `[permalinks.retired]`, and its address shows the reason. In the editor, the quick fix writes the entry for you to give a reason. A permalink can move to another page or heading and keep working; run `ascribe permalinks sync` after moving it. Running `sync` doesn't quiet this: it keeps every name that's gone."
-
-[[diagnostic]]
-code = "ASC178"
-slug = "model-permalinks"
-severity = "error"
-level = "file"
-next = "write"
-evidence = []
-spec = "7.6"
-reference = "content-model/checks.md#20-permalinks"
-group = "permalinks"
-when = "A name in `[permalinks]` is both retired and an alias, an alias leads back to itself, or a retired permalink's reason is still a placeholder"
-message = "`{name}` is both retired and an alias; a name is one thing"
-messages.loop = "the alias `{name}` leads back to itself, through aliases alone, and never to a permalink"
-messages.placeholder = "\"{reason}\" is a placeholder, not a reason: write why `{name}` was retired"
-fix = "Give each name in `[permalinks]` one meaning: retired, in `[permalinks.retired]`, or an alias, in `[permalinks.aliases]`. A retired permalink can still lead somewhere: give it `to`. Make each alias lead, perhaps through other aliases, to a permalink a heading or page declares. Write the reason a permalink was retired in place of the placeholder the editor's quick fix writes: a reader whose link led there sees it."
-
-[[diagnostic]]
-code = "ASC179"
-slug = "permalink-alias-target-missing"
-severity = "error"
-level = "file"
-next = "write"
-evidence = []
-spec = "7.6"
-reference = "content-model/checks.md#20-permalinks"
-row = "Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares"
-message = "the alias `{name}` leads to `{target}`, which no heading or page declares"
-messages.retired = "the alias `{name}` leads to `{target}`, which is retired; an alias leads to a permalink that's there"
-fix = "Point the alias at a permalink a heading's `@id {permalink=true}` or a page's `permalink` declares, or at another alias that leads to one. When what it named is gone, retire the alias instead: move it to `[permalinks.retired]`, with a reason."
-
-[[diagnostic]]
-code = "ASC180"
-slug = "permalink-name-conflict"
-severity = "error"
-level = "file"
-next = "write"
-evidence = []
-spec = "7.6"
-reference = "content-model/checks.md#20-permalinks"
-row = "Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too"
-message = "`{name}` is retired here, and `{place}` declares it as a permalink; a name is one thing"
-messages.alias = "`{name}` is an alias here, and `{place}` declares it as a permalink; a name is one thing"
-fix = "When the permalink is back, delete its entry from `[permalinks.retired]` or `[permalinks.aliases]`. When it's going, remove the `@id {permalink=true}` or the page's `permalink` that still declares it: a name retired on purpose is retired once what declared it has gone."
-
-[[diagnostic]]
-code = "ASC181"
-slug = "permalink-retired-target-missing"
-severity = "error"
-level = "file"
-next = "write"
-evidence = []
-spec = "7.6"
-reference = "content-model/checks.md#20-permalinks"
-row = "Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it"
-message = "`{name}` is retired to `{to}`, and there's no page `{path}`"
-messages.fragment = "`{name}` is retired to `{to}`, which is a fragment; lead to a page that includes it"
-messages.heading = "`{name}` is retired to `{to}`, and `{path}` has no heading with the id `{id}`"
-fix = "Write `to` as a link from the content root is written: a page's path, such as `guides/security.md`, and `#` and a heading's id, such as `guides/security.md#rotate-keys`. Leave `to` out to show the reason alone."
+row = "Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, and not moved or retired in `ascribe.addresses`"
+message = "`{name}` was a permalink, in `{was}`, and nothing declares it now or says where it went. Links to it from outside these docs, such as from a product, aren't found by this check"
+messages.alias = "`{name}` was moved to the permalink `{target}`, and ascribe.addresses doesn't record it now. Links to it from outside these docs, such as from a product, aren't found by this check"
+messages.moved = "`{name}` was moved to `{was}`, and ascribe.addresses doesn't record it now. Links to it from outside these docs, such as from a product, aren't found by this check"
+messages.retired = "`{name}` was retired, and ascribe.addresses doesn't record it now. Links to it from outside these docs, such as from a product, aren't found by this check"
+fix = "Something outside the docs may link to the name. When what it named is still in the docs, put it back: `@id {permalink=true}: <name>` under the heading that now covers it, or `permalink: <name>` in a page's frontmatter. When it moved, record where: `ascribe permalinks retire <name> --to <page>` writes `\"go:<name>\" = \"<page>\"` in `ascribe.addresses`' `[moved]`, and its address leads there; a page and `#` and a heading's id, or `go:` and another permalink's name, are both places it can lead. When it's gone, retire it: `ascribe permalinks retire <name> --reason \"…\"` writes it in `[retired]`, and its address shows the reason. In the editor, the quick fix writes the entry for you to give a reason. A permalink can move to another page or heading and keep working; run `ascribe permalinks sync` after moving it. Running `sync` doesn't quiet this: it keeps every name that's gone."
 
 [[diagnostic]]
 code = "ASC182"
@@ -3661,7 +3611,7 @@ severity = "error"
 level = "file"
 next = "write"
 evidence = []
-spec = "7.2"
+spec = "none"
 reference = "content-model/index.md#41-page-types"
 group = "content-types"
 when = "A content type's template can't be read, or isn't a page Ascribe can read"
@@ -3677,7 +3627,7 @@ severity = "advice"
 level = "file"
 next = "write"
 evidence = []
-spec = "7.2"
+spec = "none"
 reference = "content-model/index.md#41-page-types"
 configurable = true
 area = "pages"
@@ -4293,7 +4243,7 @@ severity = "advice"
 level = "file"
 next = "write"
 evidence = []
-spec = "7.2"
+spec = "none"
 reference = "content-model/index.md#41-page-types"
 configurable = true
 area = "pages"
@@ -4502,7 +4452,7 @@ next = "outside"
 evidence = []
 configurable = true
 area = "project"
-spec = "2.1"
+spec = "none"
 reference = "content-model/checks.md#19-checks"
 when = "`ascribe.baseline` has an entry that no problem of the project matches any more: the problem was fixed, or the text it was about changed. Reported at the entry's line, when `ascribe check` reads the baseline and checks the whole project for every build"
 message = "ascribe.baseline holds back `{check}` in `{file}`, and nothing there matches it any more; run `ascribe baseline prune`"
@@ -4946,11 +4896,12 @@ next = "choose"
 evidence = []
 spec = "7.10"
 reference = "publishing/redirects.md#the-files-checks"
-row = "Addresses file | A `[moved]` value that isn't a page, or a heading on one, in every build that published its key"
+row = "Addresses file | A `[moved]` value that isn't a page, or a heading on one, in every build that published its key, or, for a permalink, a permalink the content declares"
 message = "`{key}` is forwarded to `{value}`, which isn't a page of the project, so no build writes its redirect"
 messages.no-heading = "`{key}` is forwarded to `{value}`, and {page} has no heading with the id `{id}`"
 messages.builds = "`{key}` is forwarded to `{value}`, which {builds}, so no redirect is written there for a reader of its old address"
-fix = "Forward it to a page every build that published it publishes: `ascribe addresses move <old> <new>` replaces the entry. When nothing replaces it, retire it instead: `ascribe addresses retire <old> --reason \"…\"`. A fragment, a path outside the content root, or a page a build leaves out would send a reader to nothing."
+messages.permalink = "`{key}` is forwarded to `{value}`, which no heading or page declares as a permalink"
+fix = "Forward it to a page every build that published it publishes: `ascribe addresses move <old> <new>` replaces the entry. A permalink, `go:<name>`, can also be forwarded to another permalink, `go:<other>`, that a heading's `@id {permalink=true}` or a page's `permalink` declares. When nothing replaces it, retire it instead: `ascribe addresses retire <old> --reason \"…\"`. A fragment, a path outside the content root, or a page a build leaves out would send a reader to nothing."
 
 [[diagnostic]]
 code = "ASC266"
@@ -4961,9 +4912,10 @@ next = "fix"
 evidence = []
 spec = "7.10"
 reference = "publishing/redirects.md#the-files-checks"
-row = "Addresses file | A key of `[moved]` or `[retired]` whose source is back"
+row = "Addresses file | A key of `[moved]` or `[retired]` whose source is back: a page, a heading's `@id`, or a permalink the content declares"
 message = "`{key}` is a source of the project again, so its entry in [{table}] does nothing; remove it"
-fix = "Remove the entry: the page, or the heading's `@id`, is back where its addresses lead, as after restoring a deleted page or a merge. The quick fix and `ascribe check --fix` remove it. When the source came back by mistake, move it away again."
+messages.permalink = "`{place}` declares `{name}` as a permalink again, so the entry for `{key}` in [{table}] does nothing; remove it"
+fix = "Remove the entry: the page, the heading's `@id`, or the permalink is back where its addresses lead, as after restoring a deleted page or a merge, and what the content declares wins. The quick fix and `ascribe check --fix` remove it. When the source came back by mistake, move it away again: for a permalink, remove the `@id {permalink=true}` or the page's `permalink` that declares it."
 
 [[diagnostic]]
 code = "ASC267"
@@ -5099,7 +5051,7 @@ fix = "Link to the operation that replaces it, if the spec names one, or say in 
 
 [[diagnostic]]
 code = "ASC277"
-slug = "example-schema-mismatch"
+slug = "api-example-schema-mismatch"
 severity = "error"
 level = "file"
 next = "write"
@@ -5112,7 +5064,7 @@ fix = "Change the example to agree with the schema, or, when the API changed and
 
 [[diagnostic]]
 code = "ASC278"
-slug = "example-not-json"
+slug = "api-example-not-json"
 severity = "error"
 level = "file"
 next = "write"
@@ -5126,7 +5078,7 @@ fix = "Fix the JSON where reading it stopped: a trailing comma, a comment, a key
 
 [[diagnostic]]
 code = "ASC279"
-slug = "example-body-missing"
+slug = "api-example-body-missing"
 severity = "error"
 level = "file"
 next = "write"
@@ -5146,7 +5098,7 @@ fix = "Name a body the operation has: for a request, an operation that takes one
 
 [[diagnostic]]
 code = "ASC280"
-slug = "example-schema-unsupported"
+slug = "api-example-schema-unsupported"
 severity = "advice"
 level = "file"
 next = "outside"
@@ -5187,3 +5139,18 @@ when = "An operation of a declared spec, not marked `deprecated`, that no link n
 message = "no page links to `{operation}` ({method} {route}) in {path}"
 messages.no-id = "no page links to {method} {route} in {path}, which has no `operationId`"
 fix = "Link to the operation from the guide that covers it, by its `operationId`, `openapi.yaml#getUser`, or by its method and path when it has none, `openapi.yaml#delete/users/{id}`. An operation a guide doesn't need to cover can be marked `deprecated` in the spec when it's on its way out, which leaves it out; for an API whose reference is enough on its own, turn the check off in [`[checks]`](content-model/checks.md#19-checks)."
+
+[[diagnostic]]
+code = "ASC283"
+slug = "build-filter-line-undeclared"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+configurable = true
+area = "project"
+spec = "9.3"
+reference = "content-model/output.md#16-buildsname"
+when = "A build's filter names a version of a target `[releases]` declares lines for, and the version is older than every line declared, so it's in no live, planned, or archived line"
+message = "build `{build}` filters for `{target} {version}`, which is older than every line `[releases.{target}]` declares, so `ascribe versions` doesn't list it; declare its line in `archived`, or make the build one output for each live line with `versions = \"{target}\"`"
+fix = "Say in one place which lines the project publishes. To keep a build for an old line, declare the line in `[releases.<target>]` as archived, with no address when nothing else publishes it, as `\"3.3\" = {}`. To publish every live line instead, give one build `versions = \"<target>\"` and remove the filtered build. A version between two declared lines is `available-line-undeclared`."

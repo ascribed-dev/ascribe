@@ -490,6 +490,9 @@ impl Checker<'_> {
         }
         let expected = match (d.colon, &d.primary, d.unexpected) {
             (Some(_), None, None) => Form::Container,
+            // Attributes without their braces before the colon
+            // (`@note type=warning:`): the colon is inside the extra text.
+            (Some(c), None, Some(u)) if u.contains_span(c) => Form::Container,
             _ => Form::Line,
         };
         if d.form != expected {

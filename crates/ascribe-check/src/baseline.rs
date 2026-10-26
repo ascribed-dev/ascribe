@@ -208,11 +208,10 @@ pub fn text<'a>(identities: impl IntoIterator<Item = &'a Identity>) -> String {
     out
 }
 
-/// What [`apply`] did to a check's diagnostics.
+/// What [`hold`] did to a check's diagnostics.
 #[derive(Debug, Default)]
 pub struct Held {
-    /// The diagnostics still reported, in their order, then a
-    /// `baseline-entry-unmatched` for each entry that matches nothing.
+    /// The diagnostics still reported, in their order.
     pub diagnostics: Vec<Diagnostic>,
     /// The advice the baseline holds back, which isn't reported.
     pub held: Vec<Diagnostic>,
@@ -224,36 +223,10 @@ pub struct Held {
     pub matched: Vec<Identity>,
 }
 
-/// `diagnostics`, a check's, with what `baseline` holds back set aside:
-/// the advice whose identity it lists. A warning or an error is never held
-/// back. With `unmatched`, each entry no diagnostic matches, whatever its
-/// severity, is reported as a `baseline-entry-unmatched` at its line, with
-/// the content model's level for it, apart from the entries of the checks
-/// `not_run` names, which this check didn't run.
-///
-/// `diagnostics` are the whole project's, so each one's order among those
-/// alike is what `ascribe baseline write` gives it.
-pub fn apply(
-    project: &Project,
-    baseline: &Baseline,
-    diagnostics: Vec<Diagnostic>,
-    unmatched: bool,
-    not_run: &[&str],
-) -> Held {
-    let found = identities(project, &diagnostics);
-    let mut held = hold(baseline, diagnostics, found);
-    if unmatched {
-        let matched: HashSet<&Identity> = held.matched.iter().collect();
-        let stale = stale(&project.model().checks, baseline, &matched, not_run);
-        held.diagnostics.extend(stale);
-    }
-    held
-}
-
 /// `diagnostics`, whose identities are `found`, in their order, with the
-/// advice `baseline` lists set aside: [`apply`] without the stale entries.
-/// The editor holds back a file's diagnostics at a time with it, since an
-/// identity's order is among the findings of one file (#790).
+/// advice `baseline` lists set aside: the advice whose identity it lists. A
+/// warning or an error is never held back. Every surface holds back with
+/// [`Request::hold`](crate::Request::hold), which finds the identities.
 pub fn hold(baseline: &Baseline, diagnostics: Vec<Diagnostic>, found: Vec<Identity>) -> Held {
     let listed: HashSet<&Identity> = baseline.entries.iter().map(|e| &e.identity).collect();
     let mut held = Held::default();

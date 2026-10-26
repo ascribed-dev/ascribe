@@ -170,11 +170,7 @@
 | [ASC174](../checks/diagnostics/content-model-builds.md#ASC174) | `model-consumer-permalink-path` | Error | File | write |
 | [ASC175](../checks/diagnostics/pages.md#ASC175) | `permalinks-list-invalid` | Error | File | write |
 | [ASC176](../checks/diagnostics/pages.md#ASC176) | `permalinks-list-behind` | Warning | File | fix |
-| [ASC177](../checks/diagnostics/pages.md#ASC177) | `permalink-removed` | Warning | File | write |
-| [ASC178](../checks/diagnostics/content-model-builds.md#ASC178) | `model-permalinks` | Error | File | write |
-| [ASC179](../checks/diagnostics/pages.md#ASC179) | `permalink-alias-target-missing` | Error | File | write |
-| [ASC180](../checks/diagnostics/pages.md#ASC180) | `permalink-name-conflict` | Error | File | write |
-| [ASC181](../checks/diagnostics/pages.md#ASC181) | `permalink-retired-target-missing` | Error | File | write |
+| [ASC177](../checks/diagnostics/pages.md#ASC177) | `permalink-lost` | Warning | File | write |
 | [ASC182](../checks/diagnostics/directives.md#ASC182) | `include-limit` | Error | Page | write |
 | [ASC183](../checks/diagnostics/content-model-builds.md#ASC183) | `model-crawlers-line` | Error | File | write |
 | [ASC184](../checks/diagnostics/output-checks.md#ASC184) | `listing-disallowed` | Advice | File | fix |
@@ -269,9 +265,10 @@
 | [ASC274](../checks/diagnostics/pages.md#ASC274) | `link-operation-form-unsupported` | Error | File | write |
 | [ASC275](../checks/diagnostics/pages.md#ASC275) | `link-operation-by-path` | Advice | File | fix |
 | [ASC276](../checks/diagnostics/pages.md#ASC276) | `link-operation-deprecated` | Advice | File | write |
-| [ASC277](../checks/diagnostics/project-files.md#ASC277) | `example-schema-mismatch` | Error | File | write |
-| [ASC278](../checks/diagnostics/project-files.md#ASC278) | `example-not-json` | Error | File | write |
-| [ASC279](../checks/diagnostics/project-files.md#ASC279) | `example-body-missing` | Error | File | write |
-| [ASC280](../checks/diagnostics/project-files.md#ASC280) | `example-schema-unsupported` | Advice | File | outside |
+| [ASC277](../checks/diagnostics/project-files.md#ASC277) | `api-example-schema-mismatch` | Error | File | write |
+| [ASC278](../checks/diagnostics/project-files.md#ASC278) | `api-example-not-json` | Error | File | write |
+| [ASC279](../checks/diagnostics/project-files.md#ASC279) | `api-example-body-missing` | Error | File | write |
+| [ASC280](../checks/diagnostics/project-files.md#ASC280) | `api-example-schema-unsupported` | Advice | File | outside |
 | [ASC281](../checks/diagnostics/pages.md#ASC281) | `operation-link-not-operation` | Error | File | write |
 | [ASC282](../checks/diagnostics/content-checks.md#ASC282) | `api-operation-unreferenced` | Advice | File | write |
+| [ASC283](../checks/diagnostics/content-checks.md#ASC283) | `build-filter-line-undeclared` | Advice | File | write |

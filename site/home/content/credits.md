@@ -40,7 +40,7 @@ You install these yourself, when you use the command that runs them.
 
 - [Vale](https://vale.sh) checks the prose, for `ascribe vale`.
 - [lychee](https://lychee.cli.rs) asks each external link whether it still works, for `ascribe report links`.
-- [afdocs](https://agentdocsspec.com), the Web Documentation Delivery Spec's checker, checks what a built site publishes for AI agents, for `ascribe report agents`.
+- [afdocs](https://agentdocsspec.com), the Web Documentation Delivery Spec's checker, checks what a built site publishes for AI agents, for `ascribe report delivery`.
 
 ### Building Ascribe and its site
 

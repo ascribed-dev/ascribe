@@ -25,7 +25,7 @@
 //! | **A non-source file created or deleted** ([`Change::AssetCreated`]) | The references to it (the resolution of each changes between an asset and a missing file), and so the pages that contain them. |
 //! | **A file a `@snippet` reads, created, changed, or deleted** ([`Change::AssetCreated`], [`Change::AssetDeleted`]) | The snippets of the files that show it, read again: the code file itself, or its source's `ascribe.examples.toml` or observations. Those files are checked again, and every page that is one or includes one is re-resolved. |
 //! | **A nested project's `ascribe.toml` created or deleted** | Nothing: it changes which files are sources (a nested project's files aren't), so the batch is refused ([`ApplyError::NestedProjectChanged`]) and the caller loads the project again. A file created, changed, or deleted inside a nested project's folder is a non-source file. |
-//! | **`ascribe.nav`** ([`Change::Nav`]) | Nothing a file holds: the project's [`Project::navigation`] follows it. A new version when the file reads differently. |
+//! | **A side file the index reads** ([`Change::SideFiles`]: `ascribe.nav`, `ascribe.addresses`) | Nothing a file holds: the project's [`Project::navigation`] and [`Project::recorded_permalinks`] follow them. A new version when one reads differently. |
 //! | **The content model** | See [`ModelImpact`]: a new directive keyword or note type reparses every file, including ones no one has open; changed phrases, fragment patterns, slugger, or sources re-index every file (parses are reused); anything else re-checks every file and re-resolves every page. |
 //!
 //! "What others see of a file" is [`structure_signature`]'s hash: the kind
@@ -92,8 +92,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use ascribe_core::{RelPath, Slugger};
+use ascribe_model::ContentModel;
 use ascribe_model::examples::{EXAMPLES_FILE, OBSERVATIONS_FOLDER};
-use ascribe_model::{ContentModel, NavFile};
 
 pub use cache::ResolvedCache;
 pub use ids::FileIds;
@@ -108,6 +108,7 @@ use crate::fs::{FileSystem, MODEL_FILE, in_nested_project, is_source_path};
 use crate::index::{FileIndex, FileKind, Target, index_parsed, parse_source};
 use crate::layout::Layout;
 use crate::project::{Project, Unreadable};
+use crate::side_file::Indexed;
 use crate::slug::{default_slugger, slugger_by_name};
 
 /// One change to the project, as the editor or the file watcher reports it.
@@ -182,9 +183,10 @@ pub enum Change {
     /// the content root or the output directory can't be applied in place
     /// ([`ApplyError::LayoutChanged`]).
     Model(Arc<ContentModel>),
-    /// `ascribe.nav` changed: this is what it says now, `None` when it's gone
-    /// or doesn't read ([`Project::nav_file`]).
-    Nav(Option<Arc<NavFile>>),
+    /// A side file the index reads changed: this is what they say now, each
+    /// `None` when it's gone or doesn't read ([`Project::nav_file`],
+    /// [`Project::addresses_file`]), as [`Indexed::read`] reads them.
+    SideFiles(Indexed),
     /// A base revision's specs, as the project there read them: where each
     /// `operationId` was there is kept, so a link to one renamed since is
     /// fixed to the operation now in its place
@@ -737,7 +739,7 @@ impl IncrementalProject {
         // read. Any other change to the path clears it.
         let mut unreadable_state: BTreeMap<RelPath, Option<String>> = BTreeMap::new();
         let mut new_model: Option<Arc<ContentModel>> = None;
-        let mut new_nav: Option<Option<Arc<NavFile>>> = None;
+        let mut new_side: Option<Indexed> = None;
         let mut base_apis: Option<Arc<crate::openapi::ApiSpecs>> = None;
         for change in changes {
             match change {
@@ -803,11 +805,11 @@ impl IncrementalProject {
                     }
                     new_model = Some(model);
                 }
-                Change::Nav(nav) => new_nav = Some(nav),
+                Change::SideFiles(side) => new_side = Some(side),
                 Change::BaseApis(apis) => base_apis = Some(apis),
             }
         }
-        let new_nav = new_nav.filter(|nav| nav.as_deref() != self.project.nav_file());
+        let new_side = new_side.filter(|side| side != self.project.side_files());
 
         // A nested project's `ascribe.toml` arrives as any other file that isn't
         // a source does. One appearing where there is no nested project, or
@@ -917,7 +919,7 @@ impl IncrementalProject {
             && showing.is_empty()
             && impact.is_none()
             && !unreadable_changed
-            && new_nav.is_none()
+            && new_side.is_none()
             && !specs_reported
             && base_apis.is_none()
         {
@@ -1060,9 +1062,9 @@ impl IncrementalProject {
                 self.fs.remove(path);
             }
         }
-        let nav_changed = new_nav.is_some();
-        if let Some(nav) = new_nav {
-            project.set_nav(nav);
+        let side_changed = new_side.is_some();
+        if let Some(side) = new_side {
+            project.set_side_files(side);
         }
         // The specs are read again with the model, and when one is reported,
         // keeping where each id was, for a link to one that was renamed.
@@ -1161,7 +1163,7 @@ impl IncrementalProject {
             && showing.is_empty()
             && spec_linkers.is_empty()
             && !unreadable_changed
-            && !nav_changed
+            && !side_changed
         {
             return Ok(Affected {
                 version: previous,

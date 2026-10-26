@@ -634,11 +634,18 @@ fn review_of(target: &Target, base: &ReviewBase, build: &str, path: &RelPath) ->
         project: target.snapshot.project(),
         model_text: &target.model_text,
     };
-    let changes = ascribe_diff::compare_page_in(base.side(), now, build, path);
+    let changes = ascribe_diff::compare_page_in(base.side(), now, build, path, &base.renames);
+    // A page that moved was where it moved from.
     let was = changes
         .as_ref()
         .filter(|c| c.status != PageStatus::Added)
-        .and_then(|_| base.page(build, path));
+        .and_then(|c| {
+            let was_path = match &c.moved_from {
+                Some(from) => RelPath::parse(from).ok()?,
+                None => path.clone(),
+            };
+            base.page(build, &was_path)
+        });
     let (was_html, was_title, was_formatted_title) = match was {
         Some((html, title)) => (Some(html), title.plain, title.formatted),
         None => (None, None, None),

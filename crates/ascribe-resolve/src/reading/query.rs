@@ -5,6 +5,12 @@
 //! any run of white space. Each is a substring: a word matches inside a
 //! longer one, unless the query keeps to whole words. Case is ignored
 //! unless the query matches it, and nothing else is folded.
+//!
+//! A stop word, a common English word such as `how` or `the` written
+//! outside quotes, isn't needed: `how do I publish llms.txt` matches where
+//! `publish llms.txt` does. A query of only stop words needs them all. When
+//! no block has every word a match needs, [`Query::partial_from`] says
+//! which of them a block has, so the closest blocks can be listed.
 
 use std::fmt;
 use std::ops::Range;
@@ -45,17 +51,88 @@ impl Coded for BadQuery {
     }
 }
 
+/// The words a query doesn't need a block to have, unless they're all it
+/// has: common English words, which a question in natural words carries.
+/// There's no setting for a project's language yet, so this is English's.
+const STOP_WORDS: &[&str] = &[
+    "a", "about", "am", "an", "and", "are", "as", "at", "be", "by", "can", "could", "did", "do",
+    "does", "for", "from", "how", "i", "if", "in", "into", "is", "it", "its", "me", "my", "of",
+    "on", "or", "our", "should", "so", "that", "the", "their", "them", "then", "there", "these",
+    "this", "those", "to", "us", "was", "we", "were", "what", "when", "where", "which", "who",
+    "why", "will", "with", "would", "you", "your",
+];
+
 /// A query, read.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Query {
-    /// The words and phrases, each as written, with its white space
-    /// collapsed.
-    terms: Vec<Vec<char>>,
+    /// The words and phrases, in the order written.
+    terms: Vec<Term>,
     /// Whether case is matched as written.
     case: bool,
     /// Whether a word or a phrase matches only where it isn't inside a
     /// longer word.
     word: bool,
+}
+
+/// A word or a phrase of a query.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct Term {
+    /// Its characters, as written, with a phrase's white space collapsed.
+    chars: Vec<char>,
+    /// Whether it's a phrase, written in quotes.
+    phrase: bool,
+    /// Whether it's a stop word: a word, not a phrase, in [`STOP_WORDS`].
+    stop: bool,
+}
+
+impl Term {
+    fn word(word: &str) -> Term {
+        let folded: String = word.chars().map(fold_char).collect();
+        Term {
+            chars: word.chars().collect(),
+            phrase: false,
+            stop: STOP_WORDS.contains(&folded.as_str()),
+        }
+    }
+
+    fn phrase(phrase: &str) -> Term {
+        Term {
+            chars: phrase.chars().collect(),
+            phrase: true,
+            stop: false,
+        }
+    }
+
+    /// The term as the query writes it: a phrase in its quotes.
+    fn written(&self) -> String {
+        let text: String = self.chars.iter().collect();
+        if self.phrase {
+            format!("\"{text}\"")
+        } else {
+            text
+        }
+    }
+}
+
+/// Which of the words a match needs a block has, when it doesn't have them
+/// all: what [`Query::partial_from`] finds.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Partial {
+    /// From the first character a word or a phrase it has covers to the
+    /// last, in bytes; the stop words it has aren't in it.
+    pub matched: Range<usize>,
+    /// For each word or phrase a match needs, in [`Query::needed`]'s order,
+    /// whether the block has it.
+    pub has: Vec<bool>,
+    /// How many of the query's stop words the block has.
+    pub stop_words: usize,
+}
+
+impl Partial {
+    /// How many of the words a match needs the block has.
+    pub fn count(&self) -> usize {
+        self.has.iter().filter(|h| **h).count()
+    }
 }
 
 impl Query {
@@ -72,10 +149,10 @@ impl Query {
             if quoted {
                 let phrase: Vec<&str> = part.split_whitespace().collect();
                 if !phrase.is_empty() {
-                    terms.push(phrase.join(" ").chars().collect());
+                    terms.push(Term::phrase(&phrase.join(" ")));
                 }
             } else {
-                terms.extend(part.split_whitespace().map(|w| w.chars().collect()));
+                terms.extend(part.split_whitespace().map(Term::word));
             }
         }
         if quoted {
@@ -118,37 +195,119 @@ impl Query {
 
     /// Where the query matches `text` at or after the byte `from`, as
     /// [`Query::find_in`] does: the characters before `from` are still
-    /// what a whole word is told by.
+    /// what a whole word is told by. A stop word isn't needed, and isn't in
+    /// the range, unless every word is one.
     pub fn find_from(&self, text: &str, from: usize) -> Option<Range<usize>> {
-        let chars: Vec<(usize, char)> = text
-            .char_indices()
-            .map(|(i, c)| (i, if self.case { c } else { fold_char(c) }))
-            .collect();
+        let chars = self.folded(text);
         let skip = chars.partition_point(|(i, _)| *i < from);
         let mut first = usize::MAX;
         let mut last = 0;
-        for term in &self.terms {
-            let term: Vec<char> = if self.case {
-                term.clone()
-            } else {
-                term.iter().copied().map(fold_char).collect()
-            };
-            let at = skip
-                + chars
-                    .get(skip..)?
-                    .windows(term.len())
-                    .enumerate()
-                    .position(|(n, w)| {
-                        w.iter().map(|(_, c)| c).eq(term.iter())
-                            && (!self.word || bounded(&chars, skip + n, term.len()))
-                    })?;
+        for term in self.needed_terms() {
+            let at = self.position(&chars, skip, term)?;
             first = first.min(at);
-            last = last.max(at + term.len());
+            last = last.max(at + term.chars.len());
         }
-        let start = chars.get(first).map_or(text.len(), |(i, _)| *i);
-        let end = chars.get(last).map_or(text.len(), |(i, _)| *i);
-        Some(start..end)
+        Some(byte_range(text, &chars, first, last))
     }
+
+    /// Which of the words and phrases a match needs `text` has at or after
+    /// the byte `from`, and how many of the stop words, when it has some of
+    /// them but not all: `None` when it has none of them, or every one.
+    pub fn partial_from(&self, text: &str, from: usize) -> Option<Partial> {
+        let chars = self.folded(text);
+        let skip = chars.partition_point(|(i, _)| *i < from);
+        let mut first = usize::MAX;
+        let mut last = 0;
+        let mut has = Vec::new();
+        for term in self.needed_terms() {
+            let at = self.position(&chars, skip, term);
+            if let Some(at) = at {
+                first = first.min(at);
+                last = last.max(at + term.chars.len());
+            }
+            has.push(at.is_some());
+        }
+        if has.iter().all(|h| *h) || !has.iter().any(|h| *h) {
+            return None;
+        }
+        let stop_words = if self.all_stop() {
+            0
+        } else {
+            self.terms
+                .iter()
+                .filter(|t| t.stop && self.position(&chars, skip, t).is_some())
+                .count()
+        };
+        Some(Partial {
+            matched: byte_range(text, &chars, first, last),
+            has,
+            stop_words,
+        })
+    }
+
+    /// The words and phrases a match needs, as the query writes them, a
+    /// phrase in its quotes: every one but the stop words, or every one
+    /// when they're all stop words.
+    pub fn needed(&self) -> Vec<String> {
+        self.needed_terms().map(Term::written).collect()
+    }
+
+    /// The query's stop words, as written, which a match doesn't need:
+    /// none when every word is one, since then a match needs them all.
+    pub fn stop_words(&self) -> Vec<String> {
+        if self.all_stop() {
+            return Vec::new();
+        }
+        self.terms
+            .iter()
+            .filter(|t| t.stop)
+            .map(Term::written)
+            .collect()
+    }
+
+    fn all_stop(&self) -> bool {
+        self.terms.iter().all(|t| t.stop)
+    }
+
+    fn needed_terms(&self) -> impl Iterator<Item = &Term> {
+        let all = self.all_stop();
+        self.terms.iter().filter(move |t| all || !t.stop)
+    }
+
+    /// `text`'s characters, each at its byte, with case folded unless the
+    /// query matches it.
+    fn folded(&self, text: &str) -> Vec<(usize, char)> {
+        text.char_indices()
+            .map(|(i, c)| (i, if self.case { c } else { fold_char(c) }))
+            .collect()
+    }
+
+    /// The first character of `chars` at or after `skip` where `term`
+    /// matches.
+    fn position(&self, chars: &[(usize, char)], skip: usize, term: &Term) -> Option<usize> {
+        let term: Vec<char> = if self.case {
+            term.chars.clone()
+        } else {
+            term.chars.iter().copied().map(fold_char).collect()
+        };
+        chars
+            .get(skip..)?
+            .windows(term.len())
+            .enumerate()
+            .position(|(n, w)| {
+                w.iter().map(|(_, c)| c).eq(term.iter())
+                    && (!self.word || bounded(chars, skip + n, term.len()))
+            })
+            .map(|n| skip + n)
+    }
+}
+
+/// The bytes of `text` from the character `first` of `chars` to the one
+/// before `last`.
+fn byte_range(text: &str, chars: &[(usize, char)], first: usize, last: usize) -> Range<usize> {
+    let start = chars.get(first).map_or(text.len(), |(i, _)| *i);
+    let end = chars.get(last).map_or(text.len(), |(i, _)| *i);
+    start..end
 }
 
 /// Whether the `len` characters at `at` of `chars` aren't inside a longer
@@ -274,6 +433,40 @@ mod tests {
     fn a_whole_word_after_a_start_is_told_by_what_comes_before_it() {
         let query = Query::parse("limit").unwrap().whole_words(true);
         assert_eq!(query.find_from("ratelimit limit", 4), Some(10..15));
+    }
+
+    #[test]
+    fn stop_words_are_not_needed_unless_every_word_is_one() {
+        assert_eq!(
+            found("how do I publish llms.txt", "Publish llms.txt for agents"),
+            Some("Publish llms.txt")
+        );
+        assert_eq!(found("how do", "how do you"), Some("how do"));
+        assert_eq!(found("how do", "how it works"), None);
+        assert_eq!(found("\"the\" key", "a key"), None, "a phrase is needed");
+        let query = Query::parse("How do I publish \"llms.txt\"").unwrap();
+        assert_eq!(query.needed(), ["publish", "\"llms.txt\""]);
+        assert_eq!(query.stop_words(), ["How", "do", "I"]);
+        let only = Query::parse("how do").unwrap();
+        assert_eq!(only.needed(), ["how", "do"]);
+        assert!(only.stop_words().is_empty());
+    }
+
+    #[test]
+    fn a_partial_match_says_which_needed_words_a_block_has() {
+        let query = Query::parse("webhook signature the").unwrap();
+        let text = "A key signs the events the agent sends to your webhooks.";
+        let partial = query.partial_from(text, 0).unwrap();
+        assert_eq!(partial.has, [true, false]);
+        assert_eq!((partial.count(), partial.stop_words), (1, 1));
+        assert_eq!(&text[partial.matched], "webhook");
+        assert_eq!(query.partial_from("the webhook signature", 0), None, "all");
+        assert_eq!(query.partial_from("the events", 0), None, "none");
+        let word = Query::parse("limit rate").unwrap().whole_words(true);
+        assert_eq!(
+            word.partial_from("limits, the rate", 0).unwrap().has,
+            [false, true]
+        );
     }
 
     #[test]

@@ -48,7 +48,7 @@ npx ascribe check --stdin --path docs/guides/new.md < draft.md
 
 ### Output for agents
 
-`--format concise` is grouped by file in file order, and by line within a file, and ends with the summary line:
+`--format concise` writes a line for each problem, grouped by file in file order, and by line within a file, and ends with the summary line. A problem with a fix ends its line with `→` and what the fix does, the help the full output gives:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check-concise.txt
 
@@ -88,9 +88,11 @@ In VS Code, **Source Action… → Apply the safe fixes in this page** applies a
 
 ### Text output
 
-Each diagnostic shows its code, message, and source, and its next step as `Help:`: the title of its first fix, or, with none, the fix advice the JSON gives as `help`. The output ends with a summary in one form: the files checked, the builds (`for every build`, or with `--build`, `` for build `cloud` ``), the files reported on, which with no paths are all of them, and the counts of errors, warnings, and advice (`checked 12 files for every build, reported on 1: 1 error, 0 warnings, 0 advice`):
+Each diagnostic shows its code, message, and source, and its next step as `Help:`: the title of its first fix, or, with none, the fix advice the JSON gives as `help`. Help that's the same for every diagnostic with a code is printed in full once; later diagnostics with that code point back to it, as `Help: as for ASC252 above (ascribe explain ASC252)`. The output ends with a summary in one form: the files checked, the builds (`for every build`, or with `--build`, `` for build `cloud` ``), the files reported on, which with no paths are all of them, and the counts of errors, warnings, and advice (`checked 12 files for every build, reported on 1: 1 error, 0 warnings, 0 advice`):
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check.txt
+
+A project with no pages yet, and nothing to report, says so in place of the summary, with the content root: `No pages in docs/ yet.` It exits with 0. The JSON is the same as for any check, with `files_checked` 0.
 
 Diagnostics go to standard output. A failure that stops the command (exit code 2) goes to standard error.
 
@@ -99,6 +101,23 @@ Advice, a diagnostic below a warning, is listed after the errors and warnings, i
 A problem [acknowledged as intended](../writing/directives.md#intended) isn't listed, and doesn't fail the command; the summary counts it when there is one: `0 errors, 2 warnings, 0 advice, 1 acknowledged`. `ascribe build` counts it the same way.
 
 Advice the project's [baseline](baseline.md), `ascribe.baseline`, holds back isn't listed either, and the summary counts it: `0 errors, 0 warnings, 2 advice, 3412 in the baseline`, and the JSON's `summary` as `baselined`. An entry of the baseline that matches nothing is reported, as `baseline-entry-unmatched`, when the check covers the whole project and every build. `--no-baseline` lists everything, without reading the file.
+
+### Quieting a problem
+
+There are four ways to quiet a problem, each with its own rules:
+
+| Way | What it quiets | For how long | Reason | Read by |
+|---|---|---|---|---|
+| [`@intended`](../writing/directives.md#intended), the `intended` frontmatter key, or [`[[intended]]`](../content-model/checks.md#intended-acknowledgements) | One problem of a review check, at its place | For good | Required | Everything |
+| [`[checks]`](../content-model/checks.md#19-checks) `<check> = "off"` | A content check, in the whole project | Until it's turned back on | None | Everything |
+| `[checks]` `<check> = "advice"` or `"warning"` | Lowers a content check, in the whole project | Until it's set again | None | Everything |
+| [`ascribe.baseline`](baseline.md) | Many advice, each by its problem | Until it's fixed and pruned | None | `ascribe check`, the editor, the hooks, and the MCP server; not `ascribe build` or `ascribe report`, for now |
+
+- **An error about whether the project is valid is never quieted,** by any of the four: a broken link, an unclosed container, or an unknown attribute makes a page wrong, and is fixed instead. These are the specification's diagnostics ([SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics)), and none is configurable. The four are for the [content checks](diagnostics.md#setting-a-checks-level), Ascribe's own checks of the content's quality.
+- **A content check raised to an error isn't the same.** `[checks]` can raise a content check, such as `page-orphan = "error"`: its problems then fail `ascribe check` and stop `ascribe build`, as an error does, but the page is still valid by the specification. A review check raised this way can still be acknowledged with `@intended`, at whatever level the project gives it.
+- **The baseline holds advice only.** A check raised to a warning or an error is reported, whatever the baseline lists. To put a check's warnings off, lower it to `"advice"`, then run `ascribe baseline write` again.
+
+Which to use: acknowledge a problem the team has looked at and means to keep, with why, beside it. Turn off or lower a check the project doesn't need, which a reviewer sees in `ascribe.toml`. Put a backlog of advice in the baseline, to fix at the team's own pace, so `ascribe check` reports only what's new.
 
 ### JSON output
 
@@ -116,7 +135,7 @@ Checks the project, then writes each build's outputs. The checks run first, exac
 
 The Astro integration turns the source anchors that `--anchors` writes into attributes on every block's element ([site-render contract](../contracts/site-render.md#7-source-anchors)).
 
-The build prints each error in full, since errors stop it. Warnings and advice are only counted, in the check's summary line, with the command that lists each: `checked 8 files in every build: 0 errors, 1 warning, 3 advice: ascribe check for each`, or `checked 8 files in every build: no problems`. `--format json` prints exactly what `ascribe check --format json` does.
+The build prints each error in full, since errors stop it. Warnings and advice are only counted, in the check's summary line, with the command that lists each: `checked 8 files in every build: 0 errors, 1 warning, 3 advice: ascribe check for each`, or `checked 8 files in every build: no problems`. The advice the [baseline](baseline.md) holds back isn't counted with the rest, but after it, as `ascribe check` counts it: `no problems, 3412 in the baseline`. `--format json` prints exactly what `ascribe check --format json` does.
 
 Then it prints one line for each build it wrote, with the outputs it wrote, on standard error, with its warnings:
 
@@ -146,7 +165,7 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 |---|---|
 | `0` | Built |
 | `1` | The checks found errors; nothing was written |
-| `2` | The build couldn't run: a usage error, no `ascribe.toml`, a content model with errors, another build writing to the output directory, a file in the output directory that Ascribe didn't write and would have to overwrite, or two pages of the site output with the same route |
+| `2` | The build couldn't run: a usage error, no `ascribe.toml`, a content model with errors, an `ascribe.baseline` with a line that doesn't parse (`--no-baseline` builds without the file), another build writing to the output directory, a file in the output directory that Ascribe didn't write and would have to overwrite, or two pages of the site output with the same route |
 
 ## `ascribe fmt`
 @id {permalink=true}: cli-fmt
@@ -154,7 +173,15 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 
 Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. It changes nothing else, never how a page renders, and leaves alone a construct that has an error. See [Canonical form](../writing/syntax.md#canonical-form).
 
-It lists each file it changed.
+It lists each file it changed. With `--check`, it changes nothing and lists each change it would make: the file and line, then the lines as they are, marked `-`, and as they'd be, marked `+`:
+
+```text
+docs/install.md:5
+- @note{ type = tip }:Run it from the project root.
++ @note {type=tip}: Run it from the project root.
+```
+
+`--diff` writes the changes as a unified diff instead, which `git apply` applies, and also changes nothing.
 
 @include: ../_generated/cli-fmt-options.md
 
@@ -164,6 +191,6 @@ A symbolic link it leaves alone is reported on standard error, as `check` report
 
 | Code | Meaning |
 |---|---|
-| `0` | Every file was formatted, or, with `--check`, none needed it |
-| `1` | With `--check`: a file would change |
+| `0` | Every file was formatted, or, with `--check` or `--diff`, none needed it |
+| `1` | With `--check` or `--diff`: a file would change |
 | `2` | A problem: no `ascribe.toml`, a content model with errors, a path or file that can't be read, or a symbolic link that leads out of the content root |

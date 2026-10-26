@@ -23,9 +23,6 @@ builds:
   cloud:
     diagnostics:
       - {slug: glossary-definition-long, file: glossary.md, line: 11}
-  self-managed-3.3:
-    diagnostics:
-      - {slug: glossary-definition-long, file: glossary.md, line: 11}
   self-managed-3.5:
     diagnostics:
       - {slug: glossary-definition-long, file: glossary.md, line: 5}

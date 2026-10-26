@@ -59,29 +59,29 @@ Advice · file level · next step: outside · [SPEC §7.10]({repo}/blob/main/SPE
 
 ### ASC265 `addresses-entry-not-a-page`
 @id {permalink=true}: ASC265
-@summary: A `[moved]` value that isn't a page, or a heading on one, in every build that published its key.
+@summary: A `[moved]` value that isn't a page, or a heading on one, in every build that published its key, or, for a permalink, a permalink the content declares.
 
 Error · file level · next step: choose · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
-**When:** A `[moved]` value that isn't a page, or a heading on one, in every build that published its key.
+**When:** A `[moved]` value that isn't a page, or a heading on one, in every build that published its key, or, for a permalink, a permalink the content declares.
 
 **Message:** `{key}` is forwarded to `{value}`, which isn't a page of the project, so no build writes its redirect
 
-**Fix:** Forward it to a page every build that published it publishes: `ascribe addresses move <old> <new>` replaces the entry. When nothing replaces it, retire it instead: `ascribe addresses retire <old> --reason "…"`. A fragment, a path outside the content root, or a page a build leaves out would send a reader to nothing.
+**Fix:** Forward it to a page every build that published it publishes: `ascribe addresses move <old> <new>` replaces the entry. A permalink, `go:<name>`, can also be forwarded to another permalink, `go:<other>`, that a heading's `@id {permalink=true}` or a page's `permalink` declares. When nothing replaces it, retire it instead: `ascribe addresses retire <old> --reason "…"`. A fragment, a path outside the content root, or a page a build leaves out would send a reader to nothing.
 
 **Read more:** [The file's checks](../publishing/redirects.md#the-files-checks) in the guide to keeping addresses.
 
 ### ASC266 `addresses-entry-live`
 @id {permalink=true}: ASC266
-@summary: A key of `[moved]` or `[retired]` whose source is back.
+@summary: A key of `[moved]` or `[retired]` whose source is back: a page, a heading's `@id`, or a permalink the content declares.
 
 Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
-**When:** A key of `[moved]` or `[retired]` whose source is back.
+**When:** A key of `[moved]` or `[retired]` whose source is back: a page, a heading's `@id`, or a permalink the content declares.
 
 **Message:** `{key}` is a source of the project again, so its entry in [\{table}] does nothing; remove it
 
-**Fix:** Remove the entry: the page, or the heading's `@id`, is back where its addresses lead, as after restoring a deleted page or a merge. The quick fix and `ascribe check --fix` remove it. When the source came back by mistake, move it away again.
+**Fix:** Remove the entry: the page, the heading's `@id`, or the permalink is back where its addresses lead, as after restoring a deleted page or a merge, and what the content declares wins. The quick fix and `ascribe check --fix` remove it. When the source came back by mistake, move it away again: for a permalink, remove the `@id {permalink=true}` or the page's `permalink` that declares it.
 
 **Read more:** [The file's checks](../publishing/redirects.md#the-files-checks) in the guide to keeping addresses.
 
@@ -215,7 +215,7 @@ Advice · file level · next step: outside · [SPEC §7.11]({repo}/blob/main/SPE
 
 ## Examples
 
-### ASC277 `example-schema-mismatch`
+### ASC277 `api-example-schema-mismatch`
 @id {permalink=true}: ASC277
 @summary: A marked example that disagrees with its body's schema.
 
@@ -229,7 +229,7 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 
 **Read more:** [What's checked](../openapi/examples.md#whats-checked) in the guide to checked examples.
 
-### ASC278 `example-not-json`
+### ASC278 `api-example-not-json`
 @id {permalink=true}: ASC278
 @summary: A marked example that isn't JSON, or isn't a `json` block.
 
@@ -243,7 +243,7 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 
 **Read more:** [Mark an example](../openapi/examples.md#mark-an-example) in the guide to checked examples.
 
-### ASC279 `example-body-missing`
+### ASC279 `api-example-body-missing`
 @id {permalink=true}: ASC279
 @summary: A marked example whose operation has no body it names.
 
@@ -257,7 +257,7 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 
 **Read more:** [Mark an example](../openapi/examples.md#mark-an-example) in the guide to checked examples.
 
-### ASC280 `example-schema-unsupported`
+### ASC280 `api-example-schema-unsupported`
 @id {permalink=true}: ASC280
 @summary: A marked example whose schema can't all be checked.
 

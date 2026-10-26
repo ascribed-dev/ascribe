@@ -2,7 +2,8 @@
 //! does what it says, each reported at its key.
 //!
 //! - **`addresses-entry-live`**, advice: a key whose source is back, as
-//!   after a page is restored. Its fix removes the entry.
+//!   after a page is restored, or a permalink, `go:<name>`, the content
+//!   declares again. Its fix removes the entry.
 //! - **`addresses-entry-taken`**, an error: an address of a key that
 //!   another source publishes now, so an old link lands on another page.
 //! - **`addresses-entry-unpublished`**, advice: an entry the base's file
@@ -11,7 +12,8 @@
 //!   base's file has is never reported.
 //! - **`addresses-entry-not-a-page`**, an error: a `[moved]` value that
 //!   isn't a page, or a heading on one, in each build that published its
-//!   key.
+//!   key; or, for a permalink moved to another, a name the content doesn't
+//!   declare.
 //! - **`addresses-chain`**, advice: a `[moved]` value that's another entry's
 //!   key. Its fix forwards it to where the chain ends.
 //! - **`addresses-anchor-collision`**, an error: an `#id` entry from a page
@@ -27,9 +29,9 @@
 use std::collections::{BTreeMap, HashSet};
 
 use ascribe_core::{FileId, Issue, Location, RelPath, Span, diagnostics};
-use ascribe_model::addresses::{Entry, Key, Step, split_place};
-use ascribe_resolve::FileKind;
+use ascribe_model::addresses::{Entry, Key, Step, permalink_name, split_place};
 use ascribe_resolve::addresses::AddressKind;
+use ascribe_resolve::{DeclaredPermalink, FileKind};
 
 use super::{Base, Here, listed};
 use crate::Diagnostic;
@@ -42,15 +44,16 @@ const SOFT_404: usize = 3;
 /// `[moved]` table's, then its `[retired]` table's, then the soft 404s.
 pub fn entries(here: &Here<'_>, base: Option<&Base>) -> Vec<Diagnostic> {
     let mut out = Vec::new();
+    let declared = here.index.declared_permalinks();
     for (table, map) in [("moved", &here.file.moved), ("retired", &here.file.retired)] {
         for (key, entry) in map {
             let at = Location::new(ADDRESSES_FILE_ID, entry.span);
-            if let Some(found) = whether_kept(here, base, table, key, at) {
+            if let Some(found) = whether_kept(here, base, &declared, table, key, at) {
                 out.push(found);
                 continue;
             }
             if table == "moved" {
-                out.extend(not_a_page(here, base, key, &entry.value, at));
+                out.extend(not_a_page(here, base, &declared, key, &entry.value, at));
                 out.extend(chain(here, key, &entry.value, at));
                 out.extend(anchor_collision(here, key, &entry.value, at));
             }
@@ -81,15 +84,27 @@ pub fn file_deleted(count: usize) -> Diagnostic {
 /// Whether the entry for `key` still keeps an address: `addresses-entry-live`
 /// when its source is back, `addresses-entry-taken` when another source has
 /// its address, and `addresses-entry-unpublished` when the base never
-/// published it and doesn't have the entry.
+/// published it and doesn't have the entry. A permalink's entry is only
+/// live: its name is the permalinks list's to keep.
 fn whether_kept(
     here: &Here<'_>,
     base: Option<&Base>,
+    declared: &[DeclaredPermalink],
     table: &'static str,
     key: &str,
     at: Location,
 ) -> Option<Diagnostic> {
     let parsed = Key::parse(key)?;
+    if let Key::Permalink(name) = parsed {
+        let permalink = declared.iter().find(|p| p.name == name)?;
+        let issue = Issue::new(diagnostics::ADDRESSES_ENTRY_LIVE, at)
+            .with_variant("permalink")
+            .with_arg("key", key.to_owned())
+            .with_arg("table", table)
+            .with_arg("name", name.to_owned())
+            .with_arg("place", permalink.place());
+        return Some(with_removal(here, issue, key));
+    }
     let live = match parsed {
         Key::Source(path) => RelPath::parse(path).is_ok_and(|p| here.index.file(&p).is_some()),
         Key::Id { .. } => here
@@ -97,7 +112,7 @@ fn whether_kept(
             .iter()
             .flat_map(|b| &b.addresses)
             .any(|a| a.source == key),
-        Key::Address(_) => false,
+        Key::Address(_) | Key::Permalink(_) => false,
     };
     if live {
         let issue = Issue::new(diagnostics::ADDRESSES_ENTRY_LIVE, at)
@@ -162,10 +177,12 @@ fn same_address(a: &str, b: &str) -> bool {
 
 /// `addresses-entry-not-a-page` for `key`, forwarded to `value`: the value
 /// isn't a page of the project, the page has no heading with its id, or a
-/// build that published the key doesn't publish the page.
+/// build that published the key doesn't publish the page; for a permalink
+/// moved to another, no heading or page declares that one.
 fn not_a_page(
     here: &Here<'_>,
     base: Option<&Base>,
+    declared: &[DeclaredPermalink],
     key: &str,
     value: &str,
     at: Location,
@@ -173,6 +190,16 @@ fn not_a_page(
     // A chain is judged by where it ends; a cycle, or a chain that ends at
     // a retired entry, is `addresses-chain`'s.
     let end = here.file.follow(value)?;
+    if let Some(name) = permalink_name(&end) {
+        if declared.iter().any(|p| p.name == name) {
+            return None;
+        }
+        let issue = Issue::new(diagnostics::ADDRESSES_ENTRY_NOT_A_PAGE, at)
+            .with_variant("permalink")
+            .with_arg("key", key.to_owned())
+            .with_arg("value", value.to_owned());
+        return Some(Diagnostic::from_issue(&issue));
+    }
     let (path, id) = split_place(&end)?;
     let page = RelPath::parse(path).ok()?;
     let issue = |variant: Option<&'static str>| {

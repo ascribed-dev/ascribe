@@ -232,7 +232,7 @@ describe("the preview equals the published site", () => {
           const contentRoot = result.contentRoot as string;
 
           await load(built as string);
-          const astro = await treeOf(page, "main > article");
+          const astro = await treeOf(page, "main article");
           const astroTitle = await page.locator("main > h1").textContent();
           const astroAvailability = await page
             .locator('ascribe-availability[scope="page"] ascribe-availability-target')
@@ -291,7 +291,7 @@ describe("the preview equals the published site", () => {
       const result = await previewOf(variant, setup);
       const root = roots.get(variant.name) as string;
       await load(builtHtml(root, result.page?.route as string) as string);
-      const astro = (await page.locator("main > article").textContent()) ?? "";
+      const astro = (await page.locator("main article").textContent()) ?? "";
       return { preview: result.page?.html ?? "", astro };
     };
     // One after another: they share one browser page.

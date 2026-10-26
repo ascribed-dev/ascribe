@@ -36,7 +36,7 @@ title-duplicate = "warning"
 limit = "200 KB"
 ```
 
-Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`; `off` turns a check off altogether.
+Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`; `off` turns a check off altogether. A check raised to `"error"` fails the check and stops the build, as an error does, though the page is still valid by the specification, and a review check raised this way can still be acknowledged. [Quieting a problem](../checks/check.md#quieting-a-problem) compares `[checks]` with the other ways to quiet one.
 
 A check the diagnostics reference marks off by default, such as `summary-missing`, is off until `[checks]` names it: with a level, it's reported at that level, and as a table without one, such as `[checks.summary-long]` with only a `limit`, at its default level ([Setting a check's level](../checks/diagnostics.md#setting-a-checks-level)).
 
@@ -101,27 +101,9 @@ A broken link is `link-external-broken` and a moved one `link-external-moved`; b
 
 ## 20. `[permalinks]`
 
-Names for something outside the docs to link to that no heading or page declares: a [permalink](../writing/directives.md#permalinks) that was ended on purpose, and another name for one. Each is published at an address, as a permalink is, and recorded in `ascribe.permalinks` when the project has it (SPEC §7.6). The [guide](../permalinks/index.md#moving-aliasing-and-retiring) says when to use each.
+`ascribe.toml` has no `[permalinks]` any more. What happened to a [permalink](../writing/directives.md#permalinks) that no heading or page declares now, retired with a reason, or moved to another permalink or to a page, is recorded in [`ascribe.addresses`](../publishing/redirects.md#ascribeaddresses), keyed `go:<name>`, with the rest of where the docs' addresses went (SPEC §7.10). The [guide](../permalinks/index.md#moving-aliasing-and-retiring) says when to use each.
 
-```toml
-[permalinks.retired]
-rotate-keys = { to = "guides/security.md", reason = "Merged into the security guide" }
-legacy-sync = { reason = "The sync agent was removed in 4.0" }
-
-[permalinks.aliases]
-agent-settings = "settings"
-cli-settings = "settings"
-```
-
-`[permalinks.retired]` has an entry for each retired permalink, keyed by its name:
-
-@include: ../_generated/content-model-permalinks-retired.md
-
-`[permalinks.aliases]` has an entry for each alias, keyed by its name, whose value is the name it leads to: a permalink a heading or page declares, or another alias that leads to one. An alias's address leads where its permalink's does, in every build that publishes it, so repointing the alias changes where it leads and nothing else.
-
-[`ascribe permalinks retire`](../permalinks/command.md#cli-permalinks-retire) writes `[permalinks.retired]` for you, and the editor's quick fix on a removed permalink writes an entry with a placeholder reason for you to replace. To bring a retired permalink back, delete its entry and declare the name again.
-
-**Rules.** A name has the characters of an `@id` (`model-invalid-name`). A retired permalink has a `reason`, not empty and not the quick fix's placeholder, and no keys but `reason` and `to` (`model-missing-key`, `model-empty-text`, `model-permalinks`, `model-unknown-key`). A name is one thing: retired, an alias, or declared by the content, never two (`model-permalinks`, `permalink-name-conflict`). An alias leads, through aliases, to a permalink the content declares, never back to itself or to a retired permalink (`model-permalinks`, `permalink-alias-target-missing`). A `to` leads to a page, not a fragment, and to a heading on it when it names one (`permalink-retired-target-missing`).
+[`ascribe addresses init`](../publishing/redirects.md#cli-addresses-init) moves a project's `[permalinks.retired]` and `[permalinks.aliases]` into `ascribe.addresses`, and removes the table. Until it does, the table is an error at the key that says so (`model-unknown-key`).
 
 ---
 

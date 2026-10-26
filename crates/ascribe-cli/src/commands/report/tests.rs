@@ -34,7 +34,7 @@ fn problems_fail_only_at_the_level_asked_for() {
 fn a_section_that_didn_t_run_is_never_a_pass() {
     let report = Report {
         problems: Some(Problems::default()),
-        agents: Some(Ran::NotRun(NotRun {
+        delivery: Some(Ran::NotRun(NotRun {
             reason: "no site".to_owned(),
             how: "give one".to_owned(),
         })),

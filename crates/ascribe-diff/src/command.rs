@@ -4,7 +4,7 @@
 
 use ascribe_check::{count_errors, select_builds};
 use ascribe_core::{RelPath, percent_decode};
-use ascribe_resolve::Project;
+use ascribe_resolve::{FileKind, Project};
 
 use crate::drift::{BaseProject, drift_with, read_base};
 use crate::html::{
@@ -135,6 +135,20 @@ impl ProjectDiff {
         })
     }
 
+    /// Whether the build `build` publishes the page at `path` now. A page a
+    /// build publishes on one side only is in its report, as added or
+    /// removed, so one it publishes now and isn't in its report didn't
+    /// change there.
+    pub fn publishes(&self, build: &str, path: &str) -> bool {
+        let (Some(build), Ok(path)) = (self.now.model().build(build), RelPath::parse(path)) else {
+            return false;
+        };
+        self.now
+            .file(&path)
+            .is_some_and(|f| f.kind == FileKind::Page)
+            && self.now.dropped(&path, build).is_none()
+    }
+
     /// A block's lines as they're written, in the base when `base` is true
     /// and in the working tree when it isn't. `None` when the file isn't in
     /// that version, or doesn't have those lines.
@@ -193,8 +207,11 @@ pub fn diff_project(
     let (before, now, diffs, errors) = std::thread::scope(|scope| {
         let errors = scope.spawn(|| count_errors(project, options.builds).unwrap_or(0));
         let before = scope.spawn(|| read_base(&repo, base.compared()));
+        let renames =
+            scope.spawn(|| crate::renames(&repo, base.compared(), &project.layout().content_root));
         let now = project.index();
         let before = joined(before)?;
+        let renames = joined(renames)?;
         let before_side = before.as_ref().map(|(revision, project)| Side {
             project,
             model_text: &revision.model_text,
@@ -203,7 +220,7 @@ pub fn diff_project(
             project: &now,
             model_text: project.model_text(),
         };
-        let diffs = compare_builds(before_side, now_side, &names);
+        let diffs = compare_builds(before_side, now_side, &names, &renames);
         Ok::<_, DiffError>((before, now, diffs, joined(errors)))
     })?;
     let mut report = Report::new(&repo, &base, diffs);

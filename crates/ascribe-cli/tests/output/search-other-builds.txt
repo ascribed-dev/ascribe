@@ -1,2 +1,2 @@
 No place matches.
-Builds not searched publish them: `site`, `site@3.4`, `self-managed-3.3`.
+Builds not searched publish them: `site`, `site@3.4`.

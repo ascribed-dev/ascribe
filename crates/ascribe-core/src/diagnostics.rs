@@ -538,25 +538,11 @@ pub const MODEL_CONSUMER_PERMALINK_PATH: DiagnosticSlug =
 /// `ASC175`, error, file level: SPEC §8.2, "Permalinks list | `ascribe.permalinks` isn't valid TOML, or doesn't have the shape §7.5 gives it".
 pub const PERMALINKS_LIST_INVALID: DiagnosticSlug = DiagnosticSlug("permalinks-list-invalid");
 
-/// `ASC176`, warning, file level: SPEC §8.2, "Permalinks list | A permalink the content declares, an alias, or a retired permalink that `ascribe.permalinks` doesn't list as it is".
+/// `ASC176`, warning, file level: SPEC §8.2, "Permalinks list | A permalink the content declares, or a name `ascribe.addresses` moves or retires, that `ascribe.permalinks` doesn't list as it is".
 pub const PERMALINKS_LIST_BEHIND: DiagnosticSlug = DiagnosticSlug("permalinks-list-behind");
 
-/// `ASC177`, warning, file level: SPEC §8.2, "Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, an alias, or retired".
-pub const PERMALINK_REMOVED: DiagnosticSlug = DiagnosticSlug("permalink-removed");
-
-/// `ASC178`, error, file level: a rule for loading `ascribe.toml`.
-pub const MODEL_PERMALINKS: DiagnosticSlug = DiagnosticSlug("model-permalinks");
-
-/// `ASC179`, error, file level: SPEC §8.2, "Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares".
-pub const PERMALINK_ALIAS_TARGET_MISSING: DiagnosticSlug =
-    DiagnosticSlug("permalink-alias-target-missing");
-
-/// `ASC180`, error, file level: SPEC §8.2, "Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too".
-pub const PERMALINK_NAME_CONFLICT: DiagnosticSlug = DiagnosticSlug("permalink-name-conflict");
-
-/// `ASC181`, error, file level: SPEC §8.2, "Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it".
-pub const PERMALINK_RETIRED_TARGET_MISSING: DiagnosticSlug =
-    DiagnosticSlug("permalink-retired-target-missing");
+/// `ASC177`, warning, file level: SPEC §8.2, "Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, and not moved or retired in `ascribe.addresses`".
+pub const PERMALINK_LOST: DiagnosticSlug = DiagnosticSlug("permalink-lost");
 
 /// `ASC182`, error, page level: SPEC §8.2, "`@include` | A page's includes expand it past the processor's limit (page level)".
 pub const INCLUDE_LIMIT: DiagnosticSlug = DiagnosticSlug("include-limit");
@@ -819,10 +805,10 @@ pub const LINK_OPERATION_MISSING: DiagnosticSlug = DiagnosticSlug("link-operatio
 /// `ASC264`, error, file level: SPEC §8.2, "Links | Target is a declared spec
 /// outside the project's folder, with no operation".
 pub const LINK_SPEC_OUTSIDE_PROJECT: DiagnosticSlug = DiagnosticSlug("link-spec-outside-project");
-/// `ASC265`, error, file level: SPEC §8.2, "Addresses file | A `[moved]` value that isn't a page, or a heading on one, in every build that published its key".
+/// `ASC265`, error, file level: SPEC §8.2, "Addresses file | A `[moved]` value that isn't a page, or a heading on one, in every build that published its key, or, for a permalink, a permalink the content declares".
 pub const ADDRESSES_ENTRY_NOT_A_PAGE: DiagnosticSlug = DiagnosticSlug("addresses-entry-not-a-page");
 
-/// `ASC266`, advice, file level: SPEC §8.2, "Addresses file | A key of `[moved]` or `[retired]` whose source is back".
+/// `ASC266`, advice, file level: SPEC §8.2, "Addresses file | A key of `[moved]` or `[retired]` whose source is back: a page, a heading's `@id`, or a permalink the content declares".
 pub const ADDRESSES_ENTRY_LIVE: DiagnosticSlug = DiagnosticSlug("addresses-entry-live");
 
 /// `ASC267`, error, file level: SPEC §8.2, "Addresses file | A key of `[moved]` or `[retired]` whose address another source publishes now".
@@ -863,19 +849,21 @@ pub const LINK_OPERATION_DEPRECATED: DiagnosticSlug = DiagnosticSlug("link-opera
 
 /// `ASC277`, error, file level: SPEC §8.2, "Examples | A marked example
 /// that disagrees with its body's schema".
-pub const EXAMPLE_SCHEMA_MISMATCH: DiagnosticSlug = DiagnosticSlug("example-schema-mismatch");
+pub const API_EXAMPLE_SCHEMA_MISMATCH: DiagnosticSlug =
+    DiagnosticSlug("api-example-schema-mismatch");
 
 /// `ASC278`, error, file level: SPEC §8.2, "Examples | A marked example
 /// that isn't JSON, or isn't a `json` block".
-pub const EXAMPLE_NOT_JSON: DiagnosticSlug = DiagnosticSlug("example-not-json");
+pub const API_EXAMPLE_NOT_JSON: DiagnosticSlug = DiagnosticSlug("api-example-not-json");
 
 /// `ASC279`, error, file level: SPEC §8.2, "Examples | A marked example
 /// whose operation has no body it names".
-pub const EXAMPLE_BODY_MISSING: DiagnosticSlug = DiagnosticSlug("example-body-missing");
+pub const API_EXAMPLE_BODY_MISSING: DiagnosticSlug = DiagnosticSlug("api-example-body-missing");
 
 /// `ASC280`, advice, file level: SPEC §8.2, "Examples | A marked example
 /// whose schema can't all be checked".
-pub const EXAMPLE_SCHEMA_UNSUPPORTED: DiagnosticSlug = DiagnosticSlug("example-schema-unsupported");
+pub const API_EXAMPLE_SCHEMA_UNSUPPORTED: DiagnosticSlug =
+    DiagnosticSlug("api-example-schema-unsupported");
 
 /// `ASC281`, error, file level: SPEC §8.2, "Links | An `@operation`'s link
 /// isn't to an operation of a declared API".
@@ -884,6 +872,10 @@ pub const OPERATION_LINK_NOT_OPERATION: DiagnosticSlug =
 
 /// `ASC282`, advice, file level: a content check (area `project`).
 pub const API_OPERATION_UNREFERENCED: DiagnosticSlug = DiagnosticSlug("api-operation-unreferenced");
+
+/// `ASC283`, advice, file level: a content check (area `project`).
+pub const BUILD_FILTER_LINE_UNDECLARED: DiagnosticSlug =
+    DiagnosticSlug("build-filter-line-undeclared");
 
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
@@ -1056,11 +1048,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_CONSUMER_PERMALINK_PATH,
     PERMALINKS_LIST_INVALID,
     PERMALINKS_LIST_BEHIND,
-    PERMALINK_REMOVED,
-    MODEL_PERMALINKS,
-    PERMALINK_ALIAS_TARGET_MISSING,
-    PERMALINK_NAME_CONFLICT,
-    PERMALINK_RETIRED_TARGET_MISSING,
+    PERMALINK_LOST,
     INCLUDE_LIMIT,
     MODEL_CRAWLERS_LINE,
     LISTING_DISALLOWED,
@@ -1155,12 +1143,13 @@ pub const ALL: &[DiagnosticSlug] = &[
     LINK_OPERATION_FORM_UNSUPPORTED,
     LINK_OPERATION_BY_PATH,
     LINK_OPERATION_DEPRECATED,
-    EXAMPLE_SCHEMA_MISMATCH,
-    EXAMPLE_NOT_JSON,
-    EXAMPLE_BODY_MISSING,
-    EXAMPLE_SCHEMA_UNSUPPORTED,
+    API_EXAMPLE_SCHEMA_MISMATCH,
+    API_EXAMPLE_NOT_JSON,
+    API_EXAMPLE_BODY_MISSING,
+    API_EXAMPLE_SCHEMA_UNSUPPORTED,
     OPERATION_LINK_NOT_OPERATION,
     API_OPERATION_UNREFERENCED,
+    BUILD_FILTER_LINE_UNDECLARED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1220,6 +1209,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     SUMMARY_LONG,
     ADDRESSES_BASE_UNREADABLE,
     API_OPERATION_UNREFERENCED,
+    BUILD_FILTER_LINE_UNDECLARED,
 ];
 
 /// The configurable checks that are off unless a project names them in

@@ -112,7 +112,12 @@ fn write_init(
     }
     writeln!(
         out,
-        "Next, to publish the pages as a site with Astro, read {}",
+        "Next, write a first page, {}, and run `ascribe check`",
+        from_here(root, &format!("{}/index.md", started.content_root))
+    )?;
+    writeln!(
+        out,
+        "Then, to publish the pages as a site with Astro, read {}",
         started.next
     )
 }

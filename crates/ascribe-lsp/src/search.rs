@@ -49,8 +49,9 @@ pub struct SearchParams {
     /// file in the project's folder. It says which project to search.
     pub text_document: TextDocumentIdentifier,
     /// What to find, as `ascribe search` takes it: words, which must all be
-    /// in one block in any order, or a phrase in double quotes, matched as
-    /// written. Case is ignored.
+    /// in one block in any order, apart from common words such as `how` and
+    /// `the`, or a phrase in double quotes, matched as written. Case is
+    /// ignored.
     pub query: String,
     /// The build to search. Without one, every build.
     #[serde(default)]

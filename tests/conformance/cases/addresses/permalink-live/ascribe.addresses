@@ -1,0 +1,7 @@
+version = 1
+
+[moved]
+"go:keys" = "go:rotate-keys"
+
+[retired]
+"go:rotate-keys" = "Merged into the security guide"

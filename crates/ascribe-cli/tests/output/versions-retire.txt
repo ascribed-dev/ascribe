@@ -3,8 +3,6 @@ Would rewrite 6 marks in 5 files. No live line's output would change.
 Builds that aren't lines of self-managed change what they show:
   cloud's plain output changes install-agent.md
   cloud's site output changes install-agent.md
-  self-managed-3.3's plain output adds configure.md, upgrade.md, webhooks.md; changes install-agent.md, keys.md
-  self-managed-3.3's site output adds configure.md, upgrade.md, webhooks.md; changes _ascribe/nav.json, _ascribe/pages.json, install-agent.md, keys.md
 Rewriting them needs --force.
 1 page is in no live line:
   docs/configure-legacy.md:5: the page "Configure the agent (3.4)"
