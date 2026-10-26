@@ -849,19 +849,21 @@ pub const LINK_OPERATION_DEPRECATED: DiagnosticSlug = DiagnosticSlug("link-opera
 
 /// `ASC277`, error, file level: SPEC §8.2, "Examples | A marked example
 /// that disagrees with its body's schema".
-pub const EXAMPLE_SCHEMA_MISMATCH: DiagnosticSlug = DiagnosticSlug("example-schema-mismatch");
+pub const API_EXAMPLE_SCHEMA_MISMATCH: DiagnosticSlug =
+    DiagnosticSlug("api-example-schema-mismatch");
 
 /// `ASC278`, error, file level: SPEC §8.2, "Examples | A marked example
 /// that isn't JSON, or isn't a `json` block".
-pub const EXAMPLE_NOT_JSON: DiagnosticSlug = DiagnosticSlug("example-not-json");
+pub const API_EXAMPLE_NOT_JSON: DiagnosticSlug = DiagnosticSlug("api-example-not-json");
 
 /// `ASC279`, error, file level: SPEC §8.2, "Examples | A marked example
 /// whose operation has no body it names".
-pub const EXAMPLE_BODY_MISSING: DiagnosticSlug = DiagnosticSlug("example-body-missing");
+pub const API_EXAMPLE_BODY_MISSING: DiagnosticSlug = DiagnosticSlug("api-example-body-missing");
 
 /// `ASC280`, advice, file level: SPEC §8.2, "Examples | A marked example
 /// whose schema can't all be checked".
-pub const EXAMPLE_SCHEMA_UNSUPPORTED: DiagnosticSlug = DiagnosticSlug("example-schema-unsupported");
+pub const API_EXAMPLE_SCHEMA_UNSUPPORTED: DiagnosticSlug =
+    DiagnosticSlug("api-example-schema-unsupported");
 
 /// `ASC281`, error, file level: SPEC §8.2, "Links | An `@operation`'s link
 /// isn't to an operation of a declared API".
@@ -1137,10 +1139,10 @@ pub const ALL: &[DiagnosticSlug] = &[
     LINK_OPERATION_FORM_UNSUPPORTED,
     LINK_OPERATION_BY_PATH,
     LINK_OPERATION_DEPRECATED,
-    EXAMPLE_SCHEMA_MISMATCH,
-    EXAMPLE_NOT_JSON,
-    EXAMPLE_BODY_MISSING,
-    EXAMPLE_SCHEMA_UNSUPPORTED,
+    API_EXAMPLE_SCHEMA_MISMATCH,
+    API_EXAMPLE_NOT_JSON,
+    API_EXAMPLE_BODY_MISSING,
+    API_EXAMPLE_SCHEMA_UNSUPPORTED,
     OPERATION_LINK_NOT_OPERATION,
     API_OPERATION_UNREFERENCED,
 ];
