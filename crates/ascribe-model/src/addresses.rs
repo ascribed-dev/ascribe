@@ -351,7 +351,8 @@ impl AddressFile {
     /// Records that `old` moved to `new`: `[moved]`'s entry for `old`, in
     /// place of any `[retired]` one. Each entry that led to `old` leads to
     /// `new` instead, so every pair stays flat; and an entry keyed by `new`,
-    /// whose source is back at its key, goes.
+    /// whose source is back at its key, goes. A permalink, `go:<name>`,
+    /// keeps its own entry: a name may move to a name that moved itself.
     ///
     /// When `old` is a page, an entry that leads to one of its headings,
     /// `old#id`, leads to `new#id`: the heading moved with its page.
@@ -371,8 +372,10 @@ impl AddressFile {
             }
         }
         self.moved.insert(old.to_owned(), Entry::new(new));
-        self.moved.remove(new);
-        self.retired.remove(new);
+        if !new.starts_with(PERMALINK_PREFIX) {
+            self.moved.remove(new);
+            self.retired.remove(new);
+        }
         self.moved.retain(|key, entry| *key != entry.value);
     }
 
@@ -1004,6 +1007,25 @@ mod tests {
         let retired: Vec<&str> = file.retired.keys().map(String::as_str).collect();
         assert_eq!(retired, ["a.md", "b.md", "c.md#x"]);
         assert_eq!(file.moved.len(), 1);
+    }
+
+    #[test]
+    fn a_name_moved_to_an_alias_keeps_the_alias() {
+        let mut file = AddressFile::default();
+        file.record_move("go:config", "go:weave-config");
+        file.record_move("go:another", "go:config");
+        let moved: Vec<(&str, &str)> = file
+            .moved
+            .iter()
+            .map(|(k, e)| (k.as_str(), e.value.as_str()))
+            .collect();
+        assert_eq!(
+            moved,
+            [
+                ("go:another", "go:config"),
+                ("go:config", "go:weave-config")
+            ]
+        );
     }
 
     #[test]

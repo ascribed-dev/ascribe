@@ -161,6 +161,12 @@ pub enum AddressesError {
     /// Only a permalink moves to another permalink.
     #[error("only a permalink, `go:<name>`, moves to another permalink, such as `{0}`")]
     NotAPermalink(String),
+    /// A permalink moved to isn't one the content declares or the file
+    /// records.
+    #[error(
+        "`{0}` isn't a permalink of the project: no page declares it, and {ADDRESSES_FILE} doesn't record it"
+    )]
+    UnknownPermalink(String),
     /// What `ascribe.toml`'s `[permalinks]` holds can't be moved.
     #[error("can't move ascribe.toml's [permalinks] into {ADDRESSES_FILE}: {0}")]
     PermalinksUnmoved(String),
@@ -207,6 +213,7 @@ impl Coded for AddressesError {
             AddressesError::NotAKey(_) => "addresses_key_invalid",
             AddressesError::StillDeclared { .. } => "addresses_permalink_still_declared",
             AddressesError::NotAPermalink(_) => "addresses_target_not_a_permalink",
+            AddressesError::UnknownPermalink(_) => "addresses_target_unknown_permalink",
             AddressesError::PermalinksUnmoved(_) => "addresses_permalinks_unmoved",
             AddressesError::Model(..) => "model_unwritable",
             AddressesError::NotAPage(_) => "addresses_target_not_a_page",
@@ -552,9 +559,9 @@ pub(crate) fn answer_move(
         if permalink_name(&old).is_none() {
             return Err(AddressesError::NotAPermalink(new.clone()));
         }
-        permalink_name(new)
-            .map(|_| new.clone())
-            .ok_or_else(|| AddressesError::NotAKey(new.clone()))?
+        permalink_name(new).ok_or_else(|| AddressesError::NotAKey(new.clone()))?;
+        known_permalink(project, &file, new)?;
+        new.clone()
     } else {
         new_place(project, new)?
     };
@@ -801,6 +808,27 @@ fn old_key(project: &Project, given: &str) -> Result<String, AddressesError> {
         return Err(AddressesError::StillThere(path.to_string()));
     }
     Ok(key)
+}
+
+/// Refuses `target`, `go:<name>`, unless the content declares the name or
+/// `file` records it: a name moved to a name that's nowhere is lost.
+pub(crate) fn known_permalink(
+    project: &Project,
+    file: &AddressFile,
+    target: &str,
+) -> Result<(), AddressesError> {
+    let declared = permalink_name(target).is_some_and(|name| {
+        project
+            .index()
+            .declared_permalinks()
+            .iter()
+            .any(|p| p.name == name)
+    });
+    if declared || file.entry(target).is_some() {
+        Ok(())
+    } else {
+        Err(AddressesError::UnknownPermalink(target.to_owned()))
+    }
 }
 
 /// Where it moved, as a value of the file: a page of the project, read

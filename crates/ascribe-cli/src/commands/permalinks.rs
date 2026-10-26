@@ -548,6 +548,13 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
             );
         }
     };
+    if let Some(to) = to
+        .as_deref()
+        .filter(|to| ascribe_model::permalink_name(to).is_some())
+        && let Err(e) = crate::commands::addresses::known_permalink(&project, &file, to)
+    {
+        return answer::fail(err, &PermalinksError::from(e));
+    }
     for name in &names {
         let key = permalink_key(name);
         match (&to, reason) {

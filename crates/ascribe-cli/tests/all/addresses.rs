@@ -563,3 +563,40 @@ fn moving_permalinks_out_of_ascribe_toml_loses_no_address_of_the_base() {
     assert!(!text.contains("addresses-base-unreadable"), "{text}");
     assert!(!text.contains("weren't compared"), "{text}");
 }
+
+#[test]
+fn a_name_moved_to_an_alias_keeps_the_alias_and_an_unknown_name_is_refused() {
+    let dir = repo();
+    fs::copy(
+        example().join("ascribe.addresses"),
+        dir.path().join("ascribe.addresses"),
+    )
+    .expect("copy the file");
+    // `go:config` is an alias of `go:weave-config`: moving another name to
+    // it keeps it.
+    let out = ascribe(
+        dir.path(),
+        &["addresses", "move", "go:another", "go:config"],
+    );
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    let file = fs::read_to_string(dir.path().join("ascribe.addresses")).expect("the file");
+    assert!(file.contains("\"go:another\" = \"go:config\"\n"), "{file}");
+    assert!(
+        file.contains("\"go:config\" = \"go:weave-config\"\n"),
+        "{file}"
+    );
+
+    // A name the project neither declares nor records is refused, and the
+    // file stays as it was.
+    let before = fs::read_to_string(dir.path().join("ascribe.addresses")).expect("the file");
+    let out = ascribe(dir.path(), &["addresses", "move", "go:x", "go:typo"]);
+    assert_eq!(code(&out), 2, "{}", both(&out));
+    assert_eq!(
+        stderr(&out),
+        "error: `go:typo` isn't a permalink of the project: no page declares it, and ascribe.addresses doesn't record it\n"
+    );
+    assert_eq!(
+        fs::read_to_string(dir.path().join("ascribe.addresses")).expect("the file"),
+        before
+    );
+}

@@ -553,3 +553,48 @@ fn sync_doesnt_write_the_list_through_a_link() {
     assert!(stderr(&output).contains("link"), "{}", stderr(&output));
     assert!(!target.exists(), "the list was written through the link");
 }
+
+#[test]
+fn retire_moves_a_name_to_an_alias_and_refuses_a_name_that_s_nowhere() {
+    let dir = project();
+    write(
+        dir.path(),
+        "ascribe.addresses",
+        "version = 1\n\n[moved]\n\"go:setup\" = \"go:install\"\n\n[retired]\n",
+    );
+    let refused = ascribe(
+        dir.path(),
+        &[
+            "permalinks",
+            "retire",
+            "--page",
+            "docs/keys.md",
+            "--to",
+            "go:typo",
+        ],
+    );
+    assert_eq!(code_of(&refused), 2);
+    assert!(
+        stderr(&refused).contains("`go:typo` isn't a permalink of the project"),
+        "{}",
+        stderr(&refused)
+    );
+
+    let moved = ascribe(
+        dir.path(),
+        &[
+            "permalinks",
+            "retire",
+            "--page",
+            "docs/keys.md",
+            "--to",
+            "go:setup",
+        ],
+    );
+    assert_eq!(code_of(&moved), 0, "{}", stderr(&moved));
+    let addresses = fs::read_to_string(dir.path().join("ascribe.addresses")).unwrap();
+    assert!(
+        addresses.contains("\"go:rotate-keys\" = \"go:setup\"\n\"go:setup\" = \"go:install\"\n"),
+        "{addresses}"
+    );
+}

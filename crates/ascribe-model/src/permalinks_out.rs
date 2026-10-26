@@ -76,9 +76,14 @@ pub fn permalinks_out(model_text: &str) -> Result<Option<(String, Vec<MovedOut>)
             let target = value
                 .as_str()
                 .ok_or_else(|| format!("`permalinks.aliases.{name}` isn't a permalink's name"))?;
+            let alias = key(name)?;
+            // A name both retired and an alias was retired.
+            if out.iter().any(|e| e.key == alias) {
+                continue;
+            }
             out.push(MovedOut {
                 table: "moved",
-                key: key(name)?,
+                key: alias,
                 value: key(target)?,
             });
         }
@@ -148,6 +153,21 @@ mod tests {
                 ("retired", "go:legacy-sync", "Removed in 4.0"),
                 ("moved", "go:agent-settings", "go:settings"),
             ]
+        );
+    }
+
+    #[test]
+    fn a_name_both_retired_and_an_alias_stays_retired() {
+        let text = "[permalinks.retired]\nold = { reason = \"Gone\" }\n\n\
+                    [permalinks.aliases]\nold = \"new\"\n";
+        let (_, moved) = permalinks_out(text).expect("moves").expect("has some");
+        assert_eq!(
+            moved,
+            [MovedOut {
+                table: "retired",
+                key: "go:old".to_owned(),
+                value: "Gone".to_owned(),
+            }]
         );
     }
 
