@@ -31,7 +31,7 @@ The landing page's hero is drawn in motion by `scripts/design/assets.ts` (`hero-
 - The docs site's header draws the wordmark 2 pixels a cell, with the change marks in `color.brand.gutter`.
 - The Marketplace banner is Deep River's ground.
 - Decision [#801](../decisions/801-pixel-mark.md) records the mark, its colors, and the font, which change decisions 48 and 49's particulars.
-- The pages' colors: the site, the element library, review, the HTML report, the archive, the Astro toolbar, and the preview's fallbacks take Deep River and Shallows, with headings in the system's serif (decision [#833a](../decisions/833a-pages-palette.md)).
+- The pages' colors: the site, the element library, review, the HTML preview, the archive, the Astro toolbar, and the preview's fallbacks take Deep River and Shallows, with headings in the system's serif (decision [#833a](../decisions/833a-pages-palette.md)).
 - Motion: the three states, generated as the landing page's hero, holding still for anyone who prefers reduced motion; and the site's notes drawn with the gutter's split bar (decisions [#833b](../decisions/833b-site-split-bar.md) and [#833c](../decisions/833c-mark-in-motion.md)).
 
 ## Next

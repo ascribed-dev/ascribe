@@ -2,9 +2,10 @@
 //! the host ([`ascribe_resolve::pages::header_rules`]), as a list of rules,
 //! each a path and its headers (output-layout contract §1.4). A Markdown
 //! version has no head to carry its page's rules, so they're headers, which
-//! only the host can send. Each help entry's own address gets
-//! `Access-Control-Allow-Origin: *`, so a product on another origin can
-//! fetch it.
+//! only the host can send. Each help entry's own addresses, its JSON and its
+//! Markdown, get `Access-Control-Allow-Origin: *`, so a product on another
+//! origin can fetch them, and the JSON's `Link` names the Markdown as its
+//! alternate.
 
 use std::collections::BTreeMap;
 
@@ -29,7 +30,8 @@ struct Rule<'a> {
 }
 
 /// The rules, sorted by path: each Markdown version's, and each of `help`,
-/// the paths the help entries are served at.
+/// the paths the help entries are served at as JSON, with the same path in
+/// `.md`, where each is served as Markdown.
 fn rules(
     model: &ContentModel,
     build: &ResolvedBuild,
@@ -40,12 +42,19 @@ fn rules(
             .into_iter()
             .map(|rule| (rule.path, rule.headers.into_iter().collect()))
             .collect();
-    rules.extend(help.iter().map(|path| {
-        (
+    for path in help {
+        let cors = ("Access-Control-Allow-Origin", "*".to_owned());
+        let Some(markdown) = path.strip_suffix(".json").map(|p| format!("{p}.md")) else {
+            rules.push((path.clone(), BTreeMap::from([cors])));
+            continue;
+        };
+        let alternate = format!("<{markdown}>; rel=\"alternate\"; type=\"text/markdown\"");
+        rules.push((
             path.clone(),
-            BTreeMap::from([("Access-Control-Allow-Origin", "*".to_owned())]),
-        )
-    }));
+            BTreeMap::from([cors.clone(), ("Link", alternate)]),
+        ));
+        rules.push((markdown, BTreeMap::from([cors])));
+    }
     rules.sort_by(|a, b| a.0.cmp(&b.0));
     rules
 }

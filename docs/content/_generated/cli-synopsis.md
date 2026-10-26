@@ -15,7 +15,7 @@ ascribe link              TARGET --from <PAGE> [--format text|json]
 ascribe refs              TARGET [--limit <N>] [--format text|json]
 ascribe search            QUERY [PATHS]... [--type <NAME>] [--case] [--word] [--summary] [--build <NAME>]... [--limit <N>] [--format text|json]
 ascribe resolve           PAGE [--build <NAME>] [--emit plain|site] [--frontmatter] [--format text|json]
-ascribe rename            TARGET NEW
+ascribe rename            TARGET NEW [--format text|json]
 
 ascribe baseline write    [--format text|json]
 ascribe baseline prune    [--format text|json]

@@ -526,7 +526,7 @@ enum InlineBody {
 
 /// A piece of a formatted value, as the JSON output writes it:
 /// `{ "type": "text" | "code", "value": … }`. Other JSON that shows a
-/// formatted title, such as the review report's, writes it the same way.
+/// formatted title, such as the HTML preview's, writes it the same way.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct FormattedPiece {

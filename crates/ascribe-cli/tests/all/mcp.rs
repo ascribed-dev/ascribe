@@ -387,7 +387,7 @@ fn every_tool_returns_its_commands_json_and_changes_nothing() {
             ],
         ),
         (
-            "ascribe_format",
+            "ascribe_fmt",
             json!({ "paths": ["site/docs"] }),
             &[
                 "fmt",
@@ -400,7 +400,7 @@ fn every_tool_returns_its_commands_json_and_changes_nothing() {
             ],
         ),
         (
-            "ascribe_changes",
+            "ascribe_diff",
             json!({ "project": "site", "base": "HEAD" }),
             &[
                 "diff",
@@ -414,7 +414,7 @@ fn every_tool_returns_its_commands_json_and_changes_nothing() {
             ],
         ),
         (
-            "ascribe_changes",
+            "ascribe_diff",
             json!({ "project": "site", "base": "HEAD", "blocks": true }),
             &[
                 "diff", "--config", "site", "--base", "HEAD", "--format", "json",
@@ -780,10 +780,13 @@ fn both_revisions_list_the_same_tools_in_the_same_order() {
             "ascribe_refs",
             "ascribe_search",
             "ascribe_resolve",
-            "ascribe_format",
-            "ascribe_changes",
+            "ascribe_fmt",
+            "ascribe_diff",
+            "ascribe_rename",
             "ascribe_addresses_move",
             "ascribe_addresses_retire",
+            "ascribe_format",
+            "ascribe_changes",
         ]
     );
     for tool in tools["tools"].as_array().unwrap() {
@@ -1320,7 +1323,7 @@ fn every_tool_resource_and_prompt_names_a_command_that_exists() {
         "resourceTemplates",
     );
     collect(server.result("prompts/list", json!({})), "prompts");
-    assert_eq!(descriptions.len(), 12 + 3 + 2 + 3);
+    assert_eq!(descriptions.len(), 13 + 2 + 3 + 2 + 3);
     for description in descriptions {
         let words = named_command(&description);
         assert_eq!(words[0], "ascribe", "{description}");
@@ -1366,8 +1369,9 @@ fn call_in_project(tool: &str) -> Value {
         "ascribe_refs" => json!({ "target": "phrase:product" }),
         "ascribe_search" => json!({ "query": "product" }),
         "ascribe_resolve" => json!({ "page": "docs/install.md", "build": "cloud" }),
-        "ascribe_format" => json!({ "paths": ["docs"] }),
-        "ascribe_changes" => json!({ "base": "HEAD" }),
+        "ascribe_fmt" | "ascribe_format" => json!({ "paths": ["docs"] }),
+        "ascribe_diff" | "ascribe_changes" => json!({ "base": "HEAD" }),
+        "ascribe_rename" => json!({ "target": "keys.md", "new": "api-keys.md", "project": "." }),
         "ascribe_addresses_move" => json!({ "old": "keys.md", "new": "api-keys.md" }),
         "ascribe_addresses_retire" => json!({ "old": "keys.md", "reason": "Removed." }),
         other => panic!("{other} is a new tool: give it a call here"),
@@ -1656,6 +1660,167 @@ fn an_agent_records_a_move_git_sees_with_the_tool_s_edit() {
             .iter()
             .all(|d| d["severity"] != "error"),
         "{report}"
+    );
+}
+
+/// An agent with no shell moves a page with `ascribe_rename`: the tool
+/// writes nothing, and gives what `ascribe rename --format json` writes in a
+/// copy of the project, but `written`. Once the agent writes each file's
+/// text and moves the page, the project is what the command leaves, and the
+/// check passes.
+#[test]
+fn an_agent_moves_a_page_with_the_rename_tool() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("agent");
+    write_project(&root);
+    let out = ascribe(&root, &["addresses", "init"]);
+    assert!(out.status.success(), "{out:?}");
+    let copy = dir.path().join("command");
+    fs::create_dir_all(&copy).unwrap();
+    copy_tree(&root, &copy);
+    let before = contents(&root);
+
+    let mut server = Server::start(&root);
+    let arguments = json!({ "target": "docs/keys.md", "new": "docs/security/keys.md" });
+    let (_, renamed) = server.call_ok("ascribe_rename", arguments);
+    assert_eq!(contents(&root), before, "the tool wrote");
+    assert_eq!(renamed["written"], false, "{renamed}");
+    assert_eq!(
+        renamed["moved"],
+        json!({ "from": "docs/keys.md", "to": "docs/security/keys.md" })
+    );
+    assert_eq!(
+        renamed["recorded"],
+        json!([{ "key": "keys.md", "value": "security/keys.md" }])
+    );
+
+    let out = ascribe(
+        &copy,
+        &[
+            "rename",
+            "docs/keys.md",
+            "docs/security/keys.md",
+            "--format",
+            "json",
+        ],
+    );
+    assert!(out.status.success(), "{out:?}");
+    let mut command: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(command["written"], true);
+    command["written"] = json!(false);
+    assert_eq!(renamed, command);
+
+    for file in renamed["files"].as_array().unwrap() {
+        fs::write(
+            root.join(file["file"].as_str().unwrap()),
+            file["text"].as_str().unwrap(),
+        )
+        .unwrap();
+    }
+    fs::create_dir_all(root.join("docs/security")).unwrap();
+    fs::rename(
+        root.join("docs/keys.md"),
+        root.join("docs/security/keys.md"),
+    )
+    .unwrap();
+    let relative = |files: BTreeMap<PathBuf, Vec<u8>>, from: &Path| -> BTreeMap<PathBuf, Vec<u8>> {
+        files
+            .into_iter()
+            .map(|(path, text)| (path.strip_prefix(from).unwrap().to_owned(), text))
+            .collect()
+    };
+    assert_eq!(
+        relative(contents(&root), &root),
+        relative(contents(&copy), &copy)
+    );
+    let link = fs::read_to_string(root.join("docs/install.md")).unwrap();
+    assert!(link.contains("(security/keys.md#rotat)"), "{link}");
+
+    let (_, report) = server.call_ok("ascribe_check", json!({ "response_format": "detailed" }));
+    let codes: Vec<&str> = report["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|d| d["slug"].as_str().unwrap())
+        .collect();
+    assert!(!codes.contains(&"address-lost"), "{report}");
+}
+
+/// `ascribe_rename` renames a phrase in the project `project` names, from a
+/// server started above it, as `ascribe rename --config` does; without
+/// `project`, there's no project at or above the server's folder.
+#[test]
+fn rename_finds_the_project_an_entry_is_in_from_project() {
+    let repo = repository();
+    let root = repo.path();
+    let before = contents(root);
+    let mut server = Server::start(root);
+    let message = server.call_error(
+        "ascribe_rename",
+        json!({ "target": "phrase:product", "new": "brand" }),
+    );
+    assert!(message.contains("ascribe.toml"), "{message}");
+
+    let (_, renamed) = server.call_ok(
+        "ascribe_rename",
+        json!({ "target": "phrase:product", "new": "brand", "project": "site" }),
+    );
+    assert_eq!(contents(root), before, "the tool wrote");
+    let files: Vec<&str> = renamed["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|f| f["file"].as_str().unwrap())
+        .collect();
+    assert!(files.contains(&"site/ascribe.toml"), "{renamed}");
+    assert!(files.contains(&"site/docs/install.md"), "{renamed}");
+
+    let out = ascribe(
+        root,
+        &[
+            "rename",
+            "phrase:product",
+            "brand",
+            "--config",
+            "site",
+            "--format",
+            "json",
+        ],
+    );
+    assert!(out.status.success(), "{out:?}");
+    let mut command: Value = serde_json::from_slice(&out.stdout).unwrap();
+    command["written"] = json!(false);
+    assert_eq!(renamed, command);
+}
+
+/// A tool's old name calls the tool, and `tools/list` gives it as the tool
+/// with a sentence saying so first.
+#[test]
+fn an_old_name_calls_its_tool() {
+    let repo = repository();
+    let mut server = Server::start(repo.path());
+    let arguments = json!({ "project": "site", "base": "HEAD" });
+    assert_eq!(
+        server.call_ok("ascribe_changes", arguments.clone()),
+        server.call_ok("ascribe_diff", arguments)
+    );
+    let tools = server.result("tools/list", json!({}));
+    let tool = |name: &str| {
+        tools["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| t["name"] == name)
+            .unwrap()
+            .clone()
+    };
+    let (old, new) = (tool("ascribe_format"), tool("ascribe_fmt"));
+    assert_eq!(old["inputSchema"], new["inputSchema"]);
+    let description = old["description"].as_str().unwrap();
+    assert!(
+        description.starts_with("The old name of `ascribe_fmt`")
+            && description.ends_with(new["description"].as_str().unwrap()),
+        "{description}"
     );
 }
 

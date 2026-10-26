@@ -118,7 +118,7 @@ A site built with [`@ascribed/astro`](../astro/reference.md#help-entries) serves
 - **The current line's** beside the permalink's address: `https://docs.quill.dev/go/connect.json`.
 - **An older line's** under the line's number: `https://docs.quill.dev/3.4/go/connect.json`. A permalink's own address always leads to the current line, whose text may describe what a product on 3.4 doesn't do, so a product fetches from its own line's folder.
 
-Each answers with the file narrowed to that entry, so the product reads it as it reads its bundled file: `version`, `build`, `line`, and `help`, with the one entry under its name. The site lets any origin read it, so a web app on its own domain can fetch it too.
+Beside each, at `connect.md`, is the same section as Markdown, under its title, for an agent or a product that shows Markdown as it is. Each JSON answers with the file narrowed to that entry, so the product reads it as it reads its bundled file: `version`, `build`, `line`, and `help`, with the one entry under its name. The site lets any origin read it, so a web app on its own domain can fetch it too.
 
 The rule for a product:
 
