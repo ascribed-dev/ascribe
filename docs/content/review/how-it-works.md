@@ -8,7 +8,7 @@ Review is one comparison shown in three places: the **page preview** in VS Code,
 
 ## What review compares
 
-Review compares the working tree with a **base**, as [`ascribe diff`](diff.md#cli-diff) does: the base of the branch's pull request, when it has one, the default branch (the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists), or a branch, tag, or commit. It compares from the point where the branch left the base, as a pull request does.
+[Review](../glossary.md#review) compares the working tree with a **base**, as [`ascribe diff`](diff.md#cli-diff) does: the base of the branch's pull request, when it has one, the default branch (the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists), or a branch, tag, or commit. It compares from the point where the branch left the base, as a pull request does.
 
 It compares **resolved pages**, not files. A change to a fragment shows on every page that includes it, a change to a [phrase](../glossary.md#phrase) on every page that uses it, and reformatting shows on none. A page that changed only through something it uses says what it changed through, such as `_fragments/requirements.md` or `ascribe.toml`.
 

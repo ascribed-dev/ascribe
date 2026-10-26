@@ -24,7 +24,7 @@ Commit `ascribe.baseline` with the docs: a reviewer sees in its diff what a chan
 
 An entry that matches nothing, because its problem was fixed or its text changed, is reported, as the advice `baseline-entry-unmatched` at its line, so a stale entry can't hide a later problem whose text happens to be the same. `ascribe baseline prune` removes it. It's reported only when `ascribe check` checks the whole project for every build: with paths, `--build`, or `--editor-build`, the check doesn't see every problem the file lists.
 
-[`ascribe build`](check.md#cli-build) and [`ascribe report`](report.md#problems) read the baseline as `ascribe check` does: the build's summary line and its JSON count what it holds back, and so do the report's `problems` section and its JSON, as `baselined`, a measure of the backlog the project has put off. A baseline that can't be read stops them as it stops `ascribe check`: the build, and a report with `problems` or `inventory`. [The editor](#in-the-editor) and [the agents' tools](#for-agents) read it too.
+[`ascribe build`](check.md#cli-build) and [`ascribe report`](report.md#problems) read the baseline as `ascribe check` does: the build's summary line and its JSON count what it holds back, and so do the [report](../glossary.md#report)'s `problems` section and its JSON, as `baselined`, a measure of the backlog the project has put off. A baseline that can't be read stops them as it stops `ascribe check`: the build, and a report with `problems` or `inventory`. [The editor](#in-the-editor) and [the agents' tools](#for-agents) read it too.
 
 `--no-baseline`, on `ascribe check`, `ascribe build`, and `ascribe report`, reports everything, as if there were no baseline, and doesn't read the file.
 
