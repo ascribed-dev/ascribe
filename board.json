@@ -6323,7 +6323,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDbCrY",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "OpenAPI: @operation's link in the editor, as a link to an operation is"
     },
     {
@@ -6341,7 +6341,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Report: name the links llms-txt-links-resolve found, and don't blame Ascribe for a fetch error"
     },
     {
@@ -6369,7 +6369,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDegos",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Keep permalinks' records in ascribe.addresses, one place for where published things went"
     },
     {
@@ -6383,7 +6383,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDegsM",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Report: the builds section prints \"not ;\" and \"site and site@3.4 publishes it\""
     },
     {
@@ -6401,7 +6401,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "versions retire: record the line's addresses in ascribe.addresses, so the build writes their redirects"
     },
     {
@@ -6432,7 +6432,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Report a build that filters for a version [releases] doesn't have, and bring quill's self-managed-3.3 build up to date"
     },
     {
@@ -6446,7 +6446,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDegzg",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Don't report summary-missing in projects that don't ship embedded help"
     },
     {
@@ -6474,7 +6474,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDeg3M",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Check: print a diagnostic's help once per run in text output"
     },
     {
@@ -6491,7 +6491,7 @@
         "bug"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The `@intended` example in SPEC §4.9 and the directives page names a check that doesn't exist"
     },
     {
@@ -6519,7 +6519,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDeg58",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Build: print the check's summary line, not every diagnostic, and one line per build"
     },
     {
@@ -6536,7 +6536,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Say in the spec that it's a draft until 1.0"
     },
     {
@@ -6564,7 +6564,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDeg9U",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Group ascribe --help's commands by task, and shorten their descriptions"
     },
     {
@@ -6578,7 +6578,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehAY",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "init and check: point a new project at its first page"
     },
     {
@@ -6595,7 +6595,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "ascribe model: a section for every table of ascribe.toml, apis among them"
     },
     {
@@ -6626,7 +6626,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehDY",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: bring the docs index, command reference, and Files Ascribe writes up to date, and test them"
     },
     {
@@ -6643,7 +6643,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "MCP: add ascribe_rename, and name the tools after their commands"
     },
     {
@@ -6657,7 +6657,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehG0",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Editor: This page says things twice, and splits its warnings between About and Health"
     },
     {
@@ -6705,7 +6705,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehJM",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Editor: the Project view's Health shows only the counts that need doing"
     },
     {
@@ -6722,7 +6722,7 @@
         "bug"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: fix what redirects.md says a retired address gets, list ascribe.addresses in project files, and use it on our own docs"
     },
     {
@@ -6736,7 +6736,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehMU",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Review preview: hide the build's raw settings, and give a detached thread one label"
     },
     {
@@ -6767,7 +6767,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehO8",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Changelog: one line per entry, with the detail on the page it links"
     },
     {
@@ -6798,7 +6798,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehSA",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: lead the editor's sidebar page with what each view shows, and move the update rules after it"
     },
     {
@@ -6843,7 +6843,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehXE",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Diff: say a change once when it's the same in every build"
     },
     {
@@ -6860,7 +6860,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "`ascribe build` and `ascribe report` don't read `ascribe.baseline`"
     },
     {
@@ -6930,6 +6930,20 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "Call an API reference's address template something other than \"template\""
+    },
+    {
+      "content": {
+        "body": "Today, seeing a rendered page needs the VS Code extension, or an Astro project with `@ascribed/astro`. The command alone can't show you one, though the landing page leads with \"a page, and what readers see\".\n\nThe compiler already writes a whole site: `ascribe versions archive` renders every page with `render_site_html`, a sidebar, a search box, the element library's stylesheet (`crates/ascribe-emit/src/archive/mod.rs`), and a print stylesheet, all working from disk. That renderer is used only to keep a copy of an old release line.\n\n## Done looks like\n\n- `ascribe preview [--build <NAME>]` writes the build's pages with the archive's renderer to a folder under `.ascribe/`, serves it on localhost, prints the address, and rebuilds when a page or `ascribe.toml` changes.\n- It works in a fresh project made by `ascribe init` with one page, with no Node, editor, or Astro.\n- Problems are printed as `ascribe check` prints them, and a page with errors still renders where it can.\n- Getting started shows a rendered page with `ascribe preview` before the Astro step, and the command reference lists it.\n- The archive keeps its own command and output; both share one renderer. Whatever #950 renames `versions archive` to, the two names don't collide.\n\nNot in scope: replacing Astro as the published site.\n\nFrom the product designer review: [Ascribe product design review](https://claude.ai/artifact/Ud4DayYM9iLRFkXNCC1gsq), finding 2.",
+        "number": 981,
+        "repository": "ascribed-dev/ascribe",
+        "title": "ascribe preview: see the docs as a site without VS Code or Astro",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/981"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDlB9s",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "ascribe preview: see the docs as a site without VS Code or Astro"
     }
   ]
 }
