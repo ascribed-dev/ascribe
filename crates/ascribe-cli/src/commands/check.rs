@@ -1,6 +1,7 @@
 //! `ascribe check`: report every file-level and page-level problem, without
 //! building; with paths, only what counts for them.
 
+use std::collections::HashSet;
 use std::io::{self, Read, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -648,6 +649,15 @@ fn with_prose(
     Ok(about_vale)
 }
 
+/// How many files the problems reported are in.
+fn with_problems(reported: &[Reported]) -> usize {
+    let files: HashSet<_> = reported
+        .iter()
+        .map(|r| r.diagnostic.location.file)
+        .collect();
+    files.len()
+}
+
 /// Writes what a check found in `args.format`, as `ascribe check` does.
 ///
 /// # Errors
@@ -690,7 +700,8 @@ pub fn write(
             *counts,
             checked,
             &covered,
-            files_reported.unwrap_or(checked),
+            files_reported,
+            with_problems(reported),
             codes,
         ) + &text::acknowledged(acknowledged.len())
             + &text::baselined(*baselined)
@@ -1102,12 +1113,12 @@ mod tests {
         let reported = reported();
         let counts = Counts::of_reported(&reported);
         assert_eq!(
-            text::check_summary(counts, 1, &text::Covered::Every, 1, &[]),
-            "checked 1 file for every build, reported on 1: 0 errors, 1 warning, 1 advice"
+            text::check_summary(counts, 1, &text::Covered::Every, None, 1, &[]),
+            "checked 1 file for every build, 1 with problems: 0 errors, 1 warning, 1 advice"
         );
         assert_eq!(
-            text::check_summary(Counts::default(), 1, &text::Covered::Every, 1, &[]),
-            "checked 1 file for every build, reported on 1: 0 errors, 0 warnings, 0 advice",
+            text::check_summary(Counts::default(), 1, &text::Covered::Every, None, 0, &[]),
+            "checked 1 file for every build, 0 with problems: 0 errors, 0 warnings, 0 advice",
             "the summary counts advice even when there is none"
         );
         let builds = ["cloud".to_owned(), "site".to_owned(), "v2".to_owned()];
@@ -1116,21 +1127,29 @@ mod tests {
                 Counts::default(),
                 3,
                 &text::Covered::Named(&builds[..n]),
-                1,
+                Some(1),
+                0,
                 &[],
             )
         };
         assert_eq!(
             named(1),
-            "checked 3 files for build `cloud`, reported on 1: 0 errors, 0 warnings, 0 advice"
+            "checked 3 files for build `cloud`, reported on 1 file in the paths, 0 with problems: 0 errors, 0 warnings, 0 advice"
         );
         assert_eq!(
             named(3),
-            "checked 3 files for builds `cloud`, `site` and `v2`, reported on 1: 0 errors, 0 warnings, 0 advice"
+            "checked 3 files for builds `cloud`, `site` and `v2`, reported on 1 file in the paths, 0 with problems: 0 errors, 0 warnings, 0 advice"
         );
         assert_eq!(
-            text::check_summary(Counts::default(), 3, &text::Covered::Editor("site"), 1, &[]),
-            "checked 3 files with the page-level checks of build `site` only, reported on 1: 0 errors, 0 warnings, 0 advice"
+            text::check_summary(
+                Counts::default(),
+                3,
+                &text::Covered::Editor("site"),
+                None,
+                0,
+                &[]
+            ),
+            "checked 3 files with the page-level checks of build `site` only, 0 with problems: 0 errors, 0 warnings, 0 advice"
         );
 
         let order = concise::order(&files, &reported);

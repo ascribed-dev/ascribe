@@ -60,7 +60,7 @@ It lists at most 50 problems. When there are more, the line before the summary s
 
 ### Checking one rule at a time
 
-`--code` lets an agent, or a person, fix one rule across the project instead of working file by file. The summary line names the codes (``reported on 12 for code `ASC037` ``), and the commands a report names keep them: the concise list's `and N more:`, and the JSON's `next_command`.
+`--code` lets an agent, or a person, fix one rule across the project instead of working file by file. The summary line names the codes (``3 with problems for code `ASC037` ``), and the commands a report names keep them: the concise list's `and N more:`, and the JSON's `next_command`.
 
 ```sh
 npx ascribe check --code link-id-missing --format concise
@@ -88,7 +88,7 @@ In VS Code, **Source Action… → Apply the safe fixes in this page** applies a
 
 ### Text output
 
-Each diagnostic shows its code, message, and source, and its next step as `Help:`: the title of its first fix, or, with none, the fix advice the JSON gives as `help`. Help that's the same for every diagnostic with a code is printed in full once; later diagnostics with that code point back to it, as `Help: as for ASC252 above (ascribe explain ASC252)`. The output ends with a summary in one form: the files checked, the builds (`for every build`, or with `--build`, `` for build `cloud` ``), the files reported on, which with no paths are all of them, and the counts of errors, warnings, and advice (`checked 12 files for every build, reported on 1: 1 error, 0 warnings, 0 advice`):
+Each diagnostic shows its code, message, and source, and its next step as `Help:`: the title of its first fix, or, with none, the fix advice the JSON gives as `help`. Help that's the same for every diagnostic with a code is printed in full once; later diagnostics with that code point back to it, as `Help: as for ASC252 above (ascribe explain ASC252)`. The output ends with a summary in one form: the files checked, the builds (`for every build`, or with `--build`, `` for build `cloud` ``), with paths, how many files they name (`reported on 2 files in the paths`), how many files have a problem reported, and the counts of errors, warnings, and advice (`checked 12 files for every build, 1 with problems: 1 error, 0 warnings, 0 advice`). The JSON's `files_reported` counts the files reported on, all of them when no paths are given:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check.txt
 

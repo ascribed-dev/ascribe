@@ -531,9 +531,9 @@ Warning · file level · next step: outside · configurable in `[checks]` · [SP
 
 **Message:** the addresses weren't compared with the base: \{reason}
 
-**Fix:** Give the check a base it can read. In CI, fetch the history (`fetch-depth: 0` on actions/checkout), and pass the branch a pull request targets, `--base origin/$GITHUB_BASE_REF`, or, on a push, the commit before it, `--base ${{ github.event.before }} --base-exact`. A base with no project, as a migration's first pull request has, published nothing, so there's nothing to compare: it's reported, as advice, so a check that compared nothing never passes silently. See [The base](../publishing/redirects.md#the-base).
+**Fix:** Give the check a base it can read. In CI, fetch the history (`fetch-depth: 0` on actions/checkout), and pass the branch a pull request targets, `--base origin/$GITHUB_BASE_REF`, or, on a push, the commit before it, `--base ${{ github.event.before }} --base-exact`. A base with no project, as a migration's first pull request has, published nothing, so there's nothing to compare: it's reported, as advice, so a check that compared nothing never passes silently. See [The base](../publishing/redirects.md#addresses-base).
 
-**Read more:** [The base](../publishing/redirects.md#the-base) in the guide to keeping addresses.
+**Read more:** [The base](../publishing/redirects.md#addresses-base) in the guide to keeping addresses.
 
 ### ASC282 `api-operation-unreferenced`
 @id {permalink=true}: ASC282

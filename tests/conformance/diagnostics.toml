@@ -1514,7 +1514,7 @@ spec = "4.4"
 reference = "writing/directives.md#availability-specs"
 row = "`@available` | Spec that doesn't parse, in a directive or in `available` frontmatter"
 message = "\"{spec}\" isn't a valid availability spec: {detail}"
-fix = "Fix the availability spec. Its syntax is in the [directive reference](writing/directives.md#availability-specs)."
+fix = "Fix the availability spec. Its syntax is in the [directive reference](https://ascribed-dev.com/go/availability-specs/)."
 example.wrong = '''
 ---
 title: Install Quill
@@ -2031,7 +2031,7 @@ reference = "content-model/content.md#9-featureskey"
 group = "names"
 when = "A feature's `available` isn't a valid availability spec"
 message = "feature `{key}`: \"{spec}\" isn't a valid availability spec: {detail}"
-fix = "Fix the feature's `available` spec. Its syntax is in the [directive reference](writing/directives.md#availability-specs)."
+fix = "Fix the feature's `available` spec. Its syntax is in the [directive reference](https://ascribed-dev.com/go/availability-specs/)."
 
 [[diagnostic]]
 code = "ASC093"
@@ -2765,7 +2765,7 @@ reference = "content-model/checks.md#19-checks"
 group = "checks"
 when = "`[checks]` sets the level of a check about whether the project is valid"
 message = "`{check}` can't be set in [checks]: it reports whether the project is valid, which a project can't lower or turn off"
-fix = "Remove the check from `[checks]`. Only checks about the content's quality, which the [diagnostics reference](checks/diagnostics.md) marks as configurable, can be set there; a diagnostic about whether the project is valid is always reported at its own severity."
+fix = "Remove the check from `[checks]`. Only checks about the content's quality, which the [diagnostics reference](https://ascribed-dev.com/go/diagnostics/) marks as configurable, can be set there; a diagnostic about whether the project is valid is always reported at its own severity."
 
 [[diagnostic]]
 code = "ASC143"
@@ -2782,7 +2782,7 @@ messages.suggestion = "`{check}` isn't a check; did you mean `{suggestion}`?"
 messages.missing = "an acknowledgement names the check it's for: add `{example}`"
 messages.not-review = "`{check}` can't be acknowledged: only a check whose next step is review reports something that may be intended, so fix the problem instead"
 messages.place = "`{check}` is reported at {place}, so it's acknowledged {written}"
-fix = "Name the check whose problem is intended, by its name in the [diagnostics reference](checks/diagnostics.md): a check whose next step is review, acknowledged where it reports its problems. A page's problem goes in the page's `intended` frontmatter, a block's with `@intended` above the block (a heading's under the heading), and a content model entry's in `[[intended]]` in `ascribe.toml`. Any other problem isn't acknowledged; fix it, or set its level in `[checks]` if it's configurable."
+fix = "Name the check whose problem is intended, by its name in the [diagnostics reference](https://ascribed-dev.com/go/diagnostics/): a check whose next step is review, acknowledged where it reports its problems. A page's problem goes in the page's `intended` frontmatter, a block's with `@intended` above the block (a heading's under the heading), and a content model entry's in `[[intended]]` in `ascribe.toml`. Any other problem isn't acknowledged; fix it, or set its level in `[checks]` if it's configurable."
 
 [[diagnostic]]
 code = "ASC144"
@@ -2828,7 +2828,7 @@ message = "`{check}` isn't a check"
 messages.suggestion = "`{check}` isn't a check; did you mean `{suggestion}`?"
 messages.not-review = "`{check}` can't be acknowledged: only a check whose next step is review reports something that may be intended, so fix the problem instead"
 messages.place = "`{check}` is reported at {place}, so it's acknowledged {written}, not in ascribe.toml"
-fix = "Name a check whose next step is review and whose problems are about a phrase, feature, glossary term, or image, by its name in the [diagnostics reference](checks/diagnostics.md). A page's or a block's problem is acknowledged in the page itself."
+fix = "Name a check whose next step is review and whose problems are about a phrase, feature, glossary term, or image, by its name in the [diagnostics reference](https://ascribed-dev.com/go/diagnostics/). A page's or a block's problem is acknowledged in the page itself."
 
 [[diagnostic]]
 code = "ASC147"
@@ -2962,7 +2962,7 @@ reference = "writing/inline.md#links"
 when = "No other page the build publishes links to the page or includes it. Index pages (`index.md`), and a build's only page, aren't reported. The message says what reaches the page: only the sidebar, or, for a page that's `unlisted`, nothing but its address"
 message = "no other page links to this page or includes it, so readers reach it only through the sidebar"
 messages.unlisted = "no other page links to this page or includes it, and it's `unlisted`, so it's left out of the sidebar too and nothing reaches it but its address"
-fix = "Link to the page from a page about its topic, or include it in one, so a reader of that page finds it. A page in the navigation is still in the sidebar, so this is a hint: acknowledge one that needs no link in its `intended` frontmatter, or turn the check off in [`[checks]`](content-model/checks.md#19-checks) (`page-orphan = \"off\"`). A page that's `listing: unlisted` is in no sidebar, so only someone given its address reaches it: link to it, or take `listing: unlisted` away to put it in the sidebar."
+fix = "Link to the page from a page about its topic, or include it in one, so a reader of that page finds it. A page in the navigation is still in the sidebar, so this is a hint: acknowledge one that needs no link in its `intended` frontmatter, or turn the check off in [`[checks]`](https://ascribed-dev.com/go/19-checks/) (`page-orphan = \"off\"`). A page that's `listing: unlisted` is in no sidebar, so only someone given its address reaches it: link to it, or take `listing: unlisted` away to put it in the sidebar."
 
 [[diagnostic]]
 code = "ASC155"
@@ -3026,7 +3026,7 @@ spec = "5.4"
 reference = "content-model/content.md#122-terms"
 when = "The term, and each of its aliases, appears in no other page's prose, and no link names its heading"
 message = "the glossary term `{term}` appears in no other file's prose, and no link names its heading, so it's never linked"
-fix = "Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = \"marked\"` is used only where a link names its heading: link the occurrences that mean it, as `[build](glossary.md#build)`. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it with [`@intended`](writing/directives.md#intended) at the top of the term's section, under its heading."
+fix = "Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = \"marked\"` is used only where a link names its heading: link the occurrences that mean it, as `[build](glossary.md#build)`. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it with [`@intended`](https://ascribed-dev.com/go/intended/) at the top of the term's section, under its heading."
 
 [[diagnostic]]
 code = "ASC159"
@@ -3042,7 +3042,7 @@ spec = "5.3"
 reference = "writing/inline.md#images"
 when = "An image file under the content root that no file shows or links to: no Markdown image or link, no `src`, `srcset`, `href`, or `poster` in raw HTML, and no frontmatter string names it"
 message = "no file shows or links to `{path}`"
-fix = "Delete the image when nothing needs it. A frontmatter string counts when it names the image from the file or from the content root, as `cover: img/card.png` does. An image used only by the site's own code is reported too, since Ascribe doesn't read it: turn the check off in [`[checks]`](content-model/checks.md#19-checks) when your site uses images that way."
+fix = "Delete the image when nothing needs it. A frontmatter string counts when it names the image from the file or from the content root, as `cover: img/card.png` does. An image used only by the site's own code is reported too, since Ascribe doesn't read it: turn the check off in [`[checks]`](https://ascribed-dev.com/go/19-checks/) when your site uses images that way."
 
 [[diagnostic]]
 code = "ASC160"
@@ -3160,7 +3160,7 @@ configurable = true
 when = "The project has `[checks.vale]`, and Vale reports an alert about the prose of a page or a fragment, or of a phrase's text. Reported where the alert is in the source, or at the phrase"
 message = "{rule}: {message}"
 messages.phrase = "{rule}: {message} (in the text of phrase `{key}`)"
-fix = "Vale reported this about the prose, under the rule the message starts with. Change the text, or take the replacement the editor offers when the rule gives one; for text from a phrase, change the phrase's value in `ascribe.toml`. A rule that's wrong for the project is turned off in Vale's configuration, or, for the `quiet` preset, in `[checks.vale] off`; one place is quieted with Vale's own comments (`<!-- vale Rule = NO -->`). See [Prose, through Vale](checks/vale.md)."
+fix = "Vale reported this about the prose, under the rule the message starts with. Change the text, or take the replacement the editor offers when the rule gives one; for text from a phrase, change the phrase's value in `ascribe.toml`. A rule that's wrong for the project is turned off in Vale's configuration, or, for the `quiet` preset, in `[checks.vale] off`; one place is quieted with Vale's own comments (`<!-- vale Rule = NO -->`). See [Prose, through Vale](https://ascribed-dev.com/go/vale/)."
 
 [[diagnostic]]
 code = "ASC166"
@@ -3250,7 +3250,7 @@ reference = "content-model/output.md#consumer"
 when = "`ascribe report delivery`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation"
 message = "the site fails the delivery spec's `{check}` check: {result}. {setting}"
 messages.warning = "the site passes the delivery spec's `{check}` check with a warning: {result}. {setting}"
-fix = "Change the setting the message names where the site is hosted; no page needs editing. [Serve the Markdown versions](astro/serve-markdown.md) says what to set on the hosts it names. Only `ascribe report delivery` checks a published site."
+fix = "Change the setting the message names where the site is hosted; no page needs editing. [Serve the Markdown versions](https://ascribed-dev.com/go/serve-markdown/) says what to set on the hosts it names. Only `ascribe report delivery` checks a published site."
 
 [[diagnostic]]
 code = "ASC171"
@@ -3284,7 +3284,7 @@ spec = "4.4"
 reference = "content-model/content.md#71-releasestarget"
 when = "a feature's availability names a version for every target, each target lists its lines in `[releases]`, and no version is later than its target's current line"
 message = "feature `{key}` names releases up to {version}, and the current line of `{target}` is {current}, so what it marks has shipped"
-fix = "When the feature stood for what a release would add, write the shipped release's spec at the content that shipped in it (`@available: ascribe 0.2.0`), and mark what the next release adds `<target> planned` instead of keeping a feature for it. When it's a history worth keeping by name, acknowledge it in [`[[intended]]`](content-model/checks.md#intended-acknowledgements). After each release, move its line from `planned` to `live` in [`[releases.<target>]`](content-model/content.md#71-releasestarget)."
+fix = "When the feature stood for what a release would add, write the shipped release's spec at the content that shipped in it (`@available: ascribe 0.2.0`), and mark what the next release adds `<target> planned` instead of keeping a feature for it. When it's a history worth keeping by name, acknowledge it in [`[[intended]]`](https://ascribed-dev.com/go/intended-acknowledgements/). After each release, move its line from `planned` to `live` in [`[releases.<target>]`](https://ascribed-dev.com/go/71-releasestarget/)."
 
 [[diagnostic]]
 code = "ASC173"
@@ -4456,7 +4456,7 @@ spec = "none"
 reference = "content-model/checks.md#19-checks"
 when = "`ascribe.baseline` has an entry that no problem of the project matches any more: the problem was fixed, or the text it was about changed. Reported at the entry's line, when `ascribe check` reads the baseline and checks the whole project for every build"
 message = "ascribe.baseline holds back `{check}` in `{file}`, and nothing there matches it any more; run `ascribe baseline prune`"
-fix = "Run `ascribe baseline prune`, which removes every entry that matches nothing, and commit ascribe.baseline. Left in the file, the entry would hold back a later problem of the same check whose text happens to be the same. See [The baseline](checks/baseline.md)."
+fix = "Run `ascribe baseline prune`, which removes every entry that matches nothing, and commit ascribe.baseline. Left in the file, the entry would hold back a later problem of the same check whose text happens to be the same. See [The baseline](https://ascribed-dev.com/go/baseline/)."
 
 [[diagnostic]]
 code = "ASC244"
@@ -4758,7 +4758,7 @@ row = "Addresses file | A page's address, or its Markdown version's, that the ba
 message = "{source} was published at {addresses}, and nothing publishes them now{builds}"
 messages.one = "{source} was published at {addresses}, and nothing publishes it now{builds}"
 messages.settings = "{changes}, so {moved}{builds}"
-fix = "Decide what a reader who follows an old link should get. When the content is somewhere else now, forward it: `ascribe addresses move <old> <new>` records where it went, and the build writes the redirect. When it's gone on purpose, retire it: `ascribe addresses retire <old> --reason \"…\"`. When it was deleted by mistake, restore the file. Moving a page with `ascribe rename`, or in the editor, records the move for you. When a routing setting moved them, as `base-path`, `permalink-path`, `agents`, or a build's name, `ascribe check --fix` records the old value in `[former]`, and the build forwards every address it moved. The base is the default branch, or `--base`; see [Keep the addresses you've published](publishing/redirects.md)."
+fix = "Decide what a reader who follows an old link should get. When the content is somewhere else now, forward it: `ascribe addresses move <old> <new>` records where it went, and the build writes the redirect. When it's gone on purpose, retire it: `ascribe addresses retire <old> --reason \"…\"`. When it was deleted by mistake, restore the file. Moving a page with `ascribe rename`, or in the editor, records the move for you. When a routing setting moved them, as `base-path`, `permalink-path`, `agents`, or a build's name, `ascribe check --fix` records the old value in `[former]`, and the build forwards every address it moved. The base is the default branch, or `--base`; see [Keep the addresses you've published](https://ascribed-dev.com/go/redirects/)."
 
 [[diagnostic]]
 code = "ASC256"
@@ -4783,11 +4783,11 @@ evidence = []
 configurable = true
 area = "project"
 spec = "7.10"
-reference = "publishing/redirects.md#the-base"
+reference = "publishing/redirects.md#addresses-base"
 when = "The project has `ascribe.addresses`, and `ascribe check` can't read the base it compares the addresses with: there's no git repository, or the base isn't there, as in a shallow clone. A base with no project published nothing, so that's advice, not a warning. Reported once, at `ascribe.addresses`"
 message = "the addresses weren't compared with the base: {reason}"
 messages.no-project = "the addresses weren't compared with the base: {base} has no Ascribe project here, so it published nothing to keep"
-fix = "Give the check a base it can read. In CI, fetch the history (`fetch-depth: 0` on actions/checkout), and pass the branch a pull request targets, `--base origin/$GITHUB_BASE_REF`, or, on a push, the commit before it, `--base ${{ github.event.before }} --base-exact`. A base with no project, as a migration's first pull request has, published nothing, so there's nothing to compare: it's reported, as advice, so a check that compared nothing never passes silently. See [The base](publishing/redirects.md#the-base)."
+fix = "Give the check a base it can read. In CI, fetch the history (`fetch-depth: 0` on actions/checkout), and pass the branch a pull request targets, `--base origin/$GITHUB_BASE_REF`, or, on a push, the commit before it, `--base ${{ github.event.before }} --base-exact`. A base with no project, as a migration's first pull request has, published nothing, so there's nothing to compare: it's reported, as advice, so a check that compared nothing never passes silently. See [The base](https://ascribed-dev.com/go/addresses-base/)."
 
 [[diagnostic]]
 code = "ASC258"
@@ -5138,7 +5138,7 @@ reference = "content-model/checks.md#23-apisname"
 when = "An operation of a declared spec, not marked `deprecated`, that no link names, by its id or by its method and path"
 message = "no page links to `{operation}` ({method} {route}) in {path}"
 messages.no-id = "no page links to {method} {route} in {path}, which has no `operationId`"
-fix = "Link to the operation from the guide that covers it, by its `operationId`, `openapi.yaml#getUser`, or by its method and path when it has none, `openapi.yaml#delete/users/{id}`. An operation a guide doesn't need to cover can be marked `deprecated` in the spec when it's on its way out, which leaves it out; for an API whose reference is enough on its own, turn the check off in [`[checks]`](content-model/checks.md#19-checks)."
+fix = "Link to the operation from the guide that covers it, by its `operationId`, `openapi.yaml#getUser`, or by its method and path when it has none, `openapi.yaml#delete/users/{id}`. An operation a guide doesn't need to cover can be marked `deprecated` in the spec when it's on its way out, which leaves it out; for an API whose reference is enough on its own, turn the check off in [`[checks]`](https://ascribed-dev.com/go/19-checks/)."
 
 [[diagnostic]]
 code = "ASC283"

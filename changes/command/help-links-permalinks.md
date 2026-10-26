@@ -1,0 +1,1 @@
+- **A diagnostic's `help` links to the docs' permalinks.** The JSON of `ascribe check` and `ascribe explain`, and the editor's, has addresses an agent can follow, such as `https://ascribed-dev.com/go/19-checks/`, in place of links relative to the docs. See [`ascribe check`](docs/content/checks/check.md).

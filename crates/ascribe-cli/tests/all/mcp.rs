@@ -1259,6 +1259,32 @@ fn the_new_page_prompt_says_where_the_page_goes_and_what_it_needs() {
         "{text}"
     );
     assert!(text.contains("\naudience:\n---\n"), "{text}");
+    assert!(
+        text.contains("and fill in each empty field, the type's required ones:"),
+        "{text}"
+    );
+
+    // A type with no required field but its title has no empty field to
+    // fill in, so the prompt doesn't ask for one.
+    let text = stdout(
+        repo.path(),
+        &[
+            "agents",
+            "prompt",
+            "new-page",
+            "--arg",
+            "type=page",
+            "--arg",
+            "title=Rotate your keys",
+            "--arg",
+            "path=site",
+        ],
+    );
+    assert!(
+        text.contains("Start the file with this frontmatter:\n"),
+        "{text}"
+    );
+    assert!(!text.contains("empty field"), "{text}");
 }
 
 #[test]

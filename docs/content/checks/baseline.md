@@ -2,6 +2,7 @@
 type: reference
 title: The baseline
 description: "Put a project's existing advice off for now with `ascribe.baseline`, so `ascribe check` reports only what's new: the commands that keep it, and its syntax."
+permalink: baseline
 ---
 
 A project that turns on the [content checks](diagnostics/content-checks.md) can meet thousands of advice at once. The baseline puts them off for now: `ascribe baseline write` lists every advice the project has in `ascribe.baseline`, beside `ascribe.toml`, and from then on `ascribe check` holds those back, counts them, and reports only the advice that's new. The team fixes the backlog at its own pace, and `ascribe baseline prune` takes each fixed one out of the file.
@@ -10,7 +11,7 @@ A project that turns on the [content checks](diagnostics/content-checks.md) can 
 $ npx ascribe baseline write
 wrote ascribe.baseline: 3412 problems in 1906 files, 3412 added; commit it with the docs
 $ npx ascribe check
-checked 2061 files for every build, reported on 2061: 0 errors, 0 warnings, 2 advice, 3412 in the baseline
+checked 2061 files for every build, 2 with problems: 0 errors, 0 warnings, 2 advice, 3412 in the baseline
 ```
 
 Commit `ascribe.baseline` with the docs: a reviewer sees in its diff what a change puts off, one line a problem.

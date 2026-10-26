@@ -165,21 +165,25 @@ fn explain_answers_by_code_or_name() {
 #[test]
 fn explain_text_writes_links_for_a_terminal() {
     let dir = tempfile::tempdir().unwrap();
-    // The JSON keeps the registry's Markdown, for a tool to render.
+    // The JSON keeps the registry's Markdown, for a tool to render, with
+    // links an agent can follow.
     let value = json(dir.path(), &["explain", "page-orphan"], 0);
     assert!(
         value["fix"]
             .as_str()
             .unwrap()
-            .contains("[`[checks]`](content-model/checks.md#19-checks)"),
+            .contains("[`[checks]`](https://ascribed-dev.com/go/19-checks/)"),
         "{value}"
     );
     let text = stdout(&run(dir.path(), &["explain", "page-orphan"], 0));
     assert!(
-        text.contains("turn the check off in `[checks]` (`page-orphan = \"off\"`)"),
+        text.contains(
+            "turn the check off in `[checks]` (https://ascribed-dev.com/go/19-checks/) \
+             (`page-orphan = \"off\"`)"
+        ),
         "{text}"
     );
-    assert!(!text.contains("checks.md#"), "{text}");
+    assert!(!text.contains("]("), "{text}");
 }
 
 #[test]

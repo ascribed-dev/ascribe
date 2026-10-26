@@ -248,7 +248,8 @@ pub(crate) struct Entry {
     /// Whether it's in content that no build publishes.
     unpublished: bool,
     /// How to fix it, in general: the diagnostics reference's advice for its
-    /// code.
+    /// code, in Markdown, whose links are the docs' permalinks, such as
+    /// `https://ascribed-dev.com/go/19-checks/`.
     help: String,
     /// The address of its entry in the diagnostics reference: the docs'
     /// permalink for its code, such as `https://ascribed-dev.com/go/ASC036/`,
