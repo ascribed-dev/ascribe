@@ -172,3 +172,36 @@ git = "https://github.com/acme/api.git"
         found[0]
     );
 }
+
+/// A path that repeats the source's folder, or names a file the source has
+/// elsewhere, is offered the address of the file, as a fix that keeps the
+/// region.
+#[test]
+fn a_file_elsewhere_in_the_source_is_offered() {
+    let files = [APP, ("code/lib/util.py", "x = 1\n")];
+    let page = "@snippet: code:code/app.py#setup\n\
+                @snippet: code:util.py\n\
+                @snippet: code:gone.py\n";
+    let (project, found) = check(page, &files);
+    let text = &project.sources()[0].text;
+    let fixed = |d: &Diagnostic| {
+        d.fixes
+            .first()
+            .map(|f| ascribe_core::apply_edits(text, &f.edits).expect("edits apply"))
+    };
+    assert_eq!(found.len(), 3, "{found:#?}");
+    assert_eq!(
+        found[0].message,
+        "`code/app.py` doesn't exist in source `code`: the path is relative to the source's \
+         folder, `code`, so it doesn't repeat it; the file is `code:app.py`"
+    );
+    let first = fixed(&found[0]).expect("a fix");
+    assert!(first.contains("@snippet: code:app.py#setup\n"), "{first}");
+    assert_eq!(
+        found[1].message,
+        "`util.py` doesn't exist in source `code`; did you mean `code:lib/util.py`?"
+    );
+    let second = fixed(&found[1]).expect("a fix");
+    assert!(second.contains("@snippet: code:lib/util.py\n"), "{second}");
+    assert!(found[2].fixes.is_empty());
+}

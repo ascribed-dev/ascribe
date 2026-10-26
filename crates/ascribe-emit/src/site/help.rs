@@ -9,7 +9,7 @@
 
 use std::collections::BTreeMap;
 
-use ascribe_model::{ContentModel, TrailingSlash};
+use ascribe_model::{ContentModel, RecordedPermalinks, TrailingSlash};
 use ascribe_resolve::{PageSection, Permalink, ResolvedBlock, ResolvedBuild, ResolvedKind, select};
 use serde::Serialize;
 use serde::ser::{SerializeMap, Serializer};
@@ -69,10 +69,13 @@ pub enum Help {
     Entry(HelpEntry),
     /// A retired permalink, which has no entry.
     Retired {
-        /// Why it was retired, as `ascribe.toml` writes it.
+        /// Why it was retired, as `ascribe.addresses` writes it.
         reason: String,
-        /// Where its address leads now, as `ascribe.toml` writes it.
-        to: Option<String>,
+    },
+    /// A permalink moved to a page, which has no entry.
+    Moved {
+        /// Where its address leads now, as `ascribe.addresses` writes it.
+        to: String,
     },
     /// No name the build answers to.
     Missing {
@@ -101,12 +104,14 @@ pub fn help_header<'a>(cx: &EmitContext<'a>) -> (u32, &'a str, Option<&'a str>) 
 }
 
 /// What the build's `help.json` has under `name`: the entry the file
-/// writes, the reason a retired permalink was retired, or the names it has.
+/// writes, the reason a retired permalink was retired, where a moved one
+/// leads, or the names it has.
 pub fn help(cx: &EmitContext<'_>, build: &ResolvedBuild, name: &str) -> Help {
     let model = cx.model;
     let plain = PlainEmitter::new(model);
     let found = build.permalinks();
-    let named = named(model, build, &found);
+    let recorded = cx.project().recorded_permalinks();
+    let named = named(&recorded, build, &found);
     let permalink = match named.get(name) {
         Some(
             Named::Declared(permalink)
@@ -114,13 +119,14 @@ pub fn help(cx: &EmitContext<'_>, build: &ResolvedBuild, name: &str) -> Help {
                 target: permalink, ..
             },
         ) => Some(*permalink),
-        Some(Named::Retired { reason, .. } | Named::Removed { reason }) => {
+        Some(Named::Removed { reason }) => {
             return Help::Retired {
                 reason: (*reason).to_owned(),
-                to: model
-                    .permalinks
-                    .retired(name)
-                    .and_then(|retired| retired.to.clone()),
+            };
+        }
+        Some(Named::Moved { written, .. }) => {
+            return Help::Moved {
+                to: (*written).to_owned(),
             };
         }
         None => None,
@@ -138,20 +144,22 @@ pub fn help(cx: &EmitContext<'_>, build: &ResolvedBuild, name: &str) -> Help {
 
 /// The entries, by name, for each name the build answers to ([`named`]):
 /// a permalink's own, and an alias's, which is the entry of the permalink it
-/// ends at under its own name. A retired permalink has none.
+/// ends at under its own name. A retired permalink, and one moved to a
+/// page, have none.
 pub(super) fn entries<'a>(
     cx: &EmitContext<'a>,
+    recorded: &'a RecordedPermalinks,
     build: &ResolvedBuild,
     found: &'a [Permalink],
 ) -> BTreeMap<&'a str, HelpEntry> {
     let model = cx.model;
     let plain = PlainEmitter::new(model);
     let mut help = BTreeMap::new();
-    for (name, named) in named(model, build, found) {
+    for (name, named) in named(recorded, build, found) {
         let permalink = match named {
             Named::Declared(permalink) => permalink,
             Named::Alias { target, .. } => target,
-            Named::Retired { .. } | Named::Removed { .. } => continue,
+            Named::Moved { .. } | Named::Removed { .. } => continue,
         };
         if let Some(entry) = entry(cx, &plain, build, permalink, name) {
             help.insert(name, entry);

@@ -1022,16 +1022,6 @@
         "null"
       ]
     },
-    "permalinks": {
-      "description": "`[permalinks]`: each key, with its value in effect.",
-      "items": {
-        "$ref": "#/$defs/ModelSetting"
-      },
-      "type": [
-        "array",
-        "null"
-      ]
-    },
     "phrases": {
       "description": "Phrases, in declaration order.",
       "items": {

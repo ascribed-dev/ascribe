@@ -389,28 +389,8 @@ fn a_list_of_permalinks_thats_behind_is_brought_up_to_date_by_a_quick_fix() {
     assert!(client.codes(&keys).is_empty(), "{:?}", client.codes(&keys));
 }
 
-/// `text` with an LSP edit applied, for ASCII text.
-fn apply(text: &str, edit: &Value) -> String {
-    let offset = |at: &Value| {
-        let line = at["line"].as_u64().expect("line") as usize;
-        let character = at["character"].as_u64().expect("character") as usize;
-        let start: usize = text.split_inclusive('\n').take(line).map(str::len).sum();
-        start + character
-    };
-    let (start, end) = (
-        offset(&edit["range"]["start"]),
-        offset(&edit["range"]["end"]),
-    );
-    format!(
-        "{}{}{}",
-        &text[..start],
-        edit["newText"].as_str().expect("text"),
-        &text[end..]
-    )
-}
-
 #[test]
-fn a_removed_permalink_is_reported_on_the_list_and_retired_by_a_quick_fix() {
+fn a_lost_permalink_is_reported_on_the_list_and_retired_by_a_quick_fix() {
     let header = "# Written by Ascribe. Don't edit it: run `ascribe permalinks sync`.\n";
     let f = Fixture::new(
         crate::support::MODEL,
@@ -430,8 +410,8 @@ fn a_removed_permalink_is_reported_on_the_list_and_retired_by_a_quick_fix() {
     let diagnostic = client
         .diagnostics(&list)
         .into_iter()
-        .find(|d| slug(d) == "permalink-removed")
-        .expect("permalink-removed, on the list");
+        .find(|d| slug(d) == "permalink-lost")
+        .expect("permalink-lost, on the list");
     assert_eq!(diagnostic.range.start.line, 4);
     let actions = client
         .request(
@@ -452,64 +432,64 @@ fn a_removed_permalink_is_reported_on_the_list_and_retired_by_a_quick_fix() {
         .expect("the quick fix");
     // It needs a person's sentence, so it isn't applied unasked.
     assert_eq!(retire["isPreferred"], false);
-    let model = uri(&f.path("ascribe.toml"));
-    let edits = retire["edit"]["changes"][model.as_str()]
+    // The project has no ascribe.addresses yet: the fix creates it.
+    let addresses = uri(&f.path("ascribe.addresses"));
+    let changes = retire["edit"]["documentChanges"]
         .as_array()
-        .expect("an edit to ascribe.toml");
-    assert_eq!(edits.len(), 1);
-    let text = apply(crate::support::MODEL, &edits[0]);
-    assert!(
-        text.ends_with(
-            "\n[permalinks.retired]\nrotate-keys = { reason = \"why this permalink was retired\" }\n"
-        ),
-        "{text}"
-    );
-    // And it opens ascribe.toml with the placeholder selected.
+        .expect("document changes");
+    assert_eq!(changes[0]["kind"], "create");
+    assert_eq!(changes[0]["uri"], addresses.as_str());
+    let text = changes[1]["edits"][0]["newText"]
+        .as_str()
+        .expect("the file's text")
+        .to_owned();
+    let entry = "\"go:rotate-keys\" = \"why this address was retired\"";
+    assert!(text.contains(&format!("[retired]\n{entry}\n")), "{text}");
+    // And it opens ascribe.addresses with the placeholder selected.
     let command = &retire["command"];
     assert_eq!(command["command"], "ascribe.openFile");
-    assert_eq!(command["arguments"][0], model.as_str());
+    assert_eq!(command["arguments"][0], addresses.as_str());
     let selection = &command["arguments"][1];
-    let line = text.lines().count() - 1;
-    let column = text
+    let (line, row) = text
         .lines()
-        .last()
-        .expect("a line")
-        .find("why")
-        .expect("the placeholder");
+        .enumerate()
+        .find(|(_, l)| *l == entry)
+        .expect("the entry");
+    let column = row.find("why").expect("the placeholder");
     assert_eq!(
         selection["start"],
         json!({ "line": line, "character": column })
     );
     assert_eq!(
         selection["end"],
-        json!({ "line": line, "character": column + "why this permalink was retired".len() })
+        json!({ "line": line, "character": column + "why this address was retired".len() })
     );
 
-    // Taken, the placeholder is an error until it's replaced, and the
-    // model with the reason written quiets the removal.
-    let model_path = f.path("ascribe.toml");
-    f.write("ascribe.toml", &text);
-    client.watched(&[(&model_path, lsp_types::FileChangeType::CHANGED)]);
+    // Taken, the placeholder quiets nothing: the file doesn't read until
+    // it's replaced. With the reason written, the permalink isn't lost.
+    let addresses_path = f.path("ascribe.addresses");
+    f.write("ascribe.addresses", &text);
+    client.watched(&[(&addresses_path, lsp_types::FileChangeType::CREATED)]);
     client.settle();
     assert!(
         client
-            .diagnostics(&model_path)
+            .codes(&list)
             .iter()
-            .any(|d| slug(d) == "model-permalinks"),
+            .any(|c| c.contains("permalink-lost")),
         "{:?}",
-        client.codes(&model_path)
+        client.codes(&list)
     );
     f.write(
-        "ascribe.toml",
-        &text.replace("why this permalink was retired", "Merged into Keys"),
+        "ascribe.addresses",
+        &text.replace("why this address was retired", "Merged into Keys"),
     );
-    client.watched(&[(&model_path, lsp_types::FileChangeType::CHANGED)]);
+    client.watched(&[(&addresses_path, lsp_types::FileChangeType::CHANGED)]);
     client.settle();
     assert!(client.codes(&list).is_empty(), "{:?}", client.codes(&list));
     // The list is behind on the retired name now, and the same quick fix as
     // for a declared name records it.
     let behind = client
-        .diagnostics(&model_path)
+        .diagnostics(&addresses_path)
         .into_iter()
         .find(|d| slug(d) == "permalinks-list-behind")
         .expect("permalinks-list-behind, on the entry");
@@ -517,7 +497,7 @@ fn a_removed_permalink_is_reported_on_the_list_and_retired_by_a_quick_fix() {
         .request(
             "textDocument/codeAction",
             json!({
-                "textDocument": { "uri": model.as_str() },
+                "textDocument": { "uri": addresses.as_str() },
                 "range": behind.range,
                 "context": { "diagnostics": [behind] }
             }),

@@ -91,13 +91,12 @@ impl Answer {
         };
         match help {
             PermalinkHelp::Found(_) => None,
-            PermalinkHelp::Retired { reason, to } => {
-                let mut text = format!("permalink `{name}` is retired: {reason}");
-                if let Some(to) = to {
-                    text.push_str(&format!("; its address leads to `{to}`"));
-                }
-                Some(text)
+            PermalinkHelp::Retired { reason } => {
+                Some(format!("permalink `{name}` is retired: {reason}"))
             }
+            PermalinkHelp::Moved { to } => Some(format!(
+                "permalink `{name}` was moved, and has no entry of its own: its address leads to `{to}`"
+            )),
             PermalinkHelp::Missing { closest } => {
                 let mut text = format!("build `{build}` publishes no permalink `{name}`");
                 match closest.as_slice() {

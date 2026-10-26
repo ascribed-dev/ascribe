@@ -59,6 +59,7 @@ mod releases;
 pub mod report_history;
 pub mod roles;
 mod scope;
+pub mod side_files;
 pub mod site;
 pub mod tool;
 pub mod type_files;
@@ -68,8 +69,9 @@ pub use across::{IMAGE_EXTENSIONS, IMAGE_LIMIT, NOT_IN_EDITOR, image_file, size_
 use ascribe_core::FileId;
 pub use baseline::{BASELINE_FILE, BASELINE_FILE_ID, Baseline, BaselineError};
 pub use builds::{
-    Diagnosed, UnknownBuild, count_errors, count_errors_in, diagnose, diagnose_editor_build,
-    diagnose_editor_build_in, diagnose_every_build_in, select_builds,
+    Checked, DiagnoseError, Diagnosed, Found, Request, UnknownBuild, count_errors, count_errors_in,
+    diagnose, diagnose_editor_build, diagnose_editor_build_in, diagnose_every_build_in,
+    diagnose_with, select_builds,
 };
 pub use checks::check_file;
 use checks::{check_examples, check_sources};
@@ -111,8 +113,7 @@ pub(crate) fn check_files_with(
         None if across::any_file_level(&project.model().checks)
             || memos::any(project)
             || project.permalinks().is_some()
-            || project.nav().is_some()
-            || !project.model().permalinks.is_empty() =>
+            || project.nav().is_some() =>
         {
             PageChecker::new(project).for_every_build(true)
         }
@@ -136,6 +137,7 @@ pub(crate) fn check_files_with(
     if let Some(Err(problems)) = project.addresses() {
         sources.extend(problems.iter().map(Diagnostic::from_issue));
     }
+    sources.extend(across.remove(&ADDRESSES_FILE_ID).unwrap_or_default());
     // The specs are read with the source index, so they're asked of it only
     // when the content model declares one.
     if !project.model().apis.is_empty() {

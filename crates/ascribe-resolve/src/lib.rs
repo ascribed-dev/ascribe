@@ -96,6 +96,7 @@ mod project;
 pub mod reading;
 pub mod references;
 mod replaces;
+pub mod side_file;
 pub mod slug;
 pub mod snippet;
 mod uses;
@@ -141,8 +142,8 @@ pub use project::{
     AssetSite, IncludeEdge, LinkSite, Missing, PageAsset, Project, Resolution, Unreadable,
 };
 pub use references::{
-    IncludeTarget, SourceSet, destination_phrases, destination_span, include_issue, include_target,
-    operation_target, reference_issue, reference_target, resolve_reference,
+    IncludeTarget, SourceSet, destination_phrases, destination_span, include_fixes, include_issue,
+    include_target, operation_target, reference_issue, reference_target, resolve_reference,
 };
 pub use replaces::{REPLACES, replaces_span, replaces_target};
 pub use snippet::examples::{

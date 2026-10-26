@@ -19,7 +19,7 @@
 //! that's lost.
 
 use ascribe_core::RelPath;
-use ascribe_model::{Build, ContentModel, TrailingSlash};
+use ascribe_model::{Build, ContentModel, End, TrailingSlash};
 
 use crate::AstroRouter;
 use crate::build::ResolvedBuild;
@@ -216,7 +216,7 @@ pub fn of_resolved(
             });
         }
     }
-    addresses.extend(permalinks(&settings, model, resolved));
+    addresses.extend(permalinks(&settings, index, resolved));
     if settings.agents && model.consumer.site.is_some() {
         addresses.extend(llms(index, build, resolved));
     }
@@ -228,39 +228,43 @@ pub fn of_resolved(
 }
 
 /// The address of each name `resolved` answers to under the permalinks'
-/// path, in name order: each permalink it publishes, each retired one, and
-/// each alias of one it publishes. A page is served at each, which forwards
-/// to the permalink's page or says why it was removed.
-fn permalinks(settings: &Settings, model: &ContentModel, resolved: &ResolvedBuild) -> Vec<Address> {
+/// path, in name order: each permalink it publishes, and each name
+/// `ascribe.addresses` retires, or moves to something the build publishes,
+/// unless the content declares it too. A page is served at each, which
+/// forwards to the permalink's page or says why it was removed.
+fn permalinks(settings: &Settings, index: &Project, resolved: &ResolvedBuild) -> Vec<Address> {
     let found = resolved.permalinks();
-    let mut names: std::collections::BTreeMap<&str, Option<&RelPath>> =
+    let mut names: std::collections::BTreeMap<String, Option<RelPath>> =
         std::collections::BTreeMap::new();
     for permalink in &found {
         names
-            .entry(&permalink.name)
-            .or_insert(Some(&permalink.page));
+            .entry(permalink.name.clone())
+            .or_insert(Some(permalink.page.clone()));
     }
-    for retired in &model.permalinks.retired {
-        names.entry(&retired.name).or_insert(None);
-    }
-    for alias in &model.permalinks.aliases {
-        let target = model
-            .permalinks
-            .alias_end(&alias.name)
-            .and_then(|end| found.iter().find(|p| p.name == end));
-        if let Some(target) = target {
-            names.entry(&alias.name).or_insert(Some(&target.page));
-        }
+    for entry in index.recorded_permalinks().names {
+        let page = match &entry.end {
+            End::Retired(_) => None,
+            End::Place(place) => match resolved.retired_destination(place) {
+                Some(to) => Some(to.page),
+                None => continue,
+            },
+            End::Permalink(end) => match found.iter().find(|p| p.name == *end) {
+                Some(target) => Some(target.page.clone()),
+                None => continue,
+            },
+            End::Cycle => continue,
+        };
+        names.entry(entry.name).or_insert(page);
     }
     let home = RelPath::parse("index.md").ok();
     names
         .into_iter()
         .filter_map(|(name, page)| {
             Some(Address {
-                address: settings.permalink_address(name),
+                address: settings.permalink_address(&name),
                 kind: AddressKind::Permalink,
-                source: name.to_owned(),
-                page: page.cloned().or_else(|| home.clone())?,
+                page: page.or_else(|| home.clone())?,
+                source: name,
             })
         })
         .collect()

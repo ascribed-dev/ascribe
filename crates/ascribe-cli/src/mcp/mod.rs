@@ -29,6 +29,8 @@ use crate::cli::{Color, Global};
 use crate::commands::model::SUMMARY_BUDGET;
 
 pub use cache::Cache;
+#[cfg(test)]
+pub(crate) use tools::CONTRACT;
 pub use tools::TOOLS;
 
 /// The resource with the directive reference.

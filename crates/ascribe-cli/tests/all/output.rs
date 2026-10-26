@@ -1217,6 +1217,16 @@ fn search() {
         "search-none.txt",
         &stdout(&run(&root, &["search", "zebra", "--config", quill], 1)),
     );
+    // No block has both words: the closest places, and the word each
+    // lacks.
+    expect(
+        "search-partial.txt",
+        &stdout(&run(
+            &root,
+            &["search", "webhook signature", "--config", quill],
+            1,
+        )),
+    );
     // Kept to one page, and to whole words.
     expect(
         "search-scope.txt",
@@ -1534,10 +1544,11 @@ fn observe_check() {
 fn permalinks() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();
+    write(root, "ascribe.toml", "spec = \"0.1\"\n");
     write(
         root,
-        "ascribe.toml",
-        "spec = \"0.1\"\n\n[permalinks.aliases]\nconfig = \"weave-config\"\n",
+        "ascribe.addresses",
+        "version = 1\n\n[moved]\n\"go:config\" = \"go:weave-config\"\n\n[retired]\n",
     );
     write(
         root,
@@ -1605,8 +1616,6 @@ fn permalinks() {
         "rotate-keys",
         "--reason",
         "Merged into the security guide",
-        "--to",
-        "guides/security.md",
     ];
     expect("permalinks-retire.txt", &stdout(&run(root, &retire, 0)));
     expect(

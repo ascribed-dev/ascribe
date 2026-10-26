@@ -56,6 +56,15 @@ fn stdout(output: &Output) -> String {
     String::from_utf8_lossy(&output.stdout).into_owned()
 }
 
+/// The `file:line` of each change `--check` lists.
+fn changed(output: &Output) -> Vec<String> {
+    stdout(output)
+        .lines()
+        .filter(|line| !line.is_empty() && !line.starts_with(['-', '+']))
+        .map(str::to_owned)
+        .collect()
+}
+
 fn stderr(output: &Output) -> String {
     String::from_utf8_lossy(&output.stderr).into_owned()
 }
@@ -66,10 +75,66 @@ fn check_exits_1_on_unformatted_input_and_changes_nothing() {
     p.write("docs/a.md", MESSY);
     let out = p.fmt(&["--check"]);
     assert_eq!(code(&out), 1, "{}", stderr(&out));
-    assert!(stdout(&out).contains("would reformat"), "{}", stdout(&out));
-    assert!(stdout(&out).contains("a.md"));
+    assert_eq!(
+        stdout(&out),
+        "docs/a.md:1\n- @note{ type = tip }:Text.\n+ @note {type=tip}: Text.\n\n"
+    );
     assert!(stderr(&out).contains("1 file would be reformatted"));
     assert_eq!(p.read("docs/a.md"), MESSY);
+}
+
+#[test]
+fn diff_writes_a_unified_diff_and_changes_nothing() {
+    let p = Project::new("diff");
+    p.write("docs/a.md", &format!("# Title\n\n{MESSY}"));
+    p.write("docs/b.md", CLEAN);
+    let out = p.fmt(&["--diff"]);
+    assert_eq!(code(&out), 1, "{}", stderr(&out));
+    assert_eq!(
+        stdout(&out),
+        "--- a/docs/a.md\n+++ b/docs/a.md\n@@ -1,3 +1,3 @@\n # Title\n \n-@note{ type = tip }:Text.\n+@note {type=tip}: Text.\n"
+    );
+    assert!(stderr(&out).contains("1 file would be reformatted"));
+    assert_eq!(p.read("docs/a.md"), format!("# Title\n\n{MESSY}"));
+    // With nothing to change, there's no diff.
+    let clean = p.fmt(&["--diff", "docs/b.md"]);
+    assert_eq!(code(&clean), 0, "{}", stderr(&clean));
+    assert!(stdout(&clean).is_empty());
+}
+
+/// `git apply --check` takes what `--diff` writes for a file with `\r\n`
+/// endings and for one with no final newline, and applying it formats them.
+#[test]
+fn diff_applies_to_crlf_files_and_files_with_no_final_newline() {
+    let p = Project::new("diff-apply");
+    p.write("docs/crlf.md", "# T\r\n\r\n@note{ type = tip }:Text.\r\n");
+    p.write("docs/open.md", "# T\n\n@note{ type = tip }:Text.\n\nlast");
+    let git = |args: &[&str]| {
+        let out = Command::new("git")
+            .args(args)
+            .current_dir(&p.dir)
+            .output()
+            .expect("run git");
+        assert!(
+            out.status.success(),
+            "git {args:?}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    };
+    git(&["init", "-q"]);
+    let out = p.fmt(&["--diff"]);
+    assert_eq!(code(&out), 1, "{}", stderr(&out));
+    let patch = p.dir.join("fmt.patch");
+    std::fs::write(&patch, &out.stdout).expect("write the patch");
+    git(&["apply", "--check", "fmt.patch"]);
+    git(&["apply", "fmt.patch"]);
+    std::fs::remove_file(&patch).expect("remove the patch");
+    let again = p.fmt(&["--check"]);
+    assert_eq!(code(&again), 0, "{}", stdout(&again));
+    assert_eq!(
+        p.read("docs/crlf.md"),
+        "# T\r\n\r\n@note {type=tip}: Text.\r\n"
+    );
 }
 
 #[test]
@@ -135,7 +200,7 @@ fn hidden_directories_and_node_modules_are_skipped() {
     p.write("docs/real.md", MESSY);
     let out = p.fmt(&["--check"]);
     assert_eq!(code(&out), 1);
-    assert_eq!(stdout(&out).lines().count(), 1, "{}", stdout(&out));
+    assert_eq!(changed(&out).len(), 1, "{}", stdout(&out));
     assert!(stdout(&out).contains("real.md"));
 }
 
@@ -147,7 +212,7 @@ fn a_nested_project_is_skipped() {
     p.write("docs/real.md", MESSY);
     let out = p.fmt(&["--check"]);
     assert_eq!(code(&out), 1);
-    assert_eq!(stdout(&out).lines().count(), 1, "{}", stdout(&out));
+    assert_eq!(changed(&out).len(), 1, "{}", stdout(&out));
     assert!(stdout(&out).contains("real.md"));
 }
 
@@ -169,7 +234,7 @@ fn a_content_root_above_the_project_keeps_the_projects_own_folder() {
         .output()
         .expect("run ascribe");
     assert_eq!(code(&out), 1, "{}", stderr(&out));
-    assert_eq!(stdout(&out).lines().count(), 2, "{}", stdout(&out));
+    assert_eq!(changed(&out).len(), 2, "{}", stdout(&out));
     assert!(stdout(&out).contains("own.md"), "{}", stdout(&out));
     assert!(stdout(&out).contains("top.md"), "{}", stdout(&out));
 }

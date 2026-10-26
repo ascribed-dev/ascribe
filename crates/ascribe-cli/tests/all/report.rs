@@ -110,7 +110,7 @@ fn with_no_section_it_reports_what_needs_nothing_outside_the_project() {
 
     let out = ascribe(dir.path(), &["report", "--format", "json"]);
     let report = json(&out);
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert_eq!(
         report["sections"],
         serde_json::json!(["problems", "inventory", "builds"])
@@ -187,7 +187,7 @@ availability = { filter = "cloud" }
 #[test]
 fn a_section_that_can_t_run_says_why_and_fails_only_with_exit_code() {
     let dir = project(MODEL);
-    let out = ascribe(dir.path(), &["report", "links", "agents"]);
+    let out = ascribe(dir.path(), &["report", "links", "delivery"]);
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let text = stdout(&out);
     assert!(
@@ -204,10 +204,16 @@ fn a_section_that_can_t_run_says_why_and_fails_only_with_exit_code() {
 
     let out = ascribe(
         dir.path(),
-        &["report", "links", "agents", "--format", "json"],
+        &["report", "links", "delivery", "--format", "json"],
     );
     let report = json(&out);
-    assert_eq!(report["not_run"], serde_json::json!(["links", "agents"]));
+    assert_eq!(report["not_run"], serde_json::json!(["links", "delivery"]));
+    // The section's name before decision #953 still runs it.
+    let old = json(&ascribe(
+        dir.path(),
+        &["report", "agents", "--format", "json"],
+    ));
+    assert_eq!(old["not_run"], serde_json::json!(["delivery"]));
     assert!(
         report["links"]["not_run"]["how"]
             .as_str()
@@ -541,7 +547,7 @@ fn the_site_s_checks_say_who_changes_what() {
         &bin,
         &[
             "report",
-            "agents",
+            "delivery",
             "--site",
             "https://docs.example.com",
             "--format",
@@ -550,12 +556,12 @@ fn the_site_s_checks_say_who_changes_what() {
     );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let report = json(&out);
-    let agents = &report["agents"];
-    assert_eq!(agents["results"][1]["owner"], "hosting");
-    let entry = &agents["diagnostics"]["items"][0];
+    let delivery = &report["delivery"];
+    assert_eq!(delivery["results"][1]["owner"], "hosting");
+    let entry = &delivery["diagnostics"]["items"][0];
     assert_eq!(entry["slug"], "delivery-hosting");
     assert_eq!(entry["next"], "outside");
-    let warning = &agents["diagnostics"]["items"][1];
+    let warning = &delivery["diagnostics"]["items"][1];
     assert_eq!(warning["slug"], "delivery-hosting");
     assert!(
         warning["message"]
@@ -564,7 +570,7 @@ fn the_site_s_checks_say_who_changes_what() {
             .starts_with("the site passes the delivery spec's `cache-header-hygiene` check with a warning: llms.txt has no Cache-Control. Set `Cache-Control`"),
         "{warning}"
     );
-    assert!(agents["diagnostics"]["items"].as_array().unwrap().len() == 2);
+    assert!(delivery["diagnostics"]["items"].as_array().unwrap().len() == 2);
 }
 
 const PAGES_MODEL: &str = r#"spec = "0.1"
@@ -1028,13 +1034,13 @@ const AFDOCS_REDIRECTS_FAIL_LATER: &str = r#"redirects=pass
 printf '{"url":"%s","results":[{"id":"llms-txt-exists","category":"content-discoverability","status":"pass","message":"found"},{"id":"content-negotiation","category":"markdown-availability","status":"fail","message":"Markdown is never served for Accept: text/markdown"},{"id":"redirect-behavior","category":"url-stability","status":"%s","message":"A redirect goes to another host"}]}' "$2" "$redirects"
 exit 1"#;
 
-/// `ascribe report agents` on `site`, in `dir` on `today`, with the stand-in
+/// `ascribe report delivery` on `site`, in `dir` on `today`, with the stand-in
 /// afdocs in `dir/tools`.
 #[cfg(unix)]
-fn agents_on(dir: &Path, today: &str, site: &str, args: &[&str]) -> Output {
+fn delivery_on(dir: &Path, today: &str, site: &str, args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_ascribe"))
         .current_dir(dir)
-        .args(["report", "agents", "--site", site])
+        .args(["report", "delivery", "--site", site])
         .args(args)
         .env("NO_COLOR", "1")
         .env("PATH", dir.join("tools"))
@@ -1043,11 +1049,11 @@ fn agents_on(dir: &Path, today: &str, site: &str, args: &[&str]) -> Output {
         .expect("run ascribe")
 }
 
-/// `agents` says which checks are failing since the last report on the
+/// `delivery` says which checks are failing since the last report on the
 /// same site (decision #788): a check's identity is the site and its id.
 #[cfg(unix)]
 #[test]
-fn agents_says_what_s_failing_since_the_last_report() {
+fn delivery_says_what_s_failing_since_the_last_report() {
     let dir = project(MODEL);
     script(
         &dir.path().join("tools"),
@@ -1057,7 +1063,7 @@ fn agents_says_what_s_failing_since_the_last_report() {
     let site = "https://docs.example.com";
 
     // A first run says nothing about what's new, and keeps what it found.
-    let first = agents_on(dir.path(), "2026-10-09", site, &[]);
+    let first = delivery_on(dir.path(), "2026-10-09", site, &[]);
     assert_eq!(code_of(&first), 0, "{}", stderr(&first));
     let text = stdout(&first);
     assert!(
@@ -1070,23 +1076,23 @@ fn agents_says_what_s_failing_since_the_last_report() {
 
     // The redirects fail the second time: the report names the check.
     fs::write(dir.path().join("failing"), "").unwrap();
-    let report = json(&agents_on(
+    let report = json(&delivery_on(
         dir.path(),
         "2026-10-10",
         site,
         &["--format", "json"],
     ));
-    let agents = &report["agents"];
-    assert_eq!(agents["previous_run"], "2026-10-09");
+    let delivery = &report["delivery"];
+    assert_eq!(delivery["previous_run"], "2026-10-09");
     assert_eq!(
-        (&agents["new"], &agents["resolved"]),
+        (&delivery["new"], &delivery["resolved"]),
         (&1.into(), &0.into())
     );
     assert_eq!(
-        agents["new_checks"],
+        delivery["new_checks"],
         serde_json::json!(["redirect-behavior"])
     );
-    let text = stdout(&agents_on(dir.path(), "2026-10-11", site, &[]));
+    let text = stdout(&delivery_on(dir.path(), "2026-10-11", site, &[]));
     assert!(
         text.contains("  3 checks: 1 passing, 2 failing, none of them new since 10 October.\n"),
         "{text}"
@@ -1096,23 +1102,23 @@ fn agents_says_what_s_failing_since_the_last_report() {
     // writes the history.
     fs::remove_file(dir.path().join("failing")).unwrap();
     let before = fs::read_to_string(&history).unwrap();
-    let report = json(&agents_on(
+    let report = json(&delivery_on(
         dir.path(),
         "2026-10-12",
         site,
         &["--no-history", "--format", "json"],
     ));
-    let agents = &report["agents"];
-    assert_eq!(agents["previous_run"], serde_json::Value::Null);
+    let delivery = &report["delivery"];
+    assert_eq!(delivery["previous_run"], serde_json::Value::Null);
     assert_eq!(
-        (&agents["new"], &agents["resolved"]),
+        (&delivery["new"], &delivery["resolved"]),
         (&serde_json::Value::Null, &serde_json::Value::Null)
     );
-    assert_eq!(agents["new_checks"], serde_json::json!([]));
+    assert_eq!(delivery["new_checks"], serde_json::json!([]));
     assert_eq!(fs::read_to_string(&history).unwrap(), before);
 
     // The redirects pass again: one that failed no longer does.
-    let text = stdout(&agents_on(dir.path(), "2026-10-13", site, &[]));
+    let text = stdout(&delivery_on(dir.path(), "2026-10-13", site, &[]));
     assert!(
         text.contains(
             "  3 checks: 2 passing, 1 failing, not new since 11 October; 1 that failed on 11 October no longer fails.\n"
@@ -1124,19 +1130,19 @@ fn agents_says_what_s_failing_since_the_last_report() {
     // with it.
     fs::write(dir.path().join("failing"), "").unwrap();
     let preview = "http://localhost:4321";
-    let text = stdout(&agents_on(dir.path(), "2026-10-14", preview, &[]));
+    let text = stdout(&delivery_on(dir.path(), "2026-10-14", preview, &[]));
     assert!(!text.contains("since"), "{text}");
-    let text = stdout(&agents_on(dir.path(), "2026-10-15", preview, &[]));
+    let text = stdout(&delivery_on(dir.path(), "2026-10-15", preview, &[]));
     assert!(
         text.contains("  3 checks: 1 passing, 2 failing, none of them new since 14 October.\n"),
         "{text}"
     );
 
-    // A report of `problems` alone keeps what `agents` found.
+    // A report of `problems` alone keeps what `delivery` found.
     let out = problems_on(dir.path(), "2026-10-16", &[]);
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     fs::remove_file(dir.path().join("failing")).unwrap();
-    let text = stdout(&agents_on(dir.path(), "2026-10-17", preview, &[]));
+    let text = stdout(&delivery_on(dir.path(), "2026-10-17", preview, &[]));
     assert!(
         text.contains("  3 checks: 2 passing, 1 failing, not new since 15 October; 1 that failed on 15 October no longer fails.\n"),
         "{text}"
@@ -1150,38 +1156,38 @@ const AFDOCS_FAILS_BY_FILE: &str = r#"status() { if [ -f "$1" ]; then echo fail;
 printf '{"url":"%s","results":[{"id":"llms-txt-exists","category":"content-discoverability","status":"%s","message":"checked"},{"id":"redirect-behavior","category":"url-stability","status":"%s","message":"checked"}]}' "$2" "$(status llms-txt-exists)" "$(status redirect-behavior)"
 exit 0"#;
 
-/// With nothing failing now or on the last report, `agents` leaves out the
+/// With nothing failing now or on the last report, `delivery` leaves out the
 /// line about what's failing since then: the counts above it say it all.
 /// One that failed then and passes now keeps it.
 #[cfg(unix)]
 #[test]
-fn agents_says_nothing_since_when_nothing_fails_then_or_now() {
+fn delivery_says_nothing_since_when_nothing_fails_then_or_now() {
     let dir = project(MODEL);
     script(&dir.path().join("tools"), "afdocs", AFDOCS_FAILS_BY_FILE);
     let site = "https://docs.example.com";
 
-    agents_on(dir.path(), "2026-10-09", site, &[]);
-    let text = stdout(&agents_on(dir.path(), "2026-10-10", site, &[]));
+    delivery_on(dir.path(), "2026-10-09", site, &[]);
+    let text = stdout(&delivery_on(dir.path(), "2026-10-10", site, &[]));
     assert!(text.contains("2 pass."), "{text}");
     assert!(!text.contains(" checks: "), "{text}");
-    let report = json(&agents_on(
+    let report = json(&delivery_on(
         dir.path(),
         "2026-10-11",
         site,
         &["--format", "json"],
     ));
-    let agents = &report["agents"];
-    assert_eq!(agents["previous_run"], "2026-10-10");
+    let delivery = &report["delivery"];
+    assert_eq!(delivery["previous_run"], "2026-10-10");
     assert_eq!(
-        (&agents["new"], &agents["resolved"]),
+        (&delivery["new"], &delivery["resolved"]),
         (&0.into(), &0.into())
     );
 
     // The redirects fail, then pass again: the line says so.
     fs::write(dir.path().join("redirect-behavior"), "").unwrap();
-    agents_on(dir.path(), "2026-10-12", site, &[]);
+    delivery_on(dir.path(), "2026-10-12", site, &[]);
     fs::remove_file(dir.path().join("redirect-behavior")).unwrap();
-    let text = stdout(&agents_on(dir.path(), "2026-10-13", site, &[]));
+    let text = stdout(&delivery_on(dir.path(), "2026-10-13", site, &[]));
     assert!(
         text.contains(
             "  2 checks: 2 passing, 0 failing; 1 that failed on 12 October no longer fails.\n"
@@ -1210,13 +1216,13 @@ fn a_check_that_warns_instead_of_failing_still_fails() {
 
     set("llms-txt-exists", "fail");
     set("redirect-behavior", "fail");
-    agents_on(dir.path(), "2026-10-24", site, &[]);
+    delivery_on(dir.path(), "2026-10-24", site, &[]);
 
     // The first warns now, the second passes, and the links are new.
     set("llms-txt-exists", "warn");
     set("redirect-behavior", "pass");
     set("llms-txt-links-resolve", "warn");
-    let text = stdout(&agents_on(dir.path(), "2026-10-25", site, &[]));
+    let text = stdout(&delivery_on(dir.path(), "2026-10-25", site, &[]));
     assert!(
         text.contains(
             "  3 checks: 1 passing, 2 failing, 1 of them failing since 24 October: llms-txt-links-resolve; 1 that failed on 24 October no longer fails.\n"

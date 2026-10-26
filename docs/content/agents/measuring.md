@@ -12,13 +12,13 @@ Everything Ascribe knows about a page is in its record: its address, title, desc
 
 - **`ascribe check`** reports what would go wrong for a reader that isn't a person: two pages with the same title or description, a title its page's own heading contradicts, a page kept out of search whose address `robots.txt` won't let a crawler fetch, a page too long for an agent to read in one fetch. Each is advice you can raise or turn off in [`[checks]`](../content-model/checks.md#19-checks).
 - **`ascribe report pages`** lists every page's record, and `--not-listed` the ones kept out of search, with why. It's what a team would otherwise crawl its own site to see. See [the project report](../checks/report.md#pages).
-- **`ascribe report agents --site <URL>`** runs the delivery spec's checker on the published site, for what only a running server can answer: [Check what the site delivers to agents](#check-what-the-site-delivers-to-agents).
+- **`ascribe report delivery --site <URL>`** runs the delivery spec's checker on the published site, for what only a running server can answer: [Check what the site delivers to agents](#check-what-the-site-delivers-to-agents).
 
 None of these is a score. Each problem is listed at its file, with what to do about it; a number would count different things from one tool to the next, and invite tuning to the number.
 
 ## Check what the site delivers to agents
 
-`ascribe report agents --site <URL>` runs the [delivery spec](https://agentdocsspec.com/spec/web/)'s checker, `afdocs`, on a built site, the published one or a preview of it, and lists each check as passing, warning, failing, or skipped. Install it with `npm install -g afdocs@0.22.2`.
+`ascribe report delivery --site <URL>` runs the [delivery spec](https://agentdocsspec.com/spec/web/)'s checker, `afdocs`, on a built site, the published one or a preview of it, and lists each check as passing, warning, failing, or skipped. Install it with `npm install -g afdocs@0.22.2`.
 
 A check that fails or warns is reported by who changes what it checks, and none of it asks you to edit a page:
 

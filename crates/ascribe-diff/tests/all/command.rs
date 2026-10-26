@@ -63,6 +63,34 @@ fn load(root: &Path) -> ascribe_check::Project {
 }
 
 #[test]
+fn diff_project_reports_a_page_moved_with_git_mv_once() {
+    let dir = repository();
+    let root = dir.path();
+    git(root, &["checkout", "-q", "--", "docs/guide.md"]);
+    git(root, &["mv", "docs/guide.md", "docs/steps.md"]);
+    let project = load(root);
+    let options = DiffOptions {
+        base: Some("main"),
+        ..DiffOptions::default()
+    };
+    let diff = diff_project(&project, &options).unwrap();
+    let pages = &diff.report.builds[0].pages;
+    assert_eq!(pages.len(), 1, "{pages:?}");
+    assert_eq!(pages[0].path, "steps.md");
+    assert_eq!(pages[0].moved_from.as_deref(), Some("guide.md"));
+    assert_eq!(
+        pages[0].describe(str::to_owned),
+        "moved from guide.md, no change to the page"
+    );
+    // The report renders the page as it was where it was.
+    let html = diff.html();
+    assert!(
+        html.contains("guide.md:1-1"),
+        "the base's rendering has its anchors"
+    );
+}
+
+#[test]
 fn diff_project_reports_the_changed_pages_and_the_working_trees_errors() {
     let dir = repository();
     let project = load(dir.path());

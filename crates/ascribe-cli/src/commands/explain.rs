@@ -10,6 +10,7 @@ use clap::Args as ClapArgs;
 use crate::answer::{self, Format, fence};
 use crate::cli::Global;
 use crate::exit;
+use crate::report::links;
 
 /// Arguments of `ascribe explain`.
 #[derive(Debug, ClapArgs)]
@@ -86,7 +87,7 @@ fn write_text(out: &mut dyn Write, e: &Explanation) -> io::Result<()> {
     }
     if let Some(fix) = &e.fix {
         writeln!(out)?;
-        writeln!(out, "Fix: {fix}")?;
+        writeln!(out, "Fix: {}", links::plain(fix))?;
     }
     if let Some(example) = &e.example {
         write_example(out, example)?;

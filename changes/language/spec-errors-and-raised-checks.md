@@ -1,0 +1,1 @@
+- **The specification tells its own errors from a content check a project raises to an error.** A raised check fails the build as an error does, but the page still conforms, and a raised review check can still be acknowledged: [Quieting a problem](docs/content/checks/check.md).

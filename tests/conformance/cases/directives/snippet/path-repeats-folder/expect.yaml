@@ -1,0 +1,8 @@
+description: >-
+  A snippet's path is relative to its source's folder, so a path that
+  repeats the folder names a file that isn't there.
+spec: ["4.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: snippet-file-missing, file: index.md, line: 5}

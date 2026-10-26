@@ -7,13 +7,13 @@
 //!   part for each section it remembers, each with its own run's day:
 //!   `problems`, the builds it checked and its findings by
 //!   [identity](crate::identity), sorted, so a diff of it reads as a list
-//!   of findings; and `agents`, the site it checked and each of the
+//!   of findings; and `delivery`, the site it checked and each of the
 //!   delivery spec's checks by id, with how it came out. It's written whole
 //!   through a rename after each run that reports either; a section the run
 //!   didn't report keeps what the file held.
 //! - **A first run says nothing about what's new,** and neither does one
 //!   on other builds than the history's, compared as a set, for `problems`,
-//!   or on another site, for `agents`: either changes what's found.
+//!   or on another site, for `delivery`: either changes what's found.
 //!   `--no-history` doesn't open the history at all, so it neither reads
 //!   nor writes it.
 //! - **A reader trusts nothing:** a file that doesn't parse or has another
@@ -55,7 +55,7 @@ pub struct ReportHistory {
     read: FileJson,
 }
 
-/// What `agents` found on a site: each check's result, by its id. A
+/// What `delivery` found on a site: each check's result, by its id. A
 /// check's identity is the site's address and its id.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SiteChecks {
@@ -71,8 +71,8 @@ pub struct SiteChecks {
 pub struct Found {
     /// The findings `problems` reported.
     pub problems: Option<BTreeSet<Identity>>,
-    /// What `agents` found on the site.
-    pub agents: Option<SiteChecks>,
+    /// What `delivery` found on the site.
+    pub delivery: Option<SiteChecks>,
 }
 
 /// The file.
@@ -81,8 +81,9 @@ struct FileJson {
     version: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     problems: Option<ProblemsJson>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    agents: Option<AgentsJson>,
+    /// Written `agents` before the section was renamed (decision #953).
+    #[serde(default, alias = "agents", skip_serializing_if = "Option::is_none")]
+    delivery: Option<DeliveryJson>,
 }
 
 /// What `problems` reported on a run.
@@ -96,9 +97,9 @@ struct ProblemsJson {
     findings: BTreeSet<Identity>,
 }
 
-/// What `agents` found on a run.
+/// What `delivery` found on a run.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-struct AgentsJson {
+struct DeliveryJson {
     /// The day of the run.
     run: String,
     /// The site it checked.
@@ -143,11 +144,11 @@ impl ReportHistory {
         Some((Date::parse(&saved.run)?, &saved.findings))
     }
 
-    /// The day of the run `agents` is compared with, and how each check
+    /// The day of the run `delivery` is compared with, and how each check
     /// came out on it, unless there's none or it checked another site
     /// than `site`.
-    pub fn agents_before(&self, site: &str) -> Option<(Date, BTreeMap<&str, Status>)> {
-        let saved = self.read.agents.as_ref().filter(|a| a.site == site)?;
+    pub fn delivery_before(&self, site: &str) -> Option<(Date, BTreeMap<&str, Status>)> {
+        let saved = self.read.delivery.as_ref().filter(|a| a.site == site)?;
         let checks = saved
             .checks
             .iter()
@@ -171,8 +172,8 @@ impl ReportHistory {
                 }),
                 None => self.read.problems.clone(),
             },
-            agents: match found.agents {
-                Some(found) => Some(AgentsJson {
+            delivery: match found.delivery {
+                Some(found) => Some(DeliveryJson {
                     run,
                     site: found.site,
                     checks: found
@@ -181,7 +182,7 @@ impl ReportHistory {
                         .map(|(check, status)| CheckJson { check, status })
                         .collect(),
                 }),
-                None => self.read.agents.clone(),
+                None => self.read.delivery.clone(),
             },
         };
         let Ok(mut text) = serde_json::to_string_pretty(&file) else {
@@ -209,7 +210,7 @@ impl ReportHistory {
             .problems
             .iter()
             .map(|p| &p.run)
-            .chain(file.agents.iter().map(|a| &a.run))
+            .chain(file.delivery.iter().map(|a| &a.run))
             .all(|d| Date::parse(d).is_some());
         (file.version == VERSION && days_parse).then_some(file)
     }
@@ -243,14 +244,14 @@ mod tests {
     fn problems(found: BTreeSet<Identity>) -> Found {
         Found {
             problems: Some(found),
-            agents: None,
+            delivery: None,
         }
     }
 
-    fn agents(site: &str, checks: &[(&str, Status)]) -> Found {
+    fn delivery(site: &str, checks: &[(&str, Status)]) -> Found {
         Found {
             problems: None,
-            agents: Some(SiteChecks {
+            delivery: Some(SiteChecks {
                 site: site.to_owned(),
                 checks: checks
                     .iter()
@@ -321,7 +322,7 @@ mod tests {
         let site = "https://docs.example.com";
         ReportHistory::open(dir.path(), day("2026-10-09"), &builds())
             .save(problems(BTreeSet::from([found("a")])));
-        ReportHistory::open(dir.path(), day("2026-10-10"), &builds()).save(agents(
+        ReportHistory::open(dir.path(), day("2026-10-10"), &builds()).save(delivery(
             site,
             &[
                 ("llms-txt-exists", Status::Pass),
@@ -334,7 +335,7 @@ mod tests {
             Some((day("2026-10-09"), &BTreeSet::from([found("a")])))
         );
         assert_eq!(
-            next.agents_before(site),
+            next.delivery_before(site),
             Some((
                 day("2026-10-10"),
                 BTreeMap::from([
@@ -344,11 +345,11 @@ mod tests {
             ))
         );
         // Another site has nothing to go by.
-        assert_eq!(next.agents_before("http://localhost:4321"), None);
+        assert_eq!(next.delivery_before("http://localhost:4321"), None);
         let text = std::fs::read_to_string(next.path()).unwrap();
         assert!(
             text.contains(
-                r#""agents": {
+                r#""delivery": {
     "run": "2026-10-10",
     "site": "https://docs.example.com",
     "checks": [
@@ -362,6 +363,23 @@ mod tests {
     }
 
     #[test]
+    fn a_history_from_before_the_rename_is_read() {
+        let dir = tempfile::tempdir().unwrap();
+        let history = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
+        std::fs::create_dir_all(history.path().parent().unwrap()).unwrap();
+        std::fs::write(
+            history.path(),
+            r#"{"version":2,"agents":{"run":"2026-10-09","site":"s","checks":[{"check":"x","status":"pass"}]}}"#,
+        )
+        .unwrap();
+        let read = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
+        assert_eq!(
+            read.delivery_before("s"),
+            Some((day("2026-10-09"), BTreeMap::from([("x", Status::Pass)])))
+        );
+    }
+
+    #[test]
     fn a_reader_trusts_nothing() {
         let dir = tempfile::tempdir().unwrap();
         let history = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
@@ -371,12 +389,12 @@ mod tests {
             r#"{"version":1,"run":"2026-10-09","builds":["site"],"problems":[]}"#,
             r#"{"version":2,"problems":{"run":"someday","builds":["site"],"findings":[]}}"#,
             r#"{"version":2,"problems":{"run":"2026-10-09","builds":["site"],"findings":[{"check":"x"}]}}"#,
-            r#"{"version":2,"agents":{"run":"2026-10-09","site":"s","checks":[{"check":"x","status":"maybe"}]}}"#,
+            r#"{"version":2,"delivery":{"run":"2026-10-09","site":"s","checks":[{"check":"x","status":"maybe"}]}}"#,
         ] {
             std::fs::write(history.path(), text).unwrap();
             let read = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
             assert_eq!(read.problems_before(), None, "{text}");
-            assert_eq!(read.agents_before("s"), None, "{text}");
+            assert_eq!(read.delivery_before("s"), None, "{text}");
         }
     }
 }

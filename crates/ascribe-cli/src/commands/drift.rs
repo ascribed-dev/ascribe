@@ -12,7 +12,7 @@ use ascribe_diff::{DiffError, DriftOptions, DriftPage, DriftReport, drift_projec
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::cli::Global;
-use crate::commands::diff::{fail, fail_diff, failure_message};
+use crate::commands::diff::{base_hint, fail, fail_diff, failure_message};
 use crate::context::load_project;
 use crate::exit;
 
@@ -44,6 +44,12 @@ pub struct Args {
     /// the page didn't.
     #[arg(long)]
     pub exit_code: bool,
+
+    /// Not an argument `drift` takes: taken only so that a revision given
+    /// as `git diff` takes one, `ascribe drift main`, is answered with the
+    /// `--base` that compares with it.
+    #[arg(hide = true, value_name = "REV")]
+    pub given: Option<String>,
 }
 
 /// The output format.
@@ -78,6 +84,13 @@ fn report(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write
         Ok(project) => project,
         Err(failure) => return fail(err, &failure_message(failure)),
     };
+    if let Some(given) = &args.given {
+        let takes = format!("`ascribe drift` takes no argument, and was given `{given}`");
+        return match base_hint(&project, given) {
+            Some(hint) => fail(err, &format!("{takes}; {hint}")),
+            None => fail(err, &takes),
+        };
+    }
     let options = DriftOptions {
         base: args.base.as_deref(),
         base_exact: false,

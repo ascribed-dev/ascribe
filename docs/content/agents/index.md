@@ -5,7 +5,7 @@ description: Working on an Ascribe project with an AI coding agent, such as Clau
 permalink: agents-guide
 ---
 
-An agent is the AI coding tool you work with: Claude Code, GitHub Copilot, Cursor, Codex, and others. Ascribe gives your agent what it knows about a project, in a form an agent reads well, and checks what the agent writes. Its tools answer questions and return edits; your agent makes them, with your approvals.
+An [agent](../glossary.md#agent) is the AI coding tool you work with: Claude Code, GitHub Copilot, Cursor, Codex, and others. Ascribe gives your agent what it knows about a project, in a form an agent reads well, and checks what the agent writes. Its tools answer questions and return edits; your agent makes them, with your approvals.
 
 Nothing here is set up until you run a command for it. The quickest start, in a project's folder:
 
@@ -25,4 +25,4 @@ That writes `AGENTS.md` and the skill, which most agents read on their own. Then
 
 [What's sent where](whats-sent.md) says what leaves your machine, and what to watch for when your agent reads someone else's text.
 
-This guide writes commands as `ascribe`. With `@ascribed/cli` installed in your project, as [Install](../install.md#npm) says, run them as `npx ascribe` (`pnpm exec ascribe` with pnpm); your agent does the same.
+This guide writes commands as `ascribe`. With `@ascribed/cli` installed in your project, as [Install](../install.md#npm) says, run them as `npx ascribe` (`pnpm exec ascribe` with pnpm). The files `sync` writes tell your agent to do the same: see [The command they name](instructions.md#the-command-they-name).

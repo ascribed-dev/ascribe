@@ -163,6 +163,26 @@ fn explain_answers_by_code_or_name() {
 }
 
 #[test]
+fn explain_text_writes_links_for_a_terminal() {
+    let dir = tempfile::tempdir().unwrap();
+    // The JSON keeps the registry's Markdown, for a tool to render.
+    let value = json(dir.path(), &["explain", "page-orphan"], 0);
+    assert!(
+        value["fix"]
+            .as_str()
+            .unwrap()
+            .contains("[`[checks]`](content-model/checks.md#19-checks)"),
+        "{value}"
+    );
+    let text = stdout(&run(dir.path(), &["explain", "page-orphan"], 0));
+    assert!(
+        text.contains("turn the check off in `[checks]` (`page-orphan = \"off\"`)"),
+        "{text}"
+    );
+    assert!(!text.contains("checks.md#"), "{text}");
+}
+
+#[test]
 fn explain_names_the_closest_for_an_unknown_code() {
     let dir = tempfile::tempdir().unwrap();
     let out = run(dir.path(), &["explain", "link-targt"], 2);
@@ -474,13 +494,7 @@ fn model_shows_each_section_of_settings_with_its_values_and_defaults() {
 
     let whole = json(&root, &["--config", "docs", "model"], 0);
     for section in [
-        "project",
-        "consumer",
-        "editor",
-        "checks",
-        "crawlers",
-        "listing",
-        "permalinks",
+        "project", "consumer", "editor", "checks", "crawlers", "listing",
     ] {
         let keys: Vec<String> = whole[section]
             .as_array()
@@ -568,9 +582,7 @@ fn model_shows_settings_the_file_sets_and_the_defaults_it_leaves() {
 
     let text = stdout(&run(dir.path(), &["model"], 0));
     assert!(
-        text.contains(
-            "`permalinks`, each with its keys and values: `ascribe model --section <name>`"
-        ),
+        text.contains("`listing`, each with its keys and values: `ascribe model --section <name>`"),
         "{text}"
     );
     assert!(!text.contains("`[consumer]`"), "{text}");
@@ -1323,9 +1335,12 @@ fn resolve_shows_a_permalinks_help() {
     let dir = tempfile::tempdir().unwrap();
     write(
         &dir.path().join("ascribe.toml"),
-        &format!(
-            "{MODEL}\n[consumer]\nsite = \"https://docs.quill.dev\"\n\n[permalinks.retired]\nlegacy-sync = {{ to = \"keys.md\", reason = \"The sync agent was removed in 4.0\" }}\n\n[permalinks.aliases]\nkey-rotation = \"rotate-keys\"\n"
-        ),
+        &format!("{MODEL}\n[consumer]\nsite = \"https://docs.quill.dev\"\n"),
+    );
+    write(
+        &dir.path().join("ascribe.addresses"),
+        "version = 1\n\n[moved]\n\"go:key-rotation\" = \"go:rotate-keys\"\n\"go:old-keys\" = \"keys.md\"\n\n\
+         [retired]\n\"go:legacy-sync\" = \"The sync agent was removed in 4.0\"\n",
     );
     write(
         &dir.path().join("docs/keys.md"),
@@ -1382,7 +1397,17 @@ fn resolve_shows_a_permalinks_help() {
     assert!(stdout(&retired).is_empty(), "{}", stdout(&retired));
     assert_eq!(
         stderr(&retired),
-        "error: permalink `legacy-sync` is retired: The sync agent was removed in 4.0; its address leads to `keys.md`\n"
+        "error: permalink `legacy-sync` is retired: The sync agent was removed in 4.0\n"
+    );
+    let moved = run(
+        dir.path(),
+        &["resolve", "go:old-keys", "--build", "cloud"],
+        1,
+    );
+    assert!(stdout(&moved).is_empty(), "{}", stdout(&moved));
+    assert_eq!(
+        stderr(&moved),
+        "error: permalink `old-keys` was moved, and has no entry of its own: its address leads to `keys.md`\n"
     );
 }
 
@@ -1452,6 +1477,56 @@ fn search_finds_a_phrase_value_at_its_line_in_the_model() {
     let text = stdout(&out);
     assert!(text.starts_with("ascribe.toml:34: Quill Cloud\n"), "{text}");
     assert!(text.contains("`ascribe refs phrase:cloud`"), "{text}");
+}
+
+#[test]
+fn search_cuts_a_long_code_block_to_its_match_at_the_line_it_is_on() {
+    let dir = project();
+    // A JSON Schema's worth of code, with the words far apart in it.
+    let mut code: Vec<String> = (0..400)
+        .map(|n| format!("  \"field{n}\": {{ \"type\": \"string\" }},"))
+        .collect();
+    code[40] = "  \"strict\": \"fail when there are problems\",".to_owned();
+    code[390] = "  \"ci\": \"warnings in CI\",".to_owned();
+    write(
+        &dir.path().join("site/docs/schema.md"),
+        &format!(
+            "---\ntitle: Schema\n---\n\n```json\n{{\n{}\n}}\n```\n",
+            code.join("\n")
+        ),
+    );
+    let text = stdout(&run(
+        dir.path(),
+        &["search", "fail warnings CI", "--config", "site"],
+        0,
+    ));
+    // The block opens at line 5 and its code at 6: `{` is 6, code[40] 47.
+    let first = text.lines().next().unwrap_or_default();
+    assert!(first.starts_with("docs/schema.md:47: …"), "{text}");
+    assert!(first.contains("fail when"), "{text}");
+    assert!(first.chars().count() < 120, "{text}");
+
+    let value = json(
+        dir.path(),
+        &["search", "fail warnings CI", "--config", "site"],
+        0,
+    );
+    let place = &value["places"][0];
+    assert_eq!(place["line"], 47, "{place}");
+    assert_eq!(place["in"], "code", "{place}");
+    let excerpt: Vec<char> = place["text"].as_str().unwrap_or_default().chars().collect();
+    assert!(excerpt.len() <= 242, "{} characters", excerpt.len());
+    assert_eq!(excerpt.first(), Some(&'…'));
+    assert_eq!(excerpt.last(), Some(&'…'));
+    let at = usize::try_from(place["match"][0].as_u64().unwrap_or_default()).unwrap_or_default();
+    let end = usize::try_from(place["match"][1].as_u64().unwrap_or_default()).unwrap_or_default();
+    let matched: String = excerpt[at..].iter().take(4).collect();
+    assert_eq!(matched, "fail", "{place}");
+    assert_eq!(
+        end,
+        excerpt.len() - 1,
+        "the match runs on past the cut: {place}"
+    );
 }
 
 #[test]
@@ -1748,7 +1823,7 @@ fn search_says_which_builds_not_searched_publish_the_words() {
     );
     assert_eq!(
         stdout(&out),
-        "No place matches.\nBuilds not searched publish them: `site`, `site@3.4`, `self-managed-3.3`.\n"
+        "No place matches.\nBuilds not searched publish them: `site`, `site@3.4`.\n"
     );
 }
 

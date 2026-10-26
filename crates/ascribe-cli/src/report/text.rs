@@ -23,6 +23,7 @@ pub fn write_build(
     files_checked: usize,
     covered: &Covered<'_>,
     acknowledged: usize,
+    baselined: usize,
     check: &str,
     color: bool,
 ) -> io::Result<()> {
@@ -40,6 +41,7 @@ pub fn write_build(
             files_checked,
             covered,
             acknowledged,
+            baselined,
             check
         )
     )
@@ -49,12 +51,14 @@ pub fn write_build(
 /// build: no problems` when they found none, and otherwise the counts, with
 /// the command that lists each warning and advice when there are any, as
 /// `checked 8 files in every build: 0 errors, 1 warning, 3 advice: ascribe
-/// check for each`.
+/// check for each`. The problems acknowledged and those the baseline holds
+/// back are counted after, as `ascribe check` counts them.
 pub fn build_summary(
     counts: Counts,
     files_checked: usize,
     covered: &Covered<'_>,
     acknowledged: usize,
+    baselined: usize,
     check: &str,
 ) -> String {
     let builds = match covered {
@@ -65,7 +69,11 @@ pub fn build_summary(
     };
     let checked = format!("checked {} {builds}", plural(files_checked, "file"));
     if counts.total() == 0 {
-        return format!("{checked}: no problems{}", self::acknowledged(acknowledged));
+        return format!(
+            "{checked}: no problems{}{}",
+            self::acknowledged(acknowledged),
+            self::baselined(baselined)
+        );
     }
     let pointer = if counts.warnings + counts.advice > 0 {
         format!(": {check} for each")
@@ -73,11 +81,12 @@ pub fn build_summary(
         String::new()
     };
     format!(
-        "{checked}: {}, {}, {} advice{}{pointer}",
+        "{checked}: {}, {}, {} advice{}{}{pointer}",
         plural(counts.errors, "error"),
         plural(counts.warnings, "warning"),
         counts.advice,
-        self::acknowledged(acknowledged)
+        self::acknowledged(acknowledged),
+        self::baselined(baselined)
     )
 }
 
@@ -349,7 +358,8 @@ fn write_diagnostic(
         );
     }
     // The first fix's title, which says what applying it does; else the
-    // registry's help, the next step `check`'s JSON gives as `help`.
+    // registry's help, the next step `check`'s JSON gives as `help`, with
+    // its Markdown links written for a terminal.
     let help = d.fixes.first().map(|fix| fix.title.as_str()).or_else(|| {
         Registry::global()
             .get(d.slug)
@@ -357,7 +367,7 @@ fn write_diagnostic(
             .filter(|help| !help.is_empty())
     });
     if let Some(help) = help {
-        report = report.with_help(shown.help(d.code, help));
+        report = report.with_help(shown.help(d.code, &super::links::plain(help)));
     }
     report.finish().write(cache, out)
 }

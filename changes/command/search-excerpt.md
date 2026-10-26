@@ -1,0 +1,1 @@
+- **`ascribe search` cuts a long block to its match, in JSON and over MCP too.** A place's `text` is at most about 240 characters around the match, so a large block no longer comes back whole. See [`ascribe search`](docs/content/command/questions.md).

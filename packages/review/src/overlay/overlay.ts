@@ -695,6 +695,37 @@ class ReviewOverlay implements Overlay {
     this.markers = [];
   }
 
+  /**
+   * The text a thread was on, quoted, or in words when it's empty or can't
+   * be read: an empty quote reads as a mistake.
+   */
+  private originalText(thread: LocatedThread): HTMLElement {
+    const orig = this.el("div", "orig");
+    const quote = thread.quote?.trim() ? thread.quote : undefined;
+    if (thread.detached !== undefined) {
+      if (quote !== undefined) {
+        orig.append(
+          this.el("span", "", "The comment was on this text, which is no longer on the page: "),
+          this.el("q", "", quote),
+        );
+      } else {
+        orig.append(
+          onRemovedText(thread)
+            ? "The comment was on a line that's since been removed."
+            : "The comment was on text that's no longer on the page.",
+        );
+      }
+    } else if (quote !== undefined) {
+      orig.append(
+        this.el("span", "", "The text when the comment was made: "),
+        this.el("q", "", quote),
+      );
+    } else {
+      orig.append("The text when the comment was made can't be shown.");
+    }
+    return orig;
+  }
+
   private drawDetached(): HTMLElement[] {
     const detached = this.data?.threads.detached ?? [];
     if (detached.length === 0) return [];
@@ -810,12 +841,13 @@ class ReviewOverlay implements Overlay {
     if (!(view === "panel" && entry && !entry.removed && where === sourceLabel(entry.anchor))) {
       head.append(this.el("span", "", where));
     }
+    // One label for where the thread stands against the page, the most
+    // specific: on removed text says why a thread is detached, and a
+    // detached thread is past being outdated.
     if (onRemovedText(thread)) head.append(this.badge("removed", "On removed text"));
+    else if (thread.detached !== undefined) head.append(this.badge("detached", "Detached"));
+    else if (thread.outdated) head.append(this.badge("outdated", "Outdated"));
     if (thread.resolved) head.append(this.badge("resolved", "Resolved"));
-    if (thread.detached !== undefined) head.append(this.badge("detached", "Detached"));
-    if (thread.outdated && thread.detached === undefined) {
-      head.append(this.badge("outdated", "Outdated"));
-    }
     if (thread.kind === "conversation") head.append(this.badge("summary", "In the review summary"));
     if (hasUnsent(thread)) head.append(this.badge("unsent", "Unsent"));
     if (head.childElementCount > 0) card.append(head);
@@ -907,23 +939,8 @@ class ReviewOverlay implements Overlay {
     }
     if (collapsed) return card;
 
-    if (
-      thread.quote !== undefined &&
-      thread.quote.trim() !== "" &&
-      (thread.detached !== undefined || this.original.has(thread.id))
-    ) {
-      const orig = this.el("div", "orig");
-      orig.append(
-        this.el(
-          "span",
-          "",
-          thread.detached !== undefined
-            ? "The comment was on this text, which is no longer on the page: "
-            : "The text when the comment was made: ",
-        ),
-        this.el("q", "", thread.quote),
-      );
-      card.append(orig);
+    if (thread.detached !== undefined || this.original.has(thread.id)) {
+      card.append(this.originalText(thread));
     }
 
     const now = Date.now();

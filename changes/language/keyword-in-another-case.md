@@ -1,0 +1,1 @@
+- **`@Note:` draws `directive-unknown`, suggesting `@note`.** A line shaped like a directive whose name is a keyword in another case is still text, and is now warned about as a misspelling is. See [Syntax](docs/content/writing/syntax.md).

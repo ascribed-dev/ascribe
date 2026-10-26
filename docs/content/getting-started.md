@@ -76,6 +76,8 @@ The page below uses what most projects add next: a dimension the content varies 
 
 @snippet: code:examples/getting-started/ascribe.toml#added
 
+`values` are what a page writes, and `label` and `labels` are what readers see: the dimension's name, and each value's. The site's tabs read **npm**, **pnpm**, and **Yarn**; without `labels`, a tab shows the value as written, so the last would read **yarn**.
+
 The [`ascribe.toml` reference](content-model/index.md) covers every section: content types and their frontmatter, availability, features, the glossary, project widgets, and builds.
 
 Add the output directory to `.gitignore`:

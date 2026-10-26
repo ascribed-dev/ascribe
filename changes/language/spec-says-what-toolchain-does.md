@@ -1,0 +1,1 @@
+- **SPEC.md's builds example, site output, and editor sections say what the toolchain does.** §7.3, §9, and §10 now match the toolchain. See [SPEC.md](SPEC.md#9-compilation).

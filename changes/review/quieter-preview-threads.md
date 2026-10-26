@@ -1,0 +1,1 @@
+- **The page preview's toolbar and threads say less.** The build's settings move to the Build picker's tooltip, and a thread carries one label for where it stands. See [how review works](docs/content/review/how-it-works.md).

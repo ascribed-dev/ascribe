@@ -68,7 +68,7 @@ describe("forwardingPaths", () => {
     ]);
   });
 
-  it("leads an alias and a retired permalink like any other, and says why one was removed", () => {
+  it("leads a moved permalink like any other, and says why one was removed", () => {
     const root = siteRoot({
       version: 1,
       path: "/go/",
@@ -79,7 +79,7 @@ describe("forwardingPaths", () => {
           route: "/security/",
           fragment: "keys",
           source: "security.md",
-          retired: "Merged into the security guide",
+          moved: "security.md#keys",
         },
       },
       removed: { "legacy-sync": { reason: "The sync agent was removed in <b>4.0</b>" } },

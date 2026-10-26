@@ -11,7 +11,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Message:** this page's Markdown is \{size} characters in build `{build}`, and an agent reads under \{limit} in one piece; split the page, or move long tables and code below the prose
 
-**Fix:** Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The problem names the page's largest parts, up to five, largest first, each with its size: its sections, at their headings, and its includes, at their `@include` lines. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`. It's the spec's `page-size-markdown` check, made from the build before a deploy; `ascribe report agents` names this check for it, and for the spec's other checks of a page's size.
+**Fix:** Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The problem names the page's largest parts, up to five, largest first, each with its size: its sections, at their headings, and its includes, at their `@include` lines. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`. It's the spec's `page-size-markdown` check, made from the build before a deploy; `ascribe report delivery` names this check for it, and for the spec's other checks of a page's size.
 
 **Read more:** [`[checks]`](../content-model/checks.md#19-checks) in the `ascribe.toml` reference.
 
@@ -47,7 +47,7 @@ Advice · page level · next step: fix · configurable in `[checks]` · [SPEC §
 @id {permalink=true}: ASC152
 @summary: A fenced code block has no language after its opening fence: nothing, or only attributes, such as `phrases=true`. An indented code block isn't looked at.
 
-Advice · file level · next step: choose · configurable in `[checks]` · [SPEC §1.4]({repo}/blob/main/SPEC.md#14-relationship-to-commonmark)
+Advice · file level · next step: choose · configurable in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** A fenced code block has no language after its opening fence: nothing, or only attributes, such as `phrases=true`. An indented code block isn't looked at.
 
@@ -89,7 +89,7 @@ Advice · page level · next step: review · configurable in `[checks]` · ackno
 @id {permalink=true}: ASC195
 @summary: A page of a content type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value.
 
-Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Advice · file level · next step: write · configurable in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** A page of a content type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped, or a frontmatter field with the template's value. A memo the page keeps from the template, its instructions to the writer, isn't reported. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found.
 
@@ -173,7 +173,7 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 @id {permalink=true}: ASC229
 @summary: A page of a content type that names a template has a section the template gives only memos, and the page's section still has nothing but memos and headings.
 
-Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Advice · file level · next step: write · configurable in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** A page of a content type that names a template has a section the template gives nothing under its heading but memos, with the same heading at the same level, and nothing in the page's section, its subsections included, but memos, directives bound to its heading such as `@id`, and the subsections' headings. A section the template gives any other content is `template-placeholder-left`'s, and a page of a type with no template isn't looked at.
 
@@ -497,7 +497,7 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 @id {permalink=true}: ASC243
 @summary: `ascribe.baseline` has an entry that no problem of the project matches any more: the problem was fixed, or the text it was about changed. Reported at the entry's line, when `ascribe check` reads the baseline and checks the whole project for every build.
 
-Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+Advice · file level · next step: outside · configurable in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** `ascribe.baseline` has an entry that no problem of the project matches any more: the problem was fixed, or the text it was about changed. Reported at the entry's line, when `ascribe check` reads the baseline and checks the whole project for every build.
 
@@ -548,3 +548,17 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 **Fix:** Link to the operation from the guide that covers it, by its `operationId`, `openapi.yaml#getUser`, or by its method and path when it has none, `openapi.yaml#delete/users/{id}`. An operation a guide doesn't need to cover can be marked `deprecated` in the spec when it's on its way out, which leaves it out; for an API whose reference is enough on its own, turn the check off in [`[checks]`](../content-model/checks.md#19-checks).
 
 **Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+
+### ASC283 `build-filter-line-undeclared`
+@id {permalink=true}: ASC283
+@summary: A build's filter names a version of a target `[releases]` declares lines for, and the version is older than every line declared, so it's in no live, planned, or archived line.
+
+Advice · file level · next step: write · configurable in `[checks]` · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+
+**When:** A build's filter names a version of a target `[releases]` declares lines for, and the version is older than every line declared, so it's in no live, planned, or archived line.
+
+**Message:** build `{build}` filters for `{target} {version}`, which is older than every line `[releases.{target}]` declares, so `ascribe versions` doesn't list it; declare its line in `archived`, or make the build one output for each live line with `versions = "{target}"`
+
+**Fix:** Say in one place which lines the project publishes. To keep a build for an old line, declare the line in `[releases.<target>]` as archived, with no address when nothing else publishes it, as `"3.3" = {}`. To publish every live line instead, give one build `versions = "<target>"` and remove the filtered build. A version between two declared lines is `available-line-undeclared`.
+
+**Read more:** [`[builds.<name>]`](../content-model/output.md#16-buildsname) in the `ascribe.toml` reference.

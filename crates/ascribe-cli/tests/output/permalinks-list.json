@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "ascribe_version": "{version}",
   "has_list": true,
   "permalinks": [
@@ -27,6 +27,7 @@
       "state": "listed"
     }
   ],
+  "moved": [],
   "retired": [],
   "removed": [
     {

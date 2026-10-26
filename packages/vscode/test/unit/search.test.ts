@@ -155,6 +155,15 @@ describe("an excerpt", () => {
     expect(Array.from(cut).length).toBeLessThanOrEqual(82);
   });
 
+  it("keeps to the match's first word when the match spans a long block", () => {
+    const text = `${"word ".repeat(40)}first ${"more ".repeat(3000)}last`;
+    const at = text.indexOf("first");
+    const cut = excerpt(text, [at, Array.from(text).length]);
+    expect(cut).toContain("first");
+    expect(cut.endsWith("…")).toBe(true);
+    expect(Array.from(cut).length).toBeLessThanOrEqual(82);
+  });
+
   it("counts characters, not UTF-16 units", () => {
     const text = `${"😀 ".repeat(50)}match`;
     const chars = Array.from(text);

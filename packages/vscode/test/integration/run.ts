@@ -75,7 +75,6 @@
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
 import { execFileSync } from "node:child_process";
 import {
-  appendFileSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -202,7 +201,14 @@ const suites: Suite[] = [
         { recursive: true },
       );
       // Nothing links to broken.md, and its tests count every diagnostic.
-      appendFileSync(path.join(workspace, "ascribe.toml"), '\n[checks]\npage-orphan = "off"\n');
+      const model = path.join(workspace, "ascribe.toml");
+      const text = readFileSync(model, "utf8");
+      writeFileSync(
+        model,
+        text.includes("\n[checks]\n")
+          ? text.replace("\n[checks]\n", '\n[checks]\npage-orphan = "off"\n')
+          : `${text}\n[checks]\npage-orphan = "off"\n`,
+      );
       return { "ascribe.path": realServer, ...startAll };
     },
   },
@@ -385,11 +391,10 @@ const suites: Suite[] = [
     fixture: path.join(repositoryRoot, "examples/astro-site"),
     prepare: (workspace) => {
       rmSync(path.join(workspace, "node_modules"), { recursive: true, force: true });
-      if (existsSync(path.join(workspace, "ascribe.addresses"))) {
-        throw new Error(
-          "examples/astro-site keeps its addresses: the suite starts without the file",
-        );
-      }
+      // The suite starts without the file, so the editor offers to make it.
+      // The example's own entries are its permalinks', which the suite doesn't
+      // test.
+      rmSync(path.join(workspace, "ascribe.addresses"), { force: true });
       // The base the server compares with: what's committed on `main`.
       const git = gitIn(workspace);
       git("init", "-q", "-b", "main");

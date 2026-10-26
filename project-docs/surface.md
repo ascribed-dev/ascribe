@@ -12,14 +12,14 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 |---|---|---|---|
 | `ascribe init` | Starts a project: writes its first `ascribe.toml`, and makes the folder its pages go in, `docs/`. | `[DIR] [--templates]` | `text`, `json` |
 | `ascribe check` | Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. | `[PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]` | `text`, `concise`, `json`, `prompt` |
-| `ascribe fmt` | Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. | `[--check] [PATHS]...` | `text`, `json` |
-| `ascribe build` | Checks the project, then writes each build's outputs. | `[--build <NAME>]... [--emit site,plain,json] [--anchors]` | `text`, `json` |
+| `ascribe fmt` | Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. | `[--check] [--diff] [PATHS]...` | `text`, `json` |
+| `ascribe build` | Checks the project, then writes each build's outputs. | `[--build <NAME>]... [--emit site,plain,json] [--anchors] [--no-baseline]` | `text`, `json` |
 | `ascribe preview` | Shows a build's pages as readers see them, with nothing but the `ascribe` command: no Node, no editor, and no Astro. | `[--build <NAME>] [--port <PORT>]` |  |
 | `ascribe diff` | Shows what changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved. | `[PAGE] [--base <REV>] [--base-exact] [--build <NAME>]... [--exit-code] [--pages-only]` | `text`, `json`, `html`, `prompt` |
 | `ascribe drift` | Lists the pages whose code examples changed between a git revision and the working tree, and whether the words around them changed too, and the pages whose examples no longer resolve. | `[--base <REV>] [--build <NAME>]... [--exit-code]` | `text`, `json`, `markdown` |
-| `ascribe report` | Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. | `[SECTION]... [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice\|warning\|error]` | `text`, `markdown`, `json`, `prompt` |
+| `ascribe report` | Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. | `[SECTION]... [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--no-baseline] [--exit-code advice\|warning\|error]` | `text`, `markdown`, `json`, `prompt` |
 | `ascribe explain` | Says what a diagnostic means: its severity, its messages, how to fix it, a link to its entry in Diagnostics, and, for the diagnostics people meet most, a short page that has the problem and the same page without it. | `[CODE] [--list]` | `text`, `json` |
-| `ascribe model` | Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. | `[PATH] [--section types\|frontmatter\|fragments\|dimensions\|lifecycle\|phrases\|features\|notes\|glossary\|images\|widgets\|releases\|builds\|sources\|apis\|from\|intended\|project\|versions\|consumer\|editor\|checks\|crawlers\|listing\|permalinks]` | `text`, `json` |
+| `ascribe model` | Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. | `[PATH] [--section types\|frontmatter\|fragments\|dimensions\|lifecycle\|phrases\|features\|notes\|glossary\|images\|widgets\|releases\|builds\|sources\|apis\|from\|intended\|project\|versions\|consumer\|editor\|checks\|crawlers\|listing]` | `text`, `json` |
 | `ascribe outline` | Shows a page's title and type, and the headings a link to it can name, with the ids links write after `#`: the page's own headings and those that come from the fragments it includes. | `PAGE [--build <NAME>]` | `text`, `json` |
 | `ascribe link` | Says whether a link works, written on a given page: whether its target exists, the page's title or the heading's text, and the destination to write there. | `TARGET --from <PAGE>` | `text`, `json` |
 | `ascribe refs` | Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model, each as `file:line:column`, with what kind of use it is. | `TARGET [--limit <N>]` | `text`, `json` |
@@ -33,13 +33,13 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe versions release` | Releases a line: rewrites each mark's `planned` for its target to the line's version, makes the line live, and archives the old current line where no build is versioned by the target. | `LINE [--next <LINE>] [--dry-run] [--force]` | `text`, `json` |
 | `ascribe versions archive` | Renders a line, live or planned, into a folder of HTML that needs nothing else: every page of the line with a statement of what it is, a sidebar with a search box, a contents page, and a print stylesheet, marked so crawlers leave it alone, working from a disk with no server. | `LINE --to <DIR> [--build <NAME>] [--current <URL>]` | `text`, `json` |
 | `ascribe versions retire` | Takes the oldest live line out of the window once its archive is hosted: moves it from `live` to `archived` with its address and the day it ended, rewrites each mark for its target to the simplest spec that means the same in every line still live or planned, lists what no line has any more, and says where each of the line's addresses should go. | `LINE [--url <URL>] [--dry-run] [--force] [--show-unused] [--remove-unused]` | `text`, `json` |
-| `ascribe permalinks sync` | Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each alias and retired permalink as `ascribe.toml` has it. | `[--check]` | `text`, `json` |
-| `ascribe permalinks list` | Shows every permalink the content declares, with the file and line it's declared on, and each alias and retired permalink in `ascribe.toml`, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that the project no longer has. |  | `text`, `json` |
+| `ascribe permalinks sync` | Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each name `ascribe.addresses` moves or retires as the file has it. | `[--check]` | `text`, `json` |
+| `ascribe permalinks list` | Shows every permalink the content declares, with the file and line it's declared on, and each name `ascribe.addresses` moves or retires, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that the project no longer has. |  | `text`, `json` |
 | `ascribe permalinks verify` | Checks that each name is a permalink or an alias in a list, and names each one that isn't, and each one that was retired, with the reason the docs give. | `[NAME]... [--from <FILE>] [--against <PATH>]` | `text`, `json` |
-| `ascribe permalinks retire` | Retires permalinks on purpose, with a reason: it writes an entry for each in `ascribe.toml`'s [`[permalinks.retired]`](../content-model/checks.md#20-permalinks), in place, keeping the file's comments and order, and, when the project has `ascribe.permalinks`, records there each one the content no longer declares. | `[NAME]... --reason <TEXT> [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>]` | `text`, `json` |
+| `ascribe permalinks retire` | Retires permalinks on purpose, with a reason, or moves them to `--to`: it writes an entry for each in `ascribe.addresses`, keyed `go:` and the name, `[retired]`'s with the reason and `[moved]`'s with where it leads, making the file when there's none, and, when the project has `ascribe.permalinks`, records there each one the content no longer declares. | `[NAME]... [--reason <TEXT>] [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>]` | `text`, `json` |
 | `ascribe addresses init` | Makes `ascribe.addresses`, with its header, its `version`, and empty tables. |  | `text`, `json` |
 | `ascribe addresses move` | Records that a page, or a heading's id, moved, after a move made without Ascribe, as with `git mv`. | `[OLD] [NEW] [--from-git] [--base <REV>] [--base-exact]` | `text`, `json` |
-| `ascribe addresses retire` | Records that a page, or a heading's id, was removed on purpose, with the reason, which is for whoever reads the file later. | `OLD --reason <TEXT>` | `text`, `json` |
+| `ascribe addresses retire` | Records that a page, or a heading's id, or a permalink, `go:<name>`, was removed on purpose, with the reason, which is for whoever reads the file later. | `OLD --reason <TEXT>` | `text`, `json` |
 | `ascribe addresses list` | Shows the redirects and retired addresses each build writes, as its `_ascribe/redirects.json` has them, and the entry of `ascribe.addresses` each comes from. | `[--build <NAME>]` | `text`, `json` |
 | `ascribe sources fetch` | Makes the copies match `ascribe.lock`: at each source's pin, it copies the files snippets name that have no copy or a wrong one, and removes the copies no snippet names. | `[NAME]...` |  |
 | `ascribe sources update` | Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20, or that the pin moved back), the copies that changed, the tested examples whose status changed, and the pages whose examples changed, grouped as `ascribe drift` groups them. | `[NAME]... [--to <REV>]` | `text`, `json`, `markdown` |
@@ -49,12 +49,12 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe templates eject` | Writes each template named, with its guide and Ascribe's notes on its type, into the project, and adds its type to `ascribe.toml`. | `[NAME]... [--to <DIR>] [--keep-type]` | `text`, `json` |
 | `ascribe templates status` | Says what's changed in the templates since the project took them: for each one, whether the set this `ascribe` carries has changed it since the copy, and whether the project has changed its copy; then each template of the set the project doesn't have. | `[--exit-code] [--diff <NAME>]` | `text`, `json` |
 | `ascribe vale eject` | Writes the preset `[checks.vale]` names out as the project's own Vale configuration: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. |  |  |
-| `ascribe agents sync` | Writes your project's rules and the Ascribe skill where each `--target`'s agents read them. | `[--check] [--target agents-md\|skills\|claude\|claude-rules\|copilot\|codex]... [--with-hook] [--cloud] [--agent]` |  |
+| `ascribe agents sync` | Writes your project's rules and the Ascribe skill where each `--target`'s agents read them. | `[--check] [--target agents-md\|skills\|claude\|claude-rules\|copilot\|codex]... [--with-hook] [--cloud] [--agent] [--command <COMMAND>]` |  |
 | `ascribe agents rules` | Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside `ascribe.toml`, as it would write it now. | `[PATH]` |  |
 | `ascribe agents index` | Writes a compact index of one build's docs, for the `AGENTS.md` of the product they're about: one line a page, with its title, its address, and its description, grouped in sections as the build's `llms.txt` is. | `[--build <NAME>] [--into <FILE>] [--pages <DIR>]` | `text`, `json` |
 | `ascribe agents skill` | Prints a file of the Ascribe skill, the same for every project: its `SKILL.md`, or its directive reference, `references/directives.md`. | `[FILE]` |  |
 | `ascribe agents prompt` | Prints a named prompt for an agent, in the same form as Prompt agent's. | `[NAME] [--arg <KEY=VALUE>]... [--list]` |  |
-| `ascribe agents hook` | Checks an agent's work as its hook runs it: after the agent writes a file, or before it finishes. | `HARNESS [--event edit\|stop]` |  |
+| `ascribe agents hook` | Checks an agent's work as its hook runs it: after the agent writes a file, or before it finishes. | `HARNESS [--event edit\|stop] [--command <COMMAND>]` |  |
 | `ascribe mcp` | Runs an MCP server, speaking the Model Context Protocol over standard input and output, for an agent that has no shell, or a host that approves tools one by one. |  |  |
 | `ascribe lsp` | Runs the language server, speaking the Language Server Protocol over standard input and output. |  |  |
 
@@ -108,7 +108,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 | `[editor]` | Settings for the authoring environment (SPEC §10). | §17 |
 | `[sources.<name>]` | A source is a folder outside the project's content, or another repository, that its pages may take code examples from, with `@snippet` (SPEC §7.3). | §18 |
 | `[checks]` | How loudly each check about your content's quality speaks: whether it's reported as advice, a warning, or an error, or not at all. | §19 |
-| `[permalinks]` | Names for something outside the docs to link to that no heading or page declares: a permalink that was ended on purpose, and another name for one. | §20 |
+| `[permalinks]` | `ascribe.toml` has no `[permalinks]` any more. | §20 |
 | `[crawlers]` | What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. | §21 |
 | `[listing]` | How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type. | §22 |
 | `[apis.<name>]` | OpenAPI specs that pages link into, by name: each one's file, and where its reference is published. | §23 |
@@ -117,7 +117,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-274 in all. By severity: 61 advice, 186 error, 27 warning. By level: 244 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 171 write.
+271 in all. By severity: 62 advice, 182 error, 27 warning. By level: 241 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 168 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -290,11 +290,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC174` | `model-consumer-permalink-path` | error | write | permalink-path must start with "/", such as "/go/" |
 | `ASC175` | `permalinks-list-invalid` | error | write | ascribe.permalinks can't be read: {detail} |
 | `ASC176` | `permalinks-list-behind` | warning | fix | the permalink `{name}` isn't in ascribe.permalinks yet; run `ascribe permalinks sync` |
-| `ASC177` | `permalink-removed` | warning | write | `{name}` was a permalink, in `{was}`, and nothing declares it now. Links to it from outside these docs, such as from a product, aren't found by this check |
-| `ASC178` | `model-permalinks` | error | write | `{name}` is both retired and an alias; a name is one thing |
-| `ASC179` | `permalink-alias-target-missing` | error | write | the alias `{name}` leads to `{target}`, which no heading or page declares |
-| `ASC180` | `permalink-name-conflict` | error | write | `{name}` is retired here, and `{place}` declares it as a permalink; a name is one thing |
-| `ASC181` | `permalink-retired-target-missing` | error | write | `{name}` is retired to `{to}`, and there's no page `{path}` |
+| `ASC177` | `permalink-lost` | warning | write | `{name}` was a permalink, in `{was}`, and nothing declares it now or says where it went. Links to it from outside these docs, such as from a product, aren't found by this check |
 | `ASC182` | `include-limit` | error | write | including `{path}` here takes this page past {limit}, the most a page's includes may expand it to; it isn't expanded, and no include after it is |
 | `ASC183` | `model-crawlers-line` | error | write | `{key}` has a line break; each string in `lines` is one line of robots.txt |
 | `ASC184` | `listing-disallowed` | advice | fix | this page is unlisted, and `{line}` in `[crawlers] lines` disallows its address, so a crawler never fetches it to read that it isn't to be listed; a search engine can still list the address alone |
@@ -389,12 +385,13 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC274` | `link-operation-form-unsupported` | error | write | `#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is a template, which has no address for it; a link by method and path needs `renderer = "redoc"` |
 | `ASC275` | `link-operation-by-path` | advice | fix | `#{operation}` names the operation `{id}` of `{path}` by its method and path; link to it by its id, `#{id}` |
 | `ASC276` | `link-operation-deprecated` | advice | write | `#{operation}` names an operation `{path}` marks deprecated |
-| `ASC277` | `example-schema-mismatch` | error | write | {found}; {body} says {expected} |
-| `ASC278` | `example-not-json` | error | write | the example of {body} isn't JSON: {reason} |
-| `ASC279` | `example-body-missing` | error | write | `{operation}` has no request body in `{path}` |
-| `ASC280` | `example-schema-unsupported` | advice | outside | the schema of {body} has a pattern the validator can't read, `{pattern}`, so it's left out, and the rest of the schema is checked |
+| `ASC277` | `api-example-schema-mismatch` | error | write | {found}; {body} says {expected} |
+| `ASC278` | `api-example-not-json` | error | write | the example of {body} isn't JSON: {reason} |
+| `ASC279` | `api-example-body-missing` | error | write | `{operation}` has no request body in `{path}` |
+| `ASC280` | `api-example-schema-unsupported` | advice | outside | the schema of {body} has a pattern the validator can't read, `{pattern}`, so it's left out, and the rest of the schema is checked |
 | `ASC281` | `operation-link-not-operation` | error | write | `{link}` isn't a link to an operation; `@operation` takes a declared API's spec, `#`, and an operation's `operationId` |
 | `ASC282` | `api-operation-unreferenced` | advice | write | no page links to `{operation}` ({method} {route}) in {path} |
+| `ASC283` | `build-filter-line-undeclared` | advice | write | build `{build}` filters for `{target} {version}`, which is older than every line `[releases.{target}]` declares, so `ascribe versions` doesn't list it; declare its line in `archived`, or make the build one output for each live line with `versions = "{target}"` |
 
 ## The VS Code extension
 
@@ -755,6 +752,11 @@ CSS properties a site can set:
 | `--ascribe-border-width` |
 | `--ascribe-caution-background` |
 | `--ascribe-caution-color` |
+| `--ascribe-copy-background` |
+| `--ascribe-copy-color` |
+| `--ascribe-copy-display` |
+| `--ascribe-copy-focus-color` |
+| `--ascribe-copy-hover-background` |
 | `--ascribe-font-family` |
 | `--ascribe-font-size-small` |
 | `--ascribe-font-weight-strong` |
@@ -1038,14 +1040,17 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 | `.ascribe/build/` | `ascribe build`, and `@ascribed/astro` when it builds. It's the default output directory; `[project] output-dir` puts it elsewhere. | No |
 | `.ascribe/vale/` | `ascribe check` and the editor, when they run Vale: a preset's configuration, and the vocabulary of the project's own words. | No |
 | `.ascribe/cache/` | `ascribe report links`, which keeps the answers it reuses in `.ascribe/cache/links/`. | No |
-| `.ascribe/history/` | `ascribe report links`, which keeps in `.ascribe/history/links.json` the last day each address answered, the day it started failing, and whether it was reported. | No |
+| `.ascribe/history/` | `ascribe report links`, which keeps in `.ascribe/history/links.json` the last day each address answered, the day it started failing, and whether it was reported, and `ascribe report`, which keeps in `.ascribe/history/report.json` what its `problems` and `delivery` sections found, to say what's new next time. | No |
 | `.ascribe/dev.json` | `astro dev` with `@ascribed/astro`, for the editor's site preview. It's removed when `astro dev` stops. | No |
 | `.ascribe/memos/` | You do: personal memos, memo files kept on your machine only. Ascribe reads them, and writes one only when you ask: the editor's **Ascribe: Add a personal memo** creates one, and a rename (`ascribe rename`, `F2`, or moving a file in the editor) rewrites the `about` of each that names what it renames. | No |
 | `ascribe.lock` | `ascribe sources fetch` and `ascribe sources update`: the commit each source in another repository is pinned to. | Yes |
 | `sources/` | `ascribe sources fetch` and `ascribe sources update`: copies of the files your snippets use from another repository, in `sources/<name>/`. | Yes |
 | `examples.observations/` | `ascribe observe`, beside `ascribe.examples.toml` in the code's folder: what its tested examples passed with, in `default.toml`, or `<name>.toml` with `--name`. `ascribe observe --check` fails without it. | Yes |
 | `ascribe.permalinks` | `ascribe permalinks sync` and `ascribe permalinks retire`: the list of the docs' permalinks a product checks its links against. | Yes |
+| `ascribe.addresses` | `ascribe addresses init` makes it, and from then on `ascribe addresses move` and `ascribe addresses retire`, `ascribe rename`, moving a page in the editor, and `ascribe check --fix` write to it: where each address the docs published went, which the build turns into redirects. | Yes |
 | `ascribe.baseline` | `ascribe baseline write` and `ascribe baseline prune`: the advice `ascribe check` holds back for now. | Yes |
+| `ascribe.toml` | You do: the content model. `ascribe init` writes the first one, and a few commands change it in place. | Yes |
+| `ascribe.examples.toml` | You do, in the code's folder: the files the docs show as examples, and the test that proves them. `ascribe observe` reads it. | Yes |
 | `ascribe.nav` | You do: the order of the project's sections and pages, and their labels, beside `ascribe.toml`. Ascribe reads it; with none, a project has the default order. | Yes |
 | `memos/` | You do: memo files, which say why a page is written the way it is. Ascribe reads them, and writes one only when you ask: the editor's **Ascribe: Add a memo** creates one, and a rename (`ascribe rename`, `F2`, or moving a file in the editor) rewrites the `about` of each that names what it renames. They're in no output. | Yes |
 | `.vale.ini` and `.vale/` | `ascribe vale eject`, once. From then on they're yours, and Ascribe doesn't write them again. | Yes |
@@ -1056,7 +1061,7 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 | `.claude/rules/ascribe*.md` and `.github/instructions/ascribe*.instructions.md` | `ascribe agents sync`, at the repository's root, with `--target claude-rules` and `--target copilot`. | Yes |
 | `.claude/settings.json`, `.mcp.json`, `.codex/hooks.json`, and `.github/hooks/ascribe.json` | `ascribe agents sync --with-hook`, at the repository's root: the hooks' entries and the MCP server, beside your own. | Yes |
 | `.github/workflows/copilot-setup-steps.yml` and `.github/agents/ascribe-docs.md` | `ascribe agents sync --cloud`, at the repository's root: steps between markers in the workflow, and with `--agent`, the custom agent. | Yes |
-| `src/content.config.ts`, `src/pages/[...slug].astro`, and `src/layouts/Docs.astro` | `npx @ascribed/astro init`, once, in the Astro root. From then on they're yours. | Yes |
+| `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Docs.astro`, and `src/styles/docs.css` | `npx @ascribed/astro init`, once, in the Astro root. From then on they're yours. | Yes |
 | `.astro/integrations/_ascribed_astro/` | `@ascribed/astro`, in the Astro root: a copy of the collection's schema, inside Astro's own folder, which Astro's starters leave out of git. | No |
 
 ## What nothing declares

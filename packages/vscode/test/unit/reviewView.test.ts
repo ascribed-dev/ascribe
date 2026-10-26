@@ -191,6 +191,37 @@ describe("sourceFiles", () => {
     ]);
   });
 
+  it("compares a page that moved with its file where it was", () => {
+    const moved_links = [{ from: "guides/configure.md", to: "guides/setup.md" }];
+    const files = sourceFiles(
+      [
+        // Named first as a page a link changed through.
+        page({ path: "guides/install.md", because: ["guides/setup.md"], moved_links }),
+        page({
+          path: "guides/setup.md",
+          own_file_changed: false,
+          moved_from: "guides/configure.md",
+        }),
+      ],
+      roots,
+    );
+    expect(files).toEqual([
+      {
+        label: "guides/install.md",
+        path: at("docs", "guides", "install.md"),
+        before: true,
+        after: true,
+      },
+      {
+        label: "guides/setup.md",
+        path: at("docs", "guides", "setup.md"),
+        before: true,
+        after: true,
+        basePath: at("docs", "guides", "configure.md"),
+      },
+    ]);
+  });
+
   it("names nothing without a content root", () => {
     expect(sourceFiles([page()], { projectRoot: null, contentRoot: null })).toEqual([]);
   });

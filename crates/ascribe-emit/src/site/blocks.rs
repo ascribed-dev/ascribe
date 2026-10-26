@@ -25,7 +25,7 @@ use super::element::{Attrs, close, empty_block, marker, open, wrap};
 use super::inline::{Mode, render, value_text};
 use crate::emitter::PageContext;
 use crate::labels::{availability_target_text, is_planned, operation_text, plain_text};
-use crate::plain::{Prev, escape_closing_hash, fenced, list, quote, starts_nested};
+use crate::plain::{Prev, SITE_DROPS, escape_closing_hash, fenced, list, quote, starts_nested};
 
 pub(crate) struct Renderer<'a> {
     pub(crate) page: &'a PageContext<'a>,
@@ -259,7 +259,7 @@ impl Renderer<'_> {
                 vec![self.anchored(block, "p", text, ChunkKind::Paragraph)]
             }
             BlockKind::CodeBlock(c) => {
-                vec![self.anchored(block, "pre", fenced(c), ChunkKind::Closed)]
+                vec![self.anchored(block, "pre", fenced(c, SITE_DROPS), ChunkKind::Closed)]
             }
             // Raw HTML passes through (SPEC §9.5, "HTML passthrough"). Its
             // anchor names the element it starts with; one that starts with

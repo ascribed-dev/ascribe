@@ -27,8 +27,8 @@ use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_check::identity::Identity;
 use ascribe_check::{
-    Acknowledgements, Diagnostic, NAV_FILE_ID, PERMALINKS_FILE_ID, PageChecker, Project,
-    ReadFailure, Registry, Severity, SourceFile, apply_levels, check_file,
+    Acknowledgements, Diagnostic, PageChecker, Project, ReadFailure, Registry, Severity,
+    SourceFile, apply_levels, check_file,
 };
 use ascribe_core::path::normalize;
 use ascribe_core::{FileId, LineIndex, RelPath};
@@ -79,10 +79,13 @@ pub(crate) struct Across {
     pub sources: BTreeMap<RelPath, (Arc<str>, Vec<lsp_types::Diagnostic>)>,
     /// The content model's, and its text.
     pub model: (String, Vec<Diagnostic>),
-    /// The permalinks list's, `ascribe.permalinks`, which isn't a source.
-    pub list: Vec<lsp_types::Diagnostic>,
-    /// The navigation file's, `ascribe.nav`, which isn't a source either.
-    pub nav: Vec<lsp_types::Diagnostic>,
+    /// What they found at each side file they report on (those whose
+    /// `Stale::across` is set), by its path from the project root, when
+    /// they found anything: `ascribe.permalinks`' and `ascribe.nav`'s
+    /// problems, and at `ascribe.addresses` an entry the permalinks list is
+    /// behind on. That file's own checks, and the addresses compared with
+    /// the base, are sent apart ([`crate::addresses`]).
+    pub side: BTreeMap<&'static str, Vec<lsp_types::Diagnostic>>,
     /// Each memo file's, committed and personal (SPEC §7.7), by its path
     /// from the project root, levels applied: every memo file the checks
     /// read, with nothing for one that has no problem.
@@ -95,7 +98,20 @@ pub(crate) struct Across {
     pub matched: Vec<Identity>,
 }
 
+/// The side files the checks across the project report on, in the order of
+/// `ascribe_check::side_files::SIDE_FILES`.
+fn across_side_files() -> impl Iterator<Item = &'static ascribe_resolve::side_file::Entry> {
+    ascribe_check::side_files::SIDE_FILES
+        .iter()
+        .filter(|entry| entry.stale.across)
+}
+
 impl Across {
+    /// What they found at the side file at `path`.
+    fn side_found(&self, path: &str) -> &[lsp_types::Diagnostic] {
+        self.side.get(path).map_or(&[], Vec::as_slice)
+    }
+
     /// What's kept for a source file whose text is now `text`: nothing once
     /// it's been edited since the checks ran.
     fn of_source(&self, path: &RelPath, text: &str) -> &[lsp_types::Diagnostic] {
@@ -218,8 +234,7 @@ impl Core {
         // they found before; a file whose share changed and that this round
         // didn't compute is computed again, and `ascribe.toml` is published.
         let mut model_changed = false;
-        let mut list_changed = false;
-        let mut nav_changed = false;
+        let mut side_changed: Vec<&'static str> = Vec::new();
         let mut memos_changed: Vec<(RelPath, Vec<lsp_types::Diagnostic>)> = Vec::new();
         if let Some(across) = across
             && *across != *loaded.across
@@ -237,8 +252,10 @@ impl Core {
                 }
             }
             model_changed = across.model != loaded.across.model;
-            list_changed = across.list != loaded.across.list;
-            nav_changed = across.nav != loaded.across.nav;
+            side_changed = across_side_files()
+                .map(|entry| entry.path)
+                .filter(|path| across.side_found(path) != loaded.across.side_found(path))
+                .collect();
             // A memo file that's gone is published empty, once.
             for path in loaded.across.memos.keys() {
                 if !across.memos.contains_key(path) {
@@ -278,15 +295,12 @@ impl Core {
                 self.publish(&normalize(&root.join(path.as_str())), found);
             }
         }
-        if list_changed && let Some(loaded) = self.loaded.as_ref() {
-            let path = loaded.root.join(ascribe_model::PERMALINKS_FILE);
-            let found = loaded.across.list.clone();
-            self.publish(&path, found);
-        }
-        if nav_changed && let Some(loaded) = self.loaded.as_ref() {
-            let path = loaded.root.join(ascribe_model::NAV_FILE);
-            let found = loaded.across.nav.clone();
-            self.publish(&path, found);
+        for side in side_changed {
+            if let Some(loaded) = self.loaded.as_ref() {
+                let path = loaded.root.join(side);
+                let found = loaded.across.side_found(side).to_vec();
+                self.publish(&path, found);
+            }
         }
         self.publish_baseline();
     }
@@ -637,19 +651,19 @@ fn run_across(
         ),
         ..Across::default()
     };
-    // The permalinks list's own, and the navigation file's, at the levels
-    // `[checks]` sets (none of them is configurable, so as they are).
-    for (id, out) in [
-        (PERMALINKS_FILE_ID, &mut found.list),
-        (NAV_FILE_ID, &mut found.nav),
-    ] {
-        let list = hold(by_file.remove(&id).unwrap_or_default()).diagnostics;
-        if let Some(entry) = project.file(id) {
+    // What's at each side file they report on, at the levels `[checks]`
+    // sets (none of them is configurable, so as they are).
+    for side in across_side_files() {
+        let list = hold(by_file.remove(&side.id).unwrap_or_default()).diagnostics;
+        if let Some(entry) = project.file(side.id) {
             let index = LineIndex::new(entry.text);
-            *out = list
+            let list: Vec<_> = list
                 .iter()
                 .map(|d| to_lsp(d, &index, job.encoding, &|_| None))
                 .collect();
+            if !list.is_empty() {
+                found.side.insert(side.path, list);
+            }
         }
     }
     // Every memo file gets an entry, so one whose problems are fixed is
