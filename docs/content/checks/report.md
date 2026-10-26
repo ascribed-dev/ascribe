@@ -109,7 +109,7 @@ Agents
   23 checks: 21 passing, 2 failing, 1 of them failing since 9 October: redirect-behavior.
 ```
 
-A check is the same as one the last report had when it's on the same site, by the address given with `--site`, and has the same id. Failing, here, is failing or warning. A check is new when it's failing now and was passing on the last report, or wasn't in it, as a check the checker adds in a later version; one that was skipped or couldn't run then isn't counted as new, since there's nothing to say it was passing. One that failed then and passes now, or is gone, no longer fails.
+A check is the same as one the last report had when it's on the same site, by the address given with `--site`, and has the same id. Failing, here, is failing or warning. A check is new when it's failing now and was passing on the last report, or wasn't in it, as a check the checker adds in a later version; one that was skipped or couldn't run then isn't counted as new, since there's nothing to say it was passing. One that failed then and passes now, or is gone, no longer fails. One that failed then and warns now is still failing, so it's neither.
 
 Every check runs every time: nothing the checker said is reused, because a published site changes without a commit. The report only remembers how each check came out, to compare with. A first run says nothing about what's new, and neither does a run on another site than the last one's, such as a preview after the published site, since that's a different site. `--no-history` says nothing about what's new either, and keeps nothing. How each check came out is kept in `.ascribe/history/report.json`, beside the last report's problems; a report that doesn't run `agents` keeps what the file had for it.
 

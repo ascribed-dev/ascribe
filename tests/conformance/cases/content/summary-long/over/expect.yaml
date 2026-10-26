@@ -1,6 +1,6 @@
 description: >-
-  A section's summary as long as the limit, 300 characters, or longer is
-  advice, at its `@summary` line, whichever binding gives it; one under the
+  With `summary-long` turned on as advice, a section's summary as long as
+  the limit, 300 characters, or longer is reported at its `@summary` line, whichever binding gives it; one under the
   limit isn't reported. Any section's summary is measured, with or without
   a permalink.
 spec: ["4.12"]

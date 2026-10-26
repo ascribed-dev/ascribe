@@ -4,27 +4,31 @@ import { execFile } from "node:child_process";
 
 /** What a successful build printed. */
 export interface BuildResult {
-  /** The checks' report, which is more than a summary line when there is anything to report. */
+  /** The checks' summary line, after each error in full when there are any. */
   diagnostics: string;
-  /** The `built <build>/site: …` lines. */
+  /** The `built <build>: …` lines, one per build. */
   summary: string;
 }
 
 /**
- * A check's summary line, the report's last: `checked 14 files for build \`site\`, reported on 14:
- * 0 errors, 0 warnings, 0 advice`.
+ * The checks' summary line, the report's last: `checked 14 files in build \`site\`: no problems`,
+ * or the counts, with the command that lists the warnings and advice when there are any:
+ * `checked 14 files in build \`site\`: 0 errors, 1 warning, 3 advice: ascribe check --build site
+ * for each`.
  */
-const SUMMARY = /^checked [^:\n]*: (\d+) errors?, (\d+) warnings?, \d+ advice$/;
+const SUMMARY =
+  /^checked [^:\n]*: (?:no problems|(\d+) errors?, (\d+) warnings?, \d+ advice)(?:, \d+ acknowledged)?(?:: .* for each)?$/;
 
 /**
- * Whether a build's report is worth a warning: anything but a report whose
- * summary line counts no errors and no warnings, which is logged at info
- * level, advice and all.
+ * Whether a build's report is worth a warning: anything but a summary line
+ * that counts no errors and no warnings, which is logged at info level,
+ * advice and all.
  */
 export function hasWarnings(diagnostics: string): boolean {
   if (diagnostics === "") return false;
   const summary = SUMMARY.exec(diagnostics.trimEnd().split("\n").at(-1) ?? "");
-  return summary === null || summary[1] !== "0" || summary[2] !== "0";
+  if (summary === null) return true;
+  return (summary[1] ?? "0") !== "0" || (summary[2] ?? "0") !== "0";
 }
 
 /**

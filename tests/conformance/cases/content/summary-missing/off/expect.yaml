@@ -1,0 +1,11 @@
+description: >-
+  `summary-missing` is off unless the project names it in `[checks]`, since
+  only a project that shows its help in a product needs a summary for every
+  permalink: a permalink with no `@summary` isn't reported.
+spec: ["4.12", "7.2"]
+tags: [check, page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics: []

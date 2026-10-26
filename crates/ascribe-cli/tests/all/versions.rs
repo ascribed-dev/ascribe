@@ -1142,6 +1142,61 @@ fn retire_archives_the_line_and_rewrites_the_marks_without_deleting_anything() {
 }
 
 #[test]
+fn retire_records_the_lines_addresses_in_the_addresses_file_and_the_build_redirects_them() {
+    let dir = retiring_repository();
+    // A page only 1.0 has, which goes to the archive.
+    write(
+        dir.path(),
+        "docs/old.md",
+        "---\ntitle: Old\navailable: prod (ga 0.9, removed 1.1)\n---\n\nGone in 1.1.\n",
+    );
+    let init = ascribe(dir.path(), &["addresses", "init"]);
+    assert_eq!(code_of(&init), 0, "{}", stderr(&init));
+    git(dir.path(), &["add", "-A"]);
+    git(dir.path(), &["commit", "-q", "-m", "Keep the addresses"]);
+
+    let out = retire(dir.path(), &["--force"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(
+        text.contains("Recorded 2 addresses in ascribe.addresses, each to its page in the current line, so the build redirects them."),
+        "{text}"
+    );
+    assert!(
+        text.contains("The one that goes to the archive is your host's to redirect."),
+        "{text}"
+    );
+    let file = read(dir.path(), "ascribe.addresses");
+    assert!(
+        file.contains("[moved]\n\"/1.0/both/\" = \"both.md\"\n\"/1.0/prod/\" = \"prod.md\"\n"),
+        "{file}"
+    );
+    assert!(!file.contains("old"), "{file}");
+    git(dir.path(), &["commit", "-q", "-am", "Retire 1.0"]);
+
+    // The line's build is gone on purpose: nothing is lost.
+    let check = ascribe(dir.path(), &["check", "--base", "HEAD~1"]);
+    let report = format!("{}{}", stdout(&check), stderr(&check));
+    assert!(!report.contains("ASC258"), "{report}");
+    assert!(!report.contains("ASC255"), "{report}");
+    let list = ascribe(dir.path(), &["addresses", "list"]);
+    let listed = stdout(&list);
+    assert!(listed.contains("/1.0/both/ -> /both/ (301"), "{listed}");
+    assert!(listed.contains("/1.0/prod/ -> /prod/ (301"), "{listed}");
+}
+
+#[test]
+fn without_the_addresses_file_retire_records_nothing() {
+    let dir = retiring_repository();
+    let out = retire(dir.path(), &["--format", "json"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let json: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(json["recorded"], false);
+    assert_eq!(json["redirects"].as_array().map(Vec::len), Some(2));
+    assert!(!dir.path().join("ascribe.addresses").exists());
+}
+
+#[test]
 fn without_ends_the_line_ended_today() {
     let dir = retiring_repository();
     let model = RETIRING.replace("ends = { \"1.0\" = 2026-06-30 }\n", "");

@@ -127,6 +127,63 @@ fn with_no_section_it_reports_what_needs_nothing_outside_the_project() {
     );
 }
 
+/// A line of a versioned build names its target and line as what content
+/// isn't available on, and the verb agrees with how many builds keep it.
+#[test]
+fn builds_name_a_line_and_agree_with_the_builds_that_keep_it() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    write(
+        dir.path(),
+        "ascribe.toml",
+        r#"spec = "0.1"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+
+[releases.self-managed]
+live = ["3.4", "3.5"]
+
+[builds.site]
+versions = "self-managed"
+
+[builds.cloud]
+availability = { filter = "cloud" }
+"#,
+    );
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Home\n---\n\n## Keys\n@available: self-managed\n\nOn self-managed.\n\n## Signing\n@available: self-managed 3.5\n\nFrom 3.5.\n",
+    );
+    write(
+        dir.path(),
+        "docs/server.md",
+        "---\ntitle: Server\navailable: self-managed\n---\n\nOn self-managed.\n",
+    );
+    write(
+        dir.path(),
+        "docs/webhooks.md",
+        "---\ntitle: Webhooks\navailable: self-managed 3.5\n---\n\nFrom 3.5.\n",
+    );
+    let out = ascribe(dir.path(), &["report", "builds"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(text.contains("; site publishes it\n"), "{text}");
+    assert!(text.contains("; site and site@3.4 publish it\n"), "{text}");
+    assert!(
+        text.contains(
+            "Available on self-managed (GA, 3.5+), not self-managed 3.4; site keeps it\n"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains("Available on self-managed (GA), not cloud; site and site@3.4 keep it\n"),
+        "{text}"
+    );
+    assert!(!text.contains("not ;"), "{text}");
+}
+
 #[test]
 fn a_section_that_can_t_run_says_why_and_fails_only_with_exit_code() {
     let dir = project(MODEL);
@@ -1128,6 +1185,41 @@ fn agents_says_nothing_since_when_nothing_fails_then_or_now() {
     assert!(
         text.contains(
             "  2 checks: 2 passing, 0 failing; 1 that failed on 12 October no longer fails.\n"
+        ),
+        "{text}"
+    );
+}
+
+/// What afdocs writes: three checks, each with the status written in a
+/// file named for it in the folder it runs in, and passing without one.
+#[cfg(unix)]
+const AFDOCS_STATUS_BY_FILE: &str = r#"status() { if [ -f "$1" ]; then read -r s < "$1"; echo "$s"; else echo pass; fi; }
+printf '{"url":"%s","results":[{"id":"llms-txt-exists","category":"content-discoverability","status":"%s","message":"checked"},{"id":"llms-txt-links-resolve","category":"content-discoverability","status":"%s","message":"checked"},{"id":"redirect-behavior","category":"url-stability","status":"%s","message":"checked"}]}' "$2" "$(status llms-txt-exists)" "$(status llms-txt-links-resolve)" "$(status redirect-behavior)"
+exit 0"#;
+
+/// A check that went from failing to warning is still failing, so it isn't
+/// one that no longer fails; and the check new since the last report is
+/// named next to what says it's new, not after what no longer fails.
+#[cfg(unix)]
+#[test]
+fn a_check_that_warns_instead_of_failing_still_fails() {
+    let dir = project(MODEL);
+    script(&dir.path().join("tools"), "afdocs", AFDOCS_STATUS_BY_FILE);
+    let site = "https://docs.example.com";
+    let set = |id: &str, status: &str| fs::write(dir.path().join(id), status).unwrap();
+
+    set("llms-txt-exists", "fail");
+    set("redirect-behavior", "fail");
+    agents_on(dir.path(), "2026-10-24", site, &[]);
+
+    // The first warns now, the second passes, and the links are new.
+    set("llms-txt-exists", "warn");
+    set("redirect-behavior", "pass");
+    set("llms-txt-links-resolve", "warn");
+    let text = stdout(&agents_on(dir.path(), "2026-10-25", site, &[]));
+    assert!(
+        text.contains(
+            "  3 checks: 1 passing, 2 failing, 1 of them failing since 24 October: llms-txt-links-resolve; 1 that failed on 24 October no longer fails.\n"
         ),
         "{text}"
     );

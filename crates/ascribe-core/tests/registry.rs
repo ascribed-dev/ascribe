@@ -69,6 +69,36 @@ fn configurable_matches_the_registry() {
 }
 
 #[test]
+fn off_by_default_matches_the_registry() {
+    let path =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/conformance/diagnostics.toml");
+    let text = std::fs::read_to_string(&path).expect("read diagnostics.toml");
+    let doc: toml::Table = text.parse().expect("diagnostics.toml is TOML");
+    let registry: Vec<&str> = doc["diagnostic"]
+        .as_array()
+        .expect("[[diagnostic]] entries")
+        .iter()
+        .filter(|e| e.get("off-by-default").and_then(toml::Value::as_bool) == Some(true))
+        .map(|e| e["slug"].as_str().expect("slug"))
+        .collect();
+    let constants: Vec<&str> = diagnostics::OFF_BY_DEFAULT
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+    assert_eq!(
+        constants, registry,
+        "ascribe_core::diagnostics::OFF_BY_DEFAULT must list every registry entry with \
+         `off-by-default = true`, in registry order"
+    );
+    for slug in diagnostics::OFF_BY_DEFAULT {
+        assert!(
+            diagnostics::CONFIGURABLE.contains(slug),
+            "`{slug}` is off by default, so it must be configurable to be turned on"
+        );
+    }
+}
+
+#[test]
 fn acknowledgeable_matches_the_registry() {
     let path =
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/conformance/diagnostics.toml");

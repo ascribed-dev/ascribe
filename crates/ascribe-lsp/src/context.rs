@@ -1025,6 +1025,7 @@ fn token(
         }),
         Hit::Directive(line) => directive_token(line, offset, &range),
         Hit::Snippet(_)
+        | Hit::Operation(..)
         | Hit::Availability(..)
         | Hit::Frontmatter(..)
         | Hit::Listing(_)

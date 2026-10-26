@@ -73,6 +73,33 @@ fn stderr(output: &Output) -> String {
     String::from_utf8_lossy(&output.stderr).into_owned()
 }
 
+/// What `ascribe build` prints of `ascribe check`'s text report: its
+/// errors, each in full, without the warnings and advice or the summary
+/// line.
+fn errors_of(check: &str) -> String {
+    let mut errors = String::new();
+    let mut keep = false;
+    let lines: Vec<&str> = check.lines().collect();
+    let (_, report) = lines.split_last().unwrap_or((&"", &[]));
+    for line in report {
+        if line.starts_with("[ASC") {
+            keep = line.contains("] Error: ");
+        }
+        if keep {
+            errors.push_str(line);
+            errors.push('\n');
+        }
+    }
+    errors
+}
+
+/// `ascribe build`'s text report without its summary line.
+fn without_summary(build: &str) -> String {
+    let mut lines: Vec<&str> = build.lines().collect();
+    lines.pop();
+    lines.iter().map(|l| format!("{l}\n")).collect()
+}
+
 fn page(body: &str) -> String {
     format!("---\ntitle: A page\n---\n\n{body}")
 }
@@ -128,13 +155,17 @@ fn builds_quill_under_every_build_with_both_emitters() {
         }
     }
     assert!(
-        stderr(&out).contains("built cloud/plain: 3 pages, 2 assets"),
+        stderr(&out).contains("built cloud: 3 pages, 2 assets (site, plain, json)\n"),
         "{}",
         stderr(&out)
     );
-    // The report is what `ascribe check` prints.
-    let check = ascribe(dir.path(), &["check"]);
-    assert_eq!(stdout(&out), stdout(&check));
+    // One line per build.
+    assert_eq!(stderr(&out).lines().count(), 4, "{}", stderr(&out));
+    // With the summary checks off by default, quill has nothing to report.
+    assert_eq!(
+        stdout(&out),
+        "checked 8 files in every build: no problems\n"
+    );
     // Building again changes nothing on disk that hasn't changed.
     let again = ascribe(dir.path(), &["build"]);
     assert_eq!(code(&again), 0, "{}", stderr(&again));
@@ -156,7 +187,7 @@ fn a_project_nested_in_the_content_root_is_not_built() {
     assert!(plain.join("index.md").is_file());
     assert!(!plain.join("nested").exists());
     assert!(
-        stderr(&out).contains("built site/plain: 1 page"),
+        stderr(&out).contains("built site: 1 page, 0 assets (plain)\n"),
         "{}",
         stderr(&out)
     );
@@ -198,7 +229,7 @@ fn the_site_output_is_built_under_every_build() {
         assert!(!built.join(build).join("plain").exists());
     }
     assert!(
-        stderr(&out).contains("built cloud/site: 3 pages, 2 assets"),
+        stderr(&out).contains("built cloud: 3 pages, 2 assets (site)\n"),
         "{}",
         stderr(&out)
     );
@@ -238,7 +269,7 @@ fn a_generated_file_isnt_counted_as_an_asset() {
     let out = ascribe(dir.path(), &["build", "--build", "site", "--emit", "site"]);
     assert_eq!(code(&out), 0, "{}", stderr(&out));
     assert!(
-        stderr(&out).contains("built site/site: 1 page, 0 assets"),
+        stderr(&out).contains("built site: 1 page, 0 assets (site)\n"),
         "{}",
         stderr(&out)
     );
@@ -327,7 +358,8 @@ fn removing_a_page_removes_its_old_output_and_leaves_users_files() {
     let out = ascribe(dir.path(), &["build"]);
     assert_eq!(code(&out), 0, "{}", stderr(&out));
     assert!(
-        stderr(&out).contains("removed 2 stale files"),
+        stderr(&out)
+            .contains("built site: 1 page, 0 assets (site, plain, json), removed 6 stale files\n"),
         "{}",
         stderr(&out)
     );
@@ -436,7 +468,11 @@ fn build_reports_what_check_reports_and_writes_nothing() {
         let build = ascribe(dir.path(), &["build", "--format", format]);
         assert_eq!(code(&check), 1, "{}", stdout(&check));
         assert_eq!(code(&build), 1, "{}", stdout(&build));
-        assert_eq!(stdout(&check), stdout(&build), "{format}");
+        if format == "json" {
+            assert_eq!(stdout(&check), stdout(&build));
+        } else {
+            assert_eq!(errors_of(&stdout(&check)), without_summary(&stdout(&build)));
+        }
         assert!(
             stderr(&build).contains("nothing was written"),
             "{}",
@@ -452,9 +488,12 @@ fn a_build_with_only_warnings_reports_them_and_builds() {
     let check = ascribe(dir.path(), &["check"]);
     let build = ascribe(dir.path(), &["build"]);
     assert_eq!(code(&build), 0, "{}", stderr(&build));
-    assert!(stdout(&build).contains("1 warning"), "{}", stdout(&build));
-    // Two builds, and still one report: the same diagnostic isn't repeated per build.
-    assert_eq!(stdout(&check), stdout(&build));
+    // The warning is counted, not shown, and the check lists it.
+    assert_eq!(
+        stdout(&build),
+        "checked 1 file in every build: 0 errors, 1 warning, 1 advice: ascribe check for each\n"
+    );
+    assert!(stdout(&check).contains("1 warning"), "{}", stdout(&check));
     assert!(
         dir.path()
             .join(".ascribe/build/site/plain/index.md")
@@ -496,7 +535,15 @@ fn build_reports_what_check_reports_for_page_level_problems_too() {
             let (check, build) = (ascribe(dir.path(), &check), ascribe(dir.path(), &build));
             assert_eq!(code(&check), 1, "{args:?}: {}", stdout(&check));
             assert_eq!(code(&build), 1, "{args:?}");
-            assert_eq!(stdout(&check), stdout(&build), "{args:?} {format}");
+            if format == "json" {
+                assert_eq!(stdout(&check), stdout(&build), "{args:?}");
+            } else {
+                assert_eq!(
+                    errors_of(&stdout(&check)),
+                    without_summary(&stdout(&build)),
+                    "{args:?}"
+                );
+            }
         }
     }
     assert!(stdout(&ascribe(dir.path(), &["build"])).contains("id-duplicate"));
@@ -534,7 +581,15 @@ fn several_builds_and_unknown_builds_are_reported_as_check_reports_them() {
             build.extend(&args);
             let (check, build) = (ascribe(dir.path(), &check), ascribe(dir.path(), &build));
             assert_eq!(code(&check), code(&build), "{args:?} {format}");
-            assert_eq!(stdout(&check), stdout(&build), "{args:?} {format}");
+            if format == "json" || code(&check) == 2 {
+                assert_eq!(stdout(&check), stdout(&build), "{args:?} {format}");
+            } else {
+                assert_eq!(
+                    errors_of(&stdout(&check)),
+                    without_summary(&stdout(&build)),
+                    "{args:?}"
+                );
+            }
             assert_eq!(
                 stderr(&check),
                 stderr(&build).replace("error: the build failed; nothing was written\n", ""),
