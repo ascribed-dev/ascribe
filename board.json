@@ -6326,7 +6326,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1047"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "OpenAPI: @operation's link in the editor, as a link to an operation is"
     },
     {
@@ -6374,8 +6374,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/944"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDegos",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1061"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Keep permalinks' records in ascribe.addresses, one place for where published things went"
     },
     {
@@ -6413,7 +6416,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1048"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "versions retire: record the line's addresses in ascribe.addresses, so the build writes their redirects"
     },
     {
@@ -6491,8 +6494,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/951"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDeg3M",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1052"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Check: print a diagnostic's help once per run in text output"
     },
     {
@@ -6512,7 +6518,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1042"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "The `@intended` example in SPEC §4.9 and the directives page names a check that doesn't exist"
     },
     {
@@ -6559,8 +6565,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1051"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Say in the spec that it's a draft until 1.0"
     },
     {
@@ -6587,8 +6596,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/957"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDeg9U",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1057"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Group ascribe --help's commands by task, and shorten their descriptions"
     },
     {
@@ -6601,8 +6613,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/958"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehAY",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1055"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "init and check: point a new project at its first page"
     },
     {
@@ -6618,8 +6633,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1060"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "ascribe model: a section for every table of ascribe.toml, apis among them"
     },
     {
@@ -6636,7 +6654,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Bring five SPEC.md passages up to date with what the toolchain does"
     },
     {
@@ -6649,8 +6667,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/961"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehDY",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1054"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Docs: bring the docs index, command reference, and Files Ascribe writes up to date, and test them"
     },
     {
@@ -6666,8 +6687,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1058"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "MCP: add ascribe_rename, and name the tools after their commands"
     },
     {
@@ -6680,8 +6704,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/963"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehG0",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1056"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Editor: This page says things twice, and splits its warnings between About and Health"
     },
     {
@@ -6698,7 +6725,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Spec the implicit `release` dimension"
     },
     {
@@ -6728,8 +6755,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/966"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehJM",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1059"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Editor: the Project view's Health shows only the counts that need doing"
     },
     {
@@ -6759,8 +6789,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/968"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehMU",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1062"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Review preview: hide the build's raw settings, and give a detached thread one label"
     },
     {
@@ -6777,7 +6810,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Give the attributes in a code fence's info string a grammar in the spec"
     },
     {
@@ -6790,8 +6823,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/970"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehO8",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1063"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Changelog: one line per entry, with the detail on the page it links"
     },
     {
@@ -6808,7 +6844,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Separate what the spec defines from the processor's own settings and checks"
     },
     {
@@ -6821,8 +6857,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/972"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehSA",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1065"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Docs: lead the editor's sidebar page with what each view shows, and move the update rules after it"
     },
     {
@@ -6853,7 +6892,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Name the two kinds of error: the spec's, and a review check a project raises"
     },
     {
@@ -6866,8 +6905,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/975"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehXE",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1066"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Diff: say a change once when it's the same in every build"
     },
     {
@@ -6883,8 +6925,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1067"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "`ascribe build` and `ascribe report` don't read `ascribe.baseline`"
     },
     {
@@ -6901,7 +6946,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Restate the spec's principles and binding summary to match the features they now cover"
     },
     {
@@ -6918,7 +6963,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Define memo files' `about` targets in the spec's grammar, not by pointing at `ascribe refs`"
     },
     {
@@ -6952,7 +6997,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Call an API reference's address template something other than \"template\""
     },
     {
@@ -6965,8 +7010,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/981"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlB9s",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1068"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "ascribe preview: see the docs as a site without VS Code or Astro"
     },
     {
@@ -7007,8 +7055,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/984"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCJ0",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1064"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "One command that runs every check CI runs, named by every doc"
     },
     {
