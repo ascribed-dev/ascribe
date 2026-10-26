@@ -634,6 +634,9 @@ fn openapi_a_renamed_id_is_fixed_from_a_base_revision_s_spec() {
     let problems = inc.snapshot().problems(&guide);
     assert_eq!(problems[0].arg("closest"), Some("fetchUser"));
     assert_eq!(problems[0].fixes[0].applicability, Applicability::Safe);
+    // The message says what the id is now, and where.
+    assert_eq!(problems[0].variant, Some("renamed"));
+    assert_eq!(problems[0].arg("at"), Some("GET /users/{id}"));
 }
 
 #[test]

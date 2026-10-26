@@ -5,6 +5,7 @@ use std::io::{self, Read, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use ascribe_check::baseline;
 use ascribe_check::fix;
@@ -14,7 +15,7 @@ use ascribe_check::{
     Acknowledged, BaselineError, Diagnosed, Diagnostic, LoadError, Project, Reported, Scope,
     ScopeError, Severity, diagnose, diagnose_editor_build_in, locate_for,
 };
-use ascribe_core::Coded;
+use ascribe_core::{Coded, diagnostics};
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::answer::{Found, FromDisk, Loaded, Projects};
@@ -471,6 +472,23 @@ pub fn run_check(
             (found, base)
         });
         let mut found = found.map_err(Stopped::Build)?;
+        // A link to an operation the spec doesn't have is checked again with
+        // the base's specs, so one whose id was renamed since is offered the
+        // operation now at the method and path it had there. Only then is
+        // the base read for them, so a check with no such link never starts
+        // `git` for it; a base that can't be read leaves the closest.
+        if found
+            .diagnostics
+            .iter()
+            .any(|d| d.slug == diagnostics::LINK_OPERATION_MISSING)
+            && let Some(apis) =
+                ascribe_diff::base_apis(project.root(), args.base.as_deref(), args.base_exact)
+        {
+            let based = project.clone().with_base_apis(Arc::new(apis));
+            found = diagnose(&based, &args.build)
+                .map(names)
+                .map_err(Stopped::Build)?;
+        }
         if let Some(base) = base {
             let more = compared_addresses(&loaded, &found.builds, base);
             found

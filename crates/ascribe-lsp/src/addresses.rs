@@ -28,6 +28,11 @@
 //!   build only the base has, the file's own checks, and a base that can't
 //!   be read, with the content model's levels and the baseline applied.
 //!
+//! The first round for a project that declares an API also reads the
+//! base's specs, once, so a link to an `operationId` renamed since is offered
+//! the operation now at its method and path, as `ascribe check` offers it
+//! (`ascribe_diff::base_apis`).
+//!
 //! The same round keeps each page's redirects, from `redirects.json` as
 //! each build would write it ([`ascribe_emit::site::redirects`]), for This
 //! page's "Also answers at" ([`Redirects::of`]).
@@ -135,6 +140,8 @@ pub(crate) struct State {
     pub redirects: Arc<Redirects>,
     /// What was sent last, so the same isn't sent again.
     sent: Option<AddressesParams>,
+    /// Whether the base's specs were read for the project served.
+    apis_read: bool,
 }
 
 impl State {
@@ -156,6 +163,7 @@ impl State {
     pub(crate) fn forget(&mut self) {
         self.kept = None;
         self.redirects = Arc::default();
+        self.apis_read = false;
     }
 }
 
@@ -175,11 +183,17 @@ pub(crate) struct Job {
     /// Ascribe's version, which keys the base listed.
     pub version: String,
     kept: Option<Arc<Kept>>,
+    /// Whether to read the base's specs too: once for each project served,
+    /// when it declares an API.
+    pub read_apis: bool,
 }
 
 impl Job {
     /// The job for the project loaded, when there is one.
-    pub(crate) fn of(core: &crate::core::Core) -> Option<Job> {
+    pub(crate) fn of(core: &mut crate::core::Core) -> Option<Job> {
+        let loaded = core.loaded.as_ref()?;
+        let read_apis = !core.addresses.apis_read && !loaded.model.apis.is_empty();
+        core.addresses.apis_read |= read_apis;
         let loaded = core.loaded.as_ref()?;
         Some(Job {
             root: loaded.root.clone(),
@@ -191,6 +205,7 @@ impl Job {
             encoding: core.encoding,
             version: core.version.clone(),
             kept: core.addresses.kept.clone(),
+            read_apis,
         })
     }
 }
