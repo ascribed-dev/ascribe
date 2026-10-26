@@ -166,7 +166,7 @@ The first hook in a project starts a check server in the background, the same `a
 @id {permalink=true}: cli-mcp
 @summary: Runs an MCP server over standard input and output, for an agent that has no shell: the commands that answer questions as tools, the project's rules as resources, and the named prompts.
 
-Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextprotocol.io) over standard input and output, for an agent that has no shell, or a host that approves tools one by one. An agent's host starts it; you don't run it yourself. It offers the commands that answer questions as tools, the project's rules as resources, and the named prompts of [`ascribe agents prompt`](commands.md#cli-agents-prompt). Each tool's result is the JSON its command writes, so an agent with a shell does as well with the commands. See [The MCP server](mcp.md) to set it up.
+Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextprotocol.io) over standard input and output, for an agent that has no shell, or a host that approves tools one by one. An agent's host starts it; you don't run it yourself. It offers the commands that answer questions as tools, the project's rules as resources, and the named prompts of [`ascribe agents prompt`](commands.md#cli-agents-prompt). Each tool's result is the JSON its command writes, so an agent with a shell does as well with the commands. No tool gives an output schema: each tool's description names the [JSON report contract](../contracts/json-reports.md), which has its command's schema, so the tool list a host sends the model in every session stays small. See [The MCP server](mcp.md) to set it up.
 
 | Tool | The command it runs |
 |---|---|

@@ -793,8 +793,15 @@ fn both_revisions_list_the_same_tools_in_the_same_order() {
         assert_eq!(annotations["idempotentHint"], true, "{tool}");
         assert_eq!(annotations["openWorldHint"], false, "{tool}");
         assert_eq!(tool["inputSchema"]["type"], "object", "{tool}");
-        assert_eq!(tool["outputSchema"]["type"], "object", "{tool}");
-        assert!(tool["description"].as_str().unwrap().contains("Example: "));
+        // The JSON report contract has the result's schema (#1033).
+        assert!(tool.get("outputSchema").is_none(), "{tool}");
+        let description = tool["description"].as_str().unwrap();
+        assert!(description.contains("Example: "), "{description}");
+        assert!(
+            description
+                .ends_with("JSON report contract: https://ascribed-dev.com/go/json-reports/"),
+            "{description}"
+        );
     }
 
     for version in ["2025-11-25", "2025-06-18"] {
@@ -804,6 +811,22 @@ fn both_revisions_list_the_same_tools_in_the_same_order() {
         let (text, _) = legacy.call_ok("ascribe_explain", json!({ "code": "ASC037" }));
         assert!(text.contains("link-id-missing"), "{text}");
     }
+}
+
+/// `tools/list` stays within a budget: a host gives it to the model in every
+/// session, before the agent's first call. A new tool, or a longer
+/// description, spends from it; raise it only on purpose (#1033).
+#[test]
+fn the_tool_list_stays_within_its_budget() {
+    const BUDGET: usize = 25_000;
+    let repo = repository();
+    let mut server = Server::start(repo.path());
+    let tools = server.result("tools/list", json!({}));
+    let size = serde_json::to_string(&tools).unwrap().len();
+    assert!(
+        size <= BUDGET,
+        "tools/list is {size} bytes, over its budget of {BUDGET}"
+    );
 }
 
 #[test]
@@ -1266,12 +1289,12 @@ fn agents_prompt_lists_its_prompts_and_refuses_what_it_doesnt_know() {
     }
 }
 
-/// The command a description names, as words: "The command: `...`."
+/// The command a description names, as words: "The command: `...`".
 fn named_command(description: &str) -> Vec<String> {
     let (_, rest) = description
         .rsplit_once("The command: `")
         .unwrap_or_else(|| panic!("names no command: {description}"));
-    let command = rest.trim_end_matches("`.");
+    let command = rest.split('`').next().unwrap_or_default();
     command
         .split(' ')
         .filter(|word| !word.starts_with('<'))
