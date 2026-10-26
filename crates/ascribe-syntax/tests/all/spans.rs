@@ -88,6 +88,19 @@ fn directives_in_every_container() {
         "---\r\ntitle: x\rkind: y\r\n---\r\n@note: after\r",
         "[r]:[\r]",
         "[r]: /x\r[s]:[\r]\r\rtext\r",
+        // An info string is trimmed of spaces and tabs, not other whitespace.
+        "`````\u{c}\0\0\u{0}6\n",
+        "~~~ \u{c}rust\u{c} \n~~~\n",
+        // An unclosed container ends with its last line that isn't blank (#1122).
+        "@memo:\n",
+        "@memo:\n  - Not an item.\n\n   ",
+        "@memo:\r\ntext  \r\n\r\n",
+        "> @memo:\n> text\n>\n> \n",
+        "- @memo:\n  text\n\n  \n",
+        "@note:\n",
+        "@note:\ntext\n\n  \n",
+        "> @note:\n> text\n>\n",
+        "@details: x\n@memo:\n",
     ] {
         assert_exact("container case", source);
     }
