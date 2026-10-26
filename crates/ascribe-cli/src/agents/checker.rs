@@ -43,7 +43,8 @@ pub const LIMIT: usize = 10;
 pub const IDLE: Duration = Duration::from_secs(10 * 60);
 
 /// What a check found, as a hook reports it: the counts, the first
-/// [`LIMIT`] errors as `ascribe check --format concise` writes them, and
+/// [`LIMIT`] errors as `ascribe check --format concise` writes them but for
+/// their fixes, and
 /// for a quick check the build it covered and the advice with a safe fix.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Found {
@@ -65,7 +66,7 @@ pub struct Found {
     #[serde(default)]
     pub fixable: usize,
     /// The first [`LIMIT`] of them: each one's line, as `--format concise`
-    /// writes it, and the title of its safe fix.
+    /// writes it but for its fix, and the title of its safe fix.
     #[serde(default)]
     pub fixes: Vec<(String, String)>,
     /// How many advice `ascribe.baseline` holds back in what was checked,
@@ -227,10 +228,10 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         .map(|i| &reported[i])
         .filter(|r| r.diagnostic.severity == Severity::Error)
         .collect();
+    // Without the fix `--format concise` adds: the hook says what to do
+    // itself, as the language server's lines do.
     let line_of = |r: &Reported| -> Result<String, String> {
-        let mut line = Vec::new();
-        concise::write_line(&mut line, files, r).map_err(|e| e.to_string())?;
-        Ok(String::from_utf8_lossy(&line).trim_end().to_owned())
+        Ok(concise::head(files, r).trim_end().to_owned())
     };
     let mut lines = Vec::new();
     for r in errors.iter().take(LIMIT) {

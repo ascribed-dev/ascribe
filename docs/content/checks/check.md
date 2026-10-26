@@ -48,7 +48,7 @@ npx ascribe check --stdin --path docs/guides/new.md < draft.md
 
 ### Output for agents
 
-`--format concise` is grouped by file in file order, and by line within a file, and ends with the summary line:
+`--format concise` writes a line for each problem, grouped by file in file order, and by line within a file, and ends with the summary line. A problem with a fix ends its line with `→` and what the fix does, the help the full output gives:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check-concise.txt
 
@@ -156,7 +156,15 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 
 Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. It changes nothing else, never how a page renders, and leaves alone a construct that has an error. See [Canonical form](../writing/syntax.md#canonical-form).
 
-It lists each file it changed.
+It lists each file it changed. With `--check`, it changes nothing and lists each change it would make: the file and line, then the lines as they are, marked `-`, and as they'd be, marked `+`:
+
+```text
+docs/install.md:5
+- @note{ type = tip }:Run it from the project root.
++ @note {type=tip}: Run it from the project root.
+```
+
+`--diff` writes the changes as a unified diff instead, which `git apply` applies, and also changes nothing.
 
 @include: ../_generated/cli-fmt-options.md
 
@@ -166,6 +174,6 @@ A symbolic link it leaves alone is reported on standard error, as `check` report
 
 | Code | Meaning |
 |---|---|
-| `0` | Every file was formatted, or, with `--check`, none needed it |
-| `1` | With `--check`: a file would change |
+| `0` | Every file was formatted, or, with `--check` or `--diff`, none needed it |
+| `1` | With `--check` or `--diff`: a file would change |
 | `2` | A problem: no `ascribe.toml`, a content model with errors, a path or file that can't be read, or a symbolic link that leads out of the content root |

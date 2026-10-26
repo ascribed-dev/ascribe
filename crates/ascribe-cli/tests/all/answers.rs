@@ -163,6 +163,26 @@ fn explain_answers_by_code_or_name() {
 }
 
 #[test]
+fn explain_text_writes_links_for_a_terminal() {
+    let dir = tempfile::tempdir().unwrap();
+    // The JSON keeps the registry's Markdown, for a tool to render.
+    let value = json(dir.path(), &["explain", "page-orphan"], 0);
+    assert!(
+        value["fix"]
+            .as_str()
+            .unwrap()
+            .contains("[`[checks]`](content-model/checks.md#19-checks)"),
+        "{value}"
+    );
+    let text = stdout(&run(dir.path(), &["explain", "page-orphan"], 0));
+    assert!(
+        text.contains("turn the check off in `[checks]` (`page-orphan = \"off\"`)"),
+        "{text}"
+    );
+    assert!(!text.contains("checks.md#"), "{text}");
+}
+
+#[test]
 fn explain_names_the_closest_for_an_unknown_code() {
     let dir = tempfile::tempdir().unwrap();
     let out = run(dir.path(), &["explain", "link-targt"], 2);

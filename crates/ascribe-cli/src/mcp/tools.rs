@@ -931,6 +931,7 @@ fn call_format(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String
     let global = global_at(paths.first().map(PathBuf::as_path))?;
     let args = fmt::Args {
         check: true,
+        diff: false,
         paths,
         format: Format::Json,
     };

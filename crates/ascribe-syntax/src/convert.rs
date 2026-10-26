@@ -13,7 +13,7 @@ use comrak_ascribe::{Arena, Options, parse_document_with_definitions};
 use crate::head::{Head, parse_head};
 use crate::options::ParseOptions;
 use crate::tree::*;
-use crate::unknown::{directive_shape, is_known, suggest};
+use crate::unknown::{directive_shape, is_known, other_case, suggest};
 
 pub(crate) fn convert(source: &str, options: &ParseOptions) -> ParsedDocument {
     let mut comrak_options = Options::default();
@@ -655,12 +655,17 @@ impl<'a> Converter<'a> {
             };
             if !(n == 0 && skip_first) {
                 let candidate = &text[start..offset + line.len()];
+                let at = span.start() + start;
                 if let Some(len) = directive_shape(candidate) {
                     let name = &candidate[1..=len];
                     if !is_known(name, self.options) {
-                        let at = span.start() + start;
-                        self.report_unknown(name, Span::new(at, at + 1 + len));
+                        let suggestion = suggest(name, self.options);
+                        self.report_unknown(name, suggestion, Span::new(at, at + 1 + len));
                     }
+                } else if let Some((len, keyword)) = other_case(candidate, self.options) {
+                    let name = &candidate[1..=len];
+                    let suggestion = Some(format!("@{keyword}"));
+                    self.report_unknown(name, suggestion, Span::new(at, at + 1 + len));
                 }
             }
             let after = offset + line.len();
@@ -673,10 +678,10 @@ impl<'a> Converter<'a> {
         }
     }
 
-    fn report_unknown(&mut self, name: &str, span: Span) {
+    fn report_unknown(&mut self, name: &str, suggestion: Option<String>, span: Span) {
         let mut issue =
             Issue::new(diagnostics::DIRECTIVE_UNKNOWN, self.location(span)).with_arg("name", name);
-        if let Some(suggestion) = suggest(name, self.options) {
+        if let Some(suggestion) = suggestion {
             issue = issue
                 .with_arg("suggestion", suggestion)
                 .with_variant("suggestion");

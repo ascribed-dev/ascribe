@@ -358,7 +358,8 @@ fn write_diagnostic(
         );
     }
     // The first fix's title, which says what applying it does; else the
-    // registry's help, the next step `check`'s JSON gives as `help`.
+    // registry's help, the next step `check`'s JSON gives as `help`, with
+    // its Markdown links written for a terminal.
     let help = d.fixes.first().map(|fix| fix.title.as_str()).or_else(|| {
         Registry::global()
             .get(d.slug)
@@ -366,7 +367,7 @@ fn write_diagnostic(
             .filter(|help| !help.is_empty())
     });
     if let Some(help) = help {
-        report = report.with_help(shown.help(d.code, help));
+        report = report.with_help(shown.help(d.code, &super::links::plain(help)));
     }
     report.finish().write(cache, out)
 }

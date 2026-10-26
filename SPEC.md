@@ -196,7 +196,7 @@ Recognition is block structure, which comes before inline structure. So, as with
 
 Otherwise the line is ordinary text. In particular, `@` followed by an unknown word is literal (`@astrojs/react`, `@timestamp`), and so is an `@` that follows a letter or digit (`support@example.com`).
 
-A line that has the shape of a directive but an unknown name, meaning `@word` at line start followed by `{`, `:`, or the end of the line, is still ordinary text, but processors SHOULD warn about it and suggest the closest known directive (`@warning:` → "did you mean `@note {type=warning}:`?"). Writing `\@` silences the warning. Prose `@` doesn't take this shape in practice.
+A line that has the shape of a directive but an unknown name, meaning `@word` at line start followed by `{`, `:`, or the end of the line, is still ordinary text, but processors SHOULD warn about it and suggest the closest known directive (`@warning:` → "did you mean `@note {type=warning}:`?"). Names are case-sensitive, so a line of that shape whose name is a known keyword in another case is ordinary text too, and processors SHOULD warn about it the same way (`@Note:` → "did you mean `@note`?"). Writing `\@` silences the warning. Prose `@` doesn't take this shape in practice.
 
 Built-in keywords never contain a hyphen. Project widget names always contain one (§6). The keyword set is closed: it grows only by revisions to this specification (built-ins) or by content-model declarations (project widgets). While the specification is a draft, a revision can add a built-in under the same version (§11).
 

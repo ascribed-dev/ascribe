@@ -32,6 +32,34 @@ pub(crate) fn directive_shape(line: &str) -> Option<usize> {
     }
 }
 
+/// If `line` has the shape of a directive line but for the case of its
+/// name, and the name in lowercase is a keyword (`@Note:`), the length of
+/// its name and the keyword. Names are case-sensitive (SPEC §3.2), so the
+/// line is text, and is warned about as a misspelling is.
+pub(crate) fn other_case(line: &str, options: &ParseOptions) -> Option<(usize, String)> {
+    let rest = line.strip_prefix('@')?;
+    let bytes = rest.as_bytes();
+    if !bytes.first().is_some_and(u8::is_ascii_alphabetic) {
+        return None;
+    }
+    let len = bytes
+        .iter()
+        .take_while(|&&b| b.is_ascii_alphanumeric() || b == b'-')
+        .count();
+    let name = &rest[..len];
+    if !name.bytes().any(|b| b.is_ascii_uppercase()) {
+        return None;
+    }
+    let keyword = name.to_ascii_lowercase();
+    if !is_known(&keyword, options) {
+        return None;
+    }
+    match rest[len..].trim_start_matches([' ', '\t']).bytes().next() {
+        None | Some(b'{' | b':') => Some((len, keyword)),
+        Some(_) => None,
+    }
+}
+
 /// Whether `name` is a keyword: a schema's name, or `end`.
 pub(crate) fn is_known(name: &str, options: &ParseOptions) -> bool {
     name == END_KEYWORD || options.schema(name).is_some()
@@ -121,6 +149,30 @@ mod tests {
         assert_eq!(suggest("inlcude", &options).as_deref(), Some("@include"));
         assert_eq!(suggest("astrojs", &options), None);
         assert_eq!(suggest("timestamp", &options), None);
+    }
+
+    #[test]
+    fn finds_a_keyword_in_another_case() {
+        let options = ParseOptions::default();
+        assert_eq!(
+            other_case("@Note: text", &options),
+            Some((4, "note".to_owned()))
+        );
+        assert_eq!(
+            other_case("@NOTE {type=tip}:", &options),
+            Some((4, "note".to_owned()))
+        );
+        assert_eq!(other_case("@End", &options), Some((3, "end".to_owned())));
+        for line in [
+            "@note:",
+            "@Warning:",
+            "@Note is",
+            "@Timestamp:",
+            "@Note-x",
+            "@1Note:",
+        ] {
+            assert_eq!(other_case(line, &options), None, "{line:?}");
+        }
     }
 
     #[test]

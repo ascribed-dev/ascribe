@@ -8,6 +8,7 @@
 
 pub mod concise;
 pub mod json;
+pub mod links;
 pub mod text;
 
 use ascribe_check::{Diagnostic, Project, Reported, Severity};

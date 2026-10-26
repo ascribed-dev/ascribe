@@ -16,7 +16,7 @@ Says what a diagnostic means: its severity, its messages, how to fix it, a link 
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/explain.txt
 
-An example that needs something in `ascribe.toml` to go wrong shows that too: a few lines of the model it was checked against. Every example is checked, so each wrong page reports its diagnostic and nothing else, and each right page reports nothing.
+The text output is for a terminal, so a link in the fix is written as its text, with the address after it when it leads off the docs; `--format json` keeps the Markdown, links and all. An example that needs something in `ascribe.toml` to go wrong shows that too: a few lines of the model it was checked against. Every example is checked, so each wrong page reports its diagnostic and nothing else, and each right page reports nothing.
 
 | Code | Meaning |
 |---|---|

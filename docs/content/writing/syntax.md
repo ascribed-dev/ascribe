@@ -30,7 +30,7 @@ A line is a directive only when all of these hold:
 - The name is a **known** directive: a built-in one, `end`, or a [project widget](directives.md#project-widgets) declared in `ascribe.toml`.
 - The line isn't inside a code block or a raw HTML block.
 
-Anything else is text. `@astrojs/react` at the start of a line and `support@example.com` in a sentence are both plain text. A line shaped like a directive but with an unknown name (`@warning:`) is also text, and Ascribe warns about it and suggests the closest directive; write `\@warning:` if you mean the text.
+Anything else is text. `@astrojs/react` at the start of a line and `support@example.com` in a sentence are both plain text. A line shaped like a directive but with an unknown name (`@warning:`) is also text, and Ascribe warns about it and suggests the closest directive; write `\@warning:` if you mean the text. Names are case-sensitive, so `@Note:` is text too, and Ascribe suggests `@note`.
 
 Spaces between the parts don't matter, and nothing else may be on the line: `@steps foo` is an error. Built-in names never contain a hyphen; project widget names always do.
 
