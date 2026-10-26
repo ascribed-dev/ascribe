@@ -464,7 +464,8 @@ fn entries_with_pages(root: &Path, project: &Project) -> Vec<Held> {
             panic!("the file is text");
         };
         let file: Value = serde_json::from_str(&text).expect("the file is JSON");
-        let plain = PlainEmitter::new(project.model());
+        // The sections keep the pages' HTML addresses (decision #1023).
+        let plain = PlainEmitter::new(project.model()).with_html_links();
         let render = |cx: &EmitContext<'_>, page: &ResolvedPage| {
             let emitted = emit_page(&plain, cx, page).expect("the page renders");
             images_as_alt_text(&emitted.text)
