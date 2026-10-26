@@ -4,7 +4,7 @@ title: Glossary
 description: The terms these docs use, each with a sentence on what it means and a link to the page that documents it.
 ---
 
-Each term below is linked from the pages that use it, with its first paragraph as the link's title. Most of them are ordinary words too, so they're linked only where a page links them here: acknowledgement, address, agent, build, example, phrase, report, review, source, target, and variant. Each has one meaning in these docs, and where a word is also used another way, its entry says where and what it means there.
+Each term below is linked from the pages that use it, with its first paragraph as the link's title. Most of them are ordinary words too, so they're linked only where a page links them here: acknowledgement, address, agent, build, example, phrase, preview, report, review, source, target, and variant. Each has one meaning in these docs, and where a word is also used another way, its entry says where and what it means there.
 
 ## Acknowledgement
 @term {aliases=acknowledgements, match=marked}
@@ -111,6 +111,13 @@ A reusable string declared in `ascribe.toml` and written `{key}` in a page.
 
 See [Phrases](writing/inline.md#phrases).
 
+## Preview
+@term {aliases=previews, match=marked}
+
+Pages shown before they're published. These docs always say which of the four: the page preview, the site preview, the HTML preview, or `ascribe preview`.
+
+The [page preview](#page-preview) is in the editor; the [site preview](#site-preview) is the project's own dev server; the [HTML preview](#html-preview) is a pull request's, from `ascribe diff --format html`; and [`ascribe preview`](checks/check.md#cli-preview) renders a build as a plain site and serves it on this computer with the command alone. None of them is the published site.
+
 ## Recheck date
 @term {aliases="recheck dates"}
 
@@ -142,7 +149,7 @@ See [Review](review/index.md). A diagnostic whose next step is `review` may be f
 ## Site preview
 @term
 
-The active page on the project's own dev server, in the browser or the preview panel.
+The active page on the project's own dev server, in the browser or the preview panel. It has the published site's look, where `ascribe preview` has the element library's.
 
 See [the site preview](editor/preview.md#site-preview).
 
