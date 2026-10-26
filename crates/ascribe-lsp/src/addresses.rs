@@ -11,9 +11,11 @@
 //! without this thread, so it never reports them.
 //!
 //! - **When.** The comparison runs once the project loads, and again after a
-//!   save, a change on disk, or an edit to `ascribe.addresses` itself, a
-//!   moment after the last of a burst ([`SETTLE`]): a move in the Explorer
-//!   is a deletion and a creation, and an edit to the file the move's own.
+//!   save, a change on disk it reads (a page, a side file, the model, a
+//!   spec, git's refs; not a build's output), or an edit to
+//!   `ascribe.addresses` itself, a moment after the last of a burst
+//!   ([`SETTLE`]): a move in the Explorer is a deletion and a creation, and
+//!   an edit to the file the move's own.
 //!   Not as a page is typed.
 //! - **The base** is chosen as `ascribe check` chooses it: the merge base of
 //!   `HEAD` and the repository's default branch. Resolving it is a couple of
