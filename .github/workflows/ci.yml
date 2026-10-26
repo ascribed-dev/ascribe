@@ -33,6 +33,9 @@ name: CI
 #   fails.
 # - The install script and the Homebrew formula install the last release, on
 #   every night and when either changed.
+# - A pull request or a push to `main` that changes the crates or the corpora
+#   runs a quick benchmark (rust.yml's `bench`); the full run is weekly
+#   (corpora.yml).
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
@@ -62,6 +65,7 @@ jobs:
       site: ${{ steps.find.outputs.site }}
       install: ${{ steps.find.outputs.install }}
       windows: ${{ steps.find.outputs.windows }}
+      bench: ${{ steps.find.outputs.bench }}
       rust-os: ${{ steps.find.outputs.rust-os }}
       vscode-os: ${{ steps.find.outputs.vscode-os }}
       astro-targets: ${{ steps.find.outputs.astro-targets }}
@@ -122,6 +126,17 @@ jobs:
             windows=true
           fi
 
+          # A pull request that changes the crates, the corpora, or the job
+          # itself runs the quick benchmark, and so does a push to `main` that
+          # does, which keeps the job's cache of the dependencies warm for the
+          # pull requests after it.
+          bench=false
+          if { [ "$EVENT" = pull_request ] || [ "$EVENT" = push ]; } &&
+            { [ "$files" = all ] ||
+              printf '%s\n' "$files" | grep -qE '^(crates|tests/corpora)/|^\.github/workflows/rust\.yml$'; }; then
+            bench=true
+          fi
+
           linux_x64='{"os":"ubuntu-24.04","target":"linux-x64","env_target":"LINUX_X64","exe":"ascribe"}'
           linux_arm64='{"os":"ubuntu-24.04-arm","target":"linux-arm64","env_target":"LINUX_ARM64","exe":"ascribe"}'
           darwin_arm64='{"os":"macos-latest","target":"darwin-arm64","env_target":"DARWIN_ARM64","exe":"ascribe"}'
@@ -162,6 +177,7 @@ jobs:
             echo "site=$site"
             echo "install=$install"
             echo "windows=$windows"
+            echo "bench=$bench"
             echo "rust-os=$rust_os"
             echo "vscode-os=$vscode_os"
             echo "astro-targets=$astro"
@@ -190,6 +206,7 @@ jobs:
     uses: ./.github/workflows/rust.yml
     with:
       os: ${{ needs.changes.outputs.rust-os }}
+      bench: ${{ needs.changes.outputs.bench == 'true' }}
 
   js:
     needs: changes

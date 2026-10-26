@@ -331,6 +331,13 @@ pub mod report {
     use std::io::Write as _;
     use std::time::Duration;
 
+    /// Whether `ASCRIBE_BENCH_QUICK` is set: the pull request's run, which
+    /// measures only the metrics `corpora compare --quick` compares.
+    #[must_use]
+    pub fn quick() -> bool {
+        std::env::var_os("ASCRIBE_BENCH_QUICK").is_some()
+    }
+
     /// Appends the median and 95th percentile of `times` (which is sorted) as
     /// the metric `name`. Failures to write are ignored: a benchmark's
     /// numbers matter more than its bookkeeping.
