@@ -249,11 +249,11 @@ export function pageFragment(data: ReportData, key: string): DocumentFragment {
     }
     let text: string;
     if (ref?.bytes !== undefined) {
-      text = `Image not included: ${ref.path} (${bytes(ref.bytes)}, over the report's ${bytes(data.image_limit)} limit)`;
+      text = `Image not included: ${ref.path} (${bytes(ref.bytes)}, over the preview's ${bytes(data.image_limit)} limit)`;
     } else if (ref) {
       text = `Image not found: ${ref.path}`;
     } else {
-      text = `Image not loaded: ${src} (the report makes no network requests)`;
+      text = `Image not loaded: ${src} (the preview makes no network requests)`;
     }
     const placeholder = document.createElement("span");
     placeholder.className = "r-image";
@@ -396,7 +396,7 @@ export function start(root: HTMLElement, data: ReportData): void {
   if (data.limit.omitted > 0) {
     head.append(
       h("div", { class: "r-notice" }, [
-        `This report renders the first ${data.limit.pages} changed pages. ${data.limit.omitted} more are listed by name at the end of the list, not rendered.`,
+        `This preview renders the first ${data.limit.pages} changed pages. ${data.limit.omitted} more are listed by name at the end of the list, not rendered.`,
       ]),
     );
   }
@@ -633,7 +633,7 @@ export function start(root: HTMLElement, data: ReportData): void {
       main.append(
         h("p", { class: "r-empty" }, [
           page.omitted
-            ? `${page.path} isn't rendered: the report renders at most ${data.limit.pages} changed pages.`
+            ? `${page.path} isn't rendered: the preview renders at most ${data.limit.pages} changed pages.`
             : `${page.path} couldn't be rendered.`,
         ]),
       );

@@ -57,6 +57,36 @@ describe("forwardingPaths", () => {
     ]);
   });
 
+  it("names a permalink's section as Markdown and JSON when the help file has it", () => {
+    const root = siteRoot({
+      version: 1,
+      path: "/go/",
+      permalinks: {
+        "cli-check": { route: "/cli/", fragment: "cli-check", source: "cli.md" },
+        moved: { route: "/cli/", source: "cli.md", moved: "cli.md" },
+      },
+    });
+    writeFileSync(
+      path.join(root, "_ascribe", "help.json"),
+      JSON.stringify({
+        version: 1,
+        build: "site",
+        help: { "cli-check": { title: "Check", text: "Checks.", source: "cli.md" } },
+      }),
+    );
+    expect(forwardingPaths(root)).toEqual([
+      {
+        params: { id: "cli-check" },
+        props: {
+          to: "/cli/#cli-check",
+          dimensions: {},
+          alternates: { markdown: "/go/cli-check.md", json: "/go/cli-check.json" },
+        },
+      },
+      { params: { id: "moved" }, props: { to: "/cli/", dimensions: {} } },
+    ]);
+  });
+
   it("takes no parameters from a list that names no dimensions", () => {
     const root = siteRoot({
       version: 1,

@@ -71,7 +71,8 @@ npm test              # after a build
 ```
 
 - `test/projects.test.ts`: the docs' route is their base path; every permalink `home/`'s pages link to is one the docs publish, by `ascribe permalinks verify`, which also fails on a retired name; and the landing page's install commands are getting started's.
-- `test/negotiation.test.ts`: the edge function answers a docs page asked for as Markdown with its `.md`, passing on the `.md` file's `x-robots-tag` and `link`, and a page of `home/`, which has none, with the page.
+- `test/negotiation.test.ts`: the edge function answers a docs page asked for as Markdown with its `.md`, passing on the `.md` file's `x-robots-tag` and `link`, and a page of `home/`, which has none, with the page; and a permalink's address with its section's `.md`, which its forwarding page names as its alternate.
+- `test/redirects.test.ts`: `_redirects` forwards a permalink's address to its section with a `301`, and serves its forwarding page for an address with a dimension's parameter.
 - `test/changelog.test.ts`: the changelog's rules for links, anchors, and collapsed entries, and an unreleased section with nothing in it left out, on Markdown made in the test, with no build.
 - `test/toc.test.ts`: a docs page's table of contents lists its sections and subsections, each heading with its code spans, with no build.
 - `test/links.test.ts`: every link and anchor between the built pages lands, the changelog's included.

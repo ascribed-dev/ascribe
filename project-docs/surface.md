@@ -978,7 +978,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `publishing/index.md` | Publishing | concept |
 | `publishing/redirects.md` | Keep the addresses you've published | how-to |
 | `publishing/site.md` | The head, sitemap, `robots.txt`, and headers | reference |
-| `review/ci-report.md` | Attach the review report to every pull request | how-to |
+| `review/ci-report.md` | Attach the HTML preview to every pull request | how-to |
 | `review/diff.md` | `ascribe diff` and `drift` | reference |
 | `review/how-it-works.md` | How review works | concept |
 | `review/index.md` | Review | how-to |
@@ -1074,4 +1074,4 @@ These are part of the surface, and no file a script can read lists them, so they
 | The language | Attributes each directive takes, phrases (`{key}`), and the inline forms | `Builtin::schema` in `crates/ascribe-core/src/schema.rs`, as code, not as a list |
 | The VS Code extension | The status bar item (the build, and review's state), the preview and its header, the build lens, and review's marks and threads | `packages/vscode/src/`, as code |
 | `@ascribed/astro` | The dev toolbar's review app, and what the integration serves: published files, `llms.txt`, each page's Markdown, and a page for each permalink | `packages/astro/src/`, as code |
-| The outputs | The HTML report `ascribe diff --format html` writes, and the layout of each output's folder | `packages/review/`, and `docs/content/contracts/output-layout.md` |
+| The outputs | The HTML preview `ascribe diff --format html` writes, and the layout of each output's folder | `packages/review/`, and `docs/content/contracts/output-layout.md` |

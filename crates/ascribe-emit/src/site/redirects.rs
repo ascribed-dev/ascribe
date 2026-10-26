@@ -31,9 +31,10 @@
 //!   address from there, for each, under each base path.
 //!
 //! With `[consumer] host = "netlify"`, the emitter also writes Netlify's
-//! files in `_ascribe/host/`: `_redirects` from the pairs, and a rule for
-//! each retired address serving its page there with a 404; and `_headers`
-//! from the build's header rules.
+//! files in `_ascribe/host/`: `_redirects` from the pairs, a rule for each
+//! retired address serving its page there with a 404, and, for the current
+//! line, each permalink's rules; and `_headers` from the build's header
+//! rules.
 
 use std::collections::HashSet;
 
@@ -448,10 +449,99 @@ pub(super) fn json(redirects: &Redirects) -> String {
     text
 }
 
+/// A rule only a host's own file has: one for a permalink's address
+/// ([`permalink_rules`]), which can match a query parameter and be forced
+/// past the page at its address.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) struct HostRule {
+    /// The address, from the host's root.
+    from: String,
+    /// The query parameter the rule matches, as `name=:name`; none for a
+    /// rule that matches the address with any query.
+    query: Option<String>,
+    /// Where it leads, or, for a rewrite, the address whose page is served.
+    to: String,
+    /// The HTTP status.
+    status: u16,
+}
+
+/// The rules for each name `named` finds ([`super::permalinks::named`]), at
+/// its address under `model`'s permalinks' path: each of the content
+/// model's dimensions as a query parameter serves the forwarding page,
+/// whose script takes the reader's choice from it; then the address leads
+/// to its page, with `#` and the anchor for a heading, with a 301. A
+/// retired name serves its page, which says why, with a 410: it's gone on
+/// purpose. Each is forced, since the forwarding page is at the address.
+/// An address `taken` already has, as a pair's `from` or a retired
+/// address, writes nothing.
+pub(super) fn permalink_rules(
+    model: &ContentModel,
+    named: &std::collections::BTreeMap<&str, super::permalinks::Named<'_>>,
+    taken: &Redirects,
+) -> Vec<HostRule> {
+    use super::permalinks::Named;
+    let router = AstroRouter::from_consumer(&model.consumer);
+    let slash = if router.trailing_slash() { "/" } else { "" };
+    let path = model.consumer.permalink_path();
+    let destination = |route: &str, anchor: Option<&String>| match anchor {
+        Some(anchor) => format!("{route}#{anchor}"),
+        None => route.to_owned(),
+    };
+    let mut rules = Vec::new();
+    for (name, named) in named {
+        let from = format!("{path}{name}{slash}");
+        let mut from_taken = taken.redirects.iter().map(|r| &r.from);
+        let mut gone = taken.gone.iter().map(|g| &g.path);
+        if from_taken.any(|f| normalized(f) == normalized(&from))
+            || gone.any(|p| normalized(p) == normalized(&from))
+        {
+            continue;
+        }
+        let to = match named {
+            Named::Declared(permalink)
+            | Named::Alias {
+                target: permalink, ..
+            } => destination(&permalink.route, permalink.anchor.as_ref()),
+            Named::Moved { to, .. } => destination(&to.route, to.anchor.as_ref()),
+            Named::Removed { .. } => {
+                rules.push(HostRule {
+                    from: from.clone(),
+                    query: None,
+                    to: from,
+                    status: GONE,
+                });
+                continue;
+            }
+        };
+        for dimension in &model.dimensions {
+            rules.push(HostRule {
+                from: from.clone(),
+                query: Some(format!("{0}=:{0}", dimension.name)),
+                to: from.clone(),
+                status: OK,
+            });
+        }
+        rules.push(HostRule {
+            from,
+            query: None,
+            to,
+            status: MOVED_PERMANENTLY,
+        });
+    }
+    rules
+}
+
+/// The status a rewrite serves its page with.
+const OK: u16 = 200;
+
+/// The status a retired permalink's page is served with.
+const GONE: u16 = 410;
+
 /// Netlify's `_redirects`: each pair on a line, `from`, `to`, and the
 /// status; then each retired address, its page, and 404, which serves the
-/// page there with that status.
-pub(super) fn netlify(redirects: &Redirects) -> String {
+/// page there with that status; then each of `permalinks`, forced with `!`,
+/// its query parameter after its address.
+pub(super) fn netlify(redirects: &Redirects, permalinks: &[HostRule]) -> String {
     let pairs = redirects
         .redirects
         .iter()
@@ -460,7 +550,11 @@ pub(super) fn netlify(redirects: &Redirects) -> String {
         .gone
         .iter()
         .map(|g| format!("{} {} {NOT_FOUND}\n", g.path, g.page));
-    pairs.chain(gone).collect()
+    let permalinks = permalinks.iter().map(|r| match &r.query {
+        Some(query) => format!("{} {query} {} {}!\n", r.from, r.to, r.status),
+        None => format!("{} {} {}!\n", r.from, r.to, r.status),
+    });
+    pairs.chain(gone).chain(permalinks).collect()
 }
 
 /// The status a retired address's page is served with.

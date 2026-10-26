@@ -58,7 +58,7 @@ impl std::fmt::Debug for ProjectDiff {
 }
 
 impl ProjectDiff {
-    /// Writes the prompts, and the HTML report's, for an agent in `here`,
+    /// Writes the prompts, and the HTML preview's, for an agent in `here`,
     /// the folder the command was run in, as [`Context::seen_from`] has it.
     pub fn seen_from(&mut self, here: std::path::PathBuf) {
         self.here = Some(here);

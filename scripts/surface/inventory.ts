@@ -719,7 +719,7 @@ const UNDECLARED: { surface: string; what: string; where: string }[] = [
   },
   {
     surface: "The outputs",
-    what: "The HTML report `ascribe diff --format html` writes, and the layout of each output's folder",
+    what: "The HTML preview `ascribe diff --format html` writes, and the layout of each output's folder",
     where: "`packages/review/`, and `docs/content/contracts/output-layout.md`",
   },
 ];
