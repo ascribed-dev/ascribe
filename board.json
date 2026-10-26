@@ -7075,7 +7075,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1137"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Adopt an existing folder of Markdown: init that keeps it checking, and a guide"
     },
     {
@@ -8350,7 +8350,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "CLI conventions: bring the commands in line, one group at a time"
     },
     {
@@ -8367,7 +8367,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "A paragraph before a table loses its span after a CRLF"
     }
   ]
