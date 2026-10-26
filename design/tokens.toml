@@ -564,6 +564,7 @@ section = "700 2.125rem/1.15"
 "--type-hero" = "type.hero"
 "--type-display" = "type.display"
 "--type-section" = "type.section"
+"--scrim" = "color.scrim"
 
 [emit."site/src/styles/site.css".backdrop]
 "background" = "color.scrim"
