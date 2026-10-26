@@ -13,6 +13,10 @@
       "message": "`{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
     },
     {
+      "name": "closest",
+      "message": "`{path}` doesn't exist; did you mean `{closest}`?"
+    },
+    {
       "name": "outside",
       "message": "`{path}` is outside the project, so it can't be copied into the output"
     }

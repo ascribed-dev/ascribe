@@ -1,0 +1,1 @@
+- **A broken link's message names the target it most likely meant.** A heading whose id starts with the written id's words ranks first, and when one target clearly wins, the message ends with "did you mean" it. See [`ascribe link`](docs/content/command/questions.md#cli-link).

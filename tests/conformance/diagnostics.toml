@@ -1020,6 +1020,7 @@ row = "Links | Target file doesn't exist"
 message = "`{path}` doesn't exist"
 messages.case = "`{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.outside = "`{path}` is outside the project, so it can't be copied into the output"
+messages.closest = "`{path}` doesn't exist; did you mean `{closest}`?"
 fix = "Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project."
 example.wrong = '''
 ---
@@ -1054,6 +1055,7 @@ spec = "5.2"
 reference = "writing/inline.md#links"
 row = "Links | Target id doesn't exist in the target file (page level)"
 message = "`{path}` has no heading with the id `{id}`"
+messages.closest = "`{path}` has no heading with the id `{id}`; did you mean `{closest}`?"
 fix = "Fix the `#id`, or give the heading you mean that id with `@id`."
 example.wrong = '''
 ---

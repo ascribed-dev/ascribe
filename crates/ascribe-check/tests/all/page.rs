@@ -153,6 +153,80 @@ fn a_link_to_a_missing_heading_is_offered_the_closest_headings() {
     assert_eq!(found[0].fixes[0].file, found[0].location.file);
 }
 
+/// An id guessed from a heading's first words ranks the heading it was cut
+/// down from first, above one fewer edits away, and the message names it.
+#[test]
+fn a_link_to_a_shortened_id_is_offered_the_heading_it_starts_first() {
+    let p = project(&[
+        ("index.md", &page("See [it](loop.md#ask-instead).")),
+        (
+            "loop.md",
+            &page(
+                "## Run the loop
+
+## Ask instead of guessing
+
+## Fix it or say it's intended",
+            ),
+        ),
+    ]);
+    let found = page_level(&p);
+    assert_eq!(at(&p, &found), [row("link-id-missing", "index.md", 5)]);
+    let hrefs: Vec<&str> = found[0]
+        .fixes
+        .iter()
+        .map(|f| f.edits[0].new_text.as_str())
+        .collect();
+    assert_eq!(hrefs[0], "loop.md#ask-instead-of-guessing");
+    assert_eq!(
+        found[0].message,
+        "`loop.md` has no heading with the id `ask-instead`; did you mean `loop.md#ask-instead-of-guessing`?"
+    );
+}
+
+/// The Quill cases: an id cut down, and one written longer than the
+/// heading's, each rank the heading they share words with first.
+#[test]
+fn a_link_to_a_longer_or_shorter_id_is_offered_the_heading_it_shares_words_with() {
+    let keys = "## Create a key\n@id: create-key\n\n## Rotate keys\n@id: rotate-keys\n\n## Sign webhook events\n@id: sign-webhooks";
+    let p = project(&[
+        ("a.md", &page("See [it](keys.md#rotate).")),
+        ("b.md", &page("See [it](keys.md#sign-webhook-events).")),
+        ("keys.md", &page(keys)),
+    ]);
+    let found = page_level(&p);
+    let first: Vec<&str> = found
+        .iter()
+        .map(|d| d.fixes[0].edits[0].new_text.as_str())
+        .collect();
+    assert_eq!(first, ["keys.md#rotate-keys", "keys.md#sign-webhooks"]);
+    assert!(
+        found[0]
+            .message
+            .ends_with("did you mean `keys.md#rotate-keys`?"),
+        "{}",
+        found[0].message
+    );
+}
+
+/// With two headings equally likely, the message names neither.
+#[test]
+fn a_link_with_no_clear_closest_heading_names_none() {
+    let p = project(&[
+        ("index.md", &page("See [it](other.md#install).")),
+        (
+            "other.md",
+            &page("## Install on Linux\n\n## Install on macOS"),
+        ),
+    ]);
+    let found = page_level(&p);
+    assert_eq!(found[0].fixes.len(), 2);
+    assert_eq!(
+        found[0].message,
+        "`other.md` has no heading with the id `install`"
+    );
+}
+
 #[test]
 fn a_problem_in_a_fragment_is_reported_at_the_include_site_and_noted_in_the_fragment() {
     // The link's target id doesn't exist. The link is in `_f.md`, which
