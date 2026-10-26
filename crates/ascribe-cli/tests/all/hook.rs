@@ -271,6 +271,48 @@ fn an_edit_with_an_error_tells_the_agent() {
 }
 
 #[test]
+fn the_hook_names_the_projects_command() {
+    let dir = project();
+    let root = dir.path();
+    fs::write(
+        root.join("package.json"),
+        r#"{"devDependencies": {"@ascribed/cli": "1.0.0"}}"#,
+    )
+    .unwrap();
+    fs::write(root.join("pnpm-lock.yaml"), "").unwrap();
+    let edit = edit_input("claude-code", root, "docs/guide.md");
+    let out = hook(&["claude-code"], &edit, None);
+    let text = context("claude-code", &out);
+    assert!(
+        text.starts_with("`pnpm exec ascribe check docs/guide.md` reports 1 error:"),
+        "{text}"
+    );
+    assert!(
+        text.contains("Run `pnpm exec ascribe explain <code>`"),
+        "{text}"
+    );
+    // `--command`, as `sync --command` writes it, names another.
+    let out = hook(&["claude-code", "--command", "bunx ascribe"], &edit, None);
+    let text = context("claude-code", &out);
+    assert!(
+        text.starts_with("`bunx ascribe check docs/guide.md` reports 1 error:"),
+        "{text}"
+    );
+    fs::write(root.join("docs/index.md"), ERROR).unwrap();
+    let out = hook(
+        &["claude-code", "--event", "stop"],
+        &stop_input("claude-code", root, false),
+        None,
+    );
+    let answer: Value = serde_json::from_str(&stdout(&out)).unwrap();
+    let reason = answer["reason"].as_str().unwrap();
+    assert!(
+        reason.starts_with("`pnpm exec ascribe check` reports"),
+        "{reason}"
+    );
+}
+
+#[test]
 fn an_edit_with_no_errors_says_nothing() {
     let dir = project();
     for harness in HARNESSES {
