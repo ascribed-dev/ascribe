@@ -105,7 +105,6 @@ A page's Markdown version has no head, so the rule its page's head gives is a [r
 - `X-Robots-Tag: noindex` for a page that's `unlisted`, and `nosnippet` for one that's `unquoted`, the same rule as its head;
 - `Link: <https://docs.example.com/docs/guides/install/>; rel="canonical"` on every one, naming the page, so a search engine lists the page and not its Markdown copy, while an agent can still fetch either.
 
-@available: ascribe 0.4.3
 The list also gives each [help entry's address](../permalinks/in-your-product.md#fetching-the-entry), such as `/docs/go/connect.json`, `Access-Control-Allow-Origin: *`, so a product on another origin can fetch it.
 
 `astro dev` sends them with each `.md` file, so you can try them with no host:

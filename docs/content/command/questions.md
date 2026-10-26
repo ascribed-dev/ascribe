@@ -122,10 +122,8 @@ Lists the places that use a page, a fragment, a heading, an image, or an entry o
 
 A target that's a path, with or without `#id`, finds its project from the path. An entry of the model, or a glossary term, is written with a prefix: `phrase:product` (or `phrase:{product}`), `feature:sso`, `term:api-key`, `dimension:deployment`, `note:warning`, or `widget:release-note`, and the project is found from the current directory, or from `--config`. The places are in path order, and in order within a file. A use is `link`, `include`, `phrase`, `availability`, `term`, `variant`, `note`, or `widget`.
 
-@available: ascribe 0.4.3
 An `availability` place shows its spec as written, after the use: ``docs/keys.md:25:13: availability `self-managed 3.5` ``.
 
-@available: ascribe 0.4.3
 A line of a release target, one with `[releases.<target>]`, is written `release:<target>@<version>`. Its places are the availability specs that name a version in that line, as each is written, with `planned` read as the target's planned line. A line holds every version that starts with its parts, so `release:ascribe@0.4` finds `ascribe 0.4.1` and `ascribe (preview 0.4.0, ga 0.5.0)`, and `release:ascribe@0.4.1` only the first. A spec that names the target's dimension, such as `release`, names no version of it. A target with no `[releases.<target>]` doesn't exist.
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/refs-release.txt
@@ -189,15 +187,14 @@ When the build doesn't publish the page, it writes nothing to standard output, s
 
 A line of a [versioned build](../versions/index.md), such as `--build site@3.4`, resolves the page as that line publishes it, its route and links under the line's folder.
 
-@available: ascribe planned
+@available: ascribe 0.4.4
 `--emit site` writes the page as the site output writes it, as `ascribe build --emit site` writes its file and `@ascribed/astro` receives it: Markdown with Ascribe's elements, such as `<ascribe-tabs>`, `<ascribe-note>`, and availability badges, from the code the build and the editor's preview use. It's what a site's integration is given, which the plain form can't show: what a switcher, a badge, or a glossary link becomes before a site draws it. `--emit plain`, the default, is the plain form above. `--emit` takes one output, not a list as `ascribe build --emit` does; a list is an error, exit `2`. From `examples/quill`, `ascribe resolve install-agent.md --build site --emit site` writes its Connect section as tabs, where the plain form writes a section for each arm:
 
 @snippet {lang=markdown}: code:crates/ascribe-cli/tests/output/resolve-site-connect.txt
 
-@available: ascribe planned
+@available: ascribe 0.4.4
 The site form's frontmatter, under `--frontmatter`, is the site output's, a line of a versioned build writes the line's links, and its elements read without their script as [a page in the site output](site-output.md) says.
 
-@available: ascribe 0.4.3
 `go:` and a permalink's name, in place of the page, shows the help a [product shows](../permalinks/in-your-product.md) for that permalink: its entry in the build's `_ascribe/help.json`, from the code that writes the file. The project is the current directory's, or `--config`'s. The text is the entry's title, its summary when the text doesn't start with it, its text, and "Read more" with its address, which needs [`[consumer] site`](../content-model/output.md#consumer):
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/resolve-permalink.txt
@@ -216,10 +213,9 @@ With `--format json`, the document is as follows, and its [schema](../contracts/
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/resolve.json
 
-@available: ascribe planned
+@available: ascribe 0.4.4
 `emit` says which output `text` is written as: `plain`, or `site` under `--emit site`, where `text` is the site output's file, with its frontmatter under `--frontmatter`.
 
-@available: ascribe 0.4.3
 For `go:<name>`, the document is the entry as `help.json` writes it, with the file's `version`, `build`, and `line`, and the `name` asked for, after `schema_version` and `ascribe_version`. `version` is `help.json`'s format version, which a reader checks as it checks the file's. Its [schema](../contracts/json-reports/questions.md#ascribe-resolve-go) has every field:
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/resolve-permalink.json

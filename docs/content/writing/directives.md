@@ -343,7 +343,6 @@ A plan for turning a flag on for a growing share of users: by percentage, by seg
 To set up a glossary from the start, see [Set up a glossary](../content-model/glossary.md).
 
 ## `@summary`
-@available: ascribe 0.4.3
 
 ([SPEC §4.12]({repo}/blob/main/SPEC.md#412-summary))
 
@@ -378,7 +377,7 @@ It rewrites each mark's `planned` for its target to the line's version.
 - **Nothing is guessed.** A section without `@summary` has no summary, whatever its first paragraph says.
 
 ## `@operation`
-@available: ascribe planned
+@available: ascribe 0.4.4
 
 ([SPEC §4.13]({repo}/blob/main/SPEC.md#413-operation))
 

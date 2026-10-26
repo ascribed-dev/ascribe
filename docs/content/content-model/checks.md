@@ -160,7 +160,7 @@ In an older line of a versioned build, a page isn't looser than `older-lines` ei
 ---
 
 ## 23. `[apis.<name>]`
-@available: ascribe planned
+@available: ascribe 0.4.4
 
 @include: ../_fragments/content-model/apis.md
 

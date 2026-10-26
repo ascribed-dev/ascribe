@@ -96,7 +96,7 @@ Each is one edit to the text the editor has, so a page you've changed and not sa
 The files are left unsaved on purpose. On a large project an edit can change hundreds of files, and each is opened with its changes unsaved, so you can read them before you save them: **File: Save All** saves them. **Undo** takes the edit back: VS Code asks whether to undo it in every file it changed or only in the one you're in. If a file changes while the question is up, nothing is applied; choose the action again.
 
 ### Addresses lost
-@available: ascribe planned
+@available: ascribe 0.4.4
 
 In a project that [keeps its addresses](../publishing/redirects.md), Health has a group after **Every build**, **Against the base**, with one count:
 
@@ -147,7 +147,7 @@ A fragment has no builds, listing, or size of its own: it's published only where
 This page updates as you move between pages and headings, while it's open.
 
 ### Old addresses
-@available: ascribe planned
+@available: ascribe 0.4.4
 
 In a project that [keeps its addresses](../publishing/redirects.md), About has an **Also answers at** row after **Markdown** for each old address an entry of `ascribe.addresses` leads to the page, the redirects the build writes to it, such as `/docs/guides/my-setup` on a page moved from `guides/my-setup.md`. Its tooltip names the entry. A row goes when the entry does, and an entry you've added and not saved counts.
 

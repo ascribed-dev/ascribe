@@ -2,7 +2,7 @@
 type: how-to
 title: Find the operations no guide links to
 description: "See which operations of your OpenAPI spec no page links to, with ascribe check's api-operation-unreferenced and the inventory's count of operations linked for each API."
-available: ascribe planned
+available: ascribe 0.4.4
 ---
 
 A spec grows faster than the guides that explain it. `ascribe check` says which operations no page links to, and `ascribe report inventory` counts them, so a new endpoint that ships without a guide shows up in the next check.

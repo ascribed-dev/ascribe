@@ -231,7 +231,6 @@ A later version adds keys and changes none of these.
 The site output holds `_ascribe/nav.json`: the build's share of the project's navigation (SPEC §7.8), the sections and pages in order with their labels, for a site to draw its sidebar from, joined to the page records (§1.3) on `source`. It's `generated` in the manifest, and written for every build, with an empty root section when the build has no pages. Its fields, and how a reader places a nested section, are the [navigation contract](navigation.md). A versioned build's lines each have their own, in their own roots. The JSON output holds the same file, its formatted labels as pieces, as its pages' formatted titles are.
 
 ### 1.7 The help file
-@available: ascribe 0.4.3
 
 The site output holds `_ascribe/help.json`: each permalink's section of the docs (SPEC §4.1), for a product to show where its user is, in a tooltip, a side panel, or beside an error, by the name it already links to. It's `generated` in the manifest, and written for every build, with an empty table when the build publishes no permalink, so a product can tell "no help" from an Ascribe that doesn't write the file. A product bundles the file from its own line's build, which `line` lets it check.
 
@@ -282,7 +281,7 @@ An entry's `text` and each of its `choices` are rendered from the page's resolve
 A site serves each entry at an address of its own, for a product to fetch its line's: `<path><name>.json`, where `path` is the permalinks list's (§1.2), for the current line and a build that isn't versioned, and `<base>go/<name>.json`, where `base` is the line's (§1.5), for an older line. The answer is this file with `help` holding that one entry: `{"version": 1, "build": "site", "line": "3.4", "help": {"connect": {…}}}`. The headers list (§1.4) gives each address `Access-Control-Allow-Origin: *`.
 
 ### 1.8 The redirects
-@available: ascribe planned
+@available: ascribe 0.4.4
 
 The site output holds `_ascribe/redirects.json`: where the addresses the build used to publish lead now, and which were retired, from the project's `ascribe.addresses` (SPEC §7.10) alone. The base revision isn't read: a source's old address is made from its path by the build's routing today, so a pair is written as long as its entry is there. It's `generated` in the manifest, and written for every build, with empty lists when the project has no `ascribe.addresses`, so a consumer can tell "no redirects" from an Ascribe that doesn't write the file.
 
@@ -318,7 +317,7 @@ The site output holds `_ascribe/redirects.json`: where the addresses the build u
 A later version adds keys and changes none of these.
 
 ### 1.9 The host's files
-@available: ascribe planned
+@available: ascribe 0.4.4
 
 With `[consumer] host` (content-model.md §15), the site output holds the host's own files in `_ascribe/host/`, each `generated` in the manifest, for whatever deploys the site to copy to the root of what's deployed. `@ascribed/astro` reads them, merges every project's, and writes them at the built site's root. Without `host`, the folder isn't written.
 

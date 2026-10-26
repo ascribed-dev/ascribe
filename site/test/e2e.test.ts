@@ -467,7 +467,7 @@ test("a variant group is a switcher, and the reader's choice holds on the next p
 test("a page marked with an availability shows its badge", async () => {
   // A page new in the oldest live line keeps its mark until that line is
   // archived; then this moves to a newer one.
-  const page = await open("/docs/permalinks/in-your-product/");
+  const page = await open("/docs/command/site-output/");
   const badge = page.locator('ascribe-availability[scope="page"] ascribe-availability-target');
   expect(await badge.getAttribute("target")).toBe("ascribe");
   expect(await badge.isVisible()).toBe(true);

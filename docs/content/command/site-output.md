@@ -2,7 +2,7 @@
 type: reference
 title: A page in the site output
 description: "What `ascribe resolve --emit site` writes: a page as the site output gives it to a site, its frontmatter, a line of a versioned build, and how to read its elements without their script."
-available: ascribe planned
+available: ascribe 0.4.4
 ---
 
 [`ascribe resolve PAGE --emit site`](questions.md#cli-resolve) writes one page as the site output writes it, Ascribe's elements and all, without building the project: the file `ascribe build --emit site` writes for the page, which `@ascribed/astro` receives. This page says what's in it, for a writer asking what a directive becomes, an agent checking what a reader of the site gets, or a test of a site's integration.
