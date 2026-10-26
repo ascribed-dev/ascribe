@@ -1460,6 +1460,56 @@ fn search_finds_a_phrase_value_at_its_line_in_the_model() {
 }
 
 #[test]
+fn search_cuts_a_long_code_block_to_its_match_at_the_line_it_is_on() {
+    let dir = project();
+    // A JSON Schema's worth of code, with the words far apart in it.
+    let mut code: Vec<String> = (0..400)
+        .map(|n| format!("  \"field{n}\": {{ \"type\": \"string\" }},"))
+        .collect();
+    code[40] = "  \"strict\": \"fail when there are problems\",".to_owned();
+    code[390] = "  \"ci\": \"warnings in CI\",".to_owned();
+    write(
+        &dir.path().join("site/docs/schema.md"),
+        &format!(
+            "---\ntitle: Schema\n---\n\n```json\n{{\n{}\n}}\n```\n",
+            code.join("\n")
+        ),
+    );
+    let text = stdout(&run(
+        dir.path(),
+        &["search", "fail warnings CI", "--config", "site"],
+        0,
+    ));
+    // The block opens at line 5 and its code at 6: `{` is 6, code[40] 47.
+    let first = text.lines().next().unwrap_or_default();
+    assert!(first.starts_with("docs/schema.md:47: …"), "{text}");
+    assert!(first.contains("fail when"), "{text}");
+    assert!(first.chars().count() < 120, "{text}");
+
+    let value = json(
+        dir.path(),
+        &["search", "fail warnings CI", "--config", "site"],
+        0,
+    );
+    let place = &value["places"][0];
+    assert_eq!(place["line"], 47, "{place}");
+    assert_eq!(place["in"], "code", "{place}");
+    let excerpt: Vec<char> = place["text"].as_str().unwrap_or_default().chars().collect();
+    assert!(excerpt.len() <= 242, "{} characters", excerpt.len());
+    assert_eq!(excerpt.first(), Some(&'…'));
+    assert_eq!(excerpt.last(), Some(&'…'));
+    let at = usize::try_from(place["match"][0].as_u64().unwrap_or_default()).unwrap_or_default();
+    let end = usize::try_from(place["match"][1].as_u64().unwrap_or_default()).unwrap_or_default();
+    let matched: String = excerpt[at..].iter().take(4).collect();
+    assert_eq!(matched, "fail", "{place}");
+    assert_eq!(
+        end,
+        excerpt.len() - 1,
+        "the match runs on past the cut: {place}"
+    );
+}
+
+#[test]
 fn search_exits_1_when_nothing_matches() {
     let dir = project();
     let out = run(dir.path(), &["search", "zebra", "--config", "site"], 1);

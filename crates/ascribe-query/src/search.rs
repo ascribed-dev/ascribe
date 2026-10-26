@@ -95,6 +95,10 @@ const WRITTEN: usize = 3;
 /// How many of the pages that show a place it names.
 const PAGES: usize = 3;
 
+/// How many characters of a block's text a place gives, around the match:
+/// a code block or a table row is one block, and can be thousands.
+const EXCERPT: usize = 240;
+
 /// A place a query matches: a line of the source to edit.
 #[derive(Debug, Serialize)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
@@ -116,11 +120,14 @@ pub struct SearchPlace {
     /// `code`, or `phrase`, a phrase's value at its line in `ascribe.toml`.
     #[serde(rename = "in")]
     pub kind: &'static str,
-    /// The block's text as a reader reads it, whole; for a phrase, its
-    /// value.
+    /// The block's text as a reader reads it, or for a phrase, its value:
+    /// whole when it's at most 240 characters, and otherwise cut to about
+    /// that many around the match's first character, at words, with `…`
+    /// where it's cut. `line` and `column` say where to read the rest.
     pub text: String,
     /// Where the match is in `text`: its first character and the one after
-    /// its last, in Unicode characters.
+    /// its last, in Unicode characters; when `text` is cut before the
+    /// match's last character, the end ends where it's cut, before the `…`.
     #[serde(rename = "match")]
     pub matched: [usize; 2],
     /// What the match reads through that the line doesn't spell, in order.
@@ -347,6 +354,53 @@ pub fn search(
     })
 }
 
+/// `text` cut to about `width` characters around `matched`'s first
+/// character, at words, with `…` where it's cut, and where `matched` is in
+/// what's left; `text` and `matched` as they are when it's no longer.
+/// `matched` is in Unicode characters, and the excerpt keeps its first
+/// character however far its last is: a match of several words can span a
+/// block.
+pub fn excerpt(text: &str, matched: [usize; 2], width: usize) -> (String, [usize; 2]) {
+    let chars: Vec<char> = text.chars().collect();
+    let len = chars.len();
+    if len <= width {
+        return (text.to_owned(), matched);
+    }
+    let first = matched[0].min(len);
+    let last = matched[1].clamp(first, len);
+    // Start at a word, a quarter of the width before the match.
+    let mut start = first.saturating_sub(width / 4);
+    while start > 0 && start < first && chars.get(start - 1).is_some_and(|c| !c.is_whitespace()) {
+        start += 1;
+    }
+    // End before a word that doesn't fit, unless that would cut the match's
+    // first word: then in the word.
+    let mut end = (start + width).min(len);
+    if end < len
+        && let Some(space) = (first + 1..=end).rev().find(|&e| chars[e].is_whitespace())
+    {
+        end = space;
+    }
+    let lead = chars[start..end]
+        .iter()
+        .take_while(|c| c.is_whitespace())
+        .count();
+    let body: String = chars[start + lead..end].iter().collect();
+    let body = body.trim_end();
+    let before = usize::from(start > 0);
+    let shown = body.chars().count();
+    let at = |n: usize| (n - start).saturating_sub(lead).min(shown) + before;
+    let mut cut = String::with_capacity(body.len() + 6);
+    if start > 0 {
+        cut.push('…');
+    }
+    cut.push_str(body);
+    if end < len {
+        cut.push('…');
+    }
+    (cut, [at(first), at(last.min(end))])
+}
+
 /// What a place `find` found is, as the command gives it. `titles` are the
 /// pages' titles, and `builds` how many builds were searched.
 fn place_of(
@@ -378,6 +432,11 @@ fn place_of(
         }
     };
     let chars = |byte: usize| place.text[..byte].chars().count();
+    let (text, matched) = excerpt(
+        &place.text,
+        [chars(place.matched.start), chars(place.matched.end)],
+        EXCERPT,
+    );
     let through = place
         .through
         .iter()
@@ -424,8 +483,8 @@ fn place_of(
         column,
         end_line: place.end_line,
         kind: place.kind.as_str(),
-        text: place.text.clone(),
-        matched: [chars(place.matched.start), chars(place.matched.end)],
+        text,
+        matched,
         through,
         arm: place.arm.clone(),
         pages,
@@ -594,6 +653,36 @@ mod tests {
             &Readings::default(),
             &asked(query, &builds, limit),
         )
+    }
+
+    #[test]
+    fn an_excerpt_is_bounded_around_the_match_s_first_character() {
+        let short = "Add --deny-warnings to fail on warnings too.";
+        assert_eq!(excerpt(short, [20, 43], 240), (short.to_owned(), [20, 43]));
+
+        let words: Vec<String> = (0..2000).map(|n| format!("w{n}")).collect();
+        let text = words.join(" ");
+        let first = text.find("w1000").unwrap();
+        let (cut, [at, end]) = excerpt(&text, [first, text.len()], 240);
+        let chars: Vec<char> = cut.chars().collect();
+        assert!(chars.len() <= 242, "{cut}");
+        assert!(cut.starts_with('…') && cut.ends_with('…'), "{cut}");
+        assert!(cut[..cut.len() - '…'.len_utf8()].ends_with(|c: char| c.is_alphanumeric()));
+        assert_eq!(chars[at..at + 5].iter().collect::<String>(), "w1000");
+        assert_eq!(end, chars.len() - 1);
+        // A word just after `…`: cut at words.
+        assert!(chars[1].is_alphanumeric() && chars[1] == 'w', "{cut}");
+
+        // Near the start, nothing is cut before it.
+        let (cut, [at, _]) = excerpt(&text, [3, 5], 240);
+        assert!(cut.starts_with("w0 w1 "), "{cut}");
+        assert_eq!(at, 3);
+
+        // One word longer than the width is cut in the word.
+        let long = "x".repeat(1000);
+        let (cut, [at, end]) = excerpt(&long, [500, 520], 240);
+        assert_eq!(cut.chars().count(), 242);
+        assert_eq!([at, end], [1, 21], "it starts at the match");
     }
 
     fn scope(paths: &[&str]) -> Scope {
