@@ -238,7 +238,11 @@ fn spec_sections_exist() {
         // A check SPEC doesn't define cites no section (SPEC §7.2's
         // processor settings). A §8.2 row is SPEC's, so it always cites one.
         if e.spec == "none" {
-            assert!(e.row.is_none(), "{}: a SPEC §8.2 row cites the section that defines it", e.slug);
+            assert!(
+                e.row.is_none(),
+                "{}: a SPEC §8.2 row cites the section that defines it",
+                e.slug
+            );
             continue;
         }
         assert!(
