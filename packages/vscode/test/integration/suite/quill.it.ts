@@ -131,7 +131,7 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
       "  Address (/keys/)",
       "  Markdown (not published)",
       "  Description (52 characters)",
-      "  Builds (Published by site, site@3.4, cloud, self-managed-3.3)",
+      "  Builds (Published by site, site@3.4, cloud)",
       "  Listing (Listed (the default))",
       ...connections,
     ];

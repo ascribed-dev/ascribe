@@ -103,7 +103,7 @@ fn builds_quill_under_every_build_with_both_emitters() {
     let out = ascribe(dir.path(), &["build"]);
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
     let built = dir.path().join(".ascribe/build");
-    for build in ["site", "cloud", "self-managed-3.3"] {
+    for build in ["site", "cloud"] {
         for (emitter, page) in [
             ("plain", "install-agent.md"),
             ("json", "install-agent.json"),
@@ -182,7 +182,7 @@ fn the_site_output_is_built_under_every_build() {
     let out = ascribe(dir.path(), &["build", "--emit", "site"]);
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
     let built = dir.path().join(".ascribe/build");
-    for build in ["site", "cloud", "self-managed-3.3"] {
+    for build in ["site", "cloud"] {
         let root = built.join(build).join("site");
         for file in [
             "install-agent.md",

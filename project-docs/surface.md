@@ -116,7 +116,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-274 in all. By severity: 61 advice, 186 error, 27 warning. By level: 244 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 171 write.
+275 in all. By severity: 62 advice, 186 error, 27 warning. By level: 245 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 172 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -394,6 +394,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC280` | `example-schema-unsupported` | advice | outside | the schema of {body} has a pattern the validator can't read, `{pattern}`, so it's left out, and the rest of the schema is checked |
 | `ASC281` | `operation-link-not-operation` | error | write | `{link}` isn't a link to an operation; `@operation` takes a declared API's spec, `#`, and an operation's `operationId` |
 | `ASC282` | `api-operation-unreferenced` | advice | write | no page links to `{operation}` ({method} {route}) in {path} |
+| `ASC283` | `build-filter-line-undeclared` | advice | write | build `{build}` filters for `{target} {version}`, which is older than every line `[releases.{target}]` declares, so `ascribe versions` doesn't list it; declare its line in `archived`, or make the build one output for each live line with `versions = "{target}"` |
 
 ## The VS Code extension
 

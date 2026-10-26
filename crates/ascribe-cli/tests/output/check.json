@@ -7,8 +7,7 @@
   "builds_checked": [
     "site",
     "site@3.4",
-    "cloud",
-    "self-managed-3.3"
+    "cloud"
   ],
   "diagnostics": [
     {
@@ -85,8 +84,7 @@
       "builds": [
         "site",
         "site@3.4",
-        "cloud",
-        "self-managed-3.3"
+        "cloud"
       ],
       "unpublished": false,
       "help": "Give the section a summary with `@summary`: a sentence or two a product shows in a tooltip or beside an error. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once and shown in both places, or write `@summary: <text>` directly under the heading and its `@id` when nothing on the page reads well alone. A project that ships embedded help can raise this check to a warning, so every permalink needs one: `[checks] summary-missing = \"warning\"`.",
@@ -117,8 +115,7 @@
       "builds": [
         "site",
         "site@3.4",
-        "cloud",
-        "self-managed-3.3"
+        "cloud"
       ],
       "unpublished": false,
       "help": "Give the section a summary with `@summary`: a sentence or two a product shows in a tooltip or beside an error. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once and shown in both places, or write `@summary: <text>` directly under the heading and its `@id` when nothing on the page reads well alone. A project that ships embedded help can raise this check to a warning, so every permalink needs one: `[checks] summary-missing = \"warning\"`.",
@@ -149,8 +146,7 @@
       "builds": [
         "site",
         "site@3.4",
-        "cloud",
-        "self-managed-3.3"
+        "cloud"
       ],
       "unpublished": false,
       "help": "Give the section a summary with `@summary`: a sentence or two a product shows in a tooltip or beside an error. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once and shown in both places, or write `@summary: <text>` directly under the heading and its `@id` when nothing on the page reads well alone. A project that ships embedded help can raise this check to a warning, so every permalink needs one: `[checks] summary-missing = \"warning\"`.",

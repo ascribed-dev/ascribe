@@ -114,36 +114,6 @@
       "changed": [
         "install-agent.md"
       ]
-    },
-    {
-      "build": "self-managed-3.3",
-      "output": "plain",
-      "added": [
-        "configure.md",
-        "upgrade.md",
-        "webhooks.md"
-      ],
-      "removed": [],
-      "changed": [
-        "install-agent.md",
-        "keys.md"
-      ]
-    },
-    {
-      "build": "self-managed-3.3",
-      "output": "site",
-      "added": [
-        "configure.md",
-        "upgrade.md",
-        "webhooks.md"
-      ],
-      "removed": [],
-      "changed": [
-        "_ascribe/nav.json",
-        "_ascribe/pages.json",
-        "install-agent.md",
-        "keys.md"
-      ]
     }
   ],
   "from": null

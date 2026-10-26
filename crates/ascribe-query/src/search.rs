@@ -992,8 +992,7 @@ mod tests {
             found.nothing,
             Some(Nothing::OtherBuilds(vec![
                 "site".to_owned(),
-                "site@3.4".to_owned(),
-                "self-managed-3.3".to_owned()
+                "site@3.4".to_owned()
             ]))
         );
     }
@@ -1090,7 +1089,7 @@ mod tests {
         let found = quill_search("\"point the agent at your server\"", &["cloud"], 500).unwrap();
         let json = serde_json::to_value(&found).unwrap();
         assert_eq!(json["source_places"], serde_json::json!([]));
-        assert_eq!(json["not_searched_builds"].as_array().unwrap().len(), 3);
+        assert_eq!(json["not_searched_builds"].as_array().unwrap().len(), 2);
     }
 
     #[test]

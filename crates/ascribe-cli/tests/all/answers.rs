@@ -1670,7 +1670,7 @@ fn search_says_which_builds_not_searched_publish_the_words() {
     );
     assert_eq!(
         stdout(&out),
-        "No place matches.\nBuilds not searched publish them: `site`, `site@3.4`, `self-managed-3.3`.\n"
+        "No place matches.\nBuilds not searched publish them: `site`, `site@3.4`.\n"
     );
 }
 
