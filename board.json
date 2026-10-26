@@ -6430,7 +6430,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDegws",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Report: list what a build leaves out once per mark, not once per line"
     },
     {
@@ -6481,7 +6481,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDegzI",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Rename versions archive, which writes HTML and doesn't archive the line"
     },
     {
@@ -6532,7 +6532,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDeg5Q",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "One meaning per word: grow the docs' glossary and rename the overloaded terms"
     },
     {
@@ -6583,7 +6583,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDeg94",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Group the content model reference by job, not by when each section arrived"
     },
     {
@@ -6748,7 +6748,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "CLI conventions: one flag for \"write nothing\", one for \"fail on findings\", and the same guard on every command that writes"
     },
     {
@@ -6887,7 +6887,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehVE",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: decide when a section gets an @available: ascribe badge"
     },
     {
@@ -6995,7 +6995,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "`ascribe observe` runs the config's commands without asking when there's no terminal"
     },
     {
@@ -7043,7 +7043,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCEc",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Stop parallel pull requests from taking the same diagnostic code"
     },
     {
@@ -7057,7 +7057,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCGY",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Adopt an existing folder of Markdown: init that keeps it checking, and a guide"
     },
     {
@@ -7091,7 +7091,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Check: apply the baseline, scope, and levels inside diagnose, so every surface gets the same result"
     },
     {
@@ -7198,7 +7198,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Search: when no block has every word, show the closest matches instead of \"No place matches\""
     },
     {
@@ -7229,7 +7229,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Load a project once: one workspace type for the commands, the MCP server, the hook server, and the language server"
     },
     {
@@ -7243,7 +7243,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCek",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Board: don't start cards that touch the same files at the same time"
     },
     {
@@ -7319,7 +7319,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Diff: list a page as changed when the OpenAPI spec it uses changed"
     },
     {
@@ -7336,7 +7336,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Split ascribe-check: project loading, and the report's tools and caches, out of the checker"
     },
     {
@@ -7395,7 +7395,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCtw",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Don't publish a page that still has its template's placeholders"
     },
     {
@@ -7429,7 +7429,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "One trait for a project's side files, so a new one is one implementation instead of edits in four crates"
     },
     {
@@ -7491,7 +7491,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlC2c",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Elements: a copy button on code blocks"
     },
     {
@@ -7584,7 +7584,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDA4",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Archive: set the page's lang, and add a skip link past the sidebar"
     },
     {
@@ -7598,7 +7598,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDEQ",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Diff and review: show a moved page as a move, not a removed page and a new one"
     },
     {
@@ -7616,7 +7616,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Permalinks: forward with a 301 where the host takes redirects, and answer an agent asking for Markdown"
     },
     {
@@ -7633,7 +7633,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Fuzz the parser, the content model's loader, and the formatter nightly"
     },
     {
@@ -7682,7 +7682,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Agent Markdown: link to the other pages' Markdown, so an agent following a link stays in Markdown"
     },
     {
@@ -7765,7 +7765,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Agent Markdown and llms.txt: say what the page is for and which release the build describes"
     },
     {
@@ -7813,7 +7813,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Snippets: regions in Dockerfile, Makefile, CSS, and GraphQL"
     },
     {
@@ -7924,7 +7924,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Site output: put a tab's label in the text, and a code block's language in its class, for readers that convert HTML"
     },
     {
@@ -7994,7 +7994,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Let `versions retire \"self-managed 3.4\"` run on quill without --force: cloud's availability lines change"
     },
     {
