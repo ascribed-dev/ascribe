@@ -6,16 +6,13 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing code: it says which crat
 
 ## Before a pull request
 
-Every one of these must pass; CI runs them all and treats warnings as errors.
+Run every check CI runs, which must all pass and treat warnings as errors:
 
 ```sh
-cargo fmt --all --check
-cargo clippy --workspace --all-targets --locked -- -D warnings
-cargo test --workspace --locked
-pnpm format:check && pnpm lint && pnpm typecheck && pnpm test
+pnpm check:all
 ```
 
-Setup: `corepack enable && pnpm install`. `pnpm typecheck` needs `@ascribed/cli` and `@ascribed/elements` built first; `pnpm build:all` builds the binary and every JS package. The VS Code integration tests need VS Code and run in CI only.
+It runs each step of `rust.yml` and `js.yml`, in an order that works from a fresh checkout, and stops at the first failure; `scripts/check.ts` lists them, and says why it skips the few it does. It needs `cargo-deny` and `cargo-machete`, and when either is missing it says how to install the versions CI pins. Setup: `corepack enable`. To run one check alone, `pnpm typecheck` needs `@ascribed/cli` and `@ascribed/elements` built first; `pnpm build:all` builds the binary and every JS package. The VS Code integration tests and the Astro end-to-end run in CI only.
 
 ## Rules that aren't obvious
 
