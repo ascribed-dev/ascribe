@@ -406,6 +406,8 @@ fn project_files_follow_the_naming_rule() {
 
     let page = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../docs/content/command/project-files.md");
+    // Outside FileSystem: a page of this repository's docs, read as a test's
+    // fixture, not as a project.
     let page = std::fs::read_to_string(page).unwrap();
     let mut seen = Vec::new();
     for row in page.lines().filter(|line| line.starts_with("| `")) {
