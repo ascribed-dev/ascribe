@@ -708,15 +708,17 @@ impl Writer<'_> {
             (_, 0) => line.push_str(&format!(", none of them new since {since}")),
             (_, k) => line.push_str(&format!(", {k} of them failing since {since}")),
         }
+        // The new checks are named next to what says they're new, before
+        // what's no longer failing, which they aren't.
+        if !new.is_empty() {
+            let ids: Vec<String> = new.iter().map(|id| self.code(id)).collect();
+            line.push_str(&format!(": {}", ids.join(", ")));
+        }
         if resolved > 0 {
             line.push_str(&format!(
                 "; {resolved} that failed on {since} no longer {}",
                 plural(resolved, "fails", "fail")
             ));
-        }
-        if !new.is_empty() {
-            let ids: Vec<String> = new.iter().map(|id| self.code(id)).collect();
-            line.push_str(&format!(": {}", ids.join(", ")));
         }
         line.push('.');
         self.line(&line)

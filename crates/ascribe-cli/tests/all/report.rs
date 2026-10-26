@@ -1133,6 +1133,41 @@ fn agents_says_nothing_since_when_nothing_fails_then_or_now() {
     );
 }
 
+/// What afdocs writes: three checks, each with the status written in a
+/// file named for it in the folder it runs in, and passing without one.
+#[cfg(unix)]
+const AFDOCS_STATUS_BY_FILE: &str = r#"status() { if [ -f "$1" ]; then read -r s < "$1"; echo "$s"; else echo pass; fi; }
+printf '{"url":"%s","results":[{"id":"llms-txt-exists","category":"content-discoverability","status":"%s","message":"checked"},{"id":"llms-txt-links-resolve","category":"content-discoverability","status":"%s","message":"checked"},{"id":"redirect-behavior","category":"url-stability","status":"%s","message":"checked"}]}' "$2" "$(status llms-txt-exists)" "$(status llms-txt-links-resolve)" "$(status redirect-behavior)"
+exit 0"#;
+
+/// A check that went from failing to warning is still failing, so it isn't
+/// one that no longer fails; and the check new since the last report is
+/// named next to what says it's new, not after what no longer fails.
+#[cfg(unix)]
+#[test]
+fn a_check_that_warns_instead_of_failing_still_fails() {
+    let dir = project(MODEL);
+    script(&dir.path().join("tools"), "afdocs", AFDOCS_STATUS_BY_FILE);
+    let site = "https://docs.example.com";
+    let set = |id: &str, status: &str| fs::write(dir.path().join(id), status).unwrap();
+
+    set("llms-txt-exists", "fail");
+    set("redirect-behavior", "fail");
+    agents_on(dir.path(), "2026-10-24", site, &[]);
+
+    // The first warns now, the second passes, and the links are new.
+    set("llms-txt-exists", "warn");
+    set("redirect-behavior", "pass");
+    set("llms-txt-links-resolve", "warn");
+    let text = stdout(&agents_on(dir.path(), "2026-10-25", site, &[]));
+    assert!(
+        text.contains(
+            "  3 checks: 1 passing, 2 failing, 1 of them failing since 24 October: llms-txt-links-resolve; 1 that failed on 24 October no longer fails.\n"
+        ),
+        "{text}"
+    );
+}
+
 /// A project declaring an API whose spec has three operations: `getInvoice`,
 /// which its page links to, `deleteInvoice`, which it doesn't, and a
 /// deprecated one.

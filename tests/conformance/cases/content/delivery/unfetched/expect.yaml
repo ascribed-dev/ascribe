@@ -1,0 +1,9 @@
+description: >-
+  A check of what Ascribe writes that warns only because a link couldn't be
+  fetched is still `delivery-output`, at the content model: its message
+  names the link and says to run the report again, not to report a bug.
+spec: ["9.5"]
+tags: [site]
+
+diagnostics:
+  - {slug: delivery-output, file: ascribe.toml, line: 1, severity: advice}
