@@ -53,12 +53,16 @@ const CODE = `
 
 <ascribe-tab label="npm">
 
+<p class="ascribe-tab-label">npm</p>
+
 <pre id="tabbed"><code>npm test
 </code></pre>
 
 </ascribe-tab>
 
 <ascribe-tab label="pnpm">
+
+<p class="ascribe-tab-label">pnpm</p>
 
 <pre id="tabbed-2"><code>pnpm test
 </code></pre>
@@ -129,10 +133,16 @@ export function suiteFor(engine: Engine): void {
       for (const text of ["Install with npm.", "Install with pnpm or yarn.", "Install with bun."]) {
         await expect(page.getByText(text).isVisible()).resolves.toBe(true);
       }
-      const labels = await page
+      // The label is the tab's first paragraph, in sight, and nothing is generated.
+      const labels = page.locator("#a > ascribe-tab > .ascribe-tab-label");
+      await expect(labels.allInnerTexts()).resolves.toEqual(["npm", "pnpm / yarn", "bun"]);
+      for (const label of await labels.all()) {
+        await expect(label.isVisible()).resolves.toBe(true);
+      }
+      const generated = await page
         .locator("#a > ascribe-tab")
         .evaluateAll((tabs) => tabs.map((tab) => getComputedStyle(tab, "::before").content));
-      expect(labels).toEqual(['"npm"', '"pnpm / yarn"', '"bun"']);
+      expect(generated).toEqual(["none", "none", "none"]);
       await expect(page.locator("[role=tablist]").count()).resolves.toBe(0);
       await context.close();
     });
@@ -395,6 +405,42 @@ export function suiteFor(engine: Engine): void {
       ]);
       await expect(page.getByText("Install with npm.").isVisible()).resolves.toBe(true);
       await expect(page.getByText("Install with bun.").isVisible()).resolves.toBe(false);
+      await context.close();
+    });
+
+    it("keeps each tab's label paragraph in the page's text, out of sight and out of the accessibility tree", async () => {
+      const page = await fresh(TABS);
+      const labels = page.locator("#a > ascribe-tab > .ascribe-tab-label");
+      await expect(
+        labels.evaluateAll((all) => all.map((label) => label.getAttribute("aria-hidden"))),
+      ).resolves.toEqual(["true", "true", "true"]);
+      const label = labels.first();
+      const box = await label.boundingBox();
+      expect(box?.width).toBeLessThanOrEqual(1);
+      expect(box?.height).toBeLessThanOrEqual(1);
+      expect(await label.evaluate((e) => getComputedStyle(e).display)).not.toBe("none");
+      // The shown tab's rendered text still starts with its label.
+      await expect(page.locator("#a > ascribe-tab").first().innerText()).resolves.toMatch(/^npm\s/);
+      // A screen reader hears the label once, as the tab's name, and the panel's
+      // content after it.
+      const snapshot = await page.locator("#a").ariaSnapshot();
+      expect(snapshot).toContain('tab "npm" [selected]');
+      expect(snapshot).toContain('tabpanel "npm"');
+      expect(snapshot).toContain("Install with npm.");
+      expect(snapshot, snapshot).not.toMatch(/^\s*- (?:paragraph|text): npm$/m);
+      await context.close();
+    });
+
+    it("gives the label paragraphs back to screen readers when a group leaves the page", async () => {
+      const page = await fresh(TABS);
+      const hidden = await page.evaluate(() => {
+        const group = document.getElementById("a");
+        group?.remove();
+        return Array.from(group?.querySelectorAll(".ascribe-tab-label") ?? []).map((label) =>
+          label.getAttribute("aria-hidden"),
+        );
+      });
+      expect(hidden).toEqual([null, null, null]);
       await context.close();
     });
 

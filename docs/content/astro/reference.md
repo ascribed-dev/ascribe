@@ -33,7 +33,7 @@ Everything `@ascribed/astro` takes and does, once a site is set up: its options,
 - **Sends each Markdown version's response headers** in `astro dev`, and with `[consumer] host = "netlify"` writes them into the built site's `_headers`, or fails the build when the site's own `public/_headers` lacks them ([response headers](../publishing/site.md#response-headers)).
 - **Writes the redirects** with `[consumer] host = "netlify"`: each project's `_redirects`, from the moves [`ascribe.addresses`](../publishing/redirects.md) records, merged into the built site's, ahead of the site's own `public/_redirects`, and fails the build when a redirect's address is a page the site publishes ([the host's files](../publishing/site.md#the-hosts-files)).
 - **Serves every line of a versioned build** from one collection, builds every line in `astro build` and `astro dev`, and serves each line's linked files at its base path ([versions](reference.md#versions)). Each entry's data has `line`, the line it's from, and `current`; the generated schema doesn't type them. A permalink forwards to the current line, and each line's outputs for agents are published at its base path, with its headers.
-- **Shows code block titles** and tested lines, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](reference.md#code-block-titles)).
+- **Shows code block titles** and tested lines, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](reference.md#code-block-titles)), and gives each highlighted block's `<code>` its language as a class ([code block languages](reference.md#code-block-languages)).
 - **Copies the generated schema** into `.astro/integrations/_ascribed_astro/schema.ts` after each build, for a project outside the Astro root ([the collection](index.md#the-collection)).
 
 ### In `astro dev`
@@ -211,6 +211,10 @@ A code block's title, such as a [`@snippet`](../writing/directives.md#snippet)'s
 ```
 
 The figure has your browser's default margins, and the caption no style of its own; style `figure.code-title` and its `figcaption` to suit your site. Titles need Astro's default highlighting, Shiki; with `syntaxHighlight: "prism"` or `false`, they aren't shown.
+
+### Code block languages
+
+Astro's highlighting marks a block's language only as the `<pre>`'s `data-language`. A tool that converts a page's HTML to text or Markdown, as many AI agents do before they read it, looks for a `language-…` class on the `<code>`, as Markdown renders it before highlighting, and without one writes the block with no language. So the integration adds a second Shiki transformer, whatever `codeTitles` is, that gives the `<code>` that class: `<code class="language-sh">`. A block with no language, or one in a language Shiki doesn't know, which Astro highlights as `plaintext`, gets none.
 
 ## Other Markdown processors
 

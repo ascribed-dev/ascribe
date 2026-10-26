@@ -650,16 +650,31 @@ impl Renderer<'_> {
                 } else {
                     Some(dimensional_label(self.model, arm_values))
                 };
+                // The label as text too, first, for a reader of the HTML
+                // that has no script and no stylesheet.
+                let mut blocks: Vec<String> = label.iter().map(|label| tab_label(label)).collect();
+                blocks.extend(self.blocks(&arm.children));
                 let attrs = Attrs::new()
                     .with_opt("value", value)
                     .with_opt("label", label);
-                let text = wrap(names::ELEMENT_TAB, &attrs, &self.blocks(&arm.children));
+                let text = wrap(names::ELEMENT_TAB, &attrs, &blocks);
                 self.arm_element(block, arm, text)
             })
             .collect();
         let attrs = Attrs::new().with_opt("sync", sync);
         wrap(names::ELEMENT_TABS, &attrs, &tabs)
     }
+}
+
+/// A tab's label as an HTML block of its own, the `<ascribe-tab>`'s first
+/// child (contract §3): `<p class="ascribe-tab-label">npm</p>`.
+fn tab_label(label: &str) -> String {
+    format!(
+        "{}{}{}",
+        open("p", &Attrs::new().with("class", names::CLASS_TAB_LABEL)),
+        super::element::escape(label),
+        close("p")
+    )
 }
 
 /// `<ascribe-operation>` (contract §11), as one HTML block: its attributes,

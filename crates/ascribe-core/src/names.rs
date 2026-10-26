@@ -53,6 +53,9 @@ names! {
     ELEMENT_TABS = "ascribe-tabs";
     /// `<ascribe-tab>`: one arm of `<ascribe-tabs>` (packages/elements/CONTRACT.md §3).
     ELEMENT_TAB = "ascribe-tab";
+    /// On the paragraph that starts an `<ascribe-tab>` and holds its label as
+    /// text, for a reader of the HTML with no script (packages/elements/CONTRACT.md §3).
+    CLASS_TAB_LABEL = "ascribe-tab-label";
     /// `<ascribe-availability>`: a badge or filter (packages/elements/CONTRACT.md §4).
     ELEMENT_AVAILABILITY = "ascribe-availability";
     /// `<ascribe-availability-target>`: one target of `<ascribe-availability>`
