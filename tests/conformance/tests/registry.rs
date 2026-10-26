@@ -235,6 +235,12 @@ fn spec_sections_exist() {
         .collect();
     assert!(sections.contains("8.2") && sections.contains("11"));
     for e in registry().entries {
+        // A check SPEC doesn't define cites no section (SPEC §7.2's
+        // processor settings). A §8.2 row is SPEC's, so it always cites one.
+        if e.spec == "none" {
+            assert!(e.row.is_none(), "{}: a SPEC §8.2 row cites the section that defines it", e.slug);
+            continue;
+        }
         assert!(
             sections.contains(&e.spec),
             "{}: SPEC has no §{}",

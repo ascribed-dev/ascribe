@@ -417,7 +417,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC194
 @summary: A content type's template can't be read, or isn't a page Ascribe can read.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · Ascribe's own, not in SPEC
 
 **When:** A content type's template can't be read, or isn't a page Ascribe can read.
 
