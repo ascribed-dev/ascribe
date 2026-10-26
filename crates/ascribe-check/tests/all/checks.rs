@@ -459,6 +459,29 @@ fn a_link_to_a_fragment_is_offered_the_pages_that_include_it() {
     assert_eq!(hrefs, ["setup.md"]);
 }
 
+/// A missing page with one page near names it in the message, even for a
+/// reference form, which is offered no fix.
+#[test]
+fn a_link_to_a_missing_page_names_the_one_page_near() {
+    let p = project(&[
+        (
+            "index.md",
+            &page("[keys](key.md) and [keys][k]\n\n[k]: key.md"),
+        ),
+        ("keys.md", &page("Text.")),
+    ]);
+    let all = check_files(&p);
+    assert_eq!(slugs(&p), ["link-target-missing", "link-target-missing"]);
+    for found in &all {
+        assert_eq!(
+            found.message,
+            "`key.md` doesn't exist; did you mean `keys.md`?"
+        );
+    }
+    assert_eq!(all[0].fixes.len(), 1);
+    assert!(all[1].fixes.is_empty());
+}
+
 /// A reference form's destination is in its definition, which may serve
 /// other links, so it's offered no fix.
 #[test]

@@ -110,7 +110,7 @@ pub use build::{
     ResolvedLink, ResolvedPage, ResolvedRow, Scope, SectionSummary, Substitution, SummaryForm,
     find_summaries, glossary_targets, in_release_line, permalinks, select,
 };
-pub use closest::{Closest, closest_fixes, closest_targets, link_href};
+pub use closest::{Closest, closest_fixes, closest_targets, link_href, offer_closest};
 pub use expand::{
     ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite,
     MAX_EXPANDED_BLOCKS, MAX_EXPANDED_BYTES, PageProblem,

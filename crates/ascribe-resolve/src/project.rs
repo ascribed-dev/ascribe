@@ -6,7 +6,7 @@ use ascribe_model::{AddressFile, ContentModel, NavFile, RecordedPermalinks};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::{Arc, Mutex};
 
-use crate::closest::closest_fixes;
+use crate::closest::offer_closest;
 use crate::expand::{ExpandedPage, Expander, IncludeSite};
 use crate::fs::FileSystem;
 use crate::incremental::FileIds;
@@ -142,6 +142,9 @@ pub(crate) struct ReverseEdges {
     includes: BTreeMap<RelPath, Vec<IncludeEdge>>,
     links: BTreeMap<RelPath, Vec<LinkSite>>,
     assets: BTreeMap<RelPath, Vec<AssetSite>>,
+    /// The files with a link to a page that doesn't exist, whose message
+    /// names the page it most likely meant, wherever that is.
+    missing: BTreeSet<RelPath>,
 }
 
 impl ReverseEdges {
@@ -191,6 +194,9 @@ impl ReverseEdges {
                     },
                     |e| (e.file.clone(), e.span),
                 ),
+                Resolution::SourceMissing { .. } => {
+                    self.missing.insert(index.path.clone());
+                }
                 _ => {}
             }
         }
@@ -199,6 +205,7 @@ impl ReverseEdges {
     /// Forgets everything a file contributed (given what it was, before).
     fn remove_file(&mut self, index: &FileIndex, resolutions: &[Resolution]) {
         let path = &index.path;
+        self.missing.remove(path);
         for include in &index.includes {
             if let Some(target) = &include.target {
                 retain_edges(&mut self.includes, target, |e| &e.file != path);
@@ -616,6 +623,11 @@ impl Project {
         self.edges.links.get(target).map_or(&[], Vec::as_slice)
     }
 
+    /// The files with a link to a page that doesn't exist.
+    pub fn files_linking_missing_pages(&self) -> &BTreeSet<RelPath> {
+        &self.edges.missing
+    }
+
     /// The links that name this source id in a file.
     pub fn links_to_id<'a>(
         &'a self,
@@ -1004,7 +1016,8 @@ impl Project {
         // The headings `ascribe link` lists as closest: the target page's,
         // which the problem already depends on. A missing page's closest
         // targets can be any page, so the file-level check offers those.
-        issue.fixes = closest_fixes(
+        offer_closest(
+            &mut issue,
             self,
             &index.path,
             &reference.target,

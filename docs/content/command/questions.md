@@ -92,7 +92,7 @@ Says whether a link works, written on a given page: whether its target exists, t
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/link.txt
 
-When the target doesn't work, it says why and lists the closest targets that do: the page's headings for a heading that isn't there; for a page that isn't, the pages with the heading the link names, wherever they are, then pages with a similar path; the pages that include a fragment; or the file that a published route belongs to. `ascribe check` offers the same targets as the broken link's fixes, marked `unsafe`.
+When the target doesn't work, it says why and lists the closest targets that do: the page's headings for a heading that isn't there, first those whose ids start with the words of the one written, as `ask-instead` does `ask-instead-of-guessing`, then those whose words start the written one's, then the rest, closest first; for a page that isn't, the pages with the heading the link names, wherever they are, then pages with a similar path; the pages that include a fragment; or the file that a published route belongs to. `ascribe check` offers the same targets as the broken link's fixes, marked `unsafe`, and when one clearly wins, such as the only heading whose id starts with the written id's words, its message ends with "did you mean `loop.md#ask-instead-of-guessing`?", so the concise output and the edit hook carry it too.
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/link-missing.txt
 

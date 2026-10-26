@@ -47,7 +47,8 @@
 //!   an update drops only the pages that (transitively) include a file that
 //!   changed.
 //! - **Reverse edges** ([`Project::includers`], [`Project::links_to`],
-//!   [`Project::asset_users`]) are updated by removing and adding what the
+//!   [`Project::asset_users`], [`Project::files_linking_missing_pages`]) are
+//!   updated by removing and adding what the
 //!   files involved contribute.
 //! - **Resolved pages**: [`ResolvedCache`] keeps them per build until an update
 //!   lists them in [`Affected::re_resolve`].
@@ -1262,6 +1263,15 @@ impl IncrementalProject {
                 for includer in self.include_rev.includers(path) {
                     recheck.insert(includer);
                 }
+            }
+            // A link to a missing page names the page it most likely meant,
+            // by its path or its headings, so a page appearing, going, or
+            // changing its headings can change what any such link says.
+            let reshaped = touched
+                .iter()
+                .any(|p| old_sigs.get(p).copied().flatten() != self.sigs.get(p).copied());
+            if !created.is_empty() || !gone.is_empty() || reshaped {
+                recheck.extend(project.files_linking_missing_pages().iter().cloned());
             }
             if glossary_edited && !all_pages && old_glossary != Some(glossary_signature(project)) {
                 all_pages = true;
