@@ -6326,7 +6326,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1047"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "OpenAPI: @operation's link in the editor, as a link to an operation is"
     },
     {
@@ -6347,7 +6347,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1045"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Report: name the links llms-txt-links-resolve found, and don't blame Ascribe for a fetch error"
     },
     {
@@ -6392,7 +6392,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1043"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Report: the builds section prints \"not ;\" and \"site and site@3.4 publishes it\""
     },
     {
@@ -6413,7 +6413,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1048"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "versions retire: record the line's addresses in ascribe.addresses, so the build writes their redirects"
     },
     {
@@ -6443,8 +6443,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1049"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Report a build that filters for a version [releases] doesn't have, and bring quill's self-managed-3.3 build up to date"
     },
     {
@@ -6461,7 +6464,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1044"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Don't report summary-missing in projects that don't ship embedded help"
     },
     {
@@ -6540,7 +6543,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1046"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Build: print the check's summary line, not every diagnostic, and one line per build"
     },
     {
@@ -7005,7 +7008,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCJ0",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "One command that runs every check CI runs, named by every doc"
     },
     {
@@ -7036,7 +7039,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCME",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: an entry path for each audience, engineers, writers, and agent builders"
     },
     {
@@ -7050,7 +7053,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCOA",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Catch a stale site sidebar fixture before CI"
     },
     {
@@ -7067,7 +7070,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Incremental differential test: generate the change kinds added since it was written"
     },
     {
@@ -7081,7 +7084,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCRM",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Add a CLAUDE.md that imports AGENTS.md"
     },
     {
@@ -7098,7 +7101,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Move the edits the CLI shares with the language server into an ascribe-edit crate"
     },
     {
@@ -7112,7 +7115,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCbA",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "CI: flag a change with no changelog entry, and a contract change with no decision"
     },
     {
@@ -7143,7 +7146,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCfI",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Warn on a GitHub alert (`> [!NOTE]`), and offer the `@note` that replaces it"
     },
     {
@@ -7191,7 +7194,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Check: report a phrase's value written out on a page instead of the phrase"
     },
     {
@@ -7205,7 +7208,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCkY",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "pnpm typecheck: say to build first instead of \"Cannot find module\""
     },
     {
@@ -7219,7 +7222,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCmI",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Attributes written without braces: one error, and a fix that adds the braces instead of deleting the text"
     },
     {
@@ -7233,7 +7236,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCpA",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "One command that rewrites every generated file"
     },
     {
@@ -7284,7 +7287,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Agent rules: keep the page types, and cut what the skill already says, when the rules run over 4,000 characters"
     },
     {
@@ -7298,7 +7301,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCqc",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Astro starter: give the layout init writes a default stylesheet"
     },
     {
@@ -7312,7 +7315,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCs0",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "AGENTS.md: a by-task table of what each common change touches"
     },
     {
@@ -7343,7 +7346,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Tested examples: report an ascribe.examples.toml that no source reads"
     },
     {
@@ -7377,7 +7380,7 @@
         "docs"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: run `ascribe agents sync` on our own docs, and hold it in CI"
     },
     {
@@ -7391,7 +7394,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCwM",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: \"Tested with Rust 1.98.1 on Linux\" on npm steps and config misleads readers"
     },
     {
@@ -7408,7 +7411,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Make example-stale a warning, so CI fails when a tested example changed"
     },
     {
@@ -7439,7 +7442,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Libraries return what to write: route cache and history writes through the caller, and group the FileSystem exceptions"
     },
     {
@@ -7456,7 +7459,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Diagnostics registry: keep it beside the code that ships it, and generate the slug constants"
     },
     {
@@ -7473,7 +7476,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "OpenAPI: when an operationId is renamed, suggest the operation now at its method and path"
     },
     {
@@ -7487,7 +7490,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlC7c",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs site: previous and next links, the current section in On this page, and the phone menu"
     },
     {
@@ -7501,7 +7504,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlC8c",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Keep a new project's published addresses from the start: init makes ascribe.addresses"
     },
     {
@@ -7578,7 +7581,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDKc",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Review report: mark the changed words inside a callout, and in a short sentence that grew"
     },
     {
@@ -7595,7 +7598,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Check: annotate a pull request's lines in GitHub Actions"
     },
     {
@@ -7630,7 +7633,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Benchmarks: a quick run on pull requests, so a slowdown is caught before it merges"
     },
     {
@@ -7647,7 +7650,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Link fixes: rank a heading id the wrong id starts, first, and name the best one in the message"
     },
     {
@@ -7664,7 +7667,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: have the CI recipe run the ascribe version the project pins"
     },
     {
@@ -7678,7 +7681,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDQw",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Check: suggest the path for a missing include or snippet, and say when no dimension is declared"
     },
     {
@@ -7713,7 +7716,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Review: account for every regenerated file a pull request changes"
     },
     {
@@ -7727,7 +7730,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDXU",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "agents sync: write the command the project runs Ascribe with, such as `npx ascribe`"
     },
     {
@@ -7758,7 +7761,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDag",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: break up the paragraphs over 250 words, and keep them under 150"
     },
     {
@@ -7776,7 +7779,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "MCP: cut the tool list from 124 KB, most of it output schemas"
     },
     {
@@ -7790,7 +7793,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDhA",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "CLI papercuts a writer meets: diff's branch argument, fmt --check's what, @Note, and help that only makes sense on the site"
     },
     {
@@ -7804,7 +7807,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDiI",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs: small reader fixes (a scrollable table, leads, a repeated heading, alt text)"
     },
     {
@@ -7821,7 +7824,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Agent-facing wording: small things that mislead an agent in check, the rules, and the new-page prompt"
     },
     {
@@ -7838,7 +7841,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Site: publish the changelog as Markdown and list it for agents"
     },
     {
@@ -7873,7 +7876,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "MCP: ascribe_resolve's error for `project` with a path should say what to pass instead"
     },
     {
@@ -7890,7 +7893,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "README: say which outputs a reading agent gets from a published site"
     },
     {
@@ -7908,8 +7911,25 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Search: bound a match's excerpt, so a code block doesn't return as one 15 KB line"
+    },
+    {
+      "content": {
+        "body": "Follow-up to #948 (PR #1049).\n\nAfter #1049 removes quill's `self-managed-3.3` build, `ascribe versions retire \"self-managed 3.4\" --dry-run --url https://archive.quill.dev/3.4/` on `examples/quill` lists only one build outside the line:\n\n```\nBuilds that aren't lines of self-managed change what they show:\n  cloud's plain output changes install-agent.md\n  cloud's site output changes install-agent.md\nRewriting them needs --force.\n```\n\nThe `cloud` build filters for `cloud`, but its availability lines still show self-managed's versions: `Available: Quill Cloud (GA); self-managed (preview, 3.4+)` (and `3.3+` for the page). The retirement rewrites `self-managed preview 3.4` to `self-managed preview`, so cloud's line becomes `self-managed (preview)`. That's a visible change, so retire refuses without `--force`.\n\n## Done looks like\n\nPick one, recorded as a decision:\n\n- A build filtered for one target leaves other targets' versions out of its availability lines. Then a retirement of another target changes nothing it shows. This is an output change for every filtered build.\n- Or retire's comparison ignores changes that only touch another target's part of an availability line, and says so in its output.\n- Or quill's cloud build changes so it shows no self-managed versions.\n\nAfter that, `versions retire \"self-managed 3.4\"` on quill runs without `--force`, and `crates/ascribe-cli/tests/output/versions-retire.txt` shows it.",
+        "number": 1050,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Let `versions retire \"self-managed 3.4\"` run on quill without --force: cloud's availability lines change",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1050"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDlhD8",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Let `versions retire \"self-managed 3.4\"` run on quill without --force: cloud's availability lines change"
     }
   ]
 }
