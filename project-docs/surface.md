@@ -10,7 +10,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
-| `ascribe init` | Starts a project: writes its first `ascribe.toml`, and makes the folder its pages go in, `docs/`. | `[DIR] [--templates]` | `text`, `json` |
+| `ascribe init` | Starts a project: writes its first `ascribe.toml`, and makes the folder its pages go in, `docs/`. | `[DIR] [--templates] [--content-root <DIR>]` | `text`, `json` |
 | `ascribe check` | Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. | `[PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]` | `text`, `concise`, `json`, `prompt` |
 | `ascribe fmt` | Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. | `[--check] [--diff] [PATHS]...` | `text`, `json` |
 | `ascribe build` | Checks the project, then writes each build's outputs. | `[--build <NAME>]... [--emit site,plain,json] [--anchors] [--no-baseline]` | `text`, `json` |
@@ -963,6 +963,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `examples/snippets.md` | Show an example from the code | how-to |
 | `examples/sources.md` | `ascribe sources` and `observe` | reference |
 | `examples/tested.md` | Show what an example was tested with | how-to |
+| `existing-docs.md` | Bring existing docs to Ascribe | how-to |
 | `getting-started.md` | Getting started | tutorial |
 | `glossary.md` | Glossary | reference |
 | `index.md` | Ascribe documentation | index |

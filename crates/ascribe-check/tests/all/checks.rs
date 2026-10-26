@@ -748,6 +748,81 @@ fn attributes_without_braces_are_braced_safely_only_before_a_primary() {
     assert_eq!(applicability, Applicability::Unsafe);
 }
 
+/// A page with no `title` that opens with a level-1 heading of plain text
+/// is offered the heading as its title, safely while nothing links to the
+/// heading: the fix writes it in the frontmatter, making one when there's
+/// none, and takes the heading and the blank lines after it out.
+#[test]
+fn a_missing_title_takes_the_opening_heading() {
+    let fixed = |text: &str| {
+        let p = project(&[("index.md", text)]);
+        let d = check_files(&p)
+            .into_iter()
+            .find(|d| d.slug.as_str() == "frontmatter-missing-field")?;
+        let file = p
+            .source_at(&RelPath::parse("index.md").expect("path"))
+            .expect("a source");
+        d.fixes.first().map(|f| {
+            (
+                f.title.clone(),
+                f.applicability,
+                apply_edits(&file.text, &f.edits).expect("edits apply"),
+            )
+        })
+    };
+    let (title, applicability, text) =
+        fixed("# Install Quill\n\nRun the installer.\n").expect("a fix");
+    assert_eq!(
+        title,
+        "Take the heading as the title, `title: Install Quill`"
+    );
+    assert_eq!(applicability, Applicability::Safe);
+    assert_eq!(
+        text,
+        "---\ntitle: Install Quill\n---\n\nRun the installer.\n"
+    );
+    for (before, after) in [
+        // Frontmatter there already gets the key at its end.
+        (
+            "---\norder: 2\n---\n\n# Install\n\n\nText.\n",
+            "---\norder: 2\ntitle: Install\n---\n\nText.\n",
+        ),
+        // A value YAML would read otherwise is quoted, and an escape is
+        // written as the text it stands for.
+        (
+            "# Quill: the agent \\*\n\nText.\n",
+            "---\ntitle: 'Quill: the agent *'\n---\n\nText.\n",
+        ),
+        (
+            "Install\n=======\n\nText.\n",
+            "---\ntitle: Install\n---\n\nText.\n",
+        ),
+        ("\n# Only\n", "---\ntitle: Only\n---\n"),
+    ] {
+        let (_, applicability, text) = fixed(before).unwrap_or_else(|| panic!("{before}"));
+        assert_eq!(applicability, Applicability::Safe, "{before}");
+        assert_eq!(text, after, "{before}");
+    }
+    // A heading that isn't the page's first block, isn't level 1, isn't
+    // plain text, or has an `@id`, gets none, and a `title` that's there but empty isn't
+    // missing.
+    for text in [
+        "Intro.\n\n# Install\n",
+        "## Install\n\nText.\n",
+        "# Install `quill`\n",
+        "# Install *Quill*\n",
+        "# Install {product}\n",
+        "#\n\nText.\n",
+        "# Install\n@id: install\n\nText.\n",
+        "---\ntitle:\n---\n\n# Install\n",
+    ] {
+        assert_eq!(fixed(text), None, "{text}");
+    }
+    // A link to the heading would lose its target.
+    let (_, applicability, _) = fixed("# Install\n\nSee [above](#install).\n").expect("a fix");
+    assert_eq!(applicability, Applicability::Unsafe);
+}
+
 #[test]
 fn guesses_carry_no_fix() {
     // A missing value, an unknown key with no close match, and a wrong type

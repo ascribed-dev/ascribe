@@ -124,6 +124,7 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
         issues: doc.issues.clone(),
     };
     cx.check_frontmatter(doc.frontmatter.as_ref());
+    cx.title_from_heading(doc.frontmatter.as_ref(), &doc.blocks);
     cx.collect_mark_scopes(&doc.blocks);
     cx.blocks(&doc.blocks);
     if cx.marked_examples {

@@ -14,15 +14,18 @@ use ascribe_model::{
     crawler_tokens, inline, types, validate_frontmatter,
 };
 use ascribe_resolve::{
-    AstroRouter, Local, NAV_LABEL, REPLACES, RefKind, Target, llms, pages, reference_target,
+    AstroRouter, Local, NAV_LABEL, REPLACES, RefKind, Target, Usable, llms, pages, reference_target,
 };
-use ascribe_syntax::{BlockKind, Frontmatter, Inline, InlineKind, ParseOptions};
+use ascribe_syntax::{Block, BlockKind, Frontmatter, Inline, InlineKind, ParseOptions};
 use serde_yaml_ng::Value;
 
 use super::Ctx;
 use super::text::{quoted_and, suggest};
 use crate::roles;
 use crate::yaml::{Node, YamlIndex};
+
+/// The field every content type requires: the page's title (SPEC §7.2).
+const TITLE: &str = "title";
 
 impl Ctx<'_> {
     pub(super) fn check_frontmatter(&mut self, frontmatter: Option<&Frontmatter>) {
@@ -91,6 +94,111 @@ impl Ctx<'_> {
             self.check_template_fields(&value, &index);
         }
         self.check_intended_key(&value, &index, first_line);
+    }
+
+    /// A fix for a page with no `title` that opens with a level-1 heading of
+    /// plain text: the heading becomes the title, written in the frontmatter
+    /// and taken out of the body, as the outputs open the page with its
+    /// title in its place (SPEC §9.4). It's safe unless something links to
+    /// the heading's id, which the page wouldn't have any more.
+    pub(super) fn title_from_heading(
+        &mut self,
+        frontmatter: Option<&Frontmatter>,
+        blocks: &[Block],
+    ) {
+        let Some(at) = self.issues.iter().position(|i| {
+            i.slug == diagnostics::FRONTMATTER_MISSING_FIELD && i.arg("field") == Some(TITLE)
+        }) else {
+            return;
+        };
+        let Some(Block {
+            span,
+            kind: BlockKind::Heading(heading),
+        }) = blocks.first()
+        else {
+            return;
+        };
+        if heading.level != 1 {
+            return;
+        }
+        let mut title = String::new();
+        for inline in &heading.inlines {
+            match &inline.kind {
+                InlineKind::Text(text) => title.push_str(text),
+                _ => return,
+            }
+        }
+        let title = title.trim();
+        if title.is_empty() {
+            return;
+        }
+        // A `title` that's there, but not a string, is another problem.
+        if let Some(fm) = frontmatter {
+            let content = self.file.text.get(fm.content.range()).unwrap_or_default();
+            match serde_yaml_ng::from_str::<Value>(content) {
+                _ if content.trim().is_empty() => {}
+                Ok(Value::Null) => {}
+                Ok(Value::Mapping(map)) if !map.contains_key(TITLE) => {}
+                _ => return,
+            }
+        }
+        let Ok(value) = serde_yaml_ng::to_string(title) else {
+            return;
+        };
+        let line = format!("{TITLE}: {value}");
+        let text = self.source();
+        // The heading's lines, and the blank lines after it.
+        let mut end = text[span.end()..]
+            .find('\n')
+            .map_or(text.len(), |i| span.end() + i + 1);
+        while let Some(next) = text[end..].find('\n')
+            && text[end..end + next].trim().is_empty()
+        {
+            end += next + 1;
+        }
+        let edits = match frontmatter {
+            Some(fm) => vec![
+                TextEdit::insert(fm.content.end(), line),
+                TextEdit::delete(Span::new(span.start(), end)),
+            ],
+            None => {
+                let rest = if end < text.len() { "\n" } else { "" };
+                vec![TextEdit::replace(
+                    Span::new(0, end),
+                    format!("---\n{line}---\n{rest}"),
+                )]
+            }
+        };
+        let index = self.project.link_index();
+        let first = index
+            .file(&self.file.path)
+            .and_then(|file| file.headings.first());
+        // An `@id` or `@term` under the heading would be left marking nothing.
+        if first.is_some_and(|h| h.explicit_id.is_some() || h.term.is_some()) {
+            return;
+        }
+        let linked = first.is_some_and(|h| {
+            !h.source_id.is_empty()
+                && !index
+                    .uses(&Usable::Heading {
+                        file: self.file.path.clone(),
+                        id: h.source_id.clone(),
+                    })
+                    .is_empty()
+        });
+        let fix = Fix {
+            title: format!("Take the heading as the title, `{TITLE}: {title}`"),
+            file: self.id,
+            edits,
+            applicability: if linked {
+                // A link to the heading would lose its target.
+                Applicability::Unsafe
+            } else {
+                Applicability::Safe
+            },
+        };
+        let issue = self.issues.remove(at).with_fix(fix);
+        self.issues.insert(at, issue);
     }
 
     /// A page that names no content type, in a project that declares types

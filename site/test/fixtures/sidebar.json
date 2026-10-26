@@ -11,6 +11,10 @@
         "label": "Getting started"
       },
       {
+        "href": "/docs/existing-docs/",
+        "label": "Bring existing docs to Ascribe"
+      },
+      {
         "href": "/docs/install/",
         "label": "Install"
       },
