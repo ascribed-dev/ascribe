@@ -5,7 +5,8 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use ascribe_core::RelPath;
 use ascribe_model::addresses::Key;
-use ascribe_resolve::{AstroRouter, FileKind, Project, ResolvedPage};
+use ascribe_resolve::openapi::embedded_operations;
+use ascribe_resolve::{AstroRouter, FileKind, Project, Resolution, ResolvedPage};
 use serde::Serialize;
 
 use crate::align::{self, Found};
@@ -14,6 +15,16 @@ use crate::words::diff_words;
 
 /// The name `because` gives the content model.
 pub(crate) const MODEL_FILE: &str = "ascribe.toml";
+
+/// Whether a name [`PageDiff::because`] gives is an operation's, a spec's
+/// path from the project root, `#`, and a fragment
+/// (`api/openapi.yaml#createWidget`): it has a `#`, and isn't a content
+/// file's path, which ends in `.md`, or a snippet's address, whose source's
+/// name and `:` come before its path.
+pub(crate) fn names_operation(name: &str) -> bool {
+    name.split_once('#')
+        .is_some_and(|(spec, _)| !spec.contains(':') && !name.ends_with(".md"))
+}
 
 /// One version of a project.
 #[derive(Clone, Copy)]
@@ -64,8 +75,15 @@ pub struct PageDiff {
     /// The other changed files the page's change can come from: fragments it
     /// includes and pages its links take a title or a heading from, in path
     /// order; then the snippets whose code changed, by address
-    /// (`code:app.py#main`); and `ascribe.toml` (last) when the content model
-    /// is a cause.
+    /// (`code:app.py#main`); then the operations of a declared API whose spec
+    /// changed what the page writes for them, an `@operation`'s method, path,
+    /// summary, or deprecation, or a link's address, each by its spec's path
+    /// from the project root, `#`, and the fragment the page names it by
+    /// (`api/openapi.yaml#createWidget`); and `ascribe.toml` (last) when the
+    /// content model is a cause. The kinds are told apart by their form: a
+    /// content file's path ends in `.md`, a snippet's address has its
+    /// source's name and `:` before its path, and an operation's has a `#`
+    /// and neither.
     pub because: Vec<String>,
     /// What changed about the page itself besides its blocks, in this
     /// order: `title`, `frontmatter`, `availability` (the page-level one),
@@ -528,6 +546,26 @@ fn reachable(base: Side<'_>, now: Side<'_>) -> Option<BTreeSet<RelPath>> {
             .filter(|f| now.project.file(&f.path).is_none())
             .map(|f| &f.path),
     );
+    // A file that names an operation of an API whose spec differs: what it
+    // writes from the spec can differ.
+    let specs = base.project.apis().changed(now.project.apis());
+    if !specs.is_empty() {
+        for project in sides {
+            for file in project.files() {
+                let names_one = project
+                    .resolutions(&file.path)
+                    .iter()
+                    .cloned()
+                    .chain(embedded_operations(project, file))
+                    .any(
+                        |r| matches!(&r, Resolution::Operation { api, .. } if specs.contains(api)),
+                    );
+                if names_one {
+                    touched.insert(&file.path);
+                }
+            }
+        }
+    }
 
     // Who includes what, in either version, by the target's path and by its
     // path with case folded (an include of a twin that differs only in case
@@ -785,9 +823,13 @@ fn compare_page(
     let mut because: Vec<String> = causes.iter().map(ToString::to_string).collect();
     // A snippet whose code differs: named by its address, as a fragment is
     // by its path.
-    let snippets = changed_snippets(&was_tree, &now_tree);
+    let snippets = changed_uses(&was_tree, &now_tree, |n| n.snippet.iter().collect());
     let snippet_count = snippets.len();
     because.extend(snippets);
+    // An operation the spec changed, named by the spec and the fragment.
+    because.extend(changed_uses(&was_tree, &now_tree, |n| {
+        n.operations.iter().collect()
+    }));
     if changed.model && (model_shaped || (because.is_empty() && !own_file_changed)) {
         because.push(MODEL_FILE.to_owned());
     }
@@ -821,23 +863,29 @@ fn compare_page(
     Some((diff, snippet_count))
 }
 
-/// The addresses of the snippets on both versions of a page whose code
-/// differs between them, in order. A snippet only one version has was added
-/// or removed in the page itself, which the page's own file says.
-fn changed_snippets(was: &PageTree, now: &PageTree) -> Vec<String> {
-    let snippets = |tree: &PageTree| {
+/// The names of what both versions of a page use, by `uses` of each node,
+/// whose fingerprints differ between them, in order: the snippets whose code
+/// differs, by address, or the operations whose spec writes them
+/// differently. One only one version uses was added or removed in the page
+/// itself, which the page's own file says.
+fn changed_uses(
+    was: &PageTree,
+    now: &PageTree,
+    uses: impl Fn(&Node) -> Vec<&(String, u64)>,
+) -> Vec<String> {
+    let used = |tree: &PageTree| {
         let mut out: BTreeMap<String, BTreeSet<u64>> = BTreeMap::new();
         for node in &tree.nodes {
             node.visit(&mut |n| {
-                if let Some((address, hash)) = &n.snippet {
-                    out.entry(address.clone()).or_default().insert(*hash);
+                for (name, hash) in uses(n) {
+                    out.entry(name.clone()).or_default().insert(*hash);
                 }
             });
         }
         out
     };
-    let was = snippets(was);
-    snippets(now)
+    let was = used(was);
+    used(now)
         .into_iter()
         .filter(|(address, hashes)| was.get(address).is_some_and(|w| w != hashes))
         .map(|(address, _)| address)

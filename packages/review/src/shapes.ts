@@ -194,8 +194,15 @@ export interface PageData {
    * The other changed files the page's change can come from: fragments it
    * includes and pages its links take a title or a heading from, in path
    * order; then the snippets whose code changed, by address
-   * (`code:app.py#main`); and `ascribe.toml` (last) when the content model
-   * is a cause.
+   * (`code:app.py#main`); then the operations of a declared API whose spec
+   * changed what the page writes for them, an `@operation`'s method, path,
+   * summary, or deprecation, or a link's address, each by its spec's path
+   * from the project root, `#`, and the fragment the page names it by
+   * (`api/openapi.yaml#createWidget`); and `ascribe.toml` (last) when the
+   * content model is a cause. The kinds are told apart by their form: a
+   * content file's path ends in `.md`, a snippet's address has its
+   * source's name and `:` before its path, and an operation's has a `#`
+   * and neither.
    */
   because: string[];
   /**
@@ -266,8 +273,15 @@ export interface PageDiff {
    * The other changed files the page's change can come from: fragments it
    * includes and pages its links take a title or a heading from, in path
    * order; then the snippets whose code changed, by address
-   * (`code:app.py#main`); and `ascribe.toml` (last) when the content model
-   * is a cause.
+   * (`code:app.py#main`); then the operations of a declared API whose spec
+   * changed what the page writes for them, an `@operation`'s method, path,
+   * summary, or deprecation, or a link's address, each by its spec's path
+   * from the project root, `#`, and the fragment the page names it by
+   * (`api/openapi.yaml#createWidget`); and `ascribe.toml` (last) when the
+   * content model is a cause. The kinds are told apart by their form: a
+   * content file's path ends in `.md`, a snippet's address has its
+   * source's name and `:` before its path, and an operation's has a `#`
+   * and neither.
    */
   because: string[];
   /**
