@@ -176,7 +176,7 @@ const ROBOTS_RULE: Record<string, string | null> = {
   unlisted: "noindex",
 };
 
-/** Each help entry's own address, `<permalink path><name>.json`, in the build `records` reads. */
+/** Each help entry's own JSON address, `<permalink path><name>.json`, in the build `records` reads. */
 async function helpAddresses(root: string, project = "."): Promise<string[]> {
   const read = async (file: string): Promise<unknown> =>
     JSON.parse(
@@ -209,7 +209,17 @@ function checkHeaders(headers: string, pages: Records["pages"], help: string[]):
     });
   const want = [
     ...markdown,
-    ...help.map((address): [string, string] => [address, "  Access-Control-Allow-Origin: *\n"]),
+    ...help.flatMap((address): [string, string][] => {
+      // The same entry as Markdown, which the JSON names as its alternate.
+      const section = address.replace(/\.json$/, ".md");
+      return [
+        [
+          address,
+          `  Access-Control-Allow-Origin: *\n  Link: <${section}>; rel="alternate"; type="text/markdown"\n`,
+        ],
+        [section, "  Access-Control-Allow-Origin: *\n"],
+      ];
+    }),
   ]
     .sort(([a], [b]) => (a < b ? -1 : 1))
     .map(([at, lines]) => `${at}\n${lines}`);
@@ -263,11 +273,19 @@ describe("a site at the host's root", () => {
       await helpAddresses(root),
     );
     // The recorded move, at the host's root, for the page and its Markdown version; then the
-    // retired page's addresses, each serving the page that says so with a 404.
+    // retired page's addresses, each serving the page that says so with a 404; then each
+    // permalink's address, serving its forwarding page with a dimension's parameter, and
+    // otherwise leading to its section.
+    const permalink = (name: string, to: string) =>
+      `/docs/go/${name} pm=:pm /docs/go/${name} 200!\n` +
+      `/docs/go/${name} deployment=:deployment /docs/go/${name} 200!\n` +
+      `/docs/go/${name} ${to} 301!\n`;
     expect(await readFile(path.join(root, "dist", "_redirects"), "utf8")).toBe(
       `/docs/guides/old-setup ${UNQUOTED} 301\n/docs/guides/old-setup.md ${UNQUOTED}.md 301\n` +
         "/docs/guides/beta /docs/_ascribe/gone/guides/beta 404\n" +
-        "/docs/guides/beta.md /docs/_ascribe/gone/guides/beta 404\n",
+        "/docs/guides/beta.md /docs/_ascribe/gone/guides/beta 404\n" +
+        permalink("options", UNLISTED) +
+        permalink("weave-config", `${UNQUOTED}#weave-config`),
     );
     const host = await serveLikeNetlify(root);
     try {
@@ -281,6 +299,18 @@ describe("a site at the host's root", () => {
       }
       const moved = await fetch(`${host.origin}/docs/guides/old-setup`, { redirect: "manual" });
       expect([moved.status, moved.headers.get("location")]).toEqual([301, UNQUOTED]);
+      // A permalink's address leads to its section in one step; with a dimension's parameter,
+      // it's the forwarding page, whose script takes the choice.
+      const permalink = await fetch(`${host.origin}/docs/go/weave-config`, { redirect: "manual" });
+      expect([permalink.status, permalink.headers.get("location")]).toEqual([
+        301,
+        `${UNQUOTED}#weave-config`,
+      ]);
+      const chosen = await fetch(`${host.origin}/docs/go/weave-config?pm=pnpm`, {
+        redirect: "manual",
+      });
+      expect(chosen.status).toBe(200);
+      expect(await chosen.text()).toContain('<link rel="alternate" type="text/markdown"');
     } finally {
       await host.stop();
     }

@@ -1,12 +1,14 @@
-// A help entry's own address: one entry of a line's `_ascribe/help.json`, as
-// JSON (`help.ts`). The integration adds this route once for each folder of
-// entries, `<path>[id].json` for the current line and `<line>/go/[id].json`
-// under the base path for each older one; which folder this is comes from
-// the route's pattern. Any origin may read it, as the build's headers say
-// for a host.
+// A help entry's own addresses: one entry of a line's `_ascribe/help.json`, as
+// JSON, and its section as Markdown (`help.ts`). The integration adds this
+// route once for each folder of entries and each format, `<path>[id].json`
+// and `<path>[id].md` for the current line and `<line>/go/[id].json` and
+// `<line>/go/[id].md` under the base path for each older one; which folder
+// and format this is comes from the route's pattern. Any origin may read
+// it, and the JSON names the Markdown as its alternate, as the build's
+// headers say for a host.
 import type { APIRoute, GetStaticPaths } from "astro";
 import { base, permalinks } from "virtual:ascribe/site";
-import { helpPaths } from "./help.js";
+import { helpPaths, type HelpAnswer } from "./help.js";
 
 export const getStaticPaths = (({ routePattern }) =>
   helpPaths(
@@ -15,10 +17,15 @@ export const getStaticPaths = (({ routePattern }) =>
     routePattern,
   )) satisfies GetStaticPaths;
 
-export const GET: APIRoute = ({ props }) =>
-  new Response((props as { body: string }).body, {
+export const GET: APIRoute = ({ props }) => {
+  const { body, type, alternate } = props as HelpAnswer;
+  return new Response(body, {
     headers: {
-      "Content-Type": "application/json; charset=utf-8",
+      "Content-Type": `${type}; charset=utf-8`,
       "Access-Control-Allow-Origin": "*",
+      ...(alternate === undefined
+        ? {}
+        : { Link: `<${alternate}>; rel="alternate"; type="text/markdown"` }),
     },
   });
+};

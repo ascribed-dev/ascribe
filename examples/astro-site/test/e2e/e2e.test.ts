@@ -317,12 +317,14 @@ describe("the built site", () => {
     await page.close();
   });
 
-  it("leaves permalinks' addresses out of what agents read", async () => {
+  it("leaves permalinks' addresses out of llms.txt, and serves each section as Markdown", async () => {
     const llms = await (await fetch(`${origin}${BASE}/llms.txt`)).text();
     expect(llms).toContain("/guides/my-setup.md");
     expect(llms).not.toContain("/go/");
+    // The section a permalink names, under its title, for an agent to read in one fetch.
     const markdown = await fetch(`${origin}${BASE}/go/weave-config.md`);
-    expect(markdown.status).toBe(404);
+    expect(markdown.status).toBe(200);
+    expect(await markdown.text()).toMatch(/^# .+\n/);
   });
 
   it("gives every heading the id Ascribe validated, at the route Ascribe computed", async () => {

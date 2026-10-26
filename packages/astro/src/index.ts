@@ -486,9 +486,9 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
               prerender: true,
             });
           }
-          // Each permalink's help, at `<name>.json` beside its address, and each older line's
-          // under the line's base path. One route for each folder: the current line's, then each
-          // older line's.
+          // Each permalink's help, at `<name>.json` and `<name>.md` beside its address, and each
+          // older line's under the line's base path. One route for each folder and format: the
+          // current line's, then each older line's.
           for (const pattern of helpPatterns(
             entries.map((entry) => entry.siteRoot),
             astro.base,
