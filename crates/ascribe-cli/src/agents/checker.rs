@@ -23,7 +23,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, mpsc};
 use std::time::{Duration, Instant};
 
-use ascribe_check::{Project, Reported, Severity, prose};
+use ascribe_check::{Project, Reported, Request, Severity, prose};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{RelPath, diagnostics};
 use ascribe_resolve::is_source_path;
@@ -273,20 +273,22 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
                 .collect();
             ascribe_check::diagnose_every_build_in(project, &paths)
         });
-        // What the baseline lists is held back here too.
-        let across = match project.baseline() {
-            Some(Ok(baseline)) => {
-                ascribe_check::baseline::apply(project, baseline, across, false, &[]).diagnostics
-            }
-            _ => across,
+        // What the baseline lists is held back here too, as the check of
+        // the files holds it back: none of these entries is stale, since
+        // they're a few files' findings.
+        let request = Request {
+            editor_build,
+            baseline: matches!(project.baseline(), Some(Ok(_))),
+            ..Request::default()
         };
-        let across: Vec<Reported> = across
-            .into_iter()
-            .map(|diagnostic| Reported {
-                diagnostic,
-                repeats: 0,
-            })
-            .collect();
+        let across = ascribe_check::Found {
+            diagnostics: across,
+            ..ascribe_check::Found::default()
+        };
+        let across = request
+            .settle(project, across)
+            .map_err(|e| e.to_string())?
+            .reported;
         for r in concise::order(files, reported)
             .into_iter()
             .map(|i| &reported[i])

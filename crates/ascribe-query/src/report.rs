@@ -451,24 +451,24 @@ pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, Diagno
     // What this run found, for the history to keep.
     let mut kept = report_history::Found::default();
     if asked(Section::Problems) || asked(Section::Inventory) {
-        let diagnosed = diagnose_with(
+        let mut checked = diagnose_with(
             project,
             &Request {
                 builds: options.builds,
                 baseline: options.baseline,
+                ..Request::default()
             },
         )?;
+        let baselined = checked.baselined.len();
+        let acknowledged = std::mem::take(&mut checked.acknowledged);
+        let diagnostics = checked.into_diagnostics();
         if asked(Section::Inventory) {
-            out.inventory = Some(inventory(project, &diagnosed.diagnostics));
+            out.inventory = Some(inventory(project, &diagnostics));
         }
         if asked(Section::Problems) {
-            let (mut problems, found) = problems(
-                project,
-                diagnosed.diagnostics,
-                diagnosed.acknowledged,
-                options.history,
-            );
-            problems.baselined = diagnosed.baselined.len();
+            let (mut problems, found) =
+                problems(project, diagnostics, acknowledged, options.history);
+            problems.baselined = baselined;
             out.problems = Some(problems);
             kept.problems = found;
         }
