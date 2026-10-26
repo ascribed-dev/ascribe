@@ -313,7 +313,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Message:** the required field `{field}` is missing; the content type `{type}` needs it
 
-**Fix:** Add the field to the page's frontmatter, or give it a default in the content type.
+**Fix:** Add the field to the page's frontmatter, or give it a default in the content type. A page with no `title` that opens with a level-1 heading has a fix that makes the heading its title.
 
 **Read more:** [Frontmatter values](../content-model/index.md#42-frontmatter-values) in the `ascribe.toml` reference.
 

@@ -355,6 +355,14 @@ mod tests {
         ),
         ("init_folder_refused", "init's folder is a file"),
         (
+            "init_content_root_refused",
+            "init's content root isn't a folder inside the project's",
+        ),
+        (
+            "init_templates_refused",
+            "init was asked for the templates in a folder of pages",
+        ),
+        (
             "init_unwritable",
             "init can't write ascribe.toml or make the content root",
         ),
@@ -556,6 +564,8 @@ mod tests {
             match e {
                 ascribe_templates::InitError::Project { .. }
                 | ascribe_templates::InitError::NotAFolder { .. }
+                | ascribe_templates::InitError::ContentRoot { .. }
+                | ascribe_templates::InitError::TemplatesWithPages { .. }
                 | ascribe_templates::InitError::Templates(_)
                 | ascribe_templates::InitError::Write { .. } => {}
             }
@@ -826,6 +836,14 @@ mod tests {
             }),
             Box::new(ascribe_templates::InitError::Project { found: path() }),
             Box::new(ascribe_templates::InitError::NotAFolder { folder: path() }),
+            Box::new(ascribe_templates::InitError::ContentRoot {
+                given: text(),
+                reason: "isn't a relative path",
+            }),
+            Box::new(ascribe_templates::InitError::TemplatesWithPages {
+                pages: 2,
+                content_root: text(),
+            }),
             Box::new(ascribe_templates::InitError::Templates(
                 ascribe_templates::EjectError::Write {
                     path: text(),

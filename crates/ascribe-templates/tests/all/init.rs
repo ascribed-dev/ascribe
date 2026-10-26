@@ -1,18 +1,30 @@
 //! `init` in temporary folders: the `ascribe.toml` it writes and the content
 //! root it makes, with the templates and without, in a folder named by a
-//! path, and what it refuses, writing nothing.
+//! path, in a folder of pages already there, and what it refuses, writing
+//! nothing.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
 use std::path::Path;
 
 use ascribe_core::Coded;
+use ascribe_core::RelPath;
+use ascribe_templates::init::model_text;
 use ascribe_templates::{Init, InitAnswer, InitError, MODEL_TEXT, init};
 
 fn run(root: &Path, templates: bool) -> Result<InitAnswer, InitError> {
+    run_in(root, templates, None)
+}
+
+fn run_in(
+    root: &Path,
+    templates: bool,
+    content_root: Option<&str>,
+) -> Result<InitAnswer, InitError> {
     init(&Init {
         root,
         templates,
+        content_root,
         ascribe_version: "9.9.9",
     })
 }
@@ -133,6 +145,128 @@ fn a_content_root_already_there_is_kept() {
     let answer = run(dir.path(), false).expect("started");
     assert!(!answer.content_root_made);
     assert_eq!(read(dir.path(), "docs/index.md"), "Hello.\n");
+}
+
+/// The adopted form, and one with a content root given, load as the first
+/// does: with nothing to say, the first with no page types, so its pages
+/// are of the implicit `page`, and both with `description` beside `title`.
+#[test]
+fn the_ascribe_toml_of_a_folder_of_pages_declares_no_page_types() {
+    let guides = RelPath::parse("handbook/guides").expect("a path");
+    for (content_root, adopted) in [(None, true), (Some(&guides), true), (Some(&guides), false)] {
+        let text = model_text(content_root, adopted);
+        let model = ascribe_model::load_str(&text, ascribe_core::FileId::new(0))
+            .unwrap_or_else(|issues| panic!("{issues:#?}\n{text}"));
+        assert!(model.warnings.is_empty(), "{:#?}", model.warnings);
+        assert_eq!(
+            model.project.content_root,
+            content_root.map_or("docs", RelPath::as_str)
+        );
+        let page = model.types.first().expect("a page type");
+        assert_eq!(page.name, "page");
+        assert_eq!(page.implicit, adopted);
+        assert_eq!(model.types.len(), 1);
+        let fields: Vec<&str> = page
+            .frontmatter
+            .fields
+            .iter()
+            .map(|f| f.name.as_str())
+            .collect();
+        assert_eq!(fields, ["title", "description"]);
+        assert_eq!(text.contains("[types"), !adopted, "{text}");
+    }
+    // Nothing else changes: the same comments, in the same places.
+    let docs = model_text(None, true);
+    let guides = model_text(Some(&guides), true);
+    assert_eq!(
+        docs.replace(
+            "content-root = \"docs\"",
+            "content-root = \"handbook/guides\""
+        ),
+        guides
+    );
+    let page_type = MODEL_TEXT
+        .find("# The one kind of page")
+        .expect("the page type's comment");
+    assert!(docs.starts_with(&MODEL_TEXT[..page_type]), "{docs}");
+}
+
+#[test]
+fn a_folder_of_pages_is_adopted_and_its_pages_counted() {
+    let dir = tempfile::tempdir().expect("a temporary folder");
+    std::fs::create_dir_all(dir.path().join("docs/guides")).expect("made");
+    std::fs::create_dir_all(dir.path().join("docs/_fragments")).expect("made");
+    std::fs::create_dir_all(dir.path().join("docs/.github")).expect("made");
+    for (path, text) in [
+        ("docs/index.md", "# Home\n"),
+        (
+            "docs/guides/install.md",
+            "---\ntitle: Install\n---\n\nRun it.\n",
+        ),
+        ("docs/_fragments/note.md", "Shared.\n"),
+        ("docs/.github/notes.md", "Not a page.\n"),
+        ("docs/logo.svg", "<svg/>"),
+    ] {
+        std::fs::write(dir.path().join(path), text).expect("written");
+    }
+    let answer = run(dir.path(), false).expect("started");
+    assert_eq!(
+        answer.pages, 2,
+        "the fragment and the hidden file aren't pages"
+    );
+    assert!(!answer.content_root_made);
+    assert_eq!(read(dir.path(), "ascribe.toml"), model_text(None, true));
+    ascribe_check::Project::load(&dir.path().join("ascribe.toml")).expect("the project loads");
+}
+
+#[test]
+fn a_content_root_given_is_written_and_its_pages_counted() {
+    let dir = tempfile::tempdir().expect("a temporary folder");
+    std::fs::create_dir_all(dir.path().join("handbook")).expect("made");
+    std::fs::write(dir.path().join("handbook/a.md"), "A.\n").expect("written");
+    let answer = run_in(dir.path(), false, Some("handbook")).expect("started");
+    assert_eq!(answer.content_root, "handbook");
+    assert_eq!(answer.pages, 1);
+    let guides = RelPath::parse("handbook").expect("a path");
+    assert_eq!(
+        read(dir.path(), "ascribe.toml"),
+        model_text(Some(&guides), true)
+    );
+
+    // An empty one is made, and gets the page type as `docs` would.
+    let dir = tempfile::tempdir().expect("a temporary folder");
+    let answer = run_in(dir.path(), false, Some("site/pages")).expect("started");
+    assert_eq!(answer.pages, 0);
+    assert!(answer.content_root_made);
+    assert!(dir.path().join("site/pages").is_dir());
+    let pages = RelPath::parse("site/pages").expect("a path");
+    assert_eq!(
+        read(dir.path(), "ascribe.toml"),
+        model_text(Some(&pages), false)
+    );
+}
+
+#[test]
+fn a_content_root_outside_a_folder_of_its_own_is_refused_with_nothing_written() {
+    let dir = tempfile::tempdir().expect("a temporary folder");
+    for given in [".", "", "..", "../docs", "docs/../..", "/docs"] {
+        let error = run_in(dir.path(), false, Some(given)).expect_err(given);
+        assert_eq!(error.code(), "init_content_root_refused", "{given}");
+        assert!(error.to_string().contains(&format!("`{given}`")), "{error}");
+    }
+    assert!(entries(dir.path()).is_empty());
+}
+
+#[test]
+fn the_templates_are_refused_in_a_folder_of_pages_with_nothing_written() {
+    let dir = tempfile::tempdir().expect("a temporary folder");
+    std::fs::create_dir(dir.path().join("docs")).expect("made");
+    std::fs::write(dir.path().join("docs/index.md"), "Hello.\n").expect("written");
+    let error = run(dir.path(), true).expect_err("refused");
+    assert_eq!(error.code(), "init_templates_refused");
+    let message = error.to_string();
+    assert!(message.contains("`docs/` (1 found)"), "{message}");
+    assert_eq!(entries(dir.path()), ["docs/", "docs/index.md"]);
 }
 
 #[test]

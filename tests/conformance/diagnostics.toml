@@ -1331,7 +1331,7 @@ spec = "7.2"
 reference = "content-model/index.md#42-frontmatter-values"
 row = "Frontmatter | Required field missing"
 message = "the required field `{field}` is missing; the content type `{type}` needs it"
-fix = "Add the field to the page's frontmatter, or give it a default in the content type."
+fix = "Add the field to the page's frontmatter, or give it a default in the content type. A page with no `title` that opens with a level-1 heading has a fix that makes the heading its title."
 example.wrong = '''
 ---
 type: guide

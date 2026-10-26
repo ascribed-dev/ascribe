@@ -1,6 +1,7 @@
 //! `ascribe init`, by running the binary in temporary folders: what it says
 //! it wrote, its JSON, the project it starts checking clean with a page that
-//! names its type, and what it exits with when it refuses. What it writes,
+//! names its type, a folder of pages it adopts, and what it exits with when
+//! it refuses. What it writes,
 //! and each case it refuses, is held by
 //! `crates/ascribe-templates/tests/all/init.rs`.
 
@@ -134,9 +135,83 @@ fn init_s_json_lists_what_it_wrote() {
     assert_eq!(answer["written"], serde_json::json!(["ascribe.toml"]));
     assert_eq!(answer["content_root"], "docs");
     assert_eq!(answer["content_root_made"], true);
+    assert_eq!(answer["pages"], 0);
     assert_eq!(answer["templates"], Value::Null);
     assert_eq!(answer["next"], "https://ascribed-dev.com/go/astro-guide/");
     assert!(dir.path().join("site/ascribe.toml").is_file());
+}
+
+/// In a folder of pages, `init` writes an `ascribe.toml` that declares no
+/// types, checks the pages, and exits 0 though they have problems: the
+/// project is there. The output of `examples/existing-docs` is held by
+/// `output.rs`.
+#[test]
+fn init_in_a_folder_of_pages_adopts_them_and_checks_them() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::create_dir_all(dir.path().join("site/handbook")).unwrap();
+    fs::write(
+        dir.path().join("site/handbook/index.md"),
+        "# Handbook\n\nHi.\n",
+    )
+    .unwrap();
+    let output = ascribe(dir.path(), &["init", "site", "--content-root", "handbook"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let text = stdout(&output);
+    assert!(
+        text.starts_with(
+            "wrote site/ascribe.toml\nfound 1 page in site/handbook/; with no page types declared in ascribe.toml, no page needs `type:`\n1 page has no `title`; `ascribe check --fix` takes the heading it opens with as its title\n"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains("\nNext, run `ascribe check --fix`, which fixes 1 of them\n"),
+        "{text}"
+    );
+    let model = fs::read_to_string(dir.path().join("site/ascribe.toml")).unwrap();
+    assert!(model.contains("content-root = \"handbook\"\n"), "{model}");
+    assert!(!model.contains("[types"), "{model}");
+
+    let fix = ascribe(&dir.path().join("site"), &["check", "--fix"]);
+    assert_eq!(code_of(&fix), 0, "{}", stdout(&fix));
+    assert_eq!(
+        fs::read_to_string(dir.path().join("site/handbook/index.md")).unwrap(),
+        "---\ntitle: Handbook\n---\n\nHi.\n"
+    );
+
+    // Its JSON counts the pages.
+    let dir = tempfile::tempdir().unwrap();
+    fs::create_dir(dir.path().join("docs")).unwrap();
+    fs::write(dir.path().join("docs/a.md"), "A.\n").unwrap();
+    let output = ascribe(dir.path(), &["init", "--format", "json"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let answer: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(answer["pages"], 1);
+    assert_eq!(answer["content_root_made"], false);
+}
+
+#[test]
+fn init_refuses_the_templates_in_a_folder_of_pages_and_a_content_root_outside() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::create_dir(dir.path().join("docs")).unwrap();
+    fs::write(dir.path().join("docs/a.md"), "A.\n").unwrap();
+    let output = ascribe(dir.path(), &["init", "--templates"]);
+    assert_eq!(code_of(&output), 2);
+    assert_eq!(stdout(&output), "");
+    assert!(
+        stderr(&output).starts_with(
+            "error: the templates declare page types, which every page in `docs/` (1 found)"
+        ),
+        "{}",
+        stderr(&output)
+    );
+    let output = ascribe(dir.path(), &["init", "--content-root", "."]);
+    assert_eq!(code_of(&output), 2);
+    assert!(
+        stderr(&output).contains("`.` isn't a folder inside it"),
+        "{}",
+        stderr(&output)
+    );
+    assert!(!dir.path().join("ascribe.toml").exists());
 }
 
 #[test]

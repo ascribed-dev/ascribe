@@ -7,7 +7,7 @@ version = 1
 
 [[sections]]
 folder = ""
-pages = ["getting-started.md", "install.md", "glossary.md"]
+pages = ["getting-started.md", "existing-docs.md", "install.md", "glossary.md"]
 
 [[sections]]
 folder = "writing/"
