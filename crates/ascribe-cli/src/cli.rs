@@ -175,8 +175,9 @@ pub enum Color {
 pub enum Command {
     /// Start a project: write its first ascribe.toml and its pages' folder.
     ///
-    /// With --templates, take the page templates too. Writes nothing where
-    /// there's an ascribe.toml at or above the folder.
+    /// It writes ascribe.addresses too, so a page's move is recorded from
+    /// the first commit. With --templates, take the page templates too.
+    /// Writes nothing where there's an ascribe.toml at or above the folder.
     #[command(after_help = docs_link!("cli-init"))]
     Init(commands::init::Args),
     /// Check every source file for problems, without building anything.

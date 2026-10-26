@@ -442,12 +442,20 @@ pub fn run_check(
         let (found, base) = std::thread::scope(|threads| {
             let base = compared.then(|| {
                 threads.spawn(|| match project.addresses() {
-                    Some(_) => BaseRead::Addresses(Box::new(ascribe_diff::base_addresses(
+                    Some(_) => match ascribe_diff::base_addresses(
                         project.root(),
                         &project.layout().content_root,
                         args.base.as_deref(),
                         args.base_exact,
-                    ))),
+                    ) {
+                        Err(_)
+                            if args.base.is_none()
+                                && ascribe_diff::before_history(project.root()) =>
+                        {
+                            BaseRead::BeforeHistory
+                        }
+                        read => BaseRead::Addresses(Box::new(read)),
+                    },
                     None => BaseRead::FileEntries(ascribe_diff::base_file_entries(
                         project.root(),
                         args.base.as_deref(),
@@ -536,6 +544,10 @@ enum BaseRead {
     Addresses(Box<Result<ascribe_diff::BaseAddresses, ascribe_diff::DiffError>>),
     /// How many entries the base's file had, for a project without one.
     FileEntries(Option<usize>),
+    /// No base was named, and there's no history it could be read from: no
+    /// repository, or no commit yet. Nothing can have been published, so
+    /// nothing is compared, and that isn't reported (decision #1016).
+    BeforeHistory,
 }
 
 /// The addresses the base published that the project has lost, compared
@@ -544,8 +556,11 @@ enum BaseRead {
 /// and the problems found without it. For a project without the file, that
 /// the base had one.
 fn compared_addresses(loaded: &Loaded, builds: &[String], base: BaseRead) -> Vec<Diagnostic> {
+    // `None` before the history: nothing is compared, and only the
+    // entries are checked.
     let base = match base {
-        BaseRead::Addresses(base) => *base,
+        BaseRead::Addresses(base) => Some(*base),
+        BaseRead::BeforeHistory => None,
         BaseRead::FileEntries(entries) => {
             return entries
                 .map(ascribe_check::addresses::file_deleted)
@@ -571,6 +586,9 @@ fn compared_addresses(loaded: &Loaded, builds: &[String], base: BaseRead) -> Vec
         text,
         index,
         builds: &now,
+    };
+    let Some(base) = base else {
+        return ascribe_check::addresses::entries(&here, None);
     };
     let base = match base {
         Ok(base) => base,

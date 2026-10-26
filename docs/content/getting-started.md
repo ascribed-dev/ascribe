@@ -64,7 +64,7 @@ pnpm exec ascribe init
 ```
 @end
 
-It writes the project's first `ascribe.toml`, and makes `docs/`, the folder the pages go in. The file says what each part is for:
+It writes the project's first `ascribe.toml` and `ascribe.addresses`, and makes `docs/`, the folder the pages go in. `ascribe.toml` says what each part is for:
 
 @snippet: code:examples/getting-started/ascribe.toml#init
 
@@ -86,7 +86,7 @@ Add the output directory to `.gitignore`:
 .ascribe/
 ```
 
-[Files Ascribe writes](command/project-files.md) lists the other files Ascribe puts in a project, and which to commit.
+Commit `ascribe.addresses`; Ascribe writes it. It records where a page went when it moves, so the addresses your docs publish keep working ([Keep the addresses you've published](publishing/redirects.md)). [Files Ascribe writes](command/project-files.md) lists the other files Ascribe puts in a project, and which to commit.
 
 ## Write a page
 

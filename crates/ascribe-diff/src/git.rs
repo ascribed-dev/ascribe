@@ -103,6 +103,12 @@ impl Repository {
         })
     }
 
+    /// Whether `HEAD` is a commit: false in a repository with no commit
+    /// yet.
+    pub fn has_commit(&self) -> bool {
+        self.commit_of("HEAD").is_some()
+    }
+
     /// The project's folder inside the repository.
     pub fn project_dir(&self) -> RelPath {
         RelPath::parse(&self.prefix).unwrap_or_default()

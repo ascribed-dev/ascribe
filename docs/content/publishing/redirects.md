@@ -9,14 +9,16 @@ A link to a page outlives the page's place in the docs: a bookmark, a search res
 
 ## Turn it on
 
-Make the file beside `ascribe.toml`, and commit it with the docs:
+A project [`ascribe init`](../install.md#cli-init) started has it already: init writes `ascribe.addresses` beside `ascribe.toml`, so commit it with the docs, and its addresses are kept from the first commit.
+
+A project started before that, or without `init`, makes the file beside `ascribe.toml`, and commits it with the docs:
 
 ```console
 $ ascribe addresses init
 Wrote ascribe.addresses. Moves are recorded from now on.
 ```
 
-A project without the file records nothing, and the check compares nothing, so turning it on is the decision to keep the addresses.
+A project without the file records nothing, and the check compares nothing, so deleting it is the decision to stop keeping the addresses.
 
 The editor offers it too. After you move a page of a project without the file, in the Explorer or in Pages, VS Code asks once for the project whether to **Keep the addresses you've published**. Choose it, and the extension runs `ascribe addresses init`, then `ascribe addresses move` for each page that moved, so the move that prompted it is recorded. Dismissed, it isn't asked again for the project.
 
@@ -160,7 +162,7 @@ A second change composes with the first: under `base-path = ["/docs/", "/guide/"
 
 The base is what the docs published before: the merge base of the repository's default branch and `HEAD`, as a pull request shows its changes, or the revision `--base` names. `--base-exact` compares with that revision itself. It's read as [`ascribe diff`](../review/diff.md) reads it, so the checkout needs the history: in CI, `fetch-depth: 0`, as [Checks in CI](../checks/ci.md#keep-the-addresses-youve-published) sets up.
 
-When the base can't be read, because there's no repository, or the revision isn't there, as in a shallow clone, the rest of the check runs and [`addresses-base-unreadable`](../checks/diagnostics/content-checks.md#ASC257), a warning, says why, so a check that compared nothing never passes silently. A base with no project, as a project's first pull request has, published nothing to keep, and that's advice.
+When the base can't be read, because there's no repository, or the revision isn't there, as in a shallow clone, the rest of the check runs and [`addresses-base-unreadable`](../checks/diagnostics/content-checks.md#ASC257), a warning, says why, so a check that compared nothing never passes silently. A base with no project, as a project's first pull request has, published nothing to keep, and that's advice. Before the first commit, with no `--base`, nothing can have been published: a project outside a git repository, or in one with no commit yet, compares nothing, and the check doesn't say so, so a project `ascribe init` just started checks clean.
 
 ## What the build writes
 

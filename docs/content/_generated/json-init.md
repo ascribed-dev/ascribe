@@ -249,7 +249,7 @@
       "description": "What eject did, when the templates were asked for; otherwise null.\nWhen its `refused` isn't empty, nothing was written."
     },
     "written": {
-      "description": "The files written, from the new project's folder, `/`-separated, in\nthe order they were written: with the templates, eject's files, then\n`ascribe.toml`. Empty when the templates were refused.",
+      "description": "The files written, from the new project's folder, `/`-separated, in\nthe order they were written: with the templates, eject's files, then\n`ascribe.toml`, then `ascribe.addresses`, unless one was there\nalready. Empty when the templates were refused.",
       "items": {
         "type": "string"
       },

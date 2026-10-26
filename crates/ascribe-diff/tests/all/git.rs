@@ -410,6 +410,20 @@ fn no_default_branch() {
         found.base(None, false),
         Err(DiffError::NoDefaultBranch)
     ));
+    assert!(!ascribe_diff::before_history(&repo.root()));
+}
+
+/// No repository, or one with no commit, has no history a base could be
+/// read from; one commit is history.
+#[test]
+fn before_history_is_no_repository_or_no_commit() {
+    let outside = tempfile::tempdir().unwrap();
+    assert!(ascribe_diff::before_history(outside.path()));
+    let repo = Repo::new();
+    repo.write("ascribe.toml", MODEL);
+    assert!(ascribe_diff::before_history(&repo.root()));
+    repo.commit("first");
+    assert!(!ascribe_diff::before_history(&repo.root()));
 }
 
 #[test]
