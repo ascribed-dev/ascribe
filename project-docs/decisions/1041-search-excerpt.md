@@ -1,0 +1,5 @@
+---
+section: The binary
+---
+
+**`ascribe search`'s JSON gives a place's text cut to about 240 characters around the match's first character, at words, with `…` where it's cut, and keeps searching generated fragments under `_generated/`.** `text` was the whole block, and `match` is now in the cut text, ending where it's cut when a match of several words runs past it; `line` and `column` are unchanged, and say where to read the rest. The cut is `ascribe_query::excerpt`, which the text output uses at 80 characters. Generated fragments stay searched: the pages include them, so readers read them, and a match in one is a real place; bounding the excerpt is what made them costly, not finding them. _Why:_ a code block is one block, and a query whose words are anywhere in a 400-line JSON Schema returned it whole, 15 KB of one line, twice over MCP, about 10k tokens for one answer. _From:_ [#1041](https://github.com/ascribed-dev/ascribe/issues/1041), the agent-reader review's finding F6, 26 October 2026.

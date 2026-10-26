@@ -60,7 +60,7 @@ pub use resolve::{Emit, PermalinkHelp, Resolved, ResolvedPermalink, resolve};
 pub use rules::{pointer, rules};
 pub use search::{
     PageCount, Readings, Search, SearchPage, SearchPlace, SearchThrough, Searched, SourcePlace,
-    search,
+    excerpt, search,
 };
 pub use versions::{VersionChanges, VersionsList};
 
