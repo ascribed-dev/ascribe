@@ -96,6 +96,10 @@ pub struct Entry {
     pub evidence: Vec<String>,
     /// Whether a project may set its level in `[checks]`.
     pub configurable: bool,
+    /// Whether the check is off unless a project names it in `[checks]`
+    /// (`off-by-default`), its `severity` being the level it's reported at
+    /// when named without one.
+    pub off_by_default: bool,
     /// For a check whose next step is review: where it reports its problems,
     /// and so where one is acknowledged (SPEC §4.9).
     pub place: Option<Place>,
@@ -250,6 +254,10 @@ impl Registry {
                 .unwrap_or_default(),
             configurable: t
                 .get("configurable")
+                .and_then(toml::Value::as_bool)
+                .unwrap_or(false),
+            off_by_default: t
+                .get("off-by-default")
                 .and_then(toml::Value::as_bool)
                 .unwrap_or(false),
             place: text("place").and_then(|p| Place::from_name(&p)),

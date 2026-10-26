@@ -1,7 +1,6 @@
 description: >-
   The complete Quill project of examples/quill, built around the SPEC
-  Appendix B page: no diagnostics at file or page level but the advice that
-  its three permalinked sections have no summary, and the same three
+  Appendix B page: no diagnostics at file or page level, and the same three
   pages and two assets under every build, with the pages only self-managed
   has in the builds that have them. The site build is versioned, a build for
   each live line of self-managed: webhooks and the configuration page that
@@ -27,10 +26,7 @@ builds:
     assets:
       - _fragments/prerequisites.png
       - playground.png
-    diagnostics:
-      - {slug: summary-missing, file: install-agent.md, line: 15, severity: advice}
-      - {slug: summary-missing, file: install-agent.md, line: 20, severity: advice}
-      - {slug: summary-missing, file: install-agent.md, line: 59, severity: advice}
+    diagnostics: []
   site@3.4:
     pages:
       configure-legacy.md:
@@ -41,10 +37,7 @@ builds:
     assets:
       - _fragments/prerequisites.png
       - playground.png
-    diagnostics:
-      - {slug: summary-missing, file: install-agent.md, line: 15, severity: advice}
-      - {slug: summary-missing, file: install-agent.md, line: 20, severity: advice}
-      - {slug: summary-missing, file: install-agent.md, line: 59, severity: advice}
+    diagnostics: []
   cloud:
     pages:
       install-agent.md:
@@ -53,10 +46,7 @@ builds:
     assets:
       - _fragments/prerequisites.png
       - playground.png
-    diagnostics:
-      - {slug: summary-missing, file: install-agent.md, line: 15, severity: advice}
-      - {slug: summary-missing, file: install-agent.md, line: 20, severity: advice}
-      - {slug: summary-missing, file: install-agent.md, line: 59, severity: advice}
+    diagnostics: []
   self-managed-3.3:
     pages:
       install-agent.md:
@@ -65,7 +55,4 @@ builds:
     assets:
       - _fragments/prerequisites.png
       - playground.png
-    diagnostics:
-      - {slug: summary-missing, file: install-agent.md, line: 15, severity: advice}
-      - {slug: summary-missing, file: install-agent.md, line: 20, severity: advice}
-      - {slug: summary-missing, file: install-agent.md, line: 59, severity: advice}
+    diagnostics: []

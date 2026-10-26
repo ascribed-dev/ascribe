@@ -44,6 +44,14 @@ Each diagnostic says what kind of next step it has. `ascribe check --format json
 
 A check about the content's quality, rather than whether the project is valid, can be set to another level, or turned off, in [`[checks]`](../content-model/checks.md#19-checks) in `ascribe.toml`. Those checks are listed under [Content checks](diagnostics/content-checks.md) and [Content checks of outputs and the site](diagnostics/output-checks.md), and their entries say they're configurable. Every other diagnostic is about whether the project is valid, which a project can't lower or turn off.
 
+A few content checks matter only to some projects, and are off unless `[checks]` names them; their entries say they're off by default. Name one with a level to turn it on at that level, or with a table of its settings to turn it on at the level its entry gives. [`summary-missing`](diagnostics/content-checks.md#ASC252) and [`summary-long`](diagnostics/content-checks.md#ASC253), for a project that [shows its docs in a product](../permalinks/in-your-product.md), are turned on like this:
+
+```toml
+[checks]
+summary-missing = "advice"
+summary-long = "advice"
+```
+
 ## Index
 
 @include: ../_generated/diagnostics-index.md

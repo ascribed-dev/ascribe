@@ -1,6 +1,6 @@
 # Written by `ascribe observe`. Don't edit it by hand.
 version = 1
-ascribe = "0.4.3"
+ascribe = "0.4.4"
 command = "cargo test --locked -p ascribe-cli --test all -- output:: agents:: && cargo test --locked -p ascribe-model --test load"
 
 [environment]
@@ -34,8 +34,8 @@ rust = "rustc 1.98.1 (48a229cea 2026-09-01)"
 "crates/ascribe-cli/tests/output/agents/quill/CLAUDE.md.snap" = "sha256-lf:f771f16a83ca6f1d334a3105787567b1657c69c4de38e5818d5017665c5e4099"
 "crates/ascribe-cli/tests/output/check-concise.txt" = "sha256-lf:08334e49ef11fef0618199dbf0f70df2542911e4c34958ad7ace031e2b90658b"
 "crates/ascribe-cli/tests/output/check-prompt.txt" = "sha256-lf:5763d24c0b03542e9ef897bb1bb56d7a128b25a85636150a534e62cfc8abd4c0"
-"crates/ascribe-cli/tests/output/check.json" = "sha256-lf:12d59adfa7e0afbb50a68e9586a2d9dd9864c2ba5eb0f685ac2eccb79dd8827d"
-"crates/ascribe-cli/tests/output/check.txt" = "sha256-lf:d66555cab31951faef6ca9a90badaeff6d440d4b36453d8c6eaef86ac34b7e24"
+"crates/ascribe-cli/tests/output/check.json" = "sha256-lf:7d227d2f1ba9b2bc13f8433af3194aa2a13478003a4746e6a00c9e89a7103c38"
+"crates/ascribe-cli/tests/output/check.txt" = "sha256-lf:5b1954d69a15400f350cee5cf3cedaff3c4308294cdc4be084af258e86a82664"
 "crates/ascribe-cli/tests/output/diff-page.txt" = "sha256-lf:812c6200e149ad0d44ab36f0bd7b30d3bdb9d63f51a9aef99505a5b887ab6602"
 "crates/ascribe-cli/tests/output/diff-prompt.txt" = "sha256-lf:445e69cd3b9221bc44bd1facc777453739cefbe17645e388af8c791641fcd33d"
 "crates/ascribe-cli/tests/output/diff.json" = "sha256-lf:35d7e25460d9cbe070dd8c094360ae6f95cc15a70ee9fc357c657c708b9761d5"
