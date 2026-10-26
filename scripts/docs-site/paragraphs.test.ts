@@ -28,13 +28,14 @@ function paragraphs(text: string): { line: number; text: string }[] {
   let start = 0;
   let fence: string | null = null;
   const flush = (): void => {
-    const first = current[0]?.trimStart() ?? "";
-    const other =
-      /^(\||#|>|<|@|[-*+] |\d+[.)] )/.test(first) || (current[0] ?? "").startsWith("    ");
+    const first = current[0] ?? "";
+    const other = /^(\||#|>|<|@|[-*+] |\d+[.)] )/.test(first);
     if (current.length > 0 && !other) found.push({ line: start, text: current.join(" ") });
     current = [];
   };
-  const lines = text.replace(/^---\n[\s\S]*?\n---\n/, (front) => "\n".repeat(front.split("\n").length - 1)).split("\n");
+  const lines = text
+    .replace(/^---\n[\s\S]*?\n---\n/, (front) => "\n".repeat(front.split("\n").length - 1))
+    .split("\n");
   lines.forEach((line, i) => {
     const trimmed = line.trim();
     if (fence !== null) {
@@ -55,7 +56,9 @@ function paragraphs(text: string): { line: number; text: string }[] {
 }
 
 function words(paragraph: string): number {
-  const read = paragraph.replace(/!\[[^\]]*\]\([^)]*\)/g, "").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1");
+  const read = paragraph
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1");
   return read.split(/\s+/).filter((word) => word !== "").length;
 }
 
