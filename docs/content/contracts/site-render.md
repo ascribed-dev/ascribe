@@ -130,6 +130,10 @@ A fenced code block whose info string has a `tested="…"` word after its langua
 
 A block with no `tested` word is left as everything else is. The element contract's §9 says how the caption renders.
 
+### 5.2 A code block's language
+
+A fenced code block with a language renders with it as a class on its `<code>`, `<pre><code class="language-sh">`, as CommonMark renders it, and a renderer that highlights the code keeps that class on the `<code>`, so a reader of the HTML that converts it to text or Markdown names the block's language ([decision #1038]({repo}/blob/main/project-docs/decisions/1038-tab-labels-and-code-languages.md)). `@ascribed/astro` adds it to Shiki's output with a transformer of its own; a block Shiki highlights as `plaintext`, which it does for one with no language or one in a language it doesn't know, has none.
+
 ## 6. Constructs and fixtures
 
 Each construct below has at least one fixture in [`tests/render/`]({repo}/tree/main/tests/render/), listed in its `fixtures.toml`. [`tests/render/README.md`]({repo}/blob/main/tests/render/README.md) says how implementations run the fixtures and compare HTML.
@@ -192,6 +196,7 @@ Every block a reviewer could point at: headings, paragraphs, code blocks, lists 
 - An element that wraps the block after it (a line-form `@note`, `@steps`, `@details`, or widget) spans the directive and that block. A line-form directive whose text is its content (`@note: Text.`) gives that text's paragraph its own line too.
 - `@summary` writes no element: the paragraph a `@summary` marks has its own anchor, its own lines, not the directive's, and `@summary: Text.` writes nothing, so it has none.
 - A paragraph in a tight list has no element (CommonMark renders its text straight into the `<li>`), so it has no anchor: its item's anchor says where it is.
+- A tab's label paragraph, `<p class="ascribe-tab-label">` (element contract §3), has no anchor: it's the tab's `label` again, as text, and the tab's anchor says where it is.
 - The pointer for agents at the top of a page (`ascribe-for-agents`, element contract §8) has no anchor, nor does its paragraph: no source wrote it.
 - A raw HTML block that doesn't start with an open tag (one that starts with a comment, a closing tag, or text) has no anchor.
 

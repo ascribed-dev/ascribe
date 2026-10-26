@@ -1535,7 +1535,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 |---|---|---|
 | `@note {type=tip}` with title | `<ascribe-note type="tip" heading="…">` wrapping the content | A blockquote beginning `**Tip: …**` |
 | `@steps` | `<ascribe-steps>` wrapping the list | The ordered list |
-| `@variant` group, `switch` | `<ascribe-tabs sync="…">` containing one `<ascribe-tab value="…" label="…">` per arm | A line saying a reader sees one arm at a time, then each arm as a section under a heading naming its dimension and value, its headings ending with the label |
+| `@variant` group, `switch` | `<ascribe-tabs sync="…">` containing one `<ascribe-tab value="…" label="…">` per arm, which starts with its label as text | A line saying a reader sees one arm at a time, then each arm as a section under a heading naming its dimension and value, its headings ending with the label |
 | `@variant` group, selection | The arms that survive the selection (§9.3): one arm becomes plain content; several stay a `<ascribe-tabs>` group | One arm becomes plain content; several stay a switcher's sections, as in `switch` |
 | `@details` | `<details>` with the title in `<summary>` | The title in bold, then the content |
 | `@available`, `badge` | A `<ascribe-availability>` element; page-level availability passed through as frontmatter | A line such as "Available: Quill Cloud (GA); self-managed (preview, 3.4+)" |

@@ -1,0 +1,1 @@
+- **Tabs' labels are text in the page, and code blocks name their language in a class.** A tool that converts a page's HTML to text or Markdown for an agent then reads which tab is which, and each block's language. See [the element library](docs/content/astro/elements.md#generated-text).
