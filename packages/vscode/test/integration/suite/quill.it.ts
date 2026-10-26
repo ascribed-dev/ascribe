@@ -504,10 +504,10 @@ describe("This page's webview on examples/quill", () => {
       ),
     );
 
-    // Every section open, the focus on About's Description, and the view scrolled.
+    // Every section open, the focus on Health's Description, and the view scrolled.
     await vscode.commands.executeCommand("ascribe.thisPage.focus");
-    const placed = await view.probe({ open: true, focus: "about/4", scroll: 40 });
-    assert.equal(placed.report.focused, "about/4");
+    const placed = await view.probe({ open: true, focus: "health/1", scroll: 40 });
+    assert.equal(placed.report.focused, "health/1");
     assert.ok(placed.report.scroll > 0, "the view doesn't scroll");
 
     // The cursor moves to another heading: Connections changes, and the
@@ -522,7 +522,7 @@ describe("This page's webview on examples/quill", () => {
           (item) => item.startsWith("install-agent.md"),
         ),
     );
-    assert.equal(moved.report.focused, "about/4");
+    assert.equal(moved.report.focused, "health/1");
     assert.equal(moved.report.scroll, placed.report.scroll);
   });
 
