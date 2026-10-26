@@ -3,7 +3,8 @@
 //! target rewritten to the simplest spec that means the same in every line
 //! still in the window, the content no line still has listed, and the
 //! retired line's addresses each given where it should go (README decisions
-//! 16, 17, and 21).
+//! 16, 17, and 21), and, with `ascribe.addresses`, those to a page in the
+//! current line recorded there (decision #946).
 //!
 //! It writes nothing. [`retire_line`] returns `ascribe.toml`'s text and each
 //! source file's after the retirement; the command asks git whether the
@@ -74,6 +75,14 @@ pub struct RetiredLine {
     pub removals: Vec<(RelPath, Option<String>)>,
     /// Where each address the line published should go.
     pub redirects: Vec<Redirect>,
+    /// `ascribe.addresses`' text after the retirement, when the project has
+    /// a file that reads: each redirect to a page in the current line
+    /// recorded in `[moved]`, keyed by the old address, so the build writes
+    /// it. `None` without the file, or when it changes nothing.
+    pub addresses_text: Option<String>,
+    /// How many of `redirects` `ascribe.addresses` records: those to a page
+    /// in the current line, when the project has a file that reads; else 0.
+    pub recorded: usize,
     /// The outputs of builds that aren't lines of the target that the
     /// rewrite changes, by build and output.
     pub builds_changed: Vec<ChangedOutput>,
@@ -105,6 +114,9 @@ pub struct Redirect {
     /// Where it should go: the same page in the current line, the page that
     /// replaces it there, or the page in the archive, a full address.
     pub to: String,
+    /// The page in the current line it goes to, by its content path;
+    /// `None` when it goes to the archive.
+    pub page: Option<RelPath>,
     /// Why it goes there.
     pub why: RedirectWhy,
 }
@@ -388,6 +400,8 @@ pub fn retire_line(
         Vec::new()
     };
 
+    let redirects = redirects(project, releases, line, url);
+    let (recorded, addresses_text) = recorded(project, &redirects);
     Ok(RetiredLine {
         target: target.to_owned(),
         line: line.text.clone(),
@@ -398,7 +412,9 @@ pub fn retire_line(
         features,
         unused,
         removals,
-        redirects: redirects(project, releases, line, url),
+        redirects,
+        addresses_text,
+        recorded,
         builds_changed: elsewhere,
     })
 }
@@ -1053,6 +1069,32 @@ fn removals(project: &Project, unused: &[Unused]) -> Vec<(RelPath, Option<String
     out
 }
 
+/// `ascribe.addresses`' text once each of `redirects` that goes to a page
+/// in the current line is recorded in `[moved]`, keyed by the address the
+/// line published, which is from the host's root (SPEC §7.10): the build
+/// then writes each. An address that goes to the archive isn't recorded,
+/// since a `[moved]` value is a page of the project. With how many are
+/// recorded; the text is `None` when the project has no file, it doesn't
+/// read, or nothing changes.
+fn recorded(project: &Project, redirects: &[Redirect]) -> (usize, Option<String>) {
+    let Some(Ok(file)) = project.addresses() else {
+        return (0, None);
+    };
+    let mut after = file.clone();
+    let mut count = 0;
+    for r in redirects {
+        if let Some(page) = &r.page {
+            after.record_move(&r.from, page.as_str());
+            count += 1;
+        }
+    }
+    let text = after.to_toml();
+    (
+        count,
+        (project.addresses_text() != Some(text.as_str())).then_some(text),
+    )
+}
+
 /// Where each page the retired line published should go: the same page in
 /// the current line, the page that replaces it there, or the page in the
 /// archive.
@@ -1085,9 +1127,10 @@ fn redirects(project: &Project, releases: &Releases, line: &Version, url: &str) 
             }
             let from = ascribe_core::Router::route(&old_router, &page.path);
             let in_current = |p: &RelPath| index.dropped(p, &current).is_none();
-            let (to, why) = if in_current(&page.path) {
+            let (to, page, why) = if in_current(&page.path) {
                 (
                     ascribe_core::Router::route(&current_router, &page.path),
+                    Some(page.path.clone()),
                     RedirectWhy::Same,
                 )
             } else if let Some((by, _)) = replacements
@@ -1096,15 +1139,22 @@ fn redirects(project: &Project, releases: &Releases, line: &Version, url: &str) 
             {
                 (
                     ascribe_core::Router::route(&current_router, by),
+                    Some(by.clone()),
                     RedirectWhy::Replaced,
                 )
             } else {
                 (
                     format!("{url}/{}", ascribe_emit::archive_page_file(&page.path)),
+                    None,
                     RedirectWhy::Archive,
                 )
             };
-            out.push(Redirect { from, to, why });
+            out.push(Redirect {
+                from,
+                to,
+                page,
+                why,
+            });
         }
     }
     out.sort_by(|a, b| a.from.cmp(&b.from));

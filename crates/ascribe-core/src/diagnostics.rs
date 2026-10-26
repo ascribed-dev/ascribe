@@ -794,7 +794,7 @@ pub const ANCHOR_LOST: DiagnosticSlug = DiagnosticSlug("anchor-lost");
 pub const ADDRESSES_BASE_UNREADABLE: DiagnosticSlug = DiagnosticSlug("addresses-base-unreadable");
 
 /// `ASC258`, advice, file level: SPEC §8.2, "Addresses file | A build the base
-/// has and the working tree doesn't".
+/// has and the working tree doesn't, other than a line archived now".
 pub const ADDRESSES_BUILD_GONE: DiagnosticSlug = DiagnosticSlug("addresses-build-gone");
 
 /// `ASC259`, error, file level: a content model loader rule.

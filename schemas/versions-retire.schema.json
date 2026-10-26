@@ -212,6 +212,10 @@
       },
       "type": "array"
     },
+    "recorded": {
+      "description": "Whether `ascribe.addresses` records the redirects that go to a page\nin the current line, in `[moved]` keyed by the address, so the build\nwrites them: true when the project has the file and the line has\none. With `--dry-run`, whether it would. Those to the archive are\nnever recorded.",
+      "type": "boolean"
+    },
     "redirects": {
       "description": "Where each address the line published should go, by address: the\nsame page in the current line, the page that replaces it there, or\nits page in the archive.",
       "items": {
@@ -269,6 +273,7 @@
     "unused",
     "removed",
     "redirects",
+    "recorded",
     "outputs",
     "from"
   ],
