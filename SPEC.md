@@ -202,7 +202,7 @@ Built-in keywords never contain a hyphen. Project widget names always contain on
 
 ### 3.3 Attributes
 
-Attributes use one grammar everywhere: after a directive name, after an image (§5.3), and at the end of a table row's first cell (§4.4).
+Attributes use one grammar everywhere: after a directive name, after an image (§5.3), and at the end of a table row's first cell (§4.4). A fenced code block's info string holds `key=value` pairs instead, with the same keys and quoted values, in a grammar of their own (§3.3.1).
 
 ```
 {key=value, key=value}
@@ -225,6 +225,34 @@ Attributes use one grammar everywhere: after a directive name, after an image (�
 - **An unclosed block** runs to the end of its line, so the rest of the directive line can't be read: whether it has a colon or a primary, and so its form and binding, are unknown. Processors report the unclosed block and nothing else about that line.
 
 Attributes carry semantic metadata only. There are no class or id shorthands (`.class`, `#id`).
+
+#### 3.3.1 Info-string attributes
+
+A fenced code block's info string holds its language, then words, some of them `key=value` pairs that a processor reads (ABNF rule `info-string`):
+
+````markdown
+```yaml title="ascribe.toml" phrases=true
+```
+````
+
+- **The info string** is the one CommonMark gives: the text after the opening fence, trimmed, with its backslash escapes and entity references taken off. The grammar applies to that text, not to the line as written.
+- **Words** are parted by spaces and tabs. The first word is the block's **language**, unless it's a pair; then the block has no language.
+- **A pair** is a key, `=`, and a value, with nothing between them, then a space, a tab, or the end of the info string. Keys follow §3.3's rule. A value is a **token**, any characters but whitespace and `"`, or a **quoted string** in double quotes, inside which `\"` and `\\` escape, as in §3.3, and any other backslash is itself. A quoted value may hold spaces, and a word inside it isn't a pair: `title="use phrases=true"` doesn't opt in to phrases.
+- **Every other word is left to the consumer,** such as a highlighter's `{1,3}` or `showLineNumbers`, and processors don't report it. So are words that only look like pairs: `phrases = true` is three words, `Title=x` has no key, and `title="say "hi""` isn't a pair, because its value closes after `say ` and something other than a space follows.
+- **Order doesn't matter,** and when a key is given more than once, its first pair counts. A `title` or `tested` whose value is empty means none.
+- **Escapes in a page's source.** CommonMark takes its own escapes off first, and a backslash escapes `"` and `\` in both, so a quote inside a quoted value is written `\\\"` in the page and a backslash `\\\\`. A processor that writes an info string into Markdown escapes each backslash in it, so a reader gets the same info string back.
+
+The pairs a processor reads, and which outputs (§9.4) keep each in the block's info string:
+
+| Key | Value | Meaning | Site output | Plain output | JSON output |
+|---|---|---|---|---|---|
+| `phrases` | `true` or `false` | Whether the block's phrases are substituted (§5.1) | Left out | Left out | Kept |
+| `title` | string | The block's title, which `@snippet` writes (§4.8) | Kept, and shown as the block's caption | Kept | Kept |
+| `tested` | string | What a tested example was tested with, which `@snippet` writes (§4.8) | Kept, and shown in the caption | Left out, and written as a line under the block, `Tested with …` | Kept |
+| `request` | a link | The block is an example of an operation's request body (§7.11) | Left out | Left out | Kept |
+| `response` | a link, a status, and a media type | The block is an example of one of an operation's responses (§7.11) | Left out | Left out | Kept |
+
+`request` and `response` are left out of the site and plain outputs because they're instructions to the checker, and their links are the source's: a path in the repository means nothing to a reader of the page or to an agent reading `llms.txt`. Every other pair and word is kept in every output, as written.
 
 ### 3.4 The primary
 
@@ -632,7 +660,7 @@ Takes a code example from a file outside the content, by name, and puts it in th
   - `<path>` is the file's path relative to the source's folder, with `/` between segments on every platform. It has no empty, `.`, or `..` segments, and doesn't start with `/`. It's percent-decoded as a link destination is (§5.2). The file MUST exist, with exactly this name (as for assets, §9.4), and its source's file patterns MUST include it (§7.3). A symbolic link on the way to the file is followed, and the file it leads to MUST be in the source's folder (not above it), at a path the source's patterns include, so a link can't lead a snippet out of its source.
   - `#<region>` names a region of the file (below). Without one, the snippet is the whole file, with every tag line and removed line left out.
 - **The file** MUST be text: valid UTF-8, with no NUL character. Its line endings don't matter; the snippet's lines end in a line feed.
-- **What it becomes.** A `@snippet` is a block, allowed wherever a fenced code block is (in a list item, a container, or an arm), and a following-block directive directly above it binds it (§3.8). It becomes a fenced code block whose info string is the language, then `title="…"` when the directive has a title attribute, then `tested="…"` when its file is a tested example with a current observation (§7.3), then `phrases=true` when it opts in to phrases. With no language, the info string is empty, or starts with `text` when a title, a tested line, or `phrases=true` follows, so its first word is always a language. With `phrases=true`, declared phrases in the snippet are substituted as they are in a fence that opts in (§5.1).
+- **What it becomes.** A `@snippet` is a block, allowed wherever a fenced code block is (in a list item, a container, or an arm), and a following-block directive directly above it binds it (§3.8). It becomes a fenced code block whose info string is the language, then `title="…"` when the directive has a title attribute, then `tested="…"` when its file is a tested example with a current observation (§7.3), then `phrases=true` when it opts in to phrases, each a pair of §3.3.1, its value quoted with `"` and `\` escaped. With no language, the info string is empty, or starts with `text` when a title, a tested line, or `phrases=true` follows, so its first word is always a language. With `phrases=true`, declared phrases in the snippet are substituted as they are in a fence that opts in (§5.1).
 - **Attributes:**
 
   | Key | Type | Default | Meaning |
@@ -844,7 +872,7 @@ See the [streaming API reference]({api}streaming).
 - **Boundaries:** braces delimit the phrase, so it can sit directly against punctuation, letters, or hyphens.
 - **Where phrases apply:**
   - Prose, headings, link text, and link destinations, including the destinations of link reference definitions (`[ref]: {api}streaming`) and autolinks (`<https://{host}/status>`).
-  - Fenced code blocks only when the info string contains the word `phrases=true` (for example ` ```yaml phrases=true `).
+  - Fenced code blocks only when the info string has the pair `phrases=true` (§3.3.1), for example ` ```yaml phrases=true `.
   - Frontmatter fields, as the content model declares.
 - **Where phrases never apply:** code spans, indented code blocks, and raw HTML.
 - **Escapes in code.** A backslash doesn't escape in code, so in a fenced block with `phrases=true`, `\{key}` is a backslash followed by a phrase, and a fence's content never differs from its source except where phrases are substituted. For a literal `{key}` in code, leave `phrases=true` off that fence.
@@ -1195,7 +1223,7 @@ reference = { renderer = "redoc", at = "/api/" }
 - A processor reads, of the spec, each operation in `paths`: its method, its path, and its `operationId`, `summary`, first tag, and `deprecated`, the same way in Swagger 2.0 and in OpenAPI 3.0 to 3.2. It doesn't validate the spec, apply overlays, or follow a `$ref` into another file: a spec split across files is declared by its bundled file, the one its renderer is given.
 - `reference` says where an operation's address is. `{ renderer = "redoc", at = "<address>" }` names Redoc's page: an operation's address is `<address>#operation/<operationId>`, and one with no id's is `<address>#paths/<pointer>/<method>`, its path as a JSON pointer token (`~0` for `~`, `~1` for `/`) and its method in lowercase, each percent-encoded, an address of Redoc 3's. Any other value is a template of the address, whose placeholders are `{operationId}`, which it MUST have, and `{tag}`, the operation's first tag, each as the spec writes it and percent-encoded. An address that isn't absolute (with a scheme, or starting with `//`) is relative to the consumer profile's base path (§9.5).
 
-A fenced code block whose language is `json` is an **example** of an operation's request body when its info string has `request="<link>"`, and of one of its responses when it has `response="<link> <status>"`, beside `title` and `tested` (§4.8):
+A fenced code block whose language is `json` is an **example** of an operation's request body when its info string has the pair `request="<link>"`, and of one of its responses when it has `response="<link> <status>"`, in any order beside `title` and `tested` (§3.3.1, §4.8):
 
 ````markdown
 ```json request="../api/openapi.yaml#createUser"
@@ -1480,6 +1508,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 - A dimensional arm's label joins the labels of one attribute's values with ` / `, and several attributes with `, `. A note without a title leads with its type's label alone (`**Tip**`).
 - A widget becomes its plain fallback followed by its content, unless the widget drops its content; its title, primary, and attributes aren't shown.
 - Image attributes aren't part of plain markdown and are left out. A table keeps each column's alignment.
+- A fenced code block's info string loses the pairs §3.3.1 leaves out of the plain output, and a block with `tested` is followed by a line saying what it was tested with.
 - A `@variant` group with more than one arm left, which the site output makes a switcher, opens with a line saying a reader sees one of its arms at a time, and by which dimension's label when the arms are dimensional: `A reader sees one of the next 3 sections at a time, chosen by package manager.` Each arm is then a section under a heading one level below the section the group is in (at most level 6), naming each of its dimensions and values, as `### Package manager: pnpm`, or with a labeled arm's title.
 - A heading inside a `@variant` arm that stays a labeled section ends with the arm's label in parentheses, as `## Install (pnpm)`, and with each enclosing arm's, outermost first, when groups nest: so every section's headings stay distinct.
 
@@ -1648,6 +1677,15 @@ snippet-path    = path-segment *( "/" path-segment )
 path-segment    = 1*( %x21-22 / %x24-2E / %x30-7E / UTF8-non-ascii )
                                         ; no "/", "#", or whitespace; not "." or ".."
 region-name     = 1*( ALPHA / DIGIT / "-" / "_" / "." )
+
+info-string     = [ info-word *( RWS info-word ) ]           ; §3.3.1, with CommonMark's
+                                        ; escapes taken off; a first word that isn't
+                                        ; an info-pair is the language
+info-word       = info-pair / info-other                     ; a word that is an
+                                        ; info-pair is one
+info-pair       = key "=" ( info-token / quoted )
+info-token      = 1*( %x21 / %x23-7E / UTF8-non-ascii )      ; no whitespace or DQUOTE
+info-other      = 1*( %x21-7E / UTF8-non-ascii )
 
 availability    = entry *( OWS "," OWS entry ) / feature-key
 entry           = target [ RWS detail ]

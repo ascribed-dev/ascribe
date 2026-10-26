@@ -24,6 +24,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::{Arc, Mutex, PoisonError};
 
+use ascribe_core::info_string::quote;
 use ascribe_core::{FileId, Issue, Location, RelPath, Span, diagnostics, percent_decode};
 use ascribe_model::{ContentModel, Source, suggest};
 use ascribe_syntax::{DirectiveLine, PrimaryValue};
@@ -181,7 +182,7 @@ impl SnippetUse {
         }
     }
 
-    /// The fenced code block's info string (SPEC §4.8): the language, then
+    /// The fenced code block's info string (SPEC §4.8, §3.3.1): the language, then
     /// `title="…"`, then `tested="…"` for an example with a current
     /// observation, then `phrases=true`. With no language but other words,
     /// it starts with `text`, so no word is read as the language.
@@ -190,13 +191,12 @@ impl SnippetUse {
             .lang
             .clone()
             .or_else(|| file.path.extension().map(str::to_ascii_lowercase));
-        let quoted = |text: &str| text.replace('\\', "\\\\").replace('"', "\\\"");
         let mut words: Vec<String> = Vec::new();
         if let Some(title) = &self.title {
-            words.push(format!("title=\"{}\"", quoted(title)));
+            words.push(format!("title={}", quote(title)));
         }
         if let Some(tested) = tested {
-            words.push(format!("tested=\"{}\"", quoted(tested)));
+            words.push(format!("tested={}", quote(tested)));
         }
         if self.phrases {
             words.push("phrases=true".to_owned());

@@ -30,10 +30,19 @@ describe("codeTitle", () => {
     expect(codeTitle("")).toBeUndefined();
     expect(codeTitle('subtitle="x"')).toBeUndefined();
     expect(codeTitle('title=""')).toBeUndefined();
-    // A quote in the title, which arrives with its backslash taken off, and a backslash.
-    expect(codeTitle('title="say "hi""')).toBe('say "hi"');
-    expect(codeTitle('title="say "hi"" wrap')).toBe('say "hi"');
+    // SPEC §3.3.1: a quote or a backslash in a title is escaped, as the site
+    // output writes it; a backslash before anything else is itself.
+    expect(codeTitle('title="say \\"hi\\""')).toBe('say "hi"');
+    expect(codeTitle('title="say \\"hi\\" now" wrap')).toBe('say "hi" now');
+    expect(codeTitle('title="C:\\\\dir"')).toBe("C:\\dir");
     expect(codeTitle('title="C:\\dir"')).toBe("C:\\dir");
+    // Words that aren't pairs: an unescaped quote ends the value early, and
+    // a pair's word inside another value is part of it.
+    expect(codeTitle('title="say "hi""')).toBeUndefined();
+    expect(codeTitle('label="title=x"')).toBeUndefined();
+    expect(codeTitle("title = x")).toBeUndefined();
+    expect(codeTitle("title=x.ts phrases=true")).toBe("x.ts");
+    expect(codeTitle('title="first" title="second"')).toBe("first");
   });
 });
 
