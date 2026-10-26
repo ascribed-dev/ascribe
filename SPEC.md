@@ -58,7 +58,7 @@ These principles govern the language. They are non-normative, but every normativ
 
 The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this document are to be interpreted as described in RFC 2119 and RFC 8174 when, and only when, they appear in all capitals.
 
-- A **conforming document** is an Ascribe source file that produces no errors (§8) under a given content model.
+- A **conforming document** is an Ascribe source file that produces none of the errors §8.2 lists under a given content model. A processor's own checks, which a project may raise to errors, don't count (§8.2).
 - A **processor** is any software that reads Ascribe source: a parser, validator, compiler, or authoring environment.
 - A **conforming processor** parses documents as this specification describes and reports every error listed in §8. It MAY report additional warnings.
 
@@ -722,7 +722,7 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
   |---|---|---|---|
   | `check` | string | none, REQUIRED | The check whose problem is intended, by the processor's name for it |
 
-- **What can be acknowledged.** A processor's checks are its own, beyond the diagnostics of §8.2. This specification names none of them, so a `check` value is a name the processor defines, and a page that acknowledges a problem depends on the processor that reports it: a processor that doesn't know the name reports the acknowledgement as an error (§8.2), as it does a check that isn't a review check. A check that reports something that may be fine as it is (a page nothing links to, a page longer than an agent reads) is a **review check**, and only a review check can be acknowledged; a problem that makes a document non-conforming never can. Each review check reports its problems at one kind of place: a page or fragment as a whole, one block, or one entry of the content model or one image, which have no page. Its problems are acknowledged at that place, and nowhere else:
+- **What can be acknowledged.** A processor's checks are its own, beyond the diagnostics of §8.2. This specification names none of them, so a `check` value is a name the processor defines, and a page that acknowledges a problem depends on the processor that reports it: a processor that doesn't know the name reports the acknowledgement as an error (§8.2), as it does a check that isn't a review check. A check that reports something that may be fine as it is (a page nothing links to, a page longer than an agent reads) is a **review check**, and only a review check can be acknowledged, at whatever level the project gives it (§8.2), an error included; a problem that makes a document non-conforming never can. Each review check reports its problems at one kind of place: a page or fragment as a whole, one block, or one entry of the content model or one image, which have no page. Its problems are acknowledged at that place, and nowhere else:
   - **A block:** `@intended` directly above it. The acknowledgement covers that check's problems located anywhere in the block, including in a container's content. In a fragment, it covers the block in every page that includes it.
   - **A heading:** `@intended` at the top of its section, among the directives under the heading. The acknowledgement covers that check's problems located at the heading, and, when no blank line comes between, those in the block directly under the `@intended` line, past the directives stacked with it, so a section's first block is acknowledged as any other block is. It covers nothing else in the section:
 
@@ -1003,7 +1003,7 @@ A content model declares the following.
 | Acknowledgements | Problems of review checks about a phrase, feature, glossary term, or image that are intended, each with a reason | §4.9 |
 | Crawlers | What each kind of crawler may do, by purpose (gathering training data, building an AI search index, fetching at a person's request), and the project's own `robots.txt` lines, with paths from the project's base path. A crawler is named in one group; processors reject a content model that names one twice when loading it | §9.4 |
 | Listing | How pages are listed (§2.1): the site's default, and a value for the pages under a folder, by its path from the content root, or of a content type. A folder's value MUST NOT be looser than that of a folder it's under, and neither a folder's nor a type's looser than the default; processors reject a content model that does when loading it | §2.1 |
-| Processor settings | Settings a processor defines for its own checks and tools, such as which of its checks run and at what level, or a page template for a content type. This specification doesn't define them. A processor ignores a setting it doesn't know only where it says so | §4.9 |
+| Processor settings | Settings a processor defines for its own checks and tools, such as which of its checks run and at what level, or a page template for a content type. This specification doesn't define them. A processor ignores a setting it doesn't know only where it says so | §4.9, §8.2 |
 
 Built-in directive schemas are defined by this specification, not by the content model. A content model MAY extend the enumerations they use (note types, lifecycle states).
 
@@ -1264,6 +1264,8 @@ When several places together cause a diagnostic, it's reported once, at the late
 ### 8.2 Diagnostics
 
 Conforming processors MUST report every error below, and SHOULD report the warnings. An error means the document isn't conforming; a build MUST fail on errors. Processors MAY report the advice, which never fails a build.
+
+These are the specification's diagnostics, and their severities are fixed: a project can't lower one or turn it off, and nothing quiets one, neither an acknowledgement (§4.9) nor anything a processor offers to put problems off for now. A processor's own checks, beyond this table, such as the review checks of §4.9, are another kind. A processor MAY let a project set the level of each of them, raising it to an error, lowering it to advice, or turning it off, in the content model's processor settings (§7.2). A check a project raises to an error fails a build as an error does, but it doesn't make the document non-conforming: a conforming document is one with none of the errors below (§1.3), whatever levels a project gives its processor's checks. A review check can be acknowledged at whatever level the project gives it. A processor MAY also let a project put off its own checks' problems for now, without a reason, as Ascribe's `ascribe.baseline` puts off a project's advice until each is fixed; what it puts off is the processor's to say, and never includes an error below.
 
 | Construct | Condition | Severity |
 |---|---|---|
