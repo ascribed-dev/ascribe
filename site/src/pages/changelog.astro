@@ -4,7 +4,8 @@
 // into the repository at GitHub. A link that leads nowhere fails the build.
 // Each entry is collapsed to what it says first, each release's entries are
 // grouped by area, and the contents beside the page list the releases and the
-// newest ones' areas.
+// newest ones' areas. The same releases and entries are at /changelog.md, for
+// agents (src/pages/changelog.md.ts), which the head names as its alternate.
 import { getCollection, getEntry } from "astro:content";
 import Base from "../layouts/Base.astro";
 import {
@@ -49,6 +50,7 @@ const detailed = contents[0]?.id === "unreleased" ? 2 : 1;
   title="Changelog"
   description={firstParagraph(anchored)}
   card={{ name: "changelog", alt: "Ascribe: Changelog" }}
+  markdown={`${base}changelog.md`}
 >
   <main id="content" class="page changelog">
     <header class="changelog-intro" set:html={intro} />
