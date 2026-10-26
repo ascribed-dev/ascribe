@@ -83,7 +83,7 @@
     "pages": [
       {
         "href": "/docs/checks/check/",
-        "label": "ascribe check, build, and fmt"
+        "label": "ascribe check, build, preview, and fmt"
       },
       {
         "href": "/docs/checks/report-command/",
