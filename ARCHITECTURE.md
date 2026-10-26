@@ -39,7 +39,7 @@ All in `packages/`, a pnpm workspace with `examples/astro-site` and `tests/zod`.
 | [`@ascribed/elements`](packages/elements) | The custom elements the site output uses, to the letter of [CONTRACT.md](packages/elements/CONTRACT.md). |
 | [`@ascribed/review`](packages/review) | Reviewing pages as readers see them: marking changed blocks, and placing a pull request's review threads beside them. |
 | [Ascribe for VS Code](packages/vscode) (`ascribe-vscode`) | The editor extension: a client of the language server, the page preview, and review in the editor. |
-| [`@ascribed/archive`](packages/archive) | An archive's search script, which `ascribe versions archive` and `ascribe preview` write from the binary's copy. Private: it isn't published. |
+| [`@ascribed/archive`](packages/archive) | An archive's search script, which `ascribe versions export` and `ascribe preview` write from the binary's copy. Private: it isn't published. |
 
 ### Everything else
 
@@ -97,7 +97,7 @@ Every surface reaches the same core.
 | Review | `packages/review` | Reads `ascribe diff --format json`'s data, and GitHub through `gh` (`packages/review/src/github/`). |
 | Elements | `packages/elements` | The site output's markup. |
 | HTML preview | `ascribe-diff`, `crates/ascribe-diff/src/html/` | In the binary. Its script and stylesheet are built from `review` and `elements` by `pnpm --filter @ascribed/review embed`. |
-| Archive | `ascribe-emit`, `crates/ascribe-emit/src/archive/` | In the binary, for `ascribe versions archive` and `ascribe preview`. Its search script is built from `archive` by `pnpm --filter @ascribed/archive embed`. |
+| Archive | `ascribe-emit`, `crates/ascribe-emit/src/archive/` | In the binary, for `ascribe versions export` and `ascribe preview`. Its search script is built from `archive` by `pnpm --filter @ascribed/archive embed`. |
 
 ## From a source file to an output
 

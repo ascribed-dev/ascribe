@@ -174,7 +174,7 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 @summary
 Shows a build's pages as readers see them, with nothing but the `ascribe` command: no Node, no editor, and no Astro. It renders them into `.ascribe/preview/`, serves the folder on this computer, and renders it again as you edit.
 
-It checks the build as `ascribe check --build` does, and prints the problems as that prints them. Then it renders every page into `.ascribe/preview/` with the renderer [`ascribe versions archive`](../versions/release.md#cli-versions-archive) uses: each page is one HTML file with the element library's styles, a sidebar of the build's navigation, the page's contents, the previous and next pages, and a search box. A page with errors is rendered as far as it goes: a link that leads nowhere is written as its text, and an image that isn't there as its description.
+It checks the build as `ascribe check --build` does, and prints the problems as that prints them. Then it renders every page into `.ascribe/preview/` with the renderer [`ascribe versions export`](../versions/release.md#cli-versions-export) uses: each page is one HTML file with the element library's styles, a sidebar of the build's navigation, the page's contents, the previous and next pages, and a search box. A page with errors is rendered as far as it goes: a link that leads nowhere is written as its text, and an image that isn't there as its description.
 
 Then it serves the folder at `http://127.0.0.1:4880/`, and prints the address to open:
 
