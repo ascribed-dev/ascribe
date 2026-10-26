@@ -3,12 +3,17 @@
 //! report the same diagnostics, and `diff`, `drift`, and any other tool that
 //! takes `--build` names choose builds the same way.
 
-use ascribe_core::RelPath;
-use ascribe_model::Build;
+use std::collections::HashSet;
 
+use ascribe_core::RelPath;
+use ascribe_model::{Build, ContentModel};
+
+use crate::baseline::Held;
+use crate::identity::{Identity, identities, identities_in};
 use crate::{
-    Acknowledged, Acknowledgements, BaselineError, Diagnostic, PageChecker, PageIndex, Project,
-    apply_levels, check_all_builds, check_builds, check_file, check_files_with,
+    Acknowledged, Acknowledgements, Baseline, BaselineError, Diagnostic, PageChecker, PageIndex,
+    Project, Reported, Scope, apply_levels, check_all_builds, check_builds, check_file,
+    check_files_with,
 };
 
 /// A build name that isn't a build of the content model.
@@ -70,21 +75,77 @@ pub struct Diagnosed<'p> {
     pub acknowledged: Vec<Acknowledged>,
     /// The builds checked, as [`select_builds`] chose them.
     pub builds: Vec<&'p Build>,
-    /// The advice `ascribe.baseline` holds back, which isn't in
-    /// `diagnostics`: none unless [`Request::baseline`] asks for it.
+}
+
+/// What a check found, before [`Request::settle`] applies what the project
+/// asks of it: [`Diagnosed`], with the builds by name, so it can be kept
+/// apart from the project.
+#[derive(Clone, Debug, Default)]
+pub struct Found {
+    /// The diagnostics, in the order they're found.
+    pub diagnostics: Vec<Diagnostic>,
+    /// The problems an acknowledgement covers, which aren't in
+    /// `diagnostics`.
+    pub acknowledged: Vec<Acknowledged>,
+    /// The builds whose page-level checks ran, by name.
+    pub builds: Vec<String>,
+}
+
+impl From<Diagnosed<'_>> for Found {
+    fn from(d: Diagnosed<'_>) -> Found {
+        Found {
+            builds: d.builds.iter().map(|b| b.name.clone()).collect(),
+            diagnostics: d.diagnostics,
+            acknowledged: d.acknowledged,
+        }
+    }
+}
+
+/// What a check reports, as a [`Request`] asks: the levels `[checks]` sets,
+/// the scope, and the baseline applied.
+#[derive(Clone, Debug, Default)]
+pub struct Checked {
+    /// The diagnostics that count for the scope, in the order they're found;
+    /// all of them without one.
+    pub reported: Vec<Reported>,
+    /// The problems an acknowledgement covers in the scope, which aren't
+    /// reported.
+    pub acknowledged: Vec<Acknowledged>,
+    /// The advice `ascribe.baseline` holds back in the scope, which isn't
+    /// reported: none unless [`Request::baseline`] asks for it.
     pub baselined: Vec<Diagnostic>,
+    /// The builds whose page-level checks ran, by name.
+    pub builds: Vec<String>,
+}
+
+impl Checked {
+    /// The diagnostics reported, without how often each repeats: all of
+    /// them when there's no scope, which collapses none.
+    pub fn into_diagnostics(self) -> Vec<Diagnostic> {
+        self.reported.into_iter().map(|r| r.diagnostic).collect()
+    }
 }
 
 /// What a check is asked for, besides the project: the settings every
-/// command that checks a project's builds shares, so `ascribe check`,
-/// `ascribe build`, and `ascribe report` report the same diagnostics.
+/// surface that checks a project shares, so `ascribe check`, `ascribe
+/// build`, `ascribe report`, the agents' hook and tools, and the editor
+/// report the same diagnostics for the same project and builds.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Request<'a> {
     /// The builds to check, by name; every build when empty.
     pub builds: &'a [String],
+    /// Whether to run the page-level checks of the editor's build only, as
+    /// [`diagnose_editor_build`] does, instead of [`Request::builds`].
+    pub editor_build: bool,
+    /// What's reported: the diagnostics that count for these paths
+    /// ([`Scope::report`]). The whole project when `None`.
+    pub scope: Option<&'a Scope>,
     /// Whether `ascribe.baseline`, when the project has one, holds back the
     /// advice it lists. Without it, everything is reported.
     pub baseline: bool,
+    /// Whether Vale ran, and its findings are among those settled: when it
+    /// didn't, a baseline entry of Vale's matches nothing, and isn't stale.
+    pub vale_ran: bool,
 }
 
 /// Why [`diagnose_with`] couldn't check the project.
@@ -107,36 +168,179 @@ impl ascribe_core::Coded for DiagnoseError {
     }
 }
 
-/// [`diagnose`], as `request` asks: of the builds it names, and with what
-/// `ascribe.baseline` holds back set aside in [`Diagnosed::baselined`] when
-/// it asks for the baseline. An entry that matches nothing is reported, as
-/// `baseline-entry-unmatched`, when every build is checked, and so would
-/// have found what it lists, apart from Vale's, which this check doesn't
-/// run.
+impl Request<'_> {
+    /// Whether the check covers every build and the whole project, and so
+    /// would find everything a baseline entry lists: only then is an entry
+    /// that matches nothing stale.
+    pub fn whole(&self) -> bool {
+        self.scope.is_none() && self.builds.is_empty() && !self.editor_build
+    }
+
+    /// The checks whose findings this check doesn't have, by slug, so an
+    /// entry of theirs isn't stale: Vale's unless it ran, and in the
+    /// editor's build, the checks the editor doesn't run
+    /// ([`NOT_IN_EDITOR`](crate::NOT_IN_EDITOR)).
+    pub fn not_run(&self) -> Vec<&'static str> {
+        let prose = (!self.vale_ran).then_some(ascribe_core::diagnostics::PROSE);
+        let editor = if self.editor_build {
+            crate::NOT_IN_EDITOR
+        } else {
+            &[]
+        };
+        prose
+            .into_iter()
+            .chain(editor.iter().copied())
+            .map(|slug| slug.as_str())
+            .collect()
+    }
+
+    /// The baseline this request checks with: `None` without one, or when
+    /// it doesn't ask for it.
+    ///
+    /// # Errors
+    ///
+    /// It asks for the baseline, and `ascribe.baseline` can't be read.
+    pub fn baseline_of<'p>(
+        &self,
+        project: &'p Project,
+    ) -> Result<Option<&'p Baseline>, BaselineError> {
+        match project.baseline() {
+            Some(Err(e)) if self.baseline => Err(e.clone()),
+            Some(Ok(baseline)) if self.baseline => Ok(Some(baseline)),
+            _ => Ok(None),
+        }
+    }
+
+    /// What the checks find, before [`settle`](Request::settle): of the
+    /// builds named, as [`diagnose`] finds it, or of the editor's build, as
+    /// [`diagnose_editor_build_in`] finds it over `index`, only what can
+    /// count for the scope's files when it names some.
+    ///
+    /// # Errors
+    ///
+    /// The first name that isn't a build of the content model.
+    pub fn find<'p>(
+        &self,
+        project: &'p Project,
+        index: Option<&'p PageIndex>,
+    ) -> Result<Diagnosed<'p>, UnknownBuild> {
+        if self.editor_build {
+            let files = self.scope.and_then(|s| s.named_sources(project));
+            Ok(diagnose_editor_build_in(project, index, files.as_deref()))
+        } else {
+            diagnose(project, self.builds)
+        }
+    }
+
+    /// `found`, as the project asks: at the levels `[checks]` sets, with
+    /// the advice `ascribe.baseline` lists held back when this request asks
+    /// for the baseline, and what counts for the scope kept. An entry that
+    /// matches nothing is reported, as `baseline-entry-unmatched`, when the
+    /// check is [`whole`](Request::whole), apart from the entries of the
+    /// checks [`not_run`](Request::not_run) names.
+    ///
+    /// What [`find`](Request::find) found is at those levels already; what
+    /// a caller adds to it, such as Vale's findings or the addresses
+    /// compared with a base, is set at them here.
+    ///
+    /// # Errors
+    ///
+    /// This request asks for the baseline, and `ascribe.baseline` can't be
+    /// read.
+    pub fn settle(&self, project: &Project, found: Found) -> Result<Checked, BaselineError> {
+        let baseline = self.baseline_of(project)?;
+        let Found {
+            diagnostics,
+            mut acknowledged,
+            builds,
+        } = found;
+        let diagnostics = apply_levels(&project.model().checks, diagnostics);
+        let (diagnostics, mut baselined) = match baseline {
+            Some(baseline) => {
+                let held = self.hold(project, baseline, diagnostics);
+                let mut diagnostics = held.diagnostics;
+                if self.whole() {
+                    let matched: HashSet<&Identity> = held.matched.iter().collect();
+                    diagnostics.extend(self.unmatched(project.model(), baseline, &matched));
+                }
+                (diagnostics, held.held)
+            }
+            None => (diagnostics, Vec::new()),
+        };
+        let reported = match self.scope {
+            Some(scope) => {
+                acknowledged.retain(|a| scope.contains_file(project, a.problem.location.file));
+                baselined.retain(|d| scope.contains_file(project, d.location.file));
+                scope.report(project, diagnostics)
+            }
+            None => Reported::all(diagnostics),
+        };
+        Ok(Checked {
+            reported,
+            acknowledged,
+            baselined,
+            builds,
+        })
+    }
+
+    /// `diagnostics`, of `project`, with the advice `baseline` lists set
+    /// aside, without the entries that match nothing: the whole project's,
+    /// or all of some files', since an identity's order is among the
+    /// findings of one file and one check. The editor holds back a file's
+    /// diagnostics at a time with it (#790).
+    pub fn hold(
+        &self,
+        project: &Project,
+        baseline: &Baseline,
+        diagnostics: Vec<Diagnostic>,
+    ) -> Held {
+        let found = identities(project, &diagnostics);
+        crate::baseline::hold(baseline, diagnostics, found)
+    }
+
+    /// [`hold`](Request::hold), for `diagnostics` all located in `file`,
+    /// from the project's root, whose text is `text`: Vale's, which the
+    /// editor checks without a project.
+    pub fn hold_in(
+        &self,
+        baseline: &Baseline,
+        file: &str,
+        text: &str,
+        diagnostics: Vec<Diagnostic>,
+    ) -> Held {
+        let found = identities_in(file, text, &diagnostics);
+        crate::baseline::hold(baseline, diagnostics, found)
+    }
+
+    /// A `baseline-entry-unmatched` at each entry of `baseline` that isn't
+    /// `matched`, at the level `model` sets for it, apart from the entries
+    /// of the checks [`not_run`](Request::not_run) names.
+    pub fn unmatched(
+        &self,
+        model: &ContentModel,
+        baseline: &Baseline,
+        matched: &HashSet<&Identity>,
+    ) -> Vec<Diagnostic> {
+        crate::baseline::stale(&model.checks, baseline, matched, &self.not_run())
+    }
+}
+
+/// What a check reports, as `request` asks: what [`Request::find`] finds,
+/// [settled](Request::settle).
 ///
 /// # Errors
 ///
-/// The first name that isn't a build of the content model, or a baseline
-/// that can't be read.
-pub fn diagnose_with<'p>(
-    project: &'p Project,
-    request: &Request<'_>,
-) -> Result<Diagnosed<'p>, DiagnoseError> {
-    let baseline = match project.baseline() {
-        Some(Err(e)) if request.baseline => return Err(DiagnoseError::Baseline(e.clone())),
-        Some(Ok(baseline)) if request.baseline => Some(baseline),
-        _ => None,
-    };
-    let mut diagnosed = diagnose(project, request.builds)?;
-    if let Some(baseline) = baseline {
-        let every = request.builds.is_empty();
-        let not_run = [ascribe_core::diagnostics::PROSE.as_str()];
-        let diagnostics = std::mem::take(&mut diagnosed.diagnostics);
-        let held = crate::baseline::apply(project, baseline, diagnostics, every, &not_run);
-        diagnosed.diagnostics = held.diagnostics;
-        diagnosed.baselined = held.held;
-    }
-    Ok(diagnosed)
+/// A baseline that can't be read, when `request` asks for it, or else the
+/// first name that isn't a build of the content model.
+pub fn diagnose_with(project: &Project, request: &Request<'_>) -> Result<Checked, DiagnoseError> {
+    // A baseline that can't be read stops the check before it starts.
+    request
+        .baseline_of(project)
+        .map_err(DiagnoseError::Baseline)?;
+    let found = request.find(project, None)?;
+    request
+        .settle(project, found.into())
+        .map_err(DiagnoseError::Baseline)
 }
 
 /// The diagnostics of the builds named in `names`, and the builds: what
@@ -172,7 +376,6 @@ pub fn diagnose<'p>(project: &'p Project, names: &[String]) -> Result<Diagnosed<
         diagnostics,
         acknowledged: applied.acknowledged,
         builds,
-        baselined: Vec::new(),
     })
 }
 
@@ -306,6 +509,5 @@ pub fn diagnose_editor_build_in<'p>(
         diagnostics: applied.diagnostics,
         acknowledged: applied.acknowledged,
         builds: vec![build],
-        baselined: Vec::new(),
     }
 }

@@ -466,6 +466,12 @@ fn check_parity(source: &Path, build: &str, offer_utf8: bool) {
     let dir = tempfile::tempdir().expect("temp dir");
     let root = dir.path().canonicalize().expect("real path");
     copy_dir(source, &root);
+    check_parity_in(&root, source, build, offer_utf8);
+}
+
+/// [`check_parity`], in `root`, a copy of `source` made already.
+fn check_parity_in(root: &Path, source: &Path, build: &str, offer_utf8: bool) {
+    let root = root.to_path_buf();
     set_editor_build(&root, build);
     let expected = cli_entries(&root, build);
 
@@ -525,6 +531,39 @@ fn quill_parity_for_every_build() {
 fn problem_fixture_parity_for_every_build() {
     let fixture = manifest_dir().join("tests/fixtures/lsp/problems");
     parity_over(&fixture, 25);
+}
+
+#[test]
+fn baseline_parity_for_every_build() {
+    // A project with an `ascribe.baseline`: the advice it lists is held
+    // back in the editor as `ascribe check` holds it back.
+    let fixture = manifest_dir().join("tests/fixtures/lsp/problems");
+    let dir = tempfile::tempdir().expect("temp dir");
+    let root = dir.path().canonicalize().expect("real path");
+    copy_dir(&fixture, &root);
+    let builds = builds_of(&root);
+    let before = cli_entries(&root, &builds[0]);
+    let written = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(&root)
+        .args(["baseline", "write"])
+        .output()
+        .expect("run ascribe baseline write");
+    assert!(written.status.success(), "{written:?}");
+    let baseline = fs::read_to_string(root.join("ascribe.baseline")).expect("the baseline");
+    assert!(
+        baseline
+            .lines()
+            .any(|l| !l.starts_with('#') && !l.is_empty()),
+        "the baseline lists advice: {baseline}"
+    );
+    let after = cli_entries(&root, &builds[0]);
+    assert!(
+        after.len() < before.len() && after.iter().all(|e| e.severity != "advice"),
+        "the baseline holds back the advice:\n{after:#?}"
+    );
+    for build in &builds {
+        check_parity_in(&root, &fixture, build, false);
+    }
 }
 
 #[test]

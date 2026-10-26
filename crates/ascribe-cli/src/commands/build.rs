@@ -14,7 +14,7 @@
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use ascribe_check::{Diagnosed, LoadError, Project, Reported, Request, Severity, diagnose_with};
+use ascribe_check::{Checked, LoadError, Project, Reported, Request, Severity, diagnose_with};
 use ascribe_emit::{EmitError, Output, WriteEvent, WriteOptions, Written};
 use ascribe_model::Build;
 use clap::{Args as ClapArgs, ValueEnum};
@@ -116,21 +116,22 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
     let request = Request {
         builds: &args.build,
         baseline: !args.no_baseline,
+        ..Request::default()
     };
-    let Diagnosed {
-        mut diagnostics,
-        builds,
+    let Checked {
+        reported,
+        builds: names,
         acknowledged,
         baselined,
     } = match diagnose_with(&project, &request) {
         Ok(found) => found,
         Err(e) => return exit::fail(err, &e),
     };
+    let mut diagnostics: Vec<_> = reported.into_iter().map(|r| r.diagnostic).collect();
     // Advice after errors and warnings, as `ascribe check` lists it.
     diagnostics.sort_by_key(|d| d.severity == Severity::Advice);
     let files = FileTable::of_project(&project);
     let checked = project.sources().len();
-    let names: Vec<String> = builds.iter().map(|b| b.name.clone()).collect();
     let covered = if args.build.is_empty() {
         text::Covered::Every
     } else {
@@ -176,7 +177,11 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
 
     // The outputs are written from an index of their own, so the one the
     // checks kept goes first.
-    let builds: Vec<Build> = builds.into_iter().cloned().collect();
+    let builds: Vec<Build> = names
+        .iter()
+        .filter_map(|name| project.model().build(name))
+        .cloned()
+        .collect();
     project.release_link_index();
     let builds: Vec<&Build> = builds.iter().collect();
     match write_outputs(&project, &builds, &args.emit, args.anchors, err) {
