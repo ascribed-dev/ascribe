@@ -693,7 +693,7 @@ fn the_commands_json_has_what_the_tools_need() {
     let page = &report["builds"][0]["pages"][0];
     assert_eq!(page["path"], "keys.md");
     assert_eq!(page["changes"], json!([]), "{page}");
-    assert_eq!(page["counts"]["added"], 1, "{page}");
+    assert_eq!(page["counts"]["changed"], 1, "{page}");
     let full: Value = serde_json::from_str(&stdout(
         root,
         &[
