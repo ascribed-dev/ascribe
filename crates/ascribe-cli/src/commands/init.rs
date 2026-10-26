@@ -206,8 +206,8 @@ fn write_adopted(
                     .to_owned()
             }
             f => format!(
-                "`ascribe check --fix` takes the opening heading as the title of the {} that open with one, and the rest need `title:` in their frontmatter",
-                pages_text(f)
+                "`ascribe check --fix` takes the opening heading as the title of {} of them, and the rest need `title:` written in their frontmatter",
+                f
             ),
         };
         let has = if untitled.len() == 1 { "has" } else { "have" };

@@ -129,7 +129,9 @@ impl Ctx<'_> {
             }
         }
         let title = title.trim();
-        if title.is_empty() {
+        // A `{#id}` at the end is another tool's heading id, which `@id`
+        // under the heading replaces; there'd be no heading left for it.
+        if title.is_empty() || (title.ends_with('}') && title.contains("{#")) {
             return;
         }
         // A `title` that's there, but not a string, is another problem.

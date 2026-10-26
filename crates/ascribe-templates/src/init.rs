@@ -138,7 +138,7 @@ pub enum InitError {
     /// The templates were asked for in a folder of pages, which they'd make
     /// name a type each.
     #[error(
-        "the templates declare page types, which every page in `{content_root}` ({pages} found) would then have to name as `type:`; run `ascribe init` without --templates, and `ascribe templates eject` once the pages check clean"
+        "the templates declare page types, which every page in `{content_root}` ({pages} found) would then have to name as `type:`; run `ascribe init` without --templates, and `ascribe templates eject` once the pages check clean, then give each page `type:`"
     )]
     TemplatesWithPages {
         /// How many pages there are.

@@ -1,6 +1,6 @@
 wrote ascribe.toml
 found 4 pages in docs/; with no page types declared in ascribe.toml, no page needs `type:`
-3 pages have no `title`; `ascribe check --fix` takes the opening heading as the title of the 2 pages that open with one, and the rest need `title:` in their frontmatter
+3 pages have no `title`; `ascribe check --fix` takes the opening heading as the title of 2 of them, and the rest need `title:` written in their frontmatter
 `ascribe check` finds 4 errors, 0 warnings, 5 advice:
   3  ASC048 frontmatter-missing-field (error)
   3  ASC150 page-description-missing (advice)

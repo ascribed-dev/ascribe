@@ -32,7 +32,7 @@ The `ascribe.toml` it writes for a folder of pages declares no page types. Every
 
 @snippet: code:crates/ascribe-cli/tests/output/init-existing-ascribe.toml
 
-In an empty folder, `init` declares the type `page` instead, which each page names; [`ascribe init`](install.md#cli-init) has both. `--templates`, which declares six types, is refused in a folder of pages, since each page would have to name one. Take the templates once the pages check clean, with [`ascribe templates eject`](templates/command.md#cli-templates-eject).
+In an empty folder, `init` declares the type `page` instead, which each page names; [`ascribe init`](install.md#cli-init) has both. `--templates`, which declares six types, is refused in a folder of pages, since each page would have to name one. Take the templates once the pages check clean, with [`ascribe templates eject`](templates/command.md#cli-templates-eject), then give each page `type:`, since the project declares types from then on.
 
 ## Fix what the check finds
 
@@ -86,7 +86,7 @@ grep -rnE '^(:::|!!! |> \[!)|\{#[^}]*\}\s*$|\[\[' docs/
 
 | Written as | In Ascribe |
 |---|---|
-| `[Install](install.html)`, `[Install](/install/)` | `[Install](install.md)`: the file. A published address is reported, and `--fix` rewrites it. |
+| `[Install](install.html)`, `[Install](/install/)` | `[Install](install.md)`: the file. A published address is reported, and `--fix` rewrites it; an `.html` link is reported as missing, for you to rewrite. |
 | `[[Install]]`, `[[install\|Install it]]` | `[Install it](install.md)` |
 | `:::note` … `:::`, `!!! note`, `> [!NOTE]` | [`@note`](writing/directives.md#note), as `@note: One line.`, or `@note {type=warning}:` … `@end` around several blocks |
 | `## Setup {#setup}` | `## Setup`, with `@id: setup` on the line below it ([`@id`](writing/directives.md#id)) |
