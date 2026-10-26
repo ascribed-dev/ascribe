@@ -30,6 +30,7 @@ mod sources;
 pub(crate) mod template;
 pub(crate) mod text;
 
+use ascribe_core::info_string::InfoString;
 use ascribe_core::{
     Applicability, DirectiveSchema, FileId, Fix, Issue, Location, Span, TextEdit, diagnostics,
 };
@@ -222,8 +223,9 @@ impl Ctx<'_> {
                 }
                 BlockKind::CodeBlock(code) => {
                     self.check_code_language(block, code);
+                    let info = InfoString::parse(&code.info);
                     self.marked_examples |=
-                        code.info.contains("request=\"") || code.info.contains("response=\"");
+                        info.get("request").is_some() || info.get("response").is_some();
                 }
                 BlockKind::HtmlBlock(html) => self.check_html_block(blocks, i, html),
                 BlockKind::ThematicBreak | BlockKind::End(_) | BlockKind::Title(_) => {}
