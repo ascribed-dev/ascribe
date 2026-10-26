@@ -137,7 +137,7 @@ import MissingPermalink from "@ascribed/astro/MissingPermalink.astro";
 <MissingPermalink />
 ```
 
-On an address under the permalinks' path, it says the link came from a product that expected a section of the docs there, names it, and offers the docs' home page and search. Anywhere else, and without a script, it shows nothing. `home` sets where it sends the reader, the docs' base path by default; children replace its last paragraph, such as to point at your search:
+On an address under the permalinks' path, it says the link came from a product that expected a section of the docs there, names it, and offers the docs' home page. Anywhere else, and without a script, it shows nothing. `home` sets where it sends the reader, the docs' base path by default; children replace its last paragraph, such as to point at your search:
 
 ```astro
 <MissingPermalink>

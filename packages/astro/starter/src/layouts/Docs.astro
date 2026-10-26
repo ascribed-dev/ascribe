@@ -16,6 +16,9 @@ import {
   type SidebarGroup,
   type SidebarPage,
 } from "@ascribed/astro/content";
+// The layout's styles. To style the site your own way, change the file, or
+// delete it and this line.
+import "../styles/docs.css";
 
 interface Props {
   entry: CollectionEntry<"docs">;
@@ -50,6 +53,11 @@ const { available } = page(entry);
 // pages right after its own page, each with its depth. With a versioned build,
 // it shows the pages of the line this page is in. Previous and next are the
 // pages before and after this one in the navigation's reading order.
+//
+// The default order puts a section's pages by content type, then title, so
+// "Configure" comes before "Install". To choose another, write ascribe.nav
+// beside ascribe.toml, or drag the pages in the editor: the docs' "Put your
+// pages in order" says how.
 const entries = await getCollection("docs");
 const groups = sidebar(entries, { entry });
 const { previous, next } = neighbors(entry, entries);
@@ -91,44 +99,51 @@ function items(group: SidebarGroup<CollectionEntry<"docs">>, depth = 0): Item[] 
     <Elements />
   </head>
   <body>
-    <nav aria-label="Docs">
-      {
-        groups.map((group) => (
-          <section>
-            <h2 set:html={labelHtml(group)} />
-            <ul>
-              {items(group).map(({ page: item, depth }) => (
-                <li data-depth={depth}>
-                  <a
-                    href={item.href}
-                    aria-current={item.entry.id === entry.id ? "page" : undefined}
-                  >
-                    <Fragment set:html={labelHtml(item)} />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))
-      }
-    </nav>
+    <details class="menu">
+      <summary>Menu</summary>
+      <nav aria-label="Docs">
+        {
+          groups.map((group) => (
+            <section>
+              <h2 set:html={labelHtml(group)} />
+              <ul>
+                {items(group).map(({ page: item, depth }) => (
+                  <li data-depth={depth}>
+                    <a
+                      href={item.href}
+                      aria-current={item.entry.id === entry.id ? "page" : undefined}
+                    >
+                      <Fragment set:html={labelHtml(item)} />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))
+        }
+      </nav>
+    </details>
     <main>
       <VersionBanner entry={entry} />
       <h1 set:html={titleHtml(entry)} />
       <Availability available={available} />
       <Versions entry={entry} />
-      <nav aria-label="On this page">
-        <ul>
-          {
-            headings.map((heading) => (
-              <li data-depth={heading.depth}>
-                <a href={`#${heading.slug}`}>{heading.text}</a>
-              </li>
-            ))
-          }
-        </ul>
-      </nav>
-      <article><slot /></article>
+      <div class="page">
+        {
+          headings.length > 0 && (
+            <nav aria-label="On this page">
+              <ul>
+                {headings.map((heading) => (
+                  <li data-depth={heading.depth}>
+                    <a href={`#${heading.slug}`}>{heading.text}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )
+        }
+        <article><slot /></article>
+      </div>
       <nav aria-label="Previous and next">
         {
           previous && (

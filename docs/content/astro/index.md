@@ -45,7 +45,7 @@ The source pages go in `content/`. If your Ascribe project lives elsewhere, such
 
 ### 4. Write the site's files
 
-A site needs a content collection of the built pages, a route for them, and a layout that loads the elements; this one has a sidebar too. One command writes the three files, in the Astro project's root:
+A site needs a content collection of the built pages, a route for them, and a layout that loads the elements; this one has a sidebar and a stylesheet too. One command writes the four files, in the Astro project's root:
 
 @variant {pm=npm}:
 ```sh
@@ -57,7 +57,7 @@ pnpm exec ascribe-astro init
 ```
 @end
 
-It writes `src/content.config.ts`, `src/pages/[...slug].astro`, and `src/layouts/Docs.astro`, and from then on they're yours to change; it never writes over a file, and if any of the three is there, it writes nothing. With the Ascribe project elsewhere, say where with `--project ../docs`, and with several builds in `ascribe.toml`, say which the site shows with `--build`. The sections below say what each file does, as `init` writes them for the `ascribe.toml` above.
+It writes `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Docs.astro`, and `src/styles/docs.css`, and from then on they're yours to change; it never writes over a file, and if any of them is there, it writes nothing. With the Ascribe project elsewhere, say where with `--project ../docs`, and with several builds in `ascribe.toml`, say which the site shows with `--build`. The sections below say what each file does, as `init` writes them for the `ascribe.toml` above.
 
 #### The collection
 
@@ -81,7 +81,13 @@ A layout loads the element library, and shows the sidebar, the page's availabili
 
 @snippet {title=src/layouts/Docs.astro}: code:packages/astro/starter/src/layouts/Docs.astro
 
-`<Elements />` loads the element library, and `<Head entry={entry} />` writes the page's head from its record. The layout is yours: style it, and replace any part of it with your own components; the table of contents is `headings` from `render`. [The components](reference.md#components) lists what `@ascribed/astro` gives a layout, and what each entry's data has for it.
+`<Elements />` loads the element library, and `<Head entry={entry} />` writes the page's head from its record. The layout is yours: replace any part of it with your own components; the table of contents is `headings` from `render`. [The components](reference.md#components) lists what `@ascribed/astro` gives a layout, and what each entry's data has for it.
+
+#### The stylesheet
+
+`src/styles/docs.css`, which the layout imports, gives it a readable column in the system's font, the sidebar beside the page on a wide screen and behind a **Menu** on a phone, the table of contents beside the page where there's room and above it where there isn't, and both color schemes, as the reader's system is. Its colors and spaces are the element library's `--ascribe-*` properties, so setting one restyles the layout and the elements together ([Element library reference](elements.md)); the page's background and text are the browser's own light or dark.
+
+It's a starting point, not a theme: change it as you like. To style the site from scratch, delete the file and its `import` line in the layout; the layout's markup reads in order without it.
 
 #### The sidebar
 

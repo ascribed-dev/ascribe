@@ -27,7 +27,10 @@ describe("the example", () => {
     const files = starterFiles({ schema: schemaImport(example, readProject(example), "site") });
     for (const [file, text] of files) {
       const at = path.join(example, file);
-      if (process.env["ASCRIBE_BLESS"]) writeFileSync(at, text);
+      if (process.env["ASCRIBE_BLESS"]) {
+        mkdirSync(path.dirname(at), { recursive: true });
+        writeFileSync(at, text);
+      }
       expect(readFileSync(at, "utf8"), `${file} is out of date: run ${BLESS}`).toBe(text);
     }
   });
@@ -78,7 +81,7 @@ describe("schemaImport", () => {
 });
 
 describe("init", () => {
-  it("writes the three files, and no list of the pages", async () => {
+  it("writes the starter's files, and no list of the pages", async () => {
     const root = project('spec = "0.1"\n');
     const result = await init({ root });
     expect(result).toEqual({ build: "site", written: [...STARTER_FILES] });
@@ -89,6 +92,7 @@ describe("init", () => {
     const layout = readFileSync(path.join(root, "src/layouts/Docs.astro"), "utf8");
     expect(layout).toContain("sidebar(entries, { entry })");
     expect(layout).toContain("neighbors(entry, entries)");
+    expect(layout).toContain('import "../styles/docs.css";');
   });
 
   it("writes nothing when one of the files is there", async () => {

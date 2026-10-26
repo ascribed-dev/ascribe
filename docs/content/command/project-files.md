@@ -44,7 +44,7 @@ Paths are from the folder that holds `ascribe.toml`, except where a row says the
 | `.claude/settings.json`, `.mcp.json`, `.codex/hooks.json`, and `.github/hooks/ascribe.json` | `ascribe agents sync --with-hook`, at the repository's root: the hooks' entries and the MCP server, beside your own ([Hooks](../agents/hooks.md)). | Yes |
 | `.github/workflows/copilot-setup-steps.yml` and `.github/agents/ascribe-docs.md` | `ascribe agents sync --cloud`, at the repository's root: steps between markers in the workflow, and with `--agent`, the custom agent ([GitHub Copilot](../agents/copilot.md)). | Yes |
 | The files you name with `--into` and `--pages` | [`ascribe agents index`](../agents/commands.md#cli-agents-index): the index of the docs between its markers in the `--into` file, such as your product's `AGENTS.md`, and the pages' Markdown versions in the `--pages` folder ([Index your docs for your product's agents](../agents/product-index.md)). | Yes |
-| `src/content.config.ts`, `src/pages/[...slug].astro`, and `src/layouts/Docs.astro` | `npx @ascribed/astro init`, once, in the Astro root. From then on they're yours ([Set up a site](../astro/index.md#set-up-a-site)). | Yes |
+| `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Docs.astro`, and `src/styles/docs.css` | `npx @ascribed/astro init`, once, in the Astro root. From then on they're yours ([Set up a site](../astro/index.md#set-up-a-site)). | Yes |
 | `.astro/integrations/_ascribed_astro/` | `@ascribed/astro`, in the Astro root: a copy of the collection's schema, inside Astro's own folder, which Astro's starters leave out of git. | No |
 
 ## What deleting them costs

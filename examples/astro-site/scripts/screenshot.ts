@@ -11,11 +11,8 @@
 // Each scene is a copy of this example, as the end-to-end tests make one,
 // built with `astro build` and served with `astro preview`, or, for the
 // report, `ascribe diff --format html` in a repository of its own. The
-// starter's layout has no styles of its own, so each copy's layout adds the
-// few rules a site's stylesheet would: a `color-scheme` of `light dark`, as
-// the element library's page says to declare, a measure for the page, an
-// indent for each sidebar item's `data-depth`, and the page's own place
-// marked in the sidebar and among the lines.
+// site's scenes show the starter's layout with its own stylesheet, as `init`
+// writes them.
 import { execFileSync } from "node:child_process";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { rm } from "node:fs/promises";
@@ -26,7 +23,6 @@ import {
   BASE,
   buildSite,
   copySite,
-  edit,
   launchChromium,
   servePreview,
   siteDir,
@@ -35,20 +31,6 @@ import { versioned, write } from "../test/e2e/sites.ts";
 
 const [WIDTH, HEIGHT] = [1280, 760];
 const SCHEMES = ["light", "dark"] as const;
-
-/** What a site's stylesheet gives the starter's layout: both schemes, and the sidebar's depth. */
-const STYLE = `<style is:global>
-  :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
-  body { margin: 0 2rem; max-width: 50rem; }
-  nav[aria-label="Docs"] { width: 16rem; }
-  nav[aria-label="Docs"] h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
-  nav[aria-label="Docs"] ul, nav[aria-label="Versions"] ul { list-style: none; padding: 0; }
-  nav[aria-label="Docs"] li { margin-block: 0.3rem; }
-  nav[aria-label="Docs"] li[data-depth="1"] { margin-inline-start: 1.25rem; }
-  nav[aria-label="Docs"] li[data-depth="2"] { margin-inline-start: 2.5rem; }
-  nav[aria-label="Versions"] ul { display: flex; gap: 1rem; }
-  [aria-current="page"] { font-weight: 600; }
-</style>`;
 
 /** Pages for the sidebar's Guides: the Teams section's own page, beside its folder, and one after it. */
 const TEAMS_PAGE = "---\ntype: page\ntitle: Work in teams\n---\n\nLooms a team shares.\n";
@@ -95,14 +77,6 @@ yarn global add @loom/cli
 @available: self-managed preview 3.4
 Streaming pushes changes as you save.
 `;
-
-/** A copy of the example with STYLE in its layout. */
-async function styled(root: string): Promise<string> {
-  await edit(path.join(root, "src", "layouts", "Docs.astro"), (text) =>
-    text.replace("<Elements />", `<Elements />\n    ${STYLE}`),
-  );
-  return root;
-}
 
 /** Builds and serves the copy at `root`, opens `route`, and pictures `region` of it in each scheme. */
 async function picture(
@@ -168,7 +142,7 @@ function around(...locators: ((page: Page) => Locator)[]): Region {
 const SCENES: Record<string, (out: string) => Promise<void>> = {
   /** The specimen page's article, in the starter's layout. */
   async elements(out) {
-    const root = await styled(await copySite("scene-elements"));
+    const root = await copySite("scene-elements");
     await write(root, { "content/Guides/Install.md": ELEMENTS_PAGE });
     await picture(
       root,
@@ -180,7 +154,7 @@ const SCENES: Record<string, (out: string) => Promise<void>> = {
 
   /** The starter's sidebar, with Guides' nested Teams section. */
   async "starter-sidebar"(out) {
-    const root = await styled(await copySite("scene-sidebar"));
+    const root = await copySite("scene-sidebar");
     await write(root, {
       "content/Guides/Teams.md": TEAMS_PAGE,
       "content/Guides/Troubleshoot.md": TROUBLESHOOT_PAGE,
@@ -195,7 +169,7 @@ const SCENES: Record<string, (out: string) => Promise<void>> = {
 
   /** An older line's page: its banner, its title and badge, and the lines it's in. */
   async versions(out) {
-    const root = await styled(await versioned("scene-versions"));
+    const root = await versioned("scene-versions");
     await picture(
       root,
       `${BASE}/3.4/guides/my-setup`,
