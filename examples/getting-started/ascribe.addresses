@@ -1,8 +1,0 @@
-# Where addresses the docs published went. Written by `ascribe rename`, the
-# editor, `ascribe addresses`, and `ascribe check --fix`; edit only
-# [retired]'s reasons.
-version = 1
-
-[moved]
-
-[retired]
