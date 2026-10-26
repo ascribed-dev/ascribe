@@ -14,9 +14,10 @@ const CONTEXT: usize = 3;
 pub(super) struct Change {
     /// The first line it replaces, from 0.
     pub line: usize,
-    /// The lines it replaces, without their line endings.
+    /// The lines it replaces, each with its own line ending: `\n`, `\r\n`,
+    /// or none for a last line that has none.
     pub before: Vec<String>,
-    /// The lines it writes in their place.
+    /// The lines it writes in their place, likewise.
     pub after: Vec<String>,
 }
 
@@ -74,10 +75,10 @@ pub(super) fn write_lines(out: &mut dyn Write, file: &str, changes: &[Change]) -
     for change in changes {
         writeln!(out, "{file}:{}", change.line + 1)?;
         for line in &change.before {
-            writeln!(out, "{}", marked('-', line))?;
+            writeln!(out, "{}", marked('-', bare(line)))?;
         }
         for line in &change.after {
-            writeln!(out, "{}", marked('+', line))?;
+            writeln!(out, "{}", marked('+', bare(line)))?;
         }
         writeln!(out)?;
     }
@@ -142,22 +143,40 @@ pub(super) fn write_diff(
         let mut at = start;
         for change in hunk {
             for line in &old[at..change.line] {
-                writeln!(out, " {line}")?;
+                write_diff_line(out, ' ', line)?;
             }
             for line in &change.before {
-                writeln!(out, "-{line}")?;
+                write_diff_line(out, '-', line)?;
             }
             for line in &change.after {
-                writeln!(out, "+{line}")?;
+                write_diff_line(out, '+', line)?;
             }
             at = change.line + change.before.len();
         }
         for line in &old[at.min(end)..end] {
-            writeln!(out, " {line}")?;
+            write_diff_line(out, ' ', line)?;
         }
         shift += grown;
     }
     Ok(())
+}
+
+/// Writes one line of a hunk after its mark, with the line's own ending, so
+/// a `\r\n` file's patch matches it; a line with none is followed by the
+/// marker `git apply` and `patch` read as "no newline at end of file".
+fn write_diff_line(out: &mut dyn Write, mark: char, line: &str) -> io::Result<()> {
+    write!(out, "{mark}{line}")?;
+    if !line.ends_with('\n') {
+        writeln!(out)?;
+        writeln!(out, "\\ No newline at end of file")?;
+    }
+    Ok(())
+}
+
+/// A line without its ending.
+fn bare(line: &str) -> &str {
+    line.strip_suffix('\n')
+        .map_or(line, |l| l.strip_suffix('\r').unwrap_or(l))
 }
 
 /// A hunk's range as a unified diff writes it: its first line from 1 and
@@ -178,9 +197,9 @@ fn line_starts(text: &str) -> Vec<usize> {
         .collect()
 }
 
-/// The lines of `text`, without their endings.
+/// The lines of `text`, each with its ending.
 fn lines(text: &str) -> Vec<String> {
-    text.lines().map(str::to_owned).collect()
+    text.split_inclusive('\n').map(str::to_owned).collect()
 }
 
 #[cfg(test)]
@@ -207,8 +226,8 @@ mod tests {
             changes(source, &edits),
             [Change {
                 line: 2,
-                before: vec!["@note{ type = tip }:Text.".to_owned()],
-                after: vec!["@note {type=tip}: Text.".to_owned()],
+                before: vec!["@note{ type = tip }:Text.\n".to_owned()],
+                after: vec!["@note {type=tip}: Text.\n".to_owned()],
             }]
         );
     }
@@ -223,7 +242,7 @@ mod tests {
         ];
         let found = changes(source, &edits);
         assert_eq!(found.len(), 1);
-        assert_eq!(found[0].after, ["@note {a=1}: x"]);
+        assert_eq!(found[0].after, ["@note {a=1}: x\n"]);
     }
 
     #[test]
@@ -235,7 +254,7 @@ mod tests {
             found,
             [Change {
                 line: 1,
-                before: vec![String::new()],
+                before: vec!["\n".to_owned()],
                 after: vec![],
             }]
         );
@@ -260,6 +279,45 @@ mod tests {
             "--- a/docs/a.md\n+++ b/docs/a.md\n\
              @@ -1,9 +1,9 @@\n line 1\n-line 2\n+LINE 2\n line 3\n line 4\n line 5\n-line 6\n+LINE 6\n line 7\n line 8\n line 9\n\
              @@ -15,6 +15,7 @@\n line 15\n line 16\n line 17\n-line 18\n+new\n+line 18\n line 19\n line 20\n"
+        );
+    }
+
+    #[test]
+    fn the_diff_keeps_each_line_ending() {
+        let source = "# T\r\n\r\n@note{ type = tip }:Text.\r\n";
+        let edits = [TextEdit::replace(
+            Span::new(7, 32),
+            "@note {type=tip}: Text.",
+        )];
+        assert_eq!(
+            diff(source, &edits),
+            "--- a/docs/a.md\n+++ b/docs/a.md\n@@ -1,3 +1,3 @@\n # T\r\n \r\n-@note{ type = tip }:Text.\r\n+@note {type=tip}: Text.\r\n"
+        );
+        // The listing is for reading, so it shows no `\r`.
+        let mut out = Vec::new();
+        write_lines(&mut out, "docs/a.md", &changes(source, &edits)).expect("writes to memory");
+        assert_eq!(
+            String::from_utf8(out).expect("UTF-8"),
+            "docs/a.md:3\n- @note{ type = tip }:Text.\n+ @note {type=tip}: Text.\n\n"
+        );
+    }
+
+    #[test]
+    fn a_last_line_with_no_ending_is_marked() {
+        let source = "@note{ type = tip }:Text.\n\nlast";
+        let edits = [TextEdit::replace(
+            Span::new(0, 25),
+            "@note {type=tip}: Text.",
+        )];
+        assert_eq!(
+            diff(source, &edits),
+            "--- a/docs/a.md\n+++ b/docs/a.md\n@@ -1,3 +1,3 @@\n-@note{ type = tip }:Text.\n+@note {type=tip}: Text.\n \n last\n\\ No newline at end of file\n"
+        );
+        // A change to the last line marks both sides.
+        let edits = [TextEdit::replace(Span::new(27, 31), "LAST")];
+        assert_eq!(
+            diff(source, &edits),
+            "--- a/docs/a.md\n+++ b/docs/a.md\n@@ -1,3 +1,3 @@\n @note{ type = tip }:Text.\n \n-last\n\\ No newline at end of file\n+LAST\n\\ No newline at end of file\n"
         );
     }
 }

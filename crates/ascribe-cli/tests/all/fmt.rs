@@ -102,6 +102,41 @@ fn diff_writes_a_unified_diff_and_changes_nothing() {
     assert!(stdout(&clean).is_empty());
 }
 
+/// `git apply --check` takes what `--diff` writes for a file with `\r\n`
+/// endings and for one with no final newline, and applying it formats them.
+#[test]
+fn diff_applies_to_crlf_files_and_files_with_no_final_newline() {
+    let p = Project::new("diff-apply");
+    p.write("docs/crlf.md", "# T\r\n\r\n@note{ type = tip }:Text.\r\n");
+    p.write("docs/open.md", "# T\n\n@note{ type = tip }:Text.\n\nlast");
+    let git = |args: &[&str]| {
+        let out = Command::new("git")
+            .args(args)
+            .current_dir(&p.dir)
+            .output()
+            .expect("run git");
+        assert!(
+            out.status.success(),
+            "git {args:?}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    };
+    git(&["init", "-q"]);
+    let out = p.fmt(&["--diff"]);
+    assert_eq!(code(&out), 1, "{}", stderr(&out));
+    let patch = p.dir.join("fmt.patch");
+    std::fs::write(&patch, &out.stdout).expect("write the patch");
+    git(&["apply", "--check", "fmt.patch"]);
+    git(&["apply", "fmt.patch"]);
+    std::fs::remove_file(&patch).expect("remove the patch");
+    let again = p.fmt(&["--check"]);
+    assert_eq!(code(&again), 0, "{}", stdout(&again));
+    assert_eq!(
+        p.read("docs/crlf.md"),
+        "# T\r\n\r\n@note {type=tip}: Text.\r\n"
+    );
+}
+
 #[test]
 fn check_exits_0_on_formatted_input() {
     let p = Project::new("check-clean");
