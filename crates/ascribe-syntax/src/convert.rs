@@ -471,7 +471,11 @@ impl<'a> Converter<'a> {
                 Some(bare) => {
                     let after = &extra[bare.len..];
                     let rest = after.trim_start_matches([' ', '\t']);
-                    if rest == ":" && schema.as_ref().is_some_and(|s| !s.raw_container()) {
+                    if rest == ":"
+                        && schema
+                            .as_ref()
+                            .is_some_and(|s| s.forms.container && !s.raw_container())
+                    {
                         let c = span.start() + bare.len + (after.len() - rest.len());
                         colon = Some(Span::new(c, c + 1));
                         opens_unbraced = true;
@@ -874,8 +878,6 @@ fn fix_offsets(inlines: &mut [Inline], fix: &dyn Fn(usize) -> usize) {
     }
 }
 
-/// `span`, grown to cover `others`. comrak's end position for a container
-/// can fall short of its last child's when tabs or indented code end it.
 /// Whether `key` is one of the directive's attributes. `@variant`'s keys
 /// are the model's dimensions, which the parse doesn't know, so none counts.
 fn accepts(schema: &DirectiveSchema, key: &str) -> bool {
@@ -885,6 +887,8 @@ fn accepts(schema: &DirectiveSchema, key: &str) -> bool {
     }
 }
 
+/// `span`, grown to cover `others`. comrak's end position for a container
+/// can fall short of its last child's when tabs or indented code end it.
 fn hull(span: Span, others: impl Iterator<Item = Span>) -> Span {
     others.fold(span, |acc, other| {
         Span::new(acc.start().min(other.start()), acc.end().max(other.end()))
