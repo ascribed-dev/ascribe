@@ -14,7 +14,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 use ascribe_core::{FileId, RelPath, Span};
-use ascribe_resolve::snippet::tags::{self, comment_style};
+use ascribe_resolve::snippet::tags::{self, file_comment_style};
 use ascribe_resolve::snippet::{CodeFiles, SnippetError, resolve_snippet};
 use ascribe_resolve::{Address, AstroRouter, FileKind, FileSystem, Project, Snippet};
 use serde::Serialize;
@@ -508,9 +508,7 @@ fn changed_examples(
 /// or the whole file's, as the snippet itself is taken. `None` when the file
 /// has no such region.
 fn extract(path: &RelPath, text: &str, region: Option<&str>) -> Option<String> {
-    let found = path
-        .extension()
-        .and_then(comment_style)
+    let found = file_comment_style(path)
         .map(|style| tags::scan(text, style))
         .unwrap_or_default();
     let region = match region {
