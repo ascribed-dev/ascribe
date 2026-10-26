@@ -358,6 +358,30 @@ button.link .external {
   color: var(--vscode-editorWarning-foreground);
 }
 
+/* The line that shows a group's counts of none: under its counts, or at the
+   end of its head when it has nothing else. It reads as a quiet note, with
+   a twistie that says whether the counts are shown. */
+.none-toggle {
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+  color: var(--vscode-descriptionForeground);
+}
+
+.health-group > .none-toggle {
+  margin-left: 22px;
+  padding: 1px 0;
+}
+
+.group-top > .none-toggle {
+  margin-top: 4px;
+}
+
+.none-toggle[aria-expanded="false"] > .twistie.open,
+.none-toggle[aria-expanded="true"] > .twistie.closed {
+  display: none;
+}
+
 .health-group .action {
   display: flex;
   gap: 4px;
