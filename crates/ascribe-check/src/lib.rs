@@ -46,23 +46,17 @@ mod glossary;
 pub mod identity;
 pub mod intended;
 mod levels;
-pub mod links;
 mod memos;
 mod nav;
 pub mod page;
 mod permalinks;
 mod project;
 pub mod prompt;
-pub mod prose;
 pub mod registry;
 mod releases;
-pub mod report_history;
 pub mod roles;
 mod scope;
 pub mod side_files;
-pub mod site;
-pub mod store;
-pub mod tool;
 pub mod type_files;
 mod yaml;
 
@@ -85,7 +79,7 @@ pub use project::{
     NAV_FILE_ID, PERMALINKS_FILE_ID, Project, in_memory, in_memory_with, load, load_bounded,
 };
 pub use registry::{Entry, Example, Level, Next, Registry};
-pub use scope::{Reported, Scope, ScopeError, locate_for};
+pub use scope::{Reported, Scope, ScopeError, locate_for, real as real_path};
 
 /// Checks every file of the project at file level (SPEC §8.1): the content
 /// model's warnings, then each source file's diagnostics, in file order and,

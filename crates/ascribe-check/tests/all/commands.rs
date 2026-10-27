@@ -30,8 +30,19 @@ fn project(model: &str, pages: &[(&str, &str)]) -> tempfile::TempDir {
 
 fn load(dir: &Path) -> Project {
     ascribe_check::load(&dir.join(MODEL_FILE))
-        .map(|w| Project::new(w.snapshot()))
+        .map(|w| Project::new(w.snapshot()).with_plain_markdown(source_text))
         .expect("the project loads")
+}
+
+/// A stand-in for `ascribe_emit::plain_markdown`, which this crate doesn't
+/// use: a page's plain Markdown is its file's text.
+fn source_text(
+    index: &ascribe_resolve::Project,
+    _: &Path,
+    _: &ascribe_model::Build,
+    page: &ascribe_resolve::ResolvedPage,
+) -> Option<String> {
+    index.file_by_id(page.file).map(|f| f.source.to_string())
 }
 
 #[test]
@@ -138,6 +149,27 @@ fn count_errors_counts_what_diagnose_reports_as_errors() {
     assert_eq!(errors("advice", "advice"), 1);
     assert_eq!(errors("error", "advice"), 3);
     assert_eq!(errors("advice", "error"), 4);
+}
+
+#[test]
+fn page_size_is_measured_with_the_renderer_the_caller_gives() {
+    let page = "---\ntitle: Big\n---\n\nSome words to pass the limit.\n";
+    let model = format!("{MODEL}[checks.page-size]\nlevel = \"error\"\nlimit = 10\n");
+    let dir = project(&model, &[("big.md", page)]);
+    let sizes = |project: &Project| {
+        diagnose(project, &[])
+            .expect("every build")
+            .diagnostics
+            .iter()
+            .filter(|d| d.slug.as_str() == "page-size")
+            .count()
+    };
+    assert_eq!(sizes(&load(dir.path())), 1);
+    // Without a renderer, this crate can't measure a page.
+    let unrendered = ascribe_check::load(&dir.path().join(MODEL_FILE))
+        .map(|w| Project::new(w.snapshot()))
+        .expect("the project loads");
+    assert_eq!(sizes(&unrendered), 0);
 }
 
 #[test]

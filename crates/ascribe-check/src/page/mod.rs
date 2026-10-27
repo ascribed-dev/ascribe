@@ -14,7 +14,7 @@
 //! | `summary-missing`, `summary-long` | the page's permalinked headings and its sections' summaries |
 //! | `link-id-removed`, `link-page-dropped` | link resolution, per build |
 //! | `heading-level-skipped` | the page's resolved headings |
-//! | `page-size` | the page's plain Markdown, per build |
+//! | `page-size` | the page's plain Markdown, per build, rendered by the caller's [`PlainMarkdown`] |
 //! | `permalink-duplicate` | every page the build publishes |
 //!
 //! The entry points are [`check_project`], for one build, and
@@ -58,7 +58,8 @@ pub const SUMMARY_LIMIT: u64 = 300;
 pub use collect::summary_limit;
 
 pub use size::{
-    DEFAULT_LIMIT as DEFAULT_SIZE_LIMIT, limit as size_limit, markdown_size, thousands,
+    DEFAULT_LIMIT as DEFAULT_SIZE_LIMIT, PlainMarkdown, limit as size_limit, markdown_size,
+    thousands,
 };
 
 use std::cell::RefCell;
@@ -311,8 +312,9 @@ impl<'p> PageChecker<'p> {
         let counted = !self.errors_only
             || index.model().checks.level(diagnostics::PAGE_SIZE) == Some(CheckLevel::Error);
         if counted
+            && let Some(render) = self.project.plain_markdown()
             && let Some(limit) = size::limit(index)
-            && let Some(f) = size::page_size(index, self.project.root(), build, page, limit)
+            && let Some(f) = size::page_size(render, index, self.project.root(), build, page, limit)
         {
             found.push(f);
         }

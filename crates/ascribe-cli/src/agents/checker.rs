@@ -23,9 +23,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, mpsc};
 use std::time::{Duration, Instant};
 
-use ascribe_check::{Reported, Request, Severity, prose};
+use ascribe_check::{Reported, Request, Severity};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{RelPath, diagnostics};
+use ascribe_report::prose;
 use ascribe_resolve::is_source_path;
 use serde::{Deserialize, Serialize};
 

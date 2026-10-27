@@ -560,6 +560,28 @@ pub(crate) fn render_section(
     Rendered { text, summary }
 }
 
+/// One page's plain Markdown in `build`, as the build writes it: what
+/// `ascribe-check`'s `page-size` measures, which it's given as
+/// `ascribe_check::page::PlainMarkdown`. `None` when the page can't be rendered,
+/// which its other problems say.
+///
+/// With the outputs for agents on, the pointer to llms.txt is part of the
+/// page. One page alone doesn't learn the build's pages
+/// ([`PlainEmitter::learn_pages`]), so a link's fragment is its page id and
+/// a glossary link keeps its HTML address: a few characters off, the same
+/// for every caller, the editor's included.
+pub fn plain_markdown(
+    index: &ascribe_resolve::Project,
+    root: &std::path::Path,
+    build: &ascribe_model::Build,
+    page: &ResolvedPage,
+) -> Option<String> {
+    let cx = EmitContext::new(index, root, build);
+    crate::emit_page(&PlainEmitter::new(index.model()), &cx, page)
+        .ok()
+        .map(|page| page.text)
+}
+
 /// The summary of the section of `page` whose heading's page id is
 /// `anchor`, or of its opening for `None`, as `_ascribe/help.json` writes
 /// it (SPEC §4.12): its `@summary`'s text or paragraph, as the plain output

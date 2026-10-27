@@ -22,10 +22,9 @@ use ascribe_core::{Applicability, FileId, Fix, Issue, Location, TextEdit, diagno
 use ascribe_model::{CheckLevel, ContentModel, ValeSettings};
 use ascribe_syntax::{ParseOptions, parse};
 
-use crate::{Diagnostic, Next, Project, Severity, apply_levels};
+use ascribe_check::{Diagnostic, Next, Project, Severity, apply_levels};
 
 pub use eject::{EJECTED_CONFIG, EJECTED_STYLES, EjectError, Ejected, eject, ejected_files};
-pub(crate) use extract::is_vale_comment;
 pub use extract::{Located, Prose};
 pub use setup::{FOLDER, VOCABULARY, glossary_words, preset_files, vocabulary, with_settings};
 pub use vale::{

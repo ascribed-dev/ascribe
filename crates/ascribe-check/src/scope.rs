@@ -120,7 +120,7 @@ pub fn locate_for(config: Option<&Path>, paths: &[PathBuf]) -> Result<PathBuf, S
 /// `.` and `..` resolved, so two spellings of one place compare equal. What
 /// doesn't exist yet is kept as written, after the part that does. For
 /// comparing only: on Windows it's a `\\?\` path.
-pub(crate) fn real(path: &Path) -> PathBuf {
+pub fn real(path: &Path) -> PathBuf {
     let absolute = std::path::absolute(path).unwrap_or_else(|_| path.to_owned());
     let mut existing = absolute.as_path();
     let mut rest = Vec::new();

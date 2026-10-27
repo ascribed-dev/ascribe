@@ -10,8 +10,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
-use ascribe_check::prose::{Action, Alert, Linter, Request, ValeError};
 use ascribe_lsp::Options;
+use ascribe_report::prose::{Action, Alert, Linter, Request, ValeError};
 
 use crate::support::{self, Client, Fixture, Setup, edit, slug};
 
