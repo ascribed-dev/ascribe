@@ -219,7 +219,12 @@ fn new_page(projects: &dyn Projects, arguments: &Arguments) -> Result<String, St
     // Where the page goes, unless a file is there or the title names no
     // file; then the agent picks another path of the type's, and starts from
     // the same text.
-    let (place, text) = match ascribe_templates::start(project, type_name, title, asked.as_ref()) {
+    let (place, text) = match ascribe_templates::start(
+        project,
+        type_name,
+        Some(title),
+        asked.as_ref(),
+    ) {
         Ok(page) if asked.is_some() => (format!("Where: `{}`.", shown(&page.path)), page.text),
         Ok(page) => (
             format!(
@@ -233,11 +238,11 @@ fn new_page(projects: &dyn Projects, arguments: &Arguments) -> Result<String, St
                 "Where: not `{}`, which is there already, but {elsewhere}.",
                 RelPath::parse(&path).map_or(path.clone(), |p| shown(&p))
             ),
-            start::text(project, content_type, title).map_err(|e| e.to_string())?,
+            start::text(project, content_type, Some(title)).map_err(|e| e.to_string())?,
         ),
         Err(StartError::NoPath { .. }) => (
             format!("Where: {elsewhere}."),
-            start::text(project, content_type, title).map_err(|e| e.to_string())?,
+            start::text(project, content_type, Some(title)).map_err(|e| e.to_string())?,
         ),
         Err(e) => return Err(e.to_string()),
     };

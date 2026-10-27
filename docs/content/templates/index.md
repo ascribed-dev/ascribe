@@ -76,17 +76,37 @@ Their guide says what belongs in a page of each kind, for any tool. Ascribe's no
 
 In VS Code, run **Ascribe: New Page**. It asks for the type and the page's title, then makes the page from the type's template, with the first thing to fill in selected; **Ascribe: Go to Next Placeholder** selects the next ([editor guide](../editor/actions.md#start-a-page)).
 
-Without the editor:
+From the command line, `ascribe new` does the same.
 
-@steps
-1. Copy the template to where the page goes. It names its type already, `type: how-to`:
+### `ascribe new`
+@id {permalink=true}: cli-new
+@available: ascribe planned
 
-   ```sh
-   cp templates/how-to.md docs/rotate-keys.md
-   ```
+@summary
+Starts a page of a type from the type's template, with its `type` and `title` set, as **New Page** does, and writes it where `PATH` says. It never writes over a file.
 
-2. Read the type's guide and Ascribe's notes on it, before you write.
-3. Replace each `\{placeholder}` with what it asks for, and the title and description in the frontmatter with your own.
+```sh
+ascribe new how-to docs/guides --title "Rotate keys"
+```
+
+@include: ../_generated/cli-new-options.md
+
+`PATH` is from the current folder, in the content root: a page's path, ending in `.md`, or a folder, where the page is named for its title as a route's segment is, `docs/guides/rotate-keys.md` above. The folders it names are made. Without `--title`, the page keeps the template's title, to fill in with the rest, and `PATH` must name the page itself. A type with no template starts with its frontmatter alone: its type, the title, and each field it requires, empty.
+
+It says where the page went, the type's guide to read before writing, and how many placeholders are left, which [`ascribe check`](../checks/check.md#cli-check) lists:
+
+```text
+wrote docs/guides/rotate-keys.md, a page of type `how-to`, from templates/how-to.md
+Read its guide before you write: templates/how-to.guide.md, templates/how-to.ascribe.md
+It has 14 placeholders left to fill in, which `ascribe check docs/guides/rotate-keys.md` lists
+```
+
+With `--dry-run`, it says where the page would go and prints its text, and writes nothing. With `--format json`, it writes [one document](../contracts/json-reports/templates.md#ascribe-new) with the page's path, its text, and the count.
+
+| Exit code | Meaning |
+|---|---|
+| `0` | The page was written, or with `--dry-run` would be |
+| `2` | Nothing was written: a type the content model doesn't have, a path outside the content root, a file where the page would go, no title to name a page in a folder, or a template that can't be read |
 
 An agent starts from the template too. Ask it for a page with the plugin's `/ascribe:new-page`, or the prompt `ascribe agents prompt new-page` prints ([agents guide](../agents/prompts.md#from-the-command-line)), which gives it the template and sends it to the guide and the notes before it writes:
 

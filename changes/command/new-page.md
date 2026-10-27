@@ -1,0 +1,1 @@
+- **`ascribe new` starts a page from its type's template.** It sets the page's `type` and `title`, as the editor's New Page does, and never writes over a file. See [Start a page](docs/content/templates/index.md).

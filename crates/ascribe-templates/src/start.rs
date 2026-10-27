@@ -93,7 +93,9 @@ impl ascribe_core::Coded for StartError {
 
 /// The page of type `type_name` titled `title`, at `path` from the content
 /// root: a page's path, ending in `.md`, or a folder, where the page is named
-/// for the title. When it's `None`, the page goes in the content root.
+/// for the title. When it's `None`, the page goes in the content root. With
+/// no title, the page keeps the template's, which is left to fill in as its
+/// placeholders are, and needs a page's path.
 ///
 /// # Errors
 ///
@@ -103,7 +105,7 @@ impl ascribe_core::Coded for StartError {
 pub fn start(
     project: &Project,
     type_name: &str,
-    title: &str,
+    title: Option<&str>,
     path: Option<&RelPath>,
 ) -> Result<NewPage, StartError> {
     let model = project.model();
@@ -156,19 +158,24 @@ pub fn start(
 
 /// The text a page of `page_type` titled `title` starts with, wherever it
 /// goes: the type's template with the type and the title set, or its
-/// frontmatter when it has none.
+/// frontmatter when it has none. With no title, the template's stays, and a
+/// type with none has an empty one.
 ///
 /// # Errors
 ///
 /// A template that can't be read.
-pub fn text(project: &Project, page_type: &ContentType, title: &str) -> Result<String, StartError> {
+pub fn text(
+    project: &Project,
+    page_type: &ContentType,
+    title: Option<&str>,
+) -> Result<String, StartError> {
     Ok(match &page_type.template {
         Some(template) => {
-            let text = with_key(
-                &read_template(project.file_system(), &template.path)?,
-                "title",
-                &yaml_string(title),
-            );
+            let text = read_template(project.file_system(), &template.path)?;
+            let text = match title {
+                Some(title) => with_key(&text, "title", &yaml_string(title)),
+                None => text,
+            };
             if page_type.implicit {
                 text
             } else {
@@ -228,7 +235,13 @@ fn not_of_type(model: &ContentModel, _page_type: &ContentType, path: &RelPath) -
 
 /// The file a page titled `title` is named: the title slugged as a route's
 /// segment is, with `.md`.
-fn file_name(page_type: &ContentType, title: &str) -> Result<String, StartError> {
+fn file_name(page_type: &ContentType, title: Option<&str>) -> Result<String, StartError> {
+    let Some(title) = title else {
+        return Err(StartError::NoPath {
+            type_name: page_type.name.clone(),
+            reason: "there's no title".to_owned(),
+        });
+    };
     // A fresh scope's first slug is the slug of the text alone, as a route's
     // segment is (`ascribe_resolve::astro`).
     let slug = GithubSlugger.new_scope().slug(title);
@@ -315,12 +328,15 @@ fn frontmatter(text: &str) -> Option<(usize, usize)> {
 /// The page a type with no template starts with: its type, its title, and
 /// each other field it requires, empty, in its frontmatter. Every type has a
 /// `title` field (SPEC §7.2).
-fn frontmatter_only(page_type: &ContentType, title: &str) -> String {
+fn frontmatter_only(page_type: &ContentType, title: Option<&str>) -> String {
     let mut lines = Vec::new();
     if !page_type.implicit {
         lines.push(format!("{TYPE_KEY}: {}", type_value(&page_type.name)));
     }
-    lines.push(format!("title: {}", yaml_string(title)));
+    lines.push(match title {
+        Some(title) => format!("title: {}", yaml_string(title)),
+        None => "title:".to_owned(),
+    });
     for field in page_type
         .frontmatter
         .fields

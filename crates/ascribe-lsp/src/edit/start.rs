@@ -41,7 +41,7 @@ pub(crate) fn new_page(ctx: &Ctx, args: &Map<String, Value>) -> Result<EditResul
         Some(_) => return Err("`folder` must be a folder's URI.".to_owned()),
     };
     let project = project(ctx);
-    let page = ascribe_templates::start(&project, &type_name, &title, folder.as_ref())
+    let page = ascribe_templates::start(&project, &type_name, Some(&title), folder.as_ref())
         .map_err(|e| sentence(&e.to_string()))?;
     let uri = ctx
         .uri_of(&page.path)

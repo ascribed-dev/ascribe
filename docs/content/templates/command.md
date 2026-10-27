@@ -12,7 +12,7 @@ The commands that write the page templates into a project and say what's changed
 
 Writes the page templates Ascribe carries into a project, as the project's own files, and declares a content type for each, which takes them as its [template and guide](../content-model/index.md#41-page-types) from `templates/templates.lock`. The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, converted into Ascribe pages, as [Where the templates come from](index.md#where-the-templates-come-from) says.
 
-The set has six templates, which `ascribe templates list` names. A page is started by copying the template's file to where the page goes; the template names its type in its frontmatter, as the page must. `eject` adds to a project, and never starts one: [`ascribe init --templates`](../install.md#cli-init) does, with the set. `status` says what's changed in the set since the project's copy, and changes nothing.
+The set has six templates, which `ascribe templates list` names. A page is started from a template with [`ascribe new`](index.md#cli-new), or the editor's **New Page**; the template names its type in its frontmatter, as the page must. `eject` adds to a project, and never starts one: [`ascribe init --templates`](../install.md#cli-init) does, with the set. `status` says what's changed in the set since the project's copy, and changes nothing.
 
 ### `ascribe templates list`
 @id {permalink=true}: cli-templates-list

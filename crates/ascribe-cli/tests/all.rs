@@ -47,6 +47,8 @@ mod mcp;
 mod navigation;
 #[path = "all/network.rs"]
 mod network;
+#[path = "all/new.rs"]
+mod new;
 #[path = "all/observe.rs"]
 mod observe;
 #[path = "all/openapi.rs"]
