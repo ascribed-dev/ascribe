@@ -911,7 +911,7 @@ fn one_server_serves_two_projects_and_says_when_a_path_is_in_neither() {
 
 /// Rewrites `path` with `text`, the same length as what's there, and gives
 /// it back its modification time: a change the server's listing can't
-/// see, so the answers show whether it loaded the project again.
+/// see, so the answers show whether it read the file again.
 fn change_unseen(path: &Path, text: &str) {
     let modified = fs::metadata(path).unwrap().modified().unwrap();
     assert_eq!(fs::read(path).unwrap().len(), text.len());
@@ -947,10 +947,15 @@ fn files_outside_the_content_root_dont_load_the_project_again() {
     write(&root.join("notes.md"), "# Notes\n");
     assert_eq!(heading(&mut server), "rotate-keys");
 
-    // A file in the content root is.
+    // A file in the content root is, and only it is read.
     write(
         &root.join("docs/tokens.md"),
         "---\ntype: page\ntitle: Tokens\n---\n",
+    );
+    assert_eq!(heading(&mut server), "rotate-keys");
+    write(
+        &root.join("docs/keys.md"),
+        &KEYS.replace("Rotate keys", "Rotate keyz"),
     );
     assert_eq!(heading(&mut server), "rotate-keyz");
 }
@@ -1034,9 +1039,16 @@ fn a_second_search_doesnt_load_the_project_again() {
     );
     // Another query, and the project as it was loaded.
     assert!(search(&mut server, "them").contains("docs/keys.md:8: Rotate them."));
+    // Another page added: it's read, and the page that wasn't seen to
+    // change isn't.
     write(
         &root.join("docs/tokens.md"),
         "---\ntype: page\ntitle: Tokens\n---\n",
+    );
+    assert!(search(&mut server, "rotate").contains("docs/keys.md:8: Rotate them."));
+    write(
+        &root.join("docs/keys.md"),
+        &KEYS.replace("Rotate them.", "Rotate thez."),
     );
     assert!(search(&mut server, "rotate").contains("docs/keys.md:8: Rotate thez."));
 }

@@ -1,0 +1,11 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc dc259c76c29f86f2341460717bd3a89d6c20b8e9aaef2d49adff7b4cfd89e2ae # shrinks to batches = [[Write { file: 0, front: 0, body: [], create: false }]]
+cc dc872d2cb57b74589379e4c4b005bf15b0530c8908ba9eeef8806972f5050580 # shrinks to batches = [[Write { file: 3, front: 0, body: [], create: false }]]
+cc a68fdcf9b242e1b1085b54b056b861c70422ba41b4ecb1cb76e89c22d961d8d5 # shrinks to batches = [[Write { file: 0, front: 0, body: [15], create: false }], [Asset { file: 5 }]]
+cc 4f319b2e04391290f8e623199b9a5267e7c3fa4feeaaca06739eea8a33baf807 # shrinks to batches = [[Delete { file: 2 }], [Asset { file: 8 }], [Write { file: 0, front: 0, body: [25], create: false }], [Asset { file: 0 }]]
+cc daa15f69aee601695a8e7b2da469cd6d1fcd1a3c6233975240e0c377f0f46e73 # shrinks to batches = [[Rename { from: 8, to: 0 }], [Write { file: 0, front: 0, body: [29], create: false }]]
