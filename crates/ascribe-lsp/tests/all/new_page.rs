@@ -165,8 +165,8 @@ fn a_new_page_is_created_with_its_text_and_the_first_placeholder_selected() {
     );
     assert_eq!(
         text.replacen("title: \"Rotate keys\"", "title: \"Title\"", 1),
-        how_to(),
-        "only the title changes"
+        how_to().replacen("\n---\n", "\ndraft: true\n---\n", 1),
+        "only the title changes, and the page starts as a draft"
     );
     assert_eq!(
         covered(text, &result["select"]),
@@ -210,7 +210,7 @@ fn a_type_without_a_template_starts_with_its_frontmatter_and_nothing_selected() 
     );
     assert_eq!(
         changes[1]["edits"][0]["newText"],
-        "---\ntype: page\ntitle: \"Notes\"\nowner:\n---\n"
+        "---\ntype: page\ntitle: \"Notes\"\nowner:\ndraft: true\n---\n"
     );
     assert_eq!(result["select"], Value::Null);
 }

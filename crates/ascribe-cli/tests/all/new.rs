@@ -46,6 +46,17 @@ fn template(dir: &Path) -> String {
     fs::read_to_string(dir.join("templates/how-to.md")).unwrap()
 }
 
+/// The how-to's template as a page starts from it: titled `title`, or with
+/// the template's own, and a draft.
+fn started(dir: &Path, title: Option<&str>) -> String {
+    let text = template(dir);
+    let text = match title {
+        Some(title) => text.replacen("title: \"Title\"", &format!("title: \"{title}\""), 1),
+        None => text,
+    };
+    text.replacen("\n---\n", "\ndraft: true\n---\n", 1)
+}
+
 #[test]
 fn a_page_in_a_folder_is_named_for_its_title_and_written_from_the_template() {
     let dir = project();
@@ -55,10 +66,7 @@ fn a_page_in_a_folder_is_named_for_its_title_and_written_from_the_template() {
     );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let page = fs::read_to_string(dir.path().join("docs/guides/rotate-keys.md")).unwrap();
-    assert_eq!(
-        page,
-        template(dir.path()).replacen("title: \"Title\"", "title: \"Rotate keys\"", 1)
-    );
+    assert_eq!(page, started(dir.path(), Some("Rotate keys")));
     let text = stdout(&out);
     assert!(
         text.starts_with(
@@ -70,11 +78,12 @@ fn a_page_in_a_folder_is_named_for_its_title_and_written_from_the_template() {
     );
     assert!(
         text.ends_with(
-            " placeholders left to fill in, which `ascribe check docs/guides/rotate-keys.md` lists\n"
+            " placeholders left to fill in, which `ascribe check docs/guides/rotate-keys.md` lists\n\
+             It's a draft, with `draft: true`, which no build publishes: take the line out to publish it\n"
         ),
         "{text}"
     );
-    // What it counts is what the check reports.
+    // What it counts is what the check reports: advice, in a draft.
     let check = ascribe(
         dir.path(),
         &["check", "docs/guides/rotate-keys.md", "--format", "json"],
@@ -116,7 +125,7 @@ fn without_a_title_the_page_keeps_the_templates_and_needs_its_own_path() {
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     assert_eq!(
         fs::read_to_string(dir.path().join("docs/rotate.md")).unwrap(),
-        template(dir.path())
+        started(dir.path(), None)
     );
     let out = ascribe(dir.path(), &["new", "how-to", "docs/guides"]);
     assert_eq!(code_of(&out), 2);
@@ -173,10 +182,7 @@ fn a_dry_run_prints_the_page_and_writes_nothing() {
         ),
         "{text}"
     );
-    assert!(text.ends_with(&format!(
-        "\n\n{}",
-        template(dir.path()).replacen("title: \"Title\"", "title: \"Rotate keys\"", 1)
-    )));
+    assert!(text.ends_with(&format!("\n\n{}", started(dir.path(), Some("Rotate keys")))));
     assert!(!dir.path().join("docs/rotate.md").exists());
 }
 
@@ -209,7 +215,7 @@ fn json_says_what_was_written() {
     assert_eq!(answer["text"], text.as_str());
     assert_eq!(
         text,
-        "---\ntype: page\ntitle: \"About\"\ndescription:\n---\n"
+        "---\ntype: page\ntitle: \"About\"\ndescription:\ndraft: true\n---\n"
     );
 }
 

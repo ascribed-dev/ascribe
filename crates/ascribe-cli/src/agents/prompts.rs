@@ -264,6 +264,12 @@ fn new_page(projects: &dyn Projects, arguments: &Arguments) -> Result<String, St
             content_type.name
         ));
     }
+    known.push(
+        "The page starts as a draft, with `draft: true` in its frontmatter, which no build \
+         publishes. Once it's written, take the line out to publish it: then a placeholder \
+         left in it is an error (`template-placeholder-published`)."
+            .to_owned(),
+    );
     known.push(format!("The type's fields:\n{}", fields(page_type)));
     known.push(
         "A file or folder whose name starts with `_` is a fragment, not a page: don't name \
@@ -341,14 +347,14 @@ fn guide(page_type: &ContentType, context: &Context) -> Option<String> {
 }
 
 /// What the page starts with: the type's template with the title set, or,
-/// for a type with none, its frontmatter.
+/// for a type with none, its frontmatter, as a draft either way.
 fn start_with(page_type: &ContentType, text: &str) -> String {
     let fence = answer::fence(text);
     let lead = if page_type.template.is_some() {
         "Start the file with this text, the type's template with the title set. Write over \
          each placeholder, the text in `{curly brackets}`, and leave out a part that's marked \
          optional and doesn't apply: `ascribe check` reports what's left of the template \
-         (`template-placeholder-left`). Its memos, the `@memo` lines, are the template's \
+         (`template-placeholder-left` in a draft). Its memos, the `@memo` lines, are the template's \
          instructions to you: follow each, then delete it or keep it. A memo is never \
          published."
     } else {

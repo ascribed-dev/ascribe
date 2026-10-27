@@ -136,7 +136,7 @@ impl Project {
     /// Whether any page is a draft (SPEC §2.1), which no build the content
     /// model declares publishes.
     pub fn has_drafts(&self) -> bool {
-        self.pages().any(modes::is_draft)
+        self.pages().any(crate::index::FileIndex::is_draft)
     }
 
     /// What a build's modes take out of a page it publishes, and why: the

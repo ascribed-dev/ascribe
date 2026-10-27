@@ -4,8 +4,10 @@
 //! The page's text is the type's template, read through the project's
 //! [`FileSystem`], with its frontmatter's `type` set to the type's name and
 //! its `title` to the title given, and nothing else changed. A type with no
-//! template gives its frontmatter: its type, the title, and each other field
-//! it requires, empty. The implicit `page` type of a project that declares
+//! template gives its frontmatter: its type, the title, each other field
+//! it requires, empty, and `draft: true`. A page starts as a draft, which no
+//! build publishes, so what's left of its template is advice while it's
+//! written and an error once `draft` is taken out (#1005). The implicit `page` type of a project that declares
 //! none isn't named. The page goes where it's asked to, or, when it's asked
 //! for a folder or nothing, in that folder or the content root, named for
 //! the title slugged as a route's segments are.
@@ -15,7 +17,7 @@ use ascribe_check::Project;
 use ascribe_core::{RelPath, Slugger as _};
 use ascribe_model::{ContentModel, ContentType, TYPE_KEY};
 use ascribe_resolve::slug::GithubSlugger;
-use ascribe_resolve::{FileSystem, Probe};
+use ascribe_resolve::{DRAFT, FileSystem, Probe};
 use ascribe_syntax::frontmatter_lines;
 
 /// A page to start: where it goes, and its text.
@@ -176,14 +178,32 @@ pub fn text(
                 Some(title) => with_key(&text, "title", &yaml_string(title)),
                 None => text,
             };
-            if page_type.implicit {
+            let text = if page_type.implicit {
                 text
             } else {
                 with_key(&text, TYPE_KEY, &type_value(&page_type.name))
-            }
+            };
+            as_draft(&text)
         }
         None => frontmatter_only(page_type, title),
     })
+}
+
+/// `text` with `draft: true` in its frontmatter: the template's `draft`
+/// set, or one added after its last field. A page starts as a draft, so
+/// what it has left of its template is advice until it publishes (#1005).
+fn as_draft(text: &str) -> String {
+    let Some((start, end)) = frontmatter(text) else {
+        return with_key(text, DRAFT, "true");
+    };
+    let lines = frontmatter_lines(&text[start..end]);
+    if lines
+        .iter()
+        .any(|l| l.key == Some(DRAFT) && l.indent == 0 && l.item.is_none())
+    {
+        return with_key(text, DRAFT, "true");
+    }
+    format!("{}{DRAFT}: true\n{}", &text[..end], &text[end..])
 }
 
 /// Whether a page of `page_type` can be started in `folder`, from the
@@ -345,6 +365,7 @@ fn frontmatter_only(page_type: &ContentType, title: Option<&str>) -> String {
     {
         lines.push(format!("{}:", field.name));
     }
+    lines.push(format!("{DRAFT}: true"));
     format!("---\n{}\n---\n", lines.join("\n"))
 }
 

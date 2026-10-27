@@ -886,13 +886,14 @@ fn an_edit_that_leaves_a_templates_placeholder_names_it() {
     fs::write(root.join("templates/how-to.md"), template).unwrap();
     fs::write(
         root.join("docs/rotate.md"),
-        template.replace("title: Title", "title: Rotate keys"),
+        template.replace("title: Title", "title: Rotate keys\ndraft: true"),
     )
     .unwrap();
     let cache = tempfile::tempdir().unwrap();
+    // In a draft, they're advice, which the hook passes on.
     let said = "`ascribe check docs/rotate.md` reports 2 of what the page's template left to fill in, which you write now, while the page is yours:\n\
-                docs/rotate.md:4: [ASC195] `description` is still the template's `\\{One sentence.}`; write this page's own\n\
-                docs/rotate.md:7: [ASC195] this page still has its template's placeholder `{insert the task}`; write what it asks for in its place\n\
+                docs/rotate.md:5: [ASC195] `description` is still the template's `\\{One sentence.}`; write this page's own\n\
+                docs/rotate.md:8: [ASC195] this page still has its template's placeholder `{insert the task}`; write what it asks for in its place\n\
                 Checked build `site` only. Run `ascribe explain <code>` for any you don't recognize.\n";
     for harness in HARNESSES {
         let input = edit_input(harness, root, "docs/rotate.md");
@@ -902,6 +903,20 @@ fn an_edit_that_leaves_a_templates_placeholder_names_it() {
         let out = served(&[harness], &input, cache.path());
         assert_eq!(context(harness, &out), said, "{harness}");
     }
+    // In a page that publishes, they're errors.
+    fs::write(
+        root.join("docs/rotate.md"),
+        template.replace("title: Title", "title: Rotate keys"),
+    )
+    .unwrap();
+    let input = edit_input("claude-code", root, "docs/rotate.md");
+    let text = context("claude-code", &hook(&["claude-code"], &input, None));
+    assert!(
+        text.starts_with(
+            "`ascribe check docs/rotate.md` reports 2 errors:\ndocs/rotate.md:4: [ASC286]"
+        ),
+        "{text}"
+    );
     // Filled in, the hook goes quiet.
     fs::write(
         root.join("docs/rotate.md"),

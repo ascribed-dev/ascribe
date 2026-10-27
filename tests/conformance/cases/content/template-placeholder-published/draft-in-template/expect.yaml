@@ -1,0 +1,8 @@
+description: >-
+  A template that says `draft: true` gives its pages no field to fill in: a
+  draft page that keeps it, with everything else written, has nothing
+  reported.
+spec: ["2.1", "7.2"]
+tags: [check]
+
+diagnostics: []

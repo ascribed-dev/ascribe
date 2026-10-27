@@ -83,7 +83,7 @@ From the command line, `ascribe new` does the same.
 @available: ascribe planned
 
 @summary
-Starts a page of a type from the type's template, with its `type` and `title` set, as **New Page** does, and writes it where `PATH` says. It never writes over a file.
+Starts a page of a type from the type's template, with its `type` and `title` set, as a draft, as **New Page** does, and writes it where `PATH` says. It never writes over a file.
 
 ```sh
 ascribe new how-to docs/guides --title "Rotate keys"
@@ -93,12 +93,15 @@ ascribe new how-to docs/guides --title "Rotate keys"
 
 `PATH` is from the current folder, in the content root: a page's path, ending in `.md`, or a folder, where the page is named for its title as a route's segment is, `docs/guides/rotate-keys.md` above. The folders it names are made. Without `--title`, the page keeps the template's title, to fill in with the rest, and `PATH` must name the page itself. A type with no template starts with its frontmatter alone: its type, the title, and each field it requires, empty.
 
+The page starts as a [draft](../writing/frontmatter.md#a-draft), with `draft: true` in its frontmatter, which no build publishes, so what it has left of its template is advice while you write it. Take the line out to publish it: from then on, a placeholder left in it is an error ([What's left to fill in](#whats-left-to-fill-in)).
+
 It says where the page went, the type's guide to read before writing, and how many placeholders are left, which [`ascribe check`](../checks/check.md#cli-check) lists:
 
 ```text
 wrote docs/guides/rotate-keys.md, a page of type `how-to`, from templates/how-to.md
 Read its guide before you write: templates/how-to.guide.md, templates/how-to.ascribe.md
-It has 14 placeholders left to fill in, which `ascribe check docs/guides/rotate-keys.md` lists
+It has 13 placeholders left to fill in, which `ascribe check docs/guides/rotate-keys.md` lists
+It's a draft, with `draft: true`, which no build publishes: take the line out to publish it
 ```
 
 With `--dry-run`, it says where the page would go and prints its text, and writes nothing. With `--format json`, it writes [one document](../contracts/json-reports/templates.md#ascribe-new) with the page's path, its text, and the count.
@@ -116,9 +119,11 @@ ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 
 ## What's left to fill in
 
-`ascribe check` compares a page with its type's template and reports, as advice, what it still has of it: a placeholder or a frontmatter field the page has word for word ([`template-placeholder-left`](../checks/diagnostics/content-checks.md#ASC195)), and a section the template gives only memos that the page leaves empty ([`template-section-empty`](../checks/diagnostics/content-checks.md#ASC229)). A memo the page keeps isn't reported. In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) says how many are left, and **Go to Next Placeholder** goes to the next one.
+`ascribe check` compares a page with its type's template and reports what it still has of it: a placeholder or a frontmatter field the page has word for word, and a section the template gives only memos that the page leaves empty ([`template-section-empty`](../checks/diagnostics/content-checks.md#ASC229), advice).
 
-The check finds only what was never touched, so read a page through before publishing it. To turn either check off, or make it a warning, set its level in [`[checks]`](../content-model/checks.md#19-checks).
+A placeholder left is advice in a [draft](../writing/frontmatter.md#a-draft), a page with `draft: true` ([`template-placeholder-left`](../checks/diagnostics/content-checks.md#ASC195)), so a page you're still writing isn't covered in errors. In a page that publishes, it's an error ([`template-placeholder-published`](../checks/diagnostics/content-checks.md#ASC286)): readers would read the template's words, so `ascribe check` fails, `ascribe build` writes nothing, and the editor, the agents' hook, and the MCP tools report it the same way. A page started with `ascribe new` or **New Page** is a draft until you take the line out. A memo the page keeps isn't reported. In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) says how many are left, and **Go to Next Placeholder** goes to the next one.
+
+The check finds only what was never touched, so read a page through before publishing it. To turn any of these checks off, or set another level, set its level in [`[checks]`](../content-model/checks.md#19-checks).
 
 ## See also
 

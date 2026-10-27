@@ -885,6 +885,10 @@ pub const INFO_PAIR_MALFORMED: DiagnosticSlug = DiagnosticSlug("info-pair-malfor
 /// `ASC285`, warning, file level: a content check (area `examples`).
 pub const EXAMPLES_CONFIG_UNREAD: DiagnosticSlug = DiagnosticSlug("examples-config-unread");
 
+/// `ASC286`, error, file level: a content check (area `pages`).
+pub const TEMPLATE_PLACEHOLDER_PUBLISHED: DiagnosticSlug =
+    DiagnosticSlug("template-placeholder-published");
+
 /// The checks renamed, each by the name it had before, which still names
 /// it in `[checks]`, in an acknowledgement, and to `ascribe explain`, for a
 /// release (decision #953).
@@ -1165,6 +1169,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     BUILD_FILTER_LINE_UNDECLARED,
     INFO_PAIR_MALFORMED,
     EXAMPLES_CONFIG_UNREAD,
+    TEMPLATE_PLACEHOLDER_PUBLISHED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1226,6 +1231,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     API_OPERATION_UNREFERENCED,
     BUILD_FILTER_LINE_UNDECLARED,
     EXAMPLES_CONFIG_UNREAD,
+    TEMPLATE_PLACEHOLDER_PUBLISHED,
 ];
 
 /// The configurable checks that are off unless a project names them in

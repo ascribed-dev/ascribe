@@ -1,7 +1,8 @@
 //! `ascribe new`: starts a page from its type's template, with its type and
-//! title set, as the editor's New Page does (`ascribe_templates::start`),
-//! and writes it. It never writes over a file: `start` refuses a path where
-//! anything is, and the file is opened only if it isn't there.
+//! title set, as a draft, as the editor's New Page does
+//! (`ascribe_templates::start`), and writes it. It never writes over a
+//! file: `start` refuses a path where anything is, and the file is opened
+//! only if it isn't there.
 
 use std::fs::OpenOptions;
 use std::io::{self, Write};
@@ -293,6 +294,10 @@ fn write_text(
             }
         )?;
     }
+    writeln!(
+        out,
+        "It's a draft, with `draft: true`, which no build publishes: take the line out to publish it"
+    )?;
     if !answer.written {
         writeln!(out)?;
         write!(out, "{}", answer.text)?;

@@ -64,9 +64,12 @@ fn a_type_with_a_template_starts_from_it_with_the_title_set() {
     let template = how_to.text(&how_to.template);
     // The template names its type already.
     assert!(template.starts_with("---\ntype: how-to\n"), "{template}");
+    // It starts as a draft.
     assert_eq!(
         page.text,
-        template.replacen("title: \"Title\"", "title: \"Rotate keys\"", 1)
+        template
+            .replacen("title: \"Title\"", "title: \"Rotate keys\"", 1)
+            .replacen("\n---\n", "\ndraft: true\n---\n", 1)
     );
     assert_eq!(page.template.as_deref(), Some("templates/how-to.md"));
     assert_eq!(
@@ -82,7 +85,7 @@ fn a_type_without_a_template_starts_with_its_frontmatter() {
     assert_eq!(page.path.as_str(), "keys-why.md");
     assert_eq!(
         page.text,
-        "---\ntype: guide\ntitle: \"Keys: \\\"why\\\"\"\naudience:\n---\n"
+        "---\ntype: guide\ntitle: \"Keys: \\\"why\\\"\"\naudience:\ndraft: true\n---\n"
     );
     assert_eq!(page.template, None);
     assert!(page.guide.is_empty());
@@ -203,7 +206,12 @@ fn with_no_title_the_page_keeps_the_templates_and_needs_a_path() {
         .into_iter()
         .find(|t| t.name == "how-to")
         .expect("the set has the how-to");
-    assert_eq!(page.text, how_to.text(&how_to.template));
+    assert_eq!(
+        page.text,
+        how_to
+            .text(&how_to.template)
+            .replacen("\n---\n", "\ndraft: true\n---\n", 1)
+    );
     // A type with no template has an empty title.
     let page = start(&project, "guide", None, Some(&path)).expect("started");
     assert!(page.text.contains("\ntitle:\n"), "{}", page.text);
