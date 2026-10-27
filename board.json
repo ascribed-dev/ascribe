@@ -7420,7 +7420,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Split ascribe-check: project loading, and the report's tools and caches, out of the checker"
     },
     {
@@ -8311,8 +8311,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1201"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Load a project once, phase 3: every command loads one Workspace, and the checks see a view of it"
     },
     {
@@ -8671,7 +8674,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1198"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Fuzz: parse crashes (c1c7dcdaf4bd)"
     },
     {
@@ -8691,8 +8694,22 @@
         "https://github.com/ascribed-dev/ascribe/pull/1199"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Fuzz: format crashes (a9ae2c31f844)"
+    },
+    {
+      "content": {
+        "body": "## Ascribe report\n\n0 errors, 0 warnings, 1 advice.\n\n### External links\n\nChecked 36 addresses: asked about 3, and reused 33 answers, the oldest from 22 October.\n\nNone is broken or moved.\n\n### Delivery\n\nThe delivery spec's checks on `https://ascribed-dev.com/docs/`: 23 pass, 4 warn, 1 skip.\n\n28 checks: 23 passing, 4 failing, 2 of them failing since 26 October: `llms-txt-links-resolve`, `page-size-markdown`.\n\nTo change:\n\n- [ASC171] the delivery spec's `llms-txt-links-resolve` check couldn't fetch every address it tried, so it doesn't say yet whether what Ascribe writes passes: 48/50 same-origin sampled links resolve (96%); 2 broken; 2 failed to fetch. Not reached: `https://ascribed-dev.com/docs/openapi/no-id.md` (couldn't be fetched: fetch failed), `https://ascribed-dev.com/docs/checks/ci.md` (couldn't be fetched: fetch failed). Run the report again\n\nAlso failing, about the pages: `page-size-markdown`, `page-size-html`, `embedded-data-serialization`. `ascribe check` reports what to change in them.\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/40499224002)\n",
+        "number": 1200,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs report: links and the published site",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1200"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhD4OdE",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs report: links and the published site"
     }
   ]
 }
