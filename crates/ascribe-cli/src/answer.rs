@@ -31,6 +31,19 @@ pub enum Format {
     Json,
 }
 
+/// How a command with no one-line form shows what it did: text, which
+/// `concise` names too, as CONTRIBUTING.md's command-line conventions say, or
+/// JSON.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
+pub enum TextFormat {
+    /// Text, for people and agents to read.
+    #[default]
+    #[value(alias = "concise")]
+    Text,
+    /// One JSON document, for tools.
+    Json,
+}
+
 /// Finds the content model: `--config`, or else the nearest `ascribe.toml`
 /// at or above `path` (a file or folder named on the command line, which
 /// need not exist yet), or else at or above the current directory.

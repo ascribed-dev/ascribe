@@ -36,6 +36,14 @@ It merges its entries into a file it shares: it updates the entries it wrote bef
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/agents-sync.txt
 
+@available: ascribe planned
+With `--format json`, it writes the same list in the document its [schema](../contracts/json-reports/agents.md#ascribe-agents-sync) describes: each file's path, whether it `changed` (with `--check`, whether it's out of date), and the agents that read it; the notes and what an agent doesn't read; and with `--cloud`, the MCP server's JSON. The exit codes are the same. With `--check`, after a sync:
+
+.The JSON for this example
+@details:
+@snippet {lang=json}: code:crates/ascribe-cli/tests/output/agents-sync-check.json
+@end
+
 | Code | Meaning |
 |---|---|
 | `0` | The files are written, or with `--check`, up to date |
@@ -78,7 +86,7 @@ ascribe agents index --build site --into packages/sdk/AGENTS.md --pages packages
 | `0` | It printed the index, or wrote it |
 | `2` | It couldn't run: no `ascribe.toml`, one with errors, more than one build and no `--build`, an unknown build, a file whose markers are damaged, a file or folder under the content root (so one of the project's pages), or a file it can't read or write. Nothing is written. |
 
-With `--format json`, the document is as follows, and its [schema](../contracts/json-reports/questions.md#ascribe-agents-index) has every field:
+With `--format json`, the document is as follows, and its [schema](../contracts/json-reports/agents.md#ascribe-agents-index) has every field:
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/agents-index.json
 
@@ -116,6 +124,9 @@ Without a `path` in the content root, `new-page` says the page goes where the re
 ```shell
 ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 ```
+
+@available: ascribe planned
+With `--format json`, it writes the prompt's name and text, or with `--list` each prompt with its arguments, in the documents their [schemas](../contracts/json-reports/agents.md#ascribe-agents-prompt) describe.
 
 | Code | Meaning |
 |---|---|

@@ -490,6 +490,30 @@ fn fetch_and_status_say_what_they_did() {
     );
 }
 
+/// `fetch --format json` says what it copied, and which files it couldn't,
+/// in one document, and keeps its exit code.
+#[test]
+fn fetch_writes_json() {
+    let pair = Pair::new();
+    fs::remove_file(
+        pair.docs()
+            .join("sources")
+            .join("api")
+            .join("src")
+            .join("auth.rs"),
+    )
+    .unwrap();
+    let out = pair.ascribe(&["sources", "fetch", "--format", "json"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let fetched: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(fetched["schema_version"], 1);
+    assert_eq!(fetched["sources"][0]["name"], "api");
+    assert_eq!(fetched["sources"][0]["copied"][0], "src/auth.rs");
+    assert_eq!(fetched["lock_written"], false);
+    let out = pair.ascribe(&["sources", "fetch", "--format", "concise"]);
+    assert_eq!(stdout(&out), "The copies already match ascribe.lock.\n");
+}
+
 /// A tested example in another repository: its config and observation come
 /// with the copies, the page says what it was tested with, an update says
 /// which examples went stale, and nothing the config names is ever run.

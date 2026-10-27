@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "repository": "https://gitlab.com/tgdp/templates",
+  "tag": "v1.6.0",
+  "commit": "41645d9cc4b7d80db06d03cd7b862c16ece849b8",
+  "license": "MIT No Attribution License",
+  "templates": [
+    {
+      "name": "how-to",
+      "summary": "A how-to is a concise set of numbered steps to do one task with the product."
+    },
+    {
+      "name": "concept",
+      "summary": "An explanation of a concept, context, or background information about a product or its features."
+    },
+    {
+      "name": "tutorial",
+      "summary": "Instructions for setting up an example project using the product, intended for the purpose of hands-on learning."
+    },
+    {
+      "name": "reference",
+      "summary": "A reference article provides users with descriptions of specific components or characteristics of an application."
+    },
+    {
+      "name": "troubleshooting",
+      "summary": "A list of common problems (referred to as symptoms) experienced by users, an explanation of the causes, and steps to resolve the issue."
+    },
+    {
+      "name": "release-notes",
+      "summary": "Release notes communicate new features, improvements, bug fixes, and known issues about a product to users and stakeholders."
+    }
+  ]
+}

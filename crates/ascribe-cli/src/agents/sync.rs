@@ -132,7 +132,9 @@ impl Coded for SyncError {
 }
 
 /// An agent that reads a file `sync` writes, as `sync` names it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
 pub enum Agent {
     /// Claude Code.
     ClaudeCode,

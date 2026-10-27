@@ -9,6 +9,11 @@ Part of the [JSON report contract](../json-reports.md), whose rules every docume
 
 
 
+## `ascribe sources fetch`
+@available: ascribe planned
+
+@include: ../../_generated/json-sources-fetch.md
+
 ## `ascribe sources status`
 
 @include: ../../_generated/json-sources-status.md

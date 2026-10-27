@@ -77,5 +77,7 @@ mod report;
 mod sources;
 #[path = "all/templates.rs"]
 mod templates;
+#[path = "all/vale.rs"]
+mod vale;
 #[path = "all/versions.rs"]
 mod versions;

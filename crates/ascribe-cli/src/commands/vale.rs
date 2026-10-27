@@ -1,13 +1,15 @@
 //! `ascribe vale`: the project's Vale setup (`[checks.vale]`). `eject`
 //! writes a preset out as a configuration the project owns.
 
-use std::io::Write;
+use std::io::{self, Write};
 use std::process::ExitCode;
 
 use ascribe_check::Project;
-use ascribe_check::prose::eject;
+use ascribe_check::prose::{Ejected, eject};
 use clap::{Args as ClapArgs, Subcommand};
+use serde::Serialize;
 
+use crate::answer::{self, TextFormat};
 use crate::cli::Global;
 use crate::context::{Failure, locate};
 use crate::exit;
@@ -33,17 +35,41 @@ pub enum Command {
 
 /// Arguments of `ascribe vale eject`.
 #[derive(Debug, ClapArgs)]
-pub struct EjectArgs {}
+pub struct EjectArgs {
+    /// How to show what was written.
+    #[arg(long, value_enum, default_value_t = TextFormat::Text, value_name = "FORMAT")]
+    pub format: TextFormat,
+}
+
+/// The version of `eject --format json`'s schema.
+const EJECT_SCHEMA_VERSION: u32 = 1;
+
+/// What `ascribe vale eject --format json` writes: the preset written out,
+/// and the files written.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct EjectJson<'a> {
+    /// The version of this schema. It changes only when a field is removed
+    /// or changes meaning.
+    schema_version: u32,
+    /// The version of Ascribe that wrote it.
+    ascribe_version: &'static str,
+    /// The preset written out.
+    preset: &'a str,
+    /// The files written, from the project's folder, `/`-separated, in the
+    /// order they were written: `ascribe.toml` last.
+    written: &'a [String],
+}
 
 /// Runs the command. Exit codes: 0 when the preset was written out, 2 when
 /// it wasn't.
 pub fn run(global: &Global, args: Args) -> ExitCode {
     match args.command {
-        Command::Eject(_) => run_eject(global),
+        Command::Eject(args) => run_eject(global, &args),
     }
 }
 
-fn run_eject(global: &Global) -> ExitCode {
+fn run_eject(global: &Global, args: &EjectArgs) -> ExitCode {
     let mut out = std::io::stdout().lock();
     let mut err = std::io::stderr().lock();
     let loaded = locate(global)
@@ -53,18 +79,32 @@ fn run_eject(global: &Global) -> ExitCode {
         Ok(file) => file,
         Err(e) => return exit::code(exit::fail(&mut err, &e)),
     };
-    match eject(&file.root, &file.model, &file.text) {
-        Ok(ejected) => {
-            for path in &ejected.written {
-                let _ = writeln!(out, "wrote {path}");
-            }
-            let _ = writeln!(
-                out,
-                "The `{}` preset is now the project's own: `[checks.vale]` reads .vale.ini.",
-                ejected.preset
-            );
-            exit::code(exit::OK)
-        }
-        Err(e) => exit::code(exit::fail(&mut err, &e)),
+    let ejected = match eject(&file.root, &file.model, &file.text) {
+        Ok(ejected) => ejected,
+        Err(e) => return exit::code(exit::fail(&mut err, &e)),
+    };
+    let result = match args.format {
+        TextFormat::Text => write_eject(&mut out, &ejected),
+        TextFormat::Json => answer::write_json(
+            &mut out,
+            &EjectJson {
+                schema_version: EJECT_SCHEMA_VERSION,
+                ascribe_version: env!("CARGO_PKG_VERSION"),
+                preset: &ejected.preset,
+                written: &ejected.written,
+            },
+        ),
+    };
+    exit::code(answer::written(result, &mut err).unwrap_or(exit::OK))
+}
+
+fn write_eject(out: &mut dyn Write, ejected: &Ejected) -> io::Result<()> {
+    for path in &ejected.written {
+        writeln!(out, "wrote {path}")?;
     }
+    writeln!(
+        out,
+        "The `{}` preset is now the project's own: `[checks.vale]` reads .vale.ini.",
+        ejected.preset
+    )
 }
