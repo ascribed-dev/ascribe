@@ -88,6 +88,7 @@ impl Ctx<'_> {
             self.report(issue);
         }
         if !fragment {
+            self.draft = value.get(DRAFT).and_then(Value::as_bool) == Some(true);
             self.check_reserved_keys(&value, &index, first_line);
             self.check_roles(schema, &value, &index, first_line);
             self.check_description_length(schema, &value, &index);

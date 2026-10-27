@@ -357,10 +357,9 @@ pub(crate) fn write_added(
             }
         )?;
     }
-    let start = |template: &str, guide: &[String]| {
+    let start = |name: &str, guide: &[String]| {
         format!(
-            "To start a page, copy {} to where the page goes, and read {} first. The page names its type in its frontmatter, as the template does.",
-            from_here(root, template),
+            "To start a page, run `ascribe new {name} <PATH>`, which writes the template there as a draft, and read {} first.",
             guide
                 .iter()
                 .map(|g| from_here(root, g))
@@ -370,11 +369,11 @@ pub(crate) fn write_added(
     };
     match (ejected.added.as_slice(), ejected.kept.as_slice()) {
         ([], []) => {}
-        ([], [one]) => writeln!(out, "{}", start(&one.template, &one.guide))?,
-        ([one], []) => writeln!(out, "{}", start(&one.template, &one.guide))?,
+        ([], [one]) => writeln!(out, "{}", start(&one.name, &one.guide))?,
+        ([one], []) => writeln!(out, "{}", start(&one.name, &one.guide))?,
         _ => writeln!(
             out,
-            "To start a page, copy its type's template to where the page goes, and read its guide and Ascribe's notes on it first. The page names its type in its frontmatter, as the template does."
+            "To start a page, run `ascribe new <TYPE> <PATH>`, which writes its type's template there as a draft, and read its guide and Ascribe's notes on it first."
         )?,
     }
     Ok(())

@@ -76,7 +76,7 @@ An observation nothing writes any more stays until you delete its file. It goes 
 
 An edit to an example, anywhere in the file, makes its observations out of date. A change to a file an example only calls, such as a library, doesn't: only the example files are compared. The page then drops the tested line, and `ascribe check` reports [`example-stale`](../checks/diagnostics/output-checks.md#ASC199) at each `@snippet` of the file, naming the folder to run `ascribe observe` in. It's a warning, so the pages still build, and `ascribe check --deny-warnings`, as [CI](../checks/ci.md#keep-tested-examples-tested) runs it, fails until the example is tested again. An example no observation lists reports `example-unobserved`, advice: it was never tested, so no tested line went missing. Run `ascribe observe` again and commit, and both clear.
 
-A project that wants a stale example to pass CI can set `example-stale = "advice"` in [`[checks]`](../content-model/checks.md#19-checks). With two observations, running one again brings the page back with that one's environment, and the other is still out of date until it's run again too: `ascribe model --section sources` says how many of each observation's files are as it found them.
+A project that wants a stale example to pass CI can set `example-stale = "advice"` in [`[checks]`](../content-model/checks.md#22-checks). With two observations, running one again brings the page back with that one's environment, and the other is still out of date until it's run again too: `ascribe model --section sources` says how many of each observation's files are as it found them.
 
 An example that's deleted or renamed without a second run leaves its observation listing a file that isn't there. `ascribe check` reports [`observation-file-missing`](../checks/diagnostics/output-checks.md#ASC202) at that line of the observation, naming the command that writes it again.
 
@@ -111,5 +111,5 @@ Copy one, replace its examples with yours, and run `ascribe observe --name` once
 
 - [`ascribe observe`](sources.md#cli-observe): its options, exit codes, and JSON.
 - [Tested examples](../contracts/tested-examples.md): the two files' formats.
-- [Sources](../content-model/output.md#18-sourcesname): declaring the folder the examples are in.
+- [Sources](../content-model/sources.md#20-sourcesname): declaring the folder the examples are in.
 - [The report's inventory](../checks/report.md#inventory): how many of a project's snippets show a tested example, and how many of those are current, stale, and unobserved.

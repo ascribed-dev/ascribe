@@ -79,7 +79,6 @@ The tasks are in **Tasks: Run Task** too, and [Tasks](settings.md#tasks) says wh
 Each first says how much it changes and asks: "Apply 6 safe fixes in 4 files? They're left unsaved, to read before you save them." Each opens the files it changes, unsaved, so you can read them first. **File: Save All** saves them, and **Undo** takes the edit back. [How the whole-project edits apply](#how-the-whole-project-edits-apply) has the rest.
 
 ### Addresses lost
-@available: ascribe 0.4.4
 
 In a project that [keeps its addresses](../publishing/redirects.md), Health has a group after **Every build**, **Against the base**, with one count:
 
@@ -131,7 +130,6 @@ The head at the top shows the page's title, its type ("fragment" for a fragment)
 A fragment has no builds, listing, or size of its own: it's published only where it's included. [This page's rows](#this-pages-rows) has what each row measures and when it warns.
 
 ### Old addresses
-@available: ascribe 0.4.4
 
 In a project that [keeps its addresses](../publishing/redirects.md), About has an **Also answers at** row after **Markdown** for each old address an entry of `ascribe.addresses` leads to the page. These are the redirects the build writes to it, such as `/docs/guides/my-setup` on a page moved from `guides/my-setup.md`. Its tooltip names the entry. A row goes when the entry does, and an entry you've added and not saved counts.
 
@@ -213,7 +211,6 @@ The view never checks every build by itself, since that can take a few seconds o
 About's builds and content types are the language server's, so they're known once it runs. Its sources are what `ascribe model` says.
 
 ### When Addresses lost updates
-@available: ascribe 0.4.4
 
 The language server compares the addresses with the base's on its own, between checks: when the project loads, after a save, after a change on disk such as a page deleted in the Explorer or a `git checkout`, and as you edit `ascribe.addresses`, so a move's entry counts before you save it. It doesn't compare as you type in a page. While the server is starting, or when the base can't be read, the count is a dash and the head says why, with the reason in the Problems panel.
 
@@ -236,7 +233,7 @@ A row whose state can warn says the state in the warning color only when there's
 - **Address** is written as the site output's links write it. It opens the site's origin and the address, in your browser, after VS Code asks about a domain it doesn't trust yet. That's the published site, not your branch: a page that's new or moved on your branch isn't there yet, and the row's tooltip says so. Without a `site`, for a fragment, and where the build the status bar shows leaves the page out, it's text and opens nothing.
 - **Markdown** says "not published" when the project publishes no Markdown versions ([`[consumer] agents`](../content-model/output.md#consumer), on by default with a `site`). It opens its Markdown version as Address opens the page. A fragment's address is only where it's included.
 - **Builds** names the builds that publish the page and the ones that leave it out.
-- **Listing** is what [`pages.json`](../content-model/checks.md#22-listing) says of the page, and the rule that sets it.
+- **Listing** is what [`pages.json`](../content-model/output.md#17-listing) says of the page, and the rule that sets it.
 - **Permalink**'s tooltip has the summary a product shows with its help, as [`help.json`](../permalinks/in-your-product.md#writing-summaries) writes it in the editor's build: the section's `@summary`, or the page's description for its own. Or it says the section has none, which [`summary-missing`](../checks/diagnostics/content-checks.md#ASC252) reports when it's turned on.
 
 In Health:
@@ -244,7 +241,7 @@ In Health:
 - **Problems** is VS Code's problems for the page, counted as the status bar counts them, leaving out a severity there's none of. Its filter's **Show Active File Only** keeps the Problems panel to the page.
 - **Description** is shown "missing" where [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports the page. Its length is its field's default's when the page leaves the field out or empty. It's measured against the 300 characters its line in `llms.txt` reads best under, when the project publishes one, and led by "too long", with a warning, only where [`description-too-long`](../checks/diagnostics/output-checks.md#ASC163) reports it.
 - **Review** comes from the field with the [`recheck-date` role](../content-model/index.md#54-field-roles), as [`recheck-overdue`](../checks/diagnostics/content-checks.md#ASC153) compares it with today, with a warning only where that check reports the page.
-- **Size** is the page's Markdown in the build where it's largest, measured as [`page-size`](../content-model/checks.md#19-checks) measures it. It's shown always, so a page is seen growing toward the limit, and led by "too large" once it reaches it.
+- **Size** is the page's Markdown in the build where it's largest, measured as [`page-size`](../content-model/checks.md#22-checks) measures it. It's shown always, so a page is seen growing toward the limit, and led by "too large" once it reaches it.
 - **Example** is each tested example a `@snippet` of the page shows: its state first, tested, changed since it was tested, or not tested, then its address, what it was tested with, and the heading it's under.
 
 ### Pages and Content model

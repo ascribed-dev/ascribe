@@ -60,7 +60,7 @@ A project's schema, `ascribe.toml`: its content types, dimensions, phrases, and 
 
 An axis content varies along, such as a package manager or a deployment, declared in `ascribe.toml`.
 
-See [`[dimensions]`](content-model/content.md#dimensions) and [Content that varies](writing/variants.md).
+See [`[dimensions]`](content-model/variation.md#dimensions) and [Content that varies](writing/variants.md).
 
 ## Example
 @term {aliases=examples, match=marked}
@@ -158,14 +158,14 @@ See [the site preview](editor/preview.md#site-preview).
 
 A folder or repository outside the content, declared in `[sources.<name>]`, that pages take code examples from with `@snippet`.
 
-See [`[sources.<name>]`](content-model/output.md#18-sourcesname) and [`ascribe sources`](examples/sources.md#cli-sources). A page's source file, the Markdown it's written in, is the ordinary sense: a source file, as against what a build writes from it.
+See [`[sources.<name>]`](content-model/sources.md#20-sourcesname) and [`ascribe sources`](examples/sources.md#cli-sources). A page's source file, the Markdown it's written in, is the ordinary sense: a source file, as against what a build writes from it.
 
 ## Target
 @term {aliases=targets, match=marked}
 
 A dimension value that availability names, such as `self-managed` in `self-managed preview 3.4`; a versioned one has release lines, which `[releases.<target>]` lists.
 
-See [Availability specs](writing/directives.md#availability-specs) and [`[releases.<target>]`](content-model/content.md#71-releasestarget). A link's target, as `ascribe link`, `refs`, and `rename` take it, is what the link leads to, and `ascribe agents sync --target` names an agent whose files it writes.
+See [Availability specs](writing/directives.md#availability-specs) and [`[releases.<target>]`](content-model/variation.md#121-releasestarget). A link's target, as `ascribe link`, `refs`, and `rename` take it, is what the link leads to, and `ascribe agents sync --target` names an agent whose files it writes.
 
 ## Variant
 @term {aliases=variants, match=marked}

@@ -1,7 +1,7 @@
 ---
 type: reference
 title: "`ascribe.toml` reference"
-description: "The content model: content types, dimensions, availability, phrases, widgets, and builds."
+description: "The content model: what pages are and hold, how content varies, where pages are published, what they draw from, and the checks."
 permalink: content-model
 ---
 
@@ -19,29 +19,48 @@ In VS Code, [Project Settings](../editor/settings.md#project-settings) shows a p
 
 ## Contents
 
+The sections are grouped by what they're for, a page each.
+
+What pages are, on this page:
+
 1. [Conventions](index.md#1-conventions)
 2. [Top level: `spec`](index.md#2-top-level-spec), and [taking from another project](index.md#21-taking-from-another-project)
 3. [`[project]`](index.md#3-project)
 4. [`[types.<name>]` and `[fragments]`](index.md#4-typesname-and-fragments)
 5. [Field and attribute types](index.md#5-field-and-attribute-types)
-6. [`[dimensions.<name>]`](content.md#dimensions)
-7. [`[versions]`](content.md#7-versions)
-8. [`[lifecycle.<state>]`](content.md#8-lifecyclestate)
-9. [`[features.<key>]`](content.md#9-featureskey)
-10. [`[notes.<type>]`](content.md#10-notestype)
-11. [`[phrases]`](content.md#phrases)
-12. [`[glossary]`](content.md#12-glossary)
-13. [`[images]`](content.md#13-images)
-14. [`[widgets.<name>]`](content.md#14-widgetsname)
+
+[What pages hold](content.md):
+
+6. [`[notes.<type>]`](content.md#6-notestype)
+7. [`[phrases]`](content.md#phrases)
+8. [`[glossary]`](content.md#8-glossary)
+9. [`[images]`](content.md#9-images)
+10. [`[widgets.<name>]`](content.md#10-widgetsname)
+
+[How content varies](variation.md):
+
+11. [`[dimensions.<name>]`](variation.md#dimensions)
+12. [`[versions]`](variation.md#12-versions), and [`[releases.<target>]`](variation.md#121-releasestarget)
+13. [`[lifecycle.<state>]`](variation.md#13-lifecyclestate)
+14. [`[features.<key>]`](variation.md#14-featureskey)
+
+[Where pages are published](output.md):
+
 15. [`[consumer]`](output.md#consumer)
 16. [`[builds.<name>]`](output.md#16-buildsname)
-17. [`[editor]`](output.md#17-editor)
-18. [`[sources.<name>]`](output.md#18-sourcesname)
-19. [`[checks]`](checks.md#19-checks)
-20. [`[permalinks]`](checks.md#20-permalinks)
-21. [`[crawlers]`](checks.md#21-crawlers)
-22. [`[listing]`](checks.md#22-listing)
-23. [`[apis.<name>]`](checks.md#23-apisname)
+17. [`[listing]`](output.md#17-listing)
+18. [`[crawlers]`](output.md#18-crawlers)
+19. [`[permalinks]`](output.md#19-permalinks)
+
+[What pages draw from](sources.md):
+
+20. [`[sources.<name>]`](sources.md#20-sourcesname)
+21. [`[apis.<name>]`](sources.md#21-apisname)
+
+[Checks and the editor](checks.md):
+
+22. [`[checks]`](checks.md#22-checks)
+23. [`[editor]`](checks.md#23-editor)
 24. [Defaults: what an absent section means](checks.md#24-defaults-what-an-absent-section-means)
 25. [Validation](checks.md#25-validation)
 
@@ -125,7 +144,7 @@ listing: unlisted
 
 Each build writes every page's record, with its `listing`, to `_ascribe/pages.json` in the site output. The site output's frontmatter doesn't carry `listing`, since the record does.
 
-A project can set `listing` for the whole site, a folder, or a content type, in [`[listing]`](checks.md#22-listing). A page under a rule can set the same value or a stricter one, never a looser one (`listing-loosened`).
+A project can set `listing` for the whole site, a folder, or a content type, in [`[listing]`](output.md#17-listing). A page under a rule can set the same value or a stricter one, never a looser one (`listing-loosened`).
 
 @include: ../_fragments/content-model/types-frontmatter-and-fragments.md
 

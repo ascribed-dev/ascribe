@@ -2,13 +2,13 @@ The glossary ([SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)): the pag
 
 @snippet: code:examples/content-models/full.toml#glossary
 
-### 12.1 Settings
+### 8.1 Settings
 
 @include: ../../_generated/content-model-glossary.md
 
 There's no `terms` table: a project that has one gets an error saying to write each term on a glossary page.
 
-### 12.2 Terms
+### 8.2 Terms
 
 Each heading on a glossary page with `@term` directly under it, written on the page or in a fragment it includes, is a term:
 

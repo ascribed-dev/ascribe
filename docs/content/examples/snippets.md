@@ -17,7 +17,7 @@ include = ["service/**", "examples/**"]
 ignore = ["**/node_modules/**"]
 ```
 
-The folder must be in the same git repository as the project. When the code is in another repository, see [Keep the docs in another repository](docs-repository.md). See [`[sources.<name>]`](../content-model/output.md#18-sourcesname) for every key.
+The folder must be in the same git repository as the project. When the code is in another repository, see [Keep the docs in another repository](docs-repository.md). See [`[sources.<name>]`](../content-model/sources.md#20-sourcesname) for every key.
 
 ## 2. Mark a region in the code
 

@@ -17,7 +17,6 @@ It installs the latest release. To run the version your `package.json` pins inst
 [`ascribe check`, `build`, `preview`, and `fmt`](check.md) has each command's options and exit codes.
 
 ## Keep the addresses you've published
-@available: ascribe 0.4.4
 
 A project with [`ascribe.addresses`](../publishing/redirects.md) has `ascribe check` compare the addresses the docs publish with the base's, and the base needs the history: give `actions/checkout` `fetch-depth: 0`, and name the base. On a pull request, it's the branch the pull request targets; on a push, it's the commit before the push, compared as it is:
 
@@ -49,7 +48,7 @@ To test it again, run `ascribe observe` in that folder and commit the observatio
 
 To have CI write a new observation, run `ascribe observe` in a job that has what the test needs, and commit `examples.observations/` from there, or keep it as an artifact to commit by hand. When the code is [in another repository](../examples/tested.md#when-the-code-is-in-another-repository), it's that repository's CI that runs it, and the next `ascribe sources update` brings the observation here; until then, an update pull request that brings a stale example fails this check.
 
-To let a stale example pass, set `example-stale = "advice"` in [`[checks]`](../content-model/checks.md#19-checks).
+To let a stale example pass, set `example-stale = "advice"` in [`[checks]`](../content-model/checks.md#22-checks).
 
 ## See also
 
