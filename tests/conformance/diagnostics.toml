@@ -5209,3 +5209,33 @@ summary = "A page that publishes, of a content type that names a template, still
 message = "this page publishes with its template's placeholder `{placeholder}`; write what it asks for in its place, or mark the page `draft: true` until it's ready"
 messages.field = "this page publishes with `{field}` still the template's `{value}`; write this page's own, or mark the page `draft: true` until it's ready"
 fix = "Write the page's own text where the template's placeholder is, the text in braces, and the page's own value in each field the template fills in, such as `title`. A placeholder in a page that publishes is never meant: readers see the template's words. While the page isn't ready, mark it `draft: true` in its frontmatter: no build publishes it, and what's left to fill in is advice. `ascribe new` starts a page that way."
+
+[[diagnostic]]
+code = "ASC287"
+slug = "github-alert"
+severity = "warning"
+level = "file"
+next = "fix"
+evidence = []
+configurable = true
+area = "pages"
+spec = "4.5"
+reference = "writing/directives.md#note"
+when = "A block quote's first line is one of GitHub's alert markers, `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, or `[!CAUTION]`, in any case. A quote that mentions a marker later isn't looked at"
+message = "`{marker}` is GitHub's alert syntax, which Ascribe shows as a plain block quote that starts with `{marker}`; write the quote as `{note}`"
+fix = "Write the callout as a `@note` of the same type: GitHub's `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION` are `@note`'s types `note`, `tip`, `important`, `warning`, and `caution`. The fix does it, keeping the quote's content: `@note {type=tip}: …` for one paragraph, or `@note {type=tip}:` and `@end` around several blocks. Every output then shows it as a callout: the site as a note, and the Markdown output as a block quote that starts with its type, which reads the same on GitHub and anywhere else."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+> [!TIP]
+> Quill runs in the browser too.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=tip}: Quill runs in the browser too.
+'''

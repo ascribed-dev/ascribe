@@ -74,6 +74,16 @@ jobs:
             echo "::error file=ascribe.examples.toml::An example the docs show changed since it was last observed. Run \`cargo run -p ascribe-cli -- observe\` in the repository's root, and commit examples.observations/default.toml."
             exit 1
           }
+      # The files agents read when they write the docs (docs/AGENTS.md, the
+      # skill, and the root's block) are as `ascribe agents sync` writes them
+      # from docs/ascribe.toml and this binary. It writes nothing.
+      - name: Check the docs' agent files are up to date
+        shell: bash
+        run: |
+          ./target/debug/ascribe agents sync --check --config docs --command "cargo run -q -p ascribe-cli --" || {
+            echo "::error file=docs/AGENTS.md::The files agents read for the docs are out of date. Run \`cargo run -q -p ascribe-cli -- agents sync --config docs --command \"cargo run -q -p ascribe-cli --\"\` in the repository's root, and commit what it writes."
+            exit 1
+          }
       # An archive of examples/quill's older line (`ascribe versions export`),
       # kept as an artifact so each pull request has one to open from disk.
       - if: runner.os == 'Linux'

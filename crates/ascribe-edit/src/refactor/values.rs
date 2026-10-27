@@ -24,15 +24,17 @@ use crate::nav::Ctx;
 
 /// A dimension's value, where a rename starts from.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct DimensionValue {
+pub struct DimensionValue {
+    /// The dimension.
     pub dimension: String,
+    /// The value.
     pub value: String,
     /// Where it's written, without quotes.
     pub span: Span,
 }
 
 /// The value in a `@variant` attribute at `offset` of a page.
-pub(crate) fn in_page(file: &FileIndex, offset: usize) -> Option<DimensionValue> {
+pub fn in_page(file: &FileIndex, offset: usize) -> Option<DimensionValue> {
     let mut found = None;
     variant_lines(&file.document.blocks, &mut |line| {
         for attribute in line.attributes.iter().flat_map(|b| &b.attributes) {
@@ -53,7 +55,7 @@ pub(crate) fn in_page(file: &FileIndex, offset: usize) -> Option<DimensionValue>
 /// The value in a dimension's `values` at `offset` of `ascribe.toml`, or the
 /// target in a `[releases.<target>]` header when it's a value of the
 /// implicit `release` dimension.
-pub(crate) fn in_model(ctx: &Ctx, offset: usize) -> Option<DimensionValue> {
+pub fn in_model(ctx: &Ctx, offset: usize) -> Option<DimensionValue> {
     // Where it's written in this file: a value `[from]` takes is written in
     // another.
     let file = ModelFile::parse(&ctx.model_text).ok()?;
@@ -65,7 +67,7 @@ pub(crate) fn in_model(ctx: &Ctx, offset: usize) -> Option<DimensionValue> {
 /// The value `value`, where a dimension's `values` has it, or where its
 /// `[releases.<target>]` header is: in `ascribe.toml`, or in the file
 /// `[from]` takes it from.
-pub(crate) fn named(ctx: &Ctx, value: &str) -> Option<DimensionValue> {
+pub fn named(ctx: &Ctx, value: &str) -> Option<DimensionValue> {
     let file = ctx.model_file().ok()?;
     find_in_model(ctx, &file, |text, _| text == value)
 }
@@ -129,7 +131,7 @@ fn written(dimension: &str, text: &str, span: std::ops::Range<usize>) -> Dimensi
 }
 
 /// Why `new` can't be the value's new name, or `None` when it can.
-pub(crate) fn refusal(ctx: &Ctx, value: &DimensionValue, new: &str) -> Option<String> {
+pub fn refusal(ctx: &Ctx, value: &DimensionValue, new: &str) -> Option<String> {
     let model = &ctx.model;
     if ctx.model_problem {
         return Some("`ascribe.toml` has a problem. Fix it, then try again.".to_owned());
@@ -176,7 +178,7 @@ pub(crate) fn refusal(ctx: &Ctx, value: &DimensionValue, new: &str) -> Option<St
 /// The edit that renames the value everywhere, the project of a file
 /// `[from]` takes it from included; `None` when `new` can't be its name, or
 /// a file can't be edited in place.
-pub(crate) fn rename(ctx: &Ctx, value: &DimensionValue, new: &str) -> Option<WorkspaceEdit> {
+pub fn rename(ctx: &Ctx, value: &DimensionValue, new: &str) -> Option<WorkspaceEdit> {
     let edit = rename_here(ctx, value, new)?;
     let renaming = crate::rename::Renaming::Value {
         value: value.value.clone(),
@@ -187,7 +189,7 @@ pub(crate) fn rename(ctx: &Ctx, value: &DimensionValue, new: &str) -> Option<Wor
 
 /// [`rename`] in this project only.
 #[allow(clippy::mutable_key_type)]
-pub(crate) fn rename_here(ctx: &Ctx, value: &DimensionValue, new: &str) -> Option<WorkspaceEdit> {
+pub fn rename_here(ctx: &Ctx, value: &DimensionValue, new: &str) -> Option<WorkspaceEdit> {
     if refusal(ctx, value, new).is_some() {
         return None;
     }

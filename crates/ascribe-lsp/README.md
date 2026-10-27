@@ -450,7 +450,7 @@ What every edit holds to:
   to either, is refused with an error instead, naming the other page when
   the problem is there.
 - **The content model in place.** The content model's actions edit
-  `ascribe.toml` as text (`src/model_file.rs`), as it is in the editor when
+  `ascribe.toml` as text (`ascribe_edit::model_file`), as it is in the editor when
   it's open: an entry goes after the last one of its table, a new table after
   the last of its section, and a value is replaced where it's written, so
   comments, blank lines, and order stay. `toml_edit` finds the place from

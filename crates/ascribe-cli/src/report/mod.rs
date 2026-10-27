@@ -1,5 +1,5 @@
 //! Showing diagnostics: readable text with source snippets, one line each,
-//! and JSON.
+//! GitHub Actions' workflow commands, and JSON.
 //!
 //! The renderers read a [`FileTable`], which holds what a diagnostic's
 //! locations point into (the path to show and the text), and turn a
@@ -7,6 +7,7 @@
 //! and JSON always agree.
 
 pub mod concise;
+pub mod github;
 pub mod json;
 pub mod links;
 pub mod text;

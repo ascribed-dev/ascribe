@@ -112,6 +112,8 @@ cargo build -p ascribe-cli
 ./target/debug/ascribe fmt --check --config docs
 ```
 
+An agent writing the docs reads `docs/AGENTS.md`, and the `ascribe` skill in `.agents/skills/ascribe/` and `.claude/skills/ascribe/`: the page types, the phrases, the directives the pages use, how to link, and the checks to run, which `ascribe agents sync` writes from `docs/ascribe.toml` and the binary, with a block at the end of the root's `AGENTS.md` that points to them. They name `cargo run -q -p ascribe-cli --` as the command, so it runs the checkout's Ascribe. After changing `docs/ascribe.toml` or the skill, or using a directive no page used before, run `pnpm bless`, or the `ascribe agents sync` that `scripts/bless.ts` gives alone, and commit what it writes; `rust.yml` runs it with `--check`, which fails until you do.
+
 Two pages that say the same thing say it once, in a fragment under `docs/content/_fragments/` that each includes. The `ascribe.toml` reference and its contract share theirs from `docs/content/_fragments/content-model/`, and `the_content_model_pages_share_text_only_through_fragments` in `tests/conformance/tests/docs.rs` fails on a paragraph, list, table, or example written in both; change the fragment, and both pages change.
 
 A page's code examples aren't copies: each is taken with [`@snippet`](docs/content/writing/directives.md#snippet) from a file that's built, tested, or run, so it changes when the file does. `[sources.code]` in `docs/ascribe.toml` lists the folders a page may take one from: `examples/`, the workflows in `.github/workflows/`, and the command output in `crates/ascribe-cli/tests/output/`. To show part of a file, mark it with tags in its comments, and give the page its address:

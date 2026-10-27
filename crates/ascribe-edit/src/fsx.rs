@@ -19,14 +19,15 @@ use ascribe_resolve::{DiskFs, FileSystem, Probe, Sources, in_nested_project};
 /// new state; remembering what the disk said when a reference first looked
 /// keeps the base what it was when the project read it, and the reported
 /// changes layered over it (`ascribe_resolve::incremental`) do the rest.
-pub(crate) struct BufferFs {
+pub struct BufferFs {
     disk: DiskFs,
     buffers: BTreeMap<RelPath, String>,
     probes: Mutex<HashMap<RelPath, Probe>>,
 }
 
 impl BufferFs {
-    pub(crate) fn new(disk: DiskFs, buffers: BTreeMap<RelPath, String>) -> BufferFs {
+    /// `disk`, with `buffers` read in place of the files they name.
+    pub fn new(disk: DiskFs, buffers: BTreeMap<RelPath, String>) -> BufferFs {
         BufferFs {
             disk,
             buffers,
@@ -104,7 +105,7 @@ impl FileSystem for BufferFs {
 /// It also holds the buffers of the open files that aren't sources but are
 /// read as the editor has them: memo files (SPEC §7.7), which a memo store
 /// reads through it, and `ascribe.nav` (SPEC §7.8), which the checks do.
-pub(crate) struct LayerFs {
+pub struct LayerFs {
     disk: DiskFs,
     layers: RwLock<Layers>,
     buffers: RwLock<BTreeMap<RelPath, String>>,
@@ -117,7 +118,8 @@ struct Layers {
 }
 
 impl LayerFs {
-    pub(crate) fn new(disk: DiskFs) -> LayerFs {
+    /// `disk`, with no buffer over it yet.
+    pub fn new(disk: DiskFs) -> LayerFs {
         LayerFs {
             disk,
             layers: RwLock::new(Layers::default()),
@@ -128,7 +130,7 @@ impl LayerFs {
     /// An open memo file's or `ascribe.nav`'s text, at a path relative to
     /// the project root, or `None` once it's closed and the disk has it
     /// again.
-    pub(crate) fn set_buffer(&self, project_path: &RelPath, text: Option<String>) {
+    pub fn set_buffer(&self, project_path: &RelPath, text: Option<String>) {
         let mut buffers = self.buffers.write().unwrap_or_else(PoisonError::into_inner);
         match text {
             Some(text) => buffers.insert(project_path.clone(), text),
@@ -138,7 +140,7 @@ impl LayerFs {
 
     /// A file appeared (`present`) or disappeared, at a path relative to the
     /// project root.
-    pub(crate) fn set(&self, project_path: &RelPath, present: bool) {
+    pub fn set(&self, project_path: &RelPath, present: bool) {
         let mut layers = self.layers.write().unwrap_or_else(PoisonError::into_inner);
         if present {
             layers.removed.remove(project_path);

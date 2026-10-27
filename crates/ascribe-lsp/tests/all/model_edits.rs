@@ -1126,8 +1126,8 @@ fn an_implicit_release_target_is_renamed_from_its_releases_header() {
 
 /// What `ascribe rename` writes, as [`Done`]'s files: each file's text
 /// after, by path.
-fn renamed_by_name(f: &Fixture, renaming: &ascribe_lsp::Renaming) -> BTreeMap<String, String> {
-    let renamed = ascribe_lsp::rename(&f.path("ascribe.toml"), renaming).expect("renamed");
+fn renamed_by_name(f: &Fixture, renaming: &ascribe_edit::Renaming) -> BTreeMap<String, String> {
+    let renamed = ascribe_edit::rename(&f.path("ascribe.toml"), renaming).expect("renamed");
     renamed
         .files
         .into_iter()
@@ -1173,7 +1173,7 @@ fn renaming_by_name_makes_the_editors_edits() {
     assert_eq!(
         renamed_by_name(
             &f,
-            &ascribe_lsp::Renaming::Phrase {
+            &ascribe_edit::Renaming::Phrase {
                 key: "product".to_owned(),
                 new: "name".to_owned(),
             }
@@ -1184,7 +1184,7 @@ fn renaming_by_name_makes_the_editors_edits() {
     assert_eq!(
         renamed_by_name(
             &f,
-            &ascribe_lsp::Renaming::Value {
+            &ascribe_edit::Renaming::Value {
                 value: "self-managed".to_owned(),
                 new: "on-prem".to_owned(),
             }

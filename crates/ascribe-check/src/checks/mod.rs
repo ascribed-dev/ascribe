@@ -11,6 +11,7 @@
 //! | `avail` | `@available` specs, the `available` frontmatter key, and table rows' `available` |
 //! | `frontmatter` | Content type, fields, reserved keys, `variant` |
 //! | `acknowledge` | What `@intended` and `intended` frontmatter name (SPEC §4.9) |
+//! | `alert` | GitHub's alert syntax, which `@note` replaces |
 //! | `content` | A page's description and recheck date, code blocks' languages |
 //! | `comment` | HTML comments, which a memo would keep out of the published page |
 //! | `memo` | Container memos that say nothing |
@@ -19,6 +20,7 @@
 //! | `template` | What a page still has of its type's template, never filled in |
 
 mod acknowledge;
+mod alert;
 mod attrs;
 mod avail;
 mod comment;
@@ -224,7 +226,10 @@ impl Ctx<'_> {
                     self.heading(blocks, i, block.span, h);
                 }
                 BlockKind::Paragraph(p) => self.inlines(&p.inlines),
-                BlockKind::BlockQuote(q) => self.blocks(&q.children),
+                BlockKind::BlockQuote(q) => {
+                    self.check_alert(block, q);
+                    self.blocks(&q.children);
+                }
                 BlockKind::List(l) => {
                     for item in &l.items {
                         self.blocks(&item.children);

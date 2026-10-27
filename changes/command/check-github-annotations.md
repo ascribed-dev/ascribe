@@ -1,0 +1,1 @@
+- **`ascribe check --format github` shows each problem on the pull request's lines in GitHub Actions.** `ascribe fmt --check` takes it too, and the CI recipe uses both. See [Output for GitHub Actions](docs/content/checks/check.md).

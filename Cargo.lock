@@ -135,6 +135,7 @@ dependencies = [
  "ascribe-check",
  "ascribe-core",
  "ascribe-diff",
+ "ascribe-edit",
  "ascribe-emit",
  "ascribe-fmt",
  "ascribe-lsp",
@@ -236,6 +237,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "ascribe-edit"
+version = "0.4.4"
+dependencies = [
+ "ascribe-check",
+ "ascribe-core",
+ "ascribe-emit",
+ "ascribe-model",
+ "ascribe-resolve",
+ "ascribe-syntax",
+ "lsp-types",
+ "serde_json",
+ "serde_yaml_ng",
+ "thiserror",
+ "toml_edit",
+]
+
+[[package]]
 name = "ascribe-emit"
 version = "0.4.4"
 dependencies = [
@@ -276,6 +294,7 @@ dependencies = [
  "ascribe-check",
  "ascribe-core",
  "ascribe-diff",
+ "ascribe-edit",
  "ascribe-emit",
  "ascribe-fmt",
  "ascribe-model",
