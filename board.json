@@ -8334,8 +8334,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1206"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Load a project once, phase 4: keep the MCP server's projects up to date instead of loading them again"
     },
     {
@@ -8352,7 +8355,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In progress",
       "title": "Load a project once, phase 5: keep the language server's project as a Workspace, with the open buffers over it"
     },
     {
