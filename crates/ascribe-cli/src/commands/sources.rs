@@ -162,6 +162,26 @@ fn view(global: &Global, err: &mut dyn Write) -> Result<(Project, SourcesView), 
     Ok((checked(&workspace), view))
 }
 
+/// Whether `fetch` and `update` plan their changes, for the guard to be asked
+/// about them before they're made: unless `--force` lets them write as they
+/// go. `--dry-run` only plans.
+fn plans(guard: &guard::Options) -> bool {
+    guard.dry_run || !guard.force
+}
+
+/// Asks the guard about the changes planned, then makes them, unless
+/// `--dry-run`. A run that stopped on an error makes what it planned before
+/// it, as one that writes as it goes would have written it.
+fn make_plan(view: &SourcesView, guard: &guard::Options, err: &mut dyn Write) -> Result<(), u8> {
+    guard
+        .allow(&view.planned())
+        .map_err(|e| exit::fail(err, &e))?;
+    if !guard.dry_run {
+        view.apply().map_err(|e| exit::fail(err, &e))?;
+    }
+    Ok(())
+}
+
 /// Exit codes: 0 when the copies match the lock, 1 when a file a snippet
 /// names couldn't be copied, 2 when it couldn't run.
 fn run_fetch(global: &Global, args: &FetchArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
@@ -173,23 +193,16 @@ fn run_fetch(global: &Global, args: &FetchArgs, out: &mut dyn Write, err: &mut d
         Ok(options) => options,
         Err(e) => return exit::fail(err, &e),
     };
-    // A dry run first: the files it would change, which the guard is asked
-    // about. The second run finds what the first fetched in the cache.
-    let dry = view.clone().dry_run(true);
-    let mut report = match ascribe_sources::fetch(&dry, &args.names, &options) {
+    let dry_run = args.guard.dry_run;
+    let view = view.planning(plans(&args.guard));
+    let fetched = ascribe_sources::fetch(&view, &args.names, &options);
+    if let Err(code) = make_plan(&view, &args.guard, err) {
+        return code;
+    }
+    let report = match fetched {
         Ok(report) => report,
         Err(e) => return exit::fail(err, &e),
     };
-    if let Err(e) = args.guard.allow(&dry.planned()) {
-        return exit::fail(err, &e);
-    }
-    let dry_run = args.guard.dry_run;
-    if !dry_run {
-        report = match ascribe_sources::fetch(&view, &args.names, &options) {
-            Ok(report) => report,
-            Err(e) => return exit::fail(err, &e),
-        };
-    }
     let written = match args.format {
         answer::Format::Text => write_fetch(out, err, &report, dry_run),
         answer::Format::Json => {
@@ -398,25 +411,17 @@ fn run_update(global: &Global, args: &UpdateArgs, out: &mut dyn Write, err: &mut
         Ok(options) => options,
         Err(e) => return exit::fail(err, &e),
     };
-    // A dry run first: the files it would change, which the guard is asked
-    // about. The second run fetches the branch again, and finds what the
-    // first fetched in the cache.
-    let dry = view.clone().dry_run(true);
+    let dry_run = args.guard.dry_run;
+    let view = view.planning(plans(&args.guard));
     let to = args.to.as_deref();
-    let mut report = match ascribe_sources::update(&dry, &args.names, to, &options) {
+    let updated = ascribe_sources::update(&view, &args.names, to, &options);
+    if let Err(code) = make_plan(&view, &args.guard, err) {
+        return code;
+    }
+    let report = match updated {
         Ok(report) => report,
         Err(e) => return exit::fail(err, &e),
     };
-    if let Err(e) = args.guard.allow(&dry.planned()) {
-        return exit::fail(err, &e);
-    }
-    let dry_run = args.guard.dry_run;
-    if !dry_run {
-        report = match ascribe_sources::update(&view, &args.names, to, &options) {
-            Ok(report) => report,
-            Err(e) => return exit::fail(err, &e),
-        };
-    }
     // The pages whose examples changed: the working tree, with the new
     // copies, against HEAD. A dry run wrote no copies to compare.
     let pages = if report.changed && !dry_run {

@@ -393,3 +393,38 @@ fn a_source_with_no_examples_config_copies_what_it_did() {
     let lock = docs.read("ascribe.lock").unwrap();
     assert_eq!(lock.matches(" = \"sha256:").count(), 1, "{lock}");
 }
+
+#[test]
+fn a_planned_fetch_copies_and_removes_only_when_applied() {
+    let code = Code::new();
+    code.write("src/auth.rs", AUTH)
+        .write("src/other.rs", "fn other() {}\n");
+    code.commit("first");
+    let docs = Docs::new(&api(&code));
+    docs.page(
+        "index.md",
+        "---\ntitle: Home\n---\n\n@snippet: api:src/other.rs\n",
+    );
+    fetch(&docs.view(), &[], &docs.options()).unwrap();
+
+    // The page now uses `auth.rs` in place of `other.rs`.
+    docs.page(
+        "index.md",
+        "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n",
+    );
+    let lock = docs.read("ascribe.lock").unwrap();
+    let view = docs.view().planning(true);
+    let report = fetch(&view, &[], &docs.options()).unwrap();
+    assert_eq!(report.sources[0].copied, ["src/auth.rs"]);
+    assert_eq!(report.sources[0].removed, ["src/other.rs"]);
+    assert!(report.lock_written);
+    assert_eq!(view.planned().len(), 3);
+    assert!(!docs.exists("sources/api/src/auth.rs"));
+    assert!(docs.exists("sources/api/src/other.rs"));
+    assert_eq!(docs.read("ascribe.lock").as_deref(), Some(lock.as_str()));
+
+    view.apply().unwrap();
+    assert_eq!(docs.read("sources/api/src/auth.rs").as_deref(), Some(AUTH));
+    assert!(!docs.exists("sources/api/src/other.rs"));
+    assert_eq!(docs.check(), Vec::<String>::new());
+}
