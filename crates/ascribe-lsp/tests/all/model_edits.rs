@@ -14,8 +14,7 @@ use std::path::{Path, PathBuf};
 
 use crate::support::{Client, Fixture};
 use ascribe_check::{Project, check_project};
-use ascribe_core::{FileId, LineIndex, WideEncoding, WideLineCol};
-use ascribe_workspace::SourceFile;
+use ascribe_core::{FileId, LineIndex, RelPath, WideEncoding, WideLineCol};
 use serde_json::{Value, json};
 
 const MODEL: &str = r#"# The model.
@@ -594,7 +593,9 @@ fn diagnostics(project: &Project) -> BTreeMap<(String, String), usize> {
 /// Asserts that `done`, applied to the example at `root`, loads and adds no
 /// diagnostic.
 fn assert_no_new_diagnostics(root: &Path, done: &Done, what: &str) {
-    let project = Project::load(&root.join("ascribe.toml")).expect("the example loads");
+    let project = ascribe_check::load(&root.join("ascribe.toml"))
+        .map(|w| Project::new(w.snapshot()))
+        .expect("the example loads");
     let baseline = diagnostics(&project);
     let model_path = root.join("ascribe.toml");
     let model_text = done
@@ -605,25 +606,29 @@ fn assert_no_new_diagnostics(root: &Path, done: &Done, what: &str) {
     let model = ascribe_model::load_str_in(&model_text, FileId::new(0), root)
         .unwrap_or_else(|e| panic!("{what}: the model doesn't load: {e:?}"));
     let content = root.join(project.content_root().as_str());
-    let sources: Vec<SourceFile> = project
+    let sources: Vec<(RelPath, String)> = project
         .sources()
         .iter()
+        .filter(|s| s.unreadable.is_none())
         .map(|s| {
             let path = content.join(s.path.as_str());
             let text = done
                 .files
                 .iter()
                 .find(|(p, _, _)| same(p, &path))
-                .map_or_else(|| s.text.clone(), |(_, t, _)| t.clone());
-            SourceFile { text, ..s.clone() }
+                .map_or_else(|| s.text.to_string(), |(_, t, _)| t.clone());
+            (s.path.clone(), text)
         })
         .collect();
-    let edited = Project::from_parts(
-        root.to_path_buf(),
-        project.content_root().clone(),
-        model,
-        model_text,
-        sources,
+    let edited = Project::new(
+        ascribe_check::in_memory(
+            root.to_path_buf(),
+            project.content_root().clone(),
+            model,
+            model_text,
+            sources,
+        )
+        .snapshot(),
     );
     for (key, count) in diagnostics(&edited) {
         let before = baseline.get(&key).copied().unwrap_or_default();

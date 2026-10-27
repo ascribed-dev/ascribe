@@ -7,3 +7,5 @@
 mod load;
 #[path = "all/locate.rs"]
 mod locate;
+#[path = "all/workspace.rs"]
+mod workspace;

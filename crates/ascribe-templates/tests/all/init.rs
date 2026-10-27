@@ -101,9 +101,8 @@ fn an_empty_folder_gets_ascribe_toml_and_its_content_root() {
         read(dir.path(), "ascribe.addresses"),
         ascribe_model::AddressFile::default().to_toml()
     );
-    let project = ascribe_check::LOADER
-        .load(&dir.path().join("ascribe.toml"))
-        .map(ascribe_check::Project::from_loaded)
+    let project = ascribe_check::load(&dir.path().join("ascribe.toml"))
+        .map(|w| ascribe_check::Project::new(w.snapshot()))
         .expect("the project loads");
     assert!(
         project.addresses().is_some_and(Result::is_ok),
@@ -243,9 +242,8 @@ fn a_folder_of_pages_is_adopted_and_its_pages_counted() {
     assert!(!answer.content_root_made);
     assert_eq!(answer.written, ["ascribe.toml", "ascribe.addresses"]);
     assert_eq!(read(dir.path(), "ascribe.toml"), model_text(None, true));
-    ascribe_check::LOADER
-        .load(&dir.path().join("ascribe.toml"))
-        .map(ascribe_check::Project::from_loaded)
+    ascribe_check::load(&dir.path().join("ascribe.toml"))
+        .map(|w| ascribe_check::Project::new(w.snapshot()))
         .expect("the project loads");
 }
 

@@ -602,9 +602,8 @@ fn a_project_given_the_whole_set_checks_clean() {
         .map(|t| t.name)
         .collect();
     assert_eq!(names, set);
-    let project = ascribe_check::LOADER
-        .load(&dir.path().join("ascribe.toml"))
-        .map(Project::from_loaded)
+    let project = ascribe_check::load(&dir.path().join("ascribe.toml"))
+        .map(|w| Project::new(w.snapshot()))
         .expect("the project loads");
     let types: Vec<&str> = project
         .model()
@@ -639,9 +638,8 @@ fn a_page_copied_from_each_template_reports_its_placeholders() {
         let page = format!("docs/{}/page.md", template.name);
         std::fs::create_dir_all(dir.path().join("docs").join(&template.name)).expect("made");
         std::fs::write(dir.path().join(&page), text).expect("written");
-        let project = ascribe_check::LOADER
-            .load(&dir.path().join("ascribe.toml"))
-            .map(Project::from_loaded)
+        let project = ascribe_check::load(&dir.path().join("ascribe.toml"))
+            .map(|w| Project::new(w.snapshot()))
             .expect("the project loads");
         let found = ascribe_check::check_all_builds(&project);
         std::fs::remove_file(dir.path().join(&page)).expect("removed");

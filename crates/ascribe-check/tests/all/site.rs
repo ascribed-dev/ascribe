@@ -44,7 +44,9 @@ fn messages(checker: &dyn SiteChecker) -> Vec<String> {
     )
     .expect("write the model");
     fs::create_dir(dir.path().join("docs")).expect("create docs");
-    let project = Project::load(&dir.path().join(MODEL_FILE)).expect("the project loads");
+    let project = ascribe_check::load(&dir.path().join(MODEL_FILE))
+        .map(|w| Project::new(w.snapshot()))
+        .expect("the project loads");
     site::check(
         &project,
         checker,

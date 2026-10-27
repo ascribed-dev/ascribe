@@ -22,19 +22,17 @@ use toml_edit::{Document, Item, Value};
 use crate::{Diagnostic, Project};
 
 /// What the checks found, by file, in source order. `index` is the
-/// project's source index; `file` gives the project's id of one of its
-/// files.
+/// project's source index.
 pub(crate) fn check(
     project: &Project,
     index: &ascribe_resolve::Project,
-    file: &dyn Fn(FileId) -> FileId,
 ) -> BTreeMap<FileId, Vec<Diagnostic>> {
     let glossary = index.glossary();
     let mut issues = Vec::new();
     for duplicate in glossary.duplicates {
         let mut issue = Issue::new(
             diagnostics::GLOSSARY_TERM_DUPLICATE,
-            Location::new(file(duplicate.file), duplicate.span),
+            Location::new(duplicate.file, duplicate.span),
         )
         .with_arg("text", duplicate.text)
         .with_arg("first", duplicate.first)
@@ -48,7 +46,7 @@ pub(crate) fn check(
         issues.push(
             Issue::new(
                 diagnostics::GLOSSARY_DEFINITION_MISSING,
-                Location::new(file(term.file), term.heading),
+                Location::new(term.file, term.heading),
             )
             .with_arg("term", term.term.clone()),
         );
@@ -57,7 +55,7 @@ pub(crate) fn check(
         let path = off.path.to_string();
         let mut issue = Issue::new(
             diagnostics::TERM_OFF_GLOSSARY_PAGE,
-            Location::new(file(off.file), off.mark),
+            Location::new(off.file, off.mark),
         )
         .with_arg("path", path.clone());
         if !off.page {

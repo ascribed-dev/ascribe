@@ -52,18 +52,22 @@ fn model() -> ascribe_model::ContentModel {
 
 /// A project of in-memory pages under `docs/`, whose root is `root`.
 fn project_in(root: PathBuf, files: &[(&str, &str)]) -> Project {
-    let sources = Project::from_sources(files.iter().map(|(path, text)| {
-        (
-            RelPath::parse(path).expect("a relative path"),
-            (*text).to_owned(),
+    let sources =
+        Vec::<(ascribe_core::RelPath, String)>::from_iter(files.iter().map(|(path, text)| {
+            (
+                RelPath::parse(path).expect("a relative path"),
+                (*text).to_owned(),
+            )
+        }));
+    Project::new(
+        ascribe_check::in_memory(
+            root,
+            RelPath::parse("docs").expect("a relative path"),
+            model(),
+            MODEL.to_owned(),
+            sources,
         )
-    }));
-    Project::from_parts(
-        root,
-        RelPath::parse("docs").expect("a relative path"),
-        model(),
-        MODEL.to_owned(),
-        sources,
+        .snapshot(),
     )
 }
 
@@ -626,12 +630,15 @@ fn model_warnings_are_part_of_the_list() {
     );
     let model = ascribe_model::load_str(&text, FileId::new(0)).expect("loads with a warning");
     assert!(!model.warnings.is_empty());
-    let p = Project::from_parts(
-        PathBuf::from("/x"),
-        RelPath::parse("docs").expect("path"),
-        model,
-        text,
-        Vec::new(),
+    let p = Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/x"),
+            RelPath::parse("docs").expect("path"),
+            model,
+            text,
+            Vec::new(),
+        )
+        .snapshot(),
     );
     let all = check_files(&p);
     assert!(!all.is_empty());
@@ -918,18 +925,22 @@ fn described(agents: bool, files: &[(&str, &str)]) -> Project {
         "{MODEL}\n[consumer]\nsite = \"https://docs.example.com\"\nagents = {agents}\n\n[types.page.frontmatter]\ntitle = \"string\"\ndescription = {{ type = \"string?\", role = \"description\" }}\n"
     );
     let model = ascribe_model::load_str(&text, FileId::new(0)).expect("the model loads");
-    let sources = Project::from_sources(files.iter().map(|(path, text)| {
-        (
-            RelPath::parse(path).expect("a relative path"),
-            (*text).to_owned(),
+    let sources =
+        Vec::<(ascribe_core::RelPath, String)>::from_iter(files.iter().map(|(path, text)| {
+            (
+                RelPath::parse(path).expect("a relative path"),
+                (*text).to_owned(),
+            )
+        }));
+    Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            model,
+            text,
+            sources,
         )
-    }));
-    Project::from_parts(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        model,
-        text,
-        sources,
+        .snapshot(),
     )
 }
 
@@ -965,16 +976,19 @@ fn a_page_looser_than_its_rule_quotes_the_rule_and_its_line() {
         .expect("the rule")
         + 1;
     let model = ascribe_model::load_str(&text, FileId::new(0)).expect("the model loads");
-    let sources = Project::from_sources([(
+    let sources = Vec::<(ascribe_core::RelPath, String)>::from_iter([(
         RelPath::parse("internal/plan.md").expect("a relative path"),
         "---\ntitle: Plan\nlisting: listed\n---\n".to_owned(),
     )]);
-    let project = Project::from_parts(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        model,
-        text.clone(),
-        sources,
+    let project = Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            model,
+            text.clone(),
+            sources,
+        )
+        .snapshot(),
     );
     let d = one(&project);
     assert_eq!(d.slug.as_str(), "listing-loosened");
@@ -1219,7 +1233,7 @@ fn a_missing_include_is_offered_the_file_with_its_name() {
 #[test]
 fn a_dimension_with_none_declared_gets_the_table_to_add() {
     const BARE: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n";
-    let sources = Project::from_sources([
+    let sources = Vec::<(ascribe_core::RelPath, String)>::from_iter([
         (
             RelPath::parse("a.md").expect("a path"),
             page("@variant {os=mac}:\nMac.\n@variant {os=linux|windows}:\nOther.\n@end"),
@@ -1229,12 +1243,15 @@ fn a_dimension_with_none_declared_gets_the_table_to_add() {
             page("@variant {os=bsd}:\nBSD.\n@end"),
         ),
     ]);
-    let p = Project::from_parts(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        ascribe_model::load_str(BARE, FileId::new(0)).expect("the model loads"),
-        BARE.to_owned(),
-        sources,
+    let p = Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            ascribe_model::load_str(BARE, FileId::new(0)).expect("the model loads"),
+            BARE.to_owned(),
+            sources,
+        )
+        .snapshot(),
     );
     let all: Vec<String> = check_files(&p)
         .into_iter()

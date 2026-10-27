@@ -23,5 +23,5 @@ pub fn base_apis(root: &Path, requested: Option<&str>, exact: bool) -> Option<Ap
     let repo = Repository::discover(root).ok()?;
     let base = repo.base(requested, exact).ok()?;
     let revision = Revision::read(&repo, base.compared()).ok()??;
-    Some(ApiSpecs::read(&revision.model, &revision.fs))
+    Some(ApiSpecs::read(&revision.model, &*revision.fs))
 }

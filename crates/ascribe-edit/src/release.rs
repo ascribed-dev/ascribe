@@ -460,7 +460,7 @@ fn clear(
                 .sources()
                 .iter()
                 .find(|s| s.id == file)
-                .map(|s| s.text.as_str())
+                .map(|s| &*s.text)
         };
         // The entry the diagnostic is reported at, which names a version
         // in the archived line. One that said nothing before is left as it
@@ -490,7 +490,7 @@ fn clear(
             (None, model_text)
         } else {
             match after.sources().iter().find(|s| s.id == file) {
-                Some(s) => (Some(&s.path), s.text.as_str()),
+                Some(s) => (Some(&s.path), &*s.text),
                 None => continue,
             }
         };
@@ -825,31 +825,33 @@ pub fn outputs(
 }
 
 /// `project` with `model`, and the source files in `edited` holding their
-/// texts after.
-fn with_sources(
+/// texts after, built in memory over the project's files.
+pub(crate) fn with_sources(
     project: &Project,
     model: ContentModel,
     model_text: &str,
     edited: &[(RelPath, String)],
 ) -> Project {
-    let sources = project
+    let files = project
         .sources()
         .iter()
+        .filter(|s| s.unreadable.is_none())
         .map(|s| {
-            let mut s = s.clone();
-            if let Some((_, text)) = edited.iter().find(|(p, _)| *p == s.path) {
-                s.text = text.clone();
-            }
-            s
-        })
-        .collect();
-    Project::from_parts(
+            let text = match edited.iter().find(|(p, _)| *p == s.path) {
+                Some((_, text)) => text.clone(),
+                None => s.text.to_string(),
+            };
+            (s.path.clone(), text)
+        });
+    let workspace = ascribe_check::in_memory_with(
         project.root().to_path_buf(),
         project.content_root().clone(),
         model,
         model_text.to_owned(),
-        sources,
-    )
+        files,
+        project.snapshot().shared_file_system().clone(),
+    );
+    Project::new(workspace.snapshot())
 }
 
 /// The files that differ between two sets of outputs.

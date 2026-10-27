@@ -13,7 +13,7 @@ use ascribe_check::{
     Severity, UnknownBuild, baseline, count_errors, diagnose, diagnose_with, select_builds,
 };
 use ascribe_core::RelPath;
-use ascribe_workspace::LoadError;
+use ascribe_workspace::{LoadError, Workspace};
 
 const MODEL: &str =
     "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n[builds.site]\n[builds.pdf]\n";
@@ -29,7 +29,9 @@ fn project(model: &str, pages: &[(&str, &str)]) -> tempfile::TempDir {
 }
 
 fn load(dir: &Path) -> Project {
-    Project::load(&dir.join(MODEL_FILE)).expect("the project loads")
+    ascribe_check::load(&dir.join(MODEL_FILE))
+        .map(|w| Project::new(w.snapshot()))
+        .expect("the project loads")
 }
 
 #[test]
@@ -37,10 +39,10 @@ fn the_loader_checks_the_model_and_reads_every_side_file() {
     let dir = project(MODEL, &[]);
     let config = dir.path().join(MODEL_FILE);
     fs::write(dir.path().join(BASELINE_FILE), "").expect("write the baseline");
-    let loaded = LOADER.load(&config).expect("the project loads");
+    let loaded = Workspace::load(&LOADER, &config).expect("the project loads");
     assert_eq!(LOADER.side_files.len(), SIDE_FILES.len());
     assert!(load(dir.path()).baseline().is_some());
-    assert_eq!(loaded.side.len(), 1);
+    assert_eq!(loaded.snapshot().side_files().len(), 1);
 
     // A template that isn't there is the content model's error, which the
     // content model alone doesn't know.

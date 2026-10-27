@@ -64,19 +64,23 @@ fn project_with(text: &str, files: &[(&str, &str)], images: &[(&str, usize)]) ->
     for (path, size) in images {
         fs = fs.with_file(path, &"x".repeat(*size));
     }
-    let sources = Project::from_sources(files.iter().map(|(path, text)| {
-        (
-            RelPath::parse(path).expect("a relative path"),
-            (*text).to_owned(),
+    let sources =
+        Vec::<(ascribe_core::RelPath, String)>::from_iter(files.iter().map(|(path, text)| {
+            (
+                RelPath::parse(path).expect("a relative path"),
+                (*text).to_owned(),
+            )
+        }));
+    Project::new(
+        ascribe_check::in_memory_with(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            model,
+            text.to_owned(),
+            sources,
+            Arc::new(fs),
         )
-    }));
-    Project::from_parts_with_fs(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        model,
-        text.to_owned(),
-        sources,
-        Arc::new(fs),
+        .snapshot(),
     )
 }
 

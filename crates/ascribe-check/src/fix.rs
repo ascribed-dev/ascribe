@@ -195,7 +195,7 @@ fn writable_text(project: &Project, file: FileId) -> Option<&str> {
         .sources()
         .iter()
         .find(|s| s.id == file && s.unreadable.is_none())
-        .map(|s| s.text.as_str())
+        .map(|s| &*s.text)
 }
 
 /// Where a file the fixes may change is on disk.
@@ -215,15 +215,18 @@ mod tests {
     use ascribe_core::{Fix, Issue, Location, diagnostics};
 
     fn project(page: &str) -> Project {
-        Project::from_parts(
-            PathBuf::from("/p"),
-            ascribe_core::RelPath::parse("docs").unwrap(),
-            ascribe_model::load_str("spec = \"0.1\"\n", FileId::new(0)).unwrap(),
-            "spec = \"0.1\"\n".to_owned(),
-            Project::from_sources([(
-                ascribe_core::RelPath::parse("a.md").unwrap(),
-                page.to_owned(),
-            )]),
+        crate::Project::new(
+            crate::in_memory(
+                PathBuf::from("/p"),
+                ascribe_core::RelPath::parse("docs").unwrap(),
+                ascribe_model::load_str("spec = \"0.1\"\n", FileId::new(0)).unwrap(),
+                "spec = \"0.1\"\n".to_owned(),
+                Vec::<(ascribe_core::RelPath, String)>::from_iter([(
+                    ascribe_core::RelPath::parse("a.md").unwrap(),
+                    page.to_owned(),
+                )]),
+            )
+            .snapshot(),
         )
     }
 

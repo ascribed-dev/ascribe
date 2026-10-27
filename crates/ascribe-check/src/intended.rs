@@ -522,17 +522,20 @@ mod tests {
 
     fn project(files: &[(&str, &str)]) -> Project {
         let model = ascribe_model::load_str(MODEL, FileId::new(0)).unwrap();
-        let sources = Project::from_sources(
+        let sources = Vec::<(ascribe_core::RelPath, String)>::from_iter(
             files
                 .iter()
                 .map(|(p, t)| (RelPath::parse(p).unwrap(), (*t).to_owned())),
         );
-        Project::from_parts(
-            PathBuf::from("/p"),
-            RelPath::parse("content").unwrap(),
-            model,
-            MODEL.to_owned(),
-            sources,
+        crate::Project::new(
+            crate::in_memory(
+                PathBuf::from("/p"),
+                RelPath::parse("content").unwrap(),
+                model,
+                MODEL.to_owned(),
+                sources,
+            )
+            .snapshot(),
         )
     }
 
@@ -641,7 +644,7 @@ mod tests {
             .flat_map(|d| d.fixes[0].edits.clone())
             .collect();
         edits.sort_by_key(|e| std::cmp::Reverse(e.span.start()));
-        let mut fixed = text.clone();
+        let mut fixed = text.to_string();
         for e in edits {
             fixed.replace_range(e.span.range(), &e.new_text);
         }

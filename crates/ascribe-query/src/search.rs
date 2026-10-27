@@ -672,9 +672,8 @@ mod tests {
 
     fn quill() -> Project {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill");
-        ascribe_check::LOADER
-            .load(&root.join("ascribe.toml"))
-            .map(Project::from_loaded)
+        ascribe_check::load(&root.join("ascribe.toml"))
+            .map(|w| Project::new(w.snapshot()))
             .expect("Quill loads")
     }
 
@@ -850,9 +849,8 @@ mod tests {
     #[test]
     fn a_snippet_match_is_at_the_code_file_line() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/tested");
-        let project = ascribe_check::LOADER
-            .load(&root.join("ascribe.toml"))
-            .map(Project::from_loaded)
+        let project = ascribe_check::load(&root.join("ascribe.toml"))
+            .map(|w| Project::new(w.snapshot()))
             .expect("the example loads");
         let found = search(
             &project,
@@ -1280,9 +1278,8 @@ mod tests {
     #[test]
     fn a_question_in_natural_words_matches_as_its_other_words_do() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs");
-        let project = ascribe_check::LOADER
-            .load(&root.join("ascribe.toml"))
-            .map(Project::from_loaded)
+        let project = ascribe_check::load(&root.join("ascribe.toml"))
+            .map(|w| Project::new(w.snapshot()))
             .expect("the docs load");
         let index = project.index();
         let readings = Readings::default();

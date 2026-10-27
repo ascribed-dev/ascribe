@@ -1046,7 +1046,8 @@ fn call_rename(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String>
 
 fn call_addresses_move(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
     let global = global_at(a.path("project")?.as_deref())?;
-    let project = crate::context::load_project(&global).map_err(|f| f.to_string())?;
+    let workspace = crate::context::load_project(&global).map_err(|f| f.to_string())?;
+    let project = crate::context::checked(&workspace);
     let from_git = a.boolean("from_git")?;
     let (old, new) = (a.string("old")?, a.string("new")?);
     if from_git == (old.is_some() || new.is_some()) || old.is_some() != new.is_some() {
@@ -1070,7 +1071,8 @@ fn call_addresses_move(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult
 
 fn call_addresses_retire(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
     let global = global_at(a.path("project")?.as_deref())?;
-    let project = crate::context::load_project(&global).map_err(|f| f.to_string())?;
+    let workspace = crate::context::load_project(&global).map_err(|f| f.to_string())?;
+    let project = crate::context::checked(&workspace);
     let args = addresses::RetireArgs {
         old: a.string("old")?.unwrap_or_default(),
         reason: a.string("reason")?.unwrap_or_default(),

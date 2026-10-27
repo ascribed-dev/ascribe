@@ -5,20 +5,21 @@
 //! is read from git (`ascribe_diff`). Each build asked for is resolved on
 //! both sides and compared.
 
+use std::borrow::Borrow;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::rc::Rc;
 
-use ascribe_check::Diagnostic;
 use ascribe_check::prompt::Builds;
+use ascribe_check::{Diagnostic, Project};
 use ascribe_core::{RelPath, percent_decode};
 use ascribe_diff::{
     Anchor, BuildDiff, Change, ChangeKind, DiffError, DiffOptions, PageDiff, ProjectDiff, Report,
-    diff_project,
+    diff_loading,
 };
 use ascribe_model::ContentModel;
-use ascribe_workspace::LoadError;
+use ascribe_workspace::{LoadError, root_of};
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::answer::{self, FromDisk, Loaded, Projects};
@@ -127,17 +128,32 @@ pub fn answer(
     global: &Global,
     args: &Args,
 ) -> Result<(Rc<Loaded>, ProjectDiff), String> {
-    let loaded = answer::load(projects, global, args.page.as_deref()).map_err(failure_message)?;
+    let config = answer::locate(global, args.page.as_deref())
+        .map_err(|e| failure_message(Failure::Config(e)))?;
     let options = DiffOptions {
         base: args.base.as_deref(),
         base_exact: args.base_exact,
         builds: &args.build,
     };
-    let mut diff = diff_project(&loaded.project, &options).map_err(diff_message)?;
+    // The base is read beside the load.
+    let (Checked(loaded), diff) = diff_loading(&root_of(&config), &options, || {
+        projects.load(&config).map(Checked)
+    })
+    .map_err(|e| failure_message(Failure::Load(e)))?;
+    let mut diff = diff.map_err(diff_message)?;
     if args.pages_only && args.format == Format::Json {
         diff.report.omit_blocks();
     }
     Ok((loaded, diff))
+}
+
+/// A loaded project, as `ascribe_diff` borrows it.
+struct Checked(Rc<Loaded>);
+
+impl Borrow<Project> for Checked {
+    fn borrow(&self) -> &Project {
+        &self.0.project
+    }
 }
 
 fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {

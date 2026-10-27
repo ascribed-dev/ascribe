@@ -9,13 +9,12 @@ use ascribe_model::{
     AddressFile, ContentModel, Lock, LockedSource, NavFile, PermalinkList, SourceBound,
 };
 use ascribe_resolve::openapi::ApiSpecs;
-use ascribe_resolve::side_file::{self, Held, SideFile};
-use ascribe_resolve::{
-    CodeFile, CodeFiles, Committed, DiskFs, FileSystem, Layout, MemoFile, MemoStore, Personal,
-    SourceSet, Sources,
-};
+use ascribe_resolve::side_file::{self, SideFile};
+use ascribe_resolve::{CodeFile, CodeFiles, DiskFs, FileSystem, Layout, MemoFile, SourceSet};
 use ascribe_syntax::{Block, BlockKind, DirectiveLine, ParseOptions, parse};
-use ascribe_workspace::{LoadError, Loaded, Loader, SourceFile, read_side_files};
+use ascribe_workspace::{
+    LoadError, Loader, ModelFile, SharedFs, SourceFile, Workspace, WorkspaceSnapshot,
+};
 
 use crate::Diagnostic;
 use crate::baseline::{BASELINE_FILE_ID, Baseline, BaselineError};
@@ -63,73 +62,105 @@ pub struct FileEntry<'a> {
 /// What loading a project for the checks takes of this crate: the content
 /// model's loader, which checks the files its types name
 /// ([`type_files::load_model`](crate::type_files::load_model)), and the side
-/// files ([`SIDE_FILES`]). Every surface loads a project with it, so each
-/// has the same side files.
+/// files ([`SIDE_FILES`]). Every surface loads a [`Workspace`] with it, so
+/// each has the same side files.
 pub const LOADER: Loader = Loader {
     model: crate::type_files::load_model,
     side_files: SIDE_FILES,
 };
 
-/// A documentation set: its content model and source files.
+/// Loads the project whose content model is at `config` with [`LOADER`]:
+/// the model, then every source file under its content root, as
+/// [`ascribe_resolve::FileSystem::sources`] finds them, indexed. A command
+/// checks [`Project::new`] of its snapshot.
 ///
-/// The content model is file id 0, and the source files have ids 1, 2, … in
-/// path order when a project is loaded (the same numbering as
-/// `ascribe_resolve::Project`). A project built from parts may use any
-/// distinct ids from 1 (it finds a file by id, not by position): the language
-/// server gives the ids of an `ascribe_resolve::Snapshot`, which are stable
-/// per path across updates and have gaps where files were deleted
-/// (`ascribe_resolve::incremental`). Source texts are held in memory: the
-/// language server builds a `Project` from its open buffers, and the command
-/// line from the files on disk. Files that aren't sources (images, other
-/// downloads) are looked for on disk, through `ascribe_resolve`'s
-/// [`FileSystem`], when a reference needs them; a source file counts as
-/// existing even when it's only in memory.
+/// A source file or directory that can't be read, or a source file that
+/// isn't valid UTF-8, is still a source file, with its
+/// [`ReadFailure`](ascribe_workspace::ReadFailure); `check_files` reports it
+/// and checks the rest.
+///
+/// # Errors
+///
+/// As [`Workspace::load`].
+pub fn load(config: &Path) -> Result<Workspace, LoadError> {
+    Workspace::load(&LOADER, config)
+}
+
+/// [`load`], with a local source bounded by `bound` when no git repository
+/// is around the project ([`SourceBound`]).
+///
+/// # Errors
+///
+/// As [`load`].
+pub fn load_bounded(config: &Path, bound: SourceBound<'_>) -> Result<Workspace, LoadError> {
+    Workspace::load_bounded(&LOADER, config, bound)
+}
+
+/// A project built in memory with [`LOADER`]'s side files: its source files
+/// are `files`, `(content path, text)` pairs, numbered from 1 in path order,
+/// and everything else, the side files among it, is read from the disk under
+/// `root`. A test's project, or one whose pages are given.
+pub fn in_memory(
+    root: PathBuf,
+    content_root: RelPath,
+    model: ContentModel,
+    model_text: String,
+    files: impl IntoIterator<Item = (RelPath, String)>,
+) -> Workspace {
+    // The disk doesn't change while a project built in memory is checked,
+    // so listings are kept.
+    let layout = Layout {
+        content_root: content_root.clone(),
+        output_dir: RelPath::parse(&model.project.output_dir).unwrap_or_default(),
+    };
+    let fs = Arc::new(DiskFs::with_listing_cache(&root, &layout));
+    in_memory_with(root, content_root, model, model_text, files, fs)
+}
+
+/// [`in_memory`], with everything that isn't one of `files` read through
+/// `fs`: `ascribe explain`'s examples, or the language server's files.
+pub fn in_memory_with(
+    root: PathBuf,
+    content_root: RelPath,
+    model: ContentModel,
+    model_text: String,
+    files: impl IntoIterator<Item = (RelPath, String)>,
+    fs: SharedFs,
+) -> Workspace {
+    let model = ModelFile {
+        root,
+        text: model_text,
+        model,
+    };
+    Workspace::from_texts(LOADER.side_files, model, content_root, files, fs)
+}
+
+/// A documentation set as the checks see it: a [`WorkspaceSnapshot`], and
+/// the checks' own settings, the day they run on and whether personal memos
+/// count.
+///
+/// The content model is file id 0, and the source files have the ids of the
+/// snapshot's source index: 1, 2, … in path order when a project is loaded,
+/// or the ids an `ascribe_resolve::Snapshot` gives in the language server,
+/// which are stable per path across updates and have gaps where files were
+/// deleted (`ascribe_resolve::incremental`). It finds a file by id, not by
+/// position. Files that aren't sources (images, other downloads) are looked
+/// for through the snapshot's [`FileSystem`] when a reference needs them.
 ///
 /// Which files are sources, and every rule about what a reference names, are
 /// `ascribe_resolve`'s, so this crate and the source index can't disagree.
 #[derive(Clone, Debug)]
 pub struct Project {
-    root: PathBuf,
-    layout: Layout,
-    model: ContentModel,
-    model_text: String,
-    sources: Vec<SourceFile>,
+    snapshot: WorkspaceSnapshot,
     model_warnings: Vec<Diagnostic>,
-    /// Every source file's content path, lowercased, to its real spelling,
-    /// for [`SourceSet`].
-    source_paths: HashMap<String, RelPath>,
-    fs: Files,
-    /// The listing the sources were read from, as [`FileSystem::sources`]
-    /// gave it, when the project was loaded: the source index is built from
-    /// it and the texts read, so nothing is listed or read again. `None` for
-    /// a project built from parts.
-    listing: Option<Arc<Sources>>,
-    /// The code files snippets have read, read as the checks ask for them.
-    code: Arc<CodeFiles>,
-    /// The side files the project has ([`SIDE_FILES`]), each read with its
-    /// text, in the order of the list.
-    side: Vec<Held>,
-    /// The image files under the content root, by path from the project
-    /// root and from the content root, once the image checks have listed
-    /// them.
-    images: OnceLock<Vec<(RelPath, RelPath)>>,
-    /// The source index ([`Project::index`]): the one the caller gave
-    /// ([`Project::with_link_index`]), or one built from the held texts the
-    /// first time it's needed, so it's built once.
-    link_index: OnceLock<Arc<ascribe_resolve::Project>>,
-    /// A base revision's specs, which the source index it builds keeps
-    /// where each `operationId` was from ([`Project::with_base_apis`]).
-    base_apis: Option<Arc<ApiSpecs>>,
+    /// The source index keeping a base revision's specs
+    /// ([`Project::with_base_apis`]), in place of the snapshot's.
+    based_index: Option<Arc<ascribe_resolve::Project>>,
     /// The day the checks run on, which `recheck-overdue` compares with.
     today: Option<Date>,
     /// The templates the content types name, by type, read the first time a
     /// page of one is checked.
     templates: Arc<OnceLock<HashMap<String, Arc<Template>>>>,
-    /// The committed memo files, read the first time they're asked for.
-    memos: Arc<OnceLock<Vec<MemoFile>>>,
-    /// The committed memo files and then the personal ones, read the first
-    /// time they're asked for.
-    all_memos: Arc<OnceLock<Vec<MemoFile>>>,
     /// Whether the checks read the personal memos too: the editor's do, and
     /// `ascribe check`'s don't ([`Project::with_personal_memos`]).
     personal_memos: bool,
@@ -138,260 +169,90 @@ pub struct Project {
     variant_values: OnceLock<BTreeMap<String, Vec<String>>>,
 }
 
-/// The file system a project probes for what isn't a source file. It has a
-/// `Debug` of its own because `dyn FileSystem` doesn't.
-#[derive(Clone)]
-struct Files(Arc<dyn FileSystem + Send + Sync>);
-
-impl std::fmt::Debug for Files {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("FileSystem")
-    }
-}
-
 impl Project {
-    /// Loads the project whose content model is at `config` with
-    /// [`LOADER`]: the model, then every source file under its content root,
-    /// as [`ascribe_resolve::FileSystem::sources`] finds them.
-    ///
-    /// A source file or directory that can't be read, or a source file that
-    /// isn't valid UTF-8, is still a source file, with its
-    /// [`ReadFailure`](ascribe_workspace::ReadFailure); `check_files` reports
-    /// it and checks the rest.
-    ///
-    /// # Errors
-    ///
-    /// As [`Loader::load`].
-    pub fn load(config: &Path) -> Result<Project, LoadError> {
-        LOADER.load(config).map(Project::from_loaded)
-    }
-
-    /// [`Project::load`], with a local source bounded by `bound` when no git
-    /// repository is around the project ([`SourceBound`]).
-    ///
-    /// # Errors
-    ///
-    /// As [`Project::load`].
-    pub fn load_bounded(config: &Path, bound: SourceBound<'_>) -> Result<Project, LoadError> {
-        LOADER.load_bounded(config, bound).map(Project::from_loaded)
-    }
-
-    /// The project a [`Loader`] read, with the file system it read through
-    /// as the one the checks probe. Each source was read once and listed
-    /// once: the source index ([`Project::index`]) is built from what was
-    /// read.
-    pub fn from_loaded(loaded: Loaded) -> Project {
-        let Loaded {
-            root,
-            content_root,
-            model,
-            model_text,
-            sources,
-            listing,
-            side,
-            fs,
-        } = loaded;
-        Project {
-            listing: Some(Arc::new(listing)),
-            ..Project::assemble(root, content_root, model, model_text, sources, fs, side)
-        }
-    }
-
-    /// A project from parts the caller already has: the language server's
-    /// buffers, or a test.
-    ///
-    /// `root` is the project root (the directory of `ascribe.toml`),
-    /// `content_root` is relative to it, and `model_text` is the content
-    /// model's text (for showing snippets). `sources` should have distinct ids
-    /// from 1, not necessarily consecutive; [`Project::from_sources`] assigns
-    /// 1, 2, … in path order.
-    pub fn from_parts(
-        root: PathBuf,
-        content_root: RelPath,
-        model: ContentModel,
-        model_text: String,
-        sources: Vec<SourceFile>,
-    ) -> Project {
-        Project::with_fs(root, content_root, model, model_text, sources, None)
-    }
-
-    /// [`Project::from_parts`], with the file system the checks probe for what
-    /// isn't a source file (images, downloads, a route-like link's target)
-    /// instead of the disk.
-    ///
-    /// The language server passes the file system it keeps its source index
-    /// on: the disk with the files the editor and the file watcher have
-    /// reported appearing or disappearing layered over it, so an unsaved or
-    /// just-created image is seen by the file-level checks exactly as it is by
-    /// the source index. Source texts still come from `sources`.
-    pub fn from_parts_with_fs(
-        root: PathBuf,
-        content_root: RelPath,
-        model: ContentModel,
-        model_text: String,
-        sources: Vec<SourceFile>,
-        fs: Arc<dyn FileSystem + Send + Sync>,
-    ) -> Project {
-        Project::with_fs(root, content_root, model, model_text, sources, Some(fs))
-    }
-
-    /// A project from parts, with the side files read through `fs`, or the
-    /// disk when there's none.
-    fn with_fs(
-        root: PathBuf,
-        content_root: RelPath,
-        model: ContentModel,
-        model_text: String,
-        sources: Vec<SourceFile>,
-        fs: Option<Arc<dyn FileSystem + Send + Sync>>,
-    ) -> Project {
-        let output_dir = RelPath::parse(&model.project.output_dir).unwrap_or_default();
-        // A caller that doesn't bring a file system is a one-shot command (or a
-        // test): the disk doesn't change while it runs, so listings are kept.
-        let fs: Arc<dyn FileSystem + Send + Sync> = fs.unwrap_or_else(|| {
-            let layout = Layout {
-                content_root: content_root.clone(),
-                output_dir,
-            };
-            Arc::new(DiskFs::with_listing_cache(&root, &layout))
-        });
-        let side = read_side_files(SIDE_FILES, &*fs);
-        Project::assemble(root, content_root, model, model_text, sources, fs, side)
-    }
-
-    fn assemble(
-        root: PathBuf,
-        content_root: RelPath,
-        model: ContentModel,
-        model_text: String,
-        sources: Vec<SourceFile>,
-        fs: Arc<dyn FileSystem + Send + Sync>,
-        side: Vec<Held>,
-    ) -> Project {
-        let model_warnings = model.warnings.iter().map(Diagnostic::from_issue).collect();
-        // A file that couldn't be read isn't a source another file can name,
-        // as in the source index.
-        let source_paths = sources
+    /// The checks' view of `snapshot`, with no day and only the committed
+    /// memos.
+    pub fn new(snapshot: WorkspaceSnapshot) -> Project {
+        let model_warnings = snapshot
+            .model()
+            .warnings
             .iter()
-            .filter(|s| s.unreadable.is_none())
-            .map(|s| (s.path.as_str().to_lowercase(), s.path.clone()))
+            .map(Diagnostic::from_issue)
             .collect();
-        let layout = Layout {
-            content_root,
-            output_dir: RelPath::parse(&model.project.output_dir).unwrap_or_default(),
-        };
         Project {
-            root,
-            layout,
-            model,
-            model_text,
-            sources,
+            snapshot,
             model_warnings,
-            source_paths,
-            fs: Files(fs),
-            listing: None,
-            code: Arc::default(),
-            side,
-            images: OnceLock::new(),
-            link_index: OnceLock::new(),
-            base_apis: None,
+            based_index: None,
             today: None,
             templates: Arc::default(),
-            memos: Arc::default(),
-            all_memos: Arc::default(),
             personal_memos: false,
             variant_values: OnceLock::new(),
         }
     }
 
-    /// Source files from `(path, text)` pairs, sorted by path, with ids from 1.
-    pub fn from_sources(files: impl IntoIterator<Item = (RelPath, String)>) -> Vec<SourceFile> {
-        let mut files: Vec<_> = files.into_iter().collect();
-        files.sort_by(|a, b| a.0.cmp(&b.0));
-        files
-            .into_iter()
-            .enumerate()
-            .map(|(i, (path, text))| SourceFile {
-                id: FileId::new(i as u32 + 1),
-                path,
-                text,
-                unreadable: None,
-            })
-            .collect()
+    /// The snapshot the checks read.
+    pub fn snapshot(&self) -> &WorkspaceSnapshot {
+        &self.snapshot
     }
 
     /// The project root: the directory containing `ascribe.toml`.
     pub fn root(&self) -> &Path {
-        &self.root
+        self.snapshot.root()
     }
 
     /// The content root, relative to the project root.
     pub fn content_root(&self) -> &RelPath {
-        &self.layout.content_root
+        self.snapshot.content_root()
     }
 
     /// Where the content root and the output directory are.
     pub fn layout(&self) -> &Layout {
-        &self.layout
+        self.snapshot.layout()
     }
 
-    /// The source index over the texts this project holds: what the
-    /// page-level checks read, a broken link's closest targets are looked for
-    /// in, and a command that resolves builds (`build`, `diff`, `drift`,
-    /// `sources`) works on. It's built the first time it's needed, from the
-    /// listing and the texts loading read, so a command reads each source
-    /// once and indexes once; or it's the one given to
-    /// [`Project::with_link_index`]. The held texts can differ from the files
-    /// on disk: text laid over them with [`Project::with_source`], or a
-    /// project built in memory. Images and other files are read through
+    /// The source index: what the page-level checks read, a broken link's
+    /// closest targets are looked for in, and a command that resolves builds
+    /// (`build`, `diff`, `drift`, `sources`) works on. It's the snapshot's,
+    /// or, with a base revision's specs ([`Project::with_base_apis`]), a
+    /// copy of it keeping them. Images and other files are read through
     /// [`Project::file_system`].
     pub fn index(&self) -> &Arc<ascribe_resolve::Project> {
-        self.link_index.get_or_init(|| {
-            let mut index = crate::page::held_index(self);
-            if let Some(base) = &self.base_apis {
-                index.remember_base_apis(base);
-            }
-            Arc::new(index)
-        })
-    }
-
-    /// The listing the sources were read from, when the project was loaded
-    /// ([`Project::from_loaded`]).
-    pub(crate) fn listing(&self) -> Option<&Sources> {
-        self.listing.as_deref()
+        self.based_index
+            .as_ref()
+            .unwrap_or_else(|| self.snapshot.index())
     }
 
     /// The content model's text.
     pub fn model_text(&self) -> &str {
-        &self.model_text
+        self.snapshot.model_text()
     }
 
-    /// The files the checks probe for what isn't a source file held in memory:
-    /// the disk, or the file system given to [`Project::from_parts_with_fs`].
+    /// The files the checks probe for what isn't a source file: the file
+    /// system the snapshot was read through.
     pub fn file_system(&self) -> &dyn FileSystem {
-        &*self.fs.0
+        self.snapshot.file_system()
     }
 
     /// The code files the checks have read for snippets (SPEC §4.8), so far.
     /// A diagnostic's related location can be in one: its id is the code
     /// file's, from [`ascribe_resolve::snippet::CODE_FILE_IDS`] up.
     pub fn code_files(&self) -> &CodeFiles {
-        &self.code
+        self.snapshot.code_files()
     }
 
     /// The code file with this id, if the checks have read it.
     pub fn code_file(&self, id: FileId) -> Option<Arc<CodeFile>> {
-        self.code.by_id(id)
+        self.snapshot.code_files().by_id(id)
     }
 
     /// The content model.
     pub fn model(&self) -> &ContentModel {
-        &self.model
+        self.snapshot.model()
     }
 
     /// The source files, in path order.
     pub fn sources(&self) -> &[SourceFile] {
-        &self.sources
+        self.snapshot.sources()
     }
 
     /// The diagnostics for the content model's warnings.
@@ -401,21 +262,18 @@ impl Project {
 
     /// A source file by content path.
     pub fn source_at(&self, path: &RelPath) -> Option<&SourceFile> {
-        self.sources.iter().find(|s| &s.path == path)
+        self.snapshot.source_at(path)
     }
 
     /// The side file `F` read, when the project has it ([`SIDE_FILES`]).
     pub fn side_file<F: SideFile>(&self) -> Option<&F::Read> {
-        self.side.iter().find_map(Held::get::<F>)
+        self.snapshot.side_file::<F>()
     }
 
     /// The text of the side file at `path`, from the project root, when the
     /// project has it.
     pub fn side_text(&self, path: &str) -> Option<&str> {
-        self.side
-            .iter()
-            .find(|held| held.path() == path)
-            .map(Held::text)
+        self.snapshot.side_text(path)
     }
 
     /// The text of `ascribe.lock`, when the project has one.
@@ -468,7 +326,7 @@ impl Project {
     /// `ascribe.lock` can be read and pins it to the repository the content
     /// model names.
     pub(crate) fn pin(&self, name: &str) -> Option<&LockedSource> {
-        let url = &self.model.source(name)?.git.as_ref()?.url;
+        let url = &self.model().source(name)?.git.as_ref()?.url;
         // A lock that can't be read is reported by the sources check.
         let lock = self.lock()?.as_ref().ok()?;
         lock.source(name).filter(|l| &l.git == url)
@@ -482,13 +340,13 @@ impl Project {
         &self,
         list: impl FnOnce() -> Vec<(RelPath, RelPath)>,
     ) -> &[(RelPath, RelPath)] {
-        self.images.get_or_init(list)
+        self.snapshot.images_or(list)
     }
 
     /// The ids of the image files the image checks listed; none when they
     /// haven't run.
     pub fn image_ids(&self) -> impl Iterator<Item = FileId> + '_ {
-        (0..self.images.get().map_or(0, Vec::len)).map(image_id)
+        (0..self.snapshot.images().map_or(0, <[_]>::len)).map(image_id)
     }
 
     /// What a file id names.
@@ -517,7 +375,7 @@ impl Project {
         if let Some(i) = id.index().checked_sub(IMAGE_FILE_IDS)
             && id.index() < BASELINE_FILE_ID.index()
         {
-            let (path, content) = self.images.get()?.get(i as usize)?;
+            let (path, content) = self.snapshot.images()?.get(i as usize)?;
             return Some(FileEntry {
                 id,
                 display_path: path.to_string(),
@@ -529,16 +387,15 @@ impl Project {
             return Some(FileEntry {
                 id,
                 display_path: MODEL_FILE.to_owned(),
-                text: &self.model_text,
+                text: self.model_text(),
                 content_path: None,
             });
         }
-        let source = self.sources.iter().find(|s| s.id == id)?;
+        let source = self.sources().iter().find(|s| s.id == id)?;
         Some(FileEntry {
             id,
             display_path: self
-                .layout
-                .content_root
+                .content_root()
                 .join(source.path.as_str())
                 .map_or_else(|_| source.path.to_string(), |p| p.to_string()),
             text: &source.text,
@@ -558,44 +415,19 @@ impl Project {
 
     /// This project with the source file at `path` (a content path) holding
     /// `text` instead of what was read, or added when there's none: a file
-    /// checked before it's saved. The ids are numbered again, in path order.
+    /// checked before it's saved. The ids are numbered again, in path order
+    /// ([`WorkspaceSnapshot::with_source`]).
     pub fn with_source(&self, path: &RelPath, text: String) -> Project {
-        let (readable, unreadable): (Vec<&SourceFile>, Vec<&SourceFile>) = self
-            .sources
-            .iter()
-            .filter(|s| &s.path != path)
-            .partition(|s| s.unreadable.is_none());
-        let mut files: Vec<(RelPath, String)> = readable
-            .into_iter()
-            .map(|s| (s.path.clone(), s.text.clone()))
-            .collect();
-        files.push((path.clone(), text));
-        let mut sources = Project::from_sources(files);
-        let first = sources.len() as u32 + 1;
-        sources.extend(unreadable.into_iter().enumerate().map(|(i, s)| SourceFile {
-            id: FileId::new(first + i as u32),
-            ..s.clone()
-        }));
-        Project::with_fs(
-            self.root.clone(),
-            self.layout.content_root.clone(),
-            self.model.clone(),
-            self.model_text.clone(),
-            sources,
-            Some(self.fs.0.clone()),
-        )
-        .with_today(self.today)
-        .with_reads_of(self)
+        self.with_snapshot(self.snapshot.with_source(path, text))
     }
 
-    /// This project, with the templates and memo files another read of the
-    /// same project has, since a page's text doesn't change them.
-    fn with_reads_of(self, other: &Project) -> Project {
+    /// The checks' view of `snapshot`, another of the same project's, with
+    /// this one's day and the templates it has read, since a page's text
+    /// doesn't change them.
+    pub fn with_snapshot(&self, snapshot: WorkspaceSnapshot) -> Project {
         Project {
-            templates: other.templates.clone(),
-            memos: other.memos.clone(),
-            all_memos: other.all_memos.clone(),
-            ..self
+            templates: self.templates.clone(),
+            ..Project::new(snapshot).with_today(self.today)
         }
     }
 
@@ -603,18 +435,13 @@ impl Project {
     /// project's [`FileSystem`] the first time they're asked for. None when
     /// `memos/` is inside the content root, where its files are pages.
     pub fn memos(&self) -> &[MemoFile] {
-        self.memos
-            .get_or_init(|| Committed::new(self.file_system(), &self.layout).memos())
+        self.snapshot.memos()
     }
 
     /// The committed memo files, then the personal ones in `.ascribe/memos/`,
     /// each in path order: what `ascribe outline` and `ascribe refs` list.
     pub fn all_memos(&self) -> &[MemoFile] {
-        self.all_memos.get_or_init(|| {
-            let mut all = self.memos().to_vec();
-            all.extend(Personal::new(self.file_system()).memos());
-            all
-        })
+        self.snapshot.all_memos()
     }
 
     /// This project, with the checks reading the personal memos as well as
@@ -649,7 +476,7 @@ impl Project {
     pub(crate) fn template(&self, name: &str) -> Option<Arc<Template>> {
         let templates = self.templates.get_or_init(|| {
             let mut out = HashMap::new();
-            for t in &self.model.types {
+            for t in &self.model().types {
                 let Some(path) = t
                     .template
                     .as_ref()
@@ -658,15 +485,17 @@ impl Project {
                     continue;
                 };
                 let Some(text) = self
-                    .fs
-                    .0
+                    .file_system()
                     .read_file(&path)
                     .ok()
                     .and_then(|bytes| String::from_utf8(bytes).ok())
                 else {
                     continue;
                 };
-                out.insert(t.name.clone(), Arc::new(Template::read(&text, &self.model)));
+                out.insert(
+                    t.name.clone(),
+                    Arc::new(Template::read(&text, self.model())),
+                );
             }
             out
         });
@@ -682,7 +511,7 @@ impl Project {
     /// template can't be read.
     pub fn template_places(&self, type_name: &str, text: &str) -> Vec<Span> {
         self.template(type_name)
-            .map(|template| crate::checks::template::places(&template, text, &self.model))
+            .map(|template| crate::checks::template::places(&template, text, self.model()))
             .unwrap_or_default()
     }
 
@@ -696,26 +525,17 @@ impl Project {
         self
     }
 
-    /// This project, with `index` as its source index ([`Project::index`]),
-    /// so none is built: the language server gives its incremental index.
-    /// `index` must be an index of the same files.
-    #[must_use]
-    pub fn with_link_index(self, index: Arc<ascribe_resolve::Project>) -> Project {
-        let link_index = OnceLock::new();
-        let _ = link_index.set(index);
-        Project { link_index, ..self }
-    }
-
     /// The project with a base revision's specs, so a link to an
     /// `operationId` renamed since is offered the operation now at the
     /// method and path it had there, first and as a safe fix
-    /// ([`ascribe_resolve::openapi::ApiSpecs::renamed`]). The source index
-    /// is built again, keeping them.
+    /// ([`ascribe_resolve::openapi::ApiSpecs::renamed`]). Its source index
+    /// is a copy of the snapshot's, keeping them.
     #[must_use]
     pub fn with_base_apis(self, base: Arc<ApiSpecs>) -> Project {
+        let mut index = ascribe_resolve::Project::clone(self.snapshot.index());
+        index.remember_base_apis(&base);
         Project {
-            base_apis: Some(base),
-            link_index: OnceLock::new(),
+            based_index: Some(Arc::new(index)),
             ..self
         }
     }
@@ -730,8 +550,12 @@ impl Project {
             let mut out: BTreeMap<String, Vec<String>> = BTreeMap::new();
             // A file without the word has no arm to read, and a mention of
             // it is cheap to look for.
-            for file in self.sources.iter().filter(|f| f.text.contains("@variant")) {
-                let options = ParseOptions::new(self.model.directive_schemas());
+            for file in self
+                .sources()
+                .iter()
+                .filter(|f| f.text.contains("@variant"))
+            {
+                let options = ParseOptions::new(self.model().directive_schemas());
                 variant_values_in(&parse(&file.text, &options).blocks, &mut out);
             }
             out
@@ -752,22 +576,15 @@ impl Project {
 
 impl SourceSet for Project {
     fn contains(&self, path: &RelPath) -> bool {
-        self.source_paths
-            .get(&path.as_str().to_lowercase())
-            .is_some_and(|actual| actual == path)
+        self.snapshot.contains(path)
     }
 
     fn case_twin(&self, path: &RelPath) -> Option<RelPath> {
-        self.source_paths
-            .get(&path.as_str().to_lowercase())
-            .filter(|actual| *actual != path)
-            .cloned()
+        self.snapshot.case_twin(path)
     }
 
     fn pages(&self) -> Vec<RelPath> {
-        let mut pages: Vec<RelPath> = self.source_paths.values().cloned().collect();
-        pages.sort();
-        pages
+        self.snapshot.pages()
     }
 }
 

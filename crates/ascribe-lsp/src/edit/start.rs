@@ -126,14 +126,15 @@ pub(crate) fn project(ctx: &Ctx) -> ascribe_check::Project {
         .parent()
         .map(std::path::Path::to_path_buf)
         .unwrap_or_default();
-    ascribe_check::Project::from_parts_with_fs(
+    let workspace = ascribe_check::in_memory_with(
         root,
         ctx.snapshot.layout().content_root.clone(),
         (*ctx.model).clone(),
         ctx.model_text.clone(),
         Vec::new(),
         ctx.fs.clone(),
-    )
+    );
+    ascribe_check::Project::new(workspace.snapshot())
 }
 
 /// An error's message as a sentence: its first letter a capital, with a

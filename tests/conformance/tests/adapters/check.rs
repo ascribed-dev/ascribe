@@ -17,7 +17,7 @@ use ascribe_conformance::{
 };
 use ascribe_core::{RelPath, WideEncoding};
 use ascribe_resolve::{DiskFs, Layout};
-use ascribe_workspace::ModelFile;
+use ascribe_workspace::{ModelFile, Workspace};
 
 /// Handles the cases that expect file-level diagnostics.
 pub struct CheckAdapter;
@@ -73,10 +73,10 @@ pub fn project(case: &Case) -> Result<Project, AdapterError> {
         ),
         None => None,
     };
-    Ok(
-        Project::from_loaded(ascribe_check::LOADER.load_from(model, content_root, fs))
-            .with_today(today),
+    Ok(Project::new(
+        Workspace::load_with(ascribe_check::LOADER.side_files, model, content_root, fs).snapshot(),
     )
+    .with_today(today))
 }
 
 /// `check_files` on the case's project, without what an acknowledgement

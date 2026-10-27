@@ -58,7 +58,7 @@ impl Cache {
         }
     }
 
-    /// Where a source may be, for [`Project::load_bounded`].
+    /// Where a source may be, for [`ascribe_check::load_bounded`].
     pub fn bound(&self) -> SourceBound<'_> {
         match &self.opened {
             Some(opened) => SourceBound::Within(opened),
@@ -79,10 +79,11 @@ impl Projects for Cache {
             }
         }
         entries.remove(&key);
-        let project =
-            Project::load_bounded(config, self.bound())?.with_today(crate::clock::today());
-        let listing = list(&root, &project);
-        let loaded = Rc::new(Loaded::new(project));
+        let loaded = Rc::new(Loaded::new(ascribe_check::load_bounded(
+            config,
+            self.bound(),
+        )?));
+        let listing = list(&root, &loaded.project);
         entries.insert(
             key,
             Entry {

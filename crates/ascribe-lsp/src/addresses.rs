@@ -420,7 +420,7 @@ fn base(job: &Job, listed: &dyn Fn(&str)) -> Result<ReadBase, String> {
             listed(base.compared());
             let published = Revision::read(&repo, base.compared())
                 .map_err(|e| e.to_string())?
-                .map(|revision| Published::of(&revision.project()));
+                .map(|revision| Published::of(revision.workspace().snapshot().index()));
             Arc::new(Kept { key, published })
         }
     };

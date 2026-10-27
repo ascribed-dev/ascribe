@@ -138,7 +138,9 @@ impl Reach {
 
 fn every_edit(root: &Path) {
     let root = support::real_path(root);
-    let project = Project::load(&root.join("ascribe.toml")).expect("the example loads");
+    let project = ascribe_check::load(&root.join("ascribe.toml"))
+        .map(|w| Project::new(w.snapshot()))
+        .expect("the example loads");
     let model = project.model().clone();
     let build = model.editor_default_build().clone();
     let options = ascribe_fmt::options_from_model(&model);

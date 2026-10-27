@@ -8,7 +8,6 @@ use ascribe_check::{
     Diagnostic, Project, check_all_builds, check_builds, check_files, check_project,
 };
 use ascribe_core::{FileId, RelPath};
-use ascribe_workspace::SourceFile;
 
 /// Three builds: `site` keeps everything, `cloud` and `self-managed` each
 /// select one deployment. `edge` is a value that no build selects.
@@ -71,18 +70,22 @@ build = "cloud"
 "#;
 
 fn project_with(model: &str, files: &[(&str, &str)]) -> Project {
-    let sources = Project::from_sources(files.iter().map(|(path, text)| {
-        (
-            RelPath::parse(path).expect("a relative path"),
-            (*text).to_owned(),
+    let sources =
+        Vec::<(ascribe_core::RelPath, String)>::from_iter(files.iter().map(|(path, text)| {
+            (
+                RelPath::parse(path).expect("a relative path"),
+                (*text).to_owned(),
+            )
+        }));
+    Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            ascribe_model::load_str(model, FileId::new(0)).expect("the model loads"),
+            model.to_owned(),
+            sources,
         )
-    }));
-    Project::from_parts(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        ascribe_model::load_str(model, FileId::new(0)).expect("the model loads"),
-        model.to_owned(),
-        sources,
+        .snapshot(),
     )
 }
 
@@ -513,27 +516,26 @@ fn a_build_that_keeps_everything_needs_no_extra_pass() {
 
 #[test]
 fn locations_use_the_projects_file_ids_whatever_order_the_sources_came_in() {
-    // Sources given in reverse path order, numbered as given.
+    // Sources given in reverse path order.
     let sources = vec![
-        SourceFile {
-            id: FileId::new(1),
-            path: RelPath::parse("index.md").expect("a path"),
-            text: page("@include: _f.md"),
-            unreadable: None,
-        },
-        SourceFile {
-            id: FileId::new(2),
-            path: RelPath::parse("_f.md").expect("a path"),
-            text: "See [it](index.md#gone).\n".to_owned(),
-            unreadable: None,
-        },
+        (
+            RelPath::parse("index.md").expect("a path"),
+            page("@include: _f.md"),
+        ),
+        (
+            RelPath::parse("_f.md").expect("a path"),
+            "See [it](index.md#gone).\n".to_owned(),
+        ),
     ];
-    let p = Project::from_parts(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        ascribe_model::load_str(MODEL, FileId::new(0)).expect("the model loads"),
-        MODEL.to_owned(),
-        sources,
+    let p = Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            ascribe_model::load_str(MODEL, FileId::new(0)).expect("the model loads"),
+            MODEL.to_owned(),
+            sources,
+        )
+        .snapshot(),
     );
     let found = page_level(&p);
     assert_eq!(at(&p, &found), [row("link-id-missing", "index.md", 5)]);

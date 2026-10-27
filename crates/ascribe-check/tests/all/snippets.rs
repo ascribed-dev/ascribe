@@ -32,14 +32,20 @@ fn check(page: &str, files: &[(&str, &str)]) -> (Project, Vec<Diagnostic>) {
         fs = fs.with_file(path, text);
     }
     let text = format!("---\ntitle: T\n---\n{page}");
-    let sources = Project::from_sources([(RelPath::parse("index.md").expect("a path"), text)]);
-    let project = Project::from_parts_with_fs(
-        PathBuf::from("/no/such/project"),
-        RelPath::parse("docs").expect("a path"),
-        model,
-        MODEL.to_owned(),
-        sources,
-        Arc::new(fs),
+    let sources = Vec::<(ascribe_core::RelPath, String)>::from_iter([(
+        RelPath::parse("index.md").expect("a path"),
+        text,
+    )]);
+    let project = Project::new(
+        ascribe_check::in_memory_with(
+            PathBuf::from("/no/such/project"),
+            RelPath::parse("docs").expect("a path"),
+            model,
+            MODEL.to_owned(),
+            sources,
+            Arc::new(fs),
+        )
+        .snapshot(),
     );
     let found = check_files(&project);
     (project, found)
@@ -132,15 +138,20 @@ git = "https://github.com/acme/api.git"
         );
         let fs = MemoryFs::new(&Layout::from_model(&model)).with_file("ascribe.lock", &lock);
         let text = "---\ntitle: T\n---\n@snippet: api:src/gone.py\n\n@snippet: api:src/new.py\n";
-        let sources =
-            Project::from_sources([(RelPath::parse("index.md").expect("a path"), text.into())]);
-        let project = Project::from_parts_with_fs(
-            PathBuf::from("/no/such/project"),
-            RelPath::parse("docs").expect("a path"),
-            model,
-            REMOTE.to_owned(),
-            sources,
-            Arc::new(fs),
+        let sources = Vec::<(ascribe_core::RelPath, String)>::from_iter([(
+            RelPath::parse("index.md").expect("a path"),
+            text.into(),
+        )]);
+        let project = Project::new(
+            ascribe_check::in_memory_with(
+                PathBuf::from("/no/such/project"),
+                RelPath::parse("docs").expect("a path"),
+                model,
+                REMOTE.to_owned(),
+                sources,
+                Arc::new(fs),
+            )
+            .snapshot(),
         );
         check_files(&project)
             .into_iter()

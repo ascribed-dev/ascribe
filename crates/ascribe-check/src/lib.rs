@@ -71,8 +71,7 @@ use ascribe_core::FileId;
 pub use baseline::{BASELINE_FILE, BASELINE_FILE_ID, Baseline, BaselineError};
 pub use builds::{
     Checked, DiagnoseError, Diagnosed, Found, Request, UnknownBuild, count_errors, count_errors_in,
-    diagnose, diagnose_editor_build, diagnose_editor_build_in, diagnose_every_build_in,
-    diagnose_with, select_builds,
+    diagnose, diagnose_editor_build, diagnose_every_build_in, diagnose_with, select_builds,
 };
 use checks::{check_examples, check_sources, check_unread_configs};
 pub use checks::{check_file, unread_config_issue, with_phrases};
@@ -80,12 +79,10 @@ pub use diagnostic::{Diagnostic, EVIDENCE, Evidence, RelatedInfo, Severity};
 pub use evidence::GATHERED as GATHERED_EVIDENCE;
 pub use intended::{Acknowledged, Acknowledgement, Acknowledgements, Applied};
 pub use levels::{apply_levels, default_limit};
-pub use page::{
-    PageChecker, PageIndex, check_all_builds, check_builds, check_pages, check_project,
-};
+pub use page::{PageChecker, check_all_builds, check_builds, check_pages, check_project};
 pub use project::{
     ADDRESSES_FILE_ID, FileEntry, IMAGE_FILE_IDS, LOADER, LOCK_FILE_ID, MEMO_FILE_IDS, MODEL_FILE,
-    NAV_FILE_ID, PERMALINKS_FILE_ID, Project,
+    NAV_FILE_ID, PERMALINKS_FILE_ID, Project, in_memory, in_memory_with, load, load_bounded,
 };
 pub use registry::{Entry, Example, Level, Next, Registry};
 pub use scope::{Reported, Scope, ScopeError, locate_for};

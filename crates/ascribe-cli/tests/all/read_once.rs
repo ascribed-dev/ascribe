@@ -19,6 +19,7 @@ use ascribe_diff::{DiffOptions, DriftOptions};
 use ascribe_emit::{Output, WriteOptions};
 use ascribe_query::{Asked, Emit, Readings, Search};
 use ascribe_resolve::{DiskFs, Layout};
+use ascribe_workspace::Workspace;
 use tempfile::TempDir;
 
 use crate::counting::Counting;
@@ -73,12 +74,13 @@ fn load(dir: &Path) -> (Project, Arc<Counting>) {
         .expect("Quill's model loads");
     let layout = Layout::from_model(&model.model);
     let counting = Counting::new(Arc::new(DiskFs::with_listing_cache(dir, &layout)));
-    let project = Project::from_loaded(ascribe_check::LOADER.load_from(
+    let workspace = Workspace::load_with(
+        ascribe_check::LOADER.side_files,
         model,
         layout.content_root,
         counting.clone(),
-    ));
-    (project, counting)
+    );
+    (Project::new(workspace.snapshot()), counting)
 }
 
 /// Runs `command` on a freshly loaded Quill, then checks the sources were

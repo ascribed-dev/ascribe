@@ -14,6 +14,7 @@ serde_json.workspace = true
 serde_yaml_ng.workspace = true
 similar = "3.2"
 ascribe-check.workspace = true
+ascribe-workspace.workspace = true
 ascribe-core.workspace = true
 ascribe-emit.workspace = true
 ascribe-model.workspace = true

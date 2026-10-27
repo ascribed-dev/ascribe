@@ -2,14 +2,14 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::io;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_core::{FileId, RelPath};
 use ascribe_model::ContentModel;
 use ascribe_model::examples::{EXAMPLES_FILE, OBSERVATIONS_FOLDER};
-use ascribe_resolve::{
-    FileSystem, Layout, Probe, Project, Sources, in_nested_project, is_source_path,
-};
+use ascribe_resolve::{FileSystem, Layout, Probe, Sources, in_nested_project, is_source_path};
+use ascribe_workspace::{ModelFile, Workspace};
 
 use crate::DiffError;
 use crate::git::{BlobReader, Repository, Tree};
@@ -74,7 +74,7 @@ pub struct Revision {
     /// The content model.
     pub model: Arc<ContentModel>,
     /// The files.
-    pub fs: GitFs,
+    pub fs: Arc<GitFs>,
 }
 
 impl Revision {
@@ -136,17 +136,21 @@ impl Revision {
         Ok(Some(Revision {
             model_text,
             model: Arc::new(model),
-            fs,
+            fs: Arc::new(fs),
         }))
     }
 
-    /// The project's source index.
-    pub fn project(&self) -> Project {
-        Project::load(
-            self.model.clone(),
-            Layout::from_model(&self.model),
-            &self.fs,
-        )
+    /// The project at the revision, loaded once through its files. A
+    /// revision has no folder on disk, so its root is empty, and its side
+    /// files are the ones its source index reads.
+    pub fn workspace(&self) -> Workspace {
+        let model = ModelFile {
+            root: PathBuf::new(),
+            text: self.model_text.clone(),
+            model: ContentModel::clone(&self.model),
+        };
+        let content_root = Layout::from_model(&self.model).content_root;
+        Workspace::load_with(&[], model, content_root, self.fs.clone())
     }
 }
 

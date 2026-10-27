@@ -24,7 +24,7 @@ use ascribe_conformance::{AdapterError, AdapterResult, Case, ConformanceAdapter,
 use ascribe_core::RelPath;
 use ascribe_resolve::addresses::every_build;
 use ascribe_resolve::{DiskFs, Layout};
-use ascribe_workspace::ModelFile;
+use ascribe_workspace::{ModelFile, Workspace};
 
 use super::check::{project, to_conformance};
 
@@ -122,9 +122,6 @@ fn base(case: &Case) -> Result<Project, AdapterError> {
         text,
         model,
     };
-    Ok(Project::from_loaded(ascribe_check::LOADER.load_from(
-        model,
-        content_root,
-        fs,
-    )))
+    let workspace = Workspace::load_with(ascribe_check::LOADER.side_files, model, content_root, fs);
+    Ok(Project::new(workspace.snapshot()))
 }

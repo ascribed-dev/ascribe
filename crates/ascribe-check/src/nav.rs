@@ -41,17 +41,15 @@ use crate::{Diagnostic, Project};
 
 /// What the checks found, by file: the navigation file's own under its id,
 /// and the pages' under theirs, each list in source order. `index` is the
-/// project's source index; `file` gives the project's id of one of its
-/// files. With `errors_only`, the advice runs only when `[checks]` raises
-/// it to an error.
+/// project's source index. With `errors_only`, the advice runs only when
+/// `[checks]` raises it to an error.
 pub(crate) fn check(
     project: &Project,
     index: &ascribe_resolve::Project,
-    file: &dyn Fn(FileId) -> FileId,
     errors_only: bool,
 ) -> BTreeMap<FileId, Vec<Diagnostic>> {
     let mut issues: Vec<Issue> = Vec::new();
-    both(index, file, &mut issues);
+    both(index, &mut issues);
     if let Some(Err(problems)) = project.nav() {
         issues.extend(problems.iter().cloned());
     }
@@ -63,7 +61,6 @@ pub(crate) fn check(
             nav,
             text: entry.text,
             index,
-            file,
             sections: sections(&navigation.root),
         };
         checker.file(&mut issues);
@@ -95,7 +92,7 @@ fn runs(checks: &Checks, slug: DiagnosticSlug, errors_only: bool) -> bool {
 
 /// `section-page-both`: each folder with an `index.md` and the page beside
 /// it with its name, on the `index.md`.
-fn both(index: &ascribe_resolve::Project, file: &dyn Fn(FileId) -> FileId, out: &mut Vec<Issue>) {
+fn both(index: &ascribe_resolve::Project, out: &mut Vec<Issue>) {
     for page in index.files().filter(|f| f.kind == FileKind::Page) {
         let Some(folder) = page.path.as_str().strip_suffix("/index.md") else {
             continue;
@@ -110,7 +107,7 @@ fn both(index: &ascribe_resolve::Project, file: &dyn Fn(FileId) -> FileId, out: 
             out.push(
                 Issue::new(
                     diagnostics::SECTION_PAGE_BOTH,
-                    Location::new(file(page.file), title_span(page)),
+                    Location::new(page.file, title_span(page)),
                 )
                 .with_arg("folder", format!("{folder}/"))
                 .with_arg("page", beside.as_str().to_owned()),
@@ -134,7 +131,6 @@ struct Checker<'a> {
     nav: &'a NavFile,
     text: &'a str,
     index: &'a ascribe_resolve::Project,
-    file: &'a dyn Fn(FileId) -> FileId,
     sections: BTreeMap<String, &'a Section>,
 }
 
@@ -378,10 +374,7 @@ impl Checker<'_> {
     /// Where a problem about a page is reported: at its title.
     fn on_page(&self, page: &RelPath) -> Option<Location> {
         let indexed = self.index.file(page)?;
-        Some(Location::new(
-            (self.file)(indexed.file),
-            title_span(indexed),
-        ))
+        Some(Location::new(indexed.file, title_span(indexed)))
     }
 }
 

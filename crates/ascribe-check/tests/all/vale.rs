@@ -36,7 +36,9 @@ fn project(model: &str, files: &[(&str, &str)]) -> tempfile::TempDir {
 }
 
 fn checked(dir: &Path) -> (Project, Vec<Diagnostic>) {
-    let project = Project::load(&dir.join(MODEL_FILE)).expect("the project loads");
+    let project = ascribe_check::load(&dir.join(MODEL_FILE))
+        .map(|w| Project::new(w.snapshot()))
+        .expect("the project loads");
     let found = lint(&project, None, &Program, PROJECT_TIMEOUT);
     (project, found)
 }

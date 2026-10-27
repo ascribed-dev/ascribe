@@ -384,24 +384,7 @@ pub fn retire_line(
 
     // What's left in no line, and the marks that say nothing, in the
     // project as the retirement leaves it.
-    let sources = project
-        .sources()
-        .iter()
-        .map(|s| {
-            let mut s = s.clone();
-            if let Some((_, text)) = edited.iter().find(|(p, _)| *p == s.path) {
-                s.text = text.clone();
-            }
-            s
-        })
-        .collect();
-    let retired = Project::from_parts(
-        root.to_path_buf(),
-        project.content_root().clone(),
-        rewritten_model,
-        text.clone(),
-        sources,
-    );
+    let retired = crate::release::with_sources(project, rewritten_model, &text, &edited);
     let unused = unused_content(&retired, target);
     let removals = if retiring.remove_unused {
         removals(&retired, &unused)

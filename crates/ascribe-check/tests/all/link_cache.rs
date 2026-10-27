@@ -72,9 +72,14 @@ impl StandIn {
 fn project(root: &Path, model: &str) -> Project {
     let model_text = format!("spec = \"0.1\"\n{model}");
     let model = ascribe_model::load_str(&model_text, FileId::new(0)).expect("a model");
-    let sources =
-        Project::from_sources([(RelPath::parse("index.md").expect("a path"), PAGE.into())]);
-    Project::from_parts(root.to_owned(), RelPath::root(), model, model_text, sources)
+    let sources = Vec::<(ascribe_core::RelPath, String)>::from_iter([(
+        RelPath::parse("index.md").expect("a path"),
+        PAGE.into(),
+    )]);
+    Project::new(
+        ascribe_check::in_memory(root.to_owned(), RelPath::root(), model, model_text, sources)
+            .snapshot(),
+    )
 }
 
 fn day(s: &str) -> Date {

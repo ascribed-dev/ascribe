@@ -19,7 +19,7 @@ use serde::Serialize;
 
 use crate::answer::{self, Format};
 use crate::cli::Global;
-use crate::context::load_project;
+use crate::context::{checked, load_project};
 use crate::exit;
 use crate::guard;
 use crate::report::json::Edit;
@@ -467,7 +467,7 @@ fn init(global: &Global, guard: guard::Options) -> Result<(bool, Vec<String>), F
     let taken = ascribe_model::permalinks_out(&model_text)
         .map_err(|e| Failed::Addresses(AddressesError::PermalinksUnmoved(e)))?;
     let Some((model_after, entries)) = taken else {
-        let project = load_project(global).map_err(Failed::Load)?;
+        let project = checked(&load_project(global).map_err(Failed::Load)?);
         let created = project.addresses_text().is_none();
         if created && !guard.dry_run {
             write_file(project.root(), &AddressFile::default().to_toml())
@@ -510,7 +510,7 @@ fn init(global: &Global, guard: guard::Options) -> Result<(bool, Vec<String>), F
 /// what's given can't be recorded, or git's renames can't be read.
 fn run_move(global: &Global, args: &MoveArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let answer = match answer_move(&project, args, Some(args.guard)) {
@@ -700,7 +700,7 @@ fn change(
 /// be recorded.
 fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let json = match answer_retire(&project, args, Some(args.guard)) {
@@ -759,7 +759,7 @@ pub(crate) fn answer_retire(
 /// a build named isn't one, or the file can't be read.
 fn run_list(global: &Global, args: &ListArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     if let Some(Err(issues)) = project.addresses() {

@@ -6,7 +6,10 @@
 use std::path::Path;
 use std::process::Command;
 
-use ascribe_diff::{DiffError, DiffOptions, DriftOptions, PageStatus, diff_project, drift_project};
+use ascribe_diff::{
+    DiffError, DiffOptions, DriftOptions, PageStatus, diff_loading, diff_project, drift_loading,
+    drift_project,
+};
 
 const MODEL: &str = "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n[builds.site]\n";
 
@@ -59,7 +62,9 @@ fn repository() -> tempfile::TempDir {
 }
 
 fn load(root: &Path) -> ascribe_check::Project {
-    ascribe_check::Project::load(&root.join("ascribe.toml")).unwrap()
+    ascribe_check::load(&root.join("ascribe.toml"))
+        .map(|w| ascribe_check::Project::new(w.snapshot()))
+        .unwrap()
 }
 
 #[test]
@@ -153,4 +158,46 @@ fn drift_project_compares_with_the_revision_asked_for() {
     assert_eq!(report.base.requested, "HEAD");
     assert!(report.pages.is_empty(), "no page has an example");
     assert!(!report.needs_reading());
+}
+
+#[test]
+fn a_load_that_fails_is_reported_first_and_a_repository_missing_after_the_builds() {
+    // Outside a repository, with an unknown build: the load's error comes
+    // first, then the build's, then the repository's.
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "ascribe.toml", MODEL);
+    write(dir.path(), "docs/index.md", "# Home\n");
+    let builds = ["web".to_owned()];
+    let unknown = DiffOptions {
+        builds: &builds,
+        ..DiffOptions::default()
+    };
+    let failed = diff_loading(dir.path(), &unknown, || {
+        Err::<ascribe_check::Project, _>("not loaded")
+    });
+    assert!(matches!(failed, Err("not loaded")));
+    let drifted = drift_loading(
+        dir.path(),
+        load(dir.path()).model(),
+        &DriftOptions::default(),
+        || Err::<ascribe_check::Project, _>("not loaded"),
+    );
+    assert!(matches!(drifted, Err("not loaded")));
+
+    let loaded = diff_loading(dir.path(), &unknown, || Ok::<_, &str>(load(dir.path())));
+    let Ok((_, diff)) = loaded else {
+        panic!("loaded")
+    };
+    assert!(matches!(diff, Err(DiffError::UnknownBuild(_))), "{diff:?}");
+    let loaded = diff_loading(dir.path(), &DiffOptions::default(), || {
+        Ok::<_, &str>(load(dir.path()))
+    });
+    let Ok((project, diff)) = loaded else {
+        panic!("loaded")
+    };
+    assert!(
+        matches!(diff, Err(DiffError::NotARepository { .. })),
+        "{diff:?}"
+    );
+    assert_eq!(project.root(), dir.path());
 }

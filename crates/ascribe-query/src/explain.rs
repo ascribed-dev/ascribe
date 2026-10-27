@@ -311,14 +311,15 @@ pub fn example_slugs(
             ));
         }
     }
-    let project = ascribe_check::Project::from_parts_with_fs(
+    let workspace = ascribe_check::in_memory_with(
         PathBuf::from("/explain"),
         layout.content_root.clone(),
         model,
         text,
-        ascribe_check::Project::from_sources(sources),
+        sources,
         Arc::new(fs),
     );
+    let project = ascribe_check::Project::new(workspace.snapshot());
     let diagnostics = ascribe_check::diagnose(&project, &[])
         .map(|d| d.diagnostics)
         .unwrap_or_default();
