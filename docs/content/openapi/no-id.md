@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Link to an operation with no id
-description: "Link a guide to an OpenAPI operation the spec gives no operationId, by its method and path, which needs Redoc 3, and why setting ids is better."
+description: "Link a guide to an OpenAPI operation the spec gives no `operationId`, by its method and path, which needs Redoc 3, and why setting ids is better."
 available: ascribe 0.4.4
 ---
 

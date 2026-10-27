@@ -592,7 +592,7 @@ fn delivery_since(delivery: &mut Delivery, history: &ReportHistory) -> SiteCheck
 /// `inventory`, from the project's pages and what `ascribe check` found.
 fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
     let model = project.model();
-    let index = project.held_index();
+    let index = project.index();
     let mut by_type: BTreeMap<Option<String>, usize> = BTreeMap::new();
     let mut by_owner: BTreeMap<Option<String>, usize> = BTreeMap::new();
     let mut pages = 0;
@@ -625,8 +625,8 @@ fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
         overdue: listed(&[diagnostics::RECHECK_OVERDUE]),
         orphans: listed(&[diagnostics::PAGE_ORPHAN]),
         unused: listed(UNUSED),
-        examples: examples(project, &index),
-        apis: apis(&index),
+        examples: examples(project, index),
+        apis: apis(index),
     }
 }
 
@@ -710,7 +710,7 @@ fn most_first(counts: BTreeMap<Option<String>, usize>) -> Vec<(Option<String>, u
 /// content it takes out that another build of the project keeps.
 fn builds(project: &Project, names: &[String]) -> Builds {
     let model = project.model();
-    let index = project.held_index();
+    let index = project.index();
     let all = &model.builds;
     let pages: Vec<&RelPath> = index
         .files()
@@ -806,7 +806,7 @@ fn builds(project: &Project, names: &[String]) -> Builds {
                     }
                     continue;
                 }
-                let mut heading = heading_over(&index, mark_file, mark_span.start());
+                let mut heading = heading_over(index, mark_file, mark_span.start());
                 if heading.is_none() && mark_file == r.file {
                     // A mark in a fragment, above its headings: the heading
                     // of the place it's included.
@@ -814,7 +814,7 @@ fn builds(project: &Project, names: &[String]) -> Builds {
                         .via
                         .iter()
                         .rev()
-                        .find_map(|site| heading_over(&index, site.file, site.span.start()));
+                        .find_map(|site| heading_over(index, site.file, site.span.start()));
                 }
                 seen.push(location);
                 left.content.push(LeftContent {
@@ -915,7 +915,7 @@ fn heading_over(index: &ascribe_resolve::Project, file: FileId, at: usize) -> Op
 /// the pages that aren't `listed`.
 fn page_records(project: &Project, names: &[String], not_listed: bool) -> Pages {
     let model = project.model();
-    let index = project.held_index();
+    let index = project.index();
     let router = AstroRouter::from_consumer(&model.consumer);
     let builds = model
         .builds

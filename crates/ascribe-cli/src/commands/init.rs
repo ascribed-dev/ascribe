@@ -1,7 +1,7 @@
-//! `ascribe init`: starts a project, writing its first `ascribe.toml`, and
-//! with `--templates`, the page templates too (`ascribe_templates::init`).
-//! In a folder of pages already there, it checks them, and says what to run
-//! next.
+//! `ascribe init`: starts a project, writing its first `ascribe.toml` and
+//! `ascribe.addresses`, and with `--templates`, the page templates too
+//! (`ascribe_templates::init`). In a folder of pages already there, it
+//! checks them, and says what to run next.
 
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -10,6 +10,7 @@ use std::process::ExitCode;
 use ascribe_check::{MODEL_FILE, Severity};
 use ascribe_core::path::normalize;
 use ascribe_core::{Applicability, diagnostics};
+use ascribe_model::ADDRESSES_FILE;
 use ascribe_templates::{InitAnswer, InitError};
 use clap::Args as ClapArgs;
 
@@ -123,7 +124,15 @@ fn write_init(
         return write_refused(err, ejected);
     }
     for path in &started.written {
-        writeln!(out, "wrote {}", from_here(root, path))?;
+        if path == ADDRESSES_FILE {
+            writeln!(
+                out,
+                "wrote {}, where a page's move is recorded, so the addresses it published keep working",
+                from_here(root, path)
+            )?;
+        } else {
+            writeln!(out, "wrote {}", from_here(root, path))?;
+        }
     }
     if started.content_root_made {
         writeln!(

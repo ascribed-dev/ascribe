@@ -2,7 +2,7 @@
 type: reference
 title: "JSON reports: `ascribe versions`"
 nav-label: "`ascribe versions`"
-description: "The JSON Schemas of what ascribe versions list, changes, release, export, and retire write with --format json."
+description: "The JSON Schemas of what `ascribe versions list`, `changes`, `release`, `export`, and `retire` write with `--format json`."
 ---
 
 Part of the [JSON report contract](../json-reports.md), whose rules every document here follows.

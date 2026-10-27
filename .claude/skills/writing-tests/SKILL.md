@@ -100,7 +100,7 @@ A test that takes more than a few seconds in debug needs a reason in its doc com
 
 ## Generated files and blessing
 
-Some tests write the file they check when run with `ASCRIBE_BLESS=1`: the diagnostics reference, each command's options and JSON Schemas, the command output the docs show, what `agents sync` writes, the names each package imports, the render fixtures' inputs, the Zod fixtures, the extension's settings and commands, the design specimen and tokens. The table of which test rewrites what is in [ARCHITECTURE.md](../../../ARCHITECTURE.md#ascribe_bless1); run the one named, then read the diff before committing it. A generated file is never edited by hand.
+Some tests write the file they check when run with `ASCRIBE_BLESS=1`: the diagnostics reference, each command's options and JSON Schemas, the command output the docs show, what `agents sync` writes, the names each package imports, the render fixtures' inputs, the Zod fixtures, the extension's settings and commands, the design specimen and tokens. The table of which test rewrites what is in [ARCHITECTURE.md](../../../ARCHITECTURE.md#ascribe_bless1); run the one named, or `pnpm bless` to run all of them in order, then read the diff before committing it. A generated file is never edited by hand.
 
 ## Before you finish
 

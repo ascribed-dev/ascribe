@@ -525,11 +525,11 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 
 ### ASC257 `addresses-base-unreadable`
 @id {permalink=true}: ASC257
-@summary: The project has `ascribe.addresses`, and `ascribe check` can't read the base it compares the addresses with: there's no git repository, or the base isn't there, as in a shallow clone. A base with no project published nothing, so that's advice, not a warning. Reported once, at `ascribe.addresses`.
+@summary: The project has `ascribe.addresses`, and `ascribe check` can't read the base it compares the addresses with, as in a shallow clone, so nothing was compared.
 
 Warning · file level · next step: outside · configurable in `[checks]` · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
-**When:** The project has `ascribe.addresses`, and `ascribe check` can't read the base it compares the addresses with: there's no git repository, or the base isn't there, as in a shallow clone. A base with no project published nothing, so that's advice, not a warning. Reported once, at `ascribe.addresses`.
+**When:** The project has `ascribe.addresses`, and `ascribe check` can't read the base it compares the addresses with, as in a shallow clone. Before the first commit, or outside git, with no `--base`, nothing was published, so it isn't reported; a base with no project is advice. Reported once, at `ascribe.addresses`.
 
 **Message:** the addresses weren't compared with the base: \{reason}
 

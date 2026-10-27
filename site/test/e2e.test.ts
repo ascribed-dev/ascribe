@@ -1,10 +1,10 @@
 // The built site in Chromium: the landing page, the changelog and its entries, the head, the
 // header and the footer, each page's social card, variants, availability, code
-// titles, copy buttons, links between pages, search, the edit link, the 404 page, the narrow
-// layout, the landing page's call to action, tools, mark, demonstration,
-// pillars and their links, audiences, marks, phone width, and reading without
-// a script, Why Ascribe, with its screenshots, and Credits; the notes' split
-// bar, and the hero's mark in motion, still for a reader who asks.
+// titles, wide tables, a docs page's lead, copy buttons, links between pages, search, the
+// edit link, the 404 page, the narrow layout, the landing page's call to action, tools,
+// mark, demonstration, pillars and their links, audiences, marks, phone width, and reading
+// without a script, Why Ascribe, with its screenshots, and Credits; the notes' split bar,
+// and the hero's mark in motion, still for a reader who asks.
 import { afterAll, beforeAll, expect, test } from "vitest";
 import type { Browser, Page } from "playwright-core";
 import { readdirSync, readFileSync } from "node:fs";
@@ -584,6 +584,32 @@ test("a code example taken from a file shows its title", async () => {
   const page = await open("/docs/astro/");
   const figure = page.locator("figure.code-title", { hasText: "export default defineConfig" });
   await expect.poll(() => figure.locator("figcaption").textContent()).toBe("astro.config.mjs");
+  await page.close();
+});
+
+test("a table wider than the page takes focus and scrolls with the keyboard, and one that fits doesn't", async () => {
+  const page = await open("/docs/contracts/assets/");
+  const tables = page.locator(".page table");
+  await expect.poll(() => tables.count()).toBeGreaterThan(1);
+  const wide = tables.filter({ has: page.locator("xpath=self::*[@tabindex='0']") });
+  await expect.poll(() => wide.count()).toBeGreaterThan(0);
+  // Each table takes focus exactly when it scrolls.
+  const states = await tables.evaluateAll((all) =>
+    all.map((table) => [table.scrollWidth > table.clientWidth, table.getAttribute("tabindex")]),
+  );
+  for (const [scrolls, tabindex] of states) expect(tabindex).toBe(scrolls ? "0" : null);
+  const table = wide.first();
+  await table.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(() => table.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  await page.close();
+});
+
+test("a docs page's lead shows its code and curls its quotes, as the body does", async () => {
+  const page = await open("/docs/openapi/");
+  const lead = page.locator(".page .description");
+  expect(await lead.locator("code").allTextContents()).toEqual(["ascribe.toml", "operationId"]);
+  expect(await lead.textContent()).toContain("the operation’s address");
   await page.close();
 });
 

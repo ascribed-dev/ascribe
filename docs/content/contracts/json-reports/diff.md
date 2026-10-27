@@ -2,7 +2,7 @@
 type: reference
 title: "JSON reports: `ascribe diff` and `ascribe drift`"
 nav-label: "`ascribe diff` and `ascribe drift`"
-description: "The JSON Schemas of what ascribe diff and ascribe drift write with --format json."
+description: "The JSON Schemas of what `ascribe diff` and `ascribe drift` write with `--format json`."
 ---
 
 Part of the [JSON report contract](../json-reports.md), whose rules every document here follows.

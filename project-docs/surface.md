@@ -10,7 +10,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
-| `ascribe init` | Starts a project: writes its first `ascribe.toml`, and makes the folder its pages go in, `docs/`. | `[DIR] [--templates] [--content-root <DIR>]` | `text`, `json` |
+| `ascribe init` | Starts a project: writes its first `ascribe.toml` and `ascribe.addresses`, and makes the folder its pages go in, `docs/`. | `[DIR] [--templates] [--content-root <DIR>]` | `text`, `json` |
 | `ascribe check` | Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. | `[PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]` | `text`, `concise`, `json`, `prompt` |
 | `ascribe fmt` | Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. | `[--check] [--diff] [PATHS]...` | `text`, `json` |
 | `ascribe build` | Checks the project, then writes each build's outputs. | `[--build <NAME>]... [--emit site,plain,json] [--anchors] [--no-baseline]` | `text`, `json` |
@@ -1052,7 +1052,7 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 | `sources/` | `ascribe sources fetch` and `ascribe sources update`: copies of the files your snippets use from another repository, in `sources/<name>/`. | Yes |
 | `examples.observations/` | `ascribe observe`, beside `ascribe.examples.toml` in the code's folder: what its tested examples passed with, in `default.toml`, or `<name>.toml` with `--name`. `ascribe observe --check` fails without it. | Yes |
 | `ascribe.permalinks` | `ascribe permalinks sync` and `ascribe permalinks retire`: the list of the docs' permalinks a product checks its links against. | Yes |
-| `ascribe.addresses` | `ascribe addresses init` makes it, and from then on `ascribe addresses move` and `ascribe addresses retire`, `ascribe rename`, moving a page in the editor, and `ascribe check --fix` write to it: where each address the docs published went, which the build turns into redirects. | Yes |
+| `ascribe.addresses` | `ascribe init` writes it with a new project, or `ascribe addresses init` makes it, and from then on `ascribe addresses move` and `ascribe addresses retire`, `ascribe rename`, moving a page in the editor, and `ascribe check --fix` write to it: where each address the docs published went, which the build turns into redirects. | Yes |
 | `ascribe.baseline` | `ascribe baseline write` and `ascribe baseline prune`: the advice `ascribe check` holds back for now. | Yes |
 | `ascribe.toml` | You do: the content model. `ascribe init` writes the first one, and a few commands change it in place. | Yes |
 | `ascribe.examples.toml` | You do, in the code's folder: the files the docs show as examples, and the test that proves them. `ascribe observe` reads it. | Yes |

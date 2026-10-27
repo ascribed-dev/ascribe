@@ -322,12 +322,33 @@ fn the_file_made_while_the_server_runs_is_compared_and_a_move_records_in_it() {
     client.shutdown();
 }
 
+/// Before there's history, nothing can have been published, so nothing is
+/// compared and that isn't reported (decision #1016).
 #[test]
-fn a_project_outside_a_repository_says_the_base_can_t_be_read() {
+fn a_project_outside_a_repository_compares_nothing_and_says_nothing() {
     let f = Fixture::new(
         MODEL,
         &[("ascribe.addresses", EMPTY), ("docs/setup.md", SETUP)],
     );
+    let (mut client, listed) = start(&f);
+    client.settle();
+    let params = last(&client);
+    assert_eq!(codes(&params), Vec::<String>::new());
+    assert_eq!(params["base"], Value::Null);
+    assert!(listed.lock().unwrap().is_empty());
+    client.shutdown();
+}
+
+/// A repository with history and no default branch to compare with says
+/// the base can't be read.
+#[test]
+fn a_repository_with_no_default_branch_says_the_base_can_t_be_read() {
+    let f = Fixture::new(
+        MODEL,
+        &[("ascribe.addresses", EMPTY), ("docs/setup.md", SETUP)],
+    );
+    git(&f.root(), &["init", "-q", "-b", "trunk"]);
+    commit(&f, "First");
     let (mut client, listed) = start(&f);
     client.settle();
     let params = last(&client);

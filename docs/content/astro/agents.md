@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Publish for AI agents
-description: Publish llms.txt and a Markdown version of each page with an Astro site, so an AI agent reading the docs gets Markdown and an index to choose pages from.
+description: "Publish `llms.txt` and a Markdown version of each page with an Astro site, so an AI agent reading the docs gets Markdown and an index to choose pages from."
 permalink: publish-for-agents
 ---
 
