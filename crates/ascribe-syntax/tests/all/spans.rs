@@ -108,6 +108,12 @@ fn directives_in_every_container() {
         "a\r\nb\r\nc | d\r\n- | -\r\n",
         "a\rb\rc | d\r- | -\r",
         "> a\r\n> c | d\r\n> - | -\r\n",
+        // A body row's cells are measured from the row's own indent, not the header's (#1149).
+        " s\n:-\nc\n",
+        " s\n:-\ncc\n",
+        " \x0b\n:-\nc",
+        "  a | b\n:- | -:\nc | d\n   e | f\n",
+        "> s\n>:-\n>  cc\n",
     ] {
         assert_exact("container case", source);
     }

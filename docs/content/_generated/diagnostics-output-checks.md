@@ -153,7 +153,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 @id {permalink=true}: ASC199
 @summary: A `@snippet` shows a tested example whose file has changed since the observation that lists it was made.
 
-Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+Warning · file level · next step: outside · configurable in `[checks]` · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 **When:** A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and the file has changed since the observation that lists it was made. For a source in another repository, the config, the observation, and the file are the copies `ascribe sources fetch` made. Reported once for each snippet of the file, whichever region it shows.
 
