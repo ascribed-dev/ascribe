@@ -221,7 +221,7 @@ What Ascribe says it is has one home too, `design/words.toml`: the headline, the
 
 ### `ASCRIBE_BLESS=1`
 
-Some files are generated from a source, or copied from what the code writes, and a test fails when they're stale. Run that test with `ASCRIBE_BLESS=1` and it rewrites them instead; then read the diff. `pnpm bless` (`scripts/bless.ts`) runs every rewrite in both tables but `cargo insta review` and the corpora's, in an order where each sees what the earlier ones wrote, then prints `git diff --stat`; `scripts/bless.test.ts` fails on a row it doesn't run or say why it skips, and on a test's command that isn't the one the test names. The tests that do this:
+Some files are generated from a source, or copied from what the code writes, and a test fails when they're stale. Run that test with `ASCRIBE_BLESS=1` and it rewrites them instead; then read the diff. `pnpm bless` (`scripts/bless.ts`) runs every rewrite in both tables but `cargo insta review` and the corpora's, in an order where each sees what the earlier ones wrote, after building `@ascribed/cli` and the debug binary they run, then prints `git diff --stat`; `scripts/bless.test.ts` fails on a row it doesn't run or say why it skips, and on a test's command that isn't the one the test names. The tests that do this:
 
 | Test | Rewrites | Paths |
 |---|---|---|

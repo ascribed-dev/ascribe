@@ -7,8 +7,10 @@
 // says why. They run in an order where each sees what the earlier ones wrote:
 // the names, the JSON's types, and the stylesheets before what's built from
 // them, the docs' fragments before the surface map, and the command output the
-// docs show before `ascribe observe`. It stops at the first failure, and ends
-// with `git diff --stat`: read the diff before committing it.
+// docs show before `ascribe observe`. First it builds what the rewrites run:
+// `@ascribed/cli`, which the Astro starter's test imports, and the debug
+// binary, which the templates' conversion runs. It stops at the first
+// failure, and ends with `git diff --stat`: read the diff before committing it.
 import { spawnSync } from "node:child_process";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -23,6 +25,12 @@ export interface Rewrite {
   /** Why it doesn't run here. */
   skip?: string;
 }
+
+/** What the rewrites need built, run before them. */
+const prepare: string[] = [
+  "pnpm --filter @ascribed/cli build",
+  "cargo build -p ascribe-cli --locked",
+];
 
 export const rewrites: Rewrite[] = [
   {
@@ -63,6 +71,12 @@ export const rewrites: Rewrite[] = [
     writer: "crates/ascribe-cli/src/agents/plugin.rs",
     run: "ASCRIBE_BLESS=1 cargo test -p ascribe-cli plugin",
   },
+  // Before the command output, which shows the set the binary compiles in. It
+  // skips, saying so, without The Good Docs Project's repository.
+  {
+    writer: "scripts/templates/convert.test.ts",
+    run: "ASCRIBE_BLESS=1 pnpm exec vitest run scripts/templates/convert.test.ts",
+  },
   {
     writer: "crates/ascribe-cli/tests/all/output.rs",
     run: "ASCRIBE_BLESS=1 cargo test -p ascribe-cli --test all output::",
@@ -82,11 +96,6 @@ export const rewrites: Rewrite[] = [
   {
     writer: "packages/astro/test/init.test.ts",
     run: "ASCRIBE_BLESS=1 pnpm --filter @ascribed/astro exec vitest run test/init.test.ts",
-  },
-  // It skips, saying so, without The Good Docs Project's repository.
-  {
-    writer: "scripts/templates/convert.test.ts",
-    run: "ASCRIBE_BLESS=1 pnpm exec vitest run scripts/templates/convert.test.ts",
   },
   {
     writer: "scripts/design/specimen.test.ts",
@@ -123,7 +132,8 @@ export function command(run: string): { env: Record<string, string>; argv: strin
 }
 
 function main(): void {
-  for (const rewrite of rewrites) {
+  const runs: Rewrite[] = [...prepare.map((run) => ({ writer: run, run })), ...rewrites];
+  for (const rewrite of runs) {
     if (rewrite.run === undefined) {
       process.stdout.write(`\n# skipped: ${rewrite.writer}: ${rewrite.skip ?? ""}\n`);
       continue;

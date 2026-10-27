@@ -62,6 +62,10 @@ test("a rewrite comes after the ones whose files it reads", () => {
     expect(at(source)).toBeLessThan(at("pnpm --filter @ascribed/review embed"));
   }
   expect(at("crates/ascribe-cli/tests/all/output.rs")).toBeLessThan(at("ascribe observe"));
+  // The command output shows the template set the binary compiles in.
+  expect(at("scripts/templates/convert.test.ts")).toBeLessThan(
+    at("crates/ascribe-cli/tests/all/output.rs"),
+  );
 });
 
 test("a command's environment is its leading assignments", () => {
