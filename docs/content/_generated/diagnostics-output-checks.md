@@ -5,7 +5,7 @@
 @id {permalink=true}: ASC163
 @summary: The project publishes `llms.txt` (`[consumer] agents = true`), and a page's description, or a content type's default for its description field, is longer than 300 characters as `llms.txt` writes it.
 
-Advice · file level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
 **When:** The project publishes `llms.txt` (`[consumer] agents = true`), and a page's description, or a content type's default for its description field, is longer than 300 characters as `llms.txt` writes it.
 
@@ -19,7 +19,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 @id {permalink=true}: ASC164
 @summary: The project publishes `llms.txt` (`[consumer] agents = true`), and one of a build's `llms.txt` files is longer than 50,000 characters even with the index split by folder. Reported at the page the file is about.
 
-Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
+[Advice](../checks/diagnostics.md#severity) · [page level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
 **When:** The project publishes `llms.txt` (`[consumer] agents = true`), and one of a build's `llms.txt` files is longer than 50,000 characters even with the index split by folder. Reported at the page the file is about.
 
@@ -33,7 +33,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 @id {permalink=true}: ASC184
 @summary: A page is `unlisted`, and what the project says in `[crawlers]` keeps a search crawler from fetching it: its own lines, for every crawler or in a group that names the crawler, or a disallowed purpose.
 
-Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [fix](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
 **When:** A page is `unlisted`, and what the project says in `[crawlers]` keeps a search crawler from fetching it: its own lines, for every crawler or in a group that names the crawler, or a disallowed purpose.
 
@@ -41,13 +41,13 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 
 **Fix:** Remove one of the two. A crawler reads `noindex` only on a page it may fetch, so to keep a page out of search results, let crawlers fetch it: remove the `Disallow` line, or narrow it so it doesn't cover the page, or allow the purpose. If the page only needs to stay out of what crawlers fetch, remove `listing: unlisted`. The editor's quick fix removes `listing`.
 
-**Read more:** [`[crawlers]`](../content-model/checks.md#21-crawlers) in the `ascribe.toml` reference.
+**Read more:** [`[crawlers]`](../content-model/output.md#18-crawlers) in the `ascribe.toml` reference.
 
 ### ASC190 `crawlers-disallowed`
 @id {permalink=true}: ASC190
 @summary: `[crawlers]` disallows `search` or `on-request`, and the site's pages are listed unless they say otherwise.
 
-Advice · file level · next step: choose · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** `[crawlers]` disallows `search` or `on-request`, and the site's pages are listed unless they say otherwise.
 
@@ -55,7 +55,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 
 **Fix:** Choose what the site wants. To be in AI search answers, and fetched when a person asks, `allow` the purpose or remove it. To keep it, turn this check off in `[checks]`, saying so in a comment: the choice is the project's, and this only says what it costs. A purpose's group asks only the crawlers Ascribe knows, and some of them say they may not follow `robots.txt`.
 
-**Read more:** [`[crawlers]`](../content-model/checks.md#21-crawlers) in the `ascribe.toml` reference.
+**Read more:** [`[crawlers]`](../content-model/output.md#18-crawlers) in the `ascribe.toml` reference.
 
 ## Prose, through Vale
 
@@ -63,7 +63,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 @id {permalink=true}: ASC165
 @summary: The project has `[checks.vale]`, and Vale reports an alert about the prose of a page or a fragment, or of a phrase's text. Reported where the alert is in the source, or at the phrase.
 
-Advice · file level · next step: write · configurable in `[checks]` · Ascribe's own, not in SPEC
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** The project has `[checks.vale]`, and Vale reports an alert about the prose of a page or a fragment, or of a phrase's text. Reported where the alert is in the source, or at the phrase.
 
@@ -77,7 +77,7 @@ Advice · file level · next step: write · configurable in `[checks]` · Ascrib
 @id {permalink=true}: ASC166
 @summary: The project has `[checks.vale]`, and Vale couldn't be run, failed, or didn't finish in time, or the tool checking the project doesn't start it, as the agents' tools don't. Reported once, at `[checks.vale]`.
 
-Advice · file level · next step: outside · configurable in `[checks]` · Ascribe's own, not in SPEC
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [outside](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** The project has `[checks.vale]`, and Vale couldn't be run, failed, or didn't finish in time, or the tool checking the project doesn't start it, as the agents' tools don't. Reported once, at `[checks.vale]`.
 
@@ -93,7 +93,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · Ascr
 @id {permalink=true}: ASC168
 @summary: `ascribe report links`: the link checker found that an external link answers with an error, doesn't answer in time, or can't be reached.
 
-Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block, or under the heading for a heading · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [review](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [acknowledged](../glossary.md#acknowledgement) with `@intended` above the block, or under the heading for a heading · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
 **When:** `ascribe report links`: the link checker found that an external link answers with an error, doesn't answer in time, or can't be reached. An address that answers with a server error (`5xx`) is asked about again after a short wait, and reported only when it fails again. A host `[checks.links] ignore` names isn't checked.
 
@@ -107,7 +107,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 @id {permalink=true}: ASC169
 @summary: `ascribe report links`: an external link's address redirects permanently (`301` or `308`) to another one that answers. A site's root that redirects to another of its own pages, a landing page, hasn't moved.
 
-Advice · file level · next step: choose · configurable in `[checks]` · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
 **When:** `ascribe report links`: an external link's address redirects permanently (`301` or `308`) to another one that answers. A site's root that redirects to another of its own pages, a landing page, hasn't moved.
 
@@ -123,7 +123,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 @id {permalink=true}: ASC170
 @summary: `ascribe report delivery`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation.
 
-Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [outside](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
 **When:** `ascribe report delivery`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation.
 
@@ -137,7 +137,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 @id {permalink=true}: ASC171
 @summary: `ascribe report delivery`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`.
 
-Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [outside](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
 **When:** `ascribe report delivery`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`.
 
@@ -153,7 +153,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 @id {permalink=true}: ASC199
 @summary: A `@snippet` shows a tested example whose file has changed since the observation that lists it was made.
 
-Warning · file level · next step: outside · configurable in `[checks]` · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+[Warning](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [outside](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 **When:** A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and the file has changed since the observation that lists it was made. For a source in another repository, the config, the observation, and the file are the copies `ascribe sources fetch` made. Reported once for each snippet of the file, whichever region it shows.
 
@@ -167,7 +167,7 @@ Warning · file level · next step: outside · configurable in `[checks]` · [SP
 @id {permalink=true}: ASC200
 @summary: A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and no observation lists the file. For a source in another repository, the config and the observation are the copies `ascribe sources fetch` made. Reported once for each snippet of the file.
 
-Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [outside](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 **When:** A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and no observation lists the file. For a source in another repository, the config and the observation are the copies `ascribe sources fetch` made. Reported once for each snippet of the file.
 
@@ -181,7 +181,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 @id {permalink=true}: ASC201
 @summary: A source has an `ascribe.examples.toml`, or an observation beside it, that can't be read: in its folder, or, for a source in another repository, in its copies. Reported at the source in ascribe.toml, once for each problem in each file.
 
-Warning · file level · next step: outside · configurable in `[checks]` · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
+[Warning](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [outside](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
 
 **When:** A source has an `ascribe.examples.toml`, or an observation beside it, that can't be read: in its folder, or, for a source in another repository, in its copies. Reported at the source in ascribe.toml, once for each problem in each file.
 
@@ -189,13 +189,13 @@ Warning · file level · next step: outside · configurable in `[checks]` · [SP
 
 **Fix:** Fix the file named, in the source's folder: `ascribe.examples.toml` is written by the code's owners, and an observation by `ascribe observe`, which writes it again when it's run there. Until it can be read, no snippet of the source says what it was tested with.
 
-**Read more:** [`[sources.<name>]`](../content-model/output.md#18-sourcesname) in the `ascribe.toml` reference.
+**Read more:** [`[sources.<name>]`](../content-model/sources.md#20-sourcesname) in the `ascribe.toml` reference.
 
 ### ASC202 `observation-file-missing`
 @id {permalink=true}: ASC202
 @summary: An observation beside the `ascribe.examples.toml` of a source in the same repository lists a file that isn't in the source's folder. Reported at the file's line in the observation, once for each file.
 
-Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [outside](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
 
 **When:** An observation beside the `ascribe.examples.toml` of a source in the same repository lists a file that isn't in the source's folder. Reported at the file's line in the observation, once for each file.
 
@@ -203,13 +203,13 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 **Fix:** The example was usually deleted or renamed without a second test run. Run the command named, in the folder named, and commit the observation it writes, which lists the examples as they are. When nothing writes the observation any more, delete its file.
 
-**Read more:** [`[sources.<name>]`](../content-model/output.md#18-sourcesname) in the `ascribe.toml` reference.
+**Read more:** [`[sources.<name>]`](../content-model/sources.md#20-sourcesname) in the `ascribe.toml` reference.
 
 ### ASC285 `examples-config-unread`
 @id {permalink=true}: ASC285
 @summary: An `ascribe.examples.toml` is in the folder of a source in the same repository, below its root, in a folder the source may read files from, and no source's root holds it, so no source reads it. Reported at the file, once for each.
 
-Warning · file level · next step: write · configurable in `[checks]` · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
+[Warning](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
 
 **When:** An `ascribe.examples.toml` is in the folder of a source in the same repository, below its root, in a folder the source may read files from, and no source's root holds it, so no source reads it. Reported at the file, once for each.
 
@@ -217,4 +217,4 @@ Warning · file level · next step: write · configurable in `[checks]` · [SPEC
 
 **Fix:** Ascribe reads a source's tested examples from the `ascribe.examples.toml` at the root of its `path`, and the observations beside it. To keep the config beside the tests it runs, declare a source whose `path` is the config's folder, and write the snippets of its files with that source's name; the folder can stay inside the other source's too. Or move the config, and its `examples.observations/`, to the root of the source the snippets name, with its `include` and `test` written from there, and run `ascribe observe` there. A folder that holds an `ascribe.toml` is a project of its own, and isn't looked in.
 
-**Read more:** [`[sources.<name>]`](../content-model/output.md#18-sourcesname) in the `ascribe.toml` reference.
+**Read more:** [`[sources.<name>]`](../content-model/sources.md#20-sourcesname) in the `ascribe.toml` reference.

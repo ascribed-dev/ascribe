@@ -171,7 +171,7 @@ fn explain_text_writes_links_for_a_terminal() {
         value["fix"]
             .as_str()
             .unwrap()
-            .contains("[`[checks]`](content-model/checks.md#19-checks)"),
+            .contains("[`[checks]`](content-model/checks.md#22-checks)"),
         "{value}"
     );
     let text = stdout(&run(dir.path(), &["explain", "page-orphan"], 0));
@@ -1874,4 +1874,23 @@ fn search_kept_to_paths_says_nothing_of_words_published_outside_them() {
         &["search", "\"rotate them\"", "--config", "site"],
         0,
     );
+}
+
+#[test]
+fn concise_is_text_where_an_answer_has_no_one_line_form() {
+    let dir = project();
+    for args in [
+        &["explain", "ASC036"][..],
+        &["model", "--config", "site"][..],
+        &["outline", "site/docs/install.md"][..],
+        &["refs", "site/docs/keys.md"][..],
+    ] {
+        let text = stdout(&run(dir.path(), &[args, &["--format", "text"]].concat(), 0));
+        let concise = stdout(&run(
+            dir.path(),
+            &[args, &["--format", "concise"]].concat(),
+            0,
+        ));
+        assert_eq!(concise, text, "{args:?}");
+    }
 }

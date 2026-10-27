@@ -51,7 +51,7 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 
 - **Rewrite as a memo**, for an [HTML comment](../writing/directives.md#memo) that's a block of its own. One line becomes a line memo and more a container, about the block below it, or at the top of the section when the comment is the section's last block. A comment at the end of a list item, or before a page's first heading, gets no fix, since where its memo belongs is yours to say.
 
-- **List `page.md` in `[glossary] pages`**, for a [glossary term](../content-model/content.md#12-glossary) marked on a page that isn't a glossary page. Every term on the page is then linked on every other page, so it's yours to choose.
+- **List `page.md` in `[glossary] pages`**, for a [glossary term](../content-model/content.md#8-glossary) marked on a page that isn't a glossary page. Every term on the page is then linked on every other page, so it's yours to choose.
 - **Write a definition of** the term, for a term whose section doesn't open with a paragraph. It puts a paragraph under the heading and its directives, selected, for you to type the definition over.
 
 - In `ascribe.addresses`, after **Check Every Build**: for a page whose addresses are lost, **record git's renames**, **forward it** to one of the pages most like it, or **retire it**, with a reason to write in place of the placeholder; and for an entry the [file's checks](../publishing/redirects.md#the-files-checks) report, the fix that removes it or forwards it to where its chain ends.

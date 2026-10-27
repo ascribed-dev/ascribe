@@ -328,7 +328,7 @@ fn taking_tables() -> Fixture {
 
 #[test]
 fn renaming_a_taken_value_or_a_page_a_taken_key_names_edits_where_its_written() {
-    use ascribe_lsp::{Renaming, rename};
+    use ascribe_edit::{Renaming, rename};
     let f = taking_tables();
     let config = f.path("ascribe.toml");
     let shared = f.path("shared/ascribe.toml");
@@ -402,13 +402,13 @@ fn taking_from_a_project() -> Fixture {
 
 #[test]
 fn renaming_a_taken_key_renames_it_in_the_pages_of_the_project_that_writes_it() {
-    use ascribe_lsp::{Renaming, rename};
+    use ascribe_edit::{Renaming, rename};
     let f = taking_from_a_project();
     let config = f.path("ascribe.toml");
     let shared = f.path("shared/ascribe.toml");
     let shared_page = f.path("shared/docs/index.md");
     let page = f.path("docs/index.md");
-    let text_of = |renamed: &ascribe_lsp::Renamed, path: &Path| {
+    let text_of = |renamed: &ascribe_edit::Renamed, path: &Path| {
         renamed
             .files
             .iter()

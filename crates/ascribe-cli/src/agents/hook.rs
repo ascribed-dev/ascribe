@@ -3,9 +3,10 @@
 //! decides how the hook's input is read and how the answer reaches the
 //! model.
 //!
-//! After an edit, the answer is the errors in the files the tool wrote, and
-//! the advice in them with a safe fix, naming the fix, which the hook
-//! doesn't make (decision #578), as `additionalContext`: Claude Code's and
+//! After an edit, the answer is the errors in the files the tool wrote, the
+//! advice in them with a safe fix, naming the fix, which the hook doesn't
+//! make (decision #578), and what their template left to fill in (#1005),
+//! as `additionalContext`: Claude Code's and
 //! Codex's `hookSpecificOutput`, and Copilot's top-level field, each added
 //! to what the model sees beside the tool's result. Before the agent
 //! finishes, it's `decision: "block"` with a `reason`, which every harness
@@ -177,7 +178,12 @@ fn edit(
         }
         let shown: Vec<String> = files.iter().map(|f| from(cwd, f)).collect();
         match check_by(&config, Ask::Files(files), deadline, limits.server) {
-            Some(Ok(f)) if f.errors > 0 || f.fixable > 0 || f.baseline_problem.is_some() => {
+            Some(Ok(f))
+                if f.errors > 0
+                    || f.fixable > 0
+                    || f.unfilled > 0
+                    || f.baseline_problem.is_some() =>
+            {
                 found.push((shown, f, runs(&config, command)));
             }
             // Nothing to report, a project that can't be checked (the stop
@@ -209,7 +215,8 @@ fn edit(
 }
 
 /// What the model reads after an edit: the errors, the advice with a safe
-/// fix and each one's fix, then which build was checked.
+/// fix and each one's fix, what the template left to fill in, then which
+/// build was checked.
 fn edit_text(files: &[String], found: &Found) -> String {
     let files = files.join(" ");
     let mut lines = Vec::new();
@@ -240,6 +247,19 @@ fn edit_text(files: &[String], found: &Found) -> String {
             lines.push(format!(
                 "and {} more: `ascribe check {files} --format concise`",
                 found.fixable - LIMIT
+            ));
+        }
+    }
+    if found.unfilled > 0 {
+        lines.push(format!(
+            "`ascribe check {files}` reports {} of what the page's template left to fill in, which you write now, while the page is yours:",
+            found.unfilled
+        ));
+        lines.extend(found.unfilled_lines.iter().cloned());
+        if found.unfilled > LIMIT {
+            lines.push(format!(
+                "and {} more: `ascribe check {files} --format concise`",
+                found.unfilled - LIMIT
             ));
         }
     }

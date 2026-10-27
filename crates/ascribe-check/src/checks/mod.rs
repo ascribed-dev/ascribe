@@ -11,6 +11,7 @@
 //! | `avail` | `@available` specs, the `available` frontmatter key, and table rows' `available` |
 //! | `frontmatter` | Content type, fields, reserved keys, `variant` |
 //! | `acknowledge` | What `@intended` and `intended` frontmatter name (SPEC §4.9) |
+//! | `alert` | GitHub's alert syntax, which `@note` replaces |
 //! | `content` | A page's description and recheck date, code blocks' languages |
 //! | `comment` | HTML comments, which a memo would keep out of the published page |
 //! | `memo` | Container memos that say nothing |
@@ -20,6 +21,7 @@
 //! | `template` | What a page still has of its type's template, never filled in |
 
 mod acknowledge;
+mod alert;
 mod attrs;
 mod avail;
 mod comment;
@@ -60,6 +62,9 @@ struct Ctx<'a> {
     /// The text of the file's first paragraph, for a prompt about its
     /// description.
     first_paragraph: Option<String>,
+    /// Whether the page is a draft, `draft: true` (SPEC §2.1), once the
+    /// frontmatter is checked: no build publishes it.
+    draft: bool,
     /// The page's content type, once the frontmatter is checked: `None` for
     /// a fragment, and for a page whose type is missing or unknown.
     page_type: Option<&'a ContentType>,
@@ -127,6 +132,7 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
         schemas: model.directive_schemas(),
         definitions: doc.definitions.clone(),
         first_paragraph: content::first_paragraph(&file.text, &doc.blocks),
+        draft: false,
         page_type: None,
         mark_scopes: Vec::new(),
         marked_examples: false,
@@ -239,7 +245,10 @@ impl Ctx<'_> {
                     self.heading(marks.contains(&"id"), block.span, h);
                 }
                 BlockKind::Paragraph(p) => self.inlines(&p.inlines),
-                BlockKind::BlockQuote(q) => self.blocks(&q.children),
+                BlockKind::BlockQuote(q) => {
+                    self.check_alert(block, q);
+                    self.blocks(&q.children);
+                }
                 BlockKind::List(l) => {
                     for item in &l.items {
                         self.blocks(&item.children);

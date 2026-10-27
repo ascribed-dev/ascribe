@@ -29,6 +29,7 @@ Each command links to its section, with its options, output, and exit codes, on 
 | [`ascribe lsp`](../editor/language-server.md#cli-lsp) | Runs the language server, for an editor. |
 | [`ascribe mcp`](../agents/commands.md#cli-mcp) | Runs an MCP server, for an agent that has no shell, or a host that approves tools one by one. |
 | [`ascribe model`](questions.md#cli-model) | Shows the content model as `ascribe` reads it, with the defaults filled in. |
+| [`ascribe new`](../templates/index.md#cli-new) | Starts a page from its type's template, with its type and title set. |
 | [`ascribe observe`](../examples/sources.md#cli-observe) | Runs the test of a folder of tested examples, and records what it passed with. |
 | [`ascribe outline`](questions.md#cli-outline) | Shows a page's title and type, and the headings a link to it can name. |
 | [`ascribe permalinks`](../permalinks/command.md#cli-permalinks) | Keeps the list of permalinks, checks a product's names against it, and retires a permalink. |
@@ -46,6 +47,11 @@ Each command links to its section, with its options, output, and exit codes, on 
 ### Every command's synopsis
 
 @include: ../_generated/cli-synopsis.md
+
+### Output formats
+@available: ascribe planned
+
+`--format` takes the same words on every command that has it. Every command that takes `text` takes `concise` too: `ascribe check` lists one line a problem, and a command with no one-line form writes its text.
 
 ## Options every command accepts
 

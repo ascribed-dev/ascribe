@@ -1,7 +1,7 @@
 //! `ascribe rename`: what the editor's rename does, from the command line.
 //! A phrase, a dimension's value, a heading's id, or a page or fragment
 //! that moves, renamed everywhere it's used, through
-//! [`ascribe_lsp::rename`], which makes the editor's own edits.
+//! [`ascribe_edit::rename`], which makes the editor's own edits.
 
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -10,7 +10,7 @@ use std::process::ExitCode;
 use ascribe_check::Project;
 use ascribe_core::path::normalize;
 use ascribe_core::{Coded, FileId, RelPath};
-use ascribe_lsp::{RenameError, Renamed, Renaming};
+use ascribe_edit::{RenameError, Renamed, Renaming};
 use ascribe_model::{ADDRESSES_FILE, AddressFile};
 use clap::Args as ClapArgs;
 use serde::Serialize;
@@ -188,7 +188,7 @@ pub(crate) fn answer(
         }
     };
     let renaming = renaming.map_err(|e| Stopped::failed(&e))?;
-    let renamed = match ascribe_lsp::rename(&config, &renaming) {
+    let renamed = match ascribe_edit::rename(&config, &renaming) {
         Ok(renamed) => renamed,
         Err(RenameError::Missing(message)) => {
             return Err(missing(if entry_given {

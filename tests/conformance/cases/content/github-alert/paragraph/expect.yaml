@@ -1,0 +1,8 @@
+description: >-
+  An alert of one paragraph, after a blank quoted line, is reported; its fix
+  writes the line form of `@note`.
+spec: ["4.5"]
+tags: [check]
+
+diagnostics:
+  - {slug: github-alert, line: 5, column: 3}

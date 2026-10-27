@@ -102,6 +102,7 @@ draft: true
 
 - Every build drops it, whatever its modes: it has no page in the site, plain, or JSON output, no entry in the sidebar, the page records, or `llms.txt`, and its permalink isn't published. In VS Code, the [build lens](../editor/preview.md#the-build-lens) dims it whole, as it dims a page a build's modes drop.
 - `ascribe check` still checks it, as content no build publishes, so it's ready the day it's published.
+- What it still has of its type's [template](../templates/index.md#whats-left-to-fill-in) is advice, where a page that publishes has an error, and a section's `pages` in `ascribe.nav` needn't name it yet. A page started with [`ascribe new`](../templates/index.md#cli-new) or the editor's **New Page** is a draft.
 - A link to it from a published page is [`link-page-dropped`](../checks/diagnostics/pages.md#ASC121) in every build: take the link out until the page is published, or publish it. A draft can link to another draft, and include fragments.
 - Remove `draft: true`, or write `draft: false`, to publish it in every build that would otherwise publish it.
 - A fragment can't use it, and a content type can't declare a field named `draft`.

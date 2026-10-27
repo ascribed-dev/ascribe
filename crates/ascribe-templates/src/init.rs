@@ -279,11 +279,13 @@ pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
             return Ok(answer);
         }
     } else {
+        // Library write: the first `ascribe.toml`, through `write`.
         write(root, MODEL_FILE, |file| std::fs::write(file, &text))?;
         answer.written.push(MODEL_FILE.to_owned());
     }
     // Outside FileSystem: a file of the project just written, which is
-    // written only where there's none.
+    // written only where there's none. Library write: the first
+    // `ascribe.addresses`, through `write`.
     if !root.join(ADDRESSES_FILE).exists() {
         write(root, ADDRESSES_FILE, |file| {
             std::fs::write(file, AddressFile::default().to_toml())
@@ -294,6 +296,7 @@ pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
     // Outside FileSystem: the content root of a project just written, which
     // must exist for the project to load.
     answer.content_root_made = !root.join(content_root).is_dir();
+    // Library write: as above.
     write(root, content_root, |dir| std::fs::create_dir_all(dir))?;
     Ok(answer)
 }
@@ -331,6 +334,8 @@ fn write(
         path: path.to_owned(),
         reason: e.to_string(),
     };
+    // Library write: the project `ascribe init` makes, which has no
+    // project to return its files to before it exists.
     if let Some(dir) = target.parent() {
         std::fs::create_dir_all(dir).map_err(failed)?;
     }

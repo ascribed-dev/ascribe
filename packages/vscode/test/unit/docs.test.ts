@@ -90,8 +90,9 @@ const actionsRow = `Runs the action, such as **Ascribe: ${ACTIONS[0]?.title ?? "
 
 /**
  * The availability of each setting or command newer than the extension's
- * first release, by id: `ascribe planned` until a release ships it, then
- * that release, as `ascribe 0.2.0`. Remove an entry once every live line has it.
+ * first release, by id: `ascribe planned` until a release ships it. Remove an
+ * entry when a release ships it, since before 1.0 the docs don't say which
+ * release a feature arrived in (decision #973).
  */
 const available: Record<string, string> = {};
 

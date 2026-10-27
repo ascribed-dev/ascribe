@@ -78,9 +78,30 @@ pub struct Found {
     /// why.
     #[serde(default)]
     pub baseline_problem: Option<String>,
+    /// For a quick check, how many of the advice in the files are what the
+    /// page's template left to fill in (`template-placeholder-left`,
+    /// `template-section-empty`), which have no fix: the agent writes them
+    /// while the file is still its own (#1005).
+    #[serde(default)]
+    pub unfilled: usize,
+    /// The first [`LIMIT`] of them, each one's line as `--format concise`
+    /// writes it but for its fix.
+    #[serde(default)]
+    pub unfilled_lines: Vec<String>,
 }
 
 impl Found {
+    /// Adds an advice the page's template left to fill in, once.
+    fn add_unfilled(&mut self, line: String) {
+        if self.unfilled_lines.contains(&line) {
+            return;
+        }
+        self.unfilled += 1;
+        if self.unfilled_lines.len() < LIMIT {
+            self.unfilled_lines.push(line);
+        }
+    }
+
     /// Adds an advice with a safe fix, once.
     fn add_fixable(&mut self, line: String, fix: &str) {
         if self.fixes.iter().any(|(l, _)| *l == line) {
@@ -91,6 +112,20 @@ impl Found {
             self.fixes.push((line, fix.to_owned()));
         }
     }
+}
+
+/// The diagnostics that say what a page's template left to fill in, which
+/// an agent that started the page from the template writes.
+const UNFILLED: [ascribe_core::DiagnosticSlug; 2] = [
+    diagnostics::TEMPLATE_PLACEHOLDER_LEFT,
+    diagnostics::TEMPLATE_SECTION_EMPTY,
+];
+
+/// Whether the diagnostic with `code` is one of [`UNFILLED`].
+fn is_unfilled(code: &str) -> bool {
+    ascribe_check::Registry::global()
+        .find(code)
+        .is_some_and(|entry| UNFILLED.iter().any(|slug| slug.as_str() == entry.slug))
 }
 
 /// The title of a diagnostic's first safe fix.
@@ -181,6 +216,7 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         summary: false,
         format: check::Format::Concise,
         limit: None,
+        exit_code: None,
         deny_warnings: false,
         base: None,
         base_exact: false,
@@ -298,7 +334,9 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
             if r.diagnostic.severity != Severity::Advice {
                 continue;
             }
-            if let Some(fix) = safe_fix(&r.diagnostic) {
+            if UNFILLED.contains(&r.diagnostic.slug) {
+                found.add_unfilled(line_of(r)?);
+            } else if let Some(fix) = safe_fix(&r.diagnostic) {
                 found.add_fixable(line_of(r)?, fix);
             }
         }
@@ -832,9 +870,12 @@ impl Kept {
                         found.warnings += 1;
                         continue;
                     }
-                    // Advice reaches the agent only with a safe fix.
+                    // Advice reaches the agent only with a safe fix, or
+                    // when it's what the template left to fill in.
                     Severity::Advice => {
-                        if let Some(fix) = problem.safe_fixes.first() {
+                        if is_unfilled(&problem.code) {
+                            found.add_unfilled(line);
+                        } else if let Some(fix) = problem.safe_fixes.first() {
                             found.add_fixable(line, fix);
                         }
                         continue;

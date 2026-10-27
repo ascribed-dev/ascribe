@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "check": true,
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "changed": false,
+      "read_by": [
+        "claude_code",
+        "codex",
+        "copilot",
+        "cursor"
+      ]
+    },
+    {
+      "path": ".agents/skills/ascribe/SKILL.md",
+      "changed": false,
+      "read_by": [
+        "codex",
+        "copilot",
+        "cursor",
+        "gemini_cli"
+      ]
+    },
+    {
+      "path": ".agents/skills/ascribe/references/directives.md",
+      "changed": false,
+      "read_by": [
+        "codex",
+        "copilot",
+        "cursor",
+        "gemini_cli"
+      ]
+    }
+  ],
+  "notes": [],
+  "unread": [
+    "Claude Code doesn't read the skill in .agents/skills/; `--target claude` writes it to .claude/skills/ too, where it does"
+  ],
+  "mcp_settings": null
+}

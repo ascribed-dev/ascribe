@@ -74,6 +74,16 @@ jobs:
             echo "::error file=ascribe.examples.toml::An example the docs show changed since it was last observed. Run \`cargo run -p ascribe-cli -- observe\` in the repository's root, and commit examples.observations/default.toml."
             exit 1
           }
+      # The files agents read when they write the docs (docs/AGENTS.md, the
+      # skill, and the root's block) are as `ascribe agents sync` writes them
+      # from docs/ascribe.toml and this binary. It writes nothing.
+      - name: Check the docs' agent files are up to date
+        shell: bash
+        run: |
+          ./target/debug/ascribe agents sync --check --config docs --command "cargo run -q -p ascribe-cli --" || {
+            echo "::error file=docs/AGENTS.md::The files agents read for the docs are out of date. Run \`cargo run -q -p ascribe-cli -- agents sync --config docs --command \"cargo run -q -p ascribe-cli --\"\` in the repository's root, and commit what it writes."
+            exit 1
+          }
       # An archive of examples/quill's older line (`ascribe versions export`),
       # kept as an artifact so each pull request has one to open from disk.
       - if: runner.os == 'Linux'
@@ -114,6 +124,8 @@ jobs:
       # observations is written under the Node it names: `node-22` first,
       # then `default` under the Node the rest of the job uses. `--check`,
       # which runs nothing, says first whether the committed one matches.
+      # CI has no terminal to ask at, so the run that runs the test passes
+      # `--yes`: the config is this repository's own.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22 # Not Ascribe's Node: the one examples/tested's node-22 observation names.
@@ -123,7 +135,7 @@ jobs:
         run: |
           ../../../target/debug/ascribe observe --check --name node-22
           sed -n '/^\[files\]/,$p' examples.observations/node-22.toml > "$RUNNER_TEMP/committed.toml"
-          ../../../target/debug/ascribe observe --name node-22
+          ../../../target/debug/ascribe observe --yes --name node-22
           sed -n '/^\[files\]/,$p' examples.observations/node-22.toml > "$RUNNER_TEMP/observed.toml"
           diff "$RUNNER_TEMP/committed.toml" "$RUNNER_TEMP/observed.toml"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -135,7 +147,7 @@ jobs:
         run: |
           ../../../target/debug/ascribe observe --check
           sed -n '/^\[files\]/,$p' examples.observations/default.toml > "$RUNNER_TEMP/committed.toml"
-          ../../../target/debug/ascribe observe
+          ../../../target/debug/ascribe observe --yes
           sed -n '/^\[files\]/,$p' examples.observations/default.toml > "$RUNNER_TEMP/observed.toml"
           diff "$RUNNER_TEMP/committed.toml" "$RUNNER_TEMP/observed.toml"
       # The sources fixture's pass, on this machine: the update pull request's

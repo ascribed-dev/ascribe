@@ -1,0 +1,29 @@
+# The check on every pull request: the recipe in docs/content/checks/ci.md
+# ("Add the workflow"), which takes it from this file. It runs the `ascribe`
+# this project's package.json pins, as the editor and `npx ascribe` do, so a
+# new release changes the check only when the pin moves.
+# :snippet-start: workflow
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm ci
+      # Fails on errors and warnings, then on a page `ascribe fmt` would change,
+      # and shows each on the pull request's lines.
+      - run: npx ascribe check --deny-warnings --format github
+      - run: npx ascribe fmt --check --format github
+# :snippet-end:

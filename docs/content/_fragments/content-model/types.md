@@ -14,10 +14,8 @@ api-version = "string"
 
 `<name>` is the type's name (`key` rule). It appears in diagnostics, in generated code (the Zod schema's name), and on each page of the type, as the value of `type`.
 
-@available: ascribe
 **Frontmatter every type shares.** `[frontmatter]` declares the fields every page type has, written as a type's own are, so a field every page has is written once. A type's own `frontmatter` adds fields to them. A type that declares a field `[frontmatter]` has replaces it whole, for that type: an index page's type can make a shared `description` optional, or give it a default. The two aren't merged key by key, so a field reads as one declaration, wherever it's written. The implicit `page` type of a project that declares no types has them too.
 
-@available: ascribe
 **Where a field is declared.** In VS Code, hover a field's key in `ascribe.toml`, or a frontmatter key in a page, to see whether the field is `[frontmatter]`'s, the type's own, or the `title` every type has; on a field of `[frontmatter]`, the hover names the types that replace it. `ascribe model --section types` says the same after each field's type, and its JSON in each field's `declared`: `frontmatter`, `type`, or `implicit`. A type's field that's the same as `[frontmatter]`'s, key for key, changes nothing, and is reported as advice at the type's field (`frontmatter-field-repeated`), with a fix that deletes it; written in another form, as `{ type = "string" }` for `"string"`, it's still the same field.
 
 @include: ../../_generated/content-model-frontmatter.md
@@ -65,6 +63,6 @@ purpose = "One task, done step by step, for someone who knows why they're doing 
 
 The rules for agents say it at the end of the type's line. A type `ascribe templates eject` added and that has no `purpose` says their index's summary instead, from the `templates.lock` beside its template. When the rules' lines don't fit in their 4,000 characters, the page types' are cut first, and the cut says `ascribe model --section types` lists the rest.
 
-**A page that still has its template's text.** On a page of a type with a template, `ascribe check` reports as advice each of the template's placeholders the page still has word for word, and a frontmatter field with the template's value (`template-placeholder-left`). The [guide to page templates](../../templates/index.md#whats-left-to-fill-in) says what it finds and what it can't.
+**A page that still has its template's text.** On a page of a type with a template, `ascribe check` reports each of the template's placeholders the page still has word for word, and a frontmatter field with the template's value: as advice in a draft (`template-placeholder-left`), and as an error in a page that publishes (`template-placeholder-published`). The [guide to page templates](../../templates/index.md#whats-left-to-fill-in) says what it finds and what it can't.
 
 **A section the template leaves to the page.** A section the template gives nothing under its heading but memos, and that a page of the type still leaves empty, builds as a heading with nothing under it; `ascribe check` reports it as advice at its heading (`template-section-empty`). The [guide to page templates](../../templates/index.md#whats-left-to-fill-in) says what counts as empty.

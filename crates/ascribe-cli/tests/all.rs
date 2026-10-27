@@ -49,6 +49,8 @@ mod mcp;
 mod navigation;
 #[path = "all/network.rs"]
 mod network;
+#[path = "all/new.rs"]
+mod new;
 #[path = "all/observe.rs"]
 mod observe;
 #[path = "all/openapi.rs"]
@@ -75,5 +77,7 @@ mod report;
 mod sources;
 #[path = "all/templates.rs"]
 mod templates;
+#[path = "all/vale.rs"]
+mod vale;
 #[path = "all/versions.rs"]
 mod versions;

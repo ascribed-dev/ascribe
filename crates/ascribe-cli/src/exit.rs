@@ -6,9 +6,9 @@ use std::process::ExitCode;
 
 use ascribe_core::Coded;
 
-/// Everything passed: no errors (and, with `--deny-warnings`, no warnings).
+/// Everything passed: no errors (and, with `--exit-code=warning`, no warnings).
 pub const OK: u8 = 0;
-/// The documentation set has errors (or warnings under `--deny-warnings`).
+/// The documentation set has errors (or warnings under `--exit-code=warning`).
 pub const PROBLEMS: u8 = 1;
 /// The command couldn't do its work: a usage error, no `ascribe.toml`, a
 /// content model that doesn't load, or a file that can't be read.
@@ -46,9 +46,10 @@ mod tests {
     };
     use ascribe_core::Coded;
     use ascribe_diff::DiffError;
+    use ascribe_edit::{ReleaseError, RenameError, RetireError};
     use ascribe_emit::{EmitError, StoreError};
     use ascribe_fmt::FormatFilesError;
-    use ascribe_lsp::{ReleaseError, RenameError, RetireError, ServeError};
+    use ascribe_lsp::ServeError;
     use ascribe_query::QueryError;
     use ascribe_resolve::reading::BadQuery;
     use ascribe_sources::SourcesError;

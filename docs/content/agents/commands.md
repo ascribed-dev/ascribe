@@ -36,6 +36,14 @@ It merges its entries into a file it shares: it updates the entries it wrote bef
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/agents-sync.txt
 
+@available: ascribe planned
+With `--format json`, it writes the same list in the document its [schema](../contracts/json-reports/agents.md#ascribe-agents-sync) describes: each file's path, whether it `changed` (with `--check`, whether it's out of date), and the agents that read it; the notes and what an agent doesn't read; and with `--cloud`, the MCP server's JSON. The exit codes are the same. With `--check`, after a sync:
+
+.The JSON for this example
+@details:
+@snippet {lang=json}: code:crates/ascribe-cli/tests/output/agents-sync-check.json
+@end
+
 | Code | Meaning |
 |---|---|
 | `0` | The files are written, or with `--check`, up to date |
@@ -78,7 +86,7 @@ ascribe agents index --build site --into packages/sdk/AGENTS.md --pages packages
 | `0` | It printed the index, or wrote it |
 | `2` | It couldn't run: no `ascribe.toml`, one with errors, more than one build and no `--build`, an unknown build, a file whose markers are damaged, a file or folder under the content root (so one of the project's pages), or a file it can't read or write. Nothing is written. |
 
-With `--format json`, the document is as follows, and its [schema](../contracts/json-reports/questions.md#ascribe-agents-index) has every field:
+With `--format json`, the document is as follows, and its [schema](../contracts/json-reports/agents.md#ascribe-agents-index) has every field:
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/agents-index.json
 
@@ -117,6 +125,9 @@ Without a `path` in the content root, `new-page` says the page goes where the re
 ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 ```
 
+@available: ascribe planned
+With `--format json`, it writes the prompt's name and text, or with `--list` each prompt with its arguments, in the documents their [schemas](../contracts/json-reports/agents.md#ascribe-agents-prompt) describe.
+
 | Code | Meaning |
 |---|---|
 | `0` | It printed the prompt, or with `--list`, the prompts |
@@ -143,6 +154,8 @@ Checks an agent's work as its hook runs it: after the agent writes a file, or be
 @include: ../_generated/cli-agents-hook-options.md
 
 After an edit, it checks the Markdown files the tool wrote that are pages or fragments of a project, as `ascribe check <file> --editor-build` does, and tells the agent their errors, at most 10 lines in the concise form, then the advice in them that has a safe fix, at most 10, each line followed by its fix's title, which says what to change and where, then the build it checked. It reports the advice the editor shows in the files, so a page's `nav-page-unplaced` too, which `ascribe check <file> --editor-build` leaves to a full check. Warnings and the other advice aren't reported. Neither is the advice [`ascribe.baseline`](../checks/baseline.md#for-agents) holds back: the answer says how many it held back, here and before the agent finishes. When `ascribe.baseline` can't be read, the edit's check holds nothing back, and the answer says which line to fix.
+
+It also tells the agent what a draft's template left to fill in, at most 10 lines, before the build it checked: [`template-placeholder-left`](../checks/diagnostics/content-checks.md#ASC195) and [`template-section-empty`](../checks/diagnostics/content-checks.md#ASC229), which have no fix, so the agent writes them while the page is its own. In a page that publishes, a placeholder left is an error, among the errors.
 
 Before the agent finishes, it checks every build of each project whose pages or `ascribe.toml` the working tree changes, as `git status` lists them for the whole repository (outside a repository, the project at or above the folder the agent works in), and keeps the agent working while there are errors, with the counts, the first 10 errors, and the command to run, or while a project can't be checked at all, with what `ascribe check` would say. It says nothing when the agent is already continuing because of a stop hook, so it asks at most once for each stop.
 

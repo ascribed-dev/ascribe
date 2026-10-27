@@ -821,6 +821,7 @@ fn call_check(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> 
             check::Format::Concise
         },
         limit: None,
+        exit_code: None,
         deny_warnings: false,
         base: None,
         base_exact: false,
@@ -1011,7 +1012,7 @@ fn call_fmt(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
         check: true,
         diff: false,
         paths,
-        format: Format::Json,
+        format: fmt::Format::Json,
     };
     let (_, report) = fmt::answer(&global, &args).map_err(|e| e.to_string())?;
     json_result(&report)

@@ -1261,7 +1261,7 @@ fn the_new_page_prompt_says_where_the_page_goes_and_what_it_needs() {
         text.contains("type: guide\ntitle: \"Rotate your keys\""),
         "{text}"
     );
-    assert!(text.contains("\naudience:\n---\n"), "{text}");
+    assert!(text.contains("\naudience:\ndraft: true\n---\n"), "{text}");
 }
 
 #[test]

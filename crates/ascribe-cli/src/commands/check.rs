@@ -22,7 +22,7 @@ use crate::cli::Global;
 use crate::context::{stdout_is_terminal, use_color};
 use crate::exit;
 use crate::report::json::About;
-use crate::report::{Counts, FileTable, concise, json, tally, text};
+use crate::report::{Counts, FileTable, concise, github, json, tally, text};
 use crate::shell::quote;
 
 /// Arguments of `ascribe check`.
@@ -101,8 +101,23 @@ pub struct Args {
     #[arg(long, value_name = "N", conflicts_with = "summary")]
     pub limit: Option<concise::Limit>,
 
-    /// Make warnings fail the command too (exit code 1), for CI.
-    #[arg(long)]
+    /// Exit with 1 on problems at this level or above: `error`, the
+    /// default, or `warning`, for CI.
+    ///
+    /// Errors fail the command without it. Advice never fails it.
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..=1,
+        require_equals = true,
+        default_missing_value = "error",
+        value_name = "LEVEL",
+        overrides_with = "deny_warnings"
+    )]
+    pub exit_code: Option<FailOn>,
+
+    /// Make warnings fail the command too: `--exit-code=warning`.
+    #[arg(long, overrides_with = "exit_code")]
     pub deny_warnings: bool,
 
     /// The revision whose addresses the check compares the project's with,
@@ -214,10 +229,36 @@ pub enum Format {
     Concise,
     /// One JSON document, for tools.
     Json,
+    /// A GitHub Actions workflow command per problem, which shows it on the
+    /// pull request's lines, with the path from the repository's root, then
+    /// the summary line: for CI.
+    Github,
     /// A prompt for an agent that fixes the problems: about the file, when
     /// the paths name one file, else about the project or the paths. Nothing
     /// when there are no problems.
     Prompt,
+}
+
+/// The least problem that fails the command, as `--exit-code` names it.
+/// Advice never does.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
+pub enum FailOn {
+    /// An error.
+    Error,
+    /// A warning or an error.
+    Warning,
+}
+
+impl Args {
+    /// The least problem that fails the command: `--exit-code`'s level, or a
+    /// warning under `--deny-warnings`, or else an error.
+    fn fail_on(&self) -> FailOn {
+        match self.exit_code {
+            Some(level) => level,
+            None if self.deny_warnings => FailOn::Warning,
+            None => FailOn::Error,
+        }
+    }
 }
 
 /// Why the paths, or standard input, can't be checked.
@@ -261,7 +302,7 @@ impl Coded for CheckError {
 }
 
 /// Runs the command. Exit codes: 0 with no errors, 1 with errors (or with
-/// warnings under `--deny-warnings`), 2 when the project can't be checked.
+/// warnings under `--exit-code=warning`), 2 when the project can't be checked.
 /// Advice never changes the exit code.
 pub fn run(global: &Global, args: Args) -> ExitCode {
     // Buffered: a report is many small writes, and a locked stdout flushes
@@ -356,7 +397,7 @@ fn check(
             outcome.reported.iter().map(|r| &r.diagnostic),
         );
         if !files.is_empty() {
-            if let Err(e) = fix::write(&files) {
+            if let Err(e) = write_fixes(&files) {
                 let stopped = Stopped::Failure(Failure::Check(CheckError::Fix(e)));
                 return report_stopped(stopped, args, color, out, err);
             }
@@ -375,13 +416,13 @@ fn check(
             return exit::FAILURE;
         }
     }
-    exit_code(outcome.counts, args.deny_warnings)
+    exit_code(outcome.counts, args.fail_on())
 }
 
 /// The exit code for what a check reports: 1 with errors, or with warnings
-/// under `--deny-warnings`; 0 otherwise. Advice never fails the check.
-fn exit_code(counts: Counts, deny_warnings: bool) -> u8 {
-    if counts.errors > 0 || (deny_warnings && counts.warnings > 0) {
+/// when they fail it; 0 otherwise. Advice never fails the check.
+fn exit_code(counts: Counts, fail_on: FailOn) -> u8 {
+    if counts.errors > 0 || (fail_on == FailOn::Warning && counts.warnings > 0) {
         exit::PROBLEMS
     } else {
         exit::OK
@@ -733,7 +774,7 @@ pub fn write(
             + &text::baselined(*baselined)
     };
     let command = Command::new(global, args, codes);
-    if matches!(args.format, Format::Text | Format::Concise) {
+    if matches!(args.format, Format::Text | Format::Concise | Format::Github) {
         write_fixed(out, fixed)?;
     }
     match (args.format, args.summary) {
@@ -753,7 +794,7 @@ pub fn write(
             },
         ),
         (Format::Prompt, _) => write_prompt(out, project, args, codes, scope.as_ref(), reported),
-        (Format::Text | Format::Concise, true) => {
+        (Format::Text | Format::Concise | Format::Github, true) => {
             let (by_code, by_file) = tally(files, reported);
             let first = by_code.first().map(|c| command.of_code(c.code));
             text::write_tally(out, &by_code, &by_file, &command.tally(), first.as_deref())
@@ -768,7 +809,16 @@ pub fn write(
             args.limit.unwrap_or_default(),
             &command.concise_all(),
         ),
+        (Format::Github, false) => {
+            github::write(out, files, reported, &summary, &repository_prefix(project))
+        }
     }
+}
+
+/// The path from the repository's root to the project's, as
+/// `git rev-parse --show-prefix` prints it; empty outside a repository.
+fn repository_prefix(project: &Project) -> String {
+    ascribe_diff::Repository::discover(project.root()).map_or_else(|_| String::new(), |r| r.prefix)
 }
 
 /// What `ascribe check` says in place of its summary when the project has
@@ -1004,8 +1054,10 @@ impl<'a> Command<'a> {
         let mut words = self.on_paths();
         words.extend(self.checked());
         words.extend(["--code".to_owned(), quote(code)]);
-        if self.args.format == Format::Concise {
-            words.extend(["--format".to_owned(), "concise".to_owned()]);
+        match self.args.format {
+            Format::Concise => words.extend(["--format".to_owned(), "concise".to_owned()]),
+            Format::Github => words.extend(["--format".to_owned(), "github".to_owned()]),
+            Format::Text | Format::Json | Format::Prompt => {}
         }
         words.join(" ")
     }
@@ -1083,6 +1135,13 @@ fn report_failure(
             }
             writeln!(err, "error: {message}")
         }
+        Format::Github => {
+            for r in Reported::all(diagnostics) {
+                // The project's place in the repository isn't known.
+                let _ = writeln!(out, "{}", github::annotation(&files, &r, None));
+            }
+            writeln!(err, "{}", github::command("error", &[], &message))
+        }
         Format::Json => json::write(
             out,
             &files,
@@ -1091,6 +1150,22 @@ fn report_failure(
         ),
     };
     exit::FAILURE
+}
+
+/// Writes each fixed file's new text: the library returns it, and the CLI
+/// writes it.
+///
+/// # Errors
+///
+/// A file couldn't be written. The files before it in the list were.
+fn write_fixes(files: &[fix::FixedFile]) -> Result<(), fix::FixError> {
+    for file in files {
+        std::fs::write(&file.path, &file.text).map_err(|source| fix::FixError {
+            path: file.path.clone(),
+            source,
+        })?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -1123,14 +1198,14 @@ mod tests {
             advice: 3,
             ..Counts::default()
         };
-        assert_eq!(exit_code(advice, false), exit::OK);
-        assert_eq!(exit_code(advice, true), exit::OK);
+        assert_eq!(exit_code(advice, FailOn::Error), exit::OK);
+        assert_eq!(exit_code(advice, FailOn::Warning), exit::OK);
         let warning = Counts {
             warnings: 1,
             ..advice
         };
-        assert_eq!(exit_code(warning, false), exit::OK);
-        assert_eq!(exit_code(warning, true), exit::PROBLEMS);
+        assert_eq!(exit_code(warning, FailOn::Error), exit::OK);
+        assert_eq!(exit_code(warning, FailOn::Warning), exit::PROBLEMS);
     }
 
     #[test]

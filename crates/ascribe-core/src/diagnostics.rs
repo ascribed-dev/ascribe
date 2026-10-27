@@ -885,6 +885,13 @@ pub const INFO_PAIR_MALFORMED: DiagnosticSlug = DiagnosticSlug("info-pair-malfor
 /// `ASC285`, warning, file level: a content check (area `examples`).
 pub const EXAMPLES_CONFIG_UNREAD: DiagnosticSlug = DiagnosticSlug("examples-config-unread");
 
+/// `ASC286`, error, file level: a content check (area `pages`).
+pub const TEMPLATE_PLACEHOLDER_PUBLISHED: DiagnosticSlug =
+    DiagnosticSlug("template-placeholder-published");
+
+/// `ASC287`, warning, file level: a content check (area `pages`).
+pub const GITHUB_ALERT: DiagnosticSlug = DiagnosticSlug("github-alert");
+
 /// `ASC288`, advice, file level: a content check (area `pages`).
 pub const PHRASE_TEXT_WRITTEN: DiagnosticSlug = DiagnosticSlug("phrase-text-written");
 
@@ -1168,6 +1175,8 @@ pub const ALL: &[DiagnosticSlug] = &[
     BUILD_FILTER_LINE_UNDECLARED,
     INFO_PAIR_MALFORMED,
     EXAMPLES_CONFIG_UNREAD,
+    TEMPLATE_PLACEHOLDER_PUBLISHED,
+    GITHUB_ALERT,
     PHRASE_TEXT_WRITTEN,
 ];
 
@@ -1230,6 +1239,8 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     API_OPERATION_UNREFERENCED,
     BUILD_FILTER_LINE_UNDECLARED,
     EXAMPLES_CONFIG_UNREAD,
+    TEMPLATE_PLACEHOLDER_PUBLISHED,
+    GITHUB_ALERT,
     PHRASE_TEXT_WRITTEN,
 ];
 

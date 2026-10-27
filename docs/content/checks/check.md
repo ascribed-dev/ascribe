@@ -58,6 +58,15 @@ It lists at most 50 problems. When there are more, the line before the summary s
 
 `--summary` works in any format. The text lists at most 20 files, then the command whose JSON lists them all. On a project with hundreds of warnings, it shows which rule or file to work through first.
 
+### Output for GitHub Actions
+@available: ascribe planned
+
+`--format github` writes a GitHub Actions [workflow command](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands) for each problem, in the same order as `--format concise`, and ends with the summary line. The workflow run shows each one on the pull request's line: an error as an error, a warning as a warning, and advice as a notice. The path is from the repository's root, where GitHub looks for it, even when the project is in a folder of the repository, and the title is the diagnostic's name and code. The message is one line, without the help or the source snippet:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/check-github.txt
+
+A problem that spans lines has its first and last line, and no columns, which GitHub takes only on one line. It needs no permissions and no upload step, and [Checks in CI](ci.md) uses it. Without `--format`, the output is the text one, in GitHub Actions too.
+
 ### Checking one rule at a time
 
 `--code` lets an agent, or a person, fix one rule across the project instead of working file by file. The summary line names the codes (``reported on 12 for code `ASC037` ``), and the commands a report names keep them: the concise list's `and N more:`, and the JSON's `next_command`.
@@ -78,12 +87,21 @@ The output starts with a line for each file changed (`fixed 2 problems in docs/g
 
 In VS Code, **Source Action… → Apply the safe fixes in this page** applies a page's safe fixes the same way, to the text in the editor, saved or not, for the problems the editor shows, and can run each time you save. See [Apply the safe fixes](../editor/problems.md#apply-the-safe-fixes).
 
+### Failing on warnings
+@available: ascribe planned
+
+`--exit-code=<level>` says the least problem that fails the command: `error`, which `--exit-code` alone means and the command does without it, or `warning`, for CI. `--deny-warnings` is the same as `--exit-code=warning`, and when both are given, the last one counts. The level follows `=`, so `ascribe check --exit-code docs/guides` checks the folder. Advice never fails the command, so `advice` isn't a level.
+
+```console
+$ ascribe check --exit-code=warning
+```
+
 ### Exit codes
 
 | Code | Meaning |
 |---|---|
-| `0` | No errors. Warnings don't fail the command unless you pass `--deny-warnings`, and advice never does. |
-| `1` | There are errors, or warnings with `--deny-warnings`. |
+| `0` | No errors. Warnings don't fail the command unless you pass `--exit-code=warning` or `--deny-warnings`, and advice never does. |
+| `1` | There are errors, or warnings with `--exit-code=warning` or `--deny-warnings`. |
 | `2` | The project couldn't be checked: a usage error, a `--code` no diagnostic has, no `ascribe.toml`, a content model with errors (they're shown, and nothing else is checked), a path that doesn't exist or isn't in the project, an `ascribe.baseline` with a line that doesn't parse (the error names it; `--no-baseline` checks without the file), or, with `--fix`, a file it fixed that can't be written. A source file that can't be read, or isn't UTF-8, is a `source-unreadable` error in the list instead, and the rest of the project is still checked. |
 
 ### Text output
@@ -96,7 +114,7 @@ A project with no pages yet, and nothing to report, says so in place of the summ
 
 Diagnostics go to standard output. A failure that stops the command (exit code 2) goes to standard error.
 
-Advice, a diagnostic below a warning, is listed after the errors and warnings, in every format, and the summary counts it apart: `0 errors, 2 warnings, 5 advice`. It never fails the command, even with `--deny-warnings`. A project sets how loudly a check about its content's quality speaks in [`[checks]`](../content-model/checks.md#19-checks).
+Advice, a diagnostic below a warning, is listed after the errors and warnings, in every format, and the summary counts it apart: `0 errors, 2 warnings, 5 advice`. It never fails the command, even with `--deny-warnings`. A project sets how loudly a check about its content's quality speaks in [`[checks]`](../content-model/checks.md#22-checks).
 
 A problem [acknowledged as intended](../writing/directives.md#intended) isn't listed, and doesn't fail the command; the summary counts it when there is one: `0 errors, 2 warnings, 0 advice, 1 acknowledged`. `ascribe build` counts it the same way.
 
@@ -109,7 +127,7 @@ There are four ways to quiet a problem, each with its own rules:
 | Way | What it quiets | For how long | Reason | Read by |
 |---|---|---|---|---|
 | [`@intended`](../writing/directives.md#intended), the `intended` frontmatter key, or [`[[intended]]`](../content-model/checks.md#intended-acknowledgements) | One problem of a review check, at its place | For good | Required | Everything |
-| [`[checks]`](../content-model/checks.md#19-checks) `<check> = "off"` | A content check, in the whole project | Until it's turned back on | None | Everything |
+| [`[checks]`](../content-model/checks.md#22-checks) `<check> = "off"` | A content check, in the whole project | Until it's turned back on | None | Everything |
 | `[checks]` `<check> = "advice"` or `"warning"` | Lowers a content check, in the whole project | Until it's set again | None | Everything |
 | [`ascribe.baseline`](baseline.md) | Many advice, each by its problem | Until it's fixed and pruned | None | `ascribe check`, the editor, the hooks, and the MCP server; not `ascribe build` or `ascribe report`, for now |
 
@@ -217,7 +235,11 @@ docs/install.md:5
 
 With `--format json` and `--check`, it writes the edits it would make and no file: what a tool that applies edits itself needs, such as the MCP server's `ascribe_fmt`. An edit has the shape of a fix's edit in [`ascribe check`'s JSON](check.md#json-output), and the [schema](../contracts/json-reports.md#ascribe-fmt) has every field.
 
-A symbolic link it leaves alone is reported on standard error, as `check` reports it ([`source-unreadable`](diagnostics/pages.md#ASC123)), and the other files are still formatted.
+With `--format github` and `--check`, it writes a GitHub Actions workflow command for each file that would change, at the line of its first change, with the path from the repository's root, as [`ascribe check`'s](#output-for-github-actions) are. `--format github` without `--check` is a usage error.
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/fmt-check-github.txt
+
+A symbolic link it leaves alone is reported on standard error, as `check` reports it ([`source-unreadable`](diagnostics/sources.md#ASC123)), and the other files are still formatted.
 
 | Code | Meaning |
 |---|---|

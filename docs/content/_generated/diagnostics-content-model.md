@@ -5,7 +5,7 @@
 @id {permalink=true}: ASC060
 @summary: `ascribe.toml` isn't valid TOML.
 
-Error · file level · next step: write · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 **When:** `ascribe.toml` isn't valid TOML.
 
@@ -19,7 +19,7 @@ Error · file level · next step: write · [SPEC §7.1]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC061
 @summary: A table of `ascribe.toml` has a key this version of Ascribe doesn't know.
 
-Error · file level · next step: choose · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 **When:** A table of `ascribe.toml` has a key this version of Ascribe doesn't know.
 
@@ -33,7 +33,7 @@ Error · file level · next step: choose · [SPEC §7.1]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC062
 @summary: A table of `ascribe.toml` is missing a key it requires.
 
-Error · file level · next step: write · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 **When:** A table of `ascribe.toml` is missing a key it requires.
 
@@ -47,7 +47,7 @@ Error · file level · next step: write · [SPEC §7.1]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC063
 @summary: A key's value is of the wrong type, such as a number where a string is required.
 
-Error · file level · next step: write · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 **When:** A key's value is of the wrong type, such as a number where a string is required.
 
@@ -61,7 +61,7 @@ Error · file level · next step: write · [SPEC §7.1]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC064
 @summary: A key's value isn't one of the values the key allows.
 
-Error · file level · next step: choose · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 **When:** A key's value isn't one of the values the key allows.
 
@@ -75,7 +75,7 @@ Error · file level · next step: choose · [SPEC §7.1]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC065
 @summary: `spec` names a specification version this version of Ascribe doesn't implement.
 
-Error · file level · next step: choose · [SPEC §11]({repo}/blob/main/SPEC.md#11-versioning)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §11]({repo}/blob/main/SPEC.md#11-versioning)
 
 **When:** `spec` names a specification version this version of Ascribe doesn't implement.
 
@@ -89,7 +89,7 @@ Error · file level · next step: choose · [SPEC §11]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC066
 @summary: A name the content model declares, such as a dimension, a value, or a content type, breaks the rules for that kind of name.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A name the content model declares, such as a dimension, a value, or a content type, breaks the rules for that kind of name.
 
@@ -103,7 +103,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC067
 @summary: A key that holds text is empty.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A key that holds text is empty.
 
@@ -117,7 +117,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC246
 @summary: The file `[from]` takes from doesn't exist, can't be read, or is outside the project's repository or the folder that was opened.
 
-Error · file level · next step: write · [SPEC §7.9]({repo}/blob/main/SPEC.md#79-taking-from-another-project)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.9]({repo}/blob/main/SPEC.md#79-taking-from-another-project)
 
 **When:** The file `[from]` takes from doesn't exist, can't be read, or is outside the project's repository or the folder that was opened.
 
@@ -131,7 +131,7 @@ Error · file level · next step: write · [SPEC §7.9]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC247
 @summary: `take` names a key the other file doesn't have, one of this project's own, one taken twice, or something that isn't a dotted path of keys.
 
-Error · file level · next step: write · [SPEC §7.9]({repo}/blob/main/SPEC.md#79-taking-from-another-project)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.9]({repo}/blob/main/SPEC.md#79-taking-from-another-project)
 
 **When:** `take` names a key the other file doesn't have, one of this project's own, one taken twice, or something that isn't a dotted path of keys.
 
@@ -145,7 +145,7 @@ Error · file level · next step: write · [SPEC §7.9]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC248
 @summary: A key is taken with `[from]` and written in `ascribe.toml` too.
 
-Error · file level · next step: write · [SPEC §7.9]({repo}/blob/main/SPEC.md#79-taking-from-another-project)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.9]({repo}/blob/main/SPEC.md#79-taking-from-another-project)
 
 **When:** A key is taken with `[from]` and written in `ascribe.toml` too.
 
@@ -161,7 +161,7 @@ Error · file level · next step: write · [SPEC §7.9]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC068
 @summary: A path in `ascribe.toml` is absolute, where it must be relative to `ascribe.toml`.
 
-Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
 **When:** A path in `ascribe.toml` is absolute, where it must be relative to `ascribe.toml`.
 
@@ -175,7 +175,7 @@ Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC069
 @summary: The content root doesn't exist, or isn't a directory.
 
-Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
 **When:** The content root doesn't exist, or isn't a directory.
 
@@ -189,7 +189,7 @@ Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC070
 @summary: The output directory and the content root are the same, or one is inside the other.
 
-Error · file level · next step: write · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
 **When:** The output directory and the content root are the same, or one is inside the other.
 
@@ -205,7 +205,7 @@ Error · file level · next step: write · [SPEC §9.4]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC133
 @summary: A source's `path` doesn't exist, or isn't a folder.
 
-Error · file level · next step: write · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
 
 **When:** A source's `path` doesn't exist, or isn't a folder.
 
@@ -213,13 +213,13 @@ Error · file level · next step: write · [SPEC §7.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Fix `path`, which is relative to the folder ascribe.toml is in, or create the folder.
 
-**Read more:** [`[sources.<name>]`](../content-model/output.md#18-sourcesname) in the `ascribe.toml` reference.
+**Read more:** [`[sources.<name>]`](../content-model/sources.md#20-sourcesname) in the `ascribe.toml` reference.
 
 ### ASC134 `model-source-outside-repository`
 @id {permalink=true}: ASC134
 @summary: A source's folder is outside the project's repository, or, with no repository, outside the folder that was opened.
 
-Error · file level · next step: write · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
 
 **When:** A source's folder is outside the project's repository, or, with no repository, outside the folder that was opened.
 
@@ -227,13 +227,13 @@ Error · file level · next step: write · [SPEC §7.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Give the source a `path` inside the project's repository, or, for code in another repository, give it `git` instead. With no repository, the editor and `ascribe mcp` read a source only inside the folder they were opened on: open the folder that contains the source.
 
-**Read more:** [`[sources.<name>]`](../content-model/output.md#18-sourcesname) in the `ascribe.toml` reference.
+**Read more:** [`[sources.<name>]`](../content-model/sources.md#20-sourcesname) in the `ascribe.toml` reference.
 
 ### ASC135 `model-source-remote`
 @id {permalink=true}: ASC135
 @summary: A source has both `path` and `git`, or neither, a `branch` without `git`, a URL or a branch `git` can't take, or copies that would go inside the content root.
 
-Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
 **When:** A source has both `path` and `git`, or neither, a `branch` without `git`, a URL or a branch `git` can't take, or copies that would go inside the content root.
 
@@ -241,7 +241,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Give each source either `path`, a folder in this repository, or `git`, the URL of another repository, with `branch` only beside `git`. A source with `git` keeps its copies in `sources/<name>/`, which must be outside the content root.
 
-**Read more:** [A source in another repository](../content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
+**Read more:** [A source in another repository](../content-model/sources.md#a-source-in-another-repository) in the `ascribe.toml` reference.
 
 ## Content types, fields, and attributes
 
@@ -249,7 +249,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC074
 @summary: A content type, or the fragments' frontmatter, declares a field the specification or an output reserves.
 
-Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
 **When:** A content type, or the fragments' frontmatter, declares a field the specification or an output reserves.
 
@@ -263,7 +263,7 @@ Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC075
 @summary: A field's or an attribute's type isn't one Ascribe knows, or isn't written correctly.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A field's or an attribute's type isn't one Ascribe knows, or isn't written correctly.
 
@@ -277,7 +277,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC076
 @summary: An `object` field has no `fields`, or a field that isn't an object has them.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** An `object` field has no `fields`, or a field that isn't an object has them.
 
@@ -291,7 +291,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC077
 @summary: An enumeration is empty, lists a value twice, gives its values in both places, or gives none.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** An enumeration is empty, lists a value twice, gives its values in both places, or gives none.
 
@@ -305,7 +305,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC078
 @summary: A value of a set-valued attribute has a space or a reserved character.
 
-Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** A value of a set-valued attribute has a space or a reserved character.
 
@@ -319,7 +319,7 @@ Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC079
 @summary: A field's default isn't of the field's type, or isn't one of its values.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A field's default isn't of the field's type, or isn't one of its values.
 
@@ -333,7 +333,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC080
 @summary: `phrases = true` is on a field that isn't a `string` or a `list(string)`.
 
-Error · file level · next step: write · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
 **When:** `phrases = true` is on a field that isn't a `string` or a `list(string)`.
 
@@ -347,7 +347,7 @@ Error · file level · next step: write · [SPEC §5.1]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC081
 @summary: A pattern isn't valid, starts with `/`, or has a `..` segment.
 
-Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
 **When:** A pattern isn't valid, starts with `/`, or has a `..` segment.
 
@@ -361,7 +361,7 @@ Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC119
 @summary: An image's or a widget's attribute has a name that HTML or the site output already uses on its element.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** An image's or a widget's attribute has a name that HTML or the site output already uses on its element.
 
@@ -369,13 +369,13 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Rename the attribute.
 
-**Read more:** [`[images]`](../content-model/content.md#13-images) in the `ascribe.toml` reference.
+**Read more:** [`[images]`](../content-model/content.md#9-images) in the `ascribe.toml` reference.
 
 ### ASC141 `model-inline-field`
 @id {permalink=true}: ASC141
 @summary: `inline` is on a field that isn't a page type's top-level string field, or isn't `"code"`.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** `inline` is on a field that isn't a page type's top-level string field, or isn't `"code"`.
 
@@ -389,7 +389,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC148
 @summary: A field's `role` isn't one Ascribe knows, is on a field of the wrong type or below a page type's top level, or is on two fields of one type.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A field's `role` isn't one Ascribe knows, is on a field of the wrong type or below a page type's top level, or is on two fields of one type.
 
@@ -403,7 +403,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC193
 @summary: A content type's `template` or `guide` doesn't exist, or is inside the content root or the output directory, or outside the project's folder.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A content type's `template` or `guide` doesn't exist, or is inside the content root or the output directory, or outside the project's folder.
 
@@ -417,7 +417,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC194
 @summary: A content type's template can't be read, or isn't a page Ascribe can read.
 
-Error · file level · next step: write · Ascribe's own, not in SPEC
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · Ascribe's own, not in SPEC
 
 **When:** A content type's template can't be read, or isn't a page Ascribe can read.
 
@@ -433,7 +433,7 @@ Error · file level · next step: write · Ascribe's own, not in SPEC
 @id {permalink=true}: ASC082
 @summary: A name used in more than one role (dimension name, dimension value, lifecycle state, or feature key), or a dimension value in more than one dimension.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A name used in more than one role (dimension name, dimension value, lifecycle state, or feature key), or a dimension value in more than one dimension.
 
@@ -447,7 +447,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC083
 @summary: Two names the content model declares differ only in case.
 
-Warning · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Warning](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** Two names the content model declares differ only in case.
 
@@ -461,7 +461,7 @@ Warning · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.
 @id {permalink=true}: ASC084
 @summary: A dimension has no values.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A dimension has no values.
 
@@ -469,13 +469,13 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Add the dimension's values, or remove the dimension.
 
-**Read more:** [`[dimensions.<name>]`](../content-model/content.md#dimensions) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../content-model/variation.md#dimensions) in the `ascribe.toml` reference.
 
 ### ASC085 `model-dimension-value-duplicate`
 @id {permalink=true}: ASC085
 @summary: A dimension lists a value twice.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A dimension lists a value twice.
 
@@ -483,13 +483,13 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the repeated value.
 
-**Read more:** [`[dimensions.<name>]`](../content-model/content.md#dimensions) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../content-model/variation.md#dimensions) in the `ascribe.toml` reference.
 
 ### ASC086 `model-dimension-value-shared`
 @id {permalink=true}: ASC086
 @summary: A value is in more than one dimension.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A value is in more than one dimension.
 
@@ -497,13 +497,13 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Rename the value in one of the dimensions.
 
-**Read more:** [`[dimensions.<name>]`](../content-model/content.md#dimensions) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../content-model/variation.md#dimensions) in the `ascribe.toml` reference.
 
 ### ASC087 `model-label-undeclared`
 @id {permalink=true}: ASC087
 @summary: A dimension's `labels` gives a label for a value the dimension doesn't have.
 
-Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A dimension's `labels` gives a label for a value the dimension doesn't have.
 
@@ -511,13 +511,13 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Correct the label's key, or add the value to the dimension's `values`.
 
-**Read more:** [`[dimensions.<name>]`](../content-model/content.md#dimensions) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../content-model/variation.md#dimensions) in the `ascribe.toml` reference.
 
 ### ASC088 `model-versionless-undeclared`
 @id {permalink=true}: ASC088
 @summary: A dimension's `versionless` lists a value the dimension doesn't have.
 
-Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A dimension's `versionless` lists a value the dimension doesn't have.
 
@@ -525,13 +525,13 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Correct the entry, or add the value to the dimension's `values`.
 
-**Read more:** [`[dimensions.<name>]`](../content-model/content.md#dimensions) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../content-model/variation.md#dimensions) in the `ascribe.toml` reference.
 
 ### ASC089 `model-lifecycle-available-required`
 @id {permalink=true}: ASC089
 @summary: A lifecycle state the project adds doesn't say whether it counts as available.
 
-Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A lifecycle state the project adds doesn't say whether it counts as available.
 
@@ -539,13 +539,13 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Add `available = true` or `available = false` to the state.
 
-**Read more:** [`[lifecycle.<state>]`](../content-model/content.md#8-lifecyclestate) in the `ascribe.toml` reference.
+**Read more:** [`[lifecycle.<state>]`](../content-model/variation.md#13-lifecyclestate) in the `ascribe.toml` reference.
 
 ### ASC090 `model-lifecycle-ga-unavailable`
 @id {permalink=true}: ASC090
 @summary: `[lifecycle.ga]` doesn't count as available.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** `[lifecycle.ga]` doesn't count as available.
 
@@ -553,13 +553,13 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove `available = false` from `[lifecycle.ga]`.
 
-**Read more:** [`[lifecycle.<state>]`](../content-model/content.md#8-lifecyclestate) in the `ascribe.toml` reference.
+**Read more:** [`[lifecycle.<state>]`](../content-model/variation.md#13-lifecyclestate) in the `ascribe.toml` reference.
 
 ### ASC091 `model-note-label-required`
 @id {permalink=true}: ASC091
 @summary: A note type the project adds has no `label`.
 
-Error · file level · next step: write · [SPEC §4.5]({repo}/blob/main/SPEC.md#45-note)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.5]({repo}/blob/main/SPEC.md#45-note)
 
 **When:** A note type the project adds has no `label`.
 
@@ -567,13 +567,13 @@ Error · file level · next step: write · [SPEC §4.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Give the note type a `label`.
 
-**Read more:** [`[notes.<type>]`](../content-model/content.md#10-notestype) in the `ascribe.toml` reference.
+**Read more:** [`[notes.<type>]`](../content-model/content.md#6-notestype) in the `ascribe.toml` reference.
 
 ### ASC092 `model-availability-syntax`
 @id {permalink=true}: ASC092
 @summary: A feature's `available` isn't a valid availability spec.
 
-Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** A feature's `available` isn't a valid availability spec.
 
@@ -581,13 +581,13 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Fix the feature's `available` spec. Its syntax is in the [directive reference](../writing/directives.md#availability-specs).
 
-**Read more:** [`[features.<key>]`](../content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../content-model/variation.md#14-featureskey) in the `ascribe.toml` reference.
 
 ### ASC093 `model-availability-unknown-name`
 @id {permalink=true}: ASC093
 @summary: A feature's `available` names a target or a state the content model doesn't declare.
 
-Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** A feature's `available` names a target or a state the content model doesn't declare.
 
@@ -595,13 +595,13 @@ Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.m
 
 **Fix:** Use a declared dimension value, dimension, or lifecycle state, or declare the name.
 
-**Read more:** [`[features.<key>]`](../content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../content-model/variation.md#14-featureskey) in the `ascribe.toml` reference.
 
 ### ASC094 `model-availability-versionless`
 @id {permalink=true}: ASC094
 @summary: A feature's `available` gives a version to a versionless target or a dimension name.
 
-Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** A feature's `available` gives a version to a versionless target or a dimension name.
 
@@ -609,13 +609,13 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the version. A versionless target, or a dimension name, takes a state but no version.
 
-**Read more:** [`[features.<key>]`](../content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../content-model/variation.md#14-featureskey) in the `ascribe.toml` reference.
 
 ### ASC095 `model-availability-history-order`
 @id {permalink=true}: ASC095
 @summary: A feature's history for a target isn't in chronological order.
 
-Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** A feature's history for a target isn't in chronological order.
 
@@ -623,13 +623,13 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** List the target's states oldest first.
 
-**Read more:** [`[features.<key>]`](../content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../content-model/variation.md#14-featureskey) in the `ascribe.toml` reference.
 
 ### ASC096 `model-feature-nested`
 @id {permalink=true}: ASC096
 @summary: A feature's `available` names another feature.
 
-Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** A feature's `available` names another feature.
 
@@ -637,206 +637,4 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Write the feature's availability out in full. One feature can't refer to another.
 
-**Read more:** [`[features.<key>]`](../content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
-
-## `[releases]`
-
-### ASC204 `model-releases-target`
-@id {permalink=true}: ASC204
-@summary: A `[releases]` table names a target that's versionless, a dimension, or a name `[dimensions.release]` takes, or labels a target its dimension labels.
-
-Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
-
-**When:** A `[releases]` table names a target that's versionless, a dimension, or a name `[dimensions.release]` takes, or labels a target its dimension labels.
-
-**Message:** `[releases.{target}]`: `{target}` is in no declared dimension, so it would be a value of the implicit dimension `release`, but `[dimensions.release]` takes that name; add `{target}` to a dimension's `values`, or rename `[dimensions.release]`
-
-**Fix:** Name the table after the target a mark gives a version to, such as `[releases.self-managed]`: a versioned value of a declared dimension, or a name no dimension has, which makes it a value of the implicit dimension `release`. A versionless value has no versions to list. While a target is left to the implicit dimension, no declared dimension can be named `release`.
-
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
-
-### ASC205 `model-releases-line`
-@id {permalink=true}: ASC205
-@summary: A target's lines in `[releases]` aren't valid versions, are listed twice, or have different numbers of parts.
-
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
-
-**When:** A target's lines in `[releases]` aren't valid versions, are listed twice, or have different numbers of parts.
-
-**Message:** `[releases.{target}]` mixes lines of different lengths, `{a}` and `{b}`; write every line of a target with the same number of parts
-
-**Fix:** Write each line as a version, once, with as many parts as the target's other lines: `["3.4", "3.5"]` for a line for each minor release, or `["0.2.0"]` for one for each patch release. A line holds every version that starts with it.
-
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
-
-### ASC207 `model-releases-order`
-@id {permalink=true}: ASC207
-@summary: A target's planned line isn't newer than every live line, an archived line isn't older than every live one, or a line is in two lists.
-
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
-
-**When:** A target's planned line isn't newer than every live line, an archived line isn't older than every live one, or a line is in two lists.
-
-**Message:** `[releases.{target}]`: the planned line `{line}` isn't newer than every live line, and the newest is `{live}`
-
-**Fix:** Keep each line in one list, in the order the lists mean: `planned` lines are newer than every `live` line, and `archived` lines older. A line that has shipped moves from `planned` to `live`, and one that has left the window from `live` to `archived`.
-
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
-
-### ASC208 `model-releases-ends`
-@id {permalink=true}: ASC208
-@summary: `[releases.<target>.ends]` gives an end date to a line that isn't live.
-
-Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
-
-**When:** `[releases.<target>.ends]` gives an end date to a line that isn't live.
-
-**Message:** `[releases.{target}.ends]`: `{line}` isn't a live line; the live lines are \{live}
-
-**Fix:** Give an end date to a line in `live` only. A line whose support has ended and that has left the window goes in `archived`, with its date as `ended`.
-
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
-
-### ASC209 `model-versions-current`
-@id {permalink=true}: ASC209
-@summary: `ascribe.toml` has `[versions] current`, which is no longer a key.
-
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
-
-**When:** `ascribe.toml` has `[versions] current`, which is no longer a key.
-
-**Message:** `[versions] current` is no longer a key; a target's current release is the newest line in `[releases.<target>] live`
-
-**Fix:** Remove `current` from `[versions]`, and list the release in `[releases.<target>]`, as `live = ["3.4"]`, for the target it's a release of. Each target has its own current line, and a check that compared with `current`, `availability-left-behind`, compares each target's versions with that target's current line.
-
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
-
-## Phrases and the glossary
-
-### ASC097 `model-phrase-value-type`
-@id {permalink=true}: ASC097
-@summary: A phrase's value isn't a string, or a table naming a target's line.
-
-Error · file level · next step: write · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
-
-**When:** A phrase's value isn't a string, or a table naming a target's line.
-
-**Message:** phrase `{key}` must be a quoted string, but it's \{found}; write \{key} = "\{value}"
-
-**Fix:** Quote the value. A phrase whose value is a target's current release line is a table with one key, `line`: `release = { line = "self-managed" }`.
-
-**Read more:** [`[phrases]`](../content-model/content.md#phrases) in the `ascribe.toml` reference.
-
-### ASC215 `model-phrase-line`
-@id {permalink=true}: ASC215
-@summary: A phrase is the line of a target that has no live line.
-
-Error · file level · next step: choose · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
-
-**When:** A phrase is the line of a target that has no live line.
-
-**Message:** phrase `{key}` is the line of `{target}`, which has no live line in `[releases]`
-
-**Fix:** Name a target whose lines `[releases.<target>]` lists, with at least one in `live`, or list the target's lines there. The phrase is the target's current line: the newest live one.
-
-**Read more:** [`[phrases]`](../content-model/content.md#phrases) in the `ascribe.toml` reference.
-
-### ASC238 `model-glossary-page`
-@id {permalink=true}: ASC238
-@summary: A path in `[glossary] pages` doesn't exist, or is a fragment.
-
-Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
-
-**When:** A path in `[glossary] pages` doesn't exist, or is a fragment.
-
-**Message:** `{path}` in `[glossary] pages` doesn't exist
-
-**Fix:** Each path in `pages` is a page, from the content root, with its name's case as it is on disk: fix the path, or, for a fragment, list a page that includes it.
-
-**Read more:** [`[glossary]`](../content-model/content.md#12-glossary) in the `ascribe.toml` reference.
-
-## Widgets
-
-### ASC100 `model-widget-reserved-name`
-@id {permalink=true}: ASC100
-@summary: A widget's name is reserved by Ascribe's element library or by HTML.
-
-Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
-
-**When:** A widget's name is reserved by Ascribe's element library or by HTML.
-
-**Message:** widget name `{name}` is reserved: names starting with ascribe- belong to Ascribe's element library
-
-**Fix:** Rename the widget, for example with your project's name as its prefix: `quill-aside`.
-
-**Read more:** [`[widgets.<name>]`](../content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
-
-### ASC101 `model-widget-forms`
-@id {permalink=true}: ASC101
-@summary: A widget's `forms` isn't one of the lists it allows.
-
-Error · file level · next step: choose · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
-
-**When:** A widget's `forms` isn't one of the lists it allows.
-
-**Message:** forms must be ["line"], ["container"], or ["line", "container"]
-
-**Fix:** Set `forms` to `["line"]`, `["container"]`, or `["line", "container"]`.
-
-**Read more:** [`[widgets.<name>]`](../content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
-
-### ASC102 `model-widget-binding`
-@id {permalink=true}: ASC102
-@summary: A widget with a line form has no `binding`, or a container-only widget has one.
-
-Error · file level · next step: choose · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
-
-**When:** A widget with a line form has no `binding`, or a container-only widget has one.
-
-**Message:** widget `{name}` has a line form, so it needs a binding: "self", "heading", "block", or "heading-or-block"
-
-**Fix:** Give a widget with a line form a `binding`. Remove `binding` from a container-only widget.
-
-**Read more:** [`[widgets.<name>]`](../content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
-
-### ASC103 `model-widget-container-primary`
-@id {permalink=true}: ASC103
-@summary: A widget with a container form requires a primary, or a container-only widget takes one.
-
-Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
-
-**When:** A widget with a container form requires a primary, or a container-only widget takes one.
-
-**Message:** widget `{name}` has a container form, whose opener has no primary, so its primary can't be required; use "\{kind}?"
-
-**Fix:** Make the primary optional (`"text?"`), or remove the widget's container form. A container-only widget takes no primary.
-
-**Read more:** [`[widgets.<name>]`](../content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
-
-### ASC104 `model-widget-groupable-form`
-@id {permalink=true}: ASC104
-@summary: A groupable widget has a line form.
-
-Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
-
-**When:** A groupable widget has a line form.
-
-**Message:** widget `{name}` is groupable, so it must be container-only: forms = ["container"]
-
-**Fix:** Set `forms = ["container"]`, or remove `groupable`.
-
-**Read more:** [`[widgets.<name>]`](../content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
-
-### ASC105 `model-widget-plain-content`
-@id {permalink=true}: ASC105
-@summary: A widget that doesn't wrap content sets `plain-content`.
-
-Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
-
-**When:** A widget that doesn't wrap content sets `plain-content`.
-
-**Message:** widget `{name}` doesn't wrap content, so plain-content has no effect; remove it
-
-**Fix:** Remove `plain-content`.
-
-**Read more:** [`[widgets.<name>]`](../content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../content-model/variation.md#14-featureskey) in the `ascribe.toml` reference.

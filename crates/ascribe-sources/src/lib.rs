@@ -381,6 +381,7 @@ impl Workspace {
                 message: "it's a link; replace it with a file, or remove it".into(),
             });
         }
+        // Library write: the lock file, after a fetch that changed it.
         std::fs::write(&path, text).map_err(|e| SourcesError::Write {
             path: LOCK_FILE.into(),
             message: e.to_string(),

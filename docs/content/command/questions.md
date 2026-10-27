@@ -130,7 +130,7 @@ A line of a release target, one with `[releases.<target>]`, is written `release:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/refs-release.txt
 
-An image under the content root is a target too, named as a page is: `ascribe refs images/keys.png`. Its places are each file that shows it (`image`), links to it (`link`), names it in raw HTML such as `<img src>` (`html`), or names it in a frontmatter field such as `cover` (`frontmatter`): the uses that keep [`image-unused`](../checks/diagnostics/content-checks.md#ASC159) from reporting it. An image nothing uses has no places, and exits with `0`, as any target that exists does.
+An image under the content root is a target too, named as a page is: `ascribe refs images/keys.png`. Its places are each file that shows it (`image`), links to it (`link`), names it in raw HTML such as `<img src>` (`html`), or names it in a frontmatter field such as `cover` (`frontmatter`): the uses that keep [`image-unused`](../checks/diagnostics/project-checks.md#ASC159) from reporting it. An image nothing uses has no places, and exits with `0`, as any target that exists does.
 
 A [memo file](../writing/memo-files.md) about the target is a place too, with the use `memo`, at its `about` line, after the uses. One whose `about` names a target that doesn't exist is listed under that target, so `ascribe refs` finds the memos a rename left behind.
 
@@ -198,12 +198,10 @@ When the build doesn't publish the page, it writes nothing to standard output, s
 
 A line of a [versioned build](../versions/index.md), such as `--build site@3.4`, resolves the page as that line publishes it, its route and links under the line's folder.
 
-@available: ascribe 0.4.4
 `--emit site` writes the page as the site output writes it, as `ascribe build --emit site` writes its file and `@ascribed/astro` receives it: Markdown with Ascribe's elements, such as `<ascribe-tabs>`, `<ascribe-note>`, and availability badges, from the code the build and the editor's preview use. It's what a site's integration is given, which the plain form can't show: what a switcher, a badge, or a glossary link becomes before a site draws it. `--emit plain`, the default, is the plain form above. `--emit` takes one output, not a list as `ascribe build --emit` does; a list is an error, exit `2`. From `examples/quill`, `ascribe resolve install-agent.md --build site --emit site` writes its Connect section as tabs, where the plain form writes a section for each arm:
 
 @snippet {lang=markdown}: code:crates/ascribe-cli/tests/output/resolve-site-connect.txt
 
-@available: ascribe 0.4.4
 The site form's frontmatter, under `--frontmatter`, is the site output's, a line of a versioned build writes the line's links, and its elements read without their script as [a page in the site output](site-output.md) says.
 
 `go:` and a permalink's name, in place of the page, shows the help a [product shows](../permalinks/in-your-product.md) for that permalink: its entry in the build's `_ascribe/help.json`, from the code that writes the file. The project is the current directory's, or `--config`'s. The text is the entry's title, its summary when the text doesn't start with it, its text, and "Read more" with its address, which needs [`[consumer] site`](../content-model/output.md#consumer):
@@ -224,7 +222,6 @@ With `--format json`, the document is as follows, and its [schema](../contracts/
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/resolve.json
 
-@available: ascribe 0.4.4
 `emit` says which output `text` is written as: `plain`, or `site` under `--emit site`, where `text` is the site output's file, with its frontmatter under `--frontmatter`.
 
 For `go:<name>`, the document is the entry as `help.json` writes it, with the file's `version`, `build`, and `line`, and the `name` asked for, after `schema_version` and `ascribe_version`. `version` is `help.json`'s format version, which a reader checks as it checks the file's. Its [schema](../contracts/json-reports/questions.md#ascribe-resolve-go) has every field:

@@ -59,9 +59,12 @@ describe("starting a page from a template", () => {
     assert.equal(editor?.document.uri.fsPath, file.fsPath);
     assert.equal(editor.document.isDirty, false, "the page is saved");
     const template = readFileSync(uriOf("templates", "how-to.md").fsPath, "utf8");
+    // It starts as a draft, as `ascribe new` starts one.
     assert.equal(
       readFileSync(file.fsPath, "utf8"),
-      template.replace('title: "Title"', 'title: "Rotate signing keys"'),
+      template
+        .replace('title: "Title"', 'title: "Rotate signing keys"')
+        .replace("\n---\n", "\ndraft: true\n---\n"),
     );
     const placeholder =
       "{One sentence that says what a reader can do once they've followed this page.}";

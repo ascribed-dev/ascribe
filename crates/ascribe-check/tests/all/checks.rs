@@ -1067,6 +1067,66 @@ fn an_empty_memo_s_fix_removes_it() {
     assert_eq!(empty_memo_removed("- @memo:\n  @end\n  The block."), None);
 }
 
+/// The text of `body`'s page after its one diagnostic's one fix, which must
+/// be `github-alert`'s and safe, and leave nothing to report; `None` when it
+/// has no fix.
+fn alert_rewritten(body: &str) -> Option<String> {
+    let text = page(body);
+    let d = one(&project(&[("a.md", &text)]));
+    assert_eq!(d.slug.as_str(), "github-alert");
+    let fix = d.fixes.first()?;
+    assert_eq!(fix.applicability, Applicability::Safe);
+    let fixed = apply_edits(&text, &fix.edits).expect("edits apply");
+    assert_eq!(found(&project(&[("a.md", &fixed)])), []);
+    Some(fixed)
+}
+
+/// A GitHub alert's fix writes the `@note` of its type: the line form for
+/// one paragraph, the container for several blocks. One in a list item, and
+/// one with nothing after its marker, have none.
+#[test]
+fn a_github_alert_s_fix_writes_a_note() {
+    assert_eq!(
+        alert_rewritten("> [!NOTE]\n> Widgetly is in beta.\n> Mind the gaps.").as_deref(),
+        Some(page("@note {type=note}: Widgetly is in beta.\nMind the gaps.").as_str())
+    );
+    assert_eq!(
+        alert_rewritten("Text.\n\n> [!tip]\n>\n> The app runs in the browser.\n\nMore.").as_deref(),
+        Some(page("Text.\n\n@note {type=tip}: The app runs in the browser.\n\nMore.").as_str())
+    );
+    assert_eq!(
+        alert_rewritten("> [!Warning]\n> Back up first.\n>\n> - The database\n> - The keys")
+            .as_deref(),
+        Some(
+            page("@note {type=warning}:\nBack up first.\n\n- The database\n- The keys\n@end")
+                .as_str()
+        )
+    );
+    assert_eq!(
+        alert_rewritten("> [!CAUTION]\n>\n> ```sh\n> rm -rf data\n> ```").as_deref(),
+        Some(page("@note {type=caution}:\n```sh\nrm -rf data\n```\n@end").as_str())
+    );
+    // A line that continued the marker's paragraph would start a list or
+    // a code block at the start of the container.
+    assert_eq!(alert_rewritten("> [!NOTE]\n> 2. first\n>\n> More."), None);
+    assert_eq!(alert_rewritten("> [!NOTE]\n>     code\n>\n> More."), None);
+    assert_eq!(
+        alert_rewritten("> [!NOTE]\n> Back up first.\n>\n> More.").as_deref(),
+        Some(page("@note {type=note}:\nBack up first.\n\nMore.\n@end").as_str())
+    );
+    assert_eq!(alert_rewritten("- > [!IMPORTANT]\n  > Read this."), None);
+    assert_eq!(alert_rewritten("> [!NOTE]"), None);
+}
+
+/// A block quote that mentions a marker after its first line, or writes
+/// text beside it, isn't an alert.
+#[test]
+fn only_a_marker_on_a_quote_s_first_line_is_an_alert() {
+    let text =
+        page("> Write [!NOTE] to make an alert.\n\n> [!NOTE] Inline.\n\n> \\[!NOTE]\n> Escaped.");
+    assert_eq!(found(&project(&[("a.md", &text)])), []);
+}
+
 /// The messages of each problem the memo files in `memos` have, beside a
 /// page `a.md` with one heading, `#setup`.
 fn memo_messages(memos: &[(&str, &str)]) -> Vec<String> {

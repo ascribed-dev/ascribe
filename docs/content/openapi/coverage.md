@@ -2,7 +2,6 @@
 type: how-to
 title: Find the operations no guide links to
 description: "See which operations of your OpenAPI spec no page links to, with `ascribe check`'s `api-operation-unreferenced` and the inventory's count of operations linked for each API."
-available: ascribe 0.4.4
 ---
 
 A spec grows faster than the guides that explain it. `ascribe check` says which operations no page links to, and `ascribe report inventory` counts them, so a new endpoint that ships without a guide shows up in the next check.
@@ -19,7 +18,7 @@ ascribe.toml:7: [ASC282] no page links to `deleteInvoice` (DELETE /invoices/{id}
 
 An operation the spec marks `deprecated: true` isn't reported, since it's on its way out. An operation with no id is named by its method and path.
 
-For an API whose reference is enough on its own, turn the check off in [`[checks]`](../content-model/checks.md#19-checks):
+For an API whose reference is enough on its own, turn the check off in [`[checks]`](../content-model/checks.md#22-checks):
 
 ```toml
 [checks]

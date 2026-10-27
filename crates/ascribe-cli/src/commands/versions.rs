@@ -13,8 +13,8 @@ use std::process::ExitCode;
 use ascribe_core::availability::parse_version;
 use ascribe_core::{Coded, RelPath};
 use ascribe_diff::{DiffError, Repository};
+use ascribe_edit::{Redirect, RedirectWhy, Released, Releasing, RetiredLine, RetiringLine, Unused};
 use ascribe_emit::{ArchiveOptions, OutputDir};
-use ascribe_lsp::{Redirect, RedirectWhy, Released, Releasing, RetiredLine, RetiringLine, Unused};
 use ascribe_model::LineStatus;
 use ascribe_query::versions::{LineChange, VersionChanges, VersionsList};
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
@@ -109,6 +109,7 @@ pub struct ChangesArgs {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum ChangesFormat {
     /// What was added, removed, and changed, for people.
+    #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.
     Json,
@@ -681,7 +682,7 @@ struct OutputJson {
 }
 
 impl OutputJson {
-    fn new(o: &ascribe_lsp::ChangedOutput) -> OutputJson {
+    fn new(o: &ascribe_edit::ChangedOutput) -> OutputJson {
         OutputJson {
             build: o.build.clone(),
             output: o.output.clone(),
@@ -797,7 +798,7 @@ fn run_release(
         line: &line,
         next: next.as_ref(),
     };
-    let released = match ascribe_lsp::release(&project, &releasing) {
+    let released = match ascribe_edit::release(&project, &releasing) {
         Ok(released) => released,
         Err(e) => return answer::fail(err, &e),
     };
@@ -1001,7 +1002,7 @@ fn write_cleared(
     dry_run: bool,
     content: &Path,
 ) -> io::Result<()> {
-    let marks: Vec<(&ascribe_lsp::ClearedFile, &ascribe_lsp::ClearedMark)> = r
+    let marks: Vec<(&ascribe_edit::ClearedFile, &ascribe_edit::ClearedMark)> = r
         .cleared
         .iter()
         .flat_map(|f| f.marks.iter().map(move |m| (f, m)))
@@ -1504,7 +1505,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
     if let Some(archived) = archived
         && (args.show_unused || args.remove_unused)
     {
-        let (unused, removals) = ascribe_lsp::unused_in(&project, &target, args.remove_unused);
+        let (unused, removals) = ascribe_edit::unused_in(&project, &target, args.remove_unused);
         if !args.dry_run
             && let Some(code) = write_files(
                 &project,
@@ -1551,7 +1552,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         force: args.force || args.dry_run,
         remove_unused: args.remove_unused,
     };
-    let retired = match ascribe_lsp::retire_line(&project, &retiring) {
+    let retired = match ascribe_edit::retire_line(&project, &retiring) {
         Ok(retired) => retired,
         Err(e) => return answer::fail(err, &e),
     };
@@ -1819,7 +1820,7 @@ fn write_unused(
 }
 
 /// Each output, with the pages it adds, removes, and changes.
-fn write_outputs(out: &mut dyn Write, outputs: &[ascribe_lsp::ChangedOutput]) -> io::Result<()> {
+fn write_outputs(out: &mut dyn Write, outputs: &[ascribe_edit::ChangedOutput]) -> io::Result<()> {
     for o in outputs {
         let parts: Vec<String> = [
             ("adds", &o.added),
