@@ -339,7 +339,10 @@ pub fn plan(project: &Project, asked: &[Target], options: &Options) -> Result<Pl
     let needs_repository = asked.contains(&Target::Copilot) || options.cloud;
     let (here, prefix, root, mut notes) = locate(project, needs_repository)?;
     let (runs, skill_runs) = commands_of(options.command.as_deref(), &here, &root);
-    let skill_config = config_of(&prefix, &here, &root);
+    let skill_config = config_of(&prefix, &here, &root).map(|folder| skill::Config {
+        content: in_dir(&prefix, project.content_root().as_str()),
+        folder,
+    });
     let commands = |text: &str| command::with_command(text, &runs);
     let index = project.index();
     let name = if prefix.is_root() {
@@ -442,13 +445,13 @@ pub fn plan(project: &Project, asked: &[Target], options: &Options) -> Result<Pl
     // The skill, for every agent, and for Claude Code where it looks.
     let glob = content_glob(index, &prefix);
     let agents_skill = under(&root, ".agents/skills").join(skill::NAME);
-    for (file, text) in skill::files(None, &skill_runs, skill_config.as_deref()) {
+    for (file, text) in skill::files(None, &skill_runs, skill_config.as_ref()) {
         let path = under(&agents_skill, file);
         add(path, &|_| Ok(text.clone()), BLOCK, READ_SKILLS)?;
     }
     if claude {
         let paths = claude_skill_paths(&claude_skill, &glob)?;
-        for (file, text) in skill::files(Some(&paths), &skill_runs, skill_config.as_deref()) {
+        for (file, text) in skill::files(Some(&paths), &skill_runs, skill_config.as_ref()) {
             let path = under(&claude_skill, file);
             add(path, &|_| Ok(text.clone()), BLOCK, READ_CLAUDE)?;
         }

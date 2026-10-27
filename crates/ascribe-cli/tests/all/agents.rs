@@ -1027,6 +1027,10 @@ fn the_skill_gives_a_lone_project_in_a_folder_its_config() {
         ] {
             assert!(skill.contains(command), "{file}: {skill}");
         }
+        assert!(
+            skill.contains("give each page's path from `docs/docs/`, the content root"),
+            "{file}: {skill}"
+        );
         // A command given a page finds the project from the page.
         assert!(skill.contains("Run `ascribe check <file> --format concise`."));
         let directives = read(&root.join(file).join("references/directives.md"));
@@ -1050,6 +1054,7 @@ fn the_skill_gives_a_lone_project_in_a_folder_its_config() {
     let skill = read(&root.join(".agents/skills/ascribe/SKILL.md"));
     assert!(!skill.contains("--config docs"), "{skill}");
     assert!(skill.contains("`ascribe check` with no file"), "{skill}");
+    assert!(!skill.contains("content root"), "{skill}");
 }
 
 #[test]
