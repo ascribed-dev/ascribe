@@ -7025,7 +7025,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1182"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "`ascribe observe` runs the config's commands without asking when there's no terminal"
     },
     {
@@ -7622,7 +7622,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1105"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Libraries return what to write: route cache and history writes through the caller, and group the FileSystem exceptions"
     },
     {
@@ -7886,7 +7886,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1181"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Docs: have the CI recipe run the ascribe version the project pins"
     },
     {
@@ -8232,7 +8232,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1180"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Split the long diagnostics pages, then link each word of an entry's header line"
     },
     {
@@ -8285,8 +8285,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1184"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Load a project once, phase 2: move finding and loading a project into ascribe-workspace"
     },
     {
@@ -8576,7 +8579,7 @@
         "agents"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "`agents sync`: keep the page types in AGENTS.md, and give the skill's commands the project's `--config`"
     },
     {
@@ -8592,8 +8595,11 @@
       "labels": [
         "agents"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1183"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "`agents sync --target claude` adds a second `@AGENTS.md` to a CLAUDE.md that already imports it"
     }
   ]
