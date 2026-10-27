@@ -376,8 +376,12 @@ pub fn release(project: &Project, releasing: &Releasing<'_>) -> Result<Released,
     let mut cleared = Vec::new();
     let mut cleared_features = Vec::new();
     let after = if let Some(current) = plan.archive {
-        let archived = outputs(project, load(&text, root)?, &text, &edited)?;
-        let unexpected = compare(&after_move, &archived);
+        let archived_model = load(&text, root)?;
+        let archived = outputs(project, archived_model.clone(), &text, &edited)?;
+        let unexpected = compare(
+            &without_releases_described(&after_move, &load(&moved, root)?),
+            &without_releases_described(&archived, &archived_model),
+        );
         if !unexpected.is_empty() {
             return Err(ReleaseError::OutputsChanged {
                 step: "archiving the line that was current",
@@ -385,8 +389,7 @@ pub fn release(project: &Project, releasing: &Releasing<'_>) -> Result<Released,
             });
         }
         // Step 7: the marks that say nothing once the line is archived.
-        let model = load(&text, root)?;
-        let clearing = clear(project, &model, &text, &edited, target, current)?;
+        let clearing = clear(project, &archived_model, &text, &edited, target, current)?;
         if clearing.files.is_empty() && clearing.features.is_empty() {
             archived
         } else {
@@ -862,6 +865,41 @@ pub fn compare(
     out.extend(after.keys().filter(|p| !before.contains_key(*p)).cloned());
     out.sort();
     out
+}
+
+/// `outputs`, built with `model`, with the sentences that say which releases
+/// each build describes taken out. They name the live lines, so archiving
+/// one changes them, and that's the change archiving is for (#1175).
+fn without_releases_described(
+    outputs: &BTreeMap<String, Contents>,
+    model: &ContentModel,
+) -> BTreeMap<String, Contents> {
+    let sentences: Vec<(String, String)> = model
+        .builds
+        .iter()
+        .filter_map(|build| {
+            let sentence = ascribe_resolve::llms::releases_described(model, build)?;
+            Some((format!("{}/", build.name), sentence))
+        })
+        .collect();
+    outputs
+        .iter()
+        .map(|(path, contents)| {
+            let contents = match contents {
+                Contents::Text(text) => {
+                    let text = sentences
+                        .iter()
+                        .filter(|(prefix, _)| path.starts_with(prefix.as_str()))
+                        .fold(text.clone(), |text, (_, sentence)| {
+                            text.replace(sentence, "")
+                        });
+                    Contents::Text(text)
+                }
+                Contents::Copy(_) => contents.clone(),
+            };
+            (path.clone(), contents)
+        })
+        .collect()
 }
 
 /// What differs between two sets of outputs, by build and output.

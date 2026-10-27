@@ -161,6 +161,25 @@ fn a_release_rewrites_the_planned_marks_and_archives_the_old_line() {
     assert_eq!(code_of(&check), 0, "{}{}", stdout(&check), stderr(&check));
 }
 
+/// A site that writes each page's Markdown for agents, whose preamble names
+/// the live lines.
+const AGENTS_MODEL: &str = "\n[consumer]\nsite = \"https://example.com\"\n";
+
+#[test]
+fn a_release_archives_the_line_the_agents_preamble_names() {
+    let dir = repository(&format!("{MODEL}{AGENTS_MODEL}"));
+    let out = ascribe(
+        dir.path(),
+        &["versions", "release", "prod 1.1", "--next", "1.2"],
+    );
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let model = read(dir.path(), "ascribe.toml");
+    assert!(
+        model.contains("[releases.prod.archived]\n\"1.0\" = {}"),
+        "{model}"
+    );
+}
+
 /// A page with marks naming the live line, 1.0, and an older one, 0.9,
 /// beside a feature marked 1.0.
 const OLD_MARKS: &str = "---\ntitle: Old\n---\n\n@available: prod 1.0\nGone.\n\n@available: prod beta 1.0\nStill beta.\n\n@available: prod 0.9\nOlder.\n\n@available: prod planned\nNew.\n\n| Option | Does |\n|---|---|\n| `a` {available=\"prod 1.0.2\"} | A. |\n| `b` | B. |\n";
