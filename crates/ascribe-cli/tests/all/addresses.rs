@@ -614,3 +614,63 @@ fn a_name_moved_to_an_alias_keeps_the_alias_and_an_unknown_name_is_refused() {
         before
     );
 }
+
+#[test]
+fn with_config_a_page_s_path_is_read_from_the_current_folder() {
+    // The project is `site/`, run from the folder above it: a path from
+    // here names the page, not a path of that name in the content root.
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let site = dir.path().join("site");
+    fs::create_dir(&site).expect("create the project's folder");
+    write_project(&site);
+    let out = ascribe(dir.path(), &["addresses", "init", "--config", "site"]);
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    let content = site.join("content");
+    fs::rename(
+        content.join("Guides/My Setup.md"),
+        content.join("Guides/Setup.md"),
+    )
+    .expect("move the page");
+    fs::remove_file(content.join("Reference/Options.md")).expect("remove the page");
+
+    let out = ascribe(
+        dir.path(),
+        &[
+            "addresses",
+            "move",
+            "--config",
+            "site",
+            "site/content/Guides/My Setup.md",
+            "site/content/Guides/Setup.md",
+        ],
+    );
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    let out = ascribe(
+        dir.path(),
+        &[
+            "addresses",
+            "retire",
+            "--config",
+            "site",
+            "site/content/Reference/Options.md",
+            "--reason",
+            "Merged into the guide",
+        ],
+    );
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    assert_eq!(
+        stdout(&out),
+        "Recorded in ascribe.addresses: Reference/Options.md was retired.\n"
+    );
+
+    let file = fs::read_to_string(site.join("ascribe.addresses")).expect("the file");
+    assert!(
+        file.contains("\"Guides/My Setup.md\" = \"Guides/Setup.md\"\n"),
+        "{file}"
+    );
+    assert!(
+        file.contains("\"Reference/Options.md\" = \"Merged into the guide\"\n"),
+        "{file}"
+    );
+    assert!(!file.contains("site/content"), "{file}");
+}
