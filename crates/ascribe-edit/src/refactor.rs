@@ -7,7 +7,7 @@
 //! `textDocument/prepareRename` says what's renamed at a position, or why
 //! nothing is.
 
-pub(crate) mod values;
+pub mod values;
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -26,7 +26,9 @@ use lsp_types::{
 use crate::model_file;
 use crate::nav::{Ctx, Lines, directive_at, encode_destination, hit_at, identifier_primary};
 
-pub(crate) fn file_operation_capability() -> FileOperationRegistrationOptions {
+/// The file operations the server asks to hear of before they're made:
+/// the renames of the files and folders whose moves it edits for.
+pub fn file_operation_capability() -> FileOperationRegistrationOptions {
     FileOperationRegistrationOptions {
         // A folder too: what's in it moves with it, and `ascribe.nav` names
         // it.
@@ -53,7 +55,7 @@ pub(crate) fn file_operation_capability() -> FileOperationRegistrationOptions {
 /// itself, which doesn't take it (issue 899). That's told by the folder's
 /// listing, which has each name as it's written: `old`'s is there, and no
 /// entry is named exactly as `new` is.
-pub(crate) fn taken(old: &Path, new: &Path) -> bool {
+pub fn taken(old: &Path, new: &Path) -> bool {
     // Outside FileSystem: whether the place a file or folder moves to is
     // taken, by anything at all, for any path the editor or the command
     // names.
@@ -79,10 +81,12 @@ pub(crate) fn taken(old: &Path, new: &Path) -> bool {
     names.iter().any(|n| n == new_name) || !names.iter().any(|n| n == old_name)
 }
 
+/// `workspace/willRenameFiles`: the edits a page, a fragment, or a folder
+/// moving makes to what names it, and to what it names.
 // `Uri` hashes by its text; the map is built once and never mutated through
 // a key.
 #[allow(clippy::mutable_key_type)]
-pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<WorkspaceEdit> {
+pub fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<WorkspaceEdit> {
     let mut mappings = Vec::new();
     let root = ctx.config.parent()?;
     for file in params.files {
@@ -267,7 +271,7 @@ fn add_addresses_edit(
         let bytes = ascribe_resolve::FileSystem::read_file(&*ctx.fs, &path).ok()?;
         let text = String::from_utf8(bytes).ok()?;
         let after = recorded_moves(&text, ctx, mappings)?;
-        let edit = crate::edit::navigation::text_edit(&text, &after);
+        let edit = crate::navigation::text_edit(&text, &after);
         let uri = crate::uri::path_to_uri(&root.join(ascribe_model::ADDRESSES_FILE))?;
         Some((
             uri,
@@ -356,8 +360,8 @@ fn add_nav_edit(
         let path = RelPath::parse(ascribe_model::NAV_FILE).ok()?;
         let bytes = ascribe_resolve::FileSystem::read_file(&*ctx.fs, &path).ok()?;
         let text = String::from_utf8(bytes).ok()?;
-        let after = crate::edit::navigation::moved(&text, &|path| remap(path, mappings))?;
-        let edit = crate::edit::navigation::text_edit(&text, &after);
+        let after = crate::navigation::moved(&text, &|path| remap(path, mappings))?;
+        let edit = crate::navigation::text_edit(&text, &after);
         let uri = crate::uri::path_to_uri(&root.join(ascribe_model::NAV_FILE))?;
         Some((
             uri,
@@ -465,7 +469,9 @@ fn moved_path(written: &str, mappings: &[(RelPath, RelPath)]) -> Option<String> 
     (new != old).then(|| format!("{slash}{new}{rest}"))
 }
 
-pub(crate) fn rename(ctx: &Ctx, params: RenameParams) -> Option<WorkspaceEdit> {
+/// `textDocument/rename` in a page: what's renamed at the position,
+/// everywhere it's used.
+pub fn rename(ctx: &Ctx, params: RenameParams) -> Option<WorkspaceEdit> {
     let file = ctx.file()?;
     let index = LineIndex::new(&file.source);
     let offset =
@@ -523,7 +529,7 @@ pub(crate) fn rename(ctx: &Ctx, params: RenameParams) -> Option<WorkspaceEdit> {
 
 /// What a rename at `position` of a page renames: its range and its text,
 /// or why nothing there can be renamed.
-pub(crate) fn prepare(ctx: &Ctx, position: Position) -> Result<PrepareRenameResponse, String> {
+pub fn prepare(ctx: &Ctx, position: Position) -> Result<PrepareRenameResponse, String> {
     let file = ctx.file().ok_or_else(nothing_here)?;
     let index = LineIndex::new(&file.source);
     let offset = ctx.encoding.offset_lenient(&index, &file.source, position);
@@ -572,10 +578,7 @@ pub(crate) fn prepare(ctx: &Ctx, position: Position) -> Result<PrepareRenameResp
 }
 
 /// What a rename at `position` of `ascribe.toml` renames.
-pub(crate) fn prepare_model(
-    ctx: &Ctx,
-    position: Position,
-) -> Result<PrepareRenameResponse, String> {
+pub fn prepare_model(ctx: &Ctx, position: Position) -> Result<PrepareRenameResponse, String> {
     let index = LineIndex::new(&ctx.model_text);
     let offset = ctx
         .encoding
@@ -602,7 +605,9 @@ fn nothing_here() -> String {
         .to_owned()
 }
 
-pub(crate) fn rename_model_key(
+/// `textDocument/rename` in `ascribe.toml`: a phrase's key or a
+/// dimension's value at the position, everywhere it's used.
+pub fn rename_model_key(
     ctx: &Ctx,
     position: lsp_types::Position,
     new_name: &str,
@@ -623,7 +628,7 @@ pub(crate) fn rename_model_key(
 
 /// [`rename_model_key`] in this project only, without the projects of the
 /// files `[from]` takes from.
-pub(crate) fn rename_model_key_here(
+pub fn rename_model_key_here(
     ctx: &Ctx,
     position: lsp_types::Position,
     new_name: &str,
@@ -645,7 +650,7 @@ pub(crate) fn rename_model_key_here(
 /// The edit that renames the phrase `old` to `new`: its key where it's
 /// written, and every use, in this project and in the project of the file
 /// `[from]` takes it from.
-pub(crate) fn rename_phrase(
+pub fn rename_phrase(
     ctx: &Ctx,
     old: &str,
     new: &str,
@@ -661,7 +666,7 @@ pub(crate) fn rename_phrase(
 
 /// [`rename_phrase`] in this project only.
 #[allow(clippy::mutable_key_type)]
-pub(crate) fn rename_phrase_here(
+pub fn rename_phrase_here(
     ctx: &Ctx,
     old: &str,
     new: &str,
@@ -827,7 +832,7 @@ fn rename_heading(ctx: &Ctx, offset: usize, new_text: &str) -> Option<WorkspaceE
 /// What the editor says when a rename at `position` rewords a glossary
 /// term's heading that has no `@id`: the term's id is the heading's, so it
 /// changes with the words. `None` for any other rename.
-pub(crate) fn term_id_note(ctx: &Ctx, position: Position, new_text: &str) -> Option<String> {
+pub fn term_id_note(ctx: &Ctx, position: Position, new_text: &str) -> Option<String> {
     let file = ctx.file()?;
     let index = LineIndex::new(&file.source);
     let offset = ctx.encoding.offset_lenient(&index, &file.source, position);
@@ -863,7 +868,7 @@ pub(crate) fn term_id_note(ctx: &Ctx, position: Position, new_text: &str) -> Opt
 /// names an id it changes: its own, and those of the headings after it whose
 /// slugs were numbered after its. `None` when it can't: the heading isn't on
 /// a line of its own at the start of the line, or already has an `@id`.
-pub(crate) fn add_id(ctx: &Ctx, heading: usize, new_id: &str) -> Option<WorkspaceEdit> {
+pub fn add_id(ctx: &Ctx, heading: usize, new_id: &str) -> Option<WorkspaceEdit> {
     let file = ctx.file()?;
     let found = file.headings.get(heading)?;
     if found.explicit_id.is_some() {
@@ -1315,14 +1320,18 @@ fn workspace_edit(ctx: &Ctx, mut edits: HashMap<RelPath, Vec<ByteEdit>>) -> Work
     }
 }
 
-pub(crate) fn valid_id_or_phrase(name: &str) -> bool {
+/// Whether `name` can be an id: letters, digits, hyphens, underscores, and
+/// periods.
+pub fn valid_id_or_phrase(name: &str) -> bool {
     !name.is_empty()
         && name
             .chars()
             .all(|c| c.is_alphanumeric() || matches!(c, '-' | '_' | '.'))
 }
 
-pub(crate) fn valid_phrase_key(name: &str) -> bool {
+/// Whether `name` can be a phrase's key: a lowercase letter, then
+/// lowercase letters, digits, and hyphens.
+pub fn valid_phrase_key(name: &str) -> bool {
     let mut chars = name.chars();
     chars.next().is_some_and(|c| c.is_ascii_lowercase())
         && chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
@@ -1388,7 +1397,9 @@ fn phrase_entry_at(source: &str, offset: usize) -> Option<(String, Span)> {
     ))
 }
 
-pub(crate) fn phrase_entry_span(source: &str, key: &str) -> Option<Span> {
+/// The span of the key `key` as it's written under `[phrases]` in `source`,
+/// the text of `ascribe.toml`, quotes and all.
+pub fn phrase_entry_span(source: &str, key: &str) -> Option<Span> {
     let mut phrases = false;
     let mut at = 0;
     for line in source.split_inclusive('\n') {

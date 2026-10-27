@@ -46,9 +46,10 @@ mod tests {
     };
     use ascribe_core::Coded;
     use ascribe_diff::DiffError;
+    use ascribe_edit::{ReleaseError, RenameError, RetireError};
     use ascribe_emit::{EmitError, StoreError};
     use ascribe_fmt::FormatFilesError;
-    use ascribe_lsp::{ReleaseError, RenameError, RetireError, ServeError};
+    use ascribe_lsp::ServeError;
     use ascribe_query::QueryError;
     use ascribe_resolve::reading::BadQuery;
     use ascribe_sources::SourcesError;
