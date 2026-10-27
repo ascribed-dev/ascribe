@@ -11,12 +11,18 @@
 //! `ascribe-check`. It reads, and writes nothing.
 //!
 //! A `Workspace` kept between calls takes the changes to its files
-//! ([`Workspace::apply`]).
+//! ([`Workspace::apply`]); a [`Kept`] one learns them from a [`Listing`] of
+//! its files, made again before each call, as the MCP server keeps its
+//! projects.
 
+mod kept;
+mod listing;
 mod load;
 mod locate;
 mod workspace;
 
+pub use kept::{FsFor, Kept};
+pub use listing::{Differences, Listing, Stamp, stamp};
 
 pub use load::{LoadError, Loader, ModelFile, ModelLoader, ReadFailure, SourceFile, root_of};
 pub use locate::{LocateError, find_below, find_config, locate};

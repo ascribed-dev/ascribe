@@ -8,6 +8,8 @@ mod incremental_support;
 
 #[path = "all/differential.rs"]
 mod differential;
+#[path = "all/kept.rs"]
+mod kept;
 #[path = "all/load.rs"]
 mod load;
 #[path = "all/locate.rs"]

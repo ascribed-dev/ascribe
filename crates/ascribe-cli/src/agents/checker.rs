@@ -8,7 +8,8 @@
 //! project loaded and answers each hook in milliseconds: for the files an
 //! edit wrote, as the language server does (`ascribe_lsp::Watched`), which
 //! redoes only what the edit affects; for the whole project, as the MCP
-//! server does (`crate::mcp::cache`). Hook and server talk through files
+//! server does (`crate::mcp::cache`), which updates the project it keeps
+//! from what changed on disk. Hook and server talk through files
 //! in a folder of the user's cache folder named for the project
 //! ([`Mailbox`]), not a socket: the binary opens none. It stops after
 //! [`IDLE`] without a request, when the project's `ascribe.toml` is gone,
@@ -32,7 +33,7 @@ use serde::{Deserialize, Serialize};
 use crate::answer::Projects;
 use crate::cli::{Color, Global};
 use crate::commands::check;
-use crate::mcp::cache::{Stamp, content_listing};
+use crate::mcp::cache::Stamp;
 use crate::report::concise;
 use ascribe_lsp::Watched;
 
@@ -906,7 +907,7 @@ fn listing(config: &Path) -> Vec<Stamp> {
     };
     let layout = ascribe_resolve::Layout::from_model(&model.model);
     let root = normalize(&std::path::absolute(&model.root).unwrap_or(model.root));
-    let mut files = content_listing(&root, &layout.content_root, &layout.output_dir);
-    files.sort();
-    files
+    ascribe_workspace::Listing::content(&root, &layout, ascribe_check::LOADER.side_files)
+        .stamps()
+        .to_vec()
 }

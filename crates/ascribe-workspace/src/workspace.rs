@@ -253,7 +253,7 @@ impl Workspace {
     /// What's read again is read through the file system the project was
     /// loaded with, which must show the files as they are now: one a command
     /// loads ([`Workspace::load`]) keeps what it lists, since a command's
-    /// project is never updated, and `Kept` has the disk read
+    /// project is never updated, and [`Kept`](crate::Kept) has the disk read
     /// again once its listing shows a change.
     ///
     /// # Errors
