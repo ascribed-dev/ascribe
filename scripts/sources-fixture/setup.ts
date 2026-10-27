@@ -191,6 +191,12 @@ interface Step {
   broken?: string[];
   /** Whether `ascribe check` fails on the pull request, when that isn't because of `broken`. */
   fails?: boolean;
+  /**
+   * Whether the pull request's checks fail on a warning alone, such as
+   * `example-stale`: check.yml's `--deny-warnings` fails on it, and the
+   * description, from `ascribe check` without it, doesn't say so.
+   */
+  warns?: boolean;
   /** The examples it says went stale: changed since their last test run. */
   stale?: string[];
 }
@@ -201,6 +207,7 @@ const PASS: Step[] = [
     outcome: "opened",
     changed: ["quickstart.md"],
     broken: [],
+    warns: true,
     stale: ["examples/quickstart.ts"],
   },
   { change: "restore", outcome: "closed" },
@@ -233,7 +240,7 @@ if (options.local || options.pass) {
     const problems = outcome === step.outcome ? check(step, after) : [`expected ${step.outcome}`];
     if (problems.length === 0 && after.open !== undefined && step.broken !== undefined) {
       const passed = host.checks(after.open.number);
-      if (passed === fails(step)) {
+      if (passed === (fails(step) || step.warns === true)) {
         problems.push(`its checks ${passed ? "passed" : "failed"}`);
       }
     }

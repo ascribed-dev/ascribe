@@ -1,0 +1,11 @@
+# Written by `ascribe observe`. Don't edit it by hand.
+version = 1
+ascribe = "0.3.0"
+command = "node --test"
+
+[environment]
+os = "linux"
+arch = "x64"
+
+[files]
+"examples/edited.ts" = "sha256-lf:1f5b72d04a674b1e5c8cad8e99c7b21e11051ab7d4c986604c6de3077c8fc51c"
