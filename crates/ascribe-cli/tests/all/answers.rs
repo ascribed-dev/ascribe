@@ -218,7 +218,8 @@ fn explain_lists_every_diagnostic() {
     let diagnostics = listed["diagnostics"].as_array().unwrap();
     assert_eq!(text.lines().count(), diagnostics.len());
     let registry =
-        fs::read_to_string(repository_root().join("tests/conformance/diagnostics.toml")).unwrap();
+        fs::read_to_string(repository_root().join("crates/ascribe-core/data/diagnostics.toml"))
+            .unwrap();
     let codes = registry
         .lines()
         .filter(|l| l.starts_with("code = "))

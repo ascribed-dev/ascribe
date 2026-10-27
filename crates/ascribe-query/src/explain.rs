@@ -1,6 +1,6 @@
 //! What a diagnostic means: its message, how to fix it, and a short
 //! wrong-and-right example, from the diagnostics registry
-//! (`tests/conformance/diagnostics.toml`), which is embedded in the binary.
+//! (`crates/ascribe-core/data/diagnostics.toml`), which is embedded in the binary.
 //!
 //! Many diagnostics fire only under a particular content model, so each
 //! example is a page, `page.md`, checked under the explain model

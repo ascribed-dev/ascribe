@@ -126,8 +126,8 @@ fn the_docs_name_the_oldest_vale_that_works() {
     let (major, minor, _) = MIN_VERSION;
     let wanted = format!("Vale](https://vale.sh) {major}.{minor} or later");
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let registry =
-        fs::read_to_string(repo.join("tests/conformance/diagnostics.toml")).expect("the registry");
+    let registry = fs::read_to_string(repo.join("crates/ascribe-core/data/diagnostics.toml"))
+        .expect("the registry");
     assert!(
         registry.contains(&wanted),
         "the prose-not-checked fix says {wanted}"

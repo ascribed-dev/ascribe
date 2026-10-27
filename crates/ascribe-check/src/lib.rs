@@ -25,7 +25,7 @@
 //!   the content declares, when the project has one.
 //!
 //! Messages, codes, and severities come from the diagnostics registry
-//! (`tests/conformance/diagnostics.toml`), through [`Registry`].
+//! (`crates/ascribe-core/data/diagnostics.toml`), through [`Registry`].
 //!
 //! **Page-level checks** are in [`page`]: [`check_project`] is the one function
 //! every tool calls for a build (the file-level diagnostics, then the build's

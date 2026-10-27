@@ -28,7 +28,6 @@ Every case runs through the runner: each area tag has an adapter (`tests/adapter
 tests/conformance/
   README.md          this file
   SKIPS.toml         skipped tags and cases, each with a reason
-  diagnostics.toml   the diagnostics registry
   _model/            the shared fixture model, ascribe.toml
   cases/             the cases, grouped by area: cases/<area>/<case>/
   snapshots/         insta snapshots of expected outputs
@@ -294,7 +293,7 @@ diagnostics:
         label: "first used here"    # optional
 ```
 
-- `slug` names an entry of the diagnostics registry, `tests/conformance/diagnostics.toml` (its header documents the format). Cases refer to diagnostics by slug, never by code or message. The runner checks every expected slug before the case runs, even when the case is skipped: the slug must be registered; a `file`-level slug goes in the top-level `diagnostics` and and a `page`-level slug under a build.
+- `slug` names an entry of the diagnostics registry, `crates/ascribe-core/data/diagnostics.toml` (its header documents the format). Cases refer to diagnostics by slug, never by code or message. The runner checks every expected slug before the case runs, even when the case is skipped: the slug must be registered; a `file`-level slug goes in the top-level `diagnostics` and and a `page`-level slug under a build.
 - `line` is 1-based and counts every line of the file, including frontmatter.
 - `column` is 1-based and counts Unicode scalar values (characters), not bytes or UTF-16 units. It's compared only when written.
 - `file` is relative to the content root. It defaults to `input.md` in single-file cases.

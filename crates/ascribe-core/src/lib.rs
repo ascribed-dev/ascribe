@@ -14,7 +14,7 @@
 //! | [`text_edit`] | [`TextEdit`] and [`apply_edits`]: fixes, formatting, refactoring |
 //! | [`issue`] | [`Issue`]: a problem, by registry slug, with its message arguments |
 //! | [`error`] | [`Coded`]: errors a caller can tell apart by a stable code |
-//! | [`diagnostics`] | One [`DiagnosticSlug`] constant per entry of `tests/conformance/diagnostics.toml` |
+//! | [`diagnostics`] | One [`DiagnosticSlug`] constant per entry of `crates/ascribe-core/data/diagnostics.toml` |
 //! | [`git`] | The options and the cleared environment every `git` Ascribe starts runs with |
 //! | [`intended`] | [`Place`]: where a check's problem is acknowledged, and how a check names a content model entry |
 //! | [`schema`] | [`DirectiveSchema`], and the built-in schemas of SPEC §4 |

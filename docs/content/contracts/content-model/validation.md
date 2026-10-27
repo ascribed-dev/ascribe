@@ -11,7 +11,7 @@ Part of the [`ascribe.toml` format contract](../content-model.md), whose [conten
 
 A loader MUST enforce every rule below when it loads `ascribe.toml`, and report each violation at the span of the offending key or value. Every rule is an error unless marked **warning**. A model with errors doesn't load, and no document is checked against it; warnings don't stop loading.
 
-- **Slugs** are stable identifiers, for tests and for the diagnostics registry, [`tests/conformance/diagnostics.toml`]({repo}/blob/main/tests/conformance/diagnostics.toml), which gives each one a code. Only `model-name-multiple-roles` corresponds to a row of SPEC §8.2 ("Content model"); the rest are loader rules this reference adds.
+- **Slugs** are stable identifiers, for tests and for the diagnostics registry, [`crates/ascribe-core/data/diagnostics.toml`]({repo}/blob/main/crates/ascribe-core/data/diagnostics.toml), which gives each one a code. Only `model-name-multiple-roles` corresponds to a row of SPEC §8.2 ("Content model"); the rest are loader rules this reference adds.
 - **Messages** are templates. `{name}` is a placeholder. Where a rule has several messages, each covers one case of it.
 - Rules about documents, such as a page matching no content type or an unknown frontmatter key, aren't loader rules.
 - **Filesystem rules** (`model-content-root-missing`, `model-source-path-missing`, `model-source-outside-repository`, and `model-listing-folder` for a folder that isn't there) need the project directory. A loader given only the file's text, such as an unsaved editor buffer or a unit test, skips them; `ascribe check` and the language server always run them.
