@@ -22,6 +22,7 @@ See the [streaming API reference]({api}streaming).
 - In a fenced code block, only when its info string has `phrases=true`: ` ```yaml phrases=true `. Never in code spans, indented code, or raw HTML.
 - Values are inserted as literal text.
 - `{{key}}` puts the value between literal braces, which is usually a leftover from another tool's templates; Ascribe warns.
+- A phrase's value written out, `Quill 3.4.1` where `{product} {version}` would do, goes stale when the value changes: [`phrase-text-written`](../checks/diagnostics/content-checks.md#ASC288) reports it, with a fix that writes the phrase. Acknowledge text meant as written, such as a changelog's version, with `@intended {check=phrase-text-written}` above its block.
 
 ## Links
 

@@ -176,6 +176,7 @@ A table row takes a spec from an attribute block at the end of its first cell, w
 - `available` is the only key a row takes. Its spec is checked like an `@available` line's, and can't go beyond the table's own availability.
 - A `badge` build marks the row at the end of its first cell, and a filter build removes the row where it isn't available.
 
+@intended {check=phrase-text-written}: An example of prose that says each release's value, which stays as written.
 There's no form for part of a sentence: a filter would break the sentence, and a badge in the middle of one gets in the way. Write a value that differs by release as prose, such as "glibc 2.28 or later (2.39 for 0.1.1 and earlier)".
 
 ## `@note`

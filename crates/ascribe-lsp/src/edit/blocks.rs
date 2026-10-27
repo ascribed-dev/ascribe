@@ -457,8 +457,11 @@ fn variant_group<'a>(page: &Page<'a>) -> Result<Found<'a>, String> {
     Ok((group, span, dimension, arm))
 }
 
-/// The placeholder in a new arm, or in a new block of a group.
-pub(super) fn arm_placeholder(label: &str) -> String {
+/// The placeholder in a new arm, or in a new block of a group. A phrase's
+/// value in the label is written as the phrase, as `phrase-text-written`
+/// asks.
+pub(super) fn arm_placeholder(label: &str, model: &ascribe_model::ContentModel) -> String {
+    let label = ascribe_check::with_phrases(label, model);
     format!("Write what applies to {label} here.")
 }
 
@@ -503,7 +506,7 @@ pub(crate) fn add_variant_arm(page: &Page<'_>) -> Outcome {
         .values
         .get(at)
         .map_or(value.as_str(), |v| v.label.as_str());
-    let placeholder = arm_placeholder(label);
+    let placeholder = arm_placeholder(label, model);
     let opener = format!("@variant {block}:");
     let prefix = page.prefix(span.start());
     let nl = page.nl;

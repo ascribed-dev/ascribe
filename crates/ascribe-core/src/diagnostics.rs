@@ -885,6 +885,9 @@ pub const INFO_PAIR_MALFORMED: DiagnosticSlug = DiagnosticSlug("info-pair-malfor
 /// `ASC285`, warning, file level: a content check (area `examples`).
 pub const EXAMPLES_CONFIG_UNREAD: DiagnosticSlug = DiagnosticSlug("examples-config-unread");
 
+/// `ASC288`, advice, file level: a content check (area `pages`).
+pub const PHRASE_TEXT_WRITTEN: DiagnosticSlug = DiagnosticSlug("phrase-text-written");
+
 /// The checks renamed, each by the name it had before, which still names
 /// it in `[checks]`, in an acknowledgement, and to `ascribe explain`, for a
 /// release (decision #953).
@@ -1165,6 +1168,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     BUILD_FILTER_LINE_UNDECLARED,
     INFO_PAIR_MALFORMED,
     EXAMPLES_CONFIG_UNREAD,
+    PHRASE_TEXT_WRITTEN,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1226,6 +1230,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     API_OPERATION_UNREFERENCED,
     BUILD_FILTER_LINE_UNDECLARED,
     EXAMPLES_CONFIG_UNREAD,
+    PHRASE_TEXT_WRITTEN,
 ];
 
 /// The configurable checks that are off unless a project names them in
@@ -1249,4 +1254,5 @@ pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] = &[
     (AVAILABILITY_LEFT_BEHIND, crate::Place::Entry),
     (TITLE_HEADING_DIFFERS, crate::Place::Page),
     (HTML_COMMENT, crate::Place::Block),
+    (PHRASE_TEXT_WRITTEN, crate::Place::Block),
 ];

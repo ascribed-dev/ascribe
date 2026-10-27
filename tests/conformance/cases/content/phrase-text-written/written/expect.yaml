@@ -1,0 +1,16 @@
+description: >-
+  A declared phrase's value written in a page's text is reported where it's
+  written, whole words and whole versions only, with its case as written.
+  Of a value inside another, only the longer is reported. A number alone
+  isn't looked for.
+spec: ["5.1"]
+tags: [check]
+
+diagnostics:
+  - {slug: phrase-text-written, line: 5, column: 1, severity: advice}
+  - {slug: phrase-text-written, line: 5, column: 36}
+  - {slug: phrase-text-written, line: 7, column: 17}
+  - {slug: phrase-text-written, line: 7, column: 28}
+  - {slug: phrase-text-written, line: 7, column: 69}
+  - {slug: phrase-text-written, line: 11, column: 2}
+  - {slug: phrase-text-written, line: 11, column: 27}

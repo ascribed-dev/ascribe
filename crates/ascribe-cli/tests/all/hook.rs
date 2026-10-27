@@ -871,3 +871,30 @@ fn a_baseline_that_cant_be_read_is_named_after_an_edit() {
         );
     }
 }
+
+/// A phrase's value written out is named with its fix when the fix is safe,
+/// as a version's is, and left out when it isn't, as a word's is.
+#[test]
+fn an_edit_that_writes_a_phrases_value_names_the_safe_fix() {
+    let dir = project();
+    let root = dir.path();
+    fs::write(
+        root.join("ascribe.toml"),
+        format!("{MODEL}\n[phrases]\nproduct = \"Quill\"\nversion = \"3.4.1\"\n"),
+    )
+    .unwrap();
+    fs::write(
+        root.join("docs/index.md"),
+        "---\ntitle: Home\n---\n\nSee [the guide](guide.md), and install Quill 3.4.1.\n",
+    )
+    .unwrap();
+    let said = "`ascribe check docs/index.md` reports 1 advice with a safe fix, which you make:\n\
+                docs/index.md:5: [ASC288] `3.4.1` is the value of the phrase `{version}`; write `{version}`, so the page changes with the value\n  \
+                Fix: Replace with `{version}`.\n\
+                Checked build `site` only. Run `ascribe explain <code>` for any you don't recognize.\n";
+    for harness in HARNESSES {
+        let input = edit_input(harness, root, "docs/index.md");
+        let here = hook(&[harness], &input, None);
+        assert_eq!(context(harness, &here), said, "{harness}");
+    }
+}
