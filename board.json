@@ -8354,6 +8354,9 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1207"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "Load a project once, phase 5: keep the language server's project as a Workspace, with the open buffers over it"
