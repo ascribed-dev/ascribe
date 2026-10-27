@@ -7423,7 +7423,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1204"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Split ascribe-check: project loading, and the report's tools and caches, out of the checker"
     },
     {
@@ -8655,10 +8655,11 @@
       ],
       "linked pull requests": [
         "https://github.com/ascribed-dev/ascribe/pull/1192",
-        "https://github.com/ascribed-dev/ascribe/pull/1203"
+        "https://github.com/ascribed-dev/ascribe/pull/1203",
+        "https://github.com/ascribed-dev/ascribe/pull/1205"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "CLI conventions: the groups after --format json"
     },
     {
