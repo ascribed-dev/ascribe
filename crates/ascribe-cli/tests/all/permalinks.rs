@@ -154,8 +154,9 @@ fn sync_check_writes_nothing_and_fails_while_the_list_is_behind() {
         "{diff}"
     );
     assert!(
-        diff.lines()
-            .any(|line| line.starts_with('+') && !line.starts_with("+++") && line.contains("deploy")),
+        diff.lines().any(|line| line.starts_with('+')
+            && !line.starts_with("+++")
+            && line.contains("deploy")),
         "{diff}"
     );
     assert_eq!(

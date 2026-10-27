@@ -17,10 +17,10 @@ use serde::Serialize;
 use crate::agents::sync::{self, Agent, Plan};
 use crate::agents::{checker, command, copilot, hook, index as index_file, prompts, skill};
 use crate::answer::{self, Format, FromDisk};
-use crate::guard;
 use crate::cli::Global;
 use crate::context::Failure;
 use crate::exit;
+use crate::guard;
 
 /// Arguments of `ascribe agents`.
 #[derive(Debug, ClapArgs)]
@@ -539,7 +539,11 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
                 (true, true) => "would write",
             };
             let pad = if dry_run { 11 } else { 9 };
-            writeln!(out, "{done:<pad$} {path:<width$}  read by {}", list(readers))
+            writeln!(
+                out,
+                "{done:<pad$} {path:<width$}  read by {}",
+                list(readers)
+            )
         });
     let result = result.and_then(|()| {
         unread

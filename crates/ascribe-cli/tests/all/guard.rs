@@ -117,7 +117,9 @@ fn addresses(root: &Path) {
 /// its block, so `sync` would put it back.
 fn agent_files(root: &Path) {
     assert!(
-        ascribe(root, &["agents", "sync", "--force"]).status.success(),
+        ascribe(root, &["agents", "sync", "--force"])
+            .status
+            .success(),
         "sync"
     );
     git(root, &["add", "-A"]);
