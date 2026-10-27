@@ -317,15 +317,15 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 
 ### ASC260 `model-api-reference`
 @id {permalink=true}: ASC260
-@summary: An API's `reference` is a template with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`.
+@summary: An API's `reference` is an address pattern with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`.
 
 Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
 
-**When:** An API's `reference` is a template with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`.
+**When:** An API's `reference` is an address pattern with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`.
 
 **Message:** the reference of API `{api}` has no `{operationId}`, so every operation's address would be the same
 
-**Fix:** Write the template as your renderer addresses an operation, with `{operationId}` where the operation's id goes and `{tag}` for its first tag, such as `"/api/#/operations/{operationId}"` for Stoplight Elements. For Redoc, write `{ renderer = "redoc", at = "/api/" }` instead.
+**Fix:** Write the address pattern as your renderer addresses an operation, with `{operationId}` where the operation's id goes and `{tag}` for its first tag, such as `"/api/#/operations/{operationId}"` for Stoplight Elements. For Redoc, write `{ renderer = "redoc", at = "/api/" }` instead.
 
 **Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
 

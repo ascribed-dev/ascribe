@@ -73,14 +73,14 @@ import spec from "../../api/openapi.yaml?url&no-inline";
 
 Redoc 3 sends usage data to Redocly unless `disable-telemetry` is `"true"`.
 
-**Another renderer.** Write `reference` as a template of an operation's address, with `{operationId}` where the id goes and `{tag}` for its first tag. Each is filled in percent-encoded.
+**Another renderer.** Write `reference` as an address pattern: an operation's address, with `{operationId}` where the id goes and `{tag}` for its first tag. Each is filled in percent-encoded.
 
 | Renderer | `reference` |
 |---|---|
 | Stoplight Elements, with `router="hash"` | `"/api/#/operations/{operationId}"` |
 | Swagger UI, with deep linking | `"/api/#/{tag}/{operationId}"` |
 
-A renderer whose address is a slug of the id, such as starlight-openapi's or Docusaurus OpenAPI docs', or that addresses an operation by its method and path, such as Scalar, can't be written as a template, and isn't supported.
+A renderer whose address is a slug of the id, such as starlight-openapi's or Docusaurus OpenAPI docs', or that addresses an operation by its method and path, such as Scalar, can't be written as an address pattern, and isn't supported.
 
 ## Give each operation an id
 
