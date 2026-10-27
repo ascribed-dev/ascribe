@@ -1,9 +1,7 @@
 # The docs' own check, on every pull request: the update pull request's too,
-# so one whose examples broke fails here. It's the recipe in
-# docs/content/checks/ci.md ("Add the workflow"), which takes it from this
-# file: the line marked `:remove:` is what this example adds, since it follows
-# `main`.
-# :snippet-start: workflow
+# so one whose examples broke fails here. It installs `@ascribed/cli@next`, so
+# it follows `main`, where the recipe in docs/content/checks/ci.md runs the
+# version a project pins (examples/getting-started/.github/workflows/check.yml).
 name: Check
 
 on:
@@ -22,10 +20,8 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-      - run: npm install --global @ascribed/cli
-      - run: npm install --global @ascribed/cli@next # :remove:
+      - run: npm install --global @ascribed/cli@next
       # Fails on errors and warnings, then on a page `ascribe fmt` would change,
       # and shows each on the pull request's lines.
       - run: ascribe check --deny-warnings --format github
       - run: ascribe fmt --check --format github
-# :snippet-end:
