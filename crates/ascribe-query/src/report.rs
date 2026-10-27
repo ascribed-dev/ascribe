@@ -13,9 +13,9 @@
 //!   what every reader that isn't a person is told about each page, sorted
 //!   by address;
 //! - **links**: the external links a link checker finds broken or moved
-//!   ([`ascribe_check::links`]);
+//!   ([`ascribe_report::links`]);
 //! - **delivery**: the delivery spec's checks on a built site
-//!   ([`ascribe_check::site`]).
+//!   ([`ascribe_report::site`]).
 //!
 //! The first four need nothing outside the project. Each section is
 //! independent: one that can't run says why ([`NotRun`]), and the others
@@ -26,10 +26,6 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::time::Duration;
 
 use ascribe_check::identity::{self, Identity};
-use ascribe_check::links::{self, LinkChecker};
-use ascribe_check::report_history::{self, ReportHistory, SiteChecks};
-use ascribe_check::site::{self, CheckResult, SiteChecker};
-use ascribe_check::tool::ToolError;
 use ascribe_check::{
     Acknowledged, Acknowledgements, DiagnoseError, Diagnostic, Project, Request, apply_levels,
     diagnose_with, select_builds,
@@ -37,6 +33,10 @@ use ascribe_check::{
 use ascribe_core::{DiagnosticSlug, FileId, Location, RelPath, diagnostics};
 use ascribe_emit::labels::removal_detail;
 use ascribe_model::{FieldRole, Listing};
+use ascribe_report::links::{self, LinkChecker};
+use ascribe_report::report_history::{self, ReportHistory, SiteChecks};
+use ascribe_report::site::{self, CheckResult, SiteChecker};
+use ascribe_report::tool::ToolError;
 use ascribe_resolve::pages::{self, PageRecord};
 use ascribe_resolve::{AstroRouter, DropReason, ExampleStatus, FileKind, Removal, Scope};
 

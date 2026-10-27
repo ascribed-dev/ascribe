@@ -19,6 +19,7 @@ use ascribe_workspace::{
 use crate::Diagnostic;
 use crate::baseline::{BASELINE_FILE_ID, Baseline, BaselineError};
 use crate::checks::template::Template;
+use crate::page::PlainMarkdown;
 use crate::side_files::{SIDE_FILES, side_file_by_id};
 
 pub use ascribe_model::MODEL_FILE;
@@ -167,6 +168,9 @@ pub struct Project {
     /// The values the pages' `@variant` arms give each dimension, read the
     /// first time a check asks.
     variant_values: OnceLock<BTreeMap<String, Vec<String>>>,
+    /// What renders a page's plain Markdown, for `page-size`
+    /// ([`Project::with_plain_markdown`]).
+    plain_markdown: Option<PlainMarkdown>,
 }
 
 impl Project {
@@ -187,6 +191,7 @@ impl Project {
             templates: Arc::default(),
             personal_memos: false,
             variant_values: OnceLock::new(),
+            plain_markdown: None,
         }
     }
 
@@ -422,11 +427,12 @@ impl Project {
     }
 
     /// The checks' view of `snapshot`, another of the same project's, with
-    /// this one's day and the templates it has read, since a page's text
-    /// doesn't change them.
+    /// this one's day, renderer, and the templates it has read, since a
+    /// page's text doesn't change them.
     pub fn with_snapshot(&self, snapshot: WorkspaceSnapshot) -> Project {
         Project {
             templates: self.templates.clone(),
+            plain_markdown: self.plain_markdown,
             ..Project::new(snapshot).with_today(self.today)
         }
     }
@@ -523,6 +529,22 @@ impl Project {
     pub fn with_today(mut self, today: Option<Date>) -> Project {
         self.today = today;
         self
+    }
+
+    /// The project with `render` making a page's plain Markdown, which
+    /// `page-size` measures: `ascribe_emit::plain_markdown`, as every
+    /// surface gives it. Without one, `page-size` isn't checked, since this
+    /// crate doesn't render.
+    #[must_use]
+    pub fn with_plain_markdown(mut self, render: PlainMarkdown) -> Project {
+        self.plain_markdown = Some(render);
+        self
+    }
+
+    /// What renders a page's plain Markdown for `page-size`, when the
+    /// caller gave it ([`Project::with_plain_markdown`]).
+    pub fn plain_markdown(&self) -> Option<PlainMarkdown> {
+        self.plain_markdown
     }
 
     /// The project with a base revision's specs, so a link to an

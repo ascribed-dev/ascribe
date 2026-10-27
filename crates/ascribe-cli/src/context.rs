@@ -59,7 +59,9 @@ pub fn load_rest(config: &Path, model: ModelFile) -> Result<Workspace, Failure> 
 
 /// The checks' view of a command's project, on today.
 pub fn checked(workspace: &Workspace) -> Project {
-    Project::new(workspace.snapshot()).with_today(crate::clock::today())
+    Project::new(workspace.snapshot())
+        .with_today(crate::clock::today())
+        .with_plain_markdown(ascribe_emit::plain_markdown)
 }
 
 /// The content model `--config` names, or the nearest one.

@@ -151,7 +151,7 @@ pub struct Options {
     pub today: Option<Clock>,
     /// What checks the prose on open and on save, for a project with
     /// `[checks.vale]`: Vale itself when `None`, or a test's stand-in.
-    pub linter: Option<Arc<dyn ascribe_check::prose::Linter>>,
+    pub linter: Option<Arc<dyn ascribe_report::prose::Linter>>,
     /// Called with the commit each time the server lists a base's
     /// addresses (`addresses.rs`), so a test can count the listings.
     pub base_listed: Option<BaseListedHook>,

@@ -39,14 +39,14 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use ascribe_check::Project;
-use ascribe_check::links::{self, Answer, LinkChecker};
-use ascribe_check::site::{self, CheckResult, SiteChecker, Status};
-use ascribe_check::store::{MemoryStore, Store};
-use ascribe_check::tool::ToolError;
 use ascribe_conformance::{
     AdapterError, AdapterResult, BuildResult, Case, ConformanceAdapter, Diagnostic,
 };
 use ascribe_query::report::{Options, Ran, Section, Tools};
+use ascribe_report::links::{self, Answer, LinkChecker};
+use ascribe_report::site::{self, CheckResult, SiteChecker, Status};
+use ascribe_report::store::{MemoryStore, Store};
+use ascribe_report::tool::ToolError;
 
 /// Handles the cases that expect the report's problems.
 pub struct ReportAdapter;

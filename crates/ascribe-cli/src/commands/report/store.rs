@@ -11,8 +11,8 @@
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
-use ascribe_check::store::{Listing, Store};
 use ascribe_core::Date;
+use ascribe_report::store::{Listing, Store};
 
 /// The files under a project's folder.
 #[derive(Debug)]

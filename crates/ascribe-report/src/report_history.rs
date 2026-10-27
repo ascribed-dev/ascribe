@@ -6,7 +6,7 @@
 //! - **The history is one file,** `.ascribe/history/report.json`, with a
 //!   part for each section it remembers, each with its own run's day:
 //!   `problems`, the builds it checked and its findings by
-//!   [identity](crate::identity), sorted, so a diff of it reads as a list
+//!   [identity](ascribe_check::identity), sorted, so a diff of it reads as a list
 //!   of findings; and `delivery`, the site it checked and each of the
 //!   delivery spec's checks by id, with how it came out. It's written whole
 //!   through a rename after each run that reports either; a section the run
@@ -32,9 +32,9 @@ use std::sync::Arc;
 use ascribe_core::Date;
 use serde::{Deserialize, Serialize};
 
-use crate::identity::Identity;
 use crate::site::Status;
 use crate::store::Store;
+use ascribe_check::identity::Identity;
 
 /// The history's file, relative to the project's folder.
 pub const FILE: &str = ".ascribe/history/report.json";

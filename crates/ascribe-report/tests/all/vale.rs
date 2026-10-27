@@ -1,6 +1,6 @@
 //! The prose checked by a real Vale: the one named by `ASCRIBE_TEST_VALE`,
 //! which CI installs on Linux. Elsewhere, without it, these tests pass
-//! without running; `crates/ascribe-check/src/prose/` tests the rest with a
+//! without running; `crates/ascribe-report/src/prose/` tests the rest with a
 //! stand-in.
 
 #![allow(clippy::expect_used, clippy::panic)]
@@ -8,9 +8,9 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use ascribe_check::prose::{MIN_VERSION, PROJECT_TIMEOUT, Program, lint};
 use ascribe_check::{Diagnostic, MODEL_FILE, Project, Severity};
 use ascribe_core::diagnostics;
+use ascribe_report::prose::{MIN_VERSION, PROJECT_TIMEOUT, Program, lint};
 
 /// The Vale to run, or `None` to skip. CI on Linux must have one.
 fn vale() -> Option<PathBuf> {

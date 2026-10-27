@@ -93,6 +93,7 @@ test("Files Ascribe writes has a row for every project file the code names", () 
   const declared = tracked(
     "crates/ascribe-model/src/*.rs",
     "crates/ascribe-check/src/*.rs",
+    "crates/ascribe-report/src/*.rs",
     "crates/ascribe-resolve/src/*.rs",
   ).flatMap((file) =>
     Array.from(

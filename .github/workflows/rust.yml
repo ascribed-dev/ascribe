@@ -95,7 +95,7 @@ jobs:
           name: quill-archive-3.4
           path: ${{ runner.temp }}/quill-archive
           if-no-files-found: error
-      # Vale, for crates/ascribe-check/tests/all/vale.rs, which runs a real
+      # Vale, for crates/ascribe-report/tests/all/vale.rs, which runs a real
       # Vale on Linux and fails there without one. A pinned release, checked
       # against its published checksum.
       - if: runner.os == 'Linux'

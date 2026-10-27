@@ -149,7 +149,7 @@ pub fn eject(
     let new_model = switched(model_text)?;
     let mut written = Vec::new();
     let mut files = ejected_files(preset, off);
-    files.push((crate::MODEL_FILE.to_owned(), new_model));
+    files.push((ascribe_check::MODEL_FILE.to_owned(), new_model));
     for (path, text) in files {
         if !dry_run {
             write_if_changed(root, &path, &text).map_err(|e| EjectError::Write {

@@ -32,8 +32,8 @@ use std::sync::Arc;
 use ascribe_core::{Date, RelPath};
 use serde::{Deserialize, Serialize};
 
-use crate::Project;
 use crate::store::Store;
+use ascribe_check::Project;
 
 /// The store's folder, relative to the project's folder.
 pub const FOLDER: &str = ".ascribe/cache/links";

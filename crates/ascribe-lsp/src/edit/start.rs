@@ -135,6 +135,7 @@ pub(crate) fn project(ctx: &Ctx) -> ascribe_check::Project {
         ctx.fs.clone(),
     );
     ascribe_check::Project::new(workspace.snapshot())
+        .with_plain_markdown(ascribe_emit::plain_markdown)
 }
 
 /// An error's message as a sentence: its first letter a capital, with a
