@@ -98,7 +98,9 @@ const OTHER_REVISIONS: &[(&str, &str)] = &[("sources update", "to")];
 
 /// The values every `--format` draws from (`project-docs/checklists.md`, "A
 /// new command or option").
-const FORMATS: &[&str] = &["text", "concise", "json", "prompt", "html", "markdown"];
+const FORMATS: &[&str] = &[
+    "text", "concise", "json", "prompt", "html", "markdown", "github",
+];
 
 /// The conventions, each one a rule [`check`] holds a command to.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
