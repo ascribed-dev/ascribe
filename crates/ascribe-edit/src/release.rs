@@ -685,7 +685,9 @@ fn plan<'m>(model: &'m ContentModel, r: &Releasing<'_>) -> Result<Plan<'m>, Rele
     })
 }
 
-pub(crate) fn entry_versions(detail: &Detail) -> Vec<&Version> {
+/// The versions an entry of the list names: none, its one, or each of its
+/// history's.
+pub fn entry_versions(detail: &Detail) -> Vec<&Version> {
     match detail {
         Detail::None | Detail::State { version: None, .. } => Vec::new(),
         Detail::Version(v)
@@ -698,7 +700,7 @@ pub(crate) fn entry_versions(detail: &Detail) -> Vec<&Version> {
 
 /// The edit that sets one of a target's lists, newest first, written as
 /// the list writes its lines.
-pub(crate) fn set_lines(
+pub fn set_lines(
     file: &ModelFile<'_>,
     target: &str,
     key: &str,
@@ -719,7 +721,7 @@ pub(crate) fn set_lines(
 /// The edits that add `line` to the target's `archived`, at `url` when
 /// one's given, and the day its support ended: the one `ends` has, which
 /// then leaves `ends`, or else `today` when one's given.
-pub(crate) fn archive(
+pub fn archive(
     file: &ModelFile<'_>,
     releases: &Releases,
     line: &Version,
@@ -780,14 +782,14 @@ fn remove_end(file: &ModelFile<'_>, target: &str, line: &str) -> Result<Edit, Re
 }
 
 /// The text the edits give, checked.
-pub(crate) fn finish(file: &ModelFile<'_>, edits: Vec<Edit>) -> Result<String, ReleaseError> {
+pub fn finish(file: &ModelFile<'_>, edits: Vec<Edit>) -> Result<String, ReleaseError> {
     file.finish(edits)
         .map(|finished| finished.text)
         .map_err(ReleaseError::ModelEdit)
 }
 
 /// The content model in `text`.
-pub(crate) fn load(text: &str, root: &Path) -> Result<ContentModel, ReleaseError> {
+pub fn load(text: &str, root: &Path) -> Result<ContentModel, ReleaseError> {
     ascribe_check::type_files::load_model(text, root, SourceBound::Anywhere).map_err(|issues| {
         let messages: Vec<String> = issues
             .iter()
@@ -801,7 +803,7 @@ pub(crate) fn load(text: &str, root: &Path) -> Result<ContentModel, ReleaseError
 
 /// Every build's site and plain outputs, in memory, for `project` with `model` and the
 /// source files in `edited` holding their texts after.
-pub(crate) fn outputs(
+pub fn outputs(
     project: &Project,
     model: ContentModel,
     model_text: &str,
@@ -848,7 +850,7 @@ fn with_sources(
 }
 
 /// The files that differ between two sets of outputs.
-pub(crate) fn compare(
+pub fn compare(
     before: &BTreeMap<String, Contents>,
     after: &BTreeMap<String, Contents>,
 ) -> Vec<String> {
@@ -863,7 +865,7 @@ pub(crate) fn compare(
 }
 
 /// What differs between two sets of outputs, by build and output.
-pub(crate) fn changed_outputs(
+pub fn changed_outputs(
     before: &BTreeMap<String, Contents>,
     after: &BTreeMap<String, Contents>,
 ) -> Vec<ChangedOutput> {
@@ -1009,7 +1011,7 @@ fn rewrite_marks(
 
 /// The frontmatter's `available` value, unquoted, and where it's written,
 /// when it's on its key's line.
-pub(crate) fn frontmatter_available(file: &FileIndex) -> Option<(String, Span)> {
+pub fn frontmatter_available(file: &FileIndex) -> Option<(String, Span)> {
     let fm = file.document.frontmatter.as_ref()?;
     let source: &str = &file.source;
     let base = fm.content.start();
@@ -1021,7 +1023,7 @@ pub(crate) fn frontmatter_available(file: &FileIndex) -> Option<(String, Span)> 
 }
 
 /// Whether a spec can be written as a plain YAML scalar.
-pub(crate) fn yaml_plain(spec: &str) -> bool {
+pub fn yaml_plain(spec: &str) -> bool {
     !spec.contains(": ")
         && !spec.contains(" #")
         && !spec.starts_with(|c: char| "[]{}&*!|>'\"%@`#-?:,".contains(c))

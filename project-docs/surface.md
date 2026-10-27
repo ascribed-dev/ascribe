@@ -1021,6 +1021,7 @@ READMEs published with a package, a crate, or the repository:
 | `crates/ascribe-cli/README.md` |
 | `crates/ascribe-core/README.md` |
 | `crates/ascribe-diff/README.md` |
+| `crates/ascribe-edit/README.md` |
 | `crates/ascribe-emit/README.md` |
 | `crates/ascribe-fmt/README.md` |
 | `crates/ascribe-lsp/README.md` |

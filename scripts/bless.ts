@@ -114,6 +114,12 @@ export const rewrites: Rewrite[] = [
   // After the command output the docs show. At a terminal it lists the
   // commands it would run and asks first.
   { writer: "ascribe observe", run: "cargo run -p ascribe-cli -- observe" },
+  // The docs' agent files name the command contributors run Ascribe with, and
+  // `--check` in rust.yml gives it too.
+  {
+    writer: "ascribe agents sync",
+    run: 'cargo run -q -p ascribe-cli -- agents sync --config docs --command "cargo run -q -p ascribe-cli --"',
+  },
   {
     writer: "cargo insta review",
     skip: "it asks about each snapshot; run it yourself, and never accept one blindly",
@@ -124,9 +130,12 @@ export const rewrites: Rewrite[] = [
   },
 ];
 
-/** A rewrite's command and its environment, from its `run`. */
+/**
+ * A rewrite's command and its environment, from its `run`: words split at
+ * spaces, and a word in double quotes kept whole.
+ */
 export function command(run: string): { env: Record<string, string>; argv: string[] } {
-  const words = run.split(" ");
+  const words = Array.from(run.matchAll(/"([^"]*)"|(\S+)/g), (m) => m[1] ?? m[2] ?? "");
   const env: Record<string, string> = {};
   while (/^[A-Z_]+=/.test(words[0] ?? "")) {
     const [name = "", ...value] = (words.shift() ?? "").split("=");
