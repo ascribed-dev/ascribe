@@ -47,7 +47,6 @@ missing = ["examples/quickstart.ts"]
 ---
 
 ## 21. `[apis.<name>]`
-@available: ascribe 0.4.4
 
 @include: ../../_fragments/content-model/apis.md
 

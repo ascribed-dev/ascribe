@@ -9,7 +9,15 @@ import { afterAll, beforeAll, expect, test } from "vitest";
 import type { Browser, Page } from "playwright-core";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { launchChromium, requireBuild, serve, siteAddress, siteDir } from "./built.ts";
+import {
+  launchChromium,
+  outputDir,
+  publishedPages,
+  requireBuild,
+  serve,
+  siteAddress,
+  siteDir,
+} from "./built.ts";
 
 let server: Awaited<ReturnType<typeof serve>>;
 let browser: Browser;
@@ -470,11 +478,22 @@ test("a variant group is a switcher, and the reader's choice holds on the next p
   await page.close();
 });
 
-test("a page marked with an availability shows its badge", async () => {
-  // A page new in the oldest live line keeps its mark until that line is
-  // archived; then this moves to a newer one.
-  const page = await open("/docs/command/site-output/");
-  const badge = page.locator('ascribe-availability[scope="page"] ascribe-availability-target');
+test("a page or section marked with an availability shows its badge", async (ctx) => {
+  // Before 1.0 the docs mark only what no release has yet, and a release
+  // removes those marks (decision #973), so the page is whichever has one
+  // now: one marked as a whole if there is one, for the layout's badge.
+  // Just after a release, none is marked, and there's nothing to show.
+  const marked = await markedPage();
+  if (marked === undefined) {
+    ctx.skip();
+    return;
+  }
+  const page = await open(marked.address);
+  const badge = page
+    .locator(
+      `ascribe-availability[scope${marked.whole ? '="page"' : ""}] ascribe-availability-target`,
+    )
+    .first();
   expect(await badge.getAttribute("target")).toBe("ascribe");
   expect(await badge.isVisible()).toBe(true);
   // The element library's stylesheet draws it as a badge.
@@ -482,6 +501,23 @@ test("a page marked with an availability shows its badge", async () => {
   expect(radius).not.toBe("0px");
   await page.close();
 });
+
+/**
+ * A page of the site output marked with an availability, as its address:
+ * one marked as a whole, by its frontmatter's `available`, before one with a
+ * marked section or block. Undefined when none is.
+ */
+async function markedPage(): Promise<{ address: string; whole: boolean } | undefined> {
+  let section: string | undefined;
+  for (const file of await publishedPages()) {
+    const text = readFileSync(path.join(outputDir, file), "utf8");
+    const frontmatter = text.startsWith("---\n") ? text.slice(0, text.indexOf("\n---", 4)) : "";
+    const address = `/docs/${file.replace(/(^|\/)index\.md$/, "$1").replace(/\.md$/, "/")}`;
+    if (/^available:/m.test(frontmatter)) return { address, whole: true };
+    if (section === undefined && text.includes("<ascribe-availability")) section = address;
+  }
+  return section === undefined ? undefined : { address: section, whole: false };
+}
 
 test("notes and steps render as elements", async () => {
   const install = await open("/docs/install/");

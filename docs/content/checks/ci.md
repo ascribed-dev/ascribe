@@ -17,7 +17,6 @@ It installs the latest release. To run the version your `package.json` pins inst
 [`ascribe check`, `build`, `preview`, and `fmt`](check.md) has each command's options and exit codes.
 
 ## Keep the addresses you've published
-@available: ascribe 0.4.4
 
 A project with [`ascribe.addresses`](../publishing/redirects.md) has `ascribe check` compare the addresses the docs publish with the base's, and the base needs the history: give `actions/checkout` `fetch-depth: 0`, and name the base. On a pull request, it's the branch the pull request targets; on a push, it's the commit before the push, compared as it is:
 

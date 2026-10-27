@@ -42,7 +42,6 @@ Both are written by [`ascribe sources fetch` and `ascribe sources update`](../ex
 ---
 
 ## 21. `[apis.<name>]`
-@available: ascribe 0.4.4
 
 @include: ../_fragments/content-model/apis.md
 
