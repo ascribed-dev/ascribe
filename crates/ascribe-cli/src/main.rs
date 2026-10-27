@@ -20,6 +20,7 @@ mod conventions;
 #[cfg(test)]
 mod docs;
 mod exit;
+mod guard;
 mod mcp;
 mod report;
 #[cfg(test)]

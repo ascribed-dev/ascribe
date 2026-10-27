@@ -1678,10 +1678,14 @@ fn permalinks() {
         "docs/guides/security.md",
         "---\ntitle: Security\n---\n\nKeep the keys safe.\n",
     );
+    // In a repository, with each step committed, so the git guard lets the
+    // commands write.
+    git(root, &["init", "-q"]);
     expect(
         "permalinks-sync-new.txt",
         &stdout(&run(root, &["permalinks", "sync"], 0)),
     );
+    commit(root, "List the permalinks");
 
     // The section moves to a page of its own, and the other goes.
     write(
@@ -1725,6 +1729,7 @@ fn permalinks() {
         "permalinks-sync.txt",
         &format!("{}{}", String::from_utf8_lossy(&sync.stderr), stdout(&sync)),
     );
+    commit(root, "Sync the permalinks");
 
     let copy = tempfile::tempdir().unwrap();
     copy_tree(root, copy.path());

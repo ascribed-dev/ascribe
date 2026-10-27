@@ -590,7 +590,7 @@ fn a_name_moved_to_an_alias_keeps_the_alias_and_an_unknown_name_is_refused() {
     // it keeps it.
     let out = ascribe(
         dir.path(),
-        &["addresses", "move", "go:another", "go:config"],
+        &["addresses", "move", "go:another", "go:config", "--force"],
     );
     assert_eq!(code(&out), 0, "{}", both(&out));
     let file = fs::read_to_string(dir.path().join("ascribe.addresses")).expect("the file");
@@ -638,6 +638,7 @@ fn with_config_a_page_s_path_is_read_from_the_current_folder() {
         &[
             "addresses",
             "move",
+            "--force",
             "--config",
             "site",
             "site/content/Guides/My Setup.md",
@@ -650,6 +651,7 @@ fn with_config_a_page_s_path_is_read_from_the_current_folder() {
         &[
             "addresses",
             "retire",
+            "--force",
             "--config",
             "site",
             "site/content/Reference/Options.md",

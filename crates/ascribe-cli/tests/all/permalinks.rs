@@ -235,7 +235,10 @@ fn moving_a_heading_and_syncing_changes_one_line_and_warns_about_nothing() {
     assert_eq!(found[0].0, "permalinks-list-behind");
     assert!(found[0].1.contains("keys.md#rotate-keys"), "{}", found[0].1);
 
-    let sync = ascribe(dir.path(), &["permalinks", "sync", "--format", "json"]);
+    let sync = ascribe(
+        dir.path(),
+        &["permalinks", "sync", "--force", "--format", "json"],
+    );
     assert_eq!(code_of(&sync), 0);
     let json: Value = serde_json::from_slice(&sync.stdout).unwrap();
     assert_eq!(json["changed"], true);
@@ -399,6 +402,7 @@ fn retiring_a_lost_permalink_writes_ascribe_addresses_and_quiets_check() {
         &[
             "permalinks",
             "retire",
+            "--force",
             "rotate-keys",
             "--reason",
             "why this address was retired",
@@ -411,6 +415,7 @@ fn retiring_a_lost_permalink_writes_ascribe_addresses_and_quiets_check() {
         &[
             "permalinks",
             "retire",
+            "--force",
             "rotate-keys",
             "--reason",
             "Merged into the install page",
@@ -461,6 +466,7 @@ fn retire_takes_a_page_as_check_names_it_and_moves_it_to_another() {
         &[
             "permalinks",
             "retire",
+            "--force",
             "--page",
             "docs/keys.md",
             "--to",
@@ -485,6 +491,7 @@ fn retire_takes_a_page_as_check_names_it_and_moves_it_to_another() {
         &[
             "permalinks",
             "retire",
+            "--force",
             "--page",
             "install.md",
             "--reason",
@@ -505,6 +512,7 @@ fn retire_takes_a_page_as_check_names_it_and_moves_it_to_another() {
         &[
             "permalinks",
             "retire",
+            "--force",
             "--page",
             "docs/other.md",
             "--reason",
@@ -567,6 +575,7 @@ fn retire_moves_a_name_to_an_alias_and_refuses_a_name_that_s_nowhere() {
         &[
             "permalinks",
             "retire",
+            "--force",
             "--page",
             "docs/keys.md",
             "--to",
@@ -585,6 +594,7 @@ fn retire_moves_a_name_to_an_alias_and_refuses_a_name_that_s_nowhere() {
         &[
             "permalinks",
             "retire",
+            "--force",
             "--page",
             "docs/keys.md",
             "--to",
