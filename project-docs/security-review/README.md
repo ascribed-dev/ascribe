@@ -49,6 +49,8 @@ Settled for every phase. If one can't be met, stop and report.
 
 Phase 0 comes first because every later phase asks "is this input trusted?" Phases 1 to 5 are independent and can run in any order; by likely impact, the order above. Phase 6 waits for all of them.
 
+**Status, 27 October 2026:** phases 0 to 5 ran, each phase's findings checked by a second, adversarial agent. Five private findings are with the maintainer (two high, two medium, one low; decision 1), and the hardening notes are in `notes/phase-1.md` to `notes/phase-5.md`, each ending with what was checked and held. The fuzz targets phase 1 added are in `fuzz/`. Phase 6 is next.
+
 ## No thread
 
 A review, not a feature: no layer is built, so the steel-threads ordering doesn't apply.
