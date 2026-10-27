@@ -165,6 +165,7 @@ impl SectionArg {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum Format {
     /// Each section, for people.
+    #[value(alias = "concise")]
     Text,
     /// Markdown, for a CI job's summary or an issue's body.
     Markdown,

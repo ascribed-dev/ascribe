@@ -21,22 +21,12 @@ use crate::cli::Global;
 use crate::context::Failure;
 use crate::exit;
 
-/// How to show an answer.
+/// How to show an answer: text, which `concise` names too, since an answer
+/// has no one-line form of its own, as CONTRIBUTING.md's command-line
+/// conventions say, or JSON.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
 pub enum Format {
     /// Short text, for people and agents to read.
-    #[default]
-    Text,
-    /// One JSON document, for tools.
-    Json,
-}
-
-/// How a command with no one-line form shows what it did: text, which
-/// `concise` names too, as CONTRIBUTING.md's command-line conventions say, or
-/// JSON.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
-pub enum TextFormat {
-    /// Text, for people and agents to read.
     #[default]
     #[value(alias = "concise")]
     Text,

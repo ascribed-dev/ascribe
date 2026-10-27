@@ -109,6 +109,7 @@ pub struct ChangesArgs {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum ChangesFormat {
     /// What was added, removed, and changed, for people.
+    #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.
     Json,

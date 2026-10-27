@@ -20,7 +20,7 @@ use ascribe_templates::{
 use clap::{Args as ClapArgs, Subcommand};
 use serde::Serialize;
 
-use crate::answer::{self, Format, TextFormat, from_here};
+use crate::answer::{self, Format, from_here};
 use crate::cli::Global;
 use crate::context::{Failure, locate};
 use crate::exit;
@@ -60,8 +60,8 @@ pub enum Command {
 #[derive(Debug, ClapArgs)]
 pub struct ListArgs {
     /// How to show the templates.
-    #[arg(long, value_enum, default_value_t = TextFormat::Text, value_name = "FORMAT")]
-    pub format: TextFormat,
+    #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
+    pub format: Format,
 }
 
 /// The version of `list --format json`'s schema.
@@ -201,8 +201,8 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 fn run_list(args: &ListArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let set = ascribe_templates::set();
     let result = match args.format {
-        TextFormat::Text => write_list(out, &set),
-        TextFormat::Json => answer::write_json(
+        Format::Text => write_list(out, &set),
+        Format::Json => answer::write_json(
             out,
             &ListJson {
                 schema_version: LIST_SCHEMA_VERSION,

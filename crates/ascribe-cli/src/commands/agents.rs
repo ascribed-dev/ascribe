@@ -15,7 +15,7 @@ use serde::Serialize;
 
 use crate::agents::sync::{self, Agent, Plan};
 use crate::agents::{checker, command, copilot, hook, index as index_file, prompts, skill};
-use crate::answer::{self, Format, FromDisk, TextFormat};
+use crate::answer::{self, Format, FromDisk};
 use crate::cli::Global;
 use crate::context::Failure;
 use crate::exit;
@@ -160,8 +160,8 @@ pub struct PromptArgs {
     pub list: bool,
 
     /// How to show the prompt, or the list.
-    #[arg(long, value_enum, default_value_t = TextFormat::Text, value_name = "FORMAT")]
-    pub format: TextFormat,
+    #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
+    pub format: Format,
 }
 
 /// `key=value`, split at the first `=`.
@@ -218,8 +218,8 @@ pub struct SyncArgs {
     pub command: Option<String>,
 
     /// How to show what was written, or with --check what's out of date.
-    #[arg(long, value_enum, default_value_t = TextFormat::Text, value_name = "FORMAT")]
-    pub format: TextFormat,
+    #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
+    pub format: Format,
 }
 
 /// The version of `sync --format json`'s schema.
@@ -490,7 +490,7 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
             mcp_settings = plan.mcp_settings;
         }
     }
-    if args.format == TextFormat::Json {
+    if args.format == Format::Json {
         let json = sync_json(false, &written, &notes, &unread, mcp_settings.as_deref());
         let result = answer::write_json(out, &json);
         return answer::written(result, err).unwrap_or(exit::OK);
@@ -690,7 +690,7 @@ fn index(global: &Global, args: &IndexArgs, out: &mut dyn Write, err: &mut dyn W
 }
 
 fn prompt(args: &PromptArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    if args.list && args.format == TextFormat::Json {
+    if args.list && args.format == Format::Json {
         let list = PromptListJson {
             schema_version: PROMPT_SCHEMA_VERSION,
             ascribe_version: env!("CARGO_PKG_VERSION"),
@@ -746,8 +746,8 @@ fn prompt(args: &PromptArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     match named.text(&FromDisk, &arguments) {
         Ok(text) => {
             let result = match args.format {
-                TextFormat::Text => out.write_all(text.as_bytes()),
-                TextFormat::Json => answer::write_json(
+                Format::Text => out.write_all(text.as_bytes()),
+                Format::Json => answer::write_json(
                     out,
                     &PromptJson {
                         schema_version: PROMPT_SCHEMA_VERSION,
@@ -769,7 +769,7 @@ fn prompt(args: &PromptArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
 fn check(
     plans: &[Plan],
     notes: &[String],
-    format: TextFormat,
+    format: Format,
     out: &mut dyn Write,
     err: &mut dyn Write,
 ) -> u8 {
@@ -778,11 +778,11 @@ fn check(
         record(&mut files, plan);
     }
     let result = match format {
-        TextFormat::Text => files.iter().try_for_each(|(path, changed, _)| {
+        Format::Text => files.iter().try_for_each(|(path, changed, _)| {
             let state = if *changed { "stale" } else { "up to date" };
             writeln!(out, "{state:<10} {}", shown(path))
         }),
-        TextFormat::Json => {
+        Format::Json => {
             let mut unread: Vec<&str> = Vec::new();
             for line in plans.iter().flat_map(|plan| &plan.unread) {
                 if !unread.contains(line) {
