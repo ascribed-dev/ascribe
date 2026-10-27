@@ -89,7 +89,8 @@ test("the docs' agent files are written as rust.yml checks them", () => {
   const workflow = readFileSync(path.join(root, ".github/workflows/rust.yml"), "utf8");
   const checked = /ascribe agents sync --check (.+?) \|\|/.exec(workflow)?.[1];
   expect(checked).toBeDefined();
-  expect(sync.replace("cargo run -q -p ascribe-cli -- agents sync ", "")).toBe(checked);
+  // The rewrite also passes `--force`, which a check has no use for.
+  expect(sync.replace("cargo run -q -p ascribe-cli -- agents sync --force ", "")).toBe(checked);
   const step = steps.find((s) => s.ci === "Check the docs' agent files are up to date")?.run;
   expect(step).toEqual(["ascribe", "agents", "sync", "--check", ...command(checked ?? "").argv]);
 });

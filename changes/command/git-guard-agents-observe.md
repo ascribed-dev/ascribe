@@ -1,0 +1,1 @@
+- **Behavior change: `agents sync`, `agents index`, and `observe` refuse files git couldn't put back.** Each takes `--dry-run`, and `--force` writes a file with changes not committed. See [The `ascribe` command](docs/content/command/index.md).

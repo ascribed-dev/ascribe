@@ -485,6 +485,7 @@ const PACKAGES: &[(&str, &[&str])] = &[
             "lsp-agent-prompt",
             "lsp-addresses",
             "model",
+            "agents-sync",
         ],
     ),
 ];

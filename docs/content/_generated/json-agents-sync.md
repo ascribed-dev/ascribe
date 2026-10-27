@@ -105,12 +105,17 @@
         "type": "string"
       },
       "type": "array"
+    },
+    "written": {
+      "description": "Whether it wrote the files: false with `--check` or `--dry-run`.",
+      "type": "boolean"
     }
   },
   "required": [
     "schema_version",
     "ascribe_version",
     "check",
+    "written",
     "files",
     "notes",
     "unread",

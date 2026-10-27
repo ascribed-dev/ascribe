@@ -115,6 +115,9 @@ pub enum SyncError {
         /// Why.
         source: io::Error,
     },
+    /// The git guard refused a file it would change.
+    #[error(transparent)]
+    Guard(#[from] crate::guard::GuardError),
 }
 
 impl Coded for SyncError {
@@ -127,6 +130,7 @@ impl Coded for SyncError {
             SyncError::Read { .. } => "instructions_unreadable",
             SyncError::Settings { .. } => "settings_unreadable",
             SyncError::Write { .. } => "instructions_unwritable",
+            SyncError::Guard(e) => e.code(),
         }
     }
 }

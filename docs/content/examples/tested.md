@@ -44,6 +44,8 @@ The config is a list of commands for your machine to run, so `ascribe observe` a
 
 Commit the observation with the code, as you would a lockfile. When the test fails, nothing is written, and the old observation stays. When it replaces one, it says what changed since: the files added, removed, and changed, and the environment values that differ.
 
+Like [every command that writes](../command/index.md#commands-that-write), `ascribe observe` won't replace an observation git couldn't put back, one not committed yet, unless given `--force`, and says so before it runs anything. With `--dry-run`, it runs the test and says what it would write, and writes nothing.
+
 `ascribe observe` runs where the code is, so `ascribe` has to be installed there: with npm, or [without Node](../install.md#without-node) from Homebrew or the install script. Run it on a clean tree: the files are hashed after the test, as they are then.
 
 ## 3. Show the example
@@ -84,7 +86,7 @@ In VS Code, both are on the `@snippet` line as you write, and a hover on the add
 
 In the example itself, a lens over each region a page shows says how many pages show it, "Shown in 1 page", and lists them, so you know which pages a change will change before you make it. See [Code files a page shows](../editor/writing.md#code-files-a-page-shows).
 
-To check before a commit that an observation still matches the folder, run `ascribe observe --check`, with `--name` for one other than `default`. It runs nothing, not the test and not the environment commands, and exits 1 when the observation is stale or missing, so a pre-commit hook can run it. It's stricter than the pages: a file the config's `include` no longer matches, or one that's gone, counts as a change, though the files still in the observation stay current until the next run.
+To check before a commit that an observation still matches the folder, run `ascribe observe --check`, with `--name` for one other than `default`. It runs nothing, not the test and not the environment commands, and exits 1 when the observation is stale or missing, so a pre-commit hook can run it. A stale one's hashes are printed as a unified diff of the observation. It's stricter than the pages: a file the config's `include` no longer matches, or one that's gone, counts as a change, though the files still in the observation stay current until the next run.
 
 ## When the code is in another repository
 

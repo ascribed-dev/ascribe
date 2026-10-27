@@ -317,6 +317,24 @@ pub fn write_json(out: &mut dyn Write, answer: &impl Serialize) -> io::Result<()
     writeln!(out)
 }
 
+/// Writes how `file`'s text would change from `old` to `new`, as a unified
+/// diff with three lines of context, as `diff -u` and `git diff` write it:
+/// what `--check` prints. A file that isn't there yet is `old`, empty, and
+/// nothing is written when the two are the same.
+pub fn write_unified_diff(out: &mut dyn Write, file: &str, old: &str, new: &str) -> io::Result<()> {
+    if old == new {
+        return Ok(());
+    }
+    let diff = similar::TextDiff::from_lines(old, new);
+    let mut unified = diff.unified_diff();
+    unified.context_radius(3);
+    write!(
+        out,
+        "{}",
+        unified.header(&format!("a/{file}"), &format!("b/{file}"))
+    )
+}
+
 /// The exit code for an answer that couldn't be written: none for a closed
 /// pipe (`| head`), which isn't a problem with the project.
 pub fn written(result: io::Result<()>, err: &mut dyn Write) -> Option<u8> {
