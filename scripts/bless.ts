@@ -111,9 +111,10 @@ export const rewrites: Rewrite[] = [
     writer: "scripts/surface/inventory.test.ts",
     run: "ASCRIBE_BLESS=1 pnpm exec vitest run scripts/surface/inventory.test.ts",
   },
-  // After the command output the docs show. At a terminal it lists the
-  // commands it would run and asks first.
-  { writer: "ascribe observe", run: "cargo run -p ascribe-cli -- observe" },
+  // After the command output the docs show. It lists the commands it runs,
+  // the tests ascribe.examples.toml names; `--yes`, since without a terminal,
+  // as in an agent's shell, it runs nothing without it.
+  { writer: "ascribe observe", run: "cargo run -p ascribe-cli -- observe --yes" },
   // The docs' agent files name the command contributors run Ascribe with, and
   // `--check` in rust.yml gives it too.
   {
