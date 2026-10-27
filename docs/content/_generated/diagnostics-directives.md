@@ -603,7 +603,7 @@ Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.m
 
 **Fix:** Correct the number to a declared line, such as the newest, or, for a line that's planned, add it to `planned` in `[releases.<target>]`. Work for the planned line is marked with `planned` in place of its number, as `<target> planned`, and `ascribe versions release` writes the number when the line ships.
 
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
 
 ### ASC245 `available-planned-line`
 @id {permalink=true}: ASC245

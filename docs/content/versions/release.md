@@ -10,7 +10,7 @@ The commands for a project's [release lines](lines.md): what they are, what diff
 @id {permalink=true}: cli-versions
 @summary: Lists a project's release lines, says what differs between two, releases one, archives one, and retires one.
 
-Lists a project's release lines, says what differs between two, releases one, archives one, and retires one. Each reads the lines from `ascribe.toml`'s [`[releases]`](../content-model/content.md#71-releasestarget), and a line is named as a mark names it: the target, then the version, `"self-managed 3.4"`.
+Lists a project's release lines, says what differs between two, releases one, archives one, and retires one. Each reads the lines from `ascribe.toml`'s [`[releases]`](../content-model/variation.md#121-releasestarget), and a line is named as a mark names it: the target, then the version, `"self-managed 3.4"`.
 
 ### `ascribe versions list`
 @id {permalink=true}: cli-versions-list

@@ -1,0 +1,1 @@
+- **The `ascribe.toml` reference is grouped by what each section is for.** A page each for what pages hold, how content varies, where they're published, what they draw from, and the checks. See [the contents](docs/content/content-model/index.md#contents).

@@ -93,7 +93,7 @@ A mark written in a fragment names the fragment and its line in place of `line 2
 
 ## Pages
 
-Every page each build publishes, sorted by address, with what search engines and agents are told about it: its title, its description, and its listing, and where the listing comes from, the page's own `listing` or a rule of [`[listing]`](../content-model/checks.md#22-listing) and its line in `ascribe.toml`. It's the table a team would otherwise crawl its own site to get, made from the build before anything is deployed. The line above it gives the site's address, which each page's canonical address starts with.
+Every page each build publishes, sorted by address, with what search engines and agents are told about it: its title, its description, and its listing, and where the listing comes from, the page's own `listing` or a rule of [`[listing]`](../content-model/output.md#17-listing) and its line in `ascribe.toml`. It's the table a team would otherwise crawl its own site to get, made from the build before anything is deployed. The line above it gives the site's address, which each page's canonical address starts with.
 
 ```text
 Pages

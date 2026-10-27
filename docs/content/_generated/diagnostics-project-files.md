@@ -197,7 +197,7 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix `spec`, which is relative to the folder ascribe.toml is in, or fix the file. A spec generated from code has to be on disk when Ascribe runs, as it does for the renderer: generate it first. Ascribe reads one file, in YAML or JSON, as the renderer is given it: for a spec split across files, point `spec` at the bundled one.
 
-**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+**Read more:** [`[apis.<name>]`](../content-model/sources.md#21-apisname) in the `ascribe.toml` reference.
 
 ### ASC262 `api-spec-empty`
 @id {permalink=true}: ASC262
@@ -211,7 +211,7 @@ Advice · file level · next step: outside · [SPEC §7.11]({repo}/blob/main/SPE
 
 **Fix:** Check that `spec` names the spec you mean, and that it has a `paths` object with operations in it. A path item that's a `$ref` isn't followed: point `spec` at the bundled spec your renderer is given.
 
-**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+**Read more:** [`[apis.<name>]`](../content-model/sources.md#21-apisname) in the `ascribe.toml` reference.
 
 ## Examples
 
