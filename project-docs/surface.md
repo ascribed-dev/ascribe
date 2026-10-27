@@ -10,7 +10,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
-| `ascribe init` | Starts a project: writes its first `ascribe.toml`, and makes the folder its pages go in, `docs/`. | `[DIR] [--templates]` | `text`, `json` |
+| `ascribe init` | Starts a project: writes its first `ascribe.toml`, and makes the folder its pages go in, `docs/`. | `[DIR] [--templates] [--content-root <DIR>]` | `text`, `json` |
 | `ascribe check` | Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. | `[PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]` | `text`, `concise`, `json`, `prompt` |
 | `ascribe fmt` | Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. | `[--check] [--diff] [PATHS]...` | `text`, `json` |
 | `ascribe build` | Checks the project, then writes each build's outputs. | `[--build <NAME>]... [--emit site,plain,json] [--anchors] [--no-baseline]` | `text`, `json` |
@@ -117,7 +117,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-272 in all. By severity: 62 advice, 182 error, 28 warning. By level: 242 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 169 write.
+273 in all. By severity: 62 advice, 182 error, 29 warning. By level: 243 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 170 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -393,6 +393,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC282` | `api-operation-unreferenced` | advice | write | no page links to `{operation}` ({method} {route}) in {path} |
 | `ASC283` | `build-filter-line-undeclared` | advice | write | build `{build}` filters for `{target} {version}`, which is older than every line `[releases.{target}]` declares, so `ascribe versions` doesn't list it; declare its line in `archived`, or make the build one output for each live line with `versions = "{target}"` |
 | `ASC284` | `info-pair-malformed` | warning | write | `{written}` starts like the pair `{key}` but isn't one, so it isn't read; write `{key}=` with nothing around `=`, then the value, in double quotes if it has a space or a quote |
+| `ASC285` | `examples-config-unread` | warning | write | `{file}` is below the root of source `{source}`, `{root}`, and only the `ascribe.examples.toml` at a source's root is read, so no page says what its examples were tested with; declare a source with `path = "{folder}"`, or move the file to `{root}` |
 
 ## The VS Code extension
 
@@ -963,6 +964,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `examples/snippets.md` | Show an example from the code | how-to |
 | `examples/sources.md` | `ascribe sources` and `observe` | reference |
 | `examples/tested.md` | Show what an example was tested with | how-to |
+| `existing-docs.md` | Bring existing docs to Ascribe | how-to |
 | `getting-started.md` | Getting started | tutorial |
 | `glossary.md` | Glossary | reference |
 | `index.md` | Ascribe documentation | index |

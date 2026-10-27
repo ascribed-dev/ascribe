@@ -12,3 +12,7 @@ tests/conformance/cases/files/source-not-utf8/files/bad.md binary
 # as LF.
 tests/conformance/cases/directives/snippet/tested-line/code/examples/crlf.ts -text
 tests/conformance/cases/directives/snippet/tested-status/code/examples/crlf.ts -text
+
+# A case whose frontmatter has a lone carriage return.
+tests/conformance/cases/format/frontmatter-lone-carriage-return/input.md -text
+tests/conformance/cases/format/frontmatter-lone-carriage-return/formatted.md -text

@@ -1,0 +1,1 @@
+- **Links in the Markdown published for agents lead to the other pages' Markdown.** A link to a heading lands on that heading in the `.md`, so an agent that follows a link stays in Markdown ([Publish for AI agents](docs/content/astro/agents.md#publish-for-ai-agents)).

@@ -14,6 +14,7 @@ use ascribe_query::report::{
 };
 use ascribe_resolve::pages::PageRecord;
 
+use crate::commands::drift::escape;
 use crate::report::{Counts, FileTable};
 
 /// How the report is written.
@@ -373,39 +374,78 @@ impl Writer<'_> {
                 self.line(&format!("{build} leaves out nothing another build keeps."))?;
                 continue;
             }
+            // Each mark is counted once, by what it takes out.
+            let mut parts = Vec::new();
+            if !left.pages.is_empty() {
+                parts.push(counted(left.pages.len(), "page", "pages"));
+            }
+            for (scope, one, many) in SCOPES {
+                let n = left.content.iter().filter(|c| c.scope == scope).count();
+                if n > 0 {
+                    parts.push(counted(n, one, many));
+                }
+            }
             self.line(&format!(
-                "{build} leaves out {} and {} that another build keeps:",
-                counted(left.pages.len(), "page", "pages"),
-                counted(left.content.len(), "piece of content", "pieces of content"),
+                "{build} leaves out {} that another build keeps:",
+                names(&parts, str::to_owned),
             ))?;
             let mut lines: Vec<String> = left
                 .pages
                 .iter()
                 .map(|p| {
+                    let why = match p.kind {
+                        "variant" => "not this build's variant",
+                        _ => "not available",
+                    };
+                    let key = match p.kind {
+                        "variant" => "variant",
+                        _ => "available",
+                    };
+                    let mark = if p.mark.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" ({})", self.code(&format!("{key}: {}", p.mark)))
+                    };
                     format!(
-                        "{}: {}; {} {} it",
+                        "{}: {why}{mark}; {} {} it",
                         self.code(p.path.as_str()),
-                        p.why,
                         names(&p.kept_by, |n| self.code(n)),
                         plural(p.kept_by.len(), "publishes", "publish"),
                     )
                 })
                 .collect();
             lines.extend(left.content.iter().map(|c| {
-                let start = self
+                let line = self
                     .files
-                    .position(c.location.file, c.location.span.start());
-                let at = format!("{}:{}", self.files.path(c.location.file), start.line);
-                let on = if self.files.path(c.location.file) == c.page.as_str() {
-                    String::new()
+                    .position(c.location.file, c.location.span.start())
+                    .line;
+                let heading = c.heading.as_ref().map_or(String::new(), |h| {
+                    if self.style.markdown {
+                        format!(" § {}", escape(h))
+                    } else {
+                        format!(" § {h}")
+                    }
+                });
+                // A variant arm's reason names only what the build shows.
+                let why = if c.kind == "variant" {
+                    let mut chars = c.why.chars();
+                    let shows: String = chars
+                        .next()
+                        .map(|first| first.to_lowercase().chain(chars).collect())
+                        .unwrap_or_default();
+                    format!("variant arm the build doesn't show (it {shows})")
                 } else {
-                    format!(", on {}", self.code(c.page.as_str()))
+                    c.why.clone()
+                };
+                // A mark in a fragment says which, so it can be found.
+                let at = if c.in_page {
+                    format!("line {line}")
+                } else {
+                    self.code(&format!("{}:{line}", self.files.path(c.location.file)))
                 };
                 format!(
-                    "{} ({}{on}): {}; {} {} it",
-                    self.code(&at),
-                    c.kind,
-                    c.why,
+                    "{}{heading} ({at}): {why}; {} {} it",
+                    self.code(c.page.as_str()),
                     names(&c.kept_by, |n| self.code(n)),
                     plural(c.kept_by.len(), "keeps", "keep"),
                 )
@@ -782,6 +822,15 @@ fn counts_words(counts: Counts) -> String {
 fn day(date: Date) -> String {
     format!("{} {}", date.day(), date.month_name())
 }
+
+/// What a mark of `builds` takes out, in the order a build's line counts
+/// them: its scope, and the words for one and for several.
+const SCOPES: [(&str, &str, &str); 4] = [
+    ("section", "section", "sections"),
+    ("block", "block", "blocks"),
+    ("row", "table row", "table rows"),
+    ("arm", "variant arm", "variant arms"),
+];
 
 fn plural<'a>(n: usize, one: &'a str, many: &'a str) -> &'a str {
     if n == 1 { one } else { many }

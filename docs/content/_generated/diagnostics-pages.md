@@ -313,7 +313,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Message:** the required field `{field}` is missing; the content type `{type}` needs it
 
-**Fix:** Add the field to the page's frontmatter, or give it a default in the content type.
+**Fix:** Add the field to the page's frontmatter, or give it a default in the content type. A page with no `title` that opens with a level-1 heading has a fix that makes the heading its title.
 
 **Read more:** [Frontmatter values](../content-model/index.md#42-frontmatter-values) in the `ascribe.toml` reference.
 
@@ -599,7 +599,7 @@ Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.m
 
 **Message:** `{path}` has no region `{region}`; its regions are: \{regions}
 
-**Fix:** Fix the region's name, or mark the region in the file with `:snippet-start: <name>` and `:snippet-end:` comments. A file whose extension isn't in the comment table can only be used whole.
+**Fix:** Fix the region's name, or mark the region in the file with `:snippet-start: <name>` and `:snippet-end:` comments. A file whose name and extension are in neither comment table can only be used whole.
 
 **Read more:** [`@snippet`](../writing/directives.md#snippet) in the directive reference.
 

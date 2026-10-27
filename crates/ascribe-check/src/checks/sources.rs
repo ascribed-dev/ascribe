@@ -9,7 +9,7 @@ use ascribe_model::examples::{
     DEFAULT_OBSERVATION, EXAMPLES_FILE, Observation, Problem, is_examples_file, observation_path,
 };
 use ascribe_model::{Lock, LockedSource, file_hash};
-use ascribe_resolve::{FolderExamples, Probe};
+use ascribe_resolve::{FolderExamples, Probe, UnreadConfig, unread_configs};
 
 use crate::project::LOCK_FILE_ID;
 use crate::{Diagnostic, Project};
@@ -183,6 +183,51 @@ pub(crate) fn check_examples(project: &Project) -> Vec<Diagnostic> {
         }
     }
     out
+}
+
+/// Each `ascribe.examples.toml` in a source's folder that no source reads
+/// ([`ascribe_resolve::UnreadConfig`]), at the start of the file, which is
+/// read as a code file so a report can show it.
+pub(crate) fn check_unread_configs(project: &Project) -> Vec<Diagnostic> {
+    let model = project.model();
+    if model.checks.is_off(diagnostics::EXAMPLES_CONFIG_UNREAD) {
+        return Vec::new();
+    }
+    let (fs, code) = (project.file_system(), project.code_files());
+    let mut out = Vec::new();
+    for unread in unread_configs(model, fs) {
+        let Ok(file) = code.read(fs, &unread.path) else {
+            continue;
+        };
+        out.push(Diagnostic::from_issue(&unread_config_issue(
+            &unread, file.id,
+        )));
+    }
+    out
+}
+
+/// The `examples-config-unread` of `unread`, at the start of the config,
+/// whose file is `file`: as `ascribe check` reports it, and the editor shows
+/// it on the open file.
+pub fn unread_config_issue(unread: &UnreadConfig, file: FileId) -> Issue {
+    Issue::new(
+        diagnostics::EXAMPLES_CONFIG_UNREAD,
+        Location::new(file, Span::empty(0)),
+    )
+    .with_arg("file", unread.path.to_string())
+    .with_arg("source", unread.source.clone())
+    .with_arg("root", shown_folder(&unread.root))
+    .with_arg("folder", shown_folder(&unread.folder))
+}
+
+/// A folder from the project root as `path` in ascribe.toml writes it: `.`
+/// for the project's own.
+fn shown_folder(folder: &RelPath) -> String {
+    if folder.is_root() {
+        ".".to_owned()
+    } else {
+        folder.to_string()
+    }
 }
 
 /// Each file an observation lists that isn't in the folder, at its line in

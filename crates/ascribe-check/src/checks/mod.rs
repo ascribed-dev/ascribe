@@ -41,7 +41,8 @@ use ascribe_syntax::{
 
 use crate::{Diagnostic, Project, SourceFile};
 
-pub(crate) use sources::{check_examples, check_sources};
+pub use sources::unread_config_issue;
+pub(crate) use sources::{check_examples, check_sources, check_unread_configs};
 
 /// State shared by the checks of one file.
 struct Ctx<'a> {
@@ -124,6 +125,7 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
         issues: doc.issues.clone(),
     };
     cx.check_frontmatter(doc.frontmatter.as_ref());
+    cx.title_from_heading(doc.frontmatter.as_ref(), &doc.blocks);
     cx.collect_mark_scopes(&doc.blocks);
     cx.blocks(&doc.blocks);
     if cx.marked_examples {

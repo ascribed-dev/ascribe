@@ -5,6 +5,39 @@ description: Guides and references for writing documentation with Ascribe, and t
 permalink: docs
 ---
 
+Everyone starts with [Getting started](getting-started.md): it installs Ascribe, and writes, checks, builds, and previews a first page. From there, each path below is a few pages in order, for what you came to do.
+
+## For engineers
+@id {permalink=true}: for-engineers
+
+Keep the docs in the repository, checked like the code and changed with it.
+
+1. [Checks in CI](checks/ci.md): check every pull request with the command the editor runs.
+2. [Show an example from the code](examples/snippets.md): take a page's code examples from tested files, so they change when the code does.
+3. [Report the pages whose examples changed](examples/drift.md): find the pages whose examples moved while their words didn't.
+4. [Attach the HTML preview to every pull request](review/ci-report.md): let anyone review a change as readers will see it, without a checkout.
+
+## For writers
+@id {permalink=true}: for-writers
+
+Write and review in the editor, and write a thing once for every reader.
+
+1. [Editing](editor/index.md) and [the preview](editor/preview.md): the VS Code extension, its checks as you type, and the page as readers will see it.
+2. [Content that varies](writing/variants.md): one page for readers on different platforms or products.
+3. [Phrases](writing/inline.md#phrases) and [includes](writing/directives.md#include): write a name or a passage once, and use it on every page.
+4. [Set up a glossary](content-model/glossary.md) and [page templates](templates/index.md): link every page's terms to their definitions, and start a page of a known kind from a template.
+5. [Review in the preview](editor/review.md): what a change did, and a pull request's comments, beside the page.
+
+## For agent builders
+@id {permalink=true}: for-agent-builders
+
+Give the agents that write your docs the project's rules and checks, and the agents that read them what they need.
+
+1. [Write the agent files](agents/instructions.md): `ascribe agents sync` writes your project's rules where agents read them on their own.
+2. [Set up the MCP server](agents/mcp.md) and [check an agent's edits with hooks](agents/hooks.md): the checks as tools, and run after each edit.
+3. [Publish for AI agents](astro/agents.md): `llms.txt` and a Markdown version of every page, for the agents that read the docs.
+4. [Help entries](astro/reference.md#help-entries): each permalink's section as JSON, for an agent in your product.
+
 ## Start
 
 - [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, see it, and publish it with Astro.

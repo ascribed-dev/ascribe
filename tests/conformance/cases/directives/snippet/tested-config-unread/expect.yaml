@@ -1,0 +1,13 @@
+description: >-
+  An `ascribe.examples.toml` below a source's root, in a folder the source
+  may read files from, reports `examples-config-unread` at the file, since
+  only the one at a source's root is read, and its snippets say nothing of
+  being tested. One at another source's root is that source's, one below it
+  is reported for that source, and none is reported in a folder the
+  source's `include` can't match or one that holds an `ascribe.toml`.
+spec: ["7.3"]
+tags: [check]
+
+diagnostics:
+  - {slug: examples-config-unread, file: code/examples/ascribe.examples.toml, line: 1}
+  - {slug: examples-config-unread, file: code/nested/deep/ascribe.examples.toml, line: 1}

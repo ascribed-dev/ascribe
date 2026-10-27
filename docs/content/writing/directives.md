@@ -252,7 +252,7 @@ Takes a code example from a file outside the content, and puts it in the page as
   - A symbolic link that leads out of the source is named by the file it leads to, through a source that includes it.
   - A file of a source in another repository is copied by `ascribe sources fetch`. When it isn't in the repository at the pinned commit, because it was moved or deleted there, name it where it is now, or change the code and move the pin with `ascribe sources update`.
 - Without `#<region>`, the snippet is the whole file.
-- **Attributes:** `lang` sets the code block's language, which is otherwise the file's extension (`toml` for `ascribe.toml`); `title` gives the code block a title; `phrases=true` substitutes phrases in the code, as in a fence that opts in ([phrases](inline.md#phrases)).
+- **Attributes:** `lang` sets the code block's language, which is otherwise the file's extension (`toml` for `ascribe.toml`), or for a file known by its name, the language of its name (`dockerfile` for `Dockerfile`, `makefile` for `Makefile`); `title` gives the code block a title; `phrases=true` substitutes phrases in the code, as in a fence that opts in ([phrases](inline.md#phrases)).
 - It's a block, allowed wherever a code block is: in a list item, a note, or a variant's arm. A `@note`, `@details`, or widget directly above it applies to it.
 
 A region is marked in the code with [Bluehawk](https://github.com/mongodb-university/Bluehawk)'s tags in comments, `:snippet-start: <name>` and `:snippet-end:`: [mark a region in the code](../examples/snippets.md#2-mark-a-region-in-the-code) has the tags and the comments they're read in.

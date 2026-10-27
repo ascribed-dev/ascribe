@@ -1,0 +1,1 @@
+- **The reference pages' longest paragraphs are lists, tables, and shorter paragraphs.** None outside the contracts runs over 150 words, and a test keeps it so. See [when a mark does nothing](docs/content/content-model/content.md#71-releasestarget).

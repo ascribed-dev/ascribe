@@ -87,7 +87,7 @@
       "type": "object"
     },
     "BuildJson": {
-      "description": "What one build leaves out that another build keeps.",
+      "description": "What one build leaves out that another build keeps, once for each mark\nthat leaves it out.",
       "properties": {
         "build": {
           "description": "The build.",
@@ -95,7 +95,7 @@
         },
         "content": {
           "$ref": "#/$defs/Capped_LeftContentJson",
-          "description": "The content it takes out of the pages it publishes, in file and\nsource order."
+          "description": "The marks that take content out of the pages it publishes, in file\nand source order: each `@available` and variant arm once, however\nmany blocks it takes out."
         },
         "pages": {
           "$ref": "#/$defs/Capped_LeftPageJson",
@@ -790,11 +790,18 @@
       "type": "object"
     },
     "LeftContentJson": {
-      "description": "Content a build takes out of a page it publishes.",
+      "description": "A mark that takes content out of a page a build publishes.",
       "properties": {
         "file": {
-          "description": "The file it's written in: the page, or a fragment it includes.",
+          "description": "The file the mark is written in: the page, or a fragment it includes.",
           "type": "string"
+        },
+        "heading": {
+          "description": "The text of the heading the mark is under, or `null`: the section's\nown heading, for a section's `@available`.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "kept_by": {
           "description": "The builds that keep it.",
@@ -813,7 +820,11 @@
         },
         "range": {
           "$ref": "#/$defs/Range",
-          "description": "Where in the file."
+          "description": "Where in the file: the `@available` line, the table row, or the\nvariant arm."
+        },
+        "scope": {
+          "description": "What the mark takes out: `section`, `block`, `row` (a table row), or\n`arm` (a variant arm).",
+          "type": "string"
         },
         "why": {
           "description": "Why, with the content model's labels: `Shows only os=linux`.",
@@ -824,7 +835,9 @@
         "file",
         "range",
         "page",
+        "heading",
         "kind",
+        "scope",
         "why",
         "kept_by"
       ],
@@ -844,14 +857,19 @@
           },
           "type": "array"
         },
-        "why": {
-          "description": "Why, as the end of a sentence: `its variant frontmatter names …`.",
+        "kind": {
+          "description": "`availability` when its `available` frontmatter leaves it out, or\n`variant` when its `variant` frontmatter does.",
+          "type": "string"
+        },
+        "mark": {
+          "description": "That frontmatter's value, as written: `self-managed 3.5`, or\n`deployment=cloud` for `variant`, with a dimension's values joined by\n`|`.",
           "type": "string"
         }
       },
       "required": [
         "file",
-        "why",
+        "kind",
+        "mark",
         "kept_by"
       ],
       "type": "object"

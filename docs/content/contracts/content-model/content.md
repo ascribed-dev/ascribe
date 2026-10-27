@@ -1,6 +1,7 @@
 ---
 type: reference
 title: "`ascribe.toml` format contract: dimensions, phrases, and widgets"
+nav-label: "Dimensions, phrases, and widgets"
 description: "The normative contract for the content model's dimensions, versions, lifecycle states, features, notes, phrases, glossary, images, and widgets."
 ---
 

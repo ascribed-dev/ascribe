@@ -1020,6 +1020,7 @@ row = "Links | Target file doesn't exist"
 message = "`{path}` doesn't exist"
 messages.case = "`{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.outside = "`{path}` is outside the project, so it can't be copied into the output"
+messages.closest = "`{path}` doesn't exist; did you mean `{closest}`?"
 fix = "Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project."
 example.wrong = '''
 ---
@@ -1054,6 +1055,7 @@ spec = "5.2"
 reference = "writing/inline.md#links"
 row = "Links | Target id doesn't exist in the target file (page level)"
 message = "`{path}` has no heading with the id `{id}`"
+messages.closest = "`{path}` has no heading with the id `{id}`; did you mean `{closest}`?"
 fix = "Fix the `#id`, or give the heading you mean that id with `@id`."
 example.wrong = '''
 ---
@@ -1331,7 +1333,7 @@ spec = "7.2"
 reference = "content-model/index.md#42-frontmatter-values"
 row = "Frontmatter | Required field missing"
 message = "the required field `{field}` is missing; the content type `{type}` needs it"
-fix = "Add the field to the page's frontmatter, or give it a default in the content type."
+fix = "Add the field to the page's frontmatter, or give it a default in the content type. A page with no `title` that opens with a level-1 heading has a fix that makes the heading its title."
 example.wrong = '''
 ---
 type: guide
@@ -2600,8 +2602,8 @@ row = "`@snippet` | Region doesn't exist in the file"
 message = "`{path}` has no region `{region}`; its regions are: {regions}"
 messages.suggestion = "`{path}` has no region `{region}`; did you mean `{suggestion}`? Its regions are: {regions}"
 messages.none = "`{path}` has no region `{region}`, and no regions at all: mark one with `:snippet-start: {region}` and `:snippet-end:` comments"
-messages.no-comments = "`{path}` can't have regions, because Ascribe doesn't know the comment syntax of its extension; use the whole file, without `#{region}`"
-fix = "Fix the region's name, or mark the region in the file with `:snippet-start: <name>` and `:snippet-end:` comments. A file whose extension isn't in the comment table can only be used whole."
+messages.no-comments = "`{path}` can't have regions, because Ascribe doesn't know the comment syntax of its name or extension; use the whole file, without `#{region}`"
+fix = "Fix the region's name, or mark the region in the file with `:snippet-start: <name>` and `:snippet-end:` comments. A file whose name and extension are in neither comment table can only be used whole."
 
 [[diagnostic]]
 code = "ASC132"
@@ -3945,7 +3947,7 @@ message = "`{entry}` names versions every live line of `{target}` has, the oldes
 messages.badge = "`{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so its badge is shown and says nothing a reader of any live line needs; write `{simpler}`"
 messages.remove = "`{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so no output shows them, and `{target}` is the only value of its dimension, so the mark says nothing; remove it"
 messages.badge-remove = "`{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, and `{target}` is the only value of its dimension, so its badge is shown and says nothing a reader of any live line needs; remove the mark"
-fix = "Write the mark without its versions, keeping its state: `self-managed 3.1` becomes `self-managed`, and `self-managed deprecated 3.2` becomes `self-managed deprecated`. Every live line has the content, and a line's output leaves out a version at or before the oldest live line, so where no output shows the versions nothing a reader sees changes. When the mark would be its target alone, generally available, the target is the only value of its dimension, no build filters for another target, and the mark names nothing else, the fix removes the mark instead: the `@available` line, the page's `available` key, or the row's `{available=…}`. Content with no mark reads as the scope around it, so a mark is removed only when no mark around it says something, as a page that's deprecated or a section in preview does, and never in a fragment, which reads as where it's included; there, as everywhere else, the fix rewrites it. In a build that badges availability, which is reported only for versions before the oldest live line, the badge's version goes, or the whole badge with the mark, which changes the page, so the fix isn't safe; a project that keeps such badges, as \"new in 0.2\", turns the check off in `[checks]`."
+fix = "Write the mark without its versions, keeping its state: `self-managed 3.1` becomes `self-managed`, and `self-managed deprecated 3.2` becomes `self-managed deprecated`. Every live line has the content, and a line's output leaves out a version at or before the oldest live line, so where no output shows the versions nothing a reader sees changes. When the mark would be its target alone, generally available, the target is the only value of its dimension, no build filters for another target, and the mark names nothing else, the fix removes the mark instead: the `@available` line, the page's `available` key, or the row's `{available=…}`.\n\nContent with no mark reads as the scope around it, so a mark is removed only when no mark around it says something, as a page that's deprecated or a section in preview does, and never in a fragment, which reads as where it's included; there, as everywhere else, the fix rewrites it. In a build that badges availability, which is reported only for versions before the oldest live line, the badge's version goes, or the whole badge with the mark, which changes the page, so the fix isn't safe; a project that keeps such badges, as \"new in 0.2\", turns the check off in `[checks]`."
 
 [[diagnostic]]
 code = "ASC213"
@@ -5173,3 +5175,18 @@ messages.spaced = "`{written}` isn't a pair, because of the spaces around `=`, s
 messages.quote = "the value of `{key}` ends at its second quote, so the pair isn't read; write a quote inside it as `\\\\\"`: `{fixed}`"
 messages.unclosed = "the value of `{key}` has no closing quote, so the pair isn't read; write `{fixed}`"
 fix = "Write the pair as SPEC §3.3.1 reads it: the key in lowercase, `=` with nothing around it, and the value, in double quotes when it has a space or a quote. Inside the quotes, write a quote as `\\\\\"` and a backslash as `\\\\\\\\` in the page, since CommonMark takes one backslash off before the pair is read. A word that isn't meant as a pair can't start with `phrases`, `title`, `tested`, `request`, or `response` and `=`."
+
+[[diagnostic]]
+code = "ASC285"
+slug = "examples-config-unread"
+severity = "warning"
+level = "file"
+next = "write"
+evidence = []
+configurable = true
+area = "examples"
+spec = "7.3"
+reference = "content-model/output.md#18-sourcesname"
+when = "An `ascribe.examples.toml` is in the folder of a source in the same repository, below its root, in a folder the source may read files from, and no source's root holds it, so no source reads it. Reported at the file, once for each"
+message = "`{file}` is below the root of source `{source}`, `{root}`, and only the `ascribe.examples.toml` at a source's root is read, so no page says what its examples were tested with; declare a source with `path = \"{folder}\"`, or move the file to `{root}`"
+fix = "Ascribe reads a source's tested examples from the `ascribe.examples.toml` at the root of its `path`, and the observations beside it. To keep the config beside the tests it runs, declare a source whose `path` is the config's folder, and write the snippets of its files with that source's name; the folder can stay inside the other source's too. Or move the config, and its `examples.observations/`, to the root of the source the snippets name, with its `include` and `test` written from there, and run `ascribe observe` there. A folder that holds an `ascribe.toml` is a project of its own, and isn't looked in."

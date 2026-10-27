@@ -3,24 +3,26 @@
 //!
 //! The tags are Bluehawk's, read from its documentation: `:snippet-start:`
 //! and `:snippet-end:`, `:remove-start:` and `:remove-end:`, and a line
-//! ending in `:remove:`. A tag counts only in a line comment, in the syntax
-//! [`comment_style`] gives the file's extension, so a tag-like string in code
-//! isn't one.
+//! ending in `:remove:`. A tag counts only in a comment on a line of its
+//! own, in the syntax [`file_comment_style`] gives the file's name or
+//! extension, so a tag-like string in code isn't one.
 
-use ascribe_core::Span;
+use ascribe_core::{RelPath, Span};
 
 /// One way of writing a line comment.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Marker {
-    /// What starts a comment: `//`, `#`, `--`, `;`, or `<!--`.
+    /// What starts a comment: `//`, `#`, `--`, `;`, `<!--`, or `/*`.
     pub open: &'static str,
-    /// What ends one on the same line: `-->` after `<!--`, otherwise none.
+    /// What ends one on the same line: `-->` after `<!--`, `*/` after `/*`,
+    /// otherwise none.
     pub close: Option<&'static str>,
 }
 
-/// How a file's line comments are written: one marker, or, for a component
-/// file with both script and markup (`.astro`, `.svelte`, `.vue`), either of
-/// two.
+/// How a file's comments are written: one marker, or either of two, for a
+/// component file with both script and markup (`.astro`, `.svelte`, `.vue`)
+/// and for a stylesheet language with both `//` and `/* */` (`.scss`,
+/// `.less`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CommentStyle {
     /// The markers a tag line may use.
@@ -34,6 +36,10 @@ const SLASHES_MARKER: Marker = Marker {
 const HTML_MARKER: Marker = Marker {
     open: "<!--",
     close: Some("-->"),
+};
+const BLOCK_MARKER: Marker = Marker {
+    open: "/*",
+    close: Some("*/"),
 };
 
 const SLASHES: CommentStyle = CommentStyle {
@@ -63,6 +69,12 @@ const HTML: CommentStyle = CommentStyle {
 const COMPONENT: CommentStyle = CommentStyle {
     markers: &[SLASHES_MARKER, HTML_MARKER],
 };
+const BLOCK: CommentStyle = CommentStyle {
+    markers: &[BLOCK_MARKER],
+};
+const STYLESHEET: CommentStyle = CommentStyle {
+    markers: &[SLASHES_MARKER, BLOCK_MARKER],
+};
 
 /// The comment table of SPEC §4.8, by extension.
 const TABLE: &[(CommentStyle, &[&str])] = &[
@@ -77,8 +89,31 @@ const TABLE: &[(CommentStyle, &[&str])] = &[
     (
         HASH,
         &[
-            "bash", "cfg", "conf", "ex", "exs", "fish", "hcl", "nix", "pl", "pm", "ps1", "py", "r",
-            "rb", "sh", "tf", "toml", "yaml", "yml", "zsh",
+            "bash",
+            "cfg",
+            "conf",
+            "dockerfile",
+            "ex",
+            "exs",
+            "fish",
+            "gql",
+            "graphql",
+            "hcl",
+            "mk",
+            "nix",
+            "pl",
+            "pm",
+            "properties",
+            "ps1",
+            "py",
+            "r",
+            "rb",
+            "sh",
+            "tf",
+            "toml",
+            "yaml",
+            "yml",
+            "zsh",
         ],
     ),
     (DASHES, &["elm", "hs", "lua", "sql"]),
@@ -88,7 +123,59 @@ const TABLE: &[(CommentStyle, &[&str])] = &[
     ),
     (HTML, &["htm", "html", "md", "mdx", "svg", "xml"]),
     (COMPONENT, &["astro", "svelte", "vue"]),
+    (BLOCK, &["css"]),
+    (STYLESHEET, &["less", "scss"]),
 ];
+
+/// The table of file names of SPEC §4.8, matched before the extension: each
+/// name, its comment syntax, and the language its snippets default to, since
+/// it has no extension to take one from. A name ending in `*` matches any
+/// longer name that starts with what's before it (`.env.*` for `.env.local`).
+const NAMES: &[(&str, CommentStyle, &str)] = &[
+    ("Containerfile", HASH, "dockerfile"),
+    ("Dockerfile", HASH, "dockerfile"),
+    ("GNUmakefile", HASH, "makefile"),
+    ("Makefile", HASH, "makefile"),
+    ("Justfile", HASH, "just"),
+    (".env", HASH, "dotenv"),
+    (".env.*", HASH, "dotenv"),
+    (".gitignore", HASH, "gitignore"),
+];
+
+/// The row of [`NAMES`] for a file name, compared without regard to case.
+fn named(name: &str) -> Option<(CommentStyle, &'static str)> {
+    NAMES
+        .iter()
+        .find(|(n, ..)| match n.strip_suffix('*') {
+            Some(start) => {
+                name.len() > start.len()
+                    && name.is_char_boundary(start.len())
+                    && name[..start.len()].eq_ignore_ascii_case(start)
+            }
+            None => name.eq_ignore_ascii_case(n),
+        })
+        .map(|(_, style, lang)| (*style, *lang))
+}
+
+/// The comment syntax of the file at `path`: by its whole name, when the
+/// table of names has it, and otherwise by its extension. `None` for a file
+/// neither table has: such a file has no tags.
+pub fn file_comment_style(path: &RelPath) -> Option<CommentStyle> {
+    match path.file_name().and_then(named) {
+        Some((style, _)) => Some(style),
+        None => path.extension().and_then(comment_style),
+    }
+}
+
+/// The language a snippet of the file at `path` has when `lang` doesn't give
+/// one: the table of names' language for a name it has, and otherwise the
+/// extension, lowercased.
+pub fn default_lang(path: &RelPath) -> Option<String> {
+    match path.file_name().and_then(named) {
+        Some((_, lang)) => Some(lang.to_owned()),
+        None => path.extension().map(str::to_ascii_lowercase),
+    }
+}
 
 /// The comment syntax of files with this extension, compared without regard
 /// to case, or `None` for an extension the table doesn't have: such a file
@@ -716,8 +803,109 @@ fn main() {
             assert_eq!(region(text, style, "script"), "const b = 2;\n", "{ext}");
             assert_eq!(region(text, style, "body"), "<p>{b}</p>\n", "{ext}");
         }
+        for ext in ["css", "scss", "less"] {
+            let style = comment_style(ext).expect("a known extension");
+            let text = ".a {\n  /* :snippet-start: rule */\n  color: red;\n  margin: 0; /* :remove: */\n  /*:snippet-end:*/\n}\n";
+            assert_eq!(region(text, style, "rule"), "color: red;\n", "{ext}");
+        }
+        for ext in ["scss", "less"] {
+            let style = comment_style(ext).expect("a known extension");
+            let text = "// :snippet-start: rule\n.a { color: red; } // :remove:\n.b { color: blue; }\n// :snippet-end:\n";
+            assert_eq!(
+                region(text, style, "rule"),
+                ".b { color: blue; }\n",
+                "{ext}"
+            );
+        }
+        // Plain CSS has no line comments.
+        let css = comment_style("css").expect("a known extension");
+        assert!(scan("// :snippet-start: a\n", css).problems.is_empty());
+        for ext in ["graphql", "gql", "properties", "mk", "dockerfile"] {
+            assert_eq!(comment_style(ext), Some(HASH), "{ext}");
+        }
         assert_eq!(comment_style("json"), None);
         assert_eq!(comment_style("TOML"), Some(HASH));
+    }
+
+    /// How SPEC §4.8's tables write a comment syntax: each marker, in
+    /// backticks, with its close after `…`, joined by "or".
+    fn written(style: CommentStyle) -> String {
+        let markers: Vec<String> = style
+            .markers
+            .iter()
+            .map(|m| match m.close {
+                Some(close) => format!("`{}` … `{close}`", m.open),
+                None => format!("`{}`", m.open),
+            })
+            .collect();
+        markers.join(" or ")
+    }
+
+    /// The words in backticks in a table cell.
+    fn ticked(cell: &str) -> Vec<&str> {
+        cell.split('`').skip(1).step_by(2).collect()
+    }
+
+    #[test]
+    fn the_tables_are_the_specs() {
+        let spec = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../SPEC.md"));
+        let start = spec.find("### 4.8 ").expect("SPEC §4.8");
+        let end = start + spec[start..].find("### 4.9 ").expect("SPEC §4.9");
+        let (mut names, mut extensions) = (0, 0);
+        for row in spec[start..end].lines().filter(|l| l.starts_with("| `")) {
+            let cells: Vec<&str> = row.trim_matches('|').split(" | ").map(str::trim).collect();
+            match cells[..] {
+                [marker, lang, files] => {
+                    for name in ticked(files) {
+                        names += 1;
+                        let name = name.replace('*', "local");
+                        let (style, default) = named(&name).expect("a name in NAMES");
+                        assert_eq!(written(style), marker, "{name}");
+                        assert_eq!(format!("`{default}`"), lang, "{name}");
+                    }
+                }
+                [marker, files] => {
+                    for ext in ticked(files) {
+                        extensions += 1;
+                        let style = comment_style(ext).expect("an extension in TABLE");
+                        assert_eq!(written(style), marker, "{ext}");
+                    }
+                }
+                _ => {}
+            }
+        }
+        assert_eq!(names, NAMES.len());
+        assert_eq!(
+            extensions,
+            TABLE.iter().map(|(_, e)| e.len()).sum::<usize>()
+        );
+    }
+
+    #[test]
+    fn a_file_name_comes_before_its_extension() {
+        let path = |p: &str| RelPath::parse(p).expect("a path");
+        for (name, lang) in [
+            ("Dockerfile", "dockerfile"),
+            ("docker/dockerfile", "dockerfile"),
+            ("Containerfile", "dockerfile"),
+            ("Makefile", "makefile"),
+            ("GNUmakefile", "makefile"),
+            ("Justfile", "just"),
+            (".env", "dotenv"),
+            ("app/.env.local", "dotenv"),
+            (".gitignore", "gitignore"),
+        ] {
+            assert_eq!(file_comment_style(&path(name)), Some(HASH), "{name}");
+            assert_eq!(default_lang(&path(name)).as_deref(), Some(lang), "{name}");
+        }
+        // Otherwise the extension decides, as before.
+        assert_eq!(file_comment_style(&path("src/app.rs")), Some(SLASHES));
+        assert_eq!(default_lang(&path("App.TS")).as_deref(), Some("ts"));
+        assert_eq!(file_comment_style(&path("install")), None);
+        assert_eq!(default_lang(&path("install")), None);
+        assert_eq!(file_comment_style(&path(".envrc")), None);
+        assert_eq!(file_comment_style(&path(".env.")), None);
+        assert_eq!(file_comment_style(&path("Dockerfile.dev")), None);
     }
 
     #[test]

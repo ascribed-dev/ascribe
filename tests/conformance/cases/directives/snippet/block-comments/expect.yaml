@@ -1,0 +1,24 @@
+description: >-
+  CSS takes tags in a block comment on a line of its own, `/* :snippet-start:
+  x */`, and SCSS and Less take them in either a block comment or a `//`
+  comment. A line that ends with `/* :remove: */` is left out.
+spec: ["4.8"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: "CSS takes tags in one-line block comments:"
+          - code: "padding: 1rem;\n"
+            info: css
+          - paragraph: "SCSS and Less take them in `//` comments too:"
+          - code: "$accent: teal;\n"
+            info: scss
+          - code: "color: $accent;\n"
+            info: scss
+          - code: "@accent: teal;\n"
+            info: less
+          - code: ".card { color: @accent; }\n"
+            info: less

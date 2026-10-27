@@ -1,0 +1,1 @@
+- **Fixed:** a paragraph that a table interrupts after a `\r\n` line ending no longer loses its position. Its span was empty, so what pointed at it pointed nowhere.

@@ -228,6 +228,11 @@
       "description": "The page to read next: the Astro guide, by its permalink.",
       "type": "string"
     },
+    "pages": {
+      "description": "How many pages the content root held already. When it held any,\n`ascribe.toml` declares no page types, so none of them needs `type:`.",
+      "minimum": 0,
+      "type": "integer"
+    },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
       "minimum": 0,
@@ -258,6 +263,7 @@
     "written",
     "content_root",
     "content_root_made",
+    "pages",
     "templates",
     "next"
   ],

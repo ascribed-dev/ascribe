@@ -1,6 +1,7 @@
 ---
 type: reference
 title: "JSON reports: `ascribe model`"
+nav-label: "`ascribe model`"
 description: "The JSON Schema of what ascribe model writes with --format json."
 ---
 

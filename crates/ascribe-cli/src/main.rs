@@ -16,6 +16,8 @@ mod clock;
 mod commands;
 mod context;
 #[cfg(test)]
+mod conventions;
+#[cfg(test)]
 mod docs;
 mod exit;
 mod mcp;

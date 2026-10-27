@@ -10,7 +10,7 @@ Ascribe doesn't test the code. It runs the command you give it, and when that pa
 
 [`examples/tested`]({repo}/tree/main/examples/tested) in this repository is a small project set up this way: a TypeScript example, the output it should print, and a test with Node's own test runner that compares the two.
 
-These docs are set up this way too. The command output they show is a file a test compares with what the command prints, and [`ascribe.examples.toml`]({repo}/blob/main/ascribe.examples.toml) at the repository's root names those files and the tests, so each such block says which Rust it was tested with. The source and configuration the docs quote aren't in it: nothing tests them, so they show no tested line. The docs raise `example-stale` to an error, so they can't publish a tested line that's no longer true.
+These docs are set up this way too. The command output they show is a file a test compares with what the command prints, and [`ascribe.examples.toml`]({repo}/blob/main/ascribe.examples.toml) at the repository's root names those files and the tests, so each such block says which version of ascribe printed it, not which Rust built that ascribe. The source and configuration the docs quote aren't in it: nothing tests them, so they show no tested line. The docs raise `example-stale` to an error, so they can't publish a tested line that's no longer true.
 
 ## 1. Say which files are examples
 
@@ -23,6 +23,8 @@ In the source's folder, the one `[sources.<name>]` in `ascribe.toml` names with 
 - **`[environment]`** names what a reader wants to know about where the test ran. Each entry has a `command` whose first line is kept, and a `label`, the key when it has none. The page shows the label and the first dotted number in the line: `node --version` prints `v24.9.0`, shown as "Node 24.9.0". The operating system and architecture are always recorded, and only the system is shown.
 
 An expected output is an example like any other: show it with a second `@snippet`, and have the test compare the program's output with it.
+
+The config goes at the source's root, the folder `path` names, and only the one there is read. When the tests live in a subfolder, such as `examples/` in a source whose `path` is `.`, either declare a source of their own, `[sources.examples]` with `path = "examples"`, and write their snippets with its name, or put the config at the source's root, with `include` and `test` written from there. A config below a source's root is read by no source, and [`examples-config-unread`](../checks/diagnostics/output-checks.md#ASC285) says so, in `ascribe check`, in the editor, and after `ascribe observe` writes its observation.
 
 ## 2. Run the test and commit what it records
 
