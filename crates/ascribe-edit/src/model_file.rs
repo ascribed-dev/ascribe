@@ -25,7 +25,7 @@ use toml_edit::{Document, DocumentMut, Item, Key, Table, TableLike, Value};
 
 /// One step of a path into the document.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum Seg {
+pub enum Seg {
     /// A table's key.
     Key(String),
     /// An array's item.
@@ -33,13 +33,13 @@ pub(crate) enum Seg {
 }
 
 /// A path of keys: `["phrases", "product"]`.
-pub(crate) fn path(keys: &[&str]) -> Vec<Seg> {
+pub fn path(keys: &[&str]) -> Vec<Seg> {
     keys.iter().map(|k| Seg::Key((*k).to_owned())).collect()
 }
 
 /// A change as `toml_edit`'s API makes it, which a text edit must agree with.
 #[derive(Clone, Debug)]
-pub(crate) enum Change {
+pub enum Change {
     /// Sets the value at a path, adding the tables on the way that aren't
     /// there.
     Set(Vec<Seg>, Value),
@@ -52,7 +52,7 @@ pub(crate) enum Change {
 /// A text edit, the change it makes, and the file it's in: `None` for
 /// `ascribe.toml`, or a file it takes from, as `[from]` writes its path.
 #[derive(Clone, Debug)]
-pub(crate) struct Edit {
+pub struct Edit {
     edit: TextEdit,
     change: Change,
     file: Option<String>,
@@ -108,7 +108,7 @@ pub fn read_taken(text: &str, config: &Path) -> Vec<TakenFile> {
 
 /// The edits of a step, checked: `ascribe.toml`'s and each other file's.
 #[derive(Clone, Debug)]
-pub(crate) struct Finished {
+pub struct Finished {
     /// The edits to `ascribe.toml`, sorted.
     pub edits: Vec<TextEdit>,
     /// `ascribe.toml`'s text after them.
@@ -119,7 +119,7 @@ pub(crate) struct Finished {
 
 /// The edits to a file `[from]` takes from.
 #[derive(Clone, Debug)]
-pub(crate) struct FinishedTaken {
+pub struct FinishedTaken {
     /// The file, with its text after the edits.
     pub file: TakenFile,
     /// Its text before them.
@@ -131,7 +131,7 @@ pub(crate) struct FinishedTaken {
 impl Finished {
     /// The files `[from]` takes from that the step changes, as the loader
     /// reads them: each path as `[from]` writes it, and its text after.
-    pub(crate) fn taken_texts(&self) -> Vec<(String, String)> {
+    pub fn taken_texts(&self) -> Vec<(String, String)> {
         self.taken
             .iter()
             .map(|t| (t.file.file.clone(), t.file.text.clone()))
@@ -141,7 +141,7 @@ impl Finished {
     /// The edits to the files `[from]` takes from as the client's, by the
     /// file's URI, with `encoding`'s columns. `None` when a file can't be
     /// named as a URI.
-    pub(crate) fn taken_changes(
+    pub fn taken_changes(
         &self,
         encoding: crate::position::Encoding,
     ) -> Option<Vec<(lsp_types::Uri, Vec<lsp_types::TextEdit>)>> {
@@ -165,7 +165,7 @@ impl Finished {
 
 /// `ascribe.toml`'s text, parsed with the spans of everything in it, and the
 /// files `[from]` takes from, parsed too.
-pub(crate) struct ModelFile<'a> {
+pub struct ModelFile<'a> {
     text: &'a str,
     doc: Document<&'a str>,
     nl: &'static str,
@@ -184,17 +184,14 @@ fn keys(at: &[Seg]) -> Vec<&str> {
 
 impl<'a> ModelFile<'a> {
     /// Parses the text alone: a change at a key `[from]` takes is refused.
-    pub(crate) fn parse(text: &'a str) -> Result<ModelFile<'a>, String> {
+    pub fn parse(text: &'a str) -> Result<ModelFile<'a>, String> {
         ModelFile::parse_taking(text, &[])
     }
 
     /// Parses the text, and each file of `taken` it takes from, so a change
     /// at a taken key is made in the file that holds it. One of `taken`
     /// that isn't TOML is left out.
-    pub(crate) fn parse_taking(
-        text: &'a str,
-        taken: &'a [TakenFile],
-    ) -> Result<ModelFile<'a>, String> {
+    pub fn parse_taking(text: &'a str, taken: &'a [TakenFile]) -> Result<ModelFile<'a>, String> {
         let doc = Document::parse(text)
             .map_err(|e| format!("`ascribe.toml` isn't valid TOML: {}", e.message()))?;
         Ok(ModelFile {
@@ -209,7 +206,7 @@ impl<'a> ModelFile<'a> {
     }
 
     /// The item at a path, in the file that holds it.
-    pub(crate) fn get(&self, path: &[Seg]) -> Option<&Item> {
+    pub fn get(&self, path: &[Seg]) -> Option<&Item> {
         match self.holder(path) {
             Ok(Some(i)) => self.taken[i].1.get(path),
             Err(_) if ascribe_model::taken_from(self.text, &keys(path)).is_some() => None,
@@ -261,7 +258,7 @@ impl<'a> ModelFile<'a> {
 
     /// The key of the table-like item at `table` that `offset` is on, with
     /// its span, in this file.
-    pub(crate) fn key_at(&self, table: &[&str], offset: usize) -> Option<(String, Span)> {
+    pub fn key_at(&self, table: &[&str], offset: usize) -> Option<(String, Span)> {
         let t = self.get_here(&path(table))?.as_table_like()?;
         t.iter().find_map(|(name, _)| {
             let (key, _) = t.get_key_value(name)?;
@@ -273,19 +270,14 @@ impl<'a> ModelFile<'a> {
 
     /// The table-like item at a path: a `[header]` table, a dotted one, or an
     /// inline table.
-    pub(crate) fn table_like(&self, path: &[Seg]) -> Option<&dyn TableLike> {
+    pub fn table_like(&self, path: &[Seg]) -> Option<&dyn TableLike> {
         self.get(path)?.as_table_like()
     }
 
     /// Adds `key = value` after the last entry of the `[header]` table at
     /// `table`, or, when the file has no such table, adds the table at the
     /// end of the file.
-    pub(crate) fn add_entry(
-        &self,
-        table: &[&str],
-        key: &str,
-        value: Value,
-    ) -> Result<Edit, String> {
+    pub fn add_entry(&self, table: &[&str], key: &str, value: Value) -> Result<Edit, String> {
         let full: Vec<Seg> = path(table)
             .into_iter()
             .chain([Seg::Key(key.to_owned())])
@@ -351,7 +343,7 @@ impl<'a> ModelFile<'a> {
     /// Adds a `[header]` table with these entries after the last `[header]`
     /// table whose path starts with `after`, or at the end of the file when
     /// there's none.
-    pub(crate) fn add_table(
+    pub fn add_table(
         &self,
         table: &[&str],
         entries: &[(&str, Value)],
@@ -405,7 +397,7 @@ impl<'a> ModelFile<'a> {
     }
 
     /// Replaces the value at `path`, keeping what's around it.
-    pub(crate) fn replace_value(&self, at: &[Seg], value: Value) -> Result<Edit, String> {
+    pub fn replace_value(&self, at: &[Seg], value: Value) -> Result<Edit, String> {
         if let Some(i) = self.holder(at)? {
             return Ok(self.taken[i]
                 .1
@@ -425,7 +417,7 @@ impl<'a> ModelFile<'a> {
     /// `releases.ascribe` or `phrases.version`: the key is renamed in the
     /// file that holds it, and `take` names it by its new name. `None` when
     /// `take` doesn't name it.
-    pub(crate) fn retake(&self, at: &[Seg], new: &str) -> Option<Edit> {
+    pub fn retake(&self, at: &[Seg], new: &str) -> Option<Edit> {
         let keys = keys(at);
         let taken = ascribe_model::taken_from(self.text, &keys)?;
         if taken.name != keys.join(".") {
@@ -454,7 +446,7 @@ impl<'a> ModelFile<'a> {
     }
 
     /// Renames the last key of `at`.
-    pub(crate) fn rename_key(&self, at: &[Seg], new: &str) -> Result<Edit, String> {
+    pub fn rename_key(&self, at: &[Seg], new: &str) -> Result<Edit, String> {
         if let Some(i) = self.holder(at)? {
             return Ok(self.taken[i]
                 .1
@@ -486,7 +478,7 @@ impl<'a> ModelFile<'a> {
     /// left behind would be about nothing. A comment with a blank line
     /// before the key stays, since it may be about the lines around it too
     /// (decision 8 of the editor's next views).
-    pub(crate) fn remove_entry(&self, table: &[&str], key: &str) -> Result<Edit, String> {
+    pub fn remove_entry(&self, table: &[&str], key: &str) -> Result<Edit, String> {
         if let Some(i) = self.holder(&path(&[table, &[key]].concat()))? {
             return Ok(self.taken[i]
                 .1
@@ -530,7 +522,7 @@ impl<'a> ModelFile<'a> {
     /// The edits, checked: applied to each file's text, they give a file
     /// with the same values as the changes made through `toml_edit`'s API.
     /// Returns each file's edits, sorted, and its text after them.
-    pub(crate) fn finish(&self, edits: Vec<Edit>) -> Result<Finished, String> {
+    pub fn finish(&self, edits: Vec<Edit>) -> Result<Finished, String> {
         let mut here = Vec::new();
         let mut taken: BTreeMap<String, Vec<Edit>> = BTreeMap::new();
         for edit in edits {

@@ -13,7 +13,7 @@ use lsp_types::{CompletionItem, CompletionItemKind, CompletionTextEdit, Range, T
 
 /// The project's sections, by folder, each with the file names `pages` can
 /// name: its pages, its own page not among them.
-pub(crate) fn sections(navigation: &Navigation) -> BTreeMap<String, Vec<String>> {
+pub fn sections(navigation: &Navigation) -> BTreeMap<String, Vec<String>> {
     let mut out = BTreeMap::new();
     let mut stack: Vec<&Section> = vec![&navigation.root];
     while let Some(section) = stack.pop() {
@@ -30,7 +30,7 @@ pub(crate) fn sections(navigation: &Navigation) -> BTreeMap<String, Vec<String>>
 
 /// What can be written at `offset` of `text`. `range` gives the protocol's
 /// range of a span of the text.
-pub(crate) fn complete(
+pub fn complete(
     text: &str,
     offset: usize,
     sections: &BTreeMap<String, Vec<String>>,

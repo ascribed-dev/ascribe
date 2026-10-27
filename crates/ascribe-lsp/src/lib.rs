@@ -21,7 +21,6 @@ mod edit;
 mod examples;
 mod folding;
 mod formatting;
-mod fsx;
 mod headless;
 mod hover;
 mod intended;
@@ -29,20 +28,13 @@ mod inventory;
 mod links;
 mod log;
 mod memos;
-mod model_file;
 mod nav;
-mod nav_file;
 mod page;
 mod page_rows;
-mod position;
 mod preview;
 mod project_edit;
 mod prose;
-mod refactor;
 mod references;
-mod release;
-mod rename;
-mod retire_line;
 mod review;
 #[cfg(feature = "json-schema")]
 mod schema;
@@ -53,9 +45,12 @@ mod shown;
 mod summary;
 mod targets;
 mod tokens;
-mod uri;
 
 use std::sync::Arc;
+
+// The edits the server shares with the commands, under the names the
+// server's modules use for them.
+use ascribe_edit::{fsx, model_file, nav_file, position, refactor, uri};
 use std::sync::atomic::AtomicBool;
 
 use lsp_server::Connection;
@@ -64,6 +59,7 @@ pub use addresses::{AddressesParams, NOTIFICATION as ADDRESSES_NOTIFICATION, Pag
 pub use agent_prompt::{
     AgentPromptParams, AgentPromptResult, METHOD as AGENT_PROMPT_METHOD, PromptKind,
 };
+pub use ascribe_edit::Encoding;
 pub use build_view::{
     BuildViewParams, BuildViewResult, Excluded, ExclusionReason, METHOD as BUILD_VIEW_METHOD,
 };
@@ -77,7 +73,6 @@ pub use inventory::{
     InventoryEntry, InventoryFragment, InventoryPage, InventoryParams, InventoryResult,
     InventoryValue, METHOD as INVENTORY_METHOD, ModelKind,
 };
-pub use model_file::{TakenFile, read_taken};
 pub use page::{
     METHOD as PAGE_METHOD, PageAbout, PageHeading, PageMemo, PageParams, PagePlace, PageResult,
 };
@@ -85,21 +80,12 @@ pub use page_rows::{
     ExampleState, IncludeKind, LeftOut, PageBuild, PageDescription, PageExample, PageHealth,
     PageInclude, PageListing, PagePermalink, PageRecheck, PageSize, PageTemplate,
 };
-pub use position::Encoding;
 pub use preview::{
     AssetKind, METHOD as PREVIEW_METHOD, PreviewAsset, PreviewBuild, PreviewLink, PreviewPage,
     PreviewParams, PreviewProblem, PreviewResult, PreviewReview, PreviewSection, ProblemSeverity,
 };
 pub use project_edit::{
     METHOD as PROJECT_EDIT_METHOD, ProjectEditKind, ProjectEditParams, ProjectEditResult,
-};
-pub use release::{
-    ChangedOutput, ClearedFile, ClearedMark, MovedFeature, ReleaseError, Released, ReleasedFile,
-    Releasing, RewrittenMark, release,
-};
-pub use rename::{RenameError, Renamed, Renaming, Rewritten, rename};
-pub use retire_line::{
-    Redirect, RedirectWhy, RetireError, RetiredLine, RetiringLine, Unused, retire_line, unused_in,
 };
 pub use review::{
     BASE_FILE_METHOD as REVIEW_BASE_FILE_METHOD, BaseFileParams, BaseFileResult,

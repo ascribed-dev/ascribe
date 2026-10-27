@@ -91,6 +91,21 @@ export const steps: Step[] = [
   {
     workflow: "rust.yml",
     job: "check",
+    ci: "Check the docs' agent files are up to date",
+    run: [
+      "ascribe",
+      "agents",
+      "sync",
+      "--check",
+      "--config",
+      "docs",
+      "--command",
+      "cargo run -q -p ascribe-cli --",
+    ],
+  },
+  {
+    workflow: "rust.yml",
+    job: "check",
     ci: "Archive examples/quill's 3.4 line",
     run: [
       "ascribe",
