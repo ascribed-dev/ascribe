@@ -829,6 +829,7 @@ fn call_check(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> 
         // default branch, as `ascribe check` compares them.
         addresses: check::Addresses::Compared,
         fix: false,
+        guard: crate::guard::Options::default(),
         vale: false,
         // What `ascribe.baseline` holds back, the project's backlog, isn't
         // the agent's to fix now: the summary counts it (#790).
@@ -1011,6 +1012,7 @@ fn call_fmt(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
     let args = fmt::Args {
         check: true,
         diff: false,
+        guard: crate::guard::Options::default(),
         paths,
         format: fmt::Format::Json,
     };
@@ -1037,10 +1039,11 @@ fn call_rename(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String>
     let args = rename::Args {
         target: a.string("target")?.unwrap_or_default(),
         new: a.string("new")?.unwrap_or_default(),
+        guard: crate::guard::Options::default(),
         format: Format::Json,
     };
     let global = global_at(a.path("project")?.as_deref())?;
-    let answer = rename::answer(&server.cache, &global, &args, false).map_err(|s| s.message)?;
+    let answer = rename::answer(&server.cache, &global, &args, None).map_err(|s| s.message)?;
     json_result(&answer.json)
 }
 

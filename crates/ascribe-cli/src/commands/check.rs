@@ -2,7 +2,7 @@
 //! building; with paths, only what counts for them.
 
 use std::io::{self, Read, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -21,6 +21,7 @@ use crate::answer::{FromDisk, Loaded, Projects};
 use crate::cli::Global;
 use crate::context::{stdout_is_terminal, use_color};
 use crate::exit;
+use crate::guard;
 use crate::report::json::About;
 use crate::report::{Counts, FileTable, concise, github, json, tally, text};
 use crate::shell::quote;
@@ -159,6 +160,11 @@ pub struct Args {
     #[arg(long, conflicts_with = "stdin")]
     pub fix: bool,
 
+    /// With `--fix`, `--dry-run`, which lists the fixes it would apply and
+    /// reports the check as it is, and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
+
     /// Check the prose with Vale too, as `[checks.vale]` in `ascribe.toml`
     /// sets it up.
     ///
@@ -276,6 +282,9 @@ pub enum CheckError {
     /// `--fix` couldn't write a file it fixed.
     #[error(transparent)]
     Fix(#[from] fix::FixError),
+    /// The git guard refused to let `--fix` change a file.
+    #[error(transparent)]
+    Guard(#[from] guard::GuardError),
     /// `--code` names no diagnostic.
     #[error("--code: {0}")]
     Code(ascribe_query::QueryError),
@@ -294,6 +303,7 @@ impl Coded for CheckError {
             CheckError::Stdin(_) => "stdin_unreadable",
             CheckError::NoVale => "vale_not_set_up",
             CheckError::Fix(e) => e.code(),
+            CheckError::Guard(e) => e.code(),
             CheckError::Code(e) => e.code(),
             CheckError::Baseline(e) => e.code(),
             CheckError::LimitNotConcise => "limit_not_concise",
@@ -396,7 +406,14 @@ fn check(
             &outcome.config,
             outcome.reported.iter().map(|r| &r.diagnostic),
         );
-        if !files.is_empty() {
+        if !files.is_empty() && args.guard.dry_run {
+            outcome.fixed = json::FixedEntry::of(&files);
+        } else if !files.is_empty() {
+            let paths: Vec<&Path> = files.iter().map(|f| f.path.as_path()).collect();
+            if let Err(e) = args.guard.allow(&paths) {
+                let stopped = Stopped::Failure(Failure::Check(CheckError::Guard(e)));
+                return report_stopped(stopped, args, color, out, err);
+            }
             if let Err(e) = write_fixes(&files) {
                 let stopped = Stopped::Failure(Failure::Check(CheckError::Fix(e)));
                 return report_stopped(stopped, args, color, out, err);
@@ -775,7 +792,7 @@ pub fn write(
     };
     let command = Command::new(global, args, codes);
     if matches!(args.format, Format::Text | Format::Concise | Format::Github) {
-        write_fixed(out, fixed)?;
+        write_fixed(out, fixed, args.guard.dry_run)?;
     }
     match (args.format, args.summary) {
         (Format::Json, summary_only) => json::write(
@@ -833,9 +850,11 @@ fn no_pages(project: &Project) -> String {
     }
 }
 
-/// Writes a line for each file `--fix` changed, with how many problems it
-/// fixed there, before what's left is reported.
-fn write_fixed(out: &mut dyn Write, fixed: &[json::FixedEntry]) -> io::Result<()> {
+/// Writes a line for each file `--fix` changed, or with `--dry-run` would
+/// change, with how many problems it fixed there, before what's left is
+/// reported.
+fn write_fixed(out: &mut dyn Write, fixed: &[json::FixedEntry], dry_run: bool) -> io::Result<()> {
+    let fixed_word = if dry_run { "would fix" } else { "fixed" };
     let mut i = 0;
     while let Some(first) = fixed.get(i) {
         let n = fixed[i..]
@@ -843,7 +862,7 @@ fn write_fixed(out: &mut dyn Write, fixed: &[json::FixedEntry]) -> io::Result<()
             .take_while(|f| f.file == first.file)
             .count();
         let problems = if n == 1 { "problem" } else { "problems" };
-        writeln!(out, "fixed {n} {problems} in {}", first.file)?;
+        writeln!(out, "{fixed_word} {n} {problems} in {}", first.file)?;
         i += n;
     }
     Ok(())

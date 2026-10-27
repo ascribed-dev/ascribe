@@ -93,11 +93,16 @@ fn repository() -> TempDir {
 }
 
 /// A command that writes `file`, after `before` leaves that file there,
-/// not committed, and gives the command something to change in it.
+/// not committed, and gives the command something to change in it. With
+/// `--dry-run`, it exits with `dry_run` and says `says`, and its JSON has
+/// `written` when `json`.
 struct Case {
     args: &'static [&'static str],
     file: &'static str,
     before: fn(&Path),
+    dry_run: i32,
+    says: &'static str,
+    json: bool,
 }
 
 fn addresses(root: &Path) {
@@ -112,6 +117,9 @@ const CASES: &[Case] = &[
     Case {
         args: &["baseline", "write"],
         file: "ascribe.baseline",
+        dry_run: 0,
+        says: "ould ",
+        json: true,
         before: |root| {
             assert!(ascribe(root, &["baseline", "write"]).status.success());
             write(
@@ -124,6 +132,9 @@ const CASES: &[Case] = &[
     Case {
         args: &["baseline", "prune"],
         file: "ascribe.baseline",
+        dry_run: 0,
+        says: "ould ",
+        json: true,
         before: |root| {
             assert!(ascribe(root, &["baseline", "write"]).status.success());
             write(root, "docs/sync.md", "---\ntitle: Sync\n---\n\nText.\n");
@@ -132,6 +143,9 @@ const CASES: &[Case] = &[
     Case {
         args: &["permalinks", "sync"],
         file: "ascribe.permalinks",
+        dry_run: 0,
+        says: "ould ",
+        json: true,
         before: |root| {
             assert!(ascribe(root, &["permalinks", "sync"]).status.success());
             write(
@@ -152,16 +166,25 @@ const CASES: &[Case] = &[
         ],
         file: "ascribe.addresses",
         before: addresses,
+        dry_run: 0,
+        says: "ould ",
+        json: true,
     },
     Case {
         args: &["addresses", "move", "docs/old.md", "docs/keys.md"],
         file: "ascribe.addresses",
         before: addresses,
+        dry_run: 0,
+        says: "ould ",
+        json: true,
     },
     Case {
         args: &["addresses", "retire", "docs/old.md", "--reason", "Gone"],
         file: "ascribe.addresses",
         before: addresses,
+        dry_run: 0,
+        says: "ould ",
+        json: true,
     },
 ];
 
@@ -195,13 +218,13 @@ fn each_command_refuses_a_file_git_cant_put_back_and_dry_run_and_force_get_past(
         let dry_run = ascribe(root, &[case.args, &["--dry-run"]].concat());
         assert_eq!(
             dry_run.status.code(),
-            Some(0),
+            Some(case.dry_run),
             "{:?}: {}",
             case.args,
             both(&dry_run)
         );
         assert!(
-            String::from_utf8_lossy(&dry_run.stdout).contains("ould "),
+            both(&dry_run).contains(case.says),
             "{:?}: {}",
             case.args,
             both(&dry_run)
@@ -212,7 +235,9 @@ fn each_command_refuses_a_file_git_cant_put_back_and_dry_run_and_force_get_past(
             &[case.args, &["--dry-run", "--format", "json"]].concat(),
         );
         let json: serde_json::Value = serde_json::from_slice(&json.stdout).expect("JSON");
-        assert_eq!(json["written"], false, "{:?}: {json}", case.args);
+        if case.json {
+            assert_eq!(json["written"], false, "{:?}: {json}", case.args);
+        }
 
         let force = ascribe(root, &[case.args, &["--force"]].concat());
         assert_eq!(

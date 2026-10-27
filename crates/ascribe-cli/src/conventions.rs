@@ -147,9 +147,6 @@ const EXCEPTIONS: &[(Rule, &[&str])] = &[
         Rule::DryRun,
         &[
             "init",
-            "check",
-            "fmt",
-            "rename",
             "sources fetch",
             "sources update",
             "observe",
@@ -163,9 +160,6 @@ const EXCEPTIONS: &[(Rule, &[&str])] = &[
         Rule::Force,
         &[
             "init",
-            "check",
-            "fmt",
-            "rename",
             "sources fetch",
             "sources update",
             "observe",

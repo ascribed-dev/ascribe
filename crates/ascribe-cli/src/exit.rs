@@ -67,6 +67,7 @@ mod tests {
     use crate::commands::templates::TemplatesError;
     use crate::commands::versions::VersionsError;
     use crate::context::Failure;
+    use crate::guard::GuardError;
 
     /// Every error code, once, with what it means. A tool that wraps a
     /// command tells failures apart by these, so don't rename one.
@@ -371,6 +372,14 @@ mod tests {
             "preview_port_unavailable",
             "preview can't listen on its port",
         ),
+        (
+            "guard_unrestorable",
+            "a command would change a file git can't put back as it was",
+        ),
+        (
+            "guard_no_git",
+            "a command would change a file in no git repository",
+        ),
     ];
 
     fn path() -> PathBuf {
@@ -477,7 +486,8 @@ mod tests {
                 | CheckError::Fix(_)
                 | CheckError::Code(_)
                 | CheckError::Baseline(_)
-                | CheckError::LimitNotConcise => {}
+                | CheckError::LimitNotConcise
+                | CheckError::Guard(_) => {}
             }
         }
         fn report(e: &ReportError) {
@@ -876,6 +886,16 @@ mod tests {
                 below: Vec::new(),
             })),
             Box::new(Failure::Load(model_invalid())),
+            Box::new(GuardError::NotRestorable {
+                files: vec![text()],
+            }),
+            Box::new(GuardError::NoGit {
+                why: text(),
+                files: vec![text()],
+            }),
+            Box::new(CheckError::Guard(GuardError::NotRestorable {
+                files: vec![text()],
+            })),
             Box::new(FmtError::Locate(LocateError::NotAFile { path: path() })),
             Box::new(FmtError::Model {
                 config: path(),

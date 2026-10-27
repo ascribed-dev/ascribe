@@ -1,5 +1,6 @@
-//! What `ascribe fmt --check` shows of a file's edits: each change as the
-//! lines it touches, before and after, or as a unified diff with `--diff`.
+//! What `ascribe fmt` shows of a file's edits without writing them: each
+//! change as the lines it touches, before and after, with `--dry-run`, or as
+//! a unified diff with `--check`.
 
 use std::io::{self, Write};
 

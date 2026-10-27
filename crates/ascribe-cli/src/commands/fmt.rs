@@ -40,6 +40,7 @@ use crate::answer;
 use crate::cli::Global;
 use crate::context::locate;
 use crate::exit;
+use crate::guard;
 use crate::report::github;
 use crate::report::json::Edit;
 
@@ -51,19 +52,21 @@ pub const SCHEMA_VERSION: u32 = 1;
 /// Arguments of `ascribe fmt`.
 #[derive(Debug, Default, ClapArgs)]
 pub struct Args {
-    /// Change nothing, and list each change it would make: the file and
-    /// line, and the lines as they are and as they'd be.
+    /// Change nothing, and show what would change as a unified diff, which
+    /// `git apply` applies.
     ///
     /// Exits with 1 if any file would change. Use it in CI.
     #[arg(long)]
     pub check: bool,
 
-    /// Change nothing, and show what would change as a unified diff, which
-    /// `git apply` applies.
-    ///
-    /// Implies `--check`, and exits as it does.
-    #[arg(long, conflicts_with = "format")]
+    /// `--check`'s old spelling, kept for a release.
+    #[arg(long, hide = true, conflicts_with = "format")]
     pub diff: bool,
+
+    /// `--dry-run`, which lists each change it would make, the file and
+    /// line and the lines as they are and as they'd be, and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// Files and directories to format: the `.md` files among them.
     ///
@@ -108,13 +111,19 @@ pub enum Format {
 }
 
 impl Args {
-    /// Whether it only checks, writing nothing: `--check`, or `--diff`.
+    /// Whether it fails when a file would change: `--check`, or its old
+    /// spelling, `--diff`.
     fn checks(&self) -> bool {
         self.check || self.diff
     }
+
+    /// Whether it writes nothing: `--check`, `--diff`, or `--dry-run`.
+    fn writes_nothing(&self) -> bool {
+        self.checks() || self.guard.dry_run
+    }
 }
 
-/// A file as `--check` and `--diff` name it: from the current directory
+/// A file as `--check` and `--dry-run` name it: from the current directory
 /// when it's inside it, with `/` separators, so `git apply` run there finds
 /// it; otherwise in full.
 fn shown(file: &Path) -> String {
@@ -184,10 +193,10 @@ pub(crate) struct FmtReport {
     schema_version: u32,
     /// The version of Ascribe that wrote it.
     ascribe_version: &'static str,
-    /// Whether the files were rewritten: `false` with `--check`, which
-    /// writes nothing.
+    /// Whether the files were rewritten: `false` with `--check` or
+    /// `--dry-run`, which write nothing.
     written: bool,
-    /// Each file that changed, or with `--check` would change, in path
+    /// Each file that changed, or with `--check` or `--dry-run` would change, in path
     /// order, with the edits that format it.
     files: Vec<FmtFile>,
     /// The files left alone because a symbolic link on the way to them
@@ -222,15 +231,20 @@ struct RefusedFile {
 pub fn run(global: &Global, args: Args) -> ExitCode {
     let mut out = std::io::stdout().lock();
     let mut err = std::io::stderr().lock();
+    if let Err(e) = guarded(global, &args) {
+        return exit::code(exit::fail(&mut err, &e));
+    }
     let formatted = match args.format {
-        Format::Text if args.diff => format_all(global, &args, &mut |file, source, edits| {
+        Format::Text if args.checks() => format_all(global, &args, &mut |file, source, edits| {
             let found = changes::changes(source, edits);
             let _ = changes::write_diff(&mut out, &shown(file), source, &found);
         }),
-        Format::Text if args.check => format_all(global, &args, &mut |file, source, edits| {
-            let found = changes::changes(source, edits);
-            let _ = changes::write_lines(&mut out, &shown(file), &found);
-        }),
+        Format::Text if args.guard.dry_run => {
+            format_all(global, &args, &mut |file, source, edits| {
+                let found = changes::changes(source, edits);
+                let _ = changes::write_lines(&mut out, &shown(file), &found);
+            })
+        }
         Format::Text => format_all(global, &args, &mut |file, _, _| {
             let _ = writeln!(out, "formatted {}", file.display());
         }),
@@ -269,7 +283,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
         );
     }
     let changed = done.changed.len();
-    if args.checks() && changed > 0 {
+    if args.writes_nothing() && changed > 0 {
         let _ = writeln!(
             err,
             "{changed} file{} would be reformatted",
@@ -308,6 +322,9 @@ pub enum FmtError {
     /// A file couldn't be read, written, or formatted.
     #[error(transparent)]
     Format(#[from] FormatFilesError),
+    /// The git guard refused to change a file.
+    #[error(transparent)]
+    Guard(#[from] guard::GuardError),
     /// The report couldn't be written; it's been reported, with this exit
     /// code.
     #[error("the report couldn't be written")]
@@ -320,6 +337,7 @@ impl Coded for FmtError {
             FmtError::Locate(e) => e.code(),
             FmtError::Model { error, .. } => error.code(),
             FmtError::Format(e) => e.code(),
+            FmtError::Guard(e) => e.code(),
             FmtError::Written(_) => "report_unwritable",
         }
     }
@@ -337,11 +355,36 @@ fn model_slugs(error: &LoadError) -> Vec<&str> {
     }
 }
 
+/// Whether the git guard lets `ascribe fmt` change the files it would:
+/// always with `--force`, or when it writes nothing; otherwise, a pass that
+/// writes nothing lists them first, and git must be able to put back each.
+fn guarded(global: &Global, args: &Args) -> Result<(), FmtError> {
+    if args.guard.force || args.writes_nothing() {
+        return Ok(());
+    }
+    let mut changing = Vec::new();
+    format_files(global, args, true, &mut |file, _, _| {
+        changing.push(file.to_owned());
+    })?;
+    Ok(args.guard.allow(&changing)?)
+}
+
 /// Formats every file, listing each that changed (or would have), and
 /// returns what it did.
 fn format_all(
     global: &Global,
     options: &Args,
+    on_changed: &mut dyn FnMut(&Path, &str, &[TextEdit]),
+) -> Result<Formatted, FmtError> {
+    format_files(global, options, options.writes_nothing(), on_changed)
+}
+
+/// Formats every file, writing each that changed unless `nothing`, and
+/// listing it.
+fn format_files(
+    global: &Global,
+    options: &Args,
+    nothing: bool,
     on_changed: &mut dyn FnMut(&Path, &str, &[TextEdit]),
 ) -> Result<Formatted, FmtError> {
     let config = locate(global)?;
@@ -355,7 +398,7 @@ fn format_all(
         &config,
         &model,
         &options.paths,
-        options.checks(),
+        nothing,
         &boundary,
         on_changed,
     )?)
@@ -396,7 +439,7 @@ pub(crate) fn answer(global: &Global, options: &Args) -> Result<(Formatted, FmtR
     let report = FmtReport {
         schema_version: SCHEMA_VERSION,
         ascribe_version: env!("CARGO_PKG_VERSION"),
-        written: !options.checks(),
+        written: !options.writes_nothing(),
         files,
         refused,
     };

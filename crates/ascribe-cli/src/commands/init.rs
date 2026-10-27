@@ -291,6 +291,7 @@ fn check_args() -> check::Args {
         base_exact: false,
         addresses: check::Addresses::NotCompared,
         fix: false,
+        guard: crate::guard::Options::default(),
         vale: false,
         no_baseline: false,
         vale_timeout: None,

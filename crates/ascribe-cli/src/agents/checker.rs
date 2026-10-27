@@ -224,6 +224,7 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         // project's check's, in CI, the MCP tool, and Check Every Build.
         addresses: check::Addresses::NotCompared,
         fix: false,
+        guard: crate::guard::Options::default(),
         vale: false,
         // What `ascribe.baseline` holds back, the project's backlog, isn't
         // the agent's to fix now: it's left out, and counted (#790).
