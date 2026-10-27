@@ -17,9 +17,10 @@
 //! page written on disk did, as running the checks across the project for it
 //! would. Each size runs again with `[checks.vale]` and a stand-in for Vale
 //! that takes 50 ms and finds nothing, which shows what checking the prose
-//! on open and on save costs a keystroke: it should cost nothing. A plain
-//! `main` rather than a benchmark framework: nothing here needs more
-//! statistics than that.
+//! on open and on save costs a keystroke: it should cost nothing. With
+//! `ASCRIBE_BENCH_QUICK` set, as on a pull request, it runs 3,000 pages
+//! without Vale and nothing else. A plain `main` rather than a benchmark
+//! framework: nothing here needs more statistics than that.
 
 #![allow(
     clippy::expect_used,
@@ -465,6 +466,10 @@ fn settle(client: &mut Client, idle: &AtomicBool) {
 
 fn main() {
     println!("keystroke-to-diagnostics latency, {KEYSTROKES} keystrokes per size");
+    if ascribe_synthetic::report::quick() {
+        run(3000, false);
+        return;
+    }
     for pages in [20, 100, 300, 1000, 3000] {
         run(pages, false);
         run(pages, true);

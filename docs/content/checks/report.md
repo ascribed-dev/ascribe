@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: The project report
-description: Reading ascribe report and acting on each section, from the problems and pages it counts to the external links and the published site, and running it every day in CI.
+description: "Reading `ascribe report` and acting on each section, from the problems and pages it counts to the external links and the published site, and running it every day in CI."
 ---
 
 `ascribe check` answers "is this change fine?", quickly, on every edit and every pull request. `ascribe report` answers "what state is this project in?": it counts what the checks find across the whole project, lists what each build leaves out, and runs what's too slow or too networked for a check, such as following every external link. Every problem in it says what kind of next step it needs, as the editor does.
@@ -51,7 +51,7 @@ A first run says nothing about what's new, and neither does a run on other build
 
 ## Inventory
 
-How many pages the project has, by content type and by owner, and three lists from the checks across the project: the pages whose review date has passed, the pages nothing links to, and the fragments, phrases, features, glossary terms, and images nothing uses.
+How many pages the project has, by content type and by owner, and three lists from the checks across the project: the pages whose recheck date has passed, the pages nothing links to, and the fragments, phrases, features, glossary terms, and images nothing uses.
 
 A page's owner is the value of the frontmatter field its type marks `role = "owner"`, such as a team's name:
 
@@ -79,9 +79,21 @@ For each API in `[apis]`, it counts the spec's operations, how many of them a li
 
 For each build, the pages it doesn't publish and the content it takes out of the pages it does (a variant arm, a section marked available elsewhere), when another build keeps them, with why. It's what to read before a release of one build: whether what its readers won't see is what you meant to leave out. A project with one build has nothing to compare.
 
+Each is listed once, for the mark a writer made: a page by its `available` or `variant` frontmatter, and content by its `@available` (a section's, a block's, or a table row's) or its variant arm, at the mark's line and under the heading it's in, however many blocks it takes out. The line above a build's list counts the marks, by what each takes out.
+
+```text
+Builds
+  site@3.4 leaves out 2 pages and 1 section that another build keeps:
+    configure.md: not available (available: self-managed 3.5); site publishes it
+    webhooks.md: not available (available: self-managed 3.5); site publishes it
+    keys.md § Sign webhook events (line 25): Available on self-managed (GA, 3.5+), not self-managed 3.4; site keeps it
+```
+
+A mark written in a fragment names the fragment and its line in place of `line 25`.
+
 ## Pages
 
-Every page each build publishes, sorted by address, with what search engines and agents are told about it: its title, its description, and its listing, and where the listing comes from, the page's own `listing` or a rule of [`[listing]`](../content-model/checks.md#22-listing) and its line in `ascribe.toml`. It's the table a team would otherwise crawl its own site to get, made from the build before anything is deployed. The line above it gives the site's address, which each page's canonical address starts with.
+Every page each build publishes, sorted by address, with what search engines and agents are told about it: its title, its description, and its listing, and where the listing comes from, the page's own `listing` or a rule of [`[listing]`](../content-model/output.md#17-listing) and its line in `ascribe.toml`. It's the table a team would otherwise crawl its own site to get, made from the build before anything is deployed. The line above it gives the site's address, which each page's canonical address starts with.
 
 ```text
 Pages

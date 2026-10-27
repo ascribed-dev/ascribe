@@ -7,4 +7,4 @@ spec: ["7.2"]
 tags: [check]
 
 diagnostics:
-  - {slug: template-placeholder-left, file: how-to/rotate-keys.md, line: 8, severity: advice}
+  - {slug: template-placeholder-left, file: how-to/rotate-keys.md, line: 9, severity: advice}

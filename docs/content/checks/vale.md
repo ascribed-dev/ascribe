@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Prose, through Vale
-description: Checking your pages' prose with Vale, from Ascribe's quiet preset or your own Vale configuration, in the editor and in ascribe check.
+description: "Checking your pages' prose with Vale, from Ascribe's quiet preset or your own Vale configuration, in the editor and in `ascribe check`."
 permalink: vale
 ---
 

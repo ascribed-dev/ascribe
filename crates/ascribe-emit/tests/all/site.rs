@@ -30,6 +30,17 @@ fn a_page_is_its_frontmatter_and_its_body() {
 }
 
 #[test]
+fn a_published_pages_draft_false_is_left_out_of_its_frontmatter() {
+    // A page in the output is published, and the Zod schema has no `draft`.
+    let source = "---\ntitle: Test\ndraft: false\n---\n\nHello.\n";
+    let project = memory_project(FULL_MODEL, &[("index.md", source)]);
+    assert_eq!(
+        site(&project, "site", "index.md"),
+        "---\ntitle: Test\nsource: index.md\n---\n\nHello.\n"
+    );
+}
+
+#[test]
 fn a_code_blocks_request_and_response_are_left_out() {
     // SPEC §3.3.1: the site keeps `title` and `tested` for the caption.
     let out = body(
@@ -121,10 +132,19 @@ fn a_group_is_tabs_that_sync_on_their_dimension() {
     assert_eq!(
         body(source),
         "<ascribe-tabs sync=\"pm\">\n\n\
-         <ascribe-tab value=\"npm\" label=\"npm\">\n\nnpm i\n\n</ascribe-tab>\n\n\
-         <ascribe-tab value=\"yarn\" label=\"Yarn\">\n\nyarn add\n\n</ascribe-tab>\n\n\
+         <ascribe-tab value=\"npm\" label=\"npm\">\n\n<p class=\"ascribe-tab-label\">npm</p>\n\nnpm i\n\n</ascribe-tab>\n\n\
+         <ascribe-tab value=\"yarn\" label=\"Yarn\">\n\n<p class=\"ascribe-tab-label\">Yarn</p>\n\nyarn add\n\n</ascribe-tab>\n\n\
          </ascribe-tabs>\n"
     );
+}
+
+#[test]
+fn a_tabs_label_text_is_escaped_as_its_attribute_is() {
+    let source = ".Use `<T>` & co\n@variant:\nA\n\n.Other\n@variant:\nB\n@end\n";
+    assert!(body(source).contains(
+        "<ascribe-tab label=\"Use &lt;T&gt; &amp; co\">\n\n\
+         <p class=\"ascribe-tab-label\">Use &lt;T&gt; &amp; co</p>\n\nA\n\n</ascribe-tab>"
+    ));
 }
 
 #[test]
@@ -133,8 +153,8 @@ fn a_labeled_group_has_no_sync_and_no_values() {
     assert_eq!(
         body(source),
         "<ascribe-tabs>\n\n\
-         <ascribe-tab label=\"Docker\">\n\nA\n\n</ascribe-tab>\n\n\
-         <ascribe-tab label=\"Use k8s now\">\n\nB\n\n</ascribe-tab>\n\n\
+         <ascribe-tab label=\"Docker\">\n\n<p class=\"ascribe-tab-label\">Docker</p>\n\nA\n\n</ascribe-tab>\n\n\
+         <ascribe-tab label=\"Use k8s now\">\n\n<p class=\"ascribe-tab-label\">Use k8s now</p>\n\nB\n\n</ascribe-tab>\n\n\
          </ascribe-tabs>\n"
     );
 }

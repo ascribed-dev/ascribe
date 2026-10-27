@@ -1,0 +1,7 @@
+[toolchain]
+# The fuzz targets' toolchain: cargo-fuzz's sanitizers need a nightly. A dated
+# one, so a night's failure is the code's and not the compiler's; bump it
+# deliberately, in its own commit. The repository's own toolchain is
+# ../rust-toolchain.toml.
+channel = "nightly-2026-10-20"
+profile = "minimal"

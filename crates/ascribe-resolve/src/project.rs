@@ -6,7 +6,7 @@ use ascribe_model::{AddressFile, ContentModel, NavFile, RecordedPermalinks};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::{Arc, Mutex};
 
-use crate::closest::closest_fixes;
+use crate::closest::offer_closest;
 use crate::expand::{ExpandedPage, Expander, IncludeSite};
 use crate::fs::FileSystem;
 use crate::incremental::FileIds;
@@ -142,6 +142,9 @@ pub(crate) struct ReverseEdges {
     includes: BTreeMap<RelPath, Vec<IncludeEdge>>,
     links: BTreeMap<RelPath, Vec<LinkSite>>,
     assets: BTreeMap<RelPath, Vec<AssetSite>>,
+    /// The files with a link to a page that doesn't exist, whose message
+    /// names the page it most likely meant, wherever that is.
+    missing: BTreeSet<RelPath>,
 }
 
 impl ReverseEdges {
@@ -191,6 +194,9 @@ impl ReverseEdges {
                     },
                     |e| (e.file.clone(), e.span),
                 ),
+                Resolution::SourceMissing { .. } => {
+                    self.missing.insert(index.path.clone());
+                }
                 _ => {}
             }
         }
@@ -199,6 +205,7 @@ impl ReverseEdges {
     /// Forgets everything a file contributed (given what it was, before).
     fn remove_file(&mut self, index: &FileIndex, resolutions: &[Resolution]) {
         let path = &index.path;
+        self.missing.remove(path);
         for include in &index.includes {
             if let Some(target) = &include.target {
                 retain_edges(&mut self.includes, target, |e| &e.file != path);
@@ -364,11 +371,16 @@ impl Project {
             nested,
             own: found.own_folder,
         };
-        Project::assemble(model, layout, files, by_id, unreadable, folders, fs)
+        let code = CodeFiles::with_ids(std::mem::take(&mut ids.code));
+        let project =
+            Project::assemble(model, layout, files, by_id, unreadable, folders, fs, &code);
+        ids.code = code.into_ids();
+        project
     }
 
     /// A project from indexed files: resolves every reference and builds the
     /// edges.
+    #[allow(clippy::too_many_arguments)] // A project's parts, each needed.
     pub(crate) fn assemble(
         model: Arc<ContentModel>,
         layout: Layout,
@@ -377,6 +389,7 @@ impl Project {
         unreadable: Vec<Unreadable>,
         folders: Folders,
         fs: &dyn FileSystem,
+        code: &CodeFiles,
     ) -> Project {
         let apis = Arc::new(ApiSpecs::read(&model, fs));
         let mut project = Project {
@@ -405,7 +418,6 @@ impl Project {
             })
             .collect();
         // Each code file is read once, however many snippets use it.
-        let code = CodeFiles::new();
         project.snippets = project
             .files
             .values()
@@ -413,7 +425,7 @@ impl Project {
             .map(|index| {
                 (
                     index.path.clone(),
-                    Arc::new(project.resolve_snippets(index, fs, &code)),
+                    Arc::new(project.resolve_snippets(index, fs, code)),
                 )
             })
             .collect();
@@ -447,6 +459,13 @@ impl Project {
     /// was loaded or its content model last changed.
     pub fn apis(&self) -> &ApiSpecs {
         &self.apis
+    }
+
+    /// Keeps where each `operationId` was in a base revision's specs, so a
+    /// link to one renamed since is offered the operation in its place
+    /// ([`ApiSpecs::renamed`]).
+    pub fn remember_base_apis(&mut self, base: &ApiSpecs) {
+        Arc::make_mut(&mut self.apis).remember(base);
     }
 
     /// The project's navigation (SPEC §7.8): `ascribe.nav`'s order over the
@@ -607,6 +626,11 @@ impl Project {
     /// The links to a source file, from every file.
     pub fn links_to(&self, target: &RelPath) -> &[LinkSite] {
         self.edges.links.get(target).map_or(&[], Vec::as_slice)
+    }
+
+    /// The files with a link to a page that doesn't exist.
+    pub fn files_linking_missing_pages(&self) -> &BTreeSet<RelPath> {
+        &self.edges.missing
     }
 
     /// The links that name this source id in a file.
@@ -997,7 +1021,8 @@ impl Project {
         // The headings `ascribe link` lists as closest: the target page's,
         // which the problem already depends on. A missing page's closest
         // targets can be any page, so the file-level check offers those.
-        issue.fixes = closest_fixes(
+        offer_closest(
+            &mut issue,
             self,
             &index.path,
             &reference.target,

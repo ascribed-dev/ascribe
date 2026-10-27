@@ -5,6 +5,7 @@
   // ../elements/src/names.ts
   var ELEMENT_TABS = "ascribe-tabs";
   var ELEMENT_TAB = "ascribe-tab";
+  var CLASS_TAB_LABEL = "ascribe-tab-label";
   var CLASS_COPY = "ascribe-copy";
   var DATA_COPY = "data-ascribe-copy";
   var CLASS_COPY_STATUS = "ascribe-copy-status";
@@ -145,6 +146,10 @@
   function valuesOf(tab) {
     return (tab.getAttribute("value") ?? "").split(/\s+/).filter(Boolean);
   }
+  function labelOf(tab) {
+    const first = tab.firstElementChild;
+    return first?.classList.contains(CLASS_TAB_LABEL) ? first : void 0;
+  }
   var followChoice;
   var AscribeTab = class extends HTMLElement {
   };
@@ -194,6 +199,7 @@
         tablist.append(button2);
         tab.setAttribute("role", "tabpanel");
         tab.setAttribute("aria-labelledby", button2.id);
+        labelOf(tab)?.setAttribute("aria-hidden", "true");
         return button2;
       });
       this.prepend(tablist);
@@ -215,6 +221,7 @@
         tab.removeAttribute("role");
         tab.removeAttribute("aria-labelledby");
         tab.removeAttribute("hidden");
+        labelOf(tab)?.removeAttribute("aria-hidden");
       }
       this.#tablist = null;
       this.#tabs = [];
@@ -1069,11 +1076,11 @@
       }
       let text;
       if (ref?.bytes !== void 0) {
-        text = `Image not included: ${ref.path} (${bytes(ref.bytes)}, over the report's ${bytes(data2.image_limit)} limit)`;
+        text = `Image not included: ${ref.path} (${bytes(ref.bytes)}, over the preview's ${bytes(data2.image_limit)} limit)`;
       } else if (ref) {
         text = `Image not found: ${ref.path}`;
       } else {
-        text = `Image not loaded: ${src} (the report makes no network requests)`;
+        text = `Image not loaded: ${src} (the preview makes no network requests)`;
       }
       const placeholder = document.createElement("span");
       placeholder.className = "r-image";
@@ -1196,7 +1203,7 @@
     if (data2.limit.omitted > 0) {
       head.append(
         h("div", { class: "r-notice" }, [
-          `This report renders the first ${data2.limit.pages} changed pages. ${data2.limit.omitted} more are listed by name at the end of the list, not rendered.`
+          `This preview renders the first ${data2.limit.pages} changed pages. ${data2.limit.omitted} more are listed by name at the end of the list, not rendered.`
         ])
       );
     }
@@ -1409,7 +1416,7 @@
       if (page.omitted || page.now === null && page.was === null) {
         main.append(
           h("p", { class: "r-empty" }, [
-            page.omitted ? `${page.path} isn't rendered: the report renders at most ${data2.limit.pages} changed pages.` : `${page.path} couldn't be rendered.`
+            page.omitted ? `${page.path} isn't rendered: the preview renders at most ${data2.limit.pages} changed pages.` : `${page.path} couldn't be rendered.`
           ])
         );
         renderControls();

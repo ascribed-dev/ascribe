@@ -213,7 +213,7 @@ Error · file level · next step: write · [SPEC §7.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Fix `path`, which is relative to the folder ascribe.toml is in, or create the folder.
 
-**Read more:** [`[sources.<name>]`](../content-model/output.md#18-sourcesname) in the `ascribe.toml` reference.
+**Read more:** [`[sources.<name>]`](../content-model/sources.md#20-sourcesname) in the `ascribe.toml` reference.
 
 ### ASC134 `model-source-outside-repository`
 @id {permalink=true}: ASC134
@@ -227,7 +227,7 @@ Error · file level · next step: write · [SPEC §7.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Give the source a `path` inside the project's repository, or, for code in another repository, give it `git` instead. With no repository, the editor and `ascribe mcp` read a source only inside the folder they were opened on: open the folder that contains the source.
 
-**Read more:** [`[sources.<name>]`](../content-model/output.md#18-sourcesname) in the `ascribe.toml` reference.
+**Read more:** [`[sources.<name>]`](../content-model/sources.md#20-sourcesname) in the `ascribe.toml` reference.
 
 ### ASC135 `model-source-remote`
 @id {permalink=true}: ASC135
@@ -241,7 +241,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Give each source either `path`, a folder in this repository, or `git`, the URL of another repository, with `branch` only beside `git`. A source with `git` keeps its copies in `sources/<name>/`, which must be outside the content root.
 
-**Read more:** [A source in another repository](../content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
+**Read more:** [A source in another repository](../content-model/sources.md#a-source-in-another-repository) in the `ascribe.toml` reference.
 
 ## Content types, fields, and attributes
 
@@ -369,7 +369,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Rename the attribute.
 
-**Read more:** [`[images]`](../content-model/content.md#13-images) in the `ascribe.toml` reference.
+**Read more:** [`[images]`](../content-model/content.md#9-images) in the `ascribe.toml` reference.
 
 ### ASC141 `model-inline-field`
 @id {permalink=true}: ASC141
@@ -395,7 +395,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Message:** role = "\{role}" only works on a \{expected} field, and `{field}` is "\{type}"
 
-**Fix:** Give `role = "description"` to one string field of a content type's `frontmatter`, `role = "review-date"` to one date field, and `role = "owner"` to one string or enum field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles.
+**Fix:** Give `role = "description"` to one string field of a content type's `frontmatter`, `role = "recheck-date"` to one date field, and `role = "owner"` to one string or enum field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles.
 
 **Read more:** [Field roles](../content-model/index.md#54-field-roles) in the `ascribe.toml` reference.
 
@@ -469,7 +469,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Add the dimension's values, or remove the dimension.
 
-**Read more:** [`[dimensions.<name>]`](../content-model/content.md#dimensions) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../content-model/variation.md#dimensions) in the `ascribe.toml` reference.
 
 ### ASC085 `model-dimension-value-duplicate`
 @id {permalink=true}: ASC085
@@ -483,7 +483,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the repeated value.
 
-**Read more:** [`[dimensions.<name>]`](../content-model/content.md#dimensions) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../content-model/variation.md#dimensions) in the `ascribe.toml` reference.
 
 ### ASC086 `model-dimension-value-shared`
 @id {permalink=true}: ASC086
@@ -497,7 +497,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Rename the value in one of the dimensions.
 
-**Read more:** [`[dimensions.<name>]`](../content-model/content.md#dimensions) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../content-model/variation.md#dimensions) in the `ascribe.toml` reference.
 
 ### ASC087 `model-label-undeclared`
 @id {permalink=true}: ASC087
@@ -511,7 +511,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Correct the label's key, or add the value to the dimension's `values`.
 
-**Read more:** [`[dimensions.<name>]`](../content-model/content.md#dimensions) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../content-model/variation.md#dimensions) in the `ascribe.toml` reference.
 
 ### ASC088 `model-versionless-undeclared`
 @id {permalink=true}: ASC088
@@ -525,7 +525,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Correct the entry, or add the value to the dimension's `values`.
 
-**Read more:** [`[dimensions.<name>]`](../content-model/content.md#dimensions) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../content-model/variation.md#dimensions) in the `ascribe.toml` reference.
 
 ### ASC089 `model-lifecycle-available-required`
 @id {permalink=true}: ASC089
@@ -539,7 +539,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Add `available = true` or `available = false` to the state.
 
-**Read more:** [`[lifecycle.<state>]`](../content-model/content.md#8-lifecyclestate) in the `ascribe.toml` reference.
+**Read more:** [`[lifecycle.<state>]`](../content-model/variation.md#13-lifecyclestate) in the `ascribe.toml` reference.
 
 ### ASC090 `model-lifecycle-ga-unavailable`
 @id {permalink=true}: ASC090
@@ -553,7 +553,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove `available = false` from `[lifecycle.ga]`.
 
-**Read more:** [`[lifecycle.<state>]`](../content-model/content.md#8-lifecyclestate) in the `ascribe.toml` reference.
+**Read more:** [`[lifecycle.<state>]`](../content-model/variation.md#13-lifecyclestate) in the `ascribe.toml` reference.
 
 ### ASC091 `model-note-label-required`
 @id {permalink=true}: ASC091
@@ -567,7 +567,7 @@ Error · file level · next step: write · [SPEC §4.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Give the note type a `label`.
 
-**Read more:** [`[notes.<type>]`](../content-model/content.md#10-notestype) in the `ascribe.toml` reference.
+**Read more:** [`[notes.<type>]`](../content-model/content.md#6-notestype) in the `ascribe.toml` reference.
 
 ### ASC092 `model-availability-syntax`
 @id {permalink=true}: ASC092
@@ -581,7 +581,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Fix the feature's `available` spec. Its syntax is in the [directive reference](../writing/directives.md#availability-specs).
 
-**Read more:** [`[features.<key>]`](../content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../content-model/variation.md#14-featureskey) in the `ascribe.toml` reference.
 
 ### ASC093 `model-availability-unknown-name`
 @id {permalink=true}: ASC093
@@ -595,7 +595,7 @@ Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.m
 
 **Fix:** Use a declared dimension value, dimension, or lifecycle state, or declare the name.
 
-**Read more:** [`[features.<key>]`](../content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../content-model/variation.md#14-featureskey) in the `ascribe.toml` reference.
 
 ### ASC094 `model-availability-versionless`
 @id {permalink=true}: ASC094
@@ -609,7 +609,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the version. A versionless target, or a dimension name, takes a state but no version.
 
-**Read more:** [`[features.<key>]`](../content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../content-model/variation.md#14-featureskey) in the `ascribe.toml` reference.
 
 ### ASC095 `model-availability-history-order`
 @id {permalink=true}: ASC095
@@ -623,7 +623,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** List the target's states oldest first.
 
-**Read more:** [`[features.<key>]`](../content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../content-model/variation.md#14-featureskey) in the `ascribe.toml` reference.
 
 ### ASC096 `model-feature-nested`
 @id {permalink=true}: ASC096
@@ -637,7 +637,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Write the feature's availability out in full. One feature can't refer to another.
 
-**Read more:** [`[features.<key>]`](../content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../content-model/variation.md#14-featureskey) in the `ascribe.toml` reference.
 
 ## `[releases]`
 
@@ -653,7 +653,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Name the table after the target a mark gives a version to, such as `[releases.self-managed]`: a versioned value of a declared dimension, or a name no dimension has, which makes it a value of the implicit dimension `release`. A versionless value has no versions to list. While a target is left to the implicit dimension, no declared dimension can be named `release`.
 
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
 
 ### ASC205 `model-releases-line`
 @id {permalink=true}: ASC205
@@ -667,7 +667,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Write each line as a version, once, with as many parts as the target's other lines: `["3.4", "3.5"]` for a line for each minor release, or `["0.2.0"]` for one for each patch release. A line holds every version that starts with it.
 
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
 
 ### ASC207 `model-releases-order`
 @id {permalink=true}: ASC207
@@ -681,7 +681,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Keep each line in one list, in the order the lists mean: `planned` lines are newer than every `live` line, and `archived` lines older. A line that has shipped moves from `planned` to `live`, and one that has left the window from `live` to `archived`.
 
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
 
 ### ASC208 `model-releases-ends`
 @id {permalink=true}: ASC208
@@ -695,7 +695,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Give an end date to a line in `live` only. A line whose support has ended and that has left the window goes in `archived`, with its date as `ended`.
 
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
 
 ### ASC209 `model-versions-current`
 @id {permalink=true}: ASC209
@@ -709,7 +709,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove `current` from `[versions]`, and list the release in `[releases.<target>]`, as `live = ["3.4"]`, for the target it's a release of. Each target has its own current line, and a check that compared with `current`, `availability-left-behind`, compares each target's versions with that target's current line.
 
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
 
 ## Phrases and the glossary
 
@@ -753,7 +753,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Each path in `pages` is a page, from the content root, with its name's case as it is on disk: fix the path, or, for a fragment, list a page that includes it.
 
-**Read more:** [`[glossary]`](../content-model/content.md#12-glossary) in the `ascribe.toml` reference.
+**Read more:** [`[glossary]`](../content-model/content.md#8-glossary) in the `ascribe.toml` reference.
 
 ## Widgets
 
@@ -769,7 +769,7 @@ Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6
 
 **Fix:** Rename the widget, for example with your project's name as its prefix: `quill-aside`.
 
-**Read more:** [`[widgets.<name>]`](../content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
+**Read more:** [`[widgets.<name>]`](../content-model/content.md#10-widgetsname) in the `ascribe.toml` reference.
 
 ### ASC101 `model-widget-forms`
 @id {permalink=true}: ASC101
@@ -783,7 +783,7 @@ Error · file level · next step: choose · [SPEC §6]({repo}/blob/main/SPEC.md#
 
 **Fix:** Set `forms` to `["line"]`, `["container"]`, or `["line", "container"]`.
 
-**Read more:** [`[widgets.<name>]`](../content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
+**Read more:** [`[widgets.<name>]`](../content-model/content.md#10-widgetsname) in the `ascribe.toml` reference.
 
 ### ASC102 `model-widget-binding`
 @id {permalink=true}: ASC102
@@ -797,7 +797,7 @@ Error · file level · next step: choose · [SPEC §6]({repo}/blob/main/SPEC.md#
 
 **Fix:** Give a widget with a line form a `binding`. Remove `binding` from a container-only widget.
 
-**Read more:** [`[widgets.<name>]`](../content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
+**Read more:** [`[widgets.<name>]`](../content-model/content.md#10-widgetsname) in the `ascribe.toml` reference.
 
 ### ASC103 `model-widget-container-primary`
 @id {permalink=true}: ASC103
@@ -811,7 +811,7 @@ Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6
 
 **Fix:** Make the primary optional (`"text?"`), or remove the widget's container form. A container-only widget takes no primary.
 
-**Read more:** [`[widgets.<name>]`](../content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
+**Read more:** [`[widgets.<name>]`](../content-model/content.md#10-widgetsname) in the `ascribe.toml` reference.
 
 ### ASC104 `model-widget-groupable-form`
 @id {permalink=true}: ASC104
@@ -825,7 +825,7 @@ Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6
 
 **Fix:** Set `forms = ["container"]`, or remove `groupable`.
 
-**Read more:** [`[widgets.<name>]`](../content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
+**Read more:** [`[widgets.<name>]`](../content-model/content.md#10-widgetsname) in the `ascribe.toml` reference.
 
 ### ASC105 `model-widget-plain-content`
 @id {permalink=true}: ASC105
@@ -839,4 +839,4 @@ Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6
 
 **Fix:** Remove `plain-content`.
 
-**Read more:** [`[widgets.<name>]`](../content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
+**Read more:** [`[widgets.<name>]`](../content-model/content.md#10-widgetsname) in the `ascribe.toml` reference.

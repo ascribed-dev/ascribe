@@ -57,7 +57,9 @@ For agents: `ascribe agents --help` says how to check and fix each edit.";
 pub(crate) const GROUPS: &[(&str, &[&str])] = &[
     (
         "Write and check",
-        &["init", "check", "fmt", "build", "diff", "drift", "report"],
+        &[
+            "init", "new", "check", "fmt", "build", "preview", "diff", "drift", "report",
+        ],
     ),
     (
         "Ask about the project",
@@ -173,10 +175,16 @@ pub enum Color {
 pub enum Command {
     /// Start a project: write its first ascribe.toml and its pages' folder.
     ///
-    /// With --templates, take the page templates too. Writes nothing where
-    /// there's an ascribe.toml at or above the folder.
+    /// It writes ascribe.addresses too, so a page's move is recorded from
+    /// the first commit. With --templates, take the page templates too.
+    /// Writes nothing where there's an ascribe.toml at or above the folder.
     #[command(after_help = docs_link!("cli-init"))]
     Init(commands::init::Args),
+    /// Start a page from its type's template, its type and title set.
+    ///
+    /// Writes nothing where a file is, and makes the folders PATH names.
+    #[command(after_help = docs_link!("cli-new"))]
+    New(commands::new::Args),
     /// Check every source file for problems, without building anything.
     #[command(after_help = docs_link!("cli-check"))]
     Check(commands::check::Args),
@@ -186,6 +194,12 @@ pub enum Command {
     /// Build the documentation set's outputs.
     #[command(after_help = docs_link!("cli-build"))]
     Build(commands::build::Args),
+    /// Serve a build's pages as a site, rendered again as they change.
+    ///
+    /// Renders the pages into .ascribe/preview, serves them at 127.0.0.1,
+    /// and renders them again when the project's files change.
+    #[command(after_help = docs_link!("cli-preview"))]
+    Preview(commands::preview::Args),
     /// Show what changed since a git revision, page by page.
     ///
     /// Compares a git revision with the working tree, page by page, as
@@ -327,9 +341,11 @@ impl Command {
             Command::Lsp(args) => commands::lsp::run(global, args),
             Command::Mcp(args) => commands::mcp::run(global, args),
             Command::Model(args) => commands::model::run(global, args),
+            Command::New(args) => commands::new::run(global, args),
             Command::Observe(args) => commands::observe::run(global, args),
             Command::Outline(args) => commands::outline::run(global, args),
             Command::Permalinks(args) => commands::permalinks::run(global, args),
+            Command::Preview(args) => commands::preview::run(global, args),
             Command::Refs(args) => commands::refs::run(global, args),
             Command::Rename(args) => commands::rename::run(global, args),
             Command::Report(args) => commands::report::run(global, args),

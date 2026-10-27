@@ -88,7 +88,7 @@ pub use router::DefaultRouter;
 pub use section::PageSection;
 pub use summary::{FoundSummary, SectionSummary, SummaryForm, find_summaries};
 pub use tree::{
-    Annotation, Availability, DropReason, DroppedPage, EmbeddedOperation, FormattedField,
+    Annotation, Availability, DRAFT, DropReason, DroppedPage, EmbeddedOperation, FormattedField,
     GlossaryUse, HeadingIds, LinkTarget, NAV_LABEL, NavLabel, PagePermalink, Removal, Removed,
     ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind, ResolvedLink,
     ResolvedPage, ResolvedRow, Scope, Substitution,
@@ -122,15 +122,21 @@ impl Project {
         self.resolver(build, router).build()
     }
 
-    /// Why the build doesn't publish a page, if it doesn't (SPEC §9.3): its
-    /// `variant` frontmatter conflicts with a selection, or its `available`
-    /// frontmatter makes it unavailable in a filter build. `None` for a page
-    /// the build publishes, and for a file that isn't a page.
+    /// Why the build doesn't publish a page, if it doesn't (SPEC §9.3): it's
+    /// a draft, its `variant` frontmatter conflicts with a selection, or its
+    /// `available` frontmatter makes it unavailable in a filter build. `None`
+    /// for a page the build publishes, and for a file that isn't a page.
     pub fn dropped(&self, page: &RelPath, build: &Build) -> Option<DropReason> {
         let index = self.file(page)?;
         (index.kind == FileKind::Page)
             .then(|| modes::drop_reason(self.model(), index, build))
             .flatten()
+    }
+
+    /// Whether any page is a draft (SPEC §2.1), which no build the content
+    /// model declares publishes.
+    pub fn has_drafts(&self) -> bool {
+        self.pages().any(crate::index::FileIndex::is_draft)
     }
 
     /// What a build's modes take out of a page it publishes, and why: the

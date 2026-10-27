@@ -13,6 +13,7 @@ import type {
   InventoryResult,
   InventorySection,
   InventoryValue,
+  LeftOut,
   LspRange,
   ModelKind,
   PageAbout,
@@ -1024,13 +1025,13 @@ function addressRow(
 
 /**
  * Health's rows for the page's own fields that can warn: its description,
- * its review date, and what its template leaves to fill in.
+ * its recheck date, and what its template leaves to fill in.
  */
 function fieldRows(about: PageAbout, uri: string | undefined): AboutRow[] {
   const rows: AboutRow[] = [];
   const at = (range: LspRange | null): RowTarget | undefined =>
     uri && range ? { kind: "place", uri, range } : undefined;
-  const { description, review, template } = about;
+  const { description, recheck, template } = about;
   if (description) {
     const { length, limit } = description;
     const long = description.reported;
@@ -1053,14 +1054,14 @@ function fieldRows(about: PageAbout, uri: string | undefined): AboutRow[] {
       opens: at(description.range),
     });
   }
-  if (review) {
+  if (recheck) {
     rows.push({
-      label: "Review",
-      state: review.overdue ? "overdue" : undefined,
-      value: reviewText(review.date, review.days, review.overdue),
-      tooltip: `\`${review.field}\`: ${review.date}`,
-      warn: review.reported,
-      opens: at(review.range),
+      label: "Recheck",
+      state: recheck.overdue ? "overdue" : undefined,
+      value: recheckText(recheck.date, recheck.days, recheck.overdue),
+      tooltip: `\`${recheck.field}\`: ${recheck.date}`,
+      warn: recheck.reported,
+      opens: at(recheck.range),
     });
   }
   if (template) {
@@ -1091,7 +1092,9 @@ function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
   }
   if (about.builds.length > 0) {
     const published = about.builds.filter((b) => b.leftOut === null).map((b) => b.name);
-    const left = about.builds.filter((b) => b.leftOut !== null);
+    const left = about.builds.flatMap((b) =>
+      b.leftOut === null ? [] : [{ name: b.name, leftOut: b.leftOut }],
+    );
     const parts = [
       published.length > 0 ? `published by ${published.join(", ")}` : "",
       left.length > 0 ? `left out by ${left.map((b) => b.name).join(", ")}` : "",
@@ -1100,10 +1103,7 @@ function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
       label: "Builds",
       value: capitalized(parts.join("; ")),
       tooltip: [
-        ...left.map(
-          (b) =>
-            `${b.name} leaves it out: ${b.leftOut === "variant" ? "its `variant` names none of the build's values" : "its `available` makes it unavailable there"}`,
-        ),
+        ...left.map((b) => `${b.name} leaves it out: ${LEFT_OUT_BECAUSE[b.leftOut]}`),
         "Choose a build to see the page as it publishes it",
       ].join("\n"),
       opens: { kind: "command", command: SWITCH_BUILD, title: "Switch Build" },
@@ -1148,7 +1148,7 @@ function permalinkTooltip(permalink: PagePermalink): string {
 }
 
 /** "since 3 October", after the state "overdue"; "due in 12 days", "due today". */
-function reviewText(date: string, days: number | null, overdue: boolean): string {
+function recheckText(date: string, days: number | null, overdue: boolean): string {
   const [year, month, day] = date.split("-").map(Number);
   const months = [
     "January",
@@ -1429,7 +1429,7 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
           "Health",
           warned === 0 ? "" : warnings(warned),
           "pulse",
-          "What can warn: its problems, description, review date, template, size, and tested examples",
+          "What can warn: its problems, description, recheck date, template, size, and tested examples",
         ),
         expandable: node.rows.length > 0,
         dimmed: node.rows.length === 0,
@@ -1643,6 +1643,13 @@ function group(label: string, size: number, icon: string, tooltip: string): Item
 function count(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
+
+/** Why a build leaves a page out, for the Builds row's tooltip. */
+const LEFT_OUT_BECAUSE: Record<LeftOut, string> = {
+  variant: "its `variant` names none of the build's values",
+  availability: "its `available` makes it unavailable there",
+  draft: "it's a draft, which no build publishes",
+};
 
 function capitalized(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);

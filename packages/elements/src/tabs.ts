@@ -1,9 +1,10 @@
 // <ascribe-tabs> and <ascribe-tab> (CONTRACT.md §3): the library's only
 // element with behavior. Without this script every tab shows with its label
-// (CSS generated content); with it, the group follows the WAI-ARIA tabs
-// pattern.
+// (its first paragraph); with it, the group follows the WAI-ARIA tabs
+// pattern, and the paragraph is out of sight and hidden from screen readers,
+// which hear the label from the tab's button.
 
-import { ELEMENT_TAB } from "./names.js";
+import { CLASS_TAB_LABEL, ELEMENT_TAB } from "./names.js";
 
 const STORAGE_PREFIX = "ascribe-tabs:";
 
@@ -39,6 +40,12 @@ function writeChoice(dimension: string, value: string): void {
 
 function valuesOf(tab: Element): string[] {
   return (tab.getAttribute("value") ?? "").split(/\s+/).filter(Boolean);
+}
+
+/** A tab's label paragraph, its label as text, when it has one. */
+function labelOf(tab: Element): Element | undefined {
+  const first = tab.firstElementChild;
+  return first?.classList.contains(CLASS_TAB_LABEL) ? first : undefined;
 }
 
 /** Select `value` in every group on the page that switches on `dimension`, but `except`. */
@@ -111,6 +118,7 @@ export class AscribeTabs extends HTMLElement {
       tablist.append(button);
       tab.setAttribute("role", "tabpanel");
       tab.setAttribute("aria-labelledby", button.id);
+      labelOf(tab)?.setAttribute("aria-hidden", "true");
       return button;
     });
     this.prepend(tablist);
@@ -134,6 +142,7 @@ export class AscribeTabs extends HTMLElement {
       tab.removeAttribute("role");
       tab.removeAttribute("aria-labelledby");
       tab.removeAttribute("hidden");
+      labelOf(tab)?.removeAttribute("aria-hidden");
     }
     this.#tablist = null;
     this.#tabs = [];

@@ -4,15 +4,18 @@
 version = 1
 
 [moved]
-"_generated/diagnostics-content-model-builds.md#ASC178" = "content-model/checks.md#20-permalinks"
+"_generated/diagnostics-content-model-builds.md#ASC178" = "content-model/output.md#19-permalinks"
 "_generated/diagnostics-pages.md#ASC179" = "checks/diagnostics/project-files.md#ASC265"
 "_generated/diagnostics-pages.md#ASC180" = "checks/diagnostics/project-files.md#ASC266"
 "_generated/diagnostics-pages.md#ASC181" = "checks/diagnostics/project-files.md#ASC265"
+"content-model/content.md#dimensions" = "content-model/variation.md#dimensions"
 "go:ASC073" = "content-model/index.md#41-page-types"
-"go:ASC178" = "content-model/checks.md#20-permalinks"
+"go:ASC178" = "content-model/output.md#19-permalinks"
 "go:ASC179" = "go:ASC265"
 "go:ASC180" = "go:ASC266"
 "go:ASC181" = "go:ASC265"
 "go:cli-render" = "command/questions.md#cli-resolve"
+"go:cli-versions-archive" = "go:cli-versions-export"
+"versions/release.md#cli-versions-archive" = "versions/release.md#cli-versions-export"
 
 [retired]

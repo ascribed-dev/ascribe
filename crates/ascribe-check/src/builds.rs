@@ -407,7 +407,7 @@ pub fn count_errors(project: &Project, names: &[String]) -> Result<usize, Unknow
 }
 
 /// How many errors [`diagnose`] would report for one build, which needn't be
-/// one the content model declares: `ascribe versions archive` checks a
+/// one the content model declares: `ascribe versions export` checks a
 /// planned line's build, made for it by
 /// [`ContentModel::line_build`](ascribe_model::ContentModel::line_build).
 /// As [`count_errors`], without the checks that can't report one.

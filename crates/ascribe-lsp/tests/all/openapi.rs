@@ -2,8 +2,8 @@
 //! completion after `#`, its hover, going to it in the spec, the spec read
 //! again when it changes on disk, inside the project's folder or outside it,
 //! and the safe fix for a link to an operation that was renamed, from what
-//! the server read before or from the review's base; and the same on an
-//! `@operation`'s link.
+//! the server read before, the default base, or the review's base; and the
+//! same on an `@operation`'s link.
 
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
@@ -296,9 +296,36 @@ fn git(root: &Path, args: &[&str]) {
 }
 
 #[test]
-fn openapi_a_renamed_operation_is_fixed_from_the_review_s_base() {
+fn openapi_a_renamed_operation_is_fixed_from_the_default_base_once_the_project_loads() {
     let f = project();
     git(&f.root(), &["init", "-q", "-b", "main"]);
+    git(&f.root(), &["add", "-A"]);
+    git(&f.root(), &["commit", "-q", "-m", "First"]);
+    f.write("api/openapi.yaml", &renamed());
+    let path = f.path("docs/users.md");
+    let mut client = Client::start(&f.root());
+    client.settle();
+    // `main` has the spec with `getUser`, read as `ascribe check` reads it.
+    let missing = diagnostic(&client, &path, "link-operation-missing").expect("missing");
+    assert!(
+        missing["message"]
+            .as_str()
+            .is_some_and(|m| m.ends_with("`getUser` is now `fetchUser` (GET /users/{id})")),
+        "{missing}"
+    );
+    let (titles, safe) = fixes(&mut client, &path, &missing);
+    assert_eq!(
+        titles[0], "Link to `../api/openapi.yaml#fetchUser`",
+        "{titles:?}"
+    );
+    assert!(safe, "the rename is safe");
+}
+
+#[test]
+fn openapi_a_renamed_operation_is_fixed_from_the_review_s_base() {
+    let f = project();
+    // No default branch, so the base is only the one the review names.
+    git(&f.root(), &["init", "-q", "-b", "trunk"]);
     git(&f.root(), &["add", "-A"]);
     git(&f.root(), &["commit", "-q", "-m", "First"]);
     f.write("api/openapi.yaml", &renamed());
@@ -311,7 +338,7 @@ fn openapi_a_renamed_operation_is_fixed_from_the_review_s_base() {
     assert!(!fixes(&mut client, &path, &missing).1);
 
     let set = client
-        .request("ascribe/review/setBase", json!({ "base": "main" }))
+        .request("ascribe/review/setBase", json!({ "base": "trunk" }))
         .response_result
         .expect("the base is set");
     assert!(set["problem"].is_null(), "{set}");

@@ -2,12 +2,14 @@
 # written only where its order isn't the default (its own page, then by type
 # in ascribe.toml's order, then by title), and a `label` where its own page's
 # title, or its folder's name, isn't the sidebar's. site/test/e2e.test.ts holds
-# the published sidebar to site/test/fixtures/sidebar.json.
+# the published sidebar to site/test/fixtures/sidebar.json, and
+# crates/ascribe-emit/tests/all/site_sidebar.rs this navigation to it, which
+# `ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test all site_sidebar` rewrites.
 version = 1
 
 [[sections]]
 folder = ""
-pages = ["getting-started.md", "install.md", "glossary.md"]
+pages = ["getting-started.md", "existing-docs.md", "install.md", "glossary.md"]
 
 [[sections]]
 folder = "writing/"
@@ -17,6 +19,7 @@ pages = ["syntax.md", "directives.md", "frontmatter.md", "inline.md", "memo-file
 [[sections]]
 folder = "content-model/"
 label = "The content model"
+pages = ["content.md", "variation.md", "output.md", "sources.md", "checks.md", "glossary.md"]
 
 [[sections]]
 folder = "checks/"
@@ -100,10 +103,11 @@ folder = "command/"
 label = "The command"
 pages = ["questions.md", "site-output.md", "project-files.md"]
 
-# Contracts keep an order of their own.
+# Contracts keep an order of their own, in a section at the end apart from the
+# guides.
 [[sections]]
 folder = "contracts/"
-label = "Contracts"
+label = "For implementers"
 pages = [
   "content-model.md",
   "site-render.md",
@@ -118,8 +122,8 @@ pages = [
 
 [[sections]]
 folder = "contracts/content-model/"
-pages = ["content.md", "output.md", "checks.md", "validation.md"]
+pages = ["content.md", "variation.md", "output.md", "sources.md", "checks.md", "validation.md"]
 
 [[sections]]
 folder = "contracts/json-reports/"
-pages = ["diff.md", "report.md", "sources.md", "addresses.md", "templates.md", "model.md", "questions.md", "versions.md"]
+pages = ["model.md", "templates.md", "versions.md", "addresses.md", "sources.md", "report.md", "diff.md", "questions.md"]

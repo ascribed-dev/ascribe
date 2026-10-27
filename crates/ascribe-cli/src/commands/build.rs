@@ -108,7 +108,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 
 fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let color = use_color(global, stdout_is_terminal());
-    let mut project = match load_project(global) {
+    let project = match load_project(global) {
         Ok(project) => project,
         Err(failure) => return report_failure(failure, args, color, out, err),
     };
@@ -182,7 +182,6 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
         .filter_map(|name| project.model().build(name))
         .cloned()
         .collect();
-    project.release_link_index();
     let builds: Vec<&Build> = builds.iter().collect();
     match write_outputs(&project, &builds, &args.emit, args.anchors, err) {
         Ok(()) => exit::OK,
@@ -226,7 +225,7 @@ fn write_outputs(
             pending.push(w.clone());
         }
     };
-    let result = ascribe_emit::write_outputs(&index, project.root(), builds, &options, &mut report)
+    let result = ascribe_emit::write_outputs(index, project.root(), builds, &options, &mut report)
         .map(|_| ());
     flush(&mut pending, err);
     result

@@ -12,7 +12,9 @@
 //! building every output in memory with the line archived, before and
 //! after the marks change: a live line's output that changes is an error,
 //! and another build's is reported, since a build that isn't a line shows a
-//! version from before the window.
+//! version from before the window. A change to the target's own part of
+//! another build's availability lines is the retirement doing its job, so
+//! it's listed apart and needs no `--force` (decision #1050).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
@@ -22,6 +24,7 @@ use ascribe_core::availability::{
     AvailabilitySpec, Detail, Version, parse_availability, spec_text, without_versions_through,
 };
 use ascribe_core::{Coded, FileId, LineIndex, RelPath, Span, TextEdit, apply_edits};
+use ascribe_emit::Contents;
 use ascribe_model::{ContentModel, LineStatus, Releases};
 use ascribe_resolve::{AstroRouter, Availability, FileIndex, in_release_line, replaces_span};
 use ascribe_syntax::{Block, BlockKind, Bound};
@@ -84,8 +87,12 @@ pub struct RetiredLine {
     /// in the current line, when the project has a file that reads; else 0.
     pub recorded: usize,
     /// The outputs of builds that aren't lines of the target that the
-    /// rewrite changes, by build and output.
+    /// rewrite changes, by build and output, apart from `expected`.
     pub builds_changed: Vec<ChangedOutput>,
+    /// The pages of builds that aren't lines of the target whose only
+    /// change is the target's part of their availability lines: its state
+    /// and versions. They need no `--force`.
+    pub expected: Vec<ChangedOutput>,
 }
 
 /// Content no live or planned line has, or a mark that says nothing.
@@ -185,7 +192,7 @@ pub enum RetireError {
     },
     /// The line has no address.
     #[error(
-        "`{target} {line}` has no address; run `ascribe versions archive \"{target} {line}\" --to <folder>` first, host the folder, and give its address with --url: once the marks are rewritten, the source no longer holds what the line needs"
+        "`{target} {line}` has no address; run `ascribe versions export \"{target} {line}\" --to <folder>` first, host the folder, and give its address with --url: once the marks are rewritten, the source no longer holds what the line needs"
     )]
     NoAddress {
         /// The target.
@@ -311,7 +318,7 @@ pub fn retire_line(
     let window = Window::of(&after_model, target);
 
     // The marks, and the features.
-    let index = project.held_index();
+    let index = project.index();
     let mut files = Vec::new();
     for file in index.files() {
         if let Some(rewritten) = rewrite_marks(file, &after_model, &window)? {
@@ -353,6 +360,8 @@ pub fn retire_line(
                 .collect(),
         });
     }
+    let (expected, elsewhere) =
+        expected_changes(elsewhere, &before, &after, &rewritten_model, target);
     if !elsewhere.is_empty() && !retiring.force {
         return Err(RetireError::OtherBuildsChange {
             target: target.to_owned(),
@@ -416,7 +425,147 @@ pub fn retire_line(
         addresses_text,
         recorded,
         builds_changed: elsewhere,
+        expected,
     })
+}
+
+/// `changed` split in two: the pages whose only change is `target`'s part
+/// of their availability lines, and the rest. A page added or removed, or
+/// in an output other than the site's or the plain one, is the rest.
+fn expected_changes(
+    changed: Vec<ChangedOutput>,
+    before: &BTreeMap<String, Contents>,
+    after: &BTreeMap<String, Contents>,
+    model: &ContentModel,
+    target: &str,
+) -> (Vec<ChangedOutput>, Vec<ChangedOutput>) {
+    let label = model.value_label(target).unwrap_or(target);
+    let mut expected = Vec::new();
+    let mut rest = Vec::new();
+    for o in changed {
+        let key = |file: &str| format!("{}/{}/{file}", o.build, o.output);
+        let text = |outputs: &BTreeMap<String, Contents>, file: &str| match outputs.get(&key(file))
+        {
+            Some(Contents::Text(t)) => Some(without_target(&o.output, t, target, label)),
+            _ => None,
+        };
+        let (only, other): (Vec<String>, Vec<String>) = o
+            .changed
+            .iter()
+            .cloned()
+            .partition(|file| text(before, file).is_some_and(|b| Some(b) == text(after, file)));
+        if !only.is_empty() {
+            expected.push(ChangedOutput {
+                changed: only,
+                added: Vec::new(),
+                removed: Vec::new(),
+                ..o.clone()
+            });
+        }
+        if !other.is_empty() || !o.added.is_empty() || !o.removed.is_empty() {
+            rest.push(ChangedOutput {
+                changed: other,
+                ..o
+            });
+        }
+    }
+    (expected, rest)
+}
+
+/// A page of `output` with `target`'s part of each availability line left
+/// out, its label kept: in the site output, the state, versions, and text
+/// of its `<ascribe-availability-target>` and of its entry in the
+/// frontmatter's `available`; in the plain output, the parentheses after
+/// its label on an `Available:` line. A page of another output as it is.
+fn without_target(output: &str, text: &str, target: &str, label: &str) -> Option<String> {
+    match output {
+        "site" => {
+            let (yaml, body) = ascribe_emit::split_frontmatter(text);
+            let yaml = if yaml.is_empty() {
+                String::new()
+            } else {
+                frontmatter_without(yaml, target)?
+            };
+            Some(format!("{yaml}\n{}", elements_without(body, target)))
+        }
+        "plain" => Some(
+            text.lines()
+                .map(|line| availability_without(line, label))
+                .collect::<Vec<_>>()
+                .join("\n"),
+        ),
+        _ => None,
+    }
+}
+
+/// The frontmatter's YAML with `target`'s entries in `available` cut to
+/// their target and dimension. `None` when it doesn't parse.
+fn frontmatter_without(yaml: &str, target: &str) -> Option<String> {
+    let mut value: serde_yaml_ng::Value = serde_yaml_ng::from_str(yaml).ok()?;
+    if let Some(serde_yaml_ng::Value::Sequence(entries)) = value.get_mut("available") {
+        for entry in entries {
+            let serde_yaml_ng::Value::Mapping(map) = entry else {
+                continue;
+            };
+            if map.get("target").and_then(serde_yaml_ng::Value::as_str) == Some(target) {
+                map.retain(|k, _| matches!(k.as_str(), Some("target" | "dimension")));
+            }
+        }
+    }
+    serde_yaml_ng::to_string(&value).ok()
+}
+
+/// The site output's body with each `<ascribe-availability-target>` for
+/// `target` written with its target alone, and no text.
+fn elements_without(body: &str, target: &str) -> String {
+    let element = ascribe_core::names::ELEMENT_AVAILABILITY_TARGET;
+    let open = format!("<{element} target=\"{target}\"");
+    let close = format!("</{element}>");
+    let mut out = String::with_capacity(body.len());
+    let mut rest = body;
+    while let Some(at) = rest.find(&open) {
+        let after = &rest[at + open.len()..];
+        let ends = (after.starts_with([' ', '>']))
+            .then(|| after.find(&close))
+            .flatten();
+        let Some(end) = ends else {
+            out.push_str(&rest[..at + open.len()]);
+            rest = after;
+            continue;
+        };
+        out.push_str(&rest[..at]);
+        out.push_str(&open);
+        out.push('>');
+        rest = &after[end + close.len()..];
+    }
+    out.push_str(rest);
+    out
+}
+
+/// A line of the plain output with the parentheses after `label` left out
+/// where it begins an entry of an `Available:` line: `Available: Quill
+/// Cloud (GA); self-managed (preview, 3.4+)` is `Available: Quill Cloud
+/// (GA); self-managed`.
+fn availability_without(line: &str, label: &str) -> String {
+    let Some(start) = line.find("Available: ") else {
+        return line.to_owned();
+    };
+    let (head, tail) = line.split_at(start + "Available: ".len());
+    // Each entry follows `; `, the first as well once one is put before it.
+    let tail = format!("; {tail}");
+    let entry = format!("; {label} (");
+    let mut out = String::new();
+    let mut rest = tail.as_str();
+    while let Some(at) = rest.find(&entry) {
+        let inside = at + entry.len();
+        let Some(close) = rest[inside..].find(')') else {
+            break;
+        };
+        out.push_str(&rest[..inside - 2]);
+        rest = &rest[inside + close + 1..];
+    }
+    out.push_str(rest);
+    format!("{head}{}", &out[2..])
 }
 
 /// What a line that's left the window leaves in no line: the content no
@@ -721,8 +870,8 @@ fn rewrite_marks(
 fn unused_content(project: &Project, target: &str) -> Vec<Unused> {
     let model = project.model();
     let window = Window::of(model, target);
-    let index = project.held_index();
-    let says_nothing = marks_that_say_nothing(&index, model);
+    let index = project.index();
+    let says_nothing = marks_that_say_nothing(index, model);
     let mut out: Vec<Unused> = Vec::new();
     for file in index.files() {
         let source: &str = &file.source;
@@ -1029,7 +1178,7 @@ fn first_line(source: &str, span: Span) -> String {
 /// goes; and each page that replaced a page that goes, without its
 /// `replaces` line.
 fn removals(project: &Project, unused: &[Unused]) -> Vec<(RelPath, Option<String>)> {
-    let index = project.held_index();
+    let index = project.index();
     let mut by_file: BTreeMap<RelPath, Vec<Span>> = BTreeMap::new();
     let mut gone: Vec<RelPath> = Vec::new();
     for u in unused {
@@ -1099,7 +1248,7 @@ fn recorded(project: &Project, redirects: &[Redirect]) -> (usize, Option<String>
 /// the current line, the page that replaces it there, or the page in the
 /// archive.
 fn redirects(project: &Project, releases: &Releases, line: &Version, url: &str) -> Vec<Redirect> {
-    let index = project.held_index();
+    let index = project.index();
     let model = index.model();
     let target = releases.target.as_str();
     let replacements = index.replacements();
@@ -1159,4 +1308,73 @@ fn redirects(project: &Project, releases: &Releases, line: &Version, url: &str) 
     }
     out.sort_by(|a, b| a.from.cmp(&b.from));
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::without_target;
+
+    /// Whether two pages of `output` differ only in `self-managed`'s part
+    /// of their availability lines.
+    fn only_its_part(output: &str, before: &str, after: &str) -> bool {
+        let without = |text| without_target(output, text, "self-managed", "Self-managed");
+        without(before).is_some() && without(before) == without(after)
+    }
+
+    #[test]
+    fn a_plain_line_may_change_the_targets_part_alone() {
+        let before = "# Install\n\nAvailable: Quill Cloud (GA); Self-managed (preview, 3.4+)\n";
+        let after = "# Install\n\nAvailable: Quill Cloud (GA); Self-managed (preview)\n";
+        assert!(only_its_part("plain", before, after));
+        let first = "| `a` (Available: Self-managed (GA, 3.4+); Quill Cloud (GA)) | A. |";
+        let then = "| `a` (Available: Self-managed (GA); Quill Cloud (GA)) | A. |";
+        assert!(only_its_part("plain", first, then));
+    }
+
+    #[test]
+    fn another_targets_part_of_the_same_line_is_a_change() {
+        let before = "Available: Quill Cloud (GA); Self-managed (preview, 3.4+)\n";
+        let after = "Available: Quill Cloud (preview); Self-managed (preview)\n";
+        assert!(!only_its_part("plain", before, after));
+        // Nor may the target leave the line.
+        assert!(!only_its_part(
+            "plain",
+            before,
+            "Available: Quill Cloud (GA)\n"
+        ));
+        // Nor may the page change elsewhere.
+        assert!(!only_its_part(
+            "plain",
+            "Self-managed (3.4+) only.\n",
+            "Self-managed only.\n"
+        ));
+    }
+
+    #[test]
+    fn a_site_page_may_change_the_targets_element_and_frontmatter_entry_alone() {
+        let page = |versions: &str, text: &str, cloud: &str| {
+            format!(
+                "---\ntitle: Install\navailable:\n- target: cloud\n  dimension: deployment\n  states:\n  - {cloud}\n  text: Quill Cloud\n- target: self-managed\n  dimension: deployment\n  states:\n  - preview\n{versions}  text: {text}\nsource: install.md\n---\n\n<ascribe-availability-target target=\"cloud\" dimension=\"deployment\" states=\"{cloud}\">Quill Cloud</ascribe-availability-target>; <ascribe-availability-target target=\"self-managed\" dimension=\"deployment\" states=\"preview\"{}>{text}</ascribe-availability-target>\n",
+                if versions.is_empty() {
+                    ""
+                } else {
+                    " versions=\"3.4\""
+                }
+            )
+        };
+        let before = page(
+            "  versions:\n  - '3.4'\n",
+            "Self-managed (preview, 3.4+)",
+            "ga",
+        );
+        let after = page("", "Self-managed (preview)", "ga");
+        assert!(only_its_part("site", &before, &after));
+        let other = page("", "Self-managed (preview)", "preview");
+        assert!(!only_its_part("site", &before, &other));
+    }
+
+    #[test]
+    fn another_output_is_never_only_the_targets_part() {
+        assert!(!only_its_part("json", "{}", "{}"));
+    }
 }

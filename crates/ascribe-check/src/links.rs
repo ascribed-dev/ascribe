@@ -170,7 +170,7 @@ pub struct Unconfirmed {
 /// Every external link in the project's pages and fragments (an `http` or
 /// `https` address), in file order and source order.
 pub fn external_links(project: &Project) -> Vec<Link> {
-    let index = project.held_index();
+    let index = project.index();
     let mut out = Vec::new();
     for file in index.files() {
         let Some(source) = project.source_at(&file.path) else {

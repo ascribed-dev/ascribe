@@ -1,0 +1,11 @@
+description: >-
+  A word after the language that starts with a key a processor reads, then
+  spaces and `=`, isn't a pair, so the block doesn't opt in to phrases or get
+  its title. It's reported at the word, and the words its value runs into
+  aren't reported again.
+spec: ["3.3.1", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: info-pair-malformed, line: 5, column: 9, severity: warning}
+  - {slug: info-pair-malformed, line: 9, column: 7}

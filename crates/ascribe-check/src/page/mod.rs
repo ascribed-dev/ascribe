@@ -37,12 +37,12 @@
 //!
 //! A build records only the problems in content it publishes, so
 //! content that *no* build publishes (an arm none of the builds selects, a
-//! page every build drops) would never be checked at page level.
+//! page every build drops, a draft) would never be checked at page level.
 //! [`check_all_builds`] therefore resolves the project once more with a build
-//! that keeps everything (`switch` and `badge`) and reports the problems whose
-//! cause is in content no real build publishes, marked
+//! that keeps everything (`switch` and `badge`, drafts included) and reports
+//! the problems whose cause is in content no real build publishes, marked
 //! [`Diagnostic::unpublished`]. It costs nothing when a build already
-//! keeps everything.
+//! keeps everything and no page is a draft.
 //!
 //! A fragment that no page includes is part of no page, so it has no
 //! page-level diagnostics of its own.
@@ -281,9 +281,12 @@ impl<'p> PageChecker<'p> {
             let found = self.found(build, &mut |page| add_published(&mut published, page));
             per_build.push((Some(build.name.as_str()), found));
         }
-        let keeps_everything = model.builds.iter().any(|b| {
-            b.variants == VariantMode::Switch && b.availability == AvailabilityMode::Badge
-        });
+        // No build publishes a draft, so a project with one always has
+        // content no build publishes.
+        let keeps_everything = !self.indexed.index.has_drafts()
+            && model.builds.iter().any(|b| {
+                b.variants == VariantMode::Switch && b.availability == AvailabilityMode::Badge
+            });
         // Content no build publishes is checked with a
         // build that keeps everything, and reported as belonging to no build.
         // A fragment no page includes is in no page, so
@@ -398,6 +401,7 @@ impl<'p> PageChecker<'p> {
             availability: AvailabilityMode::Badge,
             versions: None,
             line: None,
+            drafts: true,
         };
         let router = DefaultRouter::from_consumer(&self.project.model().consumer);
         let resolved = self.indexed.index.resolve_build(&everything, &router);

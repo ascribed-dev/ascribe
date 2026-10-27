@@ -66,7 +66,7 @@ Each pillar has its claim and the features that prove it. A claim with nothing b
 3. **Built for agents, writing and reading.**
    - As writers, agents get the project's rules from `ascribe agents sync`, the model and the checks through the MCP server, and a hook that checks after each edit.
    - Memos keep the reason a page is written its way, for the next person or agent who changes it.
-   - As readers, agents get `llms.txt`, a Markdown version of every page, JSON, and an index of the docs written into the product's `AGENTS.md`.
+   - As readers, agents get `llms.txt`, a Markdown version of every page, each permalink's help as JSON, and an index of the docs written into the product's `AGENTS.md`.
 4. **Plain files you can leave.** This is the trust pillar, and it's quieter than the other three.
    - A page reads as Markdown without Ascribe.
    - The plain output is CommonMark.

@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Show what an example was tested with
-description: Run a folder's tests with ascribe observe, commit what it records, and have each page say what its examples were tested with, and warn when one changed after its last test run.
+description: "Run a folder's tests with `ascribe observe`, commit what it records, and have each page say what its examples were tested with, and warn when one changed after its last test run."
 ---
 
 A snippet keeps an [example](../glossary.md#example) on the page the same as the file, but the page can't say whether the file still works. With a test for the examples and `ascribe observe`, a code block says what it was tested with, "Tested with Node 24.9.0 on Linux", and `ascribe check` says when an example changed after its last test run.
@@ -10,7 +10,7 @@ Ascribe doesn't test the code. It runs the command you give it, and when that pa
 
 [`examples/tested`]({repo}/tree/main/examples/tested) in this repository is a small project set up this way: a TypeScript example, the output it should print, and a test with Node's own test runner that compares the two.
 
-These docs are set up this way too. The command output they show is a file a test compares with what the command prints, and [`ascribe.examples.toml`]({repo}/blob/main/ascribe.examples.toml) at the repository's root names those files and the tests, so each such block says which Rust it was tested with. The source and configuration the docs quote aren't in it: nothing tests them, so they show no tested line. The docs raise `example-stale` to an error, so they can't publish a tested line that's no longer true.
+These docs are set up this way too. The command output they show is a file a test compares with what the command prints, and [`ascribe.examples.toml`]({repo}/blob/main/ascribe.examples.toml) at the repository's root names those files and the tests, so each such block says which version of ascribe printed it, not which Rust built that ascribe. The source and configuration the docs quote aren't in it: nothing tests them, so they show no tested line. The docs raise `example-stale` to an error, so they can't publish a tested line that's no longer true.
 
 ## 1. Say which files are examples
 
@@ -23,6 +23,8 @@ In the source's folder, the one `[sources.<name>]` in `ascribe.toml` names with 
 - **`[environment]`** names what a reader wants to know about where the test ran. Each entry has a `command` whose first line is kept, and a `label`, the key when it has none. The page shows the label and the first dotted number in the line: `node --version` prints `v24.9.0`, shown as "Node 24.9.0". The operating system and architecture are always recorded, and only the system is shown.
 
 An expected output is an example like any other: show it with a second `@snippet`, and have the test compare the program's output with it.
+
+The config goes at the source's root, the folder `path` names, and only the one there is read. When the tests live in a subfolder, such as `examples/` in a source whose `path` is `.`, either declare a source of their own, `[sources.examples]` with `path = "examples"`, and write their snippets with its name, or put the config at the source's root, with `include` and `test` written from there. A config below a source's root is read by no source, and [`examples-config-unread`](../checks/diagnostics/output-checks.md#ASC285) says so, in `ascribe check`, in the editor, and after `ascribe observe` writes its observation.
 
 ## 2. Run the test and commit what it records
 
@@ -72,11 +74,13 @@ An observation nothing writes any more stays until you delete its file. It goes 
 
 ## When an example changes
 
-An edit to an example, anywhere in the file, makes its observations out of date. A change to a file an example only calls, such as a library, doesn't: only the example files are compared. The page then drops the tested line, and `ascribe check` reports [`example-stale`](../checks/diagnostics/output-checks.md#ASC199) at each `@snippet` of the file, naming the folder to run `ascribe observe` in. An example no observation lists reports `example-unobserved`. Both are advice: the pages still build. Run `ascribe observe` again and commit, and both clear. With two observations, running one again brings the page back with that one's environment, and the other is still out of date until it's run again too: `ascribe model --section sources` says how many of each observation's files are as it found them.
+An edit to an example, anywhere in the file, makes its observations out of date. A change to a file an example only calls, such as a library, doesn't: only the example files are compared. The page then drops the tested line, and `ascribe check` reports [`example-stale`](../checks/diagnostics/output-checks.md#ASC199) at each `@snippet` of the file, naming the folder to run `ascribe observe` in. It's a warning, so the pages still build, and `ascribe check --deny-warnings`, as [CI](../checks/ci.md#keep-tested-examples-tested) runs it, fails until the example is tested again. An example no observation lists reports `example-unobserved`, advice: it was never tested, so no tested line went missing. Run `ascribe observe` again and commit, and both clear.
+
+A project that wants a stale example to pass CI can set `example-stale = "advice"` in [`[checks]`](../content-model/checks.md#22-checks). With two observations, running one again brings the page back with that one's environment, and the other is still out of date until it's run again too: `ascribe model --section sources` says how many of each observation's files are as it found them.
 
 An example that's deleted or renamed without a second run leaves its observation listing a file that isn't there. `ascribe check` reports [`observation-file-missing`](../checks/diagnostics/output-checks.md#ASC202) at that line of the observation, naming the command that writes it again.
 
-In VS Code, the advice is on the `@snippet` line as you write, and a hover on the address says what the file was tested with, or why it says nothing, and which observations say so. The quick fix **Copy the command** copies the line that runs `ascribe observe` in the example's folder. The Project view's **Observe Examples**, a [task](../editor/settings.md#tasks) in a trusted workspace, runs it in the folder of each source with tested examples, where it asks in the terminal before running anything. When an observation is written, the advice follows without the page being edited. See [the editor](../editor/writing.md#hover).
+In VS Code, both are on the `@snippet` line as you write, and a hover on the address says what the file was tested with, or why it says nothing, and which observations say so. The quick fix **Copy the command** copies the line that runs `ascribe observe` in the example's folder. The Project view's **Observe Examples**, a [task](../editor/settings.md#tasks) in a trusted workspace, runs it in the folder of each source with tested examples, where it asks in the terminal before running anything. When an observation is written, they follow without the page being edited. See [the editor](../editor/writing.md#hover).
 
 In the example itself, a lens over each region a page shows says how many pages show it, "Shown in 1 page", and lists them, so you know which pages a change will change before you make it. See [Code files a page shows](../editor/writing.md#code-files-a-page-shows).
 
@@ -107,5 +111,5 @@ Copy one, replace its examples with yours, and run `ascribe observe --name` once
 
 - [`ascribe observe`](sources.md#cli-observe): its options, exit codes, and JSON.
 - [Tested examples](../contracts/tested-examples.md): the two files' formats.
-- [Sources](../content-model/output.md#18-sourcesname): declaring the folder the examples are in.
+- [Sources](../content-model/sources.md#20-sourcesname): declaring the folder the examples are in.
 - [The report's inventory](../checks/report.md#inventory): how many of a project's snippets show a tested example, and how many of those are current, stale, and unobserved.

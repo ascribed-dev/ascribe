@@ -236,15 +236,24 @@ importers:
       '@types/node':
         specifier: ^24.19.2
         version: 24.19.2
+      '@types/turndown':
+        specifier: 5.0.6
+        version: 5.0.6
       afdocs:
         specifier: 0.22.2
         version: 0.22.2(supports-color@8.1.1)
+      axe-core:
+        specifier: ^4.14.0
+        version: 4.14.0
       playwright-core:
         specifier: ^1.64.1
         version: 1.64.1
       redoc:
         specifier: 3.0.1
         version: 3.0.1(@redocly/config@0.67.0)(react-dom@18.3.1)(react-router@8.5.0(@types/react@17.0.93)(react-dom@18.3.1))(styled-components@6.6.0(react-dom@18.3.1))
+      turndown:
+        specifier: 7.2.4
+        version: 7.2.4
 
   packages/archive:
     devDependencies:
@@ -2269,6 +2278,9 @@ packages:
 
   '@types/swagger-schema-official@2.0.25':
     resolution: {integrity: sha512-T92Xav+Gf/Ik1uPW581nA+JftmjWPgskw/WBf4TJzxRG/SJ+DfNnNE+WuZ4mrXuzflQMqMkm1LSYjzYW7MB1Cg==}
+
+  '@types/turndown@5.0.6':
+    resolution: {integrity: sha512-ru00MoyeeouE5BX4gRL+6m/BsDfbRayOskWqUvh7CLGW+UXxHQItqALa38kKnOiZPqJrtzJUgAC2+F0rL1S4Pg==}
 
   '@types/type-is@1.6.7':
     resolution: {integrity: sha512-gEsh7n8824nusZ2Sidh6POxNsIdTSvIAl5gXbeFj+TUaD1CO2r4i7MQYNMfEQkChU42s2bVWAda6x6BzIhtFbQ==}
@@ -7346,6 +7358,8 @@ snapshots:
   '@types/stylis@4.2.7': {}
 
   '@types/swagger-schema-official@2.0.25': {}
+
+  '@types/turndown@5.0.6': {}
 
   '@types/type-is@1.6.7':
     dependencies:

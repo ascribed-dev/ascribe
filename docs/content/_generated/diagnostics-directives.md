@@ -85,6 +85,20 @@ Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md
 
 **Read more:** [Attributes](../writing/syntax.md#attributes) in the directive syntax reference.
 
+### ASC284 `info-pair-malformed`
+@id {permalink=true}: ASC284
+@summary: A word after a fenced code block's language that starts like a pair a processor reads (its key in any case, then optional spaces and `=`) but isn't one.
+
+Warning · file level · next step: write · SPEC §3.3.1
+
+**When:** A word after a fenced code block's language that starts like a pair a processor reads (its key in any case, then optional spaces and `=`) but isn't one.
+
+**Message:** `{written}` starts like the pair `{key}` but isn't one, so it isn't read; write `{key}=` with nothing around `=`, then the value, in double quotes if it has a space or a quote
+
+**Fix:** Write the pair as SPEC §3.3.1 reads it: the key in lowercase, `=` with nothing around it, and the value, in double quotes when it has a space or a quote. Inside the quotes, write a quote as `\\"` and a backslash as `\\\\` in the page, since CommonMark takes one backslash off before the pair is read. A word that isn't meant as a pair can't start with `phrases`, `title`, `tested`, `request`, or `response` and `=`.
+
+**Read more:** [Code block info strings](../writing/syntax.md#code-block-info-strings) in the directive syntax reference.
+
 ## Directives
 
 ### ASC005 `directive-unknown`
@@ -589,7 +603,7 @@ Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.m
 
 **Fix:** Correct the number to a declared line, such as the newest, or, for a line that's planned, add it to `planned` in `[releases.<target>]`. Work for the planned line is marked with `planned` in place of its number, as `<target> planned`, and `ascribe versions release` writes the number when the line ships.
 
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
 
 ### ASC245 `available-planned-line`
 @id {permalink=true}: ASC245

@@ -74,7 +74,7 @@ fn templates(e: &Entry) -> Vec<&String> {
 fn every_spec_row_has_exactly_one_entry() {
     let reg = registry();
     let rows = spec_rows();
-    assert_eq!(rows.len(), 132, "SPEC §8.2 changed; update the registry");
+    assert_eq!(rows.len(), 133, "SPEC §8.2 changed; update the registry");
     let mut by_row: BTreeMap<&str, Vec<&Entry>> = BTreeMap::new();
     for e in &reg.entries {
         if let Some(row) = &e.row {
@@ -170,7 +170,8 @@ fn codes_go_up_and_slugs_are_unique() {
     let mut slugs = BTreeSet::new();
     let mut last = 0u32;
     for e in &reg.entries {
-        // A removed diagnostic leaves a gap; nothing is renumbered.
+        // A removed diagnostic, or a reserved code no pull request used,
+        // leaves a gap; nothing is renumbered (decision #982).
         let number = e
             .code
             .strip_prefix("ASC")
@@ -178,7 +179,8 @@ fn codes_go_up_and_slugs_are_unique() {
             .and_then(|digits| digits.parse::<u32>().ok());
         assert!(
             number.is_some_and(|n| n > last),
-            "{}: codes are `ASC` and three digits, going up in file order",
+            "{}: codes are `ASC` and three digits, going up in file order; \
+             after merging `main`, sort both sides' entries by code",
             e.code
         );
         last = number.unwrap_or(last);
@@ -225,7 +227,10 @@ fn spec_sections_exist() {
     let sections: BTreeSet<String> = spec
         .lines()
         .filter_map(|l| {
-            let rest = l.strip_prefix("### ").or_else(|| l.strip_prefix("## "))?;
+            let rest = l
+                .strip_prefix("#### ")
+                .or_else(|| l.strip_prefix("### "))
+                .or_else(|| l.strip_prefix("## "))?;
             let number = rest.split(' ').next()?.trim_end_matches('.');
             number
                 .chars()

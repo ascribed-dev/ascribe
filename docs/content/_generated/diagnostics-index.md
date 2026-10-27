@@ -146,7 +146,7 @@
 | [ASC150](../checks/diagnostics/content-checks.md#ASC150) | `page-description-missing` | Advice | File | write |
 | [ASC151](../checks/diagnostics/content-checks.md#ASC151) | `heading-level-skipped` | Advice | Page | fix |
 | [ASC152](../checks/diagnostics/content-checks.md#ASC152) | `code-language-missing` | Advice | File | choose |
-| [ASC153](../checks/diagnostics/content-checks.md#ASC153) | `review-overdue` | Advice | File | review |
+| [ASC153](../checks/diagnostics/content-checks.md#ASC153) | `recheck-overdue` | Advice | File | review |
 | [ASC154](../checks/diagnostics/content-checks.md#ASC154) | `page-orphan` | Advice | Page | review |
 | [ASC155](../checks/diagnostics/content-checks.md#ASC155) | `fragment-unused` | Advice | File | review |
 | [ASC156](../checks/diagnostics/content-checks.md#ASC156) | `phrase-unused` | Advice | File | review |
@@ -188,7 +188,7 @@
 | [ASC196](../checks/diagnostics/pages.md#ASC196) | `content-type-missing` | Error | File | choose |
 | [ASC197](../checks/diagnostics/pages.md#ASC197) | `content-type-unknown` | Error | File | choose |
 | [ASC198](../checks/diagnostics/content-checks.md#ASC198) | `description-link` | Advice | File | write |
-| [ASC199](../checks/diagnostics/output-checks.md#ASC199) | `example-stale` | Advice | File | outside |
+| [ASC199](../checks/diagnostics/output-checks.md#ASC199) | `example-stale` | Warning | File | outside |
 | [ASC200](../checks/diagnostics/output-checks.md#ASC200) | `example-unobserved` | Advice | File | outside |
 | [ASC201](../checks/diagnostics/output-checks.md#ASC201) | `examples-config-invalid` | Warning | File | outside |
 | [ASC202](../checks/diagnostics/output-checks.md#ASC202) | `observation-file-missing` | Advice | File | outside |
@@ -272,3 +272,6 @@
 | [ASC281](../checks/diagnostics/pages.md#ASC281) | `operation-link-not-operation` | Error | File | write |
 | [ASC282](../checks/diagnostics/content-checks.md#ASC282) | `api-operation-unreferenced` | Advice | File | write |
 | [ASC283](../checks/diagnostics/content-checks.md#ASC283) | `build-filter-line-undeclared` | Advice | File | write |
+| [ASC284](../checks/diagnostics/directives.md#ASC284) | `info-pair-malformed` | Warning | File | write |
+| [ASC285](../checks/diagnostics/output-checks.md#ASC285) | `examples-config-unread` | Warning | File | write |
+| [ASC286](../checks/diagnostics/content-checks.md#ASC286) | `template-placeholder-published` | Error | File | write |

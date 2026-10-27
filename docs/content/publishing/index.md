@@ -1,15 +1,15 @@
 ---
 type: concept
 title: Publishing
-description: "What a project tells search engines and AI crawlers about its pages, and what it delivers to agents: listing, robots.txt, the response headers, llms.txt, and the Markdown versions."
+description: "What a project tells search engines and AI crawlers about its pages, and what it delivers to agents: listing, `robots.txt`, the response headers, `llms.txt`, and the Markdown versions."
 ---
 
 A site has readers that aren't people: search engines, the crawlers that gather pages for AI models and AI search, and agents that fetch a page when someone asks about it. A project says what each is told in its content model, and each build writes it down, so every output of a site says the same thing about a page.
 
 | What | Set in | Written to |
 |---|---|---|
-| Whether a page is listed | a page's [`listing`](../content-model/index.md#listing-a-page), and [`[listing]`](../content-model/checks.md#22-listing) for a folder, a type, or the site | each page's head, the sitemap, `llms.txt`, and the Markdown versions' headers |
-| What each kind of crawler may fetch | [`[crawlers]`](../content-model/checks.md#21-crawlers) | `robots.txt` |
+| Whether a page is listed | a page's [`listing`](../content-model/index.md#listing-a-page), and [`[listing]`](../content-model/output.md#17-listing) for a folder, a type, or the site | each page's head, the sitemap, `llms.txt`, and the Markdown versions' headers |
+| What each kind of crawler may fetch | [`[crawlers]`](../content-model/output.md#18-crawlers) | `robots.txt` |
 | What agents read | [`[consumer] agents`](../content-model/output.md#consumer) | `llms.txt`, and a Markdown version of each page |
 | What the host sends with a Markdown version | [`[consumer] host`](../content-model/output.md#consumer) | `_ascribe/headers.json`, and a host's own file, such as Netlify's `_headers` |
 
@@ -31,13 +31,13 @@ A page sets its own in its frontmatter. A rule in `[listing]` sets it for the wh
 
 ## What crawlers are told
 
-`robots.txt` tells crawlers what they may fetch. It's a request: a crawler may ignore it, and some bots document that they may. A project writes its own lines in `[crawlers] lines`, and says what each kind of AI crawler may do by its purpose, `training`, `search`, and `on-request`, without naming the bots: Ascribe knows which bots each purpose names ([crawlers by purpose](../content-model/checks.md#crawlers-by-purpose)). A project that says nothing gets no rules about AI crawlers.
+`robots.txt` tells crawlers what they may fetch. It's a request: a crawler may ignore it, and some bots document that they may. A project writes its own lines in `[crawlers] lines`, and says what each kind of AI crawler may do by its purpose, `training`, `search`, and `on-request`, without naming the bots: Ascribe knows which bots each purpose names ([crawlers by purpose](../content-model/output.md#crawlers-by-purpose)). A project that says nothing gets no rules about AI crawlers.
 
 What each choice costs:
 
 - **Disallowing `training`** asks those operators not to train models on the site. It doesn't take the site out of any search or answer, and it stops nothing already gathered. Google's and Apple's are tokens, not crawlers: Googlebot and Applebot still fetch every page for search, and the token says only what may be done with it.
 - **Disallowing `search`** takes the site out of those AI search products' answers, which is the point of being crawled by them: a site opted out of OpenAI's search crawler isn't shown in ChatGPT's search answers, for one. It doesn't touch Google's or Bing's search, whose AI answers are drawn from their ordinary index, which only a page's listing keeps a page out of. `ascribe check` says what it costs (`crawlers-disallowed`).
-- **Disallowing `on-request`** asks assistants not to fetch a page when a person asks about it, so they answer from what they already have, or from another site. Several operators say their fetcher may not follow it, since a person asked (see [crawlers by purpose](../content-model/checks.md#crawlers-by-purpose)), and [Google's own fetchers](https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers) for its agents generally ignore `robots.txt` and have no token, so they aren't listed. `ascribe check` says what it costs (`crawlers-disallowed`).
+- **Disallowing `on-request`** asks assistants not to fetch a page when a person asks about it, so they answer from what they already have, or from another site. Several operators say their fetcher may not follow it, since a person asked (see [crawlers by purpose](../content-model/output.md#crawlers-by-purpose)), and [Google's own fetchers](https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers) for its agents generally ignore `robots.txt` and have no token, so they aren't listed. `ascribe check` says what it costs (`crawlers-disallowed`).
 
 **Keep a page out of search with its listing, not a `Disallow` line.** A crawler that follows `robots.txt` and is told not to fetch a page never reads that page's head, so it can't see that the page asks not to be listed, and a search engine can list the address alone. `ascribe check` says so when a page that isn't listed is at an address a search crawler may not fetch (`listing-disallowed`).
 

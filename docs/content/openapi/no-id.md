@@ -1,8 +1,7 @@
 ---
 type: how-to
 title: Link to an operation with no id
-description: "Link a guide to an OpenAPI operation the spec gives no operationId, by its method and path, which needs Redoc 3, and why setting ids is better."
-available: ascribe 0.4.4
+description: "Link a guide to an OpenAPI operation the spec gives no `operationId`, by its method and path, which needs Redoc 3, and why setting ids is better."
 ---
 
 A link names an operation by its `operationId`, and some specs leave operations without one: .NET's generators write none by default. To link to an operation with no id, name it by its method and path instead.
@@ -23,7 +22,7 @@ A fragment that's an operation's id names that operation, even when it's another
 
 Redoc 3 has an address for an operation with no id, by its path: `/api/#paths/~1users~1%7Bid%7D/delete`, under `[consumer] base-path`, the path as a JSON pointer, with `~1` for each `/`. Ascribe writes that address. Redoc 2 addresses the same operation under a slug of its tag, and Ascribe can't tell which Redoc your site runs, so nothing reports a link that Redoc 2 won't open: publish the reference with Redoc 3.
 
-A template has no placeholder for an operation with no id, so with a template for `reference`, a link by method and path to one is an error, `link-operation-form-unsupported`. The closest operations a missing one is offered are then the ones with ids alone.
+An address pattern has no placeholder for an operation with no id, so with one for `reference`, a link by method and path to one is an error, `link-operation-form-unsupported`. The closest operations a missing one is offered are then the ones with ids alone.
 
 ## Set ids instead
 

@@ -5,7 +5,7 @@
 //! - **problems**: what `ascribe check` reports, and the problems
 //!   acknowledged as intended;
 //! - **inventory**: the pages by type and by owner, how many of each
-//!   declared API's operations a link names, and the overdue reviews, orphan
+//!   declared API's operations a link names, and the overdue rechecks, orphan
 //!   pages, and unused entries the checks find, as lists;
 //! - **builds**: the pages and the content each build leaves out that
 //!   another keeps;
@@ -38,14 +38,14 @@ use ascribe_core::{DiagnosticSlug, FileId, Location, RelPath, diagnostics};
 use ascribe_emit::labels::removal_detail;
 use ascribe_model::{FieldRole, Listing};
 use ascribe_resolve::pages::{self, PageRecord};
-use ascribe_resolve::{AstroRouter, ExampleStatus, FileKind, Removal};
+use ascribe_resolve::{AstroRouter, DropReason, ExampleStatus, FileKind, Removal, Scope};
 
 /// A section of the report.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Section {
     /// What `ascribe check` reports, and what's acknowledged.
     Problems,
-    /// Pages by type and owner, overdue reviews, orphans, unused entries.
+    /// Pages by type and owner, overdue rechecks, orphans, unused entries.
     Inventory,
     /// What each build leaves out that another keeps.
     Builds,
@@ -203,7 +203,7 @@ pub struct Inventory {
     /// the page's type marks `role = "owner"`; `None` for pages without
     /// one.
     pub by_owner: Vec<(Option<String>, usize)>,
-    /// The pages whose review date has passed (`review-overdue`).
+    /// The pages whose recheck date has passed (`recheck-overdue`).
     pub overdue: Vec<Diagnostic>,
     /// The pages nothing links to (`page-orphan`).
     pub orphans: Vec<Diagnostic>,
@@ -281,23 +281,36 @@ pub struct LeftOut {
 pub struct LeftPage {
     /// The page's content path.
     pub path: RelPath,
-    /// Why, as the end of a sentence: `its variant frontmatter names …`.
-    pub why: String,
+    /// `variant` for its `variant` frontmatter, or `availability` for its
+    /// `available` frontmatter.
+    pub kind: &'static str,
+    /// The frontmatter that leaves it out, as written: `self-managed 3.5`
+    /// for `available`, `deployment=cloud` for `variant`.
+    pub mark: String,
     /// The builds that publish it.
     pub kept_by: Vec<String>,
 }
 
-/// Content a build takes out of a page.
+/// Content a build takes out of a page, once for each mark that takes it
+/// out: an `@available` (a section's, a block's, or a table row's), or a
+/// variant arm.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LeftContent {
-    /// Where it's written: a block, a variant arm, or a table row, in the
-    /// page or a fragment it includes.
+    /// Where the mark is written: the `@available` line, the table row, or
+    /// the variant arm, in the page or a fragment it includes.
     pub location: Location,
+    /// Whether the mark is written in the page itself, not a fragment.
+    pub in_page: bool,
     /// The page it's taken out of: the first, when it's in a fragment
     /// several pages include.
     pub page: RelPath,
+    /// The text of the heading the mark is under, if any: the section's own,
+    /// for a section's `@available`.
+    pub heading: Option<String>,
     /// `variant` or `availability`.
     pub kind: &'static str,
+    /// What the mark takes out: `section`, `block`, `row`, or `arm`.
+    pub scope: &'static str,
     /// Why, with the content model's labels: `Shows only os=linux`.
     pub why: String,
     /// The builds that keep it.
@@ -579,7 +592,7 @@ fn delivery_since(delivery: &mut Delivery, history: &ReportHistory) -> SiteCheck
 /// `inventory`, from the project's pages and what `ascribe check` found.
 fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
     let model = project.model();
-    let index = project.held_index();
+    let index = project.index();
     let mut by_type: BTreeMap<Option<String>, usize> = BTreeMap::new();
     let mut by_owner: BTreeMap<Option<String>, usize> = BTreeMap::new();
     let mut pages = 0;
@@ -609,11 +622,11 @@ fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
         pages,
         by_type: most_first(by_type),
         by_owner: most_first(by_owner),
-        overdue: listed(&[diagnostics::REVIEW_OVERDUE]),
+        overdue: listed(&[diagnostics::RECHECK_OVERDUE]),
         orphans: listed(&[diagnostics::PAGE_ORPHAN]),
         unused: listed(UNUSED),
-        examples: examples(project, &index),
-        apis: apis(&index),
+        examples: examples(project, index),
+        apis: apis(index),
     }
 }
 
@@ -697,7 +710,7 @@ fn most_first(counts: BTreeMap<Option<String>, usize>) -> Vec<(Option<String>, u
 /// content it takes out that another build of the project keeps.
 fn builds(project: &Project, names: &[String]) -> Builds {
     let model = project.model();
-    let index = project.held_index();
+    let index = project.index();
     let all = &model.builds;
     let pages: Vec<&RelPath> = index
         .files()
@@ -717,6 +730,7 @@ fn builds(project: &Project, names: &[String]) -> Builds {
             build: build.name.clone(),
             ..LeftOut::default()
         };
+        // The marks already listed, by where each is written.
         let mut seen: Vec<Location> = Vec::new();
         for page in &pages {
             if let Some(reason) = index.dropped(page, build) {
@@ -726,9 +740,11 @@ fn builds(project: &Project, names: &[String]) -> Builds {
                     .map(|b| b.name.clone())
                     .collect();
                 if !kept_by.is_empty() {
+                    let (kind, mark) = page_mark(index.file(page), &reason);
                     left.pages.push(LeftPage {
                         path: (*page).clone(),
-                        why: reason.explanation().to_owned(),
+                        kind,
+                        mark,
                         kept_by,
                     });
                 }
@@ -737,19 +753,13 @@ fn builds(project: &Project, names: &[String]) -> Builds {
             let Some(removed) = index.removed(page, build) else {
                 continue;
             };
+            let page_file = index.file(page).map(|f| f.file);
             // What each other build that publishes the page removes from it.
             let elsewhere: Vec<(&str, Vec<ascribe_resolve::Removed>)> = others
                 .iter()
                 .filter_map(|b| Some((b.name.as_str(), index.removed(page, b)?)))
                 .collect();
             for r in &removed {
-                let Some(file) = id(r.file) else {
-                    continue;
-                };
-                let location = Location::new(file, r.span);
-                if seen.contains(&location) {
-                    continue;
-                }
                 let overlaps = |o: &ascribe_resolve::Removed| {
                     o.file == r.file
                         && o.span.start() < r.span.end()
@@ -763,24 +773,144 @@ fn builds(project: &Project, names: &[String]) -> Builds {
                 if kept_by.is_empty() {
                     continue;
                 }
+                // The mark that takes it out: one entry for all it takes.
+                let (mark_file, mark_span, kind, scope) = match &r.cause {
+                    Removal::Variant { .. } => (r.file, r.span, "variant", "arm"),
+                    Removal::Availability(spec) => (
+                        spec.written_at.file,
+                        spec.written_at.span,
+                        "availability",
+                        match spec.scope {
+                            Scope::Block => "block",
+                            Scope::Row => "row",
+                            Scope::Section | Scope::Page => "section",
+                        },
+                    ),
+                };
+                let Some(file) = id(mark_file) else {
+                    continue;
+                };
+                let location = Location::new(file, mark_span);
+                if let Some(at) = seen.iter().position(|l| *l == location) {
+                    // Another piece of what the same mark takes out: the
+                    // builds that keep any of it keep the mark's content.
+                    if let Some(entry) = left.content.get_mut(at) {
+                        for name in kept_by {
+                            if !entry.kept_by.contains(&name) {
+                                entry.kept_by.push(name);
+                            }
+                        }
+                        entry
+                            .kept_by
+                            .sort_by_key(|n| all.iter().position(|b| &b.name == n));
+                    }
+                    continue;
+                }
+                let mut heading = heading_over(index, mark_file, mark_span.start());
+                if heading.is_none() && mark_file == r.file {
+                    // A mark in a fragment, above its headings: the heading
+                    // of the place it's included.
+                    heading = r
+                        .via
+                        .iter()
+                        .rev()
+                        .find_map(|site| heading_over(index, site.file, site.span.start()));
+                }
                 seen.push(location);
                 left.content.push(LeftContent {
                     location,
+                    in_page: Some(mark_file) == page_file,
                     page: (*page).clone(),
-                    kind: match r.cause {
-                        Removal::Variant { .. } => "variant",
-                        Removal::Availability(_) => "availability",
-                    },
+                    heading,
+                    kind,
+                    scope,
                     why: removal_detail(model, build, r),
                     kept_by,
                 });
             }
         }
-        left.content
-            .sort_by_key(|c| (c.location.file, c.location.span.start()));
+        // A page's own marks come before those of the fragments it includes.
+        left.content.sort_by(|a, b| {
+            (
+                &a.page,
+                !a.in_page,
+                a.location.file,
+                a.location.span.start(),
+            )
+                .cmp(&(
+                    &b.page,
+                    !b.in_page,
+                    b.location.file,
+                    b.location.span.start(),
+                ))
+        });
         out.builds.push(left);
     }
     out
+}
+
+/// The kind of mark a page's frontmatter makes, and its value as written:
+/// `self-managed 3.5` for `available`, `deployment=cloud` for `variant`.
+fn page_mark(
+    file: Option<&ascribe_resolve::FileIndex>,
+    reason: &DropReason,
+) -> (&'static str, String) {
+    let front = file.and_then(|f| f.frontmatter.as_ref());
+    match reason {
+        // No build publishes a draft, so no other build keeps one and the
+        // report never lists it.
+        DropReason::Draft => ("draft", "true".to_owned()),
+        DropReason::Unavailable => (
+            "availability",
+            front
+                .and_then(|f| f.get("available"))
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_owned(),
+        ),
+        DropReason::Variant => {
+            let pairs = front
+                .and_then(|f| f.get("variant"))
+                .and_then(|v| v.as_mapping())
+                .map(|m| {
+                    m.iter()
+                        .filter_map(|(k, v)| {
+                            let values = match v {
+                                serde_yaml_ng::Value::Sequence(list) => {
+                                    list.iter().filter_map(scalar).collect::<Vec<_>>().join("|")
+                                }
+                                v => scalar(v)?,
+                            };
+                            Some(format!("{}={values}", scalar(k)?))
+                        })
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                })
+                .unwrap_or_default();
+            ("variant", pairs)
+        }
+    }
+}
+
+/// A YAML scalar as its text.
+fn scalar(value: &serde_yaml_ng::Value) -> Option<String> {
+    match value {
+        serde_yaml_ng::Value::String(s) => Some(s.clone()),
+        serde_yaml_ng::Value::Number(n) => Some(n.to_string()),
+        serde_yaml_ng::Value::Bool(b) => Some(b.to_string()),
+        _ => None,
+    }
+}
+
+/// The text of the innermost heading whose section holds `at` in `file`.
+fn heading_over(index: &ascribe_resolve::Project, file: FileId, at: usize) -> Option<String> {
+    index
+        .file_by_id(file)?
+        .headings
+        .iter()
+        .filter(|h| h.section.start() <= at && at < h.section.end())
+        .max_by_key(|h| h.span.start())
+        .map(|h| h.text.clone())
 }
 
 /// `pages`: the records of each build in `names`, sorted by address, as the
@@ -788,7 +918,7 @@ fn builds(project: &Project, names: &[String]) -> Builds {
 /// the pages that aren't `listed`.
 fn page_records(project: &Project, names: &[String], not_listed: bool) -> Pages {
     let model = project.model();
-    let index = project.held_index();
+    let index = project.index();
     let router = AstroRouter::from_consumer(&model.consumer);
     let builds = model
         .builds

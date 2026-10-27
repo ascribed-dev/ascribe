@@ -459,6 +459,29 @@ fn a_link_to_a_fragment_is_offered_the_pages_that_include_it() {
     assert_eq!(hrefs, ["setup.md"]);
 }
 
+/// A missing page with one page near names it in the message, even for a
+/// reference form, which is offered no fix.
+#[test]
+fn a_link_to_a_missing_page_names_the_one_page_near() {
+    let p = project(&[
+        (
+            "index.md",
+            &page("[keys](key.md) and [keys][k]\n\n[k]: key.md"),
+        ),
+        ("keys.md", &page("Text.")),
+    ]);
+    let all = check_files(&p);
+    assert_eq!(slugs(&p), ["link-target-missing", "link-target-missing"]);
+    for found in &all {
+        assert_eq!(
+            found.message,
+            "`key.md` doesn't exist; did you mean `keys.md`?"
+        );
+    }
+    assert_eq!(all[0].fixes.len(), 1);
+    assert!(all[1].fixes.is_empty());
+}
+
 /// A reference form's destination is in its definition, which may serve
 /// other links, so it's offered no fix.
 #[test]
@@ -722,6 +745,82 @@ fn attributes_without_braces_are_braced_safely_only_before_a_primary() {
     let (message, title, applicability) = fix("@note colour=red: Careful.");
     assert!(message.contains("isn't part of `@note`"), "{message}");
     assert_eq!(title, "Remove `colour=red: Careful.`");
+    assert_eq!(applicability, Applicability::Unsafe);
+}
+
+/// A page with no `title` that opens with a level-1 heading of plain text
+/// is offered the heading as its title, safely while nothing links to the
+/// heading: the fix writes it in the frontmatter, making one when there's
+/// none, and takes the heading and the blank lines after it out.
+#[test]
+fn a_missing_title_takes_the_opening_heading() {
+    let fixed = |text: &str| {
+        let p = project(&[("index.md", text)]);
+        let d = check_files(&p)
+            .into_iter()
+            .find(|d| d.slug.as_str() == "frontmatter-missing-field")?;
+        let file = p
+            .source_at(&RelPath::parse("index.md").expect("path"))
+            .expect("a source");
+        d.fixes.first().map(|f| {
+            (
+                f.title.clone(),
+                f.applicability,
+                apply_edits(&file.text, &f.edits).expect("edits apply"),
+            )
+        })
+    };
+    let (title, applicability, text) =
+        fixed("# Install Quill\n\nRun the installer.\n").expect("a fix");
+    assert_eq!(
+        title,
+        "Take the heading as the title, `title: Install Quill`"
+    );
+    assert_eq!(applicability, Applicability::Safe);
+    assert_eq!(
+        text,
+        "---\ntitle: Install Quill\n---\n\nRun the installer.\n"
+    );
+    for (before, after) in [
+        // Frontmatter there already gets the key at its end.
+        (
+            "---\norder: 2\n---\n\n# Install\n\n\nText.\n",
+            "---\norder: 2\ntitle: Install\n---\n\nText.\n",
+        ),
+        // A value YAML would read otherwise is quoted, and an escape is
+        // written as the text it stands for.
+        (
+            "# Quill: the agent \\*\n\nText.\n",
+            "---\ntitle: 'Quill: the agent *'\n---\n\nText.\n",
+        ),
+        (
+            "Install\n=======\n\nText.\n",
+            "---\ntitle: Install\n---\n\nText.\n",
+        ),
+        ("\n# Only\n", "---\ntitle: Only\n---\n"),
+    ] {
+        let (_, applicability, text) = fixed(before).unwrap_or_else(|| panic!("{before}"));
+        assert_eq!(applicability, Applicability::Safe, "{before}");
+        assert_eq!(text, after, "{before}");
+    }
+    // A heading that isn't the page's first block, isn't level 1, isn't
+    // plain text, or has an `@id`, gets none, and a `title` that's there but empty isn't
+    // missing.
+    for text in [
+        "Intro.\n\n# Install\n",
+        "## Install\n\nText.\n",
+        "# Install `quill`\n",
+        "# Install *Quill*\n",
+        "# Install {product}\n",
+        "#\n\nText.\n",
+        "# Install\n@id: install\n\nText.\n",
+        "# Install {#setup}\n\nText.\n",
+        "---\ntitle:\n---\n\n# Install\n",
+    ] {
+        assert_eq!(fixed(text), None, "{text}");
+    }
+    // A link to the heading would lose its target.
+    let (_, applicability, _) = fixed("# Install\n\nSee [above](#install).\n").expect("a fix");
     assert_eq!(applicability, Applicability::Unsafe);
 }
 
@@ -1090,4 +1189,86 @@ fn a_dimension_with_none_declared_gets_the_table_to_add() {
              `[dimensions.os]` with `values = [\"mac\", \"linux\", \"windows\", \"bsd\"]`"
         );
     }
+}
+
+/// A word after a code block's language that starts like a pair a processor
+/// reads and isn't one is reported where it's written, with the pair it was
+/// meant to be, written as the page writes it (SPEC §3.3.1).
+#[test]
+fn info_string_words_that_look_like_pairs_get_the_pair() {
+    let cases = [
+        (
+            "```ts phrases = true",
+            "```ts phrases=true",
+            "spaces around",
+        ),
+        (
+            r#"```ts title = "a.ts""#,
+            r#"```ts title="a.ts""#,
+            "spaces around",
+        ),
+        ("```ts Title=a.ts", "```ts title=a.ts", "lowercase"),
+        (
+            r#"```ts title="connect.ts"#,
+            r#"```ts title="connect.ts""#,
+            "no closing quote",
+        ),
+        // CommonMark took the page's backslashes off.
+        (
+            r#"```ts title="say \"hi\"" {1,3}"#,
+            r#"```ts title="say \\"hi\\"" {1,3}"#,
+            "second quote",
+        ),
+        (
+            r#"```ts {1} title = "C:\\\\dir" tested=x"#,
+            r#"```ts {1} title="C:\\\\dir" tested=x"#,
+            "spaces around",
+        ),
+    ];
+    for (before, after, says) in cases {
+        let text = page(&format!("{before}\nlet x;\n```"));
+        let p = project(&[("index.md", &text)]);
+        let d = check_files(&p)
+            .into_iter()
+            .find(|d| d.slug.as_str() == "info-pair-malformed")
+            .unwrap_or_else(|| panic!("{before} is reported"));
+        assert_eq!(d.severity, Severity::Warning, "{before}");
+        assert!(d.message.contains(says), "{before}: {}", d.message);
+        assert_eq!(d.fixes.len(), 1, "{before}");
+        assert_eq!(d.fixes[0].applicability, Applicability::Unsafe);
+        let now = apply_edits(&text, &d.fixes[0].edits).expect("edits apply");
+        assert_eq!(now, page(&format!("{after}\nlet x;\n```")), "{before}");
+        let p = project(&[("index.md", &now)]);
+        assert!(check_files(&p).is_empty(), "{now}");
+    }
+}
+
+#[test]
+fn info_string_words_that_look_like_pairs_are_reported_at_the_word() {
+    let text = page("```ts {1,3} showLineNumbers title= phrases=true\nlet x;\n```");
+    let p = project(&[("index.md", &text)]);
+    let d = one(&p);
+    assert_eq!(d.slug.as_str(), "info-pair-malformed");
+    assert_eq!(&text[d.location.span.range()], "title=");
+    assert!(d.fixes.is_empty(), "{:#?}", d.fixes);
+    // Words that don't start with a key are the consumer's.
+    let p = project(&[(
+        "index.md",
+        &page("```ts {1,3} showLineNumbers titles=x Foo=bar\nlet x;\n```"),
+    )]);
+    assert!(check_files(&p).is_empty());
+}
+
+#[test]
+fn a_pair_first_is_named_in_the_missing_language() {
+    let p = project(&[("index.md", &page("```title=\"a.ts\"\nlet x;\n```"))]);
+    let d = one(&p);
+    assert_eq!(d.slug.as_str(), "code-language-missing");
+    assert!(
+        d.message.contains("`title=\"a.ts\"`, is a pair"),
+        "{}",
+        d.message
+    );
+    let p = project(&[("index.md", &page("```\nlet x;\n```"))]);
+    assert!(!one(&p).message.contains("is a pair"));
 }

@@ -1,10 +1,10 @@
 ---
 type: reference
-title: "`ascribe check`, `build`, and `fmt`"
-description: "Check a project's sources, build its outputs, and format its Markdown: options, output, and exit codes."
+title: "`ascribe check`, `build`, `preview`, and `fmt`"
+description: "Check a project's sources, build its outputs, preview its pages, and format its Markdown: options, output, and exit codes."
 ---
 
-The commands that check, build, and format a project. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
+The commands that check, build, preview, and format a project. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
 
 ## `ascribe check`
 @id {permalink=true}: cli-check
@@ -24,7 +24,7 @@ Every diagnostic, with its fix, is in the [diagnostics reference](diagnostics.md
 
 ### Checking as of another day
 
-Two checks depend on the day they run: `review-overdue` reports a page whose review date has passed, and `release-line-ended` a live release line whose `ends` date has passed, each as of today's date in UTC. Set `ASCRIBE_TODAY=YYYY-MM-DD` to check as of another day, such as in a test that mustn't change with the calendar. Every command that checks, the editor and the hook's check server included, reads it.
+Two checks depend on the day they run: `recheck-overdue` reports a page whose recheck date has passed, and `release-line-ended` a live release line whose `ends` date has passed, each as of today's date in UTC. Set `ASCRIBE_TODAY=YYYY-MM-DD` to check as of another day, such as in a test that mustn't change with the calendar. Every command that checks, the editor and the hook's check server included, reads it.
 
 ### Checking some files
 
@@ -96,7 +96,7 @@ A project with no pages yet, and nothing to report, says so in place of the summ
 
 Diagnostics go to standard output. A failure that stops the command (exit code 2) goes to standard error.
 
-Advice, a diagnostic below a warning, is listed after the errors and warnings, in every format, and the summary counts it apart: `0 errors, 2 warnings, 5 advice`. It never fails the command, even with `--deny-warnings`. A project sets how loudly a check about its content's quality speaks in [`[checks]`](../content-model/checks.md#19-checks).
+Advice, a diagnostic below a warning, is listed after the errors and warnings, in every format, and the summary counts it apart: `0 errors, 2 warnings, 5 advice`. It never fails the command, even with `--deny-warnings`. A project sets how loudly a check about its content's quality speaks in [`[checks]`](../content-model/checks.md#22-checks).
 
 A problem [acknowledged as intended](../writing/directives.md#intended) isn't listed, and doesn't fail the command; the summary counts it when there is one: `0 errors, 2 warnings, 0 advice, 1 acknowledged`. `ascribe build` counts it the same way.
 
@@ -109,7 +109,7 @@ There are four ways to quiet a problem, each with its own rules:
 | Way | What it quiets | For how long | Reason | Read by |
 |---|---|---|---|---|
 | [`@intended`](../writing/directives.md#intended), the `intended` frontmatter key, or [`[[intended]]`](../content-model/checks.md#intended-acknowledgements) | One problem of a review check, at its place | For good | Required | Everything |
-| [`[checks]`](../content-model/checks.md#19-checks) `<check> = "off"` | A content check, in the whole project | Until it's turned back on | None | Everything |
+| [`[checks]`](../content-model/checks.md#22-checks) `<check> = "off"` | A content check, in the whole project | Until it's turned back on | None | Everything |
 | `[checks]` `<check> = "advice"` or `"warning"` | Lowers a content check, in the whole project | Until it's set again | None | Everything |
 | [`ascribe.baseline`](baseline.md) | Many advice, each by its problem | Until it's fixed and pruned | None | `ascribe check`, the editor, the hooks, and the MCP server; not `ascribe build` or `ascribe report`, for now |
 
@@ -167,6 +167,36 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 | `1` | The checks found errors; nothing was written |
 | `2` | The build couldn't run: a usage error, no `ascribe.toml`, a content model with errors, an `ascribe.baseline` with a line that doesn't parse (`--no-baseline` builds without the file), another build writing to the output directory, a file in the output directory that Ascribe didn't write and would have to overwrite, or two pages of the site output with the same route |
 
+## `ascribe preview`
+@id {permalink=true}: cli-preview
+@available: ascribe planned
+
+@summary
+Shows a build's pages as readers see them, with nothing but the `ascribe` command: no Node, no editor, and no Astro. It renders them into `.ascribe/preview/`, serves the folder on this computer, and renders it again as you edit.
+
+It checks the build as `ascribe check --build` does, and prints the problems as that prints them. Then it renders every page into `.ascribe/preview/` with the renderer [`ascribe versions export`](../versions/release.md#cli-versions-export) uses: each page is one HTML file with the element library's styles, a sidebar of the build's navigation, the page's contents, the previous and next pages, and a search box. A page with errors is rendered as far as it goes: a link that leads nowhere is written as its text, and an image that isn't there as its description.
+
+Then it serves the folder at `http://127.0.0.1:4880/`, and prints the address to open:
+
+```text
+checked 1 file for every build, reported on 1: 0 errors, 0 warnings, 0 advice
+rendered build `site`: 1 page, 0 assets, in .ascribe/preview
+previewing build `site` at http://127.0.0.1:4880/
+it renders again as the project's files change; Ctrl-C stops it
+```
+
+When a page, a fragment, `ascribe.toml`, or a file a snippet takes code from changes, it checks and renders the build again, and prints what it found; reload the page in the browser to see it. It runs until you stop it.
+
+@include: ../_generated/cli-preview-options.md
+
+The preview isn't the published site, which looks the way its Astro project styles it ([Astro](../astro/index.md)), and isn't the editor's page preview or site preview, two of the four [previews](../glossary.md#preview). Only this computer can open its address: it listens at `127.0.0.1` alone, answers only a request addressed to `127.0.0.1` or `localhost` with its port, so a web page elsewhere can't read it, and connects to nothing. `.ascribe/` is the folder `.gitignore` already leaves out.
+
+| Code | Meaning |
+|---|---|
+| `2` | It couldn't start: no `ascribe.toml`, a content model with errors, a build that isn't the model's, several builds and no `--build`, a preview that can't be written, or a port that can't be listened on |
+
+Once it's serving, problems in the pages never stop it, and a content model that stops loading leaves the last preview served until it loads again.
+
 ## `ascribe fmt`
 @id {permalink=true}: cli-fmt
 @summary: Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines. It never changes how a page renders.
@@ -185,7 +215,7 @@ docs/install.md:5
 
 @include: ../_generated/cli-fmt-options.md
 
-With `--format json` and `--check`, it writes the edits it would make and no file: what a tool that applies edits itself needs, such as the MCP server's `ascribe_format`. An edit has the shape of a fix's edit in [`ascribe check`'s JSON](check.md#json-output), and the [schema](../contracts/json-reports.md#ascribe-fmt) has every field.
+With `--format json` and `--check`, it writes the edits it would make and no file: what a tool that applies edits itself needs, such as the MCP server's `ascribe_fmt`. An edit has the shape of a fix's edit in [`ascribe check`'s JSON](check.md#json-output), and the [schema](../contracts/json-reports.md#ascribe-fmt) has every field.
 
 A symbolic link it leaves alone is reported on standard error, as `check` reports it ([`source-unreadable`](diagnostics/pages.md#ASC123)), and the other files are still formatted.
 

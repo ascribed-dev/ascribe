@@ -1,9 +1,9 @@
 //! `ascribe versions`: a project's release lines. `list` shows them,
 //! `changes` says what differs between two from the marks alone,
 //! `release` makes a line live, rewriting the marks that named it through
-//! a feature, `archive` renders a line into a folder of HTML that needs
-//! nothing else, and `retire` takes the oldest live line out of the window,
-//! rewriting the marks it made dead.
+//! a feature, `export` renders a line into a folder of HTML that needs
+//! nothing else, its archive, and `retire` takes the oldest live line out
+//! of the window, rewriting the marks it made dead.
 
 use std::collections::BTreeMap;
 use std::io::{self, Write};
@@ -63,8 +63,11 @@ pub enum Command {
     ///
     /// Writes nothing into the project: the text says what to add to
     /// [releases] once the folder is hosted.
-    #[command(after_help = docs_link!("cli-versions-archive"))]
-    Archive(ArchiveArgs),
+    #[command(after_help = docs_link!("cli-versions-export"))]
+    Export(ExportArgs),
+    /// The old name of `export`, kept for a release (decision #950).
+    #[command(hide = true)]
+    Archive(ExportArgs),
     /// Retire the oldest live line, once its archive is hosted: move it to
     /// archived with its address, rewrite every mark for its target to the
     /// simplest spec that means the same in every line still live, list
@@ -139,10 +142,10 @@ pub struct ReleaseArgs {
     pub format: Format,
 }
 
-/// Arguments of `ascribe versions archive`.
+/// Arguments of `ascribe versions export`.
 #[derive(Debug, ClapArgs)]
-pub struct ArchiveArgs {
-    /// The line to archive, named as a mark names it: "self-managed 3.4".
+pub struct ExportArgs {
+    /// The line to export, named as a mark names it: "self-managed 3.4".
     /// It's live or planned.
     #[arg(value_name = "LINE")]
     pub line: String,
@@ -153,7 +156,7 @@ pub struct ArchiveArgs {
     #[arg(long, value_name = "DIR")]
     pub to: PathBuf,
 
-    /// The versioned build to archive the line of, when two builds are
+    /// The versioned build to export the line of, when two builds are
     /// versioned by the line's target.
     #[arg(long, value_name = "NAME")]
     pub build: Option<String>,
@@ -239,7 +242,7 @@ pub enum VersionsError {
     },
     /// No build is versioned by the line's target.
     #[error(
-        "no build is versioned by {target}, so it has no line to archive: set `versions = \"{target}\"` on a build"
+        "no build is versioned by {target}, so it has no line to export: set `versions = \"{target}\"` on a build"
     )]
     ArchiveNoBuild {
         /// The target.
@@ -265,7 +268,7 @@ pub enum VersionsError {
         builds: Vec<String>,
     },
     /// The line is archived already, so it has no output to render.
-    #[error("{target} {line} is archived; only a live or planned line can be archived")]
+    #[error("{target} {line} is archived; only a live or planned line can be exported")]
     ArchiveLineArchived {
         /// The target.
         target: String,
@@ -322,7 +325,14 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
         Command::List(args) => run_list(global, &args, &mut out, &mut err),
         Command::Changes(args) => run_changes(global, &args, &mut out, &mut err),
         Command::Release(args) => run_release(global, &args, &mut out, &mut err),
-        Command::Archive(args) => run_archive(global, &args, &mut out, &mut err),
+        Command::Export(args) => run_export(global, &args, &mut out, &mut err),
+        Command::Archive(args) => {
+            let _ = writeln!(
+                err,
+                "warning: `ascribe versions archive` is now `ascribe versions export`, and the old name goes in the next release"
+            );
+            run_export(global, &args, &mut out, &mut err)
+        }
         Command::Retire(args) => run_retire(global, &args, &mut out, &mut err),
     };
     let _ = out.flush();
@@ -335,7 +345,7 @@ fn run_list(global: &Global, args: &ListArgs, out: &mut dyn Write, err: &mut dyn
         Ok(project) => project,
         Err(failure) => return answer::report_failure(err, &failure),
     };
-    let listed = ascribe_query::versions::list(&project.index());
+    let listed = ascribe_query::versions::list(project.index());
     let result = match args.format {
         Format::Json => answer::write_json(out, &listed),
         Format::Text => write_list(out, &listed),
@@ -413,7 +423,7 @@ fn run_changes(
         Ok(project) => project,
         Err(failure) => return answer::report_failure(err, &failure),
     };
-    let changes = match ascribe_query::versions::changes(&project.index(), &args.from, &args.to) {
+    let changes = match ascribe_query::versions::changes(project.index(), &args.from, &args.to) {
         Ok(changes) => changes,
         Err(e) => return answer::fail(err, &e),
     };
@@ -670,6 +680,18 @@ struct OutputJson {
     changed: Vec<String>,
 }
 
+impl OutputJson {
+    fn new(o: &ascribe_lsp::ChangedOutput) -> OutputJson {
+        OutputJson {
+            build: o.build.clone(),
+            output: o.output.clone(),
+            added: o.added.clone(),
+            removed: o.removed.clone(),
+            changed: o.changed.clone(),
+        }
+    }
+}
+
 /// The version of the release's JSON.
 const RELEASE_SCHEMA_VERSION: u32 = 2;
 
@@ -733,17 +755,7 @@ impl ReleaseJson {
                     kept: f.kept.clone(),
                 })
                 .collect(),
-            outputs: r
-                .outputs
-                .iter()
-                .map(|o| OutputJson {
-                    build: o.build.clone(),
-                    output: o.output.clone(),
-                    added: o.added.clone(),
-                    removed: o.removed.clone(),
-                    changed: o.changed.clone(),
-                })
-                .collect(),
+            outputs: r.outputs.iter().map(OutputJson::new).collect(),
         }
     }
 }
@@ -1041,11 +1053,11 @@ fn write_cleared(
     Ok(())
 }
 
-/// What `ascribe versions archive --format json` writes: the line, the
+/// What `ascribe versions export --format json` writes: the line, the
 /// folder, and what's in it.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
-pub(crate) struct ArchiveJson {
+pub(crate) struct ExportJson {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
@@ -1053,7 +1065,7 @@ pub(crate) struct ArchiveJson {
     ascribe_version: &'static str,
     /// The target.
     target: String,
-    /// The line archived, as `[releases.<target>]` writes it.
+    /// The line exported, as `[releases.<target>]` writes it.
     line: String,
     /// The line's status: `current`, `live`, or `planned`.
     status: &'static str,
@@ -1095,19 +1107,14 @@ struct UnlinkedJson {
     line: Option<String>,
 }
 
-/// The version of the archive's JSON.
-const ARCHIVE_SCHEMA_VERSION: u32 = 1;
+/// The version of the export's JSON.
+const EXPORT_SCHEMA_VERSION: u32 = 1;
 
 /// Exit codes: 0 when the archive is written; 2 when it can't be: the line
 /// isn't declared, live, or planned, no build or more than one is
 /// versioned by its target, the checks find errors, or the folder isn't
 /// empty and isn't an archive Ascribe wrote.
-fn run_archive(
-    global: &Global,
-    args: &ArchiveArgs,
-    out: &mut dyn Write,
-    err: &mut dyn Write,
-) -> u8 {
+fn run_export(global: &Global, args: &ExportArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
         Ok(project) => project,
         Err(failure) => return answer::report_failure(err, &failure),
@@ -1182,7 +1189,7 @@ fn run_archive(
     let options = ArchiveOptions {
         current: args.current.clone(),
     };
-    let archive = match ascribe_emit::archive(&index, project.root(), &build, &options) {
+    let archive = match ascribe_emit::archive(index, project.root(), &build, &options) {
         Ok(archive) => archive,
         Err(e) => return answer::fail(err, &e),
     };
@@ -1198,8 +1205,8 @@ fn run_archive(
         _ => "live",
     };
     let content = project.content_root();
-    let json = ArchiveJson {
-        schema_version: ARCHIVE_SCHEMA_VERSION,
+    let json = ExportJson {
+        schema_version: EXPORT_SCHEMA_VERSION,
         ascribe_version: env!("CARGO_PKG_VERSION"),
         target,
         line: line.text,
@@ -1231,7 +1238,7 @@ fn run_archive(
     };
     let result = match args.format {
         Format::Json => answer::write_json(out, &json),
-        Format::Text => write_archive(out, &json, project.root()),
+        Format::Text => write_export(out, &json, project.root()),
     };
     answer::written(result, err).unwrap_or(exit::OK)
 }
@@ -1248,7 +1255,7 @@ fn size(bytes: usize) -> String {
     }
 }
 
-fn write_archive(out: &mut dyn Write, a: &ArchiveJson, root: &Path) -> io::Result<()> {
+fn write_export(out: &mut dyn Write, a: &ExportJson, root: &Path) -> io::Result<()> {
     let (target, line) = (&a.target, &a.line);
     match a.status {
         "current" => writeln!(
@@ -1357,6 +1364,10 @@ pub(crate) struct RetireJson {
     /// rewrite changes, by build and output: they need `--force`, and a dry
     /// run lists them.
     outputs: Vec<OutputJson>,
+    /// The outputs of builds that aren't lines of the target whose pages
+    /// change only in the target's part of their availability lines, by
+    /// build and output: expected, so they need no `--force`.
+    expected: Vec<OutputJson>,
     /// The `ascribe.toml` the target's lines are written in, from the
     /// current folder, when the project's `[from]` takes them from another
     /// project's: the retirement is made in that project, and `files` are
@@ -1455,17 +1466,8 @@ impl RetireJson {
                 })
                 .collect(),
             recorded: r.recorded > 0,
-            outputs: r
-                .builds_changed
-                .iter()
-                .map(|o| OutputJson {
-                    build: o.build.clone(),
-                    output: o.output.clone(),
-                    added: o.added.clone(),
-                    removed: o.removed.clone(),
-                    changed: o.changed.clone(),
-                })
-                .collect(),
+            outputs: r.builds_changed.iter().map(OutputJson::new).collect(),
+            expected: r.expected.iter().map(OutputJson::new).collect(),
         }
     }
 }
@@ -1532,6 +1534,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
             redirects: Vec::new(),
             recorded: false,
             outputs: Vec::new(),
+            expected: Vec::new(),
             from: from.as_deref().map(answer::path_from_here),
         };
         let result = match args.format {
@@ -1815,6 +1818,33 @@ fn write_unused(
     Ok(())
 }
 
+/// Each output, with the pages it adds, removes, and changes.
+fn write_outputs(out: &mut dyn Write, outputs: &[ascribe_lsp::ChangedOutput]) -> io::Result<()> {
+    for o in outputs {
+        let parts: Vec<String> = [
+            ("adds", &o.added),
+            ("removes", &o.removed),
+            ("changes", &o.changed),
+        ]
+        .into_iter()
+        .filter(|(_, files)| !files.is_empty())
+        .map(|(verb, files)| {
+            let mut files: Vec<&str> = files.iter().map(String::as_str).collect();
+            files.sort_unstable();
+            format!("{verb} {}", files.join(", "))
+        })
+        .collect();
+        writeln!(
+            out,
+            "  {}'s {} output {}",
+            o.build,
+            o.output,
+            parts.join("; ")
+        )?;
+    }
+    Ok(())
+}
+
 fn write_retire(
     out: &mut dyn Write,
     r: &RetiredLine,
@@ -1851,33 +1881,19 @@ fn write_retire(
             f.key, f.from, f.to
         )?;
     }
+    if !r.expected.is_empty() {
+        writeln!(
+            out,
+            "Expected: builds that aren't lines of {target} change only {target}'s part of their availability lines:"
+        )?;
+        write_outputs(out, &r.expected)?;
+    }
     if !r.builds_changed.is_empty() {
         writeln!(
             out,
             "Builds that aren't lines of {target} change what they show:"
         )?;
-        for o in &r.builds_changed {
-            let parts: Vec<String> = [
-                ("adds", &o.added),
-                ("removes", &o.removed),
-                ("changes", &o.changed),
-            ]
-            .into_iter()
-            .filter(|(_, files)| !files.is_empty())
-            .map(|(verb, files)| {
-                let mut files: Vec<&str> = files.iter().map(String::as_str).collect();
-                files.sort_unstable();
-                format!("{verb} {}", files.join(", "))
-            })
-            .collect();
-            writeln!(
-                out,
-                "  {}'s {} output {}",
-                o.build,
-                o.output,
-                parts.join("; ")
-            )?;
-        }
+        write_outputs(out, &r.builds_changed)?;
         if !args.force {
             writeln!(out, "Rewriting them needs --force.")?;
         }

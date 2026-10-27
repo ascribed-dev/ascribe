@@ -1,4 +1,5 @@
 wrote ascribe.toml
+wrote ascribe.addresses, where a page's move is recorded, so the addresses it published keep working
 made docs/, the folder the pages go in
 Next, write a first page, docs/index.md, and run `ascribe check`
 Then, to publish the pages as a site with Astro, read https://ascribed-dev.com/go/astro-guide/

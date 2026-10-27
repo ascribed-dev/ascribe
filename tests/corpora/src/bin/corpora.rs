@@ -116,11 +116,11 @@ fn main() -> ExitCode {
     }
 }
 
-/// `corpora compare <results.jsonl> [--baseline FILE] [--record]`: checks
-/// benchmark results against the recorded baselines (see `perf`).
+/// `corpora compare <results.jsonl> [--baseline FILE] [--record | --quick]`:
+/// checks benchmark results against the recorded baselines (see `perf`).
 fn compare(args: &[String]) -> ExitCode {
     let Some(results) = args.first() else {
-        println!("usage: corpora compare <results.jsonl> [--baseline FILE] [--record]");
+        println!("usage: corpora compare <results.jsonl> [--baseline FILE] [--record | --quick]");
         return ExitCode::FAILURE;
     };
     let baseline = args
@@ -128,8 +128,19 @@ fn compare(args: &[String]) -> ExitCode {
         .position(|a| a == "--baseline")
         .and_then(|i| args.get(i + 1))
         .map_or_else(perf::default_baseline, std::path::PathBuf::from);
-    let record = args.iter().any(|a| a == "--record");
-    match perf::compare(std::path::Path::new(results), &baseline, record) {
+    let mode = match (
+        args.iter().any(|a| a == "--record"),
+        args.iter().any(|a| a == "--quick"),
+    ) {
+        (false, false) => perf::Mode::Full,
+        (false, true) => perf::Mode::Quick,
+        (true, false) => perf::Mode::Record,
+        (true, true) => {
+            println!("--record records the weekly run's results, not --quick's");
+            return ExitCode::FAILURE;
+        }
+    };
+    match perf::compare(std::path::Path::new(results), &baseline, mode) {
         Ok(report) => {
             print!("{}", report.text);
             if report.ok {

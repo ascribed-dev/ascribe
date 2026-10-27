@@ -141,7 +141,7 @@ fn workspace(global: &Global, err: &mut dyn Write) -> Result<(Project, Workspace
     })?;
     let index = project.index();
     let workspace =
-        Workspace::new(project.root(), project.model(), &index).map_err(|e| exit::fail(err, &e))?;
+        Workspace::new(project.root(), project.model(), index).map_err(|e| exit::fail(err, &e))?;
     Ok((project, workspace))
 }
 

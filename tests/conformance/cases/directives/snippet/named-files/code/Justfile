@@ -1,0 +1,4 @@
+# :snippet-start: check
+check:
+    cargo check
+# :snippet-end:

@@ -69,6 +69,15 @@ impl FileSystem for Overlay {
         self.base.files_in(project_dir)
     }
 
+    fn files_named(
+        &self,
+        project_dir: &RelPath,
+        name: &str,
+        enter: &dyn Fn(&RelPath) -> bool,
+    ) -> Vec<RelPath> {
+        self.base.files_named(project_dir, name, enter)
+    }
+
     /// Exact names win; among names that differ only in case, files added
     /// here come before the base's, first in path order (as
     /// [`MemoryFs`](crate::MemoryFs) does).

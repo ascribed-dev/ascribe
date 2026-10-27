@@ -53,6 +53,9 @@ names! {
     ELEMENT_TABS = "ascribe-tabs";
     /// `<ascribe-tab>`: one arm of `<ascribe-tabs>` (packages/elements/CONTRACT.md §3).
     ELEMENT_TAB = "ascribe-tab";
+    /// On the paragraph that starts an `<ascribe-tab>` and holds its label as
+    /// text, for a reader of the HTML with no script (packages/elements/CONTRACT.md §3).
+    CLASS_TAB_LABEL = "ascribe-tab-label";
     /// `<ascribe-availability>`: a badge or filter (packages/elements/CONTRACT.md §4).
     ELEMENT_AVAILABILITY = "ascribe-availability";
     /// `<ascribe-availability-target>`: one target of `<ascribe-availability>`
@@ -102,7 +105,7 @@ names! {
     /// The line a link out of a line leads to, on its link (packages/elements/CONTRACT.md §10).
     DATA_RELEASE_LINE = "data-ascribe-release-line";
 
-    // The HTML report, `ascribe diff --format html` (crates/ascribe-diff/src/html/),
+    // The HTML preview, `ascribe diff --format html` (crates/ascribe-diff/src/html/),
     // which @ascribed/review's report script draws.
 
     /// The element the report draws into.
@@ -110,7 +113,7 @@ names! {
     /// The `<script type="application/json">` holding the report's data.
     ID_REPORT_DATA = "ascribe-review-data";
 
-    // Review's marks and threads (@ascribed/review), which the HTML report,
+    // Review's marks and threads (@ascribed/review), which the HTML preview,
     // the page preview, and the Astro dev toolbar host. Written by TypeScript;
     // kept here so every package and stylesheet takes them from one place.
 

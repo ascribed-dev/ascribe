@@ -1,9 +1,10 @@
-// The changelog page's rules for links and anchors, on rendered Markdown made
+// The changelog page's rules for links and anchors, and its Markdown version's, on rendered Markdown made
 // here: they need no build.
 import { expect, test } from "vitest";
 import {
   ChangelogLinkError,
   anchorReleases,
+  changelogMarkdown,
   collapseEntries,
   firstParagraph,
   pointLinks,
@@ -220,4 +221,95 @@ test("an unreleased section with no entries is left out, and so are its contents
   expect(html).not.toContain('id="unreleased"');
   expect(html).not.toContain("unreleased-note");
   expect(contents.map((release) => release.id)).toEqual(["v0.1.0"]);
+});
+
+/** The Markdown version of `markdown`, with `html` as its rendering. */
+function asMarkdown(markdown: string[], html: string[]): Promise<string> {
+  return changelogMarkdown(
+    markdown.join("\n"),
+    html.join("\n"),
+    targets,
+    new URL("https://ascribed-dev.com/"),
+  );
+}
+
+test("the Markdown version anchors each heading as the page does, and says what's unreleased", async () => {
+  const text = await asMarkdown(
+    [
+      "# Changelog",
+      "",
+      "## Unreleased",
+      "",
+      "- New.",
+      "",
+      "## 0.2.0 (2026-10-06)",
+      "",
+      "### The `ascribe` command",
+      "",
+      "- Old.",
+    ],
+    [
+      "<h1>Changelog</h1>",
+      "<h2>Unreleased</h2>",
+      "<ul><li>New.</li></ul>",
+      "<h2>0.2.0 (2026-10-06)</h2>",
+      "<h3>The <code>ascribe</code> command</h3>",
+      "<ul><li>Old.</li></ul>",
+    ],
+  );
+  expect(text).toBe(
+    [
+      "# Changelog",
+      "",
+      '## <a id="unreleased"></a>Unreleased',
+      "",
+      "In `main`, not yet released.",
+      "",
+      "- New.",
+      "",
+      '## <a id="v0.2.0"></a>0.2.0 (2026-10-06)',
+      "",
+      '### <a id="v0.2.0-the-ascribe-command"></a>The `ascribe` command',
+      "",
+      "- Old.",
+      "",
+    ].join("\n"),
+  );
+});
+
+test("the Markdown version's links are pointed as the page's, and absolute", async () => {
+  const text = await asMarkdown(
+    [
+      "## 0.1.0 (2026-10-01)",
+      "",
+      "- See [agents](docs/content/agents/index.md#hooks), [the spec](SPEC.md), [semver](https://semver.org/), and [0.1.0](#v0.1.0).",
+      "- Not a link: `[x](SPEC.md)`.",
+      "",
+      "```md",
+      "[y](nowhere.md)",
+      "```",
+    ],
+    ["<h2>0.1.0 (2026-10-01)</h2>", "<ul><li>…</li></ul>"],
+  );
+  expect(text).toContain(
+    "- See [agents](https://ascribed-dev.com/docs/agents/#hooks), [the spec](https://github.com/ascribed-dev/ascribe/blob/main/SPEC.md), [semver](https://semver.org/), and [0.1.0](#v0.1.0).",
+  );
+  expect(text).toContain("- Not a link: `[x](SPEC.md)`.");
+  expect(text).toContain("[y](nowhere.md)");
+});
+
+test("the Markdown version fails on a link the page can't publish", async () => {
+  await expect(
+    asMarkdown(["## 0.1.0", "", "- [gone](docs/content/gone.md)"], ["<h2>0.1.0</h2>"]),
+  ).rejects.toThrow(ChangelogLinkError);
+});
+
+test("the Markdown version leaves out an unreleased section with no entries", async () => {
+  const text = await asMarkdown(
+    ["# Changelog", "", "## Unreleased", "", "## 0.1.0", "", "- Old."],
+    ["<h1>Changelog</h1>", "<h2>Unreleased</h2>", "<h2>0.1.0</h2>", "<ul><li>Old.</li></ul>"],
+  );
+  expect(text).toBe(
+    ["# Changelog", "", '## <a id="v0.1.0"></a>0.1.0', "", "- Old.", ""].join("\n"),
+  );
 });

@@ -605,7 +605,8 @@ fn a_project_given_the_whole_set_checks_clean() {
 }
 
 /// For each type of the set, a page copied from its template whole: `ascribe
-/// check` reports a placeholder left on every line the template opens one
+/// check` reports a placeholder left, an error since it publishes, on every
+/// line the template opens one
 /// with `\{`, and the title and the description, a section left empty only
 /// at a heading the template follows with a memo, and nothing else. That a
 /// page filled in reports nothing is `examples/templates`, which has one of
@@ -630,7 +631,7 @@ fn a_page_copied_from_each_template_reports_its_placeholders() {
             .filter(|d| {
                 !matches!(
                     d.slug.as_str(),
-                    "template-placeholder-left" | "template-section-empty"
+                    "template-placeholder-published" | "template-section-empty"
                 )
             })
             .map(|d| format!("{}: {}", d.slug, d.message))
@@ -656,7 +657,7 @@ fn a_page_copied_from_each_template_reports_its_placeholders() {
         }
         let mut reported: Vec<u32> = found
             .iter()
-            .filter(|d| d.slug.as_str() == "template-placeholder-left")
+            .filter(|d| d.slug.as_str() == "template-placeholder-published")
             .filter_map(|d| lines.line_col(d.location.span.start()))
             .map(|at| at.line)
             .collect();

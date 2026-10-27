@@ -235,8 +235,15 @@ export interface ChangedPage {
    * The other changed files the page's change can come from: fragments it
    * includes and pages its links take a title or a heading from, in path
    * order; then the snippets whose code changed, by address
-   * (`code:app.py#main`); and `ascribe.toml` (last) when the content model
-   * is a cause.
+   * (`code:app.py#main`); then the operations of a declared API whose spec
+   * changed what the page writes for them, an `@operation`'s method, path,
+   * summary, or deprecation, or a link's address, each by its spec's path
+   * from the project root, `#`, and the fragment the page names it by
+   * (`api/openapi.yaml#createWidget`); and `ascribe.toml` (last) when the
+   * content model is a cause. The kinds are told apart by their form: a
+   * content file's path ends in `.md`, a snippet's address has its
+   * source's name and `:` before its path, and an operation's has a `#`
+   * and neither.
    */
   because: string[];
   /**
@@ -882,7 +889,7 @@ export type Form = "line" | "block" | "container" | "group";
 /**
  * A piece of a formatted value, as the JSON output writes it:
  * `{ "type": "text" | "code", "value": … }`. Other JSON that shows a
- * formatted title, such as the review report's, writes it the same way.
+ * formatted title, such as the HTML preview's, writes it the same way.
  */
 export interface FormattedPiece {
   /** What the piece is. */
@@ -1074,7 +1081,7 @@ export interface InventoryValue {
 }
 
 /** Why a build leaves a page out (SPEC §9.3). */
-export type LeftOut = "variant" | "availability";
+export type LeftOut = "variant" | "availability" | "draft";
 
 /** A file to create, empty. */
 export interface LspCreateFile {
@@ -1164,13 +1171,13 @@ export interface ModelApi {
   /** The spec's file, from the folder `ascribe.toml` is in. */
   spec: string;
   /**
-   * Where its reference is: the renderer's page, or the template of an
-   * operation's address, as written.
+   * Where its reference is: the renderer's page, or an address
+   * pattern, as written.
    */
   reference: string;
   /**
    * The renderer its reference is published with, `redoc`; absent when
-   * `reference` is a template of an operation's address.
+   * `reference` is an address pattern.
    */
   renderer?: string;
 }
@@ -1750,10 +1757,10 @@ export interface PageAbout {
    */
   description: PageDescription | null;
   /**
-   * When it's due for review, when its type gives a field the
-   * review-date role and the page has a date in it.
+   * When it's due to be checked again, when its type gives a field the
+   * recheck-date role and the page has a date in it.
    */
-  review: PageReview | null;
+  recheck: PageRecheck | null;
   /** Its own `available`, as shown; `null` when it has none. */
   availability: string | null;
   /**
@@ -1838,8 +1845,15 @@ export interface PageDiff {
    * The other changed files the page's change can come from: fragments it
    * includes and pages its links take a title or a heading from, in path
    * order; then the snippets whose code changed, by address
-   * (`code:app.py#main`); and `ascribe.toml` (last) when the content model
-   * is a cause.
+   * (`code:app.py#main`); then the operations of a declared API whose spec
+   * changed what the page writes for them, an `@operation`'s method, path,
+   * summary, or deprecation, or a link's address, each by its spec's path
+   * from the project root, `#`, and the fragment the page names it by
+   * (`api/openapi.yaml#createWidget`); and `ascribe.toml` (last) when the
+   * content model is a cause. The kinds are told apart by their form: a
+   * content file's path ends in `.md`, a snippet's address has its
+   * source's name and `:` before its path, and an operation's has a `#`
+   * and neither.
    */
   because: string[];
   /**
@@ -2025,6 +2039,28 @@ export interface PagePlace {
   text: string;
 }
 
+/** When a page is due to be checked again. */
+export interface PageRecheck {
+  /** The frontmatter field with the recheck-date role. */
+  field: string;
+  /** The date it holds, `YYYY-MM-DD`. */
+  date: string;
+  /**
+   * The days from today to the date: negative once it's passed. `null`
+   * when the server has no day to count from.
+   */
+  days: number | null;
+  /** Whether the date has passed. */
+  overdue: boolean;
+  /**
+   * Whether `recheck-overdue` reports the page: the date has passed, and
+   * the project hasn't turned the check off.
+   */
+  reported: boolean;
+  /** The field's line, in the negotiated position encoding. */
+  range: LspRange;
+}
+
 /**
  * The answer to `ascribe/page`. A document that isn't a page or a fragment
  * of the project gets an empty answer: no `about`, no heading, and empty
@@ -2067,28 +2103,6 @@ export interface PageResult {
   health: PageHealth;
   /** The file's `@include`s and `@snippet`s, in document order. */
   includes: PageInclude[];
-}
-
-/** When a page is due for review. */
-export interface PageReview {
-  /** The frontmatter field with the review-date role. */
-  field: string;
-  /** The date it holds, `YYYY-MM-DD`. */
-  date: string;
-  /**
-   * The days from today to the date: negative once it's passed. `null`
-   * when the server has no day to count from.
-   */
-  days: number | null;
-  /** Whether the date has passed. */
-  overdue: boolean;
-  /**
-   * Whether `review-overdue` reports the page: the date has passed, and
-   * the project hasn't turned the check off.
-   */
-  reported: boolean;
-  /** The field's line, in the negotiated position encoding. */
-  range: LspRange;
 }
 
 /** A page's size, as `page-size` measures it. */

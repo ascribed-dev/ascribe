@@ -4,6 +4,7 @@
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::sync::Arc;
 
 use ascribe_check::Project;
 use ascribe_model::ContentModel;
@@ -142,7 +143,7 @@ fn load(global: &Global, args: &Args) -> Result<Loaded, Failure> {
     let file = Project::load_model(&config).map_err(Failure::Load)?;
     let fs = DiskFs::new(&file.root, &Layout::from_model(&file.model));
     let project = Project::load(&config).map_err(Failure::Load)?;
-    let index = project.index();
+    let index = project.index().clone();
     Ok(Loaded {
         model: file.model,
         config: file.text,
@@ -158,7 +159,7 @@ struct Loaded {
     config: String,
     fs: DiskFs,
     terms: Vec<ascribe_query::ModelTerm>,
-    index: ascribe_resolve::Project,
+    index: Arc<ascribe_resolve::Project>,
 }
 
 /// What `--format json` writes: without `--section`, with the project's

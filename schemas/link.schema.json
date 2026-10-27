@@ -78,7 +78,7 @@
       "description": "An operation of a declared API's spec (`[apis.<name>]`), as a link to it\nnames it.",
       "properties": {
         "address": {
-          "description": "Its address in the published reference, as the editor's build writes\nthe link; `null` when the reference has none for it: an operation\nwith no id, under a template.",
+          "description": "Its address in the published reference, as the editor's build writes\nthe link; `null` when the reference has none for it: an operation\nwith no id, under an address pattern.",
           "type": [
             "string",
             "null"

@@ -36,6 +36,8 @@ pub struct Subject<'a: 'd, 'r, 'o, 'd, 'c, 'p> {
     pub options: &'o Options<'c>,
     pub input: String,
     line: usize,
+    // ASCRIBE: the block's first line, which `line_offsets` are counted from.
+    start_line: usize,
     pub scanner: Scanner,
     column_offset: isize,
     line_offset: usize,
@@ -79,6 +81,8 @@ impl<'a, 'r, 'o, 'd, 'c, 'p> Subject<'a, 'r, 'o, 'd, 'c, 'p> {
             options,
             input,
             line,
+            // ASCRIBE: see the field.
+            start_line: line,
             scanner: Scanner::new(),
             column_offset: 0,
             line_offset: 0,
@@ -2377,7 +2381,11 @@ impl<'a, 'r, 'o, 'd, 'c, 'p> Subject<'a, 'r, 'o, 'd, 'c, 'p> {
             self.line += newlines;
             let node_ast = &mut node.data_mut();
             node_ast.sourcepos.end.line += newlines;
-            let adjusted_line = self.line - node_ast.sourcepos.start.line;
+            // ASCRIBE: `parent_line_offsets` is indexed from the block's first
+            // line, not the node's; upstream's index was short by the lines
+            // before the node, so an indented continuation line's offset was
+            // used for the line after it (#1159).
+            let adjusted_line = self.line - self.start_line;
             node_ast.sourcepos.end.column =
                 parent_line_offsets[adjusted_line] + since_newline + extra;
             self.column_offset =
@@ -2403,7 +2411,9 @@ impl<'a, 'r, 'o, 'd, 'c, 'p> Subject<'a, 'r, 'o, 'd, 'c, 'p> {
             ast.sourcepos.end.line += lines;
             // XXX I really freestyled this next line.
             ast.sourcepos.end.column =
-                parent_line_offsets[ast.sourcepos.end.line - ast.sourcepos.start.line] + last_line;
+                // ASCRIBE: indexed from the block's first line, as in
+                // `adjust_node_newlines` (#1159).
+                parent_line_offsets[ast.sourcepos.end.line - self.start_line] + last_line;
         }
         ast.attrs = Some(Box::new(attrs));
 

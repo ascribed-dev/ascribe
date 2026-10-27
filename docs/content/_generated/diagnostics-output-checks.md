@@ -41,7 +41,7 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 
 **Fix:** Remove one of the two. A crawler reads `noindex` only on a page it may fetch, so to keep a page out of search results, let crawlers fetch it: remove the `Disallow` line, or narrow it so it doesn't cover the page, or allow the purpose. If the page only needs to stay out of what crawlers fetch, remove `listing: unlisted`. The editor's quick fix removes `listing`.
 
-**Read more:** [`[crawlers]`](../content-model/checks.md#21-crawlers) in the `ascribe.toml` reference.
+**Read more:** [`[crawlers]`](../content-model/output.md#18-crawlers) in the `ascribe.toml` reference.
 
 ### ASC190 `crawlers-disallowed`
 @id {permalink=true}: ASC190
@@ -55,7 +55,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 
 **Fix:** Choose what the site wants. To be in AI search answers, and fetched when a person asks, `allow` the purpose or remove it. To keep it, turn this check off in `[checks]`, saying so in a comment: the choice is the project's, and this only says what it costs. A purpose's group asks only the crawlers Ascribe knows, and some of them say they may not follow `robots.txt`.
 
-**Read more:** [`[crawlers]`](../content-model/checks.md#21-crawlers) in the `ascribe.toml` reference.
+**Read more:** [`[crawlers]`](../content-model/output.md#18-crawlers) in the `ascribe.toml` reference.
 
 ## Prose, through Vale
 
@@ -153,7 +153,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 @id {permalink=true}: ASC199
 @summary: A `@snippet` shows a tested example whose file has changed since the observation that lists it was made.
 
-Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+Warning · file level · next step: outside · configurable in `[checks]` · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 **When:** A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and the file has changed since the observation that lists it was made. For a source in another repository, the config, the observation, and the file are the copies `ascribe sources fetch` made. Reported once for each snippet of the file, whichever region it shows.
 
@@ -189,7 +189,7 @@ Warning · file level · next step: outside · configurable in `[checks]` · [SP
 
 **Fix:** Fix the file named, in the source's folder: `ascribe.examples.toml` is written by the code's owners, and an observation by `ascribe observe`, which writes it again when it's run there. Until it can be read, no snippet of the source says what it was tested with.
 
-**Read more:** [`[sources.<name>]`](../content-model/output.md#18-sourcesname) in the `ascribe.toml` reference.
+**Read more:** [`[sources.<name>]`](../content-model/sources.md#20-sourcesname) in the `ascribe.toml` reference.
 
 ### ASC202 `observation-file-missing`
 @id {permalink=true}: ASC202
@@ -203,4 +203,18 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 **Fix:** The example was usually deleted or renamed without a second test run. Run the command named, in the folder named, and commit the observation it writes, which lists the examples as they are. When nothing writes the observation any more, delete its file.
 
-**Read more:** [`[sources.<name>]`](../content-model/output.md#18-sourcesname) in the `ascribe.toml` reference.
+**Read more:** [`[sources.<name>]`](../content-model/sources.md#20-sourcesname) in the `ascribe.toml` reference.
+
+### ASC285 `examples-config-unread`
+@id {permalink=true}: ASC285
+@summary: An `ascribe.examples.toml` is in the folder of a source in the same repository, below its root, in a folder the source may read files from, and no source's root holds it, so no source reads it. Reported at the file, once for each.
+
+Warning · file level · next step: write · configurable in `[checks]` · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
+
+**When:** An `ascribe.examples.toml` is in the folder of a source in the same repository, below its root, in a folder the source may read files from, and no source's root holds it, so no source reads it. Reported at the file, once for each.
+
+**Message:** `{file}` is below the root of source `{source}`, `{root}`, and only the `ascribe.examples.toml` at a source's root is read, so no page says what its examples were tested with; declare a source with `path = "{folder}"`, or move the file to `{root}`
+
+**Fix:** Ascribe reads a source's tested examples from the `ascribe.examples.toml` at the root of its `path`, and the observations beside it. To keep the config beside the tests it runs, declare a source whose `path` is the config's folder, and write the snippets of its files with that source's name; the folder can stay inside the other source's too. Or move the config, and its `examples.observations/`, to the root of the source the snippets name, with its `include` and `test` written from there, and run `ascribe observe` there. A folder that holds an `ascribe.toml` is a project of its own, and isn't looked in.
+
+**Read more:** [`[sources.<name>]`](../content-model/sources.md#20-sourcesname) in the `ascribe.toml` reference.

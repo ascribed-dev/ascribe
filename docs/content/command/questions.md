@@ -92,7 +92,7 @@ Says whether a link works, written on a given page: whether its target exists, t
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/link.txt
 
-When the target doesn't work, it says why and lists the closest targets that do: the page's headings for a heading that isn't there; for a page that isn't, the pages with the heading the link names, wherever they are, then pages with a similar path; the pages that include a fragment; or the file that a published route belongs to. `ascribe check` offers the same targets as the broken link's fixes, marked `unsafe`.
+When the target doesn't work, it says why and lists the closest targets that do: the page's headings for a heading that isn't there, first those whose ids start with the words of the one written, as `ask-instead` does `ask-instead-of-guessing`, then those whose words start the written one's, then the rest, closest first; for a page that isn't, the pages with the heading the link names, wherever they are, then pages with a similar path; the pages that include a fragment; or the file that a published route belongs to. `ascribe check` offers the same targets as the broken link's fixes, marked `unsafe`, and when one clearly wins, such as the only heading whose id starts with the written id's words, its message ends with "did you mean `loop.md#ask-instead-of-guessing`?", so the concise output and the edit hook carry it too.
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/link-missing.txt
 
@@ -165,13 +165,22 @@ What it renames, written as `ascribe refs` writes a target:
 | `keys.md#rotate-keys` | A heading's id, and each link and include that names it, each `[moved]` value in `ascribe.addresses` that names it, and each [memo file](../writing/memo-files.md)'s `about` that names it, in `memos/` and `.ascribe/memos/`. A heading with an `@id` has it changed. One whose id is made from its text gets an `@id` line under it, so its text stays, and links to the headings after it that were numbered after it follow. |
 | `keys.md` | The page or fragment moves to the new path, and each link and include to it, or in it, whose path changes is changed. So is what `ascribe.toml` names it by: its path in `[glossary] pages`, and a phrase that's a link to it; and each `[moved]` value in `ascribe.addresses` that leads to it, keeping its `#id`. So is each memo file's `about` that names it or a heading in it, keeping its `#id`, and its entry in its section's `pages` in [`ascribe.nav`](../navigation/index.md#the-file), which is taken out when it moves to another folder. A section written inline, as `sections = [{ … }]`, isn't followed: the file is left as it is, and `ascribe check` reports the name that's gone. The new path is read as the target was: from the current folder, or from the content root. A new path that changes only the file's case, such as `Keys.md`, renames it on a file system that matches names without case too, as macOS's and Windows' do. |
 
-A path is from the current folder, or from the content root, and the project is found from it; for a phrase or a value, the project is found from the current folder. `--config` names the project for any target, so `ascribe rename keys.md guides/keys.md --config docs` works from the repository's root. A page that isn't found is named with both places it was looked for. It writes the files it changes, then moves the page, and prints each file it changed, from the current folder. A permalink's id isn't renamed, since links from outside the docs use it: change its `@id` by hand, then move the old name to the new one, or retire it, with [`ascribe permalinks retire`](../permalinks/command.md#cli-permalinks-retire). A page isn't moved through a folder that's a symbolic link. A phrase used in the code of a source in another repository isn't renamed either, since that code is a copy.
+A path is from the current folder, or from the content root, and the project is found from it; for a phrase or a value, the project is found from the current folder. `--config` names the project for any target, so `ascribe rename keys.md guides/keys.md --config docs` works from the repository's root. A page that isn't found is named with both places it was looked for. It writes the files it changes, then moves the page, and prints each file it changed, from the current folder.
+
+Some things aren't renamed or moved:
+
+- A permalink's id isn't renamed, since links from outside the docs use it: change its `@id` by hand, then move the old name to the new one, or retire it, with [`ascribe permalinks retire`](../permalinks/command.md#cli-permalinks-retire).
+- A page isn't moved through a folder that's a symbolic link.
+- A phrase used in the code of a source in another repository isn't renamed either, since that code is a copy.
 
 | Code | Meaning |
 |---|---|
 | `0` | It renamed |
 | `1` | What it names doesn't exist: a phrase, a value, a page, or a heading |
 | `2` | It couldn't rename: no `ascribe.toml`, one with errors, a new name that can't be its name or is taken, a target it doesn't rename, or a file it can't write |
+
+@available: ascribe planned
+With `--format json`, it writes what it changed as one document, instead of a line for each file: `files`, each file it changed, from the current folder, with its whole `text` after and how many places changed (`edits`), in path order, the page that moved under where it was; `moved`, the page's `from` and `to`, when one moved; and `recorded`, each entry of `ascribe.addresses`'s `[moved]` it recorded, as a `key` and a `value`, as [`ascribe addresses move`](../publishing/redirects.md#cli-addresses-move) writes one. `written` is `true`: the MCP server's [`ascribe_rename`](../agents/commands.md#cli-mcp) gives the same document with `written` false, and writes nothing. Its [schema](../contracts/json-reports/questions.md#ascribe-rename) has every field.
 
 ## `ascribe resolve`
 @id {permalink=true}: cli-resolve
@@ -189,12 +198,10 @@ When the build doesn't publish the page, it writes nothing to standard output, s
 
 A line of a [versioned build](../versions/index.md), such as `--build site@3.4`, resolves the page as that line publishes it, its route and links under the line's folder.
 
-@available: ascribe 0.4.4
 `--emit site` writes the page as the site output writes it, as `ascribe build --emit site` writes its file and `@ascribed/astro` receives it: Markdown with Ascribe's elements, such as `<ascribe-tabs>`, `<ascribe-note>`, and availability badges, from the code the build and the editor's preview use. It's what a site's integration is given, which the plain form can't show: what a switcher, a badge, or a glossary link becomes before a site draws it. `--emit plain`, the default, is the plain form above. `--emit` takes one output, not a list as `ascribe build --emit` does; a list is an error, exit `2`. From `examples/quill`, `ascribe resolve install-agent.md --build site --emit site` writes its Connect section as tabs, where the plain form writes a section for each arm:
 
 @snippet {lang=markdown}: code:crates/ascribe-cli/tests/output/resolve-site-connect.txt
 
-@available: ascribe 0.4.4
 The site form's frontmatter, under `--frontmatter`, is the site output's, a line of a versioned build writes the line's links, and its elements read without their script as [a page in the site output](site-output.md) says.
 
 `go:` and a permalink's name, in place of the page, shows the help a [product shows](../permalinks/in-your-product.md) for that permalink: its entry in the build's `_ascribe/help.json`, from the code that writes the file. The project is the current directory's, or `--config`'s. The text is the entry's title, its summary when the text doesn't start with it, its text, and "Read more" with its address, which needs [`[consumer] site`](../content-model/output.md#consumer):
@@ -215,7 +222,6 @@ With `--format json`, the document is as follows, and its [schema](../contracts/
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/resolve.json
 
-@available: ascribe 0.4.4
 `emit` says which output `text` is written as: `plain`, or `site` under `--emit site`, where `text` is the site output's file, with its frontmatter under `--frontmatter`.
 
 For `go:<name>`, the document is the entry as `help.json` writes it, with the file's `version`, `build`, and `line`, and the `name` asked for, after `schema_version` and `ascribe_version`. `version` is `help.json`'s format version, which a reader checks as it checks the file's. Its [schema](../contracts/json-reports/questions.md#ascribe-resolve-go) has every field:
@@ -234,7 +240,12 @@ Finds where the pages say something, as their readers read it, and names the lin
 
 Each place is `file:line:` and the block as a reader reads it, cut to about 80 characters around the match's first word, then where a reader meets it: the heading it's under and that heading's id, the arm of a variant group it's in, the phrases the match reads through, and, when it isn't in every build searched, the builds it's in. A line is listed once however many pages and builds show it. The places are in a fixed order: titles, then headings, then the rest; in each, the places written in pages come before those in fragments and code files, each in path order and in order within a file.
 
-The query is one argument, and paths come after it. Words must all be in one block, in any order; a phrase in double quotes is matched as written, a run of spaces matching any run of white space. Common English words outside quotes, such as `how`, `I`, and `the`, needn't be, unless they're all the query has: `how do I publish llms.txt` finds what `publish llms.txt` does. Quote several words together, and a phrase inside them: `ascribe search "rate limit"` finds both words in a block, and `ascribe search '"rate limit"'` finds them together. Case is ignored, and nothing else is: `cafe` doesn't find "café". With `--case`, case is matched as written, so `ascribe search Vale --case` doesn't find "vale". A word matches inside a longer one, so `sync` finds "synchronize"; with `--word`, a word or a phrase matches only where the characters on either side of it aren't letters, digits, or `_`, so `ascribe search limit --word` finds "the rate limit." and not "limits". A match never crosses from one block into another.
+The query is one argument, and paths come after it. Words must all be in one block, in any order, and a match never crosses from one block into another.
+
+- **Phrases.** A phrase in double quotes is matched as written, a run of spaces matching any run of white space. Quote several words together, and a phrase inside them: `ascribe search "rate limit"` finds both words in a block, and `ascribe search '"rate limit"'` finds them together.
+- **Common words.** Common English words outside quotes, such as `how`, `I`, and `the`, needn't be, unless they're all the query has: `how do I publish llms.txt` finds what `publish llms.txt` does.
+- **Case.** Case is ignored, and nothing else is: `cafe` doesn't find "café". With `--case`, case is matched as written, so `ascribe search Vale --case` doesn't find "vale".
+- **Whole words.** A word matches inside a longer one, so `sync` finds "synchronize"; with `--word`, a word or a phrase matches only where the characters on either side of it aren't letters, digits, or `_`, so `ascribe search limit --word` finds "the rate limit." and not "limits".
 
 There are no regular expressions. To run a pattern over the text readers read, write the plain output with `ascribe build --emit plain` and use `grep` on it. That loses what `ascribe search` adds: `grep` names a line of the build's output, not the line of the source to edit, and it can't say that a line came from a fragment, a phrase, or a snippet, or list a line many pages show once; and it reads one build's output at a time.
 
@@ -308,7 +319,13 @@ With `--format json`, the document is a contract of its own, whose schema is in 
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/search.json
 
-Each place has its `file` from the project root, its `line`, and the `column` of the match's first character, in Unicode characters. `in` is what it is: `title`, `description`, `heading`, `text`, `table`, `code`, or `phrase`, a phrase's value at its line in `ascribe.toml`. `text` is the block as a reader reads it: whole when it's at most 240 characters, and otherwise cut to about that many around the match's first character, at words, with `…` where it's cut, so a long code block or table row costs no more than a paragraph; `line` and `column` say where to read the rest. `match` is where the match is in `text`: its first character and the one after its last, in characters, ending where `text` is cut when the match runs past it. A match of several words can span a whole code block, and `line` is the line its first word is on, within the block. `through` lists what the match reads through that the line doesn't spell, in order: `{"phrase": key}`, `{"title": page}` for a link with no text, which reads as the title of the page it links to, or the text of the heading it names (`page.md#id`), and `{"code": address}` for a snippet's code. `arm` is the arm of a variant group the line is in, or null.
+Each place has its `file` from the project root, its `line`, and the `column` of the match's first character, in Unicode characters. A match of several words can span a whole code block, and `line` is the line its first word is on, within the block. The other fields:
+
+- `in` is what it is: `title`, `description`, `heading`, `text`, `table`, `code`, or `phrase`, a phrase's value at its line in `ascribe.toml`.
+- `text` is the block as a reader reads it: whole when it's at most 240 characters, and otherwise cut to about that many around the match's first character, at words, with `…` where it's cut, so a long code block or table row costs no more than a paragraph; `line` and `column` say where to read the rest.
+- `match` is where the match is in `text`: its first character and the one after its last, in characters, ending where `text` is cut when the match runs past it.
+- `through` lists what the match reads through that the line doesn't spell, in order: `{"phrase": key}`, `{"title": page}` for a link with no text, which reads as the title of the page it links to, or the text of the heading it names (`page.md#id`), and `{"code": address}` for a snippet's code.
+- `arm` is the arm of a variant group the line is in, or null.
 
 `pages` names the pages that show the place, at most three, each with its `title`, the `heading` the place is under there and its `id`, and the `builds` that show it there. `pages_total` is how many pages show it; for a phrase, how many places in the source use it. `refs_command` is the `ascribe refs` command that lists them: for a phrase, and for a fragment's line on more pages than `pages` names; otherwise it's null. A snippet's code that can't be lined up with its file is at the first line the snippet shows, and `end_line` is the last; every other place's `end_line` is null.
 

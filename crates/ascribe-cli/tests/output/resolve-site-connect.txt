@@ -4,6 +4,8 @@
 
 <ascribe-tab value="cloud" label="Quill Cloud">
 
+<p class="ascribe-tab-label">Quill Cloud</p>
+
 Sign in to Quill Cloud and copy an API key from **Settings → Keys**, then add it to `quill.yaml`:
 
 ```yaml
@@ -14,6 +16,8 @@ cloud:
 </ascribe-tab>
 
 <ascribe-tab value="self-managed" label="self-managed">
+
+<p class="ascribe-tab-label">self-managed</p>
 
 Point the agent at your server. Self-managed servers must run Quill Server 3.3 or later.
 

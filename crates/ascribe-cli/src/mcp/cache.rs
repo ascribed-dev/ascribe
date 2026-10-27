@@ -134,6 +134,18 @@ fn list(root: &Path, project: &Project) -> Vec<Stamp> {
     files
 }
 
+/// The project's files, as [`list`] lists them, then each code file its
+/// snippets have read: what `ascribe preview` watches, rendering the build
+/// again when any of it changes.
+pub(crate) fn watched(project: &Project) -> Vec<Stamp> {
+    let root = project.root();
+    let mut files = list(root, project);
+    for file in project.code_files().all() {
+        files.push(stamp(&normalize(&root.join(file.path.as_str()))));
+    }
+    files
+}
+
 /// `ascribe.toml`, `ascribe.lock` and `ascribe.permalinks` (there or not),
 /// and every file under the content root, as [`list`] lists them, unsorted.
 pub(crate) fn content_listing(

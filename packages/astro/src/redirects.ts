@@ -1,7 +1,7 @@
 // The redirects a build writes for the host: with `[consumer] host =
 // "netlify"`, the compiler writes Netlify's `_redirects` in each build's site
 // output, at `_ascribe/host/_redirects` (output-layout contract §1.9), from
-// the moves `ascribe.addresses` records. `astro build` merges every
+// the moves `ascribe.addresses` records and the permalinks' addresses. `astro build` merges every
 // project's into the site's `_redirects`, at the root of what's deployed.
 //
 // A site's own `public/_redirects` is kept, after Ascribe's rules: Netlify
@@ -15,8 +15,15 @@ import { routeKey } from "./records.js";
 /** One redirect: an old address, from the host's root, to where it leads now. */
 export interface Redirect {
   from: string;
+  /** The query parameters the rule matches, as `name=:name`: a permalink's dimensions. */
+  query?: string[];
   to: string;
   status: number;
+  /**
+   * Whether the rule applies even with a page at `from`, Netlify's `!`: a
+   * permalink's, whose forwarding page is there for hosts without redirects.
+   */
+  force?: boolean;
 }
 
 /**
@@ -35,33 +42,54 @@ export function readHostRedirects(siteRoot: string): Redirect[] {
   for (const line of text.split(/\r?\n/)) {
     const trimmed = line.trim();
     if (trimmed === "" || trimmed.startsWith("#")) continue;
-    const [from, to, status] = trimmed.split(/\s+/);
+    const [from, ...rest] = trimmed.split(/\s+/);
+    // A query parameter is `name=:name`; the target starts with `/`.
+    const query = rest.filter((part) => !part.startsWith("/") && part.includes("="));
+    const [to, status] = rest.slice(query.length);
     if (from === undefined || to === undefined) continue;
-    out.push({ from, to, status: status === undefined ? 301 : Number.parseInt(status, 10) });
+    const force = status?.endsWith("!") ?? false;
+    out.push({
+      from,
+      ...(query.length > 0 ? { query } : {}),
+      to,
+      status: status === undefined ? 301 : Number.parseInt(status, 10),
+      ...(force ? { force } : {}),
+    });
   }
   return out;
 }
 
+/** What a rule matches: its address, and its query parameters. */
+function matches(redirect: Redirect): string {
+  return [redirect.from, ...(redirect.query ?? [])].join(" ");
+}
+
 /**
- * Every project's redirects as one list, in the order given: an address two
- * projects both redirect keeps the first's, as the first entry's files win.
+ * Every project's redirects as one list, in the order given: a rule two
+ * projects both write for an address, with the same query parameters, keeps
+ * the first's, as the first entry's files win.
  */
 export function mergeRedirects(projects: readonly (readonly Redirect[])[]): Redirect[] {
   const seen = new Set<string>();
   const out: Redirect[] = [];
   for (const list of projects) {
     for (const redirect of list) {
-      if (seen.has(redirect.from)) continue;
-      seen.add(redirect.from);
+      if (seen.has(matches(redirect))) continue;
+      seen.add(matches(redirect));
       out.push(redirect);
     }
   }
   return out;
 }
 
-/** The redirects in Netlify's `_redirects` format: each on a line, `from`, `to`, and the status. */
+/**
+ * The redirects in Netlify's `_redirects` format: each on a line, `from`, its
+ * query parameters, `to`, and the status, with `!` when it's forced.
+ */
 export function netlifyRedirects(redirects: readonly Redirect[]): string {
-  return redirects.map((r) => `${r.from} ${r.to} ${String(r.status)}\n`).join("");
+  return redirects
+    .map((r) => `${matches(r)} ${r.to} ${String(r.status)}${r.force === true ? "!" : ""}\n`)
+    .join("");
 }
 
 /** What the build does about the host's redirects. */
@@ -91,7 +119,10 @@ export function redirectsOutcome(sources: {
       text: `no _redirects: Astro's \`base\` is "${base}", and Netlify reads _redirects only at the root of what's deployed. Put these lines in the host's own:\n${text}`,
     };
   }
-  const taken = sources.redirects.filter((r) => sources.published(routeKey(r.from)));
+  // A forced rule is meant to pass the page at its address: a permalink's forwarding page.
+  const taken = sources.redirects.filter(
+    (r) => r.force !== true && sources.published(routeKey(r.from)),
+  );
   if (taken.length > 0) {
     return {
       kind: "fail",

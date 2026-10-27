@@ -1,0 +1,5 @@
+spec = "0.1"
+
+[types.page.frontmatter]
+title = "string"
+next-review = { type = "date?", role = "recheck-date" }

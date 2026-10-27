@@ -172,13 +172,13 @@ fn explain_text_writes_links_for_a_terminal() {
         value["fix"]
             .as_str()
             .unwrap()
-            .contains("[`[checks]`](https://ascribed-dev.com/go/19-checks/)"),
+            .contains("[`[checks]`](https://ascribed-dev.com/go/22-checks/)"),
         "{value}"
     );
     let text = stdout(&run(dir.path(), &["explain", "page-orphan"], 0));
     assert!(
         text.contains(
-            "turn the check off in `[checks]` (https://ascribed-dev.com/go/19-checks/) \
+            "turn the check off in `[checks]` (https://ascribed-dev.com/go/22-checks/) \
              (`page-orphan = \"off\"`)"
         ),
         "{text}"

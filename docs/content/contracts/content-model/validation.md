@@ -1,6 +1,7 @@
 ---
 type: reference
 title: "`ascribe.toml` format contract: validation rules"
+nav-label: "Validation rules"
 description: "Every rule a content model loader enforces, and the map of SPEC §7.2 to the contract."
 ---
 
@@ -51,7 +52,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-phrases-field-type` | `phrases = true` is set only on `string` and `list(string)` fields. | `` phrases = true only works on string and list(string) fields, and `{field}` is "{type}" `` |
 | `model-inline-field` | `inline` is `"code"`, and is set only on a page type's top-level `string` fields, its own or `[frontmatter]`'s (§5.3). | `` inline = "code" only works on string fields, and `{field}` is "{type}" ``<br>`` inline must be "code", not "{value}" ``<br>`` inline = "code" only works on a page type's top-level fields, its own or `[frontmatter]`'s, and `{field}` is in {place} `` |
 | `model-pattern-syntax` | Every pattern parses under §1.3, doesn't start with `/`, and has no `..` segment. | `` "{pattern}" isn't a valid pattern: {detail} ``<br>`` pattern "{pattern}" is already relative to the content root; remove the leading / ``<br>`` pattern "{pattern}" can't contain .. `` |
-| `model-field-role` | `role` is `"description"`, on a `string` field, `"review-date"`, on a `date` field, or `"owner"`, on a `string` or `enum` field; only on a page type's top-level fields, its own or `[frontmatter]`'s; and a table has at most one field with each role (§5.4). | `` role = "{role}" only works on a {expected} field, and `{field}` is "{type}" ``<br>`` role must be "description", "review-date", or "owner", not "{value}" ``<br>`` role only works on a page type's top-level fields, its own or `[frontmatter]`'s, and `{field}` is in {place} ``<br>`` `{other}` already has role = "{role}"; a content type has one field with each role `` |
+| `model-field-role` | `role` is `"description"`, on a `string` field, `"recheck-date"`, on a `date` field, or `"owner"`, on a `string` or `enum` field; only on a page type's top-level fields, its own or `[frontmatter]`'s; and a table has at most one field with each role (§5.4). | `` role = "{role}" only works on a {expected} field, and `{field}` is "{type}" ``<br>`` role must be "description", "recheck-date", or "owner", not "{value}" ``<br>`` role only works on a page type's top-level fields, its own or `[frontmatter]`'s, and `{field}` is in {place} ``<br>`` `{other}` already has role = "{role}"; a content type has one field with each role `` |
 | `model-attribute-reserved` | No image or widget attribute key is one HTML already gives a meaning on that element (SPEC §7.2): `src`, `alt`, or `title` on images; `heading` or `primary` on widgets; and on both, HTML's global attributes (such as `id`, `class`, `style`, and `title`), any key starting with `aria-`, and HTML's event-handler attributes (such as `onclick`, `onload`, and `onerror`). The lists are explicit, in `ascribe_core::reserved`, so keys that merely begin with `on`, such as `online` or `only-if`, are allowed. | `` `{key}` can't be an image attribute: HTML already uses it on the <img> element ``<br>`` `{key}` can't be an attribute of widget `{name}`: the site output already uses it on the widget's element `` |
 
 ### 25.4 Dimensions, names, lifecycle, notes, and features
@@ -165,7 +166,7 @@ None: `[permalinks]` is a replaced key (§20, §25.1).
 | Slug | Rule | Message |
 |---|---|---|
 | `model-api-outside-repository` | An API's `spec` is inside the git repository the project is in, or, with no repository, inside the folder that was opened. | `` the spec of API `{api}`, `{path}`, is outside the git repository the project is in ``<br>`` the spec of API `{api}`, `{path}`, is outside the folder that was opened, and with no git repository around the project, a spec isn't read from outside it; open the folder that contains it `` |
-| `model-api-reference` | A template has `{operationId}`, and no placeholder but `{operationId}` and `{tag}`. | `` the reference of API `{api}` has no `{operationId}`, so every operation's address would be the same ``<br>`` `{placeholder}` isn't a placeholder of the reference of API `{api}`; a template's are `{operationId}` and `{tag}` `` |
+| `model-api-reference` | An address pattern has `{operationId}`, and no placeholder but `{operationId}` and `{tag}`. | `` the reference of API `{api}` has no `{operationId}`, so every operation's address would be the same ``<br>`` `{placeholder}` isn't a placeholder of the reference of API `{api}`; an address pattern's are `{operationId}` and `{tag}` `` |
 
 ---
 
@@ -181,25 +182,24 @@ Every declaration SPEC §7.2 lists, and every setting SPEC §9.3 and §9.5 need,
 | Field roles (§7.2) | The `role` field option | [§5.4](../content-model.md#54-field-roles) |
 | Fragment patterns (§2.2) | `[fragments] patterns` | [§4.3](../content-model.md#43-fragments) |
 | Field types (§7.2) | Field type syntax | [§5](../content-model.md#5-field-and-attribute-types) |
-| Directive schemas for project widgets (§3, §6) | `[widgets.<name>]` | [§14](content.md#14-widgetsname) |
-| Dimensions: names, values, display labels, versionless values (§4.3, §4.4) | `[dimensions.<name>]` | [§6](content.md#6-dimensionsname) |
-| Version scheme (§4.4) | `[versions]` | [§7](content.md#7-versions) |
-| Lifecycle states (§4.4) | `[lifecycle.<state>]` | [§8](content.md#8-lifecyclestate) |
-| Features registry (§4.4) | `[features.<key>]` | [§9](content.md#9-featureskey) |
-| Note types (§4.5) | `[notes.<type>]` | [§10](content.md#10-notestype) |
-| Phrases registry; phrases in frontmatter (§5.1) | `[phrases]`; the `phrases` field option | [§11](content.md#11-phrases) |
-| Glossary (§5.4) | `[glossary]` | [§12](content.md#12-glossary) |
-| Image attributes (§5.3) | `[images.attributes]` | [§13](content.md#13-images) |
+| Directive schemas for project widgets (§3, §6) | `[widgets.<name>]` | [§10](content.md#10-widgetsname) |
+| Dimensions: names, values, display labels, versionless values (§4.3, §4.4) | `[dimensions.<name>]` | [§11](variation.md#11-dimensionsname) |
+| Version scheme (§4.4) | `[versions]` | [§12](variation.md#12-versions) |
+| Lifecycle states (§4.4) | `[lifecycle.<state>]` | [§13](variation.md#13-lifecyclestate) |
+| Features registry (§4.4) | `[features.<key>]` | [§14](variation.md#14-featureskey) |
+| Note types (§4.5) | `[notes.<type>]` | [§6](content.md#6-notestype) |
+| Phrases registry; phrases in frontmatter (§5.1) | `[phrases]`; the `phrases` field option | [§7](content.md#7-phrases) |
+| Glossary (§5.4) | `[glossary]` | [§8](content.md#8-glossary) |
+| Image attributes (§5.3) | `[images.attributes]` | [§9](content.md#9-images) |
 | Consumer profile (§9.5) | `[consumer]` | [§15](output.md#15-consumer) |
 | Builds (§9.3) | `[builds.<name>]` | [§16](output.md#16-buildsname) |
 | Name roles (§7.2, last paragraph) | Validation rule `model-name-multiple-roles` | [§25](#25-validation-rules) |
-| Sources: the folders outside the content a snippet may read (§4.8, §7.3) | `[sources.<name>]` | [§18](output.md#18-sourcesname) |
-| Acknowledgements of a content model entry's or an image's problems (§4.9) | `[[intended]]` | [§19.1](checks.md#191-intended) |
-| Retired permalinks and aliases (§7.6) | `[permalinks]` | [§20](checks.md#20-permalinks) |
-| The project's own `robots.txt` lines (§7.2, §9.4) | `[crawlers]` | [§21](checks.md#21-crawlers) |
-| How the site's, a folder's, or a type's pages are listed (§2.1, §7.2) | `[listing]` | [§22](checks.md#22-listing) |
-| The OpenAPI specs pages link into (§7.11) | `[apis.<name>]` | [§23](checks.md#23-apisname) |
-| Processor settings (§7.2): which of Ascribe's checks run, and at what level; Vale; the link checker | `[checks]`, `[checks.vale]`, `[checks.links]` | [§19](checks.md#19-checks) |
+| Sources: the folders outside the content a snippet may read (§4.8, §7.3) | `[sources.<name>]` | [§20](sources.md#20-sourcesname) |
+| Acknowledgements of a content model entry's or an image's problems (§4.9) | `[[intended]]` | [§22.1](checks.md#221-intended) |
+| Retired permalinks and aliases (§7.6) | `[permalinks]` | [§19](output.md#19-permalinks) |
+| The project's own `robots.txt` lines (§7.2, §9.4) | `[crawlers]` | [§18](output.md#18-crawlers) |
+| How the site's, a folder's, or a type's pages are listed (§2.1, §7.2) | `[listing]` | [§17](output.md#17-listing) |
+| The OpenAPI specs pages link into (§7.11) | `[apis.<name>]` | [§21](sources.md#21-apisname) |
+| Processor settings (§7.2): which of Ascribe's checks run, and at what level; Vale; the link checker | `[checks]`, `[checks.vale]`, `[checks.links]` | [§22](checks.md#22-checks) |
 | Processor settings (§7.2): a content type's page template and guide | A type's `template` and `guide` | [§4](../content-model.md#4-typesname-and-fragments) |
-| Processor settings (§7.2): the editor's default build | `[editor]` | [§17](output.md#17-editor) |
-
+| Processor settings (§7.2): the editor's default build | `[editor]` | [§23](checks.md#23-editor) |

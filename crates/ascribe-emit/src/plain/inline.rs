@@ -204,9 +204,18 @@ fn link_inline(
         .find(|l| l.span == node.span && l.kind == RefKind::Link);
     let destination = match resolved.map(|l| &l.target) {
         Some(LinkTarget::External) => Some(markdown_destination(&link.destination)),
-        Some(LinkTarget::Page { url, .. }) => {
-            Some(markdown_destination(&r.page.emit.absolute_url(url)))
-        }
+        // In the outputs for agents, a page in the build is its Markdown
+        // version; a link out of a line keeps the other line's address.
+        Some(LinkTarget::Page {
+            page,
+            id,
+            url,
+            line,
+            ..
+        }) => Some(markdown_destination(&match (r.agents, line) {
+            (Some(agents), None) => agents.markdown_link(page, id.as_deref()),
+            _ => r.page.emit.absolute_url(url),
+        })),
         Some(LinkTarget::Asset { path, fragment }) => Some(asset_destination(
             r,
             path,
@@ -221,7 +230,9 @@ fn link_inline(
         Some(LinkTarget::Unresolved) => None,
         // A glossary link (SPEC §5.4): an ordinary link to a route or a URL.
         None => Some(markdown_destination(
-            &r.page.emit.absolute_url(&link.destination),
+            &r.agents
+                .and_then(|agents| agents.route_link(&link.destination))
+                .unwrap_or_else(|| r.page.emit.absolute_url(&link.destination)),
         )),
     };
     let Some(destination) = destination else {

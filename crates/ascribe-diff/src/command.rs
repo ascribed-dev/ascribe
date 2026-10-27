@@ -2,6 +2,8 @@
 //! working tree against a base revision, from choosing the builds to the
 //! finished report.
 
+use std::sync::Arc;
+
 use ascribe_check::{count_errors, select_builds};
 use ascribe_core::{RelPath, percent_decode};
 use ascribe_resolve::{FileKind, Project};
@@ -37,7 +39,7 @@ pub struct ProjectDiff {
     repo: Repository,
     /// The base revision and its source index, when the project exists there.
     before: BaseProject,
-    now: Project,
+    now: Arc<Project>,
     /// The memo files about the working tree's files, committed and
     /// personal, placed against it.
     memos: Vec<MemoPlace>,
@@ -56,7 +58,7 @@ impl std::fmt::Debug for ProjectDiff {
 }
 
 impl ProjectDiff {
-    /// Writes the prompts, and the HTML report's, for an agent in `here`,
+    /// Writes the prompts, and the HTML preview's, for an agent in `here`,
     /// the folder the command was run in, as [`Context::seen_from`] has it.
     pub fn seen_from(&mut self, here: std::path::PathBuf) {
         self.here = Some(here);
@@ -209,7 +211,7 @@ pub fn diff_project(
         let before = scope.spawn(|| read_base(&repo, base.compared()));
         let renames =
             scope.spawn(|| crate::renames(&repo, base.compared(), &project.layout().content_root));
-        let now = project.index();
+        let now = project.index().clone();
         let before = joined(before)?;
         let renames = joined(renames)?;
         let before_side = before.as_ref().map(|(revision, project)| Side {
@@ -287,7 +289,7 @@ pub fn drift_project(
         let early = likely.then(|| scope.spawn(|| read_base(&repo, base.compared())));
         let now_project = project.index();
         let now = Side {
-            project: &now_project,
+            project: now_project,
             model_text: project.model_text(),
         };
         drift_with(

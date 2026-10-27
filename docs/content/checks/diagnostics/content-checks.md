@@ -6,7 +6,7 @@ description: "The checks of a project's pages and of the project as a whole, whi
 
 Part of the [diagnostics reference](../diagnostics.md), which says what an entry's severity, level, and next step mean, and has an index of every diagnostic.
 
-Checks of the content's quality: advice unless a project sets another level in [`[checks]`](../../content-model/checks.md#19-checks). A check with settings takes a table, and its entry names them. This page has the checks of pages and of the project as a whole; the checks of outputs, prose, external links, the published site, and tested examples are on [Diagnostics: content checks of outputs and the site](output-checks.md).
+Checks of the content's quality: advice unless a project sets another level in [`[checks]`](../../content-model/checks.md#22-checks). A check with settings takes a table, and its entry names them. This page has the checks of pages and of the project as a whole; the checks of outputs, prose, external links, the published site, and tested examples are on [Diagnostics: content checks of outputs and the site](output-checks.md).
 
 ```toml
 [checks]
@@ -18,7 +18,7 @@ level = "warning"
 limit = 40_000
 ```
 
-`review-overdue` and `release-line-ended` depend on the day, so `ascribe check` can report them on one day and not the day before: see [Checking as of another day](../check.md#checking-as-of-another-day).
+`recheck-overdue` and `release-line-ended` depend on the day, so `ascribe check` can report them on one day and not the day before: see [Checking as of another day](../check.md#checking-as-of-another-day).
 
 The checks across the project need every page, so the editor reports a page's orphan and duplicate title, and what's unused, when you save, and the checks of image files run only in `ascribe check`.
 

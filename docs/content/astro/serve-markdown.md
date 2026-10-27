@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Serve the Markdown versions
-description: Configure your host to serve the Markdown versions of an Astro site's pages and llms.txt as the Web Documentation Delivery Spec asks, with their type, their response headers, and content negotiation.
+description: "Configure your host to serve the Markdown versions of an Astro site's pages and `llms.txt` as the Web Documentation Delivery Spec asks, with their type, their response headers, and content negotiation."
 permalink: serve-markdown
 ---
 

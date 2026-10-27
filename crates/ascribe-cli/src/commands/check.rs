@@ -6,6 +6,7 @@ use std::io::{self, Read, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use ascribe_check::fix;
 use ascribe_check::prompt::{self, Builds};
@@ -14,7 +15,7 @@ use ascribe_check::{
     Acknowledged, BaselineError, Diagnostic, Found, LoadError, Project, Reported, Request, Scope,
     ScopeError, Severity, locate_for,
 };
-use ascribe_core::Coded;
+use ascribe_core::{Coded, diagnostics};
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::answer::{FromDisk, Loaded, Projects};
@@ -443,12 +444,20 @@ pub fn run_check(
         let (found, base) = std::thread::scope(|threads| {
             let base = compared.then(|| {
                 threads.spawn(|| match project.addresses() {
-                    Some(_) => BaseRead::Addresses(Box::new(ascribe_diff::base_addresses(
+                    Some(_) => match ascribe_diff::base_addresses(
                         project.root(),
                         &project.layout().content_root,
                         args.base.as_deref(),
                         args.base_exact,
-                    ))),
+                    ) {
+                        Err(_)
+                            if args.base.is_none()
+                                && ascribe_diff::before_history(project.root()) =>
+                        {
+                            BaseRead::BeforeHistory
+                        }
+                        read => BaseRead::Addresses(Box::new(read)),
+                    },
                     None => BaseRead::FileEntries(ascribe_diff::base_file_entries(
                         project.root(),
                         args.base.as_deref(),
@@ -467,6 +476,24 @@ pub fn run_check(
             (found, base)
         });
         let mut found = found.map_err(Stopped::Build)?;
+        // A link to an operation the spec doesn't have is checked again with
+        // the base's specs, so one whose id was renamed since is offered the
+        // operation now at the method and path it had there. Only then is
+        // the base read for them, so a check with no such link never starts
+        // `git` for it; a base that can't be read leaves the closest.
+        if found
+            .diagnostics
+            .iter()
+            .any(|d| d.slug == diagnostics::LINK_OPERATION_MISSING)
+            && let Some(apis) =
+                ascribe_diff::base_apis(project.root(), args.base.as_deref(), args.base_exact)
+        {
+            let based = project.clone().with_base_apis(Arc::new(apis));
+            found = request
+                .find(&based, None)
+                .map(Found::from)
+                .map_err(Stopped::Build)?;
+        }
         if let Some(base) = base {
             let more = compared_addresses(&loaded, &found.builds, base);
             found.diagnostics.extend(more);
@@ -537,6 +564,10 @@ enum BaseRead {
     Addresses(Box<Result<ascribe_diff::BaseAddresses, ascribe_diff::DiffError>>),
     /// How many entries the base's file had, for a project without one.
     FileEntries(Option<usize>),
+    /// No base was named, and there's no history it could be read from: no
+    /// repository, or no commit yet. Nothing can have been published, so
+    /// nothing is compared, and that isn't reported (decision #1016).
+    BeforeHistory,
 }
 
 /// The addresses the base published that the project has lost, compared
@@ -545,8 +576,11 @@ enum BaseRead {
 /// and the problems found without it. For a project without the file, that
 /// the base had one.
 fn compared_addresses(loaded: &Loaded, builds: &[String], base: BaseRead) -> Vec<Diagnostic> {
+    // `None` before the history: nothing is compared, and only the
+    // entries are checked.
     let base = match base {
-        BaseRead::Addresses(base) => *base,
+        BaseRead::Addresses(base) => Some(*base),
+        BaseRead::BeforeHistory => None,
         BaseRead::FileEntries(entries) => {
             return entries
                 .map(ascribe_check::addresses::file_deleted)
@@ -572,6 +606,9 @@ fn compared_addresses(loaded: &Loaded, builds: &[String], base: BaseRead) -> Vec
         text,
         index,
         builds: &now,
+    };
+    let Some(base) = base else {
+        return ascribe_check::addresses::entries(&here, None);
     };
     let base = match base {
         Ok(base) => base,
@@ -806,7 +843,7 @@ fn write_prompt(
     let index = std::cell::OnceCell::new();
     let shown_on = |fragment: &ascribe_core::RelPath| {
         index
-            .get_or_init(|| project.held_index())
+            .get_or_init(|| project.index())
             .including_pages(fragment)
     };
     let text = match one {

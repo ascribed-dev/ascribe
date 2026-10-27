@@ -1,8 +1,7 @@
 ---
 type: how-to
 title: Link to operations in the editor
-description: "Complete an OpenAPI operation after a link's #, see its method, path, and summary on hover, open it in the spec, and fix a link whose operation was renamed, in VS Code or any editor with the language server."
-available: ascribe 0.4.4
+description: "Complete an OpenAPI operation after a link's `#`, see its method, path, and summary on hover, open it in the spec, and fix a link whose operation was renamed, in VS Code or any editor with the language server."
 ---
 
 The editor knows the operations of each spec `[apis]` declares, as it knows a page's headings: it completes them in a link, shows what a link names, opens it in the spec, and fixes a link when the spec renames its operation. This is the language server's, so it works in VS Code and in any editor that runs `ascribe lsp`. All of it applies to the link of an [`@operation`](operation.md#operation-editor) too.
@@ -31,9 +30,9 @@ The editor reads the spec again when it changes on disk: when you regenerate it,
 
 A regenerated spec can rename an operation: the code's method was renamed, or the generator's ids changed. When the spec loses `getUser` and the same method and path, `GET /users/{id}`, now have `fetchUser`, the link's `link-operation-missing` offers `fetchUser` first, as a safe fix, so **Apply the safe fixes in this page** applies it.
 
-The editor knows where `getUser` was from the spec as it read it before the change, or, after the change, from the review's base: the branch you compare with in [Review](../editor/review.md) has the spec as it was. The fix is safe only when exactly one operation is at that method and path, with an id that's new there. Otherwise the closest operations are offered, as for any missing one, for you to choose.
+The editor knows where `getUser` was from the spec as it read it before the change, or from a base revision's: the one `ascribe check` reads, which the editor reads once the project loads, and the branch you compare with in [Review](../editor/review.md). The fix is safe only when exactly one operation is at that method and path, with an id that's new there. Otherwise the closest operations are offered, as for any missing one, for you to choose.
 
-`ascribe check` has no earlier spec to compare with, so on the command line the operation in its place is offered as the closest, without being safe.
+`ascribe check` offers the same fix, from the same base: see [A renamed id](index.md#a-renamed-id).
 
 ## A deprecated operation
 

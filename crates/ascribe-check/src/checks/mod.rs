@@ -11,7 +11,7 @@
 //! | `avail` | `@available` specs, the `available` frontmatter key, and table rows' `available` |
 //! | `frontmatter` | Content type, fields, reserved keys, `variant` |
 //! | `acknowledge` | What `@intended` and `intended` frontmatter name (SPEC §4.9) |
-//! | `content` | A page's description and review date, code blocks' languages |
+//! | `content` | A page's description and recheck date, code blocks' languages |
 //! | `comment` | HTML comments, which a memo would keep out of the published page |
 //! | `memo` | Container memos that say nothing |
 //! | `refs` | `@include` targets, `@snippet` addresses, link destinations, image sources and alt text |
@@ -41,7 +41,8 @@ use ascribe_syntax::{
 
 use crate::{Diagnostic, Project, SourceFile};
 
-pub(crate) use sources::{check_examples, check_sources};
+pub use sources::unread_config_issue;
+pub(crate) use sources::{check_examples, check_sources, check_unread_configs};
 
 /// State shared by the checks of one file.
 struct Ctx<'a> {
@@ -56,6 +57,9 @@ struct Ctx<'a> {
     /// The text of the file's first paragraph, for a prompt about its
     /// description.
     first_paragraph: Option<String>,
+    /// Whether the page is a draft, `draft: true` (SPEC §2.1), once the
+    /// frontmatter is checked: no build publishes it.
+    draft: bool,
     /// The page's content type, once the frontmatter is checked: `None` for
     /// a fragment, and for a page whose type is missing or unknown.
     page_type: Option<&'a ContentType>,
@@ -118,12 +122,14 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
         schemas: model.directive_schemas(),
         definitions: doc.definitions.clone(),
         first_paragraph: content::first_paragraph(&file.text, &doc.blocks),
+        draft: false,
         page_type: None,
         mark_scopes: Vec::new(),
         marked_examples: false,
         issues: doc.issues.clone(),
     };
     cx.check_frontmatter(doc.frontmatter.as_ref());
+    cx.title_from_heading(doc.frontmatter.as_ref(), &doc.blocks);
     cx.collect_mark_scopes(&doc.blocks);
     cx.blocks(&doc.blocks);
     if cx.marked_examples {
@@ -248,6 +254,7 @@ impl Ctx<'_> {
                 }
                 BlockKind::CodeBlock(code) => {
                     self.check_code_language(block, code);
+                    self.check_info_pairs(code);
                     let info = InfoString::parse(&code.info);
                     self.marked_examples |=
                         info.get("request").is_some() || info.get("response").is_some();

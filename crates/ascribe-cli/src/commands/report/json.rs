@@ -21,7 +21,7 @@ use crate::report::{Counts, FileTable};
 
 /// The version of the JSON schema. It changes only when a field is removed or
 /// changes meaning; fields may be added without a new version.
-pub const SCHEMA_VERSION: u32 = 2;
+pub const SCHEMA_VERSION: u32 = 3;
 
 /// What `ascribe report --format json` writes: one document, whatever the
 /// outcome. A reader ignores fields it doesn't know.
@@ -192,7 +192,7 @@ struct InventoryJson {
     /// How many pages each owner has, most first: the value of the
     /// frontmatter field the page's type marks `role = "owner"`.
     by_owner: Vec<OwnerCount>,
-    /// The pages whose review date has passed (`review-overdue`).
+    /// The pages whose recheck date has passed (`recheck-overdue`).
     overdue: Capped<Entry>,
     /// The pages nothing links to (`page-orphan`).
     orphans: Capped<Entry>,
@@ -266,7 +266,8 @@ struct OwnerCount {
     pages: usize,
 }
 
-/// What one build leaves out that another build keeps.
+/// What one build leaves out that another build keeps, once for each mark
+/// that leaves it out.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
 struct BuildJson {
@@ -274,8 +275,9 @@ struct BuildJson {
     build: String,
     /// The pages it doesn't publish, in path order.
     pages: Capped<LeftPageJson>,
-    /// The content it takes out of the pages it publishes, in file and
-    /// source order.
+    /// The marks that take content out of the pages it publishes, in file
+    /// and source order: each `@available` and variant arm once, however
+    /// many blocks it takes out.
     content: Capped<LeftContentJson>,
 }
 
@@ -285,25 +287,37 @@ struct BuildJson {
 struct LeftPageJson {
     /// The page, relative to the project root, as a diagnostic's `file` is.
     file: String,
-    /// Why, as the end of a sentence: `its variant frontmatter names …`.
-    why: String,
+    /// `availability` when its `available` frontmatter leaves it out, or
+    /// `variant` when its `variant` frontmatter does.
+    kind: &'static str,
+    /// That frontmatter's value, as written: `self-managed 3.5`, or
+    /// `deployment=cloud` for `variant`, with a dimension's values joined by
+    /// `|`.
+    mark: String,
     /// The builds that publish it.
     kept_by: Vec<String>,
 }
 
-/// Content a build takes out of a page it publishes.
+/// A mark that takes content out of a page a build publishes.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
 struct LeftContentJson {
-    /// The file it's written in: the page, or a fragment it includes.
+    /// The file the mark is written in: the page, or a fragment it includes.
     file: String,
-    /// Where in the file.
+    /// Where in the file: the `@available` line, the table row, or the
+    /// variant arm.
     range: Range,
     /// The page it's taken out of, as `file` is.
     page: String,
+    /// The text of the heading the mark is under, or `null`: the section's
+    /// own heading, for a section's `@available`.
+    heading: Option<String>,
     /// `variant` for a variant arm, or `availability` for content a
     /// feature's availability takes out.
     kind: &'static str,
+    /// What the mark takes out: `section`, `block`, `row` (a table row), or
+    /// `arm` (a variant arm).
+    scope: &'static str,
     /// Why, with the content model's labels: `Shows only os=linux`.
     why: String,
     /// The builds that keep it.
@@ -708,7 +722,8 @@ fn builds(b: &Builds, files: &FileTable, limit: usize) -> Vec<BuildJson> {
             build: left.build.clone(),
             pages: Capped::of(left.pages.iter(), limit, |p: &LeftPage| LeftPageJson {
                 file: p.path.to_string(),
-                why: p.why.clone(),
+                kind: p.kind,
+                mark: p.mark.clone(),
                 kept_by: p.kept_by.clone(),
             }),
             content: Capped::of(left.content.iter(), limit, |c: &LeftContent| {
@@ -716,7 +731,9 @@ fn builds(b: &Builds, files: &FileTable, limit: usize) -> Vec<BuildJson> {
                     file: files.path(c.location.file),
                     range: range(files, c.location),
                     page: c.page.to_string(),
+                    heading: c.heading.clone(),
                     kind: c.kind,
+                    scope: c.scope,
                     why: c.why.clone(),
                     kept_by: c.kept_by.clone(),
                 }

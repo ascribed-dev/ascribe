@@ -1,0 +1,1 @@
+- **`draft: true` keeps a page out of every build until it's ready.** `ascribe check` still checks a draft, and a link to one from a published page is `link-page-dropped`. See [Frontmatter](docs/content/writing/frontmatter.md#a-draft).

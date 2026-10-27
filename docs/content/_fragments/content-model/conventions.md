@@ -37,7 +37,7 @@ Names are case-sensitive and spelled exactly as declared ([SPEC §4.4]({repo}/bl
 
 - Paths use `/` as the separator on every platform.
 - Filesystem paths in `[project]` and `[sources]` are relative to the project root. They can't be absolute, and they can use `..`.
-- A path in `[glossary] pages` (§12) is written like a link destination in a document ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)), relative to the content root.
+- A path in `[glossary] pages` (§8) is written like a link destination in a document ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)), relative to the content root.
 - **Patterns** (globs) are matched against a source file's path relative to the content root, including its extension, with `/` separators. They are case-sensitive. The syntax:
 
   | Syntax | Matches |
@@ -48,7 +48,7 @@ Names are case-sensitive and spelled exactly as declared ([SPEC §4.4]({repo}/bl
   | `{a,b}` | Either alternative. Alternatives don't nest |
   | `\` | Escapes the next character |
 
-  Every other character matches itself. A pattern doesn't start with `/`, and has no `..` segment. Patterns only ever apply to Markdown source files (`*.md`); other files under the content root are assets. The exception is a source's `include` and `ignore` (§18), which are matched against any file's path relative to the source's folder.
+  Every other character matches itself. A pattern doesn't start with `/`, and has no `..` segment. Patterns only ever apply to Markdown source files (`*.md`); other files under the content root are assets. The exception is a source's `include` and `ignore` (§20), which are matched against any file's path relative to the source's folder.
 
 ### 1.4 How this reference describes keys
 

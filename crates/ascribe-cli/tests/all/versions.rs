@@ -586,7 +586,7 @@ availability = "badge"
 versions = "prod"
 "#;
 
-fn archive_project(model: &str) -> TempDir {
+fn export_project(model: &str) -> TempDir {
     let dir = tempfile::tempdir().unwrap();
     write(dir.path(), "ascribe.toml", model);
     write(
@@ -603,12 +603,12 @@ fn archive_project(model: &str) -> TempDir {
 }
 
 #[test]
-fn archive_writes_a_line_into_the_folder_and_nothing_into_the_project() {
-    let dir = archive_project(VERSIONED);
+fn export_writes_a_line_into_the_folder_and_nothing_into_the_project() {
+    let dir = export_project(VERSIONED);
     let out = ascribe(
         dir.path(),
         &[
-            "versions", "archive", "prod 1.0", "--to", "out/1.0", "--format", "json",
+            "versions", "export", "prod 1.0", "--to", "out/1.0", "--format", "json",
         ],
     );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
@@ -625,17 +625,35 @@ fn archive_writes_a_line_into_the_folder_and_nothing_into_the_project() {
     // Again, into the same folder: its own archive is replaced.
     let again = ascribe(
         dir.path(),
-        &["versions", "archive", "prod 1.0", "--to", "out/1.0"],
+        &["versions", "export", "prod 1.0", "--to", "out/1.0"],
     );
     assert_eq!(code_of(&again), 0, "{}", stderr(&again));
 }
 
 #[test]
-fn archive_says_so_when_the_line_is_current() {
-    let dir = archive_project(VERSIONED);
+fn archive_is_the_old_name_of_export_and_says_so() {
+    let dir = export_project(VERSIONED);
     let out = ascribe(
         dir.path(),
-        &["versions", "archive", "prod 1.1", "--to", "out"],
+        &["versions", "archive", "prod 1.0", "--to", "out"],
+    );
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    assert!(
+        stderr(&out).contains("`ascribe versions archive` is now `ascribe versions export`"),
+        "{}",
+        stderr(&out)
+    );
+    assert!(read(dir.path(), "out/a.html").contains("See B."));
+    let help = ascribe(dir.path(), &["versions", "--help"]);
+    assert!(!stdout(&help).contains("archive  "), "{}", stdout(&help));
+}
+
+#[test]
+fn export_says_so_when_the_line_is_current() {
+    let dir = export_project(VERSIONED);
+    let out = ascribe(
+        dir.path(),
+        &["versions", "export", "prod 1.1", "--to", "out"],
     );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     assert!(
@@ -646,12 +664,12 @@ fn archive_says_so_when_the_line_is_current() {
 }
 
 #[test]
-fn archive_refuses_a_folder_that_isnt_its_own() {
-    let dir = archive_project(VERSIONED);
+fn export_refuses_a_folder_that_isnt_its_own() {
+    let dir = export_project(VERSIONED);
     write(dir.path(), "out/keep.txt", "mine");
     let out = ascribe(
         dir.path(),
-        &["versions", "archive", "prod 1.0", "--to", "out"],
+        &["versions", "export", "prod 1.0", "--to", "out"],
     );
     assert_eq!(code_of(&out), 2);
     assert!(stderr(&out).contains("isn't empty"), "{}", stderr(&out));
@@ -659,19 +677,19 @@ fn archive_refuses_a_folder_that_isnt_its_own() {
 }
 
 #[test]
-fn archive_refuses_an_archived_line_and_a_target_no_build_versions() {
-    let dir = archive_project(VERSIONED);
+fn export_refuses_an_archived_line_and_a_target_no_build_versions() {
+    let dir = export_project(VERSIONED);
     let out = ascribe(
         dir.path(),
-        &["versions", "archive", "prod 0.9", "--to", "out"],
+        &["versions", "export", "prod 0.9", "--to", "out"],
     );
     assert_eq!(code_of(&out), 2);
     assert!(stderr(&out).contains("is archived"), "{}", stderr(&out));
     let unversioned = VERSIONED.replace("versions = \"prod\"\n", "");
-    let dir = archive_project(&unversioned);
+    let dir = export_project(&unversioned);
     let out = ascribe(
         dir.path(),
-        &["versions", "archive", "prod 1.0", "--to", "out"],
+        &["versions", "export", "prod 1.0", "--to", "out"],
     );
     assert_eq!(code_of(&out), 2);
     assert!(
@@ -682,28 +700,28 @@ fn archive_refuses_an_archived_line_and_a_target_no_build_versions() {
 }
 
 #[test]
-fn archive_needs_build_when_two_builds_are_versioned_by_the_target() {
+fn export_needs_build_when_two_builds_are_versioned_by_the_target() {
     let model =
         format!("{VERSIONED}\n[builds.other]\navailability = \"badge\"\nversions = \"prod\"\n");
-    let dir = archive_project(&model);
+    let dir = export_project(&model);
     let out = ascribe(
         dir.path(),
-        &["versions", "archive", "prod 1.0", "--to", "out"],
+        &["versions", "export", "prod 1.0", "--to", "out"],
     );
     assert_eq!(code_of(&out), 2);
     assert!(stderr(&out).contains("site, other"), "{}", stderr(&out));
     let out = ascribe(
         dir.path(),
         &[
-            "versions", "archive", "prod 1.0", "--to", "out", "--build", "other",
+            "versions", "export", "prod 1.0", "--to", "out", "--build", "other",
         ],
     );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
 }
 
 #[test]
-fn archive_refuses_a_line_whose_build_has_errors() {
-    let dir = archive_project(VERSIONED);
+fn export_refuses_a_line_whose_build_has_errors() {
+    let dir = export_project(VERSIONED);
     write(
         dir.path(),
         "docs/c.md",
@@ -711,7 +729,7 @@ fn archive_refuses_a_line_whose_build_has_errors() {
     );
     let out = ascribe(
         dir.path(),
-        &["versions", "archive", "prod 1.0", "--to", "out"],
+        &["versions", "export", "prod 1.0", "--to", "out"],
     );
     assert_eq!(code_of(&out), 2);
     assert!(
@@ -905,17 +923,17 @@ fn removed_heading(lines: &str) -> TempDir {
 }
 
 #[test]
-fn archive_checks_the_line_it_archives_and_no_other() {
+fn export_checks_the_line_it_exports_and_no_other() {
     // The error is in the current line, 1.1; 1.0 has none.
     let dir = removed_heading("live = [\"1.1\", \"1.0\"]");
     let out = ascribe(
         dir.path(),
-        &["versions", "archive", "prod 1.0", "--to", "out"],
+        &["versions", "export", "prod 1.0", "--to", "out"],
     );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let out = ascribe(
         dir.path(),
-        &["versions", "archive", "prod 1.1", "--to", "out2"],
+        &["versions", "export", "prod 1.1", "--to", "out2"],
     );
     assert_eq!(code_of(&out), 2);
     assert!(stderr(&out).contains("in build `site`"), "{}", stderr(&out));
@@ -925,7 +943,7 @@ fn archive_checks_the_line_it_archives_and_no_other() {
     assert_eq!(code_of(&check), 0, "{}", stderr(&check));
     let out = ascribe(
         dir.path(),
-        &["versions", "archive", "prod 1.1", "--to", "out"],
+        &["versions", "export", "prod 1.1", "--to", "out"],
     );
     assert_eq!(code_of(&out), 2);
     assert!(
@@ -1030,12 +1048,12 @@ fn a_retirement_in_a_project_that_takes_the_lines_is_made_where_theyre_written()
 }
 
 #[test]
-fn retire_without_an_address_names_the_archive_command() {
+fn retire_without_an_address_names_the_export_command() {
     let dir = retiring_repository();
     let out = ascribe(dir.path(), &["versions", "retire", "prod 1.0"]);
     assert_eq!(code_of(&out), 2, "{}", stderr(&out));
     assert!(
-        stderr(&out).contains("ascribe versions archive \"prod 1.0\""),
+        stderr(&out).contains("ascribe versions export \"prod 1.0\""),
         "{}",
         stderr(&out)
     );
@@ -1183,6 +1201,56 @@ fn retire_records_the_lines_addresses_in_the_addresses_file_and_the_build_redire
     let listed = stdout(&list);
     assert!(listed.contains("/1.0/both/ -> /both/ (301"), "{listed}");
     assert!(listed.contains("/1.0/prod/ -> /prod/ (301"), "{listed}");
+}
+
+#[test]
+fn retire_needs_no_force_when_another_build_changes_only_the_targets_part_of_its_availability_lines()
+ {
+    let dir = retiring_repository();
+    // `both.md` is `cloud, prod 1.0`: its line in the cloud build loses
+    // prod's `1.0+`, and nothing else.
+    let model = format!("{RETIRING}\n[builds.cloud]\navailability = {{ filter = \"cloud\" }}\n");
+    write(dir.path(), "ascribe.toml", &model);
+    git(dir.path(), &["commit", "-q", "-am", "A cloud build"]);
+    let out = retire(dir.path(), &["--dry-run"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(
+        text.contains("Expected: builds that aren't lines of prod change only prod's part of their availability lines:\n  cloud's plain output changes both.md\n  cloud's site output changes both.md\n"),
+        "{text}"
+    );
+    assert!(!text.contains("--force"), "{text}");
+    let out = retire(dir.path(), &["--format", "json"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let json: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(json["outputs"], serde_json::json!([]));
+    assert_eq!(json["expected"][0]["build"], "cloud");
+    assert_eq!(
+        json["expected"][0]["changed"],
+        serde_json::json!(["both.md"])
+    );
+    assert!(read(dir.path(), "docs/both.md").contains("available: cloud, prod\n"));
+}
+
+#[test]
+fn retire_still_needs_force_when_another_build_changes_more_than_the_targets_part() {
+    let dir = retiring_repository();
+    // A filter build for 1.0 also gains the block `prod deprecated 1.1`
+    // no longer limits to 1.1.
+    let model = format!("{RETIRING}\n[builds.old]\navailability = {{ filter = \"prod 1.0\" }}\n");
+    write(dir.path(), "ascribe.toml", &model);
+    git(dir.path(), &["commit", "-q", "-am", "A build for 1.0"]);
+    let out = retire(dir.path(), &["--dry-run"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(
+        text.contains("Builds that aren't lines of prod change what they show:\n  old's plain output changes both.md\n  old's site output changes both.md\nRewriting them needs --force.\n"),
+        "{text}"
+    );
+    let out = retire(dir.path(), &[]);
+    assert_eq!(code_of(&out), 2, "{}", stdout(&out));
+    assert!(stderr(&out).contains("pass --force"), "{}", stderr(&out));
+    assert!(read(dir.path(), "docs/both.md").contains("available: cloud, prod 1.0\n"));
 }
 
 #[test]

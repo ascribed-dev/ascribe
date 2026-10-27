@@ -240,8 +240,8 @@ impl Checker<'_> {
     }
 
     /// `nav-page-unplaced`, on each page of a listed section's that its
-    /// `pages` leaves out and that isn't `unlisted`: no sidebar shows one
-    /// that is (SPEC §7.8), so it has no place to need.
+    /// `pages` leaves out and that isn't `unlisted` or a draft: no sidebar
+    /// shows one that is (SPEC §7.8), so it has no place to need yet.
     fn unplaced_pages(&self, out: &mut Vec<Issue>) {
         let mut seen: BTreeSet<&str> = BTreeSet::new();
         for entry in &self.nav.sections {
@@ -261,7 +261,7 @@ impl Checker<'_> {
             let left: Vec<&RelPath> = section
                 .pages
                 .iter()
-                .filter(|p| !named.contains(name(p)) && !self.unlisted(p))
+                .filter(|p| !named.contains(name(p)) && !self.unlisted(p) && !self.draft(p))
                 .collect();
             let names: Vec<&str> = left.iter().map(|p| name(p)).collect();
             let Some(edit) = append_names(self.text, list, written, &names) else {
@@ -368,6 +368,11 @@ impl Checker<'_> {
         self.index
             .file(page)
             .is_some_and(|f| f.listing(model) == Listing::Unlisted)
+    }
+
+    /// Whether `page` is a draft, which no build publishes.
+    fn draft(&self, page: &RelPath) -> bool {
+        self.index.file(page).is_some_and(|f| f.is_draft())
     }
 
     /// Where a problem about a page is reported: at its title.
