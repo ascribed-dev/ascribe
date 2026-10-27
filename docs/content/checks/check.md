@@ -56,6 +56,8 @@ It lists at most 50 problems. When there are more, the line before the summary s
 
 `--format prompt` writes the prompt [Prompt your agent](../agents/prompts.md) describes. It lists at most 20 problems, or 20 files, then names the command that lists the rest. With `--stdin`, it says the file has unsaved changes.
 
+`--summary` works in any format. The text lists at most 20 files, then the command whose JSON lists them all. On a project with hundreds of warnings, it shows which rule or file to work through first.
+
 ### Output for GitHub Actions
 @available: ascribe planned
 
@@ -64,8 +66,6 @@ It lists at most 50 problems. When there are more, the line before the summary s
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check-github.txt
 
 A problem that spans lines has its first and last line, and no columns, which GitHub takes only on one line. It needs no permissions and no upload step, and [Checks in CI](ci.md) uses it. Without `--format`, the output is the text one, in GitHub Actions too.
-
-`--summary` works in any format. The text lists at most 20 files, then the command whose JSON lists them all. On a project with hundreds of warnings, it shows which rule or file to work through first.
 
 ### Checking one rule at a time
 
