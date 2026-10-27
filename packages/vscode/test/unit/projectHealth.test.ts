@@ -601,12 +601,17 @@ describe("lastSaveGroup", () => {
     });
   });
 
-  it("reads the stale files from ascribe agents sync --check", () => {
-    expect(
-      staleFiles(
-        "stale      AGENTS.md\nup to date .claude/skills/ascribe/SKILL.md\r\nstale      ../.github/copilot-instructions.md\n",
-      ),
-    ).toEqual(["AGENTS.md", "../.github/copilot-instructions.md"]);
+  it("reads the stale files from ascribe agents sync --check --format json", () => {
+    const files = [
+      { path: "AGENTS.md", changed: true, read_by: [] },
+      { path: ".claude/skills/ascribe/SKILL.md", changed: false, read_by: [] },
+      { path: "../.github/copilot-instructions.md", changed: true, read_by: [] },
+    ];
+    expect(staleFiles(JSON.stringify({ check: true, files }))).toEqual([
+      "AGENTS.md",
+      "../.github/copilot-instructions.md",
+    ]);
+    expect(staleFiles("not JSON")).toEqual([]);
   });
 
   it("asks before Sync Agent Files, naming the files it would change", () => {

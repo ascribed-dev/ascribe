@@ -56,12 +56,14 @@ Each command links to its section, with its options, output, and exit codes, on 
 ### Commands that write
 @available: ascribe planned
 
-A command that changes a file you commit, such as `ascribe fmt`, `ascribe check --fix`, `ascribe rename`, `ascribe baseline write`, or `ascribe addresses move`, takes `--dry-run`, which says what it would change and changes nothing. It also refuses to change a file git couldn't put back as it was: one with changes not committed, one git doesn't track, or one in no repository. The error names the files; commit or stash them, or pass `--force` to write them anyway. A file that isn't there yet is only added, so it's never refused.
+A command that changes a file you commit, such as `ascribe fmt`, `ascribe check --fix`, `ascribe rename`, `ascribe baseline write`, `ascribe addresses move`, `ascribe agents sync`, or `ascribe observe`, takes `--dry-run`, which says what it would change and changes nothing. It also refuses to change a file git couldn't put back as it was: one with changes not committed, one git doesn't track, or one in no repository. The error names the files; commit or stash them, or pass `--force` to write them anyway. A file that isn't there yet is only added, so it's never refused.
 
 ```console
 $ ascribe addresses move guides/old.md guides/new.md
 error: this would change files git can't put back as they are: ascribe.addresses; commit or stash them, or pass --force
 ```
+
+One that takes `--check`, such as `ascribe fmt`, `ascribe permalinks sync`, `ascribe agents sync`, or `ascribe observe`, changes nothing with it either, and is for CI: it prints each change as a unified diff, and exits with `1` when something would change.
 
 ## Options every command accepts
 

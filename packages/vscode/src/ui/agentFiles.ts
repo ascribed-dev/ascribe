@@ -213,7 +213,11 @@ export class AgentFilesChecks implements vscode.Disposable {
     this.started++;
     const layout = await readLayout(project);
     this.changed.fire();
-    const { code, stdout, stderr } = await runAgents(binary.path, project, ["--check"]);
+    const { code, stdout, stderr } = await runAgents(binary.path, project, [
+      "--check",
+      "--format",
+      "json",
+    ]);
     // 0: up to date; 1: a file is out of date. Anything else couldn't check.
     const error =
       code === 0 || code === 1 ? null : stderr.trim() || `ascribe agents sync exited with ${code}`;

@@ -15,7 +15,7 @@
 import type { Counted } from "../everyBuild.js";
 import { problemsText } from "../problems.js";
 import type { ServerState } from "../serverState.js";
-import type { InventoryResult } from "../shapes.js";
+import type { AgentsSyncReport, InventoryResult } from "../shapes.js";
 import { TASKS, type TaskName } from "../tasks.js";
 import type {
   ProjectAboutRow,
@@ -719,11 +719,17 @@ export function lastSaveGroup({ agentFiles, time }: ProjectFacts): ProjectHealth
   }
 }
 
-/** The files `ascribe agents sync --check` lists as `stale`, in its order. */
+/**
+ * The files `ascribe agents sync --check --format json` says are out of
+ * date, in its order: none when what it wrote isn't its JSON.
+ */
 export function staleFiles(stdout: string): string[] {
-  return stdout
-    .split(/\r?\n/)
-    .flatMap((line) => (line.startsWith("stale ") ? [line.slice("stale ".length).trim()] : []));
+  try {
+    const report = JSON.parse(stdout) as AgentsSyncReport;
+    return report.files.flatMap((file) => (file.changed ? [file.path] : []));
+  } catch {
+    return [];
+  }
 }
 
 /** What Sync Agent Files asks before it runs. */

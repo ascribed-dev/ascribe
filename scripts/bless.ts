@@ -113,13 +113,15 @@ export const rewrites: Rewrite[] = [
   },
   // After the command output the docs show. It lists the commands it runs,
   // the tests ascribe.examples.toml names; `--yes`, since without a terminal,
-  // as in an agent's shell, it runs nothing without it.
-  { writer: "ascribe observe", run: "cargo run -p ascribe-cli -- observe --yes" },
+  // as in an agent's shell, it runs nothing without it. Like every rewrite
+  // here, it writes over what an earlier run wrote and isn't committed yet,
+  // so `--force` gets it past the git guard: the diff is read before commit.
+  { writer: "ascribe observe", run: "cargo run -p ascribe-cli -- observe --yes --force" },
   // The docs' agent files name the command contributors run Ascribe with, and
-  // `--check` in rust.yml gives it too.
+  // `--check` in rust.yml gives it too. `--force`, as above.
   {
     writer: "ascribe agents sync",
-    run: 'cargo run -q -p ascribe-cli -- agents sync --config docs --command "cargo run -q -p ascribe-cli --"',
+    run: 'cargo run -q -p ascribe-cli -- agents sync --force --config docs --command "cargo run -q -p ascribe-cli --"',
   },
   {
     writer: "cargo insta review",

@@ -1,5 +1,5 @@
 @memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
-- `--check`: Write nothing, and exit with 1 when the list would change: for CI.
+- `--check`: Write nothing, print how the list would change as a unified diff, and exit with 1 when it would: for CI.
 - `--dry-run`: Say what it would change, and change nothing.
 - `--force`: Change files even when git couldn't put them back as they are: ones with changes not committed, ones git doesn't track, or ones in no repository.
 - `--format <FORMAT>`: How to show what changed.

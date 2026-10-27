@@ -149,11 +149,8 @@ const EXCEPTIONS: &[(Rule, &[&str])] = &[
             "init",
             "sources fetch",
             "sources update",
-            "observe",
             "templates eject",
             "vale eject",
-            "agents sync",
-            "agents index",
         ],
     ),
     (
@@ -162,11 +159,8 @@ const EXCEPTIONS: &[(Rule, &[&str])] = &[
             "init",
             "sources fetch",
             "sources update",
-            "observe",
             "templates eject",
             "vale eject",
-            "agents sync",
-            "agents index",
         ],
     ),
 ];
