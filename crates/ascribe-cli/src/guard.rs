@@ -78,22 +78,20 @@ impl Options {
 /// Whether git could put back each of `files` that's there.
 fn allow<P: AsRef<Path>>(files: &[P]) -> Result<(), GuardError> {
     // Outside FileSystem: whether a file the command writes is there, and
-    // where, to ask git about it; nothing is read.
-    let there: Vec<PathBuf> = files
+    // where, to ask git about it; nothing is read. Each is named as the
+    // command gave it, and found by its canonical path.
+    let there: Vec<(String, PathBuf)> = files
         .iter()
         .map(AsRef::as_ref)
         .filter(|f| f.exists())
-        .filter_map(|f| std::fs::canonicalize(f).ok())
+        .filter_map(|f| Some((answer::path_from_here(f), std::fs::canonicalize(f).ok()?)))
         .collect();
-    let Some(first) = there.first() else {
+    let Some((_, first)) = there.first() else {
         return Ok(());
-    };
-    let shown = |paths: &[PathBuf]| -> Vec<String> {
-        paths.iter().map(|p| answer::path_from_here(p)).collect()
     };
     let no_git = |why: String| GuardError::NoGit {
         why,
-        files: shown(&there),
+        files: there.iter().map(|(shown, _)| shown.clone()).collect(),
     };
     let dir = first.parent().unwrap_or(first);
     let found = Repository::discover(dir).map_err(|e| {
@@ -105,33 +103,32 @@ fn allow<P: AsRef<Path>>(files: &[P]) -> Result<(), GuardError> {
     })?;
     let root = std::fs::canonicalize(&found.root).map_err(|e| no_git(e.to_string()))?;
     let at_root = Repository::discover(&root).map_err(|e| no_git(e.to_string()))?;
-    let mut paths = Vec::new();
+    let mut paths: Vec<(String, RelPath)> = Vec::new();
     let mut outside = Vec::new();
-    for file in &there {
+    for (shown, file) in &there {
         match file.strip_prefix(&root).ok().and_then(rel_path) {
-            Some(path) => paths.push(path),
-            None => outside.push(file.clone()),
+            Some(path) => paths.push((shown.clone(), path)),
+            None => outside.push(shown.clone()),
         }
     }
     if !outside.is_empty() {
         return Err(GuardError::NoGit {
-            why: format!(
-                "they aren't in the repository at {}",
-                answer::path_from_here(&root)
-            ),
-            files: shown(&outside),
+            why: "they aren't in the repository the others are in".to_owned(),
+            files: outside,
         });
     }
+    let asked: Vec<RelPath> = paths.iter().map(|(_, path)| path.clone()).collect();
     let unrestorable = at_root
-        .not_restorable(&paths)
+        .not_restorable(&asked)
         .map_err(|e| no_git(e.to_string()))?;
     if unrestorable.is_empty() {
         return Ok(());
     }
     Err(GuardError::NotRestorable {
-        files: unrestorable
-            .iter()
-            .map(|p| answer::path_from_here(&root.join(p.as_str())))
+        files: paths
+            .into_iter()
+            .filter(|(_, path)| unrestorable.contains(path))
+            .map(|(shown, _)| shown)
             .collect(),
     })
 }
