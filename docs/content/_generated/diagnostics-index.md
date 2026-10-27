@@ -188,7 +188,7 @@
 | [ASC196](../checks/diagnostics/pages.md#ASC196) | `content-type-missing` | Error | File | choose |
 | [ASC197](../checks/diagnostics/pages.md#ASC197) | `content-type-unknown` | Error | File | choose |
 | [ASC198](../checks/diagnostics/content-checks.md#ASC198) | `description-link` | Advice | File | write |
-| [ASC199](../checks/diagnostics/output-checks.md#ASC199) | `example-stale` | Advice | File | outside |
+| [ASC199](../checks/diagnostics/output-checks.md#ASC199) | `example-stale` | Warning | File | outside |
 | [ASC200](../checks/diagnostics/output-checks.md#ASC200) | `example-unobserved` | Advice | File | outside |
 | [ASC201](../checks/diagnostics/output-checks.md#ASC201) | `examples-config-invalid` | Warning | File | outside |
 | [ASC202](../checks/diagnostics/output-checks.md#ASC202) | `observation-file-missing` | Advice | File | outside |

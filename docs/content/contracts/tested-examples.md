@@ -73,10 +73,10 @@ For a snippet of an example, the observations that can be read decide its status
 | Status | When | What the page shows | What `ascribe check` reports |
 |---|---|---|---|
 | current | At least one lists it with the hash it has now | The tested line, from those | Nothing |
-| stale | One or more list it, none with the hash it has now | Nothing | [`example-stale`](../checks/diagnostics/output-checks.md#ASC199), advice |
+| stale | One or more list it, none with the hash it has now | Nothing | [`example-stale`](../checks/diagnostics/output-checks.md#ASC199), a warning |
 | unobserved | None lists it, or there's no observation | Nothing | [`example-unobserved`](../checks/diagnostics/output-checks.md#ASC200), advice |
 
-For a source in another repository, the observation and the file are the copies, so an example's status is what it was at the pin. Its advice says the fix is in that repository, and arrives with the next `ascribe sources update`. The observation usually lists more files than the docs have copies of, which is expected: only the files snippets use are copied.
+For a source in another repository, the observation and the file are the copies, so an example's status is what it was at the pin. Its diagnostic says the fix is in that repository, and arrives with the next `ascribe sources update`. The observation usually lists more files than the docs have copies of, which is expected: only the files snippets use are copied.
 
 ## 5. The tested line
 
