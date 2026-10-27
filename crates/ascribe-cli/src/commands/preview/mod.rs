@@ -167,7 +167,7 @@ fn render(
         .map_err(|e| answer::fail(err, &e))?;
     let index = project.index();
     let preview =
-        ascribe_emit::preview(&index, project.root(), build).map_err(|e| exit::fail(err, &e))?;
+        ascribe_emit::preview(index, project.root(), build).map_err(|e| exit::fail(err, &e))?;
     let folder = project.root().join(FOLDER);
     OutputDir::lock_archive(&folder)
         .and_then(|dir| dir.replace_archive(&build.name, &preview.files))
