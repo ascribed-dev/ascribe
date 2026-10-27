@@ -6591,8 +6591,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/956"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDeg94",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1169"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Group the content model reference by job, not by when each section arrived"
     },
     {
@@ -6793,8 +6796,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1168"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Docs: fix what redirects.md says a retired address gets, list ascribe.addresses in project files, and use it on our own docs"
     },
     {
@@ -7033,7 +7039,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1164"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Call an API reference's address template something other than \"template\""
     },
     {
@@ -7063,8 +7069,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/982"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCEc",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1167"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Stop parallel pull requests from taking the same diagnostic code"
     },
     {
@@ -7223,7 +7232,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1155"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "CI: flag a change with no changelog entry, and a contract change with no decision"
     },
     {
@@ -7447,7 +7456,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1163"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "AGENTS.md: a by-task table of what each common change touches"
     },
     {
@@ -7460,8 +7469,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1005"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCtw",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1170"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Don't publish a page that still has its template's placeholders"
     },
     {
@@ -7517,8 +7529,11 @@
       "labels": [
         "docs"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1171"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Docs: run `ascribe agents sync` on our own docs, and hold it in CI"
     },
     {
@@ -7891,7 +7906,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1160"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Agent Markdown and llms.txt: say what the page is for and which release the build describes"
     },
     {
@@ -8482,8 +8497,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1166"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Text after a code span that starts on an indented continuation line overlaps the code span"
     },
     {
@@ -8503,7 +8521,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1165"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Keep a page that isn't ready out of every build with `draft: true`"
     }
   ]
