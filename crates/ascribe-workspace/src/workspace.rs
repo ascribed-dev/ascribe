@@ -681,14 +681,16 @@ impl Inner {
                 .map(|s| s.id.index())
                 .max()
                 .map_or(1, |max| max + 1);
-            sources.extend((first..).zip(&self.failed).map(|(id, (path, failure))| {
-                SourceFile {
-                    id: FileId::new(id),
-                    path: path.clone(),
-                    text: Arc::from(""),
-                    unreadable: Some(failure.clone()),
-                }
-            }));
+            sources.extend(
+                (first..)
+                    .zip(&self.failed)
+                    .map(|(id, (path, failure))| SourceFile {
+                        id: FileId::new(id),
+                        path: path.clone(),
+                        text: Arc::from(""),
+                        unreadable: Some(failure.clone()),
+                    }),
+            );
             if self.by_path {
                 sources.sort_by(|a, b| a.path.cmp(&b.path));
             }
