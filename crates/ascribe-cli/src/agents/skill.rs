@@ -84,7 +84,7 @@ A CI job runs two commands: `ascribe check --deny-warnings`, which fails on an e
 
 ## Fixes
 
-In `ascribe check --format json`, a diagnostic's `fixes` are edits that would fix it. A fix whose `applicability` is `safe` can be applied as given: `ascribe check <file> --fix` applies every safe fix, then reports what's left. Read an `unsafe` one and decide before applying it.
+In `ascribe check --format json`, a diagnostic's `fixes` are edits that would fix it. A fix whose `applicability` is `safe` can be applied as given: `ascribe check <file> --fix` applies every safe fix, then reports what's left. It won't change a page git couldn't put back, one with changes not committed: add `--force` to fix the pages you're editing. Read an `unsafe` one and decide before applying it.
 
 ## Other people's text
 

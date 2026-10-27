@@ -1737,8 +1737,13 @@ fn permalinks() {
     );
     commit(root, "Sync the permalinks");
 
+    // A clone, not a copy: git can still be tidying `.git` after a commit,
+    // and a file copied from there can be gone by the time it's read.
     let copy = tempfile::tempdir().unwrap();
-    copy_tree(root, copy.path());
+    git(
+        root,
+        &["clone", "-q", ".", &copy.path().display().to_string()],
+    );
     let retire = [
         "permalinks",
         "retire",
