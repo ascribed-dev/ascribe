@@ -2,6 +2,7 @@
 type: how-to
 title: Keep the addresses you've published
 description: "Record where a page went when it moves or goes, so a link to its old address still leads somewhere: `ascribe.addresses`, the check that compares with the base, and the redirects the build writes."
+permalink: redirects
 ---
 
 A link to a page outlives the page's place in the docs: a bookmark, a search result, a product's help menu, an answer on a forum. Rename a folder or merge two pages, and every one of those links stops working unless someone decided where it should lead. `ascribe.addresses` is where that decision is written. With it, a move records itself, `ascribe check` reports an [address](../glossary.md#address) the docs published that nothing accounts for, and the build writes the redirects the host needs.
@@ -154,6 +155,7 @@ The build then forwards every address under each former value to the same source
 A second change composes with the first: under `base-path = ["/docs/", "/guide/"]`, an address under either forwards straight to today's, in one step. A page lost in the same change, as one deleted with it, is still a warning of its own. `trailing-slash` isn't kept: a host matches an address with or without its final `/`.
 
 ## The base
+@id {permalink=true}: addresses-base
 
 The base is what the docs published before: the merge base of the repository's default branch and `HEAD`, as a pull request shows its changes, or the revision `--base` names. `--base-exact` compares with that revision itself. It's read as [`ascribe diff`](../review/diff.md) reads it, so the checkout needs the history: in CI, `fetch-depth: 0`, as [Checks in CI](../checks/ci.md#keep-the-addresses-youve-published) sets up.
 

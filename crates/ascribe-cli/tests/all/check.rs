@@ -58,11 +58,9 @@ fn a_clean_project_exits_0() {
     let dir = project(&[("index.md", CLEAN)]);
     let out = ascribe(dir.path(), &["check"]);
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
-    assert!(
-        stdout(&out).contains(
-            "checked 1 file for every build, reported on 1: 0 errors, 0 warnings, 0 advice"
-        )
-    );
+    assert!(stdout(&out).contains(
+        "checked 1 file for every build, 0 with problems: 0 errors, 0 warnings, 0 advice"
+    ));
 }
 
 #[test]
@@ -250,7 +248,7 @@ fn a_project_nested_in_the_content_root_is_left_to_its_own_check() {
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
     assert!(
         stdout(&out).contains(
-            "checked 1 file for every build, reported on 1: 0 errors, 0 warnings, 0 advice"
+            "checked 1 file for every build, 0 with problems: 0 errors, 0 warnings, 0 advice"
         ),
         "{}",
         stdout(&out)
@@ -282,7 +280,7 @@ fn a_content_root_above_the_project_keeps_the_projects_own_folder() {
     assert_eq!(code(&out), 1, "{}{}", stdout(&out), stderr(&out));
     let text = stdout(&out);
     assert!(
-        text.contains("checked 2 files for every build, reported on 2: 1 error"),
+        text.contains("checked 2 files for every build, 1 with problems: 1 error"),
         "{text}"
     );
     assert!(text.contains("own.md"), "{text}");
@@ -778,7 +776,7 @@ fn a_problem_in_a_fragment_is_shown_once_with_how_many_more_includes_have_it() {
     assert!(text.contains("(also at 2 other includes)"), "{text}");
     assert!(
         text.contains(
-            "checked 4 files for every build, reported on 1: 1 error, 0 warnings, 0 advice"
+            "checked 4 files for every build, reported on 1 file in the paths, 1 with problems: 1 error, 0 warnings, 0 advice"
         ),
         "{text}"
     );
@@ -1088,7 +1086,7 @@ fn concise_output_is_a_line_per_diagnostic_grouped_by_file_and_cut_at_50() {
             "docs/guides/b.md:7: [ASC044] `{nope}` isn't a declared phrase, so its braces are literal text; declare it in [phrases], or write `\\{` to keep it literal\n",
             "docs/index.md:5: [ASC037] `index.md` has no heading with the id `gone`\n",
             "docs/index.md:7: [ASC036] `gone.md` doesn't exist\n",
-            "checked 4 files for every build, reported on 4: 4 errors, 1 warning, 0 advice\n",
+            "checked 4 files for every build, 3 with problems: 4 errors, 1 warning, 0 advice\n",
         )
     );
 
@@ -1121,7 +1119,7 @@ title: Many
     );
     assert_eq!(
         lines[51],
-        "checked 2 files for every build, reported on 2: 0 errors, 60 warnings, 0 advice"
+        "checked 2 files for every build, 2 with problems: 0 errors, 60 warnings, 0 advice"
     );
     // The command it names lists them all: the 50 shown, then exactly the
     // 10 left out, and nothing more.
@@ -1158,7 +1156,7 @@ fn limit_sets_how_many_problems_the_concise_list_shows() {
             &["check", "--format", "concise", "--limit", limit],
         ))
     };
-    let summary = "checked 1 file for every build, reported on 1: 0 errors, 8 warnings, 0 advice";
+    let summary = "checked 1 file for every build, 1 with problems: 0 errors, 8 warnings, 0 advice";
 
     let three = concise("3");
     let lines: Vec<&str> = three.lines().collect();
@@ -1227,7 +1225,7 @@ fn summary_counts_by_code_and_by_file_instead_of_listing() {
             "  2  docs/index.md (2 errors, 0 warnings)\n",
             "  1  docs/guides/a.md (1 error, 0 warnings)\n",
             "To work through the first code: ascribe check --code ASC037\n",
-            "checked 4 files for every build, reported on 4: 4 errors, 1 warning, 0 advice\n",
+            "checked 4 files for every build, 3 with problems: 4 errors, 1 warning, 0 advice\n",
         )
     );
 
@@ -1274,7 +1272,7 @@ fn code_shows_only_the_problems_with_that_code() {
         stdout(&by_name),
         concat!(
             "docs/guides/b.md:7: [ASC044] `{nope}` isn't a declared phrase, so its braces are literal text; declare it in [phrases], or write `\\{` to keep it literal\n",
-            "checked 4 files for every build, reported on 4 for code `ASC044`: 0 errors, 1 warning, 0 advice\n",
+            "checked 4 files for every build, 1 with problems for code `ASC044`: 0 errors, 1 warning, 0 advice\n",
         )
     );
     // The exit code is about what's shown: a warning alone doesn't fail.

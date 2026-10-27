@@ -2,6 +2,7 @@
 type: how-to
 title: Prose, through Vale
 description: "Checking your pages' prose with Vale, from Ascribe's quiet preset or your own Vale configuration, in the editor and in `ascribe check`."
+permalink: vale
 ---
 
 [Vale](https://vale.sh) checks prose: a word written twice, a misspelling, a term spelled two ways, and whatever else its rules look for. Ascribe runs it for you and reports what it finds as Ascribe diagnostics, at the right place in your source, beside the rest of your problems in the editor and in `ascribe check`.

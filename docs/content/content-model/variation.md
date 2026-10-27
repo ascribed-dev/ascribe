@@ -31,6 +31,7 @@ No other scheme is defined. The table exists so a later spec version can add one
 **Rules.** `scheme` is one of the schemes (`model-invalid-value`). `current` isn't a key: a target's current release is its newest live line in [`[releases.<target>]`](#121-releasestarget), and a project that sets it gets an error that says so (`model-versions-current`).
 
 ### 12.1 `[releases.<target>]`
+@id {permalink=true}: 121-releasestarget
 
 @include: ../_fragments/content-model/releases.md
 

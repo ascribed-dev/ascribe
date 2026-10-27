@@ -3,7 +3,7 @@
 
 The Markdown pages under `content/` are Ascribe documentation: pages with YAML frontmatter, `@` directives, and `{key}` phrases, checked against the content model in `ascribe.toml`.
 
-Programmatic check: after editing a page, run `cargo run -q -p ascribe-cli -- check <file> --format concise` and fix every error. Before you finish, run `cargo run -q -p ascribe-cli -- check --config docs`. `cargo run -q -p ascribe-cli -- explain <code>` says what a problem means and how to fix it.
+After editing a page, run `cargo run -q -p ascribe-cli -- check <file> --format concise` and fix every error. Before you finish, run `cargo run -q -p ascribe-cli -- check --config docs`. `cargo run -q -p ascribe-cli -- explain <code>` says what a problem means and how to fix it.
 
 Before writing a page about a subject, run `cargo run -q -p ascribe-cli -- search "<words>" --config docs` to find where the pages already say it, as readers read them, and link to what's there or extend it instead of saying it again.
 
@@ -27,8 +27,8 @@ Write the phrase (`{version}`), not the text it stands for.
 
 - `@id: <id>` on the line under a heading: an id for links to it that doesn't change with its text
 - `@include: <file>.md`, or `@include: <file>.md#<id>` for one section: another file's content, in place
-- `@variant {<dimension>=<value>}:` before each arm, and one `@end` after the last: content that differs by a dimension. Here: dimensions `pm`, `release`
-- `@available: <spec>` under a heading or above a block: where it applies, as targets with an optional state and version (`cloud, self-managed preview 3.4`), or a feature's key
+- `@variant {<dimension>=<value>}:` before each arm, and one `@end` after the last: content that differs by a dimension. Here: dimensions `pm` (`npm`, `pnpm`), `release` (`ascribe`)
+- `@available: <spec>` under a heading or above a block: where it applies, as targets with an optional state and version (`ascribe`), or a feature's key
 - `@note {type=<type>}: <text>`, or `@note:` … `@end` around several blocks: a callout. Here: types `note`, `tip`, `important`, `warning`, `caution`
 - `@steps` on the line above an ordered list: the list is a procedure
 - `.<Title>` on its own line, then `@details:` … `@end`: collapsible content; the title is required

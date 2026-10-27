@@ -119,6 +119,7 @@ Says where content applies and its lifecycle state. Unlike `@variant`, it doesn'
 - Several `@available` lines on one heading or block all apply: the content is available only where all of them allow it.
 
 ### Availability specs
+@id {permalink=true}: availability-specs
 
 A spec is a comma-separated list of [targets](../glossary.md#target), each with an optional lifecycle:
 
@@ -271,6 +272,7 @@ Every problem is reported at the `@snippet` line ([source files](../checks/diagn
 In VS Code, a code file says which pages show it: see [code files a page shows](../editor/writing.md#code-files-a-page-shows).
 
 ## `@intended`
+@id {permalink=true}: intended
 
 ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended))
 

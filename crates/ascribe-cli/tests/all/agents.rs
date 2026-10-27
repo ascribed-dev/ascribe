@@ -619,12 +619,20 @@ fn the_rules_fit_their_budget() {
     sync(repo.path(), ".", &[]);
     let text = read(&repo.path().join("AGENTS.md"));
     assert!(text.chars().count() <= 4_200, "{}", text.chars().count());
-    assert!(text.contains(
-        "Programmatic check: after editing a page, run `ascribe check <file> --format concise`"
-    ));
-    // Quill writes `@variant`, so it's told about it, with its dimensions.
+    assert!(text.contains("After editing a page, run `ascribe check <file> --format concise`"));
+    // Quill writes `@variant`, so it's told about it, with its dimensions
+    // and their values; and its `@available` example is its own targets.
     assert!(text.contains("`@variant {<dimension>=<value>}:`"), "{text}");
-    assert!(text.contains("dimensions `pm`, `deployment`"), "{text}");
+    assert!(
+        text.contains(
+            "dimensions `pm` (`npm`, `pnpm`, `yarn`), `deployment` (`cloud`, `self-managed`)"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains("an optional state and version (`cloud, self-managed`)"),
+        "{text}"
+    );
 
     // A project with no variants isn't told about them.
     let repo = repository("monorepo");

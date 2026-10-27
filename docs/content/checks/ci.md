@@ -46,7 +46,7 @@ A project with [`ascribe.addresses`](../publishing/redirects.md) has `ascribe ch
         run: npx ascribe check --deny-warnings --format github --base ${{ github.event.before }} --base-exact
 ```
 
-Without the history, or with a base that isn't there, as after a force-push, the rest of the check runs and [`addresses-base-unreadable`](../publishing/redirects.md#the-base) says the addresses weren't compared, a warning `--deny-warnings` fails on.
+Without the history, or with a base that isn't there, as after a force-push, the rest of the check runs and [`addresses-base-unreadable`](../publishing/redirects.md#addresses-base) says the addresses weren't compared, a warning `--deny-warnings` fails on.
 
 ## Keep tested examples tested
 @available: ascribe planned

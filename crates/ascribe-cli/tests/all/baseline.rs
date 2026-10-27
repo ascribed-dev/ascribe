@@ -103,7 +103,7 @@ fn write_makes_the_baseline_and_check_holds_back_what_it_lists() {
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     assert_eq!(
         stdout(&out),
-        "checked 3 files for every build, reported on 3: 0 errors, 0 warnings, 0 advice, 2 in the baseline\n"
+        "checked 3 files for every build, 0 with problems: 0 errors, 0 warnings, 0 advice, 2 in the baseline\n"
     );
     let report = json(&ascribe(dir.path(), &["check", "--format", "json"]));
     assert_eq!(report["diagnostics"], serde_json::json!([]));
@@ -215,7 +215,7 @@ fn prune_removes_the_entries_that_match_nothing() {
     let out = ascribe(dir.path(), &["check", "--format", "concise"]);
     assert_eq!(
         stdout(&out),
-        "checked 3 files for every build, reported on 3: 0 errors, 0 warnings, 0 advice, 1 in the baseline\n"
+        "checked 3 files for every build, 0 with problems: 0 errors, 0 warnings, 0 advice, 1 in the baseline\n"
     );
 }
 
@@ -300,7 +300,7 @@ fn a_check_of_some_files_or_builds_reports_no_stale_entry() {
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     assert_eq!(
         stdout(&out),
-        "checked 3 files for every build, reported on 1: 0 errors, 0 warnings, 0 advice\n"
+        "checked 3 files for every build, reported on 1 file in the paths, 0 with problems: 0 errors, 0 warnings, 0 advice\n"
     );
     let out = ascribe(
         dir.path(),

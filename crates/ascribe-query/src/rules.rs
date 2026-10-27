@@ -318,7 +318,7 @@ impl At {
         let whole = format!("ascribe check{}", self.config());
 
         format!(
-            "Programmatic check: after editing a page, run `ascribe check <file> --format \
+            "After editing a page, run `ascribe check <file> --format \
              concise` and fix every error. Before you finish, run `{whole}`. `ascribe explain \
              <code>` says what a problem means and how to fix it."
         )
@@ -418,11 +418,19 @@ fn directive_lines(model: &ContentModel, used: &std::collections::BTreeSet<Strin
         .into_iter()
         .filter(|b| used.contains(b.name()))
         .map(|b| {
-            let line = builtin_line(b);
+            let line = match b {
+                Builtin::Available => available_line(Some(&available_example(model))),
+                _ => builtin_line(b),
+            };
             let declared = match b {
                 Builtin::Variant if !model.dimensions.is_empty() => Some(format!(
                     "dimensions {}",
-                    code(model.dimensions.iter().map(|d| d.name.as_str()).collect())
+                    model
+                        .dimensions
+                        .iter()
+                        .map(dimension_values)
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 )),
                 Builtin::Note => {
                     let types: Vec<&str> = model.notes.iter().map(|n| n.name.as_str()).collect();
@@ -465,10 +473,7 @@ fn builtin_line(builtin: Builtin) -> String {
         Builtin::Variant => "`@variant {<dimension>=<value>}:` before each arm, and one `@end` \
                              after the last: content that differs by a dimension"
             .to_owned(),
-        Builtin::Available => "`@available: <spec>` under a heading or above a block: where it \
-                               applies, as targets with an optional state and version \
-                               (`cloud, self-managed preview 3.4`), or a feature's key"
-            .to_owned(),
+        Builtin::Available => available_line(None),
         Builtin::Note => "`@note {type=<type>}: <text>`, or `@note:` … `@end` around several \
                           blocks: a callout"
             .to_owned(),
@@ -502,6 +507,68 @@ fn builtin_line(builtin: Builtin) -> String {
                                its reference"
             .to_owned(),
     }
+}
+
+/// The line for `@available`, with `example`, a spec, after its targets; or,
+/// with none, the language's own example.
+fn available_line(example: Option<&str>) -> String {
+    let example = match example {
+        Some("") => String::new(),
+        Some(spec) => format!(" (`{spec}`)"),
+        None => " (`cloud, self-managed preview 3.4`)".to_owned(),
+    };
+    format!(
+        "`@available: <spec>` under a heading or above a block: where it applies, as targets \
+         with an optional state and version{example}, or a feature's key"
+    )
+}
+
+/// A spec of the project's own targets: two values of the dimension
+/// availability is most likely about, the first with a value that has
+/// release lines or is versionless, or else the first dimension. Empty when
+/// it has no dimension values.
+fn available_example(model: &ContentModel) -> String {
+    let versioned = |d: &&ascribe_model::Dimension| {
+        d.implicit
+            || d.values
+                .iter()
+                .any(|v| v.versionless || model.releases.iter().any(|r| r.target == v.value))
+    };
+    let dimension = model
+        .dimensions
+        .iter()
+        .find(versioned)
+        .or_else(|| model.dimensions.first());
+    dimension.map_or_else(String::new, |d| {
+        d.values
+            .iter()
+            .take(2)
+            .map(|v| v.value.as_str())
+            .collect::<Vec<_>>()
+            .join(", ")
+    })
+}
+
+/// The most values a dimension's line names.
+const VALUES_SHOWN: usize = 6;
+
+/// A dimension and its values, as the directives' lines name them:
+/// `` `pm` (`npm`, `pnpm`) ``, its first [`VALUES_SHOWN`] values and `…` when
+/// there are more.
+fn dimension_values(dimension: &ascribe_model::Dimension) -> String {
+    let mut values: Vec<String> = dimension
+        .values
+        .iter()
+        .take(VALUES_SHOWN)
+        .map(|v| format!("`{}`", v.value))
+        .collect();
+    if dimension.values.len() > VALUES_SHOWN {
+        values.push("…".to_owned());
+    }
+    if values.is_empty() {
+        return format!("`{}`", dimension.name);
+    }
+    format!("`{}` ({})", dimension.name, values.join(", "))
 }
 
 fn widget_line(schema: &DirectiveSchema) -> String {

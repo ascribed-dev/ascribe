@@ -3,7 +3,7 @@
 
 The Markdown pages under `content/` are Ascribe documentation: pages with YAML frontmatter, `@` directives, and `{key}` phrases, checked against the content model in `ascribe.toml`.
 
-Programmatic check: after editing a page, run `ascribe check <file> --format concise` and fix every error. Before you finish, run `ascribe check --config handbook/pages/security`. `ascribe explain <code>` says what a problem means and how to fix it.
+After editing a page, run `ascribe check <file> --format concise` and fix every error. Before you finish, run `ascribe check --config handbook/pages/security`. `ascribe explain <code>` says what a problem means and how to fix it.
 
 Before writing a page about a subject, run `ascribe search "<words>" --config handbook/pages/security` to find where the pages already say it, as readers read them, and link to what's there or extend it instead of saying it again.
 

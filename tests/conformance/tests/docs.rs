@@ -1368,7 +1368,9 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
     let _ = writeln!(
         out,
         "**Fix:** {}",
-        escape_braces(&rebase_links(entry.fix.as_deref().unwrap_or_default()))
+        escape_braces(&rebase_links(&local_links(
+            entry.fix.as_deref().unwrap_or_default()
+        )))
     );
     let section = entry
         .reference
@@ -1588,6 +1590,57 @@ fn message(template: &str) -> String {
 /// registry's are, resolve from `_generated/` instead, where the fragment is.
 fn rebase_links(text: &str) -> String {
     relink(text, |_| "../")
+}
+
+/// Text whose links to the docs' permalinks, as the registry's help writes
+/// them so an agent reading the JSON can follow them, lead to the place each
+/// permalink names in `docs/ascribe.permalinks` instead, written from the
+/// content root, so the docs link to their own pages.
+fn local_links(text: &str) -> String {
+    let list = std::fs::read_to_string(repo().join("docs/ascribe.permalinks")).unwrap();
+    let list = ascribe_model::PermalinkList::parse(&list, ascribe_core::FileId::new(0)).unwrap();
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    let at = concat!("](", ascribe_core::docs_permalinks!());
+    while let Some(i) = rest.find(at) {
+        out.push_str(&rest[..i + 2]);
+        let after = &rest[i + at.len()..];
+        let name = after.split('/').next().unwrap_or_default();
+        let place = &list
+            .permalinks
+            .get(name)
+            .unwrap_or_else(|| panic!("the help links to go/{name}, which the docs don't publish"))
+            .place;
+        out.push_str(place);
+        rest = &after[name.len() + 1..];
+    }
+    out.push_str(rest);
+    out
+}
+
+/// A diagnostic's help, which `ascribe check --format json` gives an agent
+/// as `help`, has no relative link: each leads to a permalink of the docs,
+/// an address an agent can follow, which the reference writes as a link to
+/// its own page.
+#[test]
+fn help_links_are_permalinks() {
+    let registry = DiagnosticsRegistry::load(&Suite::bundled().diagnostics_path()).unwrap();
+    for entry in &registry.entries {
+        let help = entry.fix.as_deref().unwrap_or_default();
+        let relative = std::cell::RefCell::new(Vec::new());
+        relink(help, |dest| {
+            relative.borrow_mut().push(dest.to_owned());
+            ""
+        });
+        let relative = relative.into_inner();
+        assert!(
+            relative.is_empty(),
+            "{}'s fix links to {relative:?}: link to a permalink of the docs, `{}<name>/`",
+            entry.code,
+            ascribe_core::docs_permalinks!()
+        );
+        let _ = local_links(help);
+    }
 }
 
 /// Text with `prefix(destination)` written before each relative link's

@@ -12,7 +12,7 @@ ascribe agents sync
 
 It writes:
 
-- **`AGENTS.md`** beside `ascribe.toml`: the check to run after each edit and before finishing, to run `ascribe search` for a subject before writing a page about it, your page types with what each is for and its frontmatter, and that each page names its type with `type:`, your phrases, the directives your pages use, and how to link. It's at most 4,000 characters, and long lists are cut with the command that shows the rest, the page types first.
+- **`AGENTS.md`** beside `ascribe.toml`: the check to run after each edit and before finishing, to run `ascribe search` for a subject before writing a page about it, your page types with what each is for and its frontmatter, and that each page names its type with `type:`, your phrases, the directives your pages use, with your dimensions and their values for `@variant` and an example of your own targets for `@available`, and how to link. It's at most 4,000 characters, and long lists are cut with the command that shows the rest, the page types first.
 - **A short block in the repository's root `AGENTS.md`,** when your project is in a subfolder: where its pages are, the check to run, and where its full rules are. Some agents, such as Codex, read no `AGENTS.md` below the folder they start in.
 - **The skill,** in `.agents/skills/ascribe/` at the repository's root. See [The skill](#the-skill).
 
