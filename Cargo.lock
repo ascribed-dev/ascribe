@@ -250,6 +250,7 @@ dependencies = [
  "ascribe-model",
  "ascribe-resolve",
  "ascribe-syntax",
+ "ascribe-workspace",
  "lsp-types",
  "serde_json",
  "serde_yaml_ng",
@@ -429,6 +430,7 @@ dependencies = [
  "ascribe-core",
  "ascribe-model",
  "ascribe-resolve",
+ "proptest",
  "tempfile",
  "thiserror",
 ]

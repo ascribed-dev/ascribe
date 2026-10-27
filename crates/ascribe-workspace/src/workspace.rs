@@ -1,17 +1,18 @@
 //! The [`Workspace`]: a project loaded once, and the [`WorkspaceSnapshot`]
 //! everything that reads it is given.
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock, PoisonError};
 
 use ascribe_core::{FileId, RelPath};
 use ascribe_model::{ContentModel, SourceBound};
-use ascribe_resolve::side_file::{Entry, Held, SideFile};
+use ascribe_resolve::side_file::{Entry, Held, Indexed, SideFile};
 use ascribe_resolve::{
-    CodeFiles, Committed, DiskFs, FileIds, FileSystem, IncrementalProject, Layout, MemoFile,
-    MemoStore, Personal, Probe, SourceSet, Sources,
+    Affected, ApplyError, Change, CodeFiles, Committed, DiskFs, FileIds, FileSystem,
+    IncrementalProject, Layout, MemoFile, MemoStore, Personal, Probe, SourceSet, Sources,
+    is_memo_path,
 };
 
 use crate::load::{
@@ -30,13 +31,50 @@ pub type SharedFs = Arc<dyn FileSystem + Send + Sync>;
 /// [`WorkspaceSnapshot`], which never changes. A command loads one and
 /// never updates it, so it's loaded without what only an update needs
 /// ([`IncrementalProject::load_deferred`]): loading costs what indexing the
-/// sources costs.
+/// sources costs. One kept between calls takes what changed on its files
+/// ([`Workspace::apply`]) and makes the next snapshot, and the first update
+/// makes what loading left out.
 pub struct Workspace {
     /// The source index, kept current through its changes.
-    // What an update reads; the snapshot is all a loaded project's readers need.
-    #[allow(dead_code)]
     index: IncrementalProject,
+    /// What its file system's probes answer.
+    probes: Probes,
     snapshot: WorkspaceSnapshot,
+}
+
+/// A change to one of a project's files, as [`Workspace::apply`] takes it.
+#[derive(Clone, Debug)]
+pub enum Changed {
+    /// A change to the sources, or to a file that isn't one, as the source
+    /// index takes it: source files by content path, other files by path
+    /// from the project root. A change to the model or the side files is
+    /// given as [`Changed::Model`] or [`Changed::SideFile`], which keep the
+    /// snapshot's text of them with them.
+    Index(Change),
+    /// The side file at this path from the project root, one of the list
+    /// the project was loaded with, appeared, changed, or went: it's read
+    /// again. A path in no entry of the list changes nothing.
+    SideFile(String),
+    /// `ascribe.toml` changed and loaded: this is the new model and its
+    /// text.
+    Model(Box<ModelFile>),
+}
+
+/// What [`Workspace::apply`] made stale.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Updated {
+    /// What the source index's update touched.
+    pub index: Affected,
+    /// Whether the checks across the project are to run again: a side file
+    /// they compare with the content changed ([`ascribe_resolve::side_file::Stale::across`]).
+    pub across: bool,
+    /// Whether every file is to be checked again: a side file that holds
+    /// back problems in every file changed
+    /// ([`ascribe_resolve::side_file::Stale::every_file`]).
+    pub every_file: bool,
+    /// Whether the changes made a new snapshot. A batch that changes
+    /// nothing keeps the one there was.
+    pub changed: bool,
 }
 
 impl std::fmt::Debug for Workspace {
@@ -126,7 +164,7 @@ impl Workspace {
         let side = read_side_files(side_files, &*fs);
         let failed = failures(&read);
         let texts = Texts::new(fs.clone(), listing, read);
-        Workspace::assemble(model, content_root, texts, failed, side, fs)
+        Workspace::assemble(model, content_root, texts, failed, (side_files, side), fs)
     }
 
     /// A project whose source files are `files`, `(content path, text)`
@@ -143,7 +181,14 @@ impl Workspace {
     ) -> Workspace {
         let side = read_side_files(side_files, &*fs);
         let texts = Texts::held(fs.clone(), files.into_iter().map(|(p, t)| (p, Ok(t))));
-        Workspace::assemble(model, content_root, texts, Vec::new(), side, fs)
+        Workspace::assemble(
+            model,
+            content_root,
+            texts,
+            Vec::new(),
+            (side_files, side),
+            fs,
+        )
     }
 
     fn assemble(
@@ -151,12 +196,13 @@ impl Workspace {
         content_root: RelPath,
         texts: Texts,
         failed: Vec<(RelPath, ReadFailure)>,
-        side: Vec<Held>,
+        (side_files, side): (&'static [Entry], Vec<Held>),
         fs: SharedFs,
     ) -> Workspace {
         let ModelFile { root, text, model } = model;
         let layout = layout(&model, content_root);
         let model = Arc::new(model);
+        let probes = texts.probes.clone();
         let index = IncrementalProject::load_deferred(model.clone(), layout, texts);
         let snapshot = WorkspaceSnapshot(Arc::new(Inner::assemble(
             Parts {
@@ -165,16 +211,236 @@ impl Workspace {
                 model_text: text,
                 index: index.snapshot().shared_project(),
                 side,
+                side_list: side_files,
                 fs,
             },
             failed,
         )));
-        Workspace { index, snapshot }
+        Workspace {
+            index,
+            probes,
+            snapshot,
+        }
     }
 
     /// The project as it is: what every check and command reads.
     pub fn snapshot(&self) -> WorkspaceSnapshot {
         self.snapshot.clone()
+    }
+
+    /// The source index's own snapshot, with the versions it reflects: what
+    /// an edit computed beside the language server's works from.
+    pub fn index_snapshot(&self) -> ascribe_resolve::Snapshot {
+        self.index.snapshot()
+    }
+
+    /// The ids of every path a source has been at ([`FileIds`]).
+    pub fn ids(&self) -> &FileIds {
+        self.index.ids()
+    }
+
+    /// Takes a batch of changes to the project's files and makes the next
+    /// snapshot, as a fresh load of the same files would be. A change to a
+    /// source or a file that isn't one goes to the source index; a side file
+    /// is read again through the project's file system, and what its
+    /// [`Stale`](ascribe_resolve::side_file::Stale) names follows it: the
+    /// index is given the side files it reads ([`Change::SideFiles`]), and
+    /// [`Updated`] says when the checks across the project, or every file's,
+    /// are stale. A memo file, an image, or a code file drops what the
+    /// snapshot read of its kind on demand, to be read again when it's asked
+    /// for. A batch that changes nothing keeps the snapshot there was.
+    ///
+    /// What's read again is read through the file system the project was
+    /// loaded with, which must show the files as they are now: one a command
+    /// loads ([`Workspace::load`]) keeps what it lists, since a command's
+    /// project is never updated, and `Kept` has the disk read
+    /// again once its listing shows a change.
+    ///
+    /// # Errors
+    ///
+    /// The project must be loaded again, and nothing changed: a nested
+    /// project's `ascribe.toml` appeared or went
+    /// ([`ApplyError::NestedProjectChanged`]), or the new model moves the
+    /// content root or the output directory ([`ApplyError::LayoutChanged`]).
+    pub fn apply(
+        &mut self,
+        changes: impl IntoIterator<Item = Changed>,
+    ) -> Result<Updated, ApplyError> {
+        let old = &self.snapshot.0;
+        let layout = old.index.layout().clone();
+        let mut to_index = Vec::new();
+        let mut model = None;
+        let mut side_paths = BTreeSet::new();
+        let mut drop = Dropped::default();
+        for change in changes {
+            match change {
+                Changed::Index(change) => {
+                    drop.note(&change, &layout, &old.index);
+                    to_index.push(change);
+                }
+                Changed::SideFile(path) => {
+                    if let Some(entry) = old.side_list.iter().find(|e| e.path == path) {
+                        side_paths.insert(entry.path);
+                    }
+                }
+                Changed::Model(file) => model = Some(*file),
+            }
+        }
+
+        // Each side file named, as it reads now, and what its change makes
+        // stale.
+        let mut side = old.side.clone();
+        let mut side_changed = false;
+        let (mut indexed, mut across, mut every_file) = (false, false, false);
+        for entry in old.side_list.iter().filter(|e| side_paths.contains(e.path)) {
+            let now = entry.read(&*old.fs);
+            let at = side.iter().position(|held| held.path() == entry.path);
+            let before = at.map(|at| side[at].text());
+            if before == now.as_ref().map(Held::text) {
+                continue;
+            }
+            side_changed = true;
+            indexed |= entry.stale.index;
+            across |= entry.stale.across;
+            every_file |= entry.stale.every_file;
+            match (at, now) {
+                (Some(at), Some(now)) => side[at] = now,
+                (Some(at), None) => {
+                    side.remove(at);
+                }
+                (None, Some(now)) => side.push(now),
+                (None, None) => {}
+            }
+        }
+        // In the order of the list, as loading reads them.
+        side.sort_by_key(|held| old.side_list.iter().position(|e| e.path == held.path()));
+        if indexed {
+            to_index.push(Change::SideFiles(Indexed::read(&*old.fs)));
+        }
+
+        let new_model = model.as_ref().map(|m| Arc::new(m.model.clone()));
+        if let Some(model) = &new_model {
+            to_index.push(Change::Model(model.clone()));
+            drop = Dropped::all();
+        }
+        let affected = if to_index.is_empty() {
+            let version = self.index.version();
+            Affected {
+                version,
+                previous: version,
+                parsed: BTreeSet::new(),
+                indexed: BTreeSet::new(),
+                recheck: BTreeSet::new(),
+                removed: BTreeSet::new(),
+                unreadable: BTreeSet::new(),
+                re_resolve: BTreeSet::new(),
+                model: None,
+            }
+        } else {
+            for change in &to_index {
+                self.probes.before(change, &self.snapshot.0.index);
+            }
+            self.index.apply(to_index)?
+        };
+        let changed = !affected.is_empty() || side_changed || model.is_some() || drop.any();
+        let updated = Updated {
+            across: across || drop.memos || !affected.is_empty(),
+            every_file,
+            changed,
+            index: affected,
+        };
+        if !changed {
+            return Ok(updated);
+        }
+
+        let old = &self.snapshot.0;
+        let index = self.index.snapshot().shared_project();
+        let (model, model_text) = match (new_model, model) {
+            (Some(arc), Some(file)) => (arc, file.text),
+            _ => (old.model.clone(), old.model_text.clone()),
+        };
+        let mut failed = unreadable(&index);
+        failed.sort_by(|a, b| a.0.cmp(&b.0));
+        let mut inner = Inner::assemble(
+            Parts {
+                root: old.root.clone(),
+                model,
+                model_text,
+                index,
+                side,
+                side_list: old.side_list,
+                fs: old.fs.clone(),
+            },
+            failed,
+        );
+        if !drop.code {
+            inner.code = old.code.clone();
+        }
+        if !drop.memos {
+            inner.memos = old.memos.clone();
+            inner.all_memos = old.all_memos.clone();
+        }
+        if !drop.images {
+            inner.images = old.images.clone();
+        }
+        self.snapshot = WorkspaceSnapshot(Arc::new(inner));
+        Ok(updated)
+    }
+}
+
+/// What a batch of changes drops of what a snapshot reads on demand.
+#[derive(Default)]
+struct Dropped {
+    code: bool,
+    memos: bool,
+    images: bool,
+}
+
+impl Dropped {
+    fn all() -> Dropped {
+        Dropped {
+            code: true,
+            memos: true,
+            images: true,
+        }
+    }
+
+    fn any(&self) -> bool {
+        self.code || self.memos || self.images
+    }
+
+    /// What `change` drops. A file that isn't a source under the content
+    /// root may be an image, and one anywhere else a code file a snippet
+    /// reads or what its source says of its examples.
+    fn note(&mut self, change: &Change, layout: &Layout, index: &ascribe_resolve::Project) {
+        let not_source = |path: &RelPath| !index.is_source(path);
+        match change {
+            Change::Created { path, .. }
+            | Change::Edited { path, .. }
+            | Change::Deleted { path }
+            | Change::Unreadable { path, .. } => {
+                if not_source(path) {
+                    self.images = true;
+                    self.code = true;
+                }
+            }
+            Change::Renamed { from, to } => {
+                if not_source(from) || not_source(to) {
+                    self.images = true;
+                    self.code = true;
+                }
+            }
+            Change::AssetCreated { path } | Change::AssetDeleted { path } => {
+                if is_memo_path(path, layout) {
+                    self.memos = true;
+                } else {
+                    self.images |= path.starts_with(&layout.content_root);
+                    self.code = true;
+                }
+            }
+            Change::Model(_) => *self = Dropped::all(),
+            Change::SideFiles(_) | Change::BaseApis(_) => {}
+        }
     }
 }
 
@@ -184,6 +450,24 @@ fn layout(model: &ContentModel, content_root: RelPath) -> Layout {
         content_root,
         output_dir: RelPath::parse(&model.project.output_dir).unwrap_or_default(),
     }
+}
+
+/// The sources the index couldn't read, each with its [`ReadFailure`], in
+/// its order.
+fn unreadable(index: &ascribe_resolve::Project) -> Vec<(RelPath, ReadFailure)> {
+    index
+        .unreadable()
+        .iter()
+        .map(|u| {
+            (
+                u.path.clone(),
+                ReadFailure {
+                    reason: u.reason.clone(),
+                    not_utf8: u.reason.contains("valid UTF-8"),
+                },
+            )
+        })
+        .collect()
 }
 
 /// The sources of `read` that couldn't be read, in its order.
@@ -216,6 +500,8 @@ struct Inner {
     /// The side files the project has, each read with its text, in the order
     /// of the list it was loaded with.
     side: Vec<Held>,
+    /// The list it was loaded with.
+    side_list: &'static [Entry],
     fs: SharedFs,
     /// The code files snippets have read, read as the checks ask for them.
     code: Arc<CodeFiles>,
@@ -227,7 +513,7 @@ struct Inner {
     /// The image files under the content root, by path from the project
     /// root and from the content root, once the image checks have listed
     /// them.
-    images: OnceLock<Vec<(RelPath, RelPath)>>,
+    images: Arc<OnceLock<Vec<(RelPath, RelPath)>>>,
 }
 
 impl std::fmt::Debug for WorkspaceSnapshot {
@@ -248,6 +534,7 @@ struct Parts {
     model_text: String,
     index: Arc<ascribe_resolve::Project>,
     side: Vec<Held>,
+    side_list: &'static [Entry],
     fs: SharedFs,
 }
 
@@ -262,6 +549,7 @@ impl Inner {
             model_text,
             index,
             side,
+            side_list,
             fs,
         } = parts;
         let mut sources: Vec<SourceFile> = index
@@ -303,11 +591,12 @@ impl Inner {
             source_paths,
             index,
             side,
+            side_list,
             fs,
             code: Arc::default(),
             memos: Arc::default(),
             all_memos: Arc::default(),
-            images: OnceLock::new(),
+            images: Arc::default(),
         }
     }
 }
@@ -326,19 +615,7 @@ impl WorkspaceSnapshot {
         side_files: &'static [Entry],
         fs: SharedFs,
     ) -> WorkspaceSnapshot {
-        let failed = index
-            .unreadable()
-            .iter()
-            .map(|u| {
-                (
-                    u.path.clone(),
-                    ReadFailure {
-                        reason: u.reason.clone(),
-                        not_utf8: u.reason.contains("valid UTF-8"),
-                    },
-                )
-            })
-            .collect();
+        let failed = unreadable(&index);
         let side = read_side_files(side_files, &*fs);
         let mut inner = Inner::assemble(
             Parts {
@@ -347,6 +624,7 @@ impl WorkspaceSnapshot {
                 model_text,
                 index,
                 side,
+                side_list: side_files,
                 fs,
             },
             failed,
@@ -406,6 +684,18 @@ impl WorkspaceSnapshot {
     /// [`WorkspaceSnapshot::file_system`], shared.
     pub fn shared_file_system(&self) -> &SharedFs {
         &self.0.fs
+    }
+
+    /// Whether `other` is this snapshot, and not only one like it: what's
+    /// kept with a snapshot belongs to it alone.
+    pub fn same_as(&self, other: &WorkspaceSnapshot) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+
+    /// The list of side files the project was loaded with: those it may
+    /// have.
+    pub fn side_file_list(&self) -> &'static [Entry] {
+        self.0.side_list
     }
 
     /// The side files the project has, each read with its text.
@@ -540,6 +830,7 @@ impl WorkspaceSnapshot {
                 model_text: self.0.model_text.clone(),
                 index: Arc::new(index),
                 side: self.0.side.clone(),
+                side_list: self.0.side_list,
                 fs: self.0.fs.clone(),
             },
             failed,
@@ -578,10 +869,61 @@ impl SourceSet for WorkspaceSnapshot {
 /// already read, each given out once, and the listing they were read from,
 /// given out once, so indexing reads nothing again; everything else, and
 /// anything asked for again, from the file system underneath.
+///
+/// Each probe is answered as the project was loaded ([`Probes`]): the
+/// index lays the changes it's given over what its file system said, so
+/// what it said mustn't change underneath it, while the snapshot's own
+/// reads see the files as they are.
 struct Texts {
     base: SharedFs,
     listing: Mutex<Option<Sources>>,
     texts: Mutex<HashMap<RelPath, Result<String, ReadFailure>>>,
+    probes: Probes,
+}
+
+/// What each path probed as when the project was loaded: its answer the
+/// first time it was asked, or, for a file that isn't a source that a change
+/// was reported at before it was asked, what it was before the change. A
+/// file that's there after the change is taken to have been missing before,
+/// so a file that only changed is told as one that appeared, which redoes
+/// what reads it, and never less. A source's path needs nothing: the index
+/// lays its own record of the sources over what's probed.
+#[derive(Clone, Default)]
+struct Probes(Arc<Mutex<HashMap<RelPath, Probe>>>);
+
+impl Probes {
+    /// Remembers what `change` says each file it names that isn't a source
+    /// of `index` was before, for a path not asked about yet.
+    fn before(&self, change: &Change, index: &ascribe_resolve::Project) {
+        let layout = index.layout();
+        let mut probes = self.0.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut was = |path: &RelPath, content: bool, there: bool| {
+            if content && index.is_source(path) {
+                return;
+            }
+            let path = if content {
+                layout.project_path(path)
+            } else {
+                path.clone()
+            };
+            probes
+                .entry(path)
+                .or_insert(if there { Probe::File } else { Probe::Missing });
+        };
+        match change {
+            Change::Created { path, .. }
+            | Change::Edited { path, .. }
+            | Change::Unreadable { path, .. } => was(path, true, false),
+            Change::Deleted { path } => was(path, true, true),
+            Change::Renamed { from, to } => {
+                was(from, true, true);
+                was(to, true, false);
+            }
+            Change::AssetCreated { path } => was(path, false, false),
+            Change::AssetDeleted { path } => was(path, false, true),
+            Change::Model(_) | Change::SideFiles(_) | Change::BaseApis(_) => {}
+        }
+    }
 }
 
 impl Texts {
@@ -595,6 +937,7 @@ impl Texts {
             base,
             listing: Mutex::new(Some(listing)),
             texts: Mutex::new(texts.into_iter().collect()),
+            probes: Probes::default(),
         }
     }
 
@@ -620,6 +963,7 @@ impl Texts {
             base,
             listing: Mutex::new(Some(listing)),
             texts: Mutex::new(texts),
+            probes: Probes::default(),
         }
     }
 }
@@ -649,7 +993,13 @@ impl FileSystem for Texts {
     }
 
     fn probe(&self, project_path: &RelPath) -> Probe {
-        self.base.probe(project_path)
+        let mut probes = self.probes.0.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some(answer) = probes.get(project_path) {
+            return answer.clone();
+        }
+        let answer = self.base.probe(project_path);
+        probes.insert(project_path.clone(), answer.clone());
+        answer
     }
 
     fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {

@@ -9,11 +9,15 @@
 //! needs of the checks, the content model's own checks and the list of side
 //! files, comes in as a [`Loader`]'s fields, so this crate doesn't depend on
 //! `ascribe-check`. It reads, and writes nothing.
+//!
+//! A `Workspace` kept between calls takes the changes to its files
+//! ([`Workspace::apply`]).
 
 mod load;
 mod locate;
 mod workspace;
 
+
 pub use load::{LoadError, Loader, ModelFile, ModelLoader, ReadFailure, SourceFile, root_of};
 pub use locate::{LocateError, find_below, find_config, locate};
-pub use workspace::{SharedFs, Workspace, WorkspaceSnapshot};
+pub use workspace::{Changed, SharedFs, Updated, Workspace, WorkspaceSnapshot};
