@@ -67,5 +67,5 @@ Where each common change starts: the files to change, the files to rewrite, and 
 
 The Markdown pages under `docs/content/` are Ascribe documentation: pages with YAML frontmatter, `@` directives, and `{key}` phrases, checked against the content model in `docs/ascribe.toml`. This project's rules are in `docs/AGENTS.md`: read them before editing a page there.
 
-Programmatic check: after editing a page, run `cargo run -q -p ascribe-cli -- check <file> --format concise` and fix every error. Before you finish, run `cargo run -q -p ascribe-cli -- check --config docs`. `cargo run -q -p ascribe-cli -- explain <code>` says what a problem means and how to fix it.
+After editing a page, run `cargo run -q -p ascribe-cli -- check <file> --format concise` and fix every error. Before you finish, run `cargo run -q -p ascribe-cli -- check --config docs`. `cargo run -q -p ascribe-cli -- explain <code>` says what a problem means and how to fix it.
 <!-- ascribe:agents:docs end -->
