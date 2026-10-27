@@ -890,7 +890,9 @@ fn without_releases_described(
                     let text = sentences
                         .iter()
                         .filter(|(prefix, _)| path.starts_with(prefix.as_str()))
-                        .fold(text.clone(), |text, (_, sentence)| text.replace(sentence, ""));
+                        .fold(text.clone(), |text, (_, sentence)| {
+                            text.replace(sentence, "")
+                        });
                     Contents::Text(text)
                 }
                 Contents::Copy(_) => contents.clone(),
