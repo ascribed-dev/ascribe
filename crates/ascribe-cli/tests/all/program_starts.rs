@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 /// The files that start a program, and what each starts.
 const STARTS: &[(&str, &str)] = &[
     (
-        "crates/ascribe-check/src/tool.rs",
+        "crates/ascribe-report/src/tool.rs",
         "the programs a report runs and reads the answers of (Vale, lychee, afdocs), with a fixed argument list",
     ),
     (

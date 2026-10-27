@@ -149,7 +149,7 @@ pub fn eject(root: &Path, model: &ContentModel, model_text: &str) -> Result<Ejec
         })?;
         written.push(path);
     }
-    let model_file = crate::MODEL_FILE;
+    let model_file = ascribe_check::MODEL_FILE;
     write_if_changed(root, model_file, &new_model).map_err(|e| EjectError::Write {
         path: model_file.to_owned(),
         reason: e.to_string(),

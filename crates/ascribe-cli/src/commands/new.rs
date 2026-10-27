@@ -163,7 +163,9 @@ fn run_new(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Writ
         Err(e) => return answer::report_failure(err, &Failure::Config(e)),
     };
     let project = match ascribe_check::load(&config) {
-        Ok(workspace) => Project::new(workspace.snapshot()),
+        Ok(workspace) => {
+            Project::new(workspace.snapshot()).with_plain_markdown(ascribe_emit::plain_markdown)
+        }
         Err(e) => return answer::report_failure(err, &Failure::Load(e)),
     };
     // PATH is from the current folder, as every command's is.

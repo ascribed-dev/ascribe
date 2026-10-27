@@ -10,12 +10,12 @@ use std::sync::Arc;
 
 use ascribe_check::fix;
 use ascribe_check::prompt::{self, Builds};
-use ascribe_check::prose;
 use ascribe_check::{
     Acknowledged, BaselineError, Diagnostic, Found, Project, Reported, Request, Scope, ScopeError,
     Severity, locate_for,
 };
 use ascribe_core::{Coded, diagnostics};
+use ascribe_report::prose;
 use ascribe_workspace::LoadError;
 use clap::{Args as ClapArgs, ValueEnum};
 

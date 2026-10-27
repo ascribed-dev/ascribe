@@ -319,7 +319,8 @@ pub fn example_slugs(
         sources,
         Arc::new(fs),
     );
-    let project = ascribe_check::Project::new(workspace.snapshot());
+    let project = ascribe_check::Project::new(workspace.snapshot())
+        .with_plain_markdown(ascribe_emit::plain_markdown);
     let diagnostics = ascribe_check::diagnose(&project, &[])
         .map(|d| d.diagnostics)
         .unwrap_or_default();

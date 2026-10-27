@@ -4,7 +4,7 @@
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use ascribe_check::prose::{Ejected, eject};
+use ascribe_report::prose::{Ejected, eject};
 use clap::{Args as ClapArgs, Subcommand};
 use serde::Serialize;
 

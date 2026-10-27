@@ -123,5 +123,5 @@ fn base(case: &Case) -> Result<Project, AdapterError> {
         model,
     };
     let workspace = Workspace::load_with(ascribe_check::LOADER.side_files, model, content_root, fs);
-    Ok(Project::new(workspace.snapshot()))
+    Ok(Project::new(workspace.snapshot()).with_plain_markdown(ascribe_emit::plain_markdown))
 }

@@ -851,7 +851,7 @@ pub(crate) fn with_sources(
         files,
         project.snapshot().shared_file_system().clone(),
     );
-    Project::new(workspace.snapshot())
+    Project::new(workspace.snapshot()).with_plain_markdown(ascribe_emit::plain_markdown)
 }
 
 /// The files that differ between two sets of outputs.

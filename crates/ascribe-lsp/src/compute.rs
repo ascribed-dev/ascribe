@@ -761,6 +761,7 @@ fn check_project_of(job: &Job) -> Project {
         &job.fs,
     ))
     .with_today(job.today)
+    .with_plain_markdown(ascribe_emit::plain_markdown)
     // The editor reports a personal memo's problems as a team memo's.
     .with_personal_memos()
 }
@@ -796,6 +797,7 @@ pub(crate) fn checked_project(
     replaced: &[(&RelPath, &str)],
 ) -> Project {
     Project::new(snapshot_of(snapshot, root, model, model_text, fs).with_texts(replaced))
+        .with_plain_markdown(ascribe_emit::plain_markdown)
 }
 
 /// Adds to `lsp`'s data the fixes of `d` that edit another file the project

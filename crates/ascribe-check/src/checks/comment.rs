@@ -12,7 +12,6 @@ use ascribe_core::{Applicability, Fix, Issue, Span, TextEdit, diagnostics};
 use ascribe_syntax::{Block, BlockKind, Bound, HtmlBlock, PrimaryValue};
 
 use super::Ctx;
-use crate::prose::is_vale_comment;
 
 /// The quick fix's title.
 const TITLE: &str = "Rewrite as a memo";
@@ -251,6 +250,18 @@ fn bindable(block: &Block) -> bool {
         }
         _ => true,
     }
+}
+
+/// Whether an HTML comment, `<!-- … -->` as written, is one of Vale's own:
+/// its text starts with the word `vale`, as `<!-- vale off -->` and
+/// `<!-- vale Ascribe.Repeated = NO -->` do. The prose given to Vale keeps
+/// every comment, so these still work
+/// (`ascribe_report::prose`).
+fn is_vale_comment(comment: &str) -> bool {
+    let text = comment.strip_prefix("<!--").unwrap_or(comment).trim_start();
+    text.strip_prefix("vale").is_some_and(|rest| {
+        rest.is_empty() || rest.starts_with(char::is_whitespace) || rest.starts_with("-->")
+    })
 }
 
 #[cfg(test)]

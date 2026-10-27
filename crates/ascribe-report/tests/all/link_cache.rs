@@ -1,6 +1,6 @@
-//! The answers `ascribe report links` reuses (`ascribe_check::links::cache`)
-//! and what it remembers (`ascribe_check::links::history`, and
-//! `ascribe_check::report_history` for the other sections): what a second
+//! The answers `ascribe report links` reuses (`ascribe_report::links::cache`)
+//! and what it remembers (`ascribe_report::links::history`, and
+//! `ascribe_report::report_history` for the other sections): what a second
 //! run asks about and holds, and that only the report's code opens any.
 
 #![allow(clippy::expect_used, clippy::panic)]
@@ -12,10 +12,10 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use ascribe_check::Project;
-use ascribe_check::links::{self, Answer, Cache, LinkChecker, Request};
-use ascribe_check::store::MemoryStore;
-use ascribe_check::tool::ToolError;
 use ascribe_core::{Date, FileId, RelPath};
+use ascribe_report::links::{self, Answer, Cache, LinkChecker, Request};
+use ascribe_report::store::MemoryStore;
+use ascribe_report::tool::ToolError;
 
 const PAGE: &str = "# Links\n\n[Fine](https://fine.test/a), [gone](https://gone.test/b), \
                     [moved](https://moved.test/c), and [fine again](https://fine.test/d).\n";
@@ -232,9 +232,9 @@ const OPENS: &[&str] = &[
 /// `build`, `diff`, `drift`, `fmt`, the language server, and the hook never
 /// read or write it, so their outputs stay a function of the sources.
 const REPORT: &[&str] = &[
-    "crates/ascribe-check/src/links.rs",
-    "crates/ascribe-check/src/links/",
-    "crates/ascribe-check/src/report_history.rs",
+    "crates/ascribe-report/src/links.rs",
+    "crates/ascribe-report/src/links/",
+    "crates/ascribe-report/src/report_history.rs",
     "crates/ascribe-query/src/report.rs",
     "crates/ascribe-cli/src/commands/report/",
 ];

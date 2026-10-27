@@ -7,9 +7,9 @@
 use std::fs;
 use std::time::Duration;
 
-use ascribe_check::site::{self, CheckResult, Request, SiteChecker, Status};
-use ascribe_check::tool::ToolError;
 use ascribe_check::{MODEL_FILE, Project};
+use ascribe_report::site::{self, CheckResult, Request, SiteChecker, Status};
+use ascribe_report::tool::ToolError;
 use serde_json::json;
 
 /// A checker whose one result is `llms-txt-links-resolve`, warning, with

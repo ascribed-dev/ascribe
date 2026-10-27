@@ -1334,8 +1334,8 @@ fn worker(shared: &Shared) {
 /// The thread that runs Vale: takes one document at a time, checks it
 /// without the lock, and keeps what's still current (`prose.rs`).
 fn prose_worker(shared: &Shared) {
-    let program = ascribe_check::prose::Program;
-    let linter: &dyn ascribe_check::prose::Linter = match &shared.options.linter {
+    let program = ascribe_report::prose::Program;
+    let linter: &dyn ascribe_report::prose::Linter = match &shared.options.linter {
         Some(linter) => &**linter,
         None => &program,
     };

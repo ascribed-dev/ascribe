@@ -12,13 +12,13 @@ use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::Duration;
 
-use ascribe_check::links::{Cache, History};
 use ascribe_check::prompt::{self, Builds as PromptBuilds};
-use ascribe_check::report_history::ReportHistory;
-use ascribe_check::store::Store;
 use ascribe_check::{Diagnostic, Project, Reported, Severity};
 use ascribe_core::Coded;
 use ascribe_query::report::{Options, Ran, Report, Section, Tools};
+use ascribe_report::links::{Cache, History};
+use ascribe_report::report_history::ReportHistory;
+use ascribe_report::store::Store;
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::cli::Global;

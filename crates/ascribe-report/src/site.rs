@@ -20,7 +20,7 @@ use ascribe_model::CheckLevel;
 use serde::{Deserialize, Serialize};
 
 use crate::tool::{self, ToolError};
-use crate::{Diagnostic, Project};
+use ascribe_check::{Diagnostic, Project};
 
 /// The command that runs the checker.
 pub const COMMAND: &str = "afdocs";
