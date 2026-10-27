@@ -7033,7 +7033,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1164"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Call an API reference's address template something other than \"template\""
     },
     {
@@ -7663,7 +7663,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1119"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Keep a new project's published addresses from the start: init makes ascribe.addresses"
     },
     {
@@ -8250,7 +8250,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Load a project once, phase 2: move finding and loading a project into ascribe-workspace"
     },
     {
@@ -8483,7 +8483,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Text after a code span that starts on an indented continuation line overlaps the code span"
     },
     {
