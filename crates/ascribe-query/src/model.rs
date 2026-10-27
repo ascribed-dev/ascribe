@@ -533,11 +533,11 @@ pub struct ModelApi {
     /// The spec's file, from the folder `ascribe.toml` is in.
     pub spec: String,
     /// The renderer its reference is published with, `redoc`; absent when
-    /// `reference` is a template of an operation's address.
+    /// `reference` is an address pattern.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub renderer: Option<&'static str>,
-    /// Where its reference is: the renderer's page, or the template of an
-    /// operation's address, as written.
+    /// Where its reference is: the renderer's page, or an address
+    /// pattern, as written.
     pub reference: String,
 }
 

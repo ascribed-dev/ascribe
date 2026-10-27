@@ -336,7 +336,7 @@ fn the_first_ascribe_toml_links_to_permalinks_of_the_docs() {
 fn the_docs_list_of_permalinks_is_current() {
     let project = ascribe_check::Project::load(&repo().join("docs/ascribe.toml")).unwrap();
     let synced = ascribe_query::permalinks::sync(
-        &project.index(),
+        project.index(),
         project.permalinks(),
         project.permalinks_text(),
     )

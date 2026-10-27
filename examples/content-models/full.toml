@@ -20,7 +20,7 @@ featured = "boolean?"
 updated = "date?"
 level = "enum(beginner, intermediate, advanced)?"
 tags = "list(string)?"
-draft = { type = "boolean", default = false }
+pinned = { type = "boolean", default = false }
 status = { type = "enum(draft, review, published)", default = "published" }
 category = { type = "enum?", values = ["Getting started", "How-to guides", "Concepts"] }
 keywords = { type = "list(string)?", phrases = true }

@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Find the operations no guide links to
-description: "See which operations of your OpenAPI spec no page links to, with ascribe check's api-operation-unreferenced and the inventory's count of operations linked for each API."
+description: "See which operations of your OpenAPI spec no page links to, with `ascribe check`'s `api-operation-unreferenced` and the inventory's count of operations linked for each API."
 available: ascribe 0.4.4
 ---
 

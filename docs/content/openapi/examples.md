@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Check a JSON example against its schema
-description: "Mark a JSON example in a guide as an operation's request or response, and have ascribe check it against that body's schema in the OpenAPI spec, each disagreement at its place in the block."
+description: "Mark a JSON example in a guide as an operation's request or response, and have `ascribe check` it against that body's schema in the OpenAPI spec, each disagreement at its place in the block."
 available: ascribe 0.4.4
 ---
 

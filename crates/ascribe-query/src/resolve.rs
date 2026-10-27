@@ -273,8 +273,8 @@ mod tests {
             let emitter = SiteEmitter::new(project.model());
             let paths: Vec<RelPath> = index.pages().map(|file| file.path.clone()).collect();
             for path in paths {
-                let whole = resolve(&index, &root, &path, build, Emit::Site, true).unwrap();
-                let body = resolve(&index, &root, &path, build, Emit::Site, false).unwrap();
+                let whole = resolve(index, &root, &path, build, Emit::Site, true).unwrap();
+                let body = resolve(index, &root, &path, build, Emit::Site, false).unwrap();
                 assert_eq!(whole.emit, Emit::Site);
                 if whole.not_published.is_some() {
                     assert!(whole.text.is_empty() && body.text.is_empty());
@@ -307,7 +307,7 @@ mod tests {
         let index = loaded.index();
         let build = &loaded.model().builds[0];
         let path = RelPath::parse("Reference/Options.md").unwrap();
-        let text = resolve(&index, &root, &path, build, Emit::Plain, false)
+        let text = resolve(index, &root, &path, build, Emit::Plain, false)
             .unwrap()
             .text;
         assert!(

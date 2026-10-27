@@ -693,7 +693,7 @@ mod tests {
         let builds: Vec<String> = builds.iter().map(|b| (*b).to_owned()).collect();
         search(
             &project,
-            &project.index(),
+            project.index(),
             &Readings::default(),
             &asked(query, &builds, limit),
         )
@@ -850,7 +850,7 @@ mod tests {
         let project = Project::load(&root.join("ascribe.toml")).expect("the example loads");
         let found = search(
             &project,
-            &project.index(),
+            project.index(),
             &Readings::default(),
             &asked("\"hello, \"", &[], 50),
         )
@@ -891,7 +891,7 @@ mod tests {
         let index = project.index();
         let all = search(
             &project,
-            &index,
+            index,
             &Readings::default(),
             &asked("quill", &[], 500),
         )
@@ -899,7 +899,7 @@ mod tests {
         let kept = scope(&["docs/keys.md"]);
         let keys = search(
             &project,
-            &index,
+            index,
             &Readings::default(),
             &Search {
                 scope: Some(&kept),
@@ -919,7 +919,7 @@ mod tests {
         let folder = scope(&["docs"]);
         let docs = search(
             &project,
-            &index,
+            index,
             &Readings::default(),
             &Search {
                 scope: Some(&folder),
@@ -933,10 +933,10 @@ mod tests {
     #[test]
     fn a_fragment_counts_only_for_the_pages_in_the_scope_that_show_it() {
         let project = quill_with_second_page();
-        let index = project.held_index();
+        let index = project.index();
         let everywhere = search(
             &project,
-            &index,
+            index,
             &Readings::default(),
             &asked("\"node.js 20\"", &[], 50),
         )
@@ -950,7 +950,7 @@ mod tests {
         let kept = scope(&["docs/setup.md"]);
         let one = search(
             &project,
-            &index,
+            index,
             &Readings::default(),
             &Search {
                 scope: Some(&kept),
@@ -966,7 +966,7 @@ mod tests {
             .collect();
         assert_eq!(pages, ["setup.md"]);
         assert_eq!(
-            summarized(&project, &index, &kept, "\"node.js 20\"").pages,
+            summarized(&project, index, &kept, "\"node.js 20\"").pages,
             Some(vec![PageCount {
                 page: "docs/setup.md".to_owned(),
                 places: 1
@@ -980,7 +980,7 @@ mod tests {
         let index = project.index();
         let typed = search(
             &project,
-            &index,
+            index,
             &Readings::default(),
             &Search {
                 page_type: Some("page"),
@@ -991,7 +991,7 @@ mod tests {
         assert_eq!(typed.total, quill_search("quill", &[], 500).unwrap().total);
         let error = search(
             &project,
-            &index,
+            index,
             &Readings::default(),
             &Search {
                 page_type: Some("pgae"),
@@ -1005,7 +1005,7 @@ mod tests {
         );
         let error = search(
             &project,
-            &index,
+            index,
             &Readings::default(),
             &Search {
                 page_type: Some("tutorial"),
@@ -1025,14 +1025,14 @@ mod tests {
         let index = project.index();
         let any = search(
             &project,
-            &index,
+            index,
             &Readings::default(),
             &asked("key", &[], 500),
         )
         .unwrap();
         let word = search(
             &project,
-            &index,
+            index,
             &Readings::default(),
             &Search {
                 word: true,
@@ -1050,7 +1050,7 @@ mod tests {
         );
         let lower = search(
             &project,
-            &index,
+            index,
             &Readings::default(),
             &Search {
                 case: true,
@@ -1072,7 +1072,7 @@ mod tests {
         let index = project.index();
         let found = search(
             &project,
-            &index,
+            index,
             &Readings::default(),
             &Search {
                 summary: true,
@@ -1135,7 +1135,7 @@ mod tests {
         let kept = scope(paths);
         search(
             &project,
-            &project.index(),
+            project.index(),
             &Readings::default(),
             &Search {
                 scope: Some(&kept),
@@ -1278,7 +1278,7 @@ mod tests {
         let index = project.index();
         let readings = Readings::default();
         let asked_for =
-            |query| search(&project, &index, &readings, &asked(query, &[], 500)).unwrap();
+            |query| search(&project, index, &readings, &asked(query, &[], 500)).unwrap();
         let question = asked_for("how do I publish llms.txt");
         let words = asked_for("publish llms.txt");
         assert_eq!(question.stop_words, ["how", "do", "I"]);
@@ -1312,7 +1312,7 @@ mod tests {
         let index = project.index();
         let readings = Readings::default();
         let cloud = vec!["cloud".to_owned()];
-        search(&project, &index, &readings, &asked("quill", &cloud, 50)).unwrap();
+        search(&project, index, &readings, &asked("quill", &cloud, 50)).unwrap();
         assert_eq!(readings.kept(), ["cloud"]);
         let build = project
             .model()
@@ -1320,10 +1320,10 @@ mod tests {
             .iter()
             .find(|b| b.name == "cloud")
             .unwrap();
-        let first = readings.of(&index, build);
-        search(&project, &index, &readings, &asked("agent", &cloud, 50)).unwrap();
-        assert!(Arc::ptr_eq(&first, &readings.of(&index, build)), "kept");
-        search(&project, &index, &readings, &asked("agent", &[], 50)).unwrap();
+        let first = readings.of(index, build);
+        search(&project, index, &readings, &asked("agent", &cloud, 50)).unwrap();
+        assert!(Arc::ptr_eq(&first, &readings.of(index, build)), "kept");
+        search(&project, index, &readings, &asked("agent", &[], 50)).unwrap();
         assert_eq!(readings.kept().len(), project.model().builds.len());
     }
 }

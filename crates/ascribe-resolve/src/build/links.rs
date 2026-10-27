@@ -21,7 +21,8 @@ use super::BuildResolver;
 use super::inlines::{find_mut, own_lists_mut, own_ranges};
 use super::lines::Landing;
 use super::tree::{
-    EmbeddedOperation, LinkTarget, ResolvedBlock, ResolvedKind, ResolvedLink, ResolvedPage,
+    DropReason, EmbeddedOperation, LinkTarget, ResolvedBlock, ResolvedKind, ResolvedLink,
+    ResolvedPage,
 };
 use crate::expand::PageProblem;
 use crate::index::{FileIndex, RefKind, Reference, Target};
@@ -238,12 +239,16 @@ impl<'p> Links<'_, 'p> {
                     self.landed(block, here, target, id, Some(line), text_empty)
                 }
                 None => {
-                    self.problem(
-                        Issue::new(diagnostics::LINK_PAGE_DROPPED, here)
-                            .with_arg("build", self.resolver.build_name())
-                            .with_arg("path", target.to_string()),
-                        block,
-                    );
+                    let issue = Issue::new(diagnostics::LINK_PAGE_DROPPED, here);
+                    // No build publishes a draft, so the message names none.
+                    let draft = project.dropped(target, self.resolver.build_def())
+                        == Some(DropReason::Draft);
+                    let issue = if draft {
+                        issue.with_variant("draft")
+                    } else {
+                        issue.with_arg("build", self.resolver.build_name())
+                    };
+                    self.problem(issue.with_arg("path", target.to_string()), block);
                     (LinkTarget::Unresolved, None)
                 }
             };

@@ -14,7 +14,8 @@ use ascribe_model::{
     crawler_tokens, inline, types, validate_frontmatter,
 };
 use ascribe_resolve::{
-    AstroRouter, Local, NAV_LABEL, REPLACES, RefKind, Target, Usable, llms, pages, reference_target,
+    AstroRouter, DRAFT, Local, NAV_LABEL, REPLACES, RefKind, Target, Usable, llms, pages,
+    reference_target,
 };
 use ascribe_syntax::{Block, BlockKind, Frontmatter, Inline, InlineKind, ParseOptions};
 use serde_yaml_ng::Value;
@@ -171,7 +172,7 @@ impl Ctx<'_> {
                 )]
             }
         };
-        let index = self.project.link_index();
+        let index = self.project.index();
         let first = index
             .file(&self.file.path)
             .and_then(|file| file.headings.first());
@@ -451,8 +452,8 @@ impl Ctx<'_> {
     /// The reserved keys on a page (SPEC §2.1): `available` holds an
     /// availability spec, `variant` a mapping of dimensions to values,
     /// `permalink` a name with the characters an `@id` has, `replaces` the
-    /// path of a page, `nav-label` a string on one line, and `listing` one
-    /// of its values.
+    /// path of a page, `nav-label` a string on one line, `draft` a boolean,
+    /// and `listing` one of its values.
     fn check_reserved_keys(&mut self, value: &Value, index: &YamlIndex, first_line: Span) {
         // SPEC §2.1: a value of the wrong shape is a type mismatch.
         let Value::Mapping(map) = value else { return };
@@ -523,6 +524,12 @@ impl Ctx<'_> {
                 Value::String(label) => self.check_nav_label_length(label, map.get("title"), at),
                 other => self.mismatch(NAV_LABEL, "a label on one line, such as `Keys`", other, at),
             }
+        }
+        if let Some(v) = map.get(DRAFT)
+            && !v.is_bool()
+        {
+            let at = index.get(DRAFT).map_or(first_line, |n| n.value);
+            self.mismatch(DRAFT, "`true` or `false`", v, at);
         }
         if let Some(v) = map.get(Listing::KEY) {
             let node = index.get(Listing::KEY);

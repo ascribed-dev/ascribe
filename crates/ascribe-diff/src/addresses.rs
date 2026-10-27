@@ -60,6 +60,18 @@ pub fn base_addresses(
     Ok(BaseAddresses { base, published })
 }
 
+/// Whether the project at `root` can't have published anything yet, by
+/// git: it isn't in a repository, or the repository has no commit. The
+/// default base can't be read then, and there's nothing it could have
+/// published (decision #1016), so a project `ascribe init` just started
+/// isn't told the addresses weren't compared.
+pub fn before_history(root: &Path) -> bool {
+    match Repository::discover(root) {
+        Ok(repo) => !repo.has_commit(),
+        Err(e) => matches!(e, DiffError::NotARepository { .. }),
+    }
+}
+
 /// The source files git sees renamed between `commit` and the working tree,
 /// each old content path with its new one, both under `content_root`: a
 /// rename git sees below its similarity threshold isn't one, and neither is

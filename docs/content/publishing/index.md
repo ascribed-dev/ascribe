@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Publishing
-description: "What a project tells search engines and AI crawlers about its pages, and what it delivers to agents: listing, robots.txt, the response headers, llms.txt, and the Markdown versions."
+description: "What a project tells search engines and AI crawlers about its pages, and what it delivers to agents: listing, `robots.txt`, the response headers, `llms.txt`, and the Markdown versions."
 ---
 
 A site has readers that aren't people: search engines, the crawlers that gather pages for AI models and AI search, and agents that fetch a page when someone asks about it. A project says what each is told in its content model, and each build writes it down, so every output of a site says the same thing about a page.

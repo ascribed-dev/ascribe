@@ -1,0 +1,14 @@
+description: >-
+  A link to a draft is an error in every build, since no build publishes the
+  page. A link from one draft to another isn't reported in any build: no
+  build publishes the page it's on.
+spec: ["2.1", "5.2", "9.3", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: link-page-dropped, file: index.md, line: 5}
+  cloud-only:
+    diagnostics:
+      - {slug: link-page-dropped, file: index.md, line: 5}

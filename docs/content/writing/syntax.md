@@ -153,7 +153,7 @@ A directive in line form applies to something, according to its **binding**:
 
 **Following-block directives** go directly above the block they describe, touching it. A blank line between them is allowed but warned about, since it hides what the directive annotates. Several stack, and all apply to the block the last one touches. A heading can't be bound this way.
 
-The short version: **at the top of a section, a directive describes the section; anywhere else, it describes the block it touches.**
+The short version: **at the top of a section, a directive describes the section; anywhere else, it describes the block it touches.** Two exceptions: a container `@memo` touches the block after its `@end`, and `@summary` without a colon describes its section from anywhere in it, by the paragraph it touches.
 
 ## Lists and block quotes
 

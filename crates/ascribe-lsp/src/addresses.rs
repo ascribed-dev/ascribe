@@ -299,6 +299,11 @@ pub(crate) fn compare(job: &Job, listed: &dyn Fn(&str)) -> Outcome {
         builds: &now,
     };
     let (found, base, kept) = match base(job, listed) {
+        // Nothing can have been published yet, so nothing is compared, as
+        // `ascribe check` does (decision #1016).
+        Err(_) if ascribe_diff::before_history(&job.root) => {
+            (ascribe_check::addresses::entries(&here, None), None, None)
+        }
         Err(problem) => {
             let mut out = vec![ascribe_check::addresses::base_unreadable(&problem)];
             out.extend(ascribe_check::addresses::entries(&here, None));

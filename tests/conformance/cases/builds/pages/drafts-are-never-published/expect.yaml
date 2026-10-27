@@ -1,0 +1,15 @@
+description: >-
+  A page with `draft: true` is published by no build, whatever its modes;
+  `draft: false` is a page like any other.
+spec: ["2.1", "9.3"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+      ready.md:
+  cloud-only:
+    pages:
+      index.md:
+      ready.md:

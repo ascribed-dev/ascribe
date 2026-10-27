@@ -637,7 +637,8 @@ fn counts_agree_with_the_resolver_for_every_example() {
         let config = root.join("ascribe.toml");
         let project = ascribe_check::Project::load(&config)
             .unwrap_or_else(|e| panic!("{example}: {e}"))
-            .index();
+            .index()
+            .clone();
         let mut client = Client::start(&root);
         client.settle();
         let r = inventory(&mut client, &config);
@@ -723,7 +724,8 @@ fn ascribe_refs_agrees_with_find_all_references() {
     let mut client = started(&f);
     let project = ascribe_check::Project::load(&f.root().join("ascribe.toml"))
         .expect("the project loads")
-        .index();
+        .index()
+        .clone();
     let cases: &[(&str, Value, &str)] = &[
         // A heading in a fragment, named through the page that includes it.
         ("_setup.md", at(SETUP, "Setup", 2), "guide.md#setup"),

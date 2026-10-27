@@ -12,7 +12,7 @@ A reader on 3.4 should read the docs for 3.4, and find the same page for 3.5. Th
 - Mark the content that's in some versions and not others with [`@available`](../writing/directives.md#available), naming a target `ascribe.toml` declares, such as `self-managed 3.5`.
 - To publish with Astro, set the site up with [`@ascribed/astro`](../astro/index.md) first.
 
-## Publish a site for each version
+## Steps
 
 ### 1. List the live lines
 
