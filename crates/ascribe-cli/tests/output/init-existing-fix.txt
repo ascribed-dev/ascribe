@@ -5,4 +5,4 @@ docs/guides/troubleshooting.md:1: [ASC048] the required field `title` is missing
 docs/guides/alerts.md:1: [ASC150] this page has no `description`; write a sentence saying what the page is for, which search results and agents show with its title
 docs/guides/troubleshooting.md:1: [ASC150] this page has no `description`; write a sentence saying what the page is for, which search results and agents show with its title
 docs/index.md:1: [ASC150] this page has no `description`; write a sentence saying what the page is for, which search results and agents show with its title
-checked 4 files for every build, reported on 4: 2 errors, 0 warnings, 3 advice
+checked 4 files for every build, 3 with problems: 2 errors, 0 warnings, 3 advice

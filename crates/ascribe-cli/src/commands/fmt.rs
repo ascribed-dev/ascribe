@@ -98,6 +98,7 @@ pub struct Args {
 pub enum Format {
     /// Short text, for people and agents to read.
     #[default]
+    #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.
     Json,

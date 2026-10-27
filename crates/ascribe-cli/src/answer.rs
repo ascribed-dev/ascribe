@@ -22,11 +22,14 @@ use crate::cli::Global;
 use crate::context::Failure;
 use crate::exit;
 
-/// How to show an answer.
+/// How to show an answer: text, which `concise` names too, since an answer
+/// has no one-line form of its own, as CONTRIBUTING.md's command-line
+/// conventions say, or JSON.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
 pub enum Format {
     /// Short text, for people and agents to read.
     #[default]
+    #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.
     Json,
@@ -286,7 +289,10 @@ pub fn content_paths(project: &Project, given: &Path) -> Vec<RelPath> {
 /// The two readings of [`content_paths`], in its order, each `None` where
 /// it reads nothing: so a second path can be read the way a first was.
 pub fn content_path_readings(project: &Project, given: &Path) -> [Option<RelPath>; 2] {
-    let content = normalize(&project.root().join(project.content_root().as_str()));
+    // Absolute, as the current folder is: `--config docs` makes a root
+    // that's relative, and no path from `/` is relative to it.
+    let content = project.root().join(project.content_root().as_str());
+    let content = normalize(&std::path::absolute(&content).unwrap_or(content));
     let from_cwd = std::env::current_dir()
         .ok()
         .and_then(|cwd| relative_path(&content, &normalize(&cwd.join(given))))

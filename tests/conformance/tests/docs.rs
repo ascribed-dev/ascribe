@@ -181,9 +181,10 @@ fn the_diagnostics_reference_is_current() {
 /// The pages of the diagnostics reference, in `docs/content/checks/diagnostics/`,
 /// each with the fragment it lists the diagnostics of. The reference's own page has
 /// the index.
-const DIAGNOSTICS_PAGES: [(&str, &str); 7] = [
+const DIAGNOSTICS_PAGES: [(&str, &str); 9] = [
     ("directives", "diagnostics-directives.md"),
     ("pages", "diagnostics-pages.md"),
+    ("sources", "diagnostics-sources.md"),
     ("project-files", "diagnostics-project-files.md"),
     ("content-model", "diagnostics-content-model.md"),
     (
@@ -191,6 +192,7 @@ const DIAGNOSTICS_PAGES: [(&str, &str); 7] = [
         "diagnostics-content-model-builds.md",
     ),
     ("content-checks", "diagnostics-content-checks.md"),
+    ("project-checks", "diagnostics-project-checks.md"),
     ("output-checks", "diagnostics-output-checks.md"),
 ];
 
@@ -199,16 +201,25 @@ const DIAGNOSTICS_PAGES: [(&str, &str); 7] = [
 const FIRST_ON_PAGES: &str = "Links";
 
 /// The first construct of the source-file diagnostics listed on the
-/// `project-files` page; those from `FIRST_ON_PAGES` to it are on the `pages`
-/// page.
+/// `sources` page; those from `FIRST_ON_PAGES` to it are on the `pages` page.
+const FIRST_ON_SOURCES: &str = "Files";
+
+/// The first construct of the source-file diagnostics listed on the
+/// `project-files` page; those from `FIRST_ON_SOURCES` to it are on the
+/// `sources` page.
 const FIRST_ON_PROJECT_FILES: &str = "Addresses file";
 
 /// The first rule group of the content model listed on the
 /// `content-model-builds` page; those before it are on the `content-model` page.
-const FIRST_ON_CONTENT_MODEL_BUILDS: &str = "consumer";
+const FIRST_ON_CONTENT_MODEL_BUILDS: &str = "releases";
+
+/// The first area of the content checks listed on the `project-checks` page;
+/// those before it are on the `content-checks` page.
+const FIRST_ON_PROJECT_CHECKS: &str = "project";
 
 /// The first area of the content checks listed on the `output-checks` page;
-/// those before it are on the `content-checks` page.
+/// those from `FIRST_ON_PROJECT_CHECKS` to it are on the `project-checks`
+/// page.
 const FIRST_ON_OUTPUT_CHECKS: &str = "outputs";
 
 /// Each phrase in `docs/ascribe.toml` whose value is also in another file
@@ -1103,10 +1114,11 @@ const HEADER: &str = "@memo: Generated from tests/conformance/diagnostics.toml b
      `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.\n";
 
 /// The fragments, by file name: an index of every diagnostic, the
-/// source-file diagnostics in three (directives; links, pages, and sources;
-/// and the addresses file and API specs), the content model's in two (the file through its widgets, and
-/// the consumer, builds, and the site's settings), and the content checks in two (pages and
-/// the project, and outputs, prose, links, the site, and examples). The index links to each entry on the page
+/// source-file diagnostics in four (directives; links and pages; sources,
+/// memo files, and navigation; and the addresses file and API specs), the
+/// content model's in two (the file through its names, and releases through
+/// the site's settings), and the content checks in three (pages; the project
+/// as a whole; and outputs, prose, links, the site, and examples). The index links to each entry on the page
 /// that includes its fragment (SPEC §4.2).
 fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)> {
     let active: Vec<&Entry> = registry.entries.iter().collect();
@@ -1126,6 +1138,10 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         .iter()
         .position(|(construct, _)| *construct == FIRST_ON_PAGES)
         .unwrap_or_else(|| panic!("no construct {FIRST_ON_PAGES}: change FIRST_ON_PAGES"));
+    let sources_split = constructs
+        .iter()
+        .position(|(construct, _)| *construct == FIRST_ON_SOURCES)
+        .unwrap_or_else(|| panic!("no construct {FIRST_ON_SOURCES}: change FIRST_ON_SOURCES"));
     let files_split = constructs
         .iter()
         .position(|(construct, _)| *construct == FIRST_ON_PROJECT_FILES)
@@ -1134,13 +1150,16 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         });
     let mut directives = String::new();
     let mut source_pages = String::new();
+    let mut sources = String::new();
     let mut project_files = String::new();
     let mut page_of: BTreeMap<&str, &str> = BTreeMap::new();
     for (i, (construct, entries)) in constructs.into_iter().enumerate() {
         let (out, page) = if i < split {
             (&mut directives, "directives")
-        } else if i < files_split {
+        } else if i < sources_split {
             (&mut source_pages, "pages")
+        } else if i < files_split {
+            (&mut sources, "sources")
         } else {
             (&mut project_files, "project-files")
         };
@@ -1183,6 +1202,12 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         }
     }
 
+    let project_split = AREAS
+        .iter()
+        .position(|(area, _)| *area == FIRST_ON_PROJECT_CHECKS)
+        .unwrap_or_else(|| {
+            panic!("no area {FIRST_ON_PROJECT_CHECKS}: change FIRST_ON_PROJECT_CHECKS")
+        });
     let split = AREAS
         .iter()
         .position(|(area, _)| *area == FIRST_ON_OUTPUT_CHECKS)
@@ -1190,10 +1215,13 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
             panic!("no area {FIRST_ON_OUTPUT_CHECKS}: change FIRST_ON_OUTPUT_CHECKS")
         });
     let mut content_checks = String::new();
+    let mut project_checks = String::new();
     let mut output_checks = String::new();
     for (i, (area, title)) in AREAS.iter().enumerate() {
-        let (out, page) = if i < split {
+        let (out, page) = if i < project_split {
             (&mut content_checks, "content-checks")
+        } else if i < split {
+            (&mut project_checks, "project-checks")
         } else {
             (&mut output_checks, "output-checks")
         };
@@ -1218,6 +1246,7 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
             with_memo(&directives),
         ),
         ("diagnostics-pages.md".to_owned(), with_memo(&source_pages)),
+        ("diagnostics-sources.md".to_owned(), with_memo(&sources)),
         (
             "diagnostics-project-files.md".to_owned(),
             with_memo(&project_files),
@@ -1233,6 +1262,10 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         (
             "diagnostics-content-checks.md".to_owned(),
             with_memo(&content_checks),
+        ),
+        (
+            "diagnostics-project-checks.md".to_owned(),
+            with_memo(&project_checks),
         ),
         (
             "diagnostics-output-checks.md".to_owned(),
@@ -1283,6 +1316,10 @@ fn model_group(entry: &Entry) -> &str {
     entry.group.as_deref().unwrap_or("names")
 }
 
+/// The diagnostics reference's own page, from a fragment in `_generated/`:
+/// where an entry's header line links its words to.
+const REFERENCE: &str = "../checks/diagnostics.md";
+
 fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: &Pages) {
     let section = match pages.spec.get(&entry.spec) {
         None if entry.spec == "none" => "Ascribe's own, not in SPEC".to_owned(),
@@ -1292,20 +1329,22 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
         ),
         None => format!("SPEC §{}", entry.spec),
     };
+    // Each word of the header line links to where the reference, or the
+    // glossary, says what it means.
     let configurable = if entry.configurable {
-        " · configurable in `[checks]`"
+        format!(" · [configurable]({REFERENCE}#setting-a-checks-level) in `[checks]`")
     } else {
-        ""
+        String::new()
     };
     let acknowledged = entry
         .place
         .as_deref()
         .and_then(place_words)
-        .map(|words| format!(" · acknowledged {words}"))
+        .map(|words| format!(" · [acknowledged](../glossary.md#acknowledgement) {words}"))
         .unwrap_or_default();
     let _ = write!(
         out,
-        "\n### {} `{}`\n@id {{permalink=true}}: {}\n{}\n{} · {} level · next step: {}{configurable}{acknowledged} · {section}\n\n",
+        "\n### {} `{}`\n@id {{permalink=true}}: {}\n{}\n[{}]({REFERENCE}#severity) · [{} level]({REFERENCE}#file-level-and-page-level) · next step: [{}]({REFERENCE}#what-to-do-next){configurable}{acknowledged} · {section}\n\n",
         entry.code,
         entry.slug,
         entry.code,
@@ -1329,7 +1368,9 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
     let _ = writeln!(
         out,
         "**Fix:** {}",
-        escape_braces(&rebase_links(entry.fix.as_deref().unwrap_or_default()))
+        escape_braces(&rebase_links(&local_links(
+            entry.fix.as_deref().unwrap_or_default()
+        )))
     );
     let section = entry
         .reference
@@ -1549,6 +1590,57 @@ fn message(template: &str) -> String {
 /// registry's are, resolve from `_generated/` instead, where the fragment is.
 fn rebase_links(text: &str) -> String {
     relink(text, |_| "../")
+}
+
+/// Text whose links to the docs' permalinks, as the registry's help writes
+/// them so an agent reading the JSON can follow them, lead to the place each
+/// permalink names in `docs/ascribe.permalinks` instead, written from the
+/// content root, so the docs link to their own pages.
+fn local_links(text: &str) -> String {
+    let list = std::fs::read_to_string(repo().join("docs/ascribe.permalinks")).unwrap();
+    let list = ascribe_model::PermalinkList::parse(&list, ascribe_core::FileId::new(0)).unwrap();
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    let at = concat!("](", ascribe_core::docs_permalinks!());
+    while let Some(i) = rest.find(at) {
+        out.push_str(&rest[..i + 2]);
+        let after = &rest[i + at.len()..];
+        let name = after.split('/').next().unwrap_or_default();
+        let place = &list
+            .permalinks
+            .get(name)
+            .unwrap_or_else(|| panic!("the help links to go/{name}, which the docs don't publish"))
+            .place;
+        out.push_str(place);
+        rest = &after[name.len() + 1..];
+    }
+    out.push_str(rest);
+    out
+}
+
+/// A diagnostic's help, which `ascribe check --format json` gives an agent
+/// as `help`, has no relative link: each leads to a permalink of the docs,
+/// an address an agent can follow, which the reference writes as a link to
+/// its own page.
+#[test]
+fn help_links_are_permalinks() {
+    let registry = DiagnosticsRegistry::load(&Suite::bundled().diagnostics_path()).unwrap();
+    for entry in &registry.entries {
+        let help = entry.fix.as_deref().unwrap_or_default();
+        let relative = std::cell::RefCell::new(Vec::new());
+        relink(help, |dest| {
+            relative.borrow_mut().push(dest.to_owned());
+            ""
+        });
+        let relative = relative.into_inner();
+        assert!(
+            relative.is_empty(),
+            "{}'s fix links to {relative:?}: link to a permalink of the docs, `{}<name>/`",
+            entry.code,
+            ascribe_core::docs_permalinks!()
+        );
+        let _ = local_links(help);
+    }
 }
 
 /// Text with `prefix(destination)` written before each relative link's

@@ -69,7 +69,7 @@ A problem that spans lines has its first and last line, and no columns, which Gi
 
 ### Checking one rule at a time
 
-`--code` lets an agent, or a person, fix one rule across the project instead of working file by file. The summary line names the codes (``reported on 12 for code `ASC037` ``), and the commands a report names keep them: the concise list's `and N more:`, and the JSON's `next_command`.
+`--code` lets an agent, or a person, fix one rule across the project instead of working file by file. The summary line names the codes (``3 with problems for code `ASC037` ``), and the commands a report names keep them: the concise list's `and N more:`, and the JSON's `next_command`.
 
 ```sh
 npx ascribe check --code link-id-missing --format concise
@@ -87,17 +87,26 @@ The output starts with a line for each file changed (`fixed 2 problems in docs/g
 
 In VS Code, **Source Action… → Apply the safe fixes in this page** applies a page's safe fixes the same way, to the text in the editor, saved or not, for the problems the editor shows, and can run each time you save. See [Apply the safe fixes](../editor/problems.md#apply-the-safe-fixes).
 
+### Failing on warnings
+@available: ascribe planned
+
+`--exit-code=<level>` says the least problem that fails the command: `error`, which `--exit-code` alone means and the command does without it, or `warning`, for CI. `--deny-warnings` is the same as `--exit-code=warning`, and when both are given, the last one counts. The level follows `=`, so `ascribe check --exit-code docs/guides` checks the folder. Advice never fails the command, so `advice` isn't a level.
+
+```console
+$ ascribe check --exit-code=warning
+```
+
 ### Exit codes
 
 | Code | Meaning |
 |---|---|
-| `0` | No errors. Warnings don't fail the command unless you pass `--deny-warnings`, and advice never does. |
-| `1` | There are errors, or warnings with `--deny-warnings`. |
+| `0` | No errors. Warnings don't fail the command unless you pass `--exit-code=warning` or `--deny-warnings`, and advice never does. |
+| `1` | There are errors, or warnings with `--exit-code=warning` or `--deny-warnings`. |
 | `2` | The project couldn't be checked: a usage error, a `--code` no diagnostic has, no `ascribe.toml`, a content model with errors (they're shown, and nothing else is checked), a path that doesn't exist or isn't in the project, an `ascribe.baseline` with a line that doesn't parse (the error names it; `--no-baseline` checks without the file), or, with `--fix`, a file it fixed that can't be written. A source file that can't be read, or isn't UTF-8, is a `source-unreadable` error in the list instead, and the rest of the project is still checked. |
 
 ### Text output
 
-Each diagnostic shows its code, message, and source, and its next step as `Help:`: the title of its first fix, or, with none, the fix advice the JSON gives as `help`. Help that's the same for every diagnostic with a code is printed in full once; later diagnostics with that code point back to it, as `Help: as for ASC252 above (ascribe explain ASC252)`. The output ends with a summary in one form: the files checked, the builds (`for every build`, or with `--build`, `` for build `cloud` ``), the files reported on, which with no paths are all of them, and the counts of errors, warnings, and advice (`checked 12 files for every build, reported on 1: 1 error, 0 warnings, 0 advice`):
+Each diagnostic shows its code, message, and source, and its next step as `Help:`: the title of its first fix, or, with none, the fix advice the JSON gives as `help`. Help that's the same for every diagnostic with a code is printed in full once; later diagnostics with that code point back to it, as `Help: as for ASC252 above (ascribe explain ASC252)`. The output ends with a summary in one form: the files checked, the builds (`for every build`, or with `--build`, `` for build `cloud` ``), with paths, how many files they name (`reported on 2 files in the paths`), how many files have a problem reported, and the counts of errors, warnings, and advice (`checked 12 files for every build, 1 with problems: 1 error, 0 warnings, 0 advice`). The JSON's `files_reported` counts the files reported on, all of them when no paths are given:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check.txt
 
@@ -188,7 +197,7 @@ It checks the build as `ascribe check --build` does, and prints the problems as 
 Then it serves the folder at `http://127.0.0.1:4880/`, and prints the address to open:
 
 ```text
-checked 1 file for every build, reported on 1: 0 errors, 0 warnings, 0 advice
+checked 1 file for every build, 0 with problems: 0 errors, 0 warnings, 0 advice
 rendered build `site`: 1 page, 0 assets, in .ascribe/preview
 previewing build `site` at http://127.0.0.1:4880/
 it renders again as the project's files change; Ctrl-C stops it
@@ -230,7 +239,7 @@ With `--format github` and `--check`, it writes a GitHub Actions workflow comman
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/fmt-check-github.txt
 
-A symbolic link it leaves alone is reported on standard error, as `check` reports it ([`source-unreadable`](diagnostics/pages.md#ASC123)), and the other files are still formatted.
+A symbolic link it leaves alone is reported on standard error, as `check` reports it ([`source-unreadable`](diagnostics/sources.md#ASC123)), and the other files are still formatted.
 
 | Code | Meaning |
 |---|---|

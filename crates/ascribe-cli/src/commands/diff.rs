@@ -87,6 +87,7 @@ pub struct Args {
 pub enum Format {
     /// The changed pages of each build, with counts, for people; with a
     /// PAGE, its changes too, each block as it was and as it is.
+    #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.
     Json,

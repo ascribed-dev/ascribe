@@ -18,6 +18,7 @@ use ascribe_templates::{
 };
 use ascribe_workspace::{LoadError, LocateError};
 use clap::{Args as ClapArgs, Subcommand};
+use serde::Serialize;
 
 use crate::answer::{self, Format, from_here};
 use crate::cli::Global;
@@ -57,7 +58,46 @@ pub enum Command {
 
 /// Arguments of `ascribe templates list`.
 #[derive(Debug, ClapArgs)]
-pub struct ListArgs {}
+pub struct ListArgs {
+    /// How to show the templates.
+    #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
+    pub format: Format,
+}
+
+/// The version of `list --format json`'s schema.
+const LIST_SCHEMA_VERSION: u32 = 1;
+
+/// What `ascribe templates list --format json` writes: the templates
+/// Ascribe carries, and where they're from.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct ListJson {
+    /// The version of this schema. It changes only when a field is removed
+    /// or changes meaning.
+    schema_version: u32,
+    /// The version of Ascribe that wrote it.
+    ascribe_version: &'static str,
+    /// The repository of The Good Docs Project's templates.
+    repository: String,
+    /// The tag of theirs the templates were converted from.
+    tag: String,
+    /// The tag's commit.
+    commit: String,
+    /// Their license.
+    license: String,
+    /// The templates, in the set's order.
+    templates: Vec<ListTemplate>,
+}
+
+/// A template in `ascribe templates list --format json`.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct ListTemplate {
+    /// Its name, which `ascribe templates eject` takes, and its type's.
+    name: String,
+    /// What it's for.
+    summary: String,
+}
 
 /// Arguments of `ascribe templates eject`.
 #[derive(Debug, ClapArgs)]
@@ -149,7 +189,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     let stderr = io::stderr();
     let mut err = stderr.lock();
     let code = match args.command {
-        Command::List(_) => run_list(&mut out, &mut err),
+        Command::List(args) => run_list(&args, &mut out, &mut err),
         Command::Eject(args) => run_eject(global, &args, &mut out, &mut err),
         Command::Status(args) => run_status(global, &args, &mut out, &mut err),
     };
@@ -158,25 +198,48 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 }
 
 /// Exit codes: 0, or 2 when the list can't be written.
-fn run_list(out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+fn run_list(args: &ListArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let set = ascribe_templates::set();
+    let result = match args.format {
+        Format::Text => write_list(out, &set),
+        Format::Json => answer::write_json(
+            out,
+            &ListJson {
+                schema_version: LIST_SCHEMA_VERSION,
+                ascribe_version: env!("CARGO_PKG_VERSION"),
+                templates: set
+                    .templates
+                    .iter()
+                    .map(|t| ListTemplate {
+                        name: t.name.clone(),
+                        summary: t.summary.clone(),
+                    })
+                    .collect(),
+                repository: set.repository,
+                tag: set.tag,
+                commit: set.commit,
+                license: set.license,
+            },
+        ),
+    };
+    answer::written(result, err).unwrap_or(exit::OK)
+}
+
+fn write_list(out: &mut dyn Write, set: &ascribe_templates::Set) -> io::Result<()> {
     let width = set
         .templates
         .iter()
         .map(|t| t.name.len())
         .max()
         .unwrap_or(0);
-    let result = (|| {
-        for template in &set.templates {
-            writeln!(out, "{:width$}  {}", template.name, template.summary)?;
-        }
-        writeln!(
-            out,
-            "From The Good Docs Project's templates, {}, at {}, under the {}.",
-            set.repository, set.tag, set.license
-        )
-    })();
-    answer::written(result, err).unwrap_or(exit::OK)
+    for template in &set.templates {
+        writeln!(out, "{:width$}  {}", template.name, template.summary)?;
+    }
+    writeln!(
+        out,
+        "From The Good Docs Project's templates, {}, at {}, under the {}.",
+        set.repository, set.tag, set.license
+    )
 }
 
 /// Exit codes: 0 when every template named was written and its type added;

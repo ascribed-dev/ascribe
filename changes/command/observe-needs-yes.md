@@ -1,0 +1,1 @@
+- **Behavior change: `ascribe observe` without a terminal runs nothing unless given `--yes`.** In CI, a hook, or an agent's shell, it lists the config's commands and exits 2, naming `--yes`. See [`ascribe observe`](docs/content/examples/sources.md).

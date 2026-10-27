@@ -165,21 +165,25 @@ fn explain_answers_by_code_or_name() {
 #[test]
 fn explain_text_writes_links_for_a_terminal() {
     let dir = tempfile::tempdir().unwrap();
-    // The JSON keeps the registry's Markdown, for a tool to render.
+    // The JSON keeps the registry's Markdown, for a tool to render, with
+    // links an agent can follow.
     let value = json(dir.path(), &["explain", "page-orphan"], 0);
     assert!(
         value["fix"]
             .as_str()
             .unwrap()
-            .contains("[`[checks]`](content-model/checks.md#22-checks)"),
+            .contains("[`[checks]`](https://ascribed-dev.com/go/22-checks/)"),
         "{value}"
     );
     let text = stdout(&run(dir.path(), &["explain", "page-orphan"], 0));
     assert!(
-        text.contains("turn the check off in `[checks]` (`page-orphan = \"off\"`)"),
+        text.contains(
+            "turn the check off in `[checks]` (https://ascribed-dev.com/go/22-checks/) \
+             (`page-orphan = \"off\"`)"
+        ),
         "{text}"
     );
-    assert!(!text.contains("checks.md#"), "{text}");
+    assert!(!text.contains("]("), "{text}");
 }
 
 #[test]
@@ -1874,4 +1878,23 @@ fn search_kept_to_paths_says_nothing_of_words_published_outside_them() {
         &["search", "\"rotate them\"", "--config", "site"],
         0,
     );
+}
+
+#[test]
+fn concise_is_text_where_an_answer_has_no_one_line_form() {
+    let dir = project();
+    for args in [
+        &["explain", "ASC036"][..],
+        &["model", "--config", "site"][..],
+        &["outline", "site/docs/install.md"][..],
+        &["refs", "site/docs/keys.md"][..],
+    ] {
+        let text = stdout(&run(dir.path(), &[args, &["--format", "text"]].concat(), 0));
+        let concise = stdout(&run(
+            dir.path(),
+            &[args, &["--format", "concise"]].concat(),
+            0,
+        ));
+        assert_eq!(concise, text, "{args:?}");
+    }
 }

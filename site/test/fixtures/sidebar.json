@@ -111,6 +111,11 @@
         "nested": true
       },
       {
+        "href": "/docs/checks/diagnostics/project-checks/",
+        "label": "Diagnostics: content checks across the project",
+        "nested": true
+      },
+      {
         "href": "/docs/checks/diagnostics/output-checks/",
         "label": "Diagnostics: content checks of outputs and the site",
         "nested": true
@@ -122,7 +127,12 @@
       },
       {
         "href": "/docs/checks/diagnostics/pages/",
-        "label": "Diagnostics: links, pages, and sources",
+        "label": "Diagnostics: links and pages",
+        "nested": true
+      },
+      {
+        "href": "/docs/checks/diagnostics/sources/",
+        "label": "Diagnostics: sources, memo files, and navigation",
         "nested": true
       },
       {
@@ -581,6 +591,11 @@
       {
         "href": "/docs/contracts/json-reports/questions/",
         "label": "The commands that answer questions",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/json-reports/agents/",
+        "label": "ascribe agents",
         "nested": true
       },
       {

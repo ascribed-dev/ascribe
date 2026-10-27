@@ -1396,7 +1396,8 @@ fn search() {
 }
 
 /// `ascribe agents sync` on `examples/quill` in a repository of its own:
-/// the agents guide's list of what it writes, and who reads each file.
+/// the agents guide's list of what it writes, and who reads each file; then
+/// `--check`'s JSON.
 #[test]
 fn agents_sync() {
     let dir = repository();
@@ -1407,6 +1408,14 @@ fn agents_sync() {
     expect(
         "agents-sync.txt",
         &stdout(&run(dir.path(), &["agents", "sync"], 0)),
+    );
+    expect(
+        "agents-sync-check.json",
+        &json(&run(
+            dir.path(),
+            &["agents", "sync", "--check", "--format", "json"],
+            0,
+        )),
     );
 }
 
@@ -1669,10 +1678,14 @@ fn permalinks() {
         "docs/guides/security.md",
         "---\ntitle: Security\n---\n\nKeep the keys safe.\n",
     );
+    // In a repository, with each step committed, so the git guard lets the
+    // commands write.
+    git(root, &["init", "-q"]);
     expect(
         "permalinks-sync-new.txt",
         &stdout(&run(root, &["permalinks", "sync"], 0)),
     );
+    commit(root, "List the permalinks");
 
     // The section moves to a page of its own, and the other goes.
     write(
@@ -1716,6 +1729,7 @@ fn permalinks() {
         "permalinks-sync.txt",
         &format!("{}{}", String::from_utf8_lossy(&sync.stderr), stdout(&sync)),
     );
+    commit(root, "Sync the permalinks");
 
     let copy = tempfile::tempdir().unwrap();
     copy_tree(root, copy.path());
@@ -1771,6 +1785,10 @@ fn templates() {
     expect(
         "templates-list.txt",
         &stdout(&run(root, &["templates", "list"], 0)),
+    );
+    expect(
+        "templates-list.json",
+        &json(&run(root, &["templates", "list", "--format", "json"], 0)),
     );
     let copy = tempfile::tempdir().unwrap();
     copy_tree(root, copy.path());

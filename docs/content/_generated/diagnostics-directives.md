@@ -5,7 +5,7 @@
 @id {permalink=true}: ASC001
 @summary: Unknown key for the directive, image, or table row.
 
-Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** Unknown key for the directive, image, or table row.
 
@@ -19,7 +19,7 @@ Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC002
 @summary: Value doesn't match the key's declared type.
 
-Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** Value doesn't match the key's declared type.
 
@@ -33,7 +33,7 @@ Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC003
 @summary: Bare key without a value.
 
-Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** Bare key without a value.
 
@@ -47,7 +47,7 @@ Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC004
 @summary: Unquoted value containing a reserved character.
 
-Error · file level · next step: fix · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [fix](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** Unquoted value containing a reserved character.
 
@@ -61,7 +61,7 @@ Error · file level · next step: fix · [SPEC §3.3]({repo}/blob/main/SPEC.md#3
 @id {permalink=true}: ASC055
 @summary: Attribute block that doesn't parse (such as an unclosed quote or brace, or `=` with no value).
 
-Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** Attribute block that doesn't parse (such as an unclosed quote or brace, or `=` with no value).
 
@@ -75,7 +75,7 @@ Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC056
 @summary: The same key given more than once.
 
-Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** The same key given more than once.
 
@@ -89,7 +89,7 @@ Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC284
 @summary: A word after a fenced code block's language that starts like a pair a processor reads (its key in any case, then optional spaces and `=`) but isn't one.
 
-Warning · file level · next step: write · SPEC §3.3.1
+[Warning](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · SPEC §3.3.1
 
 **When:** A word after a fenced code block's language that starts like a pair a processor reads (its key in any case, then optional spaces and `=`) but isn't one.
 
@@ -105,7 +105,7 @@ Warning · file level · next step: write · SPEC §3.3.1
 @id {permalink=true}: ASC005
 @summary: Directive-shaped line (`@word` followed by `{`, `:`, or end of line) with an unknown name.
 
-Warning · file level · next step: choose · [SPEC §3.2]({repo}/blob/main/SPEC.md#32-recognition)
+[Warning](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.2]({repo}/blob/main/SPEC.md#32-recognition)
 
 **When:** Directive-shaped line (`@word` followed by `{`, `:`, or end of line) with an unknown name.
 
@@ -119,7 +119,7 @@ Warning · file level · next step: choose · [SPEC §3.2]({repo}/blob/main/SPEC
 @id {permalink=true}: ASC006
 @summary: Primary given to a directive that takes none, or a required primary missing.
 
-Error · file level · next step: write · [SPEC §3.4]({repo}/blob/main/SPEC.md#34-the-primary)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.4]({repo}/blob/main/SPEC.md#34-the-primary)
 
 **When:** Primary given to a directive that takes none, or a required primary missing.
 
@@ -133,7 +133,7 @@ Error · file level · next step: write · [SPEC §3.4]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC120
 @summary: Text on a directive line that fits no part of it: after the name or attributes, after `@end`, or after an identifier primary.
 
-Error · file level · next step: fix · [SPEC §3.1]({repo}/blob/main/SPEC.md#31-syntax)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [fix](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.1]({repo}/blob/main/SPEC.md#31-syntax)
 
 **When:** Text on a directive line that fits no part of it: after the name or attributes, after `@end`, or after an identifier primary.
 
@@ -149,7 +149,7 @@ Error · file level · next step: fix · [SPEC §3.1]({repo}/blob/main/SPEC.md#3
 @id {permalink=true}: ASC007
 @summary: Container not closed before its enclosing block ends.
 
-Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 **When:** Container not closed before its enclosing block ends.
 
@@ -163,7 +163,7 @@ Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC008
 @summary: Trailing `:` on a directive with no container form.
 
-Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [fix](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 **When:** Trailing `:` on a directive with no container form.
 
@@ -177,7 +177,7 @@ Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#3
 @id {permalink=true}: ASC009
 @summary: Container-only directive without a trailing `:`.
 
-Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [fix](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 **When:** Container-only directive without a trailing `:`.
 
@@ -191,7 +191,7 @@ Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#3
 @id {permalink=true}: ASC010
 @summary: Container still open when the next arm of its group begins (reported at that arm's opener).
 
-Error · file level · next step: write · [SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups)
 
 **When:** Container still open when the next arm of its group begins (reported at that arm's opener).
 
@@ -205,7 +205,7 @@ Error · file level · next step: write · [SPEC §3.6]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC011
 @summary: End line with no open container.
 
-Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 **When:** End line with no open container.
 
@@ -219,7 +219,7 @@ Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC012
 @summary: End line indented differently from its opener.
 
-Error · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
 
 **When:** End line indented differently from its opener.
 
@@ -233,7 +233,7 @@ Error · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC013
 @summary: Nesting deeper than two levels.
 
-Warning · file level · next step: write · [SPEC §3.10]({repo}/blob/main/SPEC.md#310-nesting)
+[Warning](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.10]({repo}/blob/main/SPEC.md#310-nesting)
 
 **When:** Nesting deeper than two levels.
 
@@ -249,7 +249,7 @@ Warning · file level · next step: write · [SPEC §3.10]({repo}/blob/main/SPEC
 @id {permalink=true}: ASC014
 @summary: Following-block directive with no following block in its container.
 
-Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 **When:** Following-block directive with no following block in its container.
 
@@ -263,7 +263,7 @@ Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC015
 @summary: Following-block directive bound to a heading.
 
-Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 **When:** Following-block directive bound to a heading.
 
@@ -277,7 +277,7 @@ Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC016
 @summary: Blank line between a following-block directive and its block.
 
-Warning · file level · next step: fix · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
+[Warning](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [fix](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 **When:** Blank line between a following-block directive and its block.
 
@@ -291,7 +291,7 @@ Warning · file level · next step: fix · [SPEC §3.8]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC017
 @summary: Heading-bound directive that isn't at the top of its section.
 
-Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 **When:** Heading-bound directive that isn't at the top of its section.
 
@@ -307,7 +307,7 @@ Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC018
 @summary: Title given to a directive that doesn't accept one.
 
-Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
+[Warning](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
 
 **When:** Title given to a directive that doesn't accept one.
 
@@ -321,7 +321,7 @@ Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.
 @id {permalink=true}: ASC019
 @summary: A `. ` line (dot and space) directly above a directive that accepts a title.
 
-Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
+[Warning](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
 
 **When:** A `. ` line (dot and space) directly above a directive that accepts a title.
 
@@ -337,7 +337,7 @@ Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.
 @id {permalink=true}: ASC020
 @summary: Duplicate id on a page, including ids from included content.
 
-Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
+[Error](../checks/diagnostics.md#severity) · [page level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
 **When:** Duplicate id on a page, including ids from included content.
 
@@ -351,7 +351,7 @@ Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC058
 @summary: Id, or a page's `permalink`, containing characters other than letters, digits, hyphens, underscores, and periods.
 
-Error · file level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
 **When:** Id, or a page's `permalink`, containing characters other than letters, digits, hyphens, underscores, and periods.
 
@@ -365,7 +365,7 @@ Error · file level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC173
 @summary: Permalink published by one build in more than one place, names compared ignoring case: on two pages, or as a page's own and a heading's.
 
-Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
+[Error](../checks/diagnostics.md#severity) · [page level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
 **When:** Permalink published by one build in more than one place, names compared ignoring case: on two pages, or as a page's own and a heading's.
 
@@ -381,7 +381,7 @@ Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC021
 @summary: Target file doesn't exist.
 
-Error · file level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** Target file doesn't exist.
 
@@ -395,7 +395,7 @@ Error · file level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC022
 @summary: Target id doesn't exist in the target file.
 
-Error · page level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
+[Error](../checks/diagnostics.md#severity) · [page level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** Target id doesn't exist in the target file.
 
@@ -409,7 +409,7 @@ Error · page level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC023
 @summary: Include cycle.
 
-Error · page level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
+[Error](../checks/diagnostics.md#severity) · [page level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** Include cycle.
 
@@ -423,7 +423,7 @@ Error · page level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC125
 @summary: `{heading=false}` without an `#id`, which has no effect.
 
-Warning · file level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
+[Warning](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** `{heading=false}` without an `#id`, which has no effect.
 
@@ -437,7 +437,7 @@ Warning · file level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.
 @id {permalink=true}: ASC182
 @summary: A page's includes expand it past the processor's limit.
 
-Error · page level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
+[Error](../checks/diagnostics.md#severity) · [page level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** A page's includes expand it past the processor's limit.
 
@@ -453,7 +453,7 @@ Error · page level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC024
 @summary: No arm of a group survives a build's selection.
 
-Warning · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+[Warning](../checks/diagnostics.md#severity) · [page level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **When:** No arm of a group survives a build's selection.
 
@@ -467,7 +467,7 @@ Warning · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.
 @id {permalink=true}: ASC025
 @summary: Unknown dimension or value.
 
-Error · file level · next step: choose · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 **When:** Unknown dimension or value.
 
@@ -481,7 +481,7 @@ Error · file level · next step: choose · [SPEC §4.3]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC026
 @summary: Group mixes labeled and dimensional arms.
 
-Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 **When:** Group mixes labeled and dimensional arms.
 
@@ -495,7 +495,7 @@ Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC027
 @summary: Arm has both a title and attributes, or neither.
 
-Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 **When:** Arm has both a title and attributes, or neither.
 
@@ -509,7 +509,7 @@ Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC028
 @summary: Dimensional arms share no dimension key.
 
-Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 **When:** Dimensional arms share no dimension key.
 
@@ -525,7 +525,7 @@ Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC029
 @summary: Unknown target or state.
 
-Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** Unknown target or state.
 
@@ -539,7 +539,7 @@ Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC030
 @summary: History out of chronological order.
 
-Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** History out of chronological order.
 
@@ -553,7 +553,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC031
 @summary: Versions given for a versionless target.
 
-Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** Versions given for a versionless target.
 
@@ -567,7 +567,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC032
 @summary: Spec exceeds its enclosing scope.
 
-Error · page level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+[Error](../checks/diagnostics.md#severity) · [page level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** Spec exceeds its enclosing scope.
 
@@ -581,7 +581,7 @@ Error · page level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC057
 @summary: Spec that doesn't parse, in a directive or in `available` frontmatter.
 
-Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** Spec that doesn't parse, in a directive or in `available` frontmatter.
 
@@ -595,7 +595,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC210
 @summary: Version newer than every release line its target declares.
 
-Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** Version newer than every release line its target declares.
 
@@ -609,7 +609,7 @@ Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC245
 @summary: `planned` for a target with no planned line, or more than one.
 
-Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** `planned` for a target with no planned line, or more than one.
 
@@ -625,7 +625,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC033
 @summary: Bound block isn't an ordered list.
 
-Error · file level · next step: write · [SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps)
 
 **When:** Bound block isn't an ordered list.
 
@@ -641,7 +641,7 @@ Error · file level · next step: write · [SPEC §4.6]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC034
 @summary: Missing title.
 
-Error · file level · next step: write · [SPEC §4.7]({repo}/blob/main/SPEC.md#47-details)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.7]({repo}/blob/main/SPEC.md#47-details)
 
 **When:** Missing title.
 
@@ -657,7 +657,7 @@ Error · file level · next step: write · [SPEC §4.7]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC035
 @summary: Violates its declared schema.
 
-Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 **When:** Violates its declared schema.
 

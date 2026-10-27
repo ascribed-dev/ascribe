@@ -70,8 +70,8 @@ pub const PROMPTS: &[Named] = &[
                 "path",
                 "Where the page goes: its file, or a folder for it, in the content root, from \
                  the current directory or the content root. Any other file or folder names \
-                 the project. By default, the type's first folder in the project at or above \
-                 the current directory.",
+                 the project. By default, where the request says, or else the content root, \
+                 named for the title.",
                 false,
             ),
         ],
@@ -357,8 +357,11 @@ fn start_with(page_type: &ContentType, text: &str) -> String {
          (`template-placeholder-left` in a draft). Its memos, the `@memo` lines, are the template's \
          instructions to you: follow each, then delete it or keep it. A memo is never \
          published."
+    } else if start::empty_fields(page_type).next().is_some() {
+        "Start the file with this frontmatter, and fill in each empty field, the type's \
+         required ones:"
     } else {
-        "Start the file with this frontmatter, and fill in each empty field:"
+        "Start the file with this frontmatter:"
     };
     let info = if page_type.template.is_some() {
         "markdown"
@@ -404,6 +407,7 @@ fn fix(projects: &dyn Projects, arguments: &Arguments) -> Result<String, String>
         summary: false,
         format: check::Format::Prompt,
         limit: None,
+        exit_code: None,
         deny_warnings: false,
         base: None,
         base_exact: false,

@@ -86,6 +86,7 @@ pub enum Emit {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum Format {
     /// Diagnostics with source snippets, for people.
+    #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.
     Json,

@@ -71,6 +71,29 @@ fn list_shows_each_template_with_its_summary_and_where_the_set_is_from() {
 }
 
 #[test]
+fn list_s_json_has_each_template_and_where_the_set_is_from() {
+    let dir = tempfile::tempdir().unwrap();
+    let output = ascribe(dir.path(), &["templates", "list", "--format", "json"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let list: Value = serde_json::from_str(&stdout(&output)).unwrap();
+    let set = ascribe_templates::set();
+    assert_eq!(list["schema_version"], 1);
+    assert_eq!(list["tag"], set.tag.as_str());
+    assert_eq!(list["license"], set.license.as_str());
+    let templates = list["templates"].as_array().unwrap();
+    assert_eq!(templates.len(), set.templates.len());
+    for (listed, template) in templates.iter().zip(&set.templates) {
+        assert_eq!(listed["name"], template.name.as_str());
+        assert_eq!(listed["summary"], template.summary.as_str());
+    }
+    let concise = ascribe(dir.path(), &["templates", "list", "--format", "concise"]);
+    assert_eq!(
+        stdout(&concise),
+        stdout(&ascribe(dir.path(), &["templates", "list"]))
+    );
+}
+
+#[test]
 fn eject_says_what_it_wrote_and_the_project_checks_with_the_type() {
     let dir = project();
     let output = ascribe(dir.path(), &["templates", "eject", "how-to"]);
@@ -422,7 +445,7 @@ description: \"Replace the keys Quill signs releases with, without a release goi
 
 ## Overview
 
-This guide explains how to replace the keys Quill signs releases with.
+This guide explains how to replace the keys {product} signs releases with.
 
 ## Before you start
 
@@ -440,7 +463,7 @@ Before you rotate the keys, ensure:
 
 ## See also
 
-* [Install Quill](../install.md)
+* [Install {product}](../install.md)
 ";
 
 /// The phase's goal, in a copy of `examples/getting-started`: eject the

@@ -1091,8 +1091,8 @@ fn a_github_alert_s_fix_writes_a_note() {
         Some(page("@note {type=note}: Widgetly is in beta.\nMind the gaps.").as_str())
     );
     assert_eq!(
-        alert_rewritten("Text.\n\n> [!tip]\n>\n> Quill runs in the browser.\n\nMore.").as_deref(),
-        Some(page("Text.\n\n@note {type=tip}: Quill runs in the browser.\n\nMore.").as_str())
+        alert_rewritten("Text.\n\n> [!tip]\n>\n> The app runs in the browser.\n\nMore.").as_deref(),
+        Some(page("Text.\n\n@note {type=tip}: The app runs in the browser.\n\nMore.").as_str())
     );
     assert_eq!(
         alert_rewritten("> [!Warning]\n> Back up first.\n>\n> - The database\n> - The keys")
@@ -1331,4 +1331,65 @@ fn a_pair_first_is_named_in_the_missing_language() {
     );
     let p = project(&[("index.md", &page("```\nlet x;\n```"))]);
     assert!(!one(&p).message.contains("is a pair"));
+}
+
+/// A phrase's value written out is advice, whose fix writes the phrase: safe
+/// for a value that can't be an ordinary word, such as a URL, and unsafe for
+/// one that can, which may mean the word.
+#[test]
+fn a_phrase_value_written_out_is_offered_the_phrase() {
+    let p = project(&[(
+        "index.md",
+        &page("Quill answers at https://api.quill.dev/v1."),
+    )]);
+    let all = check_files(&p);
+    assert_eq!(slugs(&p), ["phrase-text-written", "phrase-text-written"]);
+    assert!(all.iter().all(|d| d.severity == Severity::Advice));
+    assert_eq!(
+        all[0].message,
+        "`Quill` is the value of the phrase `{product}`; write `{product}`, so the page changes with the value"
+    );
+    let applicability: Vec<Applicability> = all.iter().map(|d| d.fixes[0].applicability).collect();
+    assert_eq!(applicability, [Applicability::Unsafe, Applicability::Safe]);
+    let file = p
+        .source_at(&RelPath::parse("index.md").expect("path"))
+        .expect("a source");
+    let edits: Vec<_> = all.iter().flat_map(|d| d.fixes[0].edits.clone()).collect();
+    let fixed = apply_edits(&file.text, &edits).expect("edits apply");
+    assert_eq!(fixed, page("{product} answers at {api}v1."));
+    let fixed = project(&[("index.md", &fixed)]);
+    assert!(check_files(&fixed).is_empty());
+}
+
+/// In a heading with no `@id`, the fix would leave a phrase in a heading
+/// with no `@id`, so it's unsafe, and the message says to give it one.
+#[test]
+fn a_phrase_value_in_a_heading_asks_for_an_id() {
+    let p = project(&[(
+        "index.md",
+        &page(
+            "## Call https://api.quill.dev/\n\nText.\n\n## Use https://api.quill.dev/\n@id: use\n\nText.",
+        ),
+    )]);
+    let all = check_files(&p);
+    assert_eq!(slugs(&p), ["phrase-text-written", "phrase-text-written"]);
+    assert!(
+        all[0].message.contains("give the heading an `@id`"),
+        "{}",
+        all[0].message
+    );
+    assert_eq!(all[0].fixes[0].applicability, Applicability::Unsafe);
+    assert!(!all[1].message.contains("`@id`"), "{}", all[1].message);
+    assert_eq!(all[1].fixes[0].applicability, Applicability::Safe);
+}
+
+/// Text Ascribe writes into a page has a phrase's value written as the
+/// phrase, by the check's own rules.
+#[test]
+fn text_written_into_a_page_has_its_phrases() {
+    let model = model();
+    assert_eq!(
+        ascribe_check::with_phrases("Quill and Quills at https://api.quill.dev/", &model),
+        "{product} and Quills at {api}"
+    );
 }

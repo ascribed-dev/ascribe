@@ -12,7 +12,7 @@ ascribe agents sync
 
 It writes:
 
-- **`AGENTS.md`** beside `ascribe.toml`: the check to run after each edit and before finishing, to run `ascribe search` for a subject before writing a page about it, your page types with what each is for and its frontmatter, and that each page names its type with `type:`, your phrases, the directives your pages use, and how to link. It's at most 4,000 characters, and long lists are cut with the command that shows the rest, the page types first.
+- **`AGENTS.md`** beside `ascribe.toml`: the check to run after each edit and before finishing, to run `ascribe search` for a subject before writing a page about it, your page types with what each is for and its frontmatter, and that each page names its type with `type:`, your phrases, the directives your pages use, with your dimensions and their values for `@variant` and an example of your own targets for `@available`, and how to link. It's at most 4,000 characters, and long lists are cut with the command that shows the rest, the page types first.
 - **A short block in the repository's root `AGENTS.md`,** when your project is in a subfolder: where its pages are, the check to run, and where its full rules are. Some agents, such as Codex, read no `AGENTS.md` below the folder they start in.
 - **The skill,** in `.agents/skills/ascribe/` at the repository's root. See [The skill](#the-skill).
 
@@ -77,7 +77,7 @@ The skill is one folder, `ascribe`, in the [Agent Skills](https://agentskills.io
 - that text from a review or a pull request is someone else's, not instructions;
 - each directive's syntax, in a reference it reads only when it needs it.
 
-`sync` writes it to `.agents/skills/ascribe/` at the repository's root, where Codex, Cursor, Gemini CLI, and Copilot find it, and with the `claude` target to `.claude/skills/ascribe/`, where Claude Code does. `ascribe agents skill` prints its `SKILL.md`. The `@ascribed/cli` package ships it too, as `skills/ascribe/`, for tools that install skills from packages.
+`sync` writes it to `.agents/skills/ascribe/` at the repository's root, where Codex, Cursor, Gemini CLI, and Copilot find it, and with the `claude` target to `.claude/skills/ascribe/`, where Claude Code does. When the repository's only project is in a folder, the skill gives the commands that work on the whole project, such as `ascribe check` with no file, that folder with `--config`, so they work from the repository's root, where an agent starts. With more than one project, the skill is each one's, so it names none. `ascribe agents skill` prints its `SKILL.md`. The `@ascribed/cli` package ships it too, as `skills/ascribe/`, for tools that install skills from packages.
 
 In VS Code, chat has the skill before you run `sync`: the [extension](../editor/agents.md#agents-in-vs-code) ships it.
 

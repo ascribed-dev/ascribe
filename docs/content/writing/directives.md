@@ -119,6 +119,7 @@ Says where content applies and its lifecycle state. Unlike `@variant`, it doesn'
 - Several `@available` lines on one heading or block all apply: the content is available only where all of them allow it.
 
 ### Availability specs
+@id {permalink=true}: availability-specs
 
 A spec is a comma-separated list of [targets](../glossary.md#target), each with an optional lifecycle:
 
@@ -176,6 +177,7 @@ A table row takes a spec from an attribute block at the end of its first cell, w
 - `available` is the only key a row takes. Its spec is checked like an `@available` line's, and can't go beyond the table's own availability.
 - A `badge` build marks the row at the end of its first cell, and a filter build removes the row where it isn't available.
 
+@intended {check=phrase-text-written}: An example of prose that says each release's value, which stays as written.
 There's no form for part of a sentence: a filter would break the sentence, and a badge in the middle of one gets in the way. Write a value that differs by release as prose, such as "glibc 2.28 or later (2.39 for 0.1.1 and earlier)".
 
 ## `@note`
@@ -271,6 +273,7 @@ Every problem is reported at the `@snippet` line ([source files](../checks/diagn
 In VS Code, a code file says which pages show it: see [code files a page shows](../editor/writing.md#code-files-a-page-shows).
 
 ## `@intended`
+@id {permalink=true}: intended
 
 ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended))
 
@@ -282,7 +285,7 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 ```
 
 - **Only review checks,** whose next step is *review*, since what they report may be fine as it is, such as a page nothing links to. A problem that's always wrong is fixed instead. A review check the project raises to an error in [`[checks]`](../content-model/checks.md#22-checks) can still be acknowledged. The [diagnostics reference](../checks/diagnostics.md) says where each review check is acknowledged, and [Quieting a problem](../checks/check.md#quieting-a-problem) compares `@intended` with the other ways to quiet one.
-- **The names are Ascribe's.** A check is named as the diagnostics reference names it. The specification names no checks, so another processor may name its checks differently, and reports a name it doesn't know as an error, as Ascribe does ([`intended-check`](../checks/diagnostics/pages.md#ASC143)).
+- **The names are Ascribe's.** A check is named as the diagnostics reference names it. The specification names no checks, so another processor may name its checks differently, and reports a name it doesn't know as an error, as Ascribe does ([`intended-check`](../checks/diagnostics/sources.md#ASC143)).
 - **Where it's written** depends on the check, which reports its problems at one kind of place:
   - **A block:** `@intended` directly above it, as above. It covers the check's problems anywhere in the block, including inside a container. Above a block of a fragment, it covers that block in every page that includes it.
   - **A heading:** `@intended` at the top of its section, among the directives under the heading. It covers the check's problems at the heading, and, when no blank line comes between, in the block directly under the `@intended` line, so a section's first block is acknowledged as any other block is. It covers nothing else in the section. An unused glossary term is acknowledged this way:

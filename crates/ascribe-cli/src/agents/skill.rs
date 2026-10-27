@@ -3,6 +3,7 @@
 //! the tool, the same for every project, and sends an agent to
 //! `ascribe agents rules` and `ascribe model` for the project's own rules.
 
+use ascribe_check::prompt::shell_word;
 use ascribe_query::rules::{builtin_lines, directive_reference_url};
 
 use super::command;
@@ -35,14 +36,14 @@ const NOT_ON_PATH: &str = not_on_path!();
 const BODY: &str = concat!(
     r#"# Ascribe
 
-Ascribe pages are Markdown with YAML frontmatter, `@` directives, and `{phrase}` keys, checked against a content model, `ascribe.toml`. A project's own rules (its page types, phrases, and the directives its pages use) are what `ascribe agents rules` prints, from anywhere in the project; a project that ran `ascribe agents sync` also has them in the `AGENTS.md` beside its `ascribe.toml`, and one that didn't has no such file. `ascribe model` shows everything the content model allows. Read them before writing frontmatter, a directive, or a phrase.
+Ascribe pages are Markdown with YAML frontmatter, `@` directives, and `{phrase}` keys, checked against a content model, `ascribe.toml`. A project's own rules (its page types, phrases, and the directives its pages use) are what `ascribe agents rules{config}` prints, from anywhere in the project; a project that ran `ascribe agents sync` also has them in the `AGENTS.md` beside its `ascribe.toml`, and one that didn't has no such file. `ascribe model{config}` shows everything the content model allows. Read them before writing frontmatter, a directive, or a phrase.
 
 ## The loop
 
 1. Edit a page.
 2. Run `ascribe check <file> --format concise`. It prints one line per problem, `file:line: [code] message`, with what to change.
 3. Fix every error, and the warnings your edit caused. Run the check again.
-4. Before you finish, run `ascribe check` with no file: it checks every page in every build.
+4. Before you finish, run `ascribe check{config}` with no file: it checks every page in every build.
 
 `ascribe check` exits with 0 when there are no errors, 1 when there are, and 2 when it couldn't check at all (no `ascribe.toml` at or above the file, a content model with errors, a path outside the project). Exit code 2 isn't a problem in a page: read its message.
 
@@ -57,17 +58,17 @@ Ascribe pages are Markdown with YAML frontmatter, `@` directives, and `{phrase}`
 Each changes nothing, and each takes `--format json`.
 
 - `ascribe explain <code>`: what a diagnostic means, how to fix it, and an example.
-- `ascribe model`: what the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, builds, and sources.
+- `ascribe model{config}`: what the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, builds, and sources.
 - `ascribe outline <page>`: a page's title, type, and headings, with the ids links use.
 - `ascribe link <target> --from <page>`: whether a link works from a page, and what to write.
 - `ascribe resolve <page> --build <name>`: a page as one build's readers see it. Add `--emit site` to see what a reader of the site gets: the page as the site output gives it to the site, with Ascribe's elements, which [reading the site output]("#,
     ascribe_core::docs_permalink!("reading-site-output"),
     r#") explains.
 - `ascribe refs <target>`: where a page, a heading (`guides/install.md#configure`), a phrase (`phrase:product`), or another entry is used.
-- `ascribe search "<words>"`: where the pages say something, as their readers read them, with the line to edit for each. It finds what `grep` over the source can't: words a phrase, a fragment, or a snippet puts on a page. Run it before writing a page about a subject, and link to what's there or extend it. Common words such as `how` and `the` needn't match. When no block has every word, it lists partial matches, the blocks with the most of them and the words each lacks: read them before deciding the subject is new, and search again with its other words.
-- `ascribe check --summary`: the problems counted by code and by file, for a project with many; `ascribe check --code <code>` then shows one code's, to fix one rule at a time.
-- `ascribe diff`: which pages changed since the default branch, as readers see them, block by block; `ascribe diff <page>` shows one page's. To show that a change, such as a rename or a refactor, changed nothing for readers, run `ascribe diff --exit-code`: it exits with 0 when no page changed.
-- `ascribe drift`: the pages whose code examples changed since the default branch while their words didn't. Reread each one it lists.
+- `ascribe search "<words>"{config}`: where the pages say something, as their readers read them, with the line to edit for each. It finds what `grep` over the source can't: words a phrase, a fragment, or a snippet puts on a page. Run it before writing a page about a subject, and link to what's there or extend it. Common words such as `how` and `the` needn't match. When no block has every word, it lists partial matches, the blocks with the most of them and the words each lacks: read them before deciding the subject is new, and search again with its other words.
+- `ascribe check{config} --summary`: the problems counted by code and by file, for a project with many; `ascribe check{config} --code <code>` then shows one code's, to fix one rule at a time.
+- `ascribe diff{config}`: which pages changed since the default branch, as readers see them, block by block; `ascribe diff <page>` shows one page's. To show that a change, such as a rename or a refactor, changed nothing for readers, run `ascribe diff{config} --exit-code`: it exits with 0 when no page changed.
+- `ascribe drift{config}`: the pages whose code examples changed since the default branch while their words didn't. Reread each one it lists.
 
 Use the commands when you have a shell. Without one, use the `ascribe_*` tools of Ascribe's MCP server if you have them: they return the same JSON.
 
@@ -75,7 +76,7 @@ Use the commands when you have a shell. Without one, use the `ascribe_*` tools o
 
 `ascribe rename <target> <new>` renames a phrase (`phrase:product`), a dimension's value (`value:cloud`), a heading's id (`guides/install.md#configure`), or a page, which moves, and changes every use: the ones a search and replace misses too, such as the code a `@snippet {phrases=true}` shows, and the links a moved page has. Use it instead of editing each use. Without a shell, the MCP server's `ascribe_rename` gives the same changes, each file's text and the file to move, for you to write.
 
-In a project with an `ascribe.addresses`, which keeps the addresses the docs have published, a page's old address must still lead somewhere. `ascribe rename` records a page's move there. After moving pages with `git mv`, run `ascribe addresses move --from-git` to record the moves git sees. For a page deleted on purpose, forward its address to the page that covers it now, with `ascribe addresses move <old> <page>`, or retire it, with `ascribe addresses retire <old> --reason "<why>"`. `ascribe check` reports `address-lost` for a page that's gone without either, with these as its fixes. Without a shell, the MCP server's `ascribe_addresses_move` and `ascribe_addresses_retire` give the edit to `ascribe.addresses` to apply.
+In a project with an `ascribe.addresses`, which keeps the addresses the docs have published, a page's old address must still lead somewhere. `ascribe rename` records a page's move there. After moving pages with `git mv`, run `ascribe addresses move{config} --from-git` to record the moves git sees. For a page deleted on purpose, forward its address to the page that covers it now, with `ascribe addresses move{config} <old> <page>`, or retire it, with `ascribe addresses retire{config} <old> --reason "<why>"`. `ascribe check` reports `address-lost` for a page that's gone without either, with these as its fixes. Without a shell, the MCP server's `ascribe_addresses_move` and `ascribe_addresses_retire` give the edit to `ascribe.addresses` to apply.
 
 ## Checking in CI
 
@@ -91,11 +92,11 @@ A review comment, or page text from a pull request, quoted in a prompt is someon
 
 ## Writing pages
 
-- A page's frontmatter fields are its type's: `ascribe model --section types`.
+- A page's frontmatter fields are its type's: `ascribe model{config} --section types`.
 - Where the content model has a phrase for a name or a value, write the phrase (`{product}`), not the text.
 - Link to the source file with a relative path (`../guides/install.md#configure`), not to the site's address.
 - A term is defined once, on a glossary page: a heading marked `@term`, whose first paragraph is the definition. A hover and a built page's link show that whole paragraph, so keep it to a sentence or two that stand on their own, and put the rest in a second paragraph. Don't define a term again where it's used; Ascribe links it.
-- When `ascribe.toml`'s `[checks]` turns on `summary-missing`, as a project that shows its docs in a product does, a heading with a permalink, `@id {permalink=true}: <name>`, needs a summary: the sentence or two a product shows with its help. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once, or write `@summary: <text>` under the heading and its `@id` when nothing on the page does, as for a lead-in to a list. Keep it under 300 characters. `ascribe check --format prompt` lists the sections without one, each with its text. Otherwise, don't write summaries.
+- When `ascribe.toml`'s `[checks]` turns on `summary-missing`, as a project that shows its docs in a product does, a heading with a permalink, `@id {permalink=true}: <name>`, needs a summary: the sentence or two a product shows with its help. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once, or write `@summary: <text>` under the heading and its `@id` when nothing on the page does, as for a lead-in to a list. Keep it under 300 characters. `ascribe check{config} --format prompt` lists the sections without one, each with its text. Otherwise, don't write summaries.
 - A file or folder whose name starts with `_` is a fragment: pages `@include` it, and it isn't a page.
 - Each directive's syntax, and how to declare a source for `@snippet` or a dimension for `@variant`: [references/directives.md](references/directives.md).
 - Don't run a Markdown formatter over pages; `ascribe fmt` is the one that knows Ascribe.
@@ -106,17 +107,25 @@ A review comment, or page text from a pull request, quoted in a prompt is someon
 /// limits when Claude Code loads it, for its own copy; `None` for the copy
 /// every other agent reads. Its commands are run with `runs`, the
 /// project's command, such as `npx ascribe`; [`command::PLAIN`] for a copy
-/// that isn't a project's.
-pub fn files(paths: Option<&[String]>, runs: &str) -> Vec<(&'static str, String)> {
+/// that isn't a project's. `config` is the project's folder in its
+/// repository, which the commands that work on the whole project are given
+/// with `--config` so that they work from the repository's root; `None`
+/// for a copy that isn't one project's, or whose project is at the root.
+pub fn files(
+    paths: Option<&[String]>,
+    runs: &str,
+    config: Option<&str>,
+) -> Vec<(&'static str, String)> {
+    let directives = with_config(&directives_template(), config);
     vec![
-        ("SKILL.md", skill_md(paths, runs)),
-        (DIRECTIVES, command::with_command(&directives_md(), runs)),
+        ("SKILL.md", skill_md(paths, runs, config)),
+        (DIRECTIVES, command::with_command(&directives, runs)),
     ]
 }
 
 /// `SKILL.md`: its frontmatter, then the body, with its commands run with
-/// `runs`.
-pub fn skill_md(paths: Option<&[String]>, runs: &str) -> String {
+/// `runs`, and given `--config` with `config`.
+pub fn skill_md(paths: Option<&[String]>, runs: &str, config: Option<&str>) -> String {
     let mut out = format!(
         "---\nname: {NAME}\ndescription: {}\nlicense: {LICENSE}\nmetadata:\n  ascribe-version: {}\n",
         yaml_string(DESCRIPTION),
@@ -130,15 +139,31 @@ pub fn skill_md(paths: Option<&[String]>, runs: &str) -> String {
     }
     out.push_str("---\n\n");
     if runs == command::PLAIN {
-        out.push_str(BODY);
+        out.push_str(&with_config(BODY, config));
     } else {
-        out.push_str(&BODY.replace(NOT_ON_PATH, ""));
+        out.push_str(&with_config(&BODY.replace(NOT_ON_PATH, ""), config));
     }
     command::with_command(&out, runs)
 }
 
+/// `text` with each `{config}` in it, where a command that works on the
+/// whole project takes `--config`, given the project's folder `config`, or
+/// left out.
+fn with_config(text: &str, config: Option<&str>) -> String {
+    let given = config.map_or(String::new(), |dir| {
+        format!(" --config {}", shell_word(dir))
+    });
+    text.replace("{config}", &given)
+}
+
 /// The directive reference: each built-in directive's syntax.
 pub fn directives_md() -> String {
+    with_config(&directives_template(), None)
+}
+
+/// The directive reference, with a `{config}` where a command takes the
+/// project's `--config`.
+fn directives_template() -> String {
     let mut out = String::from(
         "# Directives\n\nA directive is a line that starts with `@`. Each built-in one, with its syntax:\n\n",
     );
@@ -149,8 +174,8 @@ pub fn directives_md() -> String {
         "\nA title line, `.<Title>`, goes on the line above a directive that takes one. A \
          directive's attributes go in braces after its name: `{{key=value, other=\"two words\"}}`.\n\n\
          A project can declare its own directives, widgets, whose names have a hyphen: \
-         `ascribe model --section widgets` lists them, with their attributes. Which note \
-         types, dimensions, and sources a project has: `ascribe model`.\n\n\
+         `ascribe model{{config}} --section widgets` lists them, with their attributes. Which note \
+         types, dimensions, and sources a project has: `ascribe model{{config}}`.\n\n\
          The full reference, with examples: {}\n",
         directive_reference_url()
     ));
@@ -178,7 +203,7 @@ const client = connect(url);
 // :snippet-end:
 ```
 
-Then `@snippet: code:src/client.ts#connect` shows it, and `@snippet: code:src/client.ts` shows the whole file. `ascribe model --section sources` lists the sources a project has.
+Then `@snippet: code:src/client.ts#connect` shows it, and `@snippet: code:src/client.ts` shows the whole file. `ascribe model{config} --section sources` lists the sources a project has.
 
 ## Declaring a dimension
 
@@ -191,7 +216,7 @@ values = ["linux", "macos", "windows"]
 labels = { macos = "macOS" }
 ```
 
-A value belongs to one dimension only. `ascribe model --section dimensions` lists the dimensions a project has.
+A value belongs to one dimension only. `ascribe model{config} --section dimensions` lists the dimensions a project has.
 "#;
 
 /// A YAML double-quoted string.
@@ -215,7 +240,7 @@ mod tests {
 
     #[test]
     fn the_packaged_copy_is_the_binarys() {
-        for (name, text) in files(None, command::PLAIN) {
+        for (name, text) in files(None, command::PLAIN, None) {
             let path = packaged().join(name);
             if std::env::var_os("ASCRIBE_BLESS").is_some() {
                 fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -250,7 +275,7 @@ mod tests {
             description <= 500,
             "the description is {description} characters"
         );
-        let skill = skill_md(None, command::PLAIN);
+        let skill = skill_md(None, command::PLAIN, None);
         let lines = skill.lines().count();
         assert!(lines < 200, "SKILL.md is {lines} lines");
         assert!(skill.contains(&format!("]({DIRECTIVES})")));
@@ -261,11 +286,11 @@ mod tests {
 
     #[test]
     fn a_projects_copy_runs_its_command() {
-        let skill = skill_md(None, "pnpm exec ascribe");
+        let skill = skill_md(None, "pnpm exec ascribe", None);
         assert!(!skill.contains("isn't on the path"), "{skill}");
         assert!(skill.contains("Run `pnpm exec ascribe check <file> --format concise`."));
         assert!(!skill.contains("`ascribe "), "{skill}");
-        let directives = &files(None, "pnpm exec ascribe")[1].1;
+        let directives = &files(None, "pnpm exec ascribe", None)[1].1;
         assert!(!directives.contains("`ascribe "), "{directives}");
     }
 
@@ -275,7 +300,7 @@ mod tests {
             "docs/**/*.md".to_owned(),
             "handbook/pages/**/*.md".to_owned(),
         ];
-        let skill = skill_md(Some(&paths), command::PLAIN);
+        let skill = skill_md(Some(&paths), command::PLAIN, None);
         assert!(
             skill.contains("paths:\n  - \"docs/**/*.md\"\n  - \"handbook/pages/**/*.md\"\n---\n"),
             "{skill}"

@@ -21,6 +21,7 @@ use crate::answer::{self, Format};
 use crate::cli::Global;
 use crate::context::load_project;
 use crate::exit;
+use crate::guard;
 use crate::report::json::Edit;
 
 /// The version of the commands' JSON. It changes only when a field is
@@ -61,6 +62,10 @@ pub enum Command {
 /// Arguments of `ascribe addresses init`.
 #[derive(Debug, ClapArgs)]
 pub struct InitArgs {
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
+
     /// How to show what was done.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
@@ -100,6 +105,10 @@ pub struct MoveArgs {
     #[arg(long, requires = "from_git")]
     pub base_exact: bool,
 
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
+
     /// How to show what was recorded.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
@@ -118,6 +127,10 @@ pub struct RetireArgs {
     /// Why it was removed.
     #[arg(long, value_name = "TEXT")]
     pub reason: String,
+
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// How to show what was recorded.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
@@ -203,6 +216,9 @@ pub enum AddressesError {
     /// The renames git sees can't be read.
     #[error("can't read the moves git sees: {0}")]
     Git(String),
+    /// The git guard refused to change a file.
+    #[error(transparent)]
+    Guard(#[from] guard::GuardError),
 }
 
 impl Coded for AddressesError {
@@ -223,6 +239,7 @@ impl Coded for AddressesError {
             AddressesError::UnknownBuild(e) => e.code(),
             AddressesError::Unwritable(_) => "addresses_file_unwritable",
             AddressesError::Git(_) => "addresses_git_unreadable",
+            AddressesError::Guard(e) => e.code(),
         }
     }
 }
@@ -245,6 +262,9 @@ pub(crate) struct InitJson {
     /// each `go:<name>`, in the order written there; empty when it has
     /// none.
     moved: Vec<String>,
+    /// Whether a file was written: one made, or moved into, without
+    /// `--dry-run`.
+    written: bool,
 }
 
 /// What `ascribe addresses move` and `retire` write with `--format json`.
@@ -350,7 +370,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 /// project doesn't load, what `ascribe.toml`'s `[permalinks]` holds can't be
 /// moved, or a file can't be written.
 fn run_init(global: &Global, args: &InitArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let (created, moved) = match init(global) {
+    let (created, moved) = match init(global, args.guard) {
         Ok(done) => done,
         Err(Failed::Load(failure)) => return answer::report_failure(err, &failure),
         Err(Failed::Addresses(e)) => return answer::fail(err, &e),
@@ -364,14 +384,37 @@ fn run_init(global: &Global, args: &InitArgs, out: &mut dyn Write, err: &mut dyn
                 file: ADDRESSES_FILE,
                 created,
                 moved: moved.clone(),
+                written: (created || !moved.is_empty()) && !args.guard.dry_run,
             },
         ),
-        Format::Text => write_init(out, created, &moved),
+        Format::Text => write_init(out, created, &moved, args.guard.dry_run),
     };
     answer::written(result, err).unwrap_or(exit::OK)
 }
 
-fn write_init(out: &mut dyn Write, created: bool, moved: &[String]) -> io::Result<()> {
+fn write_init(
+    out: &mut dyn Write,
+    created: bool,
+    moved: &[String],
+    dry_run: bool,
+) -> io::Result<()> {
+    if dry_run {
+        if !moved.is_empty() {
+            return writeln!(
+                out,
+                "Would move {} from {MODEL_FILE}'s [permalinks] into {ADDRESSES_FILE}: {}.",
+                if moved.len() == 1 {
+                    "1 permalink".to_owned()
+                } else {
+                    format!("{} permalinks", moved.len())
+                },
+                moved.join(", ")
+            );
+        }
+        if created {
+            return writeln!(out, "Would write {ADDRESSES_FILE}.");
+        }
+    }
     if !moved.is_empty() {
         let count = if moved.len() == 1 {
             "1 permalink".to_owned()
@@ -413,7 +456,7 @@ enum Failed {
 /// `[permalinks]` into it: whether it made the file, and the keys moved.
 /// A content model with `[permalinks]` doesn't load, so it's read as text,
 /// and the project is loaded only once it's gone.
-fn init(global: &Global) -> Result<(bool, Vec<String>), Failed> {
+fn init(global: &Global, guard: guard::Options) -> Result<(bool, Vec<String>), Failed> {
     let config = crate::context::locate(global)
         .map_err(|e| Failed::Load(crate::context::Failure::Config(e)))?;
     let root = config.parent().unwrap_or(Path::new(".")).to_path_buf();
@@ -426,7 +469,7 @@ fn init(global: &Global) -> Result<(bool, Vec<String>), Failed> {
     let Some((model_after, entries)) = taken else {
         let project = load_project(global).map_err(Failed::Load)?;
         let created = project.addresses_text().is_none();
-        if created {
+        if created && !guard.dry_run {
             write_file(project.root(), &AddressFile::default().to_toml())
                 .map_err(Failed::Addresses)?;
         }
@@ -446,10 +489,16 @@ fn init(global: &Global) -> Result<(bool, Vec<String>), Failed> {
         None => AddressFile::default(),
     };
     file.take_in(&entries);
-    write_file(&root, &file.to_toml()).map_err(Failed::Addresses)?;
-    // Outside FileSystem: writing the content model, as its other edits do.
-    std::fs::write(&config, model_after)
-        .map_err(|e| Failed::Addresses(AddressesError::Model("write", e.to_string())))?;
+    guard
+        .allow(&[&path, &config])
+        .map_err(|e| Failed::Addresses(e.into()))?;
+    if !guard.dry_run {
+        write_file(&root, &file.to_toml()).map_err(Failed::Addresses)?;
+        // Outside FileSystem: writing the content model, as its other edits
+        // do.
+        std::fs::write(&config, model_after)
+            .map_err(|e| Failed::Addresses(AddressesError::Model("write", e.to_string())))?;
+    }
     Ok((
         before.is_none(),
         entries.into_iter().map(|e| e.key).collect(),
@@ -464,7 +513,7 @@ fn run_move(global: &Global, args: &MoveArgs, out: &mut dyn Write, err: &mut dyn
         Ok(project) => project,
         Err(failure) => return answer::report_failure(err, &failure),
     };
-    let answer = match answer_move(&project, args, true) {
+    let answer = match answer_move(&project, args, Some(args.guard)) {
         Ok(answer) => answer,
         Err(e) => return answer::fail(err, &e),
     };
@@ -473,15 +522,30 @@ fn run_move(global: &Global, args: &MoveArgs, out: &mut dyn Write, err: &mut dyn
         (Format::Json, Moved::FromGit(json)) => answer::write_json(out, &json),
         (Format::Text, Moved::One(json)) => writeln!(
             out,
-            "Recorded in {ADDRESSES_FILE}: {} moved to {}.",
-            json.key, json.value
+            "{} in {ADDRESSES_FILE}: {} moved to {}.",
+            recorded(args.guard),
+            json.key,
+            json.value
         ),
-        (Format::Text, Moved::FromGit(json)) => write_from_git(out, &json),
+        (Format::Text, Moved::FromGit(json)) => write_from_git(out, &json, args.guard),
     };
     answer::written(result, err).unwrap_or(exit::OK)
 }
 
-fn write_from_git(out: &mut dyn Write, json: &FromGitJson) -> io::Result<()> {
+/// How the text says an entry was recorded: or, with `--dry-run`, would be.
+fn recorded(guard: guard::Options) -> &'static str {
+    if guard.dry_run {
+        "Would record"
+    } else {
+        "Recorded"
+    }
+}
+
+fn write_from_git(
+    out: &mut dyn Write,
+    json: &FromGitJson,
+    guard: guard::Options,
+) -> io::Result<()> {
     if json.moves.is_empty() {
         return writeln!(
             out,
@@ -496,7 +560,8 @@ fn write_from_git(out: &mut dyn Write, json: &FromGitJson) -> io::Result<()> {
         .collect();
     writeln!(
         out,
-        "Recorded {} git sees: {}.",
+        "{} {} git sees: {}.",
+        recorded(guard),
         if moves.len() == 1 {
             "1 move".to_owned()
         } else {
@@ -515,8 +580,9 @@ pub(crate) enum Moved {
 }
 
 /// Records the move `args` gives in `project`'s `ascribe.addresses`, and
-/// writes the file when `write` asks and it changed: what the command
-/// says, with the edits. The MCP server's tool writes nothing.
+/// writes the file when it changed and `write` gives the guard, which
+/// allows it and isn't a dry run: what the command says, with the edits.
+/// The MCP server's tool writes nothing.
 ///
 /// # Errors
 ///
@@ -525,7 +591,7 @@ pub(crate) enum Moved {
 pub(crate) fn answer_move(
     project: &Project,
     args: &MoveArgs,
-    write: bool,
+    write: Option<guard::Options>,
 ) -> Result<Moved, AddressesError> {
     let file = existing(project)?;
     let text = project.addresses_text().unwrap_or_default();
@@ -547,7 +613,7 @@ pub(crate) fn answer_move(
                 .map(|(key, value)| MoveJson { key, value })
                 .collect(),
             changed,
-            written: write && changed,
+            written: writes(write) && changed,
             edits,
         }));
     }
@@ -576,7 +642,7 @@ pub(crate) fn answer_move(
         key: old,
         value: new,
         changed,
-        written: write && changed,
+        written: writes(write) && changed,
         edits,
     }))
 }
@@ -602,19 +668,28 @@ fn git_renames(
     Ok((named, renames))
 }
 
+/// Whether `write` writes: it gives the guard, and isn't a dry run.
+fn writes(write: Option<guard::Options>) -> bool {
+    write.is_some_and(|guard| !guard.dry_run)
+}
+
 /// Whether `after` changes `text`, the file as it is, and the edits that
-/// make the change; writing it when `write` asks and it changed.
+/// make the change; writing it when it changed and `write` gives the guard,
+/// which allows it, unless it's a dry run.
 fn change(
     project: &Project,
     text: &str,
     after: &AddressFile,
-    write: bool,
+    write: Option<guard::Options>,
 ) -> Result<(bool, Vec<Edit>), AddressesError> {
     let Some(edit) = after.edit_from(text) else {
         return Ok((false, Vec::new()));
     };
-    if write {
-        write_file(project.root(), &after.to_toml())?;
+    if let Some(guard) = write {
+        guard.allow(&[project.root().join(ADDRESSES_FILE)])?;
+        if !guard.dry_run {
+            write_file(project.root(), &after.to_toml())?;
+        }
     }
     let index = ascribe_core::LineIndex::new(text);
     Ok((true, vec![Edit::in_text(&index, &edit)]))
@@ -628,7 +703,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         Ok(project) => project,
         Err(failure) => return answer::report_failure(err, &failure),
     };
-    let json = match answer_retire(&project, args, true) {
+    let json = match answer_retire(&project, args, Some(args.guard)) {
         Ok(json) => json,
         Err(e) => return answer::fail(err, &e),
     };
@@ -636,7 +711,8 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         Format::Json => answer::write_json(out, &json),
         Format::Text => writeln!(
             out,
-            "Recorded in {ADDRESSES_FILE}: {} was retired.",
+            "{} in {ADDRESSES_FILE}: {} was retired.",
+            recorded(args.guard),
             json.key
         ),
     };
@@ -644,8 +720,8 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
 }
 
 /// Records the retirement `args` gives in `project`'s `ascribe.addresses`,
-/// and writes the file when `write` asks and it changed: what the command
-/// says, with the edits.
+/// and writes the file as [`answer_move`] does: what the command says, with
+/// the edits.
 ///
 /// # Errors
 ///
@@ -654,7 +730,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
 pub(crate) fn answer_retire(
     project: &Project,
     args: &RetireArgs,
-    write: bool,
+    write: Option<guard::Options>,
 ) -> Result<RecordJson, AddressesError> {
     let reason = args.reason.trim();
     if reason.is_empty() || reason == RETIRED_PLACEHOLDER {
@@ -674,7 +750,7 @@ pub(crate) fn answer_retire(
         key: old,
         value: reason.to_owned(),
         changed,
-        written: write && changed,
+        written: writes(write) && changed,
         edits,
     })
 }

@@ -15,6 +15,7 @@
 //! | `content` | A page's description and recheck date, code blocks' languages |
 //! | `comment` | HTML comments, which a memo would keep out of the published page |
 //! | `memo` | Container memos that say nothing |
+//! | `phrase_text` | A phrase's value written out where the phrase could be |
 //! | `refs` | `@include` targets, `@snippet` addresses, link destinations, image sources and alt text |
 //! | `sources` | `ascribe.lock`, and the copies of sources in other repositories |
 //! | `template` | What a page still has of its type's template, never filled in |
@@ -27,6 +28,7 @@ mod comment;
 mod content;
 mod frontmatter;
 mod memo;
+mod phrase_text;
 mod refs;
 mod sources;
 pub(crate) mod template;
@@ -44,6 +46,7 @@ use ascribe_workspace::SourceFile;
 
 use crate::{Diagnostic, Project};
 
+pub use phrase_text::with_phrases;
 pub use sources::unread_config_issue;
 pub(crate) use sources::{check_examples, check_sources, check_unread_configs};
 
@@ -73,6 +76,11 @@ struct Ctx<'a> {
     /// operation's body, so the file's examples are checked once its blocks
     /// are walked.
     marked_examples: bool,
+    /// The phrases' values `phrase-text-written` looks for, longest first,
+    /// each with its key; empty when the check is off.
+    phrase_values: Vec<(String, String)>,
+    /// What the text being walked is, for `phrase-text-written`.
+    written: phrase_text::Written,
     issues: Vec<Issue>,
 }
 
@@ -129,6 +137,8 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
         page_type: None,
         mark_scopes: Vec::new(),
         marked_examples: false,
+        phrase_values: phrase_text::values(model),
+        written: phrase_text::Written::Prose,
         issues: doc.issues.clone(),
     };
     cx.check_frontmatter(doc.frontmatter.as_ref());
@@ -223,8 +233,17 @@ impl Ctx<'_> {
         for (i, block) in blocks.iter().enumerate() {
             match &block.kind {
                 BlockKind::Heading(h) => {
+                    let marks = heading_marks(blocks, i);
+                    self.written = if marks.contains(&"term") {
+                        phrase_text::Written::Not
+                    } else if marks.contains(&"id") {
+                        phrase_text::Written::Prose
+                    } else {
+                        phrase_text::Written::Heading
+                    };
                     self.inlines(&h.inlines);
-                    self.heading(blocks, i, block.span, h);
+                    self.written = phrase_text::Written::Prose;
+                    self.heading(marks.contains(&"id"), block.span, h);
                 }
                 BlockKind::Paragraph(p) => self.inlines(&p.inlines),
                 BlockKind::BlockQuote(q) => {
@@ -295,34 +314,38 @@ impl Ctx<'_> {
                 }
                 InlineKind::Link(link) => {
                     self.check_link(inline.span, link);
-                    self.inlines(&link.children);
+                    self.label_inlines(link.form, &link.children);
                 }
                 InlineKind::Image(image) => {
                     self.check_image(inline.span, image);
-                    self.inlines(&image.children);
+                    self.label_inlines(image.form, &image.children);
                 }
-                InlineKind::Text(_)
-                | InlineKind::Code(_)
-                | InlineKind::SoftBreak
-                | InlineKind::HardBreak => {}
+                InlineKind::Text(_) => self.check_phrase_text(inline.span),
+                InlineKind::Code(_) | InlineKind::SoftBreak | InlineKind::HardBreak => {}
                 InlineKind::Html(_) => self.check_html_inline(inline.span),
             }
         }
     }
 
+    /// A link's or an image's text. The text of a reference form that's
+    /// also its label (`[Quill]`, `[Quill][]`), and an autolink's, which is
+    /// its destination, aren't looked in for a phrase's value.
+    fn label_inlines(&mut self, form: ascribe_syntax::LinkForm, children: &[Inline]) {
+        use ascribe_syntax::LinkForm;
+        let outer = self.written;
+        if matches!(
+            form,
+            LinkForm::Collapsed | LinkForm::Shortcut | LinkForm::Autolink
+        ) {
+            self.written = phrase_text::Written::Not;
+        }
+        self.inlines(children);
+        self.written = outer;
+    }
+
     /// A heading with no `@id` (SPEC §5.5) whose slug changes whenever a
     /// phrase's value does, or whose slug is empty.
-    fn heading(&mut self, siblings: &[Block], index: usize, span: Span, h: &Heading) {
-        let has_id = siblings[index + 1..]
-            .iter()
-            .take_while(|b| !matches!(b.kind, BlockKind::Heading(_)))
-            .any(|b| {
-                matches!(
-                    &b.kind,
-                    BlockKind::Directive(d)
-                        if d.name == "id" && d.binding == Some(ascribe_syntax::Bound::Heading)
-                )
-            });
+    fn heading(&mut self, has_id: bool, span: Span, h: &Heading) {
         if has_id {
             return;
         }
@@ -455,4 +478,19 @@ impl Ctx<'_> {
             self.report(issue);
         }
     }
+}
+
+/// The names of the directives bound to the heading at `index` (SPEC §3.8):
+/// those between it and the next heading, bound to the heading.
+fn heading_marks(siblings: &[Block], index: usize) -> Vec<&str> {
+    siblings[index + 1..]
+        .iter()
+        .take_while(|b| !matches!(b.kind, BlockKind::Heading(_)))
+        .filter_map(|b| match &b.kind {
+            BlockKind::Directive(d) if d.binding == Some(ascribe_syntax::Bound::Heading) => {
+                Some(d.name.as_str())
+            }
+            _ => None,
+        })
+        .collect()
 }

@@ -43,6 +43,10 @@
         "string",
         "null"
       ]
+    },
+    "written": {
+      "description": "Whether the files were written: false with `--dry-run`, which says\nwhat would change.",
+      "type": "boolean"
     }
   },
   "required": [
@@ -52,7 +56,8 @@
     "reason",
     "to",
     "created",
-    "list_changed"
+    "list_changed",
+    "written"
   ],
   "title": "PermalinksRetireReport",
   "type": "object"

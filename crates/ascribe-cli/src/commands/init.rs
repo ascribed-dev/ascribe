@@ -285,6 +285,7 @@ fn check_args() -> check::Args {
         summary: false,
         format: check::Format::Text,
         limit: None,
+        exit_code: None,
         deny_warnings: false,
         base: None,
         base_exact: false,

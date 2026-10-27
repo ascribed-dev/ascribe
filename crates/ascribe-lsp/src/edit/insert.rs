@@ -299,7 +299,7 @@ pub(crate) fn variant_group(page: &Page<'_>) -> Outcome {
         let block = ascribe_fmt::directive_block("variant", &pairs, &options, model)
             .ok_or_else(|| format!("`{}` can't be an attribute value.", declared.value))?;
         lines.push(format!("@variant {block}:"));
-        lines.push_placeholder("", &arm_placeholder(&declared.label));
+        lines.push_placeholder("", &arm_placeholder(&declared.label, model));
     }
     lines.push("@end");
     insert(page, lines)

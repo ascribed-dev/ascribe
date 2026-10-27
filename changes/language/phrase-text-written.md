@@ -1,0 +1,1 @@
+- **`ascribe check` reports a phrase's value written out where the phrase could be.** A version or a URL typed out goes stale at the next release; the fix writes the phrase. See [Phrases](docs/content/writing/inline.md).

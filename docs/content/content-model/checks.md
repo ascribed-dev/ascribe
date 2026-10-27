@@ -7,6 +7,7 @@ description: "How the content model sets the checks' levels and the editor's bui
 Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The rules for a loader are in the contract's [checks and the editor](../contracts/content-model/checks.md).
 
 ## 22. `[checks]`
+@id {permalink=true}: 22-checks
 
 How loudly each check about your content's quality speaks: whether it's reported as advice, a warning, or an error, or not at all. A diagnostic about whether the project is valid, such as a broken link, can't be set here: it's always reported at its own severity.
 
@@ -45,7 +46,7 @@ In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) shows a pa
 **Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`), and so is a setting the check doesn't have. A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`). `page-size`'s, `memo-long`'s, and `summary-long`'s `limit` is a whole number above 0, and `image-large`'s a size (`model-wrong-type`).
 
 ### `[[intended]]`: acknowledgements
-@id: intended-acknowledgements
+@id {permalink=true}: intended-acknowledgements
 
 Says that a check's problem with a content model entry or an image is intended, as [`@intended`](../writing/directives.md#intended) does for a block and the `intended` frontmatter key for a page. Each table names one check, one entry, and why.
 

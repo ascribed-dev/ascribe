@@ -15,7 +15,7 @@
 
 use ascribe_check::Project;
 use ascribe_core::{RelPath, Slugger as _};
-use ascribe_model::{ContentModel, ContentType, TYPE_KEY};
+use ascribe_model::{ContentModel, ContentType, Field, TYPE_KEY};
 use ascribe_resolve::slug::GithubSlugger;
 use ascribe_resolve::{DRAFT, FileSystem, Probe};
 use ascribe_syntax::frontmatter_lines;
@@ -357,16 +357,22 @@ fn frontmatter_only(page_type: &ContentType, title: Option<&str>) -> String {
         Some(title) => format!("title: {}", yaml_string(title)),
         None => "title:".to_owned(),
     });
-    for field in page_type
-        .frontmatter
-        .fields
-        .iter()
-        .filter(|f| f.required && f.name != "title")
-    {
+    for field in empty_fields(page_type) {
         lines.push(format!("{}:", field.name));
     }
     lines.push(format!("{DRAFT}: true"));
     format!("---\n{}\n---\n", lines.join("\n"))
+}
+
+/// The fields a type with no template starts its frontmatter with, empty,
+/// for the writer to fill in: its required ones, but its title, which
+/// [`text`] sets.
+pub fn empty_fields(page_type: &ContentType) -> impl Iterator<Item = &Field> {
+    page_type
+        .frontmatter
+        .fields
+        .iter()
+        .filter(|f| f.required && f.name != "title")
 }
 
 /// A type's name as the value of `type`: plain, as a page's is written,

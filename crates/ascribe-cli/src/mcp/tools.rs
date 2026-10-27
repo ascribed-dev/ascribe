@@ -821,6 +821,7 @@ fn call_check(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> 
             check::Format::Concise
         },
         limit: None,
+        exit_code: None,
         deny_warnings: false,
         base: None,
         base_exact: false,
@@ -1057,9 +1058,11 @@ fn call_addresses_move(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult
         from_git,
         base: a.string("base")?,
         base_exact: a.boolean("base_exact")?,
+        // The tool writes nothing, so the guard has nothing to refuse.
+        guard: crate::guard::Options::default(),
         format: Format::Json,
     };
-    match addresses::answer_move(&project, &args, false).map_err(|e| e.to_string())? {
+    match addresses::answer_move(&project, &args, None).map_err(|e| e.to_string())? {
         addresses::Moved::One(json) => json_result(&json),
         addresses::Moved::FromGit(json) => json_result(&json),
     }
@@ -1071,8 +1074,9 @@ fn call_addresses_retire(_server: &Server, a: &Arguments<'_>) -> Result<ToolResu
     let args = addresses::RetireArgs {
         old: a.string("old")?.unwrap_or_default(),
         reason: a.string("reason")?.unwrap_or_default(),
+        guard: crate::guard::Options::default(),
         format: Format::Json,
     };
-    let json = addresses::answer_retire(&project, &args, false).map_err(|e| e.to_string())?;
+    let json = addresses::answer_retire(&project, &args, None).map_err(|e| e.to_string())?;
     json_result(&json)
 }

@@ -1,0 +1,1 @@
+- **Every command that takes `--format text` takes `concise` too.** A command with no one-line form writes its text, so an agent can pass `--format concise` to any of them. See [The `ascribe` command](docs/content/command/index.md).

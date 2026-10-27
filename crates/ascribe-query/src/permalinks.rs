@@ -288,6 +288,9 @@ pub struct SyncAnswer {
     pub ascribe_version: &'static str,
     /// Whether the list's file changes: it's new, or its text differs.
     pub changed: bool,
+    /// Whether the list's file was written: it changes, and nothing said to
+    /// write nothing (`--check`, `--dry-run`).
+    pub written: bool,
     /// Whether the project had no list, so this makes one.
     pub created: bool,
     /// The names added, by name.
@@ -355,6 +358,7 @@ pub fn sync(
         schema_version: SCHEMA_VERSION,
         ascribe_version: ASCRIBE_VERSION,
         changed: text != Some(new_text.as_str()),
+        written: false,
         created: before.is_none(),
         added: synced.added,
         moved,
@@ -619,6 +623,9 @@ pub struct RetireAnswer {
     /// Whether `ascribe.permalinks` was changed to record them. Only a name
     /// the content no longer declares is recorded as retired.
     pub list_changed: bool,
+    /// Whether the files were written: false with `--dry-run`, which says
+    /// what would change.
+    pub written: bool,
 }
 
 impl RetireAnswer {
@@ -629,6 +636,7 @@ impl RetireAnswer {
         to: Option<&str>,
         created: bool,
         list_changed: bool,
+        written: bool,
     ) -> Self {
         RetireAnswer {
             schema_version: PERMALINKS_RETIRE_SCHEMA_VERSION,
@@ -638,6 +646,7 @@ impl RetireAnswer {
             to: to.map(str::to_owned),
             created,
             list_changed,
+            written,
         }
     }
 }

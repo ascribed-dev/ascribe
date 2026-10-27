@@ -1,6 +1,7 @@
 //! `ascribe check`: report every file-level and page-level problem, without
 //! building; with paths, only what counts for them.
 
+use std::collections::HashSet;
 use std::io::{self, Read, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -102,8 +103,23 @@ pub struct Args {
     #[arg(long, value_name = "N", conflicts_with = "summary")]
     pub limit: Option<concise::Limit>,
 
-    /// Make warnings fail the command too (exit code 1), for CI.
-    #[arg(long)]
+    /// Exit with 1 on problems at this level or above: `error`, the
+    /// default, or `warning`, for CI.
+    ///
+    /// Errors fail the command without it. Advice never fails it.
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..=1,
+        require_equals = true,
+        default_missing_value = "error",
+        value_name = "LEVEL",
+        overrides_with = "deny_warnings"
+    )]
+    pub exit_code: Option<FailOn>,
+
+    /// Make warnings fail the command too: `--exit-code=warning`.
+    #[arg(long, overrides_with = "exit_code")]
     pub deny_warnings: bool,
 
     /// The revision whose addresses the check compares the project's with,
@@ -225,6 +241,28 @@ pub enum Format {
     Prompt,
 }
 
+/// The least problem that fails the command, as `--exit-code` names it.
+/// Advice never does.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
+pub enum FailOn {
+    /// An error.
+    Error,
+    /// A warning or an error.
+    Warning,
+}
+
+impl Args {
+    /// The least problem that fails the command: `--exit-code`'s level, or a
+    /// warning under `--deny-warnings`, or else an error.
+    fn fail_on(&self) -> FailOn {
+        match self.exit_code {
+            Some(level) => level,
+            None if self.deny_warnings => FailOn::Warning,
+            None => FailOn::Error,
+        }
+    }
+}
+
 /// Why the paths, or standard input, can't be checked.
 #[derive(Debug, thiserror::Error)]
 pub enum CheckError {
@@ -266,7 +304,7 @@ impl Coded for CheckError {
 }
 
 /// Runs the command. Exit codes: 0 with no errors, 1 with errors (or with
-/// warnings under `--deny-warnings`), 2 when the project can't be checked.
+/// warnings under `--exit-code=warning`), 2 when the project can't be checked.
 /// Advice never changes the exit code.
 pub fn run(global: &Global, args: Args) -> ExitCode {
     // Buffered: a report is many small writes, and a locked stdout flushes
@@ -380,13 +418,13 @@ fn check(
             return exit::FAILURE;
         }
     }
-    exit_code(outcome.counts, args.deny_warnings)
+    exit_code(outcome.counts, args.fail_on())
 }
 
 /// The exit code for what a check reports: 1 with errors, or with warnings
-/// under `--deny-warnings`; 0 otherwise. Advice never fails the check.
-fn exit_code(counts: Counts, deny_warnings: bool) -> u8 {
-    if counts.errors > 0 || (deny_warnings && counts.warnings > 0) {
+/// when they fail it; 0 otherwise. Advice never fails the check.
+fn exit_code(counts: Counts, fail_on: FailOn) -> u8 {
+    if counts.errors > 0 || (fail_on == FailOn::Warning && counts.warnings > 0) {
         exit::PROBLEMS
     } else {
         exit::OK
@@ -690,6 +728,15 @@ fn with_prose(
     Ok(about_vale)
 }
 
+/// How many files the problems reported are in.
+fn with_problems(reported: &[Reported]) -> usize {
+    let files: HashSet<_> = reported
+        .iter()
+        .map(|r| r.diagnostic.location.file)
+        .collect();
+    files.len()
+}
+
 /// Writes what a check found in `args.format`, as `ascribe check` does.
 ///
 /// # Errors
@@ -732,7 +779,8 @@ pub fn write(
             *counts,
             checked,
             &covered,
-            files_reported.unwrap_or(checked),
+            files_reported,
+            with_problems(reported),
             codes,
         ) + &text::acknowledged(acknowledged.len())
             + &text::baselined(*baselined)
@@ -1162,14 +1210,14 @@ mod tests {
             advice: 3,
             ..Counts::default()
         };
-        assert_eq!(exit_code(advice, false), exit::OK);
-        assert_eq!(exit_code(advice, true), exit::OK);
+        assert_eq!(exit_code(advice, FailOn::Error), exit::OK);
+        assert_eq!(exit_code(advice, FailOn::Warning), exit::OK);
         let warning = Counts {
             warnings: 1,
             ..advice
         };
-        assert_eq!(exit_code(warning, false), exit::OK);
-        assert_eq!(exit_code(warning, true), exit::PROBLEMS);
+        assert_eq!(exit_code(warning, FailOn::Error), exit::OK);
+        assert_eq!(exit_code(warning, FailOn::Warning), exit::PROBLEMS);
     }
 
     #[test]
@@ -1178,12 +1226,12 @@ mod tests {
         let reported = reported();
         let counts = Counts::of_reported(&reported);
         assert_eq!(
-            text::check_summary(counts, 1, &text::Covered::Every, 1, &[]),
-            "checked 1 file for every build, reported on 1: 0 errors, 1 warning, 1 advice"
+            text::check_summary(counts, 1, &text::Covered::Every, None, 1, &[]),
+            "checked 1 file for every build, 1 with problems: 0 errors, 1 warning, 1 advice"
         );
         assert_eq!(
-            text::check_summary(Counts::default(), 1, &text::Covered::Every, 1, &[]),
-            "checked 1 file for every build, reported on 1: 0 errors, 0 warnings, 0 advice",
+            text::check_summary(Counts::default(), 1, &text::Covered::Every, None, 0, &[]),
+            "checked 1 file for every build, 0 with problems: 0 errors, 0 warnings, 0 advice",
             "the summary counts advice even when there is none"
         );
         let builds = ["cloud".to_owned(), "site".to_owned(), "v2".to_owned()];
@@ -1192,21 +1240,29 @@ mod tests {
                 Counts::default(),
                 3,
                 &text::Covered::Named(&builds[..n]),
-                1,
+                Some(1),
+                0,
                 &[],
             )
         };
         assert_eq!(
             named(1),
-            "checked 3 files for build `cloud`, reported on 1: 0 errors, 0 warnings, 0 advice"
+            "checked 3 files for build `cloud`, reported on 1 file in the paths, 0 with problems: 0 errors, 0 warnings, 0 advice"
         );
         assert_eq!(
             named(3),
-            "checked 3 files for builds `cloud`, `site` and `v2`, reported on 1: 0 errors, 0 warnings, 0 advice"
+            "checked 3 files for builds `cloud`, `site` and `v2`, reported on 1 file in the paths, 0 with problems: 0 errors, 0 warnings, 0 advice"
         );
         assert_eq!(
-            text::check_summary(Counts::default(), 3, &text::Covered::Editor("site"), 1, &[]),
-            "checked 3 files with the page-level checks of build `site` only, reported on 1: 0 errors, 0 warnings, 0 advice"
+            text::check_summary(
+                Counts::default(),
+                3,
+                &text::Covered::Editor("site"),
+                None,
+                0,
+                &[]
+            ),
+            "checked 3 files with the page-level checks of build `site` only, 0 with problems: 0 errors, 0 warnings, 0 advice"
         );
 
         let order = concise::order(&files, &reported);
