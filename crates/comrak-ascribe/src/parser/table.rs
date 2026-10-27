@@ -158,33 +158,31 @@ fn try_opening_row<'a>(
         return None;
     }
 
-    let sourcepos = container.data().sourcepos;
+    // ASCRIBE: the row's cells are offsets into the line from its first non-space byte, so
+    // they're measured from that column, not the table's, which is the header's indent (#1149).
+    let start_column = parser.first_nonspace + 1;
     let spoiler = parser.options.extension.spoiler;
     let mut this_row = row(&line[parser.first_nonspace..], spoiler)?;
 
-    let new_row = parser.add_child(
-        container,
-        NodeValue::TableRow(false),
-        sourcepos.start.column,
-    );
+    let new_row = parser.add_child(container, NodeValue::TableRow(false), start_column);
     new_row.data_mut().sourcepos.end.column = parser.curline_end_col;
 
     let mut i = 0;
-    let mut last_column = sourcepos.start.column;
+    let mut last_column = start_column;
 
     while i < min(alignments.len(), this_row.cells.len()) {
         let cell = &mut this_row.cells[i];
         let cell_node = parser.add_child(
             new_row,
             NodeValue::TableCell,
-            sourcepos.start.column + cell.start_offset,
+            start_column + cell.start_offset,
         );
         let cell_ast = &mut cell_node.data_mut();
-        cell_ast.sourcepos.end.column = sourcepos.start.column + cell.end_offset;
+        cell_ast.sourcepos.end.column = start_column + cell.end_offset;
         mem::swap(&mut cell_ast.content, cell.content.to_mut());
         cell_ast
             .line_offsets
-            .push(sourcepos.start.column + cell.start_offset - 1 + cell.internal_offset);
+            .push(start_column + cell.start_offset - 1 + cell.internal_offset);
 
         last_column = cell_ast.sourcepos.end.column;
 

@@ -172,7 +172,7 @@ impl Ctx<'_> {
                 )]
             }
         };
-        let index = self.project.link_index();
+        let index = self.project.index();
         let first = index
             .file(&self.file.path)
             .and_then(|file| file.headings.first());

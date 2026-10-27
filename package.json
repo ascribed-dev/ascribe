@@ -11,6 +11,7 @@
     "trailingComma": "all"
   },
   "scripts": {
+    "bless": "node scripts/bless.ts",
     "build:all": "node scripts/build-all.ts",
     "check:all": "node scripts/check.ts",
     "check:packages": "node scripts/release/consumers.ts",

@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Astro
-description: Set up an Astro site that publishes an Ascribe project, with @ascribed/astro.
+description: "Set up an Astro site that publishes an Ascribe project, with `@ascribed/astro`."
 permalink: astro-guide
 ---
 

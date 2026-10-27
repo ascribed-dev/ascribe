@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Install
-description: "Install the ascribe command, in a project with npm, or on your path with Homebrew, the install script, PowerShell, or a release's archive; then start a project with ascribe init."
+description: "Install the `ascribe` command, in a project with npm, or on your path with Homebrew, the install script, PowerShell, or a release's archive; then start a project with `ascribe init`."
 permalink: install
 ---
 
