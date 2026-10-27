@@ -29,6 +29,6 @@ An edit works from a `nav::Ctx`: a snapshot of the project, the content model an
 
 ## Tests
 
-- The unit tests beside the code: `model_file.rs`, `navigation.rs`, `nav_file.rs`, `position.rs`, `uri.rs`, `retire_line.rs`, and `refactor/values.rs`.
+- The unit tests beside the code: `model_file.rs`, `navigation.rs`, `nav_file.rs`, `position.rs`, `uri.rs`, `retire_line.rs`, and `src/refactor/values.rs`.
 - Renaming by name is held by `ascribe-lsp`'s tests, which share the server's project fixture: `crates/ascribe-lsp/tests/all/rename.rs` (what only renaming by name does), `model_edits.rs` (the same places the editor's rename changes), and `from.rs` (the projects of the files `[from]` takes from). The editor's rename and file moves are tested there too, over the server.
 - `ascribe rename` and `ascribe versions` are run as the binary in `crates/ascribe-cli/tests/all/rename.rs` and `versions.rs`.
