@@ -6595,7 +6595,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1169"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Group the content model reference by job, not by when each section arrived"
     },
     {
@@ -6904,8 +6904,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/973"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDehVE",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1174"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Docs: decide when a section gets an @available: ascribe badge"
     },
     {
@@ -7214,8 +7217,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1173"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Move the edits the CLI shares with the language server into an ascribe-edit crate"
     },
     {
@@ -7265,8 +7271,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/993"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCfI",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1172"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Warn on a GitHub alert (`> [!NOTE]`), and offer the `@note` that replaces it"
     },
     {
@@ -7316,8 +7325,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1176"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Check: report a phrase's value written out on a page instead of the phrase"
     },
     {
@@ -7473,7 +7485,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1170"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Don't publish a page that still has its template's placeholders"
     },
     {
@@ -7533,7 +7545,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1171"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Docs: run `ascribe agents sync` on our own docs, and hold it in CI"
     },
     {
@@ -8523,6 +8535,20 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "Keep a page that isn't ready out of every build with `draft: true`"
+    },
+    {
+      "content": {
+        "body": "On `main` (f9180e9), releasing the docs' planned line fails at step 2 of RELEASING.md:\n\n```sh\nascribe versions release \"ascribe 0.4.5\" --next 0.4.6 --config docs --dry-run\n```\n\n```\nError: archiving the line that was current would change what a reader sees, in site/plain/agents.md, site/plain/agents/claude-code.md, … (every page of site/plain, and site/plain/llms.txt); nothing was written\n```\n\nThe change it finds is the agents' preamble at the top of each plain page, which names the live lines. With 0.4.4 and 0.4.5 both live (after the release's move step), it says:\n\n```\n> … This documentation describes Ascribe 0.4.5 and 0.4.4. Anything marked in main, not yet released isn't in any of those releases yet.\n```\n\nand with 0.4.4 archived:\n\n```\n> … This documentation describes Ascribe 0.4.5. Anything marked in main, not yet released isn't in that release yet.\n```\n\nThat's the change archiving the line is supposed to make. But step 6 of `release` in `crates/ascribe-lsp/src/release.rs` compares the outputs before and after the archive (`compare(&after_move, &archived)`) and treats any difference as unexpected. The sentence is written in `crates/ascribe-resolve/src/llms.rs` (around line 428). It probably arrived with #1028 (PR #1160), which added the release sentence after the last release.\n\n## Done when\n\n- `ascribe versions release \"ascribe <planned>\" --next <next> --config docs` works on `main`, and it still refuses an archive that changes anything else a reader sees.\n- A test in `crates/ascribe-cli/tests/all/` releases a project whose build writes the agents' preamble with more than one live line, so this doesn't come back.\n\nFound while doing #973 (PR #1174).",
+        "number": 1175,
+        "repository": "ascribed-dev/ascribe",
+        "title": "versions release fails on the docs: archiving the current line changes the agents' preamble",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1175"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDxisY",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "versions release fails on the docs: archiving the current line changes the agents' preamble"
     }
   ]
 }
