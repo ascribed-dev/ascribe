@@ -34,20 +34,20 @@ ascribe addresses init    [--format text|json]
 ascribe addresses move    [OLD] [NEW] [--from-git] [--base <REV>] [--base-exact] [--format text|json]
 ascribe addresses retire  OLD --reason <TEXT> [--format text|json]
 ascribe addresses list    [--build <NAME>] [--format text|json]
-ascribe sources fetch     [NAME]...
+ascribe sources fetch     [NAME]... [--format text|json]
 ascribe sources update    [NAME]... [--to <REV>] [--format text|json|markdown]
 ascribe sources status    [--format text|json]
 ascribe observe           [--name <NAME>] [--check] [--yes] [--format text|json]
-ascribe templates list
+ascribe templates list    [--format text|json]
 ascribe templates eject   [NAME]... [--to <DIR>] [--keep-type] [--format text|json]
 ascribe templates status  [--format text|json] [--exit-code] [--diff <NAME>]
-ascribe vale eject
+ascribe vale eject        [--format text|json]
 
-ascribe agents sync       [--check] [--target agents-md|skills|claude|claude-rules|copilot|codex]... [--with-hook] [--cloud] [--agent] [--command <COMMAND>]
+ascribe agents sync       [--check] [--target agents-md|skills|claude|claude-rules|copilot|codex]... [--with-hook] [--cloud] [--agent] [--command <COMMAND>] [--format text|json]
 ascribe agents rules      [PATH]
 ascribe agents index      [--build <NAME>] [--into <FILE>] [--pages <DIR>] [--format text|json]
 ascribe agents skill      [FILE]
-ascribe agents prompt     [NAME] [--arg <KEY=VALUE>]... [--list]
+ascribe agents prompt     [NAME] [--arg <KEY=VALUE>]... [--list] [--format text|json]
 ascribe agents hook       HARNESS [--event edit|stop] [--command <COMMAND>]
 ascribe mcp
 ascribe lsp

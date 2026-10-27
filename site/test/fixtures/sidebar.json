@@ -594,6 +594,11 @@
         "nested": true
       },
       {
+        "href": "/docs/contracts/json-reports/agents/",
+        "label": "ascribe agents",
+        "nested": true
+      },
+      {
         "href": "/docs/contracts/permalinks-list/",
         "label": "The permalinks list"
       },

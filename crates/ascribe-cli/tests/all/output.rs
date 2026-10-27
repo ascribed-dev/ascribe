@@ -1396,7 +1396,8 @@ fn search() {
 }
 
 /// `ascribe agents sync` on `examples/quill` in a repository of its own:
-/// the agents guide's list of what it writes, and who reads each file.
+/// the agents guide's list of what it writes, and who reads each file; then
+/// `--check`'s JSON.
 #[test]
 fn agents_sync() {
     let dir = repository();
@@ -1407,6 +1408,14 @@ fn agents_sync() {
     expect(
         "agents-sync.txt",
         &stdout(&run(dir.path(), &["agents", "sync"], 0)),
+    );
+    expect(
+        "agents-sync-check.json",
+        &json(&run(
+            dir.path(),
+            &["agents", "sync", "--check", "--format", "json"],
+            0,
+        )),
     );
 }
 
@@ -1771,6 +1780,10 @@ fn templates() {
     expect(
         "templates-list.txt",
         &stdout(&run(root, &["templates", "list"], 0)),
+    );
+    expect(
+        "templates-list.json",
+        &json(&run(root, &["templates", "list", "--format", "json"], 0)),
     );
     let copy = tempfile::tempdir().unwrap();
     copy_tree(root, copy.path());

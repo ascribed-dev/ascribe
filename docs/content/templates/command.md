@@ -18,9 +18,19 @@ The set has six templates, which `ascribe templates list` names. A page is start
 @id {permalink=true}: cli-templates-list
 
 @summary
-Shows each template the set has, in a line, with what it's for, and which release of theirs the set was converted from. It reads only what the binary carries, so it works anywhere, in a project or not. It takes no options, and exits with `0`.
+Shows each template the set has, in a line, with what it's for, and which release of theirs the set was converted from. It reads only what the binary carries, so it works anywhere, in a project or not. It exits with `0`.
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/templates-list.txt
+
+@include: ../_generated/cli-templates-list-options.md
+
+@available: ascribe planned
+With `--format json`, it writes the same in the document its [schema](../contracts/json-reports/templates.md#ascribe-templates-list) describes, with the commit of theirs the set is from.
+
+.The JSON for this example
+@details:
+@snippet {lang=json}: code:crates/ascribe-cli/tests/output/templates-list.json
+@end
 
 ### `ascribe templates eject`
 @id {permalink=true}: cli-templates-eject

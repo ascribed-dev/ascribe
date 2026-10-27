@@ -358,6 +358,87 @@ fn each_file_says_who_reads_it() {
     assert!(!check.contains("read by"), "{check}");
 }
 
+/// `sync --format json` lists each file, whether it changed, and who reads
+/// it, as the text does; with `--check`, which files are out of date, and
+/// the same exit code.
+#[test]
+fn sync_writes_json() {
+    let repo = repository("quill");
+    let root = repo.path();
+    let out = run(root, &["agents", "sync", "--format", "json"], 0);
+    let synced: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(synced["schema_version"], 1);
+    assert_eq!(synced["check"], false);
+    let agents_md = synced["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["path"] == "AGENTS.md")
+        .unwrap_or_else(|| panic!("no AGENTS.md: {synced}"));
+    assert_eq!(agents_md["changed"], true);
+    assert_eq!(
+        agents_md["read_by"],
+        serde_json::json!(["claude_code", "codex", "copilot", "cursor"])
+    );
+    let unread = synced["unread"].as_array().unwrap();
+    assert!(
+        unread.iter().any(|line| line
+            .as_str()
+            .unwrap()
+            .starts_with("Claude Code doesn't read the skill")),
+        "{synced}"
+    );
+    assert_eq!(synced["mcp_settings"], serde_json::Value::Null);
+
+    let model = root.join("ascribe.toml");
+    write(
+        &model,
+        &read(&model).replace("type = \"string?\", role", "type = \"string\", role"),
+    );
+    let out = run(root, &["agents", "sync", "--check", "--format", "json"], 1);
+    let checked: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(checked["check"], true);
+    let stale: Vec<&str> = checked["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|f| f["changed"] == true)
+        .map(|f| f["path"].as_str().unwrap())
+        .collect();
+    assert_eq!(stale, ["AGENTS.md"], "{checked}");
+    assert!(
+        stderr(&out).contains("1 file is out of date"),
+        "{}",
+        stderr(&out)
+    );
+}
+
+/// `prompt --format json` is the prompt the text prints, with its name, and
+/// `--list --format json` every prompt with its arguments.
+#[test]
+fn prompt_writes_json() {
+    let repo = repository("quill");
+    let root = repo.path();
+    let text = stdout(&run(root, &["agents", "prompt", "fix"], 0));
+    let out = run(root, &["agents", "prompt", "fix", "--format", "json"], 0);
+    let prompt: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(prompt["schema_version"], 1);
+    assert_eq!(prompt["name"], "fix");
+    assert_eq!(prompt["text"].as_str().unwrap().replace('\\', "/"), text);
+
+    let out = run(root, &["agents", "prompt", "--list", "--format", "json"], 0);
+    let list: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let names: Vec<&str> = list["prompts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| p["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, ["new-page", "fix", "review"]);
+    assert_eq!(list["prompts"][0]["arguments"][0]["name"], "type");
+    assert_eq!(list["prompts"][0]["arguments"][0]["required"], true);
+}
+
 /// The line `sync` printed about `path`.
 fn line_of(text: &str, path: &str) -> String {
     text.lines()

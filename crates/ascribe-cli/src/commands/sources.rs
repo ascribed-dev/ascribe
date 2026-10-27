@@ -16,11 +16,15 @@ use ascribe_sources::{
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 use serde::Serialize;
 
+use crate::answer::TextFormat;
 use crate::cli::Global;
 use crate::commands::diff::fail;
 use crate::commands::drift::{escape, write_summary_groups, write_text_groups};
 use crate::context::{Failure, load_project};
 use crate::exit;
+
+/// The version of `fetch --format json`'s schema.
+pub const FETCH_SCHEMA_VERSION: u32 = 1;
 
 /// The version of `status --format json`'s schema.
 pub const STATUS_SCHEMA_VERSION: u32 = 1;
@@ -58,6 +62,10 @@ pub struct FetchArgs {
     /// The sources to fetch. By default, every source in another repository.
     #[arg(value_name = "NAME")]
     pub names: Vec<String>,
+
+    /// How to show what was copied.
+    #[arg(long, value_enum, default_value_t = TextFormat::Text, value_name = "FORMAT")]
+    pub format: TextFormat,
 }
 
 /// Arguments of `ascribe sources update`.
@@ -160,7 +168,29 @@ fn run_fetch(global: &Global, args: &FetchArgs, out: &mut dyn Write, err: &mut d
         Ok(report) => report,
         Err(e) => return exit::fail(err, &e),
     };
-    let _ = write_fetch(out, err, &report);
+    let written = match args.format {
+        TextFormat::Text => write_fetch(out, err, &report),
+        TextFormat::Json => {
+            for source in report.sources.iter().filter(|s| s.first_copy) {
+                let _ = first_copy(err, &source.name);
+            }
+            serde_json::to_writer_pretty(
+                &mut *out,
+                &FetchJson {
+                    schema_version: FETCH_SCHEMA_VERSION,
+                    ascribe_version: env!("CARGO_PKG_VERSION"),
+                    report: &report,
+                },
+            )
+            .map_err(io::Error::from)
+            .and_then(|()| writeln!(out))
+        }
+    };
+    if let Err(e) = written
+        && e.kind() != io::ErrorKind::BrokenPipe
+    {
+        return fail(err, &format!("can't write the report: {e}"));
+    }
     if report.has_failures() {
         exit::PROBLEMS
     } else {
@@ -217,6 +247,20 @@ fn first_copy(err: &mut dyn Write, name: &str) -> io::Result<()> {
         err,
         "note: these are the first files copied from {name}, into sources/{name}/. Commit them with the docs: everyone who can read this repository can read them, which matters when the code's repository is private."
     )
+}
+
+/// What `ascribe sources fetch --format json` writes: what was copied and
+/// removed for each source, and the files that couldn't be copied.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct FetchJson<'a> {
+    /// The version of this schema. It changes only when a field is removed
+    /// or changes meaning.
+    schema_version: u32,
+    /// The version of Ascribe that wrote it.
+    ascribe_version: &'static str,
+    #[serde(flatten)]
+    report: &'a FetchReport,
 }
 
 /// What `ascribe sources status --format json` writes: each source's pin and

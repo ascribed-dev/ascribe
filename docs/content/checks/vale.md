@@ -108,7 +108,12 @@ Sets up Vale for a project. Vale itself is run by `ascribe check --vale` and the
 
 Writes the preset `[checks.vale]` names out as the project's own Vale configuration: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. Then it changes `[checks.vale]` in `ascribe.toml` to `config = ".vale.ini"`, in place of `preset` and `off`, keeping its other keys and comments.
 
-It takes no options but the ones every command accepts ([command reference](../command/index.md#options-every-command-accepts)). It lists each file it wrote, `ascribe.toml` last.
+It lists each file it wrote, `ascribe.toml` last.
+
+@include: ../_generated/cli-vale-eject-options.md
+
+@available: ascribe planned
+With `--format json`, it writes the preset and the files in the document its [schema](../contracts/json-reports.md#ascribe-vale-eject) describes.
 
 | Code | Meaning |
 |---|---|

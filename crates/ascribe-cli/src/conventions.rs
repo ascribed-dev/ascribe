@@ -191,16 +191,6 @@ const EXCEPTIONS: &[(Rule, &[&str])] = &[
     ),
     (Rule::ExitCode, &["check"]),
     (
-        Rule::Json,
-        &[
-            "sources fetch",
-            "templates list",
-            "vale eject",
-            "agents sync",
-            "agents prompt",
-        ],
-    ),
-    (
         Rule::FormatValues,
         &[
             "init",
@@ -279,6 +269,9 @@ fn long<'a>(command: &'a Command, name: &str) -> Option<&'a Arg> {
         .find(|arg| arg.get_long() == Some(name))
 }
 
+/// Whether `arg` takes a git revision: its value name is `REV`. Every
+/// option or argument that takes one names it `REV`, which is how this test
+/// finds them, so one named otherwise gets past [`Rule::Base`].
 fn takes_revision(arg: &Arg) -> bool {
     arg.get_value_names()
         .is_some_and(|names| names.iter().any(|name| name.as_str() == "REV"))
